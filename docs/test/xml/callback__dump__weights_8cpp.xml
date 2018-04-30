@@ -1,0 +1,438 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="callback__dump__weights_8cpp" kind="file" language="C++">
+    <compoundname>callback_dump_weights.cpp</compoundname>
+    <includes local="no">vector</includes>
+    <includes refid="callback__dump__weights_8hpp" local="yes">lbann/callbacks/callback_dump_weights.hpp</includes>
+    <incdepgraph>
+      <node id="17931">
+        <label>sys/stat.h</label>
+      </node>
+      <node id="17906">
+        <label>lbann/utils/summary.hpp</label>
+        <link refid="summary_8hpp"/>
+        <childnode refid="17907" relation="include">
+        </childnode>
+        <childnode refid="17893" relation="include">
+        </childnode>
+        <childnode refid="17897" relation="include">
+        </childnode>
+        <childnode refid="17908" relation="include">
+        </childnode>
+      </node>
+      <node id="17923">
+        <label>lbann/io/persist.hpp</label>
+        <link refid="persist_8hpp"/>
+        <childnode refid="17897" relation="include">
+        </childnode>
+        <childnode refid="17898" relation="include">
+        </childnode>
+      </node>
+      <node id="17898">
+        <label>El.hpp</label>
+      </node>
+      <node id="17897">
+        <label>lbann/base.hpp</label>
+        <link refid="base_8hpp"/>
+        <childnode refid="17898" relation="include">
+        </childnode>
+        <childnode refid="17899" relation="include">
+        </childnode>
+        <childnode refid="17900" relation="include">
+        </childnode>
+        <childnode refid="17905" relation="include">
+        </childnode>
+      </node>
+      <node id="17933">
+        <label>fcntl.h</label>
+      </node>
+      <node id="17936">
+        <label>lbann/metrics/metric.hpp</label>
+        <link refid="metric_8hpp"/>
+        <childnode refid="17897" relation="include">
+        </childnode>
+        <childnode refid="17908" relation="include">
+        </childnode>
+        <childnode refid="17915" relation="include">
+        </childnode>
+        <childnode refid="17923" relation="include">
+        </childnode>
+      </node>
+      <node id="17907">
+        <label>string</label>
+      </node>
+      <node id="17920">
+        <label>lbann/utils/cudnn_wrapper.hpp</label>
+        <link refid="cudnn__wrapper_8hpp"/>
+        <childnode refid="17893" relation="include">
+        </childnode>
+        <childnode refid="17897" relation="include">
+        </childnode>
+        <childnode refid="17908" relation="include">
+        </childnode>
+        <childnode refid="17915" relation="include">
+        </childnode>
+      </node>
+      <node id="17926">
+        <label>lbann/utils/timer.hpp</label>
+        <link refid="timer_8hpp"/>
+        <childnode refid="17927" relation="include">
+        </childnode>
+      </node>
+      <node id="17909">
+        <label>map</label>
+      </node>
+      <node id="17925">
+        <label>unordered_set</label>
+      </node>
+      <node id="17919">
+        <label>exception</label>
+      </node>
+      <node id="17922">
+        <label>lbann/weights/initializer.hpp</label>
+        <link refid="initializer_8hpp"/>
+        <childnode refid="17897" relation="include">
+        </childnode>
+        <childnode refid="17908" relation="include">
+        </childnode>
+        <childnode refid="17915" relation="include">
+        </childnode>
+        <childnode refid="17920" relation="include">
+        </childnode>
+      </node>
+      <node id="17932">
+        <label>sys/types.h</label>
+      </node>
+      <node id="17896">
+        <label>lbann/callbacks/callback.hpp</label>
+        <link refid="callback_8hpp"/>
+        <childnode refid="17897" relation="include">
+        </childnode>
+        <childnode refid="17906" relation="include">
+        </childnode>
+        <childnode refid="17911" relation="include">
+        </childnode>
+        <childnode refid="17912" relation="include">
+        </childnode>
+      </node>
+      <node id="17928">
+        <label>lbann/utils/graph.hpp</label>
+        <link refid="graph_8hpp"/>
+        <childnode refid="17918" relation="include">
+        </childnode>
+        <childnode refid="17893" relation="include">
+        </childnode>
+        <childnode refid="17929" relation="include">
+        </childnode>
+        <childnode refid="17909" relation="include">
+        </childnode>
+      </node>
+      <node id="17902">
+        <label>cstdio</label>
+      </node>
+      <node id="17916">
+        <label>lbann/utils/stack_trace.hpp</label>
+        <link refid="stack__trace_8hpp"/>
+        <childnode refid="17917" relation="include">
+        </childnode>
+        <childnode refid="17907" relation="include">
+        </childnode>
+      </node>
+      <node id="17904">
+        <label>cxxabi.h</label>
+      </node>
+      <node id="17915">
+        <label>lbann/utils/exception.hpp</label>
+        <link refid="exception_8hpp"/>
+        <childnode refid="17897" relation="include">
+        </childnode>
+        <childnode refid="17908" relation="include">
+        </childnode>
+        <childnode refid="17916" relation="include">
+        </childnode>
+        <childnode refid="17918" relation="include">
+        </childnode>
+        <childnode refid="17919" relation="include">
+        </childnode>
+      </node>
+      <node id="17893">
+        <label>vector</label>
+      </node>
+      <node id="17908">
+        <label>lbann/comm.hpp</label>
+        <link refid="comm_8hpp"/>
+        <childnode refid="17893" relation="include">
+        </childnode>
+        <childnode refid="17909" relation="include">
+        </childnode>
+        <childnode refid="17910" relation="include">
+        </childnode>
+        <childnode refid="17897" relation="include">
+        </childnode>
+      </node>
+      <node id="17934">
+        <label>lbann/objective_functions/objective_function.hpp</label>
+        <link refid="objective__function_8hpp"/>
+        <childnode refid="17935" relation="include">
+        </childnode>
+        <childnode refid="17936" relation="include">
+        </childnode>
+      </node>
+      <node id="17895">
+        <label>utility</label>
+      </node>
+      <node id="17930">
+        <label>lbann/io/file_io.hpp</label>
+        <link refid="file__io_8hpp"/>
+        <childnode refid="17931" relation="include">
+        </childnode>
+        <childnode refid="17932" relation="include">
+        </childnode>
+        <childnode refid="17933" relation="include">
+        </childnode>
+      </node>
+      <node id="17892">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_dump_weights.cpp</label>
+        <link refid="callback__dump__weights_8cpp"/>
+        <childnode refid="17893" relation="include">
+        </childnode>
+        <childnode refid="17894" relation="include">
+        </childnode>
+      </node>
+      <node id="17924">
+        <label>lbann.pb.h</label>
+      </node>
+      <node id="17901">
+        <label>cstdlib</label>
+      </node>
+      <node id="17918">
+        <label>iostream</label>
+      </node>
+      <node id="17913">
+        <label>lbann/optimizers/optimizer.hpp</label>
+        <link refid="optimizer_8hpp"/>
+        <childnode refid="17914" relation="include">
+        </childnode>
+        <childnode refid="17897" relation="include">
+        </childnode>
+        <childnode refid="17908" relation="include">
+        </childnode>
+        <childnode refid="17915" relation="include">
+        </childnode>
+        <childnode refid="17920" relation="include">
+        </childnode>
+        <childnode refid="17921" relation="include">
+        </childnode>
+        <childnode refid="17907" relation="include">
+        </childnode>
+        <childnode refid="17925" relation="include">
+        </childnode>
+      </node>
+      <node id="17937">
+        <label>unordered_map</label>
+      </node>
+      <node id="17912">
+        <label>lbann/layers/layer.hpp</label>
+        <link refid="layer_8hpp"/>
+        <childnode refid="17897" relation="include">
+        </childnode>
+        <childnode refid="17908" relation="include">
+        </childnode>
+        <childnode refid="17906" relation="include">
+        </childnode>
+        <childnode refid="17913" relation="include">
+        </childnode>
+        <childnode refid="17915" relation="include">
+        </childnode>
+        <childnode refid="17920" relation="include">
+        </childnode>
+        <childnode refid="17926" relation="include">
+        </childnode>
+        <childnode refid="17923" relation="include">
+        </childnode>
+        <childnode refid="17924" relation="include">
+        </childnode>
+        <childnode refid="17907" relation="include">
+        </childnode>
+        <childnode refid="17893" relation="include">
+        </childnode>
+      </node>
+      <node id="17927">
+        <label>chrono</label>
+      </node>
+      <node id="17935">
+        <label>lbann/objective_functions/objective_function_term.hpp</label>
+        <link refid="objective__function__term_8hpp"/>
+        <childnode refid="17897" relation="include">
+        </childnode>
+        <childnode refid="17912" relation="include">
+        </childnode>
+        <childnode refid="17921" relation="include">
+        </childnode>
+      </node>
+      <node id="17917">
+        <label>csignal</label>
+      </node>
+      <node id="17921">
+        <label>lbann/weights/weights.hpp</label>
+        <link refid="weights_8hpp"/>
+        <childnode refid="17907" relation="include">
+        </childnode>
+        <childnode refid="17897" relation="include">
+        </childnode>
+        <childnode refid="17908" relation="include">
+        </childnode>
+        <childnode refid="17915" relation="include">
+        </childnode>
+        <childnode refid="17920" relation="include">
+        </childnode>
+        <childnode refid="17922" relation="include">
+        </childnode>
+        <childnode refid="17923" relation="include">
+        </childnode>
+        <childnode refid="17924" relation="include">
+        </childnode>
+      </node>
+      <node id="17905">
+        <label>lbann_config.hpp</label>
+      </node>
+      <node id="17929">
+        <label>set</label>
+      </node>
+      <node id="17911">
+        <label>lbann/models/model.hpp</label>
+        <link refid="model_8hpp"/>
+        <childnode refid="17897" relation="include">
+        </childnode>
+        <childnode refid="17908" relation="include">
+        </childnode>
+        <childnode refid="17912" relation="include">
+        </childnode>
+        <childnode refid="17906" relation="include">
+        </childnode>
+        <childnode refid="17928" relation="include">
+        </childnode>
+        <childnode refid="17930" relation="include">
+        </childnode>
+        <childnode refid="17923" relation="include">
+        </childnode>
+        <childnode refid="17934" relation="include">
+        </childnode>
+        <childnode refid="17936" relation="include">
+        </childnode>
+        <childnode refid="17921" relation="include">
+        </childnode>
+        <childnode refid="17913" relation="include">
+        </childnode>
+        <childnode refid="17924" relation="include">
+        </childnode>
+        <childnode refid="17893" relation="include">
+        </childnode>
+        <childnode refid="17907" relation="include">
+        </childnode>
+        <childnode refid="17937" relation="include">
+        </childnode>
+      </node>
+      <node id="17914">
+        <label>lbann/utils/compiler_control.hpp</label>
+        <link refid="compiler__control_8hpp"/>
+      </node>
+      <node id="17900">
+        <label>lbann/utils/cyg_profile.hpp</label>
+        <link refid="cyg__profile_8hpp"/>
+        <childnode refid="17901" relation="include">
+        </childnode>
+        <childnode refid="17902" relation="include">
+        </childnode>
+        <childnode refid="17903" relation="include">
+        </childnode>
+        <childnode refid="17904" relation="include">
+        </childnode>
+      </node>
+      <node id="17899">
+        <label>lbann/Elemental_extensions.hpp</label>
+        <link refid="Elemental__extensions_8hpp"/>
+        <childnode refid="17898" relation="include">
+        </childnode>
+      </node>
+      <node id="17894">
+        <label>lbann/callbacks/callback_dump_weights.hpp</label>
+        <link refid="callback__dump__weights_8hpp"/>
+        <childnode refid="17895" relation="include">
+        </childnode>
+        <childnode refid="17896" relation="include">
+        </childnode>
+      </node>
+      <node id="17910">
+        <label>typeindex</label>
+      </node>
+      <node id="17903">
+        <label>dlfcn.h</label>
+      </node>
+    </incdepgraph>
+    <innernamespace refid="namespacelbann">lbann</innernamespace>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>2014-2016,<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Security,<sp/>LLC.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Produced<sp/>at<sp/>the<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Laboratory.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Written<sp/>by<sp/>the<sp/>LBANN<sp/>Research<sp/>Team<sp/>(B.<sp/>Van<sp/>Essen,<sp/>et<sp/>al.)<sp/>listed<sp/>in</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="comment">//<sp/>the<sp/>CONTRIBUTORS<sp/>file.<sp/>&lt;lbann-dev@llnl.gov&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="comment">//<sp/>LLNL-CODE-697807.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="comment">//<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="comment">//<sp/>This<sp/>file<sp/>is<sp/>part<sp/>of<sp/>LBANN:<sp/>Livermore<sp/>Big<sp/>Artificial<sp/>Neural<sp/>Network</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Toolkit.<sp/>For<sp/>details,<sp/>see<sp/>http://software.llnl.gov/LBANN<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="comment">//<sp/>https://github.com/LLNL/LBANN.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Licensed<sp/>under<sp/>the<sp/>Apache<sp/>License,<sp/>Version<sp/>2.0<sp/>(the<sp/>&quot;Licensee&quot;);<sp/>you</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight><highlight class="comment">//<sp/>may<sp/>not<sp/>use<sp/>this<sp/>file<sp/>except<sp/>in<sp/>compliance<sp/>with<sp/>the<sp/>License.<sp/><sp/>You<sp/>may</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="comment">//<sp/>obtain<sp/>a<sp/>copy<sp/>of<sp/>the<sp/>License<sp/>at:</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight><highlight class="comment">//<sp/>http://www.apache.org/licenses/LICENSE-2.0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Unless<sp/>required<sp/>by<sp/>applicable<sp/>law<sp/>or<sp/>agreed<sp/>to<sp/>in<sp/>writing,<sp/>software</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight><highlight class="comment">//<sp/>distributed<sp/>under<sp/>the<sp/>License<sp/>is<sp/>distributed<sp/>on<sp/>an<sp/>&quot;AS<sp/>IS&quot;<sp/>BASIS,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight><highlight class="comment">//<sp/>WITHOUT<sp/>WARRANTIES<sp/>OR<sp/>CONDITIONS<sp/>OF<sp/>ANY<sp/>KIND,<sp/>either<sp/>express<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="comment">//<sp/>implied.<sp/>See<sp/>the<sp/>License<sp/>for<sp/>the<sp/>specific<sp/>language<sp/>governing</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="comment">//<sp/>permissions<sp/>and<sp/>limitations<sp/>under<sp/>the<sp/>license.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="25"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="26"><highlight class="normal"></highlight><highlight class="comment">//<sp/>lbann_callback_dump_weights<sp/>.hpp<sp/>.cpp<sp/>-<sp/>Callbacks<sp/>to<sp/>dump<sp/>weight<sp/>matrices</highlight></codeline>
+<codeline lineno="28"><highlight class="comment"></highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="29"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;vector&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="30"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="callback__dump__weights_8hpp" kindref="compound">lbann/callbacks/callback_dump_weights.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight></codeline>
+<codeline lineno="32"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacelbann" kindref="compound">lbann</ref><sp/>{</highlight></codeline>
+<codeline lineno="33"><highlight class="normal"></highlight></codeline>
+<codeline lineno="34" refid="classlbann_1_1lbann__callback__dump__weights_1a46db01d535414a0965caae709a08a150" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__dump__weights_1a46db01d535414a0965caae709a08a150" kindref="member">lbann_callback_dump_weights::on_train_begin</ref>(<ref refid="classlbann_1_1model" kindref="compound">model</ref><sp/>*m)<sp/>{</highlight></codeline>
+<codeline lineno="35"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__dump__weights_1a5902fb87255b410a5d777ea385813416" kindref="member">dump_weights</ref>(m,<sp/></highlight><highlight class="stringliteral">&quot;initial&quot;</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="36"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="37"><highlight class="normal"></highlight></codeline>
+<codeline lineno="38" refid="classlbann_1_1lbann__callback__dump__weights_1aa73068d94b2408fc0124b2a05b4e2b8a" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__dump__weights_1aa73068d94b2408fc0124b2a05b4e2b8a" kindref="member">lbann_callback_dump_weights::on_epoch_end</ref>(<ref refid="classlbann_1_1model" kindref="compound">model</ref><sp/>*m)<sp/>{</highlight></codeline>
+<codeline lineno="39"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__dump__weights_1a5902fb87255b410a5d777ea385813416" kindref="member">dump_weights</ref>(m);</highlight></codeline>
+<codeline lineno="40"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="41"><highlight class="normal"></highlight></codeline>
+<codeline lineno="42" refid="classlbann_1_1lbann__callback__dump__weights_1a5902fb87255b410a5d777ea385813416" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__dump__weights_1a5902fb87255b410a5d777ea385813416" kindref="member">lbann_callback_dump_weights::dump_weights</ref>(<ref refid="classlbann_1_1model" kindref="compound">model</ref><sp/>*m,<sp/>std::string<sp/>s)<sp/>{</highlight></codeline>
+<codeline lineno="43"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1weights" kindref="compound">weights</ref><sp/>*w<sp/>:<sp/>m-&gt;<ref refid="classlbann_1_1model_1ac0a89794f1f51e7c502fff2745c973e6" kindref="member">get_weights</ref>())<sp/>{</highlight></codeline>
+<codeline lineno="44"><highlight class="normal"><sp/><sp/><sp/><sp/>std::string<sp/>epoch<sp/>=<sp/></highlight><highlight class="stringliteral">&quot;-epoch&quot;</highlight><highlight class="normal"><sp/>+<sp/>std::to_string(m-&gt;<ref refid="classlbann_1_1model_1a1cf70e098524cc5013bce56edd96dfe7" kindref="member">get_cur_epoch</ref>()-1);</highlight></codeline>
+<codeline lineno="45"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal">(s<sp/>!=<sp/></highlight><highlight class="stringliteral">&quot;&quot;</highlight><highlight class="normal">)<sp/>{</highlight></codeline>
+<codeline lineno="46"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>epoch<sp/>=<sp/></highlight><highlight class="stringliteral">&quot;-&quot;</highlight><highlight class="normal"><sp/>+<sp/>s;</highlight></codeline>
+<codeline lineno="47"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="48"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::string<sp/>file</highlight></codeline>
+<codeline lineno="49"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>=<sp/>(<ref refid="classlbann_1_1lbann__callback__dump__weights_1a6c73416bd2edd414e7c4094a19ae2d79" kindref="member">m_basename</ref></highlight></codeline>
+<codeline lineno="50"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>+<sp/></highlight><highlight class="stringliteral">&quot;model&quot;</highlight><highlight class="normal"><sp/>+<sp/>std::to_string(m-&gt;<ref refid="classlbann_1_1model_1a9e1cfe449d2f4858a32994f6be0042fb" kindref="member">get_comm</ref>()-&gt;<ref refid="classlbann_1_1lbann__comm_1a6422f70c92bed0b78179facc52b066f7" kindref="member">get_model_rank</ref>())</highlight></codeline>
+<codeline lineno="51"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>+<sp/>epoch</highlight></codeline>
+<codeline lineno="52"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>+<sp/></highlight><highlight class="stringliteral">&quot;-&quot;</highlight><highlight class="normal"><sp/>+<sp/>w-&gt;get_name()</highlight></codeline>
+<codeline lineno="53"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>+<sp/></highlight><highlight class="stringliteral">&quot;-Weights&quot;</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="54"><highlight class="normal"><sp/><sp/><sp/><sp/>El::Write(w-&gt;get_values(),<sp/>file,<sp/>El::ASCII);</highlight></codeline>
+<codeline lineno="55"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="56"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="57"><highlight class="normal"></highlight></codeline>
+<codeline lineno="58"><highlight class="normal">}<sp/><sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>lbann</highlight><highlight class="normal"></highlight></codeline>
+    </programlisting>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_dump_weights.cpp"/>
+  </compounddef>
+</doxygen>

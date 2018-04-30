@@ -1,0 +1,2305 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="weights__factory_8cpp" kind="file" language="C++">
+    <compoundname>weights_factory.cpp</compoundname>
+    <includes refid="factories_8hpp" local="yes">lbann/proto/factories.hpp</includes>
+    <incdepgraph>
+      <node id="24710">
+        <label>sys/stat.h</label>
+      </node>
+      <node id="24671">
+        <label>lbann/proto/factories.hpp</label>
+        <link refid="factories_8hpp"/>
+        <childnode refid="24672" relation="include">
+        </childnode>
+      </node>
+      <node id="24895">
+        <label>glob.h</label>
+      </node>
+      <node id="24793">
+        <label>cv_process.hpp</label>
+        <link refid="cv__process_8hpp"/>
+        <childnode refid="24794" relation="include">
+        </childnode>
+        <childnode refid="24797" relation="include">
+        </childnode>
+        <childnode refid="24800" relation="include">
+        </childnode>
+        <childnode refid="24801" relation="include">
+        </childnode>
+        <childnode refid="24804" relation="include">
+        </childnode>
+        <childnode refid="24805" relation="include">
+        </childnode>
+        <childnode refid="24806" relation="include">
+        </childnode>
+        <childnode refid="24807" relation="include">
+        </childnode>
+        <childnode refid="24809" relation="include">
+        </childnode>
+        <childnode refid="24810" relation="include">
+        </childnode>
+      </node>
+      <node id="24756">
+        <label>lbann/layers/transform/pooling.hpp</label>
+        <link refid="pooling_8hpp"/>
+        <childnode refid="24757" relation="include">
+        </childnode>
+        <childnode refid="24686" relation="include">
+        </childnode>
+        <childnode refid="24755" relation="include">
+        </childnode>
+        <childnode refid="24699" relation="include">
+        </childnode>
+        <childnode refid="24694" relation="include">
+        </childnode>
+        <childnode refid="24752" relation="include">
+        </childnode>
+      </node>
+      <node id="24861">
+        <label>lbann/callbacks/callback_checkpoint.hpp</label>
+        <link refid="callback__checkpoint_8hpp"/>
+        <childnode refid="24785" relation="include">
+        </childnode>
+        <childnode refid="24702" relation="include">
+        </childnode>
+      </node>
+      <node id="24746">
+        <label>lbann/weights/fan_in_fan_out_initializers.hpp</label>
+        <link refid="fan__in__fan__out__initializers_8hpp"/>
+        <childnode refid="24701" relation="include">
+        </childnode>
+      </node>
+      <node id="24807">
+        <label>cv_mean_extractor.hpp</label>
+        <link refid="cv__mean__extractor_8hpp"/>
+        <childnode refid="24794" relation="include">
+        </childnode>
+        <childnode refid="24808" relation="include">
+        </childnode>
+      </node>
+      <node id="24736">
+        <label>lbann/layers/activations/selu.hpp</label>
+        <link refid="selu_8hpp"/>
+        <childnode refid="24729" relation="include">
+        </childnode>
+      </node>
+      <node id="24810">
+        <label>limits</label>
+      </node>
+      <node id="24690">
+        <label>lbann/utils/summary.hpp</label>
+        <link refid="summary_8hpp"/>
+        <childnode refid="24691" relation="include">
+        </childnode>
+        <childnode refid="24686" relation="include">
+        </childnode>
+        <childnode refid="24676" relation="include">
+        </childnode>
+        <childnode refid="24685" relation="include">
+        </childnode>
+      </node>
+      <node id="24843">
+        <label>lbann/callbacks/callback_io.hpp</label>
+        <link refid="callback__io_8hpp"/>
+        <childnode refid="24704" relation="include">
+        </childnode>
+        <childnode refid="24716" relation="include">
+        </childnode>
+        <childnode refid="24785" relation="include">
+        </childnode>
+      </node>
+      <node id="24786">
+        <label>lbann/utils/quantizer.hpp</label>
+        <link refid="quantizer_8hpp"/>
+        <childnode refid="24716" relation="include">
+        </childnode>
+        <childnode refid="24676" relation="include">
+        </childnode>
+        <childnode refid="24685" relation="include">
+        </childnode>
+        <childnode refid="24705" relation="include">
+        </childnode>
+        <childnode refid="24694" relation="include">
+        </childnode>
+        <childnode refid="24751" relation="include">
+        </childnode>
+        <childnode refid="24787" relation="include">
+        </childnode>
+      </node>
+      <node id="24864">
+        <label>lbann/optimizers/adagrad.hpp</label>
+        <link refid="adagrad_8hpp"/>
+        <childnode refid="24692" relation="include">
+        </childnode>
+      </node>
+      <node id="24735">
+        <label>lbann/layers/activations/relu.hpp</label>
+        <link refid="relu_8hpp"/>
+        <childnode refid="24729" relation="include">
+        </childnode>
+        <childnode refid="24699" relation="include">
+        </childnode>
+      </node>
+      <node id="24732">
+        <label>lbann/layers/activations/exponential.hpp</label>
+        <link refid="exponential_8hpp"/>
+        <childnode refid="24729" relation="include">
+        </childnode>
+      </node>
+      <node id="24860">
+        <label>lbann/callbacks/callback_timeline.hpp</label>
+        <link refid="callback__timeline_8hpp"/>
+        <childnode refid="24716" relation="include">
+        </childnode>
+        <childnode refid="24785" relation="include">
+        </childnode>
+      </node>
+      <node id="24875">
+        <label>lbann/objective_functions/loss_functions/mean_absolute_deviation.hpp</label>
+        <link refid="objective__functions_2loss__functions_2mean__absolute__deviation_8hpp"/>
+        <childnode refid="24870" relation="include">
+        </childnode>
+      </node>
+      <node id="24821">
+        <label>offline_patches_npz.hpp</label>
+        <link refid="offline__patches__npz_8hpp"/>
+        <childnode refid="24822" relation="include">
+        </childnode>
+        <childnode refid="24691" relation="include">
+        </childnode>
+        <childnode refid="24686" relation="include">
+        </childnode>
+      </node>
+      <node id="24839">
+        <label>lbann/callbacks/callback_checksmall.hpp</label>
+        <link refid="callback__checksmall_8hpp"/>
+        <childnode refid="24785" relation="include">
+        </childnode>
+      </node>
+      <node id="24820">
+        <label>lbann/data_readers/data_reader_triplet.hpp</label>
+        <link refid="data__reader__triplet_8hpp"/>
+        <childnode refid="24818" relation="include">
+        </childnode>
+        <childnode refid="24793" relation="include">
+        </childnode>
+        <childnode refid="24821" relation="include">
+        </childnode>
+        <childnode refid="24686" relation="include">
+        </childnode>
+        <childnode refid="24691" relation="include">
+        </childnode>
+        <childnode refid="24757" relation="include">
+        </childnode>
+        <childnode refid="24697" relation="include">
+        </childnode>
+      </node>
+      <node id="24720">
+        <label>lbann/data_readers/image_preprocessor.hpp</label>
+        <link refid="image__preprocessor_8hpp"/>
+        <childnode refid="24684" relation="include">
+        </childnode>
+        <childnode refid="24676" relation="include">
+        </childnode>
+      </node>
+      <node id="24815">
+        <label>patchworks/patchworks_patch_descriptor.hpp</label>
+        <link refid="patchworks__patch__descriptor_8hpp"/>
+        <childnode refid="24684" relation="include">
+        </childnode>
+      </node>
+      <node id="24879">
+        <label>lbann/objective_functions/weight_regularization/l1.hpp</label>
+        <link refid="l1_8hpp"/>
+        <childnode refid="24714" relation="include">
+        </childnode>
+      </node>
+      <node id="24894">
+        <label>lbann/utils/glob.hpp</label>
+        <link refid="glob_8hpp"/>
+        <childnode refid="24895" relation="include">
+        </childnode>
+        <childnode refid="24686" relation="include">
+        </childnode>
+        <childnode refid="24691" relation="include">
+        </childnode>
+        <childnode refid="24694" relation="include">
+        </childnode>
+      </node>
+      <node id="24762">
+        <label>lbann/layers/transform/concatenation.hpp</label>
+        <link refid="concatenation_8hpp"/>
+        <childnode refid="24755" relation="include">
+        </childnode>
+        <childnode refid="24694" relation="include">
+        </childnode>
+        <childnode refid="24747" relation="include">
+        </childnode>
+      </node>
+      <node id="24870">
+        <label>lbann/objective_functions/loss_functions/loss_function.hpp</label>
+        <link refid="loss__function_8hpp"/>
+        <childnode refid="24714" relation="include">
+        </childnode>
+        <childnode refid="24789" relation="include">
+        </childnode>
+      </node>
+      <node id="24834">
+        <label>lbann/data_store/generic_data_store.hpp</label>
+        <link refid="generic__data__store_8hpp"/>
+        <childnode refid="24676" relation="include">
+        </childnode>
+        <childnode refid="24685" relation="include">
+        </childnode>
+        <childnode refid="24686" relation="include">
+        </childnode>
+        <childnode refid="24704" relation="include">
+        </childnode>
+      </node>
+      <node id="24754">
+        <label>lbann/layers/transform/reshape.hpp</label>
+        <link refid="reshape_8hpp"/>
+        <childnode refid="24755" relation="include">
+        </childnode>
+      </node>
+      <node id="24702">
+        <label>lbann/io/persist.hpp</label>
+        <link refid="persist_8hpp"/>
+        <childnode refid="24676" relation="include">
+        </childnode>
+        <childnode refid="24677" relation="include">
+        </childnode>
+      </node>
+      <node id="24898">
+        <label>cstdint</label>
+      </node>
+      <node id="24835">
+        <label>lbann/data_store/data_store_imagenet.hpp</label>
+        <link refid="data__store__imagenet_8hpp"/>
+        <childnode refid="24836" relation="include">
+        </childnode>
+      </node>
+      <node id="24677">
+        <label>El.hpp</label>
+      </node>
+      <node id="24880">
+        <label>lbann/objective_functions/weight_regularization/l2.hpp</label>
+        <link refid="l2_8hpp"/>
+        <childnode refid="24714" relation="include">
+        </childnode>
+      </node>
+      <node id="24799">
+        <label>lbann/utils/mild_exception.hpp</label>
+        <link refid="mild__exception_8hpp"/>
+        <childnode refid="24697" relation="include">
+        </childnode>
+      </node>
+      <node id="24733">
+        <label>lbann/layers/activations/identity.hpp</label>
+        <link refid="identity_8hpp"/>
+        <childnode refid="24729" relation="include">
+        </childnode>
+      </node>
+      <node id="24841">
+        <label>lbann/callbacks/callback_print.hpp</label>
+        <link refid="callback__print_8hpp"/>
+        <childnode refid="24785" relation="include">
+        </childnode>
+      </node>
+      <node id="24838">
+        <label>lbann/callbacks/callback_checknan.hpp</label>
+        <link refid="callback__checknan_8hpp"/>
+        <childnode refid="24785" relation="include">
+        </childnode>
+      </node>
+      <node id="24676">
+        <label>lbann/base.hpp</label>
+        <link refid="base_8hpp"/>
+        <childnode refid="24677" relation="include">
+        </childnode>
+        <childnode refid="24678" relation="include">
+        </childnode>
+        <childnode refid="24679" relation="include">
+        </childnode>
+        <childnode refid="24684" relation="include">
+        </childnode>
+      </node>
+      <node id="24672">
+        <label>lbann/proto/proto_common.hpp</label>
+        <link refid="proto__common_8hpp"/>
+        <childnode refid="24673" relation="include">
+        </childnode>
+        <childnode refid="24703" relation="include">
+        </childnode>
+        <childnode refid="24699" relation="include">
+        </childnode>
+        <childnode refid="24671" relation="include">
+        </childnode>
+      </node>
+      <node id="24765">
+        <label>lbann/layers/transform/safe_inv.hpp</label>
+        <link refid="safe__inv_8hpp"/>
+        <childnode refid="24676" relation="include">
+        </childnode>
+        <childnode refid="24755" relation="include">
+        </childnode>
+        <childnode refid="24694" relation="include">
+        </childnode>
+      </node>
+      <node id="24774">
+        <label>lbann/layers/regularizers/dropout.hpp</label>
+        <link refid="dropout_8hpp"/>
+        <childnode refid="24773" relation="include">
+        </childnode>
+      </node>
+      <node id="24897">
+        <label>lbann/utils/omp_diagnostics.hpp</label>
+        <link refid="omp__diagnostics_8hpp"/>
+        <childnode refid="24898" relation="include">
+        </childnode>
+      </node>
+      <node id="24783">
+        <label>lbann/io/data_buffers/distributed_io_buffer.hpp</label>
+        <link refid="distributed__io__buffer_8hpp"/>
+        <childnode refid="24781" relation="include">
+        </childnode>
+      </node>
+      <node id="24767">
+        <label>lbann/layers/transform/reduction.hpp</label>
+        <link refid="reduction_8hpp"/>
+        <childnode refid="24686" relation="include">
+        </childnode>
+        <childnode refid="24755" relation="include">
+        </childnode>
+      </node>
+      <node id="24777">
+        <label>lbann/layers/io/input/input_layer.hpp</label>
+        <link refid="input__layer_8hpp"/>
+        <childnode refid="24778" relation="include">
+        </childnode>
+        <childnode refid="24694" relation="include">
+        </childnode>
+        <childnode refid="24675" relation="include">
+        </childnode>
+        <childnode refid="24691" relation="include">
+        </childnode>
+        <childnode refid="24711" relation="include">
+        </childnode>
+        <childnode refid="24710" relation="include">
+        </childnode>
+        <childnode refid="24723" relation="include">
+        </childnode>
+      </node>
+      <node id="24784">
+        <label>lbann/callbacks/callback_imcomm.hpp</label>
+        <link refid="callback__imcomm_8hpp"/>
+        <childnode refid="24686" relation="include">
+        </childnode>
+        <childnode refid="24704" relation="include">
+        </childnode>
+        <childnode refid="24716" relation="include">
+        </childnode>
+        <childnode refid="24785" relation="include">
+        </childnode>
+        <childnode refid="24786" relation="include">
+        </childnode>
+      </node>
+      <node id="24792">
+        <label>data_reader_image.hpp</label>
+        <link refid="data__reader__image_8hpp"/>
+        <childnode refid="24717" relation="include">
+        </childnode>
+        <childnode refid="24720" relation="include">
+        </childnode>
+        <childnode refid="24793" relation="include">
+        </childnode>
+      </node>
+      <node id="24721">
+        <label>cassert</label>
+      </node>
+      <node id="24842">
+        <label>lbann/callbacks/callback_timer.hpp</label>
+        <link refid="callback__timer_8hpp"/>
+        <childnode refid="24706" relation="include">
+        </childnode>
+        <childnode refid="24686" relation="include">
+        </childnode>
+        <childnode refid="24785" relation="include">
+        </childnode>
+      </node>
+      <node id="24845">
+        <label>lbann/callbacks/callback_learning_rate.hpp</label>
+        <link refid="callback__learning__rate_8hpp"/>
+        <childnode refid="24704" relation="include">
+        </childnode>
+        <childnode refid="24716" relation="include">
+        </childnode>
+        <childnode refid="24785" relation="include">
+        </childnode>
+      </node>
+      <node id="24712">
+        <label>fcntl.h</label>
+      </node>
+      <node id="24872">
+        <label>lbann/objective_functions/loss_functions/binary_cross_entropy.hpp</label>
+        <link refid="binary__cross__entropy_8hpp"/>
+        <childnode refid="24870" relation="include">
+        </childnode>
+      </node>
+      <node id="24715">
+        <label>lbann/metrics/metric.hpp</label>
+        <link refid="metric_8hpp"/>
+        <childnode refid="24676" relation="include">
+        </childnode>
+        <childnode refid="24685" relation="include">
+        </childnode>
+        <childnode refid="24694" relation="include">
+        </childnode>
+        <childnode refid="24702" relation="include">
+        </childnode>
+      </node>
+      <node id="24796">
+        <label>opencv_extensions.hpp</label>
+        <link refid="opencv__extensions_8hpp"/>
+      </node>
+      <node id="24804">
+        <label>cv_colorizer.hpp</label>
+        <link refid="cv__colorizer_8hpp"/>
+        <childnode refid="24794" relation="include">
+        </childnode>
+      </node>
+      <node id="24779">
+        <label>lbann/layers/io/io_layer.hpp</label>
+        <link refid="io__layer_8hpp"/>
+        <childnode refid="24689" relation="include">
+        </childnode>
+        <childnode refid="24717" relation="include">
+        </childnode>
+        <childnode refid="24780" relation="include">
+        </childnode>
+        <childnode refid="24702" relation="include">
+        </childnode>
+        <childnode refid="24694" relation="include">
+        </childnode>
+        <childnode refid="24691" relation="include">
+        </childnode>
+        <childnode refid="24711" relation="include">
+        </childnode>
+        <childnode refid="24710" relation="include">
+        </childnode>
+        <childnode refid="24723" relation="include">
+        </childnode>
+        <childnode refid="24681" relation="include">
+        </childnode>
+      </node>
+      <node id="24862">
+        <label>lbann/callbacks/callback_save_model.hpp</label>
+        <link refid="callback__save__model_8hpp"/>
+        <childnode refid="24757" relation="include">
+        </childnode>
+        <childnode refid="24785" relation="include">
+        </childnode>
+        <childnode refid="24703" relation="include">
+        </childnode>
+        <childnode refid="24863" relation="include">
+        </childnode>
+      </node>
+      <node id="24896">
+        <label>lbann/params.hpp</label>
+        <link refid="params_8hpp"/>
+        <childnode refid="24673" relation="include">
+        </childnode>
+        <childnode refid="24676" relation="include">
+        </childnode>
+        <childnode refid="24691" relation="include">
+        </childnode>
+      </node>
+      <node id="24691">
+        <label>string</label>
+      </node>
+      <node id="24781">
+        <label>lbann/io/data_buffers/generic_io_buffer.hpp</label>
+        <link refid="generic__io__buffer_8hpp"/>
+        <childnode refid="24676" relation="include">
+        </childnode>
+        <childnode refid="24685" relation="include">
+        </childnode>
+        <childnode refid="24717" relation="include">
+        </childnode>
+      </node>
+      <node id="24773">
+        <label>lbann/layers/regularizers/regularizer.hpp</label>
+        <link refid="regularizer_8hpp"/>
+        <childnode refid="24689" relation="include">
+        </childnode>
+      </node>
+      <node id="24878">
+        <label>lbann/objective_functions/loss_functions/polya_negloglike.hpp</label>
+        <link refid="polya__negloglike_8hpp"/>
+        <childnode refid="24870" relation="include">
+        </childnode>
+      </node>
+      <node id="24738">
+        <label>lbann/layers/activations/smooth_relu.hpp</label>
+        <link refid="smooth__relu_8hpp"/>
+        <childnode refid="24729" relation="include">
+        </childnode>
+      </node>
+      <node id="24699">
+        <label>lbann/utils/cudnn_wrapper.hpp</label>
+        <link refid="cudnn__wrapper_8hpp"/>
+        <childnode refid="24686" relation="include">
+        </childnode>
+        <childnode refid="24676" relation="include">
+        </childnode>
+        <childnode refid="24685" relation="include">
+        </childnode>
+        <childnode refid="24694" relation="include">
+        </childnode>
+      </node>
+      <node id="24851">
+        <label>lbann/callbacks/callback_dump_minibatch_sample_indices.hpp</label>
+        <link refid="callback__dump__minibatch__sample__indices_8hpp"/>
+        <childnode refid="24757" relation="include">
+        </childnode>
+        <childnode refid="24785" relation="include">
+        </childnode>
+      </node>
+      <node id="24883">
+        <label>lbann/objective_functions/layer_term.hpp</label>
+        <link refid="layer__term_8hpp"/>
+        <childnode refid="24714" relation="include">
+        </childnode>
+        <childnode refid="24768" relation="include">
+        </childnode>
+      </node>
+      <node id="24705">
+        <label>lbann/utils/timer.hpp</label>
+        <link refid="timer_8hpp"/>
+        <childnode refid="24706" relation="include">
+        </childnode>
+      </node>
+      <node id="24687">
+        <label>map</label>
+      </node>
+      <node id="24829">
+        <label>compound_data_reader.hpp</label>
+        <link refid="compound__data__reader_8hpp"/>
+        <childnode refid="24717" relation="include">
+        </childnode>
+        <childnode refid="24757" relation="include">
+        </childnode>
+      </node>
+      <node id="24747">
+        <label>lbann/utils/cublas_wrapper.hpp</label>
+        <link refid="cublas__wrapper_8hpp"/>
+        <childnode refid="24676" relation="include">
+        </childnode>
+      </node>
+      <node id="24724">
+        <label>lbann/models/directed_acyclic_graph.hpp</label>
+        <link refid="directed__acyclic__graph_8hpp"/>
+        <childnode refid="24675" relation="include">
+        </childnode>
+        <childnode refid="24689" relation="include">
+        </childnode>
+      </node>
+      <node id="24704">
+        <label>unordered_set</label>
+      </node>
+      <node id="24775">
+        <label>lbann/layers/regularizers/selu_dropout.hpp</label>
+        <link refid="selu__dropout_8hpp"/>
+        <childnode refid="24773" relation="include">
+        </childnode>
+      </node>
+      <node id="24873">
+        <label>lbann/objective_functions/loss_functions/cross_entropy_with_uncertainty.hpp</label>
+        <link refid="cross__entropy__with__uncertainty_8hpp"/>
+        <childnode refid="24870" relation="include">
+        </childnode>
+      </node>
+      <node id="24890">
+        <label>lbann/metrics/boolean_accuracy.hpp</label>
+        <link refid="boolean__accuracy_8hpp"/>
+        <childnode refid="24715" relation="include">
+        </childnode>
+      </node>
+      <node id="24827">
+        <label>lbann/data_readers/data_reader_numpy.hpp</label>
+        <link refid="data__reader__numpy_8hpp"/>
+        <childnode refid="24717" relation="include">
+        </childnode>
+        <childnode refid="24822" relation="include">
+        </childnode>
+      </node>
+      <node id="24788">
+        <label>lbann/layers/io/target/target_layer.hpp</label>
+        <link refid="target__layer_8hpp"/>
+        <childnode refid="24789" relation="include">
+        </childnode>
+        <childnode refid="24694" relation="include">
+        </childnode>
+        <childnode refid="24675" relation="include">
+        </childnode>
+        <childnode refid="24691" relation="include">
+        </childnode>
+        <childnode refid="24711" relation="include">
+        </childnode>
+        <childnode refid="24710" relation="include">
+        </childnode>
+        <childnode refid="24723" relation="include">
+        </childnode>
+      </node>
+      <node id="24751">
+        <label>omp.h</label>
+      </node>
+      <node id="24750">
+        <label>lbann/layers/learning/base_convolution.hpp</label>
+        <link refid="base__convolution_8hpp"/>
+        <childnode refid="24686" relation="include">
+        </childnode>
+        <childnode refid="24751" relation="include">
+        </childnode>
+        <childnode refid="24745" relation="include">
+        </childnode>
+        <childnode refid="24689" relation="include">
+        </childnode>
+        <childnode refid="24701" relation="include">
+        </childnode>
+        <childnode refid="24746" relation="include">
+        </childnode>
+        <childnode refid="24699" relation="include">
+        </childnode>
+        <childnode refid="24694" relation="include">
+        </childnode>
+        <childnode refid="24718" relation="include">
+        </childnode>
+        <childnode refid="24705" relation="include">
+        </childnode>
+        <childnode refid="24752" relation="include">
+        </childnode>
+      </node>
+      <node id="24749">
+        <label>lbann/layers/learning/convolution.hpp</label>
+        <link refid="convolution_8hpp"/>
+        <childnode refid="24686" relation="include">
+        </childnode>
+        <childnode refid="24750" relation="include">
+        </childnode>
+        <childnode refid="24689" relation="include">
+        </childnode>
+        <childnode refid="24699" relation="include">
+        </childnode>
+        <childnode refid="24694" relation="include">
+        </childnode>
+        <childnode refid="24718" relation="include">
+        </childnode>
+        <childnode refid="24705" relation="include">
+        </childnode>
+      </node>
+      <node id="24740">
+        <label>lbann/layers/activations/softplus.hpp</label>
+        <link refid="softplus_8hpp"/>
+        <childnode refid="24729" relation="include">
+        </childnode>
+      </node>
+      <node id="24800">
+        <label>cv_subtractor.hpp</label>
+        <link refid="cv__subtractor_8hpp"/>
+        <childnode refid="24794" relation="include">
+        </childnode>
+        <childnode refid="24676" relation="include">
+        </childnode>
+      </node>
+      <node id="24698">
+        <label>exception</label>
+      </node>
+      <node id="24802">
+        <label>ostream</label>
+      </node>
+      <node id="24739">
+        <label>lbann/layers/activations/softmax.hpp</label>
+        <link refid="softmax_8hpp"/>
+        <childnode refid="24729" relation="include">
+        </childnode>
+        <childnode refid="24689" relation="include">
+        </childnode>
+        <childnode refid="24709" relation="include">
+        </childnode>
+        <childnode refid="24718" relation="include">
+        </childnode>
+        <childnode refid="24675" relation="include">
+        </childnode>
+        <childnode refid="24723" relation="include">
+        </childnode>
+        <childnode refid="24691" relation="include">
+        </childnode>
+        <childnode refid="24721" relation="include">
+        </childnode>
+      </node>
+      <node id="24856">
+        <label>lbann/callbacks/callback_check_reconstruction_error.hpp</label>
+        <link refid="callback__check__reconstruction__error_8hpp"/>
+        <childnode refid="24704" relation="include">
+        </childnode>
+        <childnode refid="24716" relation="include">
+        </childnode>
+        <childnode refid="24785" relation="include">
+        </childnode>
+      </node>
+      <node id="24885">
+        <label>lbann/metrics/top_k_categorical_accuracy.hpp</label>
+        <link refid="top__k__categorical__accuracy_8hpp"/>
+        <childnode refid="24715" relation="include">
+        </childnode>
+      </node>
+      <node id="24819">
+        <label>lbann/data_readers/data_reader_mnist_siamese.hpp</label>
+        <link refid="data__reader__mnist__siamese_8hpp"/>
+        <childnode refid="24818" relation="include">
+        </childnode>
+        <childnode refid="24793" relation="include">
+        </childnode>
+        <childnode refid="24686" relation="include">
+        </childnode>
+        <childnode refid="24691" relation="include">
+        </childnode>
+        <childnode refid="24757" relation="include">
+        </childnode>
+        <childnode refid="24697" relation="include">
+        </childnode>
+      </node>
+      <node id="24752">
+        <label>lbann/utils/im2col.hpp</label>
+        <link refid="im2col_8hpp"/>
+        <childnode refid="24676" relation="include">
+        </childnode>
+      </node>
+      <node id="24755">
+        <label>lbann/layers/transform/transform.hpp</label>
+        <link refid="transform_8hpp"/>
+        <childnode refid="24689" relation="include">
+        </childnode>
+      </node>
+      <node id="24790">
+        <label>lbann/layers/io/target/reconstruction.hpp</label>
+        <link refid="reconstruction_8hpp"/>
+        <childnode refid="24689" relation="include">
+        </childnode>
+        <childnode refid="24789" relation="include">
+        </childnode>
+        <childnode refid="24675" relation="include">
+        </childnode>
+        <childnode refid="24691" relation="include">
+        </childnode>
+        <childnode refid="24718" relation="include">
+        </childnode>
+      </node>
+      <node id="24816">
+        <label>lbann/data_readers/data_reader_cifar10.hpp</label>
+        <link refid="data__reader__cifar10_8hpp"/>
+        <childnode refid="24792" relation="include">
+        </childnode>
+      </node>
+      <node id="24889">
+        <label>lbann/metrics/r2.hpp</label>
+        <link refid="r2_8hpp"/>
+        <childnode refid="24715" relation="include">
+        </childnode>
+      </node>
+      <node id="24725">
+        <label>lbann/models/recurrent.hpp</label>
+        <link refid="recurrent_8hpp"/>
+        <childnode refid="24724" relation="include">
+        </childnode>
+      </node>
+      <node id="24768">
+        <label>lbann/layers/transform/evaluation.hpp</label>
+        <link refid="evaluation_8hpp"/>
+        <childnode refid="24755" relation="include">
+        </childnode>
+      </node>
+      <node id="24891">
+        <label>lbann/metrics/boolean_false_positives.hpp</label>
+        <link refid="boolean__false__positives_8hpp"/>
+        <childnode refid="24715" relation="include">
+        </childnode>
+      </node>
+      <node id="24858">
+        <label>lbann/callbacks/callback_variable_minibatch.hpp</label>
+        <link refid="callback__variable__minibatch_8hpp"/>
+        <childnode refid="24785" relation="include">
+        </childnode>
+      </node>
+      <node id="24867">
+        <label>lbann/optimizers/rmsprop.hpp</label>
+        <link refid="rmsprop_8hpp"/>
+        <childnode refid="24692" relation="include">
+        </childnode>
+        <childnode refid="24710" relation="include">
+        </childnode>
+      </node>
+      <node id="24830">
+        <label>lbann/data_readers/data_reader_merge_features.hpp</label>
+        <link refid="data__reader__merge__features_8hpp"/>
+        <childnode refid="24829" relation="include">
+        </childnode>
+      </node>
+      <node id="24741">
+        <label>lbann/layers/activations/swish.hpp</label>
+        <link refid="swish_8hpp"/>
+        <childnode refid="24729" relation="include">
+        </childnode>
+      </node>
+      <node id="24753">
+        <label>lbann/layers/learning/deconvolution.hpp</label>
+        <link refid="deconvolution_8hpp"/>
+        <childnode refid="24686" relation="include">
+        </childnode>
+        <childnode refid="24750" relation="include">
+        </childnode>
+        <childnode refid="24689" relation="include">
+        </childnode>
+        <childnode refid="24699" relation="include">
+        </childnode>
+        <childnode refid="24694" relation="include">
+        </childnode>
+        <childnode refid="24718" relation="include">
+        </childnode>
+        <childnode refid="24705" relation="include">
+        </childnode>
+      </node>
+      <node id="24719">
+        <label>random</label>
+      </node>
+      <node id="24849">
+        <label>lbann/callbacks/callback_dump_activations.hpp</label>
+        <link refid="callback__dump__activations_8hpp"/>
+        <childnode refid="24757" relation="include">
+        </childnode>
+        <childnode refid="24785" relation="include">
+        </childnode>
+      </node>
+      <node id="24886">
+        <label>lbann/metrics/mean_squared_error.hpp</label>
+        <link refid="metrics_2mean__squared__error_8hpp"/>
+        <childnode refid="24715" relation="include">
+        </childnode>
+      </node>
+      <node id="24701">
+        <label>lbann/weights/initializer.hpp</label>
+        <link refid="initializer_8hpp"/>
+        <childnode refid="24676" relation="include">
+        </childnode>
+        <childnode refid="24685" relation="include">
+        </childnode>
+        <childnode refid="24694" relation="include">
+        </childnode>
+        <childnode refid="24699" relation="include">
+        </childnode>
+      </node>
+      <node id="24884">
+        <label>lbann/metrics/categorical_accuracy.hpp</label>
+        <link refid="categorical__accuracy_8hpp"/>
+        <childnode refid="24715" relation="include">
+        </childnode>
+      </node>
+      <node id="24813">
+        <label>lbann/data_readers/data_reader_imagenet_patches.hpp</label>
+        <link refid="data__reader__imagenet__patches_8hpp"/>
+        <childnode refid="24792" relation="include">
+        </childnode>
+        <childnode refid="24814" relation="include">
+        </childnode>
+      </node>
+      <node id="24811">
+        <label>lbann/data_readers/data_reader_imagenet.hpp</label>
+        <link refid="data__reader__imagenet_8hpp"/>
+        <childnode refid="24792" relation="include">
+        </childnode>
+        <childnode refid="24793" relation="include">
+        </childnode>
+      </node>
+      <node id="24711">
+        <label>sys/types.h</label>
+      </node>
+      <node id="24785">
+        <label>lbann/callbacks/callback.hpp</label>
+        <link refid="callback_8hpp"/>
+        <childnode refid="24676" relation="include">
+        </childnode>
+        <childnode refid="24690" relation="include">
+        </childnode>
+        <childnode refid="24675" relation="include">
+        </childnode>
+        <childnode refid="24689" relation="include">
+        </childnode>
+      </node>
+      <node id="24844">
+        <label>lbann/callbacks/callback_summary.hpp</label>
+        <link refid="callback__summary_8hpp"/>
+        <childnode refid="24785" relation="include">
+        </childnode>
+        <childnode refid="24690" relation="include">
+        </childnode>
+      </node>
+      <node id="24707">
+        <label>lbann/utils/graph.hpp</label>
+        <link refid="graph_8hpp"/>
+        <childnode refid="24697" relation="include">
+        </childnode>
+        <childnode refid="24686" relation="include">
+        </childnode>
+        <childnode refid="24708" relation="include">
+        </childnode>
+        <childnode refid="24687" relation="include">
+        </childnode>
+      </node>
+      <node id="24798">
+        <label>typeinfo</label>
+      </node>
+      <node id="24772">
+        <label>lbann/layers/regularizers/local_response_normalization.hpp</label>
+        <link refid="local__response__normalization_8hpp"/>
+        <childnode refid="24686" relation="include">
+        </childnode>
+        <childnode refid="24773" relation="include">
+        </childnode>
+        <childnode refid="24699" relation="include">
+        </childnode>
+        <childnode refid="24694" relation="include">
+        </childnode>
+      </node>
+      <node id="24681">
+        <label>cstdio</label>
+      </node>
+      <node id="24805">
+        <label>cv_decolorizer.hpp</label>
+        <link refid="cv__decolorizer_8hpp"/>
+        <childnode refid="24684" relation="include">
+        </childnode>
+        <childnode refid="24794" relation="include">
+        </childnode>
+      </node>
+      <node id="24782">
+        <label>lbann/io/data_buffers/partitioned_io_buffer.hpp</label>
+        <link refid="partitioned__io__buffer_8hpp"/>
+        <childnode refid="24781" relation="include">
+        </childnode>
+      </node>
+      <node id="24695">
+        <label>lbann/utils/stack_trace.hpp</label>
+        <link refid="stack__trace_8hpp"/>
+        <childnode refid="24696" relation="include">
+        </childnode>
+        <childnode refid="24691" relation="include">
+        </childnode>
+      </node>
+      <node id="24881">
+        <label>lbann/objective_functions/weight_regularization/group_lasso.hpp</label>
+        <link refid="group__lasso_8hpp"/>
+        <childnode refid="24714" relation="include">
+        </childnode>
+      </node>
+      <node id="24683">
+        <label>cxxabi.h</label>
+      </node>
+      <node id="24760">
+        <label>lbann/layers/transform/sum.hpp</label>
+        <link refid="sum_8hpp"/>
+        <childnode refid="24686" relation="include">
+        </childnode>
+        <childnode refid="24755" relation="include">
+        </childnode>
+        <childnode refid="24694" relation="include">
+        </childnode>
+      </node>
+      <node id="24694">
+        <label>lbann/utils/exception.hpp</label>
+        <link refid="exception_8hpp"/>
+        <childnode refid="24676" relation="include">
+        </childnode>
+        <childnode refid="24685" relation="include">
+        </childnode>
+        <childnode refid="24695" relation="include">
+        </childnode>
+        <childnode refid="24697" relation="include">
+        </childnode>
+        <childnode refid="24698" relation="include">
+        </childnode>
+      </node>
+      <node id="24731">
+        <label>lbann/layers/activations/elu.hpp</label>
+        <link refid="elu_8hpp"/>
+        <childnode refid="24729" relation="include">
+        </childnode>
+      </node>
+      <node id="24823">
+        <label>lbann/data_readers/data_reader_synthetic.hpp</label>
+        <link refid="data__reader__synthetic_8hpp"/>
+        <childnode refid="24717" relation="include">
+        </childnode>
+      </node>
+      <node id="24791">
+        <label>lbann/data_readers/data_reader_imagenet_org.hpp</label>
+        <link refid="data__reader__imagenet__org_8hpp"/>
+        <childnode refid="24792" relation="include">
+        </childnode>
+        <childnode refid="24720" relation="include">
+        </childnode>
+      </node>
+      <node id="24824">
+        <label>lbann/data_readers/data_reader_jag.hpp</label>
+        <link refid="data__reader__jag_8hpp"/>
+        <childnode refid="24822" relation="include">
+        </childnode>
+        <childnode refid="24691" relation="include">
+        </childnode>
+        <childnode refid="24686" relation="include">
+        </childnode>
+        <childnode refid="24676" relation="include">
+        </childnode>
+        <childnode refid="24795" relation="include">
+        </childnode>
+        <childnode refid="24717" relation="include">
+        </childnode>
+      </node>
+      <node id="24818">
+        <label>lbann/data_readers/data_reader_multi_images.hpp</label>
+        <link refid="data__reader__multi__images_8hpp"/>
+        <childnode refid="24811" relation="include">
+        </childnode>
+        <childnode refid="24793" relation="include">
+        </childnode>
+        <childnode refid="24686" relation="include">
+        </childnode>
+        <childnode refid="24691" relation="include">
+        </childnode>
+        <childnode refid="24757" relation="include">
+        </childnode>
+        <childnode refid="24697" relation="include">
+        </childnode>
+      </node>
+      <node id="24723">
+        <label>unistd.h</label>
+      </node>
+      <node id="24729">
+        <label>lbann/layers/activations/activation.hpp</label>
+        <link refid="activation_8hpp"/>
+        <childnode refid="24689" relation="include">
+        </childnode>
+        <childnode refid="24694" relation="include">
+        </childnode>
+      </node>
+      <node id="24686">
+        <label>vector</label>
+      </node>
+      <node id="24766">
+        <label>lbann/layers/transform/hadamard.hpp</label>
+        <link refid="hadamard_8hpp"/>
+        <childnode refid="24686" relation="include">
+        </childnode>
+        <childnode refid="24755" relation="include">
+        </childnode>
+        <childnode refid="24694" relation="include">
+        </childnode>
+      </node>
+      <node id="24759">
+        <label>lbann/layers/transform/split.hpp</label>
+        <link refid="split_8hpp"/>
+        <childnode refid="24686" relation="include">
+        </childnode>
+        <childnode refid="24755" relation="include">
+        </childnode>
+        <childnode refid="24694" relation="include">
+        </childnode>
+        <childnode refid="24747" relation="include">
+        </childnode>
+      </node>
+      <node id="24685">
+        <label>lbann/comm.hpp</label>
+        <link refid="comm_8hpp"/>
+        <childnode refid="24686" relation="include">
+        </childnode>
+        <childnode refid="24687" relation="include">
+        </childnode>
+        <childnode refid="24688" relation="include">
+        </childnode>
+        <childnode refid="24676" relation="include">
+        </childnode>
+      </node>
+      <node id="24673">
+        <label>lbann/lbann.hpp</label>
+        <link refid="lbann_8hpp"/>
+        <childnode refid="24674" relation="include">
+        </childnode>
+        <childnode refid="24724" relation="include">
+        </childnode>
+        <childnode refid="24725" relation="include">
+        </childnode>
+        <childnode refid="24726" relation="include">
+        </childnode>
+        <childnode refid="24727" relation="include">
+        </childnode>
+        <childnode refid="24728" relation="include">
+        </childnode>
+        <childnode refid="24730" relation="include">
+        </childnode>
+        <childnode refid="24731" relation="include">
+        </childnode>
+        <childnode refid="24732" relation="include">
+        </childnode>
+        <childnode refid="24733" relation="include">
+        </childnode>
+        <childnode refid="24734" relation="include">
+        </childnode>
+        <childnode refid="24735" relation="include">
+        </childnode>
+        <childnode refid="24736" relation="include">
+        </childnode>
+        <childnode refid="24737" relation="include">
+        </childnode>
+        <childnode refid="24738" relation="include">
+        </childnode>
+        <childnode refid="24739" relation="include">
+        </childnode>
+        <childnode refid="24740" relation="include">
+        </childnode>
+        <childnode refid="24741" relation="include">
+        </childnode>
+        <childnode refid="24742" relation="include">
+        </childnode>
+        <childnode refid="24743" relation="include">
+        </childnode>
+        <childnode refid="24744" relation="include">
+        </childnode>
+        <childnode refid="24749" relation="include">
+        </childnode>
+        <childnode refid="24753" relation="include">
+        </childnode>
+        <childnode refid="24754" relation="include">
+        </childnode>
+        <childnode refid="24756" relation="include">
+        </childnode>
+        <childnode refid="24758" relation="include">
+        </childnode>
+        <childnode refid="24759" relation="include">
+        </childnode>
+        <childnode refid="24760" relation="include">
+        </childnode>
+        <childnode refid="24761" relation="include">
+        </childnode>
+        <childnode refid="24762" relation="include">
+        </childnode>
+        <childnode refid="24763" relation="include">
+        </childnode>
+        <childnode refid="24764" relation="include">
+        </childnode>
+        <childnode refid="24765" relation="include">
+        </childnode>
+        <childnode refid="24766" relation="include">
+        </childnode>
+        <childnode refid="24767" relation="include">
+        </childnode>
+        <childnode refid="24768" relation="include">
+        </childnode>
+        <childnode refid="24769" relation="include">
+        </childnode>
+        <childnode refid="24770" relation="include">
+        </childnode>
+        <childnode refid="24771" relation="include">
+        </childnode>
+        <childnode refid="24772" relation="include">
+        </childnode>
+        <childnode refid="24774" relation="include">
+        </childnode>
+        <childnode refid="24775" relation="include">
+        </childnode>
+        <childnode refid="24776" relation="include">
+        </childnode>
+        <childnode refid="24777" relation="include">
+        </childnode>
+        <childnode refid="24788" relation="include">
+        </childnode>
+        <childnode refid="24790" relation="include">
+        </childnode>
+        <childnode refid="24791" relation="include">
+        </childnode>
+        <childnode refid="24811" relation="include">
+        </childnode>
+        <childnode refid="24812" relation="include">
+        </childnode>
+        <childnode refid="24813" relation="include">
+        </childnode>
+        <childnode refid="24816" relation="include">
+        </childnode>
+        <childnode refid="24817" relation="include">
+        </childnode>
+        <childnode refid="24818" relation="include">
+        </childnode>
+        <childnode refid="24819" relation="include">
+        </childnode>
+        <childnode refid="24820" relation="include">
+        </childnode>
+        <childnode refid="24823" relation="include">
+        </childnode>
+        <childnode refid="24824" relation="include">
+        </childnode>
+        <childnode refid="24825" relation="include">
+        </childnode>
+        <childnode refid="24827" relation="include">
+        </childnode>
+        <childnode refid="24826" relation="include">
+        </childnode>
+        <childnode refid="24828" relation="include">
+        </childnode>
+        <childnode refid="24830" relation="include">
+        </childnode>
+        <childnode refid="24831" relation="include">
+        </childnode>
+        <childnode refid="24832" relation="include">
+        </childnode>
+        <childnode refid="24833" relation="include">
+        </childnode>
+        <childnode refid="24834" relation="include">
+        </childnode>
+        <childnode refid="24835" relation="include">
+        </childnode>
+        <childnode refid="24837" relation="include">
+        </childnode>
+        <childnode refid="24838" relation="include">
+        </childnode>
+        <childnode refid="24839" relation="include">
+        </childnode>
+        <childnode refid="24840" relation="include">
+        </childnode>
+        <childnode refid="24841" relation="include">
+        </childnode>
+        <childnode refid="24842" relation="include">
+        </childnode>
+        <childnode refid="24843" relation="include">
+        </childnode>
+        <childnode refid="24844" relation="include">
+        </childnode>
+        <childnode refid="24845" relation="include">
+        </childnode>
+        <childnode refid="24846" relation="include">
+        </childnode>
+        <childnode refid="24847" relation="include">
+        </childnode>
+        <childnode refid="24784" relation="include">
+        </childnode>
+        <childnode refid="24848" relation="include">
+        </childnode>
+        <childnode refid="24849" relation="include">
+        </childnode>
+        <childnode refid="24850" relation="include">
+        </childnode>
+        <childnode refid="24851" relation="include">
+        </childnode>
+        <childnode refid="24852" relation="include">
+        </childnode>
+        <childnode refid="24853" relation="include">
+        </childnode>
+        <childnode refid="24854" relation="include">
+        </childnode>
+        <childnode refid="24855" relation="include">
+        </childnode>
+        <childnode refid="24856" relation="include">
+        </childnode>
+        <childnode refid="24857" relation="include">
+        </childnode>
+        <childnode refid="24858" relation="include">
+        </childnode>
+        <childnode refid="24859" relation="include">
+        </childnode>
+        <childnode refid="24860" relation="include">
+        </childnode>
+        <childnode refid="24861" relation="include">
+        </childnode>
+        <childnode refid="24862" relation="include">
+        </childnode>
+        <childnode refid="24700" relation="include">
+        </childnode>
+        <childnode refid="24701" relation="include">
+        </childnode>
+        <childnode refid="24746" relation="include">
+        </childnode>
+        <childnode refid="24864" relation="include">
+        </childnode>
+        <childnode refid="24865" relation="include">
+        </childnode>
+        <childnode refid="24866" relation="include">
+        </childnode>
+        <childnode refid="24867" relation="include">
+        </childnode>
+        <childnode refid="24868" relation="include">
+        </childnode>
+        <childnode refid="24713" relation="include">
+        </childnode>
+        <childnode refid="24869" relation="include">
+        </childnode>
+        <childnode refid="24871" relation="include">
+        </childnode>
+        <childnode refid="24872" relation="include">
+        </childnode>
+        <childnode refid="24873" relation="include">
+        </childnode>
+        <childnode refid="24874" relation="include">
+        </childnode>
+        <childnode refid="24875" relation="include">
+        </childnode>
+        <childnode refid="24876" relation="include">
+        </childnode>
+        <childnode refid="24877" relation="include">
+        </childnode>
+        <childnode refid="24878" relation="include">
+        </childnode>
+        <childnode refid="24879" relation="include">
+        </childnode>
+        <childnode refid="24880" relation="include">
+        </childnode>
+        <childnode refid="24881" relation="include">
+        </childnode>
+        <childnode refid="24882" relation="include">
+        </childnode>
+        <childnode refid="24883" relation="include">
+        </childnode>
+        <childnode refid="24884" relation="include">
+        </childnode>
+        <childnode refid="24885" relation="include">
+        </childnode>
+        <childnode refid="24886" relation="include">
+        </childnode>
+        <childnode refid="24887" relation="include">
+        </childnode>
+        <childnode refid="24888" relation="include">
+        </childnode>
+        <childnode refid="24889" relation="include">
+        </childnode>
+        <childnode refid="24890" relation="include">
+        </childnode>
+        <childnode refid="24891" relation="include">
+        </childnode>
+        <childnode refid="24892" relation="include">
+        </childnode>
+        <childnode refid="24694" relation="include">
+        </childnode>
+        <childnode refid="24690" relation="include">
+        </childnode>
+        <childnode refid="24893" relation="include">
+        </childnode>
+        <childnode refid="24894" relation="include">
+        </childnode>
+        <childnode refid="24896" relation="include">
+        </childnode>
+        <childnode refid="24709" relation="include">
+        </childnode>
+        <childnode refid="24702" relation="include">
+        </childnode>
+        <childnode refid="24693" relation="include">
+        </childnode>
+        <childnode refid="24897" relation="include">
+        </childnode>
+      </node>
+      <node id="24776">
+        <label>lbann/layers/regularizers/batch_normalization.hpp</label>
+        <link refid="batch__normalization_8hpp"/>
+        <childnode refid="24773" relation="include">
+        </childnode>
+      </node>
+      <node id="24871">
+        <label>lbann/objective_functions/loss_functions/mean_squared_error.hpp</label>
+        <link refid="objective__functions_2loss__functions_2mean__squared__error_8hpp"/>
+        <childnode refid="24870" relation="include">
+        </childnode>
+      </node>
+      <node id="24742">
+        <label>lbann/layers/activations/tanh.hpp</label>
+        <link refid="tanh_8hpp"/>
+        <childnode refid="24729" relation="include">
+        </childnode>
+      </node>
+      <node id="24744">
+        <label>lbann/layers/learning/fully_connected.hpp</label>
+        <link refid="fully__connected_8hpp"/>
+        <childnode refid="24745" relation="include">
+        </childnode>
+        <childnode refid="24729" relation="include">
+        </childnode>
+        <childnode refid="24718" relation="include">
+        </childnode>
+        <childnode refid="24699" relation="include">
+        </childnode>
+        <childnode refid="24675" relation="include">
+        </childnode>
+        <childnode refid="24701" relation="include">
+        </childnode>
+        <childnode refid="24746" relation="include">
+        </childnode>
+        <childnode refid="24747" relation="include">
+        </childnode>
+        <childnode refid="24691" relation="include">
+        </childnode>
+        <childnode refid="24748" relation="include">
+        </childnode>
+      </node>
+      <node id="24769">
+        <label>lbann/layers/transform/gaussian.hpp</label>
+        <link refid="gaussian_8hpp"/>
+        <childnode refid="24755" relation="include">
+        </childnode>
+        <childnode refid="24718" relation="include">
+        </childnode>
+      </node>
+      <node id="24713">
+        <label>lbann/objective_functions/objective_function.hpp</label>
+        <link refid="objective__function_8hpp"/>
+        <childnode refid="24714" relation="include">
+        </childnode>
+        <childnode refid="24715" relation="include">
+        </childnode>
+      </node>
+      <node id="24757">
+        <label>utility</label>
+      </node>
+      <node id="24709">
+        <label>lbann/io/file_io.hpp</label>
+        <link refid="file__io_8hpp"/>
+        <childnode refid="24710" relation="include">
+        </childnode>
+        <childnode refid="24711" relation="include">
+        </childnode>
+        <childnode refid="24712" relation="include">
+        </childnode>
+      </node>
+      <node id="24877">
+        <label>lbann/objective_functions/loss_functions/poisson_negloglike.hpp</label>
+        <link refid="poisson__negloglike_8hpp"/>
+        <childnode refid="24870" relation="include">
+        </childnode>
+      </node>
+      <node id="24748">
+        <label>sstream</label>
+      </node>
+      <node id="24743">
+        <label>lbann/layers/activations/power.hpp</label>
+        <link refid="power_8hpp"/>
+        <childnode refid="24729" relation="include">
+        </childnode>
+      </node>
+      <node id="24828">
+        <label>lbann/data_readers/data_reader_merge_samples.hpp</label>
+        <link refid="data__reader__merge__samples_8hpp"/>
+        <childnode refid="24829" relation="include">
+        </childnode>
+      </node>
+      <node id="24770">
+        <label>lbann/layers/transform/bernoulli.hpp</label>
+        <link refid="bernoulli_8hpp"/>
+        <childnode refid="24755" relation="include">
+        </childnode>
+        <childnode refid="24718" relation="include">
+        </childnode>
+      </node>
+      <node id="24866">
+        <label>lbann/optimizers/hypergradient_adam.hpp</label>
+        <link refid="hypergradient__adam_8hpp"/>
+        <childnode refid="24692" relation="include">
+        </childnode>
+      </node>
+      <node id="24761">
+        <label>lbann/layers/transform/slice.hpp</label>
+        <link refid="slice_8hpp"/>
+        <childnode refid="24755" relation="include">
+        </childnode>
+        <childnode refid="24694" relation="include">
+        </childnode>
+        <childnode refid="24747" relation="include">
+        </childnode>
+      </node>
+      <node id="24837">
+        <label>lbann/callbacks/callback_check_init.hpp</label>
+        <link refid="callback__check__init_8hpp"/>
+        <childnode refid="24785" relation="include">
+        </childnode>
+      </node>
+      <node id="24703">
+        <label>lbann.pb.h</label>
+      </node>
+      <node id="24846">
+        <label>lbann/callbacks/callback_debug.hpp</label>
+        <link refid="callback__debug_8hpp"/>
+        <childnode refid="24706" relation="include">
+        </childnode>
+        <childnode refid="24686" relation="include">
+        </childnode>
+        <childnode refid="24785" relation="include">
+        </childnode>
+      </node>
+      <node id="24825">
+        <label>lbann/data_readers/data_reader_nci.hpp</label>
+        <link refid="data__reader__nci_8hpp"/>
+        <childnode refid="24826" relation="include">
+        </childnode>
+      </node>
+      <node id="24832">
+        <label>lbann/data_readers/data_reader_pilot2_molecular.hpp</label>
+        <link refid="data__reader__pilot2__molecular_8hpp"/>
+        <childnode refid="24717" relation="include">
+        </childnode>
+        <childnode refid="24822" relation="include">
+        </childnode>
+      </node>
+      <node id="24680">
+        <label>cstdlib</label>
+      </node>
+      <node id="24855">
+        <label>lbann/callbacks/profiler.hpp</label>
+        <link refid="profiler_8hpp"/>
+        <childnode refid="24785" relation="include">
+        </childnode>
+      </node>
+      <node id="24840">
+        <label>lbann/callbacks/callback_check_dataset.hpp</label>
+        <link refid="callback__check__dataset_8hpp"/>
+        <childnode refid="24708" relation="include">
+        </childnode>
+        <childnode refid="24785" relation="include">
+        </childnode>
+      </node>
+      <node id="24778">
+        <label>lbann/layers/io/input/generic_input_layer.hpp</label>
+        <link refid="generic__input__layer_8hpp"/>
+        <childnode refid="24779" relation="include">
+        </childnode>
+        <childnode refid="24781" relation="include">
+        </childnode>
+        <childnode refid="24782" relation="include">
+        </childnode>
+        <childnode refid="24783" relation="include">
+        </childnode>
+        <childnode refid="24675" relation="include">
+        </childnode>
+        <childnode refid="24784" relation="include">
+        </childnode>
+      </node>
+      <node id="24795">
+        <label>opencv.hpp</label>
+        <link refid="opencv_8hpp"/>
+        <childnode refid="24684" relation="include">
+        </childnode>
+      </node>
+      <node id="24852">
+        <label>lbann/callbacks/callback_early_stopping.hpp</label>
+        <link refid="callback__early__stopping_8hpp"/>
+        <childnode refid="24704" relation="include">
+        </childnode>
+        <childnode refid="24716" relation="include">
+        </childnode>
+        <childnode refid="24785" relation="include">
+        </childnode>
+      </node>
+      <node id="24697">
+        <label>iostream</label>
+      </node>
+      <node id="24737">
+        <label>lbann/layers/activations/sigmoid.hpp</label>
+        <link refid="sigmoid_8hpp"/>
+        <childnode refid="24729" relation="include">
+        </childnode>
+        <childnode refid="24699" relation="include">
+        </childnode>
+      </node>
+      <node id="24727">
+        <label>lbann/models/siamese.hpp</label>
+        <link refid="siamese_8hpp"/>
+        <childnode refid="24724" relation="include">
+        </childnode>
+      </node>
+      <node id="24826">
+        <label>data_reader_csv.hpp</label>
+        <link refid="data__reader__csv_8hpp"/>
+        <childnode refid="24717" relation="include">
+        </childnode>
+        <childnode refid="24720" relation="include">
+        </childnode>
+        <childnode refid="24716" relation="include">
+        </childnode>
+      </node>
+      <node id="24814">
+        <label>cv_process_patches.hpp</label>
+        <link refid="cv__process__patches_8hpp"/>
+        <childnode refid="24793" relation="include">
+        </childnode>
+        <childnode refid="24815" relation="include">
+        </childnode>
+        <childnode refid="24810" relation="include">
+        </childnode>
+      </node>
+      <node id="24692">
+        <label>lbann/optimizers/optimizer.hpp</label>
+        <link refid="optimizer_8hpp"/>
+        <childnode refid="24693" relation="include">
+        </childnode>
+        <childnode refid="24676" relation="include">
+        </childnode>
+        <childnode refid="24685" relation="include">
+        </childnode>
+        <childnode refid="24694" relation="include">
+        </childnode>
+        <childnode refid="24699" relation="include">
+        </childnode>
+        <childnode refid="24700" relation="include">
+        </childnode>
+        <childnode refid="24691" relation="include">
+        </childnode>
+        <childnode refid="24704" relation="include">
+        </childnode>
+      </node>
+      <node id="24716">
+        <label>unordered_map</label>
+      </node>
+      <node id="24797">
+        <label>cv_normalizer.hpp</label>
+        <link refid="cv__normalizer_8hpp"/>
+        <childnode refid="24798" relation="include">
+        </childnode>
+        <childnode refid="24794" relation="include">
+        </childnode>
+        <childnode refid="24676" relation="include">
+        </childnode>
+        <childnode refid="24799" relation="include">
+        </childnode>
+      </node>
+      <node id="24718">
+        <label>lbann/utils/random.hpp</label>
+        <link refid="random_8hpp"/>
+        <childnode refid="24676" relation="include">
+        </childnode>
+        <childnode refid="24685" relation="include">
+        </childnode>
+        <childnode refid="24702" relation="include">
+        </childnode>
+        <childnode refid="24719" relation="include">
+        </childnode>
+      </node>
+      <node id="24758">
+        <label>lbann/layers/transform/unpooling.hpp</label>
+        <link refid="unpooling_8hpp"/>
+        <childnode refid="24686" relation="include">
+        </childnode>
+        <childnode refid="24756" relation="include">
+        </childnode>
+        <childnode refid="24699" relation="include">
+        </childnode>
+        <childnode refid="24694" relation="include">
+        </childnode>
+        <childnode refid="24752" relation="include">
+        </childnode>
+      </node>
+      <node id="24794">
+        <label>cv_transform.hpp</label>
+        <link refid="cv__transform_8hpp"/>
+        <childnode refid="24795" relation="include">
+        </childnode>
+        <childnode refid="24796" relation="include">
+        </childnode>
+      </node>
+      <node id="24859">
+        <label>lbann/callbacks/callback_gradient_check.hpp</label>
+        <link refid="callback__gradient__check_8hpp"/>
+        <childnode refid="24785" relation="include">
+        </childnode>
+      </node>
+      <node id="24865">
+        <label>lbann/optimizers/adam.hpp</label>
+        <link refid="adam_8hpp"/>
+        <childnode refid="24692" relation="include">
+        </childnode>
+      </node>
+      <node id="24892">
+        <label>lbann/metrics/boolean_false_negatives.hpp</label>
+        <link refid="boolean__false__negatives_8hpp"/>
+        <childnode refid="24715" relation="include">
+        </childnode>
+      </node>
+      <node id="24689">
+        <label>lbann/layers/layer.hpp</label>
+        <link refid="layer_8hpp"/>
+        <childnode refid="24676" relation="include">
+        </childnode>
+        <childnode refid="24685" relation="include">
+        </childnode>
+        <childnode refid="24690" relation="include">
+        </childnode>
+        <childnode refid="24692" relation="include">
+        </childnode>
+        <childnode refid="24694" relation="include">
+        </childnode>
+        <childnode refid="24699" relation="include">
+        </childnode>
+        <childnode refid="24705" relation="include">
+        </childnode>
+        <childnode refid="24702" relation="include">
+        </childnode>
+        <childnode refid="24703" relation="include">
+        </childnode>
+        <childnode refid="24691" relation="include">
+        </childnode>
+        <childnode refid="24686" relation="include">
+        </childnode>
+      </node>
+      <node id="24869">
+        <label>lbann/objective_functions/loss_functions/cross_entropy.hpp</label>
+        <link refid="cross__entropy_8hpp"/>
+        <childnode refid="24870" relation="include">
+        </childnode>
+      </node>
+      <node id="24763">
+        <label>lbann/layers/transform/constant.hpp</label>
+        <link refid="constant_8hpp"/>
+        <childnode refid="24755" relation="include">
+        </childnode>
+      </node>
+      <node id="24726">
+        <label>lbann/models/greedy_layerwise_autoencoder.hpp</label>
+        <link refid="greedy__layerwise__autoencoder_8hpp"/>
+        <childnode refid="24674" relation="include">
+        </childnode>
+      </node>
+      <node id="24670">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/weights_factory.cpp</label>
+        <link refid="weights__factory_8cpp"/>
+        <childnode refid="24671" relation="include">
+        </childnode>
+      </node>
+      <node id="24801">
+        <label>cv_augmenter.hpp</label>
+        <link refid="cv__augmenter_8hpp"/>
+        <childnode refid="24794" relation="include">
+        </childnode>
+        <childnode refid="24697" relation="include">
+        </childnode>
+        <childnode refid="24802" relation="include">
+        </childnode>
+        <childnode refid="24803" relation="include">
+        </childnode>
+        <childnode refid="24691" relation="include">
+        </childnode>
+      </node>
+      <node id="24706">
+        <label>chrono</label>
+      </node>
+      <node id="24836">
+        <label>lbann/data_store/data_store_image.hpp</label>
+        <link refid="data__store__image_8hpp"/>
+        <childnode refid="24834" relation="include">
+        </childnode>
+        <childnode refid="24716" relation="include">
+        </childnode>
+      </node>
+      <node id="24764">
+        <label>lbann/layers/transform/dummy.hpp</label>
+        <link refid="dummy_8hpp"/>
+        <childnode refid="24755" relation="include">
+        </childnode>
+      </node>
+      <node id="24857">
+        <label>lbann/callbacks/callback_hang.hpp</label>
+        <link refid="callback__hang_8hpp"/>
+        <childnode refid="24785" relation="include">
+        </childnode>
+      </node>
+      <node id="24714">
+        <label>lbann/objective_functions/objective_function_term.hpp</label>
+        <link refid="objective__function__term_8hpp"/>
+        <childnode refid="24676" relation="include">
+        </childnode>
+        <childnode refid="24689" relation="include">
+        </childnode>
+        <childnode refid="24700" relation="include">
+        </childnode>
+      </node>
+      <node id="24696">
+        <label>csignal</label>
+      </node>
+      <node id="24806">
+        <label>cv_cropper.hpp</label>
+        <link refid="cv__cropper_8hpp"/>
+        <childnode refid="24794" relation="include">
+        </childnode>
+        <childnode refid="24757" relation="include">
+        </childnode>
+        <childnode refid="24802" relation="include">
+        </childnode>
+      </node>
+      <node id="24780">
+        <label>lbann/utils/dataset.hpp</label>
+        <link refid="dataset_8hpp"/>
+        <childnode refid="24717" relation="include">
+        </childnode>
+      </node>
+      <node id="24893">
+        <label>lbann/utils/options.hpp</label>
+        <link refid="options_8hpp"/>
+        <childnode refid="24697" relation="include">
+        </childnode>
+        <childnode refid="24687" relation="include">
+        </childnode>
+        <childnode refid="24686" relation="include">
+        </childnode>
+        <childnode refid="24691" relation="include">
+        </childnode>
+      </node>
+      <node id="24700">
+        <label>lbann/weights/weights.hpp</label>
+        <link refid="weights_8hpp"/>
+        <childnode refid="24691" relation="include">
+        </childnode>
+        <childnode refid="24676" relation="include">
+        </childnode>
+        <childnode refid="24685" relation="include">
+        </childnode>
+        <childnode refid="24694" relation="include">
+        </childnode>
+        <childnode refid="24699" relation="include">
+        </childnode>
+        <childnode refid="24701" relation="include">
+        </childnode>
+        <childnode refid="24702" relation="include">
+        </childnode>
+        <childnode refid="24703" relation="include">
+        </childnode>
+      </node>
+      <node id="24888">
+        <label>lbann/metrics/pearson_correlation.hpp</label>
+        <link refid="pearson__correlation_8hpp"/>
+        <childnode refid="24715" relation="include">
+        </childnode>
+      </node>
+      <node id="24717">
+        <label>lbann/data_readers/data_reader.hpp</label>
+        <link refid="data__reader_8hpp"/>
+        <childnode refid="24676" relation="include">
+        </childnode>
+        <childnode refid="24718" relation="include">
+        </childnode>
+        <childnode refid="24694" relation="include">
+        </childnode>
+        <childnode refid="24685" relation="include">
+        </childnode>
+        <childnode refid="24709" relation="include">
+        </childnode>
+        <childnode refid="24702" relation="include">
+        </childnode>
+        <childnode refid="24720" relation="include">
+        </childnode>
+        <childnode refid="24721" relation="include">
+        </childnode>
+        <childnode refid="24722" relation="include">
+        </childnode>
+        <childnode refid="24691" relation="include">
+        </childnode>
+        <childnode refid="24686" relation="include">
+        </childnode>
+        <childnode refid="24723" relation="include">
+        </childnode>
+      </node>
+      <node id="24817">
+        <label>lbann/data_readers/data_reader_mnist.hpp</label>
+        <link refid="data__reader__mnist_8hpp"/>
+        <childnode refid="24792" relation="include">
+        </childnode>
+        <childnode refid="24720" relation="include">
+        </childnode>
+      </node>
+      <node id="24684">
+        <label>lbann_config.hpp</label>
+      </node>
+      <node id="24808">
+        <label>type_traits</label>
+      </node>
+      <node id="24863">
+        <label>google/protobuf/message.h</label>
+      </node>
+      <node id="24708">
+        <label>set</label>
+      </node>
+      <node id="24812">
+        <label>lbann/data_readers/data_reader_imagenet_single.hpp</label>
+        <link refid="data__reader__imagenet__single_8hpp"/>
+        <childnode refid="24811" relation="include">
+        </childnode>
+        <childnode refid="24686" relation="include">
+        </childnode>
+      </node>
+      <node id="24876">
+        <label>lbann/objective_functions/loss_functions/mean_absolute_error.hpp</label>
+        <link refid="mean__absolute__error_8hpp"/>
+        <childnode refid="24870" relation="include">
+        </childnode>
+      </node>
+      <node id="24675">
+        <label>lbann/models/model.hpp</label>
+        <link refid="model_8hpp"/>
+        <childnode refid="24676" relation="include">
+        </childnode>
+        <childnode refid="24685" relation="include">
+        </childnode>
+        <childnode refid="24689" relation="include">
+        </childnode>
+        <childnode refid="24690" relation="include">
+        </childnode>
+        <childnode refid="24707" relation="include">
+        </childnode>
+        <childnode refid="24709" relation="include">
+        </childnode>
+        <childnode refid="24702" relation="include">
+        </childnode>
+        <childnode refid="24713" relation="include">
+        </childnode>
+        <childnode refid="24715" relation="include">
+        </childnode>
+        <childnode refid="24700" relation="include">
+        </childnode>
+        <childnode refid="24692" relation="include">
+        </childnode>
+        <childnode refid="24703" relation="include">
+        </childnode>
+        <childnode refid="24686" relation="include">
+        </childnode>
+        <childnode refid="24691" relation="include">
+        </childnode>
+        <childnode refid="24716" relation="include">
+        </childnode>
+      </node>
+      <node id="24853">
+        <label>lbann/callbacks/callback_ltfb.hpp</label>
+        <link refid="callback__ltfb_8hpp"/>
+        <childnode refid="24785" relation="include">
+        </childnode>
+      </node>
+      <node id="24854">
+        <label>lbann/callbacks/callback_save_images.hpp</label>
+        <link refid="callback__save__images_8hpp"/>
+        <childnode refid="24757" relation="include">
+        </childnode>
+        <childnode refid="24785" relation="include">
+        </childnode>
+        <childnode refid="24717" relation="include">
+        </childnode>
+      </node>
+      <node id="24693">
+        <label>lbann/utils/compiler_control.hpp</label>
+        <link refid="compiler__control_8hpp"/>
+      </node>
+      <node id="24745">
+        <label>lbann/layers/learning/learning.hpp</label>
+        <link refid="learning_8hpp"/>
+        <childnode refid="24689" relation="include">
+        </childnode>
+      </node>
+      <node id="24722">
+        <label>algorithm</label>
+      </node>
+      <node id="24679">
+        <label>lbann/utils/cyg_profile.hpp</label>
+        <link refid="cyg__profile_8hpp"/>
+        <childnode refid="24680" relation="include">
+        </childnode>
+        <childnode refid="24681" relation="include">
+        </childnode>
+        <childnode refid="24682" relation="include">
+        </childnode>
+        <childnode refid="24683" relation="include">
+        </childnode>
+      </node>
+      <node id="24822">
+        <label>cnpy.h</label>
+      </node>
+      <node id="24771">
+        <label>lbann/layers/transform/uniform.hpp</label>
+        <link refid="uniform_8hpp"/>
+        <childnode refid="24755" relation="include">
+        </childnode>
+        <childnode refid="24718" relation="include">
+        </childnode>
+      </node>
+      <node id="24674">
+        <label>lbann/models/sequential.hpp</label>
+        <link refid="sequential_8hpp"/>
+        <childnode refid="24675" relation="include">
+        </childnode>
+        <childnode refid="24689" relation="include">
+        </childnode>
+        <childnode refid="24717" relation="include">
+        </childnode>
+        <childnode refid="24702" relation="include">
+        </childnode>
+        <childnode refid="24686" relation="include">
+        </childnode>
+        <childnode refid="24691" relation="include">
+        </childnode>
+      </node>
+      <node id="24847">
+        <label>lbann/callbacks/callback_debug_io.hpp</label>
+        <link refid="callback__debug__io_8hpp"/>
+        <childnode refid="24706" relation="include">
+        </childnode>
+        <childnode refid="24686" relation="include">
+        </childnode>
+        <childnode refid="24785" relation="include">
+        </childnode>
+        <childnode refid="24777" relation="include">
+        </childnode>
+      </node>
+      <node id="24728">
+        <label>lbann/layers/activations/atan.hpp</label>
+        <link refid="atan_8hpp"/>
+        <childnode refid="24729" relation="include">
+        </childnode>
+      </node>
+      <node id="24803">
+        <label>cstring</label>
+      </node>
+      <node id="24678">
+        <label>lbann/Elemental_extensions.hpp</label>
+        <link refid="Elemental__extensions_8hpp"/>
+        <childnode refid="24677" relation="include">
+        </childnode>
+      </node>
+      <node id="24789">
+        <label>lbann/layers/io/target/generic_target_layer.hpp</label>
+        <link refid="generic__target__layer_8hpp"/>
+        <childnode refid="24779" relation="include">
+        </childnode>
+        <childnode refid="24778" relation="include">
+        </childnode>
+        <childnode refid="24782" relation="include">
+        </childnode>
+        <childnode refid="24783" relation="include">
+        </childnode>
+        <childnode refid="24694" relation="include">
+        </childnode>
+        <childnode refid="24675" relation="include">
+        </childnode>
+        <childnode refid="24691" relation="include">
+        </childnode>
+        <childnode refid="24711" relation="include">
+        </childnode>
+        <childnode refid="24710" relation="include">
+        </childnode>
+        <childnode refid="24723" relation="include">
+        </childnode>
+      </node>
+      <node id="24882">
+        <label>lbann/objective_functions/kl_divergence.hpp</label>
+        <link refid="kl__divergence_8hpp"/>
+        <childnode refid="24714" relation="include">
+        </childnode>
+        <childnode refid="24788" relation="include">
+        </childnode>
+      </node>
+      <node id="24887">
+        <label>lbann/metrics/mean_absolute_deviation.hpp</label>
+        <link refid="metrics_2mean__absolute__deviation_8hpp"/>
+        <childnode refid="24715" relation="include">
+        </childnode>
+      </node>
+      <node id="24734">
+        <label>lbann/layers/activations/leaky_relu.hpp</label>
+        <link refid="leaky__relu_8hpp"/>
+        <childnode refid="24729" relation="include">
+        </childnode>
+      </node>
+      <node id="24831">
+        <label>lbann/data_readers/data_reader_ascii.hpp</label>
+        <link refid="data__reader__ascii_8hpp"/>
+        <childnode refid="24717" relation="include">
+        </childnode>
+      </node>
+      <node id="24874">
+        <label>lbann/objective_functions/loss_functions/geom_negloglike.hpp</label>
+        <link refid="geom__negloglike_8hpp"/>
+        <childnode refid="24870" relation="include">
+        </childnode>
+      </node>
+      <node id="24787">
+        <label>quantizer_impl.hpp</label>
+        <link refid="quantizer__impl_8hpp"/>
+        <childnode refid="24751" relation="include">
+        </childnode>
+      </node>
+      <node id="24833">
+        <label>lbann/data_readers/data_reader_mesh.hpp</label>
+        <link refid="data__reader__mesh_8hpp"/>
+        <childnode refid="24717" relation="include">
+        </childnode>
+      </node>
+      <node id="24730">
+        <label>lbann/layers/activations/bent_identity.hpp</label>
+        <link refid="bent__identity_8hpp"/>
+        <childnode refid="24729" relation="include">
+        </childnode>
+      </node>
+      <node id="24809">
+        <label>memory</label>
+      </node>
+      <node id="24848">
+        <label>lbann/callbacks/callback_dump_weights.hpp</label>
+        <link refid="callback__dump__weights_8hpp"/>
+        <childnode refid="24757" relation="include">
+        </childnode>
+        <childnode refid="24785" relation="include">
+        </childnode>
+      </node>
+      <node id="24868">
+        <label>lbann/optimizers/sgd.hpp</label>
+        <link refid="sgd_8hpp"/>
+        <childnode refid="24692" relation="include">
+        </childnode>
+      </node>
+      <node id="24688">
+        <label>typeindex</label>
+      </node>
+      <node id="24850">
+        <label>lbann/callbacks/callback_dump_gradients.hpp</label>
+        <link refid="callback__dump__gradients_8hpp"/>
+        <childnode refid="24757" relation="include">
+        </childnode>
+        <childnode refid="24785" relation="include">
+        </childnode>
+      </node>
+      <node id="24682">
+        <label>dlfcn.h</label>
+      </node>
+    </incdepgraph>
+    <innernamespace refid="namespacelbann">lbann</innernamespace>
+    <innernamespace refid="namespacelbann_1_1proto">lbann::proto</innernamespace>
+    <innernamespace refid="namespacelbann_1_1proto_1_1anonymous__namespace_02weights__factory_8cpp_03">lbann::proto::anonymous_namespace{weights_factory.cpp}</innernamespace>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>2014-2016,<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Security,<sp/>LLC.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Produced<sp/>at<sp/>the<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Laboratory.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Written<sp/>by<sp/>the<sp/>LBANN<sp/>Research<sp/>Team<sp/>(B.<sp/>Van<sp/>Essen,<sp/>et<sp/>al.)<sp/>listed<sp/>in</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="comment">//<sp/>the<sp/>CONTRIBUTORS<sp/>file.<sp/>&lt;lbann-dev@llnl.gov&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="comment">//<sp/>LLNL-CODE-697807.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="comment">//<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="comment">//<sp/>This<sp/>file<sp/>is<sp/>part<sp/>of<sp/>LBANN:<sp/>Livermore<sp/>Big<sp/>Artificial<sp/>Neural<sp/>Network</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Toolkit.<sp/>For<sp/>details,<sp/>see<sp/>http://software.llnl.gov/LBANN<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="comment">//<sp/>https://github.com/LLNL/LBANN.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Licensed<sp/>under<sp/>the<sp/>Apache<sp/>License,<sp/>Version<sp/>2.0<sp/>(the<sp/>&quot;Licensee&quot;);<sp/>you</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight><highlight class="comment">//<sp/>may<sp/>not<sp/>use<sp/>this<sp/>file<sp/>except<sp/>in<sp/>compliance<sp/>with<sp/>the<sp/>License.<sp/><sp/>You<sp/>may</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="comment">//<sp/>obtain<sp/>a<sp/>copy<sp/>of<sp/>the<sp/>License<sp/>at:</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight><highlight class="comment">//<sp/>http://www.apache.org/licenses/LICENSE-2.0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Unless<sp/>required<sp/>by<sp/>applicable<sp/>law<sp/>or<sp/>agreed<sp/>to<sp/>in<sp/>writing,<sp/>software</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight><highlight class="comment">//<sp/>distributed<sp/>under<sp/>the<sp/>License<sp/>is<sp/>distributed<sp/>on<sp/>an<sp/>&quot;AS<sp/>IS&quot;<sp/>BASIS,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight><highlight class="comment">//<sp/>WITHOUT<sp/>WARRANTIES<sp/>OR<sp/>CONDITIONS<sp/>OF<sp/>ANY<sp/>KIND,<sp/>either<sp/>express<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="comment">//<sp/>implied.<sp/>See<sp/>the<sp/>License<sp/>for<sp/>the<sp/>specific<sp/>language<sp/>governing</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="comment">//<sp/>permissions<sp/>and<sp/>limitations<sp/>under<sp/>the<sp/>license.</highlight></codeline>
+<codeline lineno="26"><highlight class="comment"></highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="27"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="factories_8hpp" kindref="compound">lbann/proto/factories.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="28"><highlight class="normal"></highlight></codeline>
+<codeline lineno="29"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacelbann" kindref="compound">lbann</ref><sp/>{</highlight></codeline>
+<codeline lineno="30"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal">proto<sp/>{</highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight></codeline>
+<codeline lineno="32" refid="namespacelbann_1_1proto_1_1anonymous__namespace_02weights__factory_8cpp_03" refkind="compound"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="33"><highlight class="normal"></highlight></codeline>
+<codeline lineno="35" refid="namespacelbann_1_1proto_1_1anonymous__namespace_02weights__factory_8cpp_03_1a2bbaafd93915c6f2334e16f0afcd4ee5" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1weights__initializer" kindref="compound">weights_initializer</ref>*<sp/><ref refid="namespacelbann_1_1proto_1_1anonymous__namespace_02weights__factory_8cpp_03_1a2bbaafd93915c6f2334e16f0afcd4ee5" kindref="member">construct_initializer</ref>(<ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref>*<sp/><ref refid="file__io_8cpp_1ab048c6f9fcbcfaa57ce68b00263dbebe" kindref="member">comm</ref>,</highlight></codeline>
+<codeline lineno="36"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>lbann_data::Weights&amp;<sp/>proto_weights)<sp/>{</highlight></codeline>
+<codeline lineno="37"><highlight class="normal"></highlight></codeline>
+<codeline lineno="38"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Random<sp/>initialization</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="39"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(proto_weights.has_uniform_initializer())<sp/>{</highlight></codeline>
+<codeline lineno="40"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">auto</highlight><highlight class="normal">&amp;<sp/>params<sp/>=<sp/>proto_weights.uniform_initializer();</highlight></codeline>
+<codeline lineno="41"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">auto</highlight><highlight class="normal">&amp;<sp/>min<sp/>=<sp/>params.min();</highlight></codeline>
+<codeline lineno="42"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">auto</highlight><highlight class="normal">&amp;<sp/><ref refid="base_8hpp_1ac47a6ee5278a53898222a48639a2bf39a2ffe4e77325d9a7152f7086ea7aa5114" kindref="member">max</ref><sp/>=<sp/>params.max();</highlight></codeline>
+<codeline lineno="43"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(min<sp/>!=<sp/>0.0<sp/>||<sp/><ref refid="base_8hpp_1ac47a6ee5278a53898222a48639a2bf39a2ffe4e77325d9a7152f7086ea7aa5114" kindref="member">max</ref><sp/>!=<sp/>0.0)<sp/>{</highlight></codeline>
+<codeline lineno="44"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">new</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1uniform__initializer" kindref="compound">uniform_initializer</ref>(comm,<sp/>min,<sp/><ref refid="base_8hpp_1ac47a6ee5278a53898222a48639a2bf39a2ffe4e77325d9a7152f7086ea7aa5114" kindref="member">max</ref>);</highlight></codeline>
+<codeline lineno="45"><highlight class="normal"><sp/><sp/><sp/><sp/>}<sp/></highlight><highlight class="keywordflow">else</highlight><highlight class="normal"><sp/>{</highlight></codeline>
+<codeline lineno="46"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">new</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1uniform__initializer" kindref="compound">uniform_initializer</ref>(comm);</highlight></codeline>
+<codeline lineno="47"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="48"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="49"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(proto_weights.has_normal_initializer())<sp/>{</highlight></codeline>
+<codeline lineno="50"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">auto</highlight><highlight class="normal">&amp;<sp/>params<sp/>=<sp/>proto_weights.normal_initializer();</highlight></codeline>
+<codeline lineno="51"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">auto</highlight><highlight class="normal">&amp;<sp/>mean<sp/>=<sp/>params.mean();</highlight></codeline>
+<codeline lineno="52"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">auto</highlight><highlight class="normal">&amp;<sp/>standard_deviation<sp/>=<sp/>params.standard_deviation();</highlight></codeline>
+<codeline lineno="53"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(mean<sp/>!=<sp/>0.0<sp/>||<sp/>standard_deviation<sp/>!=<sp/>0.0)<sp/>{</highlight></codeline>
+<codeline lineno="54"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">new</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1normal__initializer" kindref="compound">normal_initializer</ref>(comm,<sp/>mean,<sp/>standard_deviation);</highlight></codeline>
+<codeline lineno="55"><highlight class="normal"><sp/><sp/><sp/><sp/>}<sp/></highlight><highlight class="keywordflow">else</highlight><highlight class="normal"><sp/>{</highlight></codeline>
+<codeline lineno="56"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">new</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1normal__initializer" kindref="compound">normal_initializer</ref>(comm);</highlight></codeline>
+<codeline lineno="57"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="58"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="59"><highlight class="normal"></highlight></codeline>
+<codeline lineno="60"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Glorot<sp/>and<sp/>He<sp/>initialization</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="61"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(proto_weights.has_glorot_normal_initializer())<sp/>{</highlight></codeline>
+<codeline lineno="62"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">new</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1glorot__normal__initializer" kindref="compound">glorot_normal_initializer</ref>(comm);</highlight></codeline>
+<codeline lineno="63"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="64"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(proto_weights.has_glorot_uniform_initializer())<sp/>{</highlight></codeline>
+<codeline lineno="65"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">new</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1glorot__uniform__initializer" kindref="compound">glorot_uniform_initializer</ref>(comm);</highlight></codeline>
+<codeline lineno="66"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="67"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(proto_weights.has_he_normal_initializer())<sp/>{</highlight></codeline>
+<codeline lineno="68"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">new</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1he__normal__initializer" kindref="compound">he_normal_initializer</ref>(comm);</highlight></codeline>
+<codeline lineno="69"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="70"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(proto_weights.has_he_uniform_initializer())<sp/>{</highlight></codeline>
+<codeline lineno="71"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">new</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1he__uniform__initializer" kindref="compound">he_uniform_initializer</ref>(comm);</highlight></codeline>
+<codeline lineno="72"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="73"><highlight class="normal"></highlight></codeline>
+<codeline lineno="74"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Constant<sp/>initialization</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="75"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Note:<sp/>default<sp/>is<sp/>zero-initialization</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="76"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">auto</highlight><highlight class="normal">&amp;<sp/>params<sp/>=<sp/>proto_weights.constant_initializer();</highlight></codeline>
+<codeline lineno="77"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">new</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1constant__initializer" kindref="compound">constant_initializer</ref>(comm,<sp/>params.value());</highlight></codeline>
+<codeline lineno="78"><highlight class="normal"></highlight></codeline>
+<codeline lineno="79"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="80"><highlight class="normal"></highlight></codeline>
+<codeline lineno="81"><highlight class="normal">}<sp/></highlight><highlight class="comment">//<sp/>namespace</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="82"><highlight class="normal"></highlight></codeline>
+<codeline lineno="83" refid="namespacelbann_1_1proto_1a1e95259d3e7fd20a9c361850940a398a" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1weights" kindref="compound">weights</ref>*<sp/><ref refid="namespacelbann_1_1proto_1a1e95259d3e7fd20a9c361850940a398a" kindref="member">construct_weights</ref>(<ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref>*<sp/><ref refid="file__io_8cpp_1ab048c6f9fcbcfaa57ce68b00263dbebe" kindref="member">comm</ref>,</highlight></codeline>
+<codeline lineno="84"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1cudnn_1_1cudnn__manager" kindref="compound">cudnn::cudnn_manager</ref>*<sp/>cudnn,</highlight></codeline>
+<codeline lineno="85"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>lbann_data::Optimizer&amp;<sp/>proto_opt,</highlight></codeline>
+<codeline lineno="86"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>lbann_data::Weights&amp;<sp/>proto_weights)<sp/>{</highlight></codeline>
+<codeline lineno="87"><highlight class="normal"><sp/><sp/>std::stringstream<sp/>err;</highlight></codeline>
+<codeline lineno="88"><highlight class="normal"></highlight></codeline>
+<codeline lineno="89"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Instantiate<sp/>weights</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="90"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1weights" kindref="compound">weights</ref>*<sp/>w<sp/>=<sp/></highlight><highlight class="keyword">new</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1weights" kindref="compound">weights</ref>(comm,<sp/>cudnn);</highlight></codeline>
+<codeline lineno="91"><highlight class="normal"><sp/><sp/></highlight></codeline>
+<codeline lineno="92"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Set<sp/>weights<sp/>name<sp/>if<sp/>provided</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="93"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">auto</highlight><highlight class="normal">&amp;<sp/>name<sp/>=<sp/>proto_weights.name();</highlight></codeline>
+<codeline lineno="94"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">auto</highlight><highlight class="normal">&amp;<sp/>parsed_name<sp/>=<sp/>parse_list&lt;std::string&gt;(name);</highlight></codeline>
+<codeline lineno="95"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(!name.empty())<sp/>{</highlight></codeline>
+<codeline lineno="96"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(parsed_name.empty()<sp/>||<sp/>parsed_name.front()<sp/>!=<sp/>name)<sp/>{</highlight></codeline>
+<codeline lineno="97"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>err<sp/>&lt;&lt;<sp/></highlight><highlight class="stringliteral">&quot;weights<sp/>name<sp/>\&quot;&quot;</highlight><highlight class="normal"><sp/>&lt;&lt;<sp/>name<sp/>&lt;&lt;<sp/></highlight><highlight class="stringliteral">&quot;\&quot;<sp/>is<sp/>invalid<sp/>since<sp/>it<sp/>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="98"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>&lt;&lt;<sp/></highlight><highlight class="stringliteral">&quot;contains<sp/>whitespace&quot;</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="99"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="base_8hpp_1a80b1d707117e968a6951b7222e4b2b87" kindref="member">LBANN_ERROR</ref>(err.str());</highlight></codeline>
+<codeline lineno="100"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="101"><highlight class="normal"><sp/><sp/><sp/><sp/>w-&gt;<ref refid="classlbann_1_1weights_1ab886e4d3ff62b62a7ac6c52e391666f2" kindref="member">set_name</ref>(name);</highlight></codeline>
+<codeline lineno="102"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="103"><highlight class="normal"></highlight></codeline>
+<codeline lineno="104"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Set<sp/>weights<sp/>initializer<sp/>and<sp/>optimizer</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="105"><highlight class="normal"><sp/><sp/>w-&gt;<ref refid="classlbann_1_1weights_1a71e56d32d8e9c0e3ddf0ec2d0cd3924d" kindref="member">set_initializer</ref>(<ref refid="namespacelbann_1_1proto_1_1anonymous__namespace_02weights__factory_8cpp_03_1a2bbaafd93915c6f2334e16f0afcd4ee5" kindref="member">construct_initializer</ref>(comm,<sp/>proto_weights));</highlight></codeline>
+<codeline lineno="106"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(proto_weights.has_optimizer())<sp/>{</highlight></codeline>
+<codeline lineno="107"><highlight class="normal"><sp/><sp/><sp/><sp/>w-&gt;<ref refid="classlbann_1_1weights_1ab641f66c09c8b5d491c0f262e8cb55e6" kindref="member">set_optimizer</ref>(<ref refid="namespacelbann_1_1proto_1af85d2b9f1e986bbab4feccfaa19c9960" kindref="member">construct_optimizer</ref>(comm,<sp/>proto_weights.optimizer()));</highlight></codeline>
+<codeline lineno="108"><highlight class="normal"><sp/><sp/>}<sp/></highlight><highlight class="keywordflow">else</highlight><highlight class="normal"><sp/>{</highlight></codeline>
+<codeline lineno="109"><highlight class="normal"><sp/><sp/><sp/><sp/>w-&gt;<ref refid="classlbann_1_1weights_1ab641f66c09c8b5d491c0f262e8cb55e6" kindref="member">set_optimizer</ref>(<ref refid="namespacelbann_1_1proto_1af85d2b9f1e986bbab4feccfaa19c9960" kindref="member">construct_optimizer</ref>(comm,<sp/>proto_opt));</highlight></codeline>
+<codeline lineno="110"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="111"><highlight class="normal"></highlight></codeline>
+<codeline lineno="112"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>w;</highlight></codeline>
+<codeline lineno="113"><highlight class="normal"></highlight></codeline>
+<codeline lineno="114"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="115"><highlight class="normal"></highlight></codeline>
+<codeline lineno="116"><highlight class="normal">}<sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>proto</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="117"><highlight class="normal">}<sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>lbann</highlight><highlight class="normal"></highlight></codeline>
+    </programlisting>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/weights_factory.cpp"/>
+  </compounddef>
+</doxygen>

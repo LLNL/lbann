@@ -1,0 +1,1373 @@
+\hypertarget{classlbann_1_1batch__normalization}{}\section{lbann\+:\+:batch\+\_\+normalization$<$ T\+\_\+layout $>$ Class Template Reference}
+\label{classlbann_1_1batch__normalization}\index{lbann\+::batch\+\_\+normalization$<$ T\+\_\+layout $>$@{lbann\+::batch\+\_\+normalization$<$ T\+\_\+layout $>$}}
+
+
+{\ttfamily \#include $<$batch\+\_\+normalization.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:batch\+\_\+normalization$<$ T\+\_\+layout $>$\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=216pt]{classlbann_1_1batch__normalization__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:batch\+\_\+normalization$<$ T\+\_\+layout $>$\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1batch__normalization__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1batch__normalization_a04f092712566fd732e5fc5e48ee16f4d}{batch\+\_\+normalization} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, Data\+Type decay=0.\+9, Data\+Type epsilon=1e-\/5, bool use\+\_\+global\+\_\+stats=false, cudnn\+::cudnn\+\_\+manager $\ast$cudnn=nullptr)
+\item 
+\hyperlink{classlbann_1_1batch__normalization_a62e642fc7c064a49826e5d4a10a87e5c}{batch\+\_\+normalization} (const \hyperlink{classlbann_1_1batch__normalization}{batch\+\_\+normalization} \&other)
+\item 
+\hyperlink{classlbann_1_1batch__normalization}{batch\+\_\+normalization} \& \hyperlink{classlbann_1_1batch__normalization_aeb3c03a8dd166a64a77a26ee06ba81cd}{operator=} (const \hyperlink{classlbann_1_1batch__normalization}{batch\+\_\+normalization} \&other)
+\item 
+std\+::string \hyperlink{classlbann_1_1batch__normalization_a331738f02157f9e1e21f212c41feb86c}{get\+\_\+description} () const override
+\item 
+virtual \hyperlink{classlbann_1_1batch__normalization_a6aeb06e13733560fb2203ea08df42632}{$\sim$batch\+\_\+normalization} () override
+\item 
+\hyperlink{classlbann_1_1batch__normalization}{batch\+\_\+normalization} $\ast$ \hyperlink{classlbann_1_1batch__normalization_af149d82996f351a5897a16a78ced113d}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1batch__normalization_a1a773049354935cc2841bea8aa8bd94f}{get\+\_\+type} () const override
+\item 
+void \hyperlink{classlbann_1_1batch__normalization_a4ddf27efaf48f0726dc4356a3a0b40a9}{setup\+\_\+matrices} (const \hyperlink{base_8hpp_a9951bb1719d534e0401b1f06cad19eab}{El\+::\+Grid} \&grid) override
+\item 
+\hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08db}{data\+\_\+layout} \hyperlink{classlbann_1_1batch__normalization_ac97c038b9dec333a7fb285c196429e2d}{get\+\_\+data\+\_\+layout} () const override
+\item 
+void \hyperlink{classlbann_1_1batch__normalization_ac046a5ab567cc01f9a36c6b0fc4e3b55}{setup\+\_\+data} () override
+\item 
+void \hyperlink{classlbann_1_1batch__normalization_ab4737c3efcafa9bff1e68084b7f36283}{setup\+\_\+gpu} () override
+\item 
+void \hyperlink{classlbann_1_1batch__normalization_a92ad52396d7083c84ec20016ad5e994b}{fp\+\_\+compute} () override
+\item 
+void \hyperlink{classlbann_1_1batch__normalization_ad9aedd689cd8923d8c8e9c4e57a4e8b7}{bp\+\_\+compute} () override
+\item 
+void \hyperlink{classlbann_1_1batch__normalization_aacff2c47a5455a4c28b9695f4fb37249}{fp\+\_\+compute\+\_\+gpu} ()
+\item 
+void \hyperlink{classlbann_1_1batch__normalization_a7d48ad1531825fc9745c77f9ae5f68d6}{bp\+\_\+compute\+\_\+gpu} ()
+\item 
+void \hyperlink{classlbann_1_1batch__normalization_ae4cad47f456752e4ea20add0f6f38819}{fp\+\_\+compute\+\_\+cpu} ()
+\item 
+void \hyperlink{classlbann_1_1batch__normalization_a83e40edd001a0b71c31fbc9a3acb2231}{bp\+\_\+compute\+\_\+cpu} ()
+\end{DoxyCompactItemize}
+\subsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{classlbann_1_1batch__normalization_ac98f8fbb6e5ea998a06cef2c2cac9f03}{deallocate\+\_\+matrices} ()
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+Data\+Type \hyperlink{classlbann_1_1batch__normalization_aa2ee72d5efbf47c74796510ee61dbb14}{m\+\_\+decay}
+\item 
+Data\+Type \hyperlink{classlbann_1_1batch__normalization_ab82e74f905b7a117d9940f8542451e37}{m\+\_\+epsilon}
+\item 
+bool \hyperlink{classlbann_1_1batch__normalization_a0a33289150c01899f4b7ef2980771899}{m\+\_\+use\+\_\+global\+\_\+stats}
+\item 
+\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} $\ast$ \hyperlink{classlbann_1_1batch__normalization_a7c0db2315a4c5bb662da7a740ae76e24}{m\+\_\+mean}
+\item 
+\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} $\ast$ \hyperlink{classlbann_1_1batch__normalization_aba533149e4179378ab23443b0a2a7dc6}{m\+\_\+var}
+\item 
+\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} $\ast$ \hyperlink{classlbann_1_1batch__normalization_aa4677c2f7d5ea27c53bf0f61f280a2a3}{m\+\_\+mean\+\_\+gradient}
+\item 
+\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} $\ast$ \hyperlink{classlbann_1_1batch__normalization_aa2d2050a265eed854aa8950cd1461af9}{m\+\_\+var\+\_\+gradient}
+\item 
+\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} $\ast$ \hyperlink{classlbann_1_1batch__normalization_a66364e1b0c9afb40a4c03ee1869d264c}{m\+\_\+scale\+\_\+gradient}
+\item 
+\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} $\ast$ \hyperlink{classlbann_1_1batch__normalization_aa0f1e9a9f48f67544618e239167494bb}{m\+\_\+bias\+\_\+gradient}
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+\subsubsection*{template$<$data\+\_\+layout T\+\_\+layout$>$\newline
+class lbann\+::batch\+\_\+normalization$<$ T\+\_\+layout $>$}
+
+Batch normalization layer. Each input channel is normalized across the mini-\/batch to have zero mean and unit standard deviation. Learned scaling factors and biases are then applied. See\+: Sergey Ioffe and Christian Szegedy. "Batch Normalization\+: Accelerating Deep Network Training by Reducing Internal Covariate Shift." I\+C\+ML 2015. This uses the standard approach of maintaining the running mean and standard deviation (with exponential decay) for use at test time. See\+: \href{https://cthorey.github.io/backpropagation/}{\tt https\+://cthorey.\+github.\+io/backpropagation/} 
+
+Definition at line 50 of file batch\+\_\+normalization.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1batch__normalization_a04f092712566fd732e5fc5e48ee16f4d}\label{classlbann_1_1batch__normalization_a04f092712566fd732e5fc5e48ee16f4d}} 
+\index{lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}!batch\+\_\+normalization@{batch\+\_\+normalization}}
+\index{batch\+\_\+normalization@{batch\+\_\+normalization}!lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}}
+\subsubsection{\texorpdfstring{batch\+\_\+normalization()}{batch\_normalization()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{classlbann_1_1batch__normalization}{lbann\+::batch\+\_\+normalization}$<$ T\+\_\+layout $>$\+::\hyperlink{classlbann_1_1batch__normalization}{batch\+\_\+normalization} (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{Data\+Type}]{decay = {\ttfamily 0.9},  }\item[{Data\+Type}]{epsilon = {\ttfamily 1e-\/5},  }\item[{bool}]{use\+\_\+global\+\_\+stats = {\ttfamily false},  }\item[{\hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$}]{cudnn = {\ttfamily nullptr} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Set up batch normalization. 
+\begin{DoxyParams}{Parameters}
+{\em decay} & Controls the momentum of the running mean/standard deviation averages. \\
+\hline
+{\em epsilon} & A small number to avoid division by zero. \\
+\hline
+{\em use\+\_\+global\+\_\+stats} & Whether to use global statistics when training. \\
+\hline
+\end{DoxyParams}
+
+
+Definition at line 98 of file batch\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+104     : \hyperlink{classlbann_1_1regularizer__layer_a2ebf3877b905b479a0250b74cf8f68b3}{regularizer\_layer}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}),
+105       \hyperlink{classlbann_1_1batch__normalization_aa2ee72d5efbf47c74796510ee61dbb14}{m\_decay}(decay),
+106       \hyperlink{classlbann_1_1batch__normalization_ab82e74f905b7a117d9940f8542451e37}{m\_epsilon}(epsilon),
+107       \hyperlink{classlbann_1_1batch__normalization_a0a33289150c01899f4b7ef2980771899}{m\_use\_global\_stats}(use\_global\_stats),
+108       \hyperlink{classlbann_1_1batch__normalization_a7c0db2315a4c5bb662da7a740ae76e24}{m\_mean}(\textcolor{keyword}{nullptr}),
+109       \hyperlink{classlbann_1_1batch__normalization_aba533149e4179378ab23443b0a2a7dc6}{m\_var}(\textcolor{keyword}{nullptr}),
+110       \hyperlink{classlbann_1_1batch__normalization_aa4677c2f7d5ea27c53bf0f61f280a2a3}{m\_mean\_gradient}(\textcolor{keyword}{nullptr}),
+111       \hyperlink{classlbann_1_1batch__normalization_aa2d2050a265eed854aa8950cd1461af9}{m\_var\_gradient}(\textcolor{keyword}{nullptr}),
+112       \hyperlink{classlbann_1_1batch__normalization_a66364e1b0c9afb40a4c03ee1869d264c}{m\_scale\_gradient}(\textcolor{keyword}{nullptr}),
+113       \hyperlink{classlbann_1_1batch__normalization_aa0f1e9a9f48f67544618e239167494bb}{m\_bias\_gradient}(\textcolor{keyword}{nullptr}) \{
+114     static\_assert(T\_layout == \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08dba37d2a3465f7cbf4ab60f4e79944d0638}{data\_layout::DATA\_PARALLEL},
+115                   \textcolor{stringliteral}{"batch normalization only supports DATA\_PARALLEL"});
+116 \textcolor{preprocessor}{  #ifdef LBANN\_SEQUENTIAL\_CONSISTENCY}
+117     \textcolor{comment}{// Force global computation.}
+118     \hyperlink{classlbann_1_1batch__normalization_a0a33289150c01899f4b7ef2980771899}{m\_use\_global\_stats} = \textcolor{keyword}{true};
+119 \textcolor{preprocessor}{  #endif}
+120 \textcolor{preprocessor}{  #ifdef LBANN\_HAS\_CUDNN}
+121     \textcolor{comment}{// Initialize GPU memory if using GPU}
+122     \textcolor{keywordflow}{if} (cudnn != \textcolor{keyword}{nullptr}) \{
+123       this->\hyperlink{classlbann_1_1Layer_af7881cb5eff5207c15fa835d65462e8f}{m\_using\_gpus} = \textcolor{keyword}{true};
+124       this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn} = cudnn;
+125     \}
+126 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+127 
+128   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1batch__normalization_a04f092712566fd732e5fc5e48ee16f4d_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1batch__normalization_a62e642fc7c064a49826e5d4a10a87e5c}\label{classlbann_1_1batch__normalization_a62e642fc7c064a49826e5d4a10a87e5c}} 
+\index{lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}!batch\+\_\+normalization@{batch\+\_\+normalization}}
+\index{batch\+\_\+normalization@{batch\+\_\+normalization}!lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}}
+\subsubsection{\texorpdfstring{batch\+\_\+normalization()}{batch\_normalization()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{classlbann_1_1batch__normalization}{lbann\+::batch\+\_\+normalization}$<$ T\+\_\+layout $>$\+::\hyperlink{classlbann_1_1batch__normalization}{batch\+\_\+normalization} (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1batch__normalization}{batch\+\_\+normalization}$<$ T\+\_\+layout $>$ \&}]{other }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 130 of file batch\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+130                                                         :
+131     \hyperlink{classlbann_1_1regularizer__layer_a2ebf3877b905b479a0250b74cf8f68b3}{regularizer\_layer}(other),
+132     \hyperlink{classlbann_1_1batch__normalization_aa2ee72d5efbf47c74796510ee61dbb14}{m\_decay}(other.m\_decay),
+133     \hyperlink{classlbann_1_1batch__normalization_ab82e74f905b7a117d9940f8542451e37}{m\_epsilon}(other.m\_epsilon),
+134     \hyperlink{classlbann_1_1batch__normalization_a0a33289150c01899f4b7ef2980771899}{m\_use\_global\_stats}(other.m\_use\_global\_stats),
+135     \hyperlink{classlbann_1_1batch__normalization_a7c0db2315a4c5bb662da7a740ae76e24}{m\_mean}(other.m\_mean),
+136     \hyperlink{classlbann_1_1batch__normalization_aba533149e4179378ab23443b0a2a7dc6}{m\_var}(other.m\_var),
+137     \hyperlink{classlbann_1_1batch__normalization_aa4677c2f7d5ea27c53bf0f61f280a2a3}{m\_mean\_gradient}(other.m\_mean\_gradient),
+138     \hyperlink{classlbann_1_1batch__normalization_aa2d2050a265eed854aa8950cd1461af9}{m\_var\_gradient}(other.m\_var\_gradient),
+139     \hyperlink{classlbann_1_1batch__normalization_a66364e1b0c9afb40a4c03ee1869d264c}{m\_scale\_gradient}(other.m\_scale\_gradient),
+140     \hyperlink{classlbann_1_1batch__normalization_aa0f1e9a9f48f67544618e239167494bb}{m\_bias\_gradient}(other.m\_bias\_gradient) \{
+141 
+142     \textcolor{comment}{// Deep copy matrices}
+143     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1batch__normalization_a7c0db2315a4c5bb662da7a740ae76e24}{m\_mean} != \textcolor{keyword}{nullptr})           \{ \hyperlink{classlbann_1_1batch__normalization_a7c0db2315a4c5bb662da7a740ae76e24}{m\_mean} = \hyperlink{classlbann_1_1batch__normalization_a7c0db2315a4c5bb662da7a740ae76e24}{m\_mean}->Copy(); \}
+144     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1batch__normalization_aba533149e4179378ab23443b0a2a7dc6}{m\_var} != \textcolor{keyword}{nullptr})            \{ \hyperlink{classlbann_1_1batch__normalization_aba533149e4179378ab23443b0a2a7dc6}{m\_var} = \hyperlink{classlbann_1_1batch__normalization_aba533149e4179378ab23443b0a2a7dc6}{m\_var}->Copy(); \}
+145     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1batch__normalization_aa4677c2f7d5ea27c53bf0f61f280a2a3}{m\_mean\_gradient} != \textcolor{keyword}{nullptr})  \{ \hyperlink{classlbann_1_1batch__normalization_aa4677c2f7d5ea27c53bf0f61f280a2a3}{m\_mean\_gradient} = 
+      \hyperlink{classlbann_1_1batch__normalization_aa4677c2f7d5ea27c53bf0f61f280a2a3}{m\_mean\_gradient}->Copy(); \}
+146     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1batch__normalization_aa2d2050a265eed854aa8950cd1461af9}{m\_var\_gradient} != \textcolor{keyword}{nullptr})   \{ \hyperlink{classlbann_1_1batch__normalization_aa2d2050a265eed854aa8950cd1461af9}{m\_var\_gradient} = 
+      \hyperlink{classlbann_1_1batch__normalization_aa2d2050a265eed854aa8950cd1461af9}{m\_var\_gradient}->Copy(); \}
+147     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1batch__normalization_a66364e1b0c9afb40a4c03ee1869d264c}{m\_scale\_gradient} != \textcolor{keyword}{nullptr}) \{ \hyperlink{classlbann_1_1batch__normalization_a66364e1b0c9afb40a4c03ee1869d264c}{m\_scale\_gradient} = 
+      \hyperlink{classlbann_1_1batch__normalization_a66364e1b0c9afb40a4c03ee1869d264c}{m\_scale\_gradient}->Copy(); \}
+148     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1batch__normalization_aa0f1e9a9f48f67544618e239167494bb}{m\_bias\_gradient} != \textcolor{keyword}{nullptr})  \{ \hyperlink{classlbann_1_1batch__normalization_aa0f1e9a9f48f67544618e239167494bb}{m\_bias\_gradient} = 
+      \hyperlink{classlbann_1_1batch__normalization_aa0f1e9a9f48f67544618e239167494bb}{m\_bias\_gradient}->Copy(); \}
+149 
+150 \textcolor{preprocessor}{  #ifdef LBANN\_HAS\_CUDNN}
+151     \textcolor{comment}{// Copy GPU data}
+152     m\_mean\_d = other.m\_mean\_d;
+153     m\_var\_d = other.m\_var\_d;
+154     m\_mean\_gradient\_d = other.m\_mean\_gradient\_d;
+155     m\_var\_gradient\_d = other.m\_var\_gradient\_d;
+156     m\_scale\_gradient\_d = other.m\_scale\_gradient\_d;
+157     m\_bias\_gradient\_d = other.m\_bias\_gradient\_d;
+158 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+159   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1batch__normalization_a6aeb06e13733560fb2203ea08df42632}\label{classlbann_1_1batch__normalization_a6aeb06e13733560fb2203ea08df42632}} 
+\index{lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}!````~batch\+\_\+normalization@{$\sim$batch\+\_\+normalization}}
+\index{````~batch\+\_\+normalization@{$\sim$batch\+\_\+normalization}!lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}}
+\subsubsection{\texorpdfstring{$\sim$batch\+\_\+normalization()}{~batch\_normalization()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+virtual \hyperlink{classlbann_1_1batch__normalization}{lbann\+::batch\+\_\+normalization}$<$ T\+\_\+layout $>$\+::$\sim$\hyperlink{classlbann_1_1batch__normalization}{batch\+\_\+normalization} (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Definition at line 207 of file batch\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+207                                           \{
+208     \hyperlink{classlbann_1_1batch__normalization_ac98f8fbb6e5ea998a06cef2c2cac9f03}{deallocate\_matrices}();
+209   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1batch__normalization_a6aeb06e13733560fb2203ea08df42632_cgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1batch__normalization_ad9aedd689cd8923d8c8e9c4e57a4e8b7}\label{classlbann_1_1batch__normalization_ad9aedd689cd8923d8c8e9c4e57a4e8b7}} 
+\index{lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}!bp\+\_\+compute@{bp\+\_\+compute}}
+\index{bp\+\_\+compute@{bp\+\_\+compute}!lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}}
+\subsubsection{\texorpdfstring{bp\+\_\+compute()}{bp\_compute()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+void \hyperlink{classlbann_1_1batch__normalization}{lbann\+::batch\+\_\+normalization}$<$ T\+\_\+layout $>$\+::bp\+\_\+compute (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Perform the computation for the backward propagation step. 
+
+Implements \hyperlink{classlbann_1_1Layer_a7442e01f9ee1294df2de811efcf5171e}{lbann\+::\+Layer}.
+
+
+
+Definition at line 324 of file batch\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+324                              \{
+325     \textcolor{keywordflow}{if} (this->\hyperlink{classlbann_1_1Layer_af7881cb5eff5207c15fa835d65462e8f}{m\_using\_gpus}) \{
+326       \hyperlink{classlbann_1_1batch__normalization_a7d48ad1531825fc9745c77f9ae5f68d6}{bp\_compute\_gpu}();
+327     \} \textcolor{keywordflow}{else} \{
+328       \hyperlink{classlbann_1_1batch__normalization_a83e40edd001a0b71c31fbc9a3acb2231}{bp\_compute\_cpu}();
+329     \}
+330   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1batch__normalization_ad9aedd689cd8923d8c8e9c4e57a4e8b7_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1batch__normalization_a83e40edd001a0b71c31fbc9a3acb2231}\label{classlbann_1_1batch__normalization_a83e40edd001a0b71c31fbc9a3acb2231}} 
+\index{lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}!bp\+\_\+compute\+\_\+cpu@{bp\+\_\+compute\+\_\+cpu}}
+\index{bp\+\_\+compute\+\_\+cpu@{bp\+\_\+compute\+\_\+cpu}!lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}}
+\subsubsection{\texorpdfstring{bp\+\_\+compute\+\_\+cpu()}{bp\_compute\_cpu()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+void \hyperlink{classlbann_1_1batch__normalization}{lbann\+::batch\+\_\+normalization}$<$ T\+\_\+layout $>$\+::bp\+\_\+compute\+\_\+cpu (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 672 of file batch\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+672                         \{
+673 
+674     \textcolor{comment}{// Check execution mode}
+675     \textcolor{keyword}{const} \textcolor{keywordtype}{bool} is\_training = this->\hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->\hyperlink{classlbann_1_1model_addb40597cf29aa6d31b6a7d09ef48608}{get\_execution\_mode}() == 
+      \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training};
+676 
+677     \textcolor{comment}{// Matrices}
+678     \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_scale = this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[0]->get\_values().LockedMatrix();
+679     \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_mean = (is\_training ?
+680                               \hyperlink{classlbann_1_1batch__normalization_a7c0db2315a4c5bb662da7a740ae76e24}{m\_mean}->LockedMatrix() :
+681                               this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[2]->get\_values().LockedMatrix());
+682     \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_var = (is\_training ?
+683                              \hyperlink{classlbann_1_1batch__normalization_aba533149e4179378ab23443b0a2a7dc6}{m\_var}->LockedMatrix() :
+684                              this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[3]->get\_values().LockedMatrix());
+685     \textcolor{keyword}{const} \textcolor{keyword}{auto}& input = \hyperlink{classlbann_1_1Layer_a45853df73a2e72bfaa774665a0f37ed7}{get\_prev\_activations}();
+686     \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_input = input.LockedMatrix();
+687     \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_gradient\_wrt\_output = \hyperlink{classlbann_1_1Layer_a82827edc5e869960144f3ccb2172bfcd}{get\_local\_prev\_error\_signals}();
+688     \textcolor{keyword}{auto}& local\_gradient\_wrt\_input = \hyperlink{classlbann_1_1Layer_af178d00b9d878aa7d87754bff2a91f3a}{get\_local\_error\_signals}();
+689     \textcolor{keyword}{auto}& local\_mean\_gradient = \hyperlink{classlbann_1_1batch__normalization_aa4677c2f7d5ea27c53bf0f61f280a2a3}{m\_mean\_gradient}->Matrix();
+690     \textcolor{keyword}{auto}& local\_var\_gradient = \hyperlink{classlbann_1_1batch__normalization_aa2d2050a265eed854aa8950cd1461af9}{m\_var\_gradient}->Matrix();
+691     \textcolor{keyword}{auto}& local\_scale\_gradient = \hyperlink{classlbann_1_1batch__normalization_a66364e1b0c9afb40a4c03ee1869d264c}{m\_scale\_gradient}->Matrix();
+692     \textcolor{keyword}{auto}& local\_bias\_gradient = \hyperlink{classlbann_1_1batch__normalization_aa0f1e9a9f48f67544618e239167494bb}{m\_bias\_gradient}->Matrix();
+693     
+694     \textcolor{comment}{// Matrix parameters}
+695     \textcolor{keyword}{const} \textcolor{keywordtype}{int} effective\_mini\_batch\_size = this->\hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->
+      \hyperlink{classlbann_1_1model_a2a9b4cfa1c8c91e4131908751f9c4a6a}{get\_effective\_mini\_batch\_size}();
+696     \textcolor{keyword}{const} \textcolor{keywordtype}{int} width = input.Width();
+697     \textcolor{keyword}{const} El::Int local\_width = local\_input.Width();
+698     \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_channels = this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}[0];
+699     \textcolor{keyword}{const} \textcolor{keywordtype}{int} channel\_size = this->\hyperlink{classlbann_1_1Layer_a6b5ebc8a7d9329d8a773ed787e7b41d8}{m\_num\_neurons} / num\_channels;
+700 
+701     \textcolor{comment}{// Compute local gradients}
+702 \textcolor{preprocessor}{    #pragma omp parallel for}
+703     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} channel = 0; channel < num\_channels; ++channel) \{
+704 
+705       \textcolor{comment}{// Initialize channel parameters and gradients}
+706       \textcolor{keyword}{const} DataType mean = local\_mean(channel, 0);
+707       \textcolor{keyword}{const} DataType var = local\_var(channel, 0);
+708       \textcolor{keyword}{const} DataType scale = local\_scale(channel, 0);
+709       \textcolor{keyword}{const} DataType inv\_stdev = 1 / std::sqrt(var + \hyperlink{classlbann_1_1batch__normalization_ab82e74f905b7a117d9940f8542451e37}{m\_epsilon});
+710       \textcolor{keyword}{const} DataType dvar\_factor = inv\_stdev * inv\_stdev * inv\_stdev / 2;
+711       DataType dmean = DataType(0);
+712       DataType dvar = DataType(0);
+713       DataType dscale = DataType(0);
+714       DataType dbias = DataType(0);
+715 
+716       \textcolor{comment}{// Compute gradient contributions from local entries}
+717       \textcolor{keyword}{const} El::Int row\_start = channel * channel\_size;
+718       \textcolor{keyword}{const} El::Int row\_end = (channel+1) * channel\_size;
+719       \textcolor{keywordflow}{for} (El::Int col = 0; col < local\_width; ++col) \{
+720         \textcolor{keywordflow}{for} (El::Int row = row\_start; row < row\_end; ++row) \{
+721           \textcolor{keyword}{const} DataType x = local\_input(row, col);
+722           \textcolor{keyword}{const} DataType xhat = (x - mean) * inv\_stdev;
+723           \textcolor{keyword}{const} DataType dy = local\_gradient\_wrt\_output(row, col);
+724           dscale += dy * xhat;
+725           dbias += dy;
+726           \textcolor{keyword}{const} DataType dxhat = dy * scale;
+727           dmean += - dxhat * inv\_stdev;
+728           dvar += - dxhat * (x - mean) * dvar\_factor;
+729         \}
+730       \}
+731       local\_mean\_gradient(channel, 0) = dmean;
+732       local\_var\_gradient(channel, 0) = dvar;
+733       local\_scale\_gradient(channel, 0) = dscale;
+734       local\_bias\_gradient(channel, 0) = dbias;
+735 
+736     \}
+737 
+738     \textcolor{comment}{// Accumulate gradients}
+739     \textcolor{keywordflow}{if} (is\_training) \{
+740       \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1batch__normalization_a0a33289150c01899f4b7ef2980771899}{m\_use\_global\_stats}) \{
+741         \hyperlink{classlbann_1_1Layer_a5de05c52f22e0bbd7c703bec3ad4dbf2}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_af5631e5f0f54e4df4958eba9df2599ef}{allreduce}(*\hyperlink{classlbann_1_1batch__normalization_aa4677c2f7d5ea27c53bf0f61f280a2a3}{m\_mean\_gradient},
+742                           \hyperlink{classlbann_1_1batch__normalization_aa4677c2f7d5ea27c53bf0f61f280a2a3}{m\_mean\_gradient}->RedundantComm(),
+743                           El::mpi::SUM);
+744         \hyperlink{classlbann_1_1Layer_a5de05c52f22e0bbd7c703bec3ad4dbf2}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_af5631e5f0f54e4df4958eba9df2599ef}{allreduce}(*\hyperlink{classlbann_1_1batch__normalization_aa2d2050a265eed854aa8950cd1461af9}{m\_var\_gradient},
+745                           \hyperlink{classlbann_1_1batch__normalization_aa2d2050a265eed854aa8950cd1461af9}{m\_var\_gradient}->RedundantComm(),
+746                           El::mpi::SUM);
+747       \}
+748     \} \textcolor{keywordflow}{else} \{
+749       El::Zero(*\hyperlink{classlbann_1_1batch__normalization_aa4677c2f7d5ea27c53bf0f61f280a2a3}{m\_mean\_gradient});
+750       El::Zero(*\hyperlink{classlbann_1_1batch__normalization_aa2d2050a265eed854aa8950cd1461af9}{m\_var\_gradient});
+751     \}
+752     optimizer* scale\_optimizer = \hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[0]->get\_optimizer();
+753     \textcolor{keywordflow}{if} (scale\_optimizer != \textcolor{keyword}{nullptr}) \{
+754       scale\_optimizer->add\_to\_gradient\_staging(
+755         *\hyperlink{classlbann_1_1batch__normalization_a66364e1b0c9afb40a4c03ee1869d264c}{m\_scale\_gradient},
+756         DataType(1) / effective\_mini\_batch\_size);
+757     \}
+758     optimizer* bias\_optimizer = \hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[1]->get\_optimizer();
+759     \textcolor{keywordflow}{if} (bias\_optimizer != \textcolor{keyword}{nullptr}) \{
+760       bias\_optimizer->add\_to\_gradient\_staging(
+761         *\hyperlink{classlbann_1_1batch__normalization_aa0f1e9a9f48f67544618e239167494bb}{m\_bias\_gradient},
+762         DataType(1) / effective\_mini\_batch\_size);
+763     \}
+764 
+765     \textcolor{comment}{// Compute error signal}
+766 \textcolor{preprocessor}{    #pragma omp parallel for}
+767     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} channel = 0; channel < num\_channels; ++channel) \{
+768 
+769       \textcolor{comment}{// Initialize channel parameters and gradients}
+770       \textcolor{keyword}{const} DataType mean = local\_mean(channel, 0);
+771       \textcolor{keyword}{const} DataType var = local\_var(channel, 0);
+772       \textcolor{keyword}{const} DataType scale = local\_scale(channel, 0);
+773       \textcolor{keyword}{const} DataType dmean = local\_mean\_gradient(channel, 0);
+774       \textcolor{keyword}{const} DataType dvar = local\_var\_gradient(channel, 0);
+775 
+776       \textcolor{comment}{// Compute useful constants}
+777       \textcolor{keyword}{const} DataType num\_samples = (\hyperlink{classlbann_1_1batch__normalization_a0a33289150c01899f4b7ef2980771899}{m\_use\_global\_stats} ?
+778                                     width * channel\_size :
+779                                     local\_width * channel\_size);
+780       \textcolor{keyword}{const} DataType inv\_stdev = 1 / std::sqrt(var + \hyperlink{classlbann_1_1batch__normalization_ab82e74f905b7a117d9940f8542451e37}{m\_epsilon});
+781       \textcolor{keyword}{const} DataType dmean\_term = dmean / num\_samples;
+782       \textcolor{keyword}{const} DataType dvar\_term = dvar * 2 / (num\_samples - DataType(1));
+783 
+784       \textcolor{comment}{// Compute error signal for current channel}
+785       \textcolor{keyword}{const} El::Int row\_start = channel * channel\_size;
+786       \textcolor{keyword}{const} El::Int row\_end = (channel+1) * channel\_size;
+787       \textcolor{keywordflow}{for} (El::Int col = 0; col < local\_width; ++col) \{
+788         \textcolor{keywordflow}{for} (El::Int row = row\_start; row < row\_end; ++row) \{
+789           \textcolor{keyword}{const} DataType x = local\_input(row, col);
+790           \textcolor{keyword}{const} DataType dy = local\_gradient\_wrt\_output(row, col);
+791           \textcolor{keyword}{const} DataType dxhat = dy * scale;
+792           DataType dx = dxhat * inv\_stdev;
+793           dx += dmean\_term;
+794           dx += dvar\_term * (x - mean);
+795           local\_gradient\_wrt\_input(row, col) += dx;
+796         \}
+797       \}
+798 
+799     \}
+800 
+801   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1batch__normalization_a83e40edd001a0b71c31fbc9a3acb2231_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1batch__normalization_a83e40edd001a0b71c31fbc9a3acb2231_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1batch__normalization_a7d48ad1531825fc9745c77f9ae5f68d6}\label{classlbann_1_1batch__normalization_a7d48ad1531825fc9745c77f9ae5f68d6}} 
+\index{lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}!bp\+\_\+compute\+\_\+gpu@{bp\+\_\+compute\+\_\+gpu}}
+\index{bp\+\_\+compute\+\_\+gpu@{bp\+\_\+compute\+\_\+gpu}!lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}}
+\subsubsection{\texorpdfstring{bp\+\_\+compute\+\_\+gpu()}{bp\_compute\_gpu()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+void \hyperlink{classlbann_1_1batch__normalization}{lbann\+::batch\+\_\+normalization}$<$ T\+\_\+layout $>$\+::bp\+\_\+compute\+\_\+gpu (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 442 of file batch\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+442                         \{
+443 \textcolor{preprocessor}{  #ifndef LBANN\_HAS\_CUDNN}
+444     \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"batch\_normalization\_layer: cuDNN not detected"});
+445 \textcolor{preprocessor}{  #else}
+446 
+447     \textcolor{comment}{// Check execution mode}
+448     \textcolor{keyword}{const} \textcolor{keywordtype}{bool} is\_training = this->\hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->\hyperlink{classlbann_1_1model_addb40597cf29aa6d31b6a7d09ef48608}{get\_execution\_mode}() == 
+      \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training};
+449 
+450     \textcolor{comment}{// GPU objects}
+451     \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_gpus = this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_num\_gpus();
+452     \textcolor{keyword}{const} std::vector<DataType*> scale\_d = \hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[0]->get\_values\_gpu();
+453     \textcolor{keyword}{const} std::vector<DataType*> mean\_d = (is\_training ?
+454                                            m\_mean\_d.get\_locked\_data() :
+455                                            \hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[2]->get\_values\_gpu());
+456     \textcolor{keyword}{const} std::vector<DataType*> var\_d = (is\_training ?
+457                                           m\_var\_d.get\_locked\_data() :
+458                                           \hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[3]->get\_values\_gpu());
+459 
+460     \textcolor{comment}{// Matrix parameters}
+461     \textcolor{keyword}{const} \textcolor{keywordtype}{int} effective\_mini\_batch\_size = this->\hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->
+      \hyperlink{classlbann_1_1model_a2a9b4cfa1c8c91e4131908751f9c4a6a}{get\_effective\_mini\_batch\_size}();
+462     \textcolor{keyword}{const} \textcolor{keyword}{auto}& input = \hyperlink{classlbann_1_1Layer_a45853df73a2e72bfaa774665a0f37ed7}{get\_prev\_activations}();
+463     \textcolor{keyword}{const} \textcolor{keywordtype}{int} height = input.Height();
+464     \textcolor{keyword}{const} \textcolor{keywordtype}{int} width = input.Width();
+465     \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_width = input.LocalWidth();
+466     \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_channels = this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}[0];
+467 
+468     \textcolor{comment}{// Compute local gradient contributions}
+469     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<num\_gpus; ++i) \{
+470       CHECK\_CUDA(cudaSetDevice(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_gpu(i)));
+471       \textcolor{keyword}{const} \textcolor{keywordtype}{int} col\_start = std::min(i * this->m\_mini\_batch\_size\_per\_gpu, local\_width);
+472       \textcolor{keyword}{const} \textcolor{keywordtype}{int} col\_end = std::min((i+1) * this->m\_mini\_batch\_size\_per\_gpu, local\_width);
+473       \textcolor{keyword}{const} \textcolor{keywordtype}{int} current\_width = col\_end - col\_start;
+474       batch\_normalization\_cuda
+475         ::batch\_normalization\_backprop1(height,
+476                                         current\_width,
+477                                         num\_channels,
+478                                         this->m\_prev\_activations\_d[0].get\_locked\_data(i),
+479                                         this->m\_prev\_activations\_d[0].get\_leading\_dim(),
+480                                         this->m\_prev\_error\_signals\_d[0].get\_locked\_data(i),
+481                                         this->m\_prev\_error\_signals\_d[0].get\_leading\_dim(),
+482                                         mean\_d[i],
+483                                         var\_d[i],
+484                                         \hyperlink{classlbann_1_1batch__normalization_ab82e74f905b7a117d9940f8542451e37}{m\_epsilon},
+485                                         scale\_d[i],
+486                                         m\_scale\_gradient\_d.get\_data(i),
+487                                         m\_bias\_gradient\_d.get\_data(i),
+488                                         m\_mean\_gradient\_d.get\_data(i),
+489                                         m\_var\_gradient\_d.get\_data(i),
+490                                         this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_stream(i));
+491     \}
+492 
+493     \textcolor{comment}{// Accumulate gradients}
+494     \textcolor{keywordflow}{if} (is\_training) \{
+495       \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1batch__normalization_a0a33289150c01899f4b7ef2980771899}{m\_use\_global\_stats}) \{
+496         this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->global\_allreduce\_on\_gpus(m\_mean\_gradient\_d.get\_data(),
+497                                                 num\_channels,
+498                                                 1,
+499                                                 \hyperlink{classlbann_1_1batch__normalization_aa4677c2f7d5ea27c53bf0f61f280a2a3}{m\_mean\_gradient}->RedundantComm());
+500         this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->global\_allreduce\_on\_gpus(m\_var\_gradient\_d.get\_data(),
+501                                                 num\_channels,
+502                                                 1,
+503                                                 \hyperlink{classlbann_1_1batch__normalization_aa2d2050a265eed854aa8950cd1461af9}{m\_var\_gradient}->RedundantComm());
+504       \} \textcolor{keywordflow}{else} \{
+505         this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->allreduce\_on\_gpus(m\_mean\_gradient\_d.get\_data(),
+506                                          num\_channels,
+507                                          1);
+508         this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->allreduce\_on\_gpus(m\_var\_gradient\_d.get\_data(),
+509                                          num\_channels,
+510                                          1);
+511       \}
+512     \} \textcolor{keywordflow}{else} \{
+513       m\_mean\_gradient\_d.zero();
+514       m\_var\_gradient\_d.zero();
+515     \}
+516     optimizer* scale\_optimizer = \hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[0]->get\_optimizer();
+517     \textcolor{keywordflow}{if} (scale\_optimizer != \textcolor{keyword}{nullptr}) \{
+518       scale\_optimizer->add\_to\_gradient\_staging(
+519         m\_scale\_gradient\_d,
+520         DataType(1) / effective\_mini\_batch\_size);
+521     \}
+522     optimizer* bias\_optimizer = \hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[1]->get\_optimizer();
+523     \textcolor{keywordflow}{if} (bias\_optimizer != \textcolor{keyword}{nullptr}) \{
+524       bias\_optimizer->add\_to\_gradient\_staging(
+525         m\_bias\_gradient\_d,
+526         DataType(1) / effective\_mini\_batch\_size);
+527     \}
+528 
+529     \textcolor{comment}{// Compute error signal}
+530     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<num\_gpus; ++i) \{
+531       CHECK\_CUDA(cudaSetDevice(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_gpu(i)));
+532       \textcolor{keyword}{const} \textcolor{keywordtype}{int} col\_start = std::min(i * this->m\_mini\_batch\_size\_per\_gpu, local\_width);
+533       \textcolor{keyword}{const} \textcolor{keywordtype}{int} col\_end = std::min((i+1) * this->m\_mini\_batch\_size\_per\_gpu, local\_width);
+534       \textcolor{keyword}{const} \textcolor{keywordtype}{int} current\_width = col\_end - col\_start;
+535       batch\_normalization\_cuda
+536         ::batch\_normalization\_backprop2(height,
+537                                         current\_width,
+538                                         \hyperlink{classlbann_1_1batch__normalization_a0a33289150c01899f4b7ef2980771899}{m\_use\_global\_stats} ? width : local\_width,
+539                                         num\_channels,
+540                                         this->m\_prev\_activations\_d[0].get\_locked\_data(i),
+541                                         this->m\_prev\_activations\_d[0].get\_leading\_dim(),
+542                                         this->m\_prev\_error\_signals\_d[0].get\_locked\_data(i),
+543                                         this->m\_prev\_error\_signals\_d[0].get\_leading\_dim(),
+544                                         mean\_d[i],
+545                                         var\_d[i],
+546                                         \hyperlink{classlbann_1_1batch__normalization_ab82e74f905b7a117d9940f8542451e37}{m\_epsilon},
+547                                         scale\_d[i],
+548                                         m\_mean\_gradient\_d.get\_locked\_data(i),
+549                                         m\_var\_gradient\_d.get\_locked\_data(i),
+550                                         this->m\_error\_signals\_d[0].get\_data(i),
+551                                         this->m\_error\_signals\_d[0].get\_leading\_dim(),
+552                                         this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_stream(i));
+553     \}
+554 
+555 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+556   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1batch__normalization_a7d48ad1531825fc9745c77f9ae5f68d6_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1batch__normalization_a7d48ad1531825fc9745c77f9ae5f68d6_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1batch__normalization_af149d82996f351a5897a16a78ced113d}\label{classlbann_1_1batch__normalization_af149d82996f351a5897a16a78ced113d}} 
+\index{lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}!copy@{copy}}
+\index{copy@{copy}!lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{classlbann_1_1batch__normalization}{batch\+\_\+normalization}$\ast$ \hyperlink{classlbann_1_1batch__normalization}{lbann\+::batch\+\_\+normalization}$<$ T\+\_\+layout $>$\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Copy function. This function dynamically allocates memory for a layer instance and instantiates a copy. The caller is responsible for deallocating the instance. 
+
+Implements \hyperlink{classlbann_1_1Layer_af420f22bbac801c85483ade84588a23f}{lbann\+::\+Layer}.
+
+
+
+Definition at line 211 of file batch\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+211 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1batch__normalization_a04f092712566fd732e5fc5e48ee16f4d}{batch\_normalization}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1batch__normalization_af149d82996f351a5897a16a78ced113d_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1batch__normalization_ac98f8fbb6e5ea998a06cef2c2cac9f03}\label{classlbann_1_1batch__normalization_ac98f8fbb6e5ea998a06cef2c2cac9f03}} 
+\index{lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}!deallocate\+\_\+matrices@{deallocate\+\_\+matrices}}
+\index{deallocate\+\_\+matrices@{deallocate\+\_\+matrices}!lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}}
+\subsubsection{\texorpdfstring{deallocate\+\_\+matrices()}{deallocate\_matrices()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+void \hyperlink{classlbann_1_1batch__normalization}{lbann\+::batch\+\_\+normalization}$<$ T\+\_\+layout $>$\+::deallocate\+\_\+matrices (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [private]}}
+
+
+
+Definition at line 805 of file batch\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+805                              \{
+806     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1batch__normalization_a7c0db2315a4c5bb662da7a740ae76e24}{m\_mean} != \textcolor{keyword}{nullptr})           \textcolor{keyword}{delete} \hyperlink{classlbann_1_1batch__normalization_a7c0db2315a4c5bb662da7a740ae76e24}{m\_mean};
+807     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1batch__normalization_aba533149e4179378ab23443b0a2a7dc6}{m\_var} != \textcolor{keyword}{nullptr})            \textcolor{keyword}{delete} \hyperlink{classlbann_1_1batch__normalization_aba533149e4179378ab23443b0a2a7dc6}{m\_var};
+808     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1batch__normalization_aa4677c2f7d5ea27c53bf0f61f280a2a3}{m\_mean\_gradient} != \textcolor{keyword}{nullptr})  \textcolor{keyword}{delete} \hyperlink{classlbann_1_1batch__normalization_aa4677c2f7d5ea27c53bf0f61f280a2a3}{m\_mean\_gradient};
+809     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1batch__normalization_aa2d2050a265eed854aa8950cd1461af9}{m\_var\_gradient} != \textcolor{keyword}{nullptr})   \textcolor{keyword}{delete} \hyperlink{classlbann_1_1batch__normalization_aa2d2050a265eed854aa8950cd1461af9}{m\_var\_gradient};
+810     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1batch__normalization_a66364e1b0c9afb40a4c03ee1869d264c}{m\_scale\_gradient} != \textcolor{keyword}{nullptr}) \textcolor{keyword}{delete} \hyperlink{classlbann_1_1batch__normalization_a66364e1b0c9afb40a4c03ee1869d264c}{m\_scale\_gradient};
+811     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1batch__normalization_aa0f1e9a9f48f67544618e239167494bb}{m\_bias\_gradient} != \textcolor{keyword}{nullptr})  \textcolor{keyword}{delete} \hyperlink{classlbann_1_1batch__normalization_aa0f1e9a9f48f67544618e239167494bb}{m\_bias\_gradient};
+812     \hyperlink{classlbann_1_1batch__normalization_a7c0db2315a4c5bb662da7a740ae76e24}{m\_mean} = \textcolor{keyword}{nullptr};
+813     \hyperlink{classlbann_1_1batch__normalization_aba533149e4179378ab23443b0a2a7dc6}{m\_var} = \textcolor{keyword}{nullptr};
+814     \hyperlink{classlbann_1_1batch__normalization_aa4677c2f7d5ea27c53bf0f61f280a2a3}{m\_mean\_gradient} = \textcolor{keyword}{nullptr};
+815     \hyperlink{classlbann_1_1batch__normalization_aa2d2050a265eed854aa8950cd1461af9}{m\_var\_gradient} = \textcolor{keyword}{nullptr};
+816     \hyperlink{classlbann_1_1batch__normalization_a66364e1b0c9afb40a4c03ee1869d264c}{m\_scale\_gradient} = \textcolor{keyword}{nullptr};
+817     \hyperlink{classlbann_1_1batch__normalization_aa0f1e9a9f48f67544618e239167494bb}{m\_bias\_gradient} = \textcolor{keyword}{nullptr};
+818   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1batch__normalization_ac98f8fbb6e5ea998a06cef2c2cac9f03_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1batch__normalization_a92ad52396d7083c84ec20016ad5e994b}\label{classlbann_1_1batch__normalization_a92ad52396d7083c84ec20016ad5e994b}} 
+\index{lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}!fp\+\_\+compute@{fp\+\_\+compute}}
+\index{fp\+\_\+compute@{fp\+\_\+compute}!lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}}
+\subsubsection{\texorpdfstring{fp\+\_\+compute()}{fp\_compute()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+void \hyperlink{classlbann_1_1batch__normalization}{lbann\+::batch\+\_\+normalization}$<$ T\+\_\+layout $>$\+::fp\+\_\+compute (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Perform the computation for the forward propagation step. 
+
+Implements \hyperlink{classlbann_1_1Layer_a523319dd1bd87a0612afa1912bb5aad7}{lbann\+::\+Layer}.
+
+
+
+Definition at line 316 of file batch\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+316                              \{
+317     \textcolor{keywordflow}{if} (this->\hyperlink{classlbann_1_1Layer_af7881cb5eff5207c15fa835d65462e8f}{m\_using\_gpus}) \{
+318       \hyperlink{classlbann_1_1batch__normalization_aacff2c47a5455a4c28b9695f4fb37249}{fp\_compute\_gpu}();
+319     \} \textcolor{keywordflow}{else} \{
+320       \hyperlink{classlbann_1_1batch__normalization_ae4cad47f456752e4ea20add0f6f38819}{fp\_compute\_cpu}();
+321     \}
+322   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1batch__normalization_a92ad52396d7083c84ec20016ad5e994b_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1batch__normalization_ae4cad47f456752e4ea20add0f6f38819}\label{classlbann_1_1batch__normalization_ae4cad47f456752e4ea20add0f6f38819}} 
+\index{lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}!fp\+\_\+compute\+\_\+cpu@{fp\+\_\+compute\+\_\+cpu}}
+\index{fp\+\_\+compute\+\_\+cpu@{fp\+\_\+compute\+\_\+cpu}!lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}}
+\subsubsection{\texorpdfstring{fp\+\_\+compute\+\_\+cpu()}{fp\_compute\_cpu()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+void \hyperlink{classlbann_1_1batch__normalization}{lbann\+::batch\+\_\+normalization}$<$ T\+\_\+layout $>$\+::fp\+\_\+compute\+\_\+cpu (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 558 of file batch\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+558                         \{
+559 
+560     \textcolor{comment}{// Check execution mode}
+561     \textcolor{keyword}{const} \textcolor{keywordtype}{bool} is\_training = this->\hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->\hyperlink{classlbann_1_1model_addb40597cf29aa6d31b6a7d09ef48608}{get\_execution\_mode}() == 
+      \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training};
+562 
+563     \textcolor{comment}{// Matrices}
+564     \textcolor{keyword}{const} \textcolor{keyword}{auto}& input = \hyperlink{classlbann_1_1Layer_a45853df73a2e72bfaa774665a0f37ed7}{get\_prev\_activations}();
+565     \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_input = input.LockedMatrix();
+566     \textcolor{keyword}{auto}& local\_output = \hyperlink{classlbann_1_1Layer_a4248f27acebf72b7b7b3ee39c8bcb62a}{get\_local\_activations}();
+567 
+568     \textcolor{comment}{// Matrix parameters}
+569     \textcolor{keyword}{const} \textcolor{keywordtype}{int} width = input.Width();
+570     \textcolor{keyword}{const} El::Int local\_width = local\_input.Width();
+571     \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_channels = this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}[0];
+572     \textcolor{keyword}{const} \textcolor{keywordtype}{int} channel\_size = this->\hyperlink{classlbann_1_1Layer_a6b5ebc8a7d9329d8a773ed787e7b41d8}{m\_num\_neurons} / num\_channels;
+573 
+574     \textcolor{comment}{// Compute statistics}
+575     \textcolor{keywordflow}{if} (is\_training) \{
+576 
+577       \textcolor{comment}{// Local matrices}
+578       \textcolor{comment}{// Note: local\_new\_running\_mean and local\_new\_running\_var are}
+579       \textcolor{comment}{// stored in m\_mean\_gradient and m\_var\_gradient.}
+580       \textcolor{keyword}{auto}& local\_mean = \hyperlink{classlbann_1_1batch__normalization_a7c0db2315a4c5bb662da7a740ae76e24}{m\_mean}->Matrix();
+581       \textcolor{keyword}{auto}& local\_var = \hyperlink{classlbann_1_1batch__normalization_aba533149e4179378ab23443b0a2a7dc6}{m\_var}->Matrix();
+582       \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_running\_mean = this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[2]->get\_values().LockedMatrix();
+583       \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_running\_var = this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[3]->get\_values().LockedMatrix();
+584       \textcolor{keyword}{auto}& local\_new\_running\_mean = \hyperlink{classlbann_1_1batch__normalization_aa4677c2f7d5ea27c53bf0f61f280a2a3}{m\_mean\_gradient}->Matrix();
+585       \textcolor{keyword}{auto}& local\_new\_running\_var = \hyperlink{classlbann_1_1batch__normalization_aa2d2050a265eed854aa8950cd1461af9}{m\_var\_gradient}->Matrix();
+586 
+587       \textcolor{comment}{// Compute sums and sums of squares}
+588 \textcolor{preprocessor}{      #pragma omp parallel for}
+589       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} channel = 0; channel < num\_channels; ++channel) \{
+590         DataType sum = DataType(0);
+591         DataType sqsum = DataType(0);
+592         \textcolor{keyword}{const} El::Int row\_start = channel * channel\_size;
+593         \textcolor{keyword}{const} El::Int row\_end = (channel+1) * channel\_size;
+594         \textcolor{keywordflow}{for} (El::Int col = 0; col < local\_width; ++col) \{
+595           \textcolor{keywordflow}{for} (El::Int row = row\_start; row < row\_end; ++row) \{
+596             \textcolor{keyword}{const} DataType x = local\_input(row, col);
+597             sum += x;
+598             sqsum += x * x;
+599           \}
+600         \}
+601         local\_mean(channel, 0) = sum;
+602         local\_var(channel, 0) = sqsum;
+603       \}
+604       DataType num\_samples;
+605       \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1batch__normalization_a0a33289150c01899f4b7ef2980771899}{m\_use\_global\_stats}) \{
+606         \hyperlink{classlbann_1_1Layer_a5de05c52f22e0bbd7c703bec3ad4dbf2}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_af5631e5f0f54e4df4958eba9df2599ef}{allreduce}(*\hyperlink{classlbann_1_1batch__normalization_a7c0db2315a4c5bb662da7a740ae76e24}{m\_mean}, \hyperlink{classlbann_1_1batch__normalization_a7c0db2315a4c5bb662da7a740ae76e24}{m\_mean}->RedundantComm(), El::mpi::SUM);
+607         \hyperlink{classlbann_1_1Layer_a5de05c52f22e0bbd7c703bec3ad4dbf2}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_af5631e5f0f54e4df4958eba9df2599ef}{allreduce}(*\hyperlink{classlbann_1_1batch__normalization_aba533149e4179378ab23443b0a2a7dc6}{m\_var}, \hyperlink{classlbann_1_1batch__normalization_aba533149e4179378ab23443b0a2a7dc6}{m\_var}->RedundantComm(), El::mpi::SUM);
+608         num\_samples = channel\_size * width;
+609       \} \textcolor{keywordflow}{else} \{
+610         num\_samples = channel\_size * local\_width;
+611       \}
+612 
+613       \textcolor{comment}{// Compute minibatch statistics}
+614       \textcolor{comment}{// Note: local\_new\_running\_mean and local\_new\_running\_var are}
+615       \textcolor{comment}{// stored in m\_mean\_gradient and m\_var\_gradient.}
+616 \textcolor{preprocessor}{      #pragma omp parallel for}
+617       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} channel = 0; channel < num\_channels; ++channel) \{
+618         \textcolor{keyword}{const} DataType mean = local\_mean(channel, 0) / num\_samples;
+619         \textcolor{keyword}{const} DataType sqmean = local\_var(channel, 0) / num\_samples;
+620         \textcolor{keyword}{const} DataType var = num\_samples / (num\_samples - DataType(1)) * std::max(sqmean - mean * mean, 
+      DataType(0));
+621         \textcolor{keyword}{const} DataType old\_running\_mean = local\_running\_mean(channel, 0);
+622         \textcolor{keyword}{const} DataType old\_running\_var = local\_running\_var(channel, 0);
+623         \textcolor{keyword}{const} DataType new\_running\_mean = \hyperlink{classlbann_1_1batch__normalization_aa2ee72d5efbf47c74796510ee61dbb14}{m\_decay} * old\_running\_mean + (DataType(1) - 
+      \hyperlink{classlbann_1_1batch__normalization_aa2ee72d5efbf47c74796510ee61dbb14}{m\_decay}) * mean;
+624         \textcolor{keyword}{const} DataType new\_running\_var = \hyperlink{classlbann_1_1batch__normalization_aa2ee72d5efbf47c74796510ee61dbb14}{m\_decay} * old\_running\_var + (DataType(1) - 
+      \hyperlink{classlbann_1_1batch__normalization_aa2ee72d5efbf47c74796510ee61dbb14}{m\_decay}) * var;
+625         local\_mean(channel, 0) = mean;
+626         local\_var(channel, 0) = var;
+627         local\_new\_running\_mean(channel, 0) = new\_running\_mean;
+628         local\_new\_running\_var(channel, 0) = new\_running\_var;
+629       \}
+630       \hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[2]->set\_values(*\hyperlink{classlbann_1_1batch__normalization_aa4677c2f7d5ea27c53bf0f61f280a2a3}{m\_mean\_gradient});
+631       \hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[3]->set\_values(*\hyperlink{classlbann_1_1batch__normalization_aa2d2050a265eed854aa8950cd1461af9}{m\_var\_gradient});
+632 
+633     \}
+634 
+635     \textcolor{comment}{// Get matrices}
+636     \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_scale = this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[0]->get\_values().LockedMatrix();
+637     \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_bias = this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[1]->get\_values().LockedMatrix();
+638     \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_mean = (is\_training ?
+639                               \hyperlink{classlbann_1_1batch__normalization_a7c0db2315a4c5bb662da7a740ae76e24}{m\_mean}->LockedMatrix() :
+640                               this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[2]->get\_values().LockedMatrix());
+641     \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_var = (is\_training ?
+642                              \hyperlink{classlbann_1_1batch__normalization_aba533149e4179378ab23443b0a2a7dc6}{m\_var}->LockedMatrix() :
+643                              this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[3]->get\_values().LockedMatrix());
+644  
+645     \textcolor{comment}{// Iterate through channels}
+646 \textcolor{preprocessor}{    #pragma omp parallel for}
+647     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} channel = 0; channel < num\_channels; ++channel) \{
+648 
+649       \textcolor{comment}{// Get channel parameters}
+650       \textcolor{keyword}{const} DataType mean = local\_mean(channel, 0);
+651       \textcolor{keyword}{const} DataType var = local\_var(channel, 0);
+652       \textcolor{keyword}{const} DataType inv\_stdev = 1 / std::sqrt(var + \hyperlink{classlbann_1_1batch__normalization_ab82e74f905b7a117d9940f8542451e37}{m\_epsilon});
+653       \textcolor{keyword}{const} DataType scale = local\_scale(channel, 0);
+654       \textcolor{keyword}{const} DataType bias = local\_bias(channel, 0);
+655 
+656       \textcolor{comment}{// Apply batch normalization to inputs in channel}
+657       \textcolor{keyword}{const} El::Int row\_start = channel * channel\_size;
+658       \textcolor{keyword}{const} El::Int row\_end = (channel+1) * channel\_size;
+659       \textcolor{keywordflow}{for} (El::Int col = 0; col < local\_width; ++col) \{
+660         \textcolor{keywordflow}{for} (El::Int row = row\_start; row < row\_end; ++row) \{
+661           \textcolor{keyword}{const} DataType x = local\_input(row, col);
+662           \textcolor{keyword}{const} DataType xhat = (x - mean) * inv\_stdev;
+663           \textcolor{keyword}{const} DataType y = scale * xhat + bias;
+664           local\_output(row, col) = y;
+665         \}
+666       \}
+667 
+668     \}
+669 
+670   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1batch__normalization_ae4cad47f456752e4ea20add0f6f38819_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1batch__normalization_ae4cad47f456752e4ea20add0f6f38819_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1batch__normalization_aacff2c47a5455a4c28b9695f4fb37249}\label{classlbann_1_1batch__normalization_aacff2c47a5455a4c28b9695f4fb37249}} 
+\index{lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}!fp\+\_\+compute\+\_\+gpu@{fp\+\_\+compute\+\_\+gpu}}
+\index{fp\+\_\+compute\+\_\+gpu@{fp\+\_\+compute\+\_\+gpu}!lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}}
+\subsubsection{\texorpdfstring{fp\+\_\+compute\+\_\+gpu()}{fp\_compute\_gpu()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+void \hyperlink{classlbann_1_1batch__normalization}{lbann\+::batch\+\_\+normalization}$<$ T\+\_\+layout $>$\+::fp\+\_\+compute\+\_\+gpu (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 332 of file batch\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+332                         \{
+333 \textcolor{preprocessor}{  #ifndef LBANN\_HAS\_CUDNN}
+334     \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"batch\_normalization\_layer: cuDNN not detected"});
+335 \textcolor{preprocessor}{  #else}
+336 
+337     \textcolor{comment}{// Check execution mode}
+338     \textcolor{keyword}{const} \textcolor{keywordtype}{bool} is\_training = this->\hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->\hyperlink{classlbann_1_1model_addb40597cf29aa6d31b6a7d09ef48608}{get\_execution\_mode}() == 
+      \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training};
+339 
+340     \textcolor{comment}{// Matrix parameters}
+341     \textcolor{keyword}{const} \textcolor{keyword}{auto}& input = \hyperlink{classlbann_1_1Layer_a45853df73a2e72bfaa774665a0f37ed7}{get\_prev\_activations}();
+342     \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_gpus = this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_num\_gpus();
+343     \textcolor{keyword}{const} \textcolor{keywordtype}{int} height = input.Height();
+344     \textcolor{keyword}{const} \textcolor{keywordtype}{int} width = input.Width();
+345     \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_width = input.LocalWidth();
+346     \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_channels = this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}[0];
+347     \textcolor{keyword}{const} \textcolor{keywordtype}{int} channel\_size = this->\hyperlink{classlbann_1_1Layer_a6b5ebc8a7d9329d8a773ed787e7b41d8}{m\_num\_neurons} / num\_channels;
+348 
+349     \textcolor{comment}{// Compute statistics}
+350     \textcolor{keywordflow}{if} (is\_training) \{
+351 
+352       \textcolor{comment}{// Get GPU objects}
+353       std::vector<DataType*> running\_mean\_d = \hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[2]->get\_values\_gpu();
+354       std::vector<DataType*> running\_var\_d = \hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[3]->get\_values\_gpu();
+355 
+356       \textcolor{comment}{// Compute sums and sums of squares on GPUs}
+357       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<num\_gpus; ++i) \{
+358         CHECK\_CUDA(cudaSetDevice(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_gpu(i)));
+359         \textcolor{keyword}{const} \textcolor{keywordtype}{int} col\_start = std::min(i * this->m\_mini\_batch\_size\_per\_gpu, local\_width);
+360         \textcolor{keyword}{const} \textcolor{keywordtype}{int} col\_end = std::min((i+1) * this->m\_mini\_batch\_size\_per\_gpu, local\_width);
+361         \textcolor{keyword}{const} \textcolor{keywordtype}{int} current\_width = col\_end - col\_start;
+362         batch\_normalization\_cuda
+363           ::channel\_sums\_and\_sqsums(height,
+364                                     current\_width,
+365                                     num\_channels,
+366                                     this->m\_prev\_activations\_d[0].get\_locked\_data(i),
+367                                     this->m\_prev\_activations\_d[0].get\_leading\_dim(),
+368                                     m\_mean\_d.get\_data(i),
+369                                     m\_var\_d.get\_data(i),
+370                                     this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_stream(i));
+371       \}
+372 
+373       \textcolor{comment}{// Accumulate sums and sums of squares}
+374       \textcolor{keywordtype}{int} samples\_per\_sum;
+375       \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1batch__normalization_a0a33289150c01899f4b7ef2980771899}{m\_use\_global\_stats}) \{
+376         this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->global\_allreduce\_on\_gpus(m\_mean\_d.get\_data(),
+377                                                 num\_channels,
+378                                                 1,
+379                                                 \hyperlink{classlbann_1_1batch__normalization_a7c0db2315a4c5bb662da7a740ae76e24}{m\_mean}->RedundantComm());
+380         this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->global\_allreduce\_on\_gpus(m\_var\_d.get\_data(),
+381                                                 num\_channels,
+382                                                 1,
+383                                                 \hyperlink{classlbann_1_1batch__normalization_aba533149e4179378ab23443b0a2a7dc6}{m\_var}->RedundantComm());
+384         samples\_per\_sum = channel\_size * width;
+385       \} \textcolor{keywordflow}{else} \{
+386         this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->allreduce\_on\_gpus(m\_mean\_d.get\_data(), num\_channels, 1);
+387         this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->allreduce\_on\_gpus(m\_var\_d.get\_data(), num\_channels, 1);
+388         samples\_per\_sum = channel\_size * local\_width;
+389       \}
+390 
+391       \textcolor{comment}{// Compute minibatch statistics and running statistics}
+392       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<num\_gpus; ++i) \{
+393         CHECK\_CUDA(cudaSetDevice(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_gpu(i)));
+394         batch\_normalization\_cuda
+395           ::sums\_to\_statistics(num\_channels,
+396                                samples\_per\_sum,
+397                                \hyperlink{classlbann_1_1batch__normalization_aa2ee72d5efbf47c74796510ee61dbb14}{m\_decay},
+398                                m\_mean\_d.get\_data(i),
+399                                m\_var\_d.get\_data(i),
+400                                running\_mean\_d[i],
+401                                running\_var\_d[i],
+402                                this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_stream(i));
+403       \}
+404 
+405     \}
+406 
+407     \textcolor{comment}{// Get GPU objects}
+408     \textcolor{keyword}{const} std::vector<DataType*> scale\_d = \hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[0]->get\_values\_gpu();
+409     \textcolor{keyword}{const} std::vector<DataType*> bias\_d = \hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[1]->get\_values\_gpu();
+410     \textcolor{keyword}{const} std::vector<DataType*> mean\_d = (is\_training ?
+411                                            m\_mean\_d.get\_locked\_data() :
+412                                            \hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[2]->get\_values\_gpu());
+413     \textcolor{keyword}{const} std::vector<DataType*> var\_d = (is\_training ?
+414                                           m\_var\_d.get\_locked\_data() :
+415                                           \hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[3]->get\_values\_gpu());
+416 
+417     \textcolor{comment}{// Perform batch normalization with each GPU}
+418     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<num\_gpus; ++i) \{
+419       CHECK\_CUDA(cudaSetDevice(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_gpu(i)));
+420       \textcolor{keyword}{const} \textcolor{keywordtype}{int} col\_start = std::min(i * this->m\_mini\_batch\_size\_per\_gpu, local\_width);
+421       \textcolor{keyword}{const} \textcolor{keywordtype}{int} col\_end = std::min((i+1) * this->m\_mini\_batch\_size\_per\_gpu, local\_width);
+422       \textcolor{keyword}{const} \textcolor{keywordtype}{int} current\_width = col\_end - col\_start;
+423       batch\_normalization\_cuda
+424         ::batch\_normalization(height,
+425                               current\_width,
+426                               num\_channels,
+427                               this->m\_prev\_activations\_d[0].get\_locked\_data(i),
+428                               this->m\_prev\_activations\_d[0].get\_leading\_dim(),
+429                               mean\_d[i],
+430                               var\_d[i],
+431                               \hyperlink{classlbann_1_1batch__normalization_ab82e74f905b7a117d9940f8542451e37}{m\_epsilon},
+432                               scale\_d[i],
+433                               bias\_d[i],
+434                               this->m\_activations\_d[0].get\_data(i),
+435                               this->m\_activations\_d[0].get\_leading\_dim(),
+436                               this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_stream(i));
+437     \}
+438 
+439 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+440   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1batch__normalization_aacff2c47a5455a4c28b9695f4fb37249_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1batch__normalization_aacff2c47a5455a4c28b9695f4fb37249_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1batch__normalization_ac97c038b9dec333a7fb285c196429e2d}\label{classlbann_1_1batch__normalization_ac97c038b9dec333a7fb285c196429e2d}} 
+\index{lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}!get\+\_\+data\+\_\+layout@{get\+\_\+data\+\_\+layout}}
+\index{get\+\_\+data\+\_\+layout@{get\+\_\+data\+\_\+layout}!lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}}
+\subsubsection{\texorpdfstring{get\+\_\+data\+\_\+layout()}{get\_data\_layout()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08db}{data\+\_\+layout} \hyperlink{classlbann_1_1batch__normalization}{lbann\+::batch\+\_\+normalization}$<$ T\+\_\+layout $>$\+::get\+\_\+data\+\_\+layout (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get data layout of the data tensors. We assume that the data layouts of the previous activations, activations, previous error signals, and error signals are the same. Each concrete layer that is templated on its data layout should override this function to return its template parameter. 
+
+Implements \hyperlink{classlbann_1_1Layer_a5dfb66e81fc085997402a5e2241316bd}{lbann\+::\+Layer}.
+
+
+
+Definition at line 226 of file batch\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+226 \{ \textcolor{keywordflow}{return} T\_layout; \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1batch__normalization_ac97c038b9dec333a7fb285c196429e2d_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1batch__normalization_a331738f02157f9e1e21f212c41feb86c}\label{classlbann_1_1batch__normalization_a331738f02157f9e1e21f212c41feb86c}} 
+\index{lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}!get\+\_\+description@{get\+\_\+description}}
+\index{get\+\_\+description@{get\+\_\+description}!lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}}
+\subsubsection{\texorpdfstring{get\+\_\+description()}{get\_description()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+std\+::string \hyperlink{classlbann_1_1batch__normalization}{lbann\+::batch\+\_\+normalization}$<$ T\+\_\+layout $>$\+::get\+\_\+description (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Returns description of ctor params 
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_acc0803d3428914ca1eb5988c4309174a}{lbann\+::\+Layer}.
+
+
+
+Definition at line 198 of file batch\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+198                                              \{
+199     std::stringstream ss;
+200     ss << \textcolor{stringliteral}{" batch\_normalization; "}
+201        << \textcolor{stringliteral}{"decay: "} << \hyperlink{classlbann_1_1batch__normalization_aa2ee72d5efbf47c74796510ee61dbb14}{m\_decay}
+202        << \textcolor{stringliteral}{"epsilon : "} << \hyperlink{classlbann_1_1batch__normalization_ab82e74f905b7a117d9940f8542451e37}{m\_epsilon}
+203        << \textcolor{stringliteral}{"data\_layout: "} << \hyperlink{classlbann_1_1Layer_ae3f4a5602df821f4221614b1e3782dc1}{get\_data\_layout\_string}(
+      \hyperlink{classlbann_1_1batch__normalization_ac97c038b9dec333a7fb285c196429e2d}{get\_data\_layout}());
+204     \textcolor{keywordflow}{return} ss.str();
+205   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1batch__normalization_a331738f02157f9e1e21f212c41feb86c_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1batch__normalization_a1a773049354935cc2841bea8aa8bd94f}\label{classlbann_1_1batch__normalization_a1a773049354935cc2841bea8aa8bd94f}} 
+\index{lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}!get\+\_\+type@{get\+\_\+type}}
+\index{get\+\_\+type@{get\+\_\+type}!lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}}
+\subsubsection{\texorpdfstring{get\+\_\+type()}{get\_type()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+std\+::string \hyperlink{classlbann_1_1batch__normalization}{lbann\+::batch\+\_\+normalization}$<$ T\+\_\+layout $>$\+::get\+\_\+type (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get the layer type\textquotesingle{}s name. A layer type name should be brief, human-\/readable description of the layer\textquotesingle{}s mathematical operation. 
+
+Implements \hyperlink{classlbann_1_1Layer_a0fa0ea9160b490c151c0a17fde4f7239}{lbann\+::\+Layer}.
+
+
+
+Definition at line 213 of file batch\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+213 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"batch normalization"}; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1batch__normalization_aeb3c03a8dd166a64a77a26ee06ba81cd}\label{classlbann_1_1batch__normalization_aeb3c03a8dd166a64a77a26ee06ba81cd}} 
+\index{lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{classlbann_1_1batch__normalization}{batch\+\_\+normalization}\& \hyperlink{classlbann_1_1batch__normalization}{lbann\+::batch\+\_\+normalization}$<$ T\+\_\+layout $>$\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1batch__normalization}{batch\+\_\+normalization}$<$ T\+\_\+layout $>$ \&}]{other }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 161 of file batch\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+161                                                                    \{
+162     \hyperlink{classlbann_1_1Layer_a00d8acde68fda2f38c4a39ef8c89234a}{regularizer\_layer::operator=}(other);
+163     \hyperlink{classlbann_1_1batch__normalization_aa2ee72d5efbf47c74796510ee61dbb14}{m\_decay} = other.m\_decay;
+164     \hyperlink{classlbann_1_1batch__normalization_ab82e74f905b7a117d9940f8542451e37}{m\_epsilon} = other.m\_epsilon;
+165     \hyperlink{classlbann_1_1batch__normalization_a0a33289150c01899f4b7ef2980771899}{m\_use\_global\_stats} = other.m\_use\_global\_stats;
+166 
+167     \textcolor{comment}{// Deallocate matrices}
+168     \hyperlink{classlbann_1_1batch__normalization_ac98f8fbb6e5ea998a06cef2c2cac9f03}{deallocate\_matrices}();
+169 
+170     \textcolor{comment}{// Deep copy matrices}
+171     \hyperlink{classlbann_1_1batch__normalization_a7c0db2315a4c5bb662da7a740ae76e24}{m\_mean} = other.m\_mean;
+172     \hyperlink{classlbann_1_1batch__normalization_aba533149e4179378ab23443b0a2a7dc6}{m\_var} = other.m\_var;
+173     \hyperlink{classlbann_1_1batch__normalization_aa4677c2f7d5ea27c53bf0f61f280a2a3}{m\_mean\_gradient} = other.m\_mean\_gradient;
+174     \hyperlink{classlbann_1_1batch__normalization_aa2d2050a265eed854aa8950cd1461af9}{m\_var\_gradient} = other.m\_var\_gradient;
+175     \hyperlink{classlbann_1_1batch__normalization_a66364e1b0c9afb40a4c03ee1869d264c}{m\_scale\_gradient} = other.m\_scale\_gradient;
+176     \hyperlink{classlbann_1_1batch__normalization_aa0f1e9a9f48f67544618e239167494bb}{m\_bias\_gradient} = other.m\_bias\_gradient;
+177     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1batch__normalization_a7c0db2315a4c5bb662da7a740ae76e24}{m\_mean} != \textcolor{keyword}{nullptr})           \{ \hyperlink{classlbann_1_1batch__normalization_a7c0db2315a4c5bb662da7a740ae76e24}{m\_mean} = \hyperlink{classlbann_1_1batch__normalization_a7c0db2315a4c5bb662da7a740ae76e24}{m\_mean}->Copy(); \}
+178     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1batch__normalization_aba533149e4179378ab23443b0a2a7dc6}{m\_var} != \textcolor{keyword}{nullptr})            \{ \hyperlink{classlbann_1_1batch__normalization_aba533149e4179378ab23443b0a2a7dc6}{m\_var} = \hyperlink{classlbann_1_1batch__normalization_aba533149e4179378ab23443b0a2a7dc6}{m\_var}->Copy(); \}
+179     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1batch__normalization_aa4677c2f7d5ea27c53bf0f61f280a2a3}{m\_mean\_gradient} != \textcolor{keyword}{nullptr})  \{ \hyperlink{classlbann_1_1batch__normalization_aa4677c2f7d5ea27c53bf0f61f280a2a3}{m\_mean\_gradient} = 
+      \hyperlink{classlbann_1_1batch__normalization_aa4677c2f7d5ea27c53bf0f61f280a2a3}{m\_mean\_gradient}->Copy(); \}
+180     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1batch__normalization_aa2d2050a265eed854aa8950cd1461af9}{m\_var\_gradient} != \textcolor{keyword}{nullptr})   \{ \hyperlink{classlbann_1_1batch__normalization_aa2d2050a265eed854aa8950cd1461af9}{m\_var\_gradient} = 
+      \hyperlink{classlbann_1_1batch__normalization_aa2d2050a265eed854aa8950cd1461af9}{m\_var\_gradient}->Copy(); \}
+181     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1batch__normalization_a66364e1b0c9afb40a4c03ee1869d264c}{m\_scale\_gradient} != \textcolor{keyword}{nullptr}) \{ \hyperlink{classlbann_1_1batch__normalization_a66364e1b0c9afb40a4c03ee1869d264c}{m\_scale\_gradient} = 
+      \hyperlink{classlbann_1_1batch__normalization_a66364e1b0c9afb40a4c03ee1869d264c}{m\_scale\_gradient}->Copy(); \}
+182     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1batch__normalization_aa0f1e9a9f48f67544618e239167494bb}{m\_bias\_gradient} != \textcolor{keyword}{nullptr})  \{ \hyperlink{classlbann_1_1batch__normalization_aa0f1e9a9f48f67544618e239167494bb}{m\_bias\_gradient} = 
+      \hyperlink{classlbann_1_1batch__normalization_aa0f1e9a9f48f67544618e239167494bb}{m\_bias\_gradient}->Copy(); \}
+183 
+184 \textcolor{preprocessor}{  #ifdef LBANN\_HAS\_CUDNN}
+185     \textcolor{comment}{// Copy GPU data}
+186     m\_mean\_d = other.m\_mean\_d;
+187     m\_var\_d = other.m\_var\_d;
+188     m\_mean\_gradient\_d = other.m\_mean\_gradient\_d;
+189     m\_var\_gradient\_d = other.m\_var\_gradient\_d;
+190     m\_scale\_gradient\_d = other.m\_scale\_gradient\_d;
+191     m\_bias\_gradient\_d = other.m\_bias\_gradient\_d;
+192 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+193 
+194     \textcolor{keywordflow}{return} *\textcolor{keyword}{this};
+195   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1batch__normalization_aeb3c03a8dd166a64a77a26ee06ba81cd_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1batch__normalization_ac046a5ab567cc01f9a36c6b0fc4e3b55}\label{classlbann_1_1batch__normalization_ac046a5ab567cc01f9a36c6b0fc4e3b55}} 
+\index{lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}!setup\+\_\+data@{setup\+\_\+data}}
+\index{setup\+\_\+data@{setup\+\_\+data}!lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}}
+\subsubsection{\texorpdfstring{setup\+\_\+data()}{setup\_data()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+void \hyperlink{classlbann_1_1batch__normalization}{lbann\+::batch\+\_\+normalization}$<$ T\+\_\+layout $>$\+::setup\+\_\+data (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Setup layer data. Called by the setup function. The base method sets the previous activation, activation, previous error signal, and error signal matrices to zero matrices with the proper dimensions. Matrix buffers are pinned if needed for G\+PU transfers. 
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_a50a89f8a68762c677d48efe384676e81}{lbann\+::\+Layer}.
+
+
+
+Definition at line 228 of file batch\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+228                              \{
+229     \hyperlink{classlbann_1_1Layer_a50a89f8a68762c677d48efe384676e81}{regularizer\_layer::setup\_data}();
+230 
+231     \textcolor{comment}{// Initialize default weights if none are provided}
+232     \textcolor{keywordflow}{if} (this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}.size() > 4) \{
+233       std::stringstream err;
+234       err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+235           << \textcolor{stringliteral}{"attempted to setup "} << \hyperlink{classlbann_1_1Layer_aa47109ad09b399142fa92f9d3702189f}{m\_name} << \textcolor{stringliteral}{" with an invalid number of weights"};
+236       \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+237     \}
+238     this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}.resize(4, \textcolor{keyword}{nullptr});
+239     \textcolor{keywordflow}{if} (this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[0] == \textcolor{keyword}{nullptr}) \{
+240       this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[0] = \textcolor{keyword}{new} weights(this->\hyperlink{classlbann_1_1Layer_a5de05c52f22e0bbd7c703bec3ad4dbf2}{m\_comm}, this->
+      \hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn});
+241       this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[0]->set\_name(this->m\_name + \textcolor{stringliteral}{"\_scale"});
+242       this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[0]->set\_initializer(\textcolor{keyword}{new} constant\_initializer(this->
+      \hyperlink{classlbann_1_1Layer_a5de05c52f22e0bbd7c703bec3ad4dbf2}{m\_comm}, DataType(1)));
+243       this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[0]->set\_optimizer(\hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->
+      \hyperlink{classlbann_1_1model_a0d2d5a1eac592e5721a81a9b9ea4b7f2}{create\_optimizer}());
+244       this->\hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->\hyperlink{classlbann_1_1model_af35fca77e75eb6dd570e4727aa3d5b6b}{add\_weights}(this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[0]);
+245     \}
+246     \textcolor{keywordflow}{if} (this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[1] == \textcolor{keyword}{nullptr}) \{
+247       this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[1] = \textcolor{keyword}{new} weights(this->\hyperlink{classlbann_1_1Layer_a5de05c52f22e0bbd7c703bec3ad4dbf2}{m\_comm}, this->
+      \hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn});
+248       this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[1]->set\_name(this->m\_name + \textcolor{stringliteral}{"\_bias"});
+249       this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[1]->set\_initializer(\textcolor{keyword}{new} constant\_initializer(this->
+      \hyperlink{classlbann_1_1Layer_a5de05c52f22e0bbd7c703bec3ad4dbf2}{m\_comm}, DataType(0)));
+250       this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[1]->set\_optimizer(\hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->
+      \hyperlink{classlbann_1_1model_a0d2d5a1eac592e5721a81a9b9ea4b7f2}{create\_optimizer}());
+251       this->\hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->\hyperlink{classlbann_1_1model_af35fca77e75eb6dd570e4727aa3d5b6b}{add\_weights}(this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[1]);
+252     \}
+253     \textcolor{keywordflow}{if} (this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[2] == \textcolor{keyword}{nullptr}) \{
+254       this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[2] = \textcolor{keyword}{new} weights(this->\hyperlink{classlbann_1_1Layer_a5de05c52f22e0bbd7c703bec3ad4dbf2}{m\_comm}, this->
+      \hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn});
+255       this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[2]->set\_name(this->m\_name + \textcolor{stringliteral}{"\_running\_mean"});
+256       this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[2]->set\_initializer(\textcolor{keyword}{new} constant\_initializer(this->
+      \hyperlink{classlbann_1_1Layer_a5de05c52f22e0bbd7c703bec3ad4dbf2}{m\_comm}, DataType(0)));
+257       this->\hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->\hyperlink{classlbann_1_1model_af35fca77e75eb6dd570e4727aa3d5b6b}{add\_weights}(this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[2]);
+258     \}
+259     \textcolor{keywordflow}{if} (this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[3] == \textcolor{keyword}{nullptr}) \{
+260       this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[3] = \textcolor{keyword}{new} weights(this->\hyperlink{classlbann_1_1Layer_a5de05c52f22e0bbd7c703bec3ad4dbf2}{m\_comm}, this->
+      \hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn});
+261       this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[3]->set\_name(this->m\_name + \textcolor{stringliteral}{"\_running\_variance"});
+262       this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[3]->set\_initializer(\textcolor{keyword}{new} constant\_initializer(this->
+      \hyperlink{classlbann_1_1Layer_a5de05c52f22e0bbd7c703bec3ad4dbf2}{m\_comm}, DataType(1)));
+263       this->\hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->\hyperlink{classlbann_1_1model_af35fca77e75eb6dd570e4727aa3d5b6b}{add\_weights}(this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[3]);
+264     \}
+265 
+266     \textcolor{comment}{// Setup weights}
+267     this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[0]->setup(this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}[0]);
+268     this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[1]->setup(this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}[0]);
+269     this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[2]->setup(this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}[0]);
+270     this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[3]->setup(this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}[0]);
+271 
+272     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1Layer_afdc60df9731a3ecdeeeb8175fa483676}{m\_frozen}) \{
+273       this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[0]->freeze();
+274       this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[1]->freeze();
+275       this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[2]->freeze();
+276       this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[3]->freeze();
+277     \} \textcolor{keywordflow}{else} \{
+278       \textcolor{keywordflow}{if} (this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[0]->\hyperlink{classlbann_1_1Layer_af3c0f9f32eb631f4fdf34ad040ef8637}{is\_frozen}() || this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[1]->
+      \hyperlink{classlbann_1_1Layer_af3c0f9f32eb631f4fdf34ad040ef8637}{is\_frozen}() ||
+279           this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[2]->\hyperlink{classlbann_1_1Layer_af3c0f9f32eb631f4fdf34ad040ef8637}{is\_frozen}() || this->\hyperlink{classlbann_1_1Layer_a7954e30fbf9100a6ba4b56d02767a469}{m\_weights}[3]->
+      \hyperlink{classlbann_1_1Layer_af3c0f9f32eb631f4fdf34ad040ef8637}{is\_frozen}()) \{
+280         \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"batch\_normalization: layer is not frozen but weights are"});
+281       \}
+282     \}
+283 
+284     \textcolor{comment}{// Initialize matrices}
+285     El::Zeros(*\hyperlink{classlbann_1_1batch__normalization_a7c0db2315a4c5bb662da7a740ae76e24}{m\_mean}, this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}[0], 1);
+286     El::Zeros(*\hyperlink{classlbann_1_1batch__normalization_aba533149e4179378ab23443b0a2a7dc6}{m\_var}, this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}[0], 1);
+287     El::Zeros(*\hyperlink{classlbann_1_1batch__normalization_aa4677c2f7d5ea27c53bf0f61f280a2a3}{m\_mean\_gradient}, this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}[0], 1);
+288     El::Zeros(*\hyperlink{classlbann_1_1batch__normalization_aa2d2050a265eed854aa8950cd1461af9}{m\_var\_gradient}, this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}[0], 1);
+289     El::Zeros(*\hyperlink{classlbann_1_1batch__normalization_a66364e1b0c9afb40a4c03ee1869d264c}{m\_scale\_gradient}, this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}[0], 1);
+290     El::Zeros(*\hyperlink{classlbann_1_1batch__normalization_aa0f1e9a9f48f67544618e239167494bb}{m\_bias\_gradient}, this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}[0], 1);
+291 
+292   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1batch__normalization_ac046a5ab567cc01f9a36c6b0fc4e3b55_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1batch__normalization_ab4737c3efcafa9bff1e68084b7f36283}\label{classlbann_1_1batch__normalization_ab4737c3efcafa9bff1e68084b7f36283}} 
+\index{lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}!setup\+\_\+gpu@{setup\+\_\+gpu}}
+\index{setup\+\_\+gpu@{setup\+\_\+gpu}!lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}}
+\subsubsection{\texorpdfstring{setup\+\_\+gpu()}{setup\_gpu()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+void \hyperlink{classlbann_1_1batch__normalization}{lbann\+::batch\+\_\+normalization}$<$ T\+\_\+layout $>$\+::setup\+\_\+gpu (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Setup G\+PU objects. Called by the setup function if G\+P\+Us are enabled. The base method initializes G\+PU matrices for the previous activations, activations, previous error signals, and error signals. It also initializes cu\+D\+NN tensor descriptors. 
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_a36aa22ef90ce4de65abe729d38490863}{lbann\+::\+Layer}.
+
+
+
+Definition at line 294 of file batch\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+294                             \{
+295     \hyperlink{classlbann_1_1Layer_a36aa22ef90ce4de65abe729d38490863}{regularizer\_layer::setup\_gpu}();
+296 \textcolor{preprocessor}{  #ifndef LBANN\_HAS\_CUDNN}
+297     \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"convolution\_layer: cuDNN not detected"});
+298 \textcolor{preprocessor}{  #else}
+299     m\_mean\_d = cudnn::matrix(\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}, \hyperlink{classlbann_1_1batch__normalization_a7c0db2315a4c5bb662da7a740ae76e24}{m\_mean}->Height(), \hyperlink{classlbann_1_1batch__normalization_a7c0db2315a4c5bb662da7a740ae76e24}{m\_mean}->Width());
+300     m\_var\_d = cudnn::matrix(\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}, \hyperlink{classlbann_1_1batch__normalization_aba533149e4179378ab23443b0a2a7dc6}{m\_var}->Height(), \hyperlink{classlbann_1_1batch__normalization_aba533149e4179378ab23443b0a2a7dc6}{m\_var}->Width());
+301     m\_mean\_gradient\_d = cudnn::matrix(\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn},
+302                                       \hyperlink{classlbann_1_1batch__normalization_aa4677c2f7d5ea27c53bf0f61f280a2a3}{m\_mean\_gradient}->Height(),
+303                                       \hyperlink{classlbann_1_1batch__normalization_aa4677c2f7d5ea27c53bf0f61f280a2a3}{m\_mean\_gradient}->Width());
+304     m\_var\_gradient\_d = cudnn::matrix(\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn},
+305                                       \hyperlink{classlbann_1_1batch__normalization_aa2d2050a265eed854aa8950cd1461af9}{m\_var\_gradient}->Height(),
+306                                       \hyperlink{classlbann_1_1batch__normalization_aa2d2050a265eed854aa8950cd1461af9}{m\_var\_gradient}->Width());
+307     m\_scale\_gradient\_d = cudnn::matrix(\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn},
+308                                        \hyperlink{classlbann_1_1batch__normalization_a66364e1b0c9afb40a4c03ee1869d264c}{m\_scale\_gradient}->Height(),
+309                                        \hyperlink{classlbann_1_1batch__normalization_a66364e1b0c9afb40a4c03ee1869d264c}{m\_scale\_gradient}->Width());
+310     m\_bias\_gradient\_d = cudnn::matrix(\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn},
+311                                       \hyperlink{classlbann_1_1batch__normalization_aa0f1e9a9f48f67544618e239167494bb}{m\_bias\_gradient}->Height(),
+312                                       \hyperlink{classlbann_1_1batch__normalization_aa0f1e9a9f48f67544618e239167494bb}{m\_bias\_gradient}->Width());
+313 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+314   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1batch__normalization_ab4737c3efcafa9bff1e68084b7f36283_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1batch__normalization_a4ddf27efaf48f0726dc4356a3a0b40a9}\label{classlbann_1_1batch__normalization_a4ddf27efaf48f0726dc4356a3a0b40a9}} 
+\index{lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}!setup\+\_\+matrices@{setup\+\_\+matrices}}
+\index{setup\+\_\+matrices@{setup\+\_\+matrices}!lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}}
+\subsubsection{\texorpdfstring{setup\+\_\+matrices()}{setup\_matrices()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+void \hyperlink{classlbann_1_1batch__normalization}{lbann\+::batch\+\_\+normalization}$<$ T\+\_\+layout $>$\+::setup\+\_\+matrices (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a9951bb1719d534e0401b1f06cad19eab}{El\+::\+Grid} \&}]{grid }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Instantiate distributed matrices. If the layer has already been setup, this function should destroy all matrices and reinstantiate them. However, it is not guaranteed that derived classes will obey this behavior. 
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_a57bbe21131dc00ab5cf9ea5e3656808e}{lbann\+::\+Layer}.
+
+
+
+Definition at line 215 of file batch\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+215                                                    \{
+216     \hyperlink{classlbann_1_1Layer_a57bbe21131dc00ab5cf9ea5e3656808e}{regularizer\_layer::setup\_matrices}(grid);
+217     \hyperlink{classlbann_1_1batch__normalization_ac98f8fbb6e5ea998a06cef2c2cac9f03}{deallocate\_matrices}();
+218     \hyperlink{classlbann_1_1batch__normalization_a7c0db2315a4c5bb662da7a740ae76e24}{m\_mean} = \textcolor{keyword}{new} \hyperlink{base_8hpp_aba08580d21767b53d0737e115d738dbe}{StarMat}(grid);
+219     \hyperlink{classlbann_1_1batch__normalization_aba533149e4179378ab23443b0a2a7dc6}{m\_var} = \textcolor{keyword}{new} \hyperlink{base_8hpp_aba08580d21767b53d0737e115d738dbe}{StarMat}(grid);
+220     \hyperlink{classlbann_1_1batch__normalization_aa4677c2f7d5ea27c53bf0f61f280a2a3}{m\_mean\_gradient} = \textcolor{keyword}{new} \hyperlink{base_8hpp_aba08580d21767b53d0737e115d738dbe}{StarMat}(grid);
+221     \hyperlink{classlbann_1_1batch__normalization_aa2d2050a265eed854aa8950cd1461af9}{m\_var\_gradient} = \textcolor{keyword}{new} \hyperlink{base_8hpp_aba08580d21767b53d0737e115d738dbe}{StarMat}(grid);
+222     \hyperlink{classlbann_1_1batch__normalization_a66364e1b0c9afb40a4c03ee1869d264c}{m\_scale\_gradient} = \textcolor{keyword}{new} \hyperlink{base_8hpp_aba08580d21767b53d0737e115d738dbe}{StarMat}(grid);
+223     \hyperlink{classlbann_1_1batch__normalization_aa0f1e9a9f48f67544618e239167494bb}{m\_bias\_gradient} = \textcolor{keyword}{new} \hyperlink{base_8hpp_aba08580d21767b53d0737e115d738dbe}{StarMat}(grid);
+224   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1batch__normalization_a4ddf27efaf48f0726dc4356a3a0b40a9_cgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1batch__normalization_aa0f1e9a9f48f67544618e239167494bb}\label{classlbann_1_1batch__normalization_aa0f1e9a9f48f67544618e239167494bb}} 
+\index{lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}!m\+\_\+bias\+\_\+gradient@{m\+\_\+bias\+\_\+gradient}}
+\index{m\+\_\+bias\+\_\+gradient@{m\+\_\+bias\+\_\+gradient}!lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}}
+\subsubsection{\texorpdfstring{m\+\_\+bias\+\_\+gradient}{m\_bias\_gradient}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat}$\ast$ \hyperlink{classlbann_1_1batch__normalization}{lbann\+::batch\+\_\+normalization}$<$ T\+\_\+layout $>$\+::m\+\_\+bias\+\_\+gradient\hspace{0.3cm}{\ttfamily [private]}}
+
+Gradient w.\+r.\+t. bias terms. 
+
+Definition at line 72 of file batch\+\_\+normalization.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1batch__normalization_aa2ee72d5efbf47c74796510ee61dbb14}\label{classlbann_1_1batch__normalization_aa2ee72d5efbf47c74796510ee61dbb14}} 
+\index{lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}!m\+\_\+decay@{m\+\_\+decay}}
+\index{m\+\_\+decay@{m\+\_\+decay}!lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}}
+\subsubsection{\texorpdfstring{m\+\_\+decay}{m\_decay}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+Data\+Type \hyperlink{classlbann_1_1batch__normalization}{lbann\+::batch\+\_\+normalization}$<$ T\+\_\+layout $>$\+::m\+\_\+decay\hspace{0.3cm}{\ttfamily [private]}}
+
+Decay rate for the running statistics. 
+
+Definition at line 55 of file batch\+\_\+normalization.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1batch__normalization_ab82e74f905b7a117d9940f8542451e37}\label{classlbann_1_1batch__normalization_ab82e74f905b7a117d9940f8542451e37}} 
+\index{lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}!m\+\_\+epsilon@{m\+\_\+epsilon}}
+\index{m\+\_\+epsilon@{m\+\_\+epsilon}!lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}}
+\subsubsection{\texorpdfstring{m\+\_\+epsilon}{m\_epsilon}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+Data\+Type \hyperlink{classlbann_1_1batch__normalization}{lbann\+::batch\+\_\+normalization}$<$ T\+\_\+layout $>$\+::m\+\_\+epsilon\hspace{0.3cm}{\ttfamily [private]}}
+
+Small number to avoid division by zero. 
+
+Definition at line 57 of file batch\+\_\+normalization.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1batch__normalization_a7c0db2315a4c5bb662da7a740ae76e24}\label{classlbann_1_1batch__normalization_a7c0db2315a4c5bb662da7a740ae76e24}} 
+\index{lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}!m\+\_\+mean@{m\+\_\+mean}}
+\index{m\+\_\+mean@{m\+\_\+mean}!lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}}
+\subsubsection{\texorpdfstring{m\+\_\+mean}{m\_mean}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat}$\ast$ \hyperlink{classlbann_1_1batch__normalization}{lbann\+::batch\+\_\+normalization}$<$ T\+\_\+layout $>$\+::m\+\_\+mean\hspace{0.3cm}{\ttfamily [private]}}
+
+Current minibatch means. 
+
+Definition at line 62 of file batch\+\_\+normalization.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1batch__normalization_aa4677c2f7d5ea27c53bf0f61f280a2a3}\label{classlbann_1_1batch__normalization_aa4677c2f7d5ea27c53bf0f61f280a2a3}} 
+\index{lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}!m\+\_\+mean\+\_\+gradient@{m\+\_\+mean\+\_\+gradient}}
+\index{m\+\_\+mean\+\_\+gradient@{m\+\_\+mean\+\_\+gradient}!lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}}
+\subsubsection{\texorpdfstring{m\+\_\+mean\+\_\+gradient}{m\_mean\_gradient}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat}$\ast$ \hyperlink{classlbann_1_1batch__normalization}{lbann\+::batch\+\_\+normalization}$<$ T\+\_\+layout $>$\+::m\+\_\+mean\+\_\+gradient\hspace{0.3cm}{\ttfamily [private]}}
+
+Gradient w.\+r.\+t. means. 
+
+Definition at line 66 of file batch\+\_\+normalization.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1batch__normalization_a66364e1b0c9afb40a4c03ee1869d264c}\label{classlbann_1_1batch__normalization_a66364e1b0c9afb40a4c03ee1869d264c}} 
+\index{lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}!m\+\_\+scale\+\_\+gradient@{m\+\_\+scale\+\_\+gradient}}
+\index{m\+\_\+scale\+\_\+gradient@{m\+\_\+scale\+\_\+gradient}!lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}}
+\subsubsection{\texorpdfstring{m\+\_\+scale\+\_\+gradient}{m\_scale\_gradient}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat}$\ast$ \hyperlink{classlbann_1_1batch__normalization}{lbann\+::batch\+\_\+normalization}$<$ T\+\_\+layout $>$\+::m\+\_\+scale\+\_\+gradient\hspace{0.3cm}{\ttfamily [private]}}
+
+Gradient w.\+r.\+t. scaling terms. 
+
+Definition at line 70 of file batch\+\_\+normalization.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1batch__normalization_a0a33289150c01899f4b7ef2980771899}\label{classlbann_1_1batch__normalization_a0a33289150c01899f4b7ef2980771899}} 
+\index{lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}!m\+\_\+use\+\_\+global\+\_\+stats@{m\+\_\+use\+\_\+global\+\_\+stats}}
+\index{m\+\_\+use\+\_\+global\+\_\+stats@{m\+\_\+use\+\_\+global\+\_\+stats}!lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}}
+\subsubsection{\texorpdfstring{m\+\_\+use\+\_\+global\+\_\+stats}{m\_use\_global\_stats}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+bool \hyperlink{classlbann_1_1batch__normalization}{lbann\+::batch\+\_\+normalization}$<$ T\+\_\+layout $>$\+::m\+\_\+use\+\_\+global\+\_\+stats\hspace{0.3cm}{\ttfamily [private]}}
+
+Whether to use global statistics when training. 
+
+Definition at line 59 of file batch\+\_\+normalization.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1batch__normalization_aba533149e4179378ab23443b0a2a7dc6}\label{classlbann_1_1batch__normalization_aba533149e4179378ab23443b0a2a7dc6}} 
+\index{lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}!m\+\_\+var@{m\+\_\+var}}
+\index{m\+\_\+var@{m\+\_\+var}!lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}}
+\subsubsection{\texorpdfstring{m\+\_\+var}{m\_var}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat}$\ast$ \hyperlink{classlbann_1_1batch__normalization}{lbann\+::batch\+\_\+normalization}$<$ T\+\_\+layout $>$\+::m\+\_\+var\hspace{0.3cm}{\ttfamily [private]}}
+
+Current minibatch standard deviations. 
+
+Definition at line 64 of file batch\+\_\+normalization.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1batch__normalization_aa2d2050a265eed854aa8950cd1461af9}\label{classlbann_1_1batch__normalization_aa2d2050a265eed854aa8950cd1461af9}} 
+\index{lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}!m\+\_\+var\+\_\+gradient@{m\+\_\+var\+\_\+gradient}}
+\index{m\+\_\+var\+\_\+gradient@{m\+\_\+var\+\_\+gradient}!lbann\+::batch\+\_\+normalization@{lbann\+::batch\+\_\+normalization}}
+\subsubsection{\texorpdfstring{m\+\_\+var\+\_\+gradient}{m\_var\_gradient}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat}$\ast$ \hyperlink{classlbann_1_1batch__normalization}{lbann\+::batch\+\_\+normalization}$<$ T\+\_\+layout $>$\+::m\+\_\+var\+\_\+gradient\hspace{0.3cm}{\ttfamily [private]}}
+
+Gradient w.\+r.\+t. standard deviations. 
+
+Definition at line 68 of file batch\+\_\+normalization.\+hpp.
+
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/layers/regularizers/\hyperlink{batch__normalization_8hpp}{batch\+\_\+normalization.\+hpp}\end{DoxyCompactItemize}

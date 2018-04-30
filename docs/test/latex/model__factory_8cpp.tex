@@ -1,0 +1,31 @@
+\hypertarget{model__factory_8cpp}{}\section{/\+Users/mckinney27/doxy-\/testbed/lbann/src/proto/factories/model\+\_\+factory.cpp File Reference}
+\label{model__factory_8cpp}\index{/\+Users/mckinney27/doxy-\/testbed/lbann/src/proto/factories/model\+\_\+factory.\+cpp@{/\+Users/mckinney27/doxy-\/testbed/lbann/src/proto/factories/model\+\_\+factory.\+cpp}}
+{\ttfamily \#include \char`\"{}lbann/proto/factories.\+hpp\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}lbann/objective\+\_\+functions/layer\+\_\+term.\+hpp\char`\"{}}\newline
+Include dependency graph for model\+\_\+factory.\+cpp\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{model__factory_8cpp__incl}
+\end{center}
+\end{figure}
+\subsection*{Namespaces}
+\begin{DoxyCompactItemize}
+\item 
+ \hyperlink{namespacelbann}{lbann}
+\begin{DoxyCompactList}\small\item\em Open\+MP Diagnostic code from Edgar Leon at L\+L\+NL. \end{DoxyCompactList}\item 
+ \hyperlink{namespacelbann_1_1proto}{lbann\+::proto}
+\item 
+ \hyperlink{namespacelbann_1_1proto_1_1anonymous__namespace_02model__factory_8cpp_03}{lbann\+::proto\+::anonymous\+\_\+namespace\{model\+\_\+factory.\+cpp\}}
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+model $\ast$ \hyperlink{namespacelbann_1_1proto_1_1anonymous__namespace_02model__factory_8cpp_03_a6a08f0b26d015824ef28ddbb66b6d4c0}{lbann\+::proto\+::anonymous\+\_\+namespace\{model\+\_\+factory.\+cpp\}\+::instantiate\+\_\+model} (lbann\+\_\+comm $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, objective\+\_\+function $\ast$obj, const lbann\+\_\+data\+::\+Optimizer \&proto\+\_\+opt, const lbann\+\_\+data\+::\+Model \&proto\+\_\+model)
+\item 
+void \hyperlink{namespacelbann_1_1proto_1_1anonymous__namespace_02model__factory_8cpp_03_a3406a809935f319486cf8fd017b58417}{lbann\+::proto\+::anonymous\+\_\+namespace\{model\+\_\+factory.\+cpp\}\+::assign\+\_\+layers\+\_\+to\+\_\+objective\+\_\+function} (std\+::vector$<$ Layer $\ast$$>$ \&layer\+\_\+list, objective\+\_\+function $\ast$obj, const lbann\+\_\+data\+::\+Objective\+Function \&proto\+\_\+obj)
+\item 
+void \hyperlink{namespacelbann_1_1proto_1_1anonymous__namespace_02model__factory_8cpp_03_a19d0eaf0259647155039ed45eb980b05}{lbann\+::proto\+::anonymous\+\_\+namespace\{model\+\_\+factory.\+cpp\}\+::assign\+\_\+weights\+\_\+to\+\_\+layers} (std\+::vector$<$ Layer $\ast$$>$ \&layer\+\_\+list, std\+::vector$<$ weights $\ast$$>$ \&weights\+\_\+list, const lbann\+\_\+data\+::\+Model \&proto\+\_\+model)
+\item 
+model $\ast$ \hyperlink{namespacelbann_1_1proto_a6c051439c9c5cbbfb1a2387d5a3fc902}{lbann\+::proto\+::construct\+\_\+model} (lbann\+\_\+comm $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, cudnn\+::cudnn\+\_\+manager $\ast$cudnn, std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, generic\+\_\+data\+\_\+reader $\ast$$>$ \&data\+\_\+readers, const lbann\+\_\+data\+::\+Optimizer \&proto\+\_\+opt, const lbann\+\_\+data\+::\+Model \&proto\+\_\+model)
+\end{DoxyCompactItemize}

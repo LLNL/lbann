@@ -1,0 +1,26 @@
+<map id="lbann::partitioned_io_buffer::calculate_num_iterations_per_epoch_spanning_models" name="lbann::partitioned_io_buffer::calculate_num_iterations_per_epoch_spanning_models">
+<area shape="rect" id="node2" href="$classlbann_1_1generic__data__reader.html#adcdb833aff7ce85b0879334b252f357a" title="Get the number of samples in this dataset. " alt="" coords="258,5,418,44"/>
+<area shape="rect" id="node3" href="$classlbann_1_1partitioned__io__buffer.html#a5048100fb7cdc13908ecba6b4415b977" title="lbann::partitioned\l_io_buffer::compute\l_max_num_parallel_readers" alt="" coords="243,120,433,172"/>
+<area shape="rect" id="node4" href="$classlbann_1_1lbann__comm.html#a5755dfdfc6377b4cae5ef8f7819e17de" title="lbann::lbann_comm::\lget_procs_per_model" alt="" coords="483,64,634,103"/>
+<area shape="rect" id="node6" href="$classlbann_1_1generic__data__reader.html#a9b348d52852062dbc66b0accde5c6e8a" title="Set the number of parallel readers per model. " alt="" coords="250,196,426,248"/>
+<area shape="rect" id="node7" href="$classlbann_1_1lbann__comm.html#aeb8ef8f13bbb324e3e1f656998198f3f" title="lbann::lbann_comm::\lget_num_models" alt="" coords="265,272,410,311"/>
+<area shape="rect" id="node8" href="$classlbann_1_1lbann__comm.html#a789453454468a3b70de768537c50ca52" title="lbann::lbann_comm::\lget_rank_in_model" alt="" coords="265,335,410,373"/>
+<area shape="rect" id="node9" href="$classlbann_1_1lbann__comm.html#a6422f70c92bed0b78179facc52b066f7" title="lbann::lbann_comm::\lget_model_rank" alt="" coords="265,397,410,436"/>
+<area shape="rect" id="node10" href="$classlbann_1_1generic__data__reader.html#adf161cca4b80eb95f9748050e7fe1809" title="Set the mini batch size. " alt="" coords="240,460,435,499"/>
+<area shape="rect" id="node11" href="$classlbann_1_1generic__data__reader.html#add5bd1d488967ebab5852b636e07db15" title="Set the mini batch stride. " alt="" coords="266,523,410,575"/>
+<area shape="rect" id="node12" href="$classlbann_1_1generic__data__reader.html#adb90391e3e9c8e3c2aba4d4a0911ca82" title="Set the sample stride. " alt="" coords="266,599,409,651"/>
+<area shape="rect" id="node13" href="$classlbann_1_1generic__data__reader.html#ac1f3f81ca0e2920658cba026fe09a95b" title="Set the iteration stride. " alt="" coords="264,675,411,727"/>
+<area shape="rect" id="node14" href="$classlbann_1_1generic__data__reader.html#adcf4c6012f44c78589bb75ea530cf518" title="Return the base offset. " alt="" coords="253,751,422,789"/>
+<area shape="rect" id="node15" href="$classlbann_1_1generic__data__reader.html#ab20e835e0e0565717e0fd74da09d4890" title="Set the model offset. " alt="" coords="250,813,426,852"/>
+<area shape="rect" id="node16" href="$classlbann_1_1generic__data__reader.html#ac6d4a5ba1d4e1134620cddcac343bf59" title="Set the current position based on the base and model offsets. " alt="" coords="268,876,407,928"/>
+<area shape="rect" id="node17" href="$classlbann_1_1generic__data__reader.html#a03388338e75d37e1b28389d22bd5b604" title="Set the mini batch size across all models (global) " alt="" coords="268,952,407,1004"/>
+<area shape="rect" id="node18" href="$classlbann_1_1generic__data__reader.html#a357389ee93428b68f9400de708f6915d" title="Set the last mini batch size. " alt="" coords="261,1028,414,1080"/>
+<area shape="rect" id="node19" href="$classlbann_1_1generic__data__reader.html#a4455d137b469287bf964436f9fcc6d94" title="Set the last mini batch size across all models (global) " alt="" coords="261,1104,414,1156"/>
+<area shape="rect" id="node20" href="$classlbann_1_1generic__data__reader.html#a91573d9599b503a6bdf2939e69659e8b" title="Set the number of iterations in each epoch. " alt="" coords="244,1180,431,1232"/>
+<area shape="rect" id="node21" href="$classlbann_1_1generic__data__reader.html#a79cb3bee4e0d19006ef9213763dc8af2" title="Return the last mini batch size. " alt="" coords="261,1256,414,1308"/>
+<area shape="rect" id="node22" href="$classlbann_1_1generic__data__reader.html#af2fc6b35ad8139d15729b19db2895827" title="Set the last mini batch stride. " alt="" coords="268,1332,408,1384"/>
+<area shape="rect" id="node23" href="$classlbann_1_1generic__data__reader.html#a2d1d5657e8b9bf8b8a9d51b33aedf017" title="Return the mini batch stride. " alt="" coords="266,1408,410,1460"/>
+<area shape="rect" id="node24" href="$classlbann_1_1generic__data__reader.html#a65b9d39e7585ec325eb40a123cd70891" title="Return the base offset. " alt="" coords="253,1484,422,1523"/>
+<area shape="rect" id="node25" href="$classlbann_1_1generic__data__reader.html#a9e78b6062be9746c81eabf0f9d28264e" title="Return the model offset. " alt="" coords="249,1547,426,1585"/>
+<area shape="rect" id="node5" href="$classlbann_1_1lbann__comm.html#ad8a5790dfa9191d4b4f889e8707e57f1" title="lbann::lbann_comm::\lam_model_master" alt="" coords="486,127,631,165"/>
+</map>

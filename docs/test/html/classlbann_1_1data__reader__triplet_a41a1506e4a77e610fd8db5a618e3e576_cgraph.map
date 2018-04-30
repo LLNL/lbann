@@ -1,0 +1,4 @@
+<map id="lbann::data_reader_triplet::get_image_list" name="lbann::data_reader_triplet::get_image_list">
+<area shape="rect" id="node2" href="$classlbann_1_1offline__patches__npz.html#aa6fa05575f54a29b67d0bba8a2a9d363" title="Return the number of samples. " alt="" coords="407,5,574,44"/>
+<area shape="rect" id="node3" href="$classlbann_1_1offline__patches__npz.html#a9c8ad05ffdf0d44ee1c9b61740dd42e3" title="Reconsturct and return the meta&#45;data (patch file names and the label) of idx&#45;th sample. " alt="" coords="208,33,359,72"/>
+</map>

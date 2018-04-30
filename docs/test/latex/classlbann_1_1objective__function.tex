@@ -1,0 +1,841 @@
+\hypertarget{classlbann_1_1objective__function}{}\section{lbann\+:\+:objective\+\_\+function Class Reference}
+\label{classlbann_1_1objective__function}\index{lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}}
+
+
+{\ttfamily \#include $<$objective\+\_\+function.\+hpp$>$}
+
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1objective__function_a89e96fddff19f13a6d3acafe4394fd65}{objective\+\_\+function} ()
+\item 
+\hyperlink{classlbann_1_1objective__function_a67523a368d2fc31d8be9081139ec0a73}{objective\+\_\+function} (const \hyperlink{classlbann_1_1objective__function}{objective\+\_\+function} \&other)
+\item 
+\hyperlink{classlbann_1_1objective__function}{objective\+\_\+function} \& \hyperlink{classlbann_1_1objective__function_ab0695b92af6dec63912e5ef0cb81b953}{operator=} (const \hyperlink{classlbann_1_1objective__function}{objective\+\_\+function} \&other)
+\item 
+\hyperlink{classlbann_1_1objective__function_a823ebffb8056cb4a9ff0b2af7cf084b4}{$\sim$objective\+\_\+function} ()
+\item 
+\hyperlink{classlbann_1_1objective__function}{objective\+\_\+function} $\ast$ \hyperlink{classlbann_1_1objective__function_a8ab03f0dc1d2c067b895f5859bacd810}{copy} () const
+\item 
+void \hyperlink{classlbann_1_1objective__function_a98ba95d702f542ed99ccbf9e5cdde21d}{add\+\_\+term} (\hyperlink{classlbann_1_1objective__function__term}{objective\+\_\+function\+\_\+term} $\ast$term)
+\item 
+std\+::vector$<$ \hyperlink{classlbann_1_1objective__function__term}{objective\+\_\+function\+\_\+term} $\ast$ $>$ \hyperlink{classlbann_1_1objective__function_a510544e9e511be54a50efd39226de345}{get\+\_\+terms} ()
+\item 
+void \hyperlink{classlbann_1_1objective__function_ac14bb274978e0a5182122fd179579878}{setup} (\hyperlink{classlbann_1_1model}{model} \&m)
+\item 
+void \hyperlink{classlbann_1_1objective__function_a3edb6708894d31ec2a014c6eb8a61df2}{start\+\_\+evaluation} (\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode} mode, int mini\+\_\+batch\+\_\+size)
+\item 
+\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} \hyperlink{classlbann_1_1objective__function_ad35ce9b7daa87d197d00b1762b691a02}{finish\+\_\+evaluation} (\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode} mode, int mini\+\_\+batch\+\_\+size)
+\item 
+void \hyperlink{classlbann_1_1objective__function_ae8b7314bdc12ba52d270b46a35acd138}{differentiate} ()
+\item 
+void \hyperlink{classlbann_1_1objective__function_a7b7f8869bf110846e971fef995db51e1}{compute\+\_\+weight\+\_\+regularization} ()
+\item 
+void \hyperlink{classlbann_1_1objective__function_acf7a6c67e7a45a1fd03684ca897d6324}{reset\+\_\+statistics} ()
+\item 
+void \hyperlink{classlbann_1_1objective__function_a3c564d26d6c75007ae95153cef3b8c02}{reset\+\_\+statistics} (\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode} mode)
+\item 
+\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} \hyperlink{classlbann_1_1objective__function_a0aa271e497363e97ba3741292961d47d}{get\+\_\+mean\+\_\+value} (\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode} mode) const
+\item 
+int \hyperlink{classlbann_1_1objective__function_a19078ce481d321627adfe0151112602e}{get\+\_\+statistics\+\_\+num\+\_\+samples} (\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode} mode) const
+\item 
+std\+::vector$<$ \hyperlink{classlbann_1_1Layer}{Layer} $\ast$ $>$ \hyperlink{classlbann_1_1objective__function_a1055da2236a7faf79c5a2632f8dfc683}{get\+\_\+layer\+\_\+pointers} () const
+\item 
+void \hyperlink{classlbann_1_1objective__function_a0f934e078b55528dd0ec1ec8ad34c73b}{set\+\_\+layer\+\_\+pointers} (std\+::vector$<$ \hyperlink{classlbann_1_1Layer}{Layer} $\ast$$>$ layers)
+\item 
+std\+::vector$<$ \hyperlink{classlbann_1_1weights}{weights} $\ast$ $>$ \hyperlink{classlbann_1_1objective__function_a8e37f76e42f6f341ea3592001b3794e5}{get\+\_\+weights\+\_\+pointers} () const
+\item 
+void \hyperlink{classlbann_1_1objective__function_a9c3211354ca1cee8a7ba219f4e56e03c}{set\+\_\+weights\+\_\+pointers} (std\+::vector$<$ \hyperlink{classlbann_1_1weights}{weights} $\ast$$>$ w)
+\item 
+\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} \hyperlink{classlbann_1_1objective__function_a4a23b4c51fe61584c97a471d28f7b8d7}{get\+\_\+evaluation\+\_\+time} () const
+\item 
+\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} \hyperlink{classlbann_1_1objective__function_af968b6949c170721d04895f1268b03dd}{get\+\_\+differentiation\+\_\+time} () const
+\item 
+void \hyperlink{classlbann_1_1objective__function_a92b248be17049b1d7e82accbd913d6f1}{reset\+\_\+counters} ()
+\item 
+bool \hyperlink{classlbann_1_1objective__function_a5c7de99300ce17535648bfcbc3b97aeb}{save\+\_\+to\+\_\+checkpoint\+\_\+shared} (\hyperlink{classlbann_1_1persist}{lbann\+::persist} \&p)
+\item 
+bool \hyperlink{classlbann_1_1objective__function_a82fec97efbb8c4f68a674d42e0f2faa4}{load\+\_\+from\+\_\+checkpoint\+\_\+shared} (\hyperlink{classlbann_1_1persist}{lbann\+::persist} \&p)
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+std\+::vector$<$ \hyperlink{classlbann_1_1objective__function__term}{objective\+\_\+function\+\_\+term} $\ast$ $>$ \hyperlink{classlbann_1_1objective__function_aea9c1f90ba9af1b1330efa2ba6adb5e2}{m\+\_\+terms}
+\item 
+std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{structlbann_1_1metric__statistics}{metric\+\_\+statistics} $>$ \hyperlink{classlbann_1_1objective__function_ad5daa18c52374a849c6fbd515bcc1eb1}{m\+\_\+statistics}
+\item 
+\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} \hyperlink{classlbann_1_1objective__function_a9ef17c7204cd371261c9c083d86de91a}{m\+\_\+evaluation\+\_\+time} = \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type}(0)
+\item 
+\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} \hyperlink{classlbann_1_1objective__function_ae526559f3a530f540a29407ea64bbea6}{m\+\_\+differentiation\+\_\+time} = \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type}(0)
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Objective function class. 
+
+Definition at line 36 of file objective\+\_\+function.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1objective__function_a89e96fddff19f13a6d3acafe4394fd65}\label{classlbann_1_1objective__function_a89e96fddff19f13a6d3acafe4394fd65}} 
+\index{lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}!objective\+\_\+function@{objective\+\_\+function}}
+\index{objective\+\_\+function@{objective\+\_\+function}!lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}}
+\subsubsection{\texorpdfstring{objective\+\_\+function()}{objective\_function()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::objective\+\_\+function\+::objective\+\_\+function (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Default constructor. 
+
+Definition at line 40 of file objective\+\_\+function.\+hpp.
+
+
+\begin{DoxyCode}
+40 \{\}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1objective__function_a89e96fddff19f13a6d3acafe4394fd65_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1objective__function_a89e96fddff19f13a6d3acafe4394fd65_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1objective__function_a67523a368d2fc31d8be9081139ec0a73}\label{classlbann_1_1objective__function_a67523a368d2fc31d8be9081139ec0a73}} 
+\index{lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}!objective\+\_\+function@{objective\+\_\+function}}
+\index{objective\+\_\+function@{objective\+\_\+function}!lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}}
+\subsubsection{\texorpdfstring{objective\+\_\+function()}{objective\_function()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::objective\+\_\+function\+::objective\+\_\+function (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1objective__function}{objective\+\_\+function} \&}]{other }\end{DoxyParamCaption})}
+
+Copy constructor. 
+
+Definition at line 33 of file objective\+\_\+function.\+cpp.
+
+
+\begin{DoxyCode}
+34   : \hyperlink{classlbann_1_1objective__function_ad5daa18c52374a849c6fbd515bcc1eb1}{m\_statistics}(other.m\_statistics),
+35     \hyperlink{classlbann_1_1objective__function_a9ef17c7204cd371261c9c083d86de91a}{m\_evaluation\_time}(other.m\_evaluation\_time),
+36     \hyperlink{classlbann_1_1objective__function_ae526559f3a530f540a29407ea64bbea6}{m\_differentiation\_time}(other.m\_differentiation\_time) \{
+37   \hyperlink{classlbann_1_1objective__function_aea9c1f90ba9af1b1330efa2ba6adb5e2}{m\_terms} = other.m\_terms;
+38   \textcolor{keywordflow}{for} (\textcolor{keyword}{auto}& term : \hyperlink{classlbann_1_1objective__function_aea9c1f90ba9af1b1330efa2ba6adb5e2}{m\_terms}) \{
+39     term = term->copy();
+40   \}
+41 \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1objective__function_a823ebffb8056cb4a9ff0b2af7cf084b4}\label{classlbann_1_1objective__function_a823ebffb8056cb4a9ff0b2af7cf084b4}} 
+\index{lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}!````~objective\+\_\+function@{$\sim$objective\+\_\+function}}
+\index{````~objective\+\_\+function@{$\sim$objective\+\_\+function}!lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}}
+\subsubsection{\texorpdfstring{$\sim$objective\+\_\+function()}{~objective\_function()}}
+{\footnotesize\ttfamily lbann\+::objective\+\_\+function\+::$\sim$objective\+\_\+function (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+Destructor. 
+
+Definition at line 57 of file objective\+\_\+function.\+cpp.
+
+
+\begin{DoxyCode}
+57                                         \{
+58   \textcolor{keywordflow}{for} (\textcolor{keyword}{const} \textcolor{keyword}{auto}& term : \hyperlink{classlbann_1_1objective__function_aea9c1f90ba9af1b1330efa2ba6adb5e2}{m\_terms}) \{
+59     \textcolor{keywordflow}{if} (term != \textcolor{keyword}{nullptr}) \{ \textcolor{keyword}{delete} term; \}
+60   \}
+61 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1objective__function_a823ebffb8056cb4a9ff0b2af7cf084b4_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1objective__function_a98ba95d702f542ed99ccbf9e5cdde21d}\label{classlbann_1_1objective__function_a98ba95d702f542ed99ccbf9e5cdde21d}} 
+\index{lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}!add\+\_\+term@{add\+\_\+term}}
+\index{add\+\_\+term@{add\+\_\+term}!lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}}
+\subsubsection{\texorpdfstring{add\+\_\+term()}{add\_term()}}
+{\footnotesize\ttfamily void lbann\+::objective\+\_\+function\+::add\+\_\+term (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1objective__function__term}{objective\+\_\+function\+\_\+term} $\ast$}]{term }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Add a term to the objective function. The objective function takes ownership of the objective function term and deallocates it during destruction. 
+
+Definition at line 55 of file objective\+\_\+function.\+hpp.
+
+
+\begin{DoxyCode}
+55 \{ \hyperlink{classlbann_1_1objective__function_aea9c1f90ba9af1b1330efa2ba6adb5e2}{m\_terms}.push\_back(term); \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1objective__function_a98ba95d702f542ed99ccbf9e5cdde21d_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1objective__function_a7b7f8869bf110846e971fef995db51e1}\label{classlbann_1_1objective__function_a7b7f8869bf110846e971fef995db51e1}} 
+\index{lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}!compute\+\_\+weight\+\_\+regularization@{compute\+\_\+weight\+\_\+regularization}}
+\index{compute\+\_\+weight\+\_\+regularization@{compute\+\_\+weight\+\_\+regularization}!lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}}
+\subsubsection{\texorpdfstring{compute\+\_\+weight\+\_\+regularization()}{compute\_weight\_regularization()}}
+{\footnotesize\ttfamily void lbann\+::objective\+\_\+function\+::compute\+\_\+weight\+\_\+regularization (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+Compute the gradient of the weight regularization term. The gradient is computed w.\+r.\+t. the weights. 
+
+Definition at line 105 of file objective\+\_\+function.\+cpp.
+
+
+\begin{DoxyCode}
+105                                                        \{
+106   \textcolor{keyword}{const} \textcolor{keyword}{auto} start\_time = \hyperlink{namespacelbann_a478d36031ff0659893c4322cd856157f}{get\_time}();
+107   \textcolor{keywordflow}{for} (\textcolor{keyword}{const} \textcolor{keyword}{auto}& term : \hyperlink{classlbann_1_1objective__function_aea9c1f90ba9af1b1330efa2ba6adb5e2}{m\_terms}) \{
+108     term->compute\_weight\_regularization();
+109   \}
+110   \hyperlink{classlbann_1_1objective__function_ae526559f3a530f540a29407ea64bbea6}{m\_differentiation\_time} += \hyperlink{namespacelbann_a478d36031ff0659893c4322cd856157f}{get\_time}() - start\_time;
+111 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1objective__function_a7b7f8869bf110846e971fef995db51e1_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1objective__function_a7b7f8869bf110846e971fef995db51e1_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1objective__function_a8ab03f0dc1d2c067b895f5859bacd810}\label{classlbann_1_1objective__function_a8ab03f0dc1d2c067b895f5859bacd810}} 
+\index{lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}!copy@{copy}}
+\index{copy@{copy}!lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1objective__function}{objective\+\_\+function}$\ast$ lbann\+::objective\+\_\+function\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Copy function. 
+
+Definition at line 49 of file objective\+\_\+function.\+hpp.
+
+
+\begin{DoxyCode}
+49 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1objective__function_a89e96fddff19f13a6d3acafe4394fd65}{objective\_function}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1objective__function_a8ab03f0dc1d2c067b895f5859bacd810_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1objective__function_a8ab03f0dc1d2c067b895f5859bacd810_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1objective__function_ae8b7314bdc12ba52d270b46a35acd138}\label{classlbann_1_1objective__function_ae8b7314bdc12ba52d270b46a35acd138}} 
+\index{lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}!differentiate@{differentiate}}
+\index{differentiate@{differentiate}!lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}}
+\subsubsection{\texorpdfstring{differentiate()}{differentiate()}}
+{\footnotesize\ttfamily void lbann\+::objective\+\_\+function\+::differentiate (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+Compute the objective function gradient. The gradient is with respect to the objective function inputs 
+
+Definition at line 97 of file objective\+\_\+function.\+cpp.
+
+
+\begin{DoxyCode}
+97                                        \{
+98   \textcolor{keyword}{const} \textcolor{keyword}{auto} start\_time = \hyperlink{namespacelbann_a478d36031ff0659893c4322cd856157f}{get\_time}();
+99   \textcolor{keywordflow}{for} (\textcolor{keyword}{const} \textcolor{keyword}{auto}& term : \hyperlink{classlbann_1_1objective__function_aea9c1f90ba9af1b1330efa2ba6adb5e2}{m\_terms}) \{
+100     term->differentiate();
+101   \}
+102   \hyperlink{classlbann_1_1objective__function_ae526559f3a530f540a29407ea64bbea6}{m\_differentiation\_time} += \hyperlink{namespacelbann_a478d36031ff0659893c4322cd856157f}{get\_time}() - start\_time;
+103 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=326pt]{classlbann_1_1objective__function_ae8b7314bdc12ba52d270b46a35acd138_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1objective__function_ae8b7314bdc12ba52d270b46a35acd138_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1objective__function_ad35ce9b7daa87d197d00b1762b691a02}\label{classlbann_1_1objective__function_ad35ce9b7daa87d197d00b1762b691a02}} 
+\index{lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}!finish\+\_\+evaluation@{finish\+\_\+evaluation}}
+\index{finish\+\_\+evaluation@{finish\+\_\+evaluation}!lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}}
+\subsubsection{\texorpdfstring{finish\+\_\+evaluation()}{finish\_evaluation()}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} lbann\+::objective\+\_\+function\+::finish\+\_\+evaluation (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}}]{mode,  }\item[{int}]{mini\+\_\+batch\+\_\+size }\end{DoxyParamCaption})}
+
+Complete evaluation of the objective function. The result is stored in history. 
+
+Definition at line 84 of file objective\+\_\+function.\+cpp.
+
+
+\begin{DoxyCode}
+85                                                                     \{
+86   \textcolor{keyword}{const} \textcolor{keyword}{auto} start\_time = \hyperlink{namespacelbann_a478d36031ff0659893c4322cd856157f}{get\_time}();
+87   \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType} value = \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType}(0);
+88   \textcolor{keywordflow}{for} (\textcolor{keyword}{const} \textcolor{keyword}{auto}& term : \hyperlink{classlbann_1_1objective__function_aea9c1f90ba9af1b1330efa2ba6adb5e2}{m\_terms}) \{
+89     value += term->finish\_evaluation();
+90   \}
+91   \hyperlink{classlbann_1_1objective__function_ad5daa18c52374a849c6fbd515bcc1eb1}{m\_statistics}[mode].add\_value(mini\_batch\_size * value,
+92                                mini\_batch\_size);
+93   \hyperlink{classlbann_1_1objective__function_a9ef17c7204cd371261c9c083d86de91a}{m\_evaluation\_time} += \hyperlink{namespacelbann_a478d36031ff0659893c4322cd856157f}{get\_time}() - start\_time;
+94   \textcolor{keywordflow}{return} value;
+95 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=326pt]{classlbann_1_1objective__function_ad35ce9b7daa87d197d00b1762b691a02_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1objective__function_ad35ce9b7daa87d197d00b1762b691a02_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1objective__function_af968b6949c170721d04895f1268b03dd}\label{classlbann_1_1objective__function_af968b6949c170721d04895f1268b03dd}} 
+\index{lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}!get\+\_\+differentiation\+\_\+time@{get\+\_\+differentiation\+\_\+time}}
+\index{get\+\_\+differentiation\+\_\+time@{get\+\_\+differentiation\+\_\+time}!lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}}
+\subsubsection{\texorpdfstring{get\+\_\+differentiation\+\_\+time()}{get\_differentiation\_time()}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} lbann\+::objective\+\_\+function\+::get\+\_\+differentiation\+\_\+time (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Get the time spent computing the objective function gradient. 
+
+Definition at line 111 of file objective\+\_\+function.\+hpp.
+
+
+\begin{DoxyCode}
+111 \{ \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1objective__function_ae526559f3a530f540a29407ea64bbea6}{m\_differentiation\_time}; \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1objective__function_af968b6949c170721d04895f1268b03dd_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1objective__function_a4a23b4c51fe61584c97a471d28f7b8d7}\label{classlbann_1_1objective__function_a4a23b4c51fe61584c97a471d28f7b8d7}} 
+\index{lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}!get\+\_\+evaluation\+\_\+time@{get\+\_\+evaluation\+\_\+time}}
+\index{get\+\_\+evaluation\+\_\+time@{get\+\_\+evaluation\+\_\+time}!lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}}
+\subsubsection{\texorpdfstring{get\+\_\+evaluation\+\_\+time()}{get\_evaluation\_time()}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} lbann\+::objective\+\_\+function\+::get\+\_\+evaluation\+\_\+time (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Get the time spent evaluating the objective function. 
+
+Definition at line 109 of file objective\+\_\+function.\+hpp.
+
+
+\begin{DoxyCode}
+109 \{ \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1objective__function_a9ef17c7204cd371261c9c083d86de91a}{m\_evaluation\_time}; \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1objective__function_a4a23b4c51fe61584c97a471d28f7b8d7_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1objective__function_a1055da2236a7faf79c5a2632f8dfc683}\label{classlbann_1_1objective__function_a1055da2236a7faf79c5a2632f8dfc683}} 
+\index{lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}!get\+\_\+layer\+\_\+pointers@{get\+\_\+layer\+\_\+pointers}}
+\index{get\+\_\+layer\+\_\+pointers@{get\+\_\+layer\+\_\+pointers}!lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}}
+\subsubsection{\texorpdfstring{get\+\_\+layer\+\_\+pointers()}{get\_layer\_pointers()}}
+{\footnotesize\ttfamily std\+::vector$<$ \hyperlink{classlbann_1_1Layer}{Layer} $\ast$ $>$ lbann\+::objective\+\_\+function\+::get\+\_\+layer\+\_\+pointers (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const}
+
+Get list of pointers to layers. 
+
+Definition at line 132 of file objective\+\_\+function.\+cpp.
+
+
+\begin{DoxyCode}
+132                                                                \{
+133   std::vector<Layer*> layers;
+134   \textcolor{keywordflow}{for} (objective\_function\_term *term : \hyperlink{classlbann_1_1objective__function_aea9c1f90ba9af1b1330efa2ba6adb5e2}{m\_terms}) \{
+135     std::vector<Layer*> term\_layers = term->get\_layer\_pointers();
+136     layers.insert(layers.end(), term\_layers.begin(), term\_layers.end());
+137   \}
+138   \textcolor{keywordflow}{return} layers;
+139 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1objective__function_a1055da2236a7faf79c5a2632f8dfc683_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1objective__function_a0aa271e497363e97ba3741292961d47d}\label{classlbann_1_1objective__function_a0aa271e497363e97ba3741292961d47d}} 
+\index{lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}!get\+\_\+mean\+\_\+value@{get\+\_\+mean\+\_\+value}}
+\index{get\+\_\+mean\+\_\+value@{get\+\_\+mean\+\_\+value}!lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}}
+\subsubsection{\texorpdfstring{get\+\_\+mean\+\_\+value()}{get\_mean\_value()}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} lbann\+::objective\+\_\+function\+::get\+\_\+mean\+\_\+value (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}}]{mode }\end{DoxyParamCaption}) const}
+
+Get mean objective function value. This is a weighted average such that each mini-\/batch sample makes an equal contribution. 
+
+Definition at line 113 of file objective\+\_\+function.\+cpp.
+
+
+\begin{DoxyCode}
+113                                                                      \{
+114   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1objective__function_ad5daa18c52374a849c6fbd515bcc1eb1}{m\_statistics}.count(mode) == 0
+115       || \hyperlink{classlbann_1_1objective__function_ad5daa18c52374a849c6fbd515bcc1eb1}{m\_statistics}.at(mode).get\_num\_samples() == 0) \{
+116     std::stringstream err;
+117     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+118         << \textcolor{stringliteral}{"attempted to get mean objective function value with no samples for statistics"};
+119     \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+120   \}
+121   \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1objective__function_ad5daa18c52374a849c6fbd515bcc1eb1}{m\_statistics}.at(mode).get\_mean();
+122 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1objective__function_a0aa271e497363e97ba3741292961d47d_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1objective__function_a19078ce481d321627adfe0151112602e}\label{classlbann_1_1objective__function_a19078ce481d321627adfe0151112602e}} 
+\index{lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}!get\+\_\+statistics\+\_\+num\+\_\+samples@{get\+\_\+statistics\+\_\+num\+\_\+samples}}
+\index{get\+\_\+statistics\+\_\+num\+\_\+samples@{get\+\_\+statistics\+\_\+num\+\_\+samples}!lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}}
+\subsubsection{\texorpdfstring{get\+\_\+statistics\+\_\+num\+\_\+samples()}{get\_statistics\_num\_samples()}}
+{\footnotesize\ttfamily int lbann\+::objective\+\_\+function\+::get\+\_\+statistics\+\_\+num\+\_\+samples (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}}]{mode }\end{DoxyParamCaption}) const}
+
+Get number of samples for statistics. 
+
+Definition at line 124 of file objective\+\_\+function.\+cpp.
+
+
+\begin{DoxyCode}
+124                                                                             \{
+125   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1objective__function_ad5daa18c52374a849c6fbd515bcc1eb1}{m\_statistics}.count(mode) == 0) \{
+126     \textcolor{keywordflow}{return} 0;
+127   \} \textcolor{keywordflow}{else} \{
+128     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1objective__function_ad5daa18c52374a849c6fbd515bcc1eb1}{m\_statistics}.at(mode).get\_num\_samples();
+129   \}
+130 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1objective__function_a19078ce481d321627adfe0151112602e_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1objective__function_a510544e9e511be54a50efd39226de345}\label{classlbann_1_1objective__function_a510544e9e511be54a50efd39226de345}} 
+\index{lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}!get\+\_\+terms@{get\+\_\+terms}}
+\index{get\+\_\+terms@{get\+\_\+terms}!lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}}
+\subsubsection{\texorpdfstring{get\+\_\+terms()}{get\_terms()}}
+{\footnotesize\ttfamily std\+::vector$<$\hyperlink{classlbann_1_1objective__function__term}{objective\+\_\+function\+\_\+term}$\ast$$>$ lbann\+::objective\+\_\+function\+::get\+\_\+terms (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Get list of objective function terms. 
+
+Definition at line 57 of file objective\+\_\+function.\+hpp.
+
+
+\begin{DoxyCode}
+57 \{ \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1objective__function_aea9c1f90ba9af1b1330efa2ba6adb5e2}{m\_terms}; \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1objective__function_a510544e9e511be54a50efd39226de345_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1objective__function_a510544e9e511be54a50efd39226de345_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1objective__function_a8e37f76e42f6f341ea3592001b3794e5}\label{classlbann_1_1objective__function_a8e37f76e42f6f341ea3592001b3794e5}} 
+\index{lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}!get\+\_\+weights\+\_\+pointers@{get\+\_\+weights\+\_\+pointers}}
+\index{get\+\_\+weights\+\_\+pointers@{get\+\_\+weights\+\_\+pointers}!lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}}
+\subsubsection{\texorpdfstring{get\+\_\+weights\+\_\+pointers()}{get\_weights\_pointers()}}
+{\footnotesize\ttfamily std\+::vector$<$ \hyperlink{classlbann_1_1weights}{weights} $\ast$ $>$ lbann\+::objective\+\_\+function\+::get\+\_\+weights\+\_\+pointers (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const}
+
+Get list of pointers to weights. 
+
+Definition at line 159 of file objective\+\_\+function.\+cpp.
+
+
+\begin{DoxyCode}
+159                                                                    \{
+160   std::vector<weights*> w;
+161   \textcolor{keywordflow}{for} (objective\_function\_term *term : \hyperlink{classlbann_1_1objective__function_aea9c1f90ba9af1b1330efa2ba6adb5e2}{m\_terms}) \{
+162     std::vector<weights*> term\_weights = term->get\_weights\_pointers();
+163     w.insert(w.end(), term\_weights.begin(), term\_weights.end());
+164   \}
+165   \textcolor{keywordflow}{return} w;
+166 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1objective__function_a8e37f76e42f6f341ea3592001b3794e5_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1objective__function_a82fec97efbb8c4f68a674d42e0f2faa4}\label{classlbann_1_1objective__function_a82fec97efbb8c4f68a674d42e0f2faa4}} 
+\index{lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}!load\+\_\+from\+\_\+checkpoint\+\_\+shared@{load\+\_\+from\+\_\+checkpoint\+\_\+shared}}
+\index{load\+\_\+from\+\_\+checkpoint\+\_\+shared@{load\+\_\+from\+\_\+checkpoint\+\_\+shared}!lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}}
+\subsubsection{\texorpdfstring{load\+\_\+from\+\_\+checkpoint\+\_\+shared()}{load\_from\_checkpoint\_shared()}}
+{\footnotesize\ttfamily bool lbann\+::objective\+\_\+function\+::load\+\_\+from\+\_\+checkpoint\+\_\+shared (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1persist}{lbann\+::persist} \&}]{p }\end{DoxyParamCaption})}
+
+
+
+Definition at line 193 of file objective\+\_\+function.\+cpp.
+
+
+\begin{DoxyCode}
+193                                                                     \{
+194   \textcolor{keywordflow}{for} (objective\_function\_term *term : \hyperlink{classlbann_1_1objective__function_aea9c1f90ba9af1b1330efa2ba6adb5e2}{m\_terms}) \{
+195     term->load\_from\_checkpoint\_shared(p);
+196   \}
+197   \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+198 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1objective__function_a82fec97efbb8c4f68a674d42e0f2faa4_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1objective__function_ab0695b92af6dec63912e5ef0cb81b953}\label{classlbann_1_1objective__function_ab0695b92af6dec63912e5ef0cb81b953}} 
+\index{lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1objective__function}{objective\+\_\+function} \& lbann\+::objective\+\_\+function\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1objective__function}{objective\+\_\+function} \&}]{other }\end{DoxyParamCaption})}
+
+Copy assignment operator. 
+
+Definition at line 43 of file objective\+\_\+function.\+cpp.
+
+
+\begin{DoxyCode}
+43                                                                                  \{
+44   \textcolor{keywordflow}{for} (\textcolor{keyword}{const} \textcolor{keyword}{auto}& term : \hyperlink{classlbann_1_1objective__function_aea9c1f90ba9af1b1330efa2ba6adb5e2}{m\_terms}) \{
+45     \textcolor{keywordflow}{if} (term != \textcolor{keyword}{nullptr}) \{ \textcolor{keyword}{delete} term; \}
+46   \}
+47   m\_terms = other.m\_terms;
+48   \textcolor{keywordflow}{for} (\textcolor{keyword}{auto}& term : m\_terms) \{
+49     term = term->copy();
+50   \}
+51   \hyperlink{classlbann_1_1objective__function_ad5daa18c52374a849c6fbd515bcc1eb1}{m\_statistics} = other.m\_statistics;
+52   \hyperlink{classlbann_1_1objective__function_a9ef17c7204cd371261c9c083d86de91a}{m\_evaluation\_time} = other.m\_evaluation\_time;
+53   \hyperlink{classlbann_1_1objective__function_ae526559f3a530f540a29407ea64bbea6}{m\_differentiation\_time} = other.m\_differentiation\_time;
+54   \textcolor{keywordflow}{return} *\textcolor{keyword}{this};
+55 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1objective__function_ab0695b92af6dec63912e5ef0cb81b953_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1objective__function_a92b248be17049b1d7e82accbd913d6f1}\label{classlbann_1_1objective__function_a92b248be17049b1d7e82accbd913d6f1}} 
+\index{lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}!reset\+\_\+counters@{reset\+\_\+counters}}
+\index{reset\+\_\+counters@{reset\+\_\+counters}!lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}}
+\subsubsection{\texorpdfstring{reset\+\_\+counters()}{reset\_counters()}}
+{\footnotesize\ttfamily void lbann\+::objective\+\_\+function\+::reset\+\_\+counters (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Reset time counters. 
+
+Definition at line 113 of file objective\+\_\+function.\+hpp.
+
+
+\begin{DoxyCode}
+113                         \{
+114     \hyperlink{classlbann_1_1objective__function_a9ef17c7204cd371261c9c083d86de91a}{m\_evaluation\_time} = 0.0;
+115     \hyperlink{classlbann_1_1objective__function_ae526559f3a530f540a29407ea64bbea6}{m\_differentiation\_time} = 0.0;
+116   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1objective__function_a92b248be17049b1d7e82accbd913d6f1_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1objective__function_a92b248be17049b1d7e82accbd913d6f1_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1objective__function_acf7a6c67e7a45a1fd03684ca897d6324}\label{classlbann_1_1objective__function_acf7a6c67e7a45a1fd03684ca897d6324}} 
+\index{lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}!reset\+\_\+statistics@{reset\+\_\+statistics}}
+\index{reset\+\_\+statistics@{reset\+\_\+statistics}!lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}}
+\subsubsection{\texorpdfstring{reset\+\_\+statistics()}{reset\_statistics()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily void lbann\+::objective\+\_\+function\+::reset\+\_\+statistics (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Clear all statistics. 
+
+Definition at line 87 of file objective\+\_\+function.\+hpp.
+
+
+\begin{DoxyCode}
+87 \{ \hyperlink{classlbann_1_1objective__function_ad5daa18c52374a849c6fbd515bcc1eb1}{m\_statistics}.clear(); \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1objective__function_acf7a6c67e7a45a1fd03684ca897d6324_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1objective__function_a3c564d26d6c75007ae95153cef3b8c02}\label{classlbann_1_1objective__function_a3c564d26d6c75007ae95153cef3b8c02}} 
+\index{lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}!reset\+\_\+statistics@{reset\+\_\+statistics}}
+\index{reset\+\_\+statistics@{reset\+\_\+statistics}!lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}}
+\subsubsection{\texorpdfstring{reset\+\_\+statistics()}{reset\_statistics()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily void lbann\+::objective\+\_\+function\+::reset\+\_\+statistics (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}}]{mode }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Clear statistics for an execution mode. 
+
+Definition at line 89 of file objective\+\_\+function.\+hpp.
+
+
+\begin{DoxyCode}
+89 \{ \hyperlink{classlbann_1_1objective__function_ad5daa18c52374a849c6fbd515bcc1eb1}{m\_statistics}.erase(mode); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1objective__function_a3c564d26d6c75007ae95153cef3b8c02_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1objective__function_a5c7de99300ce17535648bfcbc3b97aeb}\label{classlbann_1_1objective__function_a5c7de99300ce17535648bfcbc3b97aeb}} 
+\index{lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}!save\+\_\+to\+\_\+checkpoint\+\_\+shared@{save\+\_\+to\+\_\+checkpoint\+\_\+shared}}
+\index{save\+\_\+to\+\_\+checkpoint\+\_\+shared@{save\+\_\+to\+\_\+checkpoint\+\_\+shared}!lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}}
+\subsubsection{\texorpdfstring{save\+\_\+to\+\_\+checkpoint\+\_\+shared()}{save\_to\_checkpoint\_shared()}}
+{\footnotesize\ttfamily bool lbann\+::objective\+\_\+function\+::save\+\_\+to\+\_\+checkpoint\+\_\+shared (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1persist}{lbann\+::persist} \&}]{p }\end{DoxyParamCaption})}
+
+
+
+Definition at line 186 of file objective\+\_\+function.\+cpp.
+
+
+\begin{DoxyCode}
+186                                                                   \{
+187   \textcolor{keywordflow}{for} (objective\_function\_term *term : \hyperlink{classlbann_1_1objective__function_aea9c1f90ba9af1b1330efa2ba6adb5e2}{m\_terms}) \{
+188     term->save\_to\_checkpoint\_shared(p);
+189   \}
+190   \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+191 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1objective__function_a5c7de99300ce17535648bfcbc3b97aeb_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1objective__function_a0f934e078b55528dd0ec1ec8ad34c73b}\label{classlbann_1_1objective__function_a0f934e078b55528dd0ec1ec8ad34c73b}} 
+\index{lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}!set\+\_\+layer\+\_\+pointers@{set\+\_\+layer\+\_\+pointers}}
+\index{set\+\_\+layer\+\_\+pointers@{set\+\_\+layer\+\_\+pointers}!lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}}
+\subsubsection{\texorpdfstring{set\+\_\+layer\+\_\+pointers()}{set\_layer\_pointers()}}
+{\footnotesize\ttfamily void lbann\+::objective\+\_\+function\+::set\+\_\+layer\+\_\+pointers (\begin{DoxyParamCaption}\item[{std\+::vector$<$ \hyperlink{classlbann_1_1Layer}{Layer} $\ast$$>$}]{layers }\end{DoxyParamCaption})}
+
+Set list of pointers to layers. 
+
+Definition at line 141 of file objective\+\_\+function.\+cpp.
+
+
+\begin{DoxyCode}
+141                                                                     \{
+142   \textcolor{keyword}{auto} it = layers.begin();
+143   \textcolor{keywordflow}{for} (objective\_function\_term *term : \hyperlink{classlbann_1_1objective__function_aea9c1f90ba9af1b1330efa2ba6adb5e2}{m\_terms}) \{
+144     \textcolor{keyword}{const} \textcolor{keywordtype}{size\_t} num\_layers = term->get\_layer\_pointers().size();
+145     std::vector<Layer*> term\_layers(it, it + num\_layers);
+146     term->set\_layer\_pointers(term\_layers);
+147     it += num\_layers;
+148   \}
+149   \textcolor{keywordflow}{if} (it != layers.end()) \{
+150     std::stringstream err;
+151     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+152         << \textcolor{stringliteral}{"attempted to set an invalid number of layer pointers "}
+153         << \textcolor{stringliteral}{"(expected "} << it - layers.begin() << \textcolor{stringliteral}{", "}
+154         << \textcolor{stringliteral}{"found "} << layers.size() << \textcolor{stringliteral}{")"};
+155     \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+156   \}
+157 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1objective__function_a0f934e078b55528dd0ec1ec8ad34c73b_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1objective__function_a9c3211354ca1cee8a7ba219f4e56e03c}\label{classlbann_1_1objective__function_a9c3211354ca1cee8a7ba219f4e56e03c}} 
+\index{lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}!set\+\_\+weights\+\_\+pointers@{set\+\_\+weights\+\_\+pointers}}
+\index{set\+\_\+weights\+\_\+pointers@{set\+\_\+weights\+\_\+pointers}!lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}}
+\subsubsection{\texorpdfstring{set\+\_\+weights\+\_\+pointers()}{set\_weights\_pointers()}}
+{\footnotesize\ttfamily void lbann\+::objective\+\_\+function\+::set\+\_\+weights\+\_\+pointers (\begin{DoxyParamCaption}\item[{std\+::vector$<$ \hyperlink{classlbann_1_1weights}{weights} $\ast$$>$}]{w }\end{DoxyParamCaption})}
+
+Set list of pointers to weights. 
+
+Definition at line 168 of file objective\+\_\+function.\+cpp.
+
+
+\begin{DoxyCode}
+168                                                                    \{
+169   \textcolor{keyword}{auto} it = w.begin();
+170   \textcolor{keywordflow}{for} (objective\_function\_term *term : \hyperlink{classlbann_1_1objective__function_aea9c1f90ba9af1b1330efa2ba6adb5e2}{m\_terms}) \{
+171     \textcolor{keyword}{const} \textcolor{keywordtype}{size\_t} num\_weights = term->get\_weights\_pointers().size();
+172     std::vector<weights*> term\_weights(it, it + num\_weights);
+173     term->set\_weights\_pointers(term\_weights);
+174     it += num\_weights;
+175   \}
+176   \textcolor{keywordflow}{if} (it != w.end()) \{
+177     std::stringstream err;
+178     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+179         << \textcolor{stringliteral}{"attempted to set an invalid number of weights pointers "}
+180         << \textcolor{stringliteral}{"(expected "} << it - w.begin() << \textcolor{stringliteral}{", "}
+181         << \textcolor{stringliteral}{"found "} << w.size() << \textcolor{stringliteral}{")"};
+182     \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+183   \}
+184 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1objective__function_a9c3211354ca1cee8a7ba219f4e56e03c_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1objective__function_ac14bb274978e0a5182122fd179579878}\label{classlbann_1_1objective__function_ac14bb274978e0a5182122fd179579878}} 
+\index{lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}!setup@{setup}}
+\index{setup@{setup}!lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}}
+\subsubsection{\texorpdfstring{setup()}{setup()}}
+{\footnotesize\ttfamily void lbann\+::objective\+\_\+function\+::setup (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} \&}]{m }\end{DoxyParamCaption})}
+
+Setup objective function. 
+
+Definition at line 63 of file objective\+\_\+function.\+cpp.
+
+
+\begin{DoxyCode}
+63                                        \{
+64   \textcolor{keywordflow}{for} (objective\_function\_term *term : \hyperlink{classlbann_1_1objective__function_aea9c1f90ba9af1b1330efa2ba6adb5e2}{m\_terms}) \{
+65     \textcolor{keywordflow}{if} (term == \textcolor{keyword}{nullptr}) \{
+66       std::stringstream err;
+67       err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+68           << \textcolor{stringliteral}{"a term in the objective function is a null pointer"};
+69       \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+70     \}
+71     term->setup(m);
+72   \}
+73 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1objective__function_ac14bb274978e0a5182122fd179579878_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1objective__function_a3edb6708894d31ec2a014c6eb8a61df2}\label{classlbann_1_1objective__function_a3edb6708894d31ec2a014c6eb8a61df2}} 
+\index{lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}!start\+\_\+evaluation@{start\+\_\+evaluation}}
+\index{start\+\_\+evaluation@{start\+\_\+evaluation}!lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}}
+\subsubsection{\texorpdfstring{start\+\_\+evaluation()}{start\_evaluation()}}
+{\footnotesize\ttfamily void lbann\+::objective\+\_\+function\+::start\+\_\+evaluation (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}}]{mode,  }\item[{int}]{mini\+\_\+batch\+\_\+size }\end{DoxyParamCaption})}
+
+Start evaluating the objective function. This function takes the model\textquotesingle{}s current mini-\/batch size. If multiple models are being trained, the current mini-\/batch size may be different from the effective mini-\/batch size. The result is not guaranteed to be available until finish\+\_\+evaluation is called. 
+
+Definition at line 75 of file objective\+\_\+function.\+cpp.
+
+
+\begin{DoxyCode}
+76                                                                \{
+77   \textcolor{keyword}{const} \textcolor{keyword}{auto} start\_time = \hyperlink{namespacelbann_a478d36031ff0659893c4322cd856157f}{get\_time}();
+78   \textcolor{keywordflow}{for} (\textcolor{keyword}{const} \textcolor{keyword}{auto}& term : \hyperlink{classlbann_1_1objective__function_aea9c1f90ba9af1b1330efa2ba6adb5e2}{m\_terms}) \{
+79     term->start\_evaluation();
+80   \}
+81   \hyperlink{classlbann_1_1objective__function_a9ef17c7204cd371261c9c083d86de91a}{m\_evaluation\_time} += \hyperlink{namespacelbann_a478d36031ff0659893c4322cd856157f}{get\_time}() - start\_time;
+82 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=326pt]{classlbann_1_1objective__function_a3edb6708894d31ec2a014c6eb8a61df2_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1objective__function_a3edb6708894d31ec2a014c6eb8a61df2_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1objective__function_ae526559f3a530f540a29407ea64bbea6}\label{classlbann_1_1objective__function_ae526559f3a530f540a29407ea64bbea6}} 
+\index{lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}!m\+\_\+differentiation\+\_\+time@{m\+\_\+differentiation\+\_\+time}}
+\index{m\+\_\+differentiation\+\_\+time@{m\+\_\+differentiation\+\_\+time}!lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}}
+\subsubsection{\texorpdfstring{m\+\_\+differentiation\+\_\+time}{m\_differentiation\_time}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} lbann\+::objective\+\_\+function\+::m\+\_\+differentiation\+\_\+time = \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type}(0)\hspace{0.3cm}{\ttfamily [private]}}
+
+Time spent computing the objective function gradient. 
+
+Definition at line 145 of file objective\+\_\+function.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1objective__function_a9ef17c7204cd371261c9c083d86de91a}\label{classlbann_1_1objective__function_a9ef17c7204cd371261c9c083d86de91a}} 
+\index{lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}!m\+\_\+evaluation\+\_\+time@{m\+\_\+evaluation\+\_\+time}}
+\index{m\+\_\+evaluation\+\_\+time@{m\+\_\+evaluation\+\_\+time}!lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}}
+\subsubsection{\texorpdfstring{m\+\_\+evaluation\+\_\+time}{m\_evaluation\_time}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} lbann\+::objective\+\_\+function\+::m\+\_\+evaluation\+\_\+time = \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type}(0)\hspace{0.3cm}{\ttfamily [private]}}
+
+Time spent evaluating the objective function. 
+
+Definition at line 143 of file objective\+\_\+function.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1objective__function_ad5daa18c52374a849c6fbd515bcc1eb1}\label{classlbann_1_1objective__function_ad5daa18c52374a849c6fbd515bcc1eb1}} 
+\index{lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}!m\+\_\+statistics@{m\+\_\+statistics}}
+\index{m\+\_\+statistics@{m\+\_\+statistics}!lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}}
+\subsubsection{\texorpdfstring{m\+\_\+statistics}{m\_statistics}}
+{\footnotesize\ttfamily std\+::map$<$\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode},\hyperlink{structlbann_1_1metric__statistics}{metric\+\_\+statistics}$>$ lbann\+::objective\+\_\+function\+::m\+\_\+statistics\hspace{0.3cm}{\ttfamily [private]}}
+
+Objective funciton statistics. 
+
+Definition at line 140 of file objective\+\_\+function.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1objective__function_aea9c1f90ba9af1b1330efa2ba6adb5e2}\label{classlbann_1_1objective__function_aea9c1f90ba9af1b1330efa2ba6adb5e2}} 
+\index{lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}!m\+\_\+terms@{m\+\_\+terms}}
+\index{m\+\_\+terms@{m\+\_\+terms}!lbann\+::objective\+\_\+function@{lbann\+::objective\+\_\+function}}
+\subsubsection{\texorpdfstring{m\+\_\+terms}{m\_terms}}
+{\footnotesize\ttfamily std\+::vector$<$\hyperlink{classlbann_1_1objective__function__term}{objective\+\_\+function\+\_\+term}$\ast$$>$ lbann\+::objective\+\_\+function\+::m\+\_\+terms\hspace{0.3cm}{\ttfamily [private]}}
+
+List of objective function terms. 
+
+Definition at line 137 of file objective\+\_\+function.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/objective\+\_\+functions/\hyperlink{objective__function_8hpp}{objective\+\_\+function.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/objective\+\_\+functions/\hyperlink{objective__function_8cpp}{objective\+\_\+function.\+cpp}\end{DoxyCompactItemize}

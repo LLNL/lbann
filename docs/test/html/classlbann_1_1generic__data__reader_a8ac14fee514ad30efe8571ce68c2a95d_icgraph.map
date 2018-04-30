@@ -1,0 +1,5 @@
+<map id="lbann::generic_data_reader::set_reset_mini_batch_index" name="lbann::generic_data_reader::set_reset_mini_batch_index">
+<area shape="rect" id="node2" href="$classlbann_1_1distributed__io__buffer.html#af63a8b162ed869393c5b604c5913c631" title="lbann::distributed\l_io_buffer::calculate\l_num_iterations_per_epoch" alt="" coords="215,57,401,109"/>
+<area shape="rect" id="node3" href="$classlbann_1_1distributed__io__buffer.html#aa1f5200f9646d38fe3b3adaf39645330" title="lbann::distributed\l_io_buffer::calculate\l_num_iterations_per_epoch\l_spanning_models" alt="" coords="449,5,636,71"/>
+<area shape="rect" id="node4" href="$classlbann_1_1distributed__io__buffer.html#a2a611c36620155646e46e065e040541f" title="lbann::distributed\l_io_buffer::calculate\l_num_iterations_per_epoch\l_single_model" alt="" coords="449,95,636,160"/>
+</map>

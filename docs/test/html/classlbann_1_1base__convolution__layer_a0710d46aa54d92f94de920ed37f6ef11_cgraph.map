@@ -1,0 +1,13 @@
+<map id="lbann::base_convolution_layer::apply_convolution_im2col" name="lbann::base_convolution_layer::apply_convolution_im2col">
+<area shape="rect" id="node2" href="$classlbann_1_1Layer.html#a35397843bb0c84030000c7d872229acb" title="lbann::Layer::get_local\l_prev_activations" alt="" coords="225,47,381,85"/>
+<area shape="rect" id="node4" href="$classlbann_1_1Layer.html#a82827edc5e869960144f3ccb2172bfcd" title="lbann::Layer::get_local\l_prev_error_signals" alt="" coords="225,125,381,164"/>
+<area shape="rect" id="node6" href="$classlbann_1_1Layer.html#a4248f27acebf72b7b7b3ee39c8bcb62a" title="lbann::Layer::get_local\l_activations" alt="" coords="225,196,381,235"/>
+<area shape="rect" id="node8" href="$classlbann_1_1Layer.html#af178d00b9d878aa7d87754bff2a91f3a" title="lbann::Layer::get_local\l_error_signals" alt="" coords="225,267,381,305"/>
+<area shape="rect" id="node10" href="$namespacelbann.html#aa3636a1979e40da2af91f30a12b90db9" title="Rearrange image blocks into matrix columns. " alt="" coords="253,339,353,364"/>
+<area shape="rect" id="node3" href="$classlbann_1_1Layer.html#a45853df73a2e72bfaa774665a0f37ed7" title="lbann::Layer::get_prev\l_activations" alt="" coords="447,29,601,68"/>
+<area shape="rect" id="node5" href="$classlbann_1_1Layer.html#a7ac4579d3c1671dfaf86e3b618d6938a" title="lbann::Layer::get_prev\l_error_signals" alt="" coords="447,116,601,155"/>
+<area shape="rect" id="node7" href="$classlbann_1_1Layer.html#a1134b1a4385af199d7272c5aa827fa99" title="lbann::Layer::get_activations" alt="" coords="429,203,620,228"/>
+<area shape="rect" id="node9" href="$classlbann_1_1Layer.html#adb561e140e0bb601f3c5a8ee053a71d2" title="lbann::Layer::get_error\l_signals" alt="" coords="446,276,602,315"/>
+<area shape="rect" id="node11" href="$namespacelbann.html#a3d099edd7d1b09889e0d2133bb83d5bf" title="Rearrange 1x1 image blocks into matrix columns. " alt="" coords="460,339,589,364"/>
+<area shape="rect" id="node12" href="$namespacelbann.html#adc05d10657be77ccd9a74b1621c416c3" title="Rearrange 2D image blocks into matrix columns. " alt="" coords="463,388,585,413"/>
+</map>

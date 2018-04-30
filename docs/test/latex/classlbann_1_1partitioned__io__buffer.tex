@@ -1,0 +1,688 @@
+\hypertarget{classlbann_1_1partitioned__io__buffer}{}\section{lbann\+:\+:partitioned\+\_\+io\+\_\+buffer Class Reference}
+\label{classlbann_1_1partitioned__io__buffer}\index{lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}}
+
+
+{\ttfamily \#include $<$partitioned\+\_\+io\+\_\+buffer.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:partitioned\+\_\+io\+\_\+buffer\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=203pt]{classlbann_1_1partitioned__io__buffer__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:partitioned\+\_\+io\+\_\+buffer\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1partitioned__io__buffer__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1partitioned__io__buffer_a2dd39b740a3c0ea613cef9540d3c3e5d}{partitioned\+\_\+io\+\_\+buffer} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, int num\+\_\+parallel\+\_\+readers, std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$$>$ data\+\_\+readers)
+\item 
+\hyperlink{classlbann_1_1partitioned__io__buffer_a54a675792e2ae8d2ac4bb044b6209dcd}{partitioned\+\_\+io\+\_\+buffer} (const \hyperlink{classlbann_1_1partitioned__io__buffer}{partitioned\+\_\+io\+\_\+buffer} \&)=default
+\item 
+\hyperlink{classlbann_1_1partitioned__io__buffer}{partitioned\+\_\+io\+\_\+buffer} \& \hyperlink{classlbann_1_1partitioned__io__buffer_a69379e060f2ab7294c55f105f2c8d06c}{operator=} (const \hyperlink{classlbann_1_1partitioned__io__buffer}{partitioned\+\_\+io\+\_\+buffer} \&)=default
+\item 
+\hyperlink{classlbann_1_1partitioned__io__buffer_ada9c5ec93d1b6fbdbb6d4642f0809c1b}{$\sim$partitioned\+\_\+io\+\_\+buffer} () override
+\item 
+\hyperlink{classlbann_1_1partitioned__io__buffer}{partitioned\+\_\+io\+\_\+buffer} $\ast$ \hyperlink{classlbann_1_1partitioned__io__buffer_afce1a8859516dfaa482159806b75c263}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1partitioned__io__buffer_a55120307848cabf8ef12558594b4e9e5}{get\+\_\+type} () const override
+\item 
+void \hyperlink{classlbann_1_1partitioned__io__buffer_a58412c3f37ea3fbcf492f127781c7617}{set\+\_\+local\+\_\+matrix\+\_\+bypass} (\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} $\ast$m) override
+\item 
+void \hyperlink{classlbann_1_1partitioned__io__buffer_aa0a1d61dcecdd5c4091e0a97eb2d075a}{set\+\_\+std\+\_\+matrix\+\_\+view} (El\+::\+Int cur\+\_\+mini\+\_\+batch\+\_\+size) override
+\item 
+void \hyperlink{classlbann_1_1partitioned__io__buffer_a06a204fbf82f092b0225ab10c1bec98e}{setup\+\_\+data} (El\+::\+Int num\+\_\+neurons, El\+::\+Int max\+\_\+minibatch\+\_\+size) override
+\item 
+int \hyperlink{classlbann_1_1partitioned__io__buffer_a777719c9cebe912dc4c005e2c78d77c8}{fetch\+\_\+to\+\_\+local\+\_\+matrix} (\hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$data\+\_\+reader, \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode} mode) override
+\item 
+void \hyperlink{classlbann_1_1partitioned__io__buffer_a906b8b13a8b9a9e8080d4e4d4bba25bc}{distribute\+\_\+from\+\_\+local\+\_\+matrix} (\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&Ms, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$data\+\_\+reader, \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode} mode) override
+\item 
+bool \hyperlink{classlbann_1_1partitioned__io__buffer_a0944161f90eb65286974c3e85155608f}{is\+\_\+data\+\_\+set\+\_\+processed} (\hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$data\+\_\+reader, \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode} mode) override
+\item 
+void \hyperlink{classlbann_1_1partitioned__io__buffer_a50b6e2b7a82927526758f7cfb18a1ded}{calculate\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch\+\_\+spanning\+\_\+models} (int max\+\_\+mini\+\_\+batch\+\_\+size, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$data\+\_\+reader) override
+\item 
+void \hyperlink{classlbann_1_1partitioned__io__buffer_ad707e54827d6e537127341b10407b716}{calculate\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch\+\_\+single\+\_\+model} (int max\+\_\+mini\+\_\+batch\+\_\+size, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$data\+\_\+reader) override
+\item 
+int \hyperlink{classlbann_1_1partitioned__io__buffer_a5048100fb7cdc13908ecba6b4415b977}{compute\+\_\+max\+\_\+num\+\_\+parallel\+\_\+readers} (long data\+\_\+set\+\_\+size, int mini\+\_\+batch\+\_\+size, int requested\+\_\+num\+\_\+parallel\+\_\+readers) const override
+\end{DoxyCompactItemize}
+\subsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} $\ast$ \hyperlink{classlbann_1_1partitioned__io__buffer_a80d8916c269b26e605637353abe322b2}{M\+\_\+local}
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Parallel I/O routines for managing partitioned minibatches 
+
+Definition at line 37 of file partitioned\+\_\+io\+\_\+buffer.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1partitioned__io__buffer_a2dd39b740a3c0ea613cef9540d3c3e5d}\label{classlbann_1_1partitioned__io__buffer_a2dd39b740a3c0ea613cef9540d3c3e5d}} 
+\index{lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}!partitioned\+\_\+io\+\_\+buffer@{partitioned\+\_\+io\+\_\+buffer}}
+\index{partitioned\+\_\+io\+\_\+buffer@{partitioned\+\_\+io\+\_\+buffer}!lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}}
+\subsubsection{\texorpdfstring{partitioned\+\_\+io\+\_\+buffer()}{partitioned\_io\_buffer()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::partitioned\+\_\+io\+\_\+buffer\+::partitioned\+\_\+io\+\_\+buffer (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{int}]{num\+\_\+parallel\+\_\+readers,  }\item[{std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$$>$}]{data\+\_\+readers }\end{DoxyParamCaption})}
+
+
+
+Definition at line 30 of file partitioned\+\_\+io\+\_\+buffer.\+cpp.
+
+
+\begin{DoxyCode}
+31   : \hyperlink{classlbann_1_1generic__io__buffer_a21e2ef867da6fb0fa334d751ae6b692f}{generic\_io\_buffer}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, num\_parallel\_readers, data\_readers),
+32     \hyperlink{classlbann_1_1partitioned__io__buffer_a80d8916c269b26e605637353abe322b2}{M\_local}(\textcolor{keyword}{nullptr}) \{\}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=321pt]{classlbann_1_1partitioned__io__buffer_a2dd39b740a3c0ea613cef9540d3c3e5d_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1partitioned__io__buffer_a54a675792e2ae8d2ac4bb044b6209dcd}\label{classlbann_1_1partitioned__io__buffer_a54a675792e2ae8d2ac4bb044b6209dcd}} 
+\index{lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}!partitioned\+\_\+io\+\_\+buffer@{partitioned\+\_\+io\+\_\+buffer}}
+\index{partitioned\+\_\+io\+\_\+buffer@{partitioned\+\_\+io\+\_\+buffer}!lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}}
+\subsubsection{\texorpdfstring{partitioned\+\_\+io\+\_\+buffer()}{partitioned\_io\_buffer()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::partitioned\+\_\+io\+\_\+buffer\+::partitioned\+\_\+io\+\_\+buffer (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1partitioned__io__buffer}{partitioned\+\_\+io\+\_\+buffer} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+\mbox{\Hypertarget{classlbann_1_1partitioned__io__buffer_ada9c5ec93d1b6fbdbb6d4642f0809c1b}\label{classlbann_1_1partitioned__io__buffer_ada9c5ec93d1b6fbdbb6d4642f0809c1b}} 
+\index{lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}!````~partitioned\+\_\+io\+\_\+buffer@{$\sim$partitioned\+\_\+io\+\_\+buffer}}
+\index{````~partitioned\+\_\+io\+\_\+buffer@{$\sim$partitioned\+\_\+io\+\_\+buffer}!lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}}
+\subsubsection{\texorpdfstring{$\sim$partitioned\+\_\+io\+\_\+buffer()}{~partitioned\_io\_buffer()}}
+{\footnotesize\ttfamily lbann\+::partitioned\+\_\+io\+\_\+buffer\+::$\sim$partitioned\+\_\+io\+\_\+buffer (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}}
+
+
+
+Definition at line 44 of file partitioned\+\_\+io\+\_\+buffer.\+hpp.
+
+
+\begin{DoxyCode}
+44 \{\}
+\end{DoxyCode}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1partitioned__io__buffer_ad707e54827d6e537127341b10407b716}\label{classlbann_1_1partitioned__io__buffer_ad707e54827d6e537127341b10407b716}} 
+\index{lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}!calculate\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch\+\_\+single\+\_\+model@{calculate\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch\+\_\+single\+\_\+model}}
+\index{calculate\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch\+\_\+single\+\_\+model@{calculate\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch\+\_\+single\+\_\+model}!lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}}
+\subsubsection{\texorpdfstring{calculate\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch\+\_\+single\+\_\+model()}{calculate\_num\_iterations\_per\_epoch\_single\_model()}}
+{\footnotesize\ttfamily void lbann\+::partitioned\+\_\+io\+\_\+buffer\+::calculate\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch\+\_\+single\+\_\+model (\begin{DoxyParamCaption}\item[{int}]{max\+\_\+mini\+\_\+batch\+\_\+size,  }\item[{\hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$}]{data\+\_\+reader }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Check to make sure that there is enough data for all of the parallel readers
+
+Set the basic parameters for stride and offset of the data reader
+
+Set mini-\/batch size and stride
+
+Set data reader base offset and model offset
+
+By default each data reader will plan to process the entire data set 
+
+Implements \hyperlink{classlbann_1_1generic__io__buffer_a4c71135fada7f0da0b315d538d327e59}{lbann\+::generic\+\_\+io\+\_\+buffer}.
+
+
+
+Definition at line 198 of file partitioned\+\_\+io\+\_\+buffer.\+cpp.
+
+
+\begin{DoxyCode}
+198                                                                                                            
+                                     \{
+199   \textcolor{keywordflow}{if}(data\_reader == \textcolor{keyword}{nullptr}) \{ \textcolor{keywordflow}{return}; \}
+200   \textcolor{comment}{// If the data reader does not have any data bail out (e.g. unused validation reader)}
+201   \textcolor{keywordflow}{if}(data\_reader->get\_num\_data() == 0) \{ \textcolor{keywordflow}{return}; \}
+202 
+203   \textcolor{keywordflow}{if}(max\_mini\_batch\_size > data\_reader->get\_num\_data()) \{
+204     max\_mini\_batch\_size = data\_reader->get\_num\_data();
+205   \}
+206 
+208   \textcolor{keywordtype}{int} num\_parallel\_readers\_per\_model = \hyperlink{classlbann_1_1partitioned__io__buffer_a5048100fb7cdc13908ecba6b4415b977}{compute\_max\_num\_parallel\_readers}(
+      data\_reader->get\_num\_data(), max\_mini\_batch\_size, \hyperlink{classlbann_1_1generic__io__buffer_a2e4a46c85c8b30e10b1cc5acaa2c4cca}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_a5755dfdfc6377b4cae5ef8f7819e17de}{get\_procs\_per\_model}());
+209   data\_reader->set\_num\_parallel\_readers(num\_parallel\_readers\_per\_model);
+210   \textcolor{keywordflow}{if}(num\_parallel\_readers\_per\_model == 0
+211      || (num\_parallel\_readers\_per\_model != \hyperlink{classlbann_1_1generic__io__buffer_a2e4a46c85c8b30e10b1cc5acaa2c4cca}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_a5755dfdfc6377b4cae5ef8f7819e17de}{get\_procs\_per\_model}() && 
+      num\_parallel\_readers\_per\_model != max\_mini\_batch\_size)) \{
+212     \textcolor{keywordflow}{throw} lbann\_exception(
+213       std::string\{\} + \_\_FILE\_\_ + \textcolor{stringliteral}{" "} + std::to\_string(\_\_LINE\_\_) +
+214       \textcolor{stringliteral}{" :: generic\_data\_distribution: number of parallel readers is zero"});
+215   \}
+216 
+218   \textcolor{keywordtype}{int} batch\_stride = max\_mini\_batch\_size;
+219   \textcolor{keywordtype}{int} base\_offset  = \hyperlink{classlbann_1_1generic__io__buffer_a2e4a46c85c8b30e10b1cc5acaa2c4cca}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_a789453454468a3b70de768537c50ca52}{get\_rank\_in\_model}();
+221   data\_reader->set\_mini\_batch\_size(max\_mini\_batch\_size);
+222   data\_reader->set\_stride\_to\_next\_mini\_batch(batch\_stride);
+223   data\_reader->set\_sample\_stride(num\_parallel\_readers\_per\_model);
+224   data\_reader->set\_iteration\_stride(1);
+226   data\_reader->set\_base\_offset(base\_offset);
+227   data\_reader->set\_model\_offset(0);
+228   data\_reader->set\_initial\_position();
+229 
+231   \textcolor{keywordtype}{int} num\_iterations\_per\_epoch = ceil((\textcolor{keywordtype}{float}) data\_reader->get\_num\_data() / (float) max\_mini\_batch\_size);
+232   \textcolor{keywordtype}{int} last\_mini\_batch\_size = data\_reader->get\_num\_data() % max\_mini\_batch\_size;
+233   \textcolor{keywordflow}{if}(last\_mini\_batch\_size == 0) \{
+234     last\_mini\_batch\_size = max\_mini\_batch\_size;
+235   \}
+236   data\_reader->set\_num\_iterations\_per\_epoch(num\_iterations\_per\_epoch);
+237   data\_reader->set\_last\_mini\_batch\_size(last\_mini\_batch\_size);
+238   data\_reader->set\_stride\_to\_last\_mini\_batch(data\_reader->get\_stride\_to\_next\_mini\_batch());
+239 
+240   data\_reader->set\_global\_mini\_batch\_size(max\_mini\_batch\_size);
+241   data\_reader->set\_global\_last\_mini\_batch\_size(last\_mini\_batch\_size);
+242   \textcolor{keywordflow}{return};
+243 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=550pt]{classlbann_1_1partitioned__io__buffer_ad707e54827d6e537127341b10407b716_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1partitioned__io__buffer_ad707e54827d6e537127341b10407b716_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1partitioned__io__buffer_a50b6e2b7a82927526758f7cfb18a1ded}\label{classlbann_1_1partitioned__io__buffer_a50b6e2b7a82927526758f7cfb18a1ded}} 
+\index{lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}!calculate\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch\+\_\+spanning\+\_\+models@{calculate\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch\+\_\+spanning\+\_\+models}}
+\index{calculate\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch\+\_\+spanning\+\_\+models@{calculate\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch\+\_\+spanning\+\_\+models}!lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}}
+\subsubsection{\texorpdfstring{calculate\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch\+\_\+spanning\+\_\+models()}{calculate\_num\_iterations\_per\_epoch\_spanning\_models()}}
+{\footnotesize\ttfamily void lbann\+::partitioned\+\_\+io\+\_\+buffer\+::calculate\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch\+\_\+spanning\+\_\+models (\begin{DoxyParamCaption}\item[{int}]{max\+\_\+mini\+\_\+batch\+\_\+size,  }\item[{\hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$}]{data\+\_\+reader }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Make sure that the mini-\/batch size is not larger than the data set
+
+Check to make sure that there is enough data for all of the parallel readers
+
+Set the basic parameters for stride and offset of the data reader
+
+Set mini-\/batch size and stride
+
+Set data reader base offset and model offset
+
+Given that each model has to have at least one reader, what is the minimum stride
+
+The global mini-\/batch is a full mini-\/batch per model
+
+By default the last mini-\/batch is a full one
+
+By default the last mini-\/batch is a full one per model
+
+Note that m\+\_\+comm-\/$>$get\+\_\+model\+\_\+rank() + m\+\_\+comm-\/$>$get\+\_\+rank\+\_\+in\+\_\+model() is not equivalent to m\+\_\+comm-\/$>$get\+\_\+world\+\_\+rank() from a parallel I/O perspective Given the data readers model rank, how many models have a higher rank
+
+By default the last stride of each reader is part of a regular (full) round
+
+B\+VE F\+I\+X\+ME -\/ I feel like this is wrong I don\textquotesingle{}t think that the -\/1 should be there
+
+The last mini-\/batch may be partial and thus may have a smaller stride 
+
+Implements \hyperlink{classlbann_1_1generic__io__buffer_ac943184cf364f7922648e3acb760b41e}{lbann\+::generic\+\_\+io\+\_\+buffer}.
+
+
+
+Definition at line 104 of file partitioned\+\_\+io\+\_\+buffer.\+cpp.
+
+
+\begin{DoxyCode}
+104                                                                                                            
+                                        \{
+105   \textcolor{keywordflow}{if}(data\_reader == \textcolor{keyword}{nullptr}) \{ \textcolor{keywordflow}{return}; \}
+106   \textcolor{comment}{// If the data reader does not have any data bail out (e.g. unused validation reader)}
+107   \textcolor{keywordflow}{if}(data\_reader->get\_num\_data() == 0) \{ \textcolor{keywordflow}{return}; \}
+108 
+110   \textcolor{keywordflow}{if}(max\_mini\_batch\_size > data\_reader->get\_num\_data()) \{
+111     max\_mini\_batch\_size = data\_reader->get\_num\_data();
+112   \}
+113 
+115   \textcolor{keywordtype}{int} num\_parallel\_readers\_per\_model = \hyperlink{classlbann_1_1partitioned__io__buffer_a5048100fb7cdc13908ecba6b4415b977}{compute\_max\_num\_parallel\_readers}(
+      data\_reader->get\_num\_data(), max\_mini\_batch\_size, \hyperlink{classlbann_1_1generic__io__buffer_a2e4a46c85c8b30e10b1cc5acaa2c4cca}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_a5755dfdfc6377b4cae5ef8f7819e17de}{get\_procs\_per\_model}());
+116   data\_reader->set\_num\_parallel\_readers(num\_parallel\_readers\_per\_model);
+117   \textcolor{keywordflow}{if}(num\_parallel\_readers\_per\_model == 0
+118      || (num\_parallel\_readers\_per\_model != \hyperlink{classlbann_1_1generic__io__buffer_a2e4a46c85c8b30e10b1cc5acaa2c4cca}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_a5755dfdfc6377b4cae5ef8f7819e17de}{get\_procs\_per\_model}() && 
+      num\_parallel\_readers\_per\_model != max\_mini\_batch\_size)) \{
+119     \textcolor{keywordflow}{throw} lbann\_exception(
+120       std::string\{\} + \_\_FILE\_\_ + \textcolor{stringliteral}{" "} + std::to\_string(\_\_LINE\_\_)
+121       + \textcolor{stringliteral}{" :: partitioned\_io\_buffer: number of parallel readers is "} + std::to\_string(
+      num\_parallel\_readers\_per\_model)
+122       + \textcolor{stringliteral}{" and there are "} + std::to\_string(\hyperlink{classlbann_1_1generic__io__buffer_a2e4a46c85c8b30e10b1cc5acaa2c4cca}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_a5755dfdfc6377b4cae5ef8f7819e17de}{get\_procs\_per\_model}()) + \textcolor{stringliteral}{"
+       processes in the model"});
+123   \}
+124 
+126   \textcolor{keywordtype}{int} batch\_stride = \hyperlink{classlbann_1_1generic__io__buffer_a2e4a46c85c8b30e10b1cc5acaa2c4cca}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_aeb8ef8f13bbb324e3e1f656998198f3f}{get\_num\_models}() * max\_mini\_batch\_size;
+127   \textcolor{keywordtype}{int} base\_offset  = \hyperlink{classlbann_1_1generic__io__buffer_a2e4a46c85c8b30e10b1cc5acaa2c4cca}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_a789453454468a3b70de768537c50ca52}{get\_rank\_in\_model}();
+128   \textcolor{keywordtype}{int} model\_offset = \hyperlink{classlbann_1_1generic__io__buffer_a2e4a46c85c8b30e10b1cc5acaa2c4cca}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_a6422f70c92bed0b78179facc52b066f7}{get\_model\_rank}() * max\_mini\_batch\_size;
+130   data\_reader->set\_mini\_batch\_size(max\_mini\_batch\_size);
+131   data\_reader->set\_stride\_to\_next\_mini\_batch(batch\_stride);
+132   data\_reader->set\_sample\_stride(num\_parallel\_readers\_per\_model);
+133   data\_reader->set\_iteration\_stride(1);
+135   data\_reader->set\_base\_offset(base\_offset);
+136   data\_reader->set\_model\_offset(model\_offset);
+137   data\_reader->set\_initial\_position();
+138 
+139   \textcolor{keywordtype}{int} min\_stride\_across\_models = max\_mini\_batch\_size * \hyperlink{classlbann_1_1generic__io__buffer_a2e4a46c85c8b30e10b1cc5acaa2c4cca}{m\_comm}->
+      \hyperlink{classlbann_1_1lbann__comm_aeb8ef8f13bbb324e3e1f656998198f3f}{get\_num\_models}();  
+140 
+141   data\_reader->set\_global\_mini\_batch\_size(min\_stride\_across\_models); 
+142 
+143   data\_reader->set\_last\_mini\_batch\_size(max\_mini\_batch\_size); 
+144   data\_reader->set\_global\_last\_mini\_batch\_size(min\_stride\_across\_models); 
+145 
+146   \textcolor{keywordtype}{int} num\_whole\_mini\_batches\_per\_model = floor(data\_reader->get\_num\_data() / min\_stride\_across\_models);
+147   \textcolor{keywordtype}{int} global\_partial\_mini\_batch\_size = data\_reader->get\_num\_data() - (num\_whole\_mini\_batches\_per\_model * 
+      min\_stride\_across\_models);
+148   \textcolor{keywordtype}{int} per\_model\_partial\_mini\_batch\_size = global\_partial\_mini\_batch\_size / 
+      \hyperlink{classlbann_1_1generic__io__buffer_a2e4a46c85c8b30e10b1cc5acaa2c4cca}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_aeb8ef8f13bbb324e3e1f656998198f3f}{get\_num\_models}();
+149   \textcolor{keywordtype}{int} world\_master\_remainder\_data = 0;
+150 
+151   \textcolor{comment}{// Compute how many full "parallel" mini-batches are available}
+152   \textcolor{keywordtype}{int} last\_mini\_batch\_threshold = num\_whole\_mini\_batches\_per\_model * min\_stride\_across\_models;
+153 
+154   \textcolor{keywordtype}{int} world\_master\_remainder\_adjustment = data\_reader->get\_num\_data()
+155                                           - (num\_whole\_mini\_batches\_per\_model * min\_stride\_across\_models)
+156                                           - (per\_model\_partial\_mini\_batch\_size * 
+      \hyperlink{classlbann_1_1generic__io__buffer_a2e4a46c85c8b30e10b1cc5acaa2c4cca}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_aeb8ef8f13bbb324e3e1f656998198f3f}{get\_num\_models}());
+157   \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1generic__io__buffer_a2e4a46c85c8b30e10b1cc5acaa2c4cca}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_a6422f70c92bed0b78179facc52b066f7}{get\_model\_rank}() == 0) \{
+158     world\_master\_remainder\_data = world\_master\_remainder\_adjustment;
+159     world\_master\_remainder\_adjustment = 0;
+160   \}
+161   per\_model\_partial\_mini\_batch\_size += world\_master\_remainder\_data;
+162 
+163   \textcolor{keywordflow}{if}(per\_model\_partial\_mini\_batch\_size > 0 || world\_master\_remainder\_adjustment > 0) \{
+164     data\_reader->set\_last\_mini\_batch\_size(per\_model\_partial\_mini\_batch\_size);
+165     data\_reader->set\_global\_last\_mini\_batch\_size(global\_partial\_mini\_batch\_size);
+166   \}
+167 
+168   \textcolor{keywordflow}{if}(global\_partial\_mini\_batch\_size != 0) \{
+169     data\_reader->set\_num\_iterations\_per\_epoch(num\_whole\_mini\_batches\_per\_model+1);
+170   \}\textcolor{keywordflow}{else} \{
+171     data\_reader->set\_num\_iterations\_per\_epoch(num\_whole\_mini\_batches\_per\_model);
+172   \}
+173 
+174   \textcolor{keywordflow}{if}(data\_reader->get\_last\_mini\_batch\_size() > max\_mini\_batch\_size) \{
+175     \textcolor{keywordflow}{throw} \textcolor{keyword}{new} lbann\_exception(\textcolor{stringliteral}{"Error in calculating the partial mini-batch size, exceeds the max mini-batch
+       size"});
+176   \}
+177 
+180 
+182   data\_reader->set\_stride\_to\_last\_mini\_batch(data\_reader->get\_stride\_to\_next\_mini\_batch());
+183 
+186   \textcolor{keywordtype}{int} last\_mini\_batch\_offset = std::max(0, num\_whole\_mini\_batches\_per\_model - 1) * data\_reader->
+      get\_stride\_to\_next\_mini\_batch();
+187 
+189   \textcolor{keywordflow}{if}(per\_model\_partial\_mini\_batch\_size > 0 || world\_master\_remainder\_adjustment > 0) \{
+190     data\_reader->set\_stride\_to\_last\_mini\_batch((last\_mini\_batch\_threshold - data\_reader->get\_base\_offset() 
+      - data\_reader->get\_model\_offset() - last\_mini\_batch\_offset) + \hyperlink{classlbann_1_1generic__io__buffer_a2e4a46c85c8b30e10b1cc5acaa2c4cca}{m\_comm}->
+      \hyperlink{classlbann_1_1lbann__comm_a6422f70c92bed0b78179facc52b066f7}{get\_model\_rank}() * per\_model\_partial\_mini\_batch\_size + \hyperlink{classlbann_1_1generic__io__buffer_a2e4a46c85c8b30e10b1cc5acaa2c4cca}{m\_comm}->
+      \hyperlink{classlbann_1_1lbann__comm_a789453454468a3b70de768537c50ca52}{get\_rank\_in\_model}());
+191   \}
+192 
+193   \textcolor{comment}{//  cout << "[" << m\_comm->get\_rank\_in\_world() << "] " << m\_comm->get\_model\_rank() << " model rank, "<<
+       m\_comm->get\_rank\_in\_model() << " rank in model, num\_whole\_mini\_batches\_per\_model " <<
+       num\_whole\_mini\_batches\_per\_model << " parallel\_readers\_with\_extra\_mini\_batch " << /*parallel\_readers\_with\_extra\_mini\_batch <<*/ "
+       partial\_mini\_batch\_size=" << per\_model\_partial\_mini\_batch\_size << " last mini bath size=" <<
+       data\_reader->get\_last\_mini\_batch\_size() << " world\_master\_remainder\_data=" << world\_master\_remainder\_data << " with a last
+       stride of " << data\_reader->get\_stride\_to\_last\_mini\_batch() << " and stride of " <<
+       data\_reader->get\_stride\_to\_next\_mini\_batch() << " and there are " << num\_parallel\_readers\_per\_model << " parallel readers per model"
+       << " last mini batch offset = " << last\_mini\_batch\_offset <<  " parallel reader with extra minibatch = " <<
+       /*parallel\_readers\_with\_extra\_mini\_batch << */" model bracket = " <<
+       (/*parallel\_readers\_with\_extra\_mini\_batch **/ max\_mini\_batch\_size + per\_model\_partial\_mini\_batch\_size + world\_master\_remainder\_data) <<" base ofset
+       "<< data\_reader->get\_base\_offset() << " model offset " << data\_reader->get\_model\_offset() <<endl;}
+194 \textcolor{comment}{//cout << "[" << m\_comm->get\_rank\_in\_world() << "] " << m\_comm->get\_model\_rank() << " model rank, "<<
+       m\_comm->get\_rank\_in\_model() << " rank in model, num\_whole\_mini\_batches\_per\_model " <<
+       num\_whole\_mini\_batches\_per\_model << " num\_whole\_mini\_batches\_per\_reader " << num\_whole\_mini\_batches\_per\_reader <<
+       "(m\_num\_mini\_batches\_per\_reader=" << data\_reader->get\_num\_mini\_batches\_per\_reader() << ") parallel\_readers\_with\_extra\_mini\_batch
+       " << /*parallel\_readers\_with\_extra\_mini\_batch <<*/ " partial\_mini\_batch\_size=" <<
+       per\_model\_partial\_mini\_batch\_size << " last mini bath size=" << data\_reader->get\_last\_mini\_batch\_size() << "
+       world\_master\_remainder\_data=" << world\_master\_remainder\_data << " threshold " << data\_reader->get\_last\_mini\_batch\_threshold() << "
+       with a last stride of " << data\_reader->get\_stride\_to\_last\_mini\_batch() << " and stride of " <<
+       data\_reader->get\_batch\_stride() << " and there are " << num\_parallel\_readers\_per\_model << " parallel readers per model" <<
+       " last mini batch offset = " << last\_mini\_batch\_offset <<  " parallel reader with extra minibatch = " <<
+       /*parallel\_readers\_with\_extra\_mini\_batch << */" model bracket = " << (/*parallel\_readers\_with\_extra\_mini\_batch
+       **/ max\_mini\_batch\_size + per\_model\_partial\_mini\_batch\_size + world\_master\_remainder\_data) <<" base ofset
+       "<< data\_reader->get\_base\_offset() << " model offset " << data\_reader->get\_model\_offset() <<endl;}
+195   \textcolor{keywordflow}{return};
+196 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=550pt]{classlbann_1_1partitioned__io__buffer_a50b6e2b7a82927526758f7cfb18a1ded_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1partitioned__io__buffer_a50b6e2b7a82927526758f7cfb18a1ded_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1partitioned__io__buffer_a5048100fb7cdc13908ecba6b4415b977}\label{classlbann_1_1partitioned__io__buffer_a5048100fb7cdc13908ecba6b4415b977}} 
+\index{lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}!compute\+\_\+max\+\_\+num\+\_\+parallel\+\_\+readers@{compute\+\_\+max\+\_\+num\+\_\+parallel\+\_\+readers}}
+\index{compute\+\_\+max\+\_\+num\+\_\+parallel\+\_\+readers@{compute\+\_\+max\+\_\+num\+\_\+parallel\+\_\+readers}!lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}}
+\subsubsection{\texorpdfstring{compute\+\_\+max\+\_\+num\+\_\+parallel\+\_\+readers()}{compute\_max\_num\_parallel\_readers()}}
+{\footnotesize\ttfamily int lbann\+::partitioned\+\_\+io\+\_\+buffer\+::compute\+\_\+max\+\_\+num\+\_\+parallel\+\_\+readers (\begin{DoxyParamCaption}\item[{long}]{data\+\_\+set\+\_\+size,  }\item[{int}]{mini\+\_\+batch\+\_\+size,  }\item[{int}]{requested\+\_\+num\+\_\+parallel\+\_\+readers }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1generic__io__buffer_affc26b29e3f9eaaae5c033648e1a0141}{lbann\+::generic\+\_\+io\+\_\+buffer}.
+
+
+
+Definition at line 74 of file partitioned\+\_\+io\+\_\+buffer.\+cpp.
+
+
+\begin{DoxyCode}
+74                                                                                                            
+                                             \{
+75   \textcolor{keywordtype}{int} num\_parallel\_readers = requested\_num\_parallel\_readers;
+76 
+77   \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1generic__io__buffer_a2e4a46c85c8b30e10b1cc5acaa2c4cca}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_a5755dfdfc6377b4cae5ef8f7819e17de}{get\_procs\_per\_model}() != num\_parallel\_readers) \{
+78     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__io__buffer_a2e4a46c85c8b30e10b1cc5acaa2c4cca}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_ad8a5790dfa9191d4b4f889e8707e57f1}{am\_model\_master}()) \{
+79       std::cout << \textcolor{stringliteral}{"Warning the requested number of parallel readers "}
+80                 << num\_parallel\_readers
+81                 << \textcolor{stringliteral}{" does not match the grid size "}
+82                 << \hyperlink{classlbann_1_1generic__io__buffer_a2e4a46c85c8b30e10b1cc5acaa2c4cca}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_a5755dfdfc6377b4cae5ef8f7819e17de}{get\_procs\_per\_model}()
+83                 << \textcolor{stringliteral}{" OVERRIDING requested number of parallel readers."}
+84                 << std::endl;
+85     \}
+86     num\_parallel\_readers = \hyperlink{classlbann_1_1generic__io__buffer_a2e4a46c85c8b30e10b1cc5acaa2c4cca}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_a5755dfdfc6377b4cae5ef8f7819e17de}{get\_procs\_per\_model}();
+87   \}
+88 
+89   \textcolor{keywordflow}{if}(mini\_batch\_size < num\_parallel\_readers) \{
+90     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__io__buffer_a2e4a46c85c8b30e10b1cc5acaa2c4cca}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_ad8a5790dfa9191d4b4f889e8707e57f1}{am\_model\_master}()) \{
+91       std::cout << \textcolor{stringliteral}{"Warning the requested number of parallel readers "}
+92                 << num\_parallel\_readers
+93                 << \textcolor{stringliteral}{" is larger than the requested mini-batch size "}
+94                 << mini\_batch\_size
+95                 << \textcolor{stringliteral}{" OVERRIDING requested number of parallel readers."}
+96                 << std::endl;
+97     \}
+98     num\_parallel\_readers = mini\_batch\_size;
+99   \}
+100 
+101   \textcolor{keywordflow}{return} num\_parallel\_readers;
+102 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1partitioned__io__buffer_a5048100fb7cdc13908ecba6b4415b977_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1partitioned__io__buffer_a5048100fb7cdc13908ecba6b4415b977_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1partitioned__io__buffer_afce1a8859516dfaa482159806b75c263}\label{classlbann_1_1partitioned__io__buffer_afce1a8859516dfaa482159806b75c263}} 
+\index{lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}!copy@{copy}}
+\index{copy@{copy}!lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1partitioned__io__buffer}{partitioned\+\_\+io\+\_\+buffer}$\ast$ lbann\+::partitioned\+\_\+io\+\_\+buffer\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1generic__io__buffer_a9d8020b82cf467c9148b0b37e7229262}{lbann\+::generic\+\_\+io\+\_\+buffer}.
+
+
+
+Definition at line 45 of file partitioned\+\_\+io\+\_\+buffer.\+hpp.
+
+
+\begin{DoxyCode}
+45 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1partitioned__io__buffer_a2dd39b740a3c0ea613cef9540d3c3e5d}{partitioned\_io\_buffer}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=321pt]{classlbann_1_1partitioned__io__buffer_afce1a8859516dfaa482159806b75c263_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1partitioned__io__buffer_a906b8b13a8b9a9e8080d4e4d4bba25bc}\label{classlbann_1_1partitioned__io__buffer_a906b8b13a8b9a9e8080d4e4d4bba25bc}} 
+\index{lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}!distribute\+\_\+from\+\_\+local\+\_\+matrix@{distribute\+\_\+from\+\_\+local\+\_\+matrix}}
+\index{distribute\+\_\+from\+\_\+local\+\_\+matrix@{distribute\+\_\+from\+\_\+local\+\_\+matrix}!lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}}
+\subsubsection{\texorpdfstring{distribute\+\_\+from\+\_\+local\+\_\+matrix()}{distribute\_from\_local\_matrix()}}
+{\footnotesize\ttfamily void lbann\+::partitioned\+\_\+io\+\_\+buffer\+::distribute\+\_\+from\+\_\+local\+\_\+matrix (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{Ms,  }\item[{\hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$}]{data\+\_\+reader,  }\item[{\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}}]{mode }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Nothing to do here, it is already done 
+
+Reimplemented from \hyperlink{classlbann_1_1generic__io__buffer_a08c2bb93b86d2926df52ef9272a07d87}{lbann\+::generic\+\_\+io\+\_\+buffer}.
+
+
+
+Definition at line 55 of file partitioned\+\_\+io\+\_\+buffer.\+cpp.
+
+
+\begin{DoxyCode}
+55                                                                                                            
+                              \{
+56 
+58   \textcolor{keywordflow}{return};
+59 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=338pt]{classlbann_1_1partitioned__io__buffer_a906b8b13a8b9a9e8080d4e4d4bba25bc_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1partitioned__io__buffer_a777719c9cebe912dc4c005e2c78d77c8}\label{classlbann_1_1partitioned__io__buffer_a777719c9cebe912dc4c005e2c78d77c8}} 
+\index{lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}!fetch\+\_\+to\+\_\+local\+\_\+matrix@{fetch\+\_\+to\+\_\+local\+\_\+matrix}}
+\index{fetch\+\_\+to\+\_\+local\+\_\+matrix@{fetch\+\_\+to\+\_\+local\+\_\+matrix}!lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}}
+\subsubsection{\texorpdfstring{fetch\+\_\+to\+\_\+local\+\_\+matrix()}{fetch\_to\_local\_matrix()}}
+{\footnotesize\ttfamily int lbann\+::partitioned\+\_\+io\+\_\+buffer\+::fetch\+\_\+to\+\_\+local\+\_\+matrix (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$}]{data\+\_\+reader,  }\item[{\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}}]{mode }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Coordinate all available readers so that the perform I/O in the same step Check to make sure that the local matrix has space for data
+
+Each data reader needs to either have independent / split data, or take an offset / stride 
+
+Implements \hyperlink{classlbann_1_1generic__io__buffer_af9fc2100d41328fe399acf7bced950d7}{lbann\+::generic\+\_\+io\+\_\+buffer}.
+
+
+
+Definition at line 34 of file partitioned\+\_\+io\+\_\+buffer.\+cpp.
+
+
+\begin{DoxyCode}
+34                                                                                                            
+      \{
+35   \textcolor{keywordtype}{int} num\_parallel\_readers = data\_reader->get\_num\_parallel\_readers();
+36 
+37   \textcolor{keywordtype}{int} num\_samples\_fetched = 0;
+38 
+41   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__io__buffer_a2e4a46c85c8b30e10b1cc5acaa2c4cca}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_a789453454468a3b70de768537c50ca52}{get\_rank\_in\_model}() < num\_parallel\_readers && (
+      \hyperlink{classlbann_1_1partitioned__io__buffer_a80d8916c269b26e605637353abe322b2}{M\_local}->Height() != 0 && \hyperlink{classlbann_1_1partitioned__io__buffer_a80d8916c269b26e605637353abe322b2}{M\_local}->Width() != 0)) \{
+42     Zero(*\hyperlink{classlbann_1_1partitioned__io__buffer_a80d8916c269b26e605637353abe322b2}{M\_local});
+43 
+46     num\_samples\_fetched = (*fetch\_data\_fn)(*\hyperlink{classlbann_1_1partitioned__io__buffer_a80d8916c269b26e605637353abe322b2}{M\_local}, data\_reader);
+47     \textcolor{keywordtype}{bool} data\_valid = (num\_samples\_fetched > 0);
+48     \textcolor{keywordflow}{if}(data\_valid) \{
+49       \textcolor{comment}{//      m\_num\_data\_per\_epoch+=num\_samples\_fetched; /// BVE FIXME need to change how this is shared}
+50     \}
+51   \}
+52   \textcolor{keywordflow}{return} num\_samples\_fetched;
+53 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1partitioned__io__buffer_a777719c9cebe912dc4c005e2c78d77c8_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=333pt]{classlbann_1_1partitioned__io__buffer_a777719c9cebe912dc4c005e2c78d77c8_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1partitioned__io__buffer_a55120307848cabf8ef12558594b4e9e5}\label{classlbann_1_1partitioned__io__buffer_a55120307848cabf8ef12558594b4e9e5}} 
+\index{lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}!get\+\_\+type@{get\+\_\+type}}
+\index{get\+\_\+type@{get\+\_\+type}!lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}}
+\subsubsection{\texorpdfstring{get\+\_\+type()}{get\_type()}}
+{\footnotesize\ttfamily std\+::string lbann\+::partitioned\+\_\+io\+\_\+buffer\+::get\+\_\+type (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Return this buffer\textquotesingle{}s type, e.\+g\+: \char`\"{}partitioned\+\_\+io\+\_\+buffer,\char`\"{} \char`\"{}distributed\+\_\+io\+\_\+buffer,\char`\"{} etc. 
+
+Implements \hyperlink{classlbann_1_1generic__io__buffer_adc77c0a280f8a200a8d8495c3a371ebb}{lbann\+::generic\+\_\+io\+\_\+buffer}.
+
+
+
+Definition at line 47 of file partitioned\+\_\+io\+\_\+buffer.\+hpp.
+
+
+\begin{DoxyCode}
+47 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"partitioned\_io\_buffer"}; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1partitioned__io__buffer_a0944161f90eb65286974c3e85155608f}\label{classlbann_1_1partitioned__io__buffer_a0944161f90eb65286974c3e85155608f}} 
+\index{lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}!is\+\_\+data\+\_\+set\+\_\+processed@{is\+\_\+data\+\_\+set\+\_\+processed}}
+\index{is\+\_\+data\+\_\+set\+\_\+processed@{is\+\_\+data\+\_\+set\+\_\+processed}!lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}}
+\subsubsection{\texorpdfstring{is\+\_\+data\+\_\+set\+\_\+processed()}{is\_data\_set\_processed()}}
+{\footnotesize\ttfamily bool lbann\+::partitioned\+\_\+io\+\_\+buffer\+::is\+\_\+data\+\_\+set\+\_\+processed (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$}]{data\+\_\+reader,  }\item[{\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}}]{mode }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1generic__io__buffer_a9a038d40aec50dbc24c0abe21ad0c0a9}{lbann\+::generic\+\_\+io\+\_\+buffer}.
+
+
+
+Definition at line 61 of file partitioned\+\_\+io\+\_\+buffer.\+cpp.
+
+
+\begin{DoxyCode}
+61                                                                                                            
+       \{
+62   \textcolor{keywordtype}{int} num\_iterations\_per\_epoch = data\_reader->get\_num\_iterations\_per\_epoch();
+63   \textcolor{keywordtype}{int} current\_step\_in\_epoch = data\_reader->get\_current\_step\_in\_epoch(); \textcolor{comment}{// Get the current step before the
+       update function increments it}
+64 
+65   (*update\_data\_reader\_fn)(\textcolor{keyword}{true}, data\_reader);
+66 
+67   \textcolor{keywordflow}{if}(current\_step\_in\_epoch == (num\_iterations\_per\_epoch - 1)) \{
+68     \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+69   \} \textcolor{keywordflow}{else} \{
+70     \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+71   \}
+72 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1partitioned__io__buffer_a0944161f90eb65286974c3e85155608f_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=329pt]{classlbann_1_1partitioned__io__buffer_a0944161f90eb65286974c3e85155608f_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1partitioned__io__buffer_a69379e060f2ab7294c55f105f2c8d06c}\label{classlbann_1_1partitioned__io__buffer_a69379e060f2ab7294c55f105f2c8d06c}} 
+\index{lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1partitioned__io__buffer}{partitioned\+\_\+io\+\_\+buffer}\& lbann\+::partitioned\+\_\+io\+\_\+buffer\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1partitioned__io__buffer}{partitioned\+\_\+io\+\_\+buffer} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+\mbox{\Hypertarget{classlbann_1_1partitioned__io__buffer_a58412c3f37ea3fbcf492f127781c7617}\label{classlbann_1_1partitioned__io__buffer_a58412c3f37ea3fbcf492f127781c7617}} 
+\index{lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}!set\+\_\+local\+\_\+matrix\+\_\+bypass@{set\+\_\+local\+\_\+matrix\+\_\+bypass}}
+\index{set\+\_\+local\+\_\+matrix\+\_\+bypass@{set\+\_\+local\+\_\+matrix\+\_\+bypass}!lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}}
+\subsubsection{\texorpdfstring{set\+\_\+local\+\_\+matrix\+\_\+bypass()}{set\_local\_matrix\_bypass()}}
+{\footnotesize\ttfamily void lbann\+::partitioned\+\_\+io\+\_\+buffer\+::set\+\_\+local\+\_\+matrix\+\_\+bypass (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1generic__io__buffer_af84c26ab5ee77d1d9ed9ea5d62823815}{lbann\+::generic\+\_\+io\+\_\+buffer}.
+
+
+
+Definition at line 48 of file partitioned\+\_\+io\+\_\+buffer.\+hpp.
+
+
+\begin{DoxyCode}
+48 \{ \hyperlink{classlbann_1_1partitioned__io__buffer_a80d8916c269b26e605637353abe322b2}{M\_local} = m; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1partitioned__io__buffer_aa0a1d61dcecdd5c4091e0a97eb2d075a}\label{classlbann_1_1partitioned__io__buffer_aa0a1d61dcecdd5c4091e0a97eb2d075a}} 
+\index{lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}!set\+\_\+std\+\_\+matrix\+\_\+view@{set\+\_\+std\+\_\+matrix\+\_\+view}}
+\index{set\+\_\+std\+\_\+matrix\+\_\+view@{set\+\_\+std\+\_\+matrix\+\_\+view}!lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}}
+\subsubsection{\texorpdfstring{set\+\_\+std\+\_\+matrix\+\_\+view()}{set\_std\_matrix\_view()}}
+{\footnotesize\ttfamily void lbann\+::partitioned\+\_\+io\+\_\+buffer\+::set\+\_\+std\+\_\+matrix\+\_\+view (\begin{DoxyParamCaption}\item[{El\+::\+Int}]{cur\+\_\+mini\+\_\+batch\+\_\+size }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1generic__io__buffer_a458d9bf722effce4177a0ac0aee9124f}{lbann\+::generic\+\_\+io\+\_\+buffer}.
+
+
+
+Definition at line 49 of file partitioned\+\_\+io\+\_\+buffer.\+hpp.
+
+
+\begin{DoxyCode}
+49 \{\}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1partitioned__io__buffer_a06a204fbf82f092b0225ab10c1bec98e}\label{classlbann_1_1partitioned__io__buffer_a06a204fbf82f092b0225ab10c1bec98e}} 
+\index{lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}!setup\+\_\+data@{setup\+\_\+data}}
+\index{setup\+\_\+data@{setup\+\_\+data}!lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}}
+\subsubsection{\texorpdfstring{setup\+\_\+data()}{setup\_data()}}
+{\footnotesize\ttfamily void lbann\+::partitioned\+\_\+io\+\_\+buffer\+::setup\+\_\+data (\begin{DoxyParamCaption}\item[{El\+::\+Int}]{num\+\_\+neurons,  }\item[{El\+::\+Int}]{max\+\_\+minibatch\+\_\+size }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1generic__io__buffer_a00f3920147f7f19eceb5336bd6ddb421}{lbann\+::generic\+\_\+io\+\_\+buffer}.
+
+
+
+Definition at line 50 of file partitioned\+\_\+io\+\_\+buffer.\+hpp.
+
+
+\begin{DoxyCode}
+50 \{\}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=550pt]{classlbann_1_1partitioned__io__buffer_a06a204fbf82f092b0225ab10c1bec98e_cgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1partitioned__io__buffer_a80d8916c269b26e605637353abe322b2}\label{classlbann_1_1partitioned__io__buffer_a80d8916c269b26e605637353abe322b2}} 
+\index{lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}!M\+\_\+local@{M\+\_\+local}}
+\index{M\+\_\+local@{M\+\_\+local}!lbann\+::partitioned\+\_\+io\+\_\+buffer@{lbann\+::partitioned\+\_\+io\+\_\+buffer}}
+\subsubsection{\texorpdfstring{M\+\_\+local}{M\_local}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}$\ast$ lbann\+::partitioned\+\_\+io\+\_\+buffer\+::\+M\+\_\+local}
+
+
+
+Definition at line 60 of file partitioned\+\_\+io\+\_\+buffer.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/io/data\+\_\+buffers/\hyperlink{partitioned__io__buffer_8hpp}{partitioned\+\_\+io\+\_\+buffer.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/io/data\+\_\+buffers/\hyperlink{partitioned__io__buffer_8cpp}{partitioned\+\_\+io\+\_\+buffer.\+cpp}\end{DoxyCompactItemize}

@@ -1,0 +1,50 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1Al_1_1dummy__backend" kind="class" language="C++" prot="public">
+    <compoundname>lbann::Al::dummy_backend</compoundname>
+    <includes refid="comm_8hpp" local="no">comm.hpp</includes>
+      <sectiondef kind="public-type">
+      <memberdef kind="typedef" id="classlbann_1_1Al_1_1dummy__backend_1a9386c505d856d41c37d23e4293c11f2f" prot="public" static="no">
+        <type>int</type>
+        <definition>using lbann::Al::dummy_backend::req_type =  int</definition>
+        <argsstring></argsstring>
+        <name>req_type</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/comm.hpp" line="53" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/comm.hpp" bodystart="53" bodyend="-1"/>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-static-attrib">
+      <memberdef kind="variable" id="classlbann_1_1Al_1_1dummy__backend_1a458ac4eb9f62b06984b4ef1b1eeb5851" prot="public" static="yes" mutable="no">
+        <type>constexpr <ref refid="classlbann_1_1Al_1_1dummy__backend_1a9386c505d856d41c37d23e4293c11f2f" kindref="member">req_type</ref></type>
+        <definition>constexpr req_type lbann::Al::dummy_backend::null_req</definition>
+        <argsstring></argsstring>
+        <name>null_req</name>
+        <initializer>= 0</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/comm.hpp" line="54" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/comm.hpp" bodystart="54" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__comm_1afb144a99e0cd2241f5fb05cad68b1f08" compoundref="comm_8hpp" startline="479" endline="490">lbann::lbann_comm::nb_allreduce</referencedby>
+        <referencedby refid="classlbann_1_1lbann__comm_1a91d09d595801f6228ee0aecf6dea25c7" compoundref="comm_8cpp" startline="215" endline="227">lbann::lbann_comm::wait</referencedby>
+        <referencedby refid="classlbann_1_1lbann__comm_1a99303a11b939b4aba9d4a67dd0deef56" compoundref="comm_8cpp" startline="229" endline="243">lbann::lbann_comm::test</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/comm.hpp" line="51" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/comm.hpp" bodystart="51" bodyend="55"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1Al_1_1dummy__backend_1a458ac4eb9f62b06984b4ef1b1eeb5851" prot="public" virt="non-virtual"><scope>lbann::Al::dummy_backend</scope><name>null_req</name></member>
+      <member refid="classlbann_1_1Al_1_1dummy__backend_1a9386c505d856d41c37d23e4293c11f2f" prot="public" virt="non-virtual"><scope>lbann::Al::dummy_backend</scope><name>req_type</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

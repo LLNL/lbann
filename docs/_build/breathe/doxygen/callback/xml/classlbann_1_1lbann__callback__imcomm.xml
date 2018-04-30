@@ -1,0 +1,528 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1lbann__callback__imcomm" kind="class" language="C++" prot="public">
+    <compoundname>lbann::lbann_callback_imcomm</compoundname>
+    <basecompoundref refid="classlbann_1_1lbann__callback" prot="public" virt="non-virtual">lbann::lbann_callback</basecompoundref>
+    <includes refid="callback__imcomm_8hpp" local="no">callback_imcomm.hpp</includes>
+    <innerclass refid="structlbann_1_1lbann__callback__imcomm_1_1imcomm__params" prot="private">lbann::lbann_callback_imcomm::imcomm_params</innerclass>
+      <sectiondef kind="public-type">
+      <memberdef kind="enum" id="classlbann_1_1lbann__callback__imcomm_1acf7e894b3381e7f9b71020dc73594d6a" prot="public" static="no">
+        <name>comm_type</name>
+        <enumvalue id="classlbann_1_1lbann__callback__imcomm_1acf7e894b3381e7f9b71020dc73594d6aafa59156bc4d5bcbf6bd80918d062da03" prot="public">
+          <name>NONE</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="classlbann_1_1lbann__callback__imcomm_1acf7e894b3381e7f9b71020dc73594d6aa5f19efb5bef79cea24be992a2137962e" prot="public">
+          <name>NORMAL</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+<para>Do no gradient updates. </para>          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="classlbann_1_1lbann__callback__imcomm_1acf7e894b3381e7f9b71020dc73594d6aa06f19090efbd982638c20bcb8a3c7d33" prot="public">
+          <name>ONEBIT_QUANTIZATION</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+<para>Simply sum gradient updates. </para>          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="classlbann_1_1lbann__callback__imcomm_1acf7e894b3381e7f9b71020dc73594d6aa76420a96a3df1d5b60140bab6bc32dc4" prot="public">
+          <name>THRESH_QUANTIZATION</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+<para>Do one-bit quantization. </para>          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="classlbann_1_1lbann__callback__imcomm_1acf7e894b3381e7f9b71020dc73594d6aaeb95973ab89fc579b91554cd783031b7" prot="public">
+          <name>ADAPTIVE_QUANTIZATION</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+<para>Do threshold quantization. </para>          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" line="50" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" bodystart="50" bodyend="56"/>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="classlbann_1_1lbann__callback__imcomm_1ac3df687b12721a7278877c303357bc09" prot="private" static="no" mutable="no">
+        <type><ref refid="classlbann_1_1lbann__callback__imcomm_1acf7e894b3381e7f9b71020dc73594d6a" kindref="member">comm_type</ref></type>
+        <definition>comm_type lbann::lbann_callback_imcomm::m_default_ct</definition>
+        <argsstring></argsstring>
+        <name>m_default_ct</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Default communication type. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" line="112" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" bodystart="112" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1lbann__callback__imcomm_1a32a0319c91aff324cb3468de4f31dd50" prot="private" static="no" mutable="no">
+        <type>std::unordered_map&lt; weights *, imcomm_params &gt;</type>
+        <definition>std::unordered_map&lt;weights *, imcomm_params&gt; lbann::lbann_callback_imcomm::m_weights_params</definition>
+        <argsstring></argsstring>
+        <name>m_weights_params</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Per-weights parameters. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" line="114" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" bodystart="114" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1lbann__callback__imcomm_1a4994863d7f69e801c042c5d460bb3f34" prot="private" static="no" mutable="no">
+        <type>lbann_quantizer</type>
+        <definition>lbann_quantizer lbann::lbann_callback_imcomm::m_quantizer</definition>
+        <argsstring></argsstring>
+        <name>m_quantizer</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Quantizer for quantization of updates, if needed. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" line="116" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" bodystart="116" bodyend="-1"/>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__imcomm_1a06dc9efdcd77c9e1cf714ecf709a6e3a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::lbann_callback_imcomm::lbann_callback_imcomm</definition>
+        <argsstring>(comm_type ct=NORMAL, lbann_summary *summarizer=nullptr)</argsstring>
+        <name>lbann_callback_imcomm</name>
+        <param>
+          <type><ref refid="classlbann_1_1lbann__callback__imcomm_1acf7e894b3381e7f9b71020dc73594d6a" kindref="member">comm_type</ref></type>
+          <declname>ct</declname>
+          <defval><ref refid="classlbann_1_1lbann__callback__imcomm_1acf7e894b3381e7f9b71020dc73594d6aa5f19efb5bef79cea24be992a2137962e" kindref="member">NORMAL</ref></defval>
+        </param>
+        <param>
+          <type>lbann_summary *</type>
+          <declname>summarizer</declname>
+          <defval>nullptr</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Initialize with ct being used for all weights. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" line="61" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__imcomm_1a95ae70dd6a90c023ee3bd0638dc24888" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::lbann_callback_imcomm::lbann_callback_imcomm</definition>
+        <argsstring>(const lbann_callback_imcomm &amp;)=default</argsstring>
+        <name>lbann_callback_imcomm</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1lbann__callback__imcomm" kindref="compound">lbann_callback_imcomm</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" line="63" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__imcomm_1a01ee7aaa808987e1f7fcca0e85cc1f73" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classlbann_1_1lbann__callback__imcomm" kindref="compound">lbann_callback_imcomm</ref> &amp;</type>
+        <definition>lbann_callback_imcomm&amp; lbann::lbann_callback_imcomm::operator=</definition>
+        <argsstring>(const lbann_callback_imcomm &amp;)=default</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1lbann__callback__imcomm" kindref="compound">lbann_callback_imcomm</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" line="64" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__imcomm_1a9d59535b4789389a8c3c9e406cd1e2d3" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type><ref refid="classlbann_1_1lbann__callback__imcomm" kindref="compound">lbann_callback_imcomm</ref> *</type>
+        <definition>lbann_callback_imcomm* lbann::lbann_callback_imcomm::copy</definition>
+        <argsstring>() const override</argsstring>
+        <name>copy</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1a9f545d1269a8c7af335625d049691f26">copy</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" line="65" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" bodystart="65" bodyend="67"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__imcomm_1aadc785d2f27ad0b03fce8c2785cff4fb" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::lbann_callback_imcomm::lbann_callback_imcomm</definition>
+        <argsstring>(comm_type ct, std::unordered_set&lt; weights *&gt; weights_list, lbann_summary *summarizer=nullptr)</argsstring>
+        <name>lbann_callback_imcomm</name>
+        <param>
+          <type><ref refid="classlbann_1_1lbann__callback__imcomm_1acf7e894b3381e7f9b71020dc73594d6a" kindref="member">comm_type</ref></type>
+          <declname>ct</declname>
+        </param>
+        <param>
+          <type>std::unordered_set&lt; weights *&gt;</type>
+          <declname>weights_list</declname>
+        </param>
+        <param>
+          <type>lbann_summary *</type>
+          <declname>summarizer</declname>
+          <defval>nullptr</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Convenience initialization to do one update type for specific weights. Implies no inter-model updates for other weights. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" line="72" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__imcomm_1a6ad492f30a34de2ac62fe459037e1d12" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_imcomm::set_weights_comm</definition>
+        <argsstring>(weights *w, comm_type ct)</argsstring>
+        <name>set_weights_comm</name>
+        <param>
+          <type>weights *</type>
+          <declname>w</declname>
+        </param>
+        <param>
+          <type><ref refid="classlbann_1_1lbann__callback__imcomm_1acf7e894b3381e7f9b71020dc73594d6a" kindref="member">comm_type</ref></type>
+          <declname>ct</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Choose comm type ct for weights. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" line="76" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__imcomm_1a5e0f7d9f85da8d2e579dbe4092bc3100" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_imcomm::set_weights_adaptive</definition>
+        <argsstring>(weights *w, int proportion)</argsstring>
+        <name>set_weights_adaptive</name>
+        <param>
+          <type>weights *</type>
+          <declname>w</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>proportion</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Set weights to use adaptive quantization with proportion. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" line="78" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__imcomm_1acf71333f73d26714217ffcd93aa31830" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_imcomm::set_weights_threshold</definition>
+        <argsstring>(weights *w, DataType pos_thresh, DataType neg_thresh)</argsstring>
+        <name>set_weights_threshold</name>
+        <param>
+          <type>weights *</type>
+          <declname>w</declname>
+        </param>
+        <param>
+          <type>DataType</type>
+          <declname>pos_thresh</declname>
+        </param>
+        <param>
+          <type>DataType</type>
+          <declname>neg_thresh</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Set weights to use threshold quantization with given thresholds. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" line="80" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__imcomm_1a096555a87ce1bb011ceafb44081c4192" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_imcomm::setup</definition>
+        <argsstring>(model *m) override</argsstring>
+        <name>setup</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1aab5086e27d9bb0a7c7ee8ffc1bc58671">setup</reimplements>
+        <param>
+          <type>model *</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Do initialization for this model. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" line="85" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__imcomm_1a332ba4ceca91939c79fae2735fdc8ff3" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_imcomm::on_train_begin</definition>
+        <argsstring>(model *m) override</argsstring>
+        <name>on_train_begin</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1a7c8f0d211967ccc5219144e92571ab26">on_train_begin</reimplements>
+        <param>
+          <type>model *</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Make sure all models have the same weights. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" line="87" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__imcomm_1a3160dbf536def4f930e0ea0aabdebc11" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_imcomm::on_epoch_end</definition>
+        <argsstring>(model *m) override</argsstring>
+        <name>on_epoch_end</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1a1fc71110e7f754bf73c9e0f344a448a5">on_epoch_end</reimplements>
+        <param>
+          <type>model *</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Clear out remaining error if needed. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" line="89" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__imcomm_1a0a425ba562f7637b25cd6ba094e7885b" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_imcomm::on_backward_prop_end</definition>
+        <argsstring>(model *m) override</argsstring>
+        <name>on_backward_prop_end</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1af183624e63ba65e0003fa988f53dee0c">on_backward_prop_end</reimplements>
+        <param>
+          <type>model *</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Do inter-model gradient updates. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" line="91" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__imcomm_1af058602425005a1d198df40b7845e16e" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>std::string</type>
+        <definition>std::string lbann::lbann_callback_imcomm::name</definition>
+        <argsstring>() const override</argsstring>
+        <name>name</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1a7522c7a14f1d6a1ea762cc2d7248eb3a">name</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Return this callback&apos;s name. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" line="93" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" bodystart="93" bodyend="93"/>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="private-func">
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__imcomm_1a8b29853e49c58cf737a741c503737705" prot="private" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool lbann::lbann_callback_imcomm::ct_does_quantization</definition>
+        <argsstring>(comm_type ct) const</argsstring>
+        <name>ct_does_quantization</name>
+        <param>
+          <type><ref refid="classlbann_1_1lbann__callback__imcomm_1acf7e894b3381e7f9b71020dc73594d6a" kindref="member">comm_type</ref></type>
+          <declname>ct</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Return true if the comm type does quantization. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" line="119" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" bodystart="119" bodyend="123"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__imcomm_1ab7106f5ee53672f5ef5a58371eb39f0b" prot="private" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool lbann::lbann_callback_imcomm::ct_needs_reshape</definition>
+        <argsstring>(comm_type ct) const</argsstring>
+        <name>ct_needs_reshape</name>
+        <param>
+          <type><ref refid="classlbann_1_1lbann__callback__imcomm_1acf7e894b3381e7f9b71020dc73594d6a" kindref="member">comm_type</ref></type>
+          <declname>ct</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Return true if the comm type prefers reshaping. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" line="126" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" bodystart="126" bodyend="128"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__imcomm_1a13fe710b841f72e28daf8de029f6c2f9" prot="private" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_imcomm::reshape_mat</definition>
+        <argsstring>(Mat &amp;mat, Mat &amp;reshaped, El::Int height, El::Int width)</argsstring>
+        <name>reshape_mat</name>
+        <param>
+          <type>Mat &amp;</type>
+          <declname>mat</declname>
+        </param>
+        <param>
+          <type>Mat &amp;</type>
+          <declname>reshaped</declname>
+        </param>
+        <param>
+          <type>El::Int</type>
+          <declname>height</declname>
+        </param>
+        <param>
+          <type>El::Int</type>
+          <declname>width</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Get a matrix that reinterprets mat as being height x width. Assumes that mat.Height()*mat.Width() == height*width. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" line="134" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" bodystart="134" bodyend="136"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__imcomm_1ad45c39a7a85fb8e1d99eca97aa4d9d09" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_imcomm::do_summary</definition>
+        <argsstring>(model *m, weights *w, EvalType im_time)</argsstring>
+        <name>do_summary</name>
+        <param>
+          <type>model *</type>
+          <declname>m</declname>
+        </param>
+        <param>
+          <type>weights *</type>
+          <declname>w</declname>
+        </param>
+        <param>
+          <type>EvalType</type>
+          <declname>im_time</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Summarize relevant statistics. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" line="139" column="1"/>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>Support inter-model communication after each mini-batch to synchronize gradient updates. This optionally supports quantizing the gradient updates before communication in order to reduce bandwidth requirements. </para>    </detaileddescription>
+    <inheritancegraph>
+      <node id="111">
+        <label>lbann::lbann_callback_imcomm</label>
+        <link refid="classlbann_1_1lbann__callback__imcomm"/>
+        <childnode refid="112" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="112">
+        <label>lbann::lbann_callback</label>
+        <link refid="classlbann_1_1lbann__callback"/>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="113">
+        <label>lbann::lbann_callback_imcomm</label>
+        <link refid="classlbann_1_1lbann__callback__imcomm"/>
+        <childnode refid="114" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="114">
+        <label>lbann::lbann_callback</label>
+        <link refid="classlbann_1_1lbann__callback"/>
+      </node>
+    </collaborationgraph>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" line="46" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp" bodystart="46" bodyend="140"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1lbann__callback__imcomm_1acf7e894b3381e7f9b71020dc73594d6aaeb95973ab89fc579b91554cd783031b7" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_imcomm</scope><name>ADAPTIVE_QUANTIZATION</name></member>
+      <member refid="classlbann_1_1lbann__callback__imcomm_1acf7e894b3381e7f9b71020dc73594d6a" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_imcomm</scope><name>comm_type</name></member>
+      <member refid="classlbann_1_1lbann__callback__imcomm_1a9d59535b4789389a8c3c9e406cd1e2d3" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>copy</name></member>
+      <member refid="classlbann_1_1lbann__callback__imcomm_1a8b29853e49c58cf737a741c503737705" prot="private" virt="non-virtual"><scope>lbann::lbann_callback_imcomm</scope><name>ct_does_quantization</name></member>
+      <member refid="classlbann_1_1lbann__callback__imcomm_1ab7106f5ee53672f5ef5a58371eb39f0b" prot="private" virt="non-virtual"><scope>lbann::lbann_callback_imcomm</scope><name>ct_needs_reshape</name></member>
+      <member refid="classlbann_1_1lbann__callback__imcomm_1ad45c39a7a85fb8e1d99eca97aa4d9d09" prot="private" virt="non-virtual"><scope>lbann::lbann_callback_imcomm</scope><name>do_summary</name></member>
+      <member refid="classlbann_1_1lbann__callback_1acec888932129f93ba2a0077192467c9e" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_imcomm</scope><name>get_batch_interval</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a679057298a41ddd47f08c157f756c584" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_imcomm</scope><name>lbann_callback</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a91d994616b8bf98685ac32939228f96a" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_imcomm</scope><name>lbann_callback</name></member>
+      <member refid="classlbann_1_1lbann__callback__imcomm_1a06dc9efdcd77c9e1cf714ecf709a6e3a" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_imcomm</scope><name>lbann_callback_imcomm</name></member>
+      <member refid="classlbann_1_1lbann__callback__imcomm_1a95ae70dd6a90c023ee3bd0638dc24888" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_imcomm</scope><name>lbann_callback_imcomm</name></member>
+      <member refid="classlbann_1_1lbann__callback__imcomm_1aadc785d2f27ad0b03fce8c2785cff4fb" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_imcomm</scope><name>lbann_callback_imcomm</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a6126e310e9924398c18ccf76bb91c705" prot="protected" virt="non-virtual"><scope>lbann::lbann_callback_imcomm</scope><name>m_batch_interval</name></member>
+      <member refid="classlbann_1_1lbann__callback__imcomm_1ac3df687b12721a7278877c303357bc09" prot="private" virt="non-virtual"><scope>lbann::lbann_callback_imcomm</scope><name>m_default_ct</name></member>
+      <member refid="classlbann_1_1lbann__callback__imcomm_1a4994863d7f69e801c042c5d460bb3f34" prot="private" virt="non-virtual"><scope>lbann::lbann_callback_imcomm</scope><name>m_quantizer</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a277d46138184f85f161a8263b8322c76" prot="protected" virt="non-virtual"><scope>lbann::lbann_callback_imcomm</scope><name>m_summarizer</name></member>
+      <member refid="classlbann_1_1lbann__callback__imcomm_1a32a0319c91aff324cb3468de4f31dd50" prot="private" virt="non-virtual"><scope>lbann::lbann_callback_imcomm</scope><name>m_weights_params</name></member>
+      <member refid="classlbann_1_1lbann__callback__imcomm_1af058602425005a1d198df40b7845e16e" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>name</name></member>
+      <member refid="classlbann_1_1lbann__callback__imcomm_1acf7e894b3381e7f9b71020dc73594d6aafa59156bc4d5bcbf6bd80918d062da03" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_imcomm</scope><name>NONE</name></member>
+      <member refid="classlbann_1_1lbann__callback__imcomm_1acf7e894b3381e7f9b71020dc73594d6aa5f19efb5bef79cea24be992a2137962e" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_imcomm</scope><name>NORMAL</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a2c0709a26179d115ff85b7561786ee27" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>on_backward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1abeb1e486e259fd358332abf1e952f630" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>on_backward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback__imcomm_1a0a425ba562f7637b25cd6ba094e7885b" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>on_backward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1aba03b59c056ace8094095c08e39b9ac4" prot="public" virt="virtual" ambiguityscope="lbann::lbann_callback::"><scope>lbann::lbann_callback_imcomm</scope><name>on_backward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a9ecf4e44cd4021cdd687de14c850cc83" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>on_batch_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a895ca577e358601fcae5c04749f60535" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>on_batch_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a3462e54126adbd0082c22c98d8de5468" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>on_batch_evaluate_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ad10891b8ab3de74ee1a70e6255e7d58a" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>on_batch_evaluate_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a4ed9498763412a55953fff71ee3a9456" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>on_epoch_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback__imcomm_1a3160dbf536def4f930e0ea0aabdebc11" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>on_epoch_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a4a2cff48a688bb56ed14b8b53344f945" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>on_evaluate_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a044174864e4981a1dac093d58e8c4d6c" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>on_evaluate_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a0794f3fb88db6fef53f0e2f235f94424" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>on_evaluate_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ae23c5a61b81dbdfbd79736ac2b6035aa" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>on_evaluate_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a22ed977371173105b4aad3a20b9c59dc" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>on_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ab96adb1d77180e00fdd668cd381323fd" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>on_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a79a0bb407852d7b330b74373647ffe46" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>on_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a5eff0a59fbce98a981d9cdd0547a3ad5" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>on_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a1a9248b305f06419889c1b3b0f0893d8" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>on_optimize_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a497e750da160e0071ce8864ccc3a1344" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>on_optimize_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a235195d5fa4461835b861a03a5c0278f" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>on_optimize_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a4653e2903bfd3903709a81eaf7eabc1a" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>on_optimize_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ace7452239c9ad7aa6247e9496adbcffe" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>on_phase_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a716bff45bdc5a88eed09c2231f5bc93a" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>on_test_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1accbad4dd004c1ced33642db6398b2efe" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>on_test_end</name></member>
+      <member refid="classlbann_1_1lbann__callback__imcomm_1a332ba4ceca91939c79fae2735fdc8ff3" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>on_train_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1af28078b0ddaef45124465bef01eefedf" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>on_train_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a2bde303671110519388d9962bc3e5583" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>on_validation_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1adc16e42e5064dc2dc8d84dfbfc1325eb" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>on_validation_end</name></member>
+      <member refid="classlbann_1_1lbann__callback__imcomm_1acf7e894b3381e7f9b71020dc73594d6aa06f19090efbd982638c20bcb8a3c7d33" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_imcomm</scope><name>ONEBIT_QUANTIZATION</name></member>
+      <member refid="classlbann_1_1lbann__callback__imcomm_1a01ee7aaa808987e1f7fcca0e85cc1f73" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_imcomm</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a66b0a8c00a273669fa782ece59e8898b" prot="public" virt="non-virtual" ambiguityscope="lbann::lbann_callback::"><scope>lbann::lbann_callback_imcomm</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1lbann__callback__imcomm_1a13fe710b841f72e28daf8de029f6c2f9" prot="private" virt="non-virtual"><scope>lbann::lbann_callback_imcomm</scope><name>reshape_mat</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a02d924df2f8ca851578dc76d9015e48d" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_imcomm</scope><name>set_summarizer</name></member>
+      <member refid="classlbann_1_1lbann__callback__imcomm_1a5e0f7d9f85da8d2e579dbe4092bc3100" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_imcomm</scope><name>set_weights_adaptive</name></member>
+      <member refid="classlbann_1_1lbann__callback__imcomm_1a6ad492f30a34de2ac62fe459037e1d12" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_imcomm</scope><name>set_weights_comm</name></member>
+      <member refid="classlbann_1_1lbann__callback__imcomm_1acf71333f73d26714217ffcd93aa31830" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_imcomm</scope><name>set_weights_threshold</name></member>
+      <member refid="classlbann_1_1lbann__callback__imcomm_1a096555a87ce1bb011ceafb44081c4192" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>setup</name></member>
+      <member refid="classlbann_1_1lbann__callback__imcomm_1acf7e894b3381e7f9b71020dc73594d6aa76420a96a3df1d5b60140bab6bc32dc4" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_imcomm</scope><name>THRESH_QUANTIZATION</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ac91abaec389f8d2547512c45ae587304" prot="public" virt="virtual"><scope>lbann::lbann_callback_imcomm</scope><name>~lbann_callback</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

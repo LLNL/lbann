@@ -1,0 +1,5 @@
+<map id="lbann::generic_data_reader::set_master" name="lbann::generic_data_reader::set_master">
+<area shape="rect" id="node2" href="$classlbann_1_1generic__compound__data__reader.html#ae703ef84ca1c77221f4724a799f9ad0d" title="only the master may write to cerr or cout; primarily for use in debugging during development ..." alt="" coords="194,5,369,44"/>
+<area shape="rect" id="node3" href="$classlbann_1_1generic__data__reader.html#a39f4d80661a2c8e24d8d167ad5bd6c6b" title="set the comm object " alt="" coords="212,68,351,107"/>
+<area shape="rect" id="node4" href="$proto__common_8hpp.html#a32d4c032abc19c091fa65ace580fc057" title="instantiates one or more generic_data_readers and inserts them in &amp;data_readers " alt="" coords="417,104,541,129"/>
+</map>

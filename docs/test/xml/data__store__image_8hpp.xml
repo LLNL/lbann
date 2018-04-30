@@ -1,0 +1,411 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="data__store__image_8hpp" kind="file" language="C++">
+    <compoundname>data_store_image.hpp</compoundname>
+    <includes refid="generic__data__store_8hpp" local="yes">lbann/data_store/generic_data_store.hpp</includes>
+    <includes local="no">unordered_map</includes>
+    <includedby refid="data__store__image_8cpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_image.cpp</includedby>
+    <includedby refid="data__store__imagenet_8hpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_imagenet.hpp</includedby>
+    <incdepgraph>
+      <node id="5223">
+        <label>lbann/data_store/generic_data_store.hpp</label>
+        <link refid="generic__data__store_8hpp"/>
+        <childnode refid="5224" relation="include">
+        </childnode>
+        <childnode refid="5233" relation="include">
+        </childnode>
+        <childnode refid="5234" relation="include">
+        </childnode>
+        <childnode refid="5237" relation="include">
+        </childnode>
+      </node>
+      <node id="5225">
+        <label>El.hpp</label>
+      </node>
+      <node id="5224">
+        <label>lbann/base.hpp</label>
+        <link refid="base_8hpp"/>
+        <childnode refid="5225" relation="include">
+        </childnode>
+        <childnode refid="5226" relation="include">
+        </childnode>
+        <childnode refid="5227" relation="include">
+        </childnode>
+        <childnode refid="5232" relation="include">
+        </childnode>
+      </node>
+      <node id="5235">
+        <label>map</label>
+      </node>
+      <node id="5237">
+        <label>unordered_set</label>
+      </node>
+      <node id="5229">
+        <label>cstdio</label>
+      </node>
+      <node id="5231">
+        <label>cxxabi.h</label>
+      </node>
+      <node id="5234">
+        <label>vector</label>
+      </node>
+      <node id="5233">
+        <label>lbann/comm.hpp</label>
+        <link refid="comm_8hpp"/>
+        <childnode refid="5234" relation="include">
+        </childnode>
+        <childnode refid="5235" relation="include">
+        </childnode>
+        <childnode refid="5236" relation="include">
+        </childnode>
+        <childnode refid="5224" relation="include">
+        </childnode>
+      </node>
+      <node id="5228">
+        <label>cstdlib</label>
+      </node>
+      <node id="5238">
+        <label>unordered_map</label>
+      </node>
+      <node id="5222">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_image.hpp</label>
+        <link refid="data__store__image_8hpp"/>
+        <childnode refid="5223" relation="include">
+        </childnode>
+        <childnode refid="5238" relation="include">
+        </childnode>
+      </node>
+      <node id="5232">
+        <label>lbann_config.hpp</label>
+      </node>
+      <node id="5227">
+        <label>lbann/utils/cyg_profile.hpp</label>
+        <link refid="cyg__profile_8hpp"/>
+        <childnode refid="5228" relation="include">
+        </childnode>
+        <childnode refid="5229" relation="include">
+        </childnode>
+        <childnode refid="5230" relation="include">
+        </childnode>
+        <childnode refid="5231" relation="include">
+        </childnode>
+      </node>
+      <node id="5226">
+        <label>lbann/Elemental_extensions.hpp</label>
+        <link refid="Elemental__extensions_8hpp"/>
+        <childnode refid="5225" relation="include">
+        </childnode>
+      </node>
+      <node id="5236">
+        <label>typeindex</label>
+      </node>
+      <node id="5230">
+        <label>dlfcn.h</label>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="5260">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/proto/factories.hpp</label>
+        <link refid="factories_8hpp"/>
+        <childnode refid="5261" relation="include">
+        </childnode>
+        <childnode refid="5262" relation="include">
+        </childnode>
+        <childnode refid="5263" relation="include">
+        </childnode>
+        <childnode refid="5264" relation="include">
+        </childnode>
+        <childnode refid="5265" relation="include">
+        </childnode>
+        <childnode refid="5266" relation="include">
+        </childnode>
+        <childnode refid="5267" relation="include">
+        </childnode>
+        <childnode refid="5268" relation="include">
+        </childnode>
+        <childnode refid="5258" relation="include">
+        </childnode>
+      </node>
+      <node id="5246">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_imagenet_patches.cpp</label>
+        <link refid="data__store__imagenet__patches_8cpp"/>
+      </node>
+      <node id="5253">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_triplet.cpp</label>
+        <link refid="data__store__triplet_8cpp"/>
+      </node>
+      <node id="5252">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_triplet.cpp</label>
+        <link refid="data__reader__triplet_8cpp"/>
+      </node>
+      <node id="5265">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/model_factory.cpp</label>
+        <link refid="model__factory_8cpp"/>
+      </node>
+      <node id="5241">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_imagenet.hpp</label>
+        <link refid="data__store__imagenet_8hpp"/>
+        <childnode refid="5242" relation="include">
+        </childnode>
+        <childnode refid="5243" relation="include">
+        </childnode>
+        <childnode refid="5244" relation="include">
+        </childnode>
+        <childnode refid="5247" relation="include">
+        </childnode>
+        <childnode refid="5254" relation="include">
+        </childnode>
+      </node>
+      <node id="5247">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_multi_images.hpp</label>
+        <link refid="data__store__multi__images_8hpp"/>
+        <childnode refid="5248" relation="include">
+        </childnode>
+        <childnode refid="5249" relation="include">
+        </childnode>
+        <childnode refid="5250" relation="include">
+        </childnode>
+        <childnode refid="5251" relation="include">
+        </childnode>
+      </node>
+      <node id="5257">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/params.cpp</label>
+        <link refid="params_8cpp"/>
+      </node>
+      <node id="5258">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/proto/proto_common.hpp</label>
+        <link refid="proto__common_8hpp"/>
+        <childnode refid="5255" relation="include">
+        </childnode>
+        <childnode refid="5259" relation="include">
+        </childnode>
+        <childnode refid="5260" relation="include">
+        </childnode>
+        <childnode refid="5269" relation="include">
+        </childnode>
+      </node>
+      <node id="5256">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/params.hpp</label>
+        <link refid="params_8hpp"/>
+        <childnode refid="5257" relation="include">
+        </childnode>
+        <childnode refid="5254" relation="include">
+        </childnode>
+      </node>
+      <node id="5244">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_imagenet_patches.hpp</label>
+        <link refid="data__store__imagenet__patches_8hpp"/>
+        <childnode refid="5245" relation="include">
+        </childnode>
+        <childnode refid="5246" relation="include">
+        </childnode>
+      </node>
+      <node id="5262">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/layer_factory.cpp</label>
+        <link refid="layer__factory_8cpp"/>
+      </node>
+      <node id="5250">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_multi_images.cpp</label>
+        <link refid="data__store__multi__images_8cpp"/>
+      </node>
+      <node id="5259">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/utils/protobuf_utils.cpp</label>
+        <link refid="protobuf__utils_8cpp"/>
+      </node>
+      <node id="5270">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/init_image_data_readers.cpp</label>
+        <link refid="init__image__data__readers_8cpp"/>
+      </node>
+      <node id="5248">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_mnist_siamese.cpp</label>
+        <link refid="data__reader__mnist__siamese_8cpp"/>
+      </node>
+      <node id="5266">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/objective_function_factory.cpp</label>
+        <link refid="objective__function__factory_8cpp"/>
+      </node>
+      <node id="5251">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_triplet.hpp</label>
+        <link refid="data__store__triplet_8hpp"/>
+        <childnode refid="5252" relation="include">
+        </childnode>
+        <childnode refid="5253" relation="include">
+        </childnode>
+      </node>
+      <node id="5243">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_imagenet.cpp</label>
+        <link refid="data__store__imagenet_8cpp"/>
+      </node>
+      <node id="5242">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_imagenet.cpp</label>
+        <link refid="data__reader__imagenet_8cpp"/>
+      </node>
+      <node id="5255">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/proto_common.cpp</label>
+        <link refid="proto__common_8cpp"/>
+      </node>
+      <node id="5264">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/metric_factory.cpp</label>
+        <link refid="metric__factory_8cpp"/>
+      </node>
+      <node id="5254">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/lbann.hpp</label>
+        <link refid="lbann_8hpp"/>
+        <childnode refid="5255" relation="include">
+        </childnode>
+        <childnode refid="5256" relation="include">
+        </childnode>
+        <childnode refid="5258" relation="include">
+        </childnode>
+        <childnode refid="5271" relation="include">
+        </childnode>
+      </node>
+      <node id="5245">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_imagenet_patches.cpp</label>
+        <link refid="data__reader__imagenet__patches_8cpp"/>
+      </node>
+      <node id="5269">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/proto/init_image_data_readers.hpp</label>
+        <link refid="init__image__data__readers_8hpp"/>
+        <childnode refid="5270" relation="include">
+        </childnode>
+        <childnode refid="5255" relation="include">
+        </childnode>
+      </node>
+      <node id="5249">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_multi_images.cpp</label>
+        <link refid="data__reader__multi__images_8cpp"/>
+      </node>
+      <node id="5267">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/optimizer_factory.cpp</label>
+        <link refid="optimizer__factory_8cpp"/>
+      </node>
+      <node id="5268">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/weights_factory.cpp</label>
+        <link refid="weights__factory_8cpp"/>
+      </node>
+      <node id="5239">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_image.hpp</label>
+        <link refid="data__store__image_8hpp"/>
+        <childnode refid="5240" relation="include">
+        </childnode>
+        <childnode refid="5241" relation="include">
+        </childnode>
+      </node>
+      <node id="5240">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_image.cpp</label>
+        <link refid="data__store__image_8cpp"/>
+      </node>
+      <node id="5261">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/callback_factory.cpp</label>
+        <link refid="callback__factory_8cpp"/>
+      </node>
+      <node id="5271">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/protobuf_utils.hpp</label>
+        <link refid="protobuf__utils_8hpp"/>
+        <childnode refid="5259" relation="include">
+        </childnode>
+      </node>
+      <node id="5263">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/layer_graph_factory.cpp</label>
+        <link refid="layer__graph__factory_8cpp"/>
+      </node>
+    </invincdepgraph>
+    <innerclass refid="classlbann_1_1data__store__image" prot="public">lbann::data_store_image</innerclass>
+    <innerclass refid="structlbann_1_1data__store__image_1_1Triple" prot="protected">lbann::data_store_image::Triple</innerclass>
+    <innernamespace refid="namespacelbann">lbann</innernamespace>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>2014-2016,<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Security,<sp/>LLC.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Produced<sp/>at<sp/>the<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Laboratory.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Written<sp/>by<sp/>the<sp/>LBANN<sp/>Research<sp/>Team<sp/>(B.<sp/>Van<sp/>Essen,<sp/>et<sp/>al.)<sp/>listed<sp/>in</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="comment">//<sp/>the<sp/>CONTRIBUTORS<sp/>file.<sp/>&lt;lbann-dev@llnl.gov&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="comment">//<sp/>LLNL-CODE-697807.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="comment">//<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="comment">//<sp/>This<sp/>file<sp/>is<sp/>part<sp/>of<sp/>LBANN:<sp/>Livermore<sp/>Big<sp/>Artificial<sp/>Neural<sp/>Network</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Toolkit.<sp/>For<sp/>details,<sp/>see<sp/>http://software.llnl.gov/LBANN<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="comment">//<sp/>https://github.com/LLNL/LBANN.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Licensed<sp/>under<sp/>the<sp/>Apache<sp/>License,<sp/>Version<sp/>2.0<sp/>(the<sp/>&quot;Licensee&quot;);<sp/>you</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight><highlight class="comment">//<sp/>may<sp/>not<sp/>use<sp/>this<sp/>file<sp/>except<sp/>in<sp/>compliance<sp/>with<sp/>the<sp/>License.<sp/><sp/>You<sp/>may</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="comment">//<sp/>obtain<sp/>a<sp/>copy<sp/>of<sp/>the<sp/>License<sp/>at:</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight><highlight class="comment">//<sp/>http://www.apache.org/licenses/LICENSE-2.0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Unless<sp/>required<sp/>by<sp/>applicable<sp/>law<sp/>or<sp/>agreed<sp/>to<sp/>in<sp/>writing,<sp/>software</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight><highlight class="comment">//<sp/>distributed<sp/>under<sp/>the<sp/>License<sp/>is<sp/>distributed<sp/>on<sp/>an<sp/>&quot;AS<sp/>IS&quot;<sp/>BASIS,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight><highlight class="comment">//<sp/>WITHOUT<sp/>WARRANTIES<sp/>OR<sp/>CONDITIONS<sp/>OF<sp/>ANY<sp/>KIND,<sp/>either<sp/>express<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="comment">//<sp/>implied.<sp/>See<sp/>the<sp/>License<sp/>for<sp/>the<sp/>specific<sp/>language<sp/>governing</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="comment">//<sp/>permissions<sp/>and<sp/>limitations<sp/>under<sp/>the<sp/>license.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="25"><highlight class="normal"></highlight><highlight class="comment">//</highlight></codeline>
+<codeline lineno="27"><highlight class="comment"></highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="28"><highlight class="normal"></highlight><highlight class="preprocessor">#ifndef<sp/>__DATA_STORE_IMAGE_HPP__</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="29"><highlight class="normal"></highlight><highlight class="preprocessor">#define<sp/>__DATA_STORE_IMAGE_HPP__</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="30"><highlight class="normal"></highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="generic__data__store_8hpp" kindref="compound">lbann/data_store/generic_data_store.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="32"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;unordered_map&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="33"><highlight class="normal"></highlight></codeline>
+<codeline lineno="34"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacelbann" kindref="compound">lbann</ref><sp/>{</highlight></codeline>
+<codeline lineno="35"><highlight class="normal"></highlight></codeline>
+<codeline lineno="40" refid="classlbann_1_1data__store__image" refkind="compound"><highlight class="keyword">class<sp/></highlight><highlight class="normal"><ref refid="classlbann_1_1data__store__image" kindref="compound">data_store_image</ref><sp/>:<sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1generic__data__store" kindref="compound">generic_data_store</ref><sp/>{</highlight></codeline>
+<codeline lineno="41"><highlight class="normal"><sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="42"><highlight class="normal"></highlight></codeline>
+<codeline lineno="44" refid="classlbann_1_1data__store__image_1a8fd8c5546f405a964511823aed8ac986" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1data__store__image_1a8fd8c5546f405a964511823aed8ac986" kindref="member">data_store_image</ref>(<ref refid="classlbann_1_1generic__data__reader" kindref="compound">generic_data_reader</ref><sp/>*reader,<sp/><ref refid="classlbann_1_1model" kindref="compound">model</ref><sp/>*m)<sp/>:</highlight></codeline>
+<codeline lineno="45"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1generic__data__store" kindref="compound">generic_data_store</ref>(reader,<sp/>m),</highlight></codeline>
+<codeline lineno="46"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1data__store__image_1a2f660053e7621a9cc70a7c4eef53c9cc" kindref="member">m_num_img_srcs</ref>(1)<sp/>{}</highlight></codeline>
+<codeline lineno="47"><highlight class="normal"></highlight></codeline>
+<codeline lineno="49"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1data__store__image_1a8fd8c5546f405a964511823aed8ac986" kindref="member">data_store_image</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__store__image" kindref="compound">data_store_image</ref>&amp;)<sp/>=<sp/></highlight><highlight class="keywordflow">default</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="50"><highlight class="normal"></highlight></codeline>
+<codeline lineno="52"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1data__store__image" kindref="compound">data_store_image</ref>&amp;<sp/><ref refid="classlbann_1_1data__store__image_1a997fd4f7961b173e1b03dfe1d81ad96f" kindref="member">operator=</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__store__image" kindref="compound">data_store_image</ref>&amp;)<sp/>=<sp/></highlight><highlight class="keywordflow">default</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="53"><highlight class="normal"></highlight></codeline>
+<codeline lineno="54"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1generic__data__store" kindref="compound">generic_data_store</ref><sp/>*<sp/><ref refid="classlbann_1_1data__store__image_1ab62efcb2dbe3118bf2815fa5d51fee61" kindref="member">copy</ref>()<sp/></highlight><highlight class="keyword">const<sp/>override</highlight><highlight class="normal"><sp/>=<sp/>0;</highlight></codeline>
+<codeline lineno="55"><highlight class="normal"></highlight></codeline>
+<codeline lineno="57"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1data__store__image_1a1c6e508be9cbadcd63f79f2e2c24dba8" kindref="member">~data_store_image</ref>()<sp/></highlight><highlight class="keyword">override</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="58"><highlight class="normal"></highlight></codeline>
+<codeline lineno="59"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__store__image_1a79280b3aa9a207dfacad2bcc9824ec73" kindref="member">setup</ref>()<sp/></highlight><highlight class="keyword">override</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="60"><highlight class="normal"></highlight></codeline>
+<codeline lineno="62"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__store__image_1aa9e47fb3cad58dda4eaddcccc9bfa523" kindref="member">get_data_buf</ref>(</highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>data_id,<sp/>std::vector&lt;unsigned<sp/>char&gt;<sp/>*&amp;buf,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>multi_idx<sp/>=<sp/>0)<sp/></highlight><highlight class="keyword">override</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="63"><highlight class="normal"></highlight></codeline>
+<codeline lineno="64"><highlight class="normal"><sp/>protected<sp/>:</highlight></codeline>
+<codeline lineno="65"><highlight class="normal"></highlight></codeline>
+<codeline lineno="66"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__store__image_1a5ff5eccbd469caca692e8259f6f8c021" kindref="member">exchange_data</ref>()<sp/></highlight><highlight class="keyword">override</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="67"><highlight class="normal"></highlight></codeline>
+<codeline lineno="68" refid="structlbann_1_1data__store__image_1_1Triple" refkind="compound"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">struct<sp/></highlight><highlight class="normal"><ref refid="structlbann_1_1data__store__image_1_1Triple" kindref="compound">Triple</ref><sp/>{</highlight></codeline>
+<codeline lineno="69" refid="structlbann_1_1data__store__image_1_1Triple_1ab0272c98326490e8c32f78a06945532e" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="structlbann_1_1data__store__image_1_1Triple_1ab0272c98326490e8c32f78a06945532e" kindref="member">global_index</ref>;</highlight></codeline>
+<codeline lineno="70" refid="structlbann_1_1data__store__image_1_1Triple_1ac1433e36775425f7aad96c4679713a6a" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="structlbann_1_1data__store__image_1_1Triple_1ac1433e36775425f7aad96c4679713a6a" kindref="member">num_bytes</ref>;</highlight></codeline>
+<codeline lineno="71" refid="structlbann_1_1data__store__image_1_1Triple_1ac46e0207ffbcf36e5b68fc35fe96ddb6" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/><ref refid="structlbann_1_1data__store__image_1_1Triple_1ac46e0207ffbcf36e5b68fc35fe96ddb6" kindref="member">offset</ref>;</highlight></codeline>
+<codeline lineno="72" refid="structlbann_1_1data__store__image_1_1Triple_1a2e478c92a7be9cb64905867f4744bd9d" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="structlbann_1_1data__store__image_1_1Triple_1a2e478c92a7be9cb64905867f4744bd9d" kindref="member">rank</ref>;</highlight></codeline>
+<codeline lineno="73"><highlight class="normal"><sp/><sp/>};</highlight></codeline>
+<codeline lineno="74"><highlight class="normal"></highlight></codeline>
+<codeline lineno="76" refid="classlbann_1_1data__store__image_1a1903176a4b305fd42617ea1cb6d997ae" refkind="member"><highlight class="normal"><sp/><sp/>std::unordered_map&lt;size_t,<sp/>size_t&gt;<sp/><ref refid="classlbann_1_1data__store__image_1a1903176a4b305fd42617ea1cb6d997ae" kindref="member">m_file_sizes</ref>;</highlight></codeline>
+<codeline lineno="77"><highlight class="normal"></highlight></codeline>
+<codeline lineno="80" refid="classlbann_1_1data__store__image_1ae5a9ba5fb1bf4d3147743012b8099038" refkind="member"><highlight class="normal"><sp/><sp/>std::unordered_map&lt;size_t,<sp/>size_t&gt;<sp/><ref refid="classlbann_1_1data__store__image_1ae5a9ba5fb1bf4d3147743012b8099038" kindref="member">m_offsets</ref>;</highlight></codeline>
+<codeline lineno="82"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">virtual</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__store__image_1a8694bc9157c5fdc80bb5c251e68e18cb" kindref="member">get_file_sizes</ref>()<sp/>=<sp/>0;</highlight></codeline>
+<codeline lineno="83"><highlight class="normal"></highlight></codeline>
+<codeline lineno="85"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">virtual</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__store__image_1a477529f2ba3f86598bbd409d3c2b6901" kindref="member">exchange_file_sizes</ref>(std::vector&lt;Triple&gt;<sp/>&amp;my_file_sizes,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>num_global_indices);</highlight></codeline>
+<codeline lineno="86"><highlight class="normal"></highlight></codeline>
+<codeline lineno="88"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__store__image_1af74877e493b5a822dd3d3793a95ceb9d" kindref="member">allocate_memory</ref>();<sp/></highlight></codeline>
+<codeline lineno="89"><highlight class="normal"></highlight></codeline>
+<codeline lineno="91" refid="classlbann_1_1data__store__image_1a627a08479de191dcef74e633c4cded8c" refkind="member"><highlight class="normal"><sp/><sp/>std::unordered_map&lt;int,<sp/>std::vector&lt;unsigned<sp/>char&gt;<sp/>&gt;<sp/><ref refid="classlbann_1_1data__store__image_1a627a08479de191dcef74e633c4cded8c" kindref="member">m_my_minibatch_data</ref>;</highlight></codeline>
+<codeline lineno="92"><highlight class="normal"><sp/><sp/><sp/></highlight></codeline>
+<codeline lineno="94"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__store__image_1a8a53bab58d75554821f90c38d14078aa" kindref="member">load_file</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::string<sp/>&amp;dir,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::string<sp/>&amp;fn,<sp/></highlight><highlight class="keywordtype">unsigned</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>*p,<sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>sz);<sp/></highlight></codeline>
+<codeline lineno="95"><highlight class="normal"></highlight></codeline>
+<codeline lineno="97"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">virtual</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__store__image_1a146874a68c24213f5509efb9727cb6e5" kindref="member">read_files</ref>()<sp/>=<sp/>0;<sp/></highlight></codeline>
+<codeline lineno="98"><highlight class="normal"></highlight></codeline>
+<codeline lineno="100" refid="classlbann_1_1data__store__image_1a2f660053e7621a9cc70a7c4eef53c9cc" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">unsigned</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__store__image_1a2f660053e7621a9cc70a7c4eef53c9cc" kindref="member">m_num_img_srcs</ref>;</highlight></codeline>
+<codeline lineno="101"><highlight class="normal"></highlight></codeline>
+<codeline lineno="102" refid="classlbann_1_1data__store__image_1a10e9aa0c240785bc0a961f24e87a1c16" refkind="member"><highlight class="normal"><sp/><sp/>std::vector&lt;unsigned<sp/>char&gt;<sp/><ref refid="classlbann_1_1data__store__image_1a10e9aa0c240785bc0a961f24e87a1c16" kindref="member">m_data</ref>;</highlight></codeline>
+<codeline lineno="103"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="104"><highlight class="normal"></highlight></codeline>
+<codeline lineno="105"><highlight class="normal">}<sp/><sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>lbann</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="106"><highlight class="normal"></highlight></codeline>
+<codeline lineno="107"><highlight class="normal"></highlight><highlight class="preprocessor">#endif<sp/><sp/>//<sp/>__DATA_STORE_IMAGE_HPP__</highlight></codeline>
+    </programlisting>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_image.hpp"/>
+  </compounddef>
+</doxygen>

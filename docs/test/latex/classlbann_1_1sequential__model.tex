@@ -1,0 +1,505 @@
+\hypertarget{classlbann_1_1sequential__model}{}\section{lbann\+:\+:sequential\+\_\+model Class Reference}
+\label{classlbann_1_1sequential__model}\index{lbann\+::sequential\+\_\+model@{lbann\+::sequential\+\_\+model}}
+
+
+{\ttfamily \#include $<$sequential.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:sequential\+\_\+model\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=204pt]{classlbann_1_1sequential__model__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:sequential\+\_\+model\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sequential__model__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1sequential__model_a269f246d881186f8e8608dc4758cc6a6}{sequential\+\_\+model} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, int max\+\_\+mini\+\_\+batch\+\_\+size, \hyperlink{classlbann_1_1objective__function}{objective\+\_\+function} $\ast$obj\+\_\+fn, \hyperlink{classlbann_1_1optimizer}{optimizer} $\ast$default\+\_\+optimizer=nullptr)
+\item 
+\hyperlink{classlbann_1_1sequential__model_a03d6ed139f28f82411b5db7787c97ad2}{sequential\+\_\+model} (const \hyperlink{classlbann_1_1sequential__model}{sequential\+\_\+model} \&other)=default
+\item 
+\hyperlink{classlbann_1_1sequential__model}{sequential\+\_\+model} \& \hyperlink{classlbann_1_1sequential__model_a9714c99522b90488c486b390c5a7b6f3}{operator=} (const \hyperlink{classlbann_1_1sequential__model}{sequential\+\_\+model} \&other)=default
+\item 
+\hyperlink{classlbann_1_1sequential__model_ab56d457c38e89f6ea1c030168a018938}{$\sim$sequential\+\_\+model} () override=default
+\item 
+\hyperlink{classlbann_1_1sequential__model}{sequential\+\_\+model} $\ast$ \hyperlink{classlbann_1_1sequential__model_a548d44a9c4c6bec3680d60b20ac9bd73}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1sequential__model_abf2b69dacb5ee3165289377e1d961cd5}{name} () const override
+\item 
+bool \hyperlink{classlbann_1_1sequential__model_a51cd5ae859c66cfb36d25d968ef06203}{save\+\_\+to\+\_\+checkpoint} (int fd, const char $\ast$filename, size\+\_\+t $\ast$bytes)
+\item 
+bool \hyperlink{classlbann_1_1sequential__model_aa405c653dae867e862475e13b9df1db0}{load\+\_\+from\+\_\+checkpoint} (int fd, const char $\ast$filename, size\+\_\+t $\ast$bytes)
+\begin{DoxyCompactList}\small\item\em Load model from checkpoint. \end{DoxyCompactList}\item 
+bool \hyperlink{classlbann_1_1sequential__model_a226032d9890b8770c6fca54bf70d69eb}{save\+\_\+to\+\_\+checkpoint\+\_\+shared} (\hyperlink{classlbann_1_1persist}{persist} \&p, bool val\+\_\+end) override
+\item 
+bool \hyperlink{classlbann_1_1sequential__model_aa52cca299012c67f88483206d50abb21}{load\+\_\+from\+\_\+checkpoint\+\_\+shared} (\hyperlink{classlbann_1_1persist}{persist} \&p) override
+\item 
+void \hyperlink{classlbann_1_1sequential__model_a53a83327a1115a53affa78c93344e641}{write\+\_\+proto} (lbann\+\_\+data\+::\+Model $\ast$proto) override
+\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+virtual void \hyperlink{classlbann_1_1sequential__model_a3801a58530388fb6a8cb3e1c018e827d}{setup\+\_\+layer\+\_\+topology} () override
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+
+
+Definition at line 41 of file sequential.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1sequential__model_a269f246d881186f8e8608dc4758cc6a6}\label{classlbann_1_1sequential__model_a269f246d881186f8e8608dc4758cc6a6}} 
+\index{lbann\+::sequential\+\_\+model@{lbann\+::sequential\+\_\+model}!sequential\+\_\+model@{sequential\+\_\+model}}
+\index{sequential\+\_\+model@{sequential\+\_\+model}!lbann\+::sequential\+\_\+model@{lbann\+::sequential\+\_\+model}}
+\subsubsection{\texorpdfstring{sequential\+\_\+model()}{sequential\_model()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::sequential\+\_\+model\+::sequential\+\_\+model (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{int}]{max\+\_\+mini\+\_\+batch\+\_\+size,  }\item[{\hyperlink{classlbann_1_1objective__function}{objective\+\_\+function} $\ast$}]{obj\+\_\+fn,  }\item[{\hyperlink{classlbann_1_1optimizer}{optimizer} $\ast$}]{default\+\_\+optimizer = {\ttfamily nullptr} }\end{DoxyParamCaption})}
+
+Constructor. 
+
+Definition at line 34 of file sequential.\+cpp.
+
+
+\begin{DoxyCode}
+38   : \hyperlink{classlbann_1_1model_a6feaee921c434bbfc32451ed874cc051}{model}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, mini\_batch\_size, obj\_fn, default\_optimizer) \{\}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sequential__model_a269f246d881186f8e8608dc4758cc6a6_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1sequential__model_a03d6ed139f28f82411b5db7787c97ad2}\label{classlbann_1_1sequential__model_a03d6ed139f28f82411b5db7787c97ad2}} 
+\index{lbann\+::sequential\+\_\+model@{lbann\+::sequential\+\_\+model}!sequential\+\_\+model@{sequential\+\_\+model}}
+\index{sequential\+\_\+model@{sequential\+\_\+model}!lbann\+::sequential\+\_\+model@{lbann\+::sequential\+\_\+model}}
+\subsubsection{\texorpdfstring{sequential\+\_\+model()}{sequential\_model()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::sequential\+\_\+model\+::sequential\+\_\+model (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1sequential__model}{sequential\+\_\+model} \&}]{other }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Copy constructor. \mbox{\Hypertarget{classlbann_1_1sequential__model_ab56d457c38e89f6ea1c030168a018938}\label{classlbann_1_1sequential__model_ab56d457c38e89f6ea1c030168a018938}} 
+\index{lbann\+::sequential\+\_\+model@{lbann\+::sequential\+\_\+model}!````~sequential\+\_\+model@{$\sim$sequential\+\_\+model}}
+\index{````~sequential\+\_\+model@{$\sim$sequential\+\_\+model}!lbann\+::sequential\+\_\+model@{lbann\+::sequential\+\_\+model}}
+\subsubsection{\texorpdfstring{$\sim$sequential\+\_\+model()}{~sequential\_model()}}
+{\footnotesize\ttfamily lbann\+::sequential\+\_\+model\+::$\sim$sequential\+\_\+model (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [default]}}
+
+Destructor. 
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1sequential__model_a548d44a9c4c6bec3680d60b20ac9bd73}\label{classlbann_1_1sequential__model_a548d44a9c4c6bec3680d60b20ac9bd73}} 
+\index{lbann\+::sequential\+\_\+model@{lbann\+::sequential\+\_\+model}!copy@{copy}}
+\index{copy@{copy}!lbann\+::sequential\+\_\+model@{lbann\+::sequential\+\_\+model}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1sequential__model}{sequential\+\_\+model}$\ast$ lbann\+::sequential\+\_\+model\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Create copy. 
+
+Implements \hyperlink{classlbann_1_1model_aacd024c11f0897b33a7e7838b9433ba2}{lbann\+::model}.
+
+
+
+Definition at line 57 of file sequential.\+hpp.
+
+
+\begin{DoxyCode}
+57 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1sequential__model_a269f246d881186f8e8608dc4758cc6a6}{sequential\_model}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sequential__model_a548d44a9c4c6bec3680d60b20ac9bd73_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1sequential__model_aa405c653dae867e862475e13b9df1db0}\label{classlbann_1_1sequential__model_aa405c653dae867e862475e13b9df1db0}} 
+\index{lbann\+::sequential\+\_\+model@{lbann\+::sequential\+\_\+model}!load\+\_\+from\+\_\+checkpoint@{load\+\_\+from\+\_\+checkpoint}}
+\index{load\+\_\+from\+\_\+checkpoint@{load\+\_\+from\+\_\+checkpoint}!lbann\+::sequential\+\_\+model@{lbann\+::sequential\+\_\+model}}
+\subsubsection{\texorpdfstring{load\+\_\+from\+\_\+checkpoint()}{load\_from\_checkpoint()}}
+{\footnotesize\ttfamily bool lbann\+::sequential\+\_\+model\+::load\+\_\+from\+\_\+checkpoint (\begin{DoxyParamCaption}\item[{int}]{fd,  }\item[{const char $\ast$}]{filename,  }\item[{size\+\_\+t $\ast$}]{bytes }\end{DoxyParamCaption})}
+
+
+
+Load model from checkpoint. 
+
+\begin{DoxyRefDesc}{Todo}
+\item[\hyperlink{todo__todo000027}{Todo}]This is old and likely broken \end{DoxyRefDesc}
+
+
+Definition at line 88 of file sequential.\+cpp.
+
+
+\begin{DoxyCode}
+88                                                                                        \{
+89   \textcolor{comment}{// read number of layers}
+90   \textcolor{keywordtype}{unsigned} \textcolor{keywordtype}{int} file\_layers;
+91   \textcolor{keywordtype}{int} read\_rc = read(fd, &file\_layers, \textcolor{keyword}{sizeof}(\textcolor{keywordtype}{unsigned} \textcolor{keywordtype}{int}));
+92   \textcolor{keywordflow}{if} (read\_rc != \textcolor{keyword}{sizeof}(\textcolor{keywordtype}{int})) \{
+93     fprintf(stderr, \textcolor{stringliteral}{"ERROR: Failed to read number of layers from file `%s' (%d: %s) @ %s:%d\(\backslash\)n"},
+94             filename, errno, strerror(errno), \_\_FILE\_\_, \_\_LINE\_\_
+95            );
+96     fflush(stderr);
+97   \}
+98   *bytes += read\_rc;
+99 
+100   \textcolor{keywordflow}{if} (file\_layers != \hyperlink{classlbann_1_1model_a0229fc226ec163d1411548446104569d}{m\_layers}.size()) \{
+101     \textcolor{comment}{// error!}
+102   \}
+103 
+104   \textcolor{comment}{/*for (size\_t l = 1; l < m\_layers.size(); l++) \{}
+105 \textcolor{comment}{    if (! m\_layers[l]->loadFromCheckpoint(fd, filename, bytes)) \{}
+106 \textcolor{comment}{      return false;}
+107 \textcolor{comment}{    \}}
+108 \textcolor{comment}{  \}*/}
+109 
+110   \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+111 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sequential__model_aa405c653dae867e862475e13b9df1db0_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1sequential__model_aa52cca299012c67f88483206d50abb21}\label{classlbann_1_1sequential__model_aa52cca299012c67f88483206d50abb21}} 
+\index{lbann\+::sequential\+\_\+model@{lbann\+::sequential\+\_\+model}!load\+\_\+from\+\_\+checkpoint\+\_\+shared@{load\+\_\+from\+\_\+checkpoint\+\_\+shared}}
+\index{load\+\_\+from\+\_\+checkpoint\+\_\+shared@{load\+\_\+from\+\_\+checkpoint\+\_\+shared}!lbann\+::sequential\+\_\+model@{lbann\+::sequential\+\_\+model}}
+\subsubsection{\texorpdfstring{load\+\_\+from\+\_\+checkpoint\+\_\+shared()}{load\_from\_checkpoint\_shared()}}
+{\footnotesize\ttfamily bool lbann\+::sequential\+\_\+model\+::load\+\_\+from\+\_\+checkpoint\+\_\+shared (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1persist}{persist} \&}]{p }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Restore model by reading checkpoint from given file descriptor, return number of bytes read 
+
+Reimplemented from \hyperlink{classlbann_1_1model_a2e02dda11636e015ea0c892ffa541881}{lbann\+::model}.
+
+
+
+Definition at line 165 of file sequential.\+cpp.
+
+
+\begin{DoxyCode}
+165                                                              \{
+166   \textcolor{comment}{// read parameters from base class first}
+167   \hyperlink{classlbann_1_1model_a2e02dda11636e015ea0c892ffa541881}{model::load\_from\_checkpoint\_shared}(p);
+168 
+169   \textcolor{comment}{// have rank 0 read the network file}
+170   \textcolor{keyword}{struct }lbann\_model\_sequential\_header header;
+171   \textcolor{keywordflow}{if} (p.get\_rank() == 0) \{
+172     p.read\_uint32(\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56a20f35e630daf44dbfa4c3f68f5399d8c}{persist\_type::model}, \textcolor{stringliteral}{"layers"}, &header.layers);
+173 
+174     \textcolor{comment}{// TODO: read back each layer type and size}
+175   \}
+176 
+177   \textcolor{comment}{// TODO: this assumes homogeneous processors}
+178   \textcolor{comment}{// broadcast state from rank 0}
+179   MPI\_Bcast(&header, \textcolor{keyword}{sizeof}(header), MPI\_BYTE, 0, MPI\_COMM\_WORLD);
+180 
+181   \textcolor{keywordflow}{if} (header.layers != \hyperlink{classlbann_1_1model_a0229fc226ec163d1411548446104569d}{m\_layers}.size()) \{
+182     \textcolor{comment}{// error!}
+183      std::stringstream err;
+184      err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+185          << \textcolor{stringliteral}{"Error occured in model reload: model layers not equal"};
+186      \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+187      \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+188   \}
+189 
+190   \textcolor{comment}{// TODO: check that each layer type matches what we'd expect}
+191   \textcolor{keywordflow}{for} (weights *w : \hyperlink{classlbann_1_1model_aaf9adefe4497d90bf5bc2567e71bfb00}{m\_weights}) \{
+192     w->load\_from\_checkpoint\_shared(p);
+193   \}
+194   \textcolor{comment}{// read in each layer}
+195   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} l = 0; l < \hyperlink{classlbann_1_1model_a0229fc226ec163d1411548446104569d}{m\_layers}.size(); l++) \{
+196     \textcolor{keywordflow}{if} (! \hyperlink{classlbann_1_1model_a0229fc226ec163d1411548446104569d}{m\_layers}[l]->\hyperlink{classlbann_1_1sequential__model_aa52cca299012c67f88483206d50abb21}{load\_from\_checkpoint\_shared}(p)) \{
+197       \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+198     \}
+199   \}
+200   \textcolor{comment}{//m\_objective\_function->load\_from\_checkpoint\_shared(p);}
+201   \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+202 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sequential__model_aa52cca299012c67f88483206d50abb21_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sequential__model_aa52cca299012c67f88483206d50abb21_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1sequential__model_abf2b69dacb5ee3165289377e1d961cd5}\label{classlbann_1_1sequential__model_abf2b69dacb5ee3165289377e1d961cd5}} 
+\index{lbann\+::sequential\+\_\+model@{lbann\+::sequential\+\_\+model}!name@{name}}
+\index{name@{name}!lbann\+::sequential\+\_\+model@{lbann\+::sequential\+\_\+model}}
+\subsubsection{\texorpdfstring{name()}{name()}}
+{\footnotesize\ttfamily std\+::string lbann\+::sequential\+\_\+model\+::name (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get model name. 
+
+Implements \hyperlink{classlbann_1_1model_a7e471599eded909c4ce7178689dd13b6}{lbann\+::model}.
+
+
+
+Definition at line 60 of file sequential.\+hpp.
+
+
+\begin{DoxyCode}
+60 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"sequential\_model"}; \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sequential__model_abf2b69dacb5ee3165289377e1d961cd5_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sequential__model_abf2b69dacb5ee3165289377e1d961cd5_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1sequential__model_a9714c99522b90488c486b390c5a7b6f3}\label{classlbann_1_1sequential__model_a9714c99522b90488c486b390c5a7b6f3}} 
+\index{lbann\+::sequential\+\_\+model@{lbann\+::sequential\+\_\+model}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::sequential\+\_\+model@{lbann\+::sequential\+\_\+model}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1sequential__model}{sequential\+\_\+model}\& lbann\+::sequential\+\_\+model\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1sequential__model}{sequential\+\_\+model} \&}]{other }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Copy assignment operator. Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sequential__model_a9714c99522b90488c486b390c5a7b6f3_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1sequential__model_a51cd5ae859c66cfb36d25d968ef06203}\label{classlbann_1_1sequential__model_a51cd5ae859c66cfb36d25d968ef06203}} 
+\index{lbann\+::sequential\+\_\+model@{lbann\+::sequential\+\_\+model}!save\+\_\+to\+\_\+checkpoint@{save\+\_\+to\+\_\+checkpoint}}
+\index{save\+\_\+to\+\_\+checkpoint@{save\+\_\+to\+\_\+checkpoint}!lbann\+::sequential\+\_\+model@{lbann\+::sequential\+\_\+model}}
+\subsubsection{\texorpdfstring{save\+\_\+to\+\_\+checkpoint()}{save\_to\_checkpoint()}}
+{\footnotesize\ttfamily bool lbann\+::sequential\+\_\+model\+::save\+\_\+to\+\_\+checkpoint (\begin{DoxyParamCaption}\item[{int}]{fd,  }\item[{const char $\ast$}]{filename,  }\item[{size\+\_\+t $\ast$}]{bytes }\end{DoxyParamCaption})}
+
+
+
+Definition at line 67 of file sequential.\+cpp.
+
+
+\begin{DoxyCode}
+67                                                                                      \{
+68   \textcolor{comment}{// write number of layers (we'll check this on read)}
+69   \textcolor{keywordtype}{int} layers = \hyperlink{classlbann_1_1model_a0229fc226ec163d1411548446104569d}{m\_layers}.size();
+70   \textcolor{keywordtype}{int} write\_rc = write(fd, &layers, \textcolor{keyword}{sizeof}(\textcolor{keywordtype}{int}));
+71   \textcolor{keywordflow}{if} (write\_rc != \textcolor{keyword}{sizeof}(\textcolor{keywordtype}{int})) \{
+72     fprintf(stderr, \textcolor{stringliteral}{"ERROR: Failed to write number of layers to file `%s' (%d: %s) @ %s:%d\(\backslash\)n"},
+73             filename, errno, strerror(errno), \_\_FILE\_\_, \_\_LINE\_\_
+74            );
+75     fflush(stderr);
+76   \}
+77   *bytes += write\_rc;
+78 
+79   \textcolor{comment}{// write out details for each layer}
+80   \textcolor{comment}{/*for (size\_t l = 1; l < m\_layers.size(); l++)}
+81 \textcolor{comment}{    if (!m\_layers[l]->saveToCheckpoint(fd, filename, bytes)) \{}
+82 \textcolor{comment}{      return false;}
+83 \textcolor{comment}{    \}*/}
+84 
+85   \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+86 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sequential__model_a51cd5ae859c66cfb36d25d968ef06203_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1sequential__model_a226032d9890b8770c6fca54bf70d69eb}\label{classlbann_1_1sequential__model_a226032d9890b8770c6fca54bf70d69eb}} 
+\index{lbann\+::sequential\+\_\+model@{lbann\+::sequential\+\_\+model}!save\+\_\+to\+\_\+checkpoint\+\_\+shared@{save\+\_\+to\+\_\+checkpoint\+\_\+shared}}
+\index{save\+\_\+to\+\_\+checkpoint\+\_\+shared@{save\+\_\+to\+\_\+checkpoint\+\_\+shared}!lbann\+::sequential\+\_\+model@{lbann\+::sequential\+\_\+model}}
+\subsubsection{\texorpdfstring{save\+\_\+to\+\_\+checkpoint\+\_\+shared()}{save\_to\_checkpoint\_shared()}}
+{\footnotesize\ttfamily bool lbann\+::sequential\+\_\+model\+::save\+\_\+to\+\_\+checkpoint\+\_\+shared (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1persist}{persist} \&}]{p,  }\item[{bool}]{val\+\_\+end }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Checkpoint model to given file descriptor, return number of bytes written 
+
+Reimplemented from \hyperlink{classlbann_1_1model_a3d589d2e46ad35d0a1221e25bef70fa4}{lbann\+::model}.
+
+
+
+Definition at line 117 of file sequential.\+cpp.
+
+
+\begin{DoxyCode}
+117                                                                          \{
+118   \textcolor{comment}{// write parameters from base class first}
+119   \hyperlink{classlbann_1_1model_a3d589d2e46ad35d0a1221e25bef70fa4}{model::save\_to\_checkpoint\_shared}(p, val\_end);
+120 
+121   \textcolor{comment}{// write a single header describing layers and sizes?}
+122 
+123   \textcolor{comment}{// have rank 0 write the network file}
+124   \textcolor{keywordflow}{if} (p.get\_rank() == 0 && !val\_end) \{
+125     uint32\_t layers = \hyperlink{classlbann_1_1model_a0229fc226ec163d1411548446104569d}{m\_layers}.size();
+126     p.write\_uint32(\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56a20f35e630daf44dbfa4c3f68f5399d8c}{persist\_type::model}, \textcolor{stringliteral}{"layers"}, (uint32\_t) layers);
+127 
+128     \textcolor{comment}{// TODO: record each layer type and size (to be checked when read back)}
+129   \}
+130   \textcolor{comment}{// write out details for each layer}
+131   \textcolor{keywordflow}{if}(!val\_end)\{
+132     \textcolor{keywordflow}{for} (weights *w : \hyperlink{classlbann_1_1model_aaf9adefe4497d90bf5bc2567e71bfb00}{m\_weights}) \{
+133       w->save\_to\_checkpoint\_shared(p);
+134     \}
+135       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} l = 0; l < \hyperlink{classlbann_1_1model_a0229fc226ec163d1411548446104569d}{m\_layers}.size(); l++) \{
+136       \textcolor{keywordflow}{if} (! \hyperlink{classlbann_1_1model_a0229fc226ec163d1411548446104569d}{m\_layers}[l]->\hyperlink{classlbann_1_1sequential__model_a226032d9890b8770c6fca54bf70d69eb}{save\_to\_checkpoint\_shared}(p,val\_end)) \{
+137         \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+138       \}
+139   \}
+140   \}
+141   \textcolor{keywordflow}{else} \textcolor{keywordflow}{if}(val\_end)\{
+142     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} l = 0; l < \hyperlink{classlbann_1_1model_a0229fc226ec163d1411548446104569d}{m\_layers}.size(); l++) \{
+143       \textcolor{keywordflow}{if} (! \hyperlink{classlbann_1_1model_a0229fc226ec163d1411548446104569d}{m\_layers}[l]->\hyperlink{classlbann_1_1sequential__model_a226032d9890b8770c6fca54bf70d69eb}{save\_to\_checkpoint\_shared}(p,val\_end)) \{
+144         \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+145       \}
+146     \}
+147   \}
+148   \textcolor{comment}{//m\_objective\_function->save\_to\_checkpoint\_shared(p);}
+149   \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+150 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sequential__model_a226032d9890b8770c6fca54bf70d69eb_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sequential__model_a226032d9890b8770c6fca54bf70d69eb_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1sequential__model_a3801a58530388fb6a8cb3e1c018e827d}\label{classlbann_1_1sequential__model_a3801a58530388fb6a8cb3e1c018e827d}} 
+\index{lbann\+::sequential\+\_\+model@{lbann\+::sequential\+\_\+model}!setup\+\_\+layer\+\_\+topology@{setup\+\_\+layer\+\_\+topology}}
+\index{setup\+\_\+layer\+\_\+topology@{setup\+\_\+layer\+\_\+topology}!lbann\+::sequential\+\_\+model@{lbann\+::sequential\+\_\+model}}
+\subsubsection{\texorpdfstring{setup\+\_\+layer\+\_\+topology()}{setup\_layer\_topology()}}
+{\footnotesize\ttfamily void lbann\+::sequential\+\_\+model\+::setup\+\_\+layer\+\_\+topology (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Set up topology of layer graph. Called in setup function. Parent/child relationships are established between adjacent layers. 
+
+Reimplemented from \hyperlink{classlbann_1_1model_a7b3e2a643c658dcaa7478d2568f29784}{lbann\+::model}.
+
+
+
+Reimplemented in \hyperlink{classlbann_1_1greedy__layerwise__autoencoder_a115607e435ae4685531a81852ce01fe7}{lbann\+::greedy\+\_\+layerwise\+\_\+autoencoder}.
+
+
+
+Definition at line 40 of file sequential.\+cpp.
+
+
+\begin{DoxyCode}
+40                                             \{
+41 
+42   \textcolor{comment}{// Set up parent/child relationships between adjacent layers}
+43   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} i = 1; i < \hyperlink{classlbann_1_1model_a0229fc226ec163d1411548446104569d}{m\_layers}.size(); ++i) \{
+44     \hyperlink{classlbann_1_1model_a0229fc226ec163d1411548446104569d}{m\_layers}[i]->add\_parent\_layer(\hyperlink{classlbann_1_1model_a0229fc226ec163d1411548446104569d}{m\_layers}[i-1]);
+45   \}
+46   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} i = 0; i < \hyperlink{classlbann_1_1model_a0229fc226ec163d1411548446104569d}{m\_layers}.size() - 1; ++i) \{
+47     \hyperlink{classlbann_1_1model_a0229fc226ec163d1411548446104569d}{m\_layers}[i]->add\_child\_layer(\hyperlink{classlbann_1_1model_a0229fc226ec163d1411548446104569d}{m\_layers}[i+1]);
+48   \}
+49 
+50   \textcolor{comment}{// Setup layer graph}
+51   \hyperlink{classlbann_1_1model_a7b3e2a643c658dcaa7478d2568f29784}{model::setup\_layer\_topology}();
+52 
+53   \textcolor{comment}{// Make sure that execution order is valid}
+54   std::set<int> nodes;
+55   std::map<int,std::set<int>> edges;
+56   \hyperlink{classlbann_1_1model_aef7a4775c70f96610bfc5a4605b946a5}{construct\_layer\_graph}(nodes, edges);
+57   \textcolor{keywordflow}{if} (!\hyperlink{namespacelbann_1_1graph_a0dd9dcef8bc13481677692347530e328}{graph::is\_topologically\_sorted}(nodes, edges)) \{
+58     std::stringstream err;
+59     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+60         << \textcolor{stringliteral}{"layer execution order is not topologically sorted"};
+61     \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+62   \}
+63 
+64   \hyperlink{classlbann_1_1model_ad0131e36e763470a7bbf67e83b42cd14}{freeze\_layers\_under\_frozen\_surface}();
+65 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sequential__model_a3801a58530388fb6a8cb3e1c018e827d_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sequential__model_a3801a58530388fb6a8cb3e1c018e827d_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1sequential__model_a53a83327a1115a53affa78c93344e641}\label{classlbann_1_1sequential__model_a53a83327a1115a53affa78c93344e641}} 
+\index{lbann\+::sequential\+\_\+model@{lbann\+::sequential\+\_\+model}!write\+\_\+proto@{write\+\_\+proto}}
+\index{write\+\_\+proto@{write\+\_\+proto}!lbann\+::sequential\+\_\+model@{lbann\+::sequential\+\_\+model}}
+\subsubsection{\texorpdfstring{write\+\_\+proto()}{write\_proto()}}
+{\footnotesize\ttfamily void lbann\+::sequential\+\_\+model\+::write\+\_\+proto (\begin{DoxyParamCaption}\item[{lbann\+\_\+data\+::\+Model $\ast$}]{proto }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Write model to proto file 
+
+Reimplemented from \hyperlink{classlbann_1_1model_a488da86420421a4890c8fd7a95849acc}{lbann\+::model}.
+
+
+
+Definition at line 152 of file sequential.\+cpp.
+
+
+\begin{DoxyCode}
+152                                                          \{
+153 
+154   \hyperlink{classlbann_1_1model_a488da86420421a4890c8fd7a95849acc}{model::write\_proto}(proto);
+155   \textcolor{comment}{//Add layers}
+156   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1model_a0eabaf2b2f829fd5db3dfd26df420df0}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_a1ef526486183a29feadca9bef096a534}{am\_world\_master}()) \{
+157     proto->set\_name(\hyperlink{classlbann_1_1sequential__model_abf2b69dacb5ee3165289377e1d961cd5}{name}());
+158     \textcolor{keywordflow}{for}(\textcolor{keywordtype}{size\_t} l = 0; l < \hyperlink{classlbann_1_1model_a0229fc226ec163d1411548446104569d}{m\_layers}.size(); l++) \{
+159       \textcolor{keyword}{auto} layer\_proto = proto->add\_layer();
+160       \hyperlink{classlbann_1_1model_a0229fc226ec163d1411548446104569d}{m\_layers}[l]->write\_proto(layer\_proto);
+161     \}
+162   \}
+163 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sequential__model_a53a83327a1115a53affa78c93344e641_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sequential__model_a53a83327a1115a53affa78c93344e641_icgraph}
+\end{center}
+\end{figure}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/models/\hyperlink{sequential_8hpp}{sequential.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/models/\hyperlink{sequential_8cpp}{sequential.\+cpp}\end{DoxyCompactItemize}

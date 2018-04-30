@@ -1,0 +1,376 @@
+\hypertarget{classlbann_1_1data__store__merge__samples}{}\section{lbann\+:\+:data\+\_\+store\+\_\+merge\+\_\+samples Class Reference}
+\label{classlbann_1_1data__store__merge__samples}\index{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples@{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples}}
+
+
+{\ttfamily \#include $<$data\+\_\+store\+\_\+merge\+\_\+samples.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:data\+\_\+store\+\_\+merge\+\_\+samples\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=207pt]{classlbann_1_1data__store__merge__samples__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:data\+\_\+store\+\_\+merge\+\_\+samples\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__merge__samples__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1data__store__merge__samples_ada5d181e33c9d9fe69979856b7f26268}{data\+\_\+store\+\_\+merge\+\_\+samples} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$reader, \hyperlink{classlbann_1_1model}{model} $\ast$m)
+\begin{DoxyCompactList}\small\item\em ctor \end{DoxyCompactList}\item 
+\hyperlink{classlbann_1_1data__store__merge__samples_a0c42f42eaedbcf4be23fbb5b1f3d46b1}{data\+\_\+store\+\_\+merge\+\_\+samples} (const \hyperlink{classlbann_1_1data__store__merge__samples}{data\+\_\+store\+\_\+merge\+\_\+samples} \&)=default
+\begin{DoxyCompactList}\small\item\em copy ctor \end{DoxyCompactList}\item 
+\hyperlink{classlbann_1_1data__store__merge__samples}{data\+\_\+store\+\_\+merge\+\_\+samples} \& \hyperlink{classlbann_1_1data__store__merge__samples_a8723206ebe4ed829fbf968340ef71d8f}{operator=} (const \hyperlink{classlbann_1_1data__store__merge__samples}{data\+\_\+store\+\_\+merge\+\_\+samples} \&)=default
+\begin{DoxyCompactList}\small\item\em operator= \end{DoxyCompactList}\item 
+\hyperlink{classlbann_1_1data__store__merge__samples}{data\+\_\+store\+\_\+merge\+\_\+samples} $\ast$ \hyperlink{classlbann_1_1data__store__merge__samples_a37fc606c2347c6c6a24b588665e3cde5}{copy} () const override
+\item 
+\hyperlink{classlbann_1_1data__store__merge__samples_a29eb31269a1369f6f28439e90ed8ad49}{$\sim$data\+\_\+store\+\_\+merge\+\_\+samples} () override
+\begin{DoxyCompactList}\small\item\em dtor \end{DoxyCompactList}\item 
+void \hyperlink{classlbann_1_1data__store__merge__samples_a8b81d947c1f05c38b7f979ce7e3cef97}{get\+\_\+data\+\_\+buf} (int data\+\_\+id, std\+::vector$<$ unsigned char $>$ $\ast$\&buf, int multi\+\_\+idx=0) override
+\begin{DoxyCompactList}\small\item\em called by various image data readers \end{DoxyCompactList}\item 
+void \hyperlink{classlbann_1_1data__store__merge__samples_a9f7f027eab6bfb65dd8001939769f476}{setup} () override
+\begin{DoxyCompactList}\small\item\em called by \hyperlink{classlbann_1_1generic__data__reader_a8b2a09d38512fc11f1b9d572c89100a7}{generic\+\_\+data\+\_\+reader\+::setup\+\_\+data\+\_\+store} \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{classlbann_1_1data__store__merge__samples_a89dc9b0e04c8279cee5e89be2f2ed2a3}{exchange\+\_\+data} () override
+\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+std\+::vector$<$ int $>$ \hyperlink{classlbann_1_1data__store__merge__samples_acd867c01d5139d47285f73ed80f3b0f4}{m\+\_\+my\+\_\+minibatch\+\_\+indices}
+\item 
+std\+::vector$<$ \hyperlink{classlbann_1_1data__store__pilot2__molecular}{data\+\_\+store\+\_\+pilot2\+\_\+molecular} $\ast$ $>$ \hyperlink{classlbann_1_1data__store__merge__samples_a8aa1a9abc41edf0cb1a9efeac5e366aa}{m\+\_\+subsidiary\+\_\+stores}
+\item 
+M\+P\+I\+\_\+\+Win \hyperlink{classlbann_1_1data__store__merge__samples_a8dafb907c605bb38e89ed3d91823f6f3}{m\+\_\+win}
+\begin{DoxyCompactList}\small\item\em allocate mem for m\+\_\+data \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+
+
+Definition at line 42 of file data\+\_\+store\+\_\+merge\+\_\+samples.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1data__store__merge__samples_ada5d181e33c9d9fe69979856b7f26268}\label{classlbann_1_1data__store__merge__samples_ada5d181e33c9d9fe69979856b7f26268}} 
+\index{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples@{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples}!data\+\_\+store\+\_\+merge\+\_\+samples@{data\+\_\+store\+\_\+merge\+\_\+samples}}
+\index{data\+\_\+store\+\_\+merge\+\_\+samples@{data\+\_\+store\+\_\+merge\+\_\+samples}!lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples@{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples}}
+\subsubsection{\texorpdfstring{data\+\_\+store\+\_\+merge\+\_\+samples()}{data\_store\_merge\_samples()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples\+::data\+\_\+store\+\_\+merge\+\_\+samples (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{\hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$}]{reader,  }\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})}
+
+
+
+ctor 
+
+
+
+Definition at line 38 of file data\+\_\+store\+\_\+merge\+\_\+samples.\+cpp.
+
+
+\begin{DoxyCode}
+38                                                                                                           :
+39     \hyperlink{classlbann_1_1generic__data__store_acbcd88161c06f4bb9a70bbae857d4ee0}{generic\_data\_store}(reader, m) \{
+40   \hyperlink{classlbann_1_1generic__data__store_a853741295a07b5687921fc56d0d7d5b2}{set\_name}(\textcolor{stringliteral}{"data\_store\_merge\_samples"});
+41 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__merge__samples_ada5d181e33c9d9fe69979856b7f26268_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__merge__samples_ada5d181e33c9d9fe69979856b7f26268_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__store__merge__samples_a0c42f42eaedbcf4be23fbb5b1f3d46b1}\label{classlbann_1_1data__store__merge__samples_a0c42f42eaedbcf4be23fbb5b1f3d46b1}} 
+\index{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples@{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples}!data\+\_\+store\+\_\+merge\+\_\+samples@{data\+\_\+store\+\_\+merge\+\_\+samples}}
+\index{data\+\_\+store\+\_\+merge\+\_\+samples@{data\+\_\+store\+\_\+merge\+\_\+samples}!lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples@{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples}}
+\subsubsection{\texorpdfstring{data\+\_\+store\+\_\+merge\+\_\+samples()}{data\_store\_merge\_samples()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples\+::data\+\_\+store\+\_\+merge\+\_\+samples (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1data__store__merge__samples}{data\+\_\+store\+\_\+merge\+\_\+samples} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+copy ctor 
+
+\mbox{\Hypertarget{classlbann_1_1data__store__merge__samples_a29eb31269a1369f6f28439e90ed8ad49}\label{classlbann_1_1data__store__merge__samples_a29eb31269a1369f6f28439e90ed8ad49}} 
+\index{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples@{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples}!````~data\+\_\+store\+\_\+merge\+\_\+samples@{$\sim$data\+\_\+store\+\_\+merge\+\_\+samples}}
+\index{````~data\+\_\+store\+\_\+merge\+\_\+samples@{$\sim$data\+\_\+store\+\_\+merge\+\_\+samples}!lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples@{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples}}
+\subsubsection{\texorpdfstring{$\sim$data\+\_\+store\+\_\+merge\+\_\+samples()}{~data\_store\_merge\_samples()}}
+{\footnotesize\ttfamily lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples\+::$\sim$data\+\_\+store\+\_\+merge\+\_\+samples (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}}
+
+
+
+dtor 
+
+
+
+Definition at line 44 of file data\+\_\+store\+\_\+merge\+\_\+samples.\+cpp.
+
+
+\begin{DoxyCode}
+44                                                     \{
+45   MPI\_Win\_free( &\hyperlink{classlbann_1_1data__store__merge__samples_a8dafb907c605bb38e89ed3d91823f6f3}{m\_win} );
+46 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__merge__samples_a29eb31269a1369f6f28439e90ed8ad49_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1data__store__merge__samples_a37fc606c2347c6c6a24b588665e3cde5}\label{classlbann_1_1data__store__merge__samples_a37fc606c2347c6c6a24b588665e3cde5}} 
+\index{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples@{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples}!copy@{copy}}
+\index{copy@{copy}!lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples@{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1data__store__merge__samples}{data\+\_\+store\+\_\+merge\+\_\+samples}$\ast$ lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1generic__data__store_ae06e089790aa023b839be508a3c020c6}{lbann\+::generic\+\_\+data\+\_\+store}.
+
+
+
+Definition at line 54 of file data\+\_\+store\+\_\+merge\+\_\+samples.\+hpp.
+
+
+\begin{DoxyCode}
+54 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1data__store__merge__samples_ada5d181e33c9d9fe69979856b7f26268}{data\_store\_merge\_samples}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__merge__samples_a37fc606c2347c6c6a24b588665e3cde5_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__store__merge__samples_a89dc9b0e04c8279cee5e89be2f2ed2a3}\label{classlbann_1_1data__store__merge__samples_a89dc9b0e04c8279cee5e89be2f2ed2a3}} 
+\index{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples@{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples}!exchange\+\_\+data@{exchange\+\_\+data}}
+\index{exchange\+\_\+data@{exchange\+\_\+data}!lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples@{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples}}
+\subsubsection{\texorpdfstring{exchange\+\_\+data()}{exchange\_data()}}
+{\footnotesize\ttfamily void lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples\+::exchange\+\_\+data (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1generic__data__store_a5a34663fbbc3714d45743a6ca7195f51}{lbann\+::generic\+\_\+data\+\_\+store}.
+
+
+
+Definition at line 112 of file data\+\_\+store\+\_\+merge\+\_\+samples.\+cpp.
+
+
+\begin{DoxyCode}
+112                                              \{
+113   \textcolor{comment}{//for (auto t : m\_subsidiary\_stores) \{}
+114     
+115 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__merge__samples_a89dc9b0e04c8279cee5e89be2f2ed2a3_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__store__merge__samples_a8b81d947c1f05c38b7f979ce7e3cef97}\label{classlbann_1_1data__store__merge__samples_a8b81d947c1f05c38b7f979ce7e3cef97}} 
+\index{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples@{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples}!get\+\_\+data\+\_\+buf@{get\+\_\+data\+\_\+buf}}
+\index{get\+\_\+data\+\_\+buf@{get\+\_\+data\+\_\+buf}!lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples@{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples}}
+\subsubsection{\texorpdfstring{get\+\_\+data\+\_\+buf()}{get\_data\_buf()}}
+{\footnotesize\ttfamily void lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples\+::get\+\_\+data\+\_\+buf (\begin{DoxyParamCaption}\item[{int}]{data\+\_\+id,  }\item[{std\+::vector$<$ unsigned char $>$ $\ast$\&}]{buf,  }\item[{int}]{multi\+\_\+idx = {\ttfamily 0} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+called by various image data readers 
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1generic__data__store_a2abb3d0327b528d36e23fcef9b937798}{lbann\+::generic\+\_\+data\+\_\+store}.
+
+
+
+Definition at line 59 of file data\+\_\+store\+\_\+merge\+\_\+samples.\+hpp.
+
+
+\begin{DoxyCode}
+59 \{\}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__merge__samples_a8b81d947c1f05c38b7f979ce7e3cef97_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__store__merge__samples_a8723206ebe4ed829fbf968340ef71d8f}\label{classlbann_1_1data__store__merge__samples_a8723206ebe4ed829fbf968340ef71d8f}} 
+\index{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples@{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples@{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1data__store__merge__samples}{data\+\_\+store\+\_\+merge\+\_\+samples}\& lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1data__store__merge__samples}{data\+\_\+store\+\_\+merge\+\_\+samples} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+operator= 
+
+\mbox{\Hypertarget{classlbann_1_1data__store__merge__samples_a9f7f027eab6bfb65dd8001939769f476}\label{classlbann_1_1data__store__merge__samples_a9f7f027eab6bfb65dd8001939769f476}} 
+\index{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples@{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples}!setup@{setup}}
+\index{setup@{setup}!lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples@{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples}}
+\subsubsection{\texorpdfstring{setup()}{setup()}}
+{\footnotesize\ttfamily void lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples\+::setup (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+called by \hyperlink{classlbann_1_1generic__data__reader_a8b2a09d38512fc11f1b9d572c89100a7}{generic\+\_\+data\+\_\+reader\+::setup\+\_\+data\+\_\+store} 
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1generic__data__store_a1cff17def02ee21b6ca0befeb04bb582}{lbann\+::generic\+\_\+data\+\_\+store}.
+
+
+
+Definition at line 48 of file data\+\_\+store\+\_\+merge\+\_\+samples.\+cpp.
+
+
+\begin{DoxyCode}
+48                                      \{
+49   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__store_a87695bfd2d1ed0dbe01d99108e3f68b7}{m\_rank} == 0) std::cerr << \textcolor{stringliteral}{"STARTING data\_store\_merge\_samples::setup()\(\backslash\)n"}; 
+50   \textcolor{comment}{//double tm1 = get\_time();}
+51 
+52   \hyperlink{classlbann_1_1generic__data__store_a1cff17def02ee21b6ca0befeb04bb582}{generic\_data\_store::setup}();
+53 
+54 \textcolor{comment}{/*}
+55 \textcolor{comment}{  bool run\_tests = false;}
+56 \textcolor{comment}{  if (options::get()->has\_bool("test\_data\_store") && options::get()->get\_bool("test\_data\_store")) \{}
+57 \textcolor{comment}{    run\_tests = true;}
+58 \textcolor{comment}{  \}}
+59 \textcolor{comment}{  */}
+60 
+61   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__store_a87695bfd2d1ed0dbe01d99108e3f68b7}{m\_rank} == 0) \{
+62     std::cout << \textcolor{stringliteral}{"starting data\_store\_merge\_samples::setup() for data reader with role: "} << 
+      \hyperlink{classlbann_1_1generic__data__store_afa49ced0ab64c632371ea52532a91ec2}{m\_reader}->\hyperlink{classlbann_1_1generic__data__reader_a92982e1b399f37e2ead5aa440883cba5}{get\_role}() << std::endl;
+63   \}
+64   
+65   \textcolor{keywordflow}{if} (! \hyperlink{classlbann_1_1generic__data__store_a1a9cc7b097cd7dd6ae0d12d52bb43ea1}{m\_in\_memory}) \{
+66     std::stringstream err;
+67     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+68         << \textcolor{stringliteral}{"not yet implemented"};
+69     \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+70   \} 
+71   
+72   \textcolor{keywordflow}{else} \{
+73     \textcolor{comment}{//sanity check}
+74     data\_reader\_merge\_samples *reader = \textcolor{keyword}{dynamic\_cast<}data\_reader\_merge\_samples*\textcolor{keyword}{>}(
+      \hyperlink{classlbann_1_1generic__data__store_afa49ced0ab64c632371ea52532a91ec2}{m\_reader});
+75     \textcolor{keywordflow}{if} (reader == \textcolor{keyword}{nullptr}) \{
+76       std::stringstream err;
+77       err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+78           << \textcolor{stringliteral}{"dynamic\_cast<merge\_samples\_reader*>(m\_reader) failed"};
+79       \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+80     \}
+81 
+82 
+83     \textcolor{comment}{// get list of indices used in calls to generic\_data\_reader::fetch\_data}
+84     \hyperlink{classlbann_1_1generic__data__store_ab861db5f81e45a6063b8922a331dd007}{get\_minibatch\_index\_vector}();
+85 
+86     std::vector<generic\_data\_reader*> &readers = reader->get\_data\_readers();
+87     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} j=0; j<readers.size(); j++) \{
+88       readers[j]->get\_data\_store();
+89       pilot2\_molecular\_reader *pilot2\_reader = \textcolor{keyword}{dynamic\_cast<}pilot2\_molecular\_reader*\textcolor{keyword}{>}(
+      \hyperlink{classlbann_1_1generic__data__store_afa49ced0ab64c632371ea52532a91ec2}{m\_reader});
+90       \hyperlink{classlbann_1_1generic__data__store_acbcd88161c06f4bb9a70bbae857d4ee0}{generic\_data\_store} *store = pilot2\_reader->get\_data\_store();
+91       data\_store\_pilot2\_molecular *s = \textcolor{keyword}{dynamic\_cast<}data\_store\_pilot2\_molecular*\textcolor{keyword}{>}(store);
+92       s->clear\_minibatch\_indices();
+93       \hyperlink{classlbann_1_1data__store__merge__samples_a8aa1a9abc41edf0cb1a9efeac5e366aa}{m\_subsidiary\_stores}.push\_back(s);
+94     \}
+95 
+96     \textcolor{keywordflow}{for} (\textcolor{keyword}{auto} t : \hyperlink{classlbann_1_1data__store__merge__samples_a8aa1a9abc41edf0cb1a9efeac5e366aa}{m\_subsidiary\_stores}) \{
+97       t->set\_no\_shuffle();
+98     \}
+99 
+100     \textcolor{keyword}{const} std::vector<int> &num\_samples\_psum = reader->get\_num\_samples\_psum();
+101     \textcolor{keywordflow}{for} (\textcolor{keyword}{auto} data\_id : \hyperlink{classlbann_1_1generic__data__store_a41f7fec1f1f3d6568a5765be7a6784eb}{m\_my\_minibatch\_indices\_v}) \{
+102       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} i = 0; i < m\_subsidiary\_stores.size(); ++i) \{
+103         \textcolor{keywordflow}{if} (data\_id < num\_samples\_psum[i + 1]) \{
+104           data\_id -= num\_samples\_psum[i];
+105           m\_subsidiary\_stores[i]->add\_minibatch\_index(data\_id);
+106         \}
+107       \}
+108     \}
+109   \}
+110 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__merge__samples_a9f7f027eab6bfb65dd8001939769f476_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__merge__samples_a9f7f027eab6bfb65dd8001939769f476_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1data__store__merge__samples_acd867c01d5139d47285f73ed80f3b0f4}\label{classlbann_1_1data__store__merge__samples_acd867c01d5139d47285f73ed80f3b0f4}} 
+\index{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples@{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples}!m\+\_\+my\+\_\+minibatch\+\_\+indices@{m\+\_\+my\+\_\+minibatch\+\_\+indices}}
+\index{m\+\_\+my\+\_\+minibatch\+\_\+indices@{m\+\_\+my\+\_\+minibatch\+\_\+indices}!lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples@{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples}}
+\subsubsection{\texorpdfstring{m\+\_\+my\+\_\+minibatch\+\_\+indices}{m\_my\_minibatch\_indices}}
+{\footnotesize\ttfamily std\+::vector$<$int$>$ lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples\+::m\+\_\+my\+\_\+minibatch\+\_\+indices\hspace{0.3cm}{\ttfamily [protected]}}
+
+this contains a concatenation of the indices in m\+\_\+minibatch\+\_\+indices (see\+: generic\+\_\+data\+\_\+reader.\+hpp) 
+
+Definition at line 69 of file data\+\_\+store\+\_\+merge\+\_\+samples.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1data__store__merge__samples_a8aa1a9abc41edf0cb1a9efeac5e366aa}\label{classlbann_1_1data__store__merge__samples_a8aa1a9abc41edf0cb1a9efeac5e366aa}} 
+\index{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples@{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples}!m\+\_\+subsidiary\+\_\+stores@{m\+\_\+subsidiary\+\_\+stores}}
+\index{m\+\_\+subsidiary\+\_\+stores@{m\+\_\+subsidiary\+\_\+stores}!lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples@{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples}}
+\subsubsection{\texorpdfstring{m\+\_\+subsidiary\+\_\+stores}{m\_subsidiary\_stores}}
+{\footnotesize\ttfamily std\+::vector$<$\hyperlink{classlbann_1_1data__store__pilot2__molecular}{data\+\_\+store\+\_\+pilot2\+\_\+molecular}$\ast$$>$ lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples\+::m\+\_\+subsidiary\+\_\+stores\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 71 of file data\+\_\+store\+\_\+merge\+\_\+samples.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1data__store__merge__samples_a8dafb907c605bb38e89ed3d91823f6f3}\label{classlbann_1_1data__store__merge__samples_a8dafb907c605bb38e89ed3d91823f6f3}} 
+\index{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples@{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples}!m\+\_\+win@{m\+\_\+win}}
+\index{m\+\_\+win@{m\+\_\+win}!lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples@{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples}}
+\subsubsection{\texorpdfstring{m\+\_\+win}{m\_win}}
+{\footnotesize\ttfamily M\+P\+I\+\_\+\+Win lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples\+::m\+\_\+win\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+allocate mem for m\+\_\+data 
+
+when running in in-\/memory mode, this buffer will contain the concatenated datawill contain data to be passed to the data\+\_\+reader maps indices wrt shuffled indices to indices in m\+\_\+my\+\_\+data 
+
+Definition at line 89 of file data\+\_\+store\+\_\+merge\+\_\+samples.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/data\+\_\+store/\hyperlink{data__store__merge__samples_8hpp}{data\+\_\+store\+\_\+merge\+\_\+samples.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/data\+\_\+store/\hyperlink{data__store__merge__samples_8cpp}{data\+\_\+store\+\_\+merge\+\_\+samples.\+cpp}\end{DoxyCompactItemize}

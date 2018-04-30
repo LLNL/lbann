@@ -1,0 +1,393 @@
+\hypertarget{classlbann_1_1lbann__callback__save__images}{}\section{lbann\+:\+:lbann\+\_\+callback\+\_\+save\+\_\+images Class Reference}
+\label{classlbann_1_1lbann__callback__save__images}\index{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images@{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images}}
+
+
+{\ttfamily \#include $<$callback\+\_\+save\+\_\+images.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+save\+\_\+images\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=192pt]{classlbann_1_1lbann__callback__save__images__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+save\+\_\+images\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__save__images__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1lbann__callback__save__images_a19825aa8f1bc28114a5269bee6c88758}{lbann\+\_\+callback\+\_\+save\+\_\+images} (\hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$reader, std\+::string image\+\_\+dir, std\+::string extension=\char`\"{}jpg\char`\"{})
+\item 
+\hyperlink{classlbann_1_1lbann__callback__save__images_a3a01aa79c40d7d6f9120211d45141d23}{lbann\+\_\+callback\+\_\+save\+\_\+images} (const \hyperlink{classlbann_1_1lbann__callback__save__images}{lbann\+\_\+callback\+\_\+save\+\_\+images} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__save__images}{lbann\+\_\+callback\+\_\+save\+\_\+images} \& \hyperlink{classlbann_1_1lbann__callback__save__images_a79fcd1489f0a5239303578d892c7a8b9}{operator=} (const \hyperlink{classlbann_1_1lbann__callback__save__images}{lbann\+\_\+callback\+\_\+save\+\_\+images} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__save__images}{lbann\+\_\+callback\+\_\+save\+\_\+images} $\ast$ \hyperlink{classlbann_1_1lbann__callback__save__images_a6abba6b6a94080c09f52f1aac8773461}{copy} () const override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__save__images_aa540916eef9b95db68889a8a7426779c}{on\+\_\+epoch\+\_\+end} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__save__images_a4591438de0b52467988e2bd34b55c0dd}{on\+\_\+phase\+\_\+end} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__save__images_a44d0f0113133d6fd8944d8b7702ea786}{on\+\_\+test\+\_\+end} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\item 
+std\+::string \hyperlink{classlbann_1_1lbann__callback__save__images_ae3e0f20308b83a3a1b2fe0ba1acbd072}{name} () const override
+\end{DoxyCompactItemize}
+\subsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__save__images_ab84c4d511a4614ca90644d12dc77edee}{save\+\_\+image} (\hyperlink{classlbann_1_1model}{model} \&m, \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&input, \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&output, std\+::string tag)
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+std\+::string \hyperlink{classlbann_1_1lbann__callback__save__images_aeb69e2814c78d33a93b9ddc276c4cc57}{m\+\_\+image\+\_\+dir}
+\item 
+std\+::string \hyperlink{classlbann_1_1lbann__callback__save__images_a7b37fa08f49051897ef427b8c810ca3a}{m\+\_\+extension}
+\item 
+\hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$ \hyperlink{classlbann_1_1lbann__callback__save__images_a275e409b2b2f3ebe2baeea636e18c607}{m\+\_\+reader}
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+Save images to file 
+
+Definition at line 42 of file callback\+\_\+save\+\_\+images.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__save__images_a19825aa8f1bc28114a5269bee6c88758}\label{classlbann_1_1lbann__callback__save__images_a19825aa8f1bc28114a5269bee6c88758}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images@{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images}!lbann\+\_\+callback\+\_\+save\+\_\+images@{lbann\+\_\+callback\+\_\+save\+\_\+images}}
+\index{lbann\+\_\+callback\+\_\+save\+\_\+images@{lbann\+\_\+callback\+\_\+save\+\_\+images}!lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images@{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+save\+\_\+images()}{lbann\_callback\_save\_images()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images\+::lbann\+\_\+callback\+\_\+save\+\_\+images (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$}]{reader,  }\item[{std\+::string}]{image\+\_\+dir,  }\item[{std\+::string}]{extension = {\ttfamily \char`\"{}jpg\char`\"{}} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+\begin{DoxyParams}{Parameters}
+{\em data} & reader type e.\+g., imagenet, mnist, cifar10.... \\
+\hline
+{\em image\+\_\+dir} & directory to save image \\
+\hline
+{\em image} & extension e.\+g., jpg, png, pgm...... \\
+\hline
+\end{DoxyParams}
+
+
+Definition at line 49 of file callback\+\_\+save\+\_\+images.\+hpp.
+
+
+\begin{DoxyCode}
+50                                                         :
+51     \hyperlink{classlbann_1_1lbann__callback_a679057298a41ddd47f08c157f756c584}{lbann\_callback}(), \hyperlink{classlbann_1_1lbann__callback__save__images_aeb69e2814c78d33a93b9ddc276c4cc57}{m\_image\_dir}(std::move(image\_dir)), 
+      \hyperlink{classlbann_1_1lbann__callback__save__images_a7b37fa08f49051897ef427b8c810ca3a}{m\_extension}(std::move(extension)),
+52     \hyperlink{classlbann_1_1lbann__callback__save__images_a275e409b2b2f3ebe2baeea636e18c607}{m\_reader}(reader) \{\}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__save__images_a19825aa8f1bc28114a5269bee6c88758_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__save__images_a19825aa8f1bc28114a5269bee6c88758_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__save__images_a3a01aa79c40d7d6f9120211d45141d23}\label{classlbann_1_1lbann__callback__save__images_a3a01aa79c40d7d6f9120211d45141d23}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images@{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images}!lbann\+\_\+callback\+\_\+save\+\_\+images@{lbann\+\_\+callback\+\_\+save\+\_\+images}}
+\index{lbann\+\_\+callback\+\_\+save\+\_\+images@{lbann\+\_\+callback\+\_\+save\+\_\+images}!lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images@{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+save\+\_\+images()}{lbann\_callback\_save\_images()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images\+::lbann\+\_\+callback\+\_\+save\+\_\+images (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__save__images}{lbann\+\_\+callback\+\_\+save\+\_\+images} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__save__images_a6abba6b6a94080c09f52f1aac8773461}\label{classlbann_1_1lbann__callback__save__images_a6abba6b6a94080c09f52f1aac8773461}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images@{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images}!copy@{copy}}
+\index{copy@{copy}!lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images@{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__save__images}{lbann\+\_\+callback\+\_\+save\+\_\+images}$\ast$ lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a9f545d1269a8c7af335625d049691f26}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 56 of file callback\+\_\+save\+\_\+images.\+hpp.
+
+
+\begin{DoxyCode}
+56                                                     \{
+57     \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1lbann__callback__save__images_a19825aa8f1bc28114a5269bee6c88758}{lbann\_callback\_save\_images}(*\textcolor{keyword}{this});
+58   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__save__images_a6abba6b6a94080c09f52f1aac8773461_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__save__images_ae3e0f20308b83a3a1b2fe0ba1acbd072}\label{classlbann_1_1lbann__callback__save__images_ae3e0f20308b83a3a1b2fe0ba1acbd072}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images@{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images}!name@{name}}
+\index{name@{name}!lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images@{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images}}
+\subsubsection{\texorpdfstring{name()}{name()}}
+{\footnotesize\ttfamily std\+::string lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images\+::name (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Return this callback\textquotesingle{}s name. 
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a7522c7a14f1d6a1ea762cc2d7248eb3a}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 62 of file callback\+\_\+save\+\_\+images.\+hpp.
+
+
+\begin{DoxyCode}
+62 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"save images"}; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__save__images_aa540916eef9b95db68889a8a7426779c}\label{classlbann_1_1lbann__callback__save__images_aa540916eef9b95db68889a8a7426779c}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images@{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images}!on\+\_\+epoch\+\_\+end@{on\+\_\+epoch\+\_\+end}}
+\index{on\+\_\+epoch\+\_\+end@{on\+\_\+epoch\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images@{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images}}
+\subsubsection{\texorpdfstring{on\+\_\+epoch\+\_\+end()}{on\_epoch\_end()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images\+::on\+\_\+epoch\+\_\+end (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Called immediate after the end of each epoch. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_a1fc71110e7f754bf73c9e0f344a448a5}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 36 of file callback\+\_\+save\+\_\+images.\+cpp.
+
+
+\begin{DoxyCode}
+36                                                       \{
+37   \textcolor{keyword}{const} \textcolor{keyword}{auto} layers = m->get\_layers();
+38   \textcolor{keyword}{auto} tag = \textcolor{stringliteral}{"epoch"} + std::to\_string(m->get\_cur\_epoch());
+39   \textcolor{comment}{//@todo: generalize to two matching layers}
+40   \textcolor{comment}{//@todo: use view so we can save arbitrary number of valid images}
+41   \textcolor{comment}{//using layer just before reconstruction layer because prev\_layer\_act is protected}
+42   \hyperlink{classlbann_1_1lbann__callback__save__images_ab84c4d511a4614ca90644d12dc77edee}{save\_image}(*m,
+43              layers[0]->get\_activations(),
+44              layers[layers.size()-2]->get\_activations(),
+45              tag);
+46 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__save__images_aa540916eef9b95db68889a8a7426779c_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__save__images_aa540916eef9b95db68889a8a7426779c_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__save__images_a4591438de0b52467988e2bd34b55c0dd}\label{classlbann_1_1lbann__callback__save__images_a4591438de0b52467988e2bd34b55c0dd}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images@{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images}!on\+\_\+phase\+\_\+end@{on\+\_\+phase\+\_\+end}}
+\index{on\+\_\+phase\+\_\+end@{on\+\_\+phase\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images@{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images}}
+\subsubsection{\texorpdfstring{on\+\_\+phase\+\_\+end()}{on\_phase\_end()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images\+::on\+\_\+phase\+\_\+end (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Called at the end of every phase (multiple epochs) in a layer-\/wise model training 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_ace7452239c9ad7aa6247e9496adbcffe}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 49 of file callback\+\_\+save\+\_\+images.\+cpp.
+
+
+\begin{DoxyCode}
+49                                                       \{
+50   \textcolor{keyword}{const} \textcolor{keyword}{auto} layers = m->get\_layers();
+51   \textcolor{keyword}{const} \textcolor{keyword}{auto} phase = m->get\_current\_phase();
+52   \textcolor{keyword}{auto} tag = \textcolor{stringliteral}{"phase"} + std::to\_string(phase);
+53   \hyperlink{classlbann_1_1lbann__callback__save__images_ab84c4d511a4614ca90644d12dc77edee}{save\_image}(*m,
+54              layers[phase]->get\_activations(),
+55              layers[phase+2]->get\_activations(),
+56              tag);
+57 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__save__images_a4591438de0b52467988e2bd34b55c0dd_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__save__images_a4591438de0b52467988e2bd34b55c0dd_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__save__images_a44d0f0113133d6fd8944d8b7702ea786}\label{classlbann_1_1lbann__callback__save__images_a44d0f0113133d6fd8944d8b7702ea786}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images@{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images}!on\+\_\+test\+\_\+end@{on\+\_\+test\+\_\+end}}
+\index{on\+\_\+test\+\_\+end@{on\+\_\+test\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images@{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images}}
+\subsubsection{\texorpdfstring{on\+\_\+test\+\_\+end()}{on\_test\_end()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images\+::on\+\_\+test\+\_\+end (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Called immediately after the end of testing. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_accbad4dd004c1ced33642db6398b2efe}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 59 of file callback\+\_\+save\+\_\+images.\+cpp.
+
+
+\begin{DoxyCode}
+59                                                      \{
+60   \textcolor{keyword}{auto} layers = m->get\_layers();
+61   \hyperlink{classlbann_1_1lbann__callback__save__images_ab84c4d511a4614ca90644d12dc77edee}{save\_image}(*m,
+62              layers[0]->get\_activations(),
+63              layers[layers.size()-2]->get\_activations(),
+64              \textcolor{stringliteral}{"test"});
+65 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__save__images_a44d0f0113133d6fd8944d8b7702ea786_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__save__images_a44d0f0113133d6fd8944d8b7702ea786_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__save__images_a79fcd1489f0a5239303578d892c7a8b9}\label{classlbann_1_1lbann__callback__save__images_a79fcd1489f0a5239303578d892c7a8b9}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images@{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images@{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__save__images}{lbann\+\_\+callback\+\_\+save\+\_\+images}\& lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__save__images}{lbann\+\_\+callback\+\_\+save\+\_\+images} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__save__images_a79fcd1489f0a5239303578d892c7a8b9_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__save__images_ab84c4d511a4614ca90644d12dc77edee}\label{classlbann_1_1lbann__callback__save__images_ab84c4d511a4614ca90644d12dc77edee}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images@{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images}!save\+\_\+image@{save\+\_\+image}}
+\index{save\+\_\+image@{save\+\_\+image}!lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images@{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images}}
+\subsubsection{\texorpdfstring{save\+\_\+image()}{save\_image()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images\+::save\+\_\+image (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} \&}]{m,  }\item[{\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{input,  }\item[{\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{output,  }\item[{std\+::string}]{tag }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Definition at line 67 of file callback\+\_\+save\+\_\+images.\+cpp.
+
+
+\begin{DoxyCode}
+70                                                            \{
+71 
+72   \textcolor{comment}{// Save input image}
+73   \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{AbsDistMat}* input\_col = input.Construct(input.Grid(),
+74                                           input.Root());
+75   El::View(*input\_col, input, El::ALL, El::IR(0));
+76   \hyperlink{base_8hpp_a48abd140bc807a8ac1381efd1bfeb375}{CircMat} input\_circ = *input\_col;
+77   \textcolor{keyword}{delete} input\_col;
+78   \textcolor{keywordflow}{if}(m.get\_comm()->am\_world\_master()) \{
+79     \hyperlink{classlbann_1_1lbann__callback__save__images_a275e409b2b2f3ebe2baeea636e18c607}{m\_reader}->\hyperlink{classlbann_1_1generic__data__reader_a8cf298061c73f55e2fe717acd2a9f178}{save\_image}(input\_circ.Matrix(), \hyperlink{classlbann_1_1lbann__callback__save__images_aeb69e2814c78d33a93b9ddc276c4cc57}{m\_image\_dir}+\textcolor{stringliteral}{"input\_"}+tag+\textcolor{stringliteral}{"."}+
+      \hyperlink{classlbann_1_1lbann__callback__save__images_a7b37fa08f49051897ef427b8c810ca3a}{m\_extension});
+80   \}
+81   
+82   \textcolor{comment}{// Save output image if it is a reconstruction}
+83   \textcolor{keywordflow}{if}(output.Height() == input.Height()) \{
+84     \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{AbsDistMat}* output\_col = output.Construct(output.Grid(),
+85                                               output.Root());
+86     El::View(*output\_col, output, El::ALL, El::IR(0));
+87     \hyperlink{base_8hpp_a48abd140bc807a8ac1381efd1bfeb375}{CircMat} output\_circ = *output\_col;
+88     \textcolor{keyword}{delete} output\_col;
+89     \textcolor{keywordflow}{if}(m.get\_comm()->am\_world\_master()) \{
+90       \hyperlink{classlbann_1_1lbann__callback__save__images_a275e409b2b2f3ebe2baeea636e18c607}{m\_reader}->\hyperlink{classlbann_1_1generic__data__reader_a8cf298061c73f55e2fe717acd2a9f178}{save\_image}(output\_circ.Matrix(), \hyperlink{classlbann_1_1lbann__callback__save__images_aeb69e2814c78d33a93b9ddc276c4cc57}{m\_image\_dir}+\textcolor{stringliteral}{"output\_"}+tag+\textcolor{stringliteral}{"."}
+      +\hyperlink{classlbann_1_1lbann__callback__save__images_a7b37fa08f49051897ef427b8c810ca3a}{m\_extension});
+91     \}
+92   \}
+93 
+94   \textcolor{comment}{// Output message}
+95   \textcolor{keywordflow}{if}(m.get\_comm()->am\_world\_master()) \{
+96     std::cout << \textcolor{stringliteral}{"Saved images to "} << \hyperlink{classlbann_1_1lbann__callback__save__images_aeb69e2814c78d33a93b9ddc276c4cc57}{m\_image\_dir} << std::endl;
+97   \}
+98 
+99 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__save__images_ab84c4d511a4614ca90644d12dc77edee_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__save__images_ab84c4d511a4614ca90644d12dc77edee_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__save__images_a7b37fa08f49051897ef427b8c810ca3a}\label{classlbann_1_1lbann__callback__save__images_a7b37fa08f49051897ef427b8c810ca3a}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images@{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images}!m\+\_\+extension@{m\+\_\+extension}}
+\index{m\+\_\+extension@{m\+\_\+extension}!lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images@{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images}}
+\subsubsection{\texorpdfstring{m\+\_\+extension}{m\_extension}}
+{\footnotesize\ttfamily std\+::string lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images\+::m\+\_\+extension\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Definition at line 65 of file callback\+\_\+save\+\_\+images.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__save__images_aeb69e2814c78d33a93b9ddc276c4cc57}\label{classlbann_1_1lbann__callback__save__images_aeb69e2814c78d33a93b9ddc276c4cc57}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images@{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images}!m\+\_\+image\+\_\+dir@{m\+\_\+image\+\_\+dir}}
+\index{m\+\_\+image\+\_\+dir@{m\+\_\+image\+\_\+dir}!lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images@{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images}}
+\subsubsection{\texorpdfstring{m\+\_\+image\+\_\+dir}{m\_image\_dir}}
+{\footnotesize\ttfamily std\+::string lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images\+::m\+\_\+image\+\_\+dir\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Definition at line 64 of file callback\+\_\+save\+\_\+images.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__save__images_a275e409b2b2f3ebe2baeea636e18c607}\label{classlbann_1_1lbann__callback__save__images_a275e409b2b2f3ebe2baeea636e18c607}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images@{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images}!m\+\_\+reader@{m\+\_\+reader}}
+\index{m\+\_\+reader@{m\+\_\+reader}!lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images@{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images}}
+\subsubsection{\texorpdfstring{m\+\_\+reader}{m\_reader}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader}$\ast$ lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images\+::m\+\_\+reader\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Definition at line 66 of file callback\+\_\+save\+\_\+images.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/callbacks/\hyperlink{callback__save__images_8hpp}{callback\+\_\+save\+\_\+images.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/callbacks/\hyperlink{callback__save__images_8cpp}{callback\+\_\+save\+\_\+images.\+cpp}\end{DoxyCompactItemize}

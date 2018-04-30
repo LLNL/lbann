@@ -1,0 +1,722 @@
+\hypertarget{classlbann_1_1softmax__layer}{}\section{lbann\+:\+:softmax\+\_\+layer$<$ T\+\_\+layout $>$ Class Template Reference}
+\label{classlbann_1_1softmax__layer}\index{lbann\+::softmax\+\_\+layer$<$ T\+\_\+layout $>$@{lbann\+::softmax\+\_\+layer$<$ T\+\_\+layout $>$}}
+
+
+{\ttfamily \#include $<$softmax.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:softmax\+\_\+layer$<$ T\+\_\+layout $>$\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=196pt]{classlbann_1_1softmax__layer__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:softmax\+\_\+layer$<$ T\+\_\+layout $>$\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1softmax__layer__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1softmax__layer_aeac8e8c98c838929afc9ab6c82af24d2}{softmax\+\_\+layer} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, \hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$cudnn=nullptr)
+\item 
+\hyperlink{classlbann_1_1softmax__layer_ad17b123fdc1c1d5fc57a1abe601de2b6}{softmax\+\_\+layer} (const \hyperlink{classlbann_1_1softmax__layer}{softmax\+\_\+layer} \&other)
+\item 
+\hyperlink{classlbann_1_1softmax__layer}{softmax\+\_\+layer} \& \hyperlink{classlbann_1_1softmax__layer_a8532a4e2b1669840cea80cfde383bebb}{operator=} (const \hyperlink{classlbann_1_1softmax__layer}{softmax\+\_\+layer} \&other)
+\item 
+\hyperlink{classlbann_1_1softmax__layer_aabd598a9b0cec63e2d4558fd79ecee0d}{$\sim$softmax\+\_\+layer} () override
+\item 
+\hyperlink{classlbann_1_1softmax__layer}{softmax\+\_\+layer} $\ast$ \hyperlink{classlbann_1_1softmax__layer_adbde9ddc7c6cec83645d4bebf8b54113}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1softmax__layer_a344145869f2f28f91d9de1fec74075e5}{get\+\_\+type} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1softmax__layer_afc8ecde99bde8cbacae5dc1779052d1d}{get\+\_\+description} () const override
+\item 
+\hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08db}{data\+\_\+layout} \hyperlink{classlbann_1_1softmax__layer_af45bc0942bf38d6de7c28032d9bb0e73}{get\+\_\+data\+\_\+layout} () const override
+\item 
+void \hyperlink{classlbann_1_1softmax__layer_af07463a1d99832d3bf11610311fd7da4}{setup\+\_\+matrices} (const \hyperlink{base_8hpp_a9951bb1719d534e0401b1f06cad19eab}{El\+::\+Grid} \&grid) override
+\item 
+void \hyperlink{classlbann_1_1softmax__layer_a4cc8f1f44a2854e78dad4f898d66a5ac}{setup\+\_\+data} () override
+\item 
+void \hyperlink{classlbann_1_1softmax__layer_a313aa2f82acfbca8f3852378d00c22c3}{fp\+\_\+setup\+\_\+data} (int mini\+\_\+batch\+\_\+size) override
+\item 
+void \hyperlink{classlbann_1_1softmax__layer_a15d05369ebef618edcf34d4679aaf2fc}{fp\+\_\+compute} () override
+\item 
+void \hyperlink{classlbann_1_1softmax__layer_a82e9fd693e34c6e8ebc77802940ad079}{bp\+\_\+compute} () override
+\item 
+virtual void \hyperlink{classlbann_1_1softmax__layer_ae781c249eccf05c670395cc94ad58bc4}{fp\+\_\+compute\+\_\+cpu} ()
+\item 
+virtual void \hyperlink{classlbann_1_1softmax__layer_ac9ba1f8425f6d59ed7f12b8b7fb5b7c0}{bp\+\_\+compute\+\_\+cpu} ()
+\item 
+void \hyperlink{classlbann_1_1softmax__layer_a5f2e55d32c4042e5da736b6eb5553e82}{fp\+\_\+compute\+\_\+cudnn} ()
+\item 
+void \hyperlink{classlbann_1_1softmax__layer_a507c8c53b4a1bc20b6e5b70ce05d7f67}{bp\+\_\+compute\+\_\+cudnn} ()
+\item 
+{\footnotesize template$<$$>$ }\\void \hyperlink{classlbann_1_1softmax__layer_ad011596d678ba62d3a92b0e9b2acae54}{setup\+\_\+matrices} (const \hyperlink{base_8hpp_a9951bb1719d534e0401b1f06cad19eab}{El\+::\+Grid} \&grid)
+\item 
+{\footnotesize template$<$$>$ }\\void \hyperlink{classlbann_1_1softmax__layer_ae9472c4f1d22ff51cb7508d17e37c61d}{setup\+\_\+matrices} (const \hyperlink{base_8hpp_a9951bb1719d534e0401b1f06cad19eab}{El\+::\+Grid} \&grid)
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} $\ast$ \hyperlink{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}{m\+\_\+workspace}
+\item 
+Data\+Type \hyperlink{classlbann_1_1softmax__layer_ab3bf2d92f4441923dd0b792c38ec774a}{m\+\_\+min\+\_\+output}
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+\subsubsection*{template$<$data\+\_\+layout T\+\_\+layout$>$\newline
+class lbann\+::softmax\+\_\+layer$<$ T\+\_\+layout $>$}
+
+Softmax layer. 
+
+Definition at line 65 of file softmax.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1softmax__layer_aeac8e8c98c838929afc9ab6c82af24d2}\label{classlbann_1_1softmax__layer_aeac8e8c98c838929afc9ab6c82af24d2}} 
+\index{lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}!softmax\+\_\+layer@{softmax\+\_\+layer}}
+\index{softmax\+\_\+layer@{softmax\+\_\+layer}!lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}}
+\subsubsection{\texorpdfstring{softmax\+\_\+layer()}{softmax\_layer()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{classlbann_1_1softmax__layer}{lbann\+::softmax\+\_\+layer}$<$ T\+\_\+layout $>$\+::\hyperlink{classlbann_1_1softmax__layer}{softmax\+\_\+layer} (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{\hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$}]{cudnn = {\ttfamily nullptr} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 80 of file softmax.\+hpp.
+
+
+\begin{DoxyCode}
+82     : \hyperlink{classlbann_1_1activation__layer_a7df6f5d21ccdd5a24ad6233a52807c6d}{activation\_layer}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}),
+83       \hyperlink{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}{m\_workspace}(\textcolor{keyword}{nullptr}),
+84       \hyperlink{classlbann_1_1softmax__layer_ab3bf2d92f4441923dd0b792c38ec774a}{m\_min\_output}(std::sqrt(std::numeric\_limits<DataType>::min())) \{
+85     this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn} = cudnn;
+86 \textcolor{preprocessor}{  #ifdef LBANN\_HAS\_CUDNN}
+87     \textcolor{keywordflow}{if} (this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn} && T\_layout == \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08dba37d2a3465f7cbf4ab60f4e79944d0638}{data\_layout::DATA\_PARALLEL}) \{
+88       this->\hyperlink{classlbann_1_1Layer_af7881cb5eff5207c15fa835d65462e8f}{m\_using\_gpus} = \textcolor{keyword}{true};
+89     \}
+90 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+91   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1softmax__layer_ad17b123fdc1c1d5fc57a1abe601de2b6}\label{classlbann_1_1softmax__layer_ad17b123fdc1c1d5fc57a1abe601de2b6}} 
+\index{lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}!softmax\+\_\+layer@{softmax\+\_\+layer}}
+\index{softmax\+\_\+layer@{softmax\+\_\+layer}!lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}}
+\subsubsection{\texorpdfstring{softmax\+\_\+layer()}{softmax\_layer()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{classlbann_1_1softmax__layer}{lbann\+::softmax\+\_\+layer}$<$ T\+\_\+layout $>$\+::\hyperlink{classlbann_1_1softmax__layer}{softmax\+\_\+layer} (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1softmax__layer}{softmax\+\_\+layer}$<$ T\+\_\+layout $>$ \&}]{other }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 93 of file softmax.\+hpp.
+
+
+\begin{DoxyCode}
+94     : \hyperlink{classlbann_1_1activation__layer_a7df6f5d21ccdd5a24ad6233a52807c6d}{activation\_layer}(other),
+95       \hyperlink{classlbann_1_1softmax__layer_ab3bf2d92f4441923dd0b792c38ec774a}{m\_min\_output}(other.m\_min\_output) \{
+96 
+97     \textcolor{comment}{// Matrix deep copy}
+98     \hyperlink{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}{m\_workspace} = other.m\_workspace;
+99     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}{m\_workspace} != \textcolor{keyword}{nullptr}) \{ \hyperlink{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}{m\_workspace} = 
+      \hyperlink{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}{m\_workspace}->Copy(); \}
+100 
+101     \textcolor{comment}{// Copy GPU objects}
+102     this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn} = other.m\_cudnn;
+103     this->\hyperlink{classlbann_1_1Layer_af7881cb5eff5207c15fa835d65462e8f}{m\_using\_gpus} = other.m\_using\_gpus;
+104 
+105   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1softmax__layer_aabd598a9b0cec63e2d4558fd79ecee0d}\label{classlbann_1_1softmax__layer_aabd598a9b0cec63e2d4558fd79ecee0d}} 
+\index{lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}!````~softmax\+\_\+layer@{$\sim$softmax\+\_\+layer}}
+\index{````~softmax\+\_\+layer@{$\sim$softmax\+\_\+layer}!lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}}
+\subsubsection{\texorpdfstring{$\sim$softmax\+\_\+layer()}{~softmax\_layer()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{classlbann_1_1softmax__layer}{lbann\+::softmax\+\_\+layer}$<$ T\+\_\+layout $>$\+::$\sim$\hyperlink{classlbann_1_1softmax__layer}{softmax\+\_\+layer} (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}}
+
+
+
+Definition at line 122 of file softmax.\+hpp.
+
+
+\begin{DoxyCode}
+122                             \{
+123     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}{m\_workspace} != \textcolor{keyword}{nullptr}) \{ \textcolor{keyword}{delete} \hyperlink{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}{m\_workspace}; \}
+124   \}
+\end{DoxyCode}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1softmax__layer_a82e9fd693e34c6e8ebc77802940ad079}\label{classlbann_1_1softmax__layer_a82e9fd693e34c6e8ebc77802940ad079}} 
+\index{lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}!bp\+\_\+compute@{bp\+\_\+compute}}
+\index{bp\+\_\+compute@{bp\+\_\+compute}!lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}}
+\subsubsection{\texorpdfstring{bp\+\_\+compute()}{bp\_compute()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+void \hyperlink{classlbann_1_1softmax__layer}{lbann\+::softmax\+\_\+layer}$<$ T\+\_\+layout $>$\+::bp\+\_\+compute (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Perform the computation for the backward propagation step. 
+
+Implements \hyperlink{classlbann_1_1Layer_a7442e01f9ee1294df2de811efcf5171e}{lbann\+::\+Layer}.
+
+
+
+Definition at line 157 of file softmax.\+hpp.
+
+
+\begin{DoxyCode}
+157                              \{
+158     \textcolor{keywordflow}{if}(this->\hyperlink{classlbann_1_1Layer_af7881cb5eff5207c15fa835d65462e8f}{m\_using\_gpus}) \{
+159       \hyperlink{classlbann_1_1softmax__layer_a507c8c53b4a1bc20b6e5b70ce05d7f67}{bp\_compute\_cudnn}();
+160     \} \textcolor{keywordflow}{else} \{
+161       \hyperlink{classlbann_1_1softmax__layer_ac9ba1f8425f6d59ed7f12b8b7fb5b7c0}{bp\_compute\_cpu}();
+162     \}
+163   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1softmax__layer_ac9ba1f8425f6d59ed7f12b8b7fb5b7c0}\label{classlbann_1_1softmax__layer_ac9ba1f8425f6d59ed7f12b8b7fb5b7c0}} 
+\index{lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}!bp\+\_\+compute\+\_\+cpu@{bp\+\_\+compute\+\_\+cpu}}
+\index{bp\+\_\+compute\+\_\+cpu@{bp\+\_\+compute\+\_\+cpu}!lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}}
+\subsubsection{\texorpdfstring{bp\+\_\+compute\+\_\+cpu()}{bp\_compute\_cpu()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+virtual void \hyperlink{classlbann_1_1softmax__layer}{lbann\+::softmax\+\_\+layer}$<$ T\+\_\+layout $>$\+::bp\+\_\+compute\+\_\+cpu (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Definition at line 222 of file softmax.\+hpp.
+
+
+\begin{DoxyCode}
+222                                 \{
+223 
+224     \textcolor{comment}{// Local matrices}
+225     \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_output = \hyperlink{classlbann_1_1Layer_a4248f27acebf72b7b7b3ee39c8bcb62a}{get\_local\_activations}();
+226     \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_gradient\_wrt\_output = \hyperlink{classlbann_1_1Layer_a82827edc5e869960144f3ccb2172bfcd}{get\_local\_prev\_error\_signals}();
+227     \textcolor{keyword}{auto}& local\_gradient\_wrt\_input = \hyperlink{classlbann_1_1Layer_af178d00b9d878aa7d87754bff2a91f3a}{get\_local\_error\_signals}();
+228     \textcolor{keyword}{auto}& local\_workspace = \hyperlink{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}{m\_workspace}->Matrix();
+229     
+230     \textcolor{comment}{// Matrix parameters}
+231     \textcolor{keyword}{const} El::Int local\_height = local\_output.Height();
+232     \textcolor{keyword}{const} El::Int local\_width = local\_output.Width();
+233 
+234     \textcolor{comment}{// Compute dot products between output and gradient w.r.t. output}
+235     \textcolor{keywordflow}{for} (El::Int col = 0; col < local\_width; ++col) \{
+236       \textcolor{keyword}{const} \textcolor{keyword}{auto}& y = local\_output(El::ALL, El::IR(col));
+237       \textcolor{keyword}{const} \textcolor{keyword}{auto}& dy = local\_gradient\_wrt\_output(El::ALL, El::IR(col));
+238       local\_workspace(0, col) = El::Dot(y, dy);
+239     \}
+240     \hyperlink{classlbann_1_1Layer_a5de05c52f22e0bbd7c703bec3ad4dbf2}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_af5631e5f0f54e4df4958eba9df2599ef}{allreduce}(*\hyperlink{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}{m\_workspace}, \hyperlink{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}{m\_workspace}->RedundantComm());
+241 
+242     \textcolor{comment}{// Compute gradient w.r.t. input}
+243 \textcolor{preprocessor}{    #pragma omp parallel for}
+244     \textcolor{keywordflow}{for} (El::Int col = 0; col < local\_width; ++col) \{
+245       \textcolor{keyword}{const} DataType y\_dot\_dy = local\_workspace(0, col);
+246       \textcolor{keywordflow}{for} (El::Int row = 0; row < local\_height; ++row) \{
+247         \textcolor{keyword}{const} DataType y = local\_output(row, col);
+248         \textcolor{keyword}{const} DataType dy = local\_gradient\_wrt\_output(row, col);
+249         DataType dx = y * (dy - y\_dot\_dy);
+250 \textcolor{preprocessor}{      #ifdef LBANN\_ENABLE\_SOFTMAX\_CUTOFF}
+251         \textcolor{keywordflow}{if} (y <= \hyperlink{classlbann_1_1softmax__layer_ab3bf2d92f4441923dd0b792c38ec774a}{m\_min\_output}) \{ dx = DataType(0); \}
+252 \textcolor{preprocessor}{      #endif}
+253         local\_gradient\_wrt\_input(row, col) += dx;
+254       \}
+255     \}
+256   
+257   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1softmax__layer_a507c8c53b4a1bc20b6e5b70ce05d7f67}\label{classlbann_1_1softmax__layer_a507c8c53b4a1bc20b6e5b70ce05d7f67}} 
+\index{lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}!bp\+\_\+compute\+\_\+cudnn@{bp\+\_\+compute\+\_\+cudnn}}
+\index{bp\+\_\+compute\+\_\+cudnn@{bp\+\_\+compute\+\_\+cudnn}!lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}}
+\subsubsection{\texorpdfstring{bp\+\_\+compute\+\_\+cudnn()}{bp\_compute\_cudnn()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+void \hyperlink{classlbann_1_1softmax__layer}{lbann\+::softmax\+\_\+layer}$<$ T\+\_\+layout $>$\+::bp\+\_\+compute\+\_\+cudnn (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 301 of file softmax.\+hpp.
+
+
+\begin{DoxyCode}
+301                           \{
+302 \textcolor{preprocessor}{  #ifndef LBANN\_HAS\_CUDNN}
+303     \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"softmax\_layer: cuDNN not detected"});
+304 \textcolor{preprocessor}{  #else}
+305     
+306     \textcolor{comment}{// Useful constants}
+307     \textcolor{keyword}{const} DataType one = 1;
+308 
+309     \textcolor{comment}{// Matrices}
+310     \textcolor{keyword}{const} \textcolor{keyword}{auto}& activations\_d = this->m\_activations\_d[0];
+311     \textcolor{keyword}{const} \textcolor{keyword}{auto}& prev\_error\_signals\_d = this->m\_prev\_error\_signals\_d[0];
+312     \textcolor{keyword}{auto}& error\_signals\_d = this->m\_error\_signals\_d[0];
+313 
+314     \textcolor{comment}{// Apply softmax on each GPU}
+315     \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_gpus = this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_num\_gpus();
+316     \textcolor{keywordflow}{for}(\textcolor{keywordtype}{int} i = 0; i < num\_gpus; ++i) \{
+317       CHECK\_CUDA(cudaSetDevice(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_gpu(i)));
+318       CHECK\_CUDNN(cudnnSetStream(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_handle(i),
+319                                  this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_stream(i)));
+320       CHECK\_CUDNN(cudnnSoftmaxBackward(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_handle(i),
+321                                        CUDNN\_SOFTMAX\_ACCURATE,
+322                                        CUDNN\_SOFTMAX\_MODE\_INSTANCE,
+323                                        &one,
+324                                        this->m\_activations\_cudnn\_desc,
+325                                        activations\_d.get\_locked\_data(i),
+326                                        this->m\_prev\_error\_signals\_cudnn\_desc,
+327                                        prev\_error\_signals\_d.get\_locked\_data(i),
+328                                        &one,
+329                                        this->m\_error\_signals\_cudnn\_desc,
+330                                        error\_signals\_d.get\_data(i)));
+331     \}
+332 
+333 \textcolor{preprocessor}{  #ifdef LBANN\_ENABLE\_SOFTMAX\_CUTOFF}
+334     \textcolor{comment}{// Round to minimum value to avoid denormalized floats}
+335     softmax\_cuda::bp\_cutoff(*this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn},
+336                             activations\_d.get\_locked\_data(),
+337                             error\_signals\_d.get\_data(),
+338                             \hyperlink{classlbann_1_1Layer_aa4de686cc6c2dd38166f42faf874f227}{get\_num\_neurons}(),
+339                             this->m\_mini\_batch\_size\_per\_gpu,
+340                             this->\hyperlink{classlbann_1_1softmax__layer_ab3bf2d92f4441923dd0b792c38ec774a}{m\_min\_output});
+341 \textcolor{preprocessor}{  #endif // LBANN\_ENABLE\_SOFTMAX\_CUTOFF}
+342     
+343 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+344   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1softmax__layer_adbde9ddc7c6cec83645d4bebf8b54113}\label{classlbann_1_1softmax__layer_adbde9ddc7c6cec83645d4bebf8b54113}} 
+\index{lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}!copy@{copy}}
+\index{copy@{copy}!lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{classlbann_1_1softmax__layer}{softmax\+\_\+layer}$\ast$ \hyperlink{classlbann_1_1softmax__layer}{lbann\+::softmax\+\_\+layer}$<$ T\+\_\+layout $>$\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Copy function. This function dynamically allocates memory for a layer instance and instantiates a copy. The caller is responsible for deallocating the instance. 
+
+Implements \hyperlink{classlbann_1_1Layer_af420f22bbac801c85483ade84588a23f}{lbann\+::\+Layer}.
+
+
+
+Definition at line 126 of file softmax.\+hpp.
+
+
+\begin{DoxyCode}
+126 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1softmax__layer_aeac8e8c98c838929afc9ab6c82af24d2}{softmax\_layer}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1softmax__layer_a15d05369ebef618edcf34d4679aaf2fc}\label{classlbann_1_1softmax__layer_a15d05369ebef618edcf34d4679aaf2fc}} 
+\index{lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}!fp\+\_\+compute@{fp\+\_\+compute}}
+\index{fp\+\_\+compute@{fp\+\_\+compute}!lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}}
+\subsubsection{\texorpdfstring{fp\+\_\+compute()}{fp\_compute()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+void \hyperlink{classlbann_1_1softmax__layer}{lbann\+::softmax\+\_\+layer}$<$ T\+\_\+layout $>$\+::fp\+\_\+compute (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Perform the computation for the forward propagation step. 
+
+Implements \hyperlink{classlbann_1_1Layer_a523319dd1bd87a0612afa1912bb5aad7}{lbann\+::\+Layer}.
+
+
+
+Definition at line 149 of file softmax.\+hpp.
+
+
+\begin{DoxyCode}
+149                              \{
+150     \textcolor{keywordflow}{if}(this->\hyperlink{classlbann_1_1Layer_af7881cb5eff5207c15fa835d65462e8f}{m\_using\_gpus}) \{
+151       \hyperlink{classlbann_1_1softmax__layer_a5f2e55d32c4042e5da736b6eb5553e82}{fp\_compute\_cudnn}();
+152     \} \textcolor{keywordflow}{else} \{
+153       \hyperlink{classlbann_1_1softmax__layer_ae781c249eccf05c670395cc94ad58bc4}{fp\_compute\_cpu}();
+154     \}
+155   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1softmax__layer_ae781c249eccf05c670395cc94ad58bc4}\label{classlbann_1_1softmax__layer_ae781c249eccf05c670395cc94ad58bc4}} 
+\index{lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}!fp\+\_\+compute\+\_\+cpu@{fp\+\_\+compute\+\_\+cpu}}
+\index{fp\+\_\+compute\+\_\+cpu@{fp\+\_\+compute\+\_\+cpu}!lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}}
+\subsubsection{\texorpdfstring{fp\+\_\+compute\+\_\+cpu()}{fp\_compute\_cpu()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+virtual void \hyperlink{classlbann_1_1softmax__layer}{lbann\+::softmax\+\_\+layer}$<$ T\+\_\+layout $>$\+::fp\+\_\+compute\+\_\+cpu (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Definition at line 165 of file softmax.\+hpp.
+
+
+\begin{DoxyCode}
+165                                 \{
+166 
+167     \textcolor{comment}{// Local matrices}
+168     \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_input = \hyperlink{classlbann_1_1Layer_a35397843bb0c84030000c7d872229acb}{get\_local\_prev\_activations}();
+169     \textcolor{keyword}{auto}& local\_output = \hyperlink{classlbann_1_1Layer_a4248f27acebf72b7b7b3ee39c8bcb62a}{get\_local\_activations}();
+170     \textcolor{keyword}{auto}& local\_workspace = \hyperlink{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}{m\_workspace}->Matrix();
+171     
+172     \textcolor{comment}{// Matrix parameters}
+173     \textcolor{keyword}{const} El::Int local\_height = local\_input.Height();
+174     \textcolor{keyword}{const} El::Int local\_width = local\_input.Width();
+175 
+176     \textcolor{comment}{// Find maximum entry in each column}
+177 \textcolor{preprocessor}{    #pragma omp parallel for}
+178     \textcolor{keywordflow}{for}(El::Int col = 0; col < local\_width; ++col) \{
+179       DataType max\_entry = local\_input(0, col);
+180       \textcolor{keywordflow}{for}(El::Int row = 1; row < local\_height; ++row) \{
+181         max\_entry = std::max(max\_entry, local\_input(row, col));
+182       \}
+183       local\_workspace(0, col) = max\_entry;
+184     \}
+185     \hyperlink{classlbann_1_1Layer_a5de05c52f22e0bbd7c703bec3ad4dbf2}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_af5631e5f0f54e4df4958eba9df2599ef}{allreduce}(*\hyperlink{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}{m\_workspace}, \hyperlink{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}{m\_workspace}->RedundantComm(),
+186                       El::mpi::MAX);
+187 
+188     \textcolor{comment}{// Exponentiate activations and compute column sums}
+189     \textcolor{comment}{// Note: Subtracting by the column max prevents activations from}
+190     \textcolor{comment}{// blowing up. Large negative values underflow to 0.}
+191 \textcolor{preprocessor}{    #pragma omp parallel for}
+192     \textcolor{keywordflow}{for} (El::Int col = 0; col < local\_width; ++col) \{
+193       \textcolor{keyword}{const} DataType shift = local\_workspace(0, col);
+194       DataType sum = 0;
+195       \textcolor{keywordflow}{for} (El::Int row = 0; row < local\_height; ++row) \{
+196         \textcolor{keyword}{const} DataType x = local\_input(row, col);
+197         \textcolor{keyword}{const} DataType y = std::exp(x - shift);
+198         local\_output(row, col) = y;
+199         sum += y;
+200       \}
+201       local\_workspace(0, col) = sum;
+202     \}
+203     \hyperlink{classlbann_1_1Layer_a5de05c52f22e0bbd7c703bec3ad4dbf2}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_af5631e5f0f54e4df4958eba9df2599ef}{allreduce}(*\hyperlink{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}{m\_workspace}, \hyperlink{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}{m\_workspace}->RedundantComm());
+204 
+205     \textcolor{comment}{// Divide activations by column sums}
+206     \textcolor{comment}{// Note: Small values are rounded to minimum output value to avoid}
+207     \textcolor{comment}{// denormalized floats.}
+208 \textcolor{preprocessor}{    #pragma omp parallel for}
+209     \textcolor{keywordflow}{for} (El::Int col = 0; col < local\_width; ++col) \{
+210       \textcolor{keyword}{const} DataType scale = DataType(1) / local\_workspace(0, col);
+211       \textcolor{keywordflow}{for} (El::Int row = 0; row < local\_height; ++row) \{
+212         DataType& y = local\_output(row, col);
+213         y *= scale;
+214 \textcolor{preprocessor}{      #ifdef LBANN\_ENABLE\_SOFTMAX\_CUTOFF}
+215         y = std::max(y, \hyperlink{classlbann_1_1softmax__layer_ab3bf2d92f4441923dd0b792c38ec774a}{m\_min\_output});
+216 \textcolor{preprocessor}{      #endif // LBANN\_ENABLE\_SOFTMAX\_CUTOFF}
+217       \}
+218     \}
+219 
+220   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1softmax__layer_a5f2e55d32c4042e5da736b6eb5553e82}\label{classlbann_1_1softmax__layer_a5f2e55d32c4042e5da736b6eb5553e82}} 
+\index{lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}!fp\+\_\+compute\+\_\+cudnn@{fp\+\_\+compute\+\_\+cudnn}}
+\index{fp\+\_\+compute\+\_\+cudnn@{fp\+\_\+compute\+\_\+cudnn}!lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}}
+\subsubsection{\texorpdfstring{fp\+\_\+compute\+\_\+cudnn()}{fp\_compute\_cudnn()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+void \hyperlink{classlbann_1_1softmax__layer}{lbann\+::softmax\+\_\+layer}$<$ T\+\_\+layout $>$\+::fp\+\_\+compute\+\_\+cudnn (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 259 of file softmax.\+hpp.
+
+
+\begin{DoxyCode}
+259                           \{
+260 \textcolor{preprocessor}{  #ifndef LBANN\_HAS\_CUDNN}
+261     \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"softmax\_layer: cuDNN not detected"});
+262 \textcolor{preprocessor}{  #else}
+263     
+264     \textcolor{comment}{// Useful constants}
+265     \textcolor{keyword}{const} DataType one = 1;
+266     \textcolor{keyword}{const} DataType zero = 0;
+267 
+268     \textcolor{comment}{// Matrices}
+269     \textcolor{keyword}{const} \textcolor{keyword}{auto}& prev\_activations\_d = this->m\_prev\_activations\_d[0];
+270     \textcolor{keyword}{auto}& activations\_d = this->m\_activations\_d[0];
+271 
+272     \textcolor{comment}{// Apply softmax on each GPU}
+273     \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_gpus = this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_num\_gpus();
+274     \textcolor{keywordflow}{for}(\textcolor{keywordtype}{int} i = 0; i < num\_gpus; ++i) \{
+275       CHECK\_CUDA(cudaSetDevice(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_gpu(i)));
+276       CHECK\_CUDNN(cudnnSetStream(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_handle(i),
+277                                  this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_stream(i)));
+278       CHECK\_CUDNN(cudnnSoftmaxForward(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_handle(i),
+279                                       CUDNN\_SOFTMAX\_ACCURATE,
+280                                       CUDNN\_SOFTMAX\_MODE\_INSTANCE,
+281                                       &one,
+282                                       this->m\_prev\_activations\_cudnn\_desc,
+283                                       prev\_activations\_d.get\_locked\_data(i),
+284                                       &zero,
+285                                       this->m\_activations\_cudnn\_desc,
+286                                       activations\_d.get\_data(i)));
+287     \}
+288 
+289 \textcolor{preprocessor}{  #ifdef LBANN\_ENABLE\_SOFTMAX\_CUTOFF}
+290     \textcolor{comment}{// Round to minimum value to avoid denormalized floats}
+291     softmax\_cuda::fp\_cutoff(*this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn},
+292                             activations\_d.get\_data(),
+293                             \hyperlink{classlbann_1_1Layer_aa4de686cc6c2dd38166f42faf874f227}{get\_num\_neurons}(),
+294                             this->m\_mini\_batch\_size\_per\_gpu,
+295                             \hyperlink{classlbann_1_1softmax__layer_ab3bf2d92f4441923dd0b792c38ec774a}{m\_min\_output});
+296 \textcolor{preprocessor}{  #endif // LBANN\_ENABLE\_SOFTMAX\_CUTOFF}
+297     
+298 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+299   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1softmax__layer_a313aa2f82acfbca8f3852378d00c22c3}\label{classlbann_1_1softmax__layer_a313aa2f82acfbca8f3852378d00c22c3}} 
+\index{lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}!fp\+\_\+setup\+\_\+data@{fp\+\_\+setup\+\_\+data}}
+\index{fp\+\_\+setup\+\_\+data@{fp\+\_\+setup\+\_\+data}!lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}}
+\subsubsection{\texorpdfstring{fp\+\_\+setup\+\_\+data()}{fp\_setup\_data()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+void \hyperlink{classlbann_1_1softmax__layer}{lbann\+::softmax\+\_\+layer}$<$ T\+\_\+layout $>$\+::fp\+\_\+setup\+\_\+data (\begin{DoxyParamCaption}\item[{int}]{mini\+\_\+batch\+\_\+size }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Setup data for forward propagation. Base method gets previous activations from parent layers and resizes activations for the current mini-\/batch size. 
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_af311d901a5f71e4c749454647e9fd9c7}{lbann\+::\+Layer}.
+
+
+
+Definition at line 144 of file softmax.\+hpp.
+
+
+\begin{DoxyCode}
+144                                                    \{
+145     \hyperlink{classlbann_1_1Layer_af311d901a5f71e4c749454647e9fd9c7}{activation\_layer::fp\_setup\_data}(mini\_batch\_size);
+146     \hyperlink{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}{m\_workspace}->Resize(1, mini\_batch\_size);
+147   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1softmax__layer_a313aa2f82acfbca8f3852378d00c22c3_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1softmax__layer_af45bc0942bf38d6de7c28032d9bb0e73}\label{classlbann_1_1softmax__layer_af45bc0942bf38d6de7c28032d9bb0e73}} 
+\index{lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}!get\+\_\+data\+\_\+layout@{get\+\_\+data\+\_\+layout}}
+\index{get\+\_\+data\+\_\+layout@{get\+\_\+data\+\_\+layout}!lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+data\+\_\+layout()}{get\_data\_layout()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08db}{data\+\_\+layout} \hyperlink{classlbann_1_1softmax__layer}{lbann\+::softmax\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+data\+\_\+layout (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get data layout of the data tensors. We assume that the data layouts of the previous activations, activations, previous error signals, and error signals are the same. Each concrete layer that is templated on its data layout should override this function to return its template parameter. 
+
+Implements \hyperlink{classlbann_1_1Layer_a5dfb66e81fc085997402a5e2241316bd}{lbann\+::\+Layer}.
+
+
+
+Definition at line 134 of file softmax.\+hpp.
+
+
+\begin{DoxyCode}
+134 \{ \textcolor{keywordflow}{return} T\_layout; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1softmax__layer_afc8ecde99bde8cbacae5dc1779052d1d}\label{classlbann_1_1softmax__layer_afc8ecde99bde8cbacae5dc1779052d1d}} 
+\index{lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}!get\+\_\+description@{get\+\_\+description}}
+\index{get\+\_\+description@{get\+\_\+description}!lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+description()}{get\_description()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+std\+::string \hyperlink{classlbann_1_1softmax__layer}{lbann\+::softmax\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+description (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get a human-\/readable description of the layer parameters. 
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_acc0803d3428914ca1eb5988c4309174a}{lbann\+::\+Layer}.
+
+
+
+Definition at line 129 of file softmax.\+hpp.
+
+
+\begin{DoxyCode}
+129                                              \{
+130     \textcolor{keywordflow}{return} std::string \{\} + \textcolor{stringliteral}{" softmax"} + \textcolor{stringliteral}{" dataLayout: "}
+131            + this->\hyperlink{classlbann_1_1Layer_ae3f4a5602df821f4221614b1e3782dc1}{get\_data\_layout\_string}(\hyperlink{classlbann_1_1softmax__layer_af45bc0942bf38d6de7c28032d9bb0e73}{get\_data\_layout}());
+132   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1softmax__layer_a344145869f2f28f91d9de1fec74075e5}\label{classlbann_1_1softmax__layer_a344145869f2f28f91d9de1fec74075e5}} 
+\index{lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}!get\+\_\+type@{get\+\_\+type}}
+\index{get\+\_\+type@{get\+\_\+type}!lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+type()}{get\_type()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+std\+::string \hyperlink{classlbann_1_1softmax__layer}{lbann\+::softmax\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+type (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get the layer type\textquotesingle{}s name. A layer type name should be brief, human-\/readable description of the layer\textquotesingle{}s mathematical operation. 
+
+Implements \hyperlink{classlbann_1_1Layer_a0fa0ea9160b490c151c0a17fde4f7239}{lbann\+::\+Layer}.
+
+
+
+Definition at line 127 of file softmax.\+hpp.
+
+
+\begin{DoxyCode}
+127 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"softmax"}; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1softmax__layer_a8532a4e2b1669840cea80cfde383bebb}\label{classlbann_1_1softmax__layer_a8532a4e2b1669840cea80cfde383bebb}} 
+\index{lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{classlbann_1_1softmax__layer}{softmax\+\_\+layer}\& \hyperlink{classlbann_1_1softmax__layer}{lbann\+::softmax\+\_\+layer}$<$ T\+\_\+layout $>$\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1softmax__layer}{softmax\+\_\+layer}$<$ T\+\_\+layout $>$ \&}]{other }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 107 of file softmax.\+hpp.
+
+
+\begin{DoxyCode}
+107                                                        \{
+108     \hyperlink{classlbann_1_1Layer_a00d8acde68fda2f38c4a39ef8c89234a}{activation\_layer::operator=}(other);
+109     \hyperlink{classlbann_1_1softmax__layer_ab3bf2d92f4441923dd0b792c38ec774a}{m\_min\_output} = other.m\_min\_output;
+110 
+111     \textcolor{comment}{// Deep matrix copy}
+112     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}{m\_workspace} != \textcolor{keyword}{nullptr}) \{ \textcolor{keyword}{delete} \hyperlink{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}{m\_workspace}; \}
+113     \hyperlink{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}{m\_workspace} = other.m\_workspace;
+114     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}{m\_workspace} != \textcolor{keyword}{nullptr}) \{ \hyperlink{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}{m\_workspace} = 
+      \hyperlink{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}{m\_workspace}->Copy(); \}
+115 
+116     \textcolor{comment}{// Copy GPU objects}
+117     this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn} = other.m\_cudnn;
+118     this->\hyperlink{classlbann_1_1Layer_af7881cb5eff5207c15fa835d65462e8f}{m\_using\_gpus} = other.m\_using\_gpus;
+119 
+120   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1softmax__layer_a8532a4e2b1669840cea80cfde383bebb_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1softmax__layer_a4cc8f1f44a2854e78dad4f898d66a5ac}\label{classlbann_1_1softmax__layer_a4cc8f1f44a2854e78dad4f898d66a5ac}} 
+\index{lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}!setup\+\_\+data@{setup\+\_\+data}}
+\index{setup\+\_\+data@{setup\+\_\+data}!lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}}
+\subsubsection{\texorpdfstring{setup\+\_\+data()}{setup\_data()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+void \hyperlink{classlbann_1_1softmax__layer}{lbann\+::softmax\+\_\+layer}$<$ T\+\_\+layout $>$\+::setup\+\_\+data (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Setup layer data. Called by the setup function. The base method sets the previous activation, activation, previous error signal, and error signal matrices to zero matrices with the proper dimensions. Matrix buffers are pinned if needed for G\+PU transfers. 
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_a50a89f8a68762c677d48efe384676e81}{lbann\+::\+Layer}.
+
+
+
+Definition at line 138 of file softmax.\+hpp.
+
+
+\begin{DoxyCode}
+138                              \{
+139     \hyperlink{classlbann_1_1Layer_a50a89f8a68762c677d48efe384676e81}{activation\_layer::setup\_data}();
+140     \textcolor{keyword}{const} \textcolor{keywordtype}{int} mini\_batch\_size = this->\hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->\hyperlink{classlbann_1_1model_a8c311798ff4acaeafdfbf85162ba5084}{get\_max\_mini\_batch\_size}();
+141     \hyperlink{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}{m\_workspace}->Resize(1, mini\_batch\_size);
+142   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1softmax__layer_a4cc8f1f44a2854e78dad4f898d66a5ac_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1softmax__layer_ad011596d678ba62d3a92b0e9b2acae54}\label{classlbann_1_1softmax__layer_ad011596d678ba62d3a92b0e9b2acae54}} 
+\index{lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}!setup\+\_\+matrices@{setup\+\_\+matrices}}
+\index{setup\+\_\+matrices@{setup\+\_\+matrices}!lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}}
+\subsubsection{\texorpdfstring{setup\+\_\+matrices()}{setup\_matrices()}\hspace{0.1cm}{\footnotesize\ttfamily [1/3]}}
+{\footnotesize\ttfamily template$<$$>$ \\
+void \hyperlink{classlbann_1_1softmax__layer}{lbann\+::softmax\+\_\+layer}$<$ \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08dbac94d7b0e44ab8bdcdad694a673cdeae0}{data\+\_\+layout\+::\+M\+O\+D\+E\+L\+\_\+\+P\+A\+R\+A\+L\+L\+EL} $>$\+::setup\+\_\+matrices (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a9951bb1719d534e0401b1f06cad19eab}{El\+::\+Grid} \&}]{grid }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [virtual]}}
+
+Instantiate distributed matrices. If the layer has already been setup, this function should destroy all matrices and reinstantiate them. However, it is not guaranteed that derived classes will obey this behavior. 
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_a57bbe21131dc00ab5cf9ea5e3656808e}{lbann\+::\+Layer}.
+
+
+
+Definition at line 33 of file softmax.\+cpp.
+
+
+\begin{DoxyCode}
+33                                                     \{
+34   \hyperlink{classlbann_1_1Layer_a57bbe21131dc00ab5cf9ea5e3656808e}{activation\_layer::setup\_matrices}(grid);
+35   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}{m\_workspace} != \textcolor{keyword}{nullptr}) \{ \textcolor{keyword}{delete} \hyperlink{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}{m\_workspace}; \}
+36   \hyperlink{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}{m\_workspace} = \textcolor{keyword}{new} \hyperlink{base_8hpp_a638c3ca7c22f916d23415b234420b9f1}{StarMRMat}(grid);
+37 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1softmax__layer_ad011596d678ba62d3a92b0e9b2acae54_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1softmax__layer_ae9472c4f1d22ff51cb7508d17e37c61d}\label{classlbann_1_1softmax__layer_ae9472c4f1d22ff51cb7508d17e37c61d}} 
+\index{lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}!setup\+\_\+matrices@{setup\+\_\+matrices}}
+\index{setup\+\_\+matrices@{setup\+\_\+matrices}!lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}}
+\subsubsection{\texorpdfstring{setup\+\_\+matrices()}{setup\_matrices()}\hspace{0.1cm}{\footnotesize\ttfamily [2/3]}}
+{\footnotesize\ttfamily template$<$$>$ \\
+void \hyperlink{classlbann_1_1softmax__layer}{lbann\+::softmax\+\_\+layer}$<$ \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08dba37d2a3465f7cbf4ab60f4e79944d0638}{data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL} $>$\+::setup\+\_\+matrices (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a9951bb1719d534e0401b1f06cad19eab}{El\+::\+Grid} \&}]{grid }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [virtual]}}
+
+Instantiate distributed matrices. If the layer has already been setup, this function should destroy all matrices and reinstantiate them. However, it is not guaranteed that derived classes will obey this behavior. 
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_a57bbe21131dc00ab5cf9ea5e3656808e}{lbann\+::\+Layer}.
+
+
+
+Definition at line 41 of file softmax.\+cpp.
+
+
+\begin{DoxyCode}
+41                                      \{
+42   \hyperlink{classlbann_1_1Layer_a57bbe21131dc00ab5cf9ea5e3656808e}{activation\_layer::setup\_matrices}(grid);
+43   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}{m\_workspace} != \textcolor{keyword}{nullptr}) \{ \textcolor{keyword}{delete} \hyperlink{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}{m\_workspace}; \}
+44   \hyperlink{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}{m\_workspace} = \textcolor{keyword}{new} \hyperlink{base_8hpp_aa4ec814c4a8f15b4ea2b24b3af94ef23}{StarVCMat}(grid);
+45 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1softmax__layer_ae9472c4f1d22ff51cb7508d17e37c61d_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1softmax__layer_af07463a1d99832d3bf11610311fd7da4}\label{classlbann_1_1softmax__layer_af07463a1d99832d3bf11610311fd7da4}} 
+\index{lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}!setup\+\_\+matrices@{setup\+\_\+matrices}}
+\index{setup\+\_\+matrices@{setup\+\_\+matrices}!lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}}
+\subsubsection{\texorpdfstring{setup\+\_\+matrices()}{setup\_matrices()}\hspace{0.1cm}{\footnotesize\ttfamily [3/3]}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+void \hyperlink{classlbann_1_1softmax__layer}{lbann\+::softmax\+\_\+layer}$<$ T\+\_\+layout $>$\+::setup\+\_\+matrices (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a9951bb1719d534e0401b1f06cad19eab}{El\+::\+Grid} \&}]{grid }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Instantiate distributed matrices. If the layer has already been setup, this function should destroy all matrices and reinstantiate them. However, it is not guaranteed that derived classes will obey this behavior. 
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_a57bbe21131dc00ab5cf9ea5e3656808e}{lbann\+::\+Layer}.
+
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=333pt]{classlbann_1_1softmax__layer_af07463a1d99832d3bf11610311fd7da4_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1softmax__layer_ab3bf2d92f4441923dd0b792c38ec774a}\label{classlbann_1_1softmax__layer_ab3bf2d92f4441923dd0b792c38ec774a}} 
+\index{lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}!m\+\_\+min\+\_\+output@{m\+\_\+min\+\_\+output}}
+\index{m\+\_\+min\+\_\+output@{m\+\_\+min\+\_\+output}!lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}}
+\subsubsection{\texorpdfstring{m\+\_\+min\+\_\+output}{m\_min\_output}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+Data\+Type \hyperlink{classlbann_1_1softmax__layer}{lbann\+::softmax\+\_\+layer}$<$ T\+\_\+layout $>$\+::m\+\_\+min\+\_\+output\hspace{0.3cm}{\ttfamily [private]}}
+
+Lower bound for outputs. This should be sufficiently large to avoid denormalized floats. 
+
+Definition at line 76 of file softmax.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}\label{classlbann_1_1softmax__layer_a604e614de25758f0072308c7efdd5bdb}} 
+\index{lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}!m\+\_\+workspace@{m\+\_\+workspace}}
+\index{m\+\_\+workspace@{m\+\_\+workspace}!lbann\+::softmax\+\_\+layer@{lbann\+::softmax\+\_\+layer}}
+\subsubsection{\texorpdfstring{m\+\_\+workspace}{m\_workspace}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat}$\ast$ \hyperlink{classlbann_1_1softmax__layer}{lbann\+::softmax\+\_\+layer}$<$ T\+\_\+layout $>$\+::m\+\_\+workspace\hspace{0.3cm}{\ttfamily [private]}}
+
+Workspace for column-\/wise reductions. 
+
+Definition at line 70 of file softmax.\+hpp.
+
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/layers/activations/\hyperlink{softmax_8hpp}{softmax.\+hpp}\end{DoxyCompactItemize}

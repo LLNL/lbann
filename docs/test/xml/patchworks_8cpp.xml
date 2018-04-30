@@ -1,0 +1,206 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="patchworks_8cpp" kind="file" language="C++">
+    <compoundname>patchworks.cpp</compoundname>
+    <includes refid="patchworks_8hpp" local="yes">lbann/data_readers/patchworks/patchworks.hpp</includes>
+    <incdepgraph>
+      <node id="20121">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/patchworks/patchworks.cpp</label>
+        <link refid="patchworks_8cpp"/>
+        <childnode refid="20122" relation="include">
+        </childnode>
+      </node>
+      <node id="20122">
+        <label>lbann/data_readers/patchworks/patchworks.hpp</label>
+        <link refid="patchworks_8hpp"/>
+        <childnode refid="20123" relation="include">
+        </childnode>
+      </node>
+      <node id="20123">
+        <label>lbann_config.hpp</label>
+      </node>
+    </incdepgraph>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>2014-2016,<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Security,<sp/>LLC.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Produced<sp/>at<sp/>the<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Laboratory.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Written<sp/>by<sp/>the<sp/>LBANN<sp/>Research<sp/>Team<sp/>(B.<sp/>Van<sp/>Essen,<sp/>et<sp/>al.)<sp/>listed<sp/>in</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="comment">//<sp/>the<sp/>CONTRIBUTORS<sp/>file.<sp/>&lt;lbann-dev@llnl.gov&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="comment">//<sp/>LLNL-CODE-697807.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="comment">//<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="comment">//<sp/>This<sp/>file<sp/>is<sp/>part<sp/>of<sp/>LBANN:<sp/>Livermore<sp/>Big<sp/>Artificial<sp/>Neural<sp/>Network</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Toolkit.<sp/>For<sp/>details,<sp/>see<sp/>http://software.llnl.gov/LBANN<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="comment">//<sp/>https://github.com/LLNL/LBANN.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Licensed<sp/>under<sp/>the<sp/>Apache<sp/>License,<sp/>Version<sp/>2.0<sp/>(the<sp/>&quot;Licensee&quot;);<sp/>you</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight><highlight class="comment">//<sp/>may<sp/>not<sp/>use<sp/>this<sp/>file<sp/>except<sp/>in<sp/>compliance<sp/>with<sp/>the<sp/>License.<sp/><sp/>You<sp/>may</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="comment">//<sp/>obtain<sp/>a<sp/>copy<sp/>of<sp/>the<sp/>License<sp/>at:</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight><highlight class="comment">//<sp/>http://www.apache.org/licenses/LICENSE-2.0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Unless<sp/>required<sp/>by<sp/>applicable<sp/>law<sp/>or<sp/>agreed<sp/>to<sp/>in<sp/>writing,<sp/>software</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight><highlight class="comment">//<sp/>distributed<sp/>under<sp/>the<sp/>License<sp/>is<sp/>distributed<sp/>on<sp/>an<sp/>&quot;AS<sp/>IS&quot;<sp/>BASIS,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight><highlight class="comment">//<sp/>WITHOUT<sp/>WARRANTIES<sp/>OR<sp/>CONDITIONS<sp/>OF<sp/>ANY<sp/>KIND,<sp/>either<sp/>express<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="comment">//<sp/>implied.<sp/>See<sp/>the<sp/>License<sp/>for<sp/>the<sp/>specific<sp/>language<sp/>governing</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="comment">//<sp/>permissions<sp/>and<sp/>limitations<sp/>under<sp/>the<sp/>license.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="25"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="26"><highlight class="normal"></highlight><highlight class="comment">//<sp/>patchworks.cpp<sp/>-<sp/>LBANN<sp/>PATCHWORKS<sp/>main<sp/>interface<sp/>implementation</highlight></codeline>
+<codeline lineno="28"><highlight class="comment"></highlight></codeline>
+<codeline lineno="34"><highlight class="preprocessor">#include<sp/>&quot;<ref refid="patchworks_8hpp" kindref="compound">lbann/data_readers/patchworks/patchworks.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="35"><highlight class="normal"></highlight></codeline>
+<codeline lineno="36"><highlight class="normal"></highlight><highlight class="preprocessor">#ifdef<sp/>LBANN_HAS_OPENCV</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="37"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="random_8hpp" kindref="compound">lbann/utils/random.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="38"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="patchworks__stats_8hpp" kindref="compound">lbann/data_readers/patchworks/patchworks_stats.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="39"><highlight class="normal"></highlight></codeline>
+<codeline lineno="40"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacelbann" kindref="compound">lbann</ref><sp/>{</highlight></codeline>
+<codeline lineno="41"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal">patchworks<sp/>{</highlight></codeline>
+<codeline lineno="42"><highlight class="normal"></highlight></codeline>
+<codeline lineno="43"><highlight class="normal"></highlight><highlight class="preprocessor">#if<sp/>_PATCHWORKS_STAT_FLOAT_<sp/>==<sp/>32</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="44"><highlight class="normal"></highlight><highlight class="preprocessor">#define<sp/>_f<sp/>f</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="45"><highlight class="normal"></highlight><highlight class="preprocessor">#elif<sp/>_PATCHWORKS_STAT_FLOAT_<sp/>==<sp/>64</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="46"><highlight class="normal"></highlight><highlight class="preprocessor">#define<sp/>_f</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="47"><highlight class="normal"></highlight><highlight class="preprocessor">#else</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="48"><highlight class="normal"></highlight><highlight class="preprocessor">#error<sp/>need<sp/>to<sp/>set<sp/>_PATCHWORKS_STAT_FLOAT_</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="49"><highlight class="normal"></highlight><highlight class="preprocessor">#endif</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="50"><highlight class="normal"></highlight></codeline>
+<codeline lineno="51"><highlight class="normal">std::pair&lt;double,double&gt;<sp/>check_min_max(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">cv::Mat</ref>&amp;<sp/>_img)<sp/>{</highlight></codeline>
+<codeline lineno="52"><highlight class="normal"><sp/><sp/><ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">cv::Mat</ref><sp/>img<sp/>=<sp/>_img.clone();</highlight></codeline>
+<codeline lineno="53"><highlight class="normal"></highlight></codeline>
+<codeline lineno="54"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">double</highlight><highlight class="normal"><sp/>maxVal<sp/>=<sp/>0.0;</highlight></codeline>
+<codeline lineno="55"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">double</highlight><highlight class="normal"><sp/>minVal<sp/>=<sp/>0.0;</highlight></codeline>
+<codeline lineno="56"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>nCh<sp/>=<sp/>img.channels();</highlight></codeline>
+<codeline lineno="57"><highlight class="normal"></highlight></codeline>
+<codeline lineno="58"><highlight class="normal"><sp/><sp/>img.reshape(1);</highlight></codeline>
+<codeline lineno="59"><highlight class="normal"><sp/><sp/>cv::minMaxLoc(img,<sp/>&amp;minVal,<sp/>&amp;maxVal,<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal">,<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="60"><highlight class="normal"><sp/><sp/>img.reshape(nCh);</highlight></codeline>
+<codeline lineno="61"><highlight class="normal"></highlight></codeline>
+<codeline lineno="62"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//std::cout<sp/>&lt;&lt;<sp/>&quot;min<sp/>max<sp/>:<sp/>&quot;<sp/>&lt;&lt;<sp/>minVal<sp/>&lt;&lt;<sp/>&apos;<sp/>&apos;<sp/>&lt;&lt;<sp/>maxVal<sp/>&lt;&lt;<sp/>std::endl;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="63"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>std::make_pair(minVal,<sp/>maxVal);</highlight></codeline>
+<codeline lineno="64"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="65"><highlight class="normal"></highlight></codeline>
+<codeline lineno="66"><highlight class="normal"><ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">cv::Mat</ref><sp/>correct_chromatic_aberration(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">cv::Mat</ref>&amp;<sp/>_img)<sp/>{</highlight></codeline>
+<codeline lineno="67"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(_img.channels()<sp/>!=<sp/>3)<sp/>{</highlight></codeline>
+<codeline lineno="68"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>_img.clone();</highlight></codeline>
+<codeline lineno="69"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="70"><highlight class="normal"></highlight></codeline>
+<codeline lineno="71"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>img_depth<sp/>=<sp/>_img.depth();</highlight></codeline>
+<codeline lineno="72"><highlight class="normal"></highlight></codeline>
+<codeline lineno="73"><highlight class="normal"><sp/><sp/>std::pair&lt;double,<sp/>double&gt;<sp/>range_org<sp/>=<sp/>check_min_max(_img);</highlight></codeline>
+<codeline lineno="74"><highlight class="normal"></highlight></codeline>
+<codeline lineno="75"><highlight class="normal"><sp/><sp/><ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">cv::Mat</ref><sp/>img;<sp/></highlight><highlight class="comment">//<sp/>float<sp/>matrix</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="76"><highlight class="normal"></highlight></codeline>
+<codeline lineno="77"><highlight class="normal"><sp/><sp/>_img.convertTo(img,<sp/>_PW_CV_FP_);</highlight></codeline>
+<codeline lineno="78"><highlight class="normal"></highlight></codeline>
+<codeline lineno="79"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">static</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>pw_fp_t<sp/>a[3]<sp/>=<sp/>{-1.0<sp/>_f,<sp/>2.0<sp/>_f,<sp/>-1.0<sp/>_f};<sp/></highlight><highlight class="comment">//<sp/>BGR<sp/>order</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="80"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">static</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>pw_fp_t<sp/>aa<sp/>=<sp/>a[0]*a[0]<sp/>+<sp/>a[1]*a[1]+<sp/>a[2]*a[2];</highlight></codeline>
+<codeline lineno="81"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>A<sp/>=<sp/>a&apos;*a/(a*a&apos;)</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="82"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//static<sp/>const<sp/>pw_fp_t<sp/>A[3][3]<sp/>=<sp/>{{a[0]*a[0]/aa,<sp/>a[0]*a[1]/aa,<sp/><sp/>a[0]*a[2]/aa},</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="83"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>{a[1]*a[0]/aa,<sp/>a[1]*a[1]/aa,<sp/><sp/>a[1]*a[2]/aa},</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="84"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>{a[2]*a[0]/aa,<sp/>a[2]*a[1]/aa,<sp/><sp/>a[2]*a[2]/aa}};</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="85"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>B<sp/>=<sp/>(I<sp/>-<sp/>A)&apos;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="86"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">static</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>pw_fp_t<sp/>B[3][3]<sp/>=<sp/>{{1.0<sp/>_f-a[0]<sp/>*a[0]/aa,<sp/>a[0]<sp/>*a[1]/aa,<sp/><sp/>a[0]<sp/>*a[2]/aa},</highlight></codeline>
+<codeline lineno="87"><highlight class="normal"><sp/><sp/><sp/><sp/>{a[1]<sp/>*a[0]/aa,<sp/>1.0<sp/>_f-a[1]<sp/>*a[1]/aa,<sp/><sp/>a[1]<sp/>*a[2]/aa},</highlight></codeline>
+<codeline lineno="88"><highlight class="normal"><sp/><sp/><sp/><sp/>{a[2]<sp/>*a[0]/aa,<sp/>a[2]<sp/>*a[1]/aa,<sp/><sp/>1.0<sp/>_f-a[2]<sp/>*a[2]/aa}</highlight></codeline>
+<codeline lineno="89"><highlight class="normal"><sp/><sp/>};</highlight></codeline>
+<codeline lineno="90"><highlight class="normal"></highlight></codeline>
+<codeline lineno="91"><highlight class="normal"><sp/><sp/>cv::MatIterator_&lt;pw_cv_vec3&gt;<sp/>it<sp/>=<sp/>img.begin&lt;pw_cv_vec3&gt;();</highlight></codeline>
+<codeline lineno="92"><highlight class="normal"><sp/><sp/>cv::MatIterator_&lt;pw_cv_vec3&gt;<sp/>itend<sp/>=<sp/>img.end&lt;pw_cv_vec3&gt;();</highlight></codeline>
+<codeline lineno="93"><highlight class="normal"></highlight></codeline>
+<codeline lineno="94"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(<sp/>;<sp/>it<sp/>!=<sp/>itend;<sp/>++it)<sp/>{</highlight></codeline>
+<codeline lineno="95"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">auto</highlight><highlight class="normal"><sp/>b0<sp/>=<sp/></highlight><highlight class="keyword">static_cast&lt;</highlight><highlight class="normal">pw_fp_t</highlight><highlight class="keyword">&gt;</highlight><highlight class="normal">((*it)[0]);</highlight></codeline>
+<codeline lineno="96"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">auto</highlight><highlight class="normal"><sp/>g0<sp/>=<sp/></highlight><highlight class="keyword">static_cast&lt;</highlight><highlight class="normal">pw_fp_t</highlight><highlight class="keyword">&gt;</highlight><highlight class="normal">((*it)[1]);</highlight></codeline>
+<codeline lineno="97"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">auto</highlight><highlight class="normal"><sp/>r0<sp/>=<sp/></highlight><highlight class="keyword">static_cast&lt;</highlight><highlight class="normal">pw_fp_t</highlight><highlight class="keyword">&gt;</highlight><highlight class="normal">((*it)[2]);</highlight></codeline>
+<codeline lineno="98"><highlight class="normal"></highlight></codeline>
+<codeline lineno="99"><highlight class="normal"><sp/><sp/><sp/><sp/>pw_fp_t<sp/>b<sp/>=<sp/>b0<sp/>*<sp/>B[0][0]<sp/>+<sp/>g0<sp/>*<sp/>B[1][0]<sp/>+<sp/>r0<sp/>*<sp/>B[2][0];</highlight></codeline>
+<codeline lineno="100"><highlight class="normal"><sp/><sp/><sp/><sp/>pw_fp_t<sp/>g<sp/>=<sp/>b0<sp/>*<sp/>B[0][1]<sp/>+<sp/>g0<sp/>*<sp/>B[1][1]<sp/>+<sp/>r0<sp/>*<sp/>B[2][1];</highlight></codeline>
+<codeline lineno="101"><highlight class="normal"><sp/><sp/><sp/><sp/>pw_fp_t<sp/>r<sp/>=<sp/>b0<sp/>*<sp/>B[0][2]<sp/>+<sp/>g0<sp/>*<sp/>B[1][2]<sp/>+<sp/>r0<sp/>*<sp/>B[2][2];</highlight></codeline>
+<codeline lineno="102"><highlight class="normal"></highlight></codeline>
+<codeline lineno="103"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//std::cout<sp/>&lt;&lt;<sp/>r0<sp/>&lt;&lt;<sp/>&apos;<sp/>&apos;<sp/>&lt;&lt;<sp/>g0<sp/>&lt;&lt;<sp/>&apos;<sp/>&apos;<sp/>&lt;&lt;<sp/>b0<sp/>&lt;&lt;<sp/>&quot;<sp/>&quot;<sp/>&lt;&lt;<sp/>r<sp/>&lt;&lt;<sp/>&apos;<sp/>&apos;<sp/>&lt;&lt;<sp/>g<sp/>&lt;&lt;<sp/>&apos;<sp/>&apos;<sp/>&lt;&lt;<sp/>b<sp/>&lt;&lt;<sp/>std::endl;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="104"><highlight class="normal"><sp/><sp/><sp/><sp/>(*it)<sp/>=<sp/>pw_cv_vec3(b,g,r);</highlight></codeline>
+<codeline lineno="105"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="106"><highlight class="normal"></highlight></codeline>
+<codeline lineno="107"><highlight class="normal"><sp/><sp/>std::pair&lt;double,<sp/>double&gt;<sp/>range_new<sp/>=<sp/>check_min_max(img);</highlight></codeline>
+<codeline lineno="108"><highlight class="normal"><sp/><sp/><ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">cv::Mat</ref><sp/>img_final;</highlight></codeline>
+<codeline lineno="109"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//(x-range_new.first)*(range_org.second-range_org.first)/(range_new.second-range_new.first)<sp/>+<sp/>range_org.first;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="110"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">double</highlight><highlight class="normal"><sp/>alpha<sp/>=<sp/>(range_org.second-range_org.first)/(range_new.second-range_new.first);</highlight></codeline>
+<codeline lineno="111"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">double</highlight><highlight class="normal"><sp/>beta<sp/>=<sp/>range_org.first<sp/>-<sp/>range_new.first<sp/>*<sp/>alpha;</highlight></codeline>
+<codeline lineno="112"><highlight class="normal"><sp/><sp/>img.convertTo(img_final,<sp/>img_depth,<sp/>alpha,<sp/>beta);</highlight></codeline>
+<codeline lineno="113"><highlight class="normal"></highlight></codeline>
+<codeline lineno="114"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//std::pair&lt;double,<sp/>double&gt;<sp/>range_final<sp/>=<sp/>check_min_max(img_final);</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="115"><highlight class="normal"></highlight></codeline>
+<codeline lineno="116"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>img_final;</highlight></codeline>
+<codeline lineno="117"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="118"><highlight class="normal"></highlight></codeline>
+<codeline lineno="119"><highlight class="normal"><ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">cv::Mat</ref><sp/>drop_2channels(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">cv::Mat</ref>&amp;<sp/>_img)<sp/>{</highlight></codeline>
+<codeline lineno="120"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(_img.channels()<sp/>!=<sp/>3)<sp/>{</highlight></codeline>
+<codeline lineno="121"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>_img.clone();</highlight></codeline>
+<codeline lineno="122"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="123"><highlight class="normal"></highlight></codeline>
+<codeline lineno="124"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>img_depth<sp/>=<sp/>_img.depth();</highlight></codeline>
+<codeline lineno="125"><highlight class="normal"></highlight></codeline>
+<codeline lineno="126"><highlight class="normal"><sp/><sp/><ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">cv::Mat</ref><sp/>img;<sp/></highlight><highlight class="comment">//<sp/>pw_fp_t<sp/>matrix</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="127"><highlight class="normal"><sp/><sp/>_img.convertTo(img,<sp/>_PW_CV_FP_);</highlight></codeline>
+<codeline lineno="128"><highlight class="normal"></highlight></codeline>
+<codeline lineno="129"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>compute<sp/>channel<sp/>to<sp/>remain</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="130"><highlight class="normal"><sp/><sp/>pw_fp_t<sp/>m[3]<sp/>=<sp/>{0.0<sp/>_f,<sp/>0.0<sp/>_f,<sp/>0.0<sp/>_f};</highlight></codeline>
+<codeline lineno="131"><highlight class="normal"></highlight></codeline>
+<codeline lineno="132"><highlight class="normal"><sp/><sp/><ref refid="namespacelbann_1aab7fa584bac85b9085aa8b8c5a888356" kindref="member">::lbann::rng_gen</ref>&amp;<sp/>gen<sp/>=<sp/><ref refid="namespacelbann_1a4fea7ba21017b49d1e34394b4c20c764" kindref="member">::lbann::get_generator</ref>();</highlight></codeline>
+<codeline lineno="133"><highlight class="normal"></highlight></codeline>
+<codeline lineno="134"><highlight class="normal"><sp/><sp/>std::uniform_int_distribution&lt;int&gt;<sp/>rg_ch(0,<sp/>2);</highlight></codeline>
+<codeline lineno="135"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>chosenCh<sp/>=<sp/>rg_ch(gen);</highlight></codeline>
+<codeline lineno="136"><highlight class="normal"></highlight></codeline>
+<codeline lineno="137"><highlight class="normal"><sp/><sp/>m[chosenCh]<sp/>=<sp/>1.0<sp/>_f;</highlight></codeline>
+<codeline lineno="138"><highlight class="normal"></highlight></codeline>
+<codeline lineno="139"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>compute<sp/>white<sp/>noise</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="140"><highlight class="normal"><sp/><sp/>std::vector&lt;image_stats&gt;<sp/>stats;</highlight></codeline>
+<codeline lineno="141"><highlight class="normal"><sp/><sp/>get_channel_stats(_img,<sp/>stats);</highlight></codeline>
+<codeline lineno="142"><highlight class="normal"></highlight></codeline>
+<codeline lineno="143"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">auto</highlight><highlight class="normal"><sp/>avg<sp/>=<sp/></highlight><highlight class="keyword">static_cast&lt;</highlight><highlight class="normal">pw_fp_t</highlight><highlight class="keyword">&gt;</highlight><highlight class="normal">(stats[chosenCh].avg);</highlight></codeline>
+<codeline lineno="144"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">auto</highlight><highlight class="normal"><sp/>dev<sp/>=<sp/></highlight><highlight class="keyword">static_cast&lt;</highlight><highlight class="normal">pw_fp_t</highlight><highlight class="keyword">&gt;</highlight><highlight class="normal">(stats[chosenCh].stdev/100.0);</highlight></codeline>
+<codeline lineno="145"><highlight class="normal"><sp/><sp/>pw_fp_t<sp/>avgs[3]<sp/>=<sp/>{avg,<sp/>avg,<sp/>avg};</highlight></codeline>
+<codeline lineno="146"><highlight class="normal"><sp/><sp/>pw_fp_t<sp/>devs[3]<sp/>=<sp/>{dev,<sp/>dev,<sp/>dev};</highlight></codeline>
+<codeline lineno="147"><highlight class="normal"></highlight></codeline>
+<codeline lineno="148"><highlight class="normal"><sp/><sp/>std::normal_distribution&lt;pw_fp_t&gt;<sp/>rg_ch0(avgs[0],<sp/>devs[0]);</highlight></codeline>
+<codeline lineno="149"><highlight class="normal"><sp/><sp/>std::normal_distribution&lt;pw_fp_t&gt;<sp/>rg_ch1(avgs[1],<sp/>devs[1]);</highlight></codeline>
+<codeline lineno="150"><highlight class="normal"><sp/><sp/>std::normal_distribution&lt;pw_fp_t&gt;<sp/>rg_ch2(avgs[2],<sp/>devs[2]);</highlight></codeline>
+<codeline lineno="151"><highlight class="normal"></highlight></codeline>
+<codeline lineno="152"><highlight class="normal"><sp/><sp/>cv::MatIterator_&lt;pw_cv_vec3&gt;<sp/>it<sp/>=<sp/>img.begin&lt;pw_cv_vec3&gt;();</highlight></codeline>
+<codeline lineno="153"><highlight class="normal"><sp/><sp/>cv::MatIterator_&lt;pw_cv_vec3&gt;<sp/>itend<sp/>=<sp/>img.end&lt;pw_cv_vec3&gt;();</highlight></codeline>
+<codeline lineno="154"><highlight class="normal"></highlight></codeline>
+<codeline lineno="155"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(<sp/>;<sp/>it<sp/>!=<sp/>itend;<sp/>++it)<sp/>{</highlight></codeline>
+<codeline lineno="156"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">auto</highlight><highlight class="normal"><sp/>b0<sp/>=<sp/></highlight><highlight class="keyword">static_cast&lt;</highlight><highlight class="normal">pw_fp_t</highlight><highlight class="keyword">&gt;</highlight><highlight class="normal">((*it)[0]);</highlight></codeline>
+<codeline lineno="157"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">auto</highlight><highlight class="normal"><sp/>g0<sp/>=<sp/></highlight><highlight class="keyword">static_cast&lt;</highlight><highlight class="normal">pw_fp_t</highlight><highlight class="keyword">&gt;</highlight><highlight class="normal">((*it)[1]);</highlight></codeline>
+<codeline lineno="158"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">auto</highlight><highlight class="normal"><sp/>r0<sp/>=<sp/></highlight><highlight class="keyword">static_cast&lt;</highlight><highlight class="normal">pw_fp_t</highlight><highlight class="keyword">&gt;</highlight><highlight class="normal">((*it)[2]);</highlight></codeline>
+<codeline lineno="159"><highlight class="normal"></highlight></codeline>
+<codeline lineno="160"><highlight class="normal"></highlight><highlight class="preprocessor">#if<sp/>1</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="161"><highlight class="normal"><sp/><sp/><sp/><sp/>pw_fp_t<sp/>b<sp/>=<sp/>b0*m[0]<sp/>+<sp/>(1.0-m[0])*rg_ch0(gen);</highlight></codeline>
+<codeline lineno="162"><highlight class="normal"><sp/><sp/><sp/><sp/>pw_fp_t<sp/>g<sp/>=<sp/>g0*m[1]<sp/>+<sp/>(1.0-m[1])*rg_ch1(gen);</highlight></codeline>
+<codeline lineno="163"><highlight class="normal"><sp/><sp/><sp/><sp/>pw_fp_t<sp/>r<sp/>=<sp/>r0*m[2]<sp/>+<sp/>(1.0-m[2])*rg_ch2(gen);</highlight></codeline>
+<codeline lineno="164"><highlight class="normal"></highlight><highlight class="preprocessor">#else</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="165"><highlight class="normal"><sp/><sp/><sp/><sp/>pw_fp_t<sp/>b<sp/>=<sp/>b0*m[0];</highlight></codeline>
+<codeline lineno="166"><highlight class="normal"><sp/><sp/><sp/><sp/>pw_fp_t<sp/>g<sp/>=<sp/>g0*m[1];</highlight></codeline>
+<codeline lineno="167"><highlight class="normal"><sp/><sp/><sp/><sp/>pw_fp_t<sp/>r<sp/>=<sp/>r0*m[2];</highlight></codeline>
+<codeline lineno="168"><highlight class="normal"></highlight><highlight class="preprocessor">#endif</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="169"><highlight class="normal"></highlight></codeline>
+<codeline lineno="170"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//std::cout<sp/>&lt;&lt;<sp/>r0<sp/>&lt;&lt;<sp/>&apos;<sp/>&apos;<sp/>&lt;&lt;<sp/>g0<sp/>&lt;&lt;<sp/>&apos;<sp/>&apos;<sp/>&lt;&lt;<sp/>b0<sp/>&lt;&lt;<sp/>&quot;<sp/>&quot;<sp/>&lt;&lt;<sp/>r<sp/>&lt;&lt;<sp/>&apos;<sp/>&apos;<sp/>&lt;&lt;<sp/>g<sp/>&lt;&lt;<sp/>&apos;<sp/>&apos;<sp/>&lt;&lt;<sp/>b<sp/>&lt;&lt;<sp/>std::endl;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="171"><highlight class="normal"><sp/><sp/><sp/><sp/>(*it)<sp/>=<sp/>pw_cv_vec3(b,g,r);</highlight></codeline>
+<codeline lineno="172"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="173"><highlight class="normal"></highlight></codeline>
+<codeline lineno="174"><highlight class="normal"><sp/><sp/><ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">cv::Mat</ref><sp/>img_final;</highlight></codeline>
+<codeline lineno="175"><highlight class="normal"><sp/><sp/>img.convertTo(img_final,<sp/>img_depth);</highlight></codeline>
+<codeline lineno="176"><highlight class="normal"></highlight></codeline>
+<codeline lineno="177"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>img_final;</highlight></codeline>
+<codeline lineno="178"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="179"><highlight class="normal"></highlight></codeline>
+<codeline lineno="180"><highlight class="normal">}<sp/></highlight><highlight class="comment">//<sp/>end<sp/>of<sp/>namespace<sp/>patchworks</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="181"><highlight class="normal">}<sp/></highlight><highlight class="comment">//<sp/>end<sp/>of<sp/>namespace<sp/>lbann</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="182"><highlight class="normal"></highlight><highlight class="preprocessor">#endif<sp/>//<sp/>LBANN_HAS_OPENCV</highlight></codeline>
+    </programlisting>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/patchworks/patchworks.cpp"/>
+  </compounddef>
+</doxygen>

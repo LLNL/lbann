@@ -1,0 +1,363 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1lbann__callback__variable__minibatch" kind="class" language="C++" prot="public" abstract="yes">
+    <compoundname>lbann::lbann_callback_variable_minibatch</compoundname>
+    <basecompoundref refid="classlbann_1_1lbann__callback" prot="public" virt="non-virtual">lbann::lbann_callback</basecompoundref>
+    <derivedcompoundref refid="classlbann_1_1lbann__callback__minibatch__schedule" prot="public" virt="non-virtual">lbann::lbann_callback_minibatch_schedule</derivedcompoundref>
+    <derivedcompoundref refid="classlbann_1_1lbann__callback__step__minibatch" prot="public" virt="non-virtual">lbann::lbann_callback_step_minibatch</derivedcompoundref>
+    <includes refid="callback__variable__minibatch_8hpp" local="no">callback_variable_minibatch.hpp</includes>
+      <sectiondef kind="protected-attrib">
+      <memberdef kind="variable" id="classlbann_1_1lbann__callback__variable__minibatch_1a8e1a314b320f6131d0eecbff69aeb2b8" prot="protected" static="no" mutable="no">
+        <type>const int</type>
+        <definition>const int lbann::lbann_callback_variable_minibatch::m_starting_mbsize</definition>
+        <argsstring></argsstring>
+        <name>m_starting_mbsize</name>
+        <briefdescription>
+<para>Initial mini-batch size. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_variable_minibatch.hpp" line="73" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_variable_minibatch.hpp" bodystart="73" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__callback__variable__minibatch_1a4f5d8ab04ab3e1cc3aa66327d3712f51" compoundref="callback__variable__minibatch_8cpp" startline="40" endline="64">on_train_begin</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1lbann__callback__variable__minibatch_1a6488bd1f45110a1cb22553e5035003de" prot="protected" static="no" mutable="no">
+        <type>int</type>
+        <definition>int lbann::lbann_callback_variable_minibatch::m_current_mini_batch_size</definition>
+        <argsstring></argsstring>
+        <name>m_current_mini_batch_size</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>The current mini-batch size for this epoch. This is kept separately from the model&apos;s get_current_mini_batch_size() method, as calling that in on_epoch_end returns the size of the last mini- batch, not the &quot;base&quot; mini-batch. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_variable_minibatch.hpp" line="80" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_variable_minibatch.hpp" bodystart="80" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__callback__variable__minibatch_1a091e7563b5a7a90638e2521fe39cbf8f" compoundref="callback__variable__minibatch_8cpp" startline="66" endline="125">on_epoch_end</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__step__minibatch_1a9ed85aa78f6e4fe4cf3427f9257a4610" compoundref="callback__variable__minibatch_8cpp" startline="153" endline="163">lbann::lbann_callback_step_minibatch::schedule</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1lbann__callback__variable__minibatch_1a7beea78ef7107c88cb8782d3af618117" prot="protected" static="no" mutable="no">
+        <type>int</type>
+        <definition>int lbann::lbann_callback_variable_minibatch::m_ramp_count</definition>
+        <argsstring></argsstring>
+        <name>m_ramp_count</name>
+        <initializer>= 0</initializer>
+        <briefdescription>
+<para>Current number of epochs left to ramp the learning rate. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_variable_minibatch.hpp" line="82" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_variable_minibatch.hpp" bodystart="82" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__callback__variable__minibatch_1a091e7563b5a7a90638e2521fe39cbf8f" compoundref="callback__variable__minibatch_8cpp" startline="66" endline="125">on_epoch_end</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1lbann__callback__variable__minibatch_1ac78d3d357e1c16b3303cf358aee8a83d" prot="protected" static="no" mutable="no">
+        <type>float</type>
+        <definition>float lbann::lbann_callback_variable_minibatch::m_lr_incr</definition>
+        <argsstring></argsstring>
+        <name>m_lr_incr</name>
+        <initializer>= 0.0f</initializer>
+        <briefdescription>
+<para>Amount to increment the learning rate by when ramping. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_variable_minibatch.hpp" line="84" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_variable_minibatch.hpp" bodystart="84" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__callback__variable__minibatch_1a091e7563b5a7a90638e2521fe39cbf8f" compoundref="callback__variable__minibatch_8cpp" startline="66" endline="125">on_epoch_end</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__variable__minibatch_1a970a03f0d297f8447020e85d23f5ee73" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::lbann_callback_variable_minibatch::lbann_callback_variable_minibatch</definition>
+        <argsstring>(int starting_mbsize)</argsstring>
+        <name>lbann_callback_variable_minibatch</name>
+        <param>
+          <type>int</type>
+          <declname>starting_mbsize</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_variable_minibatch.hpp" line="43" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_variable_minibatch.cpp" bodystart="36" bodyend="38"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__variable__minibatch_1a7ffbb380f1a58b164cfb49ab1b407648" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::lbann_callback_variable_minibatch::lbann_callback_variable_minibatch</definition>
+        <argsstring>(const lbann_callback_variable_minibatch &amp;)=default</argsstring>
+        <name>lbann_callback_variable_minibatch</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1lbann__callback__variable__minibatch" kindref="compound">lbann_callback_variable_minibatch</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_variable_minibatch.hpp" line="44" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__variable__minibatch_1a154f749e29203562d41faf81202e5656" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classlbann_1_1lbann__callback__variable__minibatch" kindref="compound">lbann_callback_variable_minibatch</ref> &amp;</type>
+        <definition>lbann_callback_variable_minibatch&amp; lbann::lbann_callback_variable_minibatch::operator=</definition>
+        <argsstring>(const lbann_callback_variable_minibatch &amp;)=default</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1lbann__callback__variable__minibatch" kindref="compound">lbann_callback_variable_minibatch</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_variable_minibatch.hpp" line="46" column="1"/>
+        <referencedby refid="structlbann_1_1lbann__callback__minibatch__schedule_1_1minibatch__step_1a76efb978eebc607dd1f7be0e464ac447" compoundref="callback__variable__minibatch_8hpp" startline="122" endline="123">lbann::lbann_callback_minibatch_schedule::minibatch_step::minibatch_step</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__variable__minibatch_1a4f5d8ab04ab3e1cc3aa66327d3712f51" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_variable_minibatch::on_train_begin</definition>
+        <argsstring>(model *m) override</argsstring>
+        <name>on_train_begin</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1a7c8f0d211967ccc5219144e92571ab26">on_train_begin</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+<para>Set the initial mini-batch size. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_variable_minibatch.hpp" line="49" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_variable_minibatch.cpp" bodystart="40" bodyend="64"/>
+        <references refid="classlbann_1_1model_1a1cf70e098524cc5013bce56edd96dfe7" compoundref="model_8hpp" startline="128" endline="130">lbann::model::get_cur_epoch</references>
+        <references refid="classlbann_1_1model_1ae14f4b2cc8882b3739d4aeb25d9e73c9" compoundref="model_8hpp" startline="114" endline="114">lbann::model::get_layers</references>
+        <references refid="base_8hpp_1a80b1d707117e968a6951b7222e4b2b87" compoundref="base_8hpp" startline="154">LBANN_ERROR</references>
+        <references refid="classlbann_1_1lbann__callback__variable__minibatch_1a8e1a314b320f6131d0eecbff69aeb2b8" compoundref="callback__variable__minibatch_8hpp" startline="73">m_starting_mbsize</references>
+        <references refid="classlbann_1_1model_1a8c311798ff4acaeafdfbf85162ba5084" compoundref="model_8hpp" startline="161" endline="163">lbann::model::get_max_mini_batch_size</references>
+        <references refid="classlbann_1_1model_1a9e1cfe449d2f4858a32994f6be0042fb" compoundref="model_8hpp" startline="123" endline="125">lbann::model::get_comm</references>
+        <references refid="classlbann_1_1lbann__comm_1a1ef526486183a29feadca9bef096a534" compoundref="comm_8hpp" startline="144" endline="146">lbann::lbann_comm::am_world_master</references>
+        <references refid="classlbann_1_1generic__input__layer_1af108a5dc05276bc6bc57b306204b12e4" compoundref="generic__input__layer_8hpp" startline="372" endline="384">lbann::generic_input_layer::calculate_num_iterations_per_epoch_training_spans_models</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__variable__minibatch_1a091e7563b5a7a90638e2521fe39cbf8f" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_variable_minibatch::on_epoch_end</definition>
+        <argsstring>(model *m) override</argsstring>
+        <name>on_epoch_end</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1a1fc71110e7f754bf73c9e0f344a448a5">on_epoch_end</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+<para>Potentially change the mini-batch size. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_variable_minibatch.hpp" line="51" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_variable_minibatch.cpp" bodystart="66" bodyend="125"/>
+        <references refid="classlbann_1_1model_1ae14f4b2cc8882b3739d4aeb25d9e73c9" compoundref="model_8hpp" startline="114" endline="114">lbann::model::get_layers</references>
+        <references refid="base_8hpp_1a80b1d707117e968a6951b7222e4b2b87" compoundref="base_8hpp" startline="154">LBANN_ERROR</references>
+        <references refid="file__io_8cpp_1ab048c6f9fcbcfaa57ce68b00263dbebe" compoundref="file__io_8cpp" startline="44">comm</references>
+        <references refid="classlbann_1_1model_1a9e1cfe449d2f4858a32994f6be0042fb" compoundref="model_8hpp" startline="123" endline="125">lbann::model::get_comm</references>
+        <references refid="classlbann_1_1lbann__callback__variable__minibatch_1ace13e8941491ddd28ef35c277cecb1ad">schedule</references>
+        <references refid="classlbann_1_1model_1a8c311798ff4acaeafdfbf85162ba5084" compoundref="model_8hpp" startline="161" endline="163">lbann::model::get_max_mini_batch_size</references>
+        <references refid="classlbann_1_1lbann__comm_1ad8a5790dfa9191d4b4f889e8707e57f1" compoundref="comm_8hpp" startline="140" endline="142">lbann::lbann_comm::am_model_master</references>
+        <references refid="classlbann_1_1lbann__comm_1a6422f70c92bed0b78179facc52b066f7" compoundref="comm_8hpp" startline="112" endline="114">lbann::lbann_comm::get_model_rank</references>
+        <references refid="classlbann_1_1generic__input__layer_1af108a5dc05276bc6bc57b306204b12e4" compoundref="generic__input__layer_8hpp" startline="372" endline="384">lbann::generic_input_layer::calculate_num_iterations_per_epoch_training_spans_models</references>
+        <references refid="classlbann_1_1lbann__callback__variable__minibatch_1a6488bd1f45110a1cb22553e5035003de" compoundref="callback__variable__minibatch_8hpp" startline="80">m_current_mini_batch_size</references>
+        <references refid="classlbann_1_1lbann__callback__variable__minibatch_1a7beea78ef7107c88cb8782d3af618117" compoundref="callback__variable__minibatch_8hpp" startline="82">m_ramp_count</references>
+        <references refid="classlbann_1_1lbann__callback__variable__minibatch_1af078f30f9c206b89bdd542ce1fc6d2ad" compoundref="callback__variable__minibatch_8cpp" startline="127" endline="135">change_learning_rate</references>
+        <references refid="classlbann_1_1lbann__callback__variable__minibatch_1a9de892c44231eadbbc7d27cfcc340ce2" compoundref="callback__variable__minibatch_8cpp" startline="137" endline="146">get_current_learning_rate</references>
+        <references refid="classlbann_1_1lbann__callback__variable__minibatch_1ac78d3d357e1c16b3303cf358aee8a83d" compoundref="callback__variable__minibatch_8hpp" startline="84">m_lr_incr</references>
+        <references refid="classlbann_1_1model_1a1cf70e098524cc5013bce56edd96dfe7" compoundref="model_8hpp" startline="128" endline="130">lbann::model::get_cur_epoch</references>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="protected-func">
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__variable__minibatch_1ace13e8941491ddd28ef35c277cecb1ad" prot="protected" static="no" const="no" explicit="no" inline="no" virt="pure-virtual">
+        <type>bool</type>
+        <definition>virtual bool lbann::lbann_callback_variable_minibatch::schedule</definition>
+        <argsstring>(model *m, int &amp;new_mbsize, float &amp;new_lr, int &amp;ramp_time)=0</argsstring>
+        <name>schedule</name>
+        <reimplementedby refid="classlbann_1_1lbann__callback__step__minibatch_1a9ed85aa78f6e4fe4cf3427f9257a4610">schedule</reimplementedby>
+        <reimplementedby refid="classlbann_1_1lbann__callback__minibatch__schedule_1af95cbe83a587590219174cb17828ea4b">schedule</reimplementedby>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+          <declname>m</declname>
+        </param>
+        <param>
+          <type>int &amp;</type>
+          <declname>new_mbsize</declname>
+        </param>
+        <param>
+          <type>float &amp;</type>
+          <declname>new_lr</declname>
+        </param>
+        <param>
+          <type>int &amp;</type>
+          <declname>ramp_time</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Implemented by child classes to provide the mini-batch/learning schedule. This is called at the end of every training epoch. If it returns false, no changes are made from the currently established schedule. If this returns true, the mini-batch size will be changed accordingly. If the mini-batch size is larger than the model&apos;s maximum mini-batch size, a warning is printed and the maximum mini-batch size is used. If new_lr also non-zero, the learning rate will be changed to new_lr, with a linear ramp time. (If ramp_time is 0, it is changed immediately.) Note changing the learning rate while in a ramp may lead to unexpected behavior; also be aware of interactions with other learning rate schedules. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_variable_minibatch.hpp" line="66" column="1"/>
+        <referencedby refid="classlbann_1_1lbann__callback__step__minibatch_1a2e07fa5a590d68b1b71059d9275ee12a" compoundref="callback__variable__minibatch_8hpp" startline="101" endline="101">lbann::lbann_callback_step_minibatch::name</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__minibatch__schedule_1a2bb62cf45d2f7417cddcf79843ce3e2b" compoundref="callback__variable__minibatch_8hpp" startline="135" endline="135">lbann::lbann_callback_minibatch_schedule::name</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__variable__minibatch_1a091e7563b5a7a90638e2521fe39cbf8f" compoundref="callback__variable__minibatch_8cpp" startline="66" endline="125">on_epoch_end</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__variable__minibatch_1af078f30f9c206b89bdd542ce1fc6d2ad" prot="protected" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_variable_minibatch::change_learning_rate</definition>
+        <argsstring>(model *m, float new_lr) const</argsstring>
+        <name>change_learning_rate</name>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+          <declname>m</declname>
+        </param>
+        <param>
+          <type>float</type>
+          <declname>new_lr</declname>
+        </param>
+        <briefdescription>
+<para>Change the learning rate of every layer in m to new_lr. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_variable_minibatch.hpp" line="69" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_variable_minibatch.cpp" bodystart="127" bodyend="135"/>
+        <references refid="classlbann_1_1model_1ac0a89794f1f51e7c502fff2745c973e6" compoundref="model_8hpp" startline="120" endline="120">lbann::model::get_weights</references>
+        <references refid="classlbann_1_1optimizer_1a147cac09beaa17df4e0fc1fc1be3abce" compoundref="optimizer_8hpp" startline="66" endline="68">lbann::optimizer::set_learning_rate</references>
+        <referencedby refid="classlbann_1_1lbann__callback__variable__minibatch_1a091e7563b5a7a90638e2521fe39cbf8f" compoundref="callback__variable__minibatch_8cpp" startline="66" endline="125">on_epoch_end</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__variable__minibatch_1a9de892c44231eadbbc7d27cfcc340ce2" prot="protected" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>float</type>
+        <definition>float lbann::lbann_callback_variable_minibatch::get_current_learning_rate</definition>
+        <argsstring>(model *m) const</argsstring>
+        <name>get_current_learning_rate</name>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+<para>Get the current learning rate (assumes every layer has the same one). </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_variable_minibatch.hpp" line="71" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_variable_minibatch.cpp" bodystart="137" bodyend="146"/>
+        <references refid="classlbann_1_1model_1ac0a89794f1f51e7c502fff2745c973e6" compoundref="model_8hpp" startline="120" endline="120">lbann::model::get_weights</references>
+        <references refid="classlbann_1_1optimizer_1ac52867427b0d28ec6888b6344104791d" compoundref="optimizer_8hpp" startline="64" endline="64">lbann::optimizer::get_learning_rate</references>
+        <referencedby refid="classlbann_1_1lbann__callback__variable__minibatch_1a091e7563b5a7a90638e2521fe39cbf8f" compoundref="callback__variable__minibatch_8cpp" startline="66" endline="125">on_epoch_end</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__step__minibatch_1a9ed85aa78f6e4fe4cf3427f9257a4610" compoundref="callback__variable__minibatch_8cpp" startline="153" endline="163">lbann::lbann_callback_step_minibatch::schedule</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>Support changing the mini-batch size on different schedules. Implementations should override implement the abstract methods to define concrete schedules. </para>    </detaileddescription>
+    <inheritancegraph>
+      <node id="1510">
+        <label>lbann::lbann_callback</label>
+        <link refid="classlbann_1_1lbann__callback"/>
+      </node>
+      <node id="1512">
+        <label>lbann::lbann_callback_step_minibatch</label>
+        <link refid="classlbann_1_1lbann__callback__step__minibatch"/>
+        <childnode refid="1509" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1509">
+        <label>lbann::lbann_callback_variable_minibatch</label>
+        <link refid="classlbann_1_1lbann__callback__variable__minibatch"/>
+        <childnode refid="1510" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1511">
+        <label>lbann::lbann_callback_minibatch_schedule</label>
+        <link refid="classlbann_1_1lbann__callback__minibatch__schedule"/>
+        <childnode refid="1509" relation="public-inheritance">
+        </childnode>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="1514">
+        <label>lbann::lbann_callback</label>
+        <link refid="classlbann_1_1lbann__callback"/>
+        <childnode refid="1515" relation="usage">
+          <edgelabel>m_summarizer</edgelabel>
+        </childnode>
+      </node>
+      <node id="1515">
+        <label>lbann::lbann_summary</label>
+        <link refid="classlbann_1_1lbann__summary"/>
+      </node>
+      <node id="1513">
+        <label>lbann::lbann_callback_variable_minibatch</label>
+        <link refid="classlbann_1_1lbann__callback__variable__minibatch"/>
+        <childnode refid="1514" relation="public-inheritance">
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_variable_minibatch.hpp" line="41" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_variable_minibatch.hpp" bodystart="41" bodyend="85"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1lbann__callback__variable__minibatch_1af078f30f9c206b89bdd542ce1fc6d2ad" prot="protected" virt="non-virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>change_learning_rate</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a9f545d1269a8c7af335625d049691f26" prot="public" virt="pure-virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>copy</name></member>
+      <member refid="classlbann_1_1lbann__callback_1acec888932129f93ba2a0077192467c9e" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>get_batch_interval</name></member>
+      <member refid="classlbann_1_1lbann__callback__variable__minibatch_1a9de892c44231eadbbc7d27cfcc340ce2" prot="protected" virt="non-virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>get_current_learning_rate</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a679057298a41ddd47f08c157f756c584" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>lbann_callback</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a91d994616b8bf98685ac32939228f96a" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>lbann_callback</name></member>
+      <member refid="classlbann_1_1lbann__callback__variable__minibatch_1a970a03f0d297f8447020e85d23f5ee73" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>lbann_callback_variable_minibatch</name></member>
+      <member refid="classlbann_1_1lbann__callback__variable__minibatch_1a7ffbb380f1a58b164cfb49ab1b407648" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>lbann_callback_variable_minibatch</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a6126e310e9924398c18ccf76bb91c705" prot="protected" virt="non-virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>m_batch_interval</name></member>
+      <member refid="classlbann_1_1lbann__callback__variable__minibatch_1a6488bd1f45110a1cb22553e5035003de" prot="protected" virt="non-virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>m_current_mini_batch_size</name></member>
+      <member refid="classlbann_1_1lbann__callback__variable__minibatch_1ac78d3d357e1c16b3303cf358aee8a83d" prot="protected" virt="non-virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>m_lr_incr</name></member>
+      <member refid="classlbann_1_1lbann__callback__variable__minibatch_1a7beea78ef7107c88cb8782d3af618117" prot="protected" virt="non-virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>m_ramp_count</name></member>
+      <member refid="classlbann_1_1lbann__callback__variable__minibatch_1a8e1a314b320f6131d0eecbff69aeb2b8" prot="protected" virt="non-virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>m_starting_mbsize</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a277d46138184f85f161a8263b8322c76" prot="protected" virt="non-virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>m_summarizer</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a7522c7a14f1d6a1ea762cc2d7248eb3a" prot="public" virt="pure-virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>name</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a2c0709a26179d115ff85b7561786ee27" prot="public" virt="virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>on_backward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1abeb1e486e259fd358332abf1e952f630" prot="public" virt="virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>on_backward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1af183624e63ba65e0003fa988f53dee0c" prot="public" virt="virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>on_backward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1aba03b59c056ace8094095c08e39b9ac4" prot="public" virt="virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>on_backward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a9ecf4e44cd4021cdd687de14c850cc83" prot="public" virt="virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>on_batch_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a895ca577e358601fcae5c04749f60535" prot="public" virt="virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>on_batch_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a3462e54126adbd0082c22c98d8de5468" prot="public" virt="virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>on_batch_evaluate_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ad10891b8ab3de74ee1a70e6255e7d58a" prot="public" virt="virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>on_batch_evaluate_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a4ed9498763412a55953fff71ee3a9456" prot="public" virt="virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>on_epoch_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback__variable__minibatch_1a091e7563b5a7a90638e2521fe39cbf8f" prot="public" virt="virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>on_epoch_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a4a2cff48a688bb56ed14b8b53344f945" prot="public" virt="virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>on_evaluate_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a044174864e4981a1dac093d58e8c4d6c" prot="public" virt="virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>on_evaluate_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a0794f3fb88db6fef53f0e2f235f94424" prot="public" virt="virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>on_evaluate_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ae23c5a61b81dbdfbd79736ac2b6035aa" prot="public" virt="virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>on_evaluate_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a22ed977371173105b4aad3a20b9c59dc" prot="public" virt="virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>on_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ab96adb1d77180e00fdd668cd381323fd" prot="public" virt="virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>on_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a79a0bb407852d7b330b74373647ffe46" prot="public" virt="virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>on_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a5eff0a59fbce98a981d9cdd0547a3ad5" prot="public" virt="virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>on_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a1a9248b305f06419889c1b3b0f0893d8" prot="public" virt="virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>on_optimize_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a497e750da160e0071ce8864ccc3a1344" prot="public" virt="virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>on_optimize_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a235195d5fa4461835b861a03a5c0278f" prot="public" virt="virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>on_optimize_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a4653e2903bfd3903709a81eaf7eabc1a" prot="public" virt="virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>on_optimize_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ace7452239c9ad7aa6247e9496adbcffe" prot="public" virt="virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>on_phase_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a716bff45bdc5a88eed09c2231f5bc93a" prot="public" virt="virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>on_test_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1accbad4dd004c1ced33642db6398b2efe" prot="public" virt="virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>on_test_end</name></member>
+      <member refid="classlbann_1_1lbann__callback__variable__minibatch_1a4f5d8ab04ab3e1cc3aa66327d3712f51" prot="public" virt="virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>on_train_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1af28078b0ddaef45124465bef01eefedf" prot="public" virt="virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>on_train_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a2bde303671110519388d9962bc3e5583" prot="public" virt="virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>on_validation_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1adc16e42e5064dc2dc8d84dfbfc1325eb" prot="public" virt="virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>on_validation_end</name></member>
+      <member refid="classlbann_1_1lbann__callback__variable__minibatch_1a154f749e29203562d41faf81202e5656" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a66b0a8c00a273669fa782ece59e8898b" prot="public" virt="non-virtual" ambiguityscope="lbann::lbann_callback::"><scope>lbann::lbann_callback_variable_minibatch</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1lbann__callback__variable__minibatch_1ace13e8941491ddd28ef35c277cecb1ad" prot="protected" virt="pure-virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>schedule</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a02d924df2f8ca851578dc76d9015e48d" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>set_summarizer</name></member>
+      <member refid="classlbann_1_1lbann__callback_1aab5086e27d9bb0a7c7ee8ffc1bc58671" prot="public" virt="virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>setup</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ac91abaec389f8d2547512c45ae587304" prot="public" virt="virtual"><scope>lbann::lbann_callback_variable_minibatch</scope><name>~lbann_callback</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

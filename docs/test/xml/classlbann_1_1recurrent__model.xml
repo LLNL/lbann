@@ -1,0 +1,451 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1recurrent__model" kind="class" language="C++" prot="public">
+    <compoundname>lbann::recurrent_model</compoundname>
+    <basecompoundref refid="classlbann_1_1directed__acyclic__graph__model" prot="public" virt="non-virtual">lbann::directed_acyclic_graph_model</basecompoundref>
+    <includes refid="recurrent_8hpp" local="no">recurrent.hpp</includes>
+      <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="classlbann_1_1recurrent__model_1a71eb93ebf3411a5c170f6570c93e3cca" prot="private" static="no" mutable="no">
+        <type>int</type>
+        <definition>int lbann::recurrent_model::m_unroll_depth</definition>
+        <argsstring></argsstring>
+        <name>m_unroll_depth</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>The number of times to unroll the recurrent network. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/models/recurrent.hpp" line="74" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/models/recurrent.hpp" bodystart="74" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1recurrent__model_1ac1d3118a1642bd460c9cc9617a592a0b" compoundref="recurrent_8cpp" startline="349" endline="359">recurrent_model</referencedby>
+        <referencedby refid="classlbann_1_1recurrent__model_1ac89ddfa607e5cb6b940eb389ebbce6f6" compoundref="recurrent_8cpp" startline="361" endline="393">setup_layer_topology</referencedby>
+        <referencedby refid="classlbann_1_1recurrent__model_1a712dabb1c1e90f6e268b42f6abaedd93" compoundref="recurrent_8cpp" startline="395" endline="442">setup_layers</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1recurrent__model_1ac728773d3de0cefb9390231dc176dca4" prot="private" static="no" mutable="no">
+        <type>std::unordered_map&lt; const <ref refid="classlbann_1_1Layer" kindref="compound">Layer</ref> *, <ref refid="classlbann_1_1Layer" kindref="compound">Layer</ref> * &gt;</type>
+        <definition>std::unordered_map&lt;const Layer*, Layer*&gt; lbann::recurrent_model::m_previous_step_layer</definition>
+        <argsstring></argsstring>
+        <name>m_previous_step_layer</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Map to corresponding layer in previous step. Layers in the first step map to null pointers. The input and target layers map to themselves. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/models/recurrent.hpp" line="80" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/models/recurrent.hpp" bodystart="80" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1recurrent__model_1ac89ddfa607e5cb6b940eb389ebbce6f6" compoundref="recurrent_8cpp" startline="361" endline="393">setup_layer_topology</referencedby>
+        <referencedby refid="classlbann_1_1recurrent__model_1a712dabb1c1e90f6e268b42f6abaedd93" compoundref="recurrent_8cpp" startline="395" endline="442">setup_layers</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1recurrent__model_1a426829f7fa36b112b4b91393c1657ddd" prot="private" static="no" mutable="no">
+        <type>std::unordered_map&lt; const <ref refid="classlbann_1_1Layer" kindref="compound">Layer</ref> *, <ref refid="classlbann_1_1Layer" kindref="compound">Layer</ref> * &gt;</type>
+        <definition>std::unordered_map&lt;const Layer*, Layer*&gt; lbann::recurrent_model::m_next_step_layer</definition>
+        <argsstring></argsstring>
+        <name>m_next_step_layer</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Map to corresponding layer in next step. Layers in the last step map to null pointers. The input and target layers map to themselves. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/models/recurrent.hpp" line="85" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/models/recurrent.hpp" bodystart="85" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1recurrent__model_1ac89ddfa607e5cb6b940eb389ebbce6f6" compoundref="recurrent_8cpp" startline="361" endline="393">setup_layer_topology</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1recurrent__model_1ac1d3118a1642bd460c9cc9617a592a0b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::recurrent_model::recurrent_model</definition>
+        <argsstring>(lbann_comm *comm, int mini_batch_size, objective_function *obj_fn, optimizer *default_optimizer, int unroll_depth)</argsstring>
+        <name>recurrent_model</name>
+        <param>
+          <type><ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref> *</type>
+          <declname>comm</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>mini_batch_size</declname>
+        </param>
+        <param>
+          <type><ref refid="classlbann_1_1objective__function" kindref="compound">objective_function</ref> *</type>
+          <declname>obj_fn</declname>
+        </param>
+        <param>
+          <type><ref refid="classlbann_1_1optimizer" kindref="compound">optimizer</ref> *</type>
+          <declname>default_optimizer</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>unroll_depth</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Constructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/models/recurrent.hpp" line="44" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/models/recurrent.cpp" bodystart="349" bodyend="359"/>
+        <references refid="classlbann_1_1recurrent__model_1a71eb93ebf3411a5c170f6570c93e3cca" compoundref="recurrent_8hpp" startline="74">m_unroll_depth</references>
+        <referencedby refid="classlbann_1_1recurrent__model_1ad184f898241fe026f140db689f129d47" compoundref="recurrent_8hpp" startline="58" endline="58">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1recurrent__model_1adc71cbd387e03acc05a0f2e77aa36457" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::recurrent_model::recurrent_model</definition>
+        <argsstring>(const recurrent_model &amp;other)=default</argsstring>
+        <name>recurrent_model</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1recurrent__model" kindref="compound">recurrent_model</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Copy constructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/models/recurrent.hpp" line="51" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1recurrent__model_1a32882b23c459e1ce577fc97414521315" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classlbann_1_1recurrent__model" kindref="compound">recurrent_model</ref> &amp;</type>
+        <definition>recurrent_model&amp; lbann::recurrent_model::operator=</definition>
+        <argsstring>(const recurrent_model &amp;other)=default</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1recurrent__model" kindref="compound">recurrent_model</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Copy assignment operator. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/models/recurrent.hpp" line="53" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1recurrent__model_1aa52648414c397fc4a11ac462c278a4f1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::recurrent_model::~recurrent_model</definition>
+        <argsstring>() override=default</argsstring>
+        <name>~recurrent_model</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Destructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/models/recurrent.hpp" line="55" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1recurrent__model_1ad184f898241fe026f140db689f129d47" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type><ref refid="classlbann_1_1recurrent__model" kindref="compound">recurrent_model</ref> *</type>
+        <definition>recurrent_model* lbann::recurrent_model::copy</definition>
+        <argsstring>() const override</argsstring>
+        <name>copy</name>
+        <reimplements refid="classlbann_1_1directed__acyclic__graph__model_1a6a21050a732686e9e6c9f384ff9fda51">copy</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Create copy. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/models/recurrent.hpp" line="58" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/models/recurrent.hpp" bodystart="58" bodyend="58"/>
+        <references refid="classlbann_1_1recurrent__model_1ac1d3118a1642bd460c9cc9617a592a0b" compoundref="recurrent_8cpp" startline="349" endline="359">recurrent_model</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1recurrent__model_1a01b4f6dce63bc2e0545b2bd7603b32b2" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>std::string</type>
+        <definition>std::string lbann::recurrent_model::name</definition>
+        <argsstring>() const override</argsstring>
+        <name>name</name>
+        <reimplements refid="classlbann_1_1directed__acyclic__graph__model_1ad2b97ab2670e76538a754e28e19b5c94">name</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Get model name. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/models/recurrent.hpp" line="61" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/models/recurrent.hpp" bodystart="61" bodyend="61"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1recurrent__model_1aa4e43de8bf0d11a0f51dedbcf22a73cc" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::recurrent_model::freeze_layers_under_frozen_surface</definition>
+        <argsstring>() override</argsstring>
+        <name>freeze_layers_under_frozen_surface</name>
+        <reimplements refid="classlbann_1_1directed__acyclic__graph__model_1a9f2a6e9472235ec91c5a50356471b3cb">freeze_layers_under_frozen_surface</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>For general DAG models, users need to manually specify each layer to freeze in the model description prototext. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/models/recurrent.hpp" line="64" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/models/recurrent.hpp" bodystart="64" bodyend="64"/>
+        <references refid="classlbann_1_1recurrent__model_1ac89ddfa607e5cb6b940eb389ebbce6f6" compoundref="recurrent_8cpp" startline="361" endline="393">setup_layer_topology</references>
+        <references refid="classlbann_1_1recurrent__model_1a712dabb1c1e90f6e268b42f6abaedd93" compoundref="recurrent_8cpp" startline="395" endline="442">setup_layers</references>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="protected-func">
+      <memberdef kind="function" id="classlbann_1_1recurrent__model_1ac89ddfa607e5cb6b940eb389ebbce6f6" prot="protected" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::recurrent_model::setup_layer_topology</definition>
+        <argsstring>() override</argsstring>
+        <name>setup_layer_topology</name>
+        <reimplements refid="classlbann_1_1model_1a7b3e2a643c658dcaa7478d2568f29784">setup_layer_topology</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Set up topology of layer graph. Called in setup function. All layers in connected component of layer graph are added to the model and all parent/child relationships between layers are reciprocated. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/models/recurrent.hpp" line="68" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/models/recurrent.cpp" bodystart="361" bodyend="393"/>
+        <references refid="classlbann_1_1model_1a0229fc226ec163d1411548446104569d" compoundref="model_8hpp" startline="269">lbann::model::m_layers</references>
+        <references refid="classlbann_1_1recurrent__model_1ac728773d3de0cefb9390231dc176dca4" compoundref="recurrent_8hpp" startline="80">m_previous_step_layer</references>
+        <references refid="classlbann_1_1recurrent__model_1a426829f7fa36b112b4b91393c1657ddd" compoundref="recurrent_8hpp" startline="85">m_next_step_layer</references>
+        <references refid="namespacelbann_1_1anonymous__namespace_02recurrent_8cpp_03_1a8c76387c2dd531058700ad9a41cd093a" compoundref="recurrent_8cpp" startline="47" endline="113">lbann::anonymous_namespace{recurrent.cpp}::unroll_input_layer</references>
+        <references refid="classlbann_1_1recurrent__model_1a71eb93ebf3411a5c170f6570c93e3cca" compoundref="recurrent_8hpp" startline="74">m_unroll_depth</references>
+        <references refid="namespacelbann_1_1anonymous__namespace_02recurrent_8cpp_03_1af04adecd9a62fdcd16ae78b3e95d4bb5" compoundref="recurrent_8cpp" startline="119" endline="169">lbann::anonymous_namespace{recurrent.cpp}::unroll_target_layer</references>
+        <references refid="namespacelbann_1_1anonymous__namespace_02recurrent_8cpp_03_1a16733e1fb301c3099a5fe07d703c3782" compoundref="recurrent_8cpp" startline="175" endline="219">lbann::anonymous_namespace{recurrent.cpp}::add_unrolled_layers</references>
+        <references refid="namespacelbann_1_1anonymous__namespace_02recurrent_8cpp_03_1a50bca1c07c6f3146947b2a0fb5cc815a" compoundref="recurrent_8cpp" startline="227" endline="317">lbann::anonymous_namespace{recurrent.cpp}::add_placeholder_layers</references>
+        <references refid="namespacelbann_1_1anonymous__namespace_02recurrent_8cpp_03_1a12a6f96a1c15c91218169bf7157cd800" compoundref="recurrent_8cpp" startline="326" endline="345">lbann::anonymous_namespace{recurrent.cpp}::setup_unrolled_layer_pointers</references>
+        <references refid="classlbann_1_1model_1a7b3e2a643c658dcaa7478d2568f29784" compoundref="model_8cpp" startline="411" endline="430">lbann::model::setup_layer_topology</references>
+        <referencedby refid="classlbann_1_1recurrent__model_1aa4e43de8bf0d11a0f51dedbcf22a73cc" compoundref="recurrent_8hpp" startline="64" endline="64">freeze_layers_under_frozen_surface</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1recurrent__model_1a712dabb1c1e90f6e268b42f6abaedd93" prot="protected" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::recurrent_model::setup_layers</definition>
+        <argsstring>() override</argsstring>
+        <name>setup_layers</name>
+        <reimplements refid="classlbann_1_1model_1a989ab581e359f65c9238d627cce5b589">setup_layers</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Set up layers. Called in setup function. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/models/recurrent.hpp" line="69" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/models/recurrent.cpp" bodystart="395" bodyend="442"/>
+        <references refid="classlbann_1_1model_1a0229fc226ec163d1411548446104569d" compoundref="model_8hpp" startline="269">lbann::model::m_layers</references>
+        <references refid="classlbann_1_1recurrent__model_1a71eb93ebf3411a5c170f6570c93e3cca" compoundref="recurrent_8hpp" startline="74">m_unroll_depth</references>
+        <references refid="classlbann_1_1slice__layer_1a5c02b2a15355be051f93e72f3b2803ce" compoundref="slice_8hpp" startline="185" endline="185">lbann::slice_layer&lt; T_layout &gt;::get_slice_points</references>
+        <references refid="classlbann_1_1recurrent__model_1ac728773d3de0cefb9390231dc176dca4" compoundref="recurrent_8hpp" startline="80">m_previous_step_layer</references>
+        <references refid="classlbann_1_1model_1a0eabaf2b2f829fd5db3dfd26df420df0" compoundref="model_8hpp" startline="250">lbann::model::m_comm</references>
+        <references refid="classlbann_1_1lbann__comm_1a1ef526486183a29feadca9bef096a534" compoundref="comm_8hpp" startline="144" endline="146">lbann::lbann_comm::am_world_master</references>
+        <references refid="classlbann_1_1model_1ab173fd93a80a2980059ff292c308cbf5" compoundref="model_8cpp" startline="294" endline="310">lbann::model::print_layer_description</references>
+        <referencedby refid="classlbann_1_1recurrent__model_1aa4e43de8bf0d11a0f51dedbcf22a73cc" compoundref="recurrent_8hpp" startline="64" endline="64">freeze_layers_under_frozen_surface</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>Recurrent neural network model. Training is performed with back propagation through time, i.e. by unrolling the recurrent network into a DAG. </para>    </detaileddescription>
+    <inheritancegraph>
+      <node id="1954">
+        <label>lbann::model</label>
+        <link refid="classlbann_1_1model"/>
+      </node>
+      <node id="1952">
+        <label>lbann::recurrent_model</label>
+        <link refid="classlbann_1_1recurrent__model"/>
+        <childnode refid="1953" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1953">
+        <label>lbann::directed_acyclic_graph_model</label>
+        <link refid="classlbann_1_1directed__acyclic__graph__model"/>
+        <childnode refid="1954" relation="public-inheritance">
+        </childnode>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="1957">
+        <label>lbann::model</label>
+        <link refid="classlbann_1_1model"/>
+        <childnode refid="1958" relation="usage">
+          <edgelabel>m_default_optimizer</edgelabel>
+        </childnode>
+        <childnode refid="1959" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="1964" relation="usage">
+          <edgelabel>m_objective_function</edgelabel>
+        </childnode>
+      </node>
+      <node id="1958">
+        <label>lbann::optimizer</label>
+        <link refid="classlbann_1_1optimizer"/>
+        <childnode refid="1959" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="1960" relation="usage">
+          <edgelabel>m_cudnn</edgelabel>
+        </childnode>
+        <childnode refid="1961" relation="usage">
+          <edgelabel>m_gradient_allreduce_req</edgelabel>
+        </childnode>
+        <childnode refid="1962" relation="usage">
+          <edgelabel>m_weights</edgelabel>
+        </childnode>
+      </node>
+      <node id="1955">
+        <label>lbann::recurrent_model</label>
+        <link refid="classlbann_1_1recurrent__model"/>
+        <childnode refid="1956" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1956">
+        <label>lbann::directed_acyclic_graph_model</label>
+        <link refid="classlbann_1_1directed__acyclic__graph__model"/>
+        <childnode refid="1957" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1960">
+        <label>lbann::cudnn::cudnn_manager</label>
+        <link refid="classlbann_1_1cudnn_1_1cudnn__manager"/>
+      </node>
+      <node id="1963">
+        <label>lbann::weights_initializer</label>
+        <link refid="classlbann_1_1weights__initializer"/>
+        <childnode refid="1959" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+      </node>
+      <node id="1962">
+        <label>lbann::weights</label>
+        <link refid="classlbann_1_1weights"/>
+        <childnode refid="1958" relation="usage">
+          <edgelabel>m_optimizer</edgelabel>
+        </childnode>
+        <childnode refid="1959" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="1963" relation="usage">
+          <edgelabel>m_initializer</edgelabel>
+        </childnode>
+        <childnode refid="1960" relation="usage">
+          <edgelabel>m_cudnn</edgelabel>
+        </childnode>
+      </node>
+      <node id="1959">
+        <label>lbann::lbann_comm</label>
+        <link refid="classlbann_1_1lbann__comm"/>
+      </node>
+      <node id="1961">
+        <label>lbann::Al::request</label>
+        <link refid="structlbann_1_1Al_1_1request"/>
+      </node>
+      <node id="1964">
+        <label>lbann::objective_function</label>
+        <link refid="classlbann_1_1objective__function"/>
+      </node>
+    </collaborationgraph>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/models/recurrent.hpp" line="40" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/models/recurrent.hpp" bodystart="40" bodyend="87"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1model_1a8f45cdca82dbc0cc1f519898474cc6ec" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>add_callback</name></member>
+      <member refid="classlbann_1_1model_1a5dfa9895024f07d273062b67d7a0dc01" prot="public" virt="virtual"><scope>lbann::recurrent_model</scope><name>add_layer</name></member>
+      <member refid="classlbann_1_1model_1a2ad536c9aeb5a1dfaa5a96107d62c4a4" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>add_metric</name></member>
+      <member refid="classlbann_1_1model_1af35fca77e75eb6dd570e4727aa3d5b6b" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>add_weights</name></member>
+      <member refid="classlbann_1_1model_1a2ce4444efaab4dd1236c837d6847e438" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>backward_prop</name></member>
+      <member refid="classlbann_1_1model_1a43b3ed176749e0aab6065f274ec2a717" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>clear_error_signals</name></member>
+      <member refid="classlbann_1_1model_1ae4ca41f514498a37503ecc6ba1600bab" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>clear_gradients</name></member>
+      <member refid="classlbann_1_1model_1aa819e0d7c8bb178155e40e33037cf054" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>collect_indices</name></member>
+      <member refid="classlbann_1_1model_1aef7a4775c70f96610bfc5a4605b946a5" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>construct_layer_graph</name></member>
+      <member refid="classlbann_1_1recurrent__model_1ad184f898241fe026f140db689f129d47" prot="public" virt="virtual"><scope>lbann::recurrent_model</scope><name>copy</name></member>
+      <member refid="classlbann_1_1model_1a0d2d5a1eac592e5721a81a9b9ea4b7f2" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>create_optimizer</name></member>
+      <member refid="classlbann_1_1directed__acyclic__graph__model_1a2b5f8058b341073a0a95d4882fb4ff52" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>directed_acyclic_graph_model</name></member>
+      <member refid="classlbann_1_1directed__acyclic__graph__model_1a72966559db324ced94953b46a820d9d0" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>directed_acyclic_graph_model</name></member>
+      <member refid="classlbann_1_1model_1a156acfa740b92322d44b6c477636eb26" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>do_batch_begin_cbs</name></member>
+      <member refid="classlbann_1_1model_1a3dc29e9751a53afda7e171aff335273e" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>do_batch_end_cbs</name></member>
+      <member refid="classlbann_1_1model_1a6f975af3ff4921d78a9eb1aca12eaf5e" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>do_epoch_begin_cbs</name></member>
+      <member refid="classlbann_1_1model_1a93e43a6c5aaf8ad890ef50ff97dfa176" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>do_epoch_end_cbs</name></member>
+      <member refid="classlbann_1_1model_1ab14bedea05bd5ef549d95ceb2b57b7a4" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>do_evaluate_begin_cbs</name></member>
+      <member refid="classlbann_1_1model_1ab123ed691fb6e9f52d468914a1f4460c" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>do_evaluate_end_cbs</name></member>
+      <member refid="classlbann_1_1model_1a51dc59ea8dd4bc689854732269aaf001" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>do_layer_backward_prop_begin_cbs</name></member>
+      <member refid="classlbann_1_1model_1ab0939d2668cca7efc2cc52355d34df3b" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>do_layer_backward_prop_end_cbs</name></member>
+      <member refid="classlbann_1_1model_1ac19ce0dd060f9caddd6e14974a6e7713" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>do_layer_forward_prop_begin_cbs</name></member>
+      <member refid="classlbann_1_1model_1a7d6b891f58a7df9726e4f2c48d1f957a" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>do_layer_forward_prop_end_cbs</name></member>
+      <member refid="classlbann_1_1model_1a8a60eee343381e657b2c042637e56751" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>do_model_backward_prop_begin_cbs</name></member>
+      <member refid="classlbann_1_1model_1a737a0129eadf52be476034888b3eedc2" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>do_model_backward_prop_end_cbs</name></member>
+      <member refid="classlbann_1_1model_1af3c45642bbacf1bd07e8504d7e689ec0" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>do_model_forward_prop_begin_cbs</name></member>
+      <member refid="classlbann_1_1model_1a9d67f4f3a027327d2db8767759f9c2bf" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>do_model_forward_prop_end_cbs</name></member>
+      <member refid="classlbann_1_1model_1a19c96544ccf733646f3454be887f3a08" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>do_model_optimize_begin_cbs</name></member>
+      <member refid="classlbann_1_1model_1ac0b37e4f4881e274bd9c4889d4852fe8" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>do_model_optimize_end_cbs</name></member>
+      <member refid="classlbann_1_1model_1a780395fa740102adda5537aa5d257698" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>do_train_begin_cbs</name></member>
+      <member refid="classlbann_1_1model_1a13bb6edae42c719b78454a8af9549122" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>do_train_end_cbs</name></member>
+      <member refid="classlbann_1_1model_1a24b668fa62ce0215d3b1773636b7eced" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>do_weight_optimize_begin_cbs</name></member>
+      <member refid="classlbann_1_1model_1af1e22d2b06d0ca90ae79fd5cf1d82066" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>do_weight_optimize_end_cbs</name></member>
+      <member refid="classlbann_1_1model_1a4191097fdbcd1686525e9cd150f958ef" prot="public" virt="virtual"><scope>lbann::recurrent_model</scope><name>evaluate</name></member>
+      <member refid="classlbann_1_1model_1a9716a956bdc7d20dbc8ce8bf08bbcea7" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>evaluate_mini_batch</name></member>
+      <member refid="classlbann_1_1model_1adc4f845c8e292afe2d8686f459729484" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>forward_prop</name></member>
+      <member refid="classlbann_1_1recurrent__model_1aa4e43de8bf0d11a0f51dedbcf22a73cc" prot="public" virt="virtual"><scope>lbann::recurrent_model</scope><name>freeze_layers_under_frozen_surface</name></member>
+      <member refid="classlbann_1_1model_1a38c71a455870e087c4c07acb78e4477c" prot="public" virt="virtual"><scope>lbann::recurrent_model</scope><name>get_callbacks</name></member>
+      <member refid="classlbann_1_1model_1a9e1cfe449d2f4858a32994f6be0042fb" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>get_comm</name></member>
+      <member refid="classlbann_1_1model_1a1cf70e098524cc5013bce56edd96dfe7" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>get_cur_epoch</name></member>
+      <member refid="classlbann_1_1model_1ad0cdcba177434b52dc9c4a97be183a92" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>get_cur_step</name></member>
+      <member refid="classlbann_1_1model_1a4040b1f06a2a5d5187a72c06060124c1" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>get_cur_testing_step</name></member>
+      <member refid="classlbann_1_1model_1a680ef8ecf644dbc821b5e7488d3bd2c4" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>get_cur_validation_step</name></member>
+      <member refid="classlbann_1_1model_1a3eaad8fd538b99ecab9afca6dc3327fd" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>get_current_mini_batch_size</name></member>
+      <member refid="classlbann_1_1model_1afd569027be9b7a6adb08f486331384ac" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>get_current_phase</name></member>
+      <member refid="classlbann_1_1model_1a2a9b4cfa1c8c91e4131908751f9c4a6a" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>get_effective_mini_batch_size</name></member>
+      <member refid="classlbann_1_1model_1addb40597cf29aa6d31b6a7d09ef48608" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>get_execution_mode</name></member>
+      <member refid="classlbann_1_1model_1ae14f4b2cc8882b3739d4aeb25d9e73c9" prot="public" virt="virtual"><scope>lbann::recurrent_model</scope><name>get_layers</name></member>
+      <member refid="classlbann_1_1model_1a8c311798ff4acaeafdfbf85162ba5084" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>get_max_mini_batch_size</name></member>
+      <member refid="classlbann_1_1model_1a84c738fd219b8c2936e76a9360f68936" prot="public" virt="virtual"><scope>lbann::recurrent_model</scope><name>get_metrics</name></member>
+      <member refid="classlbann_1_1model_1a32a189033b8ff92d233781b1039c70f1" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>get_num_iterations_per_epoch</name></member>
+      <member refid="classlbann_1_1model_1aee5530467523924a662dec891b9a7993" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>get_objective_function</name></member>
+      <member refid="classlbann_1_1model_1a90363b6a20269cf7197701e49f1f52a3" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>get_terminate_training</name></member>
+      <member refid="classlbann_1_1model_1ac0a89794f1f51e7c502fff2745c973e6" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>get_weights</name></member>
+      <member refid="classlbann_1_1model_1a2c82c9def03b1c60e48f52fca7708833" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>is_execution_mode_valid</name></member>
+      <member refid="classlbann_1_1model_1a2e02dda11636e015ea0c892ffa541881" prot="public" virt="virtual"><scope>lbann::recurrent_model</scope><name>load_from_checkpoint_shared</name></member>
+      <member refid="classlbann_1_1model_1a07b511fef30368494c2ad80922ffd0eb" prot="protected" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>m_callbacks</name></member>
+      <member refid="classlbann_1_1model_1a0eabaf2b2f829fd5db3dfd26df420df0" prot="protected" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>m_comm</name></member>
+      <member refid="classlbann_1_1model_1a305fac94b9063e59198c7f936923221a" prot="protected" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>m_current_epoch</name></member>
+      <member refid="classlbann_1_1model_1a982cea92d230bab5a47df504f02daf98" prot="protected" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>m_current_mini_batch_size</name></member>
+      <member refid="classlbann_1_1model_1a150ef033f81982936e007b10c421f488" prot="protected" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>m_current_phase</name></member>
+      <member refid="classlbann_1_1model_1af31a76afc53061747d2170a65e98f692" prot="protected" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>m_current_step</name></member>
+      <member refid="classlbann_1_1model_1a2acf043862ba878cb7a91cb0d26c3791" prot="protected" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>m_current_testing_step</name></member>
+      <member refid="classlbann_1_1model_1af69e5f6bf49a4990fd4c18984705ab87" prot="protected" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>m_current_validation_step</name></member>
+      <member refid="classlbann_1_1model_1a68df9efe547f53f7bf2a03ac64527990" prot="protected" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>m_default_optimizer</name></member>
+      <member refid="classlbann_1_1model_1a4887fd2816e7c51b24cb8bf8e4a80a1c" prot="protected" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>m_effective_mini_batch_size</name></member>
+      <member refid="classlbann_1_1model_1a2166e2aad256a335ace3bdcae5da2614" prot="protected" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>m_execution_mode</name></member>
+      <member refid="classlbann_1_1model_1a0229fc226ec163d1411548446104569d" prot="protected" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>m_layers</name></member>
+      <member refid="classlbann_1_1model_1acc496503e7cf8d635e5a31ba09b3c81a" prot="protected" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>m_max_mini_batch_size</name></member>
+      <member refid="classlbann_1_1model_1ae75c9aafe9e5a93980cc1bbae986bc79" prot="protected" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>m_metrics</name></member>
+      <member refid="classlbann_1_1recurrent__model_1a426829f7fa36b112b4b91393c1657ddd" prot="private" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>m_next_step_layer</name></member>
+      <member refid="classlbann_1_1model_1a24c50e7108dd7698671aed7df5b22e8b" prot="protected" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>m_objective_function</name></member>
+      <member refid="classlbann_1_1recurrent__model_1ac728773d3de0cefb9390231dc176dca4" prot="private" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>m_previous_step_layer</name></member>
+      <member refid="classlbann_1_1model_1a639f9c3fcb81b905085f8b1932f8920f" prot="protected" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>m_terminate_training</name></member>
+      <member refid="classlbann_1_1recurrent__model_1a71eb93ebf3411a5c170f6570c93e3cca" prot="private" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>m_unroll_depth</name></member>
+      <member refid="classlbann_1_1model_1aaf9adefe4497d90bf5bc2567e71bfb00" prot="protected" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>m_weights</name></member>
+      <member refid="classlbann_1_1model_1a6feaee921c434bbfc32451ed874cc051" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>model</name></member>
+      <member refid="classlbann_1_1model_1a03fd1dc3edddb414b040bc009cf73371" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>model</name></member>
+      <member refid="classlbann_1_1recurrent__model_1a01b4f6dce63bc2e0545b2bd7603b32b2" prot="public" virt="virtual"><scope>lbann::recurrent_model</scope><name>name</name></member>
+      <member refid="classlbann_1_1recurrent__model_1a32882b23c459e1ce577fc97414521315" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1directed__acyclic__graph__model_1a683d794c5d87534d9c5c3cbba814e199" prot="public" virt="non-virtual" ambiguityscope="lbann::directed_acyclic_graph_model::"><scope>lbann::recurrent_model</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1model_1a05e8bd6c745ce4414be98462147ec52e" prot="public" virt="non-virtual" ambiguityscope="lbann::model::"><scope>lbann::recurrent_model</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1model_1a31c281b63593a0ec7110664f7309b01a" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>permute_layers</name></member>
+      <member refid="classlbann_1_1model_1ab173fd93a80a2980059ff292c308cbf5" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>print_layer_description</name></member>
+      <member refid="classlbann_1_1recurrent__model_1ac1d3118a1642bd460c9cc9617a592a0b" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>recurrent_model</name></member>
+      <member refid="classlbann_1_1recurrent__model_1adc71cbd387e03acc05a0f2e77aa36457" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>recurrent_model</name></member>
+      <member refid="classlbann_1_1model_1ac6cc0f5d850cfb997bbbc70eefa0d68f" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>remap_pointers</name></member>
+      <member refid="classlbann_1_1model_1aaed20219476dc1458bbd058be36de1ec" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>replace_weights</name></member>
+      <member refid="classlbann_1_1model_1a9c6e9c199ca0ae06b8cf7266971ab9c3" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>reset_epoch_statistics</name></member>
+      <member refid="classlbann_1_1model_1a5d188d75f53e0a4c6161500181b27c03" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>reset_mode_and_model</name></member>
+      <member refid="classlbann_1_1model_1a3d589d2e46ad35d0a1221e25bef70fa4" prot="public" virt="virtual"><scope>lbann::recurrent_model</scope><name>save_to_checkpoint_shared</name></member>
+      <member refid="classlbann_1_1model_1a4f3cc91f8495870723389be15f77184a" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>set_current_mini_batch_size</name></member>
+      <member refid="classlbann_1_1model_1aa64829cba8a84928a396893172a1d116" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>set_effective_mini_batch_size</name></member>
+      <member refid="classlbann_1_1model_1a375372b5b864ffbc4eaa0963f6939f65" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>set_execution_mode</name></member>
+      <member refid="classlbann_1_1model_1a95fb74f678f69b763d51b2ce987c8fde" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>set_layers</name></member>
+      <member refid="classlbann_1_1model_1a5bafc4e84671490c6118959becb22e16" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>set_terminate_training</name></member>
+      <member refid="classlbann_1_1model_1afd9dbca79503a40b7aa5c78da4d6f391" prot="public" virt="virtual"><scope>lbann::recurrent_model</scope><name>setup</name></member>
+      <member refid="classlbann_1_1directed__acyclic__graph__model_1a2a70d5719832c481db9fa962f6e5f2bd" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>setup_layer_execution_order</name></member>
+      <member refid="classlbann_1_1recurrent__model_1ac89ddfa607e5cb6b940eb389ebbce6f6" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>setup_layer_topology</name></member>
+      <member refid="classlbann_1_1recurrent__model_1a712dabb1c1e90f6e268b42f6abaedd93" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>setup_layers</name></member>
+      <member refid="classlbann_1_1model_1a582edc0f930e1594381ecc7922e91b08" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>setup_weights</name></member>
+      <member refid="classlbann_1_1model_1a0824e757e4806fad77630d69926a8911" prot="public" virt="virtual"><scope>lbann::recurrent_model</scope><name>summarize_matrices</name></member>
+      <member refid="classlbann_1_1model_1a1eb5efcc8f73ba9478b2ce1efb9f2d8c" prot="public" virt="virtual"><scope>lbann::recurrent_model</scope><name>summarize_stats</name></member>
+      <member refid="classlbann_1_1model_1a11c79dc3783d11b799bdc40ff9c92ddc" prot="public" virt="virtual"><scope>lbann::recurrent_model</scope><name>train</name></member>
+      <member refid="classlbann_1_1model_1a462105993a63277a1ead39c30ebae1bb" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>train_mini_batch</name></member>
+      <member refid="classlbann_1_1model_1a7518775e0fd29ed682319193e2d264cc" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>update_layers</name></member>
+      <member refid="classlbann_1_1model_1a38d8924938fa69857d3f9ed83ac98ee9" prot="protected" virt="virtual"><scope>lbann::recurrent_model</scope><name>update_weights</name></member>
+      <member refid="classlbann_1_1model_1a488da86420421a4890c8fd7a95849acc" prot="public" virt="virtual"><scope>lbann::recurrent_model</scope><name>write_proto</name></member>
+      <member refid="classlbann_1_1directed__acyclic__graph__model_1a2ad0b506b22f0c3f8b4aa49b66fad2f9" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>~directed_acyclic_graph_model</name></member>
+      <member refid="classlbann_1_1model_1ae97a8048de182af3ed8a6fbd92212958" prot="public" virt="virtual"><scope>lbann::recurrent_model</scope><name>~model</name></member>
+      <member refid="classlbann_1_1recurrent__model_1aa52648414c397fc4a11ac462c278a4f1" prot="public" virt="non-virtual"><scope>lbann::recurrent_model</scope><name>~recurrent_model</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

@@ -1,0 +1,533 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1hypergradient__adam" kind="class" language="C++" prot="public">
+    <compoundname>lbann::hypergradient_adam</compoundname>
+    <basecompoundref refid="classlbann_1_1optimizer" prot="public" virt="non-virtual">lbann::optimizer</basecompoundref>
+    <includes refid="hypergradient__adam_8hpp" local="no">hypergradient_adam.hpp</includes>
+      <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="classlbann_1_1hypergradient__adam_1a1066721ebaadb4eed2554b159510ae44" prot="private" static="no" mutable="no">
+        <type>DataType</type>
+        <definition>DataType lbann::hypergradient_adam::m_hyper_learning_rate</definition>
+        <argsstring></argsstring>
+        <name>m_hyper_learning_rate</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Hypergradient learning rate. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp" line="78" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp" bodystart="78" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1aab8df6bbd256c9731dc1e5b8eac286ec" compoundref="hypergradient__adam_8cpp" startline="65" endline="104">operator=</referencedby>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1aadcd02daeca55493b0e7210195ddb6ec" compoundref="hypergradient__adam_8cpp" startline="112" endline="120">get_description</referencedby>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1af9168cfd95707f361f0412ff2440761f" compoundref="hypergradient__adam_8cpp" startline="135" endline="202">step_compute</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1hypergradient__adam_1a876a8bc1ee9a47479008d204048724e7" prot="private" static="no" mutable="no">
+        <type>DataType</type>
+        <definition>DataType lbann::hypergradient_adam::m_beta1</definition>
+        <argsstring></argsstring>
+        <name>m_beta1</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Update factor for first moment estimate. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp" line="80" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp" bodystart="80" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1aab8df6bbd256c9731dc1e5b8eac286ec" compoundref="hypergradient__adam_8cpp" startline="65" endline="104">operator=</referencedby>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1aadcd02daeca55493b0e7210195ddb6ec" compoundref="hypergradient__adam_8cpp" startline="112" endline="120">get_description</referencedby>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1af9168cfd95707f361f0412ff2440761f" compoundref="hypergradient__adam_8cpp" startline="135" endline="202">step_compute</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1hypergradient__adam_1a0effe7359fa37f02a40f059281580760" prot="private" static="no" mutable="no">
+        <type>DataType</type>
+        <definition>DataType lbann::hypergradient_adam::m_beta2</definition>
+        <argsstring></argsstring>
+        <name>m_beta2</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Update factor for second moment estimate. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp" line="82" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp" bodystart="82" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1aab8df6bbd256c9731dc1e5b8eac286ec" compoundref="hypergradient__adam_8cpp" startline="65" endline="104">operator=</referencedby>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1aadcd02daeca55493b0e7210195ddb6ec" compoundref="hypergradient__adam_8cpp" startline="112" endline="120">get_description</referencedby>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1af9168cfd95707f361f0412ff2440761f" compoundref="hypergradient__adam_8cpp" startline="135" endline="202">step_compute</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1hypergradient__adam_1a5bae9101fcc235d961ae7713706f4ff7" prot="private" static="no" mutable="no">
+        <type>DataType</type>
+        <definition>DataType lbann::hypergradient_adam::m_eps</definition>
+        <argsstring></argsstring>
+        <name>m_eps</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Small factor to avoid division by zero. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp" line="84" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp" bodystart="84" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1aab8df6bbd256c9731dc1e5b8eac286ec" compoundref="hypergradient__adam_8cpp" startline="65" endline="104">operator=</referencedby>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1aadcd02daeca55493b0e7210195ddb6ec" compoundref="hypergradient__adam_8cpp" startline="112" endline="120">get_description</referencedby>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1af9168cfd95707f361f0412ff2440761f" compoundref="hypergradient__adam_8cpp" startline="135" endline="202">step_compute</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1hypergradient__adam_1a671c622860c712ef9716c2c8c6714780" prot="private" static="no" mutable="no">
+        <type>DataType</type>
+        <definition>DataType lbann::hypergradient_adam::m_current_beta1</definition>
+        <argsstring></argsstring>
+        <name>m_current_beta1</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>beta1 ^ iteration. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp" line="86" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp" bodystart="86" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1aab8df6bbd256c9731dc1e5b8eac286ec" compoundref="hypergradient__adam_8cpp" startline="65" endline="104">operator=</referencedby>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1af9168cfd95707f361f0412ff2440761f" compoundref="hypergradient__adam_8cpp" startline="135" endline="202">step_compute</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1hypergradient__adam_1a2d8b00faecbf4ce3996f879566ca4064" prot="private" static="no" mutable="no">
+        <type>DataType</type>
+        <definition>DataType lbann::hypergradient_adam::m_current_beta2</definition>
+        <argsstring></argsstring>
+        <name>m_current_beta2</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>beta2 ^ iteration. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp" line="88" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp" bodystart="88" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1aab8df6bbd256c9731dc1e5b8eac286ec" compoundref="hypergradient__adam_8cpp" startline="65" endline="104">operator=</referencedby>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1af9168cfd95707f361f0412ff2440761f" compoundref="hypergradient__adam_8cpp" startline="135" endline="202">step_compute</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1hypergradient__adam_1a529f3b53732247ebfb649f55f1fae4d6" prot="private" static="no" mutable="no">
+        <type><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> *</type>
+        <definition>AbsDistMat* lbann::hypergradient_adam::m_moment1</definition>
+        <argsstring></argsstring>
+        <name>m_moment1</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>First moment estimates. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp" line="90" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp" bodystart="90" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1aadb9841237fca01bbe2187a39e8f3cc5" compoundref="hypergradient__adam_8cpp" startline="49" endline="63">hypergradient_adam</referencedby>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1aab8df6bbd256c9731dc1e5b8eac286ec" compoundref="hypergradient__adam_8cpp" startline="65" endline="104">operator=</referencedby>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1af77f1872a0598de038064759a3d53fa0" compoundref="hypergradient__adam_8cpp" startline="106" endline="110">~hypergradient_adam</referencedby>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1acbc4aa4410eb2e7cb2fd9f423c4909dc" compoundref="hypergradient__adam_8cpp" startline="122" endline="133">setup</referencedby>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1af9168cfd95707f361f0412ff2440761f" compoundref="hypergradient__adam_8cpp" startline="135" endline="202">step_compute</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1hypergradient__adam_1a73b77fb79bd8e9bbfc8f360197899d18" prot="private" static="no" mutable="no">
+        <type><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> *</type>
+        <definition>AbsDistMat* lbann::hypergradient_adam::m_moment2</definition>
+        <argsstring></argsstring>
+        <name>m_moment2</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Second moment estimates. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp" line="92" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp" bodystart="92" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1aadb9841237fca01bbe2187a39e8f3cc5" compoundref="hypergradient__adam_8cpp" startline="49" endline="63">hypergradient_adam</referencedby>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1aab8df6bbd256c9731dc1e5b8eac286ec" compoundref="hypergradient__adam_8cpp" startline="65" endline="104">operator=</referencedby>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1af77f1872a0598de038064759a3d53fa0" compoundref="hypergradient__adam_8cpp" startline="106" endline="110">~hypergradient_adam</referencedby>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1acbc4aa4410eb2e7cb2fd9f423c4909dc" compoundref="hypergradient__adam_8cpp" startline="122" endline="133">setup</referencedby>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1af9168cfd95707f361f0412ff2440761f" compoundref="hypergradient__adam_8cpp" startline="135" endline="202">step_compute</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1hypergradient__adam_1a2e52355f77edf55bdac8a3eed79f44c4" prot="private" static="no" mutable="no">
+        <type><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> *</type>
+        <definition>AbsDistMat* lbann::hypergradient_adam::m_old_gradient</definition>
+        <argsstring></argsstring>
+        <name>m_old_gradient</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Gradient estimate from the prior step (for hypergradient). </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp" line="94" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp" bodystart="94" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1aadb9841237fca01bbe2187a39e8f3cc5" compoundref="hypergradient__adam_8cpp" startline="49" endline="63">hypergradient_adam</referencedby>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1aab8df6bbd256c9731dc1e5b8eac286ec" compoundref="hypergradient__adam_8cpp" startline="65" endline="104">operator=</referencedby>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1af77f1872a0598de038064759a3d53fa0" compoundref="hypergradient__adam_8cpp" startline="106" endline="110">~hypergradient_adam</referencedby>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1acbc4aa4410eb2e7cb2fd9f423c4909dc" compoundref="hypergradient__adam_8cpp" startline="122" endline="133">setup</referencedby>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1af9168cfd95707f361f0412ff2440761f" compoundref="hypergradient__adam_8cpp" startline="135" endline="202">step_compute</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1hypergradient__adam_1aefb4d2c307d8f7997624b2ebe977ca3b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::hypergradient_adam::hypergradient_adam</definition>
+        <argsstring>(lbann_comm *comm, DataType init_learning_rate, DataType hyper_learning_rate=DataType(1e-7), DataType beta1=DataType(0.9), DataType beta2=DataType(0.99), DataType eps=DataType(1e-8))</argsstring>
+        <name>hypergradient_adam</name>
+        <param>
+          <type><ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref> *</type>
+          <declname>comm</declname>
+        </param>
+        <param>
+          <type>DataType</type>
+          <declname>init_learning_rate</declname>
+        </param>
+        <param>
+          <type>DataType</type>
+          <declname>hyper_learning_rate</declname>
+          <defval>DataType(1e-7)</defval>
+        </param>
+        <param>
+          <type>DataType</type>
+          <declname>beta1</declname>
+          <defval>DataType(0.9)</defval>
+        </param>
+        <param>
+          <type>DataType</type>
+          <declname>beta2</declname>
+          <defval>DataType(0.99)</defval>
+        </param>
+        <param>
+          <type>DataType</type>
+          <declname>eps</declname>
+          <defval>DataType(1e-8)</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Constructor <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>init_learning_rate</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Initial Adam learning rate (0.001 reasonable). </para></parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>hyper_learning_rate</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Hypergradient learning rate. </para></parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>beta1</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Decay rate for the first moment moving average. </para></parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>beta2</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Decay rate for the second moment moving average. </para></parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>eps</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>A small value. </para></parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp" line="48" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/hypergradient_adam.cpp" bodystart="32" bodyend="47"/>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1a09a7e0bbae7d18cc94a2f5ad098f1f38" compoundref="hypergradient__adam_8hpp" startline="62" endline="62">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1hypergradient__adam_1aadb9841237fca01bbe2187a39e8f3cc5" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::hypergradient_adam::hypergradient_adam</definition>
+        <argsstring>(const hypergradient_adam &amp;other)</argsstring>
+        <name>hypergradient_adam</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1hypergradient__adam" kindref="compound">hypergradient_adam</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Copy constructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp" line="56" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/hypergradient_adam.cpp" bodystart="49" bodyend="63"/>
+        <references refid="classlbann_1_1hypergradient__adam_1a529f3b53732247ebfb649f55f1fae4d6" compoundref="hypergradient__adam_8hpp" startline="90">m_moment1</references>
+        <references refid="classlbann_1_1hypergradient__adam_1a73b77fb79bd8e9bbfc8f360197899d18" compoundref="hypergradient__adam_8hpp" startline="92">m_moment2</references>
+        <references refid="classlbann_1_1hypergradient__adam_1a2e52355f77edf55bdac8a3eed79f44c4" compoundref="hypergradient__adam_8hpp" startline="94">m_old_gradient</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1hypergradient__adam_1aab8df6bbd256c9731dc1e5b8eac286ec" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classlbann_1_1hypergradient__adam" kindref="compound">hypergradient_adam</ref> &amp;</type>
+        <definition>hypergradient_adam &amp; lbann::hypergradient_adam::operator=</definition>
+        <argsstring>(const hypergradient_adam &amp;other)</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1hypergradient__adam" kindref="compound">hypergradient_adam</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Copy assignment operator. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp" line="58" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/hypergradient_adam.cpp" bodystart="65" bodyend="104"/>
+        <references refid="classlbann_1_1optimizer_1ab7811e0a4d2d9b594140aed78b6de743" compoundref="optimizer_8cpp" startline="70" endline="100">lbann::optimizer::operator=</references>
+        <references refid="classlbann_1_1hypergradient__adam_1a1066721ebaadb4eed2554b159510ae44" compoundref="hypergradient__adam_8hpp" startline="78">m_hyper_learning_rate</references>
+        <references refid="classlbann_1_1hypergradient__adam_1a876a8bc1ee9a47479008d204048724e7" compoundref="hypergradient__adam_8hpp" startline="80">m_beta1</references>
+        <references refid="classlbann_1_1hypergradient__adam_1a0effe7359fa37f02a40f059281580760" compoundref="hypergradient__adam_8hpp" startline="82">m_beta2</references>
+        <references refid="classlbann_1_1hypergradient__adam_1a5bae9101fcc235d961ae7713706f4ff7" compoundref="hypergradient__adam_8hpp" startline="84">m_eps</references>
+        <references refid="classlbann_1_1hypergradient__adam_1a671c622860c712ef9716c2c8c6714780" compoundref="hypergradient__adam_8hpp" startline="86">m_current_beta1</references>
+        <references refid="classlbann_1_1hypergradient__adam_1a2d8b00faecbf4ce3996f879566ca4064" compoundref="hypergradient__adam_8hpp" startline="88">m_current_beta2</references>
+        <references refid="classlbann_1_1hypergradient__adam_1a529f3b53732247ebfb649f55f1fae4d6" compoundref="hypergradient__adam_8hpp" startline="90">m_moment1</references>
+        <references refid="classlbann_1_1hypergradient__adam_1a73b77fb79bd8e9bbfc8f360197899d18" compoundref="hypergradient__adam_8hpp" startline="92">m_moment2</references>
+        <references refid="classlbann_1_1hypergradient__adam_1a2e52355f77edf55bdac8a3eed79f44c4" compoundref="hypergradient__adam_8hpp" startline="94">m_old_gradient</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1hypergradient__adam_1af77f1872a0598de038064759a3d53fa0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::hypergradient_adam::~hypergradient_adam</definition>
+        <argsstring>() override</argsstring>
+        <name>~hypergradient_adam</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Destructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp" line="60" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/hypergradient_adam.cpp" bodystart="106" bodyend="110"/>
+        <references refid="classlbann_1_1hypergradient__adam_1a529f3b53732247ebfb649f55f1fae4d6" compoundref="hypergradient__adam_8hpp" startline="90">m_moment1</references>
+        <references refid="classlbann_1_1hypergradient__adam_1a73b77fb79bd8e9bbfc8f360197899d18" compoundref="hypergradient__adam_8hpp" startline="92">m_moment2</references>
+        <references refid="classlbann_1_1hypergradient__adam_1a2e52355f77edf55bdac8a3eed79f44c4" compoundref="hypergradient__adam_8hpp" startline="94">m_old_gradient</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1hypergradient__adam_1a09a7e0bbae7d18cc94a2f5ad098f1f38" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type><ref refid="classlbann_1_1hypergradient__adam" kindref="compound">hypergradient_adam</ref> *</type>
+        <definition>hypergradient_adam* lbann::hypergradient_adam::copy</definition>
+        <argsstring>() const override</argsstring>
+        <name>copy</name>
+        <reimplements refid="classlbann_1_1optimizer_1adf19a1d19d832ebfe70072cc202cdf39">copy</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Create a copy. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp" line="62" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp" bodystart="62" bodyend="62"/>
+        <references refid="classlbann_1_1hypergradient__adam_1aefb4d2c307d8f7997624b2ebe977ca3b" compoundref="hypergradient__adam_8cpp" startline="32" endline="47">hypergradient_adam</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1hypergradient__adam_1a21ba2e54a7c803c10ab8354d0552ba82" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>std::string</type>
+        <definition>std::string lbann::hypergradient_adam::get_type</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_type</name>
+        <reimplements refid="classlbann_1_1optimizer_1a7b7a6814e14eeee157e1cbb7f15dd4ff">get_type</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Returns the optimizer name. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp" line="65" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp" bodystart="65" bodyend="65"/>
+        <references refid="classlbann_1_1hypergradient__adam_1aadcd02daeca55493b0e7210195ddb6ec" compoundref="hypergradient__adam_8cpp" startline="112" endline="120">get_description</references>
+        <references refid="classlbann_1_1hypergradient__adam_1acbc4aa4410eb2e7cb2fd9f423c4909dc" compoundref="hypergradient__adam_8cpp" startline="122" endline="133">setup</references>
+        <references refid="classlbann_1_1hypergradient__adam_1af9168cfd95707f361f0412ff2440761f" compoundref="hypergradient__adam_8cpp" startline="135" endline="202">step_compute</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1hypergradient__adam_1aadcd02daeca55493b0e7210195ddb6ec" prot="public" static="no" const="yes" explicit="no" inline="no" virt="virtual">
+        <type>std::string</type>
+        <definition>std::string lbann::hypergradient_adam::get_description</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_description</name>
+        <reimplements refid="classlbann_1_1optimizer_1a66bb8d28dfb41452ac1a75a3efd47723">get_description</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Get a human-readable description of the optimizer. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp" line="67" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/hypergradient_adam.cpp" bodystart="112" bodyend="120"/>
+        <references refid="classlbann_1_1optimizer_1a66bb8d28dfb41452ac1a75a3efd47723" compoundref="optimizer_8cpp" startline="107" endline="115">lbann::optimizer::get_description</references>
+        <references refid="classlbann_1_1hypergradient__adam_1a1066721ebaadb4eed2554b159510ae44" compoundref="hypergradient__adam_8hpp" startline="78">m_hyper_learning_rate</references>
+        <references refid="classlbann_1_1hypergradient__adam_1a876a8bc1ee9a47479008d204048724e7" compoundref="hypergradient__adam_8hpp" startline="80">m_beta1</references>
+        <references refid="classlbann_1_1hypergradient__adam_1a0effe7359fa37f02a40f059281580760" compoundref="hypergradient__adam_8hpp" startline="82">m_beta2</references>
+        <references refid="classlbann_1_1hypergradient__adam_1a5bae9101fcc235d961ae7713706f4ff7" compoundref="hypergradient__adam_8hpp" startline="84">m_eps</references>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1a21ba2e54a7c803c10ab8354d0552ba82" compoundref="hypergradient__adam_8hpp" startline="65" endline="65">get_type</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1hypergradient__adam_1acbc4aa4410eb2e7cb2fd9f423c4909dc" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::hypergradient_adam::setup</definition>
+        <argsstring>(weights &amp;w) override</argsstring>
+        <name>setup</name>
+        <reimplements refid="classlbann_1_1optimizer_1a7641a88b3c166df2d974a298622b992b">setup</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1weights" kindref="compound">weights</ref> &amp;</type>
+          <declname>w</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Setup optimizer. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp" line="70" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/hypergradient_adam.cpp" bodystart="122" bodyend="133"/>
+        <references refid="classlbann_1_1optimizer_1a7641a88b3c166df2d974a298622b992b" compoundref="optimizer_8cpp" startline="414" endline="442">lbann::optimizer::setup</references>
+        <references refid="classlbann_1_1hypergradient__adam_1a529f3b53732247ebfb649f55f1fae4d6" compoundref="hypergradient__adam_8hpp" startline="90">m_moment1</references>
+        <references refid="classlbann_1_1optimizer_1a3df20cb0ae2b60430ad4fd235d66c12e" compoundref="optimizer_8hpp" startline="175">lbann::optimizer::m_gradient</references>
+        <references refid="classlbann_1_1hypergradient__adam_1a73b77fb79bd8e9bbfc8f360197899d18" compoundref="hypergradient__adam_8hpp" startline="92">m_moment2</references>
+        <references refid="classlbann_1_1hypergradient__adam_1a2e52355f77edf55bdac8a3eed79f44c4" compoundref="hypergradient__adam_8hpp" startline="94">m_old_gradient</references>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1a21ba2e54a7c803c10ab8354d0552ba82" compoundref="hypergradient__adam_8hpp" startline="65" endline="65">get_type</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1hypergradient__adam_1af9168cfd95707f361f0412ff2440761f" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::hypergradient_adam::step_compute</definition>
+        <argsstring>(AbsDistMat &amp;values, const AbsDistMat &amp;gradient) override</argsstring>
+        <name>step_compute</name>
+        <reimplements refid="classlbann_1_1optimizer_1a0db72c298a0bc3405fb0af97d104a036">step_compute</reimplements>
+        <param>
+          <type><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+          <declname>values</declname>
+        </param>
+        <param>
+          <type>const <ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+          <declname>gradient</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Perform the computation in an optimization step. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp" line="73" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/hypergradient_adam.cpp" bodystart="135" bodyend="202"/>
+        <references refid="classlbann_1_1hypergradient__adam_1a671c622860c712ef9716c2c8c6714780" compoundref="hypergradient__adam_8hpp" startline="86">m_current_beta1</references>
+        <references refid="classlbann_1_1hypergradient__adam_1a876a8bc1ee9a47479008d204048724e7" compoundref="hypergradient__adam_8hpp" startline="80">m_beta1</references>
+        <references refid="classlbann_1_1hypergradient__adam_1a2d8b00faecbf4ce3996f879566ca4064" compoundref="hypergradient__adam_8hpp" startline="88">m_current_beta2</references>
+        <references refid="classlbann_1_1hypergradient__adam_1a0effe7359fa37f02a40f059281580760" compoundref="hypergradient__adam_8hpp" startline="82">m_beta2</references>
+        <references refid="classlbann_1_1hypergradient__adam_1a529f3b53732247ebfb649f55f1fae4d6" compoundref="hypergradient__adam_8hpp" startline="90">m_moment1</references>
+        <references refid="classlbann_1_1hypergradient__adam_1a73b77fb79bd8e9bbfc8f360197899d18" compoundref="hypergradient__adam_8hpp" startline="92">m_moment2</references>
+        <references refid="classlbann_1_1hypergradient__adam_1a2e52355f77edf55bdac8a3eed79f44c4" compoundref="hypergradient__adam_8hpp" startline="94">m_old_gradient</references>
+        <references refid="classlbann_1_1optimizer_1ad393dcdcb82b44510c586ed5ec46d4dd" compoundref="optimizer_8hpp" startline="172">lbann::optimizer::m_learning_rate</references>
+        <references refid="classlbann_1_1hypergradient__adam_1a1066721ebaadb4eed2554b159510ae44" compoundref="hypergradient__adam_8hpp" startline="78">m_hyper_learning_rate</references>
+        <references refid="classlbann_1_1hypergradient__adam_1a5bae9101fcc235d961ae7713706f4ff7" compoundref="hypergradient__adam_8hpp" startline="84">m_eps</references>
+        <referencedby refid="classlbann_1_1hypergradient__adam_1a21ba2e54a7c803c10ab8354d0552ba82" compoundref="hypergradient__adam_8hpp" startline="65" endline="65">get_type</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>Hypergradient Adam optimizer. Reference: Baydin et al. &quot;Online Learning Rate Adaptation with Hypergradient Descent&quot;, 2017. </para>    </detaileddescription>
+    <inheritancegraph>
+      <node id="1015">
+        <label>lbann::optimizer</label>
+        <link refid="classlbann_1_1optimizer"/>
+      </node>
+      <node id="1014">
+        <label>lbann::hypergradient_adam</label>
+        <link refid="classlbann_1_1hypergradient__adam"/>
+        <childnode refid="1015" relation="public-inheritance">
+        </childnode>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="1017">
+        <label>lbann::optimizer</label>
+        <link refid="classlbann_1_1optimizer"/>
+        <childnode refid="1018" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="1019" relation="usage">
+          <edgelabel>m_cudnn</edgelabel>
+        </childnode>
+        <childnode refid="1020" relation="usage">
+          <edgelabel>m_gradient_allreduce_req</edgelabel>
+        </childnode>
+        <childnode refid="1021" relation="usage">
+          <edgelabel>m_weights</edgelabel>
+        </childnode>
+      </node>
+      <node id="1019">
+        <label>lbann::cudnn::cudnn_manager</label>
+        <link refid="classlbann_1_1cudnn_1_1cudnn__manager"/>
+      </node>
+      <node id="1022">
+        <label>lbann::weights_initializer</label>
+        <link refid="classlbann_1_1weights__initializer"/>
+        <childnode refid="1018" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+      </node>
+      <node id="1021">
+        <label>lbann::weights</label>
+        <link refid="classlbann_1_1weights"/>
+        <childnode refid="1017" relation="usage">
+          <edgelabel>m_optimizer</edgelabel>
+        </childnode>
+        <childnode refid="1018" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="1022" relation="usage">
+          <edgelabel>m_initializer</edgelabel>
+        </childnode>
+        <childnode refid="1019" relation="usage">
+          <edgelabel>m_cudnn</edgelabel>
+        </childnode>
+      </node>
+      <node id="1018">
+        <label>lbann::lbann_comm</label>
+        <link refid="classlbann_1_1lbann__comm"/>
+      </node>
+      <node id="1020">
+        <label>lbann::Al::request</label>
+        <link refid="structlbann_1_1Al_1_1request"/>
+      </node>
+      <node id="1016">
+        <label>lbann::hypergradient_adam</label>
+        <link refid="classlbann_1_1hypergradient__adam"/>
+        <childnode refid="1017" relation="public-inheritance">
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp" line="38" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp" bodystart="38" bodyend="96"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1optimizer_1ade46d28f7df19cab6c6ee90c03e976ea" prot="public" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>add_gradient_source</name></member>
+      <member refid="classlbann_1_1optimizer_1a435d31e3b7a0302e36439ee36f62dba8" prot="public" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>add_to_gradient</name></member>
+      <member refid="classlbann_1_1optimizer_1ac23ebde61a225f70c27ab937df5755ed" prot="public" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>add_to_gradient_staging</name></member>
+      <member refid="classlbann_1_1optimizer_1a3f41360479fbd46c704342bb4ef36d09" prot="public" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>clear_gradient</name></member>
+      <member refid="classlbann_1_1hypergradient__adam_1a09a7e0bbae7d18cc94a2f5ad098f1f38" prot="public" virt="virtual"><scope>lbann::hypergradient_adam</scope><name>copy</name></member>
+      <member refid="classlbann_1_1hypergradient__adam_1aadcd02daeca55493b0e7210195ddb6ec" prot="public" virt="virtual"><scope>lbann::hypergradient_adam</scope><name>get_description</name></member>
+      <member refid="classlbann_1_1optimizer_1a12b7dbc72eb2de78d6ad798b8939f349" prot="public" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>get_gradient</name></member>
+      <member refid="classlbann_1_1optimizer_1ac52867427b0d28ec6888b6344104791d" prot="public" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>get_learning_rate</name></member>
+      <member refid="classlbann_1_1optimizer_1a91370e4de6083e7cd464c809cf583eb3" prot="public" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>get_num_gradient_sources</name></member>
+      <member refid="classlbann_1_1optimizer_1afef81d54e836ba0177f7a411ba3aaf6e" prot="public" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>get_step_time</name></member>
+      <member refid="classlbann_1_1hypergradient__adam_1a21ba2e54a7c803c10ab8354d0552ba82" prot="public" virt="virtual"><scope>lbann::hypergradient_adam</scope><name>get_type</name></member>
+      <member refid="classlbann_1_1optimizer_1a9c3fc3f1d45da822676d5932a1c7af82" prot="public" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>get_weights</name></member>
+      <member refid="classlbann_1_1hypergradient__adam_1aefb4d2c307d8f7997624b2ebe977ca3b" prot="public" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>hypergradient_adam</name></member>
+      <member refid="classlbann_1_1hypergradient__adam_1aadb9841237fca01bbe2187a39e8f3cc5" prot="public" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>hypergradient_adam</name></member>
+      <member refid="classlbann_1_1optimizer_1abccf0babf69e3d7c6e9a7fd0731c79b7" prot="public" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>is_initialized</name></member>
+      <member refid="classlbann_1_1optimizer_1a42a52aab9a682fda57c1e639968a44b9" prot="public" virt="virtual"><scope>lbann::hypergradient_adam</scope><name>load_from_checkpoint_shared</name></member>
+      <member refid="classlbann_1_1hypergradient__adam_1a876a8bc1ee9a47479008d204048724e7" prot="private" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>m_beta1</name></member>
+      <member refid="classlbann_1_1hypergradient__adam_1a0effe7359fa37f02a40f059281580760" prot="private" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>m_beta2</name></member>
+      <member refid="classlbann_1_1optimizer_1a8c2569a8fcf0ee969517067b81896c44" prot="protected" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>m_comm</name></member>
+      <member refid="classlbann_1_1optimizer_1a2f24dbeaca18b06f4aa7d179bbf96680" prot="protected" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>m_cudnn</name></member>
+      <member refid="classlbann_1_1hypergradient__adam_1a671c622860c712ef9716c2c8c6714780" prot="private" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>m_current_beta1</name></member>
+      <member refid="classlbann_1_1hypergradient__adam_1a2d8b00faecbf4ce3996f879566ca4064" prot="private" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>m_current_beta2</name></member>
+      <member refid="classlbann_1_1hypergradient__adam_1a5bae9101fcc235d961ae7713706f4ff7" prot="private" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>m_eps</name></member>
+      <member refid="classlbann_1_1optimizer_1a3df20cb0ae2b60430ad4fd235d66c12e" prot="protected" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>m_gradient</name></member>
+      <member refid="classlbann_1_1hypergradient__adam_1a1066721ebaadb4eed2554b159510ae44" prot="private" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>m_hyper_learning_rate</name></member>
+      <member refid="classlbann_1_1optimizer_1ad393dcdcb82b44510c586ed5ec46d4dd" prot="protected" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>m_learning_rate</name></member>
+      <member refid="classlbann_1_1hypergradient__adam_1a529f3b53732247ebfb649f55f1fae4d6" prot="private" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>m_moment1</name></member>
+      <member refid="classlbann_1_1hypergradient__adam_1a73b77fb79bd8e9bbfc8f360197899d18" prot="private" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>m_moment2</name></member>
+      <member refid="classlbann_1_1hypergradient__adam_1a2e52355f77edf55bdac8a3eed79f44c4" prot="private" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>m_old_gradient</name></member>
+      <member refid="classlbann_1_1optimizer_1a33b57b578a089d9ffe6715bb3996907c" prot="protected" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>m_weights</name></member>
+      <member refid="classlbann_1_1hypergradient__adam_1aab8df6bbd256c9731dc1e5b8eac286ec" prot="public" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1optimizer_1ab7811e0a4d2d9b594140aed78b6de743" prot="public" virt="non-virtual" ambiguityscope="lbann::optimizer::"><scope>lbann::hypergradient_adam</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1optimizer_1a136ed79c3f279ecded5be380fb67b05f" prot="public" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>optimizer</name></member>
+      <member refid="classlbann_1_1optimizer_1a300aa4928e2e4feeb5e99b9eb0a16632" prot="public" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>optimizer</name></member>
+      <member refid="classlbann_1_1optimizer_1a68ba7515d7eb4af38ff19607c13a111b" prot="public" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>remove_gradient_source</name></member>
+      <member refid="classlbann_1_1optimizer_1a067709debd4d2e7bfe1a35b5f6ced668" prot="public" virt="virtual"><scope>lbann::hypergradient_adam</scope><name>reset_counters</name></member>
+      <member refid="classlbann_1_1optimizer_1afed10c6d8c5bd922f95075abeff711ce" prot="public" virt="virtual"><scope>lbann::hypergradient_adam</scope><name>save_to_checkpoint_shared</name></member>
+      <member refid="classlbann_1_1optimizer_1a147cac09beaa17df4e0fc1fc1be3abce" prot="public" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>set_learning_rate</name></member>
+      <member refid="classlbann_1_1optimizer_1afc00daf2acb6af7e29786524126660c2" prot="public" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>set_weights</name></member>
+      <member refid="classlbann_1_1hypergradient__adam_1acbc4aa4410eb2e7cb2fd9f423c4909dc" prot="public" virt="virtual"><scope>lbann::hypergradient_adam</scope><name>setup</name></member>
+      <member refid="classlbann_1_1optimizer_1a1fe495ccbd62d50735615818abecf454" prot="public" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>start_gradient_staging_allreduce</name></member>
+      <member refid="classlbann_1_1optimizer_1aa9f43ca3f22edc0a25d0509b6514a411" prot="public" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>step</name></member>
+      <member refid="classlbann_1_1hypergradient__adam_1af9168cfd95707f361f0412ff2440761f" prot="public" virt="virtual"><scope>lbann::hypergradient_adam</scope><name>step_compute</name></member>
+      <member refid="classlbann_1_1hypergradient__adam_1af77f1872a0598de038064759a3d53fa0" prot="public" virt="non-virtual"><scope>lbann::hypergradient_adam</scope><name>~hypergradient_adam</name></member>
+      <member refid="classlbann_1_1optimizer_1abbee0e2cb021f835b669d9ba0da5145a" prot="public" virt="virtual"><scope>lbann::hypergradient_adam</scope><name>~optimizer</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

@@ -1,0 +1,5 @@
+<map id="lbann::partitioned_io_buffer::compute_max_num_parallel_readers" name="lbann::partitioned_io_buffer::compute_max_num_parallel_readers">
+<area shape="rect" id="node2" href="$classlbann_1_1partitioned__io__buffer.html#a06a204fbf82f092b0225ab10c1bec98e" title="lbann::partitioned\l_io_buffer::setup_data" alt="" coords="478,42,632,80"/>
+<area shape="rect" id="node3" href="$classlbann_1_1partitioned__io__buffer.html#a50b6e2b7a82927526758f7cfb18a1ded" title="lbann::partitioned\l_io_buffer::calculate\l_num_iterations_per_epoch\l_spanning_models" alt="" coords="244,28,430,94"/>
+<area shape="rect" id="node4" href="$classlbann_1_1partitioned__io__buffer.html#ad707e54827d6e537127341b10407b716" title="lbann::partitioned\l_io_buffer::calculate\l_num_iterations_per_epoch\l_single_model" alt="" coords="244,118,430,183"/>
+</map>

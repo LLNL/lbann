@@ -1,0 +1,121 @@
+\hypertarget{structlbann_1_1path__delimiter}{}\section{lbann\+:\+:path\+\_\+delimiter Struct Reference}
+\label{structlbann_1_1path__delimiter}\index{lbann\+::path\+\_\+delimiter@{lbann\+::path\+\_\+delimiter}}
+
+
+{\ttfamily \#include $<$file\+\_\+utils.\+hpp$>$}
+
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+bool \hyperlink{structlbann_1_1path__delimiter_a89e287e7a7c4b4fc2863da116f199a71}{operator()} (const char ch) const
+\end{DoxyCompactItemize}
+\subsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static std\+::string \hyperlink{structlbann_1_1path__delimiter_a4f3bb346e47a66b16419125b1485e2ef}{preferred} ()
+\item 
+static bool \hyperlink{structlbann_1_1path__delimiter_adb3d520b3e7b9f9aa8327245ea943bdf}{check} (const char ch)
+\end{DoxyCompactItemize}
+\subsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+static const std\+::string \hyperlink{structlbann_1_1path__delimiter_ac64e71aff928b202c0c9e880ea641315}{characters} = \char`\"{}/\char`\"{}
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+
+
+Definition at line 38 of file file\+\_\+utils.\+hpp.
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{structlbann_1_1path__delimiter_adb3d520b3e7b9f9aa8327245ea943bdf}\label{structlbann_1_1path__delimiter_adb3d520b3e7b9f9aa8327245ea943bdf}} 
+\index{lbann\+::path\+\_\+delimiter@{lbann\+::path\+\_\+delimiter}!check@{check}}
+\index{check@{check}!lbann\+::path\+\_\+delimiter@{lbann\+::path\+\_\+delimiter}}
+\subsubsection{\texorpdfstring{check()}{check()}}
+{\footnotesize\ttfamily static bool lbann\+::path\+\_\+delimiter\+::check (\begin{DoxyParamCaption}\item[{const char}]{ch }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+
+
+Definition at line 43 of file file\+\_\+utils.\+hpp.
+
+
+\begin{DoxyCode}
+43                                    \{
+44     \textcolor{keywordflow}{return} (\hyperlink{structlbann_1_1path__delimiter_ac64e71aff928b202c0c9e880ea641315}{characters}.find(ch) != std::string::npos);
+45   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{structlbann_1_1path__delimiter_adb3d520b3e7b9f9aa8327245ea943bdf_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{structlbann_1_1path__delimiter_a89e287e7a7c4b4fc2863da116f199a71}\label{structlbann_1_1path__delimiter_a89e287e7a7c4b4fc2863da116f199a71}} 
+\index{lbann\+::path\+\_\+delimiter@{lbann\+::path\+\_\+delimiter}!operator()@{operator()}}
+\index{operator()@{operator()}!lbann\+::path\+\_\+delimiter@{lbann\+::path\+\_\+delimiter}}
+\subsubsection{\texorpdfstring{operator()()}{operator()()}}
+{\footnotesize\ttfamily bool lbann\+::path\+\_\+delimiter\+::operator() (\begin{DoxyParamCaption}\item[{const char}]{ch }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 46 of file file\+\_\+utils.\+hpp.
+
+
+\begin{DoxyCode}
+46                                        \{
+47     \textcolor{keywordflow}{return} (\hyperlink{structlbann_1_1path__delimiter_ac64e71aff928b202c0c9e880ea641315}{characters}.find(ch) != std::string::npos);
+48   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{structlbann_1_1path__delimiter_a89e287e7a7c4b4fc2863da116f199a71_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{structlbann_1_1path__delimiter_a4f3bb346e47a66b16419125b1485e2ef}\label{structlbann_1_1path__delimiter_a4f3bb346e47a66b16419125b1485e2ef}} 
+\index{lbann\+::path\+\_\+delimiter@{lbann\+::path\+\_\+delimiter}!preferred@{preferred}}
+\index{preferred@{preferred}!lbann\+::path\+\_\+delimiter@{lbann\+::path\+\_\+delimiter}}
+\subsubsection{\texorpdfstring{preferred()}{preferred()}}
+{\footnotesize\ttfamily static std\+::string lbann\+::path\+\_\+delimiter\+::preferred (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+
+
+Definition at line 40 of file file\+\_\+utils.\+hpp.
+
+
+\begin{DoxyCode}
+40                                \{
+41     \textcolor{keywordflow}{return} std::string(1, \hyperlink{structlbann_1_1path__delimiter_ac64e71aff928b202c0c9e880ea641315}{characters}[0]);
+42   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{structlbann_1_1path__delimiter_a4f3bb346e47a66b16419125b1485e2ef_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{structlbann_1_1path__delimiter_ac64e71aff928b202c0c9e880ea641315}\label{structlbann_1_1path__delimiter_ac64e71aff928b202c0c9e880ea641315}} 
+\index{lbann\+::path\+\_\+delimiter@{lbann\+::path\+\_\+delimiter}!characters@{characters}}
+\index{characters@{characters}!lbann\+::path\+\_\+delimiter@{lbann\+::path\+\_\+delimiter}}
+\subsubsection{\texorpdfstring{characters}{characters}}
+{\footnotesize\ttfamily const std\+::string lbann\+::path\+\_\+delimiter\+::characters = \char`\"{}/\char`\"{}\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+Definition at line 39 of file file\+\_\+utils.\+hpp.
+
+
+
+The documentation for this struct was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/utils/\hyperlink{file__utils_8hpp}{file\+\_\+utils.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/utils/\hyperlink{file__utils_8cpp}{file\+\_\+utils.\+cpp}\end{DoxyCompactItemize}

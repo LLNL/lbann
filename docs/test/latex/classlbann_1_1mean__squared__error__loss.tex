@@ -1,0 +1,347 @@
+\hypertarget{classlbann_1_1mean__squared__error__loss}{}\section{lbann\+:\+:mean\+\_\+squared\+\_\+error\+\_\+loss Class Reference}
+\label{classlbann_1_1mean__squared__error__loss}\index{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss@{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss}}
+
+
+{\ttfamily \#include $<$mean\+\_\+squared\+\_\+error.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:mean\+\_\+squared\+\_\+error\+\_\+loss\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=232pt]{classlbann_1_1mean__squared__error__loss__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:mean\+\_\+squared\+\_\+error\+\_\+loss\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=337pt]{classlbann_1_1mean__squared__error__loss__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1mean__squared__error__loss_a97883c4e1491dcf28f21179b62090c48}{mean\+\_\+squared\+\_\+error\+\_\+loss} (\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} scale\+\_\+factor=\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type}(1))
+\item 
+\hyperlink{classlbann_1_1mean__squared__error__loss_a142976fada7414ea93a1f7fd873624e3}{mean\+\_\+squared\+\_\+error\+\_\+loss} (const \hyperlink{classlbann_1_1mean__squared__error__loss}{mean\+\_\+squared\+\_\+error\+\_\+loss} \&other)=default
+\item 
+\hyperlink{classlbann_1_1mean__squared__error__loss}{mean\+\_\+squared\+\_\+error\+\_\+loss} \& \hyperlink{classlbann_1_1mean__squared__error__loss_a7b992996646a230f132a4df1608f1973}{operator=} (const \hyperlink{classlbann_1_1mean__squared__error__loss}{mean\+\_\+squared\+\_\+error\+\_\+loss} \&other)=default
+\item 
+\hyperlink{classlbann_1_1mean__squared__error__loss_a9c22711f4def47a20a2c4234e32881a0}{$\sim$mean\+\_\+squared\+\_\+error\+\_\+loss} () override=default
+\item 
+\hyperlink{classlbann_1_1mean__squared__error__loss}{mean\+\_\+squared\+\_\+error\+\_\+loss} $\ast$ \hyperlink{classlbann_1_1mean__squared__error__loss_aac723abb01bb19090018b3bddc9b49b0}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1mean__squared__error__loss_ab34d59b168205f198b1d4c299365fbbb}{name} () const override
+\item 
+void \hyperlink{classlbann_1_1mean__squared__error__loss_a5cfc9b54a4161015f63e5445e34f49f4}{start\+\_\+evaluate\+\_\+compute} (const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&prediction, const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&ground\+\_\+truth) override
+\item 
+\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} \hyperlink{classlbann_1_1mean__squared__error__loss_a5486b4e6d6b6fbfdd6fdd381f7cbd7eb}{finish\+\_\+evaluate\+\_\+compute} (const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&prediction, const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&ground\+\_\+truth) override
+\item 
+void \hyperlink{classlbann_1_1mean__squared__error__loss_aef698469d2e70a5d42e402eeca50efa3}{differentiate\+\_\+compute} (const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&prediction, const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&ground\+\_\+truth, \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&gradient) override
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} \hyperlink{classlbann_1_1mean__squared__error__loss_aae743bb204b7f047967ccd867c00721a}{m\+\_\+sum}
+\item 
+\hyperlink{structlbann_1_1Al_1_1request}{Al\+::request} \hyperlink{classlbann_1_1mean__squared__error__loss_a24fde367aadff7101900bb845dce775e}{m\+\_\+allreduce\+\_\+req}
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+Mean squared error loss function. Not to be confused with \hyperlink{classlbann_1_1mean__squared__error__metric}{mean\+\_\+squared\+\_\+error\+\_\+metric}. 
+
+Definition at line 37 of file mean\+\_\+squared\+\_\+error.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1mean__squared__error__loss_a97883c4e1491dcf28f21179b62090c48}\label{classlbann_1_1mean__squared__error__loss_a97883c4e1491dcf28f21179b62090c48}} 
+\index{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss@{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss}!mean\+\_\+squared\+\_\+error\+\_\+loss@{mean\+\_\+squared\+\_\+error\+\_\+loss}}
+\index{mean\+\_\+squared\+\_\+error\+\_\+loss@{mean\+\_\+squared\+\_\+error\+\_\+loss}!lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss@{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss}}
+\subsubsection{\texorpdfstring{mean\+\_\+squared\+\_\+error\+\_\+loss()}{mean\_squared\_error\_loss()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss\+::mean\+\_\+squared\+\_\+error\+\_\+loss (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type}}]{scale\+\_\+factor = {\ttfamily \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type}(1)} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Default constructor. 
+
+Definition at line 40 of file mean\+\_\+squared\+\_\+error.\+hpp.
+
+
+\begin{DoxyCode}
+41     : \hyperlink{classlbann_1_1loss__function_a0c5745e661c59e3e5496888d233c07cf}{loss\_function}(scale\_factor) \{\}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1mean__squared__error__loss_a97883c4e1491dcf28f21179b62090c48_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1mean__squared__error__loss_a97883c4e1491dcf28f21179b62090c48_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1mean__squared__error__loss_a142976fada7414ea93a1f7fd873624e3}\label{classlbann_1_1mean__squared__error__loss_a142976fada7414ea93a1f7fd873624e3}} 
+\index{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss@{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss}!mean\+\_\+squared\+\_\+error\+\_\+loss@{mean\+\_\+squared\+\_\+error\+\_\+loss}}
+\index{mean\+\_\+squared\+\_\+error\+\_\+loss@{mean\+\_\+squared\+\_\+error\+\_\+loss}!lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss@{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss}}
+\subsubsection{\texorpdfstring{mean\+\_\+squared\+\_\+error\+\_\+loss()}{mean\_squared\_error\_loss()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss\+::mean\+\_\+squared\+\_\+error\+\_\+loss (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1mean__squared__error__loss}{mean\+\_\+squared\+\_\+error\+\_\+loss} \&}]{other }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Copy constructor. \mbox{\Hypertarget{classlbann_1_1mean__squared__error__loss_a9c22711f4def47a20a2c4234e32881a0}\label{classlbann_1_1mean__squared__error__loss_a9c22711f4def47a20a2c4234e32881a0}} 
+\index{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss@{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss}!````~mean\+\_\+squared\+\_\+error\+\_\+loss@{$\sim$mean\+\_\+squared\+\_\+error\+\_\+loss}}
+\index{````~mean\+\_\+squared\+\_\+error\+\_\+loss@{$\sim$mean\+\_\+squared\+\_\+error\+\_\+loss}!lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss@{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss}}
+\subsubsection{\texorpdfstring{$\sim$mean\+\_\+squared\+\_\+error\+\_\+loss()}{~mean\_squared\_error\_loss()}}
+{\footnotesize\ttfamily lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss\+::$\sim$mean\+\_\+squared\+\_\+error\+\_\+loss (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [default]}}
+
+Destructor. Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1mean__squared__error__loss_a9c22711f4def47a20a2c4234e32881a0_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1mean__squared__error__loss_aac723abb01bb19090018b3bddc9b49b0}\label{classlbann_1_1mean__squared__error__loss_aac723abb01bb19090018b3bddc9b49b0}} 
+\index{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss@{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss}!copy@{copy}}
+\index{copy@{copy}!lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss@{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1mean__squared__error__loss}{mean\+\_\+squared\+\_\+error\+\_\+loss}$\ast$ lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Copy function. 
+
+Implements \hyperlink{classlbann_1_1objective__function__term_ae98a4ec173a602ad55d1df20dadd4cb9}{lbann\+::objective\+\_\+function\+\_\+term}.
+
+
+
+Definition at line 50 of file mean\+\_\+squared\+\_\+error.\+hpp.
+
+
+\begin{DoxyCode}
+50                                                  \{
+51     \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1mean__squared__error__loss_a97883c4e1491dcf28f21179b62090c48}{mean\_squared\_error\_loss}(*\textcolor{keyword}{this});
+52   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1mean__squared__error__loss_aac723abb01bb19090018b3bddc9b49b0_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1mean__squared__error__loss_aef698469d2e70a5d42e402eeca50efa3}\label{classlbann_1_1mean__squared__error__loss_aef698469d2e70a5d42e402eeca50efa3}} 
+\index{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss@{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss}!differentiate\+\_\+compute@{differentiate\+\_\+compute}}
+\index{differentiate\+\_\+compute@{differentiate\+\_\+compute}!lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss@{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss}}
+\subsubsection{\texorpdfstring{differentiate\+\_\+compute()}{differentiate\_compute()}}
+{\footnotesize\ttfamily void lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss\+::differentiate\+\_\+compute (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{prediction,  }\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{ground\+\_\+truth,  }\item[{\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{gradient }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Compute the gradient of the mean squared error objective function. Given a prediction $\hat{y}$ and ground truth $y$, the gradient of the mean squared error is \[ \nabla_y MSE (y,\hat{y}) = \frac{2}{n} (y - \hat{y}) \] 
+
+Implements \hyperlink{classlbann_1_1loss__function_aefccc2b4f5a02664002d12630cf369e7}{lbann\+::loss\+\_\+function}.
+
+
+
+Definition at line 66 of file mean\+\_\+squared\+\_\+error.\+cpp.
+
+
+\begin{DoxyCode}
+68                                                                           \{
+69 
+70   \textcolor{comment}{// Local matrices}
+71   \textcolor{keyword}{const} \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}& predictions\_local = predictions.LockedMatrix();
+72   \textcolor{keyword}{const} \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}& ground\_truth\_local = ground\_truth.LockedMatrix();
+73   \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}& gradient\_local = gradient.Matrix();
+74 
+75   \textcolor{comment}{// Matrix parameters}
+76   \textcolor{keyword}{const} \textcolor{keywordtype}{int} height = gradient.Height();
+77   \textcolor{keyword}{const} El::Int local\_height = gradient\_local.Height();
+78   \textcolor{keyword}{const} El::Int local\_width = gradient\_local.Width();
+79 
+80   \textcolor{comment}{// Compute gradient}
+81   \textcolor{keyword}{const} DataType scale = DataType(2) / height;
+82 \textcolor{preprocessor}{  #pragma omp parallel for collapse(2)}
+83   \textcolor{keywordflow}{for} (El::Int col = 0; col < local\_width; ++col) \{
+84     \textcolor{keywordflow}{for} (El::Int row = 0; row < local\_height; ++row) \{
+85       \textcolor{keyword}{const} DataType true\_val = ground\_truth\_local(row, col);
+86       \textcolor{keyword}{const} DataType pred\_val = predictions\_local(row, col);
+87       gradient\_local(row, col) = (pred\_val - true\_val) * scale;
+88     \}
+89   \}
+90 
+91 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1mean__squared__error__loss_aef698469d2e70a5d42e402eeca50efa3_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1mean__squared__error__loss_a5486b4e6d6b6fbfdd6fdd381f7cbd7eb}\label{classlbann_1_1mean__squared__error__loss_a5486b4e6d6b6fbfdd6fdd381f7cbd7eb}} 
+\index{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss@{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss}!finish\+\_\+evaluate\+\_\+compute@{finish\+\_\+evaluate\+\_\+compute}}
+\index{finish\+\_\+evaluate\+\_\+compute@{finish\+\_\+evaluate\+\_\+compute}!lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss@{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss}}
+\subsubsection{\texorpdfstring{finish\+\_\+evaluate\+\_\+compute()}{finish\_evaluate\_compute()}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss\+::finish\+\_\+evaluate\+\_\+compute (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{prediction,  }\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{ground\+\_\+truth }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Finish evaluation of the loss function. This should not include the scale factor. 
+
+Implements \hyperlink{classlbann_1_1loss__function_a3ea8553a4e9c75477d7d4fc533c4d4fd}{lbann\+::loss\+\_\+function}.
+
+
+
+Definition at line 59 of file mean\+\_\+squared\+\_\+error.\+cpp.
+
+
+\begin{DoxyCode}
+61                                   \{
+62   \hyperlink{classlbann_1_1objective__function__term_a5f89b676a26a6b76ddc26563ac87beb9}{get\_comm}().\hyperlink{classlbann_1_1lbann__comm_a30439f28cf615e1406090799c5499321}{wait}(\hyperlink{classlbann_1_1mean__squared__error__loss_a24fde367aadff7101900bb845dce775e}{m\_allreduce\_req});
+63   \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1mean__squared__error__loss_aae743bb204b7f047967ccd867c00721a}{m\_sum};
+64 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1mean__squared__error__loss_a5486b4e6d6b6fbfdd6fdd381f7cbd7eb_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=341pt]{classlbann_1_1mean__squared__error__loss_a5486b4e6d6b6fbfdd6fdd381f7cbd7eb_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1mean__squared__error__loss_ab34d59b168205f198b1d4c299365fbbb}\label{classlbann_1_1mean__squared__error__loss_ab34d59b168205f198b1d4c299365fbbb}} 
+\index{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss@{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss}!name@{name}}
+\index{name@{name}!lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss@{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss}}
+\subsubsection{\texorpdfstring{name()}{name()}}
+{\footnotesize\ttfamily std\+::string lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss\+::name (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get the name of the objective function term. 
+
+Implements \hyperlink{classlbann_1_1objective__function__term_a964fbfad3dd0434aa8f32c5fedf1079a}{lbann\+::objective\+\_\+function\+\_\+term}.
+
+
+
+Definition at line 55 of file mean\+\_\+squared\+\_\+error.\+hpp.
+
+
+\begin{DoxyCode}
+55 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"mean squared error"}; \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1mean__squared__error__loss_ab34d59b168205f198b1d4c299365fbbb_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1mean__squared__error__loss_a7b992996646a230f132a4df1608f1973}\label{classlbann_1_1mean__squared__error__loss_a7b992996646a230f132a4df1608f1973}} 
+\index{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss@{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss@{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1mean__squared__error__loss}{mean\+\_\+squared\+\_\+error\+\_\+loss}\& lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1mean__squared__error__loss}{mean\+\_\+squared\+\_\+error\+\_\+loss} \&}]{other }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Copy assignment operator. Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1mean__squared__error__loss_a7b992996646a230f132a4df1608f1973_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1mean__squared__error__loss_a5cfc9b54a4161015f63e5445e34f49f4}\label{classlbann_1_1mean__squared__error__loss_a5cfc9b54a4161015f63e5445e34f49f4}} 
+\index{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss@{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss}!start\+\_\+evaluate\+\_\+compute@{start\+\_\+evaluate\+\_\+compute}}
+\index{start\+\_\+evaluate\+\_\+compute@{start\+\_\+evaluate\+\_\+compute}!lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss@{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss}}
+\subsubsection{\texorpdfstring{start\+\_\+evaluate\+\_\+compute()}{start\_evaluate\_compute()}}
+{\footnotesize\ttfamily void lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss\+::start\+\_\+evaluate\+\_\+compute (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{prediction,  }\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{ground\+\_\+truth }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Compute the mean squared error objective function. Given a prediction $\hat{y}$ and ground truth $y$, the mean squared error is \[ MSE(\hat{y}, y) = \frac{1}{n} \lVert y - \hat{y} \rVert_2^2 \] This function updates the objective function value with the mean value of the mean absolute deviation across the mini-\/batch. 
+
+Implements \hyperlink{classlbann_1_1loss__function_a0bbe41060d788dc7a29f3737761a6f7d}{lbann\+::loss\+\_\+function}.
+
+
+
+Definition at line 31 of file mean\+\_\+squared\+\_\+error.\+cpp.
+
+
+\begin{DoxyCode}
+33                                   \{
+34   \textcolor{comment}{// Local matrices}
+35   \textcolor{keyword}{const} \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}& predictions\_local = predictions.LockedMatrix();
+36   \textcolor{keyword}{const} \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}& ground\_truth\_local = ground\_truth.LockedMatrix();
+37 
+38   \textcolor{comment}{// Matrix parameters}
+39   \textcolor{keyword}{const} El::Int height = predictions.Height();
+40   \textcolor{keyword}{const} El::Int width = predictions.Width();
+41   \textcolor{keyword}{const} El::Int local\_height = predictions\_local.Height();
+42   \textcolor{keyword}{const} El::Int local\_width = predictions\_local.Width();
+43 
+44   \textcolor{comment}{// Compute sum of squared errors}
+45   \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType} sum = \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType}(0);
+46 \textcolor{preprocessor}{  #pragma omp parallel for reduction(+:sum) collapse(2)}
+47   \textcolor{keywordflow}{for}(El::Int col = 0; col < local\_width; ++col) \{
+48     \textcolor{keywordflow}{for}(El::Int row = 0; row < local\_height; ++row) \{
+49       \textcolor{keyword}{const} \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType} true\_val = ground\_truth\_local(row, col);
+50       \textcolor{keyword}{const} \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType} pred\_val = predictions\_local(row, col);
+51       \textcolor{keyword}{const} \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType} error = true\_val - pred\_val;
+52       sum += error * error;
+53     \}
+54   \}
+55   \hyperlink{classlbann_1_1mean__squared__error__loss_aae743bb204b7f047967ccd867c00721a}{m\_sum} = sum / (height * width);  \textcolor{comment}{// Can't reduce on class members.}
+56   \hyperlink{classlbann_1_1objective__function__term_a5f89b676a26a6b76ddc26563ac87beb9}{get\_comm}().\hyperlink{classlbann_1_1lbann__comm_a2a7bb6cf3707366fc0671d8894ca30ea}{nb\_allreduce}(&\hyperlink{classlbann_1_1mean__squared__error__loss_aae743bb204b7f047967ccd867c00721a}{m\_sum}, 1, predictions.DistComm(), 
+      \hyperlink{classlbann_1_1mean__squared__error__loss_a24fde367aadff7101900bb845dce775e}{m\_allreduce\_req});
+57 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1mean__squared__error__loss_a5cfc9b54a4161015f63e5445e34f49f4_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1mean__squared__error__loss_a5cfc9b54a4161015f63e5445e34f49f4_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1mean__squared__error__loss_a24fde367aadff7101900bb845dce775e}\label{classlbann_1_1mean__squared__error__loss_a24fde367aadff7101900bb845dce775e}} 
+\index{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss@{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss}!m\+\_\+allreduce\+\_\+req@{m\+\_\+allreduce\+\_\+req}}
+\index{m\+\_\+allreduce\+\_\+req@{m\+\_\+allreduce\+\_\+req}!lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss@{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss}}
+\subsubsection{\texorpdfstring{m\+\_\+allreduce\+\_\+req}{m\_allreduce\_req}}
+{\footnotesize\ttfamily \hyperlink{structlbann_1_1Al_1_1request}{Al\+::request} lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss\+::m\+\_\+allreduce\+\_\+req\hspace{0.3cm}{\ttfamily [private]}}
+
+Non-\/blocking allreduce request. 
+
+Definition at line 87 of file mean\+\_\+squared\+\_\+error.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1mean__squared__error__loss_aae743bb204b7f047967ccd867c00721a}\label{classlbann_1_1mean__squared__error__loss_aae743bb204b7f047967ccd867c00721a}} 
+\index{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss@{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss}!m\+\_\+sum@{m\+\_\+sum}}
+\index{m\+\_\+sum@{m\+\_\+sum}!lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss@{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss}}
+\subsubsection{\texorpdfstring{m\+\_\+sum}{m\_sum}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} lbann\+::mean\+\_\+squared\+\_\+error\+\_\+loss\+::m\+\_\+sum\hspace{0.3cm}{\ttfamily [private]}}
+
+Sum of the the squared errors. 
+
+Definition at line 85 of file mean\+\_\+squared\+\_\+error.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/objective\+\_\+functions/loss\+\_\+functions/\hyperlink{objective__functions_2loss__functions_2mean__squared__error_8hpp}{mean\+\_\+squared\+\_\+error.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/objective\+\_\+functions/loss\+\_\+functions/\hyperlink{objective__functions_2loss__functions_2mean__squared__error_8cpp}{mean\+\_\+squared\+\_\+error.\+cpp}\end{DoxyCompactItemize}

@@ -1,0 +1,326 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1lbann__callback__ltfb" kind="class" language="C++" prot="public">
+    <compoundname>lbann::lbann_callback_ltfb</compoundname>
+    <basecompoundref refid="classlbann_1_1lbann__callback" prot="public" virt="non-virtual">lbann::lbann_callback</basecompoundref>
+    <includes refid="callback__ltfb_8hpp" local="no">callback_ltfb.hpp</includes>
+      <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="classlbann_1_1lbann__callback__ltfb_1a7536bb519c8a89b518a3196f953ac048" prot="private" static="no" mutable="no">
+        <type><ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref> *</type>
+        <definition>lbann_comm* lbann::lbann_callback_ltfb::m_comm</definition>
+        <argsstring></argsstring>
+        <name>m_comm</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>LBANN communicator. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_ltfb.hpp" line="69" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_ltfb.hpp" bodystart="69" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__callback__ltfb_1a19467cc32f7a1960ec6d62ca1c0cb6b8" compoundref="callback__ltfb_8cpp" startline="120" endline="132">operator=</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__ltfb_1a7548166d170eda00e4e0cba6626a1a78" compoundref="callback__ltfb_8cpp" startline="138" endline="154">setup</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__ltfb_1a7d2d1682c4a6a6b7e8ea1e3f4bf33c84" compoundref="callback__ltfb_8cpp" startline="156" endline="202">on_batch_begin</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1lbann__callback__ltfb_1a78434b8e8b1dfa43a68a9707473cf789" prot="private" static="no" mutable="no">
+        <type>int</type>
+        <definition>int lbann::lbann_callback_ltfb::m_round_size</definition>
+        <argsstring></argsstring>
+        <name>m_round_size</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Number of minibatches in a round. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_ltfb.hpp" line="71" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_ltfb.hpp" bodystart="71" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__callback__ltfb_1a19467cc32f7a1960ec6d62ca1c0cb6b8" compoundref="callback__ltfb_8cpp" startline="120" endline="132">operator=</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__ltfb_1a7d2d1682c4a6a6b7e8ea1e3f4bf33c84" compoundref="callback__ltfb_8cpp" startline="156" endline="202">on_batch_begin</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1lbann__callback__ltfb_1a5e5b9917b9eee67b8e14c6e8f95a85a3" prot="private" static="no" mutable="no">
+        <type>std::vector&lt; <ref refid="classlbann_1_1weights" kindref="compound">weights</ref> * &gt;</type>
+        <definition>std::vector&lt;weights*&gt; lbann::lbann_callback_ltfb::m_local_weights</definition>
+        <argsstring></argsstring>
+        <name>m_local_weights</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Weights from local model. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_ltfb.hpp" line="73" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_ltfb.hpp" bodystart="73" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__callback__ltfb_1af589490a67c5490ac91210c89ab66295" compoundref="callback__ltfb_8cpp" startline="112" endline="118">lbann_callback_ltfb</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__ltfb_1a19467cc32f7a1960ec6d62ca1c0cb6b8" compoundref="callback__ltfb_8cpp" startline="120" endline="132">operator=</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__ltfb_1abfb61fe2c92147dff98f861adb2d5c74" compoundref="callback__ltfb_8cpp" startline="134" endline="136">~lbann_callback_ltfb</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__ltfb_1a7548166d170eda00e4e0cba6626a1a78" compoundref="callback__ltfb_8cpp" startline="138" endline="154">setup</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__ltfb_1a7d2d1682c4a6a6b7e8ea1e3f4bf33c84" compoundref="callback__ltfb_8cpp" startline="156" endline="202">on_batch_begin</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__ltfb_1a44cb8fdfa7aae5d35543e47f3105f8cb" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::lbann_callback_ltfb::lbann_callback_ltfb</definition>
+        <argsstring>(int round_size, lbann_summary *summarizer=nullptr)</argsstring>
+        <name>lbann_callback_ltfb</name>
+        <param>
+          <type>int</type>
+          <declname>round_size</declname>
+        </param>
+        <param>
+          <type><ref refid="classlbann_1_1lbann__summary" kindref="compound">lbann_summary</ref> *</type>
+          <declname>summarizer</declname>
+          <defval>nullptr</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Constructor. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>round_size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The number of minibatches in each round. </para></parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_ltfb.hpp" line="54" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_ltfb.cpp" bodystart="108" bodyend="110"/>
+        <referencedby refid="classlbann_1_1lbann__callback__ltfb_1a62daf57a8c34fd301e24ba4fa2dd6630" compoundref="callback__ltfb_8hpp" startline="58" endline="58">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__ltfb_1af589490a67c5490ac91210c89ab66295" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::lbann_callback_ltfb::lbann_callback_ltfb</definition>
+        <argsstring>(const lbann_callback_ltfb &amp;other)</argsstring>
+        <name>lbann_callback_ltfb</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1lbann__callback__ltfb" kindref="compound">lbann_callback_ltfb</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_ltfb.hpp" line="55" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_ltfb.cpp" bodystart="112" bodyend="118"/>
+        <references refid="classlbann_1_1lbann__callback__ltfb_1a5e5b9917b9eee67b8e14c6e8f95a85a3" compoundref="callback__ltfb_8hpp" startline="73">m_local_weights</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__ltfb_1a19467cc32f7a1960ec6d62ca1c0cb6b8" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classlbann_1_1lbann__callback__ltfb" kindref="compound">lbann_callback_ltfb</ref> &amp;</type>
+        <definition>lbann_callback_ltfb &amp; lbann::lbann_callback_ltfb::operator=</definition>
+        <argsstring>(const lbann_callback_ltfb &amp;other)</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1lbann__callback__ltfb" kindref="compound">lbann_callback_ltfb</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_ltfb.hpp" line="56" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_ltfb.cpp" bodystart="120" bodyend="132"/>
+        <references refid="classlbann_1_1lbann__callback__ltfb_1a7536bb519c8a89b518a3196f953ac048" compoundref="callback__ltfb_8hpp" startline="69">m_comm</references>
+        <references refid="classlbann_1_1lbann__callback__ltfb_1a78434b8e8b1dfa43a68a9707473cf789" compoundref="callback__ltfb_8hpp" startline="71">m_round_size</references>
+        <references refid="classlbann_1_1lbann__callback__ltfb_1a5e5b9917b9eee67b8e14c6e8f95a85a3" compoundref="callback__ltfb_8hpp" startline="73">m_local_weights</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__ltfb_1abfb61fe2c92147dff98f861adb2d5c74" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::lbann_callback_ltfb::~lbann_callback_ltfb</definition>
+        <argsstring>() override</argsstring>
+        <name>~lbann_callback_ltfb</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_ltfb.hpp" line="57" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_ltfb.cpp" bodystart="134" bodyend="136"/>
+        <references refid="classlbann_1_1lbann__callback__ltfb_1a5e5b9917b9eee67b8e14c6e8f95a85a3" compoundref="callback__ltfb_8hpp" startline="73">m_local_weights</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__ltfb_1a62daf57a8c34fd301e24ba4fa2dd6630" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type><ref refid="classlbann_1_1lbann__callback__ltfb" kindref="compound">lbann_callback_ltfb</ref> *</type>
+        <definition>lbann_callback_ltfb* lbann::lbann_callback_ltfb::copy</definition>
+        <argsstring>() const override</argsstring>
+        <name>copy</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1a9f545d1269a8c7af335625d049691f26">copy</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_ltfb.hpp" line="58" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_ltfb.hpp" bodystart="58" bodyend="58"/>
+        <references refid="classlbann_1_1lbann__callback__ltfb_1a44cb8fdfa7aae5d35543e47f3105f8cb" compoundref="callback__ltfb_8cpp" startline="108" endline="110">lbann_callback_ltfb</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__ltfb_1aaf259b187e956282807d4daa03beb502" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>std::string</type>
+        <definition>std::string lbann::lbann_callback_ltfb::name</definition>
+        <argsstring>() const override</argsstring>
+        <name>name</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1a7522c7a14f1d6a1ea762cc2d7248eb3a">name</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Return this callback&apos;s name. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_ltfb.hpp" line="59" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_ltfb.hpp" bodystart="59" bodyend="59"/>
+        <references refid="classlbann_1_1lbann__callback__ltfb_1a7548166d170eda00e4e0cba6626a1a78" compoundref="callback__ltfb_8cpp" startline="138" endline="154">setup</references>
+        <references refid="classlbann_1_1lbann__callback__ltfb_1a7d2d1682c4a6a6b7e8ea1e3f4bf33c84" compoundref="callback__ltfb_8cpp" startline="156" endline="202">on_batch_begin</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__ltfb_1a7548166d170eda00e4e0cba6626a1a78" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_ltfb::setup</definition>
+        <argsstring>(model *m) override</argsstring>
+        <name>setup</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1aab5086e27d9bb0a7c7ee8ffc1bc58671">setup</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Set up LTFB. </para>        </detaileddescription>
+        <inbodydescription>
+<para><xrefsect id="todo_1_todo000002"><xreftitle>Todo</xreftitle><xrefdescription><para>Support LTFB with different models </para></xrefdescription></xrefsect></para>        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_ltfb.hpp" line="62" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_ltfb.cpp" bodystart="138" bodyend="154"/>
+        <references refid="classlbann_1_1lbann__callback__ltfb_1a7536bb519c8a89b518a3196f953ac048" compoundref="callback__ltfb_8hpp" startline="69">m_comm</references>
+        <references refid="classlbann_1_1model_1a9e1cfe449d2f4858a32994f6be0042fb" compoundref="model_8hpp" startline="123" endline="125">lbann::model::get_comm</references>
+        <references refid="classlbann_1_1lbann__callback__ltfb_1a5e5b9917b9eee67b8e14c6e8f95a85a3" compoundref="callback__ltfb_8hpp" startline="73">m_local_weights</references>
+        <references refid="classlbann_1_1model_1ac0a89794f1f51e7c502fff2745c973e6" compoundref="model_8hpp" startline="120" endline="120">lbann::model::get_weights</references>
+        <references refid="classlbann_1_1model_1a38c71a455870e087c4c07acb78e4477c" compoundref="model_8hpp" startline="88" endline="90">lbann::model::get_callbacks</references>
+        <references refid="base_8hpp_1a80b1d707117e968a6951b7222e4b2b87" compoundref="base_8hpp" startline="154">LBANN_ERROR</references>
+        <referencedby refid="classlbann_1_1lbann__callback__ltfb_1aaf259b187e956282807d4daa03beb502" compoundref="callback__ltfb_8hpp" startline="59" endline="59">name</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__ltfb_1a7d2d1682c4a6a6b7e8ea1e3f4bf33c84" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_ltfb::on_batch_begin</definition>
+        <argsstring>(model *m) override</argsstring>
+        <name>on_batch_begin</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1a9ecf4e44cd4021cdd687de14c850cc83">on_batch_begin</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Potentially run an LTFB round. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_ltfb.hpp" line="64" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_ltfb.cpp" bodystart="156" bodyend="202"/>
+        <references refid="classlbann_1_1model_1addb40597cf29aa6d31b6a7d09ef48608" compoundref="model_8hpp" startline="149" endline="151">lbann::model::get_execution_mode</references>
+        <references refid="classlbann_1_1model_1ad0cdcba177434b52dc9c4a97be183a92" compoundref="model_8hpp" startline="132" endline="134">lbann::model::get_cur_step</references>
+        <references refid="base_8hpp_1a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214">training</references>
+        <references refid="classlbann_1_1lbann__callback__ltfb_1a78434b8e8b1dfa43a68a9707473cf789" compoundref="callback__ltfb_8hpp" startline="71">m_round_size</references>
+        <references refid="classlbann_1_1lbann__callback__ltfb_1a7536bb519c8a89b518a3196f953ac048" compoundref="callback__ltfb_8hpp" startline="69">m_comm</references>
+        <references refid="classlbann_1_1lbann__comm_1a1ef526486183a29feadca9bef096a534" compoundref="comm_8hpp" startline="144" endline="146">lbann::lbann_comm::am_world_master</references>
+        <references refid="classlbann_1_1lbann__comm_1a6422f70c92bed0b78179facc52b066f7" compoundref="comm_8hpp" startline="112" endline="114">lbann::lbann_comm::get_model_rank</references>
+        <references refid="namespacelbann_1_1anonymous__namespace_02callback__ltfb_8cpp_03_1a1865e25ff1f3b6ad417d1853ea0bc6f4" compoundref="callback__ltfb_8cpp" startline="43" endline="69">lbann::anonymous_namespace{callback_ltfb.cpp}::assign_partners</references>
+        <references refid="namespacelbann_1_1anonymous__namespace_02callback__ltfb_8cpp_03_1a2525bf058156612d7847d0754277e4fc" compoundref="callback__ltfb_8cpp" startline="94" endline="104">lbann::anonymous_namespace{callback_ltfb.cpp}::evaluate</references>
+        <references refid="classlbann_1_1model_1ac0a89794f1f51e7c502fff2745c973e6" compoundref="model_8hpp" startline="120" endline="120">lbann::model::get_weights</references>
+        <references refid="namespacelbann_1_1anonymous__namespace_02callback__ltfb_8cpp_03_1a2b155d39e6dba02a34a7c58d804d865e" compoundref="callback__ltfb_8cpp" startline="75" endline="91">lbann::anonymous_namespace{callback_ltfb.cpp}::exchange_weights</references>
+        <references refid="classlbann_1_1lbann__callback__ltfb_1a5e5b9917b9eee67b8e14c6e8f95a85a3" compoundref="callback__ltfb_8hpp" startline="73">m_local_weights</references>
+        <references refid="classlbann_1_1lbann__comm_1ad8a5790dfa9191d4b4f889e8707e57f1" compoundref="comm_8hpp" startline="140" endline="142">lbann::lbann_comm::am_model_master</references>
+        <referencedby refid="classlbann_1_1lbann__callback__ltfb_1aaf259b187e956282807d4daa03beb502" compoundref="callback__ltfb_8hpp" startline="59" endline="59">name</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>Manage LTFB training. LTFB works in rounds, which are made up of some number of mini-batches (that evenly divide the number of minibatches in an epoch). In each round, the model trains as usual, and at the end it is randomly paired with another model. The pairs exchange their models and evaluate both their local and the received model on their validation data. The model achieving the highest accuracy is retained and training continues. Current limitations:<itemizedlist>
+<listitem><para>Does not transfer optimizer state, so it&apos;s best to stick to SGD without momentum.</para></listitem><listitem><para>Uses the validation data for the tournament (we may not want this).</para></listitem><listitem><para>Requires a manually-created model duplicate. </para></listitem></itemizedlist>
+</para>    </detaileddescription>
+    <inheritancegraph>
+      <node id="1421">
+        <label>lbann::lbann_callback</label>
+        <link refid="classlbann_1_1lbann__callback"/>
+      </node>
+      <node id="1420">
+        <label>lbann::lbann_callback_ltfb</label>
+        <link refid="classlbann_1_1lbann__callback__ltfb"/>
+        <childnode refid="1421" relation="public-inheritance">
+        </childnode>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="1423">
+        <label>lbann::lbann_callback</label>
+        <link refid="classlbann_1_1lbann__callback"/>
+        <childnode refid="1424" relation="usage">
+          <edgelabel>m_summarizer</edgelabel>
+        </childnode>
+      </node>
+      <node id="1422">
+        <label>lbann::lbann_callback_ltfb</label>
+        <link refid="classlbann_1_1lbann__callback__ltfb"/>
+        <childnode refid="1423" relation="public-inheritance">
+        </childnode>
+        <childnode refid="1425" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+      </node>
+      <node id="1424">
+        <label>lbann::lbann_summary</label>
+        <link refid="classlbann_1_1lbann__summary"/>
+      </node>
+      <node id="1425">
+        <label>lbann::lbann_comm</label>
+        <link refid="classlbann_1_1lbann__comm"/>
+      </node>
+    </collaborationgraph>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_ltfb.hpp" line="48" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_ltfb.hpp" bodystart="48" bodyend="75"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1lbann__callback__ltfb_1a62daf57a8c34fd301e24ba4fa2dd6630" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>copy</name></member>
+      <member refid="classlbann_1_1lbann__callback_1acec888932129f93ba2a0077192467c9e" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_ltfb</scope><name>get_batch_interval</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a679057298a41ddd47f08c157f756c584" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_ltfb</scope><name>lbann_callback</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a91d994616b8bf98685ac32939228f96a" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_ltfb</scope><name>lbann_callback</name></member>
+      <member refid="classlbann_1_1lbann__callback__ltfb_1a44cb8fdfa7aae5d35543e47f3105f8cb" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_ltfb</scope><name>lbann_callback_ltfb</name></member>
+      <member refid="classlbann_1_1lbann__callback__ltfb_1af589490a67c5490ac91210c89ab66295" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_ltfb</scope><name>lbann_callback_ltfb</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a6126e310e9924398c18ccf76bb91c705" prot="protected" virt="non-virtual"><scope>lbann::lbann_callback_ltfb</scope><name>m_batch_interval</name></member>
+      <member refid="classlbann_1_1lbann__callback__ltfb_1a7536bb519c8a89b518a3196f953ac048" prot="private" virt="non-virtual"><scope>lbann::lbann_callback_ltfb</scope><name>m_comm</name></member>
+      <member refid="classlbann_1_1lbann__callback__ltfb_1a5e5b9917b9eee67b8e14c6e8f95a85a3" prot="private" virt="non-virtual"><scope>lbann::lbann_callback_ltfb</scope><name>m_local_weights</name></member>
+      <member refid="classlbann_1_1lbann__callback__ltfb_1a78434b8e8b1dfa43a68a9707473cf789" prot="private" virt="non-virtual"><scope>lbann::lbann_callback_ltfb</scope><name>m_round_size</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a277d46138184f85f161a8263b8322c76" prot="protected" virt="non-virtual"><scope>lbann::lbann_callback_ltfb</scope><name>m_summarizer</name></member>
+      <member refid="classlbann_1_1lbann__callback__ltfb_1aaf259b187e956282807d4daa03beb502" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>name</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a2c0709a26179d115ff85b7561786ee27" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>on_backward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1abeb1e486e259fd358332abf1e952f630" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>on_backward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1af183624e63ba65e0003fa988f53dee0c" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>on_backward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1aba03b59c056ace8094095c08e39b9ac4" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>on_backward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback__ltfb_1a7d2d1682c4a6a6b7e8ea1e3f4bf33c84" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>on_batch_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a895ca577e358601fcae5c04749f60535" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>on_batch_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a3462e54126adbd0082c22c98d8de5468" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>on_batch_evaluate_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ad10891b8ab3de74ee1a70e6255e7d58a" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>on_batch_evaluate_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a4ed9498763412a55953fff71ee3a9456" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>on_epoch_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a1fc71110e7f754bf73c9e0f344a448a5" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>on_epoch_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a4a2cff48a688bb56ed14b8b53344f945" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>on_evaluate_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a044174864e4981a1dac093d58e8c4d6c" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>on_evaluate_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a0794f3fb88db6fef53f0e2f235f94424" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>on_evaluate_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ae23c5a61b81dbdfbd79736ac2b6035aa" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>on_evaluate_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a22ed977371173105b4aad3a20b9c59dc" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>on_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ab96adb1d77180e00fdd668cd381323fd" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>on_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a79a0bb407852d7b330b74373647ffe46" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>on_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a5eff0a59fbce98a981d9cdd0547a3ad5" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>on_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a1a9248b305f06419889c1b3b0f0893d8" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>on_optimize_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a497e750da160e0071ce8864ccc3a1344" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>on_optimize_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a235195d5fa4461835b861a03a5c0278f" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>on_optimize_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a4653e2903bfd3903709a81eaf7eabc1a" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>on_optimize_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ace7452239c9ad7aa6247e9496adbcffe" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>on_phase_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a716bff45bdc5a88eed09c2231f5bc93a" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>on_test_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1accbad4dd004c1ced33642db6398b2efe" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>on_test_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a7c8f0d211967ccc5219144e92571ab26" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>on_train_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1af28078b0ddaef45124465bef01eefedf" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>on_train_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a2bde303671110519388d9962bc3e5583" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>on_validation_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1adc16e42e5064dc2dc8d84dfbfc1325eb" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>on_validation_end</name></member>
+      <member refid="classlbann_1_1lbann__callback__ltfb_1a19467cc32f7a1960ec6d62ca1c0cb6b8" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_ltfb</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a66b0a8c00a273669fa782ece59e8898b" prot="public" virt="non-virtual" ambiguityscope="lbann::lbann_callback::"><scope>lbann::lbann_callback_ltfb</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a02d924df2f8ca851578dc76d9015e48d" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_ltfb</scope><name>set_summarizer</name></member>
+      <member refid="classlbann_1_1lbann__callback__ltfb_1a7548166d170eda00e4e0cba6626a1a78" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>setup</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ac91abaec389f8d2547512c45ae587304" prot="public" virt="virtual"><scope>lbann::lbann_callback_ltfb</scope><name>~lbann_callback</name></member>
+      <member refid="classlbann_1_1lbann__callback__ltfb_1abfb61fe2c92147dff98f861adb2d5c74" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_ltfb</scope><name>~lbann_callback_ltfb</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

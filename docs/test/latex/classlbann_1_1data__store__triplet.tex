@@ -1,0 +1,282 @@
+\hypertarget{classlbann_1_1data__store__triplet}{}\section{lbann\+:\+:data\+\_\+store\+\_\+triplet Class Reference}
+\label{classlbann_1_1data__store__triplet}\index{lbann\+::data\+\_\+store\+\_\+triplet@{lbann\+::data\+\_\+store\+\_\+triplet}}
+
+
+{\ttfamily \#include $<$data\+\_\+store\+\_\+triplet.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:data\+\_\+store\+\_\+triplet\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=220pt]{classlbann_1_1data__store__triplet__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:data\+\_\+store\+\_\+triplet\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__triplet__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1data__store__triplet_ad6ba997401d292ffb9678a75e02a258f}{data\+\_\+store\+\_\+triplet} (\hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$reader, \hyperlink{classlbann_1_1model}{model} $\ast$m)
+\begin{DoxyCompactList}\small\item\em ctor \end{DoxyCompactList}\item 
+\hyperlink{classlbann_1_1data__store__triplet_a059777d3131c8f8ecae04a8ac9b17036}{data\+\_\+store\+\_\+triplet} (const \hyperlink{classlbann_1_1data__store__triplet}{data\+\_\+store\+\_\+triplet} \&)=default
+\begin{DoxyCompactList}\small\item\em copy ctor \end{DoxyCompactList}\item 
+\hyperlink{classlbann_1_1data__store__triplet}{data\+\_\+store\+\_\+triplet} \& \hyperlink{classlbann_1_1data__store__triplet_a0ed814d64a7b664ef9646186c4642098}{operator=} (const \hyperlink{classlbann_1_1data__store__triplet}{data\+\_\+store\+\_\+triplet} \&)=default
+\begin{DoxyCompactList}\small\item\em operator= \end{DoxyCompactList}\item 
+\hyperlink{classlbann_1_1data__store__triplet}{data\+\_\+store\+\_\+triplet} $\ast$ \hyperlink{classlbann_1_1data__store__triplet_a446ee3b1fa3097e51bd0e198de960cd4}{copy} () const override
+\item 
+\hyperlink{classlbann_1_1data__store__triplet_a4051f8b3236f06554c2f35e71d3fdf70}{$\sim$data\+\_\+store\+\_\+triplet} () override
+\begin{DoxyCompactList}\small\item\em dtor \end{DoxyCompactList}\item 
+void \hyperlink{classlbann_1_1data__store__triplet_aca66b9cf71d7ba2b9870e76c5b92b5e8}{setup} () override
+\begin{DoxyCompactList}\small\item\em called by \hyperlink{classlbann_1_1generic__data__reader_a8b2a09d38512fc11f1b9d572c89100a7}{generic\+\_\+data\+\_\+reader\+::setup\+\_\+data\+\_\+store} \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+std\+::vector$<$ std\+::string $>$ \hyperlink{classlbann_1_1data__store__triplet_ade5d2290c85e7916e828553f4ab4f379}{get\+\_\+sample} (size\+\_\+t idx) const override
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+todo 
+
+Definition at line 39 of file data\+\_\+store\+\_\+triplet.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1data__store__triplet_ad6ba997401d292ffb9678a75e02a258f}\label{classlbann_1_1data__store__triplet_ad6ba997401d292ffb9678a75e02a258f}} 
+\index{lbann\+::data\+\_\+store\+\_\+triplet@{lbann\+::data\+\_\+store\+\_\+triplet}!data\+\_\+store\+\_\+triplet@{data\+\_\+store\+\_\+triplet}}
+\index{data\+\_\+store\+\_\+triplet@{data\+\_\+store\+\_\+triplet}!lbann\+::data\+\_\+store\+\_\+triplet@{lbann\+::data\+\_\+store\+\_\+triplet}}
+\subsubsection{\texorpdfstring{data\+\_\+store\+\_\+triplet()}{data\_store\_triplet()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::data\+\_\+store\+\_\+triplet\+::data\+\_\+store\+\_\+triplet (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$}]{reader,  }\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+ctor 
+
+
+
+Definition at line 43 of file data\+\_\+store\+\_\+triplet.\+hpp.
+
+
+\begin{DoxyCode}
+43                                                             :
+44     \hyperlink{classlbann_1_1data__store__multi__images_a1ad4fbec5c15f98422ebf7027f3a1d8a}{data\_store\_multi\_images}(reader, m) \{
+45     \hyperlink{classlbann_1_1generic__data__store_a853741295a07b5687921fc56d0d7d5b2}{set\_name}(\textcolor{stringliteral}{"data\_store\_triplet"});
+46   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__triplet_ad6ba997401d292ffb9678a75e02a258f_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__triplet_ad6ba997401d292ffb9678a75e02a258f_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__store__triplet_a059777d3131c8f8ecae04a8ac9b17036}\label{classlbann_1_1data__store__triplet_a059777d3131c8f8ecae04a8ac9b17036}} 
+\index{lbann\+::data\+\_\+store\+\_\+triplet@{lbann\+::data\+\_\+store\+\_\+triplet}!data\+\_\+store\+\_\+triplet@{data\+\_\+store\+\_\+triplet}}
+\index{data\+\_\+store\+\_\+triplet@{data\+\_\+store\+\_\+triplet}!lbann\+::data\+\_\+store\+\_\+triplet@{lbann\+::data\+\_\+store\+\_\+triplet}}
+\subsubsection{\texorpdfstring{data\+\_\+store\+\_\+triplet()}{data\_store\_triplet()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::data\+\_\+store\+\_\+triplet\+::data\+\_\+store\+\_\+triplet (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1data__store__triplet}{data\+\_\+store\+\_\+triplet} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+copy ctor 
+
+\mbox{\Hypertarget{classlbann_1_1data__store__triplet_a4051f8b3236f06554c2f35e71d3fdf70}\label{classlbann_1_1data__store__triplet_a4051f8b3236f06554c2f35e71d3fdf70}} 
+\index{lbann\+::data\+\_\+store\+\_\+triplet@{lbann\+::data\+\_\+store\+\_\+triplet}!````~data\+\_\+store\+\_\+triplet@{$\sim$data\+\_\+store\+\_\+triplet}}
+\index{````~data\+\_\+store\+\_\+triplet@{$\sim$data\+\_\+store\+\_\+triplet}!lbann\+::data\+\_\+store\+\_\+triplet@{lbann\+::data\+\_\+store\+\_\+triplet}}
+\subsubsection{\texorpdfstring{$\sim$data\+\_\+store\+\_\+triplet()}{~data\_store\_triplet()}}
+{\footnotesize\ttfamily lbann\+::data\+\_\+store\+\_\+triplet\+::$\sim$data\+\_\+store\+\_\+triplet (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}}
+
+
+
+dtor 
+
+
+
+Definition at line 57 of file data\+\_\+store\+\_\+triplet.\+hpp.
+
+
+\begin{DoxyCode}
+57 \{\};
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__triplet_a4051f8b3236f06554c2f35e71d3fdf70_cgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1data__store__triplet_a446ee3b1fa3097e51bd0e198de960cd4}\label{classlbann_1_1data__store__triplet_a446ee3b1fa3097e51bd0e198de960cd4}} 
+\index{lbann\+::data\+\_\+store\+\_\+triplet@{lbann\+::data\+\_\+store\+\_\+triplet}!copy@{copy}}
+\index{copy@{copy}!lbann\+::data\+\_\+store\+\_\+triplet@{lbann\+::data\+\_\+store\+\_\+triplet}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1data__store__triplet}{data\+\_\+store\+\_\+triplet}$\ast$ lbann\+::data\+\_\+store\+\_\+triplet\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1data__store__multi__images_a1046efda9448bab9b42e9fcdf71e03f1}{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images}.
+
+
+
+Definition at line 54 of file data\+\_\+store\+\_\+triplet.\+hpp.
+
+
+\begin{DoxyCode}
+54 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1data__store__triplet_ad6ba997401d292ffb9678a75e02a258f}{data\_store\_triplet}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__triplet_a446ee3b1fa3097e51bd0e198de960cd4_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__store__triplet_ade5d2290c85e7916e828553f4ab4f379}\label{classlbann_1_1data__store__triplet_ade5d2290c85e7916e828553f4ab4f379}} 
+\index{lbann\+::data\+\_\+store\+\_\+triplet@{lbann\+::data\+\_\+store\+\_\+triplet}!get\+\_\+sample@{get\+\_\+sample}}
+\index{get\+\_\+sample@{get\+\_\+sample}!lbann\+::data\+\_\+store\+\_\+triplet@{lbann\+::data\+\_\+store\+\_\+triplet}}
+\subsubsection{\texorpdfstring{get\+\_\+sample()}{get\_sample()}}
+{\footnotesize\ttfamily std\+::vector$<$ std\+::string $>$ lbann\+::data\+\_\+store\+\_\+triplet\+::get\+\_\+sample (\begin{DoxyParamCaption}\item[{size\+\_\+t}]{idx }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1data__store__multi__images_a39108690484fe407efafefe6a4b0947b}{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images}.
+
+
+
+Definition at line 36 of file data\+\_\+store\+\_\+triplet.\+cpp.
+
+
+\begin{DoxyCode}
+36                                                                     \{
+37   \textcolor{keyword}{const} data\_reader\_triplet *reader = \textcolor{keyword}{dynamic\_cast<}data\_reader\_triplet*\textcolor{keyword}{>}(
+      \hyperlink{classlbann_1_1generic__data__store_afa49ced0ab64c632371ea52532a91ec2}{m\_reader});
+38   \hyperlink{classlbann_1_1data__reader__triplet_adddc55e0424d38b60ac5f55c16990bb7}{data\_reader\_triplet::sample\_t} sample = reader->get\_sample(idx);
+39   \textcolor{keywordflow}{return} sample.first;
+40 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__triplet_ade5d2290c85e7916e828553f4ab4f379_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__triplet_ade5d2290c85e7916e828553f4ab4f379_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__store__triplet_a0ed814d64a7b664ef9646186c4642098}\label{classlbann_1_1data__store__triplet_a0ed814d64a7b664ef9646186c4642098}} 
+\index{lbann\+::data\+\_\+store\+\_\+triplet@{lbann\+::data\+\_\+store\+\_\+triplet}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::data\+\_\+store\+\_\+triplet@{lbann\+::data\+\_\+store\+\_\+triplet}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1data__store__triplet}{data\+\_\+store\+\_\+triplet}\& lbann\+::data\+\_\+store\+\_\+triplet\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1data__store__triplet}{data\+\_\+store\+\_\+triplet} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+operator= 
+
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__triplet_a0ed814d64a7b664ef9646186c4642098_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__store__triplet_aca66b9cf71d7ba2b9870e76c5b92b5e8}\label{classlbann_1_1data__store__triplet_aca66b9cf71d7ba2b9870e76c5b92b5e8}} 
+\index{lbann\+::data\+\_\+store\+\_\+triplet@{lbann\+::data\+\_\+store\+\_\+triplet}!setup@{setup}}
+\index{setup@{setup}!lbann\+::data\+\_\+store\+\_\+triplet@{lbann\+::data\+\_\+store\+\_\+triplet}}
+\subsubsection{\texorpdfstring{setup()}{setup()}}
+{\footnotesize\ttfamily void lbann\+::data\+\_\+store\+\_\+triplet\+::setup (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+called by \hyperlink{classlbann_1_1generic__data__reader_a8b2a09d38512fc11f1b9d572c89100a7}{generic\+\_\+data\+\_\+reader\+::setup\+\_\+data\+\_\+store} 
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1data__store__multi__images_a7b5e9ec7b7132872299a204d5d24ee62}{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images}.
+
+
+
+Definition at line 42 of file data\+\_\+store\+\_\+triplet.\+cpp.
+
+
+\begin{DoxyCode}
+42                                \{
+43   \textcolor{keywordtype}{double} tm1 = \hyperlink{namespacelbann_a478d36031ff0659893c4322cd856157f}{get\_time}();
+44   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__store_a87695bfd2d1ed0dbe01d99108e3f68b7}{m\_rank} == 0) \{
+45     std::cerr << \textcolor{stringliteral}{"starting data\_store\_triplet::setup() for data reader with role: "} << 
+      \hyperlink{classlbann_1_1generic__data__store_afa49ced0ab64c632371ea52532a91ec2}{m\_reader}->\hyperlink{classlbann_1_1generic__data__reader_a92982e1b399f37e2ead5aa440883cba5}{get\_role}() << std::endl;
+46   \}
+47 
+48   \hyperlink{classlbann_1_1generic__data__store_a853741295a07b5687921fc56d0d7d5b2}{set\_name}(\textcolor{stringliteral}{"data\_store\_triplet"});
+49 
+50   \textcolor{comment}{//sanity check}
+51   data\_reader\_triplet *reader = \textcolor{keyword}{dynamic\_cast<}data\_reader\_triplet*\textcolor{keyword}{>}(\hyperlink{classlbann_1_1generic__data__store_afa49ced0ab64c632371ea52532a91ec2}{m\_reader});
+52   \textcolor{keywordflow}{if} (reader == \textcolor{keyword}{nullptr}) \{
+53     std::stringstream err;
+54     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+55         << \textcolor{stringliteral}{"dynamic\_cast<data\_reader\_triplet*>(m\_reader) failed"};
+56     \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+57   \}
+58 
+59   \textcolor{comment}{//@todo needs to be designed and implemented!}
+60   \textcolor{keywordflow}{if} (! \hyperlink{classlbann_1_1generic__data__store_a1a9cc7b097cd7dd6ae0d12d52bb43ea1}{m\_in\_memory}) \{
+61     std::stringstream err;
+62     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+63         << \textcolor{stringliteral}{"not yet implemented"};
+64     \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+65   \} 
+66   
+67   \textcolor{keywordflow}{else} \{
+68     \hyperlink{classlbann_1_1data__store__multi__images_a7b5e9ec7b7132872299a204d5d24ee62}{data\_store\_multi\_images::setup}();
+69 
+70     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__store_a87695bfd2d1ed0dbe01d99108e3f68b7}{m\_rank} == 0) \{
+71       std::cerr << \textcolor{stringliteral}{"data\_store\_triplet setup time: "} << \hyperlink{namespacelbann_a478d36031ff0659893c4322cd856157f}{get\_time}() - tm1 << std::endl;
+72     \}
+73   \}
+74 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__triplet_aca66b9cf71d7ba2b9870e76c5b92b5e8_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__triplet_aca66b9cf71d7ba2b9870e76c5b92b5e8_icgraph}
+\end{center}
+\end{figure}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/data\+\_\+store/\hyperlink{data__store__triplet_8hpp}{data\+\_\+store\+\_\+triplet.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/data\+\_\+store/\hyperlink{data__store__triplet_8cpp}{data\+\_\+store\+\_\+triplet.\+cpp}\end{DoxyCompactItemize}

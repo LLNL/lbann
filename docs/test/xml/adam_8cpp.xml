@@ -1,0 +1,467 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="adam_8cpp" kind="file" language="C++">
+    <compoundname>adam.cpp</compoundname>
+    <includes refid="adam_8hpp" local="yes">lbann/optimizers/adam.hpp</includes>
+    <includes refid="exception_8hpp" local="yes">lbann/utils/exception.hpp</includes>
+    <incdepgraph>
+      <node id="22705">
+        <label>lbann/io/persist.hpp</label>
+        <link refid="persist_8hpp"/>
+        <childnode refid="22683" relation="include">
+        </childnode>
+        <childnode refid="22684" relation="include">
+        </childnode>
+      </node>
+      <node id="22684">
+        <label>El.hpp</label>
+      </node>
+      <node id="22683">
+        <label>lbann/base.hpp</label>
+        <link refid="base_8hpp"/>
+        <childnode refid="22684" relation="include">
+        </childnode>
+        <childnode refid="22685" relation="include">
+        </childnode>
+        <childnode refid="22686" relation="include">
+        </childnode>
+        <childnode refid="22691" relation="include">
+        </childnode>
+      </node>
+      <node id="22699">
+        <label>string</label>
+      </node>
+      <node id="22702">
+        <label>lbann/utils/cudnn_wrapper.hpp</label>
+        <link refid="cudnn__wrapper_8hpp"/>
+        <childnode refid="22693" relation="include">
+        </childnode>
+        <childnode refid="22683" relation="include">
+        </childnode>
+        <childnode refid="22692" relation="include">
+        </childnode>
+        <childnode refid="22696" relation="include">
+        </childnode>
+      </node>
+      <node id="22694">
+        <label>map</label>
+      </node>
+      <node id="22707">
+        <label>unordered_set</label>
+      </node>
+      <node id="22679">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/optimizers/adam.cpp</label>
+        <link refid="adam_8cpp"/>
+        <childnode refid="22680" relation="include">
+        </childnode>
+        <childnode refid="22696" relation="include">
+        </childnode>
+      </node>
+      <node id="22701">
+        <label>exception</label>
+      </node>
+      <node id="22704">
+        <label>lbann/weights/initializer.hpp</label>
+        <link refid="initializer_8hpp"/>
+        <childnode refid="22683" relation="include">
+        </childnode>
+        <childnode refid="22692" relation="include">
+        </childnode>
+        <childnode refid="22696" relation="include">
+        </childnode>
+        <childnode refid="22702" relation="include">
+        </childnode>
+      </node>
+      <node id="22688">
+        <label>cstdio</label>
+      </node>
+      <node id="22697">
+        <label>lbann/utils/stack_trace.hpp</label>
+        <link refid="stack__trace_8hpp"/>
+        <childnode refid="22698" relation="include">
+        </childnode>
+        <childnode refid="22699" relation="include">
+        </childnode>
+      </node>
+      <node id="22690">
+        <label>cxxabi.h</label>
+      </node>
+      <node id="22696">
+        <label>lbann/utils/exception.hpp</label>
+        <link refid="exception_8hpp"/>
+        <childnode refid="22683" relation="include">
+        </childnode>
+        <childnode refid="22692" relation="include">
+        </childnode>
+        <childnode refid="22697" relation="include">
+        </childnode>
+        <childnode refid="22700" relation="include">
+        </childnode>
+        <childnode refid="22701" relation="include">
+        </childnode>
+      </node>
+      <node id="22693">
+        <label>vector</label>
+      </node>
+      <node id="22692">
+        <label>lbann/comm.hpp</label>
+        <link refid="comm_8hpp"/>
+        <childnode refid="22693" relation="include">
+        </childnode>
+        <childnode refid="22694" relation="include">
+        </childnode>
+        <childnode refid="22695" relation="include">
+        </childnode>
+        <childnode refid="22683" relation="include">
+        </childnode>
+      </node>
+      <node id="22706">
+        <label>lbann.pb.h</label>
+      </node>
+      <node id="22687">
+        <label>cstdlib</label>
+      </node>
+      <node id="22700">
+        <label>iostream</label>
+      </node>
+      <node id="22681">
+        <label>lbann/optimizers/optimizer.hpp</label>
+        <link refid="optimizer_8hpp"/>
+        <childnode refid="22682" relation="include">
+        </childnode>
+        <childnode refid="22683" relation="include">
+        </childnode>
+        <childnode refid="22692" relation="include">
+        </childnode>
+        <childnode refid="22696" relation="include">
+        </childnode>
+        <childnode refid="22702" relation="include">
+        </childnode>
+        <childnode refid="22703" relation="include">
+        </childnode>
+        <childnode refid="22699" relation="include">
+        </childnode>
+        <childnode refid="22707" relation="include">
+        </childnode>
+      </node>
+      <node id="22680">
+        <label>lbann/optimizers/adam.hpp</label>
+        <link refid="adam_8hpp"/>
+        <childnode refid="22681" relation="include">
+        </childnode>
+      </node>
+      <node id="22698">
+        <label>csignal</label>
+      </node>
+      <node id="22703">
+        <label>lbann/weights/weights.hpp</label>
+        <link refid="weights_8hpp"/>
+        <childnode refid="22699" relation="include">
+        </childnode>
+        <childnode refid="22683" relation="include">
+        </childnode>
+        <childnode refid="22692" relation="include">
+        </childnode>
+        <childnode refid="22696" relation="include">
+        </childnode>
+        <childnode refid="22702" relation="include">
+        </childnode>
+        <childnode refid="22704" relation="include">
+        </childnode>
+        <childnode refid="22705" relation="include">
+        </childnode>
+        <childnode refid="22706" relation="include">
+        </childnode>
+      </node>
+      <node id="22691">
+        <label>lbann_config.hpp</label>
+      </node>
+      <node id="22682">
+        <label>lbann/utils/compiler_control.hpp</label>
+        <link refid="compiler__control_8hpp"/>
+      </node>
+      <node id="22686">
+        <label>lbann/utils/cyg_profile.hpp</label>
+        <link refid="cyg__profile_8hpp"/>
+        <childnode refid="22687" relation="include">
+        </childnode>
+        <childnode refid="22688" relation="include">
+        </childnode>
+        <childnode refid="22689" relation="include">
+        </childnode>
+        <childnode refid="22690" relation="include">
+        </childnode>
+      </node>
+      <node id="22685">
+        <label>lbann/Elemental_extensions.hpp</label>
+        <link refid="Elemental__extensions_8hpp"/>
+        <childnode refid="22684" relation="include">
+        </childnode>
+      </node>
+      <node id="22695">
+        <label>typeindex</label>
+      </node>
+      <node id="22689">
+        <label>dlfcn.h</label>
+      </node>
+    </incdepgraph>
+    <innernamespace refid="namespacelbann">lbann</innernamespace>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>2014-2016,<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Security,<sp/>LLC.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Produced<sp/>at<sp/>the<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Laboratory.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Written<sp/>by<sp/>the<sp/>LBANN<sp/>Research<sp/>Team<sp/>(B.<sp/>Van<sp/>Essen,<sp/>et<sp/>al.)<sp/>listed<sp/>in</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="comment">//<sp/>the<sp/>CONTRIBUTORS<sp/>file.<sp/>&lt;lbann-dev@llnl.gov&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="comment">//<sp/>LLNL-CODE-697807.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="comment">//<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="comment">//<sp/>This<sp/>file<sp/>is<sp/>part<sp/>of<sp/>LBANN:<sp/>Livermore<sp/>Big<sp/>Artificial<sp/>Neural<sp/>Network</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Toolkit.<sp/>For<sp/>details,<sp/>see<sp/>http://software.llnl.gov/LBANN<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="comment">//<sp/>https://github.com/LLNL/LBANN.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Licensed<sp/>under<sp/>the<sp/>Apache<sp/>License,<sp/>Version<sp/>2.0<sp/>(the<sp/>&quot;Licensee&quot;);<sp/>you</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight><highlight class="comment">//<sp/>may<sp/>not<sp/>use<sp/>this<sp/>file<sp/>except<sp/>in<sp/>compliance<sp/>with<sp/>the<sp/>License.<sp/><sp/>You<sp/>may</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="comment">//<sp/>obtain<sp/>a<sp/>copy<sp/>of<sp/>the<sp/>License<sp/>at:</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight><highlight class="comment">//<sp/>http://www.apache.org/licenses/LICENSE-2.0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Unless<sp/>required<sp/>by<sp/>applicable<sp/>law<sp/>or<sp/>agreed<sp/>to<sp/>in<sp/>writing,<sp/>software</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight><highlight class="comment">//<sp/>distributed<sp/>under<sp/>the<sp/>License<sp/>is<sp/>distributed<sp/>on<sp/>an<sp/>&quot;AS<sp/>IS&quot;<sp/>BASIS,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight><highlight class="comment">//<sp/>WITHOUT<sp/>WARRANTIES<sp/>OR<sp/>CONDITIONS<sp/>OF<sp/>ANY<sp/>KIND,<sp/>either<sp/>express<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="comment">//<sp/>implied.<sp/>See<sp/>the<sp/>License<sp/>for<sp/>the<sp/>specific<sp/>language<sp/>governing</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="comment">//<sp/>permissions<sp/>and<sp/>limitations<sp/>under<sp/>the<sp/>license.</highlight></codeline>
+<codeline lineno="26"><highlight class="comment"></highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="27"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="adam_8hpp" kindref="compound">lbann/optimizers/adam.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="28"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="exception_8hpp" kindref="compound">lbann/utils/exception.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="29"><highlight class="normal"></highlight></codeline>
+<codeline lineno="30"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacelbann" kindref="compound">lbann</ref><sp/>{</highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight></codeline>
+<codeline lineno="32" refid="classlbann_1_1adam_1a9d6848fa245bc2adfe142ae3aeb4e33d" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1adam_1a9d6848fa245bc2adfe142ae3aeb4e33d" kindref="member">adam::adam</ref>(<ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref><sp/>*<ref refid="file__io_8cpp_1ab048c6f9fcbcfaa57ce68b00263dbebe" kindref="member">comm</ref>,</highlight></codeline>
+<codeline lineno="33"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>DataType<sp/>learning_rate,</highlight></codeline>
+<codeline lineno="34"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>DataType<sp/>beta1,</highlight></codeline>
+<codeline lineno="35"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>DataType<sp/>beta2,</highlight></codeline>
+<codeline lineno="36"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>DataType<sp/>eps,</highlight></codeline>
+<codeline lineno="37"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1cudnn_1_1cudnn__manager" kindref="compound">cudnn::cudnn_manager</ref><sp/>*cudnn)</highlight></codeline>
+<codeline lineno="38"><highlight class="normal"><sp/><sp/>:<sp/><ref refid="classlbann_1_1optimizer" kindref="compound">optimizer</ref>(comm,<sp/>learning_rate),</highlight></codeline>
+<codeline lineno="39"><highlight class="normal"><sp/><sp/><sp/><sp/>m_beta1(beta1),</highlight></codeline>
+<codeline lineno="40"><highlight class="normal"><sp/><sp/><sp/><sp/>m_beta2(beta2),</highlight></codeline>
+<codeline lineno="41"><highlight class="normal"><sp/><sp/><sp/><sp/>m_eps(eps),</highlight></codeline>
+<codeline lineno="42"><highlight class="normal"><sp/><sp/><sp/><sp/>m_current_beta1(1),</highlight></codeline>
+<codeline lineno="43"><highlight class="normal"><sp/><sp/><sp/><sp/>m_current_beta2(1),</highlight></codeline>
+<codeline lineno="44"><highlight class="normal"><sp/><sp/><sp/><sp/>m_moment1(nullptr),</highlight></codeline>
+<codeline lineno="45"><highlight class="normal"><sp/><sp/><sp/><sp/>m_moment2(nullptr)<sp/>{}</highlight></codeline>
+<codeline lineno="46"><highlight class="normal"></highlight></codeline>
+<codeline lineno="47" refid="classlbann_1_1adam_1a77464b030ec2be620155eff22acdff76" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1adam_1a9d6848fa245bc2adfe142ae3aeb4e33d" kindref="member">adam::adam</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1adam" kindref="compound">adam</ref>&amp;<sp/>other)</highlight></codeline>
+<codeline lineno="48"><highlight class="normal"><sp/><sp/>:<sp/><ref refid="classlbann_1_1optimizer" kindref="compound">optimizer</ref>(other),</highlight></codeline>
+<codeline lineno="49"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1adam_1a73af15a28066edbfad9ba6a900746a19" kindref="member">m_beta1</ref>(other.<ref refid="classlbann_1_1adam_1a73af15a28066edbfad9ba6a900746a19" kindref="member">m_beta1</ref>),</highlight></codeline>
+<codeline lineno="50"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1adam_1ab1f2a16b8eb7e265895ea9eef3fe87b2" kindref="member">m_beta2</ref>(other.<ref refid="classlbann_1_1adam_1ab1f2a16b8eb7e265895ea9eef3fe87b2" kindref="member">m_beta2</ref>),</highlight></codeline>
+<codeline lineno="51"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1adam_1a751102f0fd866612f5685050a08020a9" kindref="member">m_eps</ref>(other.<ref refid="classlbann_1_1adam_1a751102f0fd866612f5685050a08020a9" kindref="member">m_eps</ref>),</highlight></codeline>
+<codeline lineno="52"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1adam_1a53c3034e187da2720447bbb4f2b59a5d" kindref="member">m_current_beta1</ref>(other.<ref refid="classlbann_1_1adam_1a53c3034e187da2720447bbb4f2b59a5d" kindref="member">m_current_beta1</ref>),</highlight></codeline>
+<codeline lineno="53"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1adam_1ad38376b684d69d4a15da1d11f8808ca7" kindref="member">m_current_beta2</ref>(other.<ref refid="classlbann_1_1adam_1ad38376b684d69d4a15da1d11f8808ca7" kindref="member">m_current_beta2</ref>),</highlight></codeline>
+<codeline lineno="54"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" kindref="member">m_moment1</ref>(other.<ref refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" kindref="member">m_moment1</ref>),</highlight></codeline>
+<codeline lineno="55"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref>(other.<ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="56"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" kindref="member">m_moment1</ref><sp/>!=<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal">)<sp/>{<sp/><ref refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" kindref="member">m_moment1</ref><sp/>=<sp/><ref refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" kindref="member">m_moment1</ref>-&gt;Copy();<sp/>}</highlight></codeline>
+<codeline lineno="57"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref><sp/>!=<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal">)<sp/>{<sp/><ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref><sp/>=<sp/><ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref>-&gt;Copy();<sp/>}</highlight></codeline>
+<codeline lineno="58"><highlight class="normal"></highlight><highlight class="preprocessor"><sp/><sp/>#ifdef<sp/>LBANN_HAS_CUDNN</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="59"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1optimizer_1a2f24dbeaca18b06f4aa7d179bbf96680" kindref="member">m_cudnn</ref><sp/>!=<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal"><sp/>&amp;&amp;<sp/>other.<ref refid="classlbann_1_1optimizer_1a33b57b578a089d9ffe6715bb3996907c" kindref="member">m_weights</ref><sp/>!=<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal">)<sp/>{</highlight></codeline>
+<codeline lineno="60"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>height<sp/>=<sp/>other.<ref refid="classlbann_1_1optimizer_1a33b57b578a089d9ffe6715bb3996907c" kindref="member">m_weights</ref>-&gt;<ref refid="classlbann_1_1weights_1ad36676b9b43bced1cc7e332e3745411f" kindref="member">get_matrix_height</ref>();</highlight></codeline>
+<codeline lineno="61"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>width<sp/>=<sp/>other.<ref refid="classlbann_1_1optimizer_1a33b57b578a089d9ffe6715bb3996907c" kindref="member">m_weights</ref>-&gt;<ref refid="classlbann_1_1weights_1abc3cf3a5b992302b1eaaea1fdf3b377d" kindref="member">get_matrix_width</ref>();</highlight></codeline>
+<codeline lineno="62"><highlight class="normal"><sp/><sp/><sp/><sp/>m_moment1_d<sp/>=<sp/><ref refid="classlbann_1_1optimizer_1a2f24dbeaca18b06f4aa7d179bbf96680" kindref="member">m_cudnn</ref>-&gt;copy(other.m_moment1_d,<sp/>height,<sp/>width);</highlight></codeline>
+<codeline lineno="63"><highlight class="normal"><sp/><sp/><sp/><sp/>m_moment2_d<sp/>=<sp/><ref refid="classlbann_1_1optimizer_1a2f24dbeaca18b06f4aa7d179bbf96680" kindref="member">m_cudnn</ref>-&gt;copy(other.m_moment2_d,<sp/>height,<sp/>width);</highlight></codeline>
+<codeline lineno="64"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="65"><highlight class="normal"></highlight><highlight class="preprocessor"><sp/><sp/>#endif<sp/>//<sp/>LBANN_HAS_CUDNN</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="66"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="67"><highlight class="normal"></highlight></codeline>
+<codeline lineno="68" refid="classlbann_1_1adam_1a00051b788b2bb34102a6bad5a380fc85" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1adam" kindref="compound">adam</ref>&amp;<sp/><ref refid="classlbann_1_1adam_1a00051b788b2bb34102a6bad5a380fc85" kindref="member">adam::operator=</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1adam" kindref="compound">adam</ref>&amp;<sp/>other)<sp/>{</highlight></codeline>
+<codeline lineno="69"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1optimizer_1ab7811e0a4d2d9b594140aed78b6de743" kindref="member">optimizer::operator=</ref>(other);</highlight></codeline>
+<codeline lineno="70"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1adam_1a73af15a28066edbfad9ba6a900746a19" kindref="member">m_beta1</ref><sp/>=<sp/>other.<ref refid="classlbann_1_1adam_1a73af15a28066edbfad9ba6a900746a19" kindref="member">m_beta1</ref>;</highlight></codeline>
+<codeline lineno="71"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1adam_1ab1f2a16b8eb7e265895ea9eef3fe87b2" kindref="member">m_beta2</ref><sp/>=<sp/>other.<ref refid="classlbann_1_1adam_1ab1f2a16b8eb7e265895ea9eef3fe87b2" kindref="member">m_beta2</ref>;</highlight></codeline>
+<codeline lineno="72"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1adam_1a751102f0fd866612f5685050a08020a9" kindref="member">m_eps</ref><sp/>=<sp/>other.<ref refid="classlbann_1_1adam_1a751102f0fd866612f5685050a08020a9" kindref="member">m_eps</ref>;</highlight></codeline>
+<codeline lineno="73"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1adam_1a53c3034e187da2720447bbb4f2b59a5d" kindref="member">m_current_beta1</ref><sp/>=<sp/>other.<ref refid="classlbann_1_1adam_1a53c3034e187da2720447bbb4f2b59a5d" kindref="member">m_current_beta1</ref>;</highlight></codeline>
+<codeline lineno="74"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1adam_1ad38376b684d69d4a15da1d11f8808ca7" kindref="member">m_current_beta2</ref><sp/>=<sp/>other.<ref refid="classlbann_1_1adam_1ad38376b684d69d4a15da1d11f8808ca7" kindref="member">m_current_beta2</ref>;</highlight></codeline>
+<codeline lineno="75"><highlight class="normal"></highlight></codeline>
+<codeline lineno="76"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Copy<sp/>moment<sp/>matrices</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="77"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" kindref="member">m_moment1</ref><sp/>!=<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal"><sp/>&amp;&amp;<sp/>other.<ref refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" kindref="member">m_moment1</ref><sp/>!=<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="78"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>&amp;&amp;<sp/><ref refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" kindref="member">m_moment1</ref>-&gt;DistData()<sp/>==<sp/>other.<ref refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" kindref="member">m_moment1</ref>-&gt;DistData())<sp/>{</highlight></codeline>
+<codeline lineno="79"><highlight class="normal"><sp/><sp/><sp/><sp/>El::Copy(*other.<ref refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" kindref="member">m_moment1</ref>,<sp/>*<ref refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" kindref="member">m_moment1</ref>);</highlight></codeline>
+<codeline lineno="80"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="81"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">else</highlight><highlight class="normal"><sp/>{</highlight></codeline>
+<codeline lineno="82"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" kindref="member">m_moment1</ref><sp/>!=<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal">)<sp/>{<sp/></highlight><highlight class="keyword">delete</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" kindref="member">m_moment1</ref>;<sp/>}</highlight></codeline>
+<codeline lineno="83"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" kindref="member">m_moment1</ref><sp/>=<sp/>other.<ref refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" kindref="member">m_moment1</ref>;</highlight></codeline>
+<codeline lineno="84"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" kindref="member">m_moment1</ref><sp/>!=<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal">)<sp/>{<sp/><ref refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" kindref="member">m_moment1</ref><sp/>=<sp/><ref refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" kindref="member">m_moment1</ref>-&gt;Copy();<sp/>}</highlight></codeline>
+<codeline lineno="85"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="86"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref><sp/>!=<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal"><sp/>&amp;&amp;<sp/>other.<ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref><sp/>!=<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="87"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>&amp;&amp;<sp/><ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref>-&gt;DistData()<sp/>==<sp/>other.<ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref>-&gt;DistData())<sp/>{</highlight></codeline>
+<codeline lineno="88"><highlight class="normal"><sp/><sp/><sp/><sp/>El::Copy(*other.<ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref>,<sp/>*<ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref>);</highlight></codeline>
+<codeline lineno="89"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="90"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">else</highlight><highlight class="normal"><sp/>{</highlight></codeline>
+<codeline lineno="91"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref><sp/>!=<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal">)<sp/>{<sp/></highlight><highlight class="keyword">delete</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref>;<sp/>}</highlight></codeline>
+<codeline lineno="92"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref><sp/>=<sp/>other.<ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref>;</highlight></codeline>
+<codeline lineno="93"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref><sp/>!=<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal">)<sp/>{<sp/><ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref><sp/>=<sp/><ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref>-&gt;Copy();<sp/>}</highlight></codeline>
+<codeline lineno="94"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="95"><highlight class="normal"></highlight></codeline>
+<codeline lineno="96"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Copy<sp/>GPU<sp/>data</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="97"><highlight class="normal"></highlight><highlight class="preprocessor"><sp/><sp/>#ifdef<sp/>LBANN_HAS_CUDNN</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="98"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1optimizer_1a2f24dbeaca18b06f4aa7d179bbf96680" kindref="member">m_cudnn</ref><sp/>!=<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal"><sp/>&amp;&amp;<sp/>other.<ref refid="classlbann_1_1optimizer_1a33b57b578a089d9ffe6715bb3996907c" kindref="member">m_weights</ref><sp/>!=<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal">)<sp/>{</highlight></codeline>
+<codeline lineno="99"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>height<sp/>=<sp/>other.<ref refid="classlbann_1_1optimizer_1a33b57b578a089d9ffe6715bb3996907c" kindref="member">m_weights</ref>-&gt;<ref refid="classlbann_1_1weights_1ad36676b9b43bced1cc7e332e3745411f" kindref="member">get_matrix_height</ref>();</highlight></codeline>
+<codeline lineno="100"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>width<sp/>=<sp/>other.<ref refid="classlbann_1_1optimizer_1a33b57b578a089d9ffe6715bb3996907c" kindref="member">m_weights</ref>-&gt;<ref refid="classlbann_1_1weights_1abc3cf3a5b992302b1eaaea1fdf3b377d" kindref="member">get_matrix_width</ref>();</highlight></codeline>
+<codeline lineno="101"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1optimizer_1a2f24dbeaca18b06f4aa7d179bbf96680" kindref="member">m_cudnn</ref>-&gt;deallocate_on_gpus(m_moment1_d);</highlight></codeline>
+<codeline lineno="102"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1optimizer_1a2f24dbeaca18b06f4aa7d179bbf96680" kindref="member">m_cudnn</ref>-&gt;deallocate_on_gpus(m_moment2_d);</highlight></codeline>
+<codeline lineno="103"><highlight class="normal"><sp/><sp/><sp/><sp/>m_moment1_d<sp/>=<sp/><ref refid="classlbann_1_1optimizer_1a2f24dbeaca18b06f4aa7d179bbf96680" kindref="member">m_cudnn</ref>-&gt;copy(other.m_moment1_d,<sp/>height,<sp/>width);</highlight></codeline>
+<codeline lineno="104"><highlight class="normal"><sp/><sp/><sp/><sp/>m_moment2_d<sp/>=<sp/><ref refid="classlbann_1_1optimizer_1a2f24dbeaca18b06f4aa7d179bbf96680" kindref="member">m_cudnn</ref>-&gt;copy(other.m_moment2_d,<sp/>height,<sp/>width);</highlight></codeline>
+<codeline lineno="105"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="106"><highlight class="normal"></highlight><highlight class="preprocessor"><sp/><sp/>#endif<sp/>//<sp/>LBANN_HAS_CUDNN</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="107"><highlight class="normal"></highlight></codeline>
+<codeline lineno="108"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>*</highlight><highlight class="keyword">this</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="109"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="110"><highlight class="normal"></highlight></codeline>
+<codeline lineno="111" refid="classlbann_1_1adam_1a5ab2783191786e2c9c1c71d6edecfb2e" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1adam_1a5ab2783191786e2c9c1c71d6edecfb2e" kindref="member">adam::~adam</ref>()<sp/>{</highlight></codeline>
+<codeline lineno="112"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal">(<ref refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" kindref="member">m_moment1</ref><sp/>!=<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal">)<sp/>{<sp/></highlight><highlight class="keyword">delete</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" kindref="member">m_moment1</ref>;<sp/>}</highlight></codeline>
+<codeline lineno="113"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal">(<ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref><sp/>!=<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal">)<sp/>{<sp/></highlight><highlight class="keyword">delete</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref>;<sp/>}</highlight></codeline>
+<codeline lineno="114"><highlight class="normal"></highlight><highlight class="preprocessor"><sp/><sp/>#ifdef<sp/>LBANN_HAS_CUDNN</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="115"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1optimizer_1a2f24dbeaca18b06f4aa7d179bbf96680" kindref="member">m_cudnn</ref><sp/>!=<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal">)<sp/>{</highlight></codeline>
+<codeline lineno="116"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1optimizer_1a2f24dbeaca18b06f4aa7d179bbf96680" kindref="member">m_cudnn</ref>-&gt;deallocate_on_gpus(m_moment1_d);</highlight></codeline>
+<codeline lineno="117"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1optimizer_1a2f24dbeaca18b06f4aa7d179bbf96680" kindref="member">m_cudnn</ref>-&gt;deallocate_on_gpus(m_moment2_d);</highlight></codeline>
+<codeline lineno="118"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="119"><highlight class="normal"></highlight><highlight class="preprocessor"><sp/><sp/>#endif<sp/>//<sp/>LBANN_HAS_CUDNN</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="120"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="121"><highlight class="normal"></highlight></codeline>
+<codeline lineno="122" refid="classlbann_1_1adam_1a14eb9754e2aa38a732d92b6d42311676" refkind="member"><highlight class="normal">std::string<sp/><ref refid="classlbann_1_1adam_1a14eb9754e2aa38a732d92b6d42311676" kindref="member">adam::get_description</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="123"><highlight class="normal"><sp/><sp/>std::stringstream<sp/>ss;</highlight></codeline>
+<codeline lineno="124"><highlight class="normal"><sp/><sp/>ss<sp/>&lt;&lt;<sp/><ref refid="classlbann_1_1optimizer_1a66bb8d28dfb41452ac1a75a3efd47723" kindref="member">optimizer::get_description</ref>()<sp/>&lt;&lt;<sp/></highlight><highlight class="stringliteral">&quot;,<sp/>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="125"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/>&lt;&lt;<sp/></highlight><highlight class="stringliteral">&quot;beta1=&quot;</highlight><highlight class="normal"><sp/>&lt;&lt;<sp/><ref refid="classlbann_1_1adam_1a73af15a28066edbfad9ba6a900746a19" kindref="member">m_beta1</ref><sp/>&lt;&lt;<sp/></highlight><highlight class="stringliteral">&quot;,<sp/>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="126"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/>&lt;&lt;<sp/></highlight><highlight class="stringliteral">&quot;beta2=&quot;</highlight><highlight class="normal"><sp/>&lt;&lt;<sp/><ref refid="classlbann_1_1adam_1ab1f2a16b8eb7e265895ea9eef3fe87b2" kindref="member">m_beta2</ref><sp/>&lt;&lt;<sp/></highlight><highlight class="stringliteral">&quot;,<sp/>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="127"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/>&lt;&lt;<sp/></highlight><highlight class="stringliteral">&quot;eps=&quot;</highlight><highlight class="normal"><sp/>&lt;&lt;<sp/><ref refid="classlbann_1_1adam_1a751102f0fd866612f5685050a08020a9" kindref="member">m_eps</ref>;</highlight></codeline>
+<codeline lineno="128"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>ss.str();</highlight></codeline>
+<codeline lineno="129"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="130"><highlight class="normal"></highlight></codeline>
+<codeline lineno="131" refid="classlbann_1_1adam_1aea0b1fa44197fe184a6feca5ec5c808e" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1adam_1aea0b1fa44197fe184a6feca5ec5c808e" kindref="member">adam::setup</ref>(<ref refid="classlbann_1_1weights" kindref="compound">weights</ref>&amp;<sp/>w)<sp/>{</highlight></codeline>
+<codeline lineno="132"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1optimizer_1a7641a88b3c166df2d974a298622b992b" kindref="member">optimizer::setup</ref>(w);</highlight></codeline>
+<codeline lineno="133"><highlight class="normal"></highlight></codeline>
+<codeline lineno="134"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Allocate<sp/>matrices</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="135"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>height<sp/>=<sp/><ref refid="classlbann_1_1optimizer_1a3df20cb0ae2b60430ad4fd235d66c12e" kindref="member">m_gradient</ref>-&gt;Height();</highlight></codeline>
+<codeline lineno="136"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>width<sp/>=<sp/><ref refid="classlbann_1_1optimizer_1a3df20cb0ae2b60430ad4fd235d66c12e" kindref="member">m_gradient</ref>-&gt;Width();</highlight></codeline>
+<codeline lineno="137"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" kindref="member">m_moment1</ref><sp/>=<sp/><ref refid="classlbann_1_1optimizer_1a3df20cb0ae2b60430ad4fd235d66c12e" kindref="member">m_gradient</ref>-&gt;Construct(<ref refid="classlbann_1_1optimizer_1a3df20cb0ae2b60430ad4fd235d66c12e" kindref="member">m_gradient</ref>-&gt;Grid(),</highlight></codeline>
+<codeline lineno="138"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1optimizer_1a3df20cb0ae2b60430ad4fd235d66c12e" kindref="member">m_gradient</ref>-&gt;Root());</highlight></codeline>
+<codeline lineno="139"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref><sp/>=<sp/><ref refid="classlbann_1_1optimizer_1a3df20cb0ae2b60430ad4fd235d66c12e" kindref="member">m_gradient</ref>-&gt;Construct(<ref refid="classlbann_1_1optimizer_1a3df20cb0ae2b60430ad4fd235d66c12e" kindref="member">m_gradient</ref>-&gt;Grid(),</highlight></codeline>
+<codeline lineno="140"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1optimizer_1a3df20cb0ae2b60430ad4fd235d66c12e" kindref="member">m_gradient</ref>-&gt;Root());</highlight></codeline>
+<codeline lineno="141"><highlight class="normal"><sp/><sp/>El::Zeros(*<ref refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" kindref="member">m_moment1</ref>,<sp/>height,<sp/>width);</highlight></codeline>
+<codeline lineno="142"><highlight class="normal"><sp/><sp/>El::Zeros(*<ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref>,<sp/>height,<sp/>width);</highlight></codeline>
+<codeline lineno="143"><highlight class="normal"></highlight></codeline>
+<codeline lineno="144"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Allocate<sp/>GPU<sp/>objects</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="145"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1optimizer_1a2f24dbeaca18b06f4aa7d179bbf96680" kindref="member">m_cudnn</ref><sp/>!=<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal">)<sp/>{</highlight></codeline>
+<codeline lineno="146"><highlight class="normal"></highlight><highlight class="preprocessor">#ifdef<sp/>LBANN_HAS_CUDNN</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="147"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1optimizer_1a2f24dbeaca18b06f4aa7d179bbf96680" kindref="member">m_cudnn</ref>-&gt;allocate_on_gpus(m_moment1_d,<sp/>height,<sp/>width);</highlight></codeline>
+<codeline lineno="148"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1optimizer_1a2f24dbeaca18b06f4aa7d179bbf96680" kindref="member">m_cudnn</ref>-&gt;allocate_on_gpus(m_moment2_d,<sp/>height,<sp/>width);</highlight></codeline>
+<codeline lineno="149"><highlight class="normal"></highlight><highlight class="preprocessor">#endif<sp/>//<sp/>LBANN_HAS_CUDNN</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="150"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="151"><highlight class="normal"></highlight></codeline>
+<codeline lineno="152"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="153"><highlight class="normal"></highlight></codeline>
+<codeline lineno="154" refid="classlbann_1_1adam_1a3bcd1bcbbed2b99c407eb0cd9fd6d449" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1adam_1a3bcd1bcbbed2b99c407eb0cd9fd6d449" kindref="member">adam::step_compute</ref>(<ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref>&amp;<sp/>values,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref>&amp;<sp/>gradient)<sp/>{</highlight></codeline>
+<codeline lineno="155"><highlight class="normal"></highlight></codeline>
+<codeline lineno="156"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Precompute<sp/>the<sp/>bias<sp/>correction<sp/>and<sp/>learning<sp/>rate.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="157"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1adam_1a53c3034e187da2720447bbb4f2b59a5d" kindref="member">m_current_beta1</ref><sp/>*=<sp/><ref refid="classlbann_1_1adam_1a73af15a28066edbfad9ba6a900746a19" kindref="member">m_beta1</ref>;</highlight></codeline>
+<codeline lineno="158"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1adam_1ad38376b684d69d4a15da1d11f8808ca7" kindref="member">m_current_beta2</ref><sp/>*=<sp/><ref refid="classlbann_1_1adam_1ab1f2a16b8eb7e265895ea9eef3fe87b2" kindref="member">m_beta2</ref>;</highlight></codeline>
+<codeline lineno="159"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>DataType<sp/>correction<sp/>=<sp/><ref refid="classlbann_1_1optimizer_1ad393dcdcb82b44510c586ed5ec46d4dd" kindref="member">m_learning_rate</ref><sp/>*</highlight></codeline>
+<codeline lineno="160"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>(std::sqrt(DataType(1)<sp/>-<sp/><ref refid="classlbann_1_1adam_1ad38376b684d69d4a15da1d11f8808ca7" kindref="member">m_current_beta2</ref>)</highlight></codeline>
+<codeline lineno="161"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>/<sp/>(DataType(1)<sp/>-<sp/><ref refid="classlbann_1_1adam_1a53c3034e187da2720447bbb4f2b59a5d" kindref="member">m_current_beta1</ref>));</highlight></codeline>
+<codeline lineno="162"><highlight class="normal"></highlight></codeline>
+<codeline lineno="163"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Get<sp/>local<sp/>matrix<sp/>data</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="164"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>local_height<sp/>=<sp/>values.LocalHeight();</highlight></codeline>
+<codeline lineno="165"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>local_width<sp/>=<sp/>values.LocalWidth();</highlight></codeline>
+<codeline lineno="166"><highlight class="normal"><sp/><sp/>DataType*<sp/>__restrict__<sp/>values_buffer<sp/>=<sp/>values.Buffer();</highlight></codeline>
+<codeline lineno="167"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>values_ldim<sp/>=<sp/>values.LDim();</highlight></codeline>
+<codeline lineno="168"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>DataType*<sp/>__restrict__<sp/>gradient_buffer<sp/>=<sp/>gradient.LockedBuffer();</highlight></codeline>
+<codeline lineno="169"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>gradient_ldim<sp/>=<sp/>gradient.LDim();</highlight></codeline>
+<codeline lineno="170"><highlight class="normal"><sp/><sp/>DataType*<sp/>__restrict__<sp/>moment1_buffer<sp/>=<sp/><ref refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" kindref="member">m_moment1</ref>-&gt;Buffer();</highlight></codeline>
+<codeline lineno="171"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>moment1_ldim<sp/>=<sp/><ref refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" kindref="member">m_moment1</ref>-&gt;LDim();</highlight></codeline>
+<codeline lineno="172"><highlight class="normal"><sp/><sp/>DataType*<sp/>__restrict__<sp/>moment2_buffer<sp/>=<sp/><ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref>-&gt;Buffer();</highlight></codeline>
+<codeline lineno="173"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>moment2_ldim<sp/>=<sp/><ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref>-&gt;LDim();</highlight></codeline>
+<codeline lineno="174"><highlight class="normal"></highlight></codeline>
+<codeline lineno="175"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Check<sp/>if<sp/>matrix<sp/>data<sp/>is<sp/>contiguous</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="176"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(values_ldim<sp/>!=<sp/>local_height</highlight></codeline>
+<codeline lineno="177"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>||<sp/>gradient_ldim<sp/>!=<sp/>local_height</highlight></codeline>
+<codeline lineno="178"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>||<sp/>moment1_ldim<sp/>!=<sp/>local_height</highlight></codeline>
+<codeline lineno="179"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>||<sp/>moment2_ldim<sp/>!=<sp/>local_height)<sp/>{</highlight></codeline>
+<codeline lineno="180"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Update<sp/>with<sp/>non-contiguous<sp/>data</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="181"><highlight class="normal"></highlight><highlight class="preprocessor"><sp/><sp/><sp/><sp/>#pragma<sp/>omp<sp/>parallel<sp/>for<sp/>collapse(2)</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="182"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(</highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>j=0;<sp/>j&lt;local_width;<sp/>++j)<sp/>{</highlight></codeline>
+<codeline lineno="183"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(</highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>i=0;<sp/>i&lt;local_height;<sp/>++i)<sp/>{</highlight></codeline>
+<codeline lineno="184"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>DataType&amp;<sp/>x<sp/>=<sp/>values_buffer[i+j*values_ldim];</highlight></codeline>
+<codeline lineno="185"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>See<sp/>below;<sp/>avoid<sp/>denormalization.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="186"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>DataType<sp/>g<sp/>=<sp/>gradient_buffer[i+j*gradient_ldim]<sp/>+<sp/><ref refid="classlbann_1_1adam_1a751102f0fd866612f5685050a08020a9" kindref="member">m_eps</ref>;</highlight></codeline>
+<codeline lineno="187"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>DataType&amp;<sp/>m1<sp/>=<sp/>moment1_buffer[i+j*moment1_ldim];</highlight></codeline>
+<codeline lineno="188"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>DataType&amp;<sp/>m2<sp/>=<sp/>moment2_buffer[i+j*moment2_ldim];</highlight></codeline>
+<codeline lineno="189"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>m1<sp/>=<sp/><ref refid="classlbann_1_1adam_1a73af15a28066edbfad9ba6a900746a19" kindref="member">m_beta1</ref><sp/>*<sp/>m1<sp/>+<sp/>(DataType(1)<sp/>-<sp/><ref refid="classlbann_1_1adam_1a73af15a28066edbfad9ba6a900746a19" kindref="member">m_beta1</ref>)<sp/>*<sp/>g;</highlight></codeline>
+<codeline lineno="190"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>m2<sp/>=<sp/><ref refid="classlbann_1_1adam_1ab1f2a16b8eb7e265895ea9eef3fe87b2" kindref="member">m_beta2</ref><sp/>*<sp/>m2<sp/>+<sp/>(DataType(1)<sp/>-<sp/><ref refid="classlbann_1_1adam_1ab1f2a16b8eb7e265895ea9eef3fe87b2" kindref="member">m_beta2</ref>)<sp/>*<sp/>g<sp/>*<sp/>g;</highlight></codeline>
+<codeline lineno="191"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>x<sp/>-=<sp/>correction<sp/>*<sp/>m1<sp/>/<sp/>(std::sqrt(m2)<sp/>+<sp/><ref refid="classlbann_1_1adam_1a751102f0fd866612f5685050a08020a9" kindref="member">m_eps</ref>);</highlight></codeline>
+<codeline lineno="192"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="193"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="194"><highlight class="normal"><sp/><sp/>}<sp/></highlight><highlight class="keywordflow">else</highlight><highlight class="normal"><sp/>{</highlight></codeline>
+<codeline lineno="195"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Update<sp/>with<sp/>contiguous<sp/>data</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="196"><highlight class="normal"></highlight><highlight class="preprocessor"><sp/><sp/><sp/><sp/>#pragma<sp/>omp<sp/>parallel<sp/>for</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="197"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(</highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>i=0;<sp/>i&lt;local_height*local_width;<sp/>++i)<sp/>{</highlight></codeline>
+<codeline lineno="198"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>DataType&amp;<sp/>x<sp/>=<sp/>values_buffer[i];</highlight></codeline>
+<codeline lineno="199"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>We<sp/>add<sp/>eps<sp/>here<sp/>because<sp/>sometimes<sp/>the<sp/>gradient<sp/>is<sp/>small<sp/>enough<sp/>that</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="200"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>g*g<sp/>can<sp/>become<sp/>denormalized,<sp/>which<sp/>can<sp/>significantly<sp/>impact<sp/>the</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="201"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>performance.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="202"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>DataType<sp/>g<sp/>=<sp/>gradient_buffer[i]<sp/>+<sp/><ref refid="classlbann_1_1adam_1a751102f0fd866612f5685050a08020a9" kindref="member">m_eps</ref>;</highlight></codeline>
+<codeline lineno="203"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>DataType&amp;<sp/>m1<sp/>=<sp/>moment1_buffer[i];</highlight></codeline>
+<codeline lineno="204"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>DataType&amp;<sp/>m2<sp/>=<sp/>moment2_buffer[i];</highlight></codeline>
+<codeline lineno="205"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>m1<sp/>=<sp/><ref refid="classlbann_1_1adam_1a73af15a28066edbfad9ba6a900746a19" kindref="member">m_beta1</ref><sp/>*<sp/>m1<sp/>+<sp/>(DataType(1)<sp/>-<sp/><ref refid="classlbann_1_1adam_1a73af15a28066edbfad9ba6a900746a19" kindref="member">m_beta1</ref>)<sp/>*<sp/>g;</highlight></codeline>
+<codeline lineno="206"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>m2<sp/>=<sp/><ref refid="classlbann_1_1adam_1ab1f2a16b8eb7e265895ea9eef3fe87b2" kindref="member">m_beta2</ref><sp/>*<sp/>m2<sp/>+<sp/>(DataType(1)<sp/>-<sp/><ref refid="classlbann_1_1adam_1ab1f2a16b8eb7e265895ea9eef3fe87b2" kindref="member">m_beta2</ref>)<sp/>*<sp/>g<sp/>*<sp/>g;</highlight></codeline>
+<codeline lineno="207"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>x<sp/>-=<sp/>correction<sp/>*<sp/>m1<sp/>/<sp/>(std::sqrt(m2)<sp/>+<sp/><ref refid="classlbann_1_1adam_1a751102f0fd866612f5685050a08020a9" kindref="member">m_eps</ref>);</highlight></codeline>
+<codeline lineno="208"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="209"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="210"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="211"><highlight class="normal"></highlight></codeline>
+<codeline lineno="213"><highlight class="comment">//<sp/>Checkpointing</highlight></codeline>
+<codeline lineno="215"><highlight class="comment"></highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="216" refid="classlbann_1_1adam_1a8070db0a451bdbc6e86200eaa14f6ac7" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1adam_1a8070db0a451bdbc6e86200eaa14f6ac7" kindref="member">adam::save_to_checkpoint_shared</ref>(<ref refid="classlbann_1_1persist" kindref="compound">persist</ref>&amp;<sp/>p,<sp/>std::string<sp/>name_prefix)<sp/>{</highlight></codeline>
+<codeline lineno="217"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1optimizer_1afed10c6d8c5bd922f95075abeff711ce" kindref="member">optimizer::save_to_checkpoint_shared</ref>(p,<sp/>name_prefix);</highlight></codeline>
+<codeline lineno="218"><highlight class="normal"></highlight><highlight class="comment">//<sp/>m_learning_rate;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="219"><highlight class="normal"></highlight></codeline>
+<codeline lineno="220"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(p.<ref refid="classlbann_1_1persist_1a34eb918a890ab49dcbeedddf27ec1616" kindref="member">get_rank</ref>()<sp/>==<sp/>0)<sp/>{</highlight></codeline>
+<codeline lineno="221"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1adam_1a43e941b596c5d1cc68b795b0399398c4" kindref="member">pack_scalars</ref>(p);</highlight></codeline>
+<codeline lineno="222"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="223"><highlight class="normal"></highlight></codeline>
+<codeline lineno="224"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>l_name[512];</highlight></codeline>
+<codeline lineno="225"><highlight class="normal"><sp/><sp/>sprintf(l_name,<sp/></highlight><highlight class="stringliteral">&quot;%s_optimizer_adam_moment1_%lldx%lld&quot;</highlight><highlight class="normal">,<sp/>name_prefix.c_str(),<sp/><ref refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" kindref="member">m_moment1</ref>-&gt;Height(),<sp/><ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref>-&gt;Width());</highlight></codeline>
+<codeline lineno="226"><highlight class="normal"><sp/><sp/>p.<ref refid="classlbann_1_1persist_1a9170de652405d86d9ba9b3793f8781c6" kindref="member">write_distmat</ref>(<ref refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64" kindref="member">persist_type::train</ref>,<sp/>l_name,<sp/>(<ref refid="base_8hpp_1a0fab5387556805cfeac3e7e567bf66c5" kindref="member">DistMat</ref>*)<ref refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" kindref="member">m_moment1</ref>);</highlight></codeline>
+<codeline lineno="227"><highlight class="normal"></highlight></codeline>
+<codeline lineno="228"><highlight class="normal"><sp/><sp/>sprintf(l_name,<sp/></highlight><highlight class="stringliteral">&quot;%s_optimizer_adam_moment2_%lldx%lld&quot;</highlight><highlight class="normal">,<sp/>name_prefix.c_str(),<sp/><ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref>-&gt;Height(),<sp/><ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref>-&gt;Width());</highlight></codeline>
+<codeline lineno="229"><highlight class="normal"><sp/><sp/>p.<ref refid="classlbann_1_1persist_1a9170de652405d86d9ba9b3793f8781c6" kindref="member">write_distmat</ref>(<ref refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64" kindref="member">persist_type::train</ref>,<sp/>l_name,<sp/>(<ref refid="base_8hpp_1a0fab5387556805cfeac3e7e567bf66c5" kindref="member">DistMat</ref>*)<ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref>);</highlight></codeline>
+<codeline lineno="230"><highlight class="normal"></highlight></codeline>
+<codeline lineno="231"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">true</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="232"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="233"><highlight class="normal"></highlight></codeline>
+<codeline lineno="234" refid="classlbann_1_1adam_1aca07e925a4751fc5c10a62fb9c72c896" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1adam_1aca07e925a4751fc5c10a62fb9c72c896" kindref="member">adam::load_from_checkpoint_shared</ref>(<ref refid="classlbann_1_1persist" kindref="compound">persist</ref>&amp;<sp/>p,<sp/>std::string<sp/>name_prefix)<sp/>{</highlight></codeline>
+<codeline lineno="235"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1optimizer_1a42a52aab9a682fda57c1e639968a44b9" kindref="member">optimizer::load_from_checkpoint_shared</ref>(p,<sp/>name_prefix);</highlight></codeline>
+<codeline lineno="236"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">struct<sp/></highlight><highlight class="normal"><ref refid="structlbann_1_1adam_1_1packing__header" kindref="compound">packing_header</ref><sp/>header;</highlight></codeline>
+<codeline lineno="237"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(p.<ref refid="classlbann_1_1persist_1a34eb918a890ab49dcbeedddf27ec1616" kindref="member">get_rank</ref>()<sp/>==<sp/>0)<sp/>{</highlight></codeline>
+<codeline lineno="238"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1adam_1a21a3d2bce0bac5e6c022c5d95ec6348b" kindref="member">unpack_scalars</ref>(p,<sp/>&amp;header);</highlight></codeline>
+<codeline lineno="239"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="240"><highlight class="normal"></highlight></codeline>
+<codeline lineno="241"><highlight class="normal"><sp/><sp/>MPI_Bcast(&amp;header,<sp/></highlight><highlight class="keyword">sizeof</highlight><highlight class="normal">(header),<sp/>MPI_BYTE,<sp/>0,<sp/>MPI_COMM_WORLD);</highlight></codeline>
+<codeline lineno="242"><highlight class="normal"></highlight></codeline>
+<codeline lineno="243"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1adam_1ae5b6108946e6a09b4e13e4285350aa05" kindref="member">unpack_header</ref>(header);</highlight></codeline>
+<codeline lineno="244"><highlight class="normal"></highlight></codeline>
+<codeline lineno="245"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>l_name[512];</highlight></codeline>
+<codeline lineno="246"><highlight class="normal"><sp/><sp/>sprintf(l_name,<sp/></highlight><highlight class="stringliteral">&quot;%s_optimizer_adam_moment1_%lldx%lld.bin&quot;</highlight><highlight class="normal">,<sp/>name_prefix.c_str(),<sp/><ref refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" kindref="member">m_moment1</ref>-&gt;Height(),<sp/><ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref>-&gt;Width());</highlight></codeline>
+<codeline lineno="247"><highlight class="normal"><sp/><sp/>p.<ref refid="classlbann_1_1persist_1aa98be93f33b510e5b506b61de6bd79bd" kindref="member">read_distmat</ref>(<ref refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64" kindref="member">persist_type::train</ref>,<sp/>l_name,<sp/>(<ref refid="base_8hpp_1a0fab5387556805cfeac3e7e567bf66c5" kindref="member">DistMat</ref>*)<ref refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" kindref="member">m_moment1</ref>);</highlight></codeline>
+<codeline lineno="248"><highlight class="normal"></highlight></codeline>
+<codeline lineno="249"><highlight class="normal"><sp/><sp/>sprintf(l_name,<sp/></highlight><highlight class="stringliteral">&quot;%s_optimizer_adam_moment2_%lldx%lld.bin&quot;</highlight><highlight class="normal">,<sp/>name_prefix.c_str(),<sp/><ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref>-&gt;Height(),<sp/><ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref>-&gt;Width());</highlight></codeline>
+<codeline lineno="250"><highlight class="normal"><sp/><sp/>p.<ref refid="classlbann_1_1persist_1aa98be93f33b510e5b506b61de6bd79bd" kindref="member">read_distmat</ref>(<ref refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64" kindref="member">persist_type::train</ref>,<sp/>l_name,<sp/>(<ref refid="base_8hpp_1a0fab5387556805cfeac3e7e567bf66c5" kindref="member">DistMat</ref>*)<ref refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" kindref="member">m_moment2</ref>);</highlight></codeline>
+<codeline lineno="251"><highlight class="normal"></highlight></codeline>
+<codeline lineno="252"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">true</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="253"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="254"><highlight class="normal">}<sp/><sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>lbann</highlight><highlight class="normal"></highlight></codeline>
+    </programlisting>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/adam.cpp"/>
+  </compounddef>
+</doxygen>

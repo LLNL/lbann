@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="dir_e2a86267c0db3d6dd42325015cc0c08f" kind="dir">
+    <compoundname>/Users/mckinney27/doxy-testbed/lbann/src/layers/learning</compoundname>
+    <innerfile refid="fully__connected_8cpp">fully_connected.cpp</innerfile>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/src/layers/learning/"/>
+  </compounddef>
+</doxygen>

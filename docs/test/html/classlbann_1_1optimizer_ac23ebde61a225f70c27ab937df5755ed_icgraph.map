@@ -1,0 +1,16 @@
+<map id="lbann::optimizer::add_to_gradient_staging" name="lbann::optimizer::add_to_gradient_staging">
+<area shape="rect" id="node2" href="$classlbann_1_1base__convolution__layer.html#ae46e6a975c443792c606817878dc4446" title="lbann::base_convolution\l_layer::compute_gradients_cudnn" alt="" coords="199,81,421,120"/>
+<area shape="rect" id="node5" href="$classlbann_1_1base__convolution__layer.html#a8cb0b4fb33f058ce6c211ebaf6a17f63" title="lbann::base_convolution\l_layer::compute_gradients\l_im2col" alt="" coords="221,5,400,57"/>
+<area shape="rect" id="node6" href="$classlbann_1_1fully__connected__layer.html#a521aa4a5b88ef00f554fe21a850f6596" title="lbann::fully_connected\l_layer::bp_compute_cuda" alt="" coords="223,144,398,183"/>
+<area shape="rect" id="node7" href="$classlbann_1_1batch__normalization.html#a7d48ad1531825fc9745c77f9ae5f68d6" title="lbann::batch_normalization\l::bp_compute_gpu" alt="" coords="220,269,401,308"/>
+<area shape="rect" id="node9" href="$classlbann_1_1batch__normalization.html#a83e40edd001a0b71c31fbc9a3acb2231" title="lbann::batch_normalization\l::bp_compute_cpu" alt="" coords="220,207,401,245"/>
+<area shape="rect" id="node10" href="$classlbann_1_1optimizer.html#a147cac09beaa17df4e0fc1fc1be3abce" title="lbann::optimizer::set\l_learning_rate" alt="" coords="240,332,381,371"/>
+<area shape="rect" id="node15" href="$classlbann_1_1fully__connected__layer.html#a4c5b0eea2036c41b15ec03594dac8dc2" title="lbann::fully_connected\l_layer::bp_compute_cpu" alt="" coords="227,395,394,433"/>
+<area shape="rect" id="node3" href="$classlbann_1_1convolution__layer.html#a610f24f98b548434cd4d22419f47c7f0" title="lbann::convolution\l_layer::bp_compute" alt="" coords="501,15,640,53"/>
+<area shape="rect" id="node4" href="$classlbann_1_1deconvolution__layer.html#a70649662ff27ddacf0f5584829022b72" title="lbann::deconvolution\l_layer::bp_compute" alt="" coords="499,79,642,117"/>
+<area shape="rect" id="node8" href="$classlbann_1_1batch__normalization.html#ad9aedd689cd8923d8c8e9c4e57a4e8b7" title="lbann::batch_normalization\l::bp_compute" alt="" coords="480,207,661,245"/>
+<area shape="rect" id="node11" href="$classlbann_1_1lbann__callback__learning__rate.html#ab8eb509bdbea501882d6b248a814bb28" title="lbann::lbann_callback\l_learning_rate::on_epoch_end" alt="" coords="469,269,672,308"/>
+<area shape="rect" id="node12" href="$classlbann_1_1lbann__callback__learning__rate.html#ab6aa0530604e32a1be2b37f3933f6bf6" title="lbann::lbann_callback\l_learning_rate::on_backward\l_prop_end" alt="" coords="474,332,667,384"/>
+<area shape="rect" id="node13" href="$classlbann_1_1lbann__callback__variable__minibatch.html#af078f30f9c206b89bdd542ce1fc6d2ad" title="Change the learning rate of every layer in m to new_lr. " alt="" coords="495,408,646,460"/>
+<area shape="rect" id="node14" href="$classlbann_1_1lbann__callback__variable__minibatch.html#a091e7563b5a7a90638e2521fe39cbf8f" title="Potentially change the mini&#45;batch size. " alt="" coords="720,408,869,460"/>
+</map>

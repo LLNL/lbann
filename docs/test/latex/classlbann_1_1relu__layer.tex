@@ -1,0 +1,453 @@
+\hypertarget{classlbann_1_1relu__layer}{}\section{lbann\+:\+:relu\+\_\+layer$<$ T\+\_\+layout $>$ Class Template Reference}
+\label{classlbann_1_1relu__layer}\index{lbann\+::relu\+\_\+layer$<$ T\+\_\+layout $>$@{lbann\+::relu\+\_\+layer$<$ T\+\_\+layout $>$}}
+
+
+{\ttfamily \#include $<$relu.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:relu\+\_\+layer$<$ T\+\_\+layout $>$\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=216pt]{classlbann_1_1relu__layer__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:relu\+\_\+layer$<$ T\+\_\+layout $>$\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1relu__layer__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1relu__layer_af4739658d074a62cd71ce0ca7e791c06}{relu\+\_\+layer} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, \hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$cudnn=nullptr)
+\item 
+\hyperlink{classlbann_1_1relu__layer_a0f0463a71fa389c6273a035d3ae4dbf6}{relu\+\_\+layer} (const \hyperlink{classlbann_1_1relu__layer}{relu\+\_\+layer} \&other)
+\item 
+\hyperlink{classlbann_1_1relu__layer}{relu\+\_\+layer} \& \hyperlink{classlbann_1_1relu__layer_a455500a9ee8e9fbef2db3d8943e65d7d}{operator=} (const \hyperlink{classlbann_1_1relu__layer}{relu\+\_\+layer} \&other)
+\item 
+\hyperlink{classlbann_1_1relu__layer_a86024c01b02a5ddbe8de3c4c264d45fa}{$\sim$relu\+\_\+layer} () override
+\item 
+\hyperlink{classlbann_1_1relu__layer}{relu\+\_\+layer} $\ast$ \hyperlink{classlbann_1_1relu__layer_af17be85b90887cf3d413fd21e7e20b5c}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1relu__layer_afcf519aa5e19169c2b7a71aa0ee16aae}{get\+\_\+type} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1relu__layer_a57d00fb2f9c90f5132ddea44d3ccc099}{get\+\_\+description} () const override
+\item 
+\hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08db}{data\+\_\+layout} \hyperlink{classlbann_1_1relu__layer_a1d0b9cb9fc976c2c4375d9422a1ac112}{get\+\_\+data\+\_\+layout} () const override
+\item 
+void \hyperlink{classlbann_1_1relu__layer_a9426317aa741ab8a202ee52cf5250b59}{setup\+\_\+gpu} () override
+\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+Data\+Type \hyperlink{classlbann_1_1relu__layer_a24c9b5e006e4a0b3f8992c1c44ce9ba5}{activation} (Data\+Type x) const override
+\item 
+Data\+Type \hyperlink{classlbann_1_1relu__layer_a70cbfb59155a255b1422995875868790}{activation\+\_\+derivative} (Data\+Type x) const override
+\item 
+void \hyperlink{classlbann_1_1relu__layer_a682fbf36187cb7f985581b5d4095ae14}{fp\+\_\+compute\+\_\+gpu} () override
+\item 
+void \hyperlink{classlbann_1_1relu__layer_a236d3e3c92376465d79104703bc8b005}{bp\+\_\+compute\+\_\+gpu} () override
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+\subsubsection*{template$<$data\+\_\+layout T\+\_\+layout$>$\newline
+class lbann\+::relu\+\_\+layer$<$ T\+\_\+layout $>$}
+
+Rectified linear unit activation function. See \href{https://en.wikipedia.org/wiki/Rectifier_(neural_networks)}{\tt https\+://en.\+wikipedia.\+org/wiki/\+Rectifier\+\_\+(neural\+\_\+networks)} 
+
+Definition at line 39 of file relu.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1relu__layer_af4739658d074a62cd71ce0ca7e791c06}\label{classlbann_1_1relu__layer_af4739658d074a62cd71ce0ca7e791c06}} 
+\index{lbann\+::relu\+\_\+layer@{lbann\+::relu\+\_\+layer}!relu\+\_\+layer@{relu\+\_\+layer}}
+\index{relu\+\_\+layer@{relu\+\_\+layer}!lbann\+::relu\+\_\+layer@{lbann\+::relu\+\_\+layer}}
+\subsubsection{\texorpdfstring{relu\+\_\+layer()}{relu\_layer()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{classlbann_1_1relu__layer}{lbann\+::relu\+\_\+layer}$<$ T\+\_\+layout $>$\+::\hyperlink{classlbann_1_1relu__layer}{relu\+\_\+layer} (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{\hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$}]{cudnn = {\ttfamily nullptr} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 49 of file relu.\+hpp.
+
+
+\begin{DoxyCode}
+51     : \hyperlink{classlbann_1_1entrywise__activation__layer_aada1d9200612dcd13259799ef327c557}{entrywise\_activation\_layer}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}) \{
+52 \textcolor{preprocessor}{  #ifdef LBANN\_HAS\_CUDNN}
+53     m\_activation\_cudnn\_desc = \textcolor{keyword}{nullptr};
+54     this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn} = cudnn;
+55     \textcolor{keywordflow}{if} (this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}) \{
+56       this->\hyperlink{classlbann_1_1Layer_af7881cb5eff5207c15fa835d65462e8f}{m\_using\_gpus} = \textcolor{keyword}{true};
+57     \}
+58 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+59   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=328pt]{classlbann_1_1relu__layer_af4739658d074a62cd71ce0ca7e791c06_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1relu__layer_a0f0463a71fa389c6273a035d3ae4dbf6}\label{classlbann_1_1relu__layer_a0f0463a71fa389c6273a035d3ae4dbf6}} 
+\index{lbann\+::relu\+\_\+layer@{lbann\+::relu\+\_\+layer}!relu\+\_\+layer@{relu\+\_\+layer}}
+\index{relu\+\_\+layer@{relu\+\_\+layer}!lbann\+::relu\+\_\+layer@{lbann\+::relu\+\_\+layer}}
+\subsubsection{\texorpdfstring{relu\+\_\+layer()}{relu\_layer()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{classlbann_1_1relu__layer}{lbann\+::relu\+\_\+layer}$<$ T\+\_\+layout $>$\+::\hyperlink{classlbann_1_1relu__layer}{relu\+\_\+layer} (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1relu__layer}{relu\+\_\+layer}$<$ T\+\_\+layout $>$ \&}]{other }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 61 of file relu.\+hpp.
+
+
+\begin{DoxyCode}
+61                                       :
+62     \hyperlink{classlbann_1_1entrywise__activation__layer_aada1d9200612dcd13259799ef327c557}{entrywise\_activation\_layer}(other) \{
+63 \textcolor{preprocessor}{  #ifdef LBANN\_HAS\_CUDNN}
+64     m\_activation\_cudnn\_desc = \textcolor{keyword}{nullptr};
+65     cudnn::copy\_activation\_cudnn\_desc(other.m\_activation\_cudnn\_desc,
+66                                       m\_activation\_cudnn\_desc);
+67 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+68   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1relu__layer_a86024c01b02a5ddbe8de3c4c264d45fa}\label{classlbann_1_1relu__layer_a86024c01b02a5ddbe8de3c4c264d45fa}} 
+\index{lbann\+::relu\+\_\+layer@{lbann\+::relu\+\_\+layer}!````~relu\+\_\+layer@{$\sim$relu\+\_\+layer}}
+\index{````~relu\+\_\+layer@{$\sim$relu\+\_\+layer}!lbann\+::relu\+\_\+layer@{lbann\+::relu\+\_\+layer}}
+\subsubsection{\texorpdfstring{$\sim$relu\+\_\+layer()}{~relu\_layer()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{classlbann_1_1relu__layer}{lbann\+::relu\+\_\+layer}$<$ T\+\_\+layout $>$\+::$\sim$\hyperlink{classlbann_1_1relu__layer}{relu\+\_\+layer} (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}}
+
+
+
+Definition at line 79 of file relu.\+hpp.
+
+
+\begin{DoxyCode}
+79                          \{
+80 \textcolor{preprocessor}{  #ifdef LBANN\_HAS\_CUDNN}
+81     \textcolor{keywordflow}{if} (m\_activation\_cudnn\_desc != \textcolor{keyword}{nullptr}) \{
+82       CHECK\_CUDNN(cudnnDestroyActivationDescriptor(m\_activation\_cudnn\_desc));
+83     \}
+84 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+85   \}
+\end{DoxyCode}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1relu__layer_a24c9b5e006e4a0b3f8992c1c44ce9ba5}\label{classlbann_1_1relu__layer_a24c9b5e006e4a0b3f8992c1c44ce9ba5}} 
+\index{lbann\+::relu\+\_\+layer@{lbann\+::relu\+\_\+layer}!activation@{activation}}
+\index{activation@{activation}!lbann\+::relu\+\_\+layer@{lbann\+::relu\+\_\+layer}}
+\subsubsection{\texorpdfstring{activation()}{activation()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+Data\+Type \hyperlink{classlbann_1_1relu__layer}{lbann\+::relu\+\_\+layer}$<$ T\+\_\+layout $>$\+::activation (\begin{DoxyParamCaption}\item[{Data\+Type}]{x }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Activation function. This function is applied independently to each input entry. 
+
+Implements \hyperlink{classlbann_1_1entrywise__activation__layer_a69269401530a2112b66660383464bab9}{lbann\+::entrywise\+\_\+activation\+\_\+layer}.
+
+
+
+Definition at line 113 of file relu.\+hpp.
+
+
+\begin{DoxyCode}
+113                                                  \{
+114     \textcolor{keywordflow}{return} x > DataType(0) ? x : DataType(0);
+115   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1relu__layer_a70cbfb59155a255b1422995875868790}\label{classlbann_1_1relu__layer_a70cbfb59155a255b1422995875868790}} 
+\index{lbann\+::relu\+\_\+layer@{lbann\+::relu\+\_\+layer}!activation\+\_\+derivative@{activation\+\_\+derivative}}
+\index{activation\+\_\+derivative@{activation\+\_\+derivative}!lbann\+::relu\+\_\+layer@{lbann\+::relu\+\_\+layer}}
+\subsubsection{\texorpdfstring{activation\+\_\+derivative()}{activation\_derivative()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+Data\+Type \hyperlink{classlbann_1_1relu__layer}{lbann\+::relu\+\_\+layer}$<$ T\+\_\+layout $>$\+::activation\+\_\+derivative (\begin{DoxyParamCaption}\item[{Data\+Type}]{x }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Derivative of activation function. 
+
+Implements \hyperlink{classlbann_1_1entrywise__activation__layer_a7676a4c5060452a38264993554e79f8e}{lbann\+::entrywise\+\_\+activation\+\_\+layer}.
+
+
+
+Definition at line 117 of file relu.\+hpp.
+
+
+\begin{DoxyCode}
+117                                                             \{
+118     \textcolor{keywordflow}{return} x > DataType(0) ? DataType(1) : DataType(0);
+119   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1relu__layer_a236d3e3c92376465d79104703bc8b005}\label{classlbann_1_1relu__layer_a236d3e3c92376465d79104703bc8b005}} 
+\index{lbann\+::relu\+\_\+layer@{lbann\+::relu\+\_\+layer}!bp\+\_\+compute\+\_\+gpu@{bp\+\_\+compute\+\_\+gpu}}
+\index{bp\+\_\+compute\+\_\+gpu@{bp\+\_\+compute\+\_\+gpu}!lbann\+::relu\+\_\+layer@{lbann\+::relu\+\_\+layer}}
+\subsubsection{\texorpdfstring{bp\+\_\+compute\+\_\+gpu()}{bp\_compute\_gpu()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+void \hyperlink{classlbann_1_1relu__layer}{lbann\+::relu\+\_\+layer}$<$ T\+\_\+layout $>$\+::bp\+\_\+compute\+\_\+gpu (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1entrywise__activation__layer_a569674cb4c0f50ea76acc0733fc53ba9}{lbann\+::entrywise\+\_\+activation\+\_\+layer}.
+
+
+
+Definition at line 149 of file relu.\+hpp.
+
+
+\begin{DoxyCode}
+149                                  \{
+150 \textcolor{preprocessor}{  #ifndef LBANN\_HAS\_CUDNN}
+151     \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"relu\_layer: cuDNN not detected"});
+152 \textcolor{preprocessor}{  #else}
+153 
+154     \textcolor{comment}{// Useful constants}
+155     \textcolor{keyword}{const} DataType one = 1;
+156 
+157     \textcolor{comment}{// Apply activation derivative on each GPU}
+158     \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_gpus = this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_num\_gpus();
+159     \textcolor{keywordflow}{for}(\textcolor{keywordtype}{int} i = 0; i < num\_gpus; ++i) \{
+160       CHECK\_CUDA(cudaSetDevice(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_gpu(i)));
+161       CHECK\_CUDNN(cudnnSetStream(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_handle(i),
+162                                  this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_stream(i)));
+163       CHECK\_CUDNN(cudnnActivationBackward(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_handle(i),
+164                                           m\_activation\_cudnn\_desc,
+165                                           &one,
+166                                           this->m\_prev\_activations\_cudnn\_desc,
+167                                           this->m\_prev\_activations\_d[0].get\_locked\_data(i),
+168                                           this->m\_prev\_error\_signals\_cudnn\_desc,
+169                                           this->m\_prev\_error\_signals\_d[0].get\_locked\_data(i),
+170                                           this->m\_activations\_cudnn\_desc,
+171                                           this->m\_activations\_d[0].get\_locked\_data(i),
+172                                           &one,
+173                                           this->m\_error\_signals\_cudnn\_desc,
+174                                           this->m\_error\_signals\_d[0].get\_data(i)));
+175     \}
+176 
+177 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+178   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1relu__layer_af17be85b90887cf3d413fd21e7e20b5c}\label{classlbann_1_1relu__layer_af17be85b90887cf3d413fd21e7e20b5c}} 
+\index{lbann\+::relu\+\_\+layer@{lbann\+::relu\+\_\+layer}!copy@{copy}}
+\index{copy@{copy}!lbann\+::relu\+\_\+layer@{lbann\+::relu\+\_\+layer}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{classlbann_1_1relu__layer}{relu\+\_\+layer}$\ast$ \hyperlink{classlbann_1_1relu__layer}{lbann\+::relu\+\_\+layer}$<$ T\+\_\+layout $>$\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Copy function. This function dynamically allocates memory for a layer instance and instantiates a copy. The caller is responsible for deallocating the instance. 
+
+Implements \hyperlink{classlbann_1_1Layer_af420f22bbac801c85483ade84588a23f}{lbann\+::\+Layer}.
+
+
+
+Definition at line 87 of file relu.\+hpp.
+
+
+\begin{DoxyCode}
+87 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1relu__layer_af4739658d074a62cd71ce0ca7e791c06}{relu\_layer}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=328pt]{classlbann_1_1relu__layer_af17be85b90887cf3d413fd21e7e20b5c_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1relu__layer_a682fbf36187cb7f985581b5d4095ae14}\label{classlbann_1_1relu__layer_a682fbf36187cb7f985581b5d4095ae14}} 
+\index{lbann\+::relu\+\_\+layer@{lbann\+::relu\+\_\+layer}!fp\+\_\+compute\+\_\+gpu@{fp\+\_\+compute\+\_\+gpu}}
+\index{fp\+\_\+compute\+\_\+gpu@{fp\+\_\+compute\+\_\+gpu}!lbann\+::relu\+\_\+layer@{lbann\+::relu\+\_\+layer}}
+\subsubsection{\texorpdfstring{fp\+\_\+compute\+\_\+gpu()}{fp\_compute\_gpu()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+void \hyperlink{classlbann_1_1relu__layer}{lbann\+::relu\+\_\+layer}$<$ T\+\_\+layout $>$\+::fp\+\_\+compute\+\_\+gpu (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1entrywise__activation__layer_aeb270dda0c2ec95dd34c35e1e8300f11}{lbann\+::entrywise\+\_\+activation\+\_\+layer}.
+
+
+
+Definition at line 121 of file relu.\+hpp.
+
+
+\begin{DoxyCode}
+121                                  \{
+122 \textcolor{preprocessor}{  #ifndef LBANN\_HAS\_CUDNN}
+123     \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"relu\_layer: cuDNN not detected"});
+124 \textcolor{preprocessor}{  #else}
+125 
+126     \textcolor{comment}{// Useful constants}
+127     \textcolor{keyword}{const} DataType one = 1;
+128     \textcolor{keyword}{const} DataType zero = 0;
+129 
+130     \textcolor{comment}{// Apply activation on each GPU}
+131     \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_gpus = this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_num\_gpus();
+132     \textcolor{keywordflow}{for}(\textcolor{keywordtype}{int} i = 0; i < num\_gpus; ++i) \{
+133       CHECK\_CUDA(cudaSetDevice(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_gpu(i)));
+134       CHECK\_CUDNN(cudnnSetStream(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_handle(i),
+135                                  this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_stream(i)));
+136       CHECK\_CUDNN(cudnnActivationForward(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_handle(i),
+137                                          m\_activation\_cudnn\_desc,
+138                                          &one,
+139                                          this->m\_prev\_activations\_cudnn\_desc,
+140                                          this->m\_prev\_activations\_d[0].get\_locked\_data(i),
+141                                          &zero,
+142                                          this->m\_activations\_cudnn\_desc,
+143                                          this->m\_activations\_d[0].get\_data(i)));
+144     \}
+145 
+146 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+147   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1relu__layer_a1d0b9cb9fc976c2c4375d9422a1ac112}\label{classlbann_1_1relu__layer_a1d0b9cb9fc976c2c4375d9422a1ac112}} 
+\index{lbann\+::relu\+\_\+layer@{lbann\+::relu\+\_\+layer}!get\+\_\+data\+\_\+layout@{get\+\_\+data\+\_\+layout}}
+\index{get\+\_\+data\+\_\+layout@{get\+\_\+data\+\_\+layout}!lbann\+::relu\+\_\+layer@{lbann\+::relu\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+data\+\_\+layout()}{get\_data\_layout()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08db}{data\+\_\+layout} \hyperlink{classlbann_1_1relu__layer}{lbann\+::relu\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+data\+\_\+layout (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get data layout of the data tensors. We assume that the data layouts of the previous activations, activations, previous error signals, and error signals are the same. Each concrete layer that is templated on its data layout should override this function to return its template parameter. 
+
+Implements \hyperlink{classlbann_1_1Layer_a5dfb66e81fc085997402a5e2241316bd}{lbann\+::\+Layer}.
+
+
+
+Definition at line 96 of file relu.\+hpp.
+
+
+\begin{DoxyCode}
+96 \{ \textcolor{keywordflow}{return} T\_layout; \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=307pt]{classlbann_1_1relu__layer_a1d0b9cb9fc976c2c4375d9422a1ac112_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1relu__layer_a57d00fb2f9c90f5132ddea44d3ccc099}\label{classlbann_1_1relu__layer_a57d00fb2f9c90f5132ddea44d3ccc099}} 
+\index{lbann\+::relu\+\_\+layer@{lbann\+::relu\+\_\+layer}!get\+\_\+description@{get\+\_\+description}}
+\index{get\+\_\+description@{get\+\_\+description}!lbann\+::relu\+\_\+layer@{lbann\+::relu\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+description()}{get\_description()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+std\+::string \hyperlink{classlbann_1_1relu__layer}{lbann\+::relu\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+description (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Returns description of ctor params 
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_acc0803d3428914ca1eb5988c4309174a}{lbann\+::\+Layer}.
+
+
+
+Definition at line 91 of file relu.\+hpp.
+
+
+\begin{DoxyCode}
+91                                              \{
+92     \textcolor{keywordflow}{return} std::string \{\} +
+93      \textcolor{stringliteral}{" relu"} + \textcolor{stringliteral}{" dataLayout: "} + this->\hyperlink{classlbann_1_1Layer_ae3f4a5602df821f4221614b1e3782dc1}{get\_data\_layout\_string}(
+      \hyperlink{classlbann_1_1relu__layer_a1d0b9cb9fc976c2c4375d9422a1ac112}{get\_data\_layout}());
+94   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=327pt]{classlbann_1_1relu__layer_a57d00fb2f9c90f5132ddea44d3ccc099_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1relu__layer_afcf519aa5e19169c2b7a71aa0ee16aae}\label{classlbann_1_1relu__layer_afcf519aa5e19169c2b7a71aa0ee16aae}} 
+\index{lbann\+::relu\+\_\+layer@{lbann\+::relu\+\_\+layer}!get\+\_\+type@{get\+\_\+type}}
+\index{get\+\_\+type@{get\+\_\+type}!lbann\+::relu\+\_\+layer@{lbann\+::relu\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+type()}{get\_type()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+std\+::string \hyperlink{classlbann_1_1relu__layer}{lbann\+::relu\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+type (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get the layer type\textquotesingle{}s name. A layer type name should be brief, human-\/readable description of the layer\textquotesingle{}s mathematical operation. 
+
+Implements \hyperlink{classlbann_1_1Layer_a0fa0ea9160b490c151c0a17fde4f7239}{lbann\+::\+Layer}.
+
+
+
+Definition at line 88 of file relu.\+hpp.
+
+
+\begin{DoxyCode}
+88 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"ReLU"}; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1relu__layer_a455500a9ee8e9fbef2db3d8943e65d7d}\label{classlbann_1_1relu__layer_a455500a9ee8e9fbef2db3d8943e65d7d}} 
+\index{lbann\+::relu\+\_\+layer@{lbann\+::relu\+\_\+layer}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::relu\+\_\+layer@{lbann\+::relu\+\_\+layer}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{classlbann_1_1relu__layer}{relu\+\_\+layer}\& \hyperlink{classlbann_1_1relu__layer}{lbann\+::relu\+\_\+layer}$<$ T\+\_\+layout $>$\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1relu__layer}{relu\+\_\+layer}$<$ T\+\_\+layout $>$ \&}]{other }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 70 of file relu.\+hpp.
+
+
+\begin{DoxyCode}
+70                                                  \{
+71     \hyperlink{classlbann_1_1Layer_a00d8acde68fda2f38c4a39ef8c89234a}{entrywise\_activation\_layer::operator=}(other);
+72 \textcolor{preprocessor}{  #ifdef LBANN\_HAS\_CUDNN}
+73     cudnn::copy\_activation\_cudnn\_desc(other.m\_activation\_cudnn\_desc,
+74                                       m\_activation\_cudnn\_desc);
+75 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+76     \textcolor{keywordflow}{return} *\textcolor{keyword}{this};
+77   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1relu__layer_a455500a9ee8e9fbef2db3d8943e65d7d_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1relu__layer_a9426317aa741ab8a202ee52cf5250b59}\label{classlbann_1_1relu__layer_a9426317aa741ab8a202ee52cf5250b59}} 
+\index{lbann\+::relu\+\_\+layer@{lbann\+::relu\+\_\+layer}!setup\+\_\+gpu@{setup\+\_\+gpu}}
+\index{setup\+\_\+gpu@{setup\+\_\+gpu}!lbann\+::relu\+\_\+layer@{lbann\+::relu\+\_\+layer}}
+\subsubsection{\texorpdfstring{setup\+\_\+gpu()}{setup\_gpu()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+void \hyperlink{classlbann_1_1relu__layer}{lbann\+::relu\+\_\+layer}$<$ T\+\_\+layout $>$\+::setup\+\_\+gpu (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Setup G\+PU objects. Called by the setup function if G\+P\+Us are enabled. The base method initializes G\+PU matrices for the previous activations, activations, previous error signals, and error signals. It also initializes cu\+D\+NN tensor descriptors. 
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_a36aa22ef90ce4de65abe729d38490863}{lbann\+::\+Layer}.
+
+
+
+Definition at line 98 of file relu.\+hpp.
+
+
+\begin{DoxyCode}
+98                             \{
+99     \hyperlink{classlbann_1_1Layer_a36aa22ef90ce4de65abe729d38490863}{entrywise\_activation\_layer::setup\_gpu}();
+100 \textcolor{preprocessor}{  #ifndef LBANN\_HAS\_CUDNN}
+101     \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"relu\_layer: cuDNN not detected"});
+102 \textcolor{preprocessor}{  #else}
+103     CHECK\_CUDNN(cudnnCreateActivationDescriptor(&m\_activation\_cudnn\_desc));
+104     CHECK\_CUDNN(cudnnSetActivationDescriptor(m\_activation\_cudnn\_desc,
+105                                              CUDNN\_ACTIVATION\_RELU,
+106                                              CUDNN\_PROPAGATE\_NAN,
+107                                              0.0));
+108 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+109   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1relu__layer_a9426317aa741ab8a202ee52cf5250b59_cgraph}
+\end{center}
+\end{figure}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/layers/activations/\hyperlink{relu_8hpp}{relu.\+hpp}\end{DoxyCompactItemize}

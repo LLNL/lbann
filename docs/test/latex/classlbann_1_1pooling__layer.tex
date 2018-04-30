@@ -1,0 +1,994 @@
+\hypertarget{classlbann_1_1pooling__layer}{}\section{lbann\+:\+:pooling\+\_\+layer$<$ T\+\_\+layout $>$ Class Template Reference}
+\label{classlbann_1_1pooling__layer}\index{lbann\+::pooling\+\_\+layer$<$ T\+\_\+layout $>$@{lbann\+::pooling\+\_\+layer$<$ T\+\_\+layout $>$}}
+
+
+{\ttfamily \#include $<$pooling.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:pooling\+\_\+layer$<$ T\+\_\+layout $>$\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=195pt]{classlbann_1_1pooling__layer__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:pooling\+\_\+layer$<$ T\+\_\+layout $>$\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1pooling__layer__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1pooling__layer_a012223832bcd60644724425488059152}{pooling\+\_\+layer} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, int num\+\_\+data\+\_\+dims, int pool\+\_\+dim, int pad, int stride, \hyperlink{base_8hpp_ac47a6ee5278a53898222a48639a2bf39}{pool\+\_\+mode} mode, \hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$cudnn=nullptr)
+\item 
+\hyperlink{classlbann_1_1pooling__layer_ad0694acb2188cb539a1ae616846600c3}{pooling\+\_\+layer} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, int num\+\_\+data\+\_\+dims, std\+::vector$<$ int $>$ pool\+\_\+dims, std\+::vector$<$ int $>$ pads, std\+::vector$<$ int $>$ strides, \hyperlink{base_8hpp_ac47a6ee5278a53898222a48639a2bf39}{pool\+\_\+mode} mode, \hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$cudnn=nullptr)
+\item 
+\hyperlink{classlbann_1_1pooling__layer_aab33e9b05ae9fffe36333feabbee9895}{pooling\+\_\+layer} (const \hyperlink{classlbann_1_1pooling__layer}{pooling\+\_\+layer} \&other)
+\item 
+\hyperlink{classlbann_1_1pooling__layer}{pooling\+\_\+layer} \& \hyperlink{classlbann_1_1pooling__layer_acd09fc03a5c22c4127222b722c4d6ce5}{operator=} (const \hyperlink{classlbann_1_1pooling__layer}{pooling\+\_\+layer} \&other)
+\item 
+\hyperlink{classlbann_1_1pooling__layer}{pooling\+\_\+layer} $\ast$ \hyperlink{classlbann_1_1pooling__layer_a58f9e6223649bb79ad10a2411602d71d}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1pooling__layer_a2af67eebe2d051b141253bdba18f54ff}{get\+\_\+type} () const override
+\item 
+\hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08db}{data\+\_\+layout} \hyperlink{classlbann_1_1pooling__layer_ad6d7e7476521ed4a4c43db493807b2ca}{get\+\_\+data\+\_\+layout} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1pooling__layer_a11f6d5c7ef16a62d081164f174825ab2}{get\+\_\+description} () const override
+\item 
+\hyperlink{classlbann_1_1pooling__layer_acdd563bbeab301496456dfb058fcb640}{$\sim$pooling\+\_\+layer} () override
+\begin{DoxyCompactList}\small\item\em Destructor. \end{DoxyCompactList}\item 
+void \hyperlink{classlbann_1_1pooling__layer_a5de83fe60224067c132b0f1d53024b57}{setup\+\_\+dims} () override
+\item 
+void \hyperlink{classlbann_1_1pooling__layer_a603adc8abc7527f2fd12eb4264b0f3cc}{setup\+\_\+gpu} () override
+\begin{DoxyCompactList}\small\item\em Initialize G\+PU objects. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{classlbann_1_1pooling__layer_a0af01b6939abe9798fa3a0b1f5292721}{fp\+\_\+compute} () override
+\item 
+void \hyperlink{classlbann_1_1pooling__layer_ab58fe97e976f60df37f958e79fd56ff9}{bp\+\_\+compute} () override
+\end{DoxyCompactItemize}
+\subsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{classlbann_1_1pooling__layer_a022eb4448992f654288b6b1ca95fcb6c}{fp\+\_\+compute\+\_\+cudnn} ()
+\begin{DoxyCompactList}\small\item\em Pooling forward propagation with cu\+D\+NN. \end{DoxyCompactList}\item 
+void \hyperlink{classlbann_1_1pooling__layer_a457b52475f27ab55985f1e47515e7c3b}{bp\+\_\+compute\+\_\+cudnn} ()
+\begin{DoxyCompactList}\small\item\em Pooling backward propagation with cu\+D\+NN. \end{DoxyCompactList}\item 
+void \hyperlink{classlbann_1_1pooling__layer_a76ce07a190fbe85685ea2ab4e53be7f9}{fp\+\_\+compute\+\_\+im2col} ()
+\begin{DoxyCompactList}\small\item\em Pooling forward propagation with im2col. \end{DoxyCompactList}\item 
+void \hyperlink{classlbann_1_1pooling__layer_a704aca0e1e5bba7d27b7755133e6d50b}{bp\+\_\+compute\+\_\+im2col} ()
+\begin{DoxyCompactList}\small\item\em Pooling forward propagation with im2col. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+const \hyperlink{base_8hpp_ac47a6ee5278a53898222a48639a2bf39}{pool\+\_\+mode} \hyperlink{classlbann_1_1pooling__layer_a7b19407c88f89757e64ed3d4afab8443}{m\+\_\+pool\+\_\+mode}
+\begin{DoxyCompactList}\small\item\em Pooling mode. \end{DoxyCompactList}\item 
+std\+::vector$<$ int $>$ \hyperlink{classlbann_1_1pooling__layer_abb52fe974f602921823a46320fd7d075}{m\+\_\+pool\+\_\+dims}
+\begin{DoxyCompactList}\small\item\em Pooling window dimensions. \end{DoxyCompactList}\item 
+int \hyperlink{classlbann_1_1pooling__layer_a8b3a9020bb896a1132c9823bc2c73515}{m\+\_\+pool\+\_\+size}
+\begin{DoxyCompactList}\small\item\em Size of pooling window. \end{DoxyCompactList}\item 
+std\+::vector$<$ int $>$ \hyperlink{classlbann_1_1pooling__layer_a22fd39aa4358149110a369ddf0e5ffdb}{m\+\_\+pads}
+\begin{DoxyCompactList}\small\item\em Pooling padding. \end{DoxyCompactList}\item 
+std\+::vector$<$ int $>$ \hyperlink{classlbann_1_1pooling__layer_a754bb6d49b39e915f315ca0049c953d9}{m\+\_\+strides}
+\begin{DoxyCompactList}\small\item\em Pooling strides. \end{DoxyCompactList}\item 
+std\+::vector$<$ int $>$ \hyperlink{classlbann_1_1pooling__layer_a58683798db4c48175cbad5ec32ff676c}{m\+\_\+max\+\_\+pool\+\_\+indices}
+\end{DoxyCompactItemize}
+\subsection*{Friends}
+\begin{DoxyCompactItemize}
+\item 
+class \hyperlink{classlbann_1_1pooling__layer_ad56e2530ee19c632a3a06e6214a1889f}{unpooling\+\_\+layer$<$ T\+\_\+layout $>$}
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+\subsubsection*{template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$\newline
+class lbann\+::pooling\+\_\+layer$<$ T\+\_\+layout $>$}
+
+Pooling layer. 
+
+Definition at line 45 of file pooling.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1pooling__layer_a012223832bcd60644724425488059152}\label{classlbann_1_1pooling__layer_a012223832bcd60644724425488059152}} 
+\index{lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}!pooling\+\_\+layer@{pooling\+\_\+layer}}
+\index{pooling\+\_\+layer@{pooling\+\_\+layer}!lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}}
+\subsubsection{\texorpdfstring{pooling\+\_\+layer()}{pooling\_layer()}\hspace{0.1cm}{\footnotesize\ttfamily [1/3]}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{classlbann_1_1pooling__layer}{lbann\+::pooling\+\_\+layer}$<$ T\+\_\+layout $>$\+::\hyperlink{classlbann_1_1pooling__layer}{pooling\+\_\+layer} (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{int}]{num\+\_\+data\+\_\+dims,  }\item[{int}]{pool\+\_\+dim,  }\item[{int}]{pad,  }\item[{int}]{stride,  }\item[{\hyperlink{base_8hpp_ac47a6ee5278a53898222a48639a2bf39}{pool\+\_\+mode}}]{mode,  }\item[{\hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$}]{cudnn = {\ttfamily nullptr} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 76 of file pooling.\+hpp.
+
+
+\begin{DoxyCode}
+83     : \hyperlink{classlbann_1_1pooling__layer_a012223832bcd60644724425488059152}{pooling\_layer}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm},
+84                     num\_data\_dims,
+85                     std::vector<int>(num\_data\_dims, pool\_dim),
+86                     std::vector<int>(num\_data\_dims, pad),
+87                     std::vector<int>(num\_data\_dims, stride),
+88                     mode,
+89                     cudnn) \{\}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=327pt]{classlbann_1_1pooling__layer_a012223832bcd60644724425488059152_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1pooling__layer_ad0694acb2188cb539a1ae616846600c3}\label{classlbann_1_1pooling__layer_ad0694acb2188cb539a1ae616846600c3}} 
+\index{lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}!pooling\+\_\+layer@{pooling\+\_\+layer}}
+\index{pooling\+\_\+layer@{pooling\+\_\+layer}!lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}}
+\subsubsection{\texorpdfstring{pooling\+\_\+layer()}{pooling\_layer()}\hspace{0.1cm}{\footnotesize\ttfamily [2/3]}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{classlbann_1_1pooling__layer}{lbann\+::pooling\+\_\+layer}$<$ T\+\_\+layout $>$\+::\hyperlink{classlbann_1_1pooling__layer}{pooling\+\_\+layer} (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{int}]{num\+\_\+data\+\_\+dims,  }\item[{std\+::vector$<$ int $>$}]{pool\+\_\+dims,  }\item[{std\+::vector$<$ int $>$}]{pads,  }\item[{std\+::vector$<$ int $>$}]{strides,  }\item[{\hyperlink{base_8hpp_ac47a6ee5278a53898222a48639a2bf39}{pool\+\_\+mode}}]{mode,  }\item[{\hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$}]{cudnn = {\ttfamily nullptr} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 91 of file pooling.\+hpp.
+
+
+\begin{DoxyCode}
+98     : \hyperlink{classlbann_1_1transform__layer_a4b72501e0f4d0745c8b13c5331055e65}{transform\_layer}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}),
+99       \hyperlink{classlbann_1_1pooling__layer_a7b19407c88f89757e64ed3d4afab8443}{m\_pool\_mode}(mode),
+100       \hyperlink{classlbann_1_1pooling__layer_abb52fe974f602921823a46320fd7d075}{m\_pool\_dims}(pool\_dims),
+101       \hyperlink{classlbann_1_1pooling__layer_a22fd39aa4358149110a369ddf0e5ffdb}{m\_pads}(pads),
+102       \hyperlink{classlbann_1_1pooling__layer_a754bb6d49b39e915f315ca0049c953d9}{m\_strides}(strides) \{
+103     static\_assert(T\_layout == \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08dba37d2a3465f7cbf4ab60f4e79944d0638}{data\_layout::DATA\_PARALLEL},
+104                   \textcolor{stringliteral}{"pooling only supports DATA\_PARALLEL"});
+105 
+106     \textcolor{comment}{// Initialize input dimensions and pooling parameters}
+107     \hyperlink{classlbann_1_1pooling__layer_a8b3a9020bb896a1132c9823bc2c73515}{m\_pool\_size} = std::accumulate(\hyperlink{classlbann_1_1pooling__layer_abb52fe974f602921823a46320fd7d075}{m\_pool\_dims}.begin(),
+108                                   \hyperlink{classlbann_1_1pooling__layer_abb52fe974f602921823a46320fd7d075}{m\_pool\_dims}.end(),
+109                                   1,
+110                                   std::multiplies<int>());
+111 
+112 \textcolor{preprocessor}{  #ifdef LBANN\_HAS\_CUDNN}
+113 
+114     \textcolor{comment}{// Initialize cuDNN objects}
+115     m\_pooling\_cudnn\_desc = \textcolor{keyword}{nullptr};
+116 
+117     \textcolor{comment}{// Initialize GPU memory if using GPU}
+118     \textcolor{keywordflow}{if} (cudnn) \{
+119       this->\hyperlink{classlbann_1_1Layer_af7881cb5eff5207c15fa835d65462e8f}{m\_using\_gpus} = \textcolor{keyword}{true};
+120       this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn} = cudnn;
+121     \}
+122 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+123 
+124   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1pooling__layer_aab33e9b05ae9fffe36333feabbee9895}\label{classlbann_1_1pooling__layer_aab33e9b05ae9fffe36333feabbee9895}} 
+\index{lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}!pooling\+\_\+layer@{pooling\+\_\+layer}}
+\index{pooling\+\_\+layer@{pooling\+\_\+layer}!lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}}
+\subsubsection{\texorpdfstring{pooling\+\_\+layer()}{pooling\_layer()}\hspace{0.1cm}{\footnotesize\ttfamily [3/3]}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{classlbann_1_1pooling__layer}{lbann\+::pooling\+\_\+layer}$<$ T\+\_\+layout $>$\+::\hyperlink{classlbann_1_1pooling__layer}{pooling\+\_\+layer} (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1pooling__layer}{pooling\+\_\+layer}$<$ T\+\_\+layout $>$ \&}]{other }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 126 of file pooling.\+hpp.
+
+
+\begin{DoxyCode}
+126                                             :
+127     \hyperlink{classlbann_1_1transform__layer_a4b72501e0f4d0745c8b13c5331055e65}{transform\_layer}(other),
+128     \hyperlink{classlbann_1_1pooling__layer_a7b19407c88f89757e64ed3d4afab8443}{m\_pool\_mode}(other.m\_pool\_mode),
+129     \hyperlink{classlbann_1_1pooling__layer_abb52fe974f602921823a46320fd7d075}{m\_pool\_dims}(other.m\_pool\_dims),
+130     \hyperlink{classlbann_1_1pooling__layer_a8b3a9020bb896a1132c9823bc2c73515}{m\_pool\_size}(other.m\_pool\_size),
+131     \hyperlink{classlbann_1_1pooling__layer_a22fd39aa4358149110a369ddf0e5ffdb}{m\_pads}(other.m\_pads),
+132     \hyperlink{classlbann_1_1pooling__layer_a754bb6d49b39e915f315ca0049c953d9}{m\_strides}(other.m\_strides),
+133     \hyperlink{classlbann_1_1pooling__layer_a58683798db4c48175cbad5ec32ff676c}{m\_max\_pool\_indices}(other.m\_max\_pool\_indices) \{
+134 \textcolor{preprocessor}{  #ifdef LBANN\_HAS\_CUDNN}
+135     m\_pooling\_cudnn\_desc = \textcolor{keyword}{nullptr};
+136     cudnn::copy\_pooling\_cudnn\_desc(other.m\_pooling\_cudnn\_desc, m\_pooling\_cudnn\_desc);
+137 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+138   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1pooling__layer_acdd563bbeab301496456dfb058fcb640}\label{classlbann_1_1pooling__layer_acdd563bbeab301496456dfb058fcb640}} 
+\index{lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}!````~pooling\+\_\+layer@{$\sim$pooling\+\_\+layer}}
+\index{````~pooling\+\_\+layer@{$\sim$pooling\+\_\+layer}!lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}}
+\subsubsection{\texorpdfstring{$\sim$pooling\+\_\+layer()}{~pooling\_layer()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{classlbann_1_1pooling__layer}{lbann\+::pooling\+\_\+layer}$<$ T\+\_\+layout $>$\+::$\sim$\hyperlink{classlbann_1_1pooling__layer}{pooling\+\_\+layer} (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}}
+
+
+
+Destructor. 
+
+
+
+Definition at line 180 of file pooling.\+hpp.
+
+
+\begin{DoxyCode}
+180                             \{
+181 \textcolor{preprocessor}{  #ifdef LBANN\_HAS\_CUDNN}
+182     \textcolor{comment}{// Destroy cuDNN objects}
+183     \textcolor{keywordflow}{if} (m\_pooling\_cudnn\_desc) \{
+184       CHECK\_CUDNN(cudnnDestroyPoolingDescriptor(m\_pooling\_cudnn\_desc));
+185     \}
+186 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+187   \}
+\end{DoxyCode}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1pooling__layer_ab58fe97e976f60df37f958e79fd56ff9}\label{classlbann_1_1pooling__layer_ab58fe97e976f60df37f958e79fd56ff9}} 
+\index{lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}!bp\+\_\+compute@{bp\+\_\+compute}}
+\index{bp\+\_\+compute@{bp\+\_\+compute}!lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}}
+\subsubsection{\texorpdfstring{bp\+\_\+compute()}{bp\_compute()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1pooling__layer}{lbann\+::pooling\+\_\+layer}$<$ T\+\_\+layout $>$\+::bp\+\_\+compute (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Perform the computation for the backward propagation step. 
+
+Implements \hyperlink{classlbann_1_1Layer_a7442e01f9ee1294df2de811efcf5171e}{lbann\+::\+Layer}.
+
+
+
+Definition at line 249 of file pooling.\+hpp.
+
+
+\begin{DoxyCode}
+249                              \{
+250     \textcolor{keywordflow}{if}(this->\hyperlink{classlbann_1_1Layer_af7881cb5eff5207c15fa835d65462e8f}{m\_using\_gpus}) \{
+251       \hyperlink{classlbann_1_1pooling__layer_a457b52475f27ab55985f1e47515e7c3b}{bp\_compute\_cudnn}();
+252     \} \textcolor{keywordflow}{else} \{
+253       \hyperlink{classlbann_1_1pooling__layer_a704aca0e1e5bba7d27b7755133e6d50b}{bp\_compute\_im2col}();
+254     \}
+255   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1pooling__layer_ab58fe97e976f60df37f958e79fd56ff9_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1pooling__layer_a457b52475f27ab55985f1e47515e7c3b}\label{classlbann_1_1pooling__layer_a457b52475f27ab55985f1e47515e7c3b}} 
+\index{lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}!bp\+\_\+compute\+\_\+cudnn@{bp\+\_\+compute\+\_\+cudnn}}
+\index{bp\+\_\+compute\+\_\+cudnn@{bp\+\_\+compute\+\_\+cudnn}!lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}}
+\subsubsection{\texorpdfstring{bp\+\_\+compute\+\_\+cudnn()}{bp\_compute\_cudnn()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1pooling__layer}{lbann\+::pooling\+\_\+layer}$<$ T\+\_\+layout $>$\+::bp\+\_\+compute\+\_\+cudnn (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [private]}}
+
+
+
+Pooling backward propagation with cu\+D\+NN. 
+
+
+
+Definition at line 289 of file pooling.\+hpp.
+
+
+\begin{DoxyCode}
+289                           \{    
+290 \textcolor{preprocessor}{  #ifndef LBANN\_HAS\_CUDNN}
+291     \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"pooling\_layer: cuDNN not detected"});
+292 \textcolor{preprocessor}{  #else}
+293 
+294     \textcolor{comment}{// Useful constants}
+295     \textcolor{keyword}{const} DataType one = DataType(1);
+296 
+297     \textcolor{comment}{// Get number of GPUs}
+298     \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_gpus = this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_num\_gpus();
+299 
+300     \textcolor{comment}{// Perform back propagation on each GPU}
+301     \textcolor{keywordflow}{for}(\textcolor{keywordtype}{int} i=0; i<num\_gpus; ++i) \{
+302       CHECK\_CUDA(cudaSetDevice(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_gpu(i)));
+303       CHECK\_CUDNN(cudnnSetStream(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_handle(i),
+304                                  this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_stream(i)));
+305       CHECK\_CUDNN(cudnnPoolingBackward(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_handle(i),
+306                                        m\_pooling\_cudnn\_desc,
+307                                        &one,
+308                                        this->m\_activations\_cudnn\_desc,
+309                                        this->m\_activations\_d[0].get\_locked\_data(i),
+310                                        this->m\_prev\_error\_signals\_cudnn\_desc,
+311                                        this->m\_prev\_error\_signals\_d[0].get\_locked\_data(i),
+312                                        this->m\_prev\_activations\_cudnn\_desc,
+313                                        this->m\_prev\_activations\_d[0].get\_locked\_data(i),
+314                                        &one,
+315                                        this->m\_error\_signals\_cudnn\_desc,
+316                                        this->m\_error\_signals\_d[0].get\_data(i)));
+317     \}
+318 
+319 \textcolor{preprocessor}{  #endif // #ifndef LBANN\_HAS\_CUDNN}
+320   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=331pt]{classlbann_1_1pooling__layer_a457b52475f27ab55985f1e47515e7c3b_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1pooling__layer_a704aca0e1e5bba7d27b7755133e6d50b}\label{classlbann_1_1pooling__layer_a704aca0e1e5bba7d27b7755133e6d50b}} 
+\index{lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}!bp\+\_\+compute\+\_\+im2col@{bp\+\_\+compute\+\_\+im2col}}
+\index{bp\+\_\+compute\+\_\+im2col@{bp\+\_\+compute\+\_\+im2col}!lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}}
+\subsubsection{\texorpdfstring{bp\+\_\+compute\+\_\+im2col()}{bp\_compute\_im2col()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1pooling__layer}{lbann\+::pooling\+\_\+layer}$<$ T\+\_\+layout $>$\+::bp\+\_\+compute\+\_\+im2col (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [private]}}
+
+
+
+Pooling forward propagation with im2col. 
+
+
+
+Definition at line 412 of file pooling.\+hpp.
+
+
+\begin{DoxyCode}
+412                            \{
+413 
+414     \textcolor{comment}{// Throw exception if pooling mode is not max or average pooling}
+415     \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1pooling__layer_a7b19407c88f89757e64ed3d4afab8443}{m\_pool\_mode} != \hyperlink{base_8hpp_ac47a6ee5278a53898222a48639a2bf39a2ffe4e77325d9a7152f7086ea7aa5114}{pool\_mode::max}
+416         && \hyperlink{classlbann_1_1pooling__layer_a7b19407c88f89757e64ed3d4afab8443}{m\_pool\_mode} != \hyperlink{base_8hpp_ac47a6ee5278a53898222a48639a2bf39a6927a3a7218a3195858411433ec20a21}{pool\_mode::average}) \{
+417       \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"pooling\_layer: CPU pooling layer only implements max and average pooling"});
+418     \}
+419 
+420     \textcolor{comment}{// Local matrices}
+421     \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_gradient\_wrt\_output = \hyperlink{classlbann_1_1Layer_a82827edc5e869960144f3ccb2172bfcd}{get\_local\_prev\_error\_signals}();
+422     \textcolor{keyword}{auto}& local\_gradient\_wrt\_input = \hyperlink{classlbann_1_1Layer_af178d00b9d878aa7d87754bff2a91f3a}{get\_local\_error\_signals}();
+423 
+424     \textcolor{comment}{// Pool parameters}
+425     \textcolor{keyword}{const} \textcolor{keywordtype}{int} input\_size = local\_gradient\_wrt\_input.Height();
+426     \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_width = local\_gradient\_wrt\_output.Width();
+427     \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_channels = this->\hyperlink{classlbann_1_1Layer_ae204d1a2a79606eaa117273857ff62a3}{m\_prev\_neuron\_dims}[0];
+428     \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_per\_input\_channel = this->\hyperlink{classlbann_1_1Layer_a6b5ebc8a7d9329d8a773ed787e7b41d8}{m\_num\_neurons} / num\_channels;
+429 
+430     \textcolor{comment}{// Initialize matrices}
+431     \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} im2col\_mat(\hyperlink{classlbann_1_1pooling__layer_a8b3a9020bb896a1132c9823bc2c73515}{m\_pool\_size} * num\_channels, num\_per\_input\_channel);
+432     \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} gradient\_wrt\_input\_col(input\_size, 1);
+433 
+434     \textcolor{comment}{// Iterate through data samples}
+435     \textcolor{keywordflow}{for}(\textcolor{keywordtype}{int} sample = 0; sample < local\_width; ++sample) \{
+436 
+437       \textcolor{comment}{// Compute gradient w.r.t. im2col matrix for max pooling}
+438       \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1pooling__layer_a7b19407c88f89757e64ed3d4afab8443}{m\_pool\_mode} == \hyperlink{base_8hpp_ac47a6ee5278a53898222a48639a2bf39a2ffe4e77325d9a7152f7086ea7aa5114}{pool\_mode::max}) \{
+439 
+440         \textcolor{comment}{// Clear im2col matrix}
+441         El::Zero(im2col\_mat);
+442 
+443         \textcolor{comment}{// Copy previous error signal to im2col matrix entries}
+444         \textcolor{comment}{// corresponding to max}
+445         \textcolor{keyword}{const} DataType *gradient\_wrt\_output\_buffer
+446           = local\_gradient\_wrt\_output.LockedBuffer(0, sample);
+447         \textcolor{keyword}{const} \textcolor{keywordtype}{int} *indices\_buffer
+448           = &\hyperlink{classlbann_1_1pooling__layer_a58683798db4c48175cbad5ec32ff676c}{m\_max\_pool\_indices}[sample * this->\hyperlink{classlbann_1_1Layer_a6b5ebc8a7d9329d8a773ed787e7b41d8}{m\_num\_neurons}];
+449 \textcolor{preprocessor}{        #pragma omp parallel for}
+450         \textcolor{keywordflow}{for}(\textcolor{keywordtype}{int} channel = 0; channel < num\_channels; ++channel) \{
+451           \textcolor{keywordflow}{for}(\textcolor{keywordtype}{int} j = 0; j < num\_per\_input\_channel; ++j) \{
+452             \textcolor{keyword}{const} \textcolor{keywordtype}{int} input\_index = j + channel * num\_per\_input\_channel;
+453             \textcolor{keyword}{const} \textcolor{keywordtype}{int} max\_index = indices\_buffer[input\_index];
+454             DataType *im2col\_buffer = im2col\_mat.Buffer(channel*\hyperlink{classlbann_1_1pooling__layer_a8b3a9020bb896a1132c9823bc2c73515}{m\_pool\_size}, j);
+455             im2col\_buffer[max\_index]
+456               = gradient\_wrt\_output\_buffer[input\_index];
+457           \}
+458         \}
+459 
+460       \}
+461 
+462       \textcolor{comment}{// Compute gradient w.r.t. im2col matrix for average pooling}
+463       \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1pooling__layer_a7b19407c88f89757e64ed3d4afab8443}{m\_pool\_mode} == \hyperlink{base_8hpp_ac47a6ee5278a53898222a48639a2bf39a6927a3a7218a3195858411433ec20a21}{pool\_mode::average}) \{
+464         \textcolor{keyword}{const} DataType *gradient\_wrt\_output\_buffer
+465           = local\_gradient\_wrt\_output.LockedBuffer(0, sample);
+466 \textcolor{preprocessor}{        #pragma omp parallel for}
+467         \textcolor{keywordflow}{for}(\textcolor{keywordtype}{int} channel = 0; channel < num\_channels; ++channel) \{
+468           \textcolor{keywordflow}{for}(\textcolor{keywordtype}{int} j = 0; j < num\_per\_input\_channel; ++j) \{
+469             DataType *im2col\_buffer = im2col\_mat.Buffer(channel*\hyperlink{classlbann_1_1pooling__layer_a8b3a9020bb896a1132c9823bc2c73515}{m\_pool\_size}, j);
+470             \textcolor{keyword}{const} \textcolor{keywordtype}{int} input\_index = j + channel * num\_per\_input\_channel;
+471             \textcolor{keyword}{const} DataType output\_entry
+472               = gradient\_wrt\_output\_buffer[input\_index] / \hyperlink{classlbann_1_1pooling__layer_a8b3a9020bb896a1132c9823bc2c73515}{m\_pool\_size};
+473             \textcolor{keywordflow}{for}(\textcolor{keywordtype}{int} i = 0; i < \hyperlink{classlbann_1_1pooling__layer_a8b3a9020bb896a1132c9823bc2c73515}{m\_pool\_size}; ++i) \{
+474               im2col\_buffer[i] = output\_entry;
+475             \}
+476           \}
+477         \}
+478 
+479       \}
+480 
+481       \textcolor{comment}{// Compute error signal (i.e. gradient w.r.t. input)}
+482       \hyperlink{namespacelbann_a0e1225f72580ffb5166181392b68b651}{col2im}(im2col\_mat,
+483              gradient\_wrt\_input\_col,
+484              num\_channels,
+485              this->\hyperlink{classlbann_1_1Layer_adc052afb38f170e839db00d3c8151d1e}{m\_num\_prev\_neuron\_dims} - 1,
+486              &this->\hyperlink{classlbann_1_1Layer_ae204d1a2a79606eaa117273857ff62a3}{m\_prev\_neuron\_dims}[1],
+487              \hyperlink{classlbann_1_1pooling__layer_a22fd39aa4358149110a369ddf0e5ffdb}{m\_pads}.data(),
+488              \hyperlink{classlbann_1_1pooling__layer_abb52fe974f602921823a46320fd7d075}{m\_pool\_dims}.data(),
+489              \hyperlink{classlbann_1_1pooling__layer_a754bb6d49b39e915f315ca0049c953d9}{m\_strides}.data());
+490       local\_gradient\_wrt\_input(El::ALL, El::IR(sample)) += gradient\_wrt\_input\_col;
+491 
+492     \}
+493 
+494   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1pooling__layer_a704aca0e1e5bba7d27b7755133e6d50b_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=333pt]{classlbann_1_1pooling__layer_a704aca0e1e5bba7d27b7755133e6d50b_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1pooling__layer_a58f9e6223649bb79ad10a2411602d71d}\label{classlbann_1_1pooling__layer_a58f9e6223649bb79ad10a2411602d71d}} 
+\index{lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}!copy@{copy}}
+\index{copy@{copy}!lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{classlbann_1_1pooling__layer}{pooling\+\_\+layer}$\ast$ \hyperlink{classlbann_1_1pooling__layer}{lbann\+::pooling\+\_\+layer}$<$ T\+\_\+layout $>$\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Copy function. This function dynamically allocates memory for a layer instance and instantiates a copy. The caller is responsible for deallocating the instance. 
+
+Implements \hyperlink{classlbann_1_1Layer_af420f22bbac801c85483ade84588a23f}{lbann\+::\+Layer}.
+
+
+
+Definition at line 154 of file pooling.\+hpp.
+
+
+\begin{DoxyCode}
+154 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1pooling__layer_a012223832bcd60644724425488059152}{pooling\_layer}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=327pt]{classlbann_1_1pooling__layer_a58f9e6223649bb79ad10a2411602d71d_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1pooling__layer_a0af01b6939abe9798fa3a0b1f5292721}\label{classlbann_1_1pooling__layer_a0af01b6939abe9798fa3a0b1f5292721}} 
+\index{lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}!fp\+\_\+compute@{fp\+\_\+compute}}
+\index{fp\+\_\+compute@{fp\+\_\+compute}!lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}}
+\subsubsection{\texorpdfstring{fp\+\_\+compute()}{fp\_compute()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1pooling__layer}{lbann\+::pooling\+\_\+layer}$<$ T\+\_\+layout $>$\+::fp\+\_\+compute (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Perform the computation for the forward propagation step. 
+
+Implements \hyperlink{classlbann_1_1Layer_a523319dd1bd87a0612afa1912bb5aad7}{lbann\+::\+Layer}.
+
+
+
+Definition at line 241 of file pooling.\+hpp.
+
+
+\begin{DoxyCode}
+241                              \{
+242     \textcolor{keywordflow}{if}(this->\hyperlink{classlbann_1_1Layer_af7881cb5eff5207c15fa835d65462e8f}{m\_using\_gpus}) \{
+243       \hyperlink{classlbann_1_1pooling__layer_a022eb4448992f654288b6b1ca95fcb6c}{fp\_compute\_cudnn}();
+244     \} \textcolor{keywordflow}{else} \{
+245       \hyperlink{classlbann_1_1pooling__layer_a76ce07a190fbe85685ea2ab4e53be7f9}{fp\_compute\_im2col}();
+246     \}
+247   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1pooling__layer_a0af01b6939abe9798fa3a0b1f5292721_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1pooling__layer_a022eb4448992f654288b6b1ca95fcb6c}\label{classlbann_1_1pooling__layer_a022eb4448992f654288b6b1ca95fcb6c}} 
+\index{lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}!fp\+\_\+compute\+\_\+cudnn@{fp\+\_\+compute\+\_\+cudnn}}
+\index{fp\+\_\+compute\+\_\+cudnn@{fp\+\_\+compute\+\_\+cudnn}!lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}}
+\subsubsection{\texorpdfstring{fp\+\_\+compute\+\_\+cudnn()}{fp\_compute\_cudnn()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1pooling__layer}{lbann\+::pooling\+\_\+layer}$<$ T\+\_\+layout $>$\+::fp\+\_\+compute\+\_\+cudnn (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [private]}}
+
+
+
+Pooling forward propagation with cu\+D\+NN. 
+
+
+
+Definition at line 260 of file pooling.\+hpp.
+
+
+\begin{DoxyCode}
+260                           \{
+261 \textcolor{preprocessor}{  #ifndef LBANN\_HAS\_CUDNN}
+262     \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"pooling\_layer: cuDNN not detected"});
+263 \textcolor{preprocessor}{  #else}
+264 
+265     \textcolor{comment}{// Useful constants}
+266     \textcolor{keyword}{const} DataType one = 1;
+267     \textcolor{keyword}{const} DataType zero = 0;
+268 
+269     \textcolor{comment}{// Perform pooling with each GPU}
+270     \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_gpus = this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_num\_gpus();
+271     \textcolor{keywordflow}{for}(\textcolor{keywordtype}{int} i=0; i<num\_gpus; ++i) \{
+272       CHECK\_CUDA(cudaSetDevice(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_gpu(i)));
+273       CHECK\_CUDNN(cudnnSetStream(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_handle(i),
+274                                  this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_stream(i)));
+275       CHECK\_CUDNN(cudnnPoolingForward(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_handle(i),
+276                                       m\_pooling\_cudnn\_desc,
+277                                       &one,
+278                                       this->m\_prev\_activations\_cudnn\_desc,
+279                                       this->m\_prev\_activations\_d[0].get\_locked\_data(i),
+280                                       &zero,
+281                                       this->m\_activations\_cudnn\_desc,
+282                                       this->m\_activations\_d[0].get\_data(i)));
+283     \}
+284 
+285 \textcolor{preprocessor}{  #endif // #ifndef LBANN\_HAS\_CUDNN}
+286   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=328pt]{classlbann_1_1pooling__layer_a022eb4448992f654288b6b1ca95fcb6c_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1pooling__layer_a76ce07a190fbe85685ea2ab4e53be7f9}\label{classlbann_1_1pooling__layer_a76ce07a190fbe85685ea2ab4e53be7f9}} 
+\index{lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}!fp\+\_\+compute\+\_\+im2col@{fp\+\_\+compute\+\_\+im2col}}
+\index{fp\+\_\+compute\+\_\+im2col@{fp\+\_\+compute\+\_\+im2col}!lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}}
+\subsubsection{\texorpdfstring{fp\+\_\+compute\+\_\+im2col()}{fp\_compute\_im2col()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1pooling__layer}{lbann\+::pooling\+\_\+layer}$<$ T\+\_\+layout $>$\+::fp\+\_\+compute\+\_\+im2col (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [private]}}
+
+
+
+Pooling forward propagation with im2col. 
+
+
+
+Definition at line 323 of file pooling.\+hpp.
+
+
+\begin{DoxyCode}
+323                            \{
+324 
+325     \textcolor{comment}{// Throw exception if pooling mode is not max or average pooling}
+326     \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1pooling__layer_a7b19407c88f89757e64ed3d4afab8443}{m\_pool\_mode} != \hyperlink{base_8hpp_ac47a6ee5278a53898222a48639a2bf39a2ffe4e77325d9a7152f7086ea7aa5114}{pool\_mode::max}
+327        && \hyperlink{classlbann_1_1pooling__layer_a7b19407c88f89757e64ed3d4afab8443}{m\_pool\_mode} != \hyperlink{base_8hpp_ac47a6ee5278a53898222a48639a2bf39a6927a3a7218a3195858411433ec20a21}{pool\_mode::average}) \{
+328       \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"pooling\_layer: CPU pooling layer only implements max and average pooling"});
+329     \}
+330 
+331     \textcolor{comment}{// Local matrices}
+332     \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_input = \hyperlink{classlbann_1_1Layer_a35397843bb0c84030000c7d872229acb}{get\_local\_prev\_activations}();
+333     \textcolor{keyword}{auto}& local\_output = \hyperlink{classlbann_1_1Layer_a4248f27acebf72b7b7b3ee39c8bcb62a}{get\_local\_activations}();
+334 
+335     \textcolor{comment}{// Pool parameters}
+336     \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_width = local\_input.Width();
+337     \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_channels = this->\hyperlink{classlbann_1_1Layer_ae204d1a2a79606eaa117273857ff62a3}{m\_prev\_neuron\_dims}[0];
+338     \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_per\_output\_channel = this->\hyperlink{classlbann_1_1Layer_a6b5ebc8a7d9329d8a773ed787e7b41d8}{m\_num\_neurons} / num\_channels;
+339 
+340     \textcolor{comment}{// Initialize max pool indices if needed}
+341     \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1pooling__layer_a7b19407c88f89757e64ed3d4afab8443}{m\_pool\_mode} == \hyperlink{base_8hpp_ac47a6ee5278a53898222a48639a2bf39a2ffe4e77325d9a7152f7086ea7aa5114}{pool\_mode::max}) \{
+342       \hyperlink{classlbann_1_1pooling__layer_a58683798db4c48175cbad5ec32ff676c}{m\_max\_pool\_indices}.assign(this->\hyperlink{classlbann_1_1Layer_a6b5ebc8a7d9329d8a773ed787e7b41d8}{m\_num\_neurons} * local\_width, 0);
+343     \}
+344 
+345     \textcolor{comment}{// Initialize matrices}
+346     \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} im2col\_mat(\hyperlink{classlbann_1_1pooling__layer_a8b3a9020bb896a1132c9823bc2c73515}{m\_pool\_size} * num\_channels, num\_per\_output\_channel);
+347     \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} input\_mat;
+348 
+349     \textcolor{comment}{// Iterate through data samples}
+350     \textcolor{keywordflow}{for}(\textcolor{keywordtype}{int} sample = 0; sample < local\_width; ++sample) \{
+351 
+352       \textcolor{comment}{// Construct im2col matrix from input}
+353       El::LockedView(input\_mat, local\_input,
+354                      El::ALL, El::IR(sample));
+355       \hyperlink{namespacelbann_aa3636a1979e40da2af91f30a12b90db9}{im2col}(input\_mat,
+356              im2col\_mat,
+357              num\_channels,
+358              this->\hyperlink{classlbann_1_1Layer_adc052afb38f170e839db00d3c8151d1e}{m\_num\_prev\_neuron\_dims} - 1,
+359              &this->\hyperlink{classlbann_1_1Layer_ae204d1a2a79606eaa117273857ff62a3}{m\_prev\_neuron\_dims}[1],
+360              \hyperlink{classlbann_1_1pooling__layer_a22fd39aa4358149110a369ddf0e5ffdb}{m\_pads}.data(),
+361              \hyperlink{classlbann_1_1pooling__layer_abb52fe974f602921823a46320fd7d075}{m\_pool\_dims}.data(),
+362              \hyperlink{classlbann_1_1pooling__layer_a754bb6d49b39e915f315ca0049c953d9}{m\_strides}.data());
+363 
+364       \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1pooling__layer_a7b19407c88f89757e64ed3d4afab8443}{m\_pool\_mode} == \hyperlink{base_8hpp_ac47a6ee5278a53898222a48639a2bf39a2ffe4e77325d9a7152f7086ea7aa5114}{pool\_mode::max}) \{
+365         \textcolor{comment}{// Apply max pooling}
+366         DataType *output\_buffer = local\_output.Buffer(0, sample);
+367         \textcolor{keywordtype}{int} *indices\_buffer = &\hyperlink{classlbann_1_1pooling__layer_a58683798db4c48175cbad5ec32ff676c}{m\_max\_pool\_indices}[sample * this->
+      \hyperlink{classlbann_1_1Layer_a6b5ebc8a7d9329d8a773ed787e7b41d8}{m\_num\_neurons}];
+368 \textcolor{preprocessor}{        #pragma omp parallel for}
+369         \textcolor{keywordflow}{for}(\textcolor{keywordtype}{int} channel = 0; channel < num\_channels; ++channel) \{
+370           \textcolor{keywordflow}{for}(\textcolor{keywordtype}{int} j = 0; j < num\_per\_output\_channel; ++j) \{
+371             DataType *im2col\_buffer = im2col\_mat.Buffer(channel*\hyperlink{classlbann_1_1pooling__layer_a8b3a9020bb896a1132c9823bc2c73515}{m\_pool\_size}, j);
+372             DataType max\_entry = im2col\_buffer[0];
+373             \textcolor{keywordtype}{int} max\_index = 0;
+374             \textcolor{keywordflow}{for}(\textcolor{keywordtype}{int} i = 1; i < \hyperlink{classlbann_1_1pooling__layer_a8b3a9020bb896a1132c9823bc2c73515}{m\_pool\_size}; ++i) \{
+375               \textcolor{keyword}{const} DataType current\_entry = im2col\_buffer[i];
+376               \textcolor{keywordflow}{if}(current\_entry > max\_entry) \{
+377                 max\_entry = current\_entry;
+378                 max\_index = i;
+379               \}
+380             \}
+381             \textcolor{keyword}{const} \textcolor{keywordtype}{int} output\_index = j + channel * num\_per\_output\_channel;
+382             output\_buffer[output\_index] = max\_entry;
+383             indices\_buffer[output\_index] = max\_index;
+384           \}
+385         \}
+386       \}
+387 
+388       \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1pooling__layer_a7b19407c88f89757e64ed3d4afab8443}{m\_pool\_mode} == \hyperlink{base_8hpp_ac47a6ee5278a53898222a48639a2bf39a6927a3a7218a3195858411433ec20a21}{pool\_mode::average}) \{
+389         \textcolor{comment}{// Apply average pooling}
+390         DataType *output\_buffer = local\_output.Buffer(0, sample);
+391 \textcolor{preprocessor}{        #pragma omp parallel for}
+392         \textcolor{keywordflow}{for}(\textcolor{keywordtype}{int} channel = 0; channel < num\_channels; ++channel) \{
+393           \textcolor{keywordflow}{for}(\textcolor{keywordtype}{int} j = 0; j < num\_per\_output\_channel; ++j) \{
+394             \textcolor{keyword}{const} DataType *im2col\_buffer
+395               = im2col\_mat.LockedBuffer(channel*\hyperlink{classlbann_1_1pooling__layer_a8b3a9020bb896a1132c9823bc2c73515}{m\_pool\_size}, j);
+396             DataType output\_entry = 0;
+397             \textcolor{keywordflow}{for}(\textcolor{keywordtype}{int} i = 0; i < \hyperlink{classlbann_1_1pooling__layer_a8b3a9020bb896a1132c9823bc2c73515}{m\_pool\_size}; ++i) \{
+398               output\_entry += im2col\_buffer[i];
+399             \}
+400             output\_entry /= \hyperlink{classlbann_1_1pooling__layer_a8b3a9020bb896a1132c9823bc2c73515}{m\_pool\_size};
+401             \textcolor{keyword}{const} \textcolor{keywordtype}{int} output\_index = j + channel * num\_per\_output\_channel;
+402             output\_buffer[output\_index] = output\_entry;
+403           \}
+404         \}
+405       \}
+406 
+407     \}
+408 
+409   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1pooling__layer_a76ce07a190fbe85685ea2ab4e53be7f9_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=330pt]{classlbann_1_1pooling__layer_a76ce07a190fbe85685ea2ab4e53be7f9_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1pooling__layer_ad6d7e7476521ed4a4c43db493807b2ca}\label{classlbann_1_1pooling__layer_ad6d7e7476521ed4a4c43db493807b2ca}} 
+\index{lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}!get\+\_\+data\+\_\+layout@{get\+\_\+data\+\_\+layout}}
+\index{get\+\_\+data\+\_\+layout@{get\+\_\+data\+\_\+layout}!lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+data\+\_\+layout()}{get\_data\_layout()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08db}{data\+\_\+layout} \hyperlink{classlbann_1_1pooling__layer}{lbann\+::pooling\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+data\+\_\+layout (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get data layout of the data tensors. We assume that the data layouts of the previous activations, activations, previous error signals, and error signals are the same. Each concrete layer that is templated on its data layout should override this function to return its template parameter. 
+
+Implements \hyperlink{classlbann_1_1Layer_a5dfb66e81fc085997402a5e2241316bd}{lbann\+::\+Layer}.
+
+
+
+Definition at line 156 of file pooling.\+hpp.
+
+
+\begin{DoxyCode}
+156 \{ \textcolor{keywordflow}{return} T\_layout; \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=327pt]{classlbann_1_1pooling__layer_ad6d7e7476521ed4a4c43db493807b2ca_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1pooling__layer_a11f6d5c7ef16a62d081164f174825ab2}\label{classlbann_1_1pooling__layer_a11f6d5c7ef16a62d081164f174825ab2}} 
+\index{lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}!get\+\_\+description@{get\+\_\+description}}
+\index{get\+\_\+description@{get\+\_\+description}!lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+description()}{get\_description()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+std\+::string \hyperlink{classlbann_1_1pooling__layer}{lbann\+::pooling\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+description (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Returns description of ctor params 
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_acc0803d3428914ca1eb5988c4309174a}{lbann\+::\+Layer}.
+
+
+
+Definition at line 159 of file pooling.\+hpp.
+
+
+\begin{DoxyCode}
+159                                              \{
+160     std::stringstream s;
+161     s << \textcolor{stringliteral}{" pooling; num\_data\_dims: "}
+162     + std::to\_string(\hyperlink{classlbann_1_1pooling__layer_abb52fe974f602921823a46320fd7d075}{m\_pool\_dims}.size()) + \textcolor{stringliteral}{" pool\_dims: "};
+163     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} h=0; h<this->\hyperlink{classlbann_1_1pooling__layer_abb52fe974f602921823a46320fd7d075}{m\_pool\_dims}.size(); h++) \{
+164       s << this->\hyperlink{classlbann_1_1pooling__layer_abb52fe974f602921823a46320fd7d075}{m\_pool\_dims}[h] << \textcolor{stringliteral}{" "};
+165     \}
+166     s << \textcolor{stringliteral}{" pads: "};
+167     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} h=0; h<this->\hyperlink{classlbann_1_1pooling__layer_a22fd39aa4358149110a369ddf0e5ffdb}{m\_pads}.size(); h++) \{
+168       s << this->\hyperlink{classlbann_1_1pooling__layer_a22fd39aa4358149110a369ddf0e5ffdb}{m\_pads}[h] << \textcolor{stringliteral}{" "};
+169     \}
+170     s << \textcolor{stringliteral}{" strides: "};
+171     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} h=0; h<this->\hyperlink{classlbann_1_1pooling__layer_a754bb6d49b39e915f315ca0049c953d9}{m\_strides}.size(); h++) \{
+172       s << this->\hyperlink{classlbann_1_1pooling__layer_a754bb6d49b39e915f315ca0049c953d9}{m\_strides}[h] << \textcolor{stringliteral}{" "};
+173     \}
+174     s << \textcolor{stringliteral}{" pool\_mode: "} << \hyperlink{base_8cpp_af3cdcb8265717e1115135deb3618e5dd}{get\_pool\_mode\_name}(this->
+      \hyperlink{classlbann_1_1pooling__layer_a7b19407c88f89757e64ed3d4afab8443}{m\_pool\_mode});
+175     s << \textcolor{stringliteral}{" dataLayout: "} << this->\hyperlink{classlbann_1_1Layer_ae3f4a5602df821f4221614b1e3782dc1}{get\_data\_layout\_string}(
+      \hyperlink{classlbann_1_1pooling__layer_ad6d7e7476521ed4a4c43db493807b2ca}{get\_data\_layout}());
+176     \textcolor{keywordflow}{return} s.str();
+177   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=337pt]{classlbann_1_1pooling__layer_a11f6d5c7ef16a62d081164f174825ab2_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1pooling__layer_a2af67eebe2d051b141253bdba18f54ff}\label{classlbann_1_1pooling__layer_a2af67eebe2d051b141253bdba18f54ff}} 
+\index{lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}!get\+\_\+type@{get\+\_\+type}}
+\index{get\+\_\+type@{get\+\_\+type}!lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+type()}{get\_type()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+std\+::string \hyperlink{classlbann_1_1pooling__layer}{lbann\+::pooling\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+type (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get the layer type\textquotesingle{}s name. A layer type name should be brief, human-\/readable description of the layer\textquotesingle{}s mathematical operation. 
+
+Implements \hyperlink{classlbann_1_1Layer_a0fa0ea9160b490c151c0a17fde4f7239}{lbann\+::\+Layer}.
+
+
+
+Definition at line 155 of file pooling.\+hpp.
+
+
+\begin{DoxyCode}
+155 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"pooling"}; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1pooling__layer_acd09fc03a5c22c4127222b722c4d6ce5}\label{classlbann_1_1pooling__layer_acd09fc03a5c22c4127222b722c4d6ce5}} 
+\index{lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{classlbann_1_1pooling__layer}{pooling\+\_\+layer}\& \hyperlink{classlbann_1_1pooling__layer}{lbann\+::pooling\+\_\+layer}$<$ T\+\_\+layout $>$\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1pooling__layer}{pooling\+\_\+layer}$<$ T\+\_\+layout $>$ \&}]{other }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 140 of file pooling.\+hpp.
+
+
+\begin{DoxyCode}
+140                                                       \{
+141     \hyperlink{classlbann_1_1Layer_a00d8acde68fda2f38c4a39ef8c89234a}{transform\_layer::operator=}(other);
+142     \hyperlink{classlbann_1_1pooling__layer_a7b19407c88f89757e64ed3d4afab8443}{m\_pool\_mode} = other.m\_pool\_mode;
+143     \hyperlink{classlbann_1_1pooling__layer_abb52fe974f602921823a46320fd7d075}{m\_pool\_dims} = other.m\_pool\_dims;
+144     \hyperlink{classlbann_1_1pooling__layer_a8b3a9020bb896a1132c9823bc2c73515}{m\_pool\_size} = other.m\_pool\_size;
+145     \hyperlink{classlbann_1_1pooling__layer_a22fd39aa4358149110a369ddf0e5ffdb}{m\_pads} = other.m\_pads;
+146     \hyperlink{classlbann_1_1pooling__layer_a754bb6d49b39e915f315ca0049c953d9}{m\_strides} = other.m\_strides;
+147     \hyperlink{classlbann_1_1pooling__layer_a58683798db4c48175cbad5ec32ff676c}{m\_max\_pool\_indices} = other.m\_max\_pool\_indices;
+148 \textcolor{preprocessor}{  #ifdef LBANN\_HAS\_CUDNN}
+149     cudnn::copy\_pooling\_cudnn\_desc(other.m\_pooling\_cudnn\_desc, m\_pooling\_cudnn\_desc);
+150 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+151     \textcolor{keywordflow}{return} *\textcolor{keyword}{this};
+152   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1pooling__layer_acd09fc03a5c22c4127222b722c4d6ce5_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1pooling__layer_a5de83fe60224067c132b0f1d53024b57}\label{classlbann_1_1pooling__layer_a5de83fe60224067c132b0f1d53024b57}} 
+\index{lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}!setup\+\_\+dims@{setup\+\_\+dims}}
+\index{setup\+\_\+dims@{setup\+\_\+dims}!lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}}
+\subsubsection{\texorpdfstring{setup\+\_\+dims()}{setup\_dims()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1pooling__layer}{lbann\+::pooling\+\_\+layer}$<$ T\+\_\+layout $>$\+::setup\+\_\+dims (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Setup tensor dimensions Called by the setup function. The base method sets the dimensions of the activation tensors equal to the dimensions of the first previous activation tensor. 
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_a90fce1b06c1f2abb480e18cfe08a9746}{lbann\+::\+Layer}.
+
+
+
+Definition at line 189 of file pooling.\+hpp.
+
+
+\begin{DoxyCode}
+189                              \{
+190 
+191     \textcolor{comment}{// Initialize previous neuron tensor dimensions}
+192     \hyperlink{classlbann_1_1Layer_a90fce1b06c1f2abb480e18cfe08a9746}{transform\_layer::setup\_dims}();
+193 
+194     \textcolor{comment}{// Initialize neuron tensor dimensions}
+195     \textcolor{keywordflow}{for}(\textcolor{keywordtype}{int} i=0; i<this->\hyperlink{classlbann_1_1Layer_adfd6178d21498c9095cd947ae1eb2d6a}{m\_num\_neuron\_dims}-1; ++i) \{
+196       \textcolor{keyword}{const} \textcolor{keywordtype}{int} effective\_dim = (this->\hyperlink{classlbann_1_1Layer_ae204d1a2a79606eaa117273857ff62a3}{m\_prev\_neuron\_dims}[i+1]
+197                                  + 2 * \hyperlink{classlbann_1_1pooling__layer_a22fd39aa4358149110a369ddf0e5ffdb}{m\_pads}[i] - \hyperlink{classlbann_1_1pooling__layer_abb52fe974f602921823a46320fd7d075}{m\_pool\_dims}[i] + 1);
+198       this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}[i+1] = ((effective\_dim + \hyperlink{classlbann_1_1pooling__layer_a754bb6d49b39e915f315ca0049c953d9}{m\_strides}[i] - 1)
+199                                   / \hyperlink{classlbann_1_1pooling__layer_a754bb6d49b39e915f315ca0049c953d9}{m\_strides}[i]);
+200     \}
+201     this->\hyperlink{classlbann_1_1Layer_a6b5ebc8a7d9329d8a773ed787e7b41d8}{m\_num\_neurons} = std::accumulate(this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}.begin(),
+202                                           this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}.end(),
+203                                           1,
+204                                           std::multiplies<int>());
+205 
+206   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=349pt]{classlbann_1_1pooling__layer_a5de83fe60224067c132b0f1d53024b57_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1pooling__layer_a603adc8abc7527f2fd12eb4264b0f3cc}\label{classlbann_1_1pooling__layer_a603adc8abc7527f2fd12eb4264b0f3cc}} 
+\index{lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}!setup\+\_\+gpu@{setup\+\_\+gpu}}
+\index{setup\+\_\+gpu@{setup\+\_\+gpu}!lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}}
+\subsubsection{\texorpdfstring{setup\+\_\+gpu()}{setup\_gpu()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1pooling__layer}{lbann\+::pooling\+\_\+layer}$<$ T\+\_\+layout $>$\+::setup\+\_\+gpu (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Initialize G\+PU objects. 
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_a36aa22ef90ce4de65abe729d38490863}{lbann\+::\+Layer}.
+
+
+
+Definition at line 209 of file pooling.\+hpp.
+
+
+\begin{DoxyCode}
+209                             \{
+210     \hyperlink{classlbann_1_1Layer_a36aa22ef90ce4de65abe729d38490863}{transform\_layer::setup\_gpu}();
+211 \textcolor{preprocessor}{  #ifndef LBANN\_HAS\_CUDNN}
+212     \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"lbann\_layer\_pooling: cuDNN not detected"});
+213 \textcolor{preprocessor}{  #else}
+214 
+215     \textcolor{comment}{// Set pooling descriptor}
+216     cudnnPoolingMode\_t cudnn\_pool\_mode;
+217     \textcolor{keywordflow}{switch}(\hyperlink{classlbann_1_1pooling__layer_a7b19407c88f89757e64ed3d4afab8443}{m\_pool\_mode}) \{
+218     \textcolor{keywordflow}{case} \hyperlink{base_8hpp_ac47a6ee5278a53898222a48639a2bf39a2ffe4e77325d9a7152f7086ea7aa5114}{pool\_mode::max}:
+219       cudnn\_pool\_mode = CUDNN\_POOLING\_MAX; \textcolor{keywordflow}{break};
+220     \textcolor{keywordflow}{case} \hyperlink{base_8hpp_ac47a6ee5278a53898222a48639a2bf39a6927a3a7218a3195858411433ec20a21}{pool\_mode::average}:
+221       cudnn\_pool\_mode = CUDNN\_POOLING\_AVERAGE\_COUNT\_INCLUDE\_PADDING; \textcolor{keywordflow}{break};
+222     \textcolor{keywordflow}{case} \hyperlink{base_8hpp_ac47a6ee5278a53898222a48639a2bf39ad91c68878ae16f6dfcd4e1551c33cdd1}{pool\_mode::average\_no\_pad}:
+223       cudnn\_pool\_mode = CUDNN\_POOLING\_AVERAGE\_COUNT\_EXCLUDE\_PADDING; \textcolor{keywordflow}{break};
+224     \textcolor{keywordflow}{default}:
+225       \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"pooling\_layer: no GPU implementation for pooling mode"});
+226     \}
+227     CHECK\_CUDNN(cudnnCreatePoolingDescriptor(&m\_pooling\_cudnn\_desc));
+228     CHECK\_CUDNN(cudnnSetPoolingNdDescriptor(m\_pooling\_cudnn\_desc,
+229                                             cudnn\_pool\_mode,
+230                                             CUDNN\_PROPAGATE\_NAN,
+231                                             \hyperlink{classlbann_1_1pooling__layer_abb52fe974f602921823a46320fd7d075}{m\_pool\_dims}.size(),
+232                                             \hyperlink{classlbann_1_1pooling__layer_abb52fe974f602921823a46320fd7d075}{m\_pool\_dims}.data(),
+233                                             \hyperlink{classlbann_1_1pooling__layer_a22fd39aa4358149110a369ddf0e5ffdb}{m\_pads}.data(),
+234                                             \hyperlink{classlbann_1_1pooling__layer_a754bb6d49b39e915f315ca0049c953d9}{m\_strides}.data()));
+235 
+236 \textcolor{preprocessor}{  #endif // #ifndef LBANN\_HAS\_CUDNN}
+237   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1pooling__layer_a603adc8abc7527f2fd12eb4264b0f3cc_cgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Friends And Related Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1pooling__layer_ad56e2530ee19c632a3a06e6214a1889f}\label{classlbann_1_1pooling__layer_ad56e2530ee19c632a3a06e6214a1889f}} 
+\index{lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}!unpooling\+\_\+layer$<$ T\+\_\+layout $>$@{unpooling\+\_\+layer$<$ T\+\_\+layout $>$}}
+\index{unpooling\+\_\+layer$<$ T\+\_\+layout $>$@{unpooling\+\_\+layer$<$ T\+\_\+layout $>$}!lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}}
+\subsubsection{\texorpdfstring{unpooling\+\_\+layer$<$ T\+\_\+layout $>$}{unpooling\_layer< T\_layout >}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+friend class \hyperlink{classlbann_1_1unpooling__layer}{unpooling\+\_\+layer}$<$ T\+\_\+layout $>$\hspace{0.3cm}{\ttfamily [friend]}}
+
+
+
+Definition at line 72 of file pooling.\+hpp.
+
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1pooling__layer_a58683798db4c48175cbad5ec32ff676c}\label{classlbann_1_1pooling__layer_a58683798db4c48175cbad5ec32ff676c}} 
+\index{lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}!m\+\_\+max\+\_\+pool\+\_\+indices@{m\+\_\+max\+\_\+pool\+\_\+indices}}
+\index{m\+\_\+max\+\_\+pool\+\_\+indices@{m\+\_\+max\+\_\+pool\+\_\+indices}!lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}}
+\subsubsection{\texorpdfstring{m\+\_\+max\+\_\+pool\+\_\+indices}{m\_max\_pool\_indices}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+std\+::vector$<$int$>$ \hyperlink{classlbann_1_1pooling__layer}{lbann\+::pooling\+\_\+layer}$<$ T\+\_\+layout $>$\+::m\+\_\+max\+\_\+pool\+\_\+indices\hspace{0.3cm}{\ttfamily [private]}}
+
+Input indices for max pooling. Each entry corresponds to a local entry in the activations matrix. The entry gives the index of the maximum entry within the pooling window. 
+
+Definition at line 65 of file pooling.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1pooling__layer_a22fd39aa4358149110a369ddf0e5ffdb}\label{classlbann_1_1pooling__layer_a22fd39aa4358149110a369ddf0e5ffdb}} 
+\index{lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}!m\+\_\+pads@{m\+\_\+pads}}
+\index{m\+\_\+pads@{m\+\_\+pads}!lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}}
+\subsubsection{\texorpdfstring{m\+\_\+pads}{m\_pads}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+std\+::vector$<$int$>$ \hyperlink{classlbann_1_1pooling__layer}{lbann\+::pooling\+\_\+layer}$<$ T\+\_\+layout $>$\+::m\+\_\+pads\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Pooling padding. 
+
+
+
+Definition at line 56 of file pooling.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1pooling__layer_abb52fe974f602921823a46320fd7d075}\label{classlbann_1_1pooling__layer_abb52fe974f602921823a46320fd7d075}} 
+\index{lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}!m\+\_\+pool\+\_\+dims@{m\+\_\+pool\+\_\+dims}}
+\index{m\+\_\+pool\+\_\+dims@{m\+\_\+pool\+\_\+dims}!lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}}
+\subsubsection{\texorpdfstring{m\+\_\+pool\+\_\+dims}{m\_pool\_dims}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+std\+::vector$<$int$>$ \hyperlink{classlbann_1_1pooling__layer}{lbann\+::pooling\+\_\+layer}$<$ T\+\_\+layout $>$\+::m\+\_\+pool\+\_\+dims\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Pooling window dimensions. 
+
+
+
+Definition at line 52 of file pooling.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1pooling__layer_a7b19407c88f89757e64ed3d4afab8443}\label{classlbann_1_1pooling__layer_a7b19407c88f89757e64ed3d4afab8443}} 
+\index{lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}!m\+\_\+pool\+\_\+mode@{m\+\_\+pool\+\_\+mode}}
+\index{m\+\_\+pool\+\_\+mode@{m\+\_\+pool\+\_\+mode}!lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}}
+\subsubsection{\texorpdfstring{m\+\_\+pool\+\_\+mode}{m\_pool\_mode}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+const \hyperlink{base_8hpp_ac47a6ee5278a53898222a48639a2bf39}{pool\+\_\+mode} \hyperlink{classlbann_1_1pooling__layer}{lbann\+::pooling\+\_\+layer}$<$ T\+\_\+layout $>$\+::m\+\_\+pool\+\_\+mode\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Pooling mode. 
+
+
+
+Definition at line 49 of file pooling.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1pooling__layer_a8b3a9020bb896a1132c9823bc2c73515}\label{classlbann_1_1pooling__layer_a8b3a9020bb896a1132c9823bc2c73515}} 
+\index{lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}!m\+\_\+pool\+\_\+size@{m\+\_\+pool\+\_\+size}}
+\index{m\+\_\+pool\+\_\+size@{m\+\_\+pool\+\_\+size}!lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}}
+\subsubsection{\texorpdfstring{m\+\_\+pool\+\_\+size}{m\_pool\_size}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+int \hyperlink{classlbann_1_1pooling__layer}{lbann\+::pooling\+\_\+layer}$<$ T\+\_\+layout $>$\+::m\+\_\+pool\+\_\+size\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Size of pooling window. 
+
+
+
+Definition at line 54 of file pooling.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1pooling__layer_a754bb6d49b39e915f315ca0049c953d9}\label{classlbann_1_1pooling__layer_a754bb6d49b39e915f315ca0049c953d9}} 
+\index{lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}!m\+\_\+strides@{m\+\_\+strides}}
+\index{m\+\_\+strides@{m\+\_\+strides}!lbann\+::pooling\+\_\+layer@{lbann\+::pooling\+\_\+layer}}
+\subsubsection{\texorpdfstring{m\+\_\+strides}{m\_strides}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+std\+::vector$<$int$>$ \hyperlink{classlbann_1_1pooling__layer}{lbann\+::pooling\+\_\+layer}$<$ T\+\_\+layout $>$\+::m\+\_\+strides\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Pooling strides. 
+
+
+
+Definition at line 58 of file pooling.\+hpp.
+
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/layers/transform/\hyperlink{pooling_8hpp}{pooling.\+hpp}\end{DoxyCompactItemize}

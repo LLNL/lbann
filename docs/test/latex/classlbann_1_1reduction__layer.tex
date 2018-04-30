@@ -1,0 +1,421 @@
+\hypertarget{classlbann_1_1reduction__layer}{}\section{lbann\+:\+:reduction\+\_\+layer$<$ T\+\_\+layout $>$ Class Template Reference}
+\label{classlbann_1_1reduction__layer}\index{lbann\+::reduction\+\_\+layer$<$ T\+\_\+layout $>$@{lbann\+::reduction\+\_\+layer$<$ T\+\_\+layout $>$}}
+
+
+{\ttfamily \#include $<$reduction.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:reduction\+\_\+layer$<$ T\+\_\+layout $>$\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=195pt]{classlbann_1_1reduction__layer__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:reduction\+\_\+layer$<$ T\+\_\+layout $>$\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1reduction__layer__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1reduction__layer_ac6e8498f03708ce51e389116107bf135}{reduction\+\_\+layer} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, \hyperlink{namespacelbann_a5975e1fb530a267728bfb01dc5c1be9b}{reduction\+\_\+mode} mode, \hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$cudnn=nullptr)
+\item 
+\hyperlink{classlbann_1_1reduction__layer}{reduction\+\_\+layer} $\ast$ \hyperlink{classlbann_1_1reduction__layer_a5a47c9c732716928131445230ef97af6}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1reduction__layer_a442261c36971a6f7188d58eba50ef798}{get\+\_\+type} () const override
+\item 
+\hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08db}{data\+\_\+layout} \hyperlink{classlbann_1_1reduction__layer_a9799e2a98d503a64b462674d0cd69b6e}{get\+\_\+data\+\_\+layout} () const override
+\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{classlbann_1_1reduction__layer_aff2c5f6112da848908baba3645408e6e}{setup\+\_\+dims} () override
+\item 
+void \hyperlink{classlbann_1_1reduction__layer_a7e78d0d69106611bfb5ff3fe5bb01016}{fp\+\_\+compute} () override
+\item 
+void \hyperlink{classlbann_1_1reduction__layer_a2ea767accbf2c9fdc9074d1e473db259}{bp\+\_\+compute} () override
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+const \hyperlink{namespacelbann_a5975e1fb530a267728bfb01dc5c1be9b}{reduction\+\_\+mode} \hyperlink{classlbann_1_1reduction__layer_aa8c753154fec05a00ede9217df3ba638}{m\+\_\+mode}
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+\subsubsection*{template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$\newline
+class lbann\+::reduction\+\_\+layer$<$ T\+\_\+layout $>$}
+
+Reduction layer. 
+
+Definition at line 39 of file reduction.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1reduction__layer_ac6e8498f03708ce51e389116107bf135}\label{classlbann_1_1reduction__layer_ac6e8498f03708ce51e389116107bf135}} 
+\index{lbann\+::reduction\+\_\+layer@{lbann\+::reduction\+\_\+layer}!reduction\+\_\+layer@{reduction\+\_\+layer}}
+\index{reduction\+\_\+layer@{reduction\+\_\+layer}!lbann\+::reduction\+\_\+layer@{lbann\+::reduction\+\_\+layer}}
+\subsubsection{\texorpdfstring{reduction\+\_\+layer()}{reduction\_layer()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{classlbann_1_1reduction__layer}{lbann\+::reduction\+\_\+layer}$<$ T\+\_\+layout $>$\+::\hyperlink{classlbann_1_1reduction__layer}{reduction\+\_\+layer} (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{\hyperlink{namespacelbann_a5975e1fb530a267728bfb01dc5c1be9b}{reduction\+\_\+mode}}]{mode,  }\item[{\hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$}]{cudnn = {\ttfamily nullptr} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 47 of file reduction.\+hpp.
+
+
+\begin{DoxyCode}
+50     : \hyperlink{classlbann_1_1transform__layer_a4b72501e0f4d0745c8b13c5331055e65}{transform\_layer}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}),
+51       \hyperlink{classlbann_1_1reduction__layer_aa8c753154fec05a00ede9217df3ba638}{m\_mode}(mode) \{
+52     static\_assert(T\_layout == \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08dba37d2a3465f7cbf4ab60f4e79944d0638}{data\_layout::DATA\_PARALLEL},
+53                   \textcolor{stringliteral}{"reduction currently only supports DATA\_PARALLEL"});
+54     \textcolor{keywordflow}{if} (mode == \hyperlink{namespacelbann_a5975e1fb530a267728bfb01dc5c1be9baccc0377a8afbf50e7094f5c23a8af223}{reduction\_mode::INVALID}) \{
+55       \hyperlink{base_8hpp_a80b1d707117e968a6951b7222e4b2b87}{LBANN\_ERROR}(\textcolor{stringliteral}{"invalid reduction mode"});
+56     \}
+57     
+58     \textcolor{comment}{// Initialize neuron tensor dimensions}
+59     this->\hyperlink{classlbann_1_1Layer_a6b5ebc8a7d9329d8a773ed787e7b41d8}{m\_num\_neurons} = 1;
+60     this->\hyperlink{classlbann_1_1Layer_adfd6178d21498c9095cd947ae1eb2d6a}{m\_num\_neuron\_dims} = 1;
+61     this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims} = \{1\};
+62 
+63 \textcolor{preprocessor}{  #ifdef LBANN\_HAS\_CUDNN}
+64     \textcolor{comment}{// Initialize GPU if available}
+65     \textcolor{keywordflow}{if} (cudnn != \textcolor{keyword}{nullptr}) \{
+66       this->\hyperlink{classlbann_1_1Layer_af7881cb5eff5207c15fa835d65462e8f}{m\_using\_gpus} = \textcolor{keyword}{true};
+67       this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn} = cudnn;
+68     \}
+69 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+70 
+71   \}
+\end{DoxyCode}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1reduction__layer_a2ea767accbf2c9fdc9074d1e473db259}\label{classlbann_1_1reduction__layer_a2ea767accbf2c9fdc9074d1e473db259}} 
+\index{lbann\+::reduction\+\_\+layer@{lbann\+::reduction\+\_\+layer}!bp\+\_\+compute@{bp\+\_\+compute}}
+\index{bp\+\_\+compute@{bp\+\_\+compute}!lbann\+::reduction\+\_\+layer@{lbann\+::reduction\+\_\+layer}}
+\subsubsection{\texorpdfstring{bp\+\_\+compute()}{bp\_compute()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1reduction__layer}{lbann\+::reduction\+\_\+layer}$<$ T\+\_\+layout $>$\+::bp\+\_\+compute (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Perform the computation for the backward propagation step. 
+
+Implements \hyperlink{classlbann_1_1Layer_a7442e01f9ee1294df2de811efcf5171e}{lbann\+::\+Layer}.
+
+
+
+Definition at line 163 of file reduction.\+hpp.
+
+
+\begin{DoxyCode}
+163                              \{
+164     \textcolor{keywordflow}{if}(this->\hyperlink{classlbann_1_1Layer_af7881cb5eff5207c15fa835d65462e8f}{m\_using\_gpus}) \{
+165 \textcolor{preprocessor}{    #ifndef LBANN\_HAS\_CUDNN}
+166       \hyperlink{base_8hpp_a80b1d707117e968a6951b7222e4b2b87}{LBANN\_ERROR}(\textcolor{stringliteral}{"cuDNN not detected"});
+167 \textcolor{preprocessor}{    #else}
+168 
+169       \textcolor{comment}{// GPU data}
+170       \textcolor{keyword}{const} \textcolor{keyword}{auto}& gradient\_wrt\_output\_d = this->m\_prev\_error\_signals\_d[0];
+171       \textcolor{keyword}{auto}& gradient\_wrt\_input\_d = this->m\_error\_signals\_d[0];
+172       \textcolor{keyword}{const} \textcolor{keyword}{auto}& input\_size = \hyperlink{classlbann_1_1Layer_a27112eb70bbfbd7f3c3e749960400dec}{get\_num\_prev\_neurons}();
+173       \textcolor{keyword}{const} \textcolor{keyword}{auto}& mini\_batch\_size = m\_mini\_batch\_size\_per\_gpu;
+174       \textcolor{keyword}{const} \textcolor{keyword}{auto}& gradient\_wrt\_input\_ldim = gradient\_wrt\_input\_d.get\_leading\_dim();
+175       \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_gpus = \hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_num\_gpus();
+176 
+177       \textcolor{comment}{// Stop early if possible}
+178       \textcolor{keywordflow}{if} (mini\_batch\_size == 0) \{ \textcolor{keywordflow}{return}; \}
+179 
+180       \textcolor{comment}{// Apply reduction on GPU}
+181       \textcolor{keywordflow}{switch} (\hyperlink{classlbann_1_1reduction__layer_aa8c753154fec05a00ede9217df3ba638}{m\_mode}) \{
+182       \textcolor{keywordflow}{case} \hyperlink{namespacelbann_a5975e1fb530a267728bfb01dc5c1be9ba6970bdc2201030b9c03fbdcf3973858a}{reduction\_mode::SUM}:
+183         \{
+184           cudnn::matrix ones\_d(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn});
+185           ones\_d.attach\_to\_work\_spaces(input\_size);
+186           \hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->set\_on\_gpus(ones\_d.get\_data(), DataType(1), input\_size);
+187           \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i = 0; i < num\_gpus; ++i) \{
+188             CHECK\_CUDA(cudaSetDevice(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_gpu(i)));
+189             cublas::gemm(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_cublas\_handle(i),
+190                          CUBLAS\_OP\_N, CUBLAS\_OP\_N,
+191                          input\_size, mini\_batch\_size, 1,
+192                          DataType(1),
+193                          ones\_d.get\_locked\_data(i), input\_size,
+194                          gradient\_wrt\_output\_d.get\_locked\_data(i), 1,
+195                          DataType(0),
+196                          gradient\_wrt\_input\_d.get\_data(i),
+197                          gradient\_wrt\_input\_ldim);
+198           \}
+199         \}
+200         \textcolor{keywordflow}{break};
+201       \textcolor{keywordflow}{case} \hyperlink{namespacelbann_a5975e1fb530a267728bfb01dc5c1be9ba16de38737a9f8366e9b2042b4e9b6290}{reduction\_mode::AVERAGE}:
+202         \{
+203           cudnn::matrix ones\_d(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn});
+204           ones\_d.attach\_to\_work\_spaces(input\_size);
+205           \hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->set\_on\_gpus(ones\_d.get\_data(), DataType(1), input\_size);
+206           \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i = 0; i < num\_gpus; ++i) \{
+207             CHECK\_CUDA(cudaSetDevice(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_gpu(i)));
+208             cublas::gemm(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_cublas\_handle(i),
+209                          CUBLAS\_OP\_N, CUBLAS\_OP\_T,
+210                          input\_size, mini\_batch\_size, 1,
+211                          DataType(1) / mini\_batch\_size,
+212                          ones\_d.get\_locked\_data(i), input\_size,
+213                          gradient\_wrt\_output\_d.get\_locked\_data(i), 1,
+214                          DataType(0),
+215                          gradient\_wrt\_input\_d.get\_data(i),
+216                          gradient\_wrt\_input\_ldim);
+217           \}
+218         \}
+219         \textcolor{keywordflow}{break};
+220       \textcolor{keywordflow}{default}:
+221         \hyperlink{base_8hpp_a80b1d707117e968a6951b7222e4b2b87}{LBANN\_ERROR}(\textcolor{stringliteral}{"invalid reduction mode"});
+222       \}
+223 
+224 \textcolor{preprocessor}{   #endif // LBANN\_HAS\_CUDNN}
+225     \} \textcolor{keywordflow}{else} \{
+226       \textcolor{comment}{// Apply reduction on CPU}
+227       \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_gradient\_wrt\_output = \hyperlink{classlbann_1_1Layer_a82827edc5e869960144f3ccb2172bfcd}{get\_local\_prev\_error\_signals}();
+228       \textcolor{keyword}{auto}& local\_gradient\_wrt\_input = \hyperlink{classlbann_1_1Layer_af178d00b9d878aa7d87754bff2a91f3a}{get\_local\_error\_signals}();
+229       \textcolor{keywordflow}{switch} (\hyperlink{classlbann_1_1reduction__layer_aa8c753154fec05a00ede9217df3ba638}{m\_mode}) \{
+230       \textcolor{keywordflow}{case} \hyperlink{namespacelbann_a5975e1fb530a267728bfb01dc5c1be9ba6970bdc2201030b9c03fbdcf3973858a}{reduction\_mode::SUM}:
+231         El::IndexDependentMap(local\_gradient\_wrt\_input,
+232                               (std::function<DataType(El::Int,El::Int,\textcolor{keyword}{const} DataType&)>)
+233                               ([\textcolor{keyword}{this},&local\_gradient\_wrt\_output]
+234                                (El::Int r, El::Int c,\textcolor{keyword}{const} DataType& dx)
+235                                ->DataType \{
+236                                 \textcolor{keywordflow}{return} dx + local\_gradient\_wrt\_output(0, c);
+237                               \}));
+238         \textcolor{keywordflow}{break};
+239       \textcolor{keywordflow}{case} \hyperlink{namespacelbann_a5975e1fb530a267728bfb01dc5c1be9ba16de38737a9f8366e9b2042b4e9b6290}{reduction\_mode::AVERAGE}:
+240         \{
+241           \textcolor{keyword}{const} DataType scale = DataType(1) / \hyperlink{classlbann_1_1Layer_a27112eb70bbfbd7f3c3e749960400dec}{get\_num\_prev\_neurons}();
+242           El::IndexDependentMap(local\_gradient\_wrt\_input,
+243                                 (std::function<DataType(El::Int,El::Int,\textcolor{keyword}{const} DataType&)>)
+244                                 ([\textcolor{keyword}{this},&local\_gradient\_wrt\_output,scale]
+245                                  (El::Int r, El::Int c,\textcolor{keyword}{const} DataType& dx)
+246                                  ->DataType \{
+247                                   \textcolor{keywordflow}{return} dx + scale * local\_gradient\_wrt\_output(0, c);
+248                                 \}));
+249         \}
+250         \textcolor{keywordflow}{break};
+251       \textcolor{keywordflow}{default}:
+252         \hyperlink{base_8hpp_a80b1d707117e968a6951b7222e4b2b87}{LBANN\_ERROR}(\textcolor{stringliteral}{"invalid reduction mode"});
+253       \}
+254     \}
+255   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1reduction__layer_a5a47c9c732716928131445230ef97af6}\label{classlbann_1_1reduction__layer_a5a47c9c732716928131445230ef97af6}} 
+\index{lbann\+::reduction\+\_\+layer@{lbann\+::reduction\+\_\+layer}!copy@{copy}}
+\index{copy@{copy}!lbann\+::reduction\+\_\+layer@{lbann\+::reduction\+\_\+layer}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{classlbann_1_1reduction__layer}{reduction\+\_\+layer}$\ast$ \hyperlink{classlbann_1_1reduction__layer}{lbann\+::reduction\+\_\+layer}$<$ T\+\_\+layout $>$\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Copy function. This function dynamically allocates memory for a layer instance and instantiates a copy. The caller is responsible for deallocating the instance. 
+
+Implements \hyperlink{classlbann_1_1Layer_af420f22bbac801c85483ade84588a23f}{lbann\+::\+Layer}.
+
+
+
+Definition at line 73 of file reduction.\+hpp.
+
+
+\begin{DoxyCode}
+73 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1reduction__layer_ac6e8498f03708ce51e389116107bf135}{reduction\_layer}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1reduction__layer_a7e78d0d69106611bfb5ff3fe5bb01016}\label{classlbann_1_1reduction__layer_a7e78d0d69106611bfb5ff3fe5bb01016}} 
+\index{lbann\+::reduction\+\_\+layer@{lbann\+::reduction\+\_\+layer}!fp\+\_\+compute@{fp\+\_\+compute}}
+\index{fp\+\_\+compute@{fp\+\_\+compute}!lbann\+::reduction\+\_\+layer@{lbann\+::reduction\+\_\+layer}}
+\subsubsection{\texorpdfstring{fp\+\_\+compute()}{fp\_compute()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1reduction__layer}{lbann\+::reduction\+\_\+layer}$<$ T\+\_\+layout $>$\+::fp\+\_\+compute (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Perform the computation for the forward propagation step. 
+
+Implements \hyperlink{classlbann_1_1Layer_a523319dd1bd87a0612afa1912bb5aad7}{lbann\+::\+Layer}.
+
+
+
+Definition at line 86 of file reduction.\+hpp.
+
+
+\begin{DoxyCode}
+86                              \{
+87     \textcolor{keywordflow}{if}(this->\hyperlink{classlbann_1_1Layer_af7881cb5eff5207c15fa835d65462e8f}{m\_using\_gpus}) \{
+88 \textcolor{preprocessor}{    #ifndef LBANN\_HAS\_CUDNN}
+89       \hyperlink{base_8hpp_a80b1d707117e968a6951b7222e4b2b87}{LBANN\_ERROR}(\textcolor{stringliteral}{"cuDNN not detected"});
+90 \textcolor{preprocessor}{    #else}
+91       
+92       \textcolor{comment}{// GPU data}
+93       \textcolor{keyword}{const} \textcolor{keyword}{auto}& input\_d = this->m\_prev\_activations\_d[0];
+94       \textcolor{keyword}{auto}& output\_d = this->m\_activations\_d[0];
+95       \textcolor{keyword}{const} \textcolor{keyword}{auto}& input\_size = \hyperlink{classlbann_1_1Layer_a27112eb70bbfbd7f3c3e749960400dec}{get\_num\_prev\_neurons}();
+96       \textcolor{keyword}{const} \textcolor{keyword}{auto}& mini\_batch\_size = m\_mini\_batch\_size\_per\_gpu;
+97       \textcolor{keyword}{const} \textcolor{keyword}{auto}& input\_ldim = input\_d.get\_leading\_dim();
+98       \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_gpus = \hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_num\_gpus();
+99 
+100       \textcolor{comment}{// Stop early if possible}
+101       \textcolor{keywordflow}{if} (mini\_batch\_size == 0) \{ \textcolor{keywordflow}{return}; \}
+102 
+103       \textcolor{comment}{// Apply reduction on GPU}
+104       \textcolor{keywordflow}{switch} (\hyperlink{classlbann_1_1reduction__layer_aa8c753154fec05a00ede9217df3ba638}{m\_mode}) \{
+105       \textcolor{keywordflow}{case} \hyperlink{namespacelbann_a5975e1fb530a267728bfb01dc5c1be9ba6970bdc2201030b9c03fbdcf3973858a}{reduction\_mode::SUM}:
+106         \{
+107           cudnn::matrix ones\_d(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn});
+108           ones\_d.attach\_to\_work\_spaces(input\_size);
+109           \hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->set\_on\_gpus(ones\_d.get\_data(), DataType(1), input\_size);
+110           \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i = 0; i < num\_gpus; ++i) \{
+111             CHECK\_CUDA(cudaSetDevice(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_gpu(i)));
+112             cublas::gemv(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_cublas\_handle(i),
+113                          CUBLAS\_OP\_T,
+114                          input\_size, mini\_batch\_size,
+115                          DataType(1),
+116                          input\_d.get\_locked\_data(i), input\_ldim,
+117                          ones\_d.get\_locked\_data(i), 1,
+118                          DataType(0),
+119                          output\_d.get\_data(i), 1);
+120           \}
+121         \}
+122         \textcolor{keywordflow}{break};
+123       \textcolor{keywordflow}{case} \hyperlink{namespacelbann_a5975e1fb530a267728bfb01dc5c1be9ba16de38737a9f8366e9b2042b4e9b6290}{reduction\_mode::AVERAGE}:
+124         \{
+125           cudnn::matrix ones\_d(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn});
+126           ones\_d.attach\_to\_work\_spaces(input\_size);
+127           \hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->set\_on\_gpus(ones\_d.get\_data(), DataType(1), input\_size);
+128           \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i = 0; i < num\_gpus; ++i) \{
+129             CHECK\_CUDA(cudaSetDevice(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_gpu(i)));
+130             cublas::gemv(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_cublas\_handle(i),
+131                          CUBLAS\_OP\_T,
+132                          input\_size, mini\_batch\_size,
+133                          DataType(1) / input\_size,
+134                          input\_d.get\_locked\_data(i), input\_ldim,
+135                          ones\_d.get\_locked\_data(i), 1,
+136                          DataType(0),
+137                          output\_d.get\_data(i), 1);
+138           \}
+139         \}
+140         \textcolor{keywordflow}{break};
+141       \textcolor{keywordflow}{default}:
+142         \hyperlink{base_8hpp_a80b1d707117e968a6951b7222e4b2b87}{LBANN\_ERROR}(\textcolor{stringliteral}{"invalid reduction mode"});
+143       \}
+144 \textcolor{preprocessor}{    #endif // LBANN\_HAS\_CUDNN}
+145     \} \textcolor{keywordflow}{else} \{
+146       \textcolor{comment}{// Apply reduction on CPU}
+147       \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_input = \hyperlink{classlbann_1_1Layer_a35397843bb0c84030000c7d872229acb}{get\_local\_prev\_activations}();
+148       \textcolor{keyword}{auto}& local\_output = \hyperlink{classlbann_1_1Layer_a4248f27acebf72b7b7b3ee39c8bcb62a}{get\_local\_activations}();
+149       \textcolor{keywordflow}{switch} (\hyperlink{classlbann_1_1reduction__layer_aa8c753154fec05a00ede9217df3ba638}{m\_mode}) \{
+150       \textcolor{keywordflow}{case} \hyperlink{namespacelbann_a5975e1fb530a267728bfb01dc5c1be9ba6970bdc2201030b9c03fbdcf3973858a}{reduction\_mode::SUM}:
+151         \hyperlink{namespaceEl_a09d5c471681b2b48fbe4c5e6bfd0b3d3}{El::ColumnSum}(local\_input, local\_output);
+152         \textcolor{keywordflow}{break};
+153       \textcolor{keywordflow}{case} \hyperlink{namespacelbann_a5975e1fb530a267728bfb01dc5c1be9ba16de38737a9f8366e9b2042b4e9b6290}{reduction\_mode::AVERAGE}:
+154         \hyperlink{namespaceEl_a09d5c471681b2b48fbe4c5e6bfd0b3d3}{El::ColumnSum}(local\_input, local\_output);
+155         local\_output *= DataType(1) / \hyperlink{classlbann_1_1Layer_a27112eb70bbfbd7f3c3e749960400dec}{get\_num\_prev\_neurons}();
+156         \textcolor{keywordflow}{break};
+157       \textcolor{keywordflow}{default}:
+158         \hyperlink{base_8hpp_a80b1d707117e968a6951b7222e4b2b87}{LBANN\_ERROR}(\textcolor{stringliteral}{"invalid reduction mode"});
+159       \}
+160     \}
+161   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=316pt]{classlbann_1_1reduction__layer_a7e78d0d69106611bfb5ff3fe5bb01016_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1reduction__layer_a9799e2a98d503a64b462674d0cd69b6e}\label{classlbann_1_1reduction__layer_a9799e2a98d503a64b462674d0cd69b6e}} 
+\index{lbann\+::reduction\+\_\+layer@{lbann\+::reduction\+\_\+layer}!get\+\_\+data\+\_\+layout@{get\+\_\+data\+\_\+layout}}
+\index{get\+\_\+data\+\_\+layout@{get\+\_\+data\+\_\+layout}!lbann\+::reduction\+\_\+layer@{lbann\+::reduction\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+data\+\_\+layout()}{get\_data\_layout()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08db}{data\+\_\+layout} \hyperlink{classlbann_1_1reduction__layer}{lbann\+::reduction\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+data\+\_\+layout (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get data layout of the data tensors. We assume that the data layouts of the previous activations, activations, previous error signals, and error signals are the same. Each concrete layer that is templated on its data layout should override this function to return its template parameter. 
+
+Implements \hyperlink{classlbann_1_1Layer_a5dfb66e81fc085997402a5e2241316bd}{lbann\+::\+Layer}.
+
+
+
+Definition at line 75 of file reduction.\+hpp.
+
+
+\begin{DoxyCode}
+75 \{ \textcolor{keywordflow}{return} T\_layout; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1reduction__layer_a442261c36971a6f7188d58eba50ef798}\label{classlbann_1_1reduction__layer_a442261c36971a6f7188d58eba50ef798}} 
+\index{lbann\+::reduction\+\_\+layer@{lbann\+::reduction\+\_\+layer}!get\+\_\+type@{get\+\_\+type}}
+\index{get\+\_\+type@{get\+\_\+type}!lbann\+::reduction\+\_\+layer@{lbann\+::reduction\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+type()}{get\_type()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+std\+::string \hyperlink{classlbann_1_1reduction__layer}{lbann\+::reduction\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+type (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get the layer type\textquotesingle{}s name. A layer type name should be brief, human-\/readable description of the layer\textquotesingle{}s mathematical operation. 
+
+Implements \hyperlink{classlbann_1_1Layer_a0fa0ea9160b490c151c0a17fde4f7239}{lbann\+::\+Layer}.
+
+
+
+Definition at line 74 of file reduction.\+hpp.
+
+
+\begin{DoxyCode}
+74 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"reduction"}; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1reduction__layer_aff2c5f6112da848908baba3645408e6e}\label{classlbann_1_1reduction__layer_aff2c5f6112da848908baba3645408e6e}} 
+\index{lbann\+::reduction\+\_\+layer@{lbann\+::reduction\+\_\+layer}!setup\+\_\+dims@{setup\+\_\+dims}}
+\index{setup\+\_\+dims@{setup\+\_\+dims}!lbann\+::reduction\+\_\+layer@{lbann\+::reduction\+\_\+layer}}
+\subsubsection{\texorpdfstring{setup\+\_\+dims()}{setup\_dims()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1reduction__layer}{lbann\+::reduction\+\_\+layer}$<$ T\+\_\+layout $>$\+::setup\+\_\+dims (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Setup tensor dimensions Called by the setup function. The base method sets the dimensions of the activation tensors equal to the dimensions of the first previous activation tensor. 
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_a90fce1b06c1f2abb480e18cfe08a9746}{lbann\+::\+Layer}.
+
+
+
+Definition at line 79 of file reduction.\+hpp.
+
+
+\begin{DoxyCode}
+79                              \{
+80     \hyperlink{classlbann_1_1Layer_a90fce1b06c1f2abb480e18cfe08a9746}{transform\_layer::setup\_dims}();
+81     this->\hyperlink{classlbann_1_1Layer_a6b5ebc8a7d9329d8a773ed787e7b41d8}{m\_num\_neurons} = 1;
+82     this->\hyperlink{classlbann_1_1Layer_adfd6178d21498c9095cd947ae1eb2d6a}{m\_num\_neuron\_dims} = 1;
+83     this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims} = \{1\};
+84   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1reduction__layer_aff2c5f6112da848908baba3645408e6e_cgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1reduction__layer_aa8c753154fec05a00ede9217df3ba638}\label{classlbann_1_1reduction__layer_aa8c753154fec05a00ede9217df3ba638}} 
+\index{lbann\+::reduction\+\_\+layer@{lbann\+::reduction\+\_\+layer}!m\+\_\+mode@{m\+\_\+mode}}
+\index{m\+\_\+mode@{m\+\_\+mode}!lbann\+::reduction\+\_\+layer@{lbann\+::reduction\+\_\+layer}}
+\subsubsection{\texorpdfstring{m\+\_\+mode}{m\_mode}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+const \hyperlink{namespacelbann_a5975e1fb530a267728bfb01dc5c1be9b}{reduction\+\_\+mode} \hyperlink{classlbann_1_1reduction__layer}{lbann\+::reduction\+\_\+layer}$<$ T\+\_\+layout $>$\+::m\+\_\+mode\hspace{0.3cm}{\ttfamily [private]}}
+
+Reduction mode. 
+
+Definition at line 43 of file reduction.\+hpp.
+
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/layers/transform/\hyperlink{reduction_8hpp}{reduction.\+hpp}\end{DoxyCompactItemize}

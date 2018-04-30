@@ -1,0 +1,195 @@
+\hypertarget{classlbann_1_1dataset}{}\section{lbann\+:\+:dataset Class Reference}
+\label{classlbann_1_1dataset}\index{lbann\+::dataset@{lbann\+::dataset}}
+
+
+{\ttfamily \#include $<$dataset.\+hpp$>$}
+
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1dataset_ab2d74c40559624136c98b1e36193fbe3}{dataset} ()
+\item 
+\hyperlink{classlbann_1_1dataset_a505f3c75563db4728949ff6cdd328723}{dataset} (const \hyperlink{classlbann_1_1dataset}{dataset} \&other)=default
+\item 
+\hyperlink{classlbann_1_1dataset}{dataset} \& \hyperlink{classlbann_1_1dataset_a8806c93d49b1171a98f61f67de964f2b}{operator=} (const \hyperlink{classlbann_1_1dataset}{dataset} \&other)=default
+\item 
+long \hyperlink{classlbann_1_1dataset_a73496347a477a5ebb0dbf30140295026}{get\+\_\+num\+\_\+samples\+\_\+processed} () const
+\item 
+long \& \hyperlink{classlbann_1_1dataset_a412b29a50638f7d8feea4ad368c6a4dc}{num\+\_\+samples\+\_\+processed} ()
+\item 
+long \hyperlink{classlbann_1_1dataset_ad314847b347d413162a9d9eab759641f}{get\+\_\+total\+\_\+samples} () const
+\item 
+long \& \hyperlink{classlbann_1_1dataset_ab951c879f151990613567e985fe1e278}{total\+\_\+samples} ()
+\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+long \hyperlink{classlbann_1_1dataset_a68f4120cc4a7837e6a95b01358210cb5}{m\+\_\+num\+\_\+samples\+\_\+processed}
+\item 
+long \hyperlink{classlbann_1_1dataset_a2bfe72a2783e0a47e725e91dfb13d06a}{m\+\_\+total\+\_\+samples}
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+
+
+Definition at line 34 of file dataset.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1dataset_ab2d74c40559624136c98b1e36193fbe3}\label{classlbann_1_1dataset_ab2d74c40559624136c98b1e36193fbe3}} 
+\index{lbann\+::dataset@{lbann\+::dataset}!dataset@{dataset}}
+\index{dataset@{dataset}!lbann\+::dataset@{lbann\+::dataset}}
+\subsubsection{\texorpdfstring{dataset()}{dataset()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::dataset\+::dataset (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 36 of file dataset.\+hpp.
+
+
+\begin{DoxyCode}
+36 : \hyperlink{classlbann_1_1dataset_a68f4120cc4a7837e6a95b01358210cb5}{m\_num\_samples\_processed}(0), \hyperlink{classlbann_1_1dataset_a2bfe72a2783e0a47e725e91dfb13d06a}{m\_total\_samples}(0) \{\};
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1dataset_ab2d74c40559624136c98b1e36193fbe3_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1dataset_a505f3c75563db4728949ff6cdd328723}\label{classlbann_1_1dataset_a505f3c75563db4728949ff6cdd328723}} 
+\index{lbann\+::dataset@{lbann\+::dataset}!dataset@{dataset}}
+\index{dataset@{dataset}!lbann\+::dataset@{lbann\+::dataset}}
+\subsubsection{\texorpdfstring{dataset()}{dataset()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::dataset\+::dataset (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1dataset}{dataset} \&}]{other }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1dataset_a73496347a477a5ebb0dbf30140295026}\label{classlbann_1_1dataset_a73496347a477a5ebb0dbf30140295026}} 
+\index{lbann\+::dataset@{lbann\+::dataset}!get\+\_\+num\+\_\+samples\+\_\+processed@{get\+\_\+num\+\_\+samples\+\_\+processed}}
+\index{get\+\_\+num\+\_\+samples\+\_\+processed@{get\+\_\+num\+\_\+samples\+\_\+processed}!lbann\+::dataset@{lbann\+::dataset}}
+\subsubsection{\texorpdfstring{get\+\_\+num\+\_\+samples\+\_\+processed()}{get\_num\_samples\_processed()}}
+{\footnotesize\ttfamily long lbann\+::dataset\+::get\+\_\+num\+\_\+samples\+\_\+processed (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 41 of file dataset.\+hpp.
+
+
+\begin{DoxyCode}
+41 \{ \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1dataset_a68f4120cc4a7837e6a95b01358210cb5}{m\_num\_samples\_processed}; \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1dataset_a73496347a477a5ebb0dbf30140295026_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1dataset_ad314847b347d413162a9d9eab759641f}\label{classlbann_1_1dataset_ad314847b347d413162a9d9eab759641f}} 
+\index{lbann\+::dataset@{lbann\+::dataset}!get\+\_\+total\+\_\+samples@{get\+\_\+total\+\_\+samples}}
+\index{get\+\_\+total\+\_\+samples@{get\+\_\+total\+\_\+samples}!lbann\+::dataset@{lbann\+::dataset}}
+\subsubsection{\texorpdfstring{get\+\_\+total\+\_\+samples()}{get\_total\_samples()}}
+{\footnotesize\ttfamily long lbann\+::dataset\+::get\+\_\+total\+\_\+samples (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 43 of file dataset.\+hpp.
+
+
+\begin{DoxyCode}
+43 \{ \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1dataset_a2bfe72a2783e0a47e725e91dfb13d06a}{m\_total\_samples}; \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1dataset_ad314847b347d413162a9d9eab759641f_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1dataset_a412b29a50638f7d8feea4ad368c6a4dc}\label{classlbann_1_1dataset_a412b29a50638f7d8feea4ad368c6a4dc}} 
+\index{lbann\+::dataset@{lbann\+::dataset}!num\+\_\+samples\+\_\+processed@{num\+\_\+samples\+\_\+processed}}
+\index{num\+\_\+samples\+\_\+processed@{num\+\_\+samples\+\_\+processed}!lbann\+::dataset@{lbann\+::dataset}}
+\subsubsection{\texorpdfstring{num\+\_\+samples\+\_\+processed()}{num\_samples\_processed()}}
+{\footnotesize\ttfamily long\& lbann\+::dataset\+::num\+\_\+samples\+\_\+processed (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 42 of file dataset.\+hpp.
+
+
+\begin{DoxyCode}
+42 \{ \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1dataset_a68f4120cc4a7837e6a95b01358210cb5}{m\_num\_samples\_processed}; \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1dataset_a412b29a50638f7d8feea4ad368c6a4dc_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1dataset_a8806c93d49b1171a98f61f67de964f2b}\label{classlbann_1_1dataset_a8806c93d49b1171a98f61f67de964f2b}} 
+\index{lbann\+::dataset@{lbann\+::dataset}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::dataset@{lbann\+::dataset}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1dataset}{dataset}\& lbann\+::dataset\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1dataset}{dataset} \&}]{other }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1dataset_a8806c93d49b1171a98f61f67de964f2b_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1dataset_ab951c879f151990613567e985fe1e278}\label{classlbann_1_1dataset_ab951c879f151990613567e985fe1e278}} 
+\index{lbann\+::dataset@{lbann\+::dataset}!total\+\_\+samples@{total\+\_\+samples}}
+\index{total\+\_\+samples@{total\+\_\+samples}!lbann\+::dataset@{lbann\+::dataset}}
+\subsubsection{\texorpdfstring{total\+\_\+samples()}{total\_samples()}}
+{\footnotesize\ttfamily long\& lbann\+::dataset\+::total\+\_\+samples (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 44 of file dataset.\+hpp.
+
+
+\begin{DoxyCode}
+44 \{ \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1dataset_a2bfe72a2783e0a47e725e91dfb13d06a}{m\_total\_samples}; \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1dataset_ab951c879f151990613567e985fe1e278_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1dataset_a68f4120cc4a7837e6a95b01358210cb5}\label{classlbann_1_1dataset_a68f4120cc4a7837e6a95b01358210cb5}} 
+\index{lbann\+::dataset@{lbann\+::dataset}!m\+\_\+num\+\_\+samples\+\_\+processed@{m\+\_\+num\+\_\+samples\+\_\+processed}}
+\index{m\+\_\+num\+\_\+samples\+\_\+processed@{m\+\_\+num\+\_\+samples\+\_\+processed}!lbann\+::dataset@{lbann\+::dataset}}
+\subsubsection{\texorpdfstring{m\+\_\+num\+\_\+samples\+\_\+processed}{m\_num\_samples\_processed}}
+{\footnotesize\ttfamily long lbann\+::dataset\+::m\+\_\+num\+\_\+samples\+\_\+processed\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 46 of file dataset.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1dataset_a2bfe72a2783e0a47e725e91dfb13d06a}\label{classlbann_1_1dataset_a2bfe72a2783e0a47e725e91dfb13d06a}} 
+\index{lbann\+::dataset@{lbann\+::dataset}!m\+\_\+total\+\_\+samples@{m\+\_\+total\+\_\+samples}}
+\index{m\+\_\+total\+\_\+samples@{m\+\_\+total\+\_\+samples}!lbann\+::dataset@{lbann\+::dataset}}
+\subsubsection{\texorpdfstring{m\+\_\+total\+\_\+samples}{m\_total\_samples}}
+{\footnotesize\ttfamily long lbann\+::dataset\+::m\+\_\+total\+\_\+samples\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 47 of file dataset.\+hpp.
+
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/utils/\hyperlink{dataset_8hpp}{dataset.\+hpp}\end{DoxyCompactItemize}

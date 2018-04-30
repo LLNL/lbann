@@ -1,0 +1,285 @@
+\hypertarget{classlbann_1_1lbann__callback__adaptive__learning__rate}{}\section{lbann\+:\+:lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate Class Reference}
+\label{classlbann_1_1lbann__callback__adaptive__learning__rate}\index{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}}
+
+
+{\ttfamily \#include $<$callback\+\_\+learning\+\_\+rate.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=203pt]{classlbann_1_1lbann__callback__adaptive__learning__rate__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=211pt]{classlbann_1_1lbann__callback__adaptive__learning__rate__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_a2095e4c430b3c4f206e85c963e1ec2aa}{lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate} (int64\+\_\+t patience, float amt)
+\item 
+\hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_a49343d73d0be9782b0480c07aeda6046}{lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate} (int64\+\_\+t patience, float amt, std\+::unordered\+\_\+set$<$ \hyperlink{classlbann_1_1weights}{weights} $\ast$$>$ weights\+\_\+list)
+\item 
+\hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_a0b2fd5ecb8eb767184951947ced9b9b7}{lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate} (const \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate}{lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate}{lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate} \& \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_a7959faa8ba665cdf1132a5c7b518b3b9}{operator=} (const \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate}{lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate}{lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate} $\ast$ \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_ad5f290b78276fc9c7fd54a67c4a7e6eb}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_ab7292639822b95f3907d1aaf88410b1c}{name} () const override
+\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+float \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_a6c64fae03736b8acba5c839f59d2ac6f}{global\+\_\+schedule} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+int64\+\_\+t \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_ac3ac3c4d34d62608c54dfa3a41691217}{m\+\_\+patience}
+\item 
+float \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_ab9c76371184664ccd8e240e3b16a9736}{m\+\_\+amt}
+\item 
+int \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_a740b8b3bbb47312b48322f440f703222}{m\+\_\+cur\+\_\+epoch} = -\/1
+\item 
+\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_a7aa8aeed3df9cca131ace1ea9fbf1cd3}{m\+\_\+last\+\_\+score} = std\+::numeric\+\_\+limits$<$\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type}$>$\+::max()
+\item 
+int64\+\_\+t \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_aecfb70e4a366762305a2dbd8248471de}{m\+\_\+wait} = 0
+\item 
+bool \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_aa3de3b7d67b5295058e9c2175d06212d}{m\+\_\+adjust\+\_\+learning\+\_\+rate} = false
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+Decrease the learning rate by a fixed proportion when validation error stops improving. 
+
+Definition at line 120 of file callback\+\_\+learning\+\_\+rate.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__adaptive__learning__rate_a2095e4c430b3c4f206e85c963e1ec2aa}\label{classlbann_1_1lbann__callback__adaptive__learning__rate_a2095e4c430b3c4f206e85c963e1ec2aa}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}!lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}}
+\index{lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}!lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate()}{lbann\_callback\_adaptive\_learning\_rate()}\hspace{0.1cm}{\footnotesize\ttfamily [1/3]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate (\begin{DoxyParamCaption}\item[{int64\+\_\+t}]{patience,  }\item[{float}]{amt }\end{DoxyParamCaption})}
+
+Decrease the learning rate by amt if accuracy does not improve for patience epochs. 
+
+Definition at line 112 of file callback\+\_\+learning\+\_\+rate.\+cpp.
+
+
+\begin{DoxyCode}
+113                                :
+114   \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_a2095e4c430b3c4f206e85c963e1ec2aa}{lbann\_callback\_adaptive\_learning\_rate}(patience, amt,
+115                                         std::unordered\_set<weights *>()) \{\}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__adaptive__learning__rate_a49343d73d0be9782b0480c07aeda6046}\label{classlbann_1_1lbann__callback__adaptive__learning__rate_a49343d73d0be9782b0480c07aeda6046}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}!lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}}
+\index{lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}!lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate()}{lbann\_callback\_adaptive\_learning\_rate()}\hspace{0.1cm}{\footnotesize\ttfamily [2/3]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate (\begin{DoxyParamCaption}\item[{int64\+\_\+t}]{patience,  }\item[{float}]{amt,  }\item[{std\+::unordered\+\_\+set$<$ \hyperlink{classlbann_1_1weights}{weights} $\ast$$>$}]{weights\+\_\+list }\end{DoxyParamCaption})}
+
+
+
+Definition at line 117 of file callback\+\_\+learning\+\_\+rate.\+cpp.
+
+
+\begin{DoxyCode}
+118                                                                          :
+119   \hyperlink{classlbann_1_1lbann__callback__learning__rate_a69687cd55f4d09c480e08e18488519fe}{lbann\_callback\_learning\_rate}(weights\_list), 
+      \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_ac3ac3c4d34d62608c54dfa3a41691217}{m\_patience}(patience), \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_ab9c76371184664ccd8e240e3b16a9736}{m\_amt}(amt) \{\}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__adaptive__learning__rate_a0b2fd5ecb8eb767184951947ced9b9b7}\label{classlbann_1_1lbann__callback__adaptive__learning__rate_a0b2fd5ecb8eb767184951947ced9b9b7}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}!lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}}
+\index{lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}!lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate()}{lbann\_callback\_adaptive\_learning\_rate()}\hspace{0.1cm}{\footnotesize\ttfamily [3/3]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate}{lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__adaptive__learning__rate_ad5f290b78276fc9c7fd54a67c4a7e6eb}\label{classlbann_1_1lbann__callback__adaptive__learning__rate_ad5f290b78276fc9c7fd54a67c4a7e6eb}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}!copy@{copy}}
+\index{copy@{copy}!lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate}{lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}$\ast$ lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a9f545d1269a8c7af335625d049691f26}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 133 of file callback\+\_\+learning\+\_\+rate.\+hpp.
+
+
+\begin{DoxyCode}
+133                                                                \{
+134     \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_a2095e4c430b3c4f206e85c963e1ec2aa}{lbann\_callback\_adaptive\_learning\_rate}(*\textcolor{keyword}{this});
+135   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__adaptive__learning__rate_a6c64fae03736b8acba5c839f59d2ac6f}\label{classlbann_1_1lbann__callback__adaptive__learning__rate_a6c64fae03736b8acba5c839f59d2ac6f}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}!global\+\_\+schedule@{global\+\_\+schedule}}
+\index{global\+\_\+schedule@{global\+\_\+schedule}!lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}}
+\subsubsection{\texorpdfstring{global\+\_\+schedule()}{global\_schedule()}}
+{\footnotesize\ttfamily float lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate\+::global\+\_\+schedule (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+This is called at the end of every epoch to update the learning rate for every optimizer. Adjustments should be made based on the current global learning rate. The returned learning rate will be used to automatically update the current global learning rate. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback__learning__rate_a7869b93e5963d6f76da68d8c8137b979}{lbann\+::lbann\+\_\+callback\+\_\+learning\+\_\+rate}.
+
+
+
+Definition at line 121 of file callback\+\_\+learning\+\_\+rate.\+cpp.
+
+
+\begin{DoxyCode}
+121                                                                      \{
+122   \textcolor{comment}{// Determine behavior the first time this is called in an epoch}
+123   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_a740b8b3bbb47312b48322f440f703222}{m\_cur\_epoch} != m->get\_cur\_epoch()) \{
+124     \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_a740b8b3bbb47312b48322f440f703222}{m\_cur\_epoch} = m->get\_cur\_epoch();
+125     \textcolor{keyword}{const} \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\_mode} mode = m->get\_execution\_mode();
+126     \textcolor{keyword}{const} \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType} score = m->get\_objective\_function()->get\_mean\_value(mode);
+127     \textcolor{keywordflow}{if} (score < \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_a7aa8aeed3df9cca131ace1ea9fbf1cd3}{m\_last\_score}) \{
+128       \textcolor{comment}{// Reset wait counter if score has decreased}
+129       \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_a7aa8aeed3df9cca131ace1ea9fbf1cd3}{m\_last\_score} = score;
+130       \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_aecfb70e4a366762305a2dbd8248471de}{m\_wait} = 0;
+131       \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_aa3de3b7d67b5295058e9c2175d06212d}{m\_adjust\_learning\_rate} = \textcolor{keyword}{false};
+132     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_aecfb70e4a366762305a2dbd8248471de}{m\_wait} >= \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_ac3ac3c4d34d62608c54dfa3a41691217}{m\_patience}) \{
+133       \textcolor{comment}{// Adjust learning rate if patience has been exceeded}
+134       \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_a7aa8aeed3df9cca131ace1ea9fbf1cd3}{m\_last\_score} = score;
+135       \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_aecfb70e4a366762305a2dbd8248471de}{m\_wait} = 0;
+136       \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_aa3de3b7d67b5295058e9c2175d06212d}{m\_adjust\_learning\_rate} = \textcolor{keyword}{true};
+137     \} \textcolor{keywordflow}{else} \{
+138       \textcolor{comment}{// Otherwise increment wait counter}
+139       \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_aecfb70e4a366762305a2dbd8248471de}{m\_wait}++;
+140       \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_aa3de3b7d67b5295058e9c2175d06212d}{m\_adjust\_learning\_rate} = \textcolor{keyword}{false};
+141     \}
+142   \}
+143 
+144   \textcolor{comment}{// Adjust learning rate if needed}
+145   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_aa3de3b7d67b5295058e9c2175d06212d}{m\_adjust\_learning\_rate}) \{
+146     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1lbann__callback__learning__rate_a97194f282c29a748c915d9811a8a99fb}{m\_cur\_global\_lr} * \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate_ab9c76371184664ccd8e240e3b16a9736}{m\_amt};
+147   \} \textcolor{keywordflow}{else} \{
+148     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1lbann__callback__learning__rate_a97194f282c29a748c915d9811a8a99fb}{m\_cur\_global\_lr};
+149   \}
+150 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__adaptive__learning__rate_a6c64fae03736b8acba5c839f59d2ac6f_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__adaptive__learning__rate_ab7292639822b95f3907d1aaf88410b1c}\label{classlbann_1_1lbann__callback__adaptive__learning__rate_ab7292639822b95f3907d1aaf88410b1c}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}!name@{name}}
+\index{name@{name}!lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}}
+\subsubsection{\texorpdfstring{name()}{name()}}
+{\footnotesize\ttfamily std\+::string lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate\+::name (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Return this callback\textquotesingle{}s name. 
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a7522c7a14f1d6a1ea762cc2d7248eb3a}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 136 of file callback\+\_\+learning\+\_\+rate.\+hpp.
+
+
+\begin{DoxyCode}
+136 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"adaptive learning rate"}; \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__adaptive__learning__rate_ab7292639822b95f3907d1aaf88410b1c_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__adaptive__learning__rate_a7959faa8ba665cdf1132a5c7b518b3b9}\label{classlbann_1_1lbann__callback__adaptive__learning__rate_a7959faa8ba665cdf1132a5c7b518b3b9}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate}{lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}\& lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__adaptive__learning__rate}{lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__adaptive__learning__rate_aa3de3b7d67b5295058e9c2175d06212d}\label{classlbann_1_1lbann__callback__adaptive__learning__rate_aa3de3b7d67b5295058e9c2175d06212d}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}!m\+\_\+adjust\+\_\+learning\+\_\+rate@{m\+\_\+adjust\+\_\+learning\+\_\+rate}}
+\index{m\+\_\+adjust\+\_\+learning\+\_\+rate@{m\+\_\+adjust\+\_\+learning\+\_\+rate}!lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}}
+\subsubsection{\texorpdfstring{m\+\_\+adjust\+\_\+learning\+\_\+rate}{m\_adjust\_learning\_rate}}
+{\footnotesize\ttfamily bool lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate\+::m\+\_\+adjust\+\_\+learning\+\_\+rate = false\hspace{0.3cm}{\ttfamily [private]}}
+
+Whether to adjust learning rate for current epoch. 
+
+Definition at line 151 of file callback\+\_\+learning\+\_\+rate.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__adaptive__learning__rate_ab9c76371184664ccd8e240e3b16a9736}\label{classlbann_1_1lbann__callback__adaptive__learning__rate_ab9c76371184664ccd8e240e3b16a9736}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}!m\+\_\+amt@{m\+\_\+amt}}
+\index{m\+\_\+amt@{m\+\_\+amt}!lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}}
+\subsubsection{\texorpdfstring{m\+\_\+amt}{m\_amt}}
+{\footnotesize\ttfamily float lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate\+::m\+\_\+amt\hspace{0.3cm}{\ttfamily [private]}}
+
+Amount to decrease the learning rate by. 
+
+Definition at line 143 of file callback\+\_\+learning\+\_\+rate.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__adaptive__learning__rate_a740b8b3bbb47312b48322f440f703222}\label{classlbann_1_1lbann__callback__adaptive__learning__rate_a740b8b3bbb47312b48322f440f703222}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}!m\+\_\+cur\+\_\+epoch@{m\+\_\+cur\+\_\+epoch}}
+\index{m\+\_\+cur\+\_\+epoch@{m\+\_\+cur\+\_\+epoch}!lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}}
+\subsubsection{\texorpdfstring{m\+\_\+cur\+\_\+epoch}{m\_cur\_epoch}}
+{\footnotesize\ttfamily int lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate\+::m\+\_\+cur\+\_\+epoch = -\/1\hspace{0.3cm}{\ttfamily [private]}}
+
+Current epoch. 
+
+Definition at line 145 of file callback\+\_\+learning\+\_\+rate.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__adaptive__learning__rate_a7aa8aeed3df9cca131ace1ea9fbf1cd3}\label{classlbann_1_1lbann__callback__adaptive__learning__rate_a7aa8aeed3df9cca131ace1ea9fbf1cd3}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}!m\+\_\+last\+\_\+score@{m\+\_\+last\+\_\+score}}
+\index{m\+\_\+last\+\_\+score@{m\+\_\+last\+\_\+score}!lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}}
+\subsubsection{\texorpdfstring{m\+\_\+last\+\_\+score}{m\_last\_score}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate\+::m\+\_\+last\+\_\+score = std\+::numeric\+\_\+limits$<$\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type}$>$\+::max()\hspace{0.3cm}{\ttfamily [private]}}
+
+Last recorded score. 
+
+Definition at line 147 of file callback\+\_\+learning\+\_\+rate.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__adaptive__learning__rate_ac3ac3c4d34d62608c54dfa3a41691217}\label{classlbann_1_1lbann__callback__adaptive__learning__rate_ac3ac3c4d34d62608c54dfa3a41691217}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}!m\+\_\+patience@{m\+\_\+patience}}
+\index{m\+\_\+patience@{m\+\_\+patience}!lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}}
+\subsubsection{\texorpdfstring{m\+\_\+patience}{m\_patience}}
+{\footnotesize\ttfamily int64\+\_\+t lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate\+::m\+\_\+patience\hspace{0.3cm}{\ttfamily [private]}}
+
+Number of epochs to wait for improvements. 
+
+Definition at line 141 of file callback\+\_\+learning\+\_\+rate.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__adaptive__learning__rate_aecfb70e4a366762305a2dbd8248471de}\label{classlbann_1_1lbann__callback__adaptive__learning__rate_aecfb70e4a366762305a2dbd8248471de}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}!m\+\_\+wait@{m\+\_\+wait}}
+\index{m\+\_\+wait@{m\+\_\+wait}!lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate}}
+\subsubsection{\texorpdfstring{m\+\_\+wait}{m\_wait}}
+{\footnotesize\ttfamily int64\+\_\+t lbann\+::lbann\+\_\+callback\+\_\+adaptive\+\_\+learning\+\_\+rate\+::m\+\_\+wait = 0\hspace{0.3cm}{\ttfamily [private]}}
+
+Current number of epochs without improvement. 
+
+Definition at line 149 of file callback\+\_\+learning\+\_\+rate.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/callbacks/\hyperlink{callback__learning__rate_8hpp}{callback\+\_\+learning\+\_\+rate.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/callbacks/\hyperlink{callback__learning__rate_8cpp}{callback\+\_\+learning\+\_\+rate.\+cpp}\end{DoxyCompactItemize}

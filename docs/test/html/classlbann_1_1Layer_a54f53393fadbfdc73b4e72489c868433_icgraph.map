@@ -1,0 +1,32 @@
+<map id="lbann::Layer::get_neuron_dims" name="lbann::Layer::get_neuron_dims">
+<area shape="rect" id="node2" href="$classlbann_1_1reconstruction__layer.html#a3abb27b670b5c57f2a6b1d669a7de508" title="lbann::reconstruction\l_layer::setup_dims" alt="" coords="263,503,408,541"/>
+<area shape="rect" id="node3" href="$classlbann_1_1Layer.html#a147a7f7dcf0027a60f10109439e5dcea" title="lbann::Layer::get_topo\l_description" alt="" coords="258,565,413,604"/>
+<area shape="rect" id="node4" href="$classlbann_1_1Layer.html#a82d8a038861b0af0d54fbf44ce715839" title="lbann::Layer::set_name" alt="" coords="475,360,635,385"/>
+<area shape="rect" id="node26" href="$classlbann_1_1convolution__layer.html#a5af5bb8b7fb68ed4e5085be676788eed" title="lbann::convolution\l_layer::get_topo_description" alt="" coords="461,625,649,664"/>
+<area shape="rect" id="node28" href="$classlbann_1_1model.html#ab173fd93a80a2980059ff292c308cbf5" title="lbann::model::print\l_layer_description" alt="" coords="763,565,894,604"/>
+<area shape="rect" id="node5" href="$classlbann_1_1greedy__layerwise__autoencoder.html#a5f237f1f6285475c5493a7d15dc32096" title="lbann::greedy_layerwise\l_autoencoder::set_phase" alt="" coords="742,167,914,205"/>
+<area shape="rect" id="node10" href="$classlbann_1_1model.html#a6ba9a836e5ba52c999c5234cfa5e62c2" title="lbann::model::add_dummy\l_layers" alt="" coords="739,384,917,423"/>
+<area shape="rect" id="node19" href="$classlbann_1_1siamese__model.html#a7ff41cffb060500605124959f1a2a6cf" title="lbann::siamese_model\l::setup_layer_topology" alt="" coords="1274,377,1430,416"/>
+<area shape="rect" id="node21" href="$classlbann_1_1model.html#ac56d43e457cd4dfc3b88122bd10d286e" title="lbann::model::add_split\l_layers" alt="" coords="749,321,907,360"/>
+<area shape="rect" id="node22" href="$namespacelbann_1_1anonymous__namespace_02recurrent_8cpp_03.html#a8c76387c2dd531058700ad9a41cd093a" title="lbann::anonymous_namespace\l\{recurrent::cpp\}::unroll\l_input_layer" alt="" coords="1011,463,1217,515"/>
+<area shape="rect" id="node23" href="$namespacelbann_1_1anonymous__namespace_02recurrent_8cpp_03.html#a50bca1c07c6f3146947b2a0fb5cc815a" title="lbann::anonymous_namespace\l\{recurrent::cpp\}::add_placeholder_layers" alt="" coords="697,447,959,485"/>
+<area shape="rect" id="node24" href="$namespacelbann_1_1proto.html#a99e65cd4abb769d020ab76ff20c39d0b" title="lbann::proto::construct\l_layer_graph" alt="" coords="751,39,905,77"/>
+<area shape="rect" id="node6" href="$classlbann_1_1greedy__layerwise__autoencoder.html#adf8750be08e34891701a24678f703acd" title="lbann::greedy_layerwise\l_autoencoder::greedy_layerwise\l_autoencoder" alt="" coords="1007,193,1221,245"/>
+<area shape="rect" id="node7" href="$classlbann_1_1greedy__layerwise__autoencoder.html#ac5e2de693353966b7816ca10282068f5" title="lbann::greedy_layerwise\l_autoencoder::operator=" alt="" coords="1030,131,1198,169"/>
+<area shape="rect" id="node8" href="$classlbann_1_1greedy__layerwise__autoencoder.html#a085f0b2debb82d9c4927a1c8b11dd353" title="lbann::greedy_layerwise\l_autoencoder::train" alt="" coords="1031,68,1196,107"/>
+<area shape="rect" id="node9" href="$classlbann_1_1greedy__layerwise__autoencoder.html#a975ea739b9a97e76fac46ce8191dea84" title="lbann::greedy_layerwise\l_autoencoder::name" alt="" coords="1269,68,1434,107"/>
+<area shape="rect" id="node11" href="$classlbann_1_1model.html#a7b3e2a643c658dcaa7478d2568f29784" title="lbann::model::setup\l_layer_topology" alt="" coords="1045,348,1183,387"/>
+<area shape="rect" id="node12" href="$classlbann_1_1model.html#afd9dbca79503a40b7aa5c78da4d6f391" title="lbann::model::setup" alt="" coords="1283,517,1421,543"/>
+<area shape="rect" id="node13" href="$classlbann_1_1recurrent__model.html#ac89ddfa607e5cb6b940eb389ebbce6f6" title="lbann::recurrent_model\l::setup_layer_topology" alt="" coords="1273,455,1431,493"/>
+<area shape="rect" id="node15" href="$classlbann_1_1sequential__model.html#a3801a58530388fb6a8cb3e1c018e827d" title="lbann::sequential_model\l::setup_layer_topology" alt="" coords="1269,315,1435,353"/>
+<area shape="rect" id="node14" href="$classlbann_1_1recurrent__model.html#aa4e43de8bf0d11a0f51dedbcf22a73cc" title="lbann::recurrent_model\l::freeze_layers_under\l_frozen_surface" alt="" coords="1493,573,1652,625"/>
+<area shape="rect" id="node16" href="$classlbann_1_1sequential__model.html#abf2b69dacb5ee3165289377e1d961cd5" title="lbann::sequential_model\l::name" alt="" coords="1489,280,1655,319"/>
+<area shape="rect" id="node18" href="$classlbann_1_1greedy__layerwise__autoencoder.html#a115607e435ae4685531a81852ce01fe7" title="lbann::greedy_layerwise\l_autoencoder::setup_layer\l_topology" alt="" coords="1483,343,1662,395"/>
+<area shape="rect" id="node17" href="$classlbann_1_1sequential__model.html#a53a83327a1115a53affa78c93344e641" title="lbann::sequential_model\l::write_proto" alt="" coords="1710,280,1876,319"/>
+<area shape="rect" id="node20" href="$classlbann_1_1siamese__model.html#ad745961977aa395e11543d263103126e" title="lbann::siamese_model\l::name" alt="" coords="1495,449,1650,488"/>
+<area shape="rect" id="node25" href="$namespacelbann_1_1proto.html#a6c051439c9c5cbbfb1a2387d5a3fc902" title="lbann::proto::construct\l_model" alt="" coords="1037,5,1191,44"/>
+<area shape="rect" id="node27" href="$classlbann_1_1convolution__layer.html#abce67d7e977d148093798936aff8ee5e" title="kernel tensor is output channels, input channels, conv dimension (w x h) " alt="" coords="750,628,906,667"/>
+<area shape="rect" id="node29" href="$classlbann_1_1model.html#a989ab581e359f65c9238d627cce5b589" title="lbann::model::setup\l_layers" alt="" coords="1045,539,1183,577"/>
+<area shape="rect" id="node30" href="$classlbann_1_1recurrent__model.html#a712dabb1c1e90f6e268b42f6abaedd93" title="lbann::recurrent_model\l::setup_layers" alt="" coords="1273,631,1431,669"/>
+<area shape="rect" id="node31" href="$classlbann_1_1siamese__model.html#afefdbaf473d40e571b2b58539001c9c0" title="lbann::siamese_model\l::setup_layers" alt="" coords="1274,567,1429,605"/>
+</map>

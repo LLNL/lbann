@@ -1,0 +1,125 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="namespaceEl" kind="namespace" language="C++">
+    <compoundname>El</compoundname>
+      <sectiondef kind="func">
+      <memberdef kind="function" id="namespaceEl_1a09d5c471681b2b48fbe4c5e6bfd0b3d3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <templateparamlist>
+          <param>
+            <type>typename F</type>
+          </param>
+        </templateparamlist>
+        <type>void</type>
+        <definition>void El::ColumnSum</definition>
+        <argsstring>(const Matrix&lt; F &gt; &amp;X, Matrix&lt; F &gt; &amp;sums)</argsstring>
+        <name>ColumnSum</name>
+        <param>
+          <type>const Matrix&lt; F &gt; &amp;</type>
+          <declname>X</declname>
+        </param>
+        <param>
+          <type>Matrix&lt; F &gt; &amp;</type>
+          <declname>sums</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/src/Elemental_extensions.cpp" line="36" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/Elemental_extensions.cpp" bodystart="36" bodyend="60"/>
+        <referencedby refid="classlbann_1_1reduction__layer_1a7e78d0d69106611bfb5ff3fe5bb01016" compoundref="reduction_8hpp" startline="86" endline="161">lbann::reduction_layer&lt; T_layout &gt;::fp_compute</referencedby>
+        <referencedby refid="namespaceEl_1ad446b5d330cc5ae121cc2eef632c4118" compoundref="Elemental__extensions_8cpp" startline="64" endline="82">ColumnSum</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="namespaceEl_1ad446b5d330cc5ae121cc2eef632c4118" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <templateparamlist>
+          <param>
+            <type>typename F</type>
+          </param>
+        </templateparamlist>
+        <type>void</type>
+        <definition>void El::ColumnSum</definition>
+        <argsstring>(const AbstractDistMatrix&lt; F &gt; &amp;A, AbstractDistMatrix&lt; F &gt; &amp;sums)</argsstring>
+        <name>ColumnSum</name>
+        <param>
+          <type>const AbstractDistMatrix&lt; F &gt; &amp;</type>
+          <declname>A</declname>
+        </param>
+        <param>
+          <type>AbstractDistMatrix&lt; F &gt; &amp;</type>
+          <declname>sums</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/src/Elemental_extensions.cpp" line="63" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/Elemental_extensions.cpp" bodystart="64" bodyend="82"/>
+        <references refid="namespaceEl_1a09d5c471681b2b48fbe4c5e6bfd0b3d3" compoundref="Elemental__extensions_8cpp" startline="36" endline="60">ColumnSum</references>
+      </memberdef>
+      <memberdef kind="function" id="namespaceEl_1a584f088a3325a8222d4d6ac37be04b04" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <templateparamlist>
+          <param>
+            <type>typename F</type>
+          </param>
+        </templateparamlist>
+        <type>void</type>
+        <definition>void El::RowSum</definition>
+        <argsstring>(const Matrix&lt; F &gt; &amp;X, Matrix&lt; F &gt; &amp;sums)</argsstring>
+        <name>RowSum</name>
+        <param>
+          <type>const Matrix&lt; F &gt; &amp;</type>
+          <declname>X</declname>
+        </param>
+        <param>
+          <type>Matrix&lt; F &gt; &amp;</type>
+          <declname>sums</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/src/Elemental_extensions.cpp" line="85" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/Elemental_extensions.cpp" bodystart="85" bodyend="112"/>
+        <referencedby refid="namespaceEl_1a3982e90cd0f7cbfdc0f19741ce254c1a" compoundref="Elemental__extensions_8cpp" startline="115" endline="132">RowSum</referencedby>
+        <referencedby refid="classlbann_1_1fully__connected__layer_1a4c5b0eea2036c41b15ec03594dac8dc2" compoundref="fully__connected_8cpp" startline="84" endline="143">lbann::fully_connected_layer&lt; T_layout &gt;::bp_compute_cpu</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="namespaceEl_1a3982e90cd0f7cbfdc0f19741ce254c1a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <templateparamlist>
+          <param>
+            <type>typename F</type>
+          </param>
+        </templateparamlist>
+        <type>void</type>
+        <definition>void El::RowSum</definition>
+        <argsstring>(const AbstractDistMatrix&lt; F &gt; &amp;A, AbstractDistMatrix&lt; F &gt; &amp;sums)</argsstring>
+        <name>RowSum</name>
+        <param>
+          <type>const AbstractDistMatrix&lt; F &gt; &amp;</type>
+          <declname>A</declname>
+        </param>
+        <param>
+          <type>AbstractDistMatrix&lt; F &gt; &amp;</type>
+          <declname>sums</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/src/Elemental_extensions.cpp" line="115" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/Elemental_extensions.cpp" bodystart="115" bodyend="132"/>
+        <references refid="namespaceEl_1a584f088a3325a8222d4d6ac37be04b04" compoundref="Elemental__extensions_8cpp" startline="85" endline="112">RowSum</references>
+        <references refid="Elemental__extensions_8hpp_1aabb751b985c8fbc1083ba9f0bf2b5c38" compoundref="Elemental__extensions_8hpp" startline="62">LBANN_PROTO_FLOAT</references>
+        <references refid="Elemental__extensions_8hpp_1a1c4169a84c56c6233350847efb61e539" compoundref="Elemental__extensions_8hpp" startline="65">LBANN_PROTO_DOUBLE</references>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/src/Elemental_extensions.cpp" line="33" column="1"/>
+  </compounddef>
+</doxygen>

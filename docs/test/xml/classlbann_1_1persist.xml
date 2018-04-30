@@ -1,0 +1,889 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1persist" kind="class" language="C++" prot="public">
+    <compoundname>lbann::persist</compoundname>
+    <includes refid="persist_8hpp" local="no">persist.hpp</includes>
+      <sectiondef kind="protected-attrib">
+      <memberdef kind="variable" id="classlbann_1_1persist_1aa99b1b0079bb10471472bf6f1d966deb" prot="protected" static="no" mutable="no">
+        <type>int</type>
+        <definition>int lbann::persist::m_rank</definition>
+        <argsstring></argsstring>
+        <name>m_rank</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="45" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" bodystart="45" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1persist_1a0bd4fd42d9858a5210c8034dfbb666d4" prot="protected" static="no" mutable="no">
+        <type>uint64_t</type>
+        <definition>uint64_t lbann::persist::m_bytes</definition>
+        <argsstring></argsstring>
+        <name>m_bytes</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="46" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" bodystart="46" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1persist_1a1adc7102c1b4bc91534ca156decbd965" prot="protected" static="no" mutable="no">
+        <type>int</type>
+        <definition>int lbann::persist::m_model_fd</definition>
+        <argsstring></argsstring>
+        <name>m_model_fd</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="47" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" bodystart="47" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1persist_1a817671390811dde04670c47139402f51" prot="protected" static="no" mutable="no">
+        <type>int</type>
+        <definition>int lbann::persist::m_train_fd</definition>
+        <argsstring></argsstring>
+        <name>m_train_fd</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="48" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" bodystart="48" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1persist_1a87927d03b0cf684023178f997c038783" prot="protected" static="no" mutable="no">
+        <type>int</type>
+        <definition>int lbann::persist::m_validate_fd</definition>
+        <argsstring></argsstring>
+        <name>m_validate_fd</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="49" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" bodystart="49" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1persist_1ac01cd3c8fe0f97c1312ca1a595f2f690" prot="protected" static="no" mutable="no">
+        <type>char</type>
+        <definition>char lbann::persist::m_model_filename[1024]</definition>
+        <argsstring>[1024]</argsstring>
+        <name>m_model_filename</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="50" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" bodystart="50" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1persist_1a417a443c894fd07472504936f5b02b62" prot="protected" static="no" mutable="no">
+        <type>char</type>
+        <definition>char lbann::persist::m_train_filename[1024]</definition>
+        <argsstring>[1024]</argsstring>
+        <name>m_train_filename</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="51" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" bodystart="51" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1persist_1a8ccf3728c62f825ec2f8cfe15929fc2a" prot="protected" static="no" mutable="no">
+        <type>char</type>
+        <definition>char lbann::persist::m_validate_filename[1024]</definition>
+        <argsstring>[1024]</argsstring>
+        <name>m_validate_filename</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="52" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" bodystart="52" bodyend="-1"/>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="classlbann_1_1persist_1a17c2b08ec1815aba6d3eae6502397bb1" prot="public" static="no" mutable="no">
+        <type>char</type>
+        <definition>char lbann::persist::m_checkpoint_dir[1024]</definition>
+        <argsstring>[1024]</argsstring>
+        <name>m_checkpoint_dir</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="54" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" bodystart="54" bodyend="-1"/>
+        <referencedby refid="namespacelbann_1af68acf5b249e5360289d4c6a7bfa8985" compoundref="random_8cpp" startline="72" endline="87">lbann::save_rng_to_checkpoint_shared</referencedby>
+        <referencedby refid="namespacelbann_1ab76114a0e8cc90c28bcb9e7d01eec89a" compoundref="random_8cpp" startline="89" endline="104">lbann::load_rng_from_checkpoint_shared</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1persist_1abf1454f4d5b61617ccfa60ba9989f1a3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::persist::persist</definition>
+        <argsstring>()</argsstring>
+        <name>persist</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="57" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/io/persist.cpp" bodystart="191" bodyend="202"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1persist_1ac0d475c0174f7dbd805a0b0603277cfa" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>lbann::persist::~persist</definition>
+        <argsstring>()</argsstring>
+        <name>~persist</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="58" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" bodystart="58" bodyend="58"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1persist_1a34eb918a890ab49dcbeedddf27ec1616" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>int</type>
+        <definition>int lbann::persist::get_rank</definition>
+        <argsstring>() const</argsstring>
+        <name>get_rank</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="60" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" bodystart="60" bodyend="62"/>
+        <referencedby refid="classlbann_1_1generic__input__layer_1abae61e13f47205491a43e4842808945d" compoundref="generic__input__layer_8hpp" startline="627" endline="664">lbann::generic_input_layer::save_to_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1generic__input__layer_1ae5a542333eaf447a05fc586848e7c94c" compoundref="generic__input__layer_8hpp" startline="676" endline="718">lbann::generic_input_layer::load_from_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1io__layer_1ab2b5002dfeb0806062ecf3d9fefb9948" compoundref="io__layer_8hpp" startline="52" endline="58">lbann::io_layer::io_layer</referencedby>
+        <referencedby refid="classlbann_1_1generic__data__reader_1a6f49d945610f35335fce4a422a432cc1" compoundref="data__reader_8cpp" startline="385" endline="391">lbann::generic_data_reader::save_to_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1generic__data__reader_1a85119fae17feb8fda32f8a2f40869436" compoundref="data__reader_8cpp" startline="394" endline="409">lbann::generic_data_reader::load_from_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1metric_1a9728b02a240dfd9faa61b7dfeb3feede" compoundref="metric_8cpp" startline="172" endline="180">lbann::metric::save_to_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1metric_1ab3d1ec8247352467790be036a07cfc2b" compoundref="metric_8cpp" startline="182" endline="198">lbann::metric::load_from_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1model_1a3d589d2e46ad35d0a1221e25bef70fa4" compoundref="model_8cpp" startline="1151" endline="1171">lbann::model::save_to_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1model_1a2e02dda11636e015ea0c892ffa541881" compoundref="model_8cpp" startline="1173" endline="1209">lbann::model::load_from_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1sequential__model_1a226032d9890b8770c6fca54bf70d69eb" compoundref="sequential_8cpp" startline="117" endline="150">lbann::sequential_model::save_to_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1sequential__model_1aa52cca299012c67f88483206d50abb21" compoundref="sequential_8cpp" startline="165" endline="202">lbann::sequential_model::load_from_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1adam_1a8070db0a451bdbc6e86200eaa14f6ac7" compoundref="adam_8cpp" startline="216" endline="232">lbann::adam::save_to_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1adam_1aca07e925a4751fc5c10a62fb9c72c896" compoundref="adam_8cpp" startline="234" endline="253">lbann::adam::load_from_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1sgd_1a78ad11ca7424d50a9f2ba29e5f725e21" compoundref="sgd_8cpp" startline="186" endline="198">lbann::sgd::save_to_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1sgd_1aa3e3237a59b0593d7caf7357b7c181cf" compoundref="sgd_8cpp" startline="200" endline="216">lbann::sgd::load_from_checkpoint_shared</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1persist_1a32a8f71995b674a62b21087ec4be9575" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::persist::open_checkpoint</definition>
+        <argsstring>(const char *dir, bool per_rank, bool val_end)</argsstring>
+        <name>open_checkpoint</name>
+        <param>
+          <type>const char *</type>
+          <declname>dir</declname>
+        </param>
+        <param>
+          <type>bool</type>
+          <declname>per_rank</declname>
+        </param>
+        <param>
+          <type>bool</type>
+          <declname>val_end</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="63" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/io/persist.cpp" bodystart="204" bodyend="255"/>
+        <references refid="namespacelbann_1a8830dea8eef0ab5b93d68e2358ceeb1a" compoundref="file__io_8cpp" startline="49" endline="77">lbann::makedir</references>
+        <references refid="namespacelbann_1af596e6d2be603e9cf808c98f5412490a" compoundref="file__io_8cpp" startline="119" endline="131">lbann::openwrite</references>
+        <referencedby refid="classlbann_1_1lbann__callback__checkpoint_1a23b6f5abb924b2c4d0694e98c7d6f4d5" compoundref="callback__checkpoint_8cpp" startline="145" endline="202">lbann::lbann_callback_checkpoint::checkpointShared</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1persist_1ab099939d0d91101fbfaf2b85e78be032" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::persist::close_checkpoint</definition>
+        <argsstring>()</argsstring>
+        <name>close_checkpoint</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="64" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/io/persist.cpp" bodystart="257" bodyend="273"/>
+        <references refid="namespacelbann_1aceeccedbbafccfa071b21ee99be794a5" compoundref="file__io_8cpp" startline="133" endline="153">lbann::closewrite</references>
+        <referencedby refid="classlbann_1_1lbann__callback__checkpoint_1a23b6f5abb924b2c4d0694e98c7d6f4d5" compoundref="callback__checkpoint_8cpp" startline="145" endline="202">lbann::lbann_callback_checkpoint::checkpointShared</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1persist_1a123cbc1d2b693640c784a45cbc6d2d97" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::persist::open_restart</definition>
+        <argsstring>(const char *dir, bool per_rank)</argsstring>
+        <name>open_restart</name>
+        <param>
+          <type>const char *</type>
+          <declname>dir</declname>
+        </param>
+        <param>
+          <type>bool</type>
+          <declname>per_rank</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="66" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/io/persist.cpp" bodystart="275" bodyend="326"/>
+        <references refid="namespacelbann_1a6084b9319eea1997f8446fa3e6879532" compoundref="file__io_8cpp" startline="98" endline="104">lbann::openread</references>
+        <referencedby refid="classlbann_1_1lbann__callback__checkpoint_1a40d369278bc5963ba2f3cca1750ba004" compoundref="callback__checkpoint_8cpp" startline="203" endline="256">lbann::lbann_callback_checkpoint::restartShared</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1persist_1afeef05548e1d17bd09d3805607edd621" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::persist::close_restart</definition>
+        <argsstring>()</argsstring>
+        <name>close_restart</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="67" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/io/persist.cpp" bodystart="328" bodyend="340"/>
+        <references refid="namespacelbann_1a38dd30b2ae8214f6595708264369ddb8" compoundref="file__io_8cpp" startline="106" endline="117">lbann::closeread</references>
+        <referencedby refid="classlbann_1_1lbann__callback__checkpoint_1a40d369278bc5963ba2f3cca1750ba004" compoundref="callback__checkpoint_8cpp" startline="203" endline="256">lbann::lbann_callback_checkpoint::restartShared</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1persist_1ad759657d69e88a491729ce8e4bf9510e" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>uint64_t</type>
+        <definition>uint64_t lbann::persist::get_bytes</definition>
+        <argsstring>() const</argsstring>
+        <name>get_bytes</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="69" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" bodystart="69" bodyend="71"/>
+        <references refid="namespacelbann_1aa7b4e710f444588dfcf4188b84b33420" compoundref="persist_8cpp" startline="609" endline="617">lbann::write_distmat</references>
+        <references refid="namespacelbann_1a0306ed35d6d90cf4fbdce7a72ad62ca7" compoundref="persist_8cpp" startline="619" endline="634">lbann::read_distmat</references>
+        <references refid="namespacelbann_1aed95061796f19fa1648dcc99dc335abd" compoundref="persist_8cpp" startline="636" endline="645">lbann::write_bytes</references>
+        <references refid="namespacelbann_1a85385e2a9e058b6720300b4cbdd2b1d0" compoundref="persist_8cpp" startline="647" endline="656">lbann::read_bytes</references>
+        <references refid="namespacelbann_1a3a801c9f48655f81b886af4bff083f27" compoundref="persist_8cpp" startline="658" endline="660">lbann::write_uint32</references>
+        <references refid="namespacelbann_1aedcde4d93c4feb5090c927de1c45b90d" compoundref="persist_8cpp" startline="662" endline="664">lbann::read_uint32</references>
+        <references refid="namespacelbann_1a234f8c7b9bbc2d9310d3e40314eb497c" compoundref="persist_8cpp" startline="666" endline="668">lbann::write_uint64</references>
+        <references refid="namespacelbann_1a7ca20ac4f0ec9feaa2f6d5b6ef3c8865" compoundref="persist_8cpp" startline="670" endline="672">lbann::read_uint64</references>
+        <references refid="namespacelbann_1a917727ad7e4f0dfd6d5a609cdc6dd9e2" compoundref="persist_8cpp" startline="674" endline="677">lbann::write_int32_contig</references>
+        <references refid="namespacelbann_1acb5b0f1b30c9ab2fba700bb953515810" compoundref="persist_8cpp" startline="679" endline="682">lbann::read_int32_contig</references>
+        <references refid="namespacelbann_1a73339e4587f8ce7f653be03a3a6cbcd0" compoundref="persist_8cpp" startline="684" endline="686">lbann::write_float</references>
+        <references refid="namespacelbann_1acd0595f8c31773a3a46f477a83e4c0f3" compoundref="persist_8cpp" startline="688" endline="690">lbann::read_float</references>
+        <references refid="namespacelbann_1add2807d7303bd96d2804f0b14e894c68" compoundref="persist_8cpp" startline="700" endline="709">lbann::write_string</references>
+        <references refid="namespacelbann_1a784843ebce0e596dba31c1d981a7f087" compoundref="persist_8cpp" startline="711" endline="720">lbann::read_string</references>
+        <references refid="namespacelbann_1a827b050911630a21f248b128e3859044" compoundref="persist_8cpp" startline="692" endline="694">lbann::write_double</references>
+        <references refid="namespacelbann_1a66f98f36cf54dca622f1186309961dd4" compoundref="persist_8cpp" startline="696" endline="698">lbann::read_double</references>
+        <references refid="namespacelbann_1af640a9302803636e0b5deb110c1aee57" compoundref="persist_8cpp" startline="66" endline="115">lbann::writeDist</references>
+        <references refid="namespacelbann_1ab2c2ad3c98b9991a6307b123617dbfb2" compoundref="persist_8cpp" startline="119" endline="185">lbann::readDist</references>
+        <referencedby refid="classlbann_1_1lbann__callback__checkpoint_1a23b6f5abb924b2c4d0694e98c7d6f4d5" compoundref="callback__checkpoint_8cpp" startline="145" endline="202">lbann::lbann_callback_checkpoint::checkpointShared</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__checkpoint_1a40d369278bc5963ba2f3cca1750ba004" compoundref="callback__checkpoint_8cpp" startline="203" endline="256">lbann::lbann_callback_checkpoint::restartShared</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1persist_1a9170de652405d86d9ba9b3793f8781c6" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool lbann::persist::write_distmat</definition>
+        <argsstring>(persist_type type, const char *name, DistMat *M)</argsstring>
+        <name>write_distmat</name>
+        <param>
+          <type><ref refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56" kindref="member">persist_type</ref></type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type><ref refid="base_8hpp_1a0fab5387556805cfeac3e7e567bf66c5" kindref="member">DistMat</ref> *</type>
+          <declname>M</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="73" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/io/persist.cpp" bodystart="342" bodyend="360"/>
+        <referencedby refid="classlbann_1_1loss__function_1ac44929838f3c3f0a34e1532530422dad" compoundref="loss__function_8cpp" startline="139" endline="145">lbann::loss_function::save_to_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1adagrad_1a94282e58af6bb1e9af27255e23bd3d3d" compoundref="adagrad_8cpp" startline="120" endline="128">lbann::adagrad::save_to_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1adam_1a8070db0a451bdbc6e86200eaa14f6ac7" compoundref="adam_8cpp" startline="216" endline="232">lbann::adam::save_to_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1rmsprop_1a8abe698168c2d1cb2c65d180552501ef" compoundref="rmsprop_8cpp" startline="127" endline="135">lbann::rmsprop::save_to_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1sgd_1a78ad11ca7424d50a9f2ba29e5f725e21" compoundref="sgd_8cpp" startline="186" endline="198">lbann::sgd::save_to_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1weights_1a48dd6b3d37668bf2ab5abafdf9dabde4" compoundref="weights_8cpp" startline="457" endline="470">lbann::weights::save_to_checkpoint_shared</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1persist_1aa98be93f33b510e5b506b61de6bd79bd" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool lbann::persist::read_distmat</definition>
+        <argsstring>(persist_type type, const char *name, DistMat *M)</argsstring>
+        <name>read_distmat</name>
+        <param>
+          <type><ref refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56" kindref="member">persist_type</ref></type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type><ref refid="base_8hpp_1a0fab5387556805cfeac3e7e567bf66c5" kindref="member">DistMat</ref> *</type>
+          <declname>M</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="74" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/io/persist.cpp" bodystart="362" bodyend="387"/>
+        <references refid="namespacelbann_1aefae2a9fc9d742ece0fa8ca7ed9ee137" compoundref="file__io_8cpp" startline="79" endline="96">lbann::exists</references>
+        <referencedby refid="classlbann_1_1loss__function_1ae948babd62a110e2407271f24dcaec1b" compoundref="loss__function_8cpp" startline="147" endline="152">lbann::loss_function::load_from_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1adagrad_1ac6b6eb0c4d393679f69281c072dbc4fa" compoundref="adagrad_8cpp" startline="130" endline="138">lbann::adagrad::load_from_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1adam_1aca07e925a4751fc5c10a62fb9c72c896" compoundref="adam_8cpp" startline="234" endline="253">lbann::adam::load_from_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1rmsprop_1a64db08f787ca8904a0ba4ecc37d5d1ed" compoundref="rmsprop_8cpp" startline="137" endline="145">lbann::rmsprop::load_from_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1sgd_1aa3e3237a59b0593d7caf7357b7c181cf" compoundref="sgd_8cpp" startline="200" endline="216">lbann::sgd::load_from_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1weights_1ad41cac4b516d83f086cdfbcdfaa8223c" compoundref="weights_8cpp" startline="507" endline="521">lbann::weights::load_from_checkpoint_shared</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1persist_1a8729c7c90f4ca3090cd678fce91a0eb0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool lbann::persist::write_bytes</definition>
+        <argsstring>(persist_type type, const char *name, const void *buf, size_t size)</argsstring>
+        <name>write_bytes</name>
+        <param>
+          <type><ref refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56" kindref="member">persist_type</ref></type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const void *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type>size_t</type>
+          <declname>size</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="76" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/io/persist.cpp" bodystart="389" bodyend="400"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1persist_1af24f635f634c8cf30cf53a0e90ec641b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool lbann::persist::read_bytes</definition>
+        <argsstring>(persist_type type, const char *name, void *buf, size_t size)</argsstring>
+        <name>read_bytes</name>
+        <param>
+          <type><ref refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56" kindref="member">persist_type</ref></type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type>size_t</type>
+          <declname>size</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="77" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/io/persist.cpp" bodystart="402" bodyend="413"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1persist_1a742334568de0aca958dbaf7bbabd3cba" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool lbann::persist::write_uint32</definition>
+        <argsstring>(persist_type type, const char *name, uint32_t val)</argsstring>
+        <name>write_uint32</name>
+        <param>
+          <type><ref refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56" kindref="member">persist_type</ref></type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>uint32_t</type>
+          <declname>val</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="79" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/io/persist.cpp" bodystart="415" bodyend="417"/>
+        <references refid="namespacelbann_1aed95061796f19fa1648dcc99dc335abd" compoundref="persist_8cpp" startline="636" endline="645">lbann::write_bytes</references>
+        <referencedby refid="classlbann_1_1model_1a3d589d2e46ad35d0a1221e25bef70fa4" compoundref="model_8cpp" startline="1151" endline="1171">lbann::model::save_to_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1sequential__model_1a226032d9890b8770c6fca54bf70d69eb" compoundref="sequential_8cpp" startline="117" endline="150">lbann::sequential_model::save_to_checkpoint_shared</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1persist_1ace1ebb58e2570693cdce0ebd2817113b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool lbann::persist::read_uint32</definition>
+        <argsstring>(persist_type type, const char *name, uint32_t *val)</argsstring>
+        <name>read_uint32</name>
+        <param>
+          <type><ref refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56" kindref="member">persist_type</ref></type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>uint32_t *</type>
+          <declname>val</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="80" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/io/persist.cpp" bodystart="419" bodyend="421"/>
+        <references refid="namespacelbann_1a85385e2a9e058b6720300b4cbdd2b1d0" compoundref="persist_8cpp" startline="647" endline="656">lbann::read_bytes</references>
+        <referencedby refid="classlbann_1_1model_1a2e02dda11636e015ea0c892ffa541881" compoundref="model_8cpp" startline="1173" endline="1209">lbann::model::load_from_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1sequential__model_1aa52cca299012c67f88483206d50abb21" compoundref="sequential_8cpp" startline="165" endline="202">lbann::sequential_model::load_from_checkpoint_shared</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1persist_1aced95e3bc711276b072af97b65ef9fc1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool lbann::persist::write_uint64</definition>
+        <argsstring>(persist_type type, const char *name, uint64_t val)</argsstring>
+        <name>write_uint64</name>
+        <param>
+          <type><ref refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56" kindref="member">persist_type</ref></type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>uint64_t</type>
+          <declname>val</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="82" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/io/persist.cpp" bodystart="423" bodyend="425"/>
+        <references refid="namespacelbann_1aed95061796f19fa1648dcc99dc335abd" compoundref="persist_8cpp" startline="636" endline="645">lbann::write_bytes</references>
+        <referencedby refid="classlbann_1_1generic__data__reader_1a93dddd2276ddc34cc97922ee27c44582" compoundref="data__reader_8hpp" startline="529" endline="608">lbann::generic_data_reader::pack_scalars</referencedby>
+        <referencedby refid="classlbann_1_1generic__input__layer_1abae61e13f47205491a43e4842808945d" compoundref="generic__input__layer_8hpp" startline="627" endline="664">lbann::generic_input_layer::save_to_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1io__layer_1ab2b5002dfeb0806062ecf3d9fefb9948" compoundref="io__layer_8hpp" startline="52" endline="58">lbann::io_layer::io_layer</referencedby>
+        <referencedby refid="structlbann_1_1metric__statistics_1a88f5324c96cceb47d723d2acfddb41f1" compoundref="metric_8cpp" startline="54" endline="58">lbann::metric_statistics::pack_scalars</referencedby>
+        <referencedby refid="classlbann_1_1model_1a3d589d2e46ad35d0a1221e25bef70fa4" compoundref="model_8cpp" startline="1151" endline="1171">lbann::model::save_to_checkpoint_shared</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1persist_1aa6d996db3714a7ae055adac0d8e8ac63" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool lbann::persist::read_uint64</definition>
+        <argsstring>(persist_type type, const char *name, uint64_t *val)</argsstring>
+        <name>read_uint64</name>
+        <param>
+          <type><ref refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56" kindref="member">persist_type</ref></type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>uint64_t *</type>
+          <declname>val</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="83" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/io/persist.cpp" bodystart="427" bodyend="429"/>
+        <references refid="namespacelbann_1a85385e2a9e058b6720300b4cbdd2b1d0" compoundref="persist_8cpp" startline="647" endline="656">lbann::read_bytes</references>
+        <referencedby refid="classlbann_1_1generic__data__reader_1a8de5c2e24d4cc2211145ed5dc37cf228" compoundref="data__reader_8hpp" startline="610" endline="741">lbann::generic_data_reader::unpack_scalars</referencedby>
+        <referencedby refid="classlbann_1_1generic__input__layer_1ae5a542333eaf447a05fc586848e7c94c" compoundref="generic__input__layer_8hpp" startline="676" endline="718">lbann::generic_input_layer::load_from_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1io__layer_1ab2b5002dfeb0806062ecf3d9fefb9948" compoundref="io__layer_8hpp" startline="52" endline="58">lbann::io_layer::io_layer</referencedby>
+        <referencedby refid="structlbann_1_1metric__statistics_1a4ff472c5d9155fe28c5a576c49f1e154" compoundref="metric_8cpp" startline="60" endline="72">lbann::metric_statistics::unpack_scalars</referencedby>
+        <referencedby refid="classlbann_1_1model_1a2e02dda11636e015ea0c892ffa541881" compoundref="model_8cpp" startline="1173" endline="1209">lbann::model::load_from_checkpoint_shared</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1persist_1a199cd86b1e1f0fd5f2d0458fc6d25828" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool lbann::persist::write_int32_contig</definition>
+        <argsstring>(persist_type type, const char *name, const int32_t *buf, uint64_t count)</argsstring>
+        <name>write_int32_contig</name>
+        <param>
+          <type><ref refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56" kindref="member">persist_type</ref></type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const int32_t *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type>uint64_t</type>
+          <declname>count</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="85" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/io/persist.cpp" bodystart="551" bodyend="554"/>
+        <references refid="namespacelbann_1aed95061796f19fa1648dcc99dc335abd" compoundref="persist_8cpp" startline="636" endline="645">lbann::write_bytes</references>
+        <referencedby refid="classlbann_1_1generic__data__reader_1a93dddd2276ddc34cc97922ee27c44582" compoundref="data__reader_8hpp" startline="529" endline="608">lbann::generic_data_reader::pack_scalars</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1persist_1a2944c32f6634223c0902b38a697a0957" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool lbann::persist::read_int32_contig</definition>
+        <argsstring>(persist_type type, const char *name, int32_t *buf, uint64_t count)</argsstring>
+        <name>read_int32_contig</name>
+        <param>
+          <type><ref refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56" kindref="member">persist_type</ref></type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>int32_t *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type>uint64_t</type>
+          <declname>count</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="86" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/io/persist.cpp" bodystart="556" bodyend="559"/>
+        <references refid="namespacelbann_1a85385e2a9e058b6720300b4cbdd2b1d0" compoundref="persist_8cpp" startline="647" endline="656">lbann::read_bytes</references>
+        <referencedby refid="classlbann_1_1generic__data__reader_1a8de5c2e24d4cc2211145ed5dc37cf228" compoundref="data__reader_8hpp" startline="610" endline="741">lbann::generic_data_reader::unpack_scalars</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1persist_1ab5be1e98f9d962c41fc9c3f2ac918c6e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool lbann::persist::write_float</definition>
+        <argsstring>(persist_type type, const char *name, float val)</argsstring>
+        <name>write_float</name>
+        <param>
+          <type><ref refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56" kindref="member">persist_type</ref></type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>float</type>
+          <declname>val</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="88" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/io/persist.cpp" bodystart="561" bodyend="563"/>
+        <references refid="namespacelbann_1aed95061796f19fa1648dcc99dc335abd" compoundref="persist_8cpp" startline="636" endline="645">lbann::write_bytes</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1persist_1ac5e659a6612e5f2911e195fc1b6c045b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool lbann::persist::read_float</definition>
+        <argsstring>(persist_type type, const char *name, float *val)</argsstring>
+        <name>read_float</name>
+        <param>
+          <type><ref refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56" kindref="member">persist_type</ref></type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>float *</type>
+          <declname>val</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="89" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/io/persist.cpp" bodystart="565" bodyend="567"/>
+        <references refid="namespacelbann_1a85385e2a9e058b6720300b4cbdd2b1d0" compoundref="persist_8cpp" startline="647" endline="656">lbann::read_bytes</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1persist_1a04afef84e7caa8509e65367225ceeba5" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool lbann::persist::write_string</definition>
+        <argsstring>(persist_type type, const char *name, const char *val, int str_length)</argsstring>
+        <name>write_string</name>
+        <param>
+          <type><ref refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56" kindref="member">persist_type</ref></type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>val</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>str_length</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="91" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/io/persist.cpp" bodystart="585" bodyend="587"/>
+        <references refid="namespacelbann_1aed95061796f19fa1648dcc99dc335abd" compoundref="persist_8cpp" startline="636" endline="645">lbann::write_bytes</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1persist_1a19c0a5dbee697aff0a5a5588f2d370b9" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool lbann::persist::read_string</definition>
+        <argsstring>(persist_type type, const char *name, char *val, int str_length)</argsstring>
+        <name>read_string</name>
+        <param>
+          <type><ref refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56" kindref="member">persist_type</ref></type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>char *</type>
+          <declname>val</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>str_length</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="92" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/io/persist.cpp" bodystart="589" bodyend="591"/>
+        <references refid="namespacelbann_1a85385e2a9e058b6720300b4cbdd2b1d0" compoundref="persist_8cpp" startline="647" endline="656">lbann::read_bytes</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1persist_1ad29ebcbacdef90a91a9d474d4d6e1bcd" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool lbann::persist::write_double</definition>
+        <argsstring>(persist_type type, const char *name, double val)</argsstring>
+        <name>write_double</name>
+        <param>
+          <type><ref refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56" kindref="member">persist_type</ref></type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>double</type>
+          <declname>val</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="94" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/io/persist.cpp" bodystart="569" bodyend="571"/>
+        <references refid="namespacelbann_1aed95061796f19fa1648dcc99dc335abd" compoundref="persist_8cpp" startline="636" endline="645">lbann::write_bytes</references>
+        <referencedby refid="structlbann_1_1metric__statistics_1a88f5324c96cceb47d723d2acfddb41f1" compoundref="metric_8cpp" startline="54" endline="58">lbann::metric_statistics::pack_scalars</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1persist_1ae3a0b96ece72901bb0a05d26a4eb4791" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool lbann::persist::read_double</definition>
+        <argsstring>(persist_type type, const char *name, double *val)</argsstring>
+        <name>read_double</name>
+        <param>
+          <type><ref refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56" kindref="member">persist_type</ref></type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>double *</type>
+          <declname>val</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="95" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/io/persist.cpp" bodystart="573" bodyend="575"/>
+        <references refid="namespacelbann_1a85385e2a9e058b6720300b4cbdd2b1d0" compoundref="persist_8cpp" startline="647" endline="656">lbann::read_bytes</references>
+        <referencedby refid="structlbann_1_1metric__statistics_1a4ff472c5d9155fe28c5a576c49f1e154" compoundref="metric_8cpp" startline="60" endline="72">lbann::metric_statistics::unpack_scalars</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1persist_1a5edc3f9cc3540b50d417993da2a6b5ce" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool lbann::persist::write_datatype</definition>
+        <argsstring>(persist_type type, const char *name, DataType val)</argsstring>
+        <name>write_datatype</name>
+        <param>
+          <type><ref refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56" kindref="member">persist_type</ref></type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>DataType</type>
+          <declname>val</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="97" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/io/persist.cpp" bodystart="577" bodyend="579"/>
+        <references refid="namespacelbann_1aed95061796f19fa1648dcc99dc335abd" compoundref="persist_8cpp" startline="636" endline="645">lbann::write_bytes</references>
+        <referencedby refid="classlbann_1_1adam_1a43e941b596c5d1cc68b795b0399398c4" compoundref="adam_8hpp" startline="112" endline="119">lbann::adam::pack_scalars</referencedby>
+        <referencedby refid="classlbann_1_1rmsprop_1ac2c5ae4dc2438da1da54072a297b148b" compoundref="rmsprop_8hpp" startline="83" endline="86">lbann::rmsprop::pack_scalars</referencedby>
+        <referencedby refid="classlbann_1_1sgd_1ab95756a63ec3fa0100d436a5a9addfeb" compoundref="sgd_8hpp" startline="90" endline="93">lbann::sgd::pack_scalars</referencedby>
+        <referencedby refid="classlbann_1_1optimizer_1afed10c6d8c5bd922f95075abeff711ce" compoundref="optimizer_8cpp" startline="487" endline="493">lbann::optimizer::save_to_checkpoint_shared</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1persist_1a1e84eff891affad6001f3c5fa803cae2" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool lbann::persist::read_datatype</definition>
+        <argsstring>(persist_type type, const char *name, DataType *val)</argsstring>
+        <name>read_datatype</name>
+        <param>
+          <type><ref refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56" kindref="member">persist_type</ref></type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>DataType *</type>
+          <declname>val</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="98" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/io/persist.cpp" bodystart="581" bodyend="583"/>
+        <references refid="namespacelbann_1a85385e2a9e058b6720300b4cbdd2b1d0" compoundref="persist_8cpp" startline="647" endline="656">lbann::read_bytes</references>
+        <referencedby refid="classlbann_1_1adam_1a21a3d2bce0bac5e6c022c5d95ec6348b" compoundref="adam_8hpp" startline="121" endline="136">lbann::adam::unpack_scalars</referencedby>
+        <referencedby refid="classlbann_1_1rmsprop_1a9b969263276b4d1aed93c3c82abf832d" compoundref="rmsprop_8hpp" startline="88" endline="96">lbann::rmsprop::unpack_scalars</referencedby>
+        <referencedby refid="classlbann_1_1sgd_1a2b4a91cbb155ed94a185db79fdbf6284" compoundref="sgd_8hpp" startline="95" endline="103">lbann::sgd::unpack_scalars</referencedby>
+        <referencedby refid="classlbann_1_1optimizer_1a42a52aab9a682fda57c1e639968a44b9" compoundref="optimizer_8cpp" startline="495" endline="499">lbann::optimizer::load_from_checkpoint_shared</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="private-func">
+      <memberdef kind="function" id="classlbann_1_1persist_1a0fe7bbf6a5a47417aa904d0cb64af3fd" prot="private" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int lbann::persist::get_fd</definition>
+        <argsstring>(persist_type type) const</argsstring>
+        <name>get_fd</name>
+        <param>
+          <type><ref refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56" kindref="member">persist_type</ref></type>
+          <declname>type</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="101" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/io/persist.cpp" bodystart="593" bodyend="603"/>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" line="43" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp" bodystart="43" bodyend="102"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1persist_1ab099939d0d91101fbfaf2b85e78be032" prot="public" virt="non-virtual"><scope>lbann::persist</scope><name>close_checkpoint</name></member>
+      <member refid="classlbann_1_1persist_1afeef05548e1d17bd09d3805607edd621" prot="public" virt="non-virtual"><scope>lbann::persist</scope><name>close_restart</name></member>
+      <member refid="classlbann_1_1persist_1ad759657d69e88a491729ce8e4bf9510e" prot="public" virt="non-virtual"><scope>lbann::persist</scope><name>get_bytes</name></member>
+      <member refid="classlbann_1_1persist_1a0fe7bbf6a5a47417aa904d0cb64af3fd" prot="private" virt="non-virtual"><scope>lbann::persist</scope><name>get_fd</name></member>
+      <member refid="classlbann_1_1persist_1a34eb918a890ab49dcbeedddf27ec1616" prot="public" virt="non-virtual"><scope>lbann::persist</scope><name>get_rank</name></member>
+      <member refid="classlbann_1_1persist_1a0bd4fd42d9858a5210c8034dfbb666d4" prot="protected" virt="non-virtual"><scope>lbann::persist</scope><name>m_bytes</name></member>
+      <member refid="classlbann_1_1persist_1a17c2b08ec1815aba6d3eae6502397bb1" prot="public" virt="non-virtual"><scope>lbann::persist</scope><name>m_checkpoint_dir</name></member>
+      <member refid="classlbann_1_1persist_1a1adc7102c1b4bc91534ca156decbd965" prot="protected" virt="non-virtual"><scope>lbann::persist</scope><name>m_model_fd</name></member>
+      <member refid="classlbann_1_1persist_1ac01cd3c8fe0f97c1312ca1a595f2f690" prot="protected" virt="non-virtual"><scope>lbann::persist</scope><name>m_model_filename</name></member>
+      <member refid="classlbann_1_1persist_1aa99b1b0079bb10471472bf6f1d966deb" prot="protected" virt="non-virtual"><scope>lbann::persist</scope><name>m_rank</name></member>
+      <member refid="classlbann_1_1persist_1a817671390811dde04670c47139402f51" prot="protected" virt="non-virtual"><scope>lbann::persist</scope><name>m_train_fd</name></member>
+      <member refid="classlbann_1_1persist_1a417a443c894fd07472504936f5b02b62" prot="protected" virt="non-virtual"><scope>lbann::persist</scope><name>m_train_filename</name></member>
+      <member refid="classlbann_1_1persist_1a87927d03b0cf684023178f997c038783" prot="protected" virt="non-virtual"><scope>lbann::persist</scope><name>m_validate_fd</name></member>
+      <member refid="classlbann_1_1persist_1a8ccf3728c62f825ec2f8cfe15929fc2a" prot="protected" virt="non-virtual"><scope>lbann::persist</scope><name>m_validate_filename</name></member>
+      <member refid="classlbann_1_1persist_1a32a8f71995b674a62b21087ec4be9575" prot="public" virt="non-virtual"><scope>lbann::persist</scope><name>open_checkpoint</name></member>
+      <member refid="classlbann_1_1persist_1a123cbc1d2b693640c784a45cbc6d2d97" prot="public" virt="non-virtual"><scope>lbann::persist</scope><name>open_restart</name></member>
+      <member refid="classlbann_1_1persist_1abf1454f4d5b61617ccfa60ba9989f1a3" prot="public" virt="non-virtual"><scope>lbann::persist</scope><name>persist</name></member>
+      <member refid="classlbann_1_1persist_1af24f635f634c8cf30cf53a0e90ec641b" prot="public" virt="non-virtual"><scope>lbann::persist</scope><name>read_bytes</name></member>
+      <member refid="classlbann_1_1persist_1a1e84eff891affad6001f3c5fa803cae2" prot="public" virt="non-virtual"><scope>lbann::persist</scope><name>read_datatype</name></member>
+      <member refid="classlbann_1_1persist_1aa98be93f33b510e5b506b61de6bd79bd" prot="public" virt="non-virtual"><scope>lbann::persist</scope><name>read_distmat</name></member>
+      <member refid="classlbann_1_1persist_1ae3a0b96ece72901bb0a05d26a4eb4791" prot="public" virt="non-virtual"><scope>lbann::persist</scope><name>read_double</name></member>
+      <member refid="classlbann_1_1persist_1ac5e659a6612e5f2911e195fc1b6c045b" prot="public" virt="non-virtual"><scope>lbann::persist</scope><name>read_float</name></member>
+      <member refid="classlbann_1_1persist_1a2944c32f6634223c0902b38a697a0957" prot="public" virt="non-virtual"><scope>lbann::persist</scope><name>read_int32_contig</name></member>
+      <member refid="classlbann_1_1persist_1a19c0a5dbee697aff0a5a5588f2d370b9" prot="public" virt="non-virtual"><scope>lbann::persist</scope><name>read_string</name></member>
+      <member refid="classlbann_1_1persist_1ace1ebb58e2570693cdce0ebd2817113b" prot="public" virt="non-virtual"><scope>lbann::persist</scope><name>read_uint32</name></member>
+      <member refid="classlbann_1_1persist_1aa6d996db3714a7ae055adac0d8e8ac63" prot="public" virt="non-virtual"><scope>lbann::persist</scope><name>read_uint64</name></member>
+      <member refid="classlbann_1_1persist_1a8729c7c90f4ca3090cd678fce91a0eb0" prot="public" virt="non-virtual"><scope>lbann::persist</scope><name>write_bytes</name></member>
+      <member refid="classlbann_1_1persist_1a5edc3f9cc3540b50d417993da2a6b5ce" prot="public" virt="non-virtual"><scope>lbann::persist</scope><name>write_datatype</name></member>
+      <member refid="classlbann_1_1persist_1a9170de652405d86d9ba9b3793f8781c6" prot="public" virt="non-virtual"><scope>lbann::persist</scope><name>write_distmat</name></member>
+      <member refid="classlbann_1_1persist_1ad29ebcbacdef90a91a9d474d4d6e1bcd" prot="public" virt="non-virtual"><scope>lbann::persist</scope><name>write_double</name></member>
+      <member refid="classlbann_1_1persist_1ab5be1e98f9d962c41fc9c3f2ac918c6e" prot="public" virt="non-virtual"><scope>lbann::persist</scope><name>write_float</name></member>
+      <member refid="classlbann_1_1persist_1a199cd86b1e1f0fd5f2d0458fc6d25828" prot="public" virt="non-virtual"><scope>lbann::persist</scope><name>write_int32_contig</name></member>
+      <member refid="classlbann_1_1persist_1a04afef84e7caa8509e65367225ceeba5" prot="public" virt="non-virtual"><scope>lbann::persist</scope><name>write_string</name></member>
+      <member refid="classlbann_1_1persist_1a742334568de0aca958dbaf7bbabd3cba" prot="public" virt="non-virtual"><scope>lbann::persist</scope><name>write_uint32</name></member>
+      <member refid="classlbann_1_1persist_1aced95e3bc711276b072af97b65ef9fc1" prot="public" virt="non-virtual"><scope>lbann::persist</scope><name>write_uint64</name></member>
+      <member refid="classlbann_1_1persist_1ac0d475c0174f7dbd805a0b0603277cfa" prot="public" virt="non-virtual"><scope>lbann::persist</scope><name>~persist</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

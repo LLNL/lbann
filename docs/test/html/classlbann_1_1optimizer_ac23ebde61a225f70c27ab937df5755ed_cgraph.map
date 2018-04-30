@@ -1,0 +1,9 @@
+<map id="lbann::optimizer::add_to_gradient_staging" name="lbann::optimizer::add_to_gradient_staging">
+<area shape="rect" id="node2" href="$classlbann_1_1optimizer.html#abccf0babf69e3d7c6e9a7fd0731c79b7" title="lbann::optimizer::is\l_initialized" alt="" coords="215,5,347,44"/>
+<area shape="rect" id="node4" href="$classlbann_1_1weights.html#a3216926df0aaf7aa440b9e5317d05fa2" title="lbann::weights::get_size" alt="" coords="199,69,363,95"/>
+<area shape="rect" id="node3" href="$classlbann_1_1optimizer.html#a9c3fc3f1d45da822676d5932a1c7af82" title="lbann::optimizer::get\l_weights" alt="" coords="411,5,552,44"/>
+<area shape="rect" id="node5" href="$classlbann_1_1weights.html#ad36676b9b43bced1cc7e332e3745411f" title="lbann::weights::get\l_matrix_height" alt="" coords="787,92,920,131"/>
+<area shape="rect" id="node7" href="$classlbann_1_1weights.html#abc3cf3a5b992302b1eaaea1fdf3b377d" title="lbann::weights::get\l_matrix_width" alt="" coords="415,120,548,159"/>
+<area shape="rect" id="node6" href="$classlbann_1_1weights.html#a2971f04c57d90fbb09631b1de3dad336" title="lbann::weights::get\l_matrix_height_dims" alt="" coords="968,92,1112,131"/>
+<area shape="rect" id="node8" href="$classlbann_1_1weights.html#a783ce38ed0b75c0264dd7e28911d5ec0" title="lbann::weights::get\l_matrix_width_dims" alt="" coords="600,120,739,159"/>
+</map>

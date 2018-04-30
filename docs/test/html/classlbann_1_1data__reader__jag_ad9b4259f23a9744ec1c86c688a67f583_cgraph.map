@@ -1,0 +1,5 @@
+<map id="lbann::data_reader_jag::fetch_response" name="lbann::data_reader_jag::fetch_response">
+<area shape="rect" id="node2" href="$classlbann_1_1data__reader__jag.html#a5535a2dc025d484ac01a6aad8585c9b5" title="Return the pointer to the raw input data. " alt="" coords="201,5,335,44"/>
+<area shape="rect" id="node3" href="$classlbann_1_1data__reader__jag.html#aab51581a1b8175bf5da1b74454ef7701" title="Return the pointer to the raw image data. " alt="" coords="198,68,338,107"/>
+<area shape="rect" id="node4" href="$classlbann_1_1data__reader__jag.html#abaa3c00c30ebaa54d395c93f0225570c" title="Return the pointer to the raw scalar data. " alt="" coords="199,131,337,169"/>
+</map>

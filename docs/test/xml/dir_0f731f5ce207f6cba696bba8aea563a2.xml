@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="dir_0f731f5ce207f6cba696bba8aea563a2" kind="dir">
+    <compoundname>/Users/mckinney27/doxy-testbed/lbann/src/models</compoundname>
+    <innerfile refid="directed__acyclic__graph_8cpp">directed_acyclic_graph.cpp</innerfile>
+    <innerfile refid="greedy__layerwise__autoencoder_8cpp">greedy_layerwise_autoencoder.cpp</innerfile>
+    <innerfile refid="model_8cpp">model.cpp</innerfile>
+    <innerfile refid="recurrent_8cpp">recurrent.cpp</innerfile>
+    <innerfile refid="sequential_8cpp">sequential.cpp</innerfile>
+    <innerfile refid="siamese_8cpp">siamese.cpp</innerfile>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/src/models/"/>
+  </compounddef>
+</doxygen>

@@ -1,0 +1,39 @@
+\hypertarget{im2col_8hpp}{}\section{/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/utils/im2col.hpp File Reference}
+\label{im2col_8hpp}\index{/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/utils/im2col.\+hpp@{/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/utils/im2col.\+hpp}}
+{\ttfamily \#include \char`\"{}lbann/base.\+hpp\char`\"{}}\newline
+Include dependency graph for im2col.\+hpp\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{im2col_8hpp__incl}
+\end{center}
+\end{figure}
+This graph shows which files directly or indirectly include this file\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{im2col_8hpp__dep__incl}
+\end{center}
+\end{figure}
+\subsection*{Namespaces}
+\begin{DoxyCompactItemize}
+\item 
+ \hyperlink{namespacelbann}{lbann}
+\begin{DoxyCompactList}\small\item\em Open\+MP Diagnostic code from Edgar Leon at L\+L\+NL. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{namespacelbann_aa3636a1979e40da2af91f30a12b90db9}{lbann\+::im2col} (const \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&im, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&col, int num\+\_\+channels, int im\+\_\+num\+\_\+dims, const int $\ast$im\+\_\+dims, const int $\ast$im\+\_\+pads, const int $\ast$window\+\_\+dims, const int $\ast$window\+\_\+strides)
+\begin{DoxyCompactList}\small\item\em Rearrange image blocks into matrix columns. \end{DoxyCompactList}\item 
+void \hyperlink{namespacelbann_a0e1225f72580ffb5166181392b68b651}{lbann\+::col2im} (const \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&col, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&im, int num\+\_\+channels, int im\+\_\+num\+\_\+dims, const int $\ast$im\+\_\+dims, const int $\ast$im\+\_\+pads, const int $\ast$window\+\_\+dims, const int $\ast$window\+\_\+strides)
+\begin{DoxyCompactList}\small\item\em Rearrange matrix columns into image blocks. \end{DoxyCompactList}\item 
+void \hyperlink{namespacelbann_ab36806d08e7c852ad9cf3a0564f29b64}{lbann\+::col2im} (const \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&col, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&im, int num\+\_\+channels, int im\+\_\+num\+\_\+dims, const int $\ast$im\+\_\+dims, const int $\ast$im\+\_\+pads, const int $\ast$window\+\_\+dims, const int $\ast$window\+\_\+strides, std\+::function$<$ Data\+Type(const Data\+Type \&, const Data\+Type \&)$>$ reduction\+\_\+op)
+\begin{DoxyCompactList}\small\item\em Rearrange matrix columns into image blocks. \end{DoxyCompactList}\item 
+void \hyperlink{namespacelbann_a3d099edd7d1b09889e0d2133bb83d5bf}{lbann\+::im2col\+\_\+1x1} (const Data\+Type $\ast$input\+\_\+buffer, Data\+Type $\ast$output\+\_\+buffer, int num\+\_\+channels, int num\+\_\+input\+\_\+dims, const int $\ast$input\+\_\+dims)
+\begin{DoxyCompactList}\small\item\em Rearrange 1x1 image blocks into matrix columns. \end{DoxyCompactList}\item 
+void \hyperlink{namespacelbann_adc05d10657be77ccd9a74b1621c416c3}{lbann\+::im2col\+\_\+2d} (const Data\+Type $\ast$\+\_\+\+\_\+restrict\+\_\+\+\_\+ input\+\_\+buffer, Data\+Type $\ast$\+\_\+\+\_\+restrict\+\_\+\+\_\+ output\+\_\+buffer, int input\+\_\+dim\+\_\+x, int input\+\_\+dim\+\_\+y, int input\+\_\+pad\+\_\+x, int input\+\_\+pad\+\_\+y, int num\+\_\+channels, int window\+\_\+dim\+\_\+x, int window\+\_\+dim\+\_\+y, int offset\+\_\+stride\+\_\+x, int offset\+\_\+stride\+\_\+y)
+\begin{DoxyCompactList}\small\item\em Rearrange 2D image blocks into matrix columns. \end{DoxyCompactList}\item 
+void \hyperlink{namespacelbann_ab4fccda3dc4c2c293d643815dfefe22a}{lbann\+::col2im\+\_\+1x1} (const Data\+Type $\ast$input\+\_\+buffer, Data\+Type $\ast$output\+\_\+buffer, const int num\+\_\+channels, const int num\+\_\+output\+\_\+dims, const int $\ast$output\+\_\+dims)
+\begin{DoxyCompactList}\small\item\em Rearrange matrix columns into 1x1 image blocks. \end{DoxyCompactList}\item 
+void \hyperlink{namespacelbann_a1953674a43b284f0abb5c5e4db94b2b9}{lbann\+::col2im\+\_\+2d} (const Data\+Type $\ast$\+\_\+\+\_\+restrict\+\_\+\+\_\+ input\+\_\+buffer, Data\+Type $\ast$\+\_\+\+\_\+restrict\+\_\+\+\_\+ output\+\_\+buffer, int output\+\_\+dim\+\_\+x, int output\+\_\+dim\+\_\+y, int output\+\_\+pad\+\_\+x, int output\+\_\+pad\+\_\+y, int num\+\_\+channels, int window\+\_\+dim\+\_\+x, int window\+\_\+dim\+\_\+y, int offset\+\_\+stride\+\_\+x, int offset\+\_\+stride\+\_\+y)
+\begin{DoxyCompactList}\small\item\em Rearrange matrix columns into 2D image blocks. \end{DoxyCompactList}\end{DoxyCompactItemize}

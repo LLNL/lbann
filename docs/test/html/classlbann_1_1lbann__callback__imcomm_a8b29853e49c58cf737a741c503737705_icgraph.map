@@ -1,0 +1,9 @@
+<map id="lbann::lbann_callback_imcomm::ct_does_quantization" name="lbann::lbann_callback_imcomm::ct_does_quantization">
+<area shape="rect" id="node2" href="$classlbann_1_1lbann__callback__imcomm.html#ab7106f5ee53672f5ef5a58371eb39f0b" title="lbann::lbann_callback\l_imcomm::ct_needs_reshape" alt="" coords="266,5,462,44"/>
+<area shape="rect" id="node3" href="$classlbann_1_1lbann__callback__imcomm.html#a096555a87ce1bb011ceafb44081c4192" title="lbann::lbann_callback\l_imcomm::setup" alt="" coords="517,56,667,95"/>
+<area shape="rect" id="node5" href="$classlbann_1_1lbann__callback__imcomm.html#a3160dbf536def4f930e0ea0aabdebc11" title="lbann::lbann_callback\l_imcomm::on_epoch_end" alt="" coords="722,113,897,152"/>
+<area shape="rect" id="node6" href="$classlbann_1_1lbann__callback__imcomm.html#ad45c39a7a85fb8e1d99eca97aa4d9d09" title="lbann::lbann_callback\l_imcomm::do_summary" alt="" coords="282,171,446,209"/>
+<area shape="rect" id="node4" href="$classlbann_1_1lbann__callback__imcomm.html#a9d59535b4789389a8c3c9e406cd1e2d3" title="lbann::lbann_callback\l_imcomm::copy" alt="" coords="945,113,1095,152"/>
+<area shape="rect" id="node7" href="$classlbann_1_1lbann__callback__imcomm.html#a13fe710b841f72e28daf8de029f6c2f9" title="lbann::lbann_callback\l_imcomm::reshape_mat" alt="" coords="510,171,674,209"/>
+<area shape="rect" id="node8" href="$classlbann_1_1lbann__callback__imcomm.html#a0a425ba562f7637b25cd6ba094e7885b" title="lbann::lbann_callback\l_imcomm::on_backward\l_prop_end" alt="" coords="727,176,893,228"/>
+</map>

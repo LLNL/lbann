@@ -1,0 +1,12 @@
+<map id="lbann::categorical_accuracy_metric::setup" name="lbann::categorical_accuracy_metric::setup">
+<area shape="rect" id="node2" href="$classlbann_1_1metric.html#a898d23e410297378db2fe9f8d1754fe0" title="lbann::metric::setup" alt="" coords="228,107,366,132"/>
+<area shape="rect" id="node10" href="$classlbann_1_1metric.html#aba7f7a12aeba6619f7b4330e9075f76e" title="lbann::metric::get\l_target_layer" alt="" coords="235,156,359,195"/>
+<area shape="rect" id="node11" href="$classlbann_1_1model.html#a8c311798ff4acaeafdfbf85162ba5084" title="lbann::model::get_max\l_mini_batch_size" alt="" coords="219,219,375,257"/>
+<area shape="rect" id="node3" href="$classlbann_1_1model.html#ae14f4b2cc8882b3739d4aeb25d9e73c9" title="lbann::model::get_layers" alt="" coords="423,107,590,132"/>
+<area shape="rect" id="node4" href="$classlbann_1_1model.html#aaed20219476dc1458bbd058be36de1ec" title="lbann::model::replace\l_weights" alt="" coords="638,100,787,139"/>
+<area shape="rect" id="node5" href="$classlbann_1_1model.html#ac6cc0f5d850cfb997bbbc70eefa0d68f" title="lbann::model::remap\l_pointers" alt="" coords="835,100,978,139"/>
+<area shape="rect" id="node6" href="$classlbann_1_1objective__function.html#a1055da2236a7faf79c5a2632f8dfc683" title="lbann::objective_function\l::get_layer_pointers" alt="" coords="1026,5,1194,44"/>
+<area shape="rect" id="node7" href="$classlbann_1_1objective__function.html#a0f934e078b55528dd0ec1ec8ad34c73b" title="lbann::objective_function\l::set_layer_pointers" alt="" coords="1026,68,1194,107"/>
+<area shape="rect" id="node8" href="$classlbann_1_1objective__function.html#a8e37f76e42f6f341ea3592001b3794e5" title="lbann::objective_function\l::get_weights_pointers" alt="" coords="1026,131,1194,169"/>
+<area shape="rect" id="node9" href="$classlbann_1_1objective__function.html#a9c3211354ca1cee8a7ba219f4e56e03c" title="lbann::objective_function\l::set_weights_pointers" alt="" coords="1026,193,1194,232"/>
+</map>

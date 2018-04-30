@@ -1,0 +1,573 @@
+\hypertarget{classlbann_1_1rmsprop}{}\section{lbann\+:\+:rmsprop Class Reference}
+\label{classlbann_1_1rmsprop}\index{lbann\+::rmsprop@{lbann\+::rmsprop}}
+
+
+{\ttfamily \#include $<$rmsprop.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:rmsprop\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=167pt]{classlbann_1_1rmsprop__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:rmsprop\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1rmsprop__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \hyperlink{structlbann_1_1rmsprop_1_1packing__header}{packing\+\_\+header}
+\end{DoxyCompactItemize}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1rmsprop_af42c8e3336e72aac926e19c57b56e59f}{rmsprop} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, Data\+Type learning\+\_\+rate, Data\+Type decay\+\_\+rate, Data\+Type eps=Data\+Type(1e-\/8))
+\item 
+\hyperlink{classlbann_1_1rmsprop_af70a9a2c9ff67d0d39f14c6e283abd95}{rmsprop} (const \hyperlink{classlbann_1_1rmsprop}{rmsprop} \&other)
+\item 
+\hyperlink{classlbann_1_1rmsprop}{rmsprop} \& \hyperlink{classlbann_1_1rmsprop_a3c7eb1fb105c7be762b97e4f947a2b94}{operator=} (const \hyperlink{classlbann_1_1rmsprop}{rmsprop} \&other)
+\item 
+\hyperlink{classlbann_1_1rmsprop_ae837f3c0e5b49f8baa42cc9c864259fc}{$\sim$rmsprop} () override
+\item 
+\hyperlink{classlbann_1_1rmsprop}{rmsprop} $\ast$ \hyperlink{classlbann_1_1rmsprop_a1493737d356809ad5c94f77051de8814}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1rmsprop_aa4299a19c0ab81a41ccebb9486f106b6}{get\+\_\+type} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1rmsprop_a4526482bf60f7f3fc3f60ff70b38cdb7}{get\+\_\+description} () const override
+\item 
+void \hyperlink{classlbann_1_1rmsprop_a8f6111a36f9ad592d14e13b64a0f228f}{setup} (\hyperlink{classlbann_1_1weights}{weights} \&w) override
+\item 
+void \hyperlink{classlbann_1_1rmsprop_a600e4b332299a6aaa36d0b7ff458e3f3}{step\+\_\+compute} (\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&values, const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&gradient) override
+\end{DoxyCompactItemize}
+\subsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+bool \hyperlink{classlbann_1_1rmsprop_ac2c5ae4dc2438da1da54072a297b148b}{pack\+\_\+scalars} (\hyperlink{classlbann_1_1persist}{persist} \&p)
+\item 
+bool \hyperlink{classlbann_1_1rmsprop_a9b969263276b4d1aed93c3c82abf832d}{unpack\+\_\+scalars} (\hyperlink{classlbann_1_1persist}{persist} \&p, struct \hyperlink{structlbann_1_1rmsprop_1_1packing__header}{packing\+\_\+header} $\ast$header)
+\item 
+void \hyperlink{classlbann_1_1rmsprop_a1af03b4c5e744abae04ccec3e19a0cc6}{unpack\+\_\+header} (struct \hyperlink{structlbann_1_1rmsprop_1_1packing__header}{packing\+\_\+header} \&header)
+\item 
+bool \hyperlink{classlbann_1_1rmsprop_a8abe698168c2d1cb2c65d180552501ef}{save\+\_\+to\+\_\+checkpoint\+\_\+shared} (\hyperlink{classlbann_1_1persist}{persist} \&p, std\+::string m\+\_\+name) override
+\item 
+bool \hyperlink{classlbann_1_1rmsprop_a64db08f787ca8904a0ba4ecc37d5d1ed}{load\+\_\+from\+\_\+checkpoint\+\_\+shared} (\hyperlink{classlbann_1_1persist}{persist} \&p, std\+::string m\+\_\+name) override
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+Data\+Type \hyperlink{classlbann_1_1rmsprop_a9cd712c44e7c4995120e2933b0387d71}{m\+\_\+decay\+\_\+rate}
+\item 
+Data\+Type \hyperlink{classlbann_1_1rmsprop_a6ea73caf5b2769451dfd798665877208}{m\+\_\+eps}
+\item 
+\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} $\ast$ \hyperlink{classlbann_1_1rmsprop_a2bbaa35bb209e971a5ac9e1dbb6ece76}{m\+\_\+cache}
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+R\+M\+Sprop optimizer. 
+
+Definition at line 36 of file rmsprop.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1rmsprop_af42c8e3336e72aac926e19c57b56e59f}\label{classlbann_1_1rmsprop_af42c8e3336e72aac926e19c57b56e59f}} 
+\index{lbann\+::rmsprop@{lbann\+::rmsprop}!rmsprop@{rmsprop}}
+\index{rmsprop@{rmsprop}!lbann\+::rmsprop@{lbann\+::rmsprop}}
+\subsubsection{\texorpdfstring{rmsprop()}{rmsprop()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::rmsprop\+::rmsprop (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{Data\+Type}]{learning\+\_\+rate,  }\item[{Data\+Type}]{decay\+\_\+rate,  }\item[{Data\+Type}]{eps = {\ttfamily DataType(1e-\/8)} }\end{DoxyParamCaption})}
+
+Constructor. 
+
+Definition at line 32 of file rmsprop.\+cpp.
+
+
+\begin{DoxyCode}
+36   : \hyperlink{classlbann_1_1optimizer_a136ed79c3f279ecded5be380fb67b05f}{optimizer}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, learning\_rate),
+37     \hyperlink{classlbann_1_1rmsprop_a9cd712c44e7c4995120e2933b0387d71}{m\_decay\_rate}(decay\_rate),
+38     \hyperlink{classlbann_1_1rmsprop_a6ea73caf5b2769451dfd798665877208}{m\_eps}(eps),
+39     \hyperlink{classlbann_1_1rmsprop_a2bbaa35bb209e971a5ac9e1dbb6ece76}{m\_cache}(\textcolor{keyword}{nullptr}) \{\}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1rmsprop_af42c8e3336e72aac926e19c57b56e59f_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1rmsprop_af70a9a2c9ff67d0d39f14c6e283abd95}\label{classlbann_1_1rmsprop_af70a9a2c9ff67d0d39f14c6e283abd95}} 
+\index{lbann\+::rmsprop@{lbann\+::rmsprop}!rmsprop@{rmsprop}}
+\index{rmsprop@{rmsprop}!lbann\+::rmsprop@{lbann\+::rmsprop}}
+\subsubsection{\texorpdfstring{rmsprop()}{rmsprop()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::rmsprop\+::rmsprop (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1rmsprop}{rmsprop} \&}]{other }\end{DoxyParamCaption})}
+
+Copy constructor. 
+
+Definition at line 41 of file rmsprop.\+cpp.
+
+
+\begin{DoxyCode}
+41                                      :
+42   \hyperlink{classlbann_1_1optimizer_a136ed79c3f279ecded5be380fb67b05f}{optimizer}(other),
+43   \hyperlink{classlbann_1_1rmsprop_a9cd712c44e7c4995120e2933b0387d71}{m\_decay\_rate}(other.m\_decay\_rate),
+44   \hyperlink{classlbann_1_1rmsprop_a6ea73caf5b2769451dfd798665877208}{m\_eps}(other.m\_eps),
+45   \hyperlink{classlbann_1_1rmsprop_a2bbaa35bb209e971a5ac9e1dbb6ece76}{m\_cache}(other.m\_cache) \{
+46   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1rmsprop_a2bbaa35bb209e971a5ac9e1dbb6ece76}{m\_cache} != \textcolor{keyword}{nullptr}) \{ \hyperlink{classlbann_1_1rmsprop_a2bbaa35bb209e971a5ac9e1dbb6ece76}{m\_cache} = \hyperlink{classlbann_1_1rmsprop_a2bbaa35bb209e971a5ac9e1dbb6ece76}{m\_cache}->Copy(); \}
+47 \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1rmsprop_ae837f3c0e5b49f8baa42cc9c864259fc}\label{classlbann_1_1rmsprop_ae837f3c0e5b49f8baa42cc9c864259fc}} 
+\index{lbann\+::rmsprop@{lbann\+::rmsprop}!````~rmsprop@{$\sim$rmsprop}}
+\index{````~rmsprop@{$\sim$rmsprop}!lbann\+::rmsprop@{lbann\+::rmsprop}}
+\subsubsection{\texorpdfstring{$\sim$rmsprop()}{~rmsprop()}}
+{\footnotesize\ttfamily lbann\+::rmsprop\+::$\sim$rmsprop (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}}
+
+Destructor. 
+
+Definition at line 68 of file rmsprop.\+cpp.
+
+
+\begin{DoxyCode}
+68                   \{
+69   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1rmsprop_a2bbaa35bb209e971a5ac9e1dbb6ece76}{m\_cache} != \textcolor{keyword}{nullptr}) \{ \textcolor{keyword}{delete} \hyperlink{classlbann_1_1rmsprop_a2bbaa35bb209e971a5ac9e1dbb6ece76}{m\_cache}; \}
+70 \}
+\end{DoxyCode}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1rmsprop_a1493737d356809ad5c94f77051de8814}\label{classlbann_1_1rmsprop_a1493737d356809ad5c94f77051de8814}} 
+\index{lbann\+::rmsprop@{lbann\+::rmsprop}!copy@{copy}}
+\index{copy@{copy}!lbann\+::rmsprop@{lbann\+::rmsprop}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1rmsprop}{rmsprop}$\ast$ lbann\+::rmsprop\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Create a copy. 
+
+Implements \hyperlink{classlbann_1_1optimizer_adf19a1d19d832ebfe70072cc202cdf39}{lbann\+::optimizer}.
+
+
+
+Definition at line 52 of file rmsprop.\+hpp.
+
+
+\begin{DoxyCode}
+52 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1rmsprop_af42c8e3336e72aac926e19c57b56e59f}{rmsprop}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1rmsprop_a1493737d356809ad5c94f77051de8814_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1rmsprop_a4526482bf60f7f3fc3f60ff70b38cdb7}\label{classlbann_1_1rmsprop_a4526482bf60f7f3fc3f60ff70b38cdb7}} 
+\index{lbann\+::rmsprop@{lbann\+::rmsprop}!get\+\_\+description@{get\+\_\+description}}
+\index{get\+\_\+description@{get\+\_\+description}!lbann\+::rmsprop@{lbann\+::rmsprop}}
+\subsubsection{\texorpdfstring{get\+\_\+description()}{get\_description()}}
+{\footnotesize\ttfamily std\+::string lbann\+::rmsprop\+::get\+\_\+description (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get a human-\/readable description of the optimizer. 
+
+Reimplemented from \hyperlink{classlbann_1_1optimizer_a66bb8d28dfb41452ac1a75a3efd47723}{lbann\+::optimizer}.
+
+
+
+Definition at line 72 of file rmsprop.\+cpp.
+
+
+\begin{DoxyCode}
+72                                          \{
+73   std::stringstream ss;
+74   ss << \hyperlink{classlbann_1_1optimizer_a66bb8d28dfb41452ac1a75a3efd47723}{optimizer::get\_description}() << \textcolor{stringliteral}{", "}
+75      << \textcolor{stringliteral}{"decay\_rate="} << \hyperlink{classlbann_1_1rmsprop_a9cd712c44e7c4995120e2933b0387d71}{m\_decay\_rate} << \textcolor{stringliteral}{", "}
+76      << \textcolor{stringliteral}{"eps="} << \hyperlink{classlbann_1_1rmsprop_a6ea73caf5b2769451dfd798665877208}{m\_eps};
+77   \textcolor{keywordflow}{return} ss.str();
+78 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1rmsprop_a4526482bf60f7f3fc3f60ff70b38cdb7_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=345pt]{classlbann_1_1rmsprop_a4526482bf60f7f3fc3f60ff70b38cdb7_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1rmsprop_aa4299a19c0ab81a41ccebb9486f106b6}\label{classlbann_1_1rmsprop_aa4299a19c0ab81a41ccebb9486f106b6}} 
+\index{lbann\+::rmsprop@{lbann\+::rmsprop}!get\+\_\+type@{get\+\_\+type}}
+\index{get\+\_\+type@{get\+\_\+type}!lbann\+::rmsprop@{lbann\+::rmsprop}}
+\subsubsection{\texorpdfstring{get\+\_\+type()}{get\_type()}}
+{\footnotesize\ttfamily std\+::string lbann\+::rmsprop\+::get\+\_\+type (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get the optimizer name. 
+
+Implements \hyperlink{classlbann_1_1optimizer_a7b7a6814e14eeee157e1cbb7f15dd4ff}{lbann\+::optimizer}.
+
+
+
+Definition at line 55 of file rmsprop.\+hpp.
+
+
+\begin{DoxyCode}
+55 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"rmsprop"}; \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1rmsprop_aa4299a19c0ab81a41ccebb9486f106b6_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1rmsprop_a64db08f787ca8904a0ba4ecc37d5d1ed}\label{classlbann_1_1rmsprop_a64db08f787ca8904a0ba4ecc37d5d1ed}} 
+\index{lbann\+::rmsprop@{lbann\+::rmsprop}!load\+\_\+from\+\_\+checkpoint\+\_\+shared@{load\+\_\+from\+\_\+checkpoint\+\_\+shared}}
+\index{load\+\_\+from\+\_\+checkpoint\+\_\+shared@{load\+\_\+from\+\_\+checkpoint\+\_\+shared}!lbann\+::rmsprop@{lbann\+::rmsprop}}
+\subsubsection{\texorpdfstring{load\+\_\+from\+\_\+checkpoint\+\_\+shared()}{load\_from\_checkpoint\_shared()}}
+{\footnotesize\ttfamily bool lbann\+::rmsprop\+::load\+\_\+from\+\_\+checkpoint\+\_\+shared (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1persist}{persist} \&}]{p,  }\item[{std\+::string}]{m\+\_\+name }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [private]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1optimizer_a42a52aab9a682fda57c1e639968a44b9}{lbann\+::optimizer}.
+
+
+
+Definition at line 137 of file rmsprop.\+cpp.
+
+
+\begin{DoxyCode}
+137                                                                              \{
+138     \hyperlink{classlbann_1_1optimizer_a42a52aab9a682fda57c1e639968a44b9}{optimizer::load\_from\_checkpoint\_shared}(p, name\_prefix);
+139     \textcolor{keywordtype}{char} l\_name[512];
+140     
+141     sprintf(l\_name, \textcolor{stringliteral}{"%s\_optimizer\_cache\_%lldx%lld.bin"}, name\_prefix.c\_str(), 
+      \hyperlink{classlbann_1_1rmsprop_a2bbaa35bb209e971a5ac9e1dbb6ece76}{m\_cache}->Height(), \hyperlink{classlbann_1_1rmsprop_a2bbaa35bb209e971a5ac9e1dbb6ece76}{m\_cache}->Width());
+142     p.read\_distmat(\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64}{persist\_type::train}, l\_name, (\hyperlink{base_8hpp_a0fab5387556805cfeac3e7e567bf66c5}{DistMat} *)
+      \hyperlink{classlbann_1_1rmsprop_a2bbaa35bb209e971a5ac9e1dbb6ece76}{m\_cache});
+143     
+144     \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+145   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1rmsprop_a64db08f787ca8904a0ba4ecc37d5d1ed_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1rmsprop_a64db08f787ca8904a0ba4ecc37d5d1ed_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1rmsprop_a3c7eb1fb105c7be762b97e4f947a2b94}\label{classlbann_1_1rmsprop_a3c7eb1fb105c7be762b97e4f947a2b94}} 
+\index{lbann\+::rmsprop@{lbann\+::rmsprop}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::rmsprop@{lbann\+::rmsprop}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1rmsprop}{rmsprop} \& lbann\+::rmsprop\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1rmsprop}{rmsprop} \&}]{other }\end{DoxyParamCaption})}
+
+Copy assignment operator. 
+
+Definition at line 49 of file rmsprop.\+cpp.
+
+
+\begin{DoxyCode}
+49                                                 \{
+50   \hyperlink{classlbann_1_1optimizer_ab7811e0a4d2d9b594140aed78b6de743}{optimizer::operator=}(other);
+51   \hyperlink{classlbann_1_1rmsprop_a9cd712c44e7c4995120e2933b0387d71}{m\_decay\_rate} = other.m\_decay\_rate;
+52   \hyperlink{classlbann_1_1rmsprop_a6ea73caf5b2769451dfd798665877208}{m\_eps} = other.m\_eps;
+53 
+54   \textcolor{comment}{// Copy cache matrix}
+55   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1rmsprop_a2bbaa35bb209e971a5ac9e1dbb6ece76}{m\_cache} != \textcolor{keyword}{nullptr} && other.m\_cache != \textcolor{keyword}{nullptr}
+56       && \hyperlink{classlbann_1_1rmsprop_a2bbaa35bb209e971a5ac9e1dbb6ece76}{m\_cache}->DistData() == other.m\_cache->DistData()) \{
+57     El::Copy(*other.m\_cache, *\hyperlink{classlbann_1_1rmsprop_a2bbaa35bb209e971a5ac9e1dbb6ece76}{m\_cache});
+58   \}
+59   \textcolor{keywordflow}{else} \{
+60     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1rmsprop_a2bbaa35bb209e971a5ac9e1dbb6ece76}{m\_cache} != \textcolor{keyword}{nullptr}) \{ \textcolor{keyword}{delete} \hyperlink{classlbann_1_1rmsprop_a2bbaa35bb209e971a5ac9e1dbb6ece76}{m\_cache}; \}
+61     \hyperlink{classlbann_1_1rmsprop_a2bbaa35bb209e971a5ac9e1dbb6ece76}{m\_cache} = other.m\_cache;
+62     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1rmsprop_a2bbaa35bb209e971a5ac9e1dbb6ece76}{m\_cache} != \textcolor{keyword}{nullptr}) \{ \hyperlink{classlbann_1_1rmsprop_a2bbaa35bb209e971a5ac9e1dbb6ece76}{m\_cache} = \hyperlink{classlbann_1_1rmsprop_a2bbaa35bb209e971a5ac9e1dbb6ece76}{m\_cache}->Copy(); \}
+63   \}
+64 
+65   \textcolor{keywordflow}{return} *\textcolor{keyword}{this};
+66 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1rmsprop_a3c7eb1fb105c7be762b97e4f947a2b94_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1rmsprop_ac2c5ae4dc2438da1da54072a297b148b}\label{classlbann_1_1rmsprop_ac2c5ae4dc2438da1da54072a297b148b}} 
+\index{lbann\+::rmsprop@{lbann\+::rmsprop}!pack\+\_\+scalars@{pack\+\_\+scalars}}
+\index{pack\+\_\+scalars@{pack\+\_\+scalars}!lbann\+::rmsprop@{lbann\+::rmsprop}}
+\subsubsection{\texorpdfstring{pack\+\_\+scalars()}{pack\_scalars()}}
+{\footnotesize\ttfamily bool lbann\+::rmsprop\+::pack\+\_\+scalars (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1persist}{persist} \&}]{p }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [private]}}
+
+
+
+Definition at line 83 of file rmsprop.\+hpp.
+
+
+\begin{DoxyCode}
+83                                 \{
+84     p.write\_datatype(\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64}{persist\_type::train}, \textcolor{stringliteral}{"decay\_rate"}, 
+      \hyperlink{classlbann_1_1rmsprop_a9cd712c44e7c4995120e2933b0387d71}{m\_decay\_rate});
+85     \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+86   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1rmsprop_ac2c5ae4dc2438da1da54072a297b148b_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1rmsprop_a8abe698168c2d1cb2c65d180552501ef}\label{classlbann_1_1rmsprop_a8abe698168c2d1cb2c65d180552501ef}} 
+\index{lbann\+::rmsprop@{lbann\+::rmsprop}!save\+\_\+to\+\_\+checkpoint\+\_\+shared@{save\+\_\+to\+\_\+checkpoint\+\_\+shared}}
+\index{save\+\_\+to\+\_\+checkpoint\+\_\+shared@{save\+\_\+to\+\_\+checkpoint\+\_\+shared}!lbann\+::rmsprop@{lbann\+::rmsprop}}
+\subsubsection{\texorpdfstring{save\+\_\+to\+\_\+checkpoint\+\_\+shared()}{save\_to\_checkpoint\_shared()}}
+{\footnotesize\ttfamily bool lbann\+::rmsprop\+::save\+\_\+to\+\_\+checkpoint\+\_\+shared (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1persist}{persist} \&}]{p,  }\item[{std\+::string}]{m\+\_\+name }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [private]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1optimizer_afed10c6d8c5bd922f95075abeff711ce}{lbann\+::optimizer}.
+
+
+
+Definition at line 127 of file rmsprop.\+cpp.
+
+
+\begin{DoxyCode}
+127                                                                            \{
+128     \hyperlink{classlbann_1_1optimizer_afed10c6d8c5bd922f95075abeff711ce}{optimizer::save\_to\_checkpoint\_shared}(p, name\_prefix);
+129 
+130     \textcolor{keywordtype}{char} l\_name[512];
+131     sprintf(l\_name, \textcolor{stringliteral}{"%s\_optimizer\_cache\_%lldx%lld"}, name\_prefix.c\_str(), \hyperlink{classlbann_1_1rmsprop_a2bbaa35bb209e971a5ac9e1dbb6ece76}{m\_cache}->Height(), 
+      \hyperlink{classlbann_1_1rmsprop_a2bbaa35bb209e971a5ac9e1dbb6ece76}{m\_cache}->Width());
+132     p.write\_distmat(\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64}{persist\_type::train}, l\_name, (\hyperlink{base_8hpp_a0fab5387556805cfeac3e7e567bf66c5}{DistMat} *)
+      \hyperlink{classlbann_1_1rmsprop_a2bbaa35bb209e971a5ac9e1dbb6ece76}{m\_cache});
+133     
+134     \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+135   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1rmsprop_a8abe698168c2d1cb2c65d180552501ef_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1rmsprop_a8abe698168c2d1cb2c65d180552501ef_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1rmsprop_a8f6111a36f9ad592d14e13b64a0f228f}\label{classlbann_1_1rmsprop_a8f6111a36f9ad592d14e13b64a0f228f}} 
+\index{lbann\+::rmsprop@{lbann\+::rmsprop}!setup@{setup}}
+\index{setup@{setup}!lbann\+::rmsprop@{lbann\+::rmsprop}}
+\subsubsection{\texorpdfstring{setup()}{setup()}}
+{\footnotesize\ttfamily void lbann\+::rmsprop\+::setup (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1weights}{weights} \&}]{w }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Setup optimizer. 
+
+Reimplemented from \hyperlink{classlbann_1_1optimizer_a7641a88b3c166df2d974a298622b992b}{lbann\+::optimizer}.
+
+
+
+Definition at line 80 of file rmsprop.\+cpp.
+
+
+\begin{DoxyCode}
+80                               \{
+81   \hyperlink{classlbann_1_1optimizer_a7641a88b3c166df2d974a298622b992b}{optimizer::setup}(w);
+82   \hyperlink{classlbann_1_1rmsprop_a2bbaa35bb209e971a5ac9e1dbb6ece76}{m\_cache} = \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Construct(\hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Grid(),
+83                                   \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Root());
+84   El::Zeros(*\hyperlink{classlbann_1_1rmsprop_a2bbaa35bb209e971a5ac9e1dbb6ece76}{m\_cache}, \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Height(), \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Width());
+85 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1rmsprop_a8f6111a36f9ad592d14e13b64a0f228f_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1rmsprop_a8f6111a36f9ad592d14e13b64a0f228f_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1rmsprop_a600e4b332299a6aaa36d0b7ff458e3f3}\label{classlbann_1_1rmsprop_a600e4b332299a6aaa36d0b7ff458e3f3}} 
+\index{lbann\+::rmsprop@{lbann\+::rmsprop}!step\+\_\+compute@{step\+\_\+compute}}
+\index{step\+\_\+compute@{step\+\_\+compute}!lbann\+::rmsprop@{lbann\+::rmsprop}}
+\subsubsection{\texorpdfstring{step\+\_\+compute()}{step\_compute()}}
+{\footnotesize\ttfamily void lbann\+::rmsprop\+::step\+\_\+compute (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{values,  }\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{gradient }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Perform the computation in an optimization step. 
+
+Implements \hyperlink{classlbann_1_1optimizer_a0db72c298a0bc3405fb0af97d104a036}{lbann\+::optimizer}.
+
+
+
+Definition at line 87 of file rmsprop.\+cpp.
+
+
+\begin{DoxyCode}
+87                                                                          \{
+88 
+89   \textcolor{comment}{// Get local matrix data}
+90   \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_height = values.LocalHeight();
+91   \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_width = values.LocalWidth();
+92   DataType* \_\_restrict\_\_ values\_buffer = values.Buffer();
+93   \textcolor{keyword}{const} \textcolor{keywordtype}{int} values\_ldim = values.LDim();
+94   \textcolor{keyword}{const} DataType* \_\_restrict\_\_ gradient\_buffer = gradient.LockedBuffer();
+95   \textcolor{keyword}{const} \textcolor{keywordtype}{int} gradient\_ldim = gradient.LDim();
+96   DataType* \_\_restrict\_\_ cache\_buffer = \hyperlink{classlbann_1_1rmsprop_a2bbaa35bb209e971a5ac9e1dbb6ece76}{m\_cache}->Buffer();
+97   \textcolor{keyword}{const} \textcolor{keywordtype}{int} cache\_ldim = \hyperlink{classlbann_1_1rmsprop_a2bbaa35bb209e971a5ac9e1dbb6ece76}{m\_cache}->LDim();
+98 
+99   \textcolor{comment}{// Check if matrix data is contiguous}
+100   \textcolor{keywordflow}{if} (values\_ldim != local\_height
+101       || gradient\_ldim != local\_height
+102       || cache\_ldim != local\_height) \{
+103     \textcolor{comment}{// Update with non-contiguous data}
+104 \textcolor{preprocessor}{    #pragma omp parallel for collapse(2)}
+105     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} j=0; j<local\_width; ++j) \{
+106       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<local\_height; ++i) \{
+107         DataType& x = values\_buffer[i+j*values\_ldim];
+108         \textcolor{keyword}{const} DataType g = gradient\_buffer[i+j*gradient\_ldim];
+109         DataType& c = cache\_buffer[i+j*cache\_ldim];
+110         c = \hyperlink{classlbann_1_1rmsprop_a9cd712c44e7c4995120e2933b0387d71}{m\_decay\_rate} * c + (DataType(1) - \hyperlink{classlbann_1_1rmsprop_a9cd712c44e7c4995120e2933b0387d71}{m\_decay\_rate}) * g * g;
+111         x -= \hyperlink{classlbann_1_1optimizer_ad393dcdcb82b44510c586ed5ec46d4dd}{m\_learning\_rate} * g / (std::sqrt(c) + \hyperlink{classlbann_1_1rmsprop_a6ea73caf5b2769451dfd798665877208}{m\_eps});
+112       \}
+113     \}
+114   \} \textcolor{keywordflow}{else} \{
+115     \textcolor{comment}{// Update with contiguous data}
+116 \textcolor{preprocessor}{    #pragma omp parallel for}
+117     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<local\_height*local\_width; ++i) \{
+118       DataType& x = values\_buffer[i];
+119       \textcolor{keyword}{const} DataType g = gradient\_buffer[i];
+120       DataType& c = cache\_buffer[i];
+121       c = \hyperlink{classlbann_1_1rmsprop_a9cd712c44e7c4995120e2933b0387d71}{m\_decay\_rate} * c + (DataType(1) - \hyperlink{classlbann_1_1rmsprop_a9cd712c44e7c4995120e2933b0387d71}{m\_decay\_rate}) * g * g;
+122       x -= \hyperlink{classlbann_1_1optimizer_ad393dcdcb82b44510c586ed5ec46d4dd}{m\_learning\_rate} * g / (std::sqrt(c) + \hyperlink{classlbann_1_1rmsprop_a6ea73caf5b2769451dfd798665877208}{m\_eps});
+123     \}
+124   \}
+125 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1rmsprop_a600e4b332299a6aaa36d0b7ff458e3f3_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1rmsprop_a1af03b4c5e744abae04ccec3e19a0cc6}\label{classlbann_1_1rmsprop_a1af03b4c5e744abae04ccec3e19a0cc6}} 
+\index{lbann\+::rmsprop@{lbann\+::rmsprop}!unpack\+\_\+header@{unpack\+\_\+header}}
+\index{unpack\+\_\+header@{unpack\+\_\+header}!lbann\+::rmsprop@{lbann\+::rmsprop}}
+\subsubsection{\texorpdfstring{unpack\+\_\+header()}{unpack\_header()}}
+{\footnotesize\ttfamily void lbann\+::rmsprop\+::unpack\+\_\+header (\begin{DoxyParamCaption}\item[{struct \hyperlink{structlbann_1_1rmsprop_1_1packing__header}{packing\+\_\+header} \&}]{header }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [private]}}
+
+
+
+Definition at line 98 of file rmsprop.\+hpp.
+
+
+\begin{DoxyCode}
+98                                                    \{
+99     \hyperlink{classlbann_1_1rmsprop_a9cd712c44e7c4995120e2933b0387d71}{m\_decay\_rate} = header.decay\_rate;
+100   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1rmsprop_a1af03b4c5e744abae04ccec3e19a0cc6_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1rmsprop_a9b969263276b4d1aed93c3c82abf832d}\label{classlbann_1_1rmsprop_a9b969263276b4d1aed93c3c82abf832d}} 
+\index{lbann\+::rmsprop@{lbann\+::rmsprop}!unpack\+\_\+scalars@{unpack\+\_\+scalars}}
+\index{unpack\+\_\+scalars@{unpack\+\_\+scalars}!lbann\+::rmsprop@{lbann\+::rmsprop}}
+\subsubsection{\texorpdfstring{unpack\+\_\+scalars()}{unpack\_scalars()}}
+{\footnotesize\ttfamily bool lbann\+::rmsprop\+::unpack\+\_\+scalars (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1persist}{persist} \&}]{p,  }\item[{struct \hyperlink{structlbann_1_1rmsprop_1_1packing__header}{packing\+\_\+header} $\ast$}]{header }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [private]}}
+
+
+
+Definition at line 88 of file rmsprop.\+hpp.
+
+
+\begin{DoxyCode}
+88                                                                 \{
+89     p.read\_datatype(\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64}{persist\_type::train}, \textcolor{stringliteral}{"momentum"},  &
+      \hyperlink{classlbann_1_1rmsprop_a9cd712c44e7c4995120e2933b0387d71}{m\_decay\_rate});
+90     
+91     \textcolor{keywordflow}{if}(header != \textcolor{keyword}{nullptr})\{
+92       header->decay\_rate = \hyperlink{classlbann_1_1rmsprop_a9cd712c44e7c4995120e2933b0387d71}{m\_decay\_rate};
+93     \}
+94    
+95   \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+96   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1rmsprop_a9b969263276b4d1aed93c3c82abf832d_cgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1rmsprop_a2bbaa35bb209e971a5ac9e1dbb6ece76}\label{classlbann_1_1rmsprop_a2bbaa35bb209e971a5ac9e1dbb6ece76}} 
+\index{lbann\+::rmsprop@{lbann\+::rmsprop}!m\+\_\+cache@{m\+\_\+cache}}
+\index{m\+\_\+cache@{m\+\_\+cache}!lbann\+::rmsprop@{lbann\+::rmsprop}}
+\subsubsection{\texorpdfstring{m\+\_\+cache}{m\_cache}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat}$\ast$ lbann\+::rmsprop\+::m\+\_\+cache\hspace{0.3cm}{\ttfamily [private]}}
+
+R\+M\+Sprop cache. 
+
+Definition at line 72 of file rmsprop.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1rmsprop_a9cd712c44e7c4995120e2933b0387d71}\label{classlbann_1_1rmsprop_a9cd712c44e7c4995120e2933b0387d71}} 
+\index{lbann\+::rmsprop@{lbann\+::rmsprop}!m\+\_\+decay\+\_\+rate@{m\+\_\+decay\+\_\+rate}}
+\index{m\+\_\+decay\+\_\+rate@{m\+\_\+decay\+\_\+rate}!lbann\+::rmsprop@{lbann\+::rmsprop}}
+\subsubsection{\texorpdfstring{m\+\_\+decay\+\_\+rate}{m\_decay\_rate}}
+{\footnotesize\ttfamily Data\+Type lbann\+::rmsprop\+::m\+\_\+decay\+\_\+rate\hspace{0.3cm}{\ttfamily [private]}}
+
+Decay rate. 
+
+Definition at line 68 of file rmsprop.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1rmsprop_a6ea73caf5b2769451dfd798665877208}\label{classlbann_1_1rmsprop_a6ea73caf5b2769451dfd798665877208}} 
+\index{lbann\+::rmsprop@{lbann\+::rmsprop}!m\+\_\+eps@{m\+\_\+eps}}
+\index{m\+\_\+eps@{m\+\_\+eps}!lbann\+::rmsprop@{lbann\+::rmsprop}}
+\subsubsection{\texorpdfstring{m\+\_\+eps}{m\_eps}}
+{\footnotesize\ttfamily Data\+Type lbann\+::rmsprop\+::m\+\_\+eps\hspace{0.3cm}{\ttfamily [private]}}
+
+Small factor to avoid division by zero. 
+
+Definition at line 70 of file rmsprop.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/optimizers/\hyperlink{rmsprop_8hpp}{rmsprop.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/optimizers/\hyperlink{rmsprop_8cpp}{rmsprop.\+cpp}\end{DoxyCompactItemize}

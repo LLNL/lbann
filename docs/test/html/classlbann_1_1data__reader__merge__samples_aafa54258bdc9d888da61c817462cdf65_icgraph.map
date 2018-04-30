@@ -1,0 +1,5 @@
+<map id="lbann::data_reader_merge_samples::compute_num_samples_psum" name="lbann::data_reader_merge_samples::compute_num_samples_psum">
+<area shape="rect" id="node2" href="$classlbann_1_1data__reader__merge__samples.html#ad45275b73fcbca47b74a9c9767f69bc9" title="lbann::data_reader\l_merge_samples::load\l_using_data_store" alt="" coords="235,5,392,57"/>
+<area shape="rect" id="node3" href="$classlbann_1_1data__reader__merge__samples.html#ab3554341417f5eba95b9c1098af40410" title="Load subsidiary data readers. " alt="" coords="440,44,596,83"/>
+<area shape="rect" id="node4" href="$classlbann_1_1data__reader__merge__samples.html#a5d24385daebfd31343e6afc11b0439d1" title="lbann::data_reader\l_merge_samples::get_type" alt="" coords="644,44,826,83"/>
+</map>

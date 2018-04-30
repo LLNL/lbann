@@ -1,0 +1,618 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1objective__function" kind="class" language="C++" prot="public">
+    <compoundname>lbann::objective_function</compoundname>
+    <includes refid="objective__function_8hpp" local="no">objective_function.hpp</includes>
+      <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="classlbann_1_1objective__function_1aea9c1f90ba9af1b1330efa2ba6adb5e2" prot="private" static="no" mutable="no">
+        <type>std::vector&lt; <ref refid="classlbann_1_1objective__function__term" kindref="compound">objective_function_term</ref> * &gt;</type>
+        <definition>std::vector&lt;objective_function_term*&gt; lbann::objective_function::m_terms</definition>
+        <argsstring></argsstring>
+        <name>m_terms</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>List of objective function terms. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" line="137" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" bodystart="137" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1objective__function_1a98ba95d702f542ed99ccbf9e5cdde21d" compoundref="objective__function_8hpp" startline="55" endline="55">add_term</referencedby>
+        <referencedby refid="classlbann_1_1objective__function_1a510544e9e511be54a50efd39226de345" compoundref="objective__function_8hpp" startline="57" endline="57">get_terms</referencedby>
+        <referencedby refid="classlbann_1_1objective__function_1a67523a368d2fc31d8be9081139ec0a73" compoundref="objective__function_8cpp" startline="33" endline="41">objective_function</referencedby>
+        <referencedby refid="classlbann_1_1objective__function_1ab0695b92af6dec63912e5ef0cb81b953" compoundref="objective__function_8cpp" startline="43" endline="55">operator=</referencedby>
+        <referencedby refid="classlbann_1_1objective__function_1a823ebffb8056cb4a9ff0b2af7cf084b4" compoundref="objective__function_8cpp" startline="57" endline="61">~objective_function</referencedby>
+        <referencedby refid="classlbann_1_1objective__function_1ac14bb274978e0a5182122fd179579878" compoundref="objective__function_8cpp" startline="63" endline="73">setup</referencedby>
+        <referencedby refid="classlbann_1_1objective__function_1a3edb6708894d31ec2a014c6eb8a61df2" compoundref="objective__function_8cpp" startline="75" endline="82">start_evaluation</referencedby>
+        <referencedby refid="classlbann_1_1objective__function_1ad35ce9b7daa87d197d00b1762b691a02" compoundref="objective__function_8cpp" startline="84" endline="95">finish_evaluation</referencedby>
+        <referencedby refid="classlbann_1_1objective__function_1ae8b7314bdc12ba52d270b46a35acd138" compoundref="objective__function_8cpp" startline="97" endline="103">differentiate</referencedby>
+        <referencedby refid="classlbann_1_1objective__function_1a7b7f8869bf110846e971fef995db51e1" compoundref="objective__function_8cpp" startline="105" endline="111">compute_weight_regularization</referencedby>
+        <referencedby refid="classlbann_1_1objective__function_1a1055da2236a7faf79c5a2632f8dfc683" compoundref="objective__function_8cpp" startline="132" endline="139">get_layer_pointers</referencedby>
+        <referencedby refid="classlbann_1_1objective__function_1a0f934e078b55528dd0ec1ec8ad34c73b" compoundref="objective__function_8cpp" startline="141" endline="157">set_layer_pointers</referencedby>
+        <referencedby refid="classlbann_1_1objective__function_1a8e37f76e42f6f341ea3592001b3794e5" compoundref="objective__function_8cpp" startline="159" endline="166">get_weights_pointers</referencedby>
+        <referencedby refid="classlbann_1_1objective__function_1a9c3211354ca1cee8a7ba219f4e56e03c" compoundref="objective__function_8cpp" startline="168" endline="184">set_weights_pointers</referencedby>
+        <referencedby refid="classlbann_1_1objective__function_1a5c7de99300ce17535648bfcbc3b97aeb" compoundref="objective__function_8cpp" startline="186" endline="191">save_to_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1objective__function_1a82fec97efbb8c4f68a674d42e0f2faa4" compoundref="objective__function_8cpp" startline="193" endline="198">load_from_checkpoint_shared</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1objective__function_1ad5daa18c52374a849c6fbd515bcc1eb1" prot="private" static="no" mutable="no">
+        <type>std::map&lt; <ref refid="base_8hpp_1a2781a159088df64ed7d47cc91c4dc0a8" kindref="member">execution_mode</ref>, <ref refid="structlbann_1_1metric__statistics" kindref="compound">metric_statistics</ref> &gt;</type>
+        <definition>std::map&lt;execution_mode,metric_statistics&gt; lbann::objective_function::m_statistics</definition>
+        <argsstring></argsstring>
+        <name>m_statistics</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Objective funciton statistics. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" line="140" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" bodystart="140" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1objective__function_1acf7a6c67e7a45a1fd03684ca897d6324" compoundref="objective__function_8hpp" startline="87" endline="87">reset_statistics</referencedby>
+        <referencedby refid="classlbann_1_1objective__function_1ab0695b92af6dec63912e5ef0cb81b953" compoundref="objective__function_8cpp" startline="43" endline="55">operator=</referencedby>
+        <referencedby refid="classlbann_1_1objective__function_1ad35ce9b7daa87d197d00b1762b691a02" compoundref="objective__function_8cpp" startline="84" endline="95">finish_evaluation</referencedby>
+        <referencedby refid="classlbann_1_1objective__function_1a0aa271e497363e97ba3741292961d47d" compoundref="objective__function_8cpp" startline="113" endline="122">get_mean_value</referencedby>
+        <referencedby refid="classlbann_1_1objective__function_1a19078ce481d321627adfe0151112602e" compoundref="objective__function_8cpp" startline="124" endline="130">get_statistics_num_samples</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1objective__function_1a9ef17c7204cd371261c9c083d86de91a" prot="private" static="no" mutable="no">
+        <type><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref></type>
+        <definition>EvalType lbann::objective_function::m_evaluation_time</definition>
+        <argsstring></argsstring>
+        <name>m_evaluation_time</name>
+        <initializer>= <ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref>(0)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Time spent evaluating the objective function. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" line="143" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" bodystart="143" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1objective__function_1a4a23b4c51fe61584c97a471d28f7b8d7" compoundref="objective__function_8hpp" startline="109" endline="109">get_evaluation_time</referencedby>
+        <referencedby refid="classlbann_1_1objective__function_1a92b248be17049b1d7e82accbd913d6f1" compoundref="objective__function_8hpp" startline="113" endline="116">reset_counters</referencedby>
+        <referencedby refid="classlbann_1_1objective__function_1ab0695b92af6dec63912e5ef0cb81b953" compoundref="objective__function_8cpp" startline="43" endline="55">operator=</referencedby>
+        <referencedby refid="classlbann_1_1objective__function_1a3edb6708894d31ec2a014c6eb8a61df2" compoundref="objective__function_8cpp" startline="75" endline="82">start_evaluation</referencedby>
+        <referencedby refid="classlbann_1_1objective__function_1ad35ce9b7daa87d197d00b1762b691a02" compoundref="objective__function_8cpp" startline="84" endline="95">finish_evaluation</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1objective__function_1ae526559f3a530f540a29407ea64bbea6" prot="private" static="no" mutable="no">
+        <type><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref></type>
+        <definition>EvalType lbann::objective_function::m_differentiation_time</definition>
+        <argsstring></argsstring>
+        <name>m_differentiation_time</name>
+        <initializer>= <ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref>(0)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Time spent computing the objective function gradient. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" line="145" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" bodystart="145" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1objective__function_1af968b6949c170721d04895f1268b03dd" compoundref="objective__function_8hpp" startline="111" endline="111">get_differentiation_time</referencedby>
+        <referencedby refid="classlbann_1_1objective__function_1a92b248be17049b1d7e82accbd913d6f1" compoundref="objective__function_8hpp" startline="113" endline="116">reset_counters</referencedby>
+        <referencedby refid="classlbann_1_1objective__function_1ab0695b92af6dec63912e5ef0cb81b953" compoundref="objective__function_8cpp" startline="43" endline="55">operator=</referencedby>
+        <referencedby refid="classlbann_1_1objective__function_1ae8b7314bdc12ba52d270b46a35acd138" compoundref="objective__function_8cpp" startline="97" endline="103">differentiate</referencedby>
+        <referencedby refid="classlbann_1_1objective__function_1a7b7f8869bf110846e971fef995db51e1" compoundref="objective__function_8cpp" startline="105" endline="111">compute_weight_regularization</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1objective__function_1a89e96fddff19f13a6d3acafe4394fd65" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>lbann::objective_function::objective_function</definition>
+        <argsstring>()</argsstring>
+        <name>objective_function</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Default constructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" line="40" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" bodystart="40" bodyend="40"/>
+        <references refid="classlbann_1_1objective__function_1ab0695b92af6dec63912e5ef0cb81b953" compoundref="objective__function_8cpp" startline="43" endline="55">operator=</references>
+        <references refid="classlbann_1_1objective__function_1a823ebffb8056cb4a9ff0b2af7cf084b4" compoundref="objective__function_8cpp" startline="57" endline="61">~objective_function</references>
+        <referencedby refid="classlbann_1_1objective__function_1a8ab03f0dc1d2c067b895f5859bacd810" compoundref="objective__function_8hpp" startline="49" endline="49">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1objective__function_1a67523a368d2fc31d8be9081139ec0a73" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::objective_function::objective_function</definition>
+        <argsstring>(const objective_function &amp;other)</argsstring>
+        <name>objective_function</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1objective__function" kindref="compound">objective_function</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Copy constructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" line="43" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/objective_function.cpp" bodystart="33" bodyend="41"/>
+        <references refid="classlbann_1_1objective__function_1aea9c1f90ba9af1b1330efa2ba6adb5e2" compoundref="objective__function_8hpp" startline="137">m_terms</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1objective__function_1ab0695b92af6dec63912e5ef0cb81b953" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classlbann_1_1objective__function" kindref="compound">objective_function</ref> &amp;</type>
+        <definition>objective_function &amp; lbann::objective_function::operator=</definition>
+        <argsstring>(const objective_function &amp;other)</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1objective__function" kindref="compound">objective_function</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Copy assignment operator. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" line="45" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/objective_function.cpp" bodystart="43" bodyend="55"/>
+        <references refid="classlbann_1_1objective__function_1aea9c1f90ba9af1b1330efa2ba6adb5e2" compoundref="objective__function_8hpp" startline="137">m_terms</references>
+        <references refid="classlbann_1_1objective__function_1ad5daa18c52374a849c6fbd515bcc1eb1" compoundref="objective__function_8hpp" startline="140">m_statistics</references>
+        <references refid="classlbann_1_1objective__function_1a9ef17c7204cd371261c9c083d86de91a" compoundref="objective__function_8hpp" startline="143">m_evaluation_time</references>
+        <references refid="classlbann_1_1objective__function_1ae526559f3a530f540a29407ea64bbea6" compoundref="objective__function_8hpp" startline="145">m_differentiation_time</references>
+        <referencedby refid="classlbann_1_1objective__function_1a89e96fddff19f13a6d3acafe4394fd65" compoundref="objective__function_8hpp" startline="40" endline="40">objective_function</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1objective__function_1a823ebffb8056cb4a9ff0b2af7cf084b4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::objective_function::~objective_function</definition>
+        <argsstring>()</argsstring>
+        <name>~objective_function</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Destructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" line="47" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/objective_function.cpp" bodystart="57" bodyend="61"/>
+        <references refid="classlbann_1_1objective__function_1aea9c1f90ba9af1b1330efa2ba6adb5e2" compoundref="objective__function_8hpp" startline="137">m_terms</references>
+        <referencedby refid="classlbann_1_1objective__function_1a89e96fddff19f13a6d3acafe4394fd65" compoundref="objective__function_8hpp" startline="40" endline="40">objective_function</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1objective__function_1a8ab03f0dc1d2c067b895f5859bacd810" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type><ref refid="classlbann_1_1objective__function" kindref="compound">objective_function</ref> *</type>
+        <definition>objective_function* lbann::objective_function::copy</definition>
+        <argsstring>() const</argsstring>
+        <name>copy</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Copy function. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" line="49" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" bodystart="49" bodyend="49"/>
+        <references refid="classlbann_1_1objective__function_1a89e96fddff19f13a6d3acafe4394fd65" compoundref="objective__function_8hpp" startline="40" endline="40">objective_function</references>
+        <referencedby refid="classlbann_1_1model_1a03fd1dc3edddb414b040bc009cf73371" compoundref="model_8cpp" startline="69" endline="112">lbann::model::model</referencedby>
+        <referencedby refid="classlbann_1_1model_1a05e8bd6c745ce4414be98462147ec52e" compoundref="model_8cpp" startline="114" endline="163">lbann::model::operator=</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1objective__function_1a98ba95d702f542ed99ccbf9e5cdde21d" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::objective_function::add_term</definition>
+        <argsstring>(objective_function_term *term)</argsstring>
+        <name>add_term</name>
+        <param>
+          <type><ref refid="classlbann_1_1objective__function__term" kindref="compound">objective_function_term</ref> *</type>
+          <declname>term</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Add a term to the objective function. The objective function takes ownership of the objective function term and deallocates it during destruction. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" line="55" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" bodystart="55" bodyend="55"/>
+        <references refid="classlbann_1_1objective__function_1aea9c1f90ba9af1b1330efa2ba6adb5e2" compoundref="objective__function_8hpp" startline="137">m_terms</references>
+        <referencedby refid="namespacelbann_1_1proto_1a2b55ede441a057291e047cf4e7352481" compoundref="objective__function__factory_8cpp" startline="32" endline="104">lbann::proto::construct_objective_function</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1objective__function_1a510544e9e511be54a50efd39226de345" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>std::vector&lt; <ref refid="classlbann_1_1objective__function__term" kindref="compound">objective_function_term</ref> * &gt;</type>
+        <definition>std::vector&lt;objective_function_term*&gt; lbann::objective_function::get_terms</definition>
+        <argsstring>()</argsstring>
+        <name>get_terms</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Get list of objective function terms. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" line="57" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" bodystart="57" bodyend="57"/>
+        <references refid="classlbann_1_1objective__function_1aea9c1f90ba9af1b1330efa2ba6adb5e2" compoundref="objective__function_8hpp" startline="137">m_terms</references>
+        <references refid="classlbann_1_1objective__function_1ac14bb274978e0a5182122fd179579878" compoundref="objective__function_8cpp" startline="63" endline="73">setup</references>
+        <references refid="classlbann_1_1objective__function_1a3edb6708894d31ec2a014c6eb8a61df2" compoundref="objective__function_8cpp" startline="75" endline="82">start_evaluation</references>
+        <references refid="classlbann_1_1objective__function_1ad35ce9b7daa87d197d00b1762b691a02" compoundref="objective__function_8cpp" startline="84" endline="95">finish_evaluation</references>
+        <references refid="classlbann_1_1objective__function_1ae8b7314bdc12ba52d270b46a35acd138" compoundref="objective__function_8cpp" startline="97" endline="103">differentiate</references>
+        <references refid="classlbann_1_1objective__function_1a7b7f8869bf110846e971fef995db51e1" compoundref="objective__function_8cpp" startline="105" endline="111">compute_weight_regularization</references>
+        <referencedby refid="classlbann_1_1greedy__layerwise__autoencoder_1a5f237f1f6285475c5493a7d15dc32096" compoundref="greedy__layerwise__autoencoder_8cpp" startline="160" endline="212">lbann::greedy_layerwise_autoencoder::set_phase</referencedby>
+        <referencedby refid="classlbann_1_1greedy__layerwise__autoencoder_1a82b8ced756904a2423a65cd0e329b4e2" compoundref="greedy__layerwise__autoencoder_8cpp" startline="214" endline="244">lbann::greedy_layerwise_autoencoder::restore_sequential_model</referencedby>
+        <referencedby refid="namespacelbann_1_1proto_1_1anonymous__namespace_02model__factory_8cpp_03_1a3406a809935f319486cf8fd017b58417" compoundref="model__factory_8cpp" startline="78" endline="116">lbann::proto::anonymous_namespace{model_factory.cpp}::assign_layers_to_objective_function</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1objective__function_1ac14bb274978e0a5182122fd179579878" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::objective_function::setup</definition>
+        <argsstring>(model &amp;m)</argsstring>
+        <name>setup</name>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> &amp;</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Setup objective function. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" line="60" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/objective_function.cpp" bodystart="63" bodyend="73"/>
+        <references refid="classlbann_1_1objective__function_1aea9c1f90ba9af1b1330efa2ba6adb5e2" compoundref="objective__function_8hpp" startline="137">m_terms</references>
+        <referencedby refid="classlbann_1_1objective__function_1a510544e9e511be54a50efd39226de345" compoundref="objective__function_8hpp" startline="57" endline="57">get_terms</referencedby>
+        <referencedby refid="classlbann_1_1model_1afd9dbca79503a40b7aa5c78da4d6f391" compoundref="model_8cpp" startline="386" endline="409">lbann::model::setup</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1objective__function_1a3edb6708894d31ec2a014c6eb8a61df2" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::objective_function::start_evaluation</definition>
+        <argsstring>(execution_mode mode, int mini_batch_size)</argsstring>
+        <name>start_evaluation</name>
+        <param>
+          <type><ref refid="base_8hpp_1a2781a159088df64ed7d47cc91c4dc0a8" kindref="member">execution_mode</ref></type>
+          <declname>mode</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>mini_batch_size</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Start evaluating the objective function. This function takes the model&apos;s current mini-batch size. If multiple models are being trained, the current mini-batch size may be different from the effective mini-batch size. The result is not guaranteed to be available until finish_evaluation is called. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" line="69" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/objective_function.cpp" bodystart="75" bodyend="82"/>
+        <references refid="namespacelbann_1a478d36031ff0659893c4322cd856157f" compoundref="timer_8hpp" startline="37" endline="41">lbann::get_time</references>
+        <references refid="classlbann_1_1objective__function_1aea9c1f90ba9af1b1330efa2ba6adb5e2" compoundref="objective__function_8hpp" startline="137">m_terms</references>
+        <references refid="classlbann_1_1objective__function_1a9ef17c7204cd371261c9c083d86de91a" compoundref="objective__function_8hpp" startline="143">m_evaluation_time</references>
+        <referencedby refid="classlbann_1_1objective__function_1a510544e9e511be54a50efd39226de345" compoundref="objective__function_8hpp" startline="57" endline="57">get_terms</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__gradient__check_1a54ba40dd3b381d5c889d77edeffa37f9" compoundref="callback__gradient__check_8cpp" startline="182" endline="192">lbann::lbann_callback_gradient_check::compute_objective_function</referencedby>
+        <referencedby refid="classlbann_1_1model_1a9716a956bdc7d20dbc8ce8bf08bbcea7" compoundref="model_8cpp" startline="720" endline="742">lbann::model::evaluate_mini_batch</referencedby>
+        <referencedby refid="classlbann_1_1model_1a462105993a63277a1ead39c30ebae1bb" compoundref="model_8cpp" startline="744" endline="776">lbann::model::train_mini_batch</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1objective__function_1ad35ce9b7daa87d197d00b1762b691a02" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref></type>
+        <definition>EvalType lbann::objective_function::finish_evaluation</definition>
+        <argsstring>(execution_mode mode, int mini_batch_size)</argsstring>
+        <name>finish_evaluation</name>
+        <param>
+          <type><ref refid="base_8hpp_1a2781a159088df64ed7d47cc91c4dc0a8" kindref="member">execution_mode</ref></type>
+          <declname>mode</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>mini_batch_size</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Complete evaluation of the objective function. The result is stored in history. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" line="74" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/objective_function.cpp" bodystart="84" bodyend="95"/>
+        <references refid="namespacelbann_1a478d36031ff0659893c4322cd856157f" compoundref="timer_8hpp" startline="37" endline="41">lbann::get_time</references>
+        <references refid="classlbann_1_1objective__function_1aea9c1f90ba9af1b1330efa2ba6adb5e2" compoundref="objective__function_8hpp" startline="137">m_terms</references>
+        <references refid="classlbann_1_1objective__function_1ad5daa18c52374a849c6fbd515bcc1eb1" compoundref="objective__function_8hpp" startline="140">m_statistics</references>
+        <references refid="classlbann_1_1objective__function_1a9ef17c7204cd371261c9c083d86de91a" compoundref="objective__function_8hpp" startline="143">m_evaluation_time</references>
+        <referencedby refid="classlbann_1_1objective__function_1a510544e9e511be54a50efd39226de345" compoundref="objective__function_8hpp" startline="57" endline="57">get_terms</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__gradient__check_1a54ba40dd3b381d5c889d77edeffa37f9" compoundref="callback__gradient__check_8cpp" startline="182" endline="192">lbann::lbann_callback_gradient_check::compute_objective_function</referencedby>
+        <referencedby refid="classlbann_1_1model_1a9716a956bdc7d20dbc8ce8bf08bbcea7" compoundref="model_8cpp" startline="720" endline="742">lbann::model::evaluate_mini_batch</referencedby>
+        <referencedby refid="classlbann_1_1model_1a462105993a63277a1ead39c30ebae1bb" compoundref="model_8cpp" startline="744" endline="776">lbann::model::train_mini_batch</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1objective__function_1ae8b7314bdc12ba52d270b46a35acd138" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::objective_function::differentiate</definition>
+        <argsstring>()</argsstring>
+        <name>differentiate</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Compute the objective function gradient. The gradient is with respect to the objective function inputs </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" line="79" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/objective_function.cpp" bodystart="97" bodyend="103"/>
+        <references refid="namespacelbann_1a478d36031ff0659893c4322cd856157f" compoundref="timer_8hpp" startline="37" endline="41">lbann::get_time</references>
+        <references refid="classlbann_1_1objective__function_1aea9c1f90ba9af1b1330efa2ba6adb5e2" compoundref="objective__function_8hpp" startline="137">m_terms</references>
+        <references refid="classlbann_1_1objective__function_1ae526559f3a530f540a29407ea64bbea6" compoundref="objective__function_8hpp" startline="145">m_differentiation_time</references>
+        <referencedby refid="classlbann_1_1objective__function_1a510544e9e511be54a50efd39226de345" compoundref="objective__function_8hpp" startline="57" endline="57">get_terms</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__gradient__check_1ab62102d5ab30330386514161b9ee6586" compoundref="callback__gradient__check_8cpp" startline="40" endline="180">lbann::lbann_callback_gradient_check::on_test_begin</referencedby>
+        <referencedby refid="classlbann_1_1model_1a462105993a63277a1ead39c30ebae1bb" compoundref="model_8cpp" startline="744" endline="776">lbann::model::train_mini_batch</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1objective__function_1a7b7f8869bf110846e971fef995db51e1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::objective_function::compute_weight_regularization</definition>
+        <argsstring>()</argsstring>
+        <name>compute_weight_regularization</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Compute the gradient of the weight regularization term. The gradient is computed w.r.t. the weights. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" line="84" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/objective_function.cpp" bodystart="105" bodyend="111"/>
+        <references refid="namespacelbann_1a478d36031ff0659893c4322cd856157f" compoundref="timer_8hpp" startline="37" endline="41">lbann::get_time</references>
+        <references refid="classlbann_1_1objective__function_1aea9c1f90ba9af1b1330efa2ba6adb5e2" compoundref="objective__function_8hpp" startline="137">m_terms</references>
+        <references refid="classlbann_1_1objective__function_1ae526559f3a530f540a29407ea64bbea6" compoundref="objective__function_8hpp" startline="145">m_differentiation_time</references>
+        <referencedby refid="classlbann_1_1objective__function_1a510544e9e511be54a50efd39226de345" compoundref="objective__function_8hpp" startline="57" endline="57">get_terms</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__gradient__check_1ab62102d5ab30330386514161b9ee6586" compoundref="callback__gradient__check_8cpp" startline="40" endline="180">lbann::lbann_callback_gradient_check::on_test_begin</referencedby>
+        <referencedby refid="classlbann_1_1model_1a462105993a63277a1ead39c30ebae1bb" compoundref="model_8cpp" startline="744" endline="776">lbann::model::train_mini_batch</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1objective__function_1acf7a6c67e7a45a1fd03684ca897d6324" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::objective_function::reset_statistics</definition>
+        <argsstring>()</argsstring>
+        <name>reset_statistics</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Clear all statistics. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" line="87" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" bodystart="87" bodyend="87"/>
+        <references refid="classlbann_1_1objective__function_1ad5daa18c52374a849c6fbd515bcc1eb1" compoundref="objective__function_8hpp" startline="140">m_statistics</references>
+        <referencedby refid="classlbann_1_1model_1a9c6e9c199ca0ae06b8cf7266971ab9c3" compoundref="model_8cpp" startline="713" endline="718">lbann::model::reset_epoch_statistics</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1objective__function_1a3c564d26d6c75007ae95153cef3b8c02" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::objective_function::reset_statistics</definition>
+        <argsstring>(execution_mode mode)</argsstring>
+        <name>reset_statistics</name>
+        <param>
+          <type><ref refid="base_8hpp_1a2781a159088df64ed7d47cc91c4dc0a8" kindref="member">execution_mode</ref></type>
+          <declname>mode</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Clear statistics for an execution mode. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" line="89" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" bodystart="89" bodyend="89"/>
+        <references refid="classlbann_1_1objective__function_1ad5daa18c52374a849c6fbd515bcc1eb1" compoundref="objective__function_8hpp" startline="140">m_statistics</references>
+        <references refid="classlbann_1_1objective__function_1a0aa271e497363e97ba3741292961d47d" compoundref="objective__function_8cpp" startline="113" endline="122">get_mean_value</references>
+        <references refid="classlbann_1_1objective__function_1a19078ce481d321627adfe0151112602e" compoundref="objective__function_8cpp" startline="124" endline="130">get_statistics_num_samples</references>
+        <references refid="classlbann_1_1objective__function_1a1055da2236a7faf79c5a2632f8dfc683" compoundref="objective__function_8cpp" startline="132" endline="139">get_layer_pointers</references>
+        <references refid="classlbann_1_1objective__function_1a0f934e078b55528dd0ec1ec8ad34c73b" compoundref="objective__function_8cpp" startline="141" endline="157">set_layer_pointers</references>
+        <references refid="classlbann_1_1objective__function_1a8e37f76e42f6f341ea3592001b3794e5" compoundref="objective__function_8cpp" startline="159" endline="166">get_weights_pointers</references>
+        <references refid="classlbann_1_1objective__function_1a9c3211354ca1cee8a7ba219f4e56e03c" compoundref="objective__function_8cpp" startline="168" endline="184">set_weights_pointers</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1objective__function_1a0aa271e497363e97ba3741292961d47d" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref></type>
+        <definition>EvalType lbann::objective_function::get_mean_value</definition>
+        <argsstring>(execution_mode mode) const</argsstring>
+        <name>get_mean_value</name>
+        <param>
+          <type><ref refid="base_8hpp_1a2781a159088df64ed7d47cc91c4dc0a8" kindref="member">execution_mode</ref></type>
+          <declname>mode</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Get mean objective function value. This is a weighted average such that each mini-batch sample makes an equal contribution. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" line="95" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/objective_function.cpp" bodystart="113" bodyend="122"/>
+        <references refid="classlbann_1_1objective__function_1ad5daa18c52374a849c6fbd515bcc1eb1" compoundref="objective__function_8hpp" startline="140">m_statistics</references>
+        <referencedby refid="classlbann_1_1reconstruction__layer_1a09bf00610af66810bf8bbb65424d1e1a" compoundref="reconstruction_8hpp" startline="94" endline="100">lbann::reconstruction_layer&lt; T_layout &gt;::summarize_stats</referencedby>
+        <referencedby refid="classlbann_1_1objective__function_1a3c564d26d6c75007ae95153cef3b8c02" compoundref="objective__function_8hpp" startline="89" endline="89">reset_statistics</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__check__reconstruction__error_1a8a6a72b8016d3ba3ad11b5e7e2f3f5df" compoundref="callback__check__reconstruction__error_8cpp" startline="38" endline="47">lbann::lbann_callback_check_reconstruction_error::on_epoch_end</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__early__stopping_1a32eb9c5e763c97ab1162cfebea7ad049" compoundref="callback__early__stopping_8cpp" startline="38" endline="61">lbann::lbann_callback_early_stopping::on_validation_end</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1a6c64fae03736b8acba5c839f59d2ac6f" compoundref="callback__learning__rate_8cpp" startline="121" endline="150">lbann::lbann_callback_adaptive_learning_rate::global_schedule</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__print_1a50117faa3edb961ddd87c5c5806820b2" compoundref="callback__print_8cpp" startline="130" endline="222">lbann::lbann_callback_print::report_results</referencedby>
+        <referencedby refid="classlbann_1_1model_1a1eb5efcc8f73ba9478b2ce1efb9f2d8c" compoundref="model_8cpp" startline="1101" endline="1126">lbann::model::summarize_stats</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1objective__function_1a19078ce481d321627adfe0151112602e" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int lbann::objective_function::get_statistics_num_samples</definition>
+        <argsstring>(execution_mode mode) const</argsstring>
+        <name>get_statistics_num_samples</name>
+        <param>
+          <type><ref refid="base_8hpp_1a2781a159088df64ed7d47cc91c4dc0a8" kindref="member">execution_mode</ref></type>
+          <declname>mode</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Get number of samples for statistics. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" line="97" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/objective_function.cpp" bodystart="124" bodyend="130"/>
+        <references refid="classlbann_1_1objective__function_1ad5daa18c52374a849c6fbd515bcc1eb1" compoundref="objective__function_8hpp" startline="140">m_statistics</references>
+        <referencedby refid="classlbann_1_1objective__function_1a3c564d26d6c75007ae95153cef3b8c02" compoundref="objective__function_8hpp" startline="89" endline="89">reset_statistics</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__print_1a50117faa3edb961ddd87c5c5806820b2" compoundref="callback__print_8cpp" startline="130" endline="222">lbann::lbann_callback_print::report_results</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1objective__function_1a1055da2236a7faf79c5a2632f8dfc683" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>std::vector&lt; <ref refid="classlbann_1_1Layer" kindref="compound">Layer</ref> * &gt;</type>
+        <definition>std::vector&lt; Layer * &gt; lbann::objective_function::get_layer_pointers</definition>
+        <argsstring>() const</argsstring>
+        <name>get_layer_pointers</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Get list of pointers to layers. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" line="100" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/objective_function.cpp" bodystart="132" bodyend="139"/>
+        <references refid="classlbann_1_1objective__function_1aea9c1f90ba9af1b1330efa2ba6adb5e2" compoundref="objective__function_8hpp" startline="137">m_terms</references>
+        <referencedby refid="classlbann_1_1objective__function_1a3c564d26d6c75007ae95153cef3b8c02" compoundref="objective__function_8hpp" startline="89" endline="89">reset_statistics</referencedby>
+        <referencedby refid="classlbann_1_1model_1ac6cc0f5d850cfb997bbbc70eefa0d68f" compoundref="model_8cpp" startline="312" endline="362">lbann::model::remap_pointers</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1objective__function_1a0f934e078b55528dd0ec1ec8ad34c73b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::objective_function::set_layer_pointers</definition>
+        <argsstring>(std::vector&lt; Layer *&gt; layers)</argsstring>
+        <name>set_layer_pointers</name>
+        <param>
+          <type>std::vector&lt; <ref refid="classlbann_1_1Layer" kindref="compound">Layer</ref> *&gt;</type>
+          <declname>layers</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Set list of pointers to layers. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" line="102" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/objective_function.cpp" bodystart="141" bodyend="157"/>
+        <references refid="classlbann_1_1objective__function_1aea9c1f90ba9af1b1330efa2ba6adb5e2" compoundref="objective__function_8hpp" startline="137">m_terms</references>
+        <referencedby refid="classlbann_1_1objective__function_1a3c564d26d6c75007ae95153cef3b8c02" compoundref="objective__function_8hpp" startline="89" endline="89">reset_statistics</referencedby>
+        <referencedby refid="classlbann_1_1model_1ac6cc0f5d850cfb997bbbc70eefa0d68f" compoundref="model_8cpp" startline="312" endline="362">lbann::model::remap_pointers</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1objective__function_1a8e37f76e42f6f341ea3592001b3794e5" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>std::vector&lt; <ref refid="classlbann_1_1weights" kindref="compound">weights</ref> * &gt;</type>
+        <definition>std::vector&lt; weights * &gt; lbann::objective_function::get_weights_pointers</definition>
+        <argsstring>() const</argsstring>
+        <name>get_weights_pointers</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Get list of pointers to weights. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" line="104" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/objective_function.cpp" bodystart="159" bodyend="166"/>
+        <references refid="classlbann_1_1objective__function_1aea9c1f90ba9af1b1330efa2ba6adb5e2" compoundref="objective__function_8hpp" startline="137">m_terms</references>
+        <referencedby refid="classlbann_1_1objective__function_1a3c564d26d6c75007ae95153cef3b8c02" compoundref="objective__function_8hpp" startline="89" endline="89">reset_statistics</referencedby>
+        <referencedby refid="classlbann_1_1model_1ac6cc0f5d850cfb997bbbc70eefa0d68f" compoundref="model_8cpp" startline="312" endline="362">lbann::model::remap_pointers</referencedby>
+        <referencedby refid="classlbann_1_1model_1a582edc0f930e1594381ecc7922e91b08" compoundref="model_8cpp" startline="468" endline="502">lbann::model::setup_weights</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1objective__function_1a9c3211354ca1cee8a7ba219f4e56e03c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::objective_function::set_weights_pointers</definition>
+        <argsstring>(std::vector&lt; weights *&gt; w)</argsstring>
+        <name>set_weights_pointers</name>
+        <param>
+          <type>std::vector&lt; <ref refid="classlbann_1_1weights" kindref="compound">weights</ref> *&gt;</type>
+          <declname>w</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Set list of pointers to weights. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" line="106" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/objective_function.cpp" bodystart="168" bodyend="184"/>
+        <references refid="classlbann_1_1objective__function_1aea9c1f90ba9af1b1330efa2ba6adb5e2" compoundref="objective__function_8hpp" startline="137">m_terms</references>
+        <referencedby refid="classlbann_1_1objective__function_1a3c564d26d6c75007ae95153cef3b8c02" compoundref="objective__function_8hpp" startline="89" endline="89">reset_statistics</referencedby>
+        <referencedby refid="classlbann_1_1model_1ac6cc0f5d850cfb997bbbc70eefa0d68f" compoundref="model_8cpp" startline="312" endline="362">lbann::model::remap_pointers</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1objective__function_1a4a23b4c51fe61584c97a471d28f7b8d7" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref></type>
+        <definition>EvalType lbann::objective_function::get_evaluation_time</definition>
+        <argsstring>() const</argsstring>
+        <name>get_evaluation_time</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Get the time spent evaluating the objective function. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" line="109" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" bodystart="109" bodyend="109"/>
+        <references refid="classlbann_1_1objective__function_1a9ef17c7204cd371261c9c083d86de91a" compoundref="objective__function_8hpp" startline="143">m_evaluation_time</references>
+        <referencedby refid="classlbann_1_1model_1a1eb5efcc8f73ba9478b2ce1efb9f2d8c" compoundref="model_8cpp" startline="1101" endline="1126">lbann::model::summarize_stats</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1objective__function_1af968b6949c170721d04895f1268b03dd" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref></type>
+        <definition>EvalType lbann::objective_function::get_differentiation_time</definition>
+        <argsstring>() const</argsstring>
+        <name>get_differentiation_time</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Get the time spent computing the objective function gradient. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" line="111" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" bodystart="111" bodyend="111"/>
+        <references refid="classlbann_1_1objective__function_1ae526559f3a530f540a29407ea64bbea6" compoundref="objective__function_8hpp" startline="145">m_differentiation_time</references>
+        <referencedby refid="classlbann_1_1model_1a1eb5efcc8f73ba9478b2ce1efb9f2d8c" compoundref="model_8cpp" startline="1101" endline="1126">lbann::model::summarize_stats</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1objective__function_1a92b248be17049b1d7e82accbd913d6f1" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::objective_function::reset_counters</definition>
+        <argsstring>()</argsstring>
+        <name>reset_counters</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Reset time counters. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" line="113" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" bodystart="113" bodyend="116"/>
+        <references refid="classlbann_1_1objective__function_1a9ef17c7204cd371261c9c083d86de91a" compoundref="objective__function_8hpp" startline="143">m_evaluation_time</references>
+        <references refid="classlbann_1_1objective__function_1ae526559f3a530f540a29407ea64bbea6" compoundref="objective__function_8hpp" startline="145">m_differentiation_time</references>
+        <references refid="classlbann_1_1objective__function_1a5c7de99300ce17535648bfcbc3b97aeb" compoundref="objective__function_8cpp" startline="186" endline="191">save_to_checkpoint_shared</references>
+        <references refid="classlbann_1_1objective__function_1a82fec97efbb8c4f68a674d42e0f2faa4" compoundref="objective__function_8cpp" startline="193" endline="198">load_from_checkpoint_shared</references>
+        <referencedby refid="classlbann_1_1model_1a1eb5efcc8f73ba9478b2ce1efb9f2d8c" compoundref="model_8cpp" startline="1101" endline="1126">lbann::model::summarize_stats</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1objective__function_1a5c7de99300ce17535648bfcbc3b97aeb" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool lbann::objective_function::save_to_checkpoint_shared</definition>
+        <argsstring>(lbann::persist &amp;p)</argsstring>
+        <name>save_to_checkpoint_shared</name>
+        <param>
+          <type><ref refid="classlbann_1_1persist" kindref="compound">lbann::persist</ref> &amp;</type>
+          <declname>p</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" line="118" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/objective_function.cpp" bodystart="186" bodyend="191"/>
+        <references refid="classlbann_1_1objective__function_1aea9c1f90ba9af1b1330efa2ba6adb5e2" compoundref="objective__function_8hpp" startline="137">m_terms</references>
+        <referencedby refid="classlbann_1_1objective__function_1a92b248be17049b1d7e82accbd913d6f1" compoundref="objective__function_8hpp" startline="113" endline="116">reset_counters</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1objective__function_1a82fec97efbb8c4f68a674d42e0f2faa4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool lbann::objective_function::load_from_checkpoint_shared</definition>
+        <argsstring>(lbann::persist &amp;p)</argsstring>
+        <name>load_from_checkpoint_shared</name>
+        <param>
+          <type><ref refid="classlbann_1_1persist" kindref="compound">lbann::persist</ref> &amp;</type>
+          <declname>p</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" line="126" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/objective_function.cpp" bodystart="193" bodyend="198"/>
+        <references refid="classlbann_1_1objective__function_1aea9c1f90ba9af1b1330efa2ba6adb5e2" compoundref="objective__function_8hpp" startline="137">m_terms</references>
+        <referencedby refid="classlbann_1_1objective__function_1a92b248be17049b1d7e82accbd913d6f1" compoundref="objective__function_8hpp" startline="113" endline="116">reset_counters</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>Objective function class. </para>    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" line="36" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp" bodystart="36" bodyend="147"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1objective__function_1a98ba95d702f542ed99ccbf9e5cdde21d" prot="public" virt="non-virtual"><scope>lbann::objective_function</scope><name>add_term</name></member>
+      <member refid="classlbann_1_1objective__function_1a7b7f8869bf110846e971fef995db51e1" prot="public" virt="non-virtual"><scope>lbann::objective_function</scope><name>compute_weight_regularization</name></member>
+      <member refid="classlbann_1_1objective__function_1a8ab03f0dc1d2c067b895f5859bacd810" prot="public" virt="non-virtual"><scope>lbann::objective_function</scope><name>copy</name></member>
+      <member refid="classlbann_1_1objective__function_1ae8b7314bdc12ba52d270b46a35acd138" prot="public" virt="non-virtual"><scope>lbann::objective_function</scope><name>differentiate</name></member>
+      <member refid="classlbann_1_1objective__function_1ad35ce9b7daa87d197d00b1762b691a02" prot="public" virt="non-virtual"><scope>lbann::objective_function</scope><name>finish_evaluation</name></member>
+      <member refid="classlbann_1_1objective__function_1af968b6949c170721d04895f1268b03dd" prot="public" virt="non-virtual"><scope>lbann::objective_function</scope><name>get_differentiation_time</name></member>
+      <member refid="classlbann_1_1objective__function_1a4a23b4c51fe61584c97a471d28f7b8d7" prot="public" virt="non-virtual"><scope>lbann::objective_function</scope><name>get_evaluation_time</name></member>
+      <member refid="classlbann_1_1objective__function_1a1055da2236a7faf79c5a2632f8dfc683" prot="public" virt="non-virtual"><scope>lbann::objective_function</scope><name>get_layer_pointers</name></member>
+      <member refid="classlbann_1_1objective__function_1a0aa271e497363e97ba3741292961d47d" prot="public" virt="non-virtual"><scope>lbann::objective_function</scope><name>get_mean_value</name></member>
+      <member refid="classlbann_1_1objective__function_1a19078ce481d321627adfe0151112602e" prot="public" virt="non-virtual"><scope>lbann::objective_function</scope><name>get_statistics_num_samples</name></member>
+      <member refid="classlbann_1_1objective__function_1a510544e9e511be54a50efd39226de345" prot="public" virt="non-virtual"><scope>lbann::objective_function</scope><name>get_terms</name></member>
+      <member refid="classlbann_1_1objective__function_1a8e37f76e42f6f341ea3592001b3794e5" prot="public" virt="non-virtual"><scope>lbann::objective_function</scope><name>get_weights_pointers</name></member>
+      <member refid="classlbann_1_1objective__function_1a82fec97efbb8c4f68a674d42e0f2faa4" prot="public" virt="non-virtual"><scope>lbann::objective_function</scope><name>load_from_checkpoint_shared</name></member>
+      <member refid="classlbann_1_1objective__function_1ae526559f3a530f540a29407ea64bbea6" prot="private" virt="non-virtual"><scope>lbann::objective_function</scope><name>m_differentiation_time</name></member>
+      <member refid="classlbann_1_1objective__function_1a9ef17c7204cd371261c9c083d86de91a" prot="private" virt="non-virtual"><scope>lbann::objective_function</scope><name>m_evaluation_time</name></member>
+      <member refid="classlbann_1_1objective__function_1ad5daa18c52374a849c6fbd515bcc1eb1" prot="private" virt="non-virtual"><scope>lbann::objective_function</scope><name>m_statistics</name></member>
+      <member refid="classlbann_1_1objective__function_1aea9c1f90ba9af1b1330efa2ba6adb5e2" prot="private" virt="non-virtual"><scope>lbann::objective_function</scope><name>m_terms</name></member>
+      <member refid="classlbann_1_1objective__function_1a89e96fddff19f13a6d3acafe4394fd65" prot="public" virt="non-virtual"><scope>lbann::objective_function</scope><name>objective_function</name></member>
+      <member refid="classlbann_1_1objective__function_1a67523a368d2fc31d8be9081139ec0a73" prot="public" virt="non-virtual"><scope>lbann::objective_function</scope><name>objective_function</name></member>
+      <member refid="classlbann_1_1objective__function_1ab0695b92af6dec63912e5ef0cb81b953" prot="public" virt="non-virtual"><scope>lbann::objective_function</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1objective__function_1a92b248be17049b1d7e82accbd913d6f1" prot="public" virt="non-virtual"><scope>lbann::objective_function</scope><name>reset_counters</name></member>
+      <member refid="classlbann_1_1objective__function_1acf7a6c67e7a45a1fd03684ca897d6324" prot="public" virt="non-virtual"><scope>lbann::objective_function</scope><name>reset_statistics</name></member>
+      <member refid="classlbann_1_1objective__function_1a3c564d26d6c75007ae95153cef3b8c02" prot="public" virt="non-virtual"><scope>lbann::objective_function</scope><name>reset_statistics</name></member>
+      <member refid="classlbann_1_1objective__function_1a5c7de99300ce17535648bfcbc3b97aeb" prot="public" virt="non-virtual"><scope>lbann::objective_function</scope><name>save_to_checkpoint_shared</name></member>
+      <member refid="classlbann_1_1objective__function_1a0f934e078b55528dd0ec1ec8ad34c73b" prot="public" virt="non-virtual"><scope>lbann::objective_function</scope><name>set_layer_pointers</name></member>
+      <member refid="classlbann_1_1objective__function_1a9c3211354ca1cee8a7ba219f4e56e03c" prot="public" virt="non-virtual"><scope>lbann::objective_function</scope><name>set_weights_pointers</name></member>
+      <member refid="classlbann_1_1objective__function_1ac14bb274978e0a5182122fd179579878" prot="public" virt="non-virtual"><scope>lbann::objective_function</scope><name>setup</name></member>
+      <member refid="classlbann_1_1objective__function_1a3edb6708894d31ec2a014c6eb8a61df2" prot="public" virt="non-virtual"><scope>lbann::objective_function</scope><name>start_evaluation</name></member>
+      <member refid="classlbann_1_1objective__function_1a823ebffb8056cb4a9ff0b2af7cf084b4" prot="public" virt="non-virtual"><scope>lbann::objective_function</scope><name>~objective_function</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

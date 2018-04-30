@@ -1,0 +1,6 @@
+<map id="lbann::weights::get_dims" name="lbann::weights::get_dims">
+<area shape="rect" id="node2" href="$classlbann_1_1weights.html#a1a85fa681dcac2dbead2e5012099f380" title="lbann::weights::copy" alt="" coords="221,5,364,31"/>
+<area shape="rect" id="node3" href="$classlbann_1_1weights.html#aca05fb7e298c8f9f1f30fa1a8eac9fbf" title="lbann::weights::set\l_value" alt="" coords="227,55,358,93"/>
+<area shape="rect" id="node4" href="$classlbann_1_1weights.html#a1a2631987f38d32a90fbee61053a04cc" title="lbann::weights::write\l_proto" alt="" coords="221,117,364,156"/>
+<area shape="rect" id="node5" href="$classlbann_1_1weights.html#a5874876052191837679634186c64c388" title="lbann::weights::is\l_frozen" alt="" coords="412,117,535,156"/>
+</map>

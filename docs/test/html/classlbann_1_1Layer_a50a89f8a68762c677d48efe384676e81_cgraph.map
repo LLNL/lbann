@@ -1,0 +1,11 @@
+<map id="lbann::Layer::setup_data" name="lbann::Layer::setup_data">
+<area shape="rect" id="node2" href="$classlbann_1_1model.html#a8c311798ff4acaeafdfbf85162ba5084" title="lbann::model::get_max\l_mini_batch_size" alt="" coords="221,5,378,44"/>
+<area shape="rect" id="node3" href="$classlbann_1_1Layer.html#ac9290d4a6453ccda5f6b4d8b57b49ba3" title="lbann::Layer::get_num\l_parents" alt="" coords="223,68,377,107"/>
+<area shape="rect" id="node5" href="$classlbann_1_1Layer.html#a27112eb70bbfbd7f3c3e749960400dec" title="lbann::Layer::get_num\l_prev_neurons" alt="" coords="223,131,377,169"/>
+<area shape="rect" id="node6" href="$classlbann_1_1Layer.html#a1409a117c31a7ea4f2c7a4d22a3e86c3" title="lbann::Layer::get_num\l_children" alt="" coords="223,193,377,232"/>
+<area shape="rect" id="node10" href="$classlbann_1_1Layer.html#aa4de686cc6c2dd38166f42faf874f227" title="lbann::Layer::get_num\l_neurons" alt="" coords="223,256,377,295"/>
+<area shape="rect" id="node4" href="$classlbann_1_1Layer.html#a898e72b93752abf52d35b06459cd360e" title="lbann::Layer::get_parent\l_layers" alt="" coords="426,68,592,107"/>
+<area shape="rect" id="node7" href="$classlbann_1_1Layer.html#aa0058c8ec4913efc3e4de5d6f61eb8db" title="lbann::Layer::get_child\l_layers" alt="" coords="431,161,586,200"/>
+<area shape="rect" id="node8" href="$classlbann_1_1Layer.html#af4a093d91552cf079217eb346bbb847f" title="lbann::Layer::get_layer\l_names" alt="" coords="430,224,587,263"/>
+<area shape="rect" id="node9" href="$classlbann_1_1Layer.html#a80027550202fa7dbb1dd55fa8a66c84b" title="lbann::Layer::get_name" alt="" coords="640,231,801,256"/>
+</map>

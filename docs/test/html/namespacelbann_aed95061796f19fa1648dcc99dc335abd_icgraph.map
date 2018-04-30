@@ -1,0 +1,67 @@
+<map id="lbann::write_bytes" name="lbann::write_bytes">
+<area shape="rect" id="node2" href="$classlbann_1_1persist.html#ad759657d69e88a491729ce8e4bf9510e" title="lbann::persist::get\l_bytes" alt="" coords="395,191,522,229"/>
+<area shape="rect" id="node11" href="$classlbann_1_1persist.html#a742334568de0aca958dbaf7bbabd3cba" title="lbann::persist::write\l_uint32" alt="" coords="183,392,319,431"/>
+<area shape="rect" id="node19" href="$classlbann_1_1persist.html#aced95e3bc711276b072af97b65ef9fc1" title="lbann::persist::write\l_uint64" alt="" coords="183,517,319,556"/>
+<area shape="rect" id="node41" href="$classlbann_1_1persist.html#a199cd86b1e1f0fd5f2d0458fc6d25828" title="lbann::persist::write\l_int32_contig" alt="" coords="183,455,319,493"/>
+<area shape="rect" id="node42" href="$classlbann_1_1persist.html#ab5be1e98f9d962c41fc9c3f2ac918c6e" title="lbann::persist::write\l_float" alt="" coords="183,643,319,681"/>
+<area shape="rect" id="node43" href="$classlbann_1_1persist.html#ad29ebcbacdef90a91a9d474d4d6e1bcd" title="lbann::persist::write\l_double" alt="" coords="183,580,319,619"/>
+<area shape="rect" id="node44" href="$classlbann_1_1persist.html#a5edc3f9cc3540b50d417993da2a6b5ce" title="lbann::persist::write\l_datatype" alt="" coords="183,740,319,779"/>
+<area shape="rect" id="node61" href="$classlbann_1_1persist.html#a04afef84e7caa8509e65367225ceeba5" title="lbann::persist::write\l_string" alt="" coords="183,803,319,841"/>
+<area shape="rect" id="node62" href="$namespacelbann.html#a3a801c9f48655f81b886af4bff083f27" title="lbann::write_uint32" alt="" coords="184,181,317,207"/>
+<area shape="rect" id="node63" href="$namespacelbann.html#a234f8c7b9bbc2d9310d3e40314eb497c" title="lbann::write_uint64" alt="" coords="184,231,317,256"/>
+<area shape="rect" id="node64" href="$namespacelbann.html#a917727ad7e4f0dfd6d5a609cdc6dd9e2" title="lbann::write_int32\l_contig" alt="" coords="188,280,314,319"/>
+<area shape="rect" id="node65" href="$namespacelbann.html#a73339e4587f8ce7f653be03a3a6cbcd0" title="lbann::write_float" alt="" coords="190,343,312,368"/>
+<area shape="rect" id="node66" href="$namespacelbann.html#a827b050911630a21f248b128e3859044" title="lbann::write_double" alt="" coords="182,80,319,105"/>
+<area shape="rect" id="node3" href="$classlbann_1_1lbann__callback__checkpoint.html#a23b6f5abb924b2c4d0694e98c7d6f4d5" title="lbann::lbann_callback\l_checkpoint::checkpointShared" alt="" coords="598,199,805,237"/>
+<area shape="rect" id="node9" href="$classlbann_1_1lbann__callback__checkpoint.html#a40d369278bc5963ba2f3cca1750ba004" title="lbann::lbann_callback\l_checkpoint::restartShared" alt="" coords="611,75,792,113"/>
+<area shape="rect" id="node4" href="$classlbann_1_1lbann__callback__checkpoint.html#ac3a0bb250a679b28924910c0dc617809" title="lbann::lbann_callback\l_checkpoint::set_checkpoint\l_per_rank" alt="" coords="874,68,1063,120"/>
+<area shape="rect" id="node5" href="$classlbann_1_1lbann__callback__checkpoint.html#a406bfba673e503e94ae6eb57aff6a78e" title="lbann::lbann_callback\l_checkpoint::on_epoch_end" alt="" coords="874,144,1062,183"/>
+<area shape="rect" id="node7" href="$classlbann_1_1lbann__callback__checkpoint.html#a5fb4288c03b1ce14681b72562e9471b2" title="lbann::lbann_callback\l_checkpoint::on_validation_end" alt="" coords="864,207,1072,245"/>
+<area shape="rect" id="node8" href="$classlbann_1_1lbann__callback__checkpoint.html#a476527e2b7b44dd3623e01f63ddb5f78" title="lbann::lbann_callback\l_checkpoint::on_batch_end" alt="" coords="876,269,1060,308"/>
+<area shape="rect" id="node6" href="$classlbann_1_1lbann__callback__checkpoint.html#a63dc49f38f063f9b85d9abdf8b2855aa" title="lbann::lbann_callback\l_checkpoint::copy" alt="" coords="1154,176,1304,215"/>
+<area shape="rect" id="node10" href="$classlbann_1_1lbann__callback__checkpoint.html#a383654a7bb70672dfc9fef679f4b509f" title="lbann::lbann_callback\l_checkpoint::setup" alt="" coords="893,5,1043,44"/>
+<area shape="rect" id="node12" href="$classlbann_1_1model.html#a3d589d2e46ad35d0a1221e25bef70fa4" title="lbann::model::save\l_to_checkpoint_shared" alt="" coords="379,392,538,431"/>
+<area shape="rect" id="node16" href="$classlbann_1_1sequential__model.html#a226032d9890b8770c6fca54bf70d69eb" title="lbann::sequential_model\l::save_to_checkpoint_shared" alt="" coords="604,332,799,371"/>
+<area shape="rect" id="node13" href="$classlbann_1_1model.html#a5bafc4e84671490c6118959becb22e16" title="lbann::model::set_terminate\l_training" alt="" coords="608,395,794,433"/>
+<area shape="rect" id="node14" href="$classlbann_1_1lbann__callback__early__stopping.html#a32eb9c5e763c97ab1162cfebea7ad049" title="lbann::lbann_callback\l_early_stopping::on_validation_end" alt="" coords="853,395,1084,433"/>
+<area shape="rect" id="node15" href="$classlbann_1_1lbann__callback__early__stopping.html#aa8e7bd4e9dde8e57dbc416dc75e25cc6" title="lbann::lbann_callback\l_early_stopping::copy" alt="" coords="1153,395,1304,433"/>
+<area shape="rect" id="node17" href="$classlbann_1_1sequential__model.html#abf2b69dacb5ee3165289377e1d961cd5" title="lbann::sequential_model\l::name" alt="" coords="885,332,1051,371"/>
+<area shape="rect" id="node18" href="$classlbann_1_1sequential__model.html#a53a83327a1115a53affa78c93344e641" title="lbann::sequential_model\l::write_proto" alt="" coords="1146,332,1312,371"/>
+<area shape="rect" id="node20" href="$classlbann_1_1generic__data__reader.html#a93dddd2276ddc34cc97922ee27c44582" title="lbann::generic_data\l_reader::pack_scalars" alt="" coords="382,455,535,493"/>
+<area shape="rect" id="node38" href="$classlbann_1_1generic__input__layer.html#abae61e13f47205491a43e4842808945d" title="lbann::generic_input\l_layer::save_to_checkpoint\l_shared" alt="" coords="367,580,550,632"/>
+<area shape="rect" id="node39" href="$classlbann_1_1io__layer.html#ab2b5002dfeb0806062ecf3d9fefb9948" title="lbann::io_layer::io\l_layer" alt="" coords="396,517,521,556"/>
+<area shape="rect" id="node40" href="$structlbann_1_1metric__statistics.html#a88f5324c96cceb47d723d2acfddb41f1" title="lbann::metric_statistics\l::pack_scalars" alt="" coords="380,656,537,695"/>
+<area shape="rect" id="node21" href="$classlbann_1_1generic__data__reader.html#a6f49d945610f35335fce4a422a432cc1" title="Given directory to store checkpoint files, write state to file and add to number of bytes written..." alt="" coords="605,485,798,537"/>
+<area shape="rect" id="node22" href="$classlbann_1_1generic__data__reader.html#ab5321bd7c6e83845785753366e6d9e64" title="Allow the reader to know where it is in the model hierarchy. " alt="" coords="899,505,1037,544"/>
+<area shape="rect" id="node23" href="$classlbann_1_1lbann__callback__debug__io.html#a528f4aea5f657f40b27c58a164d4095a" title="lbann::lbann_callback\l_debug_io::print_phase_start" alt="" coords="1132,612,1326,651"/>
+<area shape="rect" id="node28" href="$classlbann_1_1generic__data__reader.html#a1d10dec5713fbe60e61b4dc400227ade" title="lbann::generic_data\l_reader::update" alt="" coords="1160,457,1298,496"/>
+<area shape="rect" id="node36" href="$classlbann_1_1imagenet__reader__single.html#a77c576d6085d4a8674322275dd9bd133" title="lbann::imagenet_reader\l_single::fetch_datum" alt="" coords="1148,520,1310,559"/>
+<area shape="rect" id="node24" href="$classlbann_1_1lbann__callback__debug__io.html#a91fb292d9dff96dbf72ecc16855c4092" title="lbann::lbann_callback\l_debug_io::copy" alt="" coords="1650,676,1800,715"/>
+<area shape="rect" id="node25" href="$classlbann_1_1lbann__callback__debug__io.html#aa3d2a6fb4d7375c05ece0058224ea792" title="BVE FIXME. " alt="" coords="1384,583,1573,621"/>
+<area shape="rect" id="node26" href="$classlbann_1_1lbann__callback__debug__io.html#ac26d9c113c1345cc1d6390141e1a894b" title="lbann::lbann_callback\l_debug_io::on_validation_begin" alt="" coords="1374,645,1583,684"/>
+<area shape="rect" id="node27" href="$classlbann_1_1lbann__callback__debug__io.html#a469dfa4eece0a707a2d56f4c67aea9b7" title="lbann::lbann_callback\l_debug_io::on_test_begin" alt="" coords="1391,708,1566,747"/>
+<area shape="rect" id="node29" href="$classlbann_1_1generic__data__reader.html#a8cf298061c73f55e2fe717acd2a9f178" title="lbann::generic_data\l_reader::save_image" alt="" coords="1405,457,1552,496"/>
+<area shape="rect" id="node35" href="$classlbann_1_1update__data__reader__functor.html#af7bb363237370dd7b84364fea740bcdf" title="lbann::update_data\l_reader_functor::operator()" alt="" coords="1388,395,1569,433"/>
+<area shape="rect" id="node30" href="$classlbann_1_1lbann__callback__save__images.html#ab84c4d511a4614ca90644d12dc77edee" title="lbann::lbann_callback\l_save_images::save_image" alt="" coords="1631,457,1818,496"/>
+<area shape="rect" id="node31" href="$classlbann_1_1lbann__callback__save__images.html#aa540916eef9b95db68889a8a7426779c" title="lbann::lbann_callback\l_save_images::on_epoch_end" alt="" coords="1866,395,2069,433"/>
+<area shape="rect" id="node33" href="$classlbann_1_1lbann__callback__save__images.html#a4591438de0b52467988e2bd34b55c0dd" title="lbann::lbann_callback\l_save_images::on_phase_end" alt="" coords="1866,457,2069,496"/>
+<area shape="rect" id="node34" href="$classlbann_1_1lbann__callback__save__images.html#a44d0f0113133d6fd8944d8b7702ea786" title="lbann::lbann_callback\l_save_images::on_test_end" alt="" coords="1874,520,2062,559"/>
+<area shape="rect" id="node32" href="$classlbann_1_1lbann__callback__save__images.html#a6abba6b6a94080c09f52f1aac8773461" title="lbann::lbann_callback\l_save_images::copy" alt="" coords="2117,457,2267,496"/>
+<area shape="rect" id="node37" href="$classlbann_1_1imagenet__reader__single.html#aecd9cec6777e4a7485daa5b0396afee0" title="lbann::imagenet_reader\l_single::get_type" alt="" coords="1398,520,1560,559"/>
+<area shape="rect" id="node45" href="$classlbann_1_1adam.html#a43e941b596c5d1cc68b795b0399398c4" title="lbann::adam::pack_scalars" alt="" coords="369,896,549,921"/>
+<area shape="rect" id="node49" href="$classlbann_1_1rmsprop.html#ac2c5ae4dc2438da1da54072a297b148b" title="lbann::rmsprop::pack\l_scalars" alt="" coords="386,831,531,869"/>
+<area shape="rect" id="node50" href="$classlbann_1_1sgd.html#ab95756a63ec3fa0100d436a5a9addfeb" title="lbann::sgd::pack_scalars" alt="" coords="375,719,543,744"/>
+<area shape="rect" id="node54" href="$classlbann_1_1optimizer.html#afed10c6d8c5bd922f95075abeff711ce" title="lbann::optimizer::save\l_to_checkpoint_shared" alt="" coords="379,768,538,807"/>
+<area shape="rect" id="node46" href="$classlbann_1_1adam.html#a8070db0a451bdbc6e86200eaa14f6ac7" title="lbann::adam::save_to\l_checkpoint_shared" alt="" coords="627,925,776,964"/>
+<area shape="rect" id="node47" href="$classlbann_1_1adam.html#ae5b6108946e6a09b4e13e4285350aa05" title="lbann::adam::unpack\l_header" alt="" coords="896,925,1041,964"/>
+<area shape="rect" id="node48" href="$classlbann_1_1adam.html#aca07e925a4751fc5c10a62fb9c72c896" title="lbann::adam::load_from\l_checkpoint_shared" alt="" coords="1148,925,1310,964"/>
+<area shape="rect" id="node51" href="$classlbann_1_1sgd.html#a78ad11ca7424d50a9f2ba29e5f725e21" title="lbann::sgd::save_to\l_checkpoint_shared" alt="" coords="631,675,772,713"/>
+<area shape="rect" id="node52" href="$classlbann_1_1sgd.html#a3afe5aa1f1861c390472ff6f53093386" title="lbann::sgd::unpack\l_header" alt="" coords="902,675,1035,713"/>
+<area shape="rect" id="node53" href="$classlbann_1_1sgd.html#aa3e3237a59b0593d7caf7357b7c181cf" title="lbann::sgd::load_from\l_checkpoint_shared" alt="" coords="1154,675,1304,713"/>
+<area shape="rect" id="node55" href="$classlbann_1_1adagrad.html#a94282e58af6bb1e9af27255e23bd3d3d" title="lbann::adagrad::save\l_to_checkpoint_shared" alt="" coords="622,800,781,839"/>
+<area shape="rect" id="node57" href="$classlbann_1_1rmsprop.html#a8abe698168c2d1cb2c65d180552501ef" title="lbann::rmsprop::save\l_to_checkpoint_shared" alt="" coords="622,863,781,901"/>
+<area shape="rect" id="node59" href="$classlbann_1_1weights.html#a48dd6b3d37668bf2ab5abafdf9dabde4" title="lbann::weights::save\l_to_checkpoint_shared" alt="" coords="622,737,781,776"/>
+<area shape="rect" id="node56" href="$classlbann_1_1adagrad.html#af0fe80dbe6525509aae3ef2dea62a018" title="lbann::adagrad::name" alt="" coords="893,807,1044,832"/>
+<area shape="rect" id="node58" href="$classlbann_1_1rmsprop.html#a1af03b4c5e744abae04ccec3e19a0cc6" title="lbann::rmsprop::unpack\l_header" alt="" coords="888,863,1049,901"/>
+<area shape="rect" id="node60" href="$classlbann_1_1weights.html#a5874876052191837679634186c64c388" title="lbann::weights::is\l_frozen" alt="" coords="906,737,1030,776"/>
+</map>

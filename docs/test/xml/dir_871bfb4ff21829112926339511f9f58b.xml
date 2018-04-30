@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="dir_871bfb4ff21829112926339511f9f58b" kind="dir">
+    <compoundname>/Users/mckinney27/doxy-testbed/lbann/src/data_store</compoundname>
+    <innerfile refid="data__store__csv_8cpp">data_store_csv.cpp</innerfile>
+    <innerfile refid="data__store__image_8cpp">data_store_image.cpp</innerfile>
+    <innerfile refid="data__store__imagenet_8cpp">data_store_imagenet.cpp</innerfile>
+    <innerfile refid="data__store__imagenet__patches_8cpp">data_store_imagenet_patches.cpp</innerfile>
+    <innerfile refid="data__store__merge__features_8cpp">data_store_merge_features.cpp</innerfile>
+    <innerfile refid="data__store__merge__samples_8cpp">data_store_merge_samples.cpp</innerfile>
+    <innerfile refid="data__store__multi__images_8cpp">data_store_multi_images.cpp</innerfile>
+    <innerfile refid="data__store__pilot2__molecular_8cpp">data_store_pilot2_molecular.cpp</innerfile>
+    <innerfile refid="data__store__triplet_8cpp">data_store_triplet.cpp</innerfile>
+    <innerfile refid="generic__data__store_8cpp">generic_data_store.cpp</innerfile>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/src/data_store/"/>
+  </compounddef>
+</doxygen>

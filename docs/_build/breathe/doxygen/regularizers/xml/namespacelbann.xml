@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="namespacelbann" kind="namespace" language="C++">
+    <compoundname>lbann</compoundname>
+    <innerclass refid="classlbann_1_1batch__normalization" prot="public">lbann::batch_normalization</innerclass>
+    <innerclass refid="classlbann_1_1dropout" prot="public">lbann::dropout</innerclass>
+    <innerclass refid="classlbann_1_1local__response__normalization__layer" prot="public">lbann::local_response_normalization_layer</innerclass>
+    <innerclass refid="classlbann_1_1regularizer__layer" prot="public">lbann::regularizer_layer</innerclass>
+    <innerclass refid="classlbann_1_1selu__dropout" prot="public">lbann::selu_dropout</innerclass>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/batch_normalization.hpp" line="35" column="1"/>
+  </compounddef>
+</doxygen>

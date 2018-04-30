@@ -1,0 +1,26 @@
+<map id="lbann::deconvolution_layer::bp_compute" name="lbann::deconvolution_layer::bp_compute">
+<area shape="rect" id="node2" href="$classlbann_1_1base__convolution__layer.html#ae46e6a975c443792c606817878dc4446" title="lbann::base_convolution\l_layer::compute_gradients_cudnn" alt="" coords="197,123,419,161"/>
+<area shape="rect" id="node12" href="$classlbann_1_1base__convolution__layer.html#a1c6e967ab0c66cfa0d27f7abfbbf2be8" title="lbann::base_convolution\l_layer::apply_convolution_cudnn" alt="" coords="200,337,416,376"/>
+<area shape="rect" id="node13" href="$classlbann_1_1base__convolution__layer.html#a8cb0b4fb33f058ce6c211ebaf6a17f63" title="lbann::base_convolution\l_layer::compute_gradients\l_im2col" alt="" coords="219,185,397,237"/>
+<area shape="rect" id="node21" href="$classlbann_1_1base__convolution__layer.html#a0710d46aa54d92f94de920ed37f6ef11" title="lbann::base_convolution\l_layer::apply_convolution\l_im2col" alt="" coords="222,261,394,313"/>
+<area shape="rect" id="node3" href="$classlbann_1_1model.html#a2a9b4cfa1c8c91e4131908751f9c4a6a" title="lbann::model::get_effective\l_mini_batch_size" alt="" coords="467,125,648,164"/>
+<area shape="rect" id="node4" href="$classlbann_1_1optimizer.html#ac23ebde61a225f70c27ab937df5755ed" title="lbann::optimizer::add\l_to_gradient_staging" alt="" coords="484,63,630,101"/>
+<area shape="rect" id="node5" href="$classlbann_1_1optimizer.html#abccf0babf69e3d7c6e9a7fd0731c79b7" title="lbann::optimizer::is\l_initialized" alt="" coords="725,5,857,44"/>
+<area shape="rect" id="node7" href="$classlbann_1_1weights.html#a3216926df0aaf7aa440b9e5317d05fa2" title="lbann::weights::get_size" alt="" coords="709,75,873,100"/>
+<area shape="rect" id="node6" href="$classlbann_1_1optimizer.html#a9c3fc3f1d45da822676d5932a1c7af82" title="lbann::optimizer::get\l_weights" alt="" coords="935,5,1076,44"/>
+<area shape="rect" id="node8" href="$classlbann_1_1weights.html#ad36676b9b43bced1cc7e332e3745411f" title="lbann::weights::get\l_matrix_height" alt="" coords="1311,97,1444,136"/>
+<area shape="rect" id="node10" href="$classlbann_1_1weights.html#abc3cf3a5b992302b1eaaea1fdf3b377d" title="lbann::weights::get\l_matrix_width" alt="" coords="939,68,1072,107"/>
+<area shape="rect" id="node9" href="$classlbann_1_1weights.html#a2971f04c57d90fbb09631b1de3dad336" title="lbann::weights::get\l_matrix_height_dims" alt="" coords="1492,97,1636,136"/>
+<area shape="rect" id="node11" href="$classlbann_1_1weights.html#a783ce38ed0b75c0264dd7e28911d5ec0" title="lbann::weights::get\l_matrix_width_dims" alt="" coords="1124,68,1263,107"/>
+<area shape="rect" id="node14" href="$classlbann_1_1Layer.html#a35397843bb0c84030000c7d872229acb" title="lbann::Layer::get_local\l_prev_activations" alt="" coords="480,188,635,227"/>
+<area shape="rect" id="node16" href="$classlbann_1_1Layer.html#a82827edc5e869960144f3ccb2172bfcd" title="lbann::Layer::get_local\l_prev_error_signals" alt="" coords="480,251,635,289"/>
+<area shape="rect" id="node18" href="$namespacelbann.html#aa3636a1979e40da2af91f30a12b90db9" title="Rearrange image blocks into matrix columns. " alt="" coords="507,313,607,339"/>
+<area shape="rect" id="node15" href="$classlbann_1_1Layer.html#a45853df73a2e72bfaa774665a0f37ed7" title="lbann::Layer::get_prev\l_activations" alt="" coords="714,159,868,197"/>
+<area shape="rect" id="node17" href="$classlbann_1_1Layer.html#a7ac4579d3c1671dfaf86e3b618d6938a" title="lbann::Layer::get_prev\l_error_signals" alt="" coords="714,245,868,284"/>
+<area shape="rect" id="node19" href="$namespacelbann.html#a3d099edd7d1b09889e0d2133bb83d5bf" title="Rearrange 1x1 image blocks into matrix columns. " alt="" coords="727,308,856,333"/>
+<area shape="rect" id="node20" href="$namespacelbann.html#adc05d10657be77ccd9a74b1621c416c3" title="Rearrange 2D image blocks into matrix columns. " alt="" coords="730,357,852,383"/>
+<area shape="rect" id="node22" href="$classlbann_1_1Layer.html#a4248f27acebf72b7b7b3ee39c8bcb62a" title="lbann::Layer::get_local\l_activations" alt="" coords="480,471,635,509"/>
+<area shape="rect" id="node24" href="$classlbann_1_1Layer.html#af178d00b9d878aa7d87754bff2a91f3a" title="lbann::Layer::get_local\l_error_signals" alt="" coords="480,400,635,439"/>
+<area shape="rect" id="node23" href="$classlbann_1_1Layer.html#a1134b1a4385af199d7272c5aa827fa99" title="lbann::Layer::get_activations" alt="" coords="696,517,887,543"/>
+<area shape="rect" id="node25" href="$classlbann_1_1Layer.html#adb561e140e0bb601f3c5a8ee053a71d2" title="lbann::Layer::get_error\l_signals" alt="" coords="713,431,869,469"/>
+</map>

@@ -1,0 +1,507 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="data__store__imagenet__patches_8cpp" kind="file" language="C++">
+    <compoundname>data_store_imagenet_patches.cpp</compoundname>
+    <includes refid="data__store__imagenet__patches_8hpp" local="yes">lbann/data_store/data_store_imagenet_patches.hpp</includes>
+    <includes refid="data__reader__imagenet__patches_8hpp" local="yes">lbann/data_readers/data_reader_imagenet_patches.hpp</includes>
+    <includes refid="exception_8hpp" local="yes">lbann/utils/exception.hpp</includes>
+    <includes refid="options_8hpp" local="yes">lbann/utils/options.hpp</includes>
+    <includes refid="timer_8hpp" local="yes">lbann/utils/timer.hpp</includes>
+    <incdepgraph>
+      <node id="20312">
+        <label>sys/stat.h</label>
+      </node>
+      <node id="20279">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_imagenet_patches.cpp</label>
+        <link refid="data__store__imagenet__patches_8cpp"/>
+        <childnode refid="20280" relation="include">
+        </childnode>
+        <childnode refid="20299" relation="include">
+        </childnode>
+        <childnode refid="20305" relation="include">
+        </childnode>
+        <childnode refid="20340" relation="include">
+        </childnode>
+        <childnode refid="20341" relation="include">
+        </childnode>
+      </node>
+      <node id="20319">
+        <label>cv_process.hpp</label>
+        <link refid="cv__process_8hpp"/>
+        <childnode refid="20320" relation="include">
+        </childnode>
+        <childnode refid="20323" relation="include">
+        </childnode>
+        <childnode refid="20326" relation="include">
+        </childnode>
+        <childnode refid="20327" relation="include">
+        </childnode>
+        <childnode refid="20330" relation="include">
+        </childnode>
+        <childnode refid="20331" relation="include">
+        </childnode>
+        <childnode refid="20332" relation="include">
+        </childnode>
+        <childnode refid="20334" relation="include">
+        </childnode>
+        <childnode refid="20336" relation="include">
+        </childnode>
+        <childnode refid="20337" relation="include">
+        </childnode>
+      </node>
+      <node id="20334">
+        <label>cv_mean_extractor.hpp</label>
+        <link refid="cv__mean__extractor_8hpp"/>
+        <childnode refid="20320" relation="include">
+        </childnode>
+        <childnode refid="20335" relation="include">
+        </childnode>
+      </node>
+      <node id="20337">
+        <label>limits</label>
+      </node>
+      <node id="20315">
+        <label>lbann/data_readers/image_preprocessor.hpp</label>
+        <link refid="image__preprocessor_8hpp"/>
+        <childnode refid="20292" relation="include">
+        </childnode>
+        <childnode refid="20284" relation="include">
+        </childnode>
+      </node>
+      <node id="20339">
+        <label>patchworks/patchworks_patch_descriptor.hpp</label>
+        <link refid="patchworks__patch__descriptor_8hpp"/>
+        <childnode refid="20292" relation="include">
+        </childnode>
+      </node>
+      <node id="20283">
+        <label>lbann/data_store/generic_data_store.hpp</label>
+        <link refid="generic__data__store_8hpp"/>
+        <childnode refid="20284" relation="include">
+        </childnode>
+        <childnode refid="20293" relation="include">
+        </childnode>
+        <childnode refid="20294" relation="include">
+        </childnode>
+        <childnode refid="20297" relation="include">
+        </childnode>
+      </node>
+      <node id="20303">
+        <label>lbann/io/persist.hpp</label>
+        <link refid="persist_8hpp"/>
+        <childnode refid="20284" relation="include">
+        </childnode>
+        <childnode refid="20285" relation="include">
+        </childnode>
+      </node>
+      <node id="20281">
+        <label>lbann/data_store/data_store_imagenet.hpp</label>
+        <link refid="data__store__imagenet_8hpp"/>
+        <childnode refid="20282" relation="include">
+        </childnode>
+      </node>
+      <node id="20285">
+        <label>El.hpp</label>
+      </node>
+      <node id="20325">
+        <label>lbann/utils/mild_exception.hpp</label>
+        <link refid="mild__exception_8hpp"/>
+        <childnode refid="20309" relation="include">
+        </childnode>
+      </node>
+      <node id="20284">
+        <label>lbann/base.hpp</label>
+        <link refid="base_8hpp"/>
+        <childnode refid="20285" relation="include">
+        </childnode>
+        <childnode refid="20286" relation="include">
+        </childnode>
+        <childnode refid="20287" relation="include">
+        </childnode>
+        <childnode refid="20292" relation="include">
+        </childnode>
+      </node>
+      <node id="20300">
+        <label>data_reader_image.hpp</label>
+        <link refid="data__reader__image_8hpp"/>
+        <childnode refid="20301" relation="include">
+        </childnode>
+        <childnode refid="20315" relation="include">
+        </childnode>
+        <childnode refid="20319" relation="include">
+        </childnode>
+      </node>
+      <node id="20316">
+        <label>cassert</label>
+      </node>
+      <node id="20314">
+        <label>fcntl.h</label>
+      </node>
+      <node id="20322">
+        <label>opencv_extensions.hpp</label>
+        <link refid="opencv__extensions_8hpp"/>
+      </node>
+      <node id="20330">
+        <label>cv_colorizer.hpp</label>
+        <link refid="cv__colorizer_8hpp"/>
+        <childnode refid="20320" relation="include">
+        </childnode>
+      </node>
+      <node id="20308">
+        <label>string</label>
+      </node>
+      <node id="20280">
+        <label>lbann/data_store/data_store_imagenet_patches.hpp</label>
+        <link refid="data__store__imagenet__patches_8hpp"/>
+        <childnode refid="20281" relation="include">
+        </childnode>
+      </node>
+      <node id="20341">
+        <label>lbann/utils/timer.hpp</label>
+        <link refid="timer_8hpp"/>
+        <childnode refid="20342" relation="include">
+        </childnode>
+      </node>
+      <node id="20295">
+        <label>map</label>
+      </node>
+      <node id="20297">
+        <label>unordered_set</label>
+      </node>
+      <node id="20326">
+        <label>cv_subtractor.hpp</label>
+        <link refid="cv__subtractor_8hpp"/>
+        <childnode refid="20320" relation="include">
+        </childnode>
+        <childnode refid="20284" relation="include">
+        </childnode>
+      </node>
+      <node id="20310">
+        <label>exception</label>
+      </node>
+      <node id="20328">
+        <label>ostream</label>
+      </node>
+      <node id="20304">
+        <label>random</label>
+      </node>
+      <node id="20299">
+        <label>lbann/data_readers/data_reader_imagenet_patches.hpp</label>
+        <link refid="data__reader__imagenet__patches_8hpp"/>
+        <childnode refid="20300" relation="include">
+        </childnode>
+        <childnode refid="20338" relation="include">
+        </childnode>
+      </node>
+      <node id="20313">
+        <label>sys/types.h</label>
+      </node>
+      <node id="20324">
+        <label>typeinfo</label>
+      </node>
+      <node id="20289">
+        <label>cstdio</label>
+      </node>
+      <node id="20331">
+        <label>cv_decolorizer.hpp</label>
+        <link refid="cv__decolorizer_8hpp"/>
+        <childnode refid="20292" relation="include">
+        </childnode>
+        <childnode refid="20320" relation="include">
+        </childnode>
+      </node>
+      <node id="20306">
+        <label>lbann/utils/stack_trace.hpp</label>
+        <link refid="stack__trace_8hpp"/>
+        <childnode refid="20307" relation="include">
+        </childnode>
+        <childnode refid="20308" relation="include">
+        </childnode>
+      </node>
+      <node id="20291">
+        <label>cxxabi.h</label>
+      </node>
+      <node id="20305">
+        <label>lbann/utils/exception.hpp</label>
+        <link refid="exception_8hpp"/>
+        <childnode refid="20284" relation="include">
+        </childnode>
+        <childnode refid="20293" relation="include">
+        </childnode>
+        <childnode refid="20306" relation="include">
+        </childnode>
+        <childnode refid="20309" relation="include">
+        </childnode>
+        <childnode refid="20310" relation="include">
+        </childnode>
+      </node>
+      <node id="20318">
+        <label>unistd.h</label>
+      </node>
+      <node id="20294">
+        <label>vector</label>
+      </node>
+      <node id="20293">
+        <label>lbann/comm.hpp</label>
+        <link refid="comm_8hpp"/>
+        <childnode refid="20294" relation="include">
+        </childnode>
+        <childnode refid="20295" relation="include">
+        </childnode>
+        <childnode refid="20296" relation="include">
+        </childnode>
+        <childnode refid="20284" relation="include">
+        </childnode>
+      </node>
+      <node id="20333">
+        <label>utility</label>
+      </node>
+      <node id="20311">
+        <label>lbann/io/file_io.hpp</label>
+        <link refid="file__io_8hpp"/>
+        <childnode refid="20312" relation="include">
+        </childnode>
+        <childnode refid="20313" relation="include">
+        </childnode>
+        <childnode refid="20314" relation="include">
+        </childnode>
+      </node>
+      <node id="20288">
+        <label>cstdlib</label>
+      </node>
+      <node id="20321">
+        <label>opencv.hpp</label>
+        <link refid="opencv_8hpp"/>
+        <childnode refid="20292" relation="include">
+        </childnode>
+      </node>
+      <node id="20309">
+        <label>iostream</label>
+      </node>
+      <node id="20338">
+        <label>cv_process_patches.hpp</label>
+        <link refid="cv__process__patches_8hpp"/>
+        <childnode refid="20319" relation="include">
+        </childnode>
+        <childnode refid="20339" relation="include">
+        </childnode>
+        <childnode refid="20337" relation="include">
+        </childnode>
+      </node>
+      <node id="20298">
+        <label>unordered_map</label>
+      </node>
+      <node id="20323">
+        <label>cv_normalizer.hpp</label>
+        <link refid="cv__normalizer_8hpp"/>
+        <childnode refid="20324" relation="include">
+        </childnode>
+        <childnode refid="20320" relation="include">
+        </childnode>
+        <childnode refid="20284" relation="include">
+        </childnode>
+        <childnode refid="20325" relation="include">
+        </childnode>
+      </node>
+      <node id="20302">
+        <label>lbann/utils/random.hpp</label>
+        <link refid="random_8hpp"/>
+        <childnode refid="20284" relation="include">
+        </childnode>
+        <childnode refid="20293" relation="include">
+        </childnode>
+        <childnode refid="20303" relation="include">
+        </childnode>
+        <childnode refid="20304" relation="include">
+        </childnode>
+      </node>
+      <node id="20320">
+        <label>cv_transform.hpp</label>
+        <link refid="cv__transform_8hpp"/>
+        <childnode refid="20321" relation="include">
+        </childnode>
+        <childnode refid="20322" relation="include">
+        </childnode>
+      </node>
+      <node id="20327">
+        <label>cv_augmenter.hpp</label>
+        <link refid="cv__augmenter_8hpp"/>
+        <childnode refid="20320" relation="include">
+        </childnode>
+        <childnode refid="20309" relation="include">
+        </childnode>
+        <childnode refid="20328" relation="include">
+        </childnode>
+        <childnode refid="20329" relation="include">
+        </childnode>
+        <childnode refid="20308" relation="include">
+        </childnode>
+      </node>
+      <node id="20342">
+        <label>chrono</label>
+      </node>
+      <node id="20282">
+        <label>lbann/data_store/data_store_image.hpp</label>
+        <link refid="data__store__image_8hpp"/>
+        <childnode refid="20283" relation="include">
+        </childnode>
+        <childnode refid="20298" relation="include">
+        </childnode>
+      </node>
+      <node id="20307">
+        <label>csignal</label>
+      </node>
+      <node id="20332">
+        <label>cv_cropper.hpp</label>
+        <link refid="cv__cropper_8hpp"/>
+        <childnode refid="20320" relation="include">
+        </childnode>
+        <childnode refid="20333" relation="include">
+        </childnode>
+        <childnode refid="20328" relation="include">
+        </childnode>
+      </node>
+      <node id="20340">
+        <label>lbann/utils/options.hpp</label>
+        <link refid="options_8hpp"/>
+        <childnode refid="20309" relation="include">
+        </childnode>
+        <childnode refid="20295" relation="include">
+        </childnode>
+        <childnode refid="20294" relation="include">
+        </childnode>
+        <childnode refid="20308" relation="include">
+        </childnode>
+      </node>
+      <node id="20301">
+        <label>data_reader.hpp</label>
+        <link refid="data__reader_8hpp"/>
+        <childnode refid="20284" relation="include">
+        </childnode>
+        <childnode refid="20302" relation="include">
+        </childnode>
+        <childnode refid="20305" relation="include">
+        </childnode>
+        <childnode refid="20293" relation="include">
+        </childnode>
+        <childnode refid="20311" relation="include">
+        </childnode>
+        <childnode refid="20303" relation="include">
+        </childnode>
+        <childnode refid="20315" relation="include">
+        </childnode>
+        <childnode refid="20316" relation="include">
+        </childnode>
+        <childnode refid="20317" relation="include">
+        </childnode>
+        <childnode refid="20308" relation="include">
+        </childnode>
+        <childnode refid="20294" relation="include">
+        </childnode>
+        <childnode refid="20318" relation="include">
+        </childnode>
+      </node>
+      <node id="20292">
+        <label>lbann_config.hpp</label>
+      </node>
+      <node id="20335">
+        <label>type_traits</label>
+      </node>
+      <node id="20317">
+        <label>algorithm</label>
+      </node>
+      <node id="20287">
+        <label>lbann/utils/cyg_profile.hpp</label>
+        <link refid="cyg__profile_8hpp"/>
+        <childnode refid="20288" relation="include">
+        </childnode>
+        <childnode refid="20289" relation="include">
+        </childnode>
+        <childnode refid="20290" relation="include">
+        </childnode>
+        <childnode refid="20291" relation="include">
+        </childnode>
+      </node>
+      <node id="20329">
+        <label>cstring</label>
+      </node>
+      <node id="20286">
+        <label>lbann/Elemental_extensions.hpp</label>
+        <link refid="Elemental__extensions_8hpp"/>
+        <childnode refid="20285" relation="include">
+        </childnode>
+      </node>
+      <node id="20336">
+        <label>memory</label>
+      </node>
+      <node id="20296">
+        <label>typeindex</label>
+      </node>
+      <node id="20290">
+        <label>dlfcn.h</label>
+      </node>
+    </incdepgraph>
+    <innernamespace refid="namespacelbann">lbann</innernamespace>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>2014-2016,<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Security,<sp/>LLC.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Produced<sp/>at<sp/>the<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Laboratory.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Written<sp/>by<sp/>the<sp/>LBANN<sp/>Research<sp/>Team<sp/>(B.<sp/>Van<sp/>Essen,<sp/>et<sp/>al.)<sp/>listed<sp/>in</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="comment">//<sp/>the<sp/>CONTRIBUTORS<sp/>file.<sp/>&lt;lbann-dev@llnl.gov&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="comment">//<sp/>LLNL-CODE-697807.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="comment">//<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="comment">//<sp/>This<sp/>file<sp/>is<sp/>part<sp/>of<sp/>LBANN:<sp/>Livermore<sp/>Big<sp/>Artificial<sp/>Neural<sp/>Network</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Toolkit.<sp/>For<sp/>details,<sp/>see<sp/>http://software.llnl.gov/LBANN<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="comment">//<sp/>https://github.com/LLNL/LBANN.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Licensed<sp/>under<sp/>the<sp/>Apache<sp/>License,<sp/>Version<sp/>2.0<sp/>(the<sp/>&quot;Licensee&quot;);<sp/>you</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight><highlight class="comment">//<sp/>may<sp/>not<sp/>use<sp/>this<sp/>file<sp/>except<sp/>in<sp/>compliance<sp/>with<sp/>the<sp/>License.<sp/><sp/>You<sp/>may</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="comment">//<sp/>obtain<sp/>a<sp/>copy<sp/>of<sp/>the<sp/>License<sp/>at:</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight><highlight class="comment">//<sp/>http://www.apache.org/licenses/LICENSE-2.0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Unless<sp/>required<sp/>by<sp/>applicable<sp/>law<sp/>or<sp/>agreed<sp/>to<sp/>in<sp/>writing,<sp/>software</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight><highlight class="comment">//<sp/>distributed<sp/>under<sp/>the<sp/>License<sp/>is<sp/>distributed<sp/>on<sp/>an<sp/>&quot;AS<sp/>IS&quot;<sp/>BASIS,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight><highlight class="comment">//<sp/>WITHOUT<sp/>WARRANTIES<sp/>OR<sp/>CONDITIONS<sp/>OF<sp/>ANY<sp/>KIND,<sp/>either<sp/>express<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="comment">//<sp/>implied.<sp/>See<sp/>the<sp/>License<sp/>for<sp/>the<sp/>specific<sp/>language<sp/>governing</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="comment">//<sp/>permissions<sp/>and<sp/>limitations<sp/>under<sp/>the<sp/>license.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="25"><highlight class="normal"></highlight><highlight class="comment">//</highlight></codeline>
+<codeline lineno="27"><highlight class="comment"></highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="28"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="data__store__imagenet__patches_8hpp" kindref="compound">lbann/data_store/data_store_imagenet_patches.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="29"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="data__reader__imagenet__patches_8hpp" kindref="compound">lbann/data_readers/data_reader_imagenet_patches.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="30"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="exception_8hpp" kindref="compound">lbann/utils/exception.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="options_8hpp" kindref="compound">lbann/utils/options.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="32"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="timer_8hpp" kindref="compound">lbann/utils/timer.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="33"><highlight class="normal"></highlight></codeline>
+<codeline lineno="34"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacelbann" kindref="compound">lbann</ref><sp/>{</highlight></codeline>
+<codeline lineno="35"><highlight class="normal"></highlight></codeline>
+<codeline lineno="36" refid="classlbann_1_1data__store__imagenet__patches_1aa8cfaf12c87f3dbbbb4fc808f6ca26ad" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__store__imagenet__patches_1aa8cfaf12c87f3dbbbb4fc808f6ca26ad" kindref="member">data_store_imagenet_patches::setup</ref>()<sp/>{</highlight></codeline>
+<codeline lineno="37"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1generic__data__store_1a87695bfd2d1ed0dbe01d99108e3f68b7" kindref="member">m_rank</ref><sp/>==<sp/>0)<sp/>{</highlight></codeline>
+<codeline lineno="38"><highlight class="normal"><sp/><sp/><sp/><sp/>std::cerr<sp/>&lt;&lt;<sp/></highlight><highlight class="stringliteral">&quot;starting<sp/>data_store_imagenet_patches::setup()<sp/>for<sp/>data<sp/>reader<sp/>with<sp/>role:<sp/>&quot;</highlight><highlight class="normal"><sp/>&lt;&lt;<sp/><ref refid="classlbann_1_1generic__data__store_1afa49ced0ab64c632371ea52532a91ec2" kindref="member">m_reader</ref>-&gt;<ref refid="classlbann_1_1generic__data__reader_1a92982e1b399f37e2ead5aa440883cba5" kindref="member">get_role</ref>()<sp/>&lt;&lt;<sp/>std::endl;</highlight></codeline>
+<codeline lineno="39"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="40"><highlight class="normal"></highlight></codeline>
+<codeline lineno="41"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1generic__data__store_1a853741295a07b5687921fc56d0d7d5b2" kindref="member">set_name</ref>(</highlight><highlight class="stringliteral">&quot;data_store_imagenet_patches&quot;</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="42"><highlight class="normal"></highlight></codeline>
+<codeline lineno="43"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//sanity<sp/>check</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="44"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1imagenet__reader__patches" kindref="compound">imagenet_reader_patches</ref><sp/>*reader<sp/>=<sp/></highlight><highlight class="keyword">dynamic_cast&lt;</highlight><highlight class="normal"><ref refid="classlbann_1_1imagenet__reader__patches" kindref="compound">imagenet_reader_patches</ref>*</highlight><highlight class="keyword">&gt;</highlight><highlight class="normal">(<ref refid="classlbann_1_1generic__data__store_1afa49ced0ab64c632371ea52532a91ec2" kindref="member">m_reader</ref>);</highlight></codeline>
+<codeline lineno="45"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(reader<sp/>==<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal">)<sp/>{</highlight></codeline>
+<codeline lineno="46"><highlight class="normal"><sp/><sp/><sp/><sp/>std::stringstream<sp/>err;</highlight></codeline>
+<codeline lineno="47"><highlight class="normal"><sp/><sp/><sp/><sp/>err<sp/>&lt;&lt;<sp/>__FILE__<sp/>&lt;&lt;<sp/></highlight><highlight class="stringliteral">&quot;<sp/>&quot;</highlight><highlight class="normal"><sp/>&lt;&lt;<sp/>__LINE__<sp/>&lt;&lt;<sp/></highlight><highlight class="stringliteral">&quot;<sp/>::<sp/>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="48"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>&lt;&lt;<sp/></highlight><highlight class="stringliteral">&quot;dynamic_cast&lt;imagenet_reader_patches*&gt;(m_reader)<sp/>failed&quot;</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="49"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">throw</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__exception" kindref="compound">lbann_exception</ref>(err.str());</highlight></codeline>
+<codeline lineno="50"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="51"><highlight class="normal"></highlight></codeline>
+<codeline lineno="52"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1data__store__imagenet_1a611aa1734a491c443396a077b49fe4fe" kindref="member">data_store_imagenet::setup</ref>();</highlight></codeline>
+<codeline lineno="53"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="54"><highlight class="normal"></highlight></codeline>
+<codeline lineno="55"><highlight class="normal"></highlight></codeline>
+<codeline lineno="56"><highlight class="normal">}<sp/><sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>lbann</highlight><highlight class="normal"></highlight></codeline>
+    </programlisting>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_imagenet_patches.cpp"/>
+  </compounddef>
+</doxygen>

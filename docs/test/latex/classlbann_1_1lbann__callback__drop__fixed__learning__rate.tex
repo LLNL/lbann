@@ -1,0 +1,228 @@
+\hypertarget{classlbann_1_1lbann__callback__drop__fixed__learning__rate}{}\section{lbann\+:\+:lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate Class Reference}
+\label{classlbann_1_1lbann__callback__drop__fixed__learning__rate}\index{lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate}}
+
+
+{\ttfamily \#include $<$callback\+\_\+learning\+\_\+rate.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=212pt]{classlbann_1_1lbann__callback__drop__fixed__learning__rate__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=215pt]{classlbann_1_1lbann__callback__drop__fixed__learning__rate__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1lbann__callback__drop__fixed__learning__rate_a28f58eb50813e638d865179d645908f2}{lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate} (std\+::vector$<$ int64\+\_\+t $>$ drop\+\_\+epochs, float amt)
+\item 
+\hyperlink{classlbann_1_1lbann__callback__drop__fixed__learning__rate_acd69c6b5aa7e4d799dba7dab2cd5daa4}{lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate} (std\+::vector$<$ int64\+\_\+t $>$ drop\+\_\+epochs, float amt, std\+::unordered\+\_\+set$<$ \hyperlink{classlbann_1_1weights}{weights} $\ast$$>$ weights\+\_\+list)
+\item 
+\hyperlink{classlbann_1_1lbann__callback__drop__fixed__learning__rate_a5bb3a2e1d490d128e27dd1df2503644d}{lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate} (const \hyperlink{classlbann_1_1lbann__callback__drop__fixed__learning__rate}{lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__drop__fixed__learning__rate}{lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate} \& \hyperlink{classlbann_1_1lbann__callback__drop__fixed__learning__rate_ab1c5f9e9d8019d203bbbc1652e2950bd}{operator=} (const \hyperlink{classlbann_1_1lbann__callback__drop__fixed__learning__rate}{lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__drop__fixed__learning__rate}{lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate} $\ast$ \hyperlink{classlbann_1_1lbann__callback__drop__fixed__learning__rate_aad86be992434394974b50d1f1c303bbf}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1lbann__callback__drop__fixed__learning__rate_a715d550fb9ec99e32861f91299669c35}{name} () const override
+\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+float \hyperlink{classlbann_1_1lbann__callback__drop__fixed__learning__rate_a2ee62bfde00d7f1a4e55e4a334160fbe}{global\+\_\+schedule} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+float \hyperlink{classlbann_1_1lbann__callback__drop__fixed__learning__rate_a3e38dc2b7dc92d29567091395de22546}{m\+\_\+amt}
+\begin{DoxyCompactList}\small\item\em Amount to decrease the learning rate by. \end{DoxyCompactList}\item 
+std\+::vector$<$ int64\+\_\+t $>$ \hyperlink{classlbann_1_1lbann__callback__drop__fixed__learning__rate_afc99419c3d818fe86d5865c8f7beae49}{m\+\_\+drop\+\_\+epochs}
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+Decrease learning rate by a fixed amount at fixed times. 
+
+Definition at line 157 of file callback\+\_\+learning\+\_\+rate.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__drop__fixed__learning__rate_a28f58eb50813e638d865179d645908f2}\label{classlbann_1_1lbann__callback__drop__fixed__learning__rate_a28f58eb50813e638d865179d645908f2}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate}!lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate@{lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate}}
+\index{lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate@{lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate}!lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate()}{lbann\_callback\_drop\_fixed\_learning\_rate()}\hspace{0.1cm}{\footnotesize\ttfamily [1/3]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate (\begin{DoxyParamCaption}\item[{std\+::vector$<$ int64\+\_\+t $>$}]{drop\+\_\+epochs,  }\item[{float}]{amt }\end{DoxyParamCaption})}
+
+Decrease the learning rate by amt when each epoch in drop\+\_\+epochs is reached. 
+
+Definition at line 152 of file callback\+\_\+learning\+\_\+rate.\+cpp.
+
+
+\begin{DoxyCode}
+153                                              :
+154   \hyperlink{classlbann_1_1lbann__callback__drop__fixed__learning__rate_a28f58eb50813e638d865179d645908f2}{lbann\_callback\_drop\_fixed\_learning\_rate}(drop\_epochs, amt,
+155                                           std::unordered\_set<weights *>()) \{\}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__drop__fixed__learning__rate_acd69c6b5aa7e4d799dba7dab2cd5daa4}\label{classlbann_1_1lbann__callback__drop__fixed__learning__rate_acd69c6b5aa7e4d799dba7dab2cd5daa4}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate}!lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate@{lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate}}
+\index{lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate@{lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate}!lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate()}{lbann\_callback\_drop\_fixed\_learning\_rate()}\hspace{0.1cm}{\footnotesize\ttfamily [2/3]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate (\begin{DoxyParamCaption}\item[{std\+::vector$<$ int64\+\_\+t $>$}]{drop\+\_\+epochs,  }\item[{float}]{amt,  }\item[{std\+::unordered\+\_\+set$<$ \hyperlink{classlbann_1_1weights}{weights} $\ast$$>$}]{weights\+\_\+list }\end{DoxyParamCaption})}
+
+
+
+Definition at line 157 of file callback\+\_\+learning\+\_\+rate.\+cpp.
+
+
+\begin{DoxyCode}
+158                                                                                        :
+159   \hyperlink{classlbann_1_1lbann__callback__learning__rate_a69687cd55f4d09c480e08e18488519fe}{lbann\_callback\_learning\_rate}(weights\_list), \hyperlink{classlbann_1_1lbann__callback__drop__fixed__learning__rate_a3e38dc2b7dc92d29567091395de22546}{m\_amt}(amt), 
+      \hyperlink{classlbann_1_1lbann__callback__drop__fixed__learning__rate_afc99419c3d818fe86d5865c8f7beae49}{m\_drop\_epochs}(std::move(drop\_epochs)) \{
+160   \textcolor{comment}{// Sort in reverse order.}
+161   std::sort(\hyperlink{classlbann_1_1lbann__callback__drop__fixed__learning__rate_afc99419c3d818fe86d5865c8f7beae49}{m\_drop\_epochs}.rbegin(), \hyperlink{classlbann_1_1lbann__callback__drop__fixed__learning__rate_afc99419c3d818fe86d5865c8f7beae49}{m\_drop\_epochs}.rend());
+162 \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__drop__fixed__learning__rate_a5bb3a2e1d490d128e27dd1df2503644d}\label{classlbann_1_1lbann__callback__drop__fixed__learning__rate_a5bb3a2e1d490d128e27dd1df2503644d}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate}!lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate@{lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate}}
+\index{lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate@{lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate}!lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate()}{lbann\_callback\_drop\_fixed\_learning\_rate()}\hspace{0.1cm}{\footnotesize\ttfamily [3/3]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__drop__fixed__learning__rate}{lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__drop__fixed__learning__rate_aad86be992434394974b50d1f1c303bbf}\label{classlbann_1_1lbann__callback__drop__fixed__learning__rate_aad86be992434394974b50d1f1c303bbf}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate}!copy@{copy}}
+\index{copy@{copy}!lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__drop__fixed__learning__rate}{lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate}$\ast$ lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a9f545d1269a8c7af335625d049691f26}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 173 of file callback\+\_\+learning\+\_\+rate.\+hpp.
+
+
+\begin{DoxyCode}
+173                                                                  \{
+174     \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1lbann__callback__drop__fixed__learning__rate_a28f58eb50813e638d865179d645908f2}{lbann\_callback\_drop\_fixed\_learning\_rate}(*\textcolor{keyword}{this});
+175   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__drop__fixed__learning__rate_a2ee62bfde00d7f1a4e55e4a334160fbe}\label{classlbann_1_1lbann__callback__drop__fixed__learning__rate_a2ee62bfde00d7f1a4e55e4a334160fbe}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate}!global\+\_\+schedule@{global\+\_\+schedule}}
+\index{global\+\_\+schedule@{global\+\_\+schedule}!lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate}}
+\subsubsection{\texorpdfstring{global\+\_\+schedule()}{global\_schedule()}}
+{\footnotesize\ttfamily float lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate\+::global\+\_\+schedule (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+This is called at the end of every epoch to update the learning rate for every optimizer. Adjustments should be made based on the current global learning rate. The returned learning rate will be used to automatically update the current global learning rate. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback__learning__rate_a7869b93e5963d6f76da68d8c8137b979}{lbann\+::lbann\+\_\+callback\+\_\+learning\+\_\+rate}.
+
+
+
+Definition at line 164 of file callback\+\_\+learning\+\_\+rate.\+cpp.
+
+
+\begin{DoxyCode}
+164                                                                        \{
+165   \textcolor{comment}{// Delete last drop epoch if we have already passed it}
+166   \textcolor{keywordflow}{while} (!\hyperlink{classlbann_1_1lbann__callback__drop__fixed__learning__rate_afc99419c3d818fe86d5865c8f7beae49}{m\_drop\_epochs}.empty()
+167          && m->get\_cur\_epoch() > \hyperlink{classlbann_1_1lbann__callback__drop__fixed__learning__rate_afc99419c3d818fe86d5865c8f7beae49}{m\_drop\_epochs}.back()) \{
+168     \hyperlink{classlbann_1_1lbann__callback__drop__fixed__learning__rate_afc99419c3d818fe86d5865c8f7beae49}{m\_drop\_epochs}.pop\_back();
+169   \}
+170 
+171   \textcolor{comment}{// Adjust learning rate if at a drop epoch}
+172   \textcolor{keywordflow}{if} (!\hyperlink{classlbann_1_1lbann__callback__drop__fixed__learning__rate_afc99419c3d818fe86d5865c8f7beae49}{m\_drop\_epochs}.empty() && m->get\_cur\_epoch() == \hyperlink{classlbann_1_1lbann__callback__drop__fixed__learning__rate_afc99419c3d818fe86d5865c8f7beae49}{m\_drop\_epochs}.back()) \{
+173     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1lbann__callback__learning__rate_a97194f282c29a748c915d9811a8a99fb}{m\_cur\_global\_lr} * \hyperlink{classlbann_1_1lbann__callback__drop__fixed__learning__rate_a3e38dc2b7dc92d29567091395de22546}{m\_amt};
+174   \} \textcolor{keywordflow}{else} \{
+175     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1lbann__callback__learning__rate_a97194f282c29a748c915d9811a8a99fb}{m\_cur\_global\_lr};
+176   \}
+177 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=345pt]{classlbann_1_1lbann__callback__drop__fixed__learning__rate_a2ee62bfde00d7f1a4e55e4a334160fbe_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__drop__fixed__learning__rate_a715d550fb9ec99e32861f91299669c35}\label{classlbann_1_1lbann__callback__drop__fixed__learning__rate_a715d550fb9ec99e32861f91299669c35}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate}!name@{name}}
+\index{name@{name}!lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate}}
+\subsubsection{\texorpdfstring{name()}{name()}}
+{\footnotesize\ttfamily std\+::string lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate\+::name (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Return this callback\textquotesingle{}s name. 
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a7522c7a14f1d6a1ea762cc2d7248eb3a}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 176 of file callback\+\_\+learning\+\_\+rate.\+hpp.
+
+
+\begin{DoxyCode}
+176 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"drop fixed learning rate"}; \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=340pt]{classlbann_1_1lbann__callback__drop__fixed__learning__rate_a715d550fb9ec99e32861f91299669c35_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__drop__fixed__learning__rate_ab1c5f9e9d8019d203bbbc1652e2950bd}\label{classlbann_1_1lbann__callback__drop__fixed__learning__rate_ab1c5f9e9d8019d203bbbc1652e2950bd}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__drop__fixed__learning__rate}{lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate}\& lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__drop__fixed__learning__rate}{lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__drop__fixed__learning__rate_a3e38dc2b7dc92d29567091395de22546}\label{classlbann_1_1lbann__callback__drop__fixed__learning__rate_a3e38dc2b7dc92d29567091395de22546}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate}!m\+\_\+amt@{m\+\_\+amt}}
+\index{m\+\_\+amt@{m\+\_\+amt}!lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate}}
+\subsubsection{\texorpdfstring{m\+\_\+amt}{m\_amt}}
+{\footnotesize\ttfamily float lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate\+::m\+\_\+amt\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Amount to decrease the learning rate by. 
+
+
+
+Definition at line 181 of file callback\+\_\+learning\+\_\+rate.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__drop__fixed__learning__rate_afc99419c3d818fe86d5865c8f7beae49}\label{classlbann_1_1lbann__callback__drop__fixed__learning__rate_afc99419c3d818fe86d5865c8f7beae49}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate}!m\+\_\+drop\+\_\+epochs@{m\+\_\+drop\+\_\+epochs}}
+\index{m\+\_\+drop\+\_\+epochs@{m\+\_\+drop\+\_\+epochs}!lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate@{lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate}}
+\subsubsection{\texorpdfstring{m\+\_\+drop\+\_\+epochs}{m\_drop\_epochs}}
+{\footnotesize\ttfamily std\+::vector$<$int64\+\_\+t$>$ lbann\+::lbann\+\_\+callback\+\_\+drop\+\_\+fixed\+\_\+learning\+\_\+rate\+::m\+\_\+drop\+\_\+epochs\hspace{0.3cm}{\ttfamily [private]}}
+
+Epochs to drop learning rate at. This is stored in reverse sorted order, so that the end can be examined and then popped in constant time. 
+
+Definition at line 186 of file callback\+\_\+learning\+\_\+rate.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/callbacks/\hyperlink{callback__learning__rate_8hpp}{callback\+\_\+learning\+\_\+rate.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/callbacks/\hyperlink{callback__learning__rate_8cpp}{callback\+\_\+learning\+\_\+rate.\+cpp}\end{DoxyCompactItemize}

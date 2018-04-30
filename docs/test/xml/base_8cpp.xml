@@ -1,0 +1,297 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="base_8cpp" kind="file" language="C++">
+    <compoundname>base.cpp</compoundname>
+    <includes refid="base_8hpp" local="yes">lbann/base.hpp</includes>
+    <includes local="no">omp.h</includes>
+    <includes refid="comm_8hpp" local="yes">lbann/comm.hpp</includes>
+    <includes refid="random_8hpp" local="yes">lbann/utils/random.hpp</includes>
+    <includes refid="omp__diagnostics_8hpp" local="yes">lbann/utils/omp_diagnostics.hpp</includes>
+    <includes refid="stack__trace_8hpp" local="yes">lbann/utils/stack_trace.hpp</includes>
+    <incdepgraph>
+      <node id="17262">
+        <label>lbann/io/persist.hpp</label>
+        <link refid="persist_8hpp"/>
+        <childnode refid="17247" relation="include">
+        </childnode>
+        <childnode refid="17248" relation="include">
+        </childnode>
+      </node>
+      <node id="17265">
+        <label>cstdint</label>
+      </node>
+      <node id="17248">
+        <label>El.hpp</label>
+      </node>
+      <node id="17247">
+        <label>lbann/base.hpp</label>
+        <link refid="base_8hpp"/>
+        <childnode refid="17248" relation="include">
+        </childnode>
+        <childnode refid="17249" relation="include">
+        </childnode>
+        <childnode refid="17250" relation="include">
+        </childnode>
+        <childnode refid="17255" relation="include">
+        </childnode>
+      </node>
+      <node id="17264">
+        <label>lbann/utils/omp_diagnostics.hpp</label>
+        <link refid="omp__diagnostics_8hpp"/>
+        <childnode refid="17265" relation="include">
+        </childnode>
+      </node>
+      <node id="17268">
+        <label>string</label>
+      </node>
+      <node id="17259">
+        <label>map</label>
+      </node>
+      <node id="17256">
+        <label>omp.h</label>
+      </node>
+      <node id="17263">
+        <label>random</label>
+      </node>
+      <node id="17252">
+        <label>cstdio</label>
+      </node>
+      <node id="17266">
+        <label>lbann/utils/stack_trace.hpp</label>
+        <link refid="stack__trace_8hpp"/>
+        <childnode refid="17267" relation="include">
+        </childnode>
+        <childnode refid="17268" relation="include">
+        </childnode>
+      </node>
+      <node id="17254">
+        <label>cxxabi.h</label>
+      </node>
+      <node id="17258">
+        <label>vector</label>
+      </node>
+      <node id="17257">
+        <label>lbann/comm.hpp</label>
+        <link refid="comm_8hpp"/>
+        <childnode refid="17258" relation="include">
+        </childnode>
+        <childnode refid="17259" relation="include">
+        </childnode>
+        <childnode refid="17260" relation="include">
+        </childnode>
+        <childnode refid="17247" relation="include">
+        </childnode>
+      </node>
+      <node id="17251">
+        <label>cstdlib</label>
+      </node>
+      <node id="17261">
+        <label>lbann/utils/random.hpp</label>
+        <link refid="random_8hpp"/>
+        <childnode refid="17247" relation="include">
+        </childnode>
+        <childnode refid="17257" relation="include">
+        </childnode>
+        <childnode refid="17262" relation="include">
+        </childnode>
+        <childnode refid="17263" relation="include">
+        </childnode>
+      </node>
+      <node id="17267">
+        <label>csignal</label>
+      </node>
+      <node id="17255">
+        <label>lbann_config.hpp</label>
+      </node>
+      <node id="17250">
+        <label>lbann/utils/cyg_profile.hpp</label>
+        <link refid="cyg__profile_8hpp"/>
+        <childnode refid="17251" relation="include">
+        </childnode>
+        <childnode refid="17252" relation="include">
+        </childnode>
+        <childnode refid="17253" relation="include">
+        </childnode>
+        <childnode refid="17254" relation="include">
+        </childnode>
+      </node>
+      <node id="17249">
+        <label>lbann/Elemental_extensions.hpp</label>
+        <link refid="Elemental__extensions_8hpp"/>
+        <childnode refid="17248" relation="include">
+        </childnode>
+      </node>
+      <node id="17246">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/base.cpp</label>
+        <link refid="base_8cpp"/>
+        <childnode refid="17247" relation="include">
+        </childnode>
+        <childnode refid="17256" relation="include">
+        </childnode>
+        <childnode refid="17257" relation="include">
+        </childnode>
+        <childnode refid="17261" relation="include">
+        </childnode>
+        <childnode refid="17264" relation="include">
+        </childnode>
+        <childnode refid="17266" relation="include">
+        </childnode>
+      </node>
+      <node id="17260">
+        <label>typeindex</label>
+      </node>
+      <node id="17253">
+        <label>dlfcn.h</label>
+      </node>
+    </incdepgraph>
+    <innernamespace refid="namespacelbann">lbann</innernamespace>
+      <sectiondef kind="var">
+      <memberdef kind="variable" id="base_8cpp_1a4d929cc5b806bb7fb8b9dfef666e20f6" prot="public" static="yes" mutable="no">
+        <type>std::vector&lt; std::string &gt;</type>
+        <definition>std::vector&lt;std::string&gt; pool_mode_names</definition>
+        <argsstring></argsstring>
+        <name>pool_mode_names</name>
+        <initializer>= { &quot;max&quot;, &quot;average&quot;, &quot;average_no_pad&quot; }</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>hack to avoid long switch/case statement; users should ignore; of interest to developers </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/src/base.cpp" line="98" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/base.cpp" bodystart="98" bodyend="-1"/>
+        <referencedby refid="base_8hpp_1af3cdcb8265717e1115135deb3618e5dd" compoundref="base_8cpp" startline="101" endline="107">get_pool_mode_name</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="func">
+      <memberdef kind="function" id="base_8cpp_1af3cdcb8265717e1115135deb3618e5dd" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>std::string</type>
+        <definition>std::string get_pool_mode_name</definition>
+        <argsstring>(pool_mode m)</argsstring>
+        <name>get_pool_mode_name</name>
+        <param>
+          <type><ref refid="base_8hpp_1ac47a6ee5278a53898222a48639a2bf39" kindref="member">pool_mode</ref></type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>returns a string representation of the pool_mode </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/src/base.cpp" line="101" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/base.cpp" bodystart="101" bodyend="107"/>
+        <references refid="base_8cpp_1a4d929cc5b806bb7fb8b9dfef666e20f6" compoundref="base_8cpp" startline="98">pool_mode_names</references>
+        <referencedby refid="classlbann_1_1pooling__layer_1a11f6d5c7ef16a62d081164f174825ab2" compoundref="pooling_8hpp" startline="159" endline="177">lbann::pooling_layer&lt; T_layout &gt;::get_description</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>2014-2016,<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Security,<sp/>LLC.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Produced<sp/>at<sp/>the<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Laboratory.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Written<sp/>by<sp/>the<sp/>LBANN<sp/>Research<sp/>Team<sp/>(B.<sp/>Van<sp/>Essen,<sp/>et<sp/>al.)<sp/>listed<sp/>in</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="comment">//<sp/>the<sp/>CONTRIBUTORS<sp/>file.<sp/>&lt;lbann-dev@llnl.gov&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="comment">//<sp/>LLNL-CODE-697807.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="comment">//<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="comment">//<sp/>This<sp/>file<sp/>is<sp/>part<sp/>of<sp/>LBANN:<sp/>Livermore<sp/>Big<sp/>Artificial<sp/>Neural<sp/>Network</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Toolkit.<sp/>For<sp/>details,<sp/>see<sp/>http://software.llnl.gov/LBANN<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="comment">//<sp/>https://github.com/LLNL/LBANN.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Licensed<sp/>under<sp/>the<sp/>Apache<sp/>License,<sp/>Version<sp/>2.0<sp/>(the<sp/>&quot;Licensee&quot;);<sp/>you</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight><highlight class="comment">//<sp/>may<sp/>not<sp/>use<sp/>this<sp/>file<sp/>except<sp/>in<sp/>compliance<sp/>with<sp/>the<sp/>License.<sp/><sp/>You<sp/>may</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="comment">//<sp/>obtain<sp/>a<sp/>copy<sp/>of<sp/>the<sp/>License<sp/>at:</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight><highlight class="comment">//<sp/>http://www.apache.org/licenses/LICENSE-2.0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Unless<sp/>required<sp/>by<sp/>applicable<sp/>law<sp/>or<sp/>agreed<sp/>to<sp/>in<sp/>writing,<sp/>software</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight><highlight class="comment">//<sp/>distributed<sp/>under<sp/>the<sp/>License<sp/>is<sp/>distributed<sp/>on<sp/>an<sp/>&quot;AS<sp/>IS&quot;<sp/>BASIS,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight><highlight class="comment">//<sp/>WITHOUT<sp/>WARRANTIES<sp/>OR<sp/>CONDITIONS<sp/>OF<sp/>ANY<sp/>KIND,<sp/>either<sp/>express<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="comment">//<sp/>implied.<sp/>See<sp/>the<sp/>License<sp/>for<sp/>the<sp/>specific<sp/>language<sp/>governing</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="comment">//<sp/>permissions<sp/>and<sp/>limitations<sp/>under<sp/>the<sp/>license.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="25"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="26"><highlight class="normal"></highlight><highlight class="comment">//<sp/>lbann_base<sp/>.cpp<sp/>-<sp/>Basic<sp/>definitions,<sp/>functions</highlight></codeline>
+<codeline lineno="28"><highlight class="comment"></highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="29"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="base_8hpp" kindref="compound">lbann/base.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="30"><highlight class="normal"></highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;omp.h&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="32"><highlight class="normal"></highlight><highlight class="preprocessor">#if<sp/>defined(LBANN_TOPO_AWARE)</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="33"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;hwloc.h&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="34"><highlight class="normal"></highlight><highlight class="preprocessor">#if<sp/>defined(HWLOC_API_VERSION)<sp/>&amp;&amp;<sp/>(HWLOC_API_VERSION<sp/>&lt;<sp/>0x00010b00)</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="35"><highlight class="normal"></highlight><highlight class="preprocessor">#define<sp/>HWLOC_OBJ_NUMANODE<sp/>HWLOC_OBJ_NODE</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="36"><highlight class="normal"></highlight><highlight class="preprocessor">#endif</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="37"><highlight class="normal"></highlight><highlight class="preprocessor">#endif</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="38"><highlight class="normal"></highlight></codeline>
+<codeline lineno="39"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="comm_8hpp" kindref="compound">lbann/comm.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="40"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="random_8hpp" kindref="compound">lbann/utils/random.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="41"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="omp__diagnostics_8hpp" kindref="compound">lbann/utils/omp_diagnostics.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="42"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="stack__trace_8hpp" kindref="compound">lbann/utils/stack_trace.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="43"><highlight class="normal"></highlight></codeline>
+<codeline lineno="44" refid="namespacelbann" refkind="compound"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacelbann" kindref="compound">lbann</ref><sp/>{</highlight></codeline>
+<codeline lineno="45"><highlight class="normal"></highlight></codeline>
+<codeline lineno="46" refid="namespacelbann_1a3d91b615e42bf5744deeed770879bc8c" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref>*<sp/><ref refid="namespacelbann_1a3d91b615e42bf5744deeed770879bc8c" kindref="member">initialize</ref>(</highlight><highlight class="keywordtype">int</highlight><highlight class="normal">&amp;<sp/>argc,<sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal">**&amp;<sp/>argv,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>seed)<sp/>{</highlight></codeline>
+<codeline lineno="47"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Initialize<sp/>Elemental.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="48"><highlight class="normal"><sp/><sp/>El::Initialize(argc,<sp/>argv);</highlight></codeline>
+<codeline lineno="49"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Create<sp/>a<sp/>new<sp/>comm<sp/>object.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="50"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Initial<sp/>creation<sp/>with<sp/>every<sp/>process<sp/>in<sp/>one<sp/>model.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="51"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">auto</highlight><highlight class="normal">*<sp/><ref refid="file__io_8cpp_1ab048c6f9fcbcfaa57ce68b00263dbebe" kindref="member">comm</ref><sp/>=<sp/></highlight><highlight class="keyword">new</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref>(0);</highlight></codeline>
+<codeline lineno="52"><highlight class="normal"></highlight><highlight class="preprocessor">#if<sp/>defined(LBANN_TOPO_AWARE)</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="53"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Determine<sp/>the<sp/>number<sp/>of<sp/>NUMA<sp/>nodes<sp/>present.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="54"><highlight class="normal"><sp/><sp/>hwloc_topology_t<sp/>topo;</highlight></codeline>
+<codeline lineno="55"><highlight class="normal"><sp/><sp/>hwloc_topology_init(&amp;topo);</highlight></codeline>
+<codeline lineno="56"><highlight class="normal"><sp/><sp/>hwloc_topology_load(topo);</highlight></codeline>
+<codeline lineno="57"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>numa_depth<sp/>=<sp/>hwloc_get_type_depth(topo,<sp/>HWLOC_OBJ_NUMANODE);</highlight></codeline>
+<codeline lineno="58"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(numa_depth<sp/>==<sp/>HWLOC_TYPE_DEPTH_UNKNOWN)<sp/>{</highlight></codeline>
+<codeline lineno="59"><highlight class="normal"><sp/><sp/><sp/><sp/>std::cout<sp/>&lt;&lt;<sp/><ref refid="file__io_8cpp_1ab048c6f9fcbcfaa57ce68b00263dbebe" kindref="member">comm</ref>-&gt;get_rank_in_world()<sp/>&lt;&lt;</highlight></codeline>
+<codeline lineno="60"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="stringliteral">&quot;:<sp/>cannot<sp/>determine<sp/>hwloc<sp/>NUMA-node<sp/>depth&quot;</highlight><highlight class="normal"><sp/>&lt;&lt;<sp/>std::endl;</highlight></codeline>
+<codeline lineno="61"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="62"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>num_numa_nodes<sp/>=<sp/>hwloc_get_nbobjs_by_depth(topo,<sp/>numa_depth);</highlight></codeline>
+<codeline lineno="63"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Warn<sp/>if<sp/>there<sp/>are<sp/>more<sp/>NUMA<sp/>nodes<sp/>than<sp/>processes<sp/>per<sp/>node.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="64"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>It&apos;s<sp/>probably<sp/>fine<sp/>if<sp/>there<sp/>are<sp/>more<sp/>processes<sp/>than<sp/>NUMA<sp/>nodes<sp/>for<sp/>now.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="65"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>We<sp/>can<sp/>adjust<sp/>that<sp/>later<sp/>when<sp/>we<sp/>better<sp/>understand<sp/>the<sp/>threaded<sp/>perf.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="66"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>ppn<sp/>=<sp/><ref refid="file__io_8cpp_1ab048c6f9fcbcfaa57ce68b00263dbebe" kindref="member">comm</ref>-&gt;get_procs_per_node();</highlight></codeline>
+<codeline lineno="67"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(num_numa_nodes<sp/>&gt;<sp/>ppn)<sp/>{</highlight></codeline>
+<codeline lineno="68"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="file__io_8cpp_1ab048c6f9fcbcfaa57ce68b00263dbebe" kindref="member">comm</ref>-&gt;get_rank_in_node()<sp/>==<sp/>0)<sp/>{</highlight></codeline>
+<codeline lineno="69"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>std::cout<sp/>&lt;&lt;<sp/><ref refid="file__io_8cpp_1ab048c6f9fcbcfaa57ce68b00263dbebe" kindref="member">comm</ref>-&gt;get_rank_in_world()<sp/>&lt;&lt;</highlight></codeline>
+<codeline lineno="70"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="stringliteral">&quot;:<sp/>WARNING:<sp/>node<sp/>has<sp/>&quot;</highlight><highlight class="normal"><sp/>&lt;&lt;<sp/>num_numa_nodes<sp/>&lt;&lt;</highlight></codeline>
+<codeline lineno="71"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="stringliteral">&quot;<sp/>NUMA<sp/>nodes<sp/>but<sp/>you<sp/>have<sp/>&quot;</highlight><highlight class="normal"><sp/>&lt;&lt;<sp/>ppn<sp/>&lt;&lt;<sp/></highlight><highlight class="stringliteral">&quot;<sp/>processes<sp/>per<sp/>node&quot;</highlight><highlight class="normal"><sp/>&lt;&lt;</highlight></codeline>
+<codeline lineno="72"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>std::endl;</highlight></codeline>
+<codeline lineno="73"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="74"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="75"><highlight class="normal"><sp/><sp/>hwloc_topology_destroy(topo);</highlight></codeline>
+<codeline lineno="76"><highlight class="normal"></highlight><highlight class="preprocessor">#endif</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="77"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Initialize<sp/>local<sp/>random<sp/>number<sp/>generators.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="78"><highlight class="normal"><sp/><sp/><ref refid="namespacelbann_1acef152f20e422b3aea1a3c1691a533ac" kindref="member">init_random</ref>(seed);</highlight></codeline>
+<codeline lineno="79"><highlight class="normal"><sp/><sp/><ref refid="namespacelbann_1a8987701a637ff0e678114aa77e9c4d40" kindref="member">init_data_seq_random</ref>(seed);</highlight></codeline>
+<codeline lineno="80"><highlight class="normal"></highlight></codeline>
+<codeline lineno="81"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//initialization<sp/>for<sp/>stack<sp/>tracing<sp/>when<sp/>a<sp/>signal<sp/>is<sp/>raised</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="82"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//or<sp/>an<sp/>lbann_exception<sp/>thrown.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="83"><highlight class="normal"><sp/><sp/><ref refid="namespacelbann_1_1stack__trace_1a1063a9a501d78a7525224461e155a483" kindref="member">stack_trace::set_lbann_stack_trace_world_rank</ref>(<ref refid="file__io_8cpp_1ab048c6f9fcbcfaa57ce68b00263dbebe" kindref="member">comm</ref>-&gt;get_rank_in_world());</highlight></codeline>
+<codeline lineno="84"><highlight class="normal"></highlight></codeline>
+<codeline lineno="85"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="file__io_8cpp_1ab048c6f9fcbcfaa57ce68b00263dbebe" kindref="member">comm</ref>;</highlight></codeline>
+<codeline lineno="86"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="87"><highlight class="normal"></highlight></codeline>
+<codeline lineno="88" refid="namespacelbann_1a99724ee5a6647a1d8bff6764b9aa5fac" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="namespacelbann_1a99724ee5a6647a1d8bff6764b9aa5fac" kindref="member">finalize</ref>(<ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref>*<sp/><ref refid="file__io_8cpp_1ab048c6f9fcbcfaa57ce68b00263dbebe" kindref="member">comm</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="89"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(comm<sp/>!=<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal">)<sp/>{</highlight></codeline>
+<codeline lineno="90"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">delete</highlight><highlight class="normal"><sp/><ref refid="file__io_8cpp_1ab048c6f9fcbcfaa57ce68b00263dbebe" kindref="member">comm</ref>;</highlight></codeline>
+<codeline lineno="91"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="92"><highlight class="normal"><sp/><sp/>El::Finalize();</highlight></codeline>
+<codeline lineno="93"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="94"><highlight class="normal"></highlight></codeline>
+<codeline lineno="95"><highlight class="normal">}<sp/><sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>lbann</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="96"><highlight class="normal"></highlight></codeline>
+<codeline lineno="98" refid="base_8cpp_1a4d929cc5b806bb7fb8b9dfef666e20f6" refkind="member"><highlight class="keyword">static</highlight><highlight class="normal"><sp/>std::vector&lt;std::string&gt;<sp/><ref refid="base_8cpp_1a4d929cc5b806bb7fb8b9dfef666e20f6" kindref="member">pool_mode_names</ref><sp/>=<sp/>{<sp/></highlight><highlight class="stringliteral">&quot;max&quot;</highlight><highlight class="normal">,<sp/></highlight><highlight class="stringliteral">&quot;average&quot;</highlight><highlight class="normal">,<sp/></highlight><highlight class="stringliteral">&quot;average_no_pad&quot;</highlight><highlight class="normal"><sp/>};</highlight></codeline>
+<codeline lineno="99"><highlight class="normal"></highlight></codeline>
+<codeline lineno="101" refid="base_8hpp_1af3cdcb8265717e1115135deb3618e5dd" refkind="member"><highlight class="normal">std::string<sp/><ref refid="base_8cpp_1af3cdcb8265717e1115135deb3618e5dd" kindref="member">get_pool_mode_name</ref>(<ref refid="base_8hpp_1ac47a6ee5278a53898222a48639a2bf39" kindref="member">pool_mode</ref><sp/>m)<sp/>{</highlight></codeline>
+<codeline lineno="102"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>((</highlight><highlight class="keywordtype">int</highlight><highlight class="normal">)m<sp/>&lt;<sp/>0<sp/>or<sp/>(</highlight><highlight class="keywordtype">int</highlight><highlight class="normal">)m<sp/>&gt;=<sp/>(</highlight><highlight class="keywordtype">int</highlight><highlight class="normal">)<ref refid="base_8cpp_1a4d929cc5b806bb7fb8b9dfef666e20f6" kindref="member">pool_mode_names</ref>.size())<sp/>{</highlight></codeline>
+<codeline lineno="103"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">throw</highlight><highlight class="normal">(std::string{}<sp/>+<sp/>__FILE__<sp/>+<sp/></highlight><highlight class="stringliteral">&quot;<sp/>&quot;</highlight><highlight class="normal"><sp/>+<sp/>std::to_string(__LINE__)<sp/>+<sp/></highlight><highlight class="stringliteral">&quot;<sp/>::<sp/>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="104"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>+<sp/></highlight><highlight class="stringliteral">&quot;<sp/>Invalid<sp/>pool_mode&quot;</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="105"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="106"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="base_8cpp_1a4d929cc5b806bb7fb8b9dfef666e20f6" kindref="member">pool_mode_names</ref>[(int)m];</highlight></codeline>
+<codeline lineno="107"><highlight class="normal">}</highlight></codeline>
+    </programlisting>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/src/base.cpp"/>
+  </compounddef>
+</doxygen>

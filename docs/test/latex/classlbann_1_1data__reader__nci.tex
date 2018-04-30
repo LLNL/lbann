@@ -1,0 +1,189 @@
+\hypertarget{classlbann_1_1data__reader__nci}{}\section{lbann\+:\+:data\+\_\+reader\+\_\+nci Class Reference}
+\label{classlbann_1_1data__reader__nci}\index{lbann\+::data\+\_\+reader\+\_\+nci@{lbann\+::data\+\_\+reader\+\_\+nci}}
+
+
+{\ttfamily \#include $<$data\+\_\+reader\+\_\+nci.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:data\+\_\+reader\+\_\+nci\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=198pt]{classlbann_1_1data__reader__nci__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:data\+\_\+reader\+\_\+nci\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__reader__nci__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1data__reader__nci_aec1e091b879a3a2dee1329dd3e245bd3}{data\+\_\+reader\+\_\+nci} (bool shuffle=true)
+\item 
+\hyperlink{classlbann_1_1data__reader__nci_a42a40564a0110df69b99832e520111e6}{data\+\_\+reader\+\_\+nci} ()
+\item 
+\hyperlink{classlbann_1_1data__reader__nci_a3d2f93ffb61faabbdc7006030c518311}{data\+\_\+reader\+\_\+nci} (const \hyperlink{classlbann_1_1data__reader__nci}{data\+\_\+reader\+\_\+nci} \&source)=default
+\item 
+\hyperlink{classlbann_1_1data__reader__nci}{data\+\_\+reader\+\_\+nci} \& \hyperlink{classlbann_1_1data__reader__nci_aad2847ee20ec7f8d7d25c2ebfff1361e}{operator=} (const \hyperlink{classlbann_1_1data__reader__nci}{data\+\_\+reader\+\_\+nci} \&source)=default
+\item 
+\hyperlink{classlbann_1_1data__reader__nci_a5aa8e7f832ca763450027fe9886a267f}{$\sim$data\+\_\+reader\+\_\+nci} () override
+\item 
+\hyperlink{classlbann_1_1data__reader__nci}{data\+\_\+reader\+\_\+nci} $\ast$ \hyperlink{classlbann_1_1data__reader__nci_a642f96edf3efae0d5d0aad70d8a17dbe}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1data__reader__nci_a6709a3d1df162335fa4a6955ea7dcaa2}{get\+\_\+type} () const override
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+
+
+Definition at line 38 of file data\+\_\+reader\+\_\+nci.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1data__reader__nci_aec1e091b879a3a2dee1329dd3e245bd3}\label{classlbann_1_1data__reader__nci_aec1e091b879a3a2dee1329dd3e245bd3}} 
+\index{lbann\+::data\+\_\+reader\+\_\+nci@{lbann\+::data\+\_\+reader\+\_\+nci}!data\+\_\+reader\+\_\+nci@{data\+\_\+reader\+\_\+nci}}
+\index{data\+\_\+reader\+\_\+nci@{data\+\_\+reader\+\_\+nci}!lbann\+::data\+\_\+reader\+\_\+nci@{lbann\+::data\+\_\+reader\+\_\+nci}}
+\subsubsection{\texorpdfstring{data\+\_\+reader\+\_\+nci()}{data\_reader\_nci()}\hspace{0.1cm}{\footnotesize\ttfamily [1/3]}}
+{\footnotesize\ttfamily lbann\+::data\+\_\+reader\+\_\+nci\+::data\+\_\+reader\+\_\+nci (\begin{DoxyParamCaption}\item[{bool}]{shuffle = {\ttfamily true} }\end{DoxyParamCaption})}
+
+
+
+Definition at line 36 of file data\+\_\+reader\+\_\+nci.\+cpp.
+
+
+\begin{DoxyCode}
+37   : \hyperlink{classlbann_1_1csv__reader_ac301a4c8e2ef029b65e8f6b8cbbc5855}{csv\_reader}(shuffle) \{
+38   \hyperlink{classlbann_1_1csv__reader_aed2d76ec0f0a338047a4d15fc43413fb}{set\_response\_col}(2);
+39   \hyperlink{classlbann_1_1csv__reader_a7f2f980b860939e561d669575da9fb49}{enable\_responses}();
+40   \hyperlink{classlbann_1_1csv__reader_ad21bef8b7e1c1f9a03724475f987580c}{set\_label\_col}(3);
+41   \hyperlink{classlbann_1_1csv__reader_a58c71a6b3a82c064b349ae9d995bcffc}{set\_separator}(\textcolor{charliteral}{' '});
+42   \textcolor{comment}{// First five columns are metadata, not the sample.}
+43   \hyperlink{classlbann_1_1csv__reader_a1ab853e9c9a37a1e6c51811bf5be421b}{set\_skip\_cols}(5);
+44   \textcolor{comment}{// Header is broken, so skip it.}
+45   \hyperlink{classlbann_1_1csv__reader_a7ec75f9bbf61073dd205871916578125}{set\_skip\_rows}(1);
+46   \hyperlink{classlbann_1_1csv__reader_abc40f1b5848b1dcaf72cd1b84196c78e}{set\_has\_header}(\textcolor{keyword}{false});
+47   \textcolor{comment}{// Transform to binary classification.}
+48   \hyperlink{classlbann_1_1csv__reader_afa41685e0d81ab1b2b8e8739c94873cc}{set\_label\_transform}(
+49     [] (\textcolor{keyword}{const} std::string& s) -> \textcolor{keywordtype}{int} \{
+50       \textcolor{keywordflow}{return} s == \textcolor{stringliteral}{"rs"} ? 0 : 1;
+51     \});
+52 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=332pt]{classlbann_1_1data__reader__nci_aec1e091b879a3a2dee1329dd3e245bd3_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__reader__nci_a42a40564a0110df69b99832e520111e6}\label{classlbann_1_1data__reader__nci_a42a40564a0110df69b99832e520111e6}} 
+\index{lbann\+::data\+\_\+reader\+\_\+nci@{lbann\+::data\+\_\+reader\+\_\+nci}!data\+\_\+reader\+\_\+nci@{data\+\_\+reader\+\_\+nci}}
+\index{data\+\_\+reader\+\_\+nci@{data\+\_\+reader\+\_\+nci}!lbann\+::data\+\_\+reader\+\_\+nci@{lbann\+::data\+\_\+reader\+\_\+nci}}
+\subsubsection{\texorpdfstring{data\+\_\+reader\+\_\+nci()}{data\_reader\_nci()}\hspace{0.1cm}{\footnotesize\ttfamily [2/3]}}
+{\footnotesize\ttfamily lbann\+::data\+\_\+reader\+\_\+nci\+::data\+\_\+reader\+\_\+nci (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Definition at line 54 of file data\+\_\+reader\+\_\+nci.\+cpp.
+
+
+\begin{DoxyCode}
+55   : \hyperlink{classlbann_1_1data__reader__nci_a42a40564a0110df69b99832e520111e6}{data\_reader\_nci}(\textcolor{keyword}{true}) \{\}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=328pt]{classlbann_1_1data__reader__nci_a42a40564a0110df69b99832e520111e6_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__reader__nci_a3d2f93ffb61faabbdc7006030c518311}\label{classlbann_1_1data__reader__nci_a3d2f93ffb61faabbdc7006030c518311}} 
+\index{lbann\+::data\+\_\+reader\+\_\+nci@{lbann\+::data\+\_\+reader\+\_\+nci}!data\+\_\+reader\+\_\+nci@{data\+\_\+reader\+\_\+nci}}
+\index{data\+\_\+reader\+\_\+nci@{data\+\_\+reader\+\_\+nci}!lbann\+::data\+\_\+reader\+\_\+nci@{lbann\+::data\+\_\+reader\+\_\+nci}}
+\subsubsection{\texorpdfstring{data\+\_\+reader\+\_\+nci()}{data\_reader\_nci()}\hspace{0.1cm}{\footnotesize\ttfamily [3/3]}}
+{\footnotesize\ttfamily lbann\+::data\+\_\+reader\+\_\+nci\+::data\+\_\+reader\+\_\+nci (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1data__reader__nci}{data\+\_\+reader\+\_\+nci} \&}]{source }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+\mbox{\Hypertarget{classlbann_1_1data__reader__nci_a5aa8e7f832ca763450027fe9886a267f}\label{classlbann_1_1data__reader__nci_a5aa8e7f832ca763450027fe9886a267f}} 
+\index{lbann\+::data\+\_\+reader\+\_\+nci@{lbann\+::data\+\_\+reader\+\_\+nci}!````~data\+\_\+reader\+\_\+nci@{$\sim$data\+\_\+reader\+\_\+nci}}
+\index{````~data\+\_\+reader\+\_\+nci@{$\sim$data\+\_\+reader\+\_\+nci}!lbann\+::data\+\_\+reader\+\_\+nci@{lbann\+::data\+\_\+reader\+\_\+nci}}
+\subsubsection{\texorpdfstring{$\sim$data\+\_\+reader\+\_\+nci()}{~data\_reader\_nci()}}
+{\footnotesize\ttfamily lbann\+::data\+\_\+reader\+\_\+nci\+::$\sim$data\+\_\+reader\+\_\+nci (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}}
+
+
+
+Definition at line 44 of file data\+\_\+reader\+\_\+nci.\+hpp.
+
+
+\begin{DoxyCode}
+44 \{\}
+\end{DoxyCode}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1data__reader__nci_a642f96edf3efae0d5d0aad70d8a17dbe}\label{classlbann_1_1data__reader__nci_a642f96edf3efae0d5d0aad70d8a17dbe}} 
+\index{lbann\+::data\+\_\+reader\+\_\+nci@{lbann\+::data\+\_\+reader\+\_\+nci}!copy@{copy}}
+\index{copy@{copy}!lbann\+::data\+\_\+reader\+\_\+nci@{lbann\+::data\+\_\+reader\+\_\+nci}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1data__reader__nci}{data\+\_\+reader\+\_\+nci}$\ast$ lbann\+::data\+\_\+reader\+\_\+nci\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1csv__reader_a6a45ad54bb7f2b30722d70ea8921243d}{lbann\+::csv\+\_\+reader}.
+
+
+
+Definition at line 45 of file data\+\_\+reader\+\_\+nci.\+hpp.
+
+
+\begin{DoxyCode}
+45 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1data__reader__nci_a42a40564a0110df69b99832e520111e6}{data\_reader\_nci}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=328pt]{classlbann_1_1data__reader__nci_a642f96edf3efae0d5d0aad70d8a17dbe_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__reader__nci_a6709a3d1df162335fa4a6955ea7dcaa2}\label{classlbann_1_1data__reader__nci_a6709a3d1df162335fa4a6955ea7dcaa2}} 
+\index{lbann\+::data\+\_\+reader\+\_\+nci@{lbann\+::data\+\_\+reader\+\_\+nci}!get\+\_\+type@{get\+\_\+type}}
+\index{get\+\_\+type@{get\+\_\+type}!lbann\+::data\+\_\+reader\+\_\+nci@{lbann\+::data\+\_\+reader\+\_\+nci}}
+\subsubsection{\texorpdfstring{get\+\_\+type()}{get\_type()}}
+{\footnotesize\ttfamily std\+::string lbann\+::data\+\_\+reader\+\_\+nci\+::get\+\_\+type (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Return this data\+\_\+reader\textquotesingle{}s type 
+
+Reimplemented from \hyperlink{classlbann_1_1csv__reader_a0ff6a8f07f69a0927ba0bac36ad31864}{lbann\+::csv\+\_\+reader}.
+
+
+
+Definition at line 47 of file data\+\_\+reader\+\_\+nci.\+hpp.
+
+
+\begin{DoxyCode}
+47                                       \{
+48     \textcolor{keywordflow}{return} \textcolor{stringliteral}{"data\_reader\_nci"};
+49   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1data__reader__nci_aad2847ee20ec7f8d7d25c2ebfff1361e}\label{classlbann_1_1data__reader__nci_aad2847ee20ec7f8d7d25c2ebfff1361e}} 
+\index{lbann\+::data\+\_\+reader\+\_\+nci@{lbann\+::data\+\_\+reader\+\_\+nci}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::data\+\_\+reader\+\_\+nci@{lbann\+::data\+\_\+reader\+\_\+nci}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1data__reader__nci}{data\+\_\+reader\+\_\+nci}\& lbann\+::data\+\_\+reader\+\_\+nci\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1data__reader__nci}{data\+\_\+reader\+\_\+nci} \&}]{source }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/data\+\_\+readers/\hyperlink{data__reader__nci_8hpp}{data\+\_\+reader\+\_\+nci.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/data\+\_\+readers/\hyperlink{data__reader__nci_8cpp}{data\+\_\+reader\+\_\+nci.\+cpp}\end{DoxyCompactItemize}

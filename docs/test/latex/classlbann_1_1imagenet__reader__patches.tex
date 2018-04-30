@@ -1,0 +1,603 @@
+\hypertarget{classlbann_1_1imagenet__reader__patches}{}\section{lbann\+:\+:imagenet\+\_\+reader\+\_\+patches Class Reference}
+\label{classlbann_1_1imagenet__reader__patches}\index{lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}}
+
+
+{\ttfamily \#include $<$data\+\_\+reader\+\_\+imagenet\+\_\+patches.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:imagenet\+\_\+reader\+\_\+patches\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=213pt]{classlbann_1_1imagenet__reader__patches__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:imagenet\+\_\+reader\+\_\+patches\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1imagenet__reader__patches__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1imagenet__reader__patches_ab63e39d6e17dfb76b3ccb7df940c862e}{imagenet\+\_\+reader\+\_\+patches} (bool shuffle)=delete
+\item 
+\hyperlink{classlbann_1_1imagenet__reader__patches_a03a784a9beaf615e9bae9b54763e951b}{imagenet\+\_\+reader\+\_\+patches} (const std\+::shared\+\_\+ptr$<$ cv\+\_\+process\+\_\+patches $>$ \&pp, bool shuffle=true)
+\item 
+\hyperlink{classlbann_1_1imagenet__reader__patches_aca10e740934921c5c0399aae6e873a88}{imagenet\+\_\+reader\+\_\+patches} (const \hyperlink{classlbann_1_1imagenet__reader__patches}{imagenet\+\_\+reader\+\_\+patches} \&)
+\item 
+\hyperlink{classlbann_1_1imagenet__reader__patches}{imagenet\+\_\+reader\+\_\+patches} \& \hyperlink{classlbann_1_1imagenet__reader__patches_a02e20aa26fb3b024486b8d5c71d37aa7}{operator=} (const \hyperlink{classlbann_1_1imagenet__reader__patches}{imagenet\+\_\+reader\+\_\+patches} \&)
+\item 
+\hyperlink{classlbann_1_1imagenet__reader__patches_a4762a284ef646f6de1a0e0a7ac33d4ad}{$\sim$imagenet\+\_\+reader\+\_\+patches} () override
+\item 
+\hyperlink{classlbann_1_1imagenet__reader__patches}{imagenet\+\_\+reader\+\_\+patches} $\ast$ \hyperlink{classlbann_1_1imagenet__reader__patches_a6bb2c86a4416f8a74382951ab8827f1d}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1imagenet__reader__patches_adc6363b20f058260c674d92af2a6ef80}{get\+\_\+type} () const override
+\item 
+int \hyperlink{classlbann_1_1imagenet__reader__patches_a09ce692ca31d52424dea5395ad6c8b2b}{get\+\_\+linearized\+\_\+data\+\_\+size} () const override
+\begin{DoxyCompactList}\small\item\em Get the total number of channel values in a sample of image(s). \end{DoxyCompactList}\item 
+const std\+::vector$<$ int $>$ \hyperlink{classlbann_1_1imagenet__reader__patches_a4d5c6b9780908d9beb5c6d3f017c38b5}{get\+\_\+data\+\_\+dims} () const override
+\begin{DoxyCompactList}\small\item\em Get the dimensions of the data. \end{DoxyCompactList}\item 
+void \hyperlink{classlbann_1_1imagenet__reader__patches_afad50e94c5d6bde9dff2abe5bad50e11}{setup\+\_\+data\+\_\+store} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\begin{DoxyCompactList}\small\item\em sets up a data\+\_\+store. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{classlbann_1_1imagenet__reader__patches_a3458e4274b9ed894973a069cf884f04a}{set\+\_\+defaults} () override
+\begin{DoxyCompactList}\small\item\em Set the default values for the width, the height, the number of channels, and the number of labels of an image. \end{DoxyCompactList}\item 
+virtual bool \hyperlink{classlbann_1_1imagenet__reader__patches_a714247cc547161688a66a64737527de0}{replicate\+\_\+processor} (const cv\+\_\+process\+\_\+patches \&pp)
+\begin{DoxyCompactList}\small\item\em Replicate image processor for each Open\+MP thread. \end{DoxyCompactList}\item 
+virtual std\+::vector$<$\+::\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} $>$ \hyperlink{classlbann_1_1imagenet__reader__patches_a920f235bde95d5c3e8ae97c389c9d953}{create\+\_\+datum\+\_\+views} (\+::\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&X, const int mb\+\_\+idx) const
+\item 
+bool \hyperlink{classlbann_1_1imagenet__reader__patches_a8a9e4a1339f2e9676a0e653853ebff3c}{fetch\+\_\+datum} (\+::\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&X, int data\+\_\+id, int mb\+\_\+idx, int tid) override
+\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{classlbann_1_1imagenet__reader__patches_a3380936d3d01d5efc77f0f129891fc65}{m\+\_\+num\+\_\+patches}
+\item 
+std\+::vector$<$ std\+::unique\+\_\+ptr$<$ cv\+\_\+process\+\_\+patches $>$ $>$ \hyperlink{classlbann_1_1imagenet__reader__patches_a76a4c760b0430ce6df990b9e3bd33fef}{m\+\_\+pps}
+\begin{DoxyCompactList}\small\item\em preprocessor for patches duplicated for each omp thread \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+
+
+Definition at line 36 of file data\+\_\+reader\+\_\+imagenet\+\_\+patches.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1imagenet__reader__patches_ab63e39d6e17dfb76b3ccb7df940c862e}\label{classlbann_1_1imagenet__reader__patches_ab63e39d6e17dfb76b3ccb7df940c862e}} 
+\index{lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}!imagenet\+\_\+reader\+\_\+patches@{imagenet\+\_\+reader\+\_\+patches}}
+\index{imagenet\+\_\+reader\+\_\+patches@{imagenet\+\_\+reader\+\_\+patches}!lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}}
+\subsubsection{\texorpdfstring{imagenet\+\_\+reader\+\_\+patches()}{imagenet\_reader\_patches()}\hspace{0.1cm}{\footnotesize\ttfamily [1/3]}}
+{\footnotesize\ttfamily lbann\+::imagenet\+\_\+reader\+\_\+patches\+::imagenet\+\_\+reader\+\_\+patches (\begin{DoxyParamCaption}\item[{bool}]{shuffle }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [delete]}}
+
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1imagenet__reader__patches_ab63e39d6e17dfb76b3ccb7df940c862e_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1imagenet__reader__patches_a03a784a9beaf615e9bae9b54763e951b}\label{classlbann_1_1imagenet__reader__patches_a03a784a9beaf615e9bae9b54763e951b}} 
+\index{lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}!imagenet\+\_\+reader\+\_\+patches@{imagenet\+\_\+reader\+\_\+patches}}
+\index{imagenet\+\_\+reader\+\_\+patches@{imagenet\+\_\+reader\+\_\+patches}!lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}}
+\subsubsection{\texorpdfstring{imagenet\+\_\+reader\+\_\+patches()}{imagenet\_reader\_patches()}\hspace{0.1cm}{\footnotesize\ttfamily [2/3]}}
+{\footnotesize\ttfamily lbann\+::imagenet\+\_\+reader\+\_\+patches\+::imagenet\+\_\+reader\+\_\+patches (\begin{DoxyParamCaption}\item[{const std\+::shared\+\_\+ptr$<$ cv\+\_\+process\+\_\+patches $>$ \&}]{pp,  }\item[{bool}]{shuffle = {\ttfamily true} }\end{DoxyParamCaption})}
+
+
+
+Definition at line 37 of file data\+\_\+reader\+\_\+imagenet\+\_\+patches.\+cpp.
+
+
+\begin{DoxyCode}
+38   : \hyperlink{classlbann_1_1image__data__reader_a582185ab03c4643117fd93e0ba843882}{image\_data\_reader}(shuffle) \{
+39   \hyperlink{classlbann_1_1imagenet__reader__patches_a3458e4274b9ed894973a069cf884f04a}{set\_defaults}();
+40 
+41   \textcolor{keywordflow}{if} (!pp) \{
+42     std::stringstream err;
+43     err << \_\_FILE\_\_<<\textcolor{stringliteral}{" "}<<\_\_LINE\_\_<< \textcolor{stringliteral}{" :: "} << \hyperlink{classlbann_1_1imagenet__reader__patches_adc6363b20f058260c674d92af2a6ef80}{get\_type}() << \textcolor{stringliteral}{" construction error: no image
+       processor"};
+44     \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+45   \}
+46 
+47   \hyperlink{classlbann_1_1imagenet__reader__patches_a714247cc547161688a66a64737527de0}{replicate\_processor}(*pp);
+48 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1imagenet__reader__patches_a03a784a9beaf615e9bae9b54763e951b_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1imagenet__reader__patches_aca10e740934921c5c0399aae6e873a88}\label{classlbann_1_1imagenet__reader__patches_aca10e740934921c5c0399aae6e873a88}} 
+\index{lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}!imagenet\+\_\+reader\+\_\+patches@{imagenet\+\_\+reader\+\_\+patches}}
+\index{imagenet\+\_\+reader\+\_\+patches@{imagenet\+\_\+reader\+\_\+patches}!lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}}
+\subsubsection{\texorpdfstring{imagenet\+\_\+reader\+\_\+patches()}{imagenet\_reader\_patches()}\hspace{0.1cm}{\footnotesize\ttfamily [3/3]}}
+{\footnotesize\ttfamily lbann\+::imagenet\+\_\+reader\+\_\+patches\+::imagenet\+\_\+reader\+\_\+patches (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1imagenet__reader__patches}{imagenet\+\_\+reader\+\_\+patches} \&}]{rhs }\end{DoxyParamCaption})}
+
+
+
+Definition at line 50 of file data\+\_\+reader\+\_\+imagenet\+\_\+patches.\+cpp.
+
+
+\begin{DoxyCode}
+51   : \hyperlink{classlbann_1_1image__data__reader_a582185ab03c4643117fd93e0ba843882}{image\_data\_reader}(rhs)
+52 \{
+53   \textcolor{keywordflow}{if} (rhs.m\_pps.size() == 0u || !rhs.m\_pps[0]) \{
+54     std::stringstream err;
+55     err << \_\_FILE\_\_<<\textcolor{stringliteral}{" "}<<\_\_LINE\_\_<< \textcolor{stringliteral}{" :: "} << \hyperlink{classlbann_1_1imagenet__reader__patches_adc6363b20f058260c674d92af2a6ef80}{get\_type}() << \textcolor{stringliteral}{" construction error: no image
+       processor"};
+56     \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+57   \}
+58   \hyperlink{classlbann_1_1imagenet__reader__patches_a3380936d3d01d5efc77f0f129891fc65}{m\_num\_patches} = rhs.m\_num\_patches;
+59   \hyperlink{classlbann_1_1imagenet__reader__patches_a714247cc547161688a66a64737527de0}{replicate\_processor}(*rhs.m\_pps[0]);
+60 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1imagenet__reader__patches_aca10e740934921c5c0399aae6e873a88_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1imagenet__reader__patches_a4762a284ef646f6de1a0e0a7ac33d4ad}\label{classlbann_1_1imagenet__reader__patches_a4762a284ef646f6de1a0e0a7ac33d4ad}} 
+\index{lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}!````~imagenet\+\_\+reader\+\_\+patches@{$\sim$imagenet\+\_\+reader\+\_\+patches}}
+\index{````~imagenet\+\_\+reader\+\_\+patches@{$\sim$imagenet\+\_\+reader\+\_\+patches}!lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}}
+\subsubsection{\texorpdfstring{$\sim$imagenet\+\_\+reader\+\_\+patches()}{~imagenet\_reader\_patches()}}
+{\footnotesize\ttfamily lbann\+::imagenet\+\_\+reader\+\_\+patches\+::$\sim$imagenet\+\_\+reader\+\_\+patches (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}}
+
+
+
+Definition at line 80 of file data\+\_\+reader\+\_\+imagenet\+\_\+patches.\+cpp.
+
+
+\begin{DoxyCode}
+80                                                   \{
+81 \}
+\end{DoxyCode}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1imagenet__reader__patches_a6bb2c86a4416f8a74382951ab8827f1d}\label{classlbann_1_1imagenet__reader__patches_a6bb2c86a4416f8a74382951ab8827f1d}} 
+\index{lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}!copy@{copy}}
+\index{copy@{copy}!lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1imagenet__reader__patches}{imagenet\+\_\+reader\+\_\+patches}$\ast$ lbann\+::imagenet\+\_\+reader\+\_\+patches\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1generic__data__reader_a208ba1223e7aaa75e94b728501f12f86}{lbann\+::generic\+\_\+data\+\_\+reader}.
+
+
+
+Definition at line 44 of file data\+\_\+reader\+\_\+imagenet\+\_\+patches.\+hpp.
+
+
+\begin{DoxyCode}
+44 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1imagenet__reader__patches_ab63e39d6e17dfb76b3ccb7df940c862e}{imagenet\_reader\_patches}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1imagenet__reader__patches_a6bb2c86a4416f8a74382951ab8827f1d_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1imagenet__reader__patches_a920f235bde95d5c3e8ae97c389c9d953}\label{classlbann_1_1imagenet__reader__patches_a920f235bde95d5c3e8ae97c389c9d953}} 
+\index{lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}!create\+\_\+datum\+\_\+views@{create\+\_\+datum\+\_\+views}}
+\index{create\+\_\+datum\+\_\+views@{create\+\_\+datum\+\_\+views}!lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}}
+\subsubsection{\texorpdfstring{create\+\_\+datum\+\_\+views()}{create\_datum\_views()}}
+{\footnotesize\ttfamily std\+::vector$<$\+::\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} $>$ lbann\+::imagenet\+\_\+reader\+\_\+patches\+::create\+\_\+datum\+\_\+views (\begin{DoxyParamCaption}\item[{\+::\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{X,  }\item[{const int}]{mb\+\_\+idx }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+
+
+Definition at line 131 of file data\+\_\+reader\+\_\+imagenet\+\_\+patches.\+cpp.
+
+
+\begin{DoxyCode}
+131                                                                                          \{
+132 \textcolor{comment}{/*}
+133 \textcolor{comment}{  if (X.Height() != get\_linearized\_data\_size()) \{}
+134 \textcolor{comment}{    throw lbann\_exception(std::string\{\} + \_\_FILE\_\_ + " " + std::to\_string(\_\_LINE\_\_) + " "}
+135 \textcolor{comment}{                          + get\_type() + ": inconsistent number of patches");}
+136 \textcolor{comment}{  \}}
+137 \textcolor{comment}{*/}
+138   std::vector<::Mat> X\_v(\hyperlink{classlbann_1_1imagenet__reader__patches_a3380936d3d01d5efc77f0f129891fc65}{m\_num\_patches});
+139   El::Int h = 0;
+140   \textcolor{keywordflow}{for}(\textcolor{keywordtype}{int} i=0; i < \hyperlink{classlbann_1_1imagenet__reader__patches_a3380936d3d01d5efc77f0f129891fc65}{m\_num\_patches}; ++i) \{
+141     El::View(X\_v[i], X, El::IR(h, h + \hyperlink{classlbann_1_1image__data__reader_af512f1f866c0f654309b7f28886dca9a}{m\_image\_linearized\_size}), El::IR(mb\_idx, 
+      mb\_idx + 1));
+142     h = h + \hyperlink{classlbann_1_1image__data__reader_af512f1f866c0f654309b7f28886dca9a}{m\_image\_linearized\_size};
+143   \}
+144   \textcolor{keywordflow}{return} X\_v;
+145 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1imagenet__reader__patches_a920f235bde95d5c3e8ae97c389c9d953_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1imagenet__reader__patches_a8a9e4a1339f2e9676a0e653853ebff3c}\label{classlbann_1_1imagenet__reader__patches_a8a9e4a1339f2e9676a0e653853ebff3c}} 
+\index{lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}!fetch\+\_\+datum@{fetch\+\_\+datum}}
+\index{fetch\+\_\+datum@{fetch\+\_\+datum}!lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}}
+\subsubsection{\texorpdfstring{fetch\+\_\+datum()}{fetch\_datum()}}
+{\footnotesize\ttfamily bool lbann\+::imagenet\+\_\+reader\+\_\+patches\+::fetch\+\_\+datum (\begin{DoxyParamCaption}\item[{\+::\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{X,  }\item[{int}]{data\+\_\+id,  }\item[{int}]{mb\+\_\+idx,  }\item[{int}]{tid }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [protected]}}
+
+
+
+Definition at line 148 of file data\+\_\+reader\+\_\+imagenet\+\_\+patches.\+cpp.
+
+
+\begin{DoxyCode}
+148                                                                                   \{
+149   \textcolor{keyword}{const} std::string imagepath = \hyperlink{classlbann_1_1generic__data__reader_ab4c6c2d4ba40ece809ce896828c8ff03}{get\_file\_dir}() + \hyperlink{classlbann_1_1image__data__reader_ae3fc949bd08c45ceafb1a03503261008}{m\_image\_list}[data\_id].first;
+150 
+151   \textcolor{keywordtype}{int} width=0, height=0, img\_type=0;
+152   std::vector<::Mat> X\_v = \hyperlink{classlbann_1_1imagenet__reader__patches_a920f235bde95d5c3e8ae97c389c9d953}{create\_datum\_views}(X, mb\_idx);
+153   \textcolor{keywordtype}{bool} ret;
+154   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__reader_aefc076b842933a882214f4f709ca49c9}{m\_data\_store} != \textcolor{keyword}{nullptr}) \{
+155     std::vector<unsigned char> *image\_buf;
+156     \hyperlink{classlbann_1_1generic__data__reader_aefc076b842933a882214f4f709ca49c9}{m\_data\_store}->\hyperlink{classlbann_1_1generic__data__store_a2abb3d0327b528d36e23fcef9b937798}{get\_data\_buf}(data\_id, image\_buf, 0);
+157     ret = \hyperlink{classlbann_1_1image__utils_ac324a04f877601387cfb10750f1f6b8d}{lbann::image\_utils::load\_image}(*image\_buf, width, height, img\_type,
+       *(\hyperlink{classlbann_1_1imagenet__reader__patches_a76a4c760b0430ce6df990b9e3bd33fef}{m\_pps}[tid]), X\_v);
+158   \} \textcolor{keywordflow}{else} \{
+159     ret = \hyperlink{classlbann_1_1image__utils_ac324a04f877601387cfb10750f1f6b8d}{lbann::image\_utils::load\_image}(imagepath, width, height, img\_type, 
+      *(\hyperlink{classlbann_1_1imagenet__reader__patches_a76a4c760b0430ce6df990b9e3bd33fef}{m\_pps}[tid]), X\_v);
+160   \}
+161     \textcolor{comment}{//ret = lbann::image\_utils::load\_image(imagepath, width, height, img\_type, *(m\_pps[tid]), X\_v);}
+162 
+163   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1imagenet__reader__patches_a76a4c760b0430ce6df990b9e3bd33fef}{m\_pps}[tid]->is\_self\_labeling()) \{
+164     \hyperlink{classlbann_1_1image__data__reader_ae3fc949bd08c45ceafb1a03503261008}{m\_image\_list}[data\_id].second = \hyperlink{classlbann_1_1imagenet__reader__patches_a76a4c760b0430ce6df990b9e3bd33fef}{m\_pps}[tid]->get\_patch\_label();
+165   \}
+166 
+167   \textcolor{keywordflow}{if}(!ret) \{
+168     \textcolor{keywordflow}{throw} lbann\_exception(std::string\{\} + \_\_FILE\_\_ + \textcolor{stringliteral}{" "} + std::to\_string(\_\_LINE\_\_) + \textcolor{stringliteral}{" "}
+169                           + \hyperlink{classlbann_1_1imagenet__reader__patches_adc6363b20f058260c674d92af2a6ef80}{get\_type}() + \textcolor{stringliteral}{": image\_utils::load\_image failed to load - "}
+170                           + imagepath);
+171   \}
+172   \textcolor{keywordflow}{if}((width * height * CV\_MAT\_CN(img\_type)) != \hyperlink{classlbann_1_1image__data__reader_af512f1f866c0f654309b7f28886dca9a}{m\_image\_linearized\_size}) \{
+173     \textcolor{keywordflow}{throw} lbann\_exception(std::string\{\} + \_\_FILE\_\_ + \textcolor{stringliteral}{" "} + std::to\_string(\_\_LINE\_\_) + \textcolor{stringliteral}{" "}
+174                           + \hyperlink{classlbann_1_1imagenet__reader__patches_adc6363b20f058260c674d92af2a6ef80}{get\_type}() + \textcolor{stringliteral}{": mismatch data size -- either width, height or channel -
+       "}
+175                           + imagepath + \textcolor{stringliteral}{" [w,h,c]=["} + std::to\_string(width) + \textcolor{stringliteral}{"x"} + std::to\_string(height)
+176                           + \textcolor{stringliteral}{"x"} + std::to\_string(CV\_MAT\_CN(img\_type)) + \textcolor{stringliteral}{"] != "} + std::to\_string(
+      \hyperlink{classlbann_1_1image__data__reader_af512f1f866c0f654309b7f28886dca9a}{m\_image\_linearized\_size}));
+177   \}
+178   \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+179 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1imagenet__reader__patches_a8a9e4a1339f2e9676a0e653853ebff3c_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1imagenet__reader__patches_a8a9e4a1339f2e9676a0e653853ebff3c_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1imagenet__reader__patches_a4d5c6b9780908d9beb5c6d3f017c38b5}\label{classlbann_1_1imagenet__reader__patches_a4d5c6b9780908d9beb5c6d3f017c38b5}} 
+\index{lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}!get\+\_\+data\+\_\+dims@{get\+\_\+data\+\_\+dims}}
+\index{get\+\_\+data\+\_\+dims@{get\+\_\+data\+\_\+dims}!lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}}
+\subsubsection{\texorpdfstring{get\+\_\+data\+\_\+dims()}{get\_data\_dims()}}
+{\footnotesize\ttfamily const std\+::vector$<$int$>$ lbann\+::imagenet\+\_\+reader\+\_\+patches\+::get\+\_\+data\+\_\+dims (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Get the dimensions of the data. 
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1image__data__reader_a1bb05018e059afae76d46a2a908dd75c}{lbann\+::image\+\_\+data\+\_\+reader}.
+
+
+
+Definition at line 53 of file data\+\_\+reader\+\_\+imagenet\+\_\+patches.\+hpp.
+
+
+\begin{DoxyCode}
+53                                                       \{
+54     \textcolor{keywordflow}{return} \{\hyperlink{classlbann_1_1imagenet__reader__patches_a3380936d3d01d5efc77f0f129891fc65}{m\_num\_patches}*\hyperlink{classlbann_1_1image__data__reader_aab1a440f361521dc7bd583cefe1061f8}{m\_image\_num\_channels}, 
+      \hyperlink{classlbann_1_1image__data__reader_a0632efa3deaa9d61e671f741909eb3fe}{m\_image\_height}, \hyperlink{classlbann_1_1image__data__reader_af001f3d1c0f1c580b66988233b3a64f0}{m\_image\_width}\};
+55   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1imagenet__reader__patches_a4d5c6b9780908d9beb5c6d3f017c38b5_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1imagenet__reader__patches_a09ce692ca31d52424dea5395ad6c8b2b}\label{classlbann_1_1imagenet__reader__patches_a09ce692ca31d52424dea5395ad6c8b2b}} 
+\index{lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}!get\+\_\+linearized\+\_\+data\+\_\+size@{get\+\_\+linearized\+\_\+data\+\_\+size}}
+\index{get\+\_\+linearized\+\_\+data\+\_\+size@{get\+\_\+linearized\+\_\+data\+\_\+size}!lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}}
+\subsubsection{\texorpdfstring{get\+\_\+linearized\+\_\+data\+\_\+size()}{get\_linearized\_data\_size()}}
+{\footnotesize\ttfamily int lbann\+::imagenet\+\_\+reader\+\_\+patches\+::get\+\_\+linearized\+\_\+data\+\_\+size (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Get the total number of channel values in a sample of image(s). 
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1image__data__reader_a26b8566e76ba99c017a84c49a9dec37c}{lbann\+::image\+\_\+data\+\_\+reader}.
+
+
+
+Definition at line 50 of file data\+\_\+reader\+\_\+imagenet\+\_\+patches.\+hpp.
+
+
+\begin{DoxyCode}
+50                                                 \{
+51     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1image__data__reader_af512f1f866c0f654309b7f28886dca9a}{m\_image\_linearized\_size} * \hyperlink{classlbann_1_1imagenet__reader__patches_a3380936d3d01d5efc77f0f129891fc65}{m\_num\_patches};
+52   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1imagenet__reader__patches_adc6363b20f058260c674d92af2a6ef80}\label{classlbann_1_1imagenet__reader__patches_adc6363b20f058260c674d92af2a6ef80}} 
+\index{lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}!get\+\_\+type@{get\+\_\+type}}
+\index{get\+\_\+type@{get\+\_\+type}!lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}}
+\subsubsection{\texorpdfstring{get\+\_\+type()}{get\_type()}}
+{\footnotesize\ttfamily std\+::string lbann\+::imagenet\+\_\+reader\+\_\+patches\+::get\+\_\+type (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Return this data\+\_\+reader\textquotesingle{}s type 
+
+Implements \hyperlink{classlbann_1_1generic__data__reader_abeb849fb8e10b4fa317c90bc33f61758}{lbann\+::generic\+\_\+data\+\_\+reader}.
+
+
+
+Definition at line 46 of file data\+\_\+reader\+\_\+imagenet\+\_\+patches.\+hpp.
+
+
+\begin{DoxyCode}
+46                                       \{
+47     \textcolor{keywordflow}{return} \textcolor{stringliteral}{"imagenet\_reader\_patches"};
+48   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1imagenet__reader__patches_adc6363b20f058260c674d92af2a6ef80_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1imagenet__reader__patches_a02e20aa26fb3b024486b8d5c71d37aa7}\label{classlbann_1_1imagenet__reader__patches_a02e20aa26fb3b024486b8d5c71d37aa7}} 
+\index{lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1imagenet__reader__patches}{imagenet\+\_\+reader\+\_\+patches} \& lbann\+::imagenet\+\_\+reader\+\_\+patches\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1imagenet__reader__patches}{imagenet\+\_\+reader\+\_\+patches} \&}]{rhs }\end{DoxyParamCaption})}
+
+
+
+Definition at line 62 of file data\+\_\+reader\+\_\+imagenet\+\_\+patches.\+cpp.
+
+
+\begin{DoxyCode}
+62                                                                                               \{
+63   \textcolor{comment}{// check for self-assignment}
+64   \textcolor{keywordflow}{if} (\textcolor{keyword}{this} == &rhs) \{
+65     \textcolor{keywordflow}{return} (*\textcolor{keyword}{this});
+66   \}
+67 
+68   \hyperlink{classlbann_1_1image__data__reader_a76a0b52eafb9ad133fb45fec7cf44700}{image\_data\_reader::operator=}(rhs);
+69 
+70   \textcolor{keywordflow}{if} (rhs.m\_pps.size() == 0u || !rhs.m\_pps[0]) \{
+71     std::stringstream err;
+72     err << \_\_FILE\_\_<<\textcolor{stringliteral}{" "}<<\_\_LINE\_\_<< \textcolor{stringliteral}{" :: "} << \hyperlink{classlbann_1_1imagenet__reader__patches_adc6363b20f058260c674d92af2a6ef80}{get\_type}() << \textcolor{stringliteral}{" construction error: no image
+       processor"};
+73     \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+74   \}
+75   \hyperlink{classlbann_1_1imagenet__reader__patches_a3380936d3d01d5efc77f0f129891fc65}{m\_num\_patches} = rhs.m\_num\_patches;
+76   \hyperlink{classlbann_1_1imagenet__reader__patches_a714247cc547161688a66a64737527de0}{replicate\_processor}(*rhs.m\_pps[0]);
+77   \textcolor{keywordflow}{return} (*\textcolor{keyword}{this});
+78 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1imagenet__reader__patches_a02e20aa26fb3b024486b8d5c71d37aa7_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1imagenet__reader__patches_a714247cc547161688a66a64737527de0}\label{classlbann_1_1imagenet__reader__patches_a714247cc547161688a66a64737527de0}} 
+\index{lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}!replicate\+\_\+processor@{replicate\+\_\+processor}}
+\index{replicate\+\_\+processor@{replicate\+\_\+processor}!lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}}
+\subsubsection{\texorpdfstring{replicate\+\_\+processor()}{replicate\_processor()}}
+{\footnotesize\ttfamily bool lbann\+::imagenet\+\_\+reader\+\_\+patches\+::replicate\+\_\+processor (\begin{DoxyParamCaption}\item[{const cv\+\_\+process\+\_\+patches \&}]{pp }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+
+
+Replicate image processor for each Open\+MP thread. 
+
+
+
+Definition at line 93 of file data\+\_\+reader\+\_\+imagenet\+\_\+patches.\+cpp.
+
+
+\begin{DoxyCode}
+93                                                                               \{
+94   \textcolor{keyword}{const} \textcolor{keywordtype}{int} nthreads = omp\_get\_max\_threads();
+95   \hyperlink{classlbann_1_1imagenet__reader__patches_a76a4c760b0430ce6df990b9e3bd33fef}{m\_pps}.resize(nthreads);
+96 
+97   \textcolor{comment}{// Construct thread private preprocessing objects out of a shared pointer}
+98 \textcolor{preprocessor}{  #pragma omp parallel for schedule(static, 1)}
+99   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i = 0; i < nthreads; ++i) \{
+100     \textcolor{comment}{//auto ppu = std::make\_unique<cv\_process\_patches>(pp); // c++14}
+101     std::unique\_ptr<cv\_process\_patches> ppu(\textcolor{keyword}{new} cv\_process\_patches(pp));
+102     \hyperlink{classlbann_1_1imagenet__reader__patches_a76a4c760b0430ce6df990b9e3bd33fef}{m\_pps}[i] = std::move(ppu);
+103   \}
+104 
+105   \textcolor{keywordtype}{bool} ok = \textcolor{keyword}{true};
+106   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i = 0; ok && (i < nthreads); ++i) \{
+107     \textcolor{keywordflow}{if} (!\hyperlink{classlbann_1_1imagenet__reader__patches_a76a4c760b0430ce6df990b9e3bd33fef}{m\_pps}[i]) ok = \textcolor{keyword}{false};
+108   \}
+109 
+110   \textcolor{keywordflow}{if} (!ok || (nthreads <= 0)) \{
+111     std::stringstream err;
+112     err << \_\_FILE\_\_<<\textcolor{stringliteral}{" "}<<\_\_LINE\_\_<< \textcolor{stringliteral}{" :: "} << \hyperlink{classlbann_1_1imagenet__reader__patches_adc6363b20f058260c674d92af2a6ef80}{get\_type}() << \textcolor{stringliteral}{" construction error: cannot replicate
+       image processor"};
+113     \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+114     \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+115   \}
+116   \textcolor{keyword}{const} std::vector<unsigned int> dims = pp.get\_data\_dims();
+117   \textcolor{keywordflow}{if} ((dims.size() == 3u) && (dims[0] != 0u) && (dims[1] != 0u) && (dims[2] != 0u)) \{
+118     \hyperlink{classlbann_1_1imagenet__reader__patches_a3380936d3d01d5efc77f0f129891fc65}{m\_num\_patches} = \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{int}\textcolor{keyword}{>}(dims[0]);
+119     \hyperlink{classlbann_1_1image__data__reader_af001f3d1c0f1c580b66988233b3a64f0}{m\_image\_width} = \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{int}\textcolor{keyword}{>}(dims[1]);
+120     \hyperlink{classlbann_1_1image__data__reader_a0632efa3deaa9d61e671f741909eb3fe}{m\_image\_height} = \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{int}\textcolor{keyword}{>}(dims[2]);
+121     \hyperlink{classlbann_1_1image__data__reader_a0164b0e3abbe92daef73b36fb925403e}{set\_linearized\_image\_size}();
+122   \}
+123   \textcolor{keywordflow}{if} (pp.is\_self\_labeling()) \{
+124     \hyperlink{classlbann_1_1image__data__reader_af280e8758a6ec3acee7c62e6351d17e0}{m\_num\_labels} = pp.get\_num\_labels();
+125   \}
+126 
+127   \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+128 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1imagenet__reader__patches_a714247cc547161688a66a64737527de0_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1imagenet__reader__patches_a714247cc547161688a66a64737527de0_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1imagenet__reader__patches_a3458e4274b9ed894973a069cf884f04a}\label{classlbann_1_1imagenet__reader__patches_a3458e4274b9ed894973a069cf884f04a}} 
+\index{lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}!set\+\_\+defaults@{set\+\_\+defaults}}
+\index{set\+\_\+defaults@{set\+\_\+defaults}!lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}}
+\subsubsection{\texorpdfstring{set\+\_\+defaults()}{set\_defaults()}}
+{\footnotesize\ttfamily void lbann\+::imagenet\+\_\+reader\+\_\+patches\+::set\+\_\+defaults (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+
+
+Set the default values for the width, the height, the number of channels, and the number of labels of an image. 
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1image__data__reader_a8e9dbeaa0239d56597455cc23787a21d}{lbann\+::image\+\_\+data\+\_\+reader}.
+
+
+
+Definition at line 83 of file data\+\_\+reader\+\_\+imagenet\+\_\+patches.\+cpp.
+
+
+\begin{DoxyCode}
+83                                            \{
+84   \hyperlink{classlbann_1_1image__data__reader_af001f3d1c0f1c580b66988233b3a64f0}{m\_image\_width} = 256;
+85   \hyperlink{classlbann_1_1image__data__reader_a0632efa3deaa9d61e671f741909eb3fe}{m\_image\_height} = 256;
+86   \hyperlink{classlbann_1_1image__data__reader_aab1a440f361521dc7bd583cefe1061f8}{m\_image\_num\_channels} = 3;
+87   \hyperlink{classlbann_1_1image__data__reader_a0164b0e3abbe92daef73b36fb925403e}{set\_linearized\_image\_size}();
+88   \hyperlink{classlbann_1_1image__data__reader_af280e8758a6ec3acee7c62e6351d17e0}{m\_num\_labels} = 1000;
+89   \hyperlink{classlbann_1_1imagenet__reader__patches_a3380936d3d01d5efc77f0f129891fc65}{m\_num\_patches} = 1;
+90 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1imagenet__reader__patches_a3458e4274b9ed894973a069cf884f04a_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1imagenet__reader__patches_a3458e4274b9ed894973a069cf884f04a_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1imagenet__reader__patches_afad50e94c5d6bde9dff2abe5bad50e11}\label{classlbann_1_1imagenet__reader__patches_afad50e94c5d6bde9dff2abe5bad50e11}} 
+\index{lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}!setup\+\_\+data\+\_\+store@{setup\+\_\+data\+\_\+store}}
+\index{setup\+\_\+data\+\_\+store@{setup\+\_\+data\+\_\+store}!lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}}
+\subsubsection{\texorpdfstring{setup\+\_\+data\+\_\+store()}{setup\_data\_store()}}
+{\footnotesize\ttfamily void lbann\+::imagenet\+\_\+reader\+\_\+patches\+::setup\+\_\+data\+\_\+store (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+sets up a data\+\_\+store. 
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1generic__data__reader_a8b2a09d38512fc11f1b9d572c89100a7}{lbann\+::generic\+\_\+data\+\_\+reader}.
+
+
+
+Definition at line 181 of file data\+\_\+reader\+\_\+imagenet\+\_\+patches.\+cpp.
+
+
+\begin{DoxyCode}
+181                                                        \{
+182   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__reader_aefc076b842933a882214f4f709ca49c9}{m\_data\_store} != \textcolor{keyword}{nullptr}) \{
+183     \textcolor{keyword}{delete} \hyperlink{classlbann_1_1generic__data__reader_aefc076b842933a882214f4f709ca49c9}{m\_data\_store};
+184   \}
+185   \hyperlink{classlbann_1_1generic__data__reader_aefc076b842933a882214f4f709ca49c9}{m\_data\_store} = \textcolor{keyword}{new} data\_store\_imagenet\_patches(\textcolor{keyword}{this}, m);
+186   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__reader_aefc076b842933a882214f4f709ca49c9}{m\_data\_store} != \textcolor{keyword}{nullptr}) \{
+187     \hyperlink{classlbann_1_1generic__data__reader_aefc076b842933a882214f4f709ca49c9}{m\_data\_store}->\hyperlink{classlbann_1_1generic__data__store_a1cff17def02ee21b6ca0befeb04bb582}{setup}();
+188   \}
+189 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1imagenet__reader__patches_afad50e94c5d6bde9dff2abe5bad50e11_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1imagenet__reader__patches_afad50e94c5d6bde9dff2abe5bad50e11_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1imagenet__reader__patches_a3380936d3d01d5efc77f0f129891fc65}\label{classlbann_1_1imagenet__reader__patches_a3380936d3d01d5efc77f0f129891fc65}} 
+\index{lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}!m\+\_\+num\+\_\+patches@{m\+\_\+num\+\_\+patches}}
+\index{m\+\_\+num\+\_\+patches@{m\+\_\+num\+\_\+patches}!lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}}
+\subsubsection{\texorpdfstring{m\+\_\+num\+\_\+patches}{m\_num\_patches}}
+{\footnotesize\ttfamily int lbann\+::imagenet\+\_\+reader\+\_\+patches\+::m\+\_\+num\+\_\+patches\hspace{0.3cm}{\ttfamily [protected]}}
+
+number of patches extracted 
+
+Definition at line 66 of file data\+\_\+reader\+\_\+imagenet\+\_\+patches.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1imagenet__reader__patches_a76a4c760b0430ce6df990b9e3bd33fef}\label{classlbann_1_1imagenet__reader__patches_a76a4c760b0430ce6df990b9e3bd33fef}} 
+\index{lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}!m\+\_\+pps@{m\+\_\+pps}}
+\index{m\+\_\+pps@{m\+\_\+pps}!lbann\+::imagenet\+\_\+reader\+\_\+patches@{lbann\+::imagenet\+\_\+reader\+\_\+patches}}
+\subsubsection{\texorpdfstring{m\+\_\+pps}{m\_pps}}
+{\footnotesize\ttfamily std\+::vector$<$std\+::unique\+\_\+ptr$<$cv\+\_\+process\+\_\+patches$>$ $>$ lbann\+::imagenet\+\_\+reader\+\_\+patches\+::m\+\_\+pps\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+preprocessor for patches duplicated for each omp thread 
+
+
+
+Definition at line 68 of file data\+\_\+reader\+\_\+imagenet\+\_\+patches.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/data\+\_\+readers/\hyperlink{data__reader__imagenet__patches_8hpp}{data\+\_\+reader\+\_\+imagenet\+\_\+patches.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/data\+\_\+readers/\hyperlink{data__reader__imagenet__patches_8cpp}{data\+\_\+reader\+\_\+imagenet\+\_\+patches.\+cpp}\end{DoxyCompactItemize}

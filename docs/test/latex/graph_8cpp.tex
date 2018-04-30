@@ -1,0 +1,47 @@
+\hypertarget{graph_8cpp}{}\section{/\+Users/mckinney27/doxy-\/testbed/lbann/src/utils/graph.cpp File Reference}
+\label{graph_8cpp}\index{/\+Users/mckinney27/doxy-\/testbed/lbann/src/utils/graph.\+cpp@{/\+Users/mckinney27/doxy-\/testbed/lbann/src/utils/graph.\+cpp}}
+{\ttfamily \#include \char`\"{}lbann/utils/graph.\+hpp\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}lbann/utils/exception.\+hpp\char`\"{}}\newline
+{\ttfamily \#include $<$algorithm$>$}\newline
+{\ttfamily \#include $<$stack$>$}\newline
+{\ttfamily \#include $<$queue$>$}\newline
+{\ttfamily \#include $<$unordered\+\_\+map$>$}\newline
+Include dependency graph for graph.\+cpp\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{graph_8cpp__incl}
+\end{center}
+\end{figure}
+\subsection*{Namespaces}
+\begin{DoxyCompactItemize}
+\item 
+ \hyperlink{namespacelbann}{lbann}
+\begin{DoxyCompactList}\small\item\em Open\+MP Diagnostic code from Edgar Leon at L\+L\+NL. \end{DoxyCompactList}\item 
+ \hyperlink{namespacelbann_1_1graph}{lbann\+::graph}
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{namespacelbann_1_1graph_a956e9f6f1b842a2ffe5bda9015bbb906}{lbann\+::graph\+::print} (const std\+::set$<$ int $>$ \&nodes, const std\+::map$<$ int, std\+::set$<$ int $>$$>$ \&edges, std\+::ostream \&os)
+\item 
+std\+::set$<$ int $>$ \hyperlink{namespacelbann_1_1graph_ad305e0d104d25d9cb1e63a4b93c0847c}{lbann\+::graph\+::get\+\_\+neighbors} (int node, const std\+::map$<$ int, std\+::set$<$ int $>$$>$ \&edges)
+\item 
+bool \hyperlink{namespacelbann_1_1graph_ac9c1819b38f8bc514ab24ac8778f840b}{lbann\+::graph\+::is\+\_\+closure} (const std\+::set$<$ int $>$ \&nodes, const std\+::map$<$ int, std\+::set$<$ int $>$$>$ \&edges)
+\item 
+bool \hyperlink{namespacelbann_1_1graph_a0dd9dcef8bc13481677692347530e328}{lbann\+::graph\+::is\+\_\+topologically\+\_\+sorted} (const std\+::set$<$ int $>$ \&nodes, const std\+::map$<$ int, std\+::set$<$ int $>$$>$ \&edges)
+\item 
+bool \hyperlink{namespacelbann_1_1graph_a7cb66f3455c79ca9c959bcf2c36a92eb}{lbann\+::graph\+::is\+\_\+cyclic} (const std\+::set$<$ int $>$ \&nodes, const std\+::map$<$ int, std\+::set$<$ int $>$$>$ \&edges)
+\item 
+std\+::map$<$ int, std\+::set$<$ int $>$ $>$ \hyperlink{namespacelbann_1_1graph_a53b0b97c3fc0b88f2fffd44f1b951c71}{lbann\+::graph\+::transpose} (const std\+::set$<$ int $>$ \&nodes, const std\+::map$<$ int, std\+::set$<$ int $>$$>$ \&edges)
+\item 
+std\+::map$<$ int, std\+::set$<$ int $>$ $>$ \hyperlink{namespacelbann_1_1graph_a54de9f8e26046c834acfc5436a93b66b}{lbann\+::graph\+::induce\+\_\+subgraph} (const std\+::set$<$ int $>$ \&nodes, const std\+::map$<$ int, std\+::set$<$ int $>$$>$ \&edges)
+\item 
+std\+::vector$<$ int $>$ \hyperlink{namespacelbann_1_1graph_a6cc9ff6e6b9707deaa1c77c3b8eb0b20}{lbann\+::graph\+::breadth\+\_\+first\+\_\+search} (int root, const std\+::map$<$ int, std\+::set$<$ int $>$$>$ \&edges)
+\item 
+std\+::vector$<$ int $>$ \hyperlink{namespacelbann_1_1graph_a44394207f3566604f867382b10aaf974}{lbann\+::graph\+::depth\+\_\+first\+\_\+search} (int root, const std\+::map$<$ int, std\+::set$<$ int $>$$>$ \&edges)
+\item 
+std\+::vector$<$ int $>$ \hyperlink{namespacelbann_1_1graph_aeb19a22d8fac402df104ed8d547a10ee}{lbann\+::graph\+::topological\+\_\+sort} (const std\+::set$<$ int $>$ \&nodes, const std\+::map$<$ int, std\+::set$<$ int $>$$>$ \&edges)
+\item 
+void \hyperlink{namespacelbann_1_1graph_ae06c3de1931d3786348995d870b792ca}{lbann\+::graph\+::condensation} (const std\+::set$<$ int $>$ \&nodes, const std\+::map$<$ int, std\+::set$<$ int $>$$>$ \&edges, std\+::map$<$ int, std\+::set$<$ int $>$$>$ \&components, std\+::set$<$ int $>$ \&condensation\+\_\+nodes, std\+::map$<$ int, std\+::set$<$ int $>$$>$ \&condensation\+\_\+edges)
+\end{DoxyCompactItemize}

@@ -1,0 +1,415 @@
+\hypertarget{classlbann_1_1categorical__accuracy__metric}{}\section{lbann\+:\+:categorical\+\_\+accuracy\+\_\+metric Class Reference}
+\label{classlbann_1_1categorical__accuracy__metric}\index{lbann\+::categorical\+\_\+accuracy\+\_\+metric@{lbann\+::categorical\+\_\+accuracy\+\_\+metric}}
+
+
+{\ttfamily \#include $<$categorical\+\_\+accuracy.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:categorical\+\_\+accuracy\+\_\+metric\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=174pt]{classlbann_1_1categorical__accuracy__metric__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:categorical\+\_\+accuracy\+\_\+metric\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1categorical__accuracy__metric__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1categorical__accuracy__metric_ae7ea6f472bd6375780c49277742af9dc}{categorical\+\_\+accuracy\+\_\+metric} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm})
+\item 
+\hyperlink{classlbann_1_1categorical__accuracy__metric_a42d38fbdadc86de653cb5b251cf01eb7}{categorical\+\_\+accuracy\+\_\+metric} (const \hyperlink{classlbann_1_1categorical__accuracy__metric}{categorical\+\_\+accuracy\+\_\+metric} \&other)
+\item 
+\hyperlink{classlbann_1_1categorical__accuracy__metric}{categorical\+\_\+accuracy\+\_\+metric} \& \hyperlink{classlbann_1_1categorical__accuracy__metric_a859f8e13d7222c92e32b6751b194ef47}{operator=} (const \hyperlink{classlbann_1_1categorical__accuracy__metric}{categorical\+\_\+accuracy\+\_\+metric} \&other)
+\item 
+virtual \hyperlink{classlbann_1_1categorical__accuracy__metric_ade4c5123c0f6f979308dd012f8adc615}{$\sim$categorical\+\_\+accuracy\+\_\+metric} ()
+\item 
+\hyperlink{classlbann_1_1categorical__accuracy__metric}{categorical\+\_\+accuracy\+\_\+metric} $\ast$ \hyperlink{classlbann_1_1categorical__accuracy__metric_a46ce5b6eb09fecc8b0029fb62ba8cf66}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1categorical__accuracy__metric_a6fea8e495ab4ec4b05546c794468fa12}{name} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1categorical__accuracy__metric_a9c06851bc233a01b28c346a10d278d99}{get\+\_\+unit} () const override
+\item 
+virtual void \hyperlink{classlbann_1_1categorical__accuracy__metric_a328a63ccc21c31efd511445f5b060960}{setup} (\hyperlink{classlbann_1_1model}{model} \&m) override
+\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} \hyperlink{classlbann_1_1categorical__accuracy__metric_a0ec8c3254569c9f9855675243ac51612}{evaluate\+\_\+compute} (const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&prediction, const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&ground\+\_\+truth) override
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} $\ast$ \hyperlink{classlbann_1_1categorical__accuracy__metric_a796e50da721050d30e0cea709484154e}{m\+\_\+prediction\+\_\+values}
+\item 
+std\+::vector$<$ int $>$ \hyperlink{classlbann_1_1categorical__accuracy__metric_a369a86a91f08f3ad3b12b870ccf2e427}{m\+\_\+prediction\+\_\+indices}
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Categorical accuracy metric. The value is a percentage in \mbox{[}0,100\mbox{]}. 
+
+Definition at line 37 of file categorical\+\_\+accuracy.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1categorical__accuracy__metric_ae7ea6f472bd6375780c49277742af9dc}\label{classlbann_1_1categorical__accuracy__metric_ae7ea6f472bd6375780c49277742af9dc}} 
+\index{lbann\+::categorical\+\_\+accuracy\+\_\+metric@{lbann\+::categorical\+\_\+accuracy\+\_\+metric}!categorical\+\_\+accuracy\+\_\+metric@{categorical\+\_\+accuracy\+\_\+metric}}
+\index{categorical\+\_\+accuracy\+\_\+metric@{categorical\+\_\+accuracy\+\_\+metric}!lbann\+::categorical\+\_\+accuracy\+\_\+metric@{lbann\+::categorical\+\_\+accuracy\+\_\+metric}}
+\subsubsection{\texorpdfstring{categorical\+\_\+accuracy\+\_\+metric()}{categorical\_accuracy\_metric()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::categorical\+\_\+accuracy\+\_\+metric\+::categorical\+\_\+accuracy\+\_\+metric (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm }\end{DoxyParamCaption})}
+
+Constructor. 
+
+Definition at line 32 of file categorical\+\_\+accuracy.\+cpp.
+
+
+\begin{DoxyCode}
+33   : \hyperlink{classlbann_1_1metric_a3cd2d4f7dcbf94f70b3b8560a3171d9d}{metric}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}), \hyperlink{classlbann_1_1categorical__accuracy__metric_a796e50da721050d30e0cea709484154e}{m\_prediction\_values}(\textcolor{keyword}{nullptr}) \{\}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1categorical__accuracy__metric_ae7ea6f472bd6375780c49277742af9dc_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1categorical__accuracy__metric_a42d38fbdadc86de653cb5b251cf01eb7}\label{classlbann_1_1categorical__accuracy__metric_a42d38fbdadc86de653cb5b251cf01eb7}} 
+\index{lbann\+::categorical\+\_\+accuracy\+\_\+metric@{lbann\+::categorical\+\_\+accuracy\+\_\+metric}!categorical\+\_\+accuracy\+\_\+metric@{categorical\+\_\+accuracy\+\_\+metric}}
+\index{categorical\+\_\+accuracy\+\_\+metric@{categorical\+\_\+accuracy\+\_\+metric}!lbann\+::categorical\+\_\+accuracy\+\_\+metric@{lbann\+::categorical\+\_\+accuracy\+\_\+metric}}
+\subsubsection{\texorpdfstring{categorical\+\_\+accuracy\+\_\+metric()}{categorical\_accuracy\_metric()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::categorical\+\_\+accuracy\+\_\+metric\+::categorical\+\_\+accuracy\+\_\+metric (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1categorical__accuracy__metric}{categorical\+\_\+accuracy\+\_\+metric} \&}]{other }\end{DoxyParamCaption})}
+
+Copy constructor. 
+
+Definition at line 35 of file categorical\+\_\+accuracy.\+cpp.
+
+
+\begin{DoxyCode}
+36   : \hyperlink{classlbann_1_1metric_a3cd2d4f7dcbf94f70b3b8560a3171d9d}{metric}(other),
+37     \hyperlink{classlbann_1_1categorical__accuracy__metric_a796e50da721050d30e0cea709484154e}{m\_prediction\_values}(other.m\_prediction\_values),
+38     \hyperlink{classlbann_1_1categorical__accuracy__metric_a369a86a91f08f3ad3b12b870ccf2e427}{m\_prediction\_indices}(other.m\_prediction\_indices) \{
+39   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1categorical__accuracy__metric_a796e50da721050d30e0cea709484154e}{m\_prediction\_values} != \textcolor{keyword}{nullptr}) \{
+40     \hyperlink{classlbann_1_1categorical__accuracy__metric_a796e50da721050d30e0cea709484154e}{m\_prediction\_values} = \hyperlink{classlbann_1_1categorical__accuracy__metric_a796e50da721050d30e0cea709484154e}{m\_prediction\_values}->Copy();
+41   \}
+42 \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1categorical__accuracy__metric_ade4c5123c0f6f979308dd012f8adc615}\label{classlbann_1_1categorical__accuracy__metric_ade4c5123c0f6f979308dd012f8adc615}} 
+\index{lbann\+::categorical\+\_\+accuracy\+\_\+metric@{lbann\+::categorical\+\_\+accuracy\+\_\+metric}!````~categorical\+\_\+accuracy\+\_\+metric@{$\sim$categorical\+\_\+accuracy\+\_\+metric}}
+\index{````~categorical\+\_\+accuracy\+\_\+metric@{$\sim$categorical\+\_\+accuracy\+\_\+metric}!lbann\+::categorical\+\_\+accuracy\+\_\+metric@{lbann\+::categorical\+\_\+accuracy\+\_\+metric}}
+\subsubsection{\texorpdfstring{$\sim$categorical\+\_\+accuracy\+\_\+metric()}{~categorical\_accuracy\_metric()}}
+{\footnotesize\ttfamily lbann\+::categorical\+\_\+accuracy\+\_\+metric\+::$\sim$categorical\+\_\+accuracy\+\_\+metric (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [virtual]}}
+
+Destructor. 
+
+Definition at line 55 of file categorical\+\_\+accuracy.\+cpp.
+
+
+\begin{DoxyCode}
+55                                                           \{
+56   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1categorical__accuracy__metric_a796e50da721050d30e0cea709484154e}{m\_prediction\_values} != \textcolor{keyword}{nullptr}) \textcolor{keyword}{delete} 
+      \hyperlink{classlbann_1_1categorical__accuracy__metric_a796e50da721050d30e0cea709484154e}{m\_prediction\_values};
+57 \}
+\end{DoxyCode}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1categorical__accuracy__metric_a46ce5b6eb09fecc8b0029fb62ba8cf66}\label{classlbann_1_1categorical__accuracy__metric_a46ce5b6eb09fecc8b0029fb62ba8cf66}} 
+\index{lbann\+::categorical\+\_\+accuracy\+\_\+metric@{lbann\+::categorical\+\_\+accuracy\+\_\+metric}!copy@{copy}}
+\index{copy@{copy}!lbann\+::categorical\+\_\+accuracy\+\_\+metric@{lbann\+::categorical\+\_\+accuracy\+\_\+metric}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1categorical__accuracy__metric}{categorical\+\_\+accuracy\+\_\+metric}$\ast$ lbann\+::categorical\+\_\+accuracy\+\_\+metric\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Copy function. 
+
+Implements \hyperlink{classlbann_1_1metric_a2a4498d41f77da8585552f485caab167}{lbann\+::metric}.
+
+
+
+Definition at line 51 of file categorical\+\_\+accuracy.\+hpp.
+
+
+\begin{DoxyCode}
+51                                                      \{
+52     \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1categorical__accuracy__metric_ae7ea6f472bd6375780c49277742af9dc}{categorical\_accuracy\_metric}(*\textcolor{keyword}{this});
+53   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1categorical__accuracy__metric_a46ce5b6eb09fecc8b0029fb62ba8cf66_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1categorical__accuracy__metric_a0ec8c3254569c9f9855675243ac51612}\label{classlbann_1_1categorical__accuracy__metric_a0ec8c3254569c9f9855675243ac51612}} 
+\index{lbann\+::categorical\+\_\+accuracy\+\_\+metric@{lbann\+::categorical\+\_\+accuracy\+\_\+metric}!evaluate\+\_\+compute@{evaluate\+\_\+compute}}
+\index{evaluate\+\_\+compute@{evaluate\+\_\+compute}!lbann\+::categorical\+\_\+accuracy\+\_\+metric@{lbann\+::categorical\+\_\+accuracy\+\_\+metric}}
+\subsubsection{\texorpdfstring{evaluate\+\_\+compute()}{evaluate\_compute()}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} lbann\+::categorical\+\_\+accuracy\+\_\+metric\+::evaluate\+\_\+compute (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{prediction,  }\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{ground\+\_\+truth }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Computation to evaluate the metric function. This returns the sum of metric values across the mini-\/batch, not the mean value. 
+
+Implements \hyperlink{classlbann_1_1metric_aab79147ff480675db2e01d7a889a4296}{lbann\+::metric}.
+
+
+
+Definition at line 80 of file categorical\+\_\+accuracy.\+cpp.
+
+
+\begin{DoxyCode}
+81                                                                                        \{
+82 
+83   \textcolor{comment}{// Get matrix dimensions}
+84   \textcolor{keyword}{const} \textcolor{keywordtype}{int} height = \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac41b9ec75e920b610e8907e066074b30}{prediction}.Height();
+85   \textcolor{keyword}{const} \textcolor{keywordtype}{int} width = \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac41b9ec75e920b610e8907e066074b30}{prediction}.Width();
+86   \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_height = \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac41b9ec75e920b610e8907e066074b30}{prediction}.LocalHeight();
+87   \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_width = \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac41b9ec75e920b610e8907e066074b30}{prediction}.LocalWidth();
+88 
+89   \textcolor{comment}{// Get local matrices}
+90   \textcolor{keyword}{const} \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}& prediction\_local = \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac41b9ec75e920b610e8907e066074b30}{prediction}.LockedMatrix();
+91   \textcolor{keyword}{const} \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}& ground\_truth\_local = ground\_truth.LockedMatrix();
+92 
+93   \textcolor{comment}{// Initialize workspace matrices}
+94   \hyperlink{classlbann_1_1categorical__accuracy__metric_a796e50da721050d30e0cea709484154e}{m\_prediction\_values}->Resize(1, width);
+95   \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}& prediction\_values\_local = \hyperlink{classlbann_1_1categorical__accuracy__metric_a796e50da721050d30e0cea709484154e}{m\_prediction\_values}->Matrix();
+96   \hyperlink{classlbann_1_1categorical__accuracy__metric_a369a86a91f08f3ad3b12b870ccf2e427}{m\_prediction\_indices}.resize(local\_width);
+97 
+98   \textcolor{comment}{// Find largest value in each column of prediction matrix}
+99 \textcolor{preprocessor}{  #pragma omp parallel for}
+100   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} col = 0; col < local\_width; ++col) \{
+101     DataType max\_val;
+102     \textcolor{keywordtype}{int} max\_index;
+103     \textcolor{keywordflow}{if} (local\_height > 0) \{
+104       max\_val = prediction\_local(0, col);
+105       max\_index = 0;
+106     \} \textcolor{keywordflow}{else} \{
+107       max\_val = std::numeric\_limits<DataType>::lowest();
+108       max\_index = -1;
+109     \}
+110     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} row = 1; row < local\_height; ++row) \{
+111       \textcolor{keyword}{const} DataType pred\_val = prediction\_local(row, col);
+112       \textcolor{keywordflow}{if} (pred\_val > max\_val) \{
+113         max\_val = pred\_val;
+114         max\_index = row;
+115       \}
+116     \}
+117     prediction\_values\_local(0, col) = max\_val;
+118     \hyperlink{classlbann_1_1categorical__accuracy__metric_a369a86a91f08f3ad3b12b870ccf2e427}{m\_prediction\_indices}[col] = max\_index;
+119   \}
+120   \hyperlink{classlbann_1_1metric_a464120720df6bfdf91bffe353e562964}{get\_comm}().\hyperlink{classlbann_1_1lbann__comm_af5631e5f0f54e4df4958eba9df2599ef}{allreduce}(*\hyperlink{classlbann_1_1categorical__accuracy__metric_a796e50da721050d30e0cea709484154e}{m\_prediction\_values},
+121                        \hyperlink{classlbann_1_1categorical__accuracy__metric_a796e50da721050d30e0cea709484154e}{m\_prediction\_values}->RedundantComm(),
+122                        El::mpi::MAX);
+123 
+124   \textcolor{comment}{// Find first index corresponding to maximum prediction matrix values}
+125 \textcolor{preprocessor}{  #pragma omp parallel for}
+126   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} col = 0; col < local\_width; ++col) \{
+127     \textcolor{keyword}{const} \textcolor{keywordtype}{int} row = \hyperlink{classlbann_1_1categorical__accuracy__metric_a369a86a91f08f3ad3b12b870ccf2e427}{m\_prediction\_indices}[col];
+128     \textcolor{keywordflow}{if} (local\_height > 0
+129         && prediction\_local(row, col) >= prediction\_values\_local(0, col)) \{
+130       \hyperlink{classlbann_1_1categorical__accuracy__metric_a369a86a91f08f3ad3b12b870ccf2e427}{m\_prediction\_indices}[col] = \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac41b9ec75e920b610e8907e066074b30}{prediction}.GlobalRow(row);
+131     \} \textcolor{keywordflow}{else} \{
+132       \hyperlink{classlbann_1_1categorical__accuracy__metric_a369a86a91f08f3ad3b12b870ccf2e427}{m\_prediction\_indices}[col] = height;
+133     \}
+134   \}
+135   \hyperlink{classlbann_1_1metric_a464120720df6bfdf91bffe353e562964}{get\_comm}().\hyperlink{classlbann_1_1lbann__comm_af5631e5f0f54e4df4958eba9df2599ef}{allreduce}(\hyperlink{classlbann_1_1categorical__accuracy__metric_a369a86a91f08f3ad3b12b870ccf2e427}{m\_prediction\_indices}.data(),
+136                        local\_width,
+137                        \hyperlink{classlbann_1_1categorical__accuracy__metric_a796e50da721050d30e0cea709484154e}{m\_prediction\_values}->RedundantComm(),
+138                        El::mpi::MIN);
+139 
+140   \textcolor{comment}{// Count number of correct predictions}
+141   \textcolor{keywordtype}{int} correct\_predictions = 0;
+142   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} col = 0; col < local\_width; ++col) \{
+143     \textcolor{keyword}{const} \textcolor{keywordtype}{int} global\_row = \hyperlink{classlbann_1_1categorical__accuracy__metric_a369a86a91f08f3ad3b12b870ccf2e427}{m\_prediction\_indices}[col];
+144     \textcolor{keywordflow}{if} (ground\_truth.IsLocalRow(global\_row)) \{
+145       \textcolor{keyword}{const} \textcolor{keywordtype}{int} row = ground\_truth.LocalRow(global\_row);
+146       \textcolor{keywordflow}{if} (ground\_truth\_local(row, col) != DataType(0)) \{
+147         ++correct\_predictions;
+148       \}
+149     \}
+150   \}
+151   correct\_predictions = \hyperlink{classlbann_1_1metric_a464120720df6bfdf91bffe353e562964}{get\_comm}().\hyperlink{classlbann_1_1lbann__comm_aebb6290d1b618eace302404291c598a5}{model\_allreduce}(correct\_predictions);
+152 
+153   \textcolor{comment}{// Return percentage of correct predictions}
+154   \textcolor{keywordflow}{return} \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType}(100) * correct\_predictions;
+155 
+156 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1categorical__accuracy__metric_a0ec8c3254569c9f9855675243ac51612_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1categorical__accuracy__metric_a0ec8c3254569c9f9855675243ac51612_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1categorical__accuracy__metric_a9c06851bc233a01b28c346a10d278d99}\label{classlbann_1_1categorical__accuracy__metric_a9c06851bc233a01b28c346a10d278d99}} 
+\index{lbann\+::categorical\+\_\+accuracy\+\_\+metric@{lbann\+::categorical\+\_\+accuracy\+\_\+metric}!get\+\_\+unit@{get\+\_\+unit}}
+\index{get\+\_\+unit@{get\+\_\+unit}!lbann\+::categorical\+\_\+accuracy\+\_\+metric@{lbann\+::categorical\+\_\+accuracy\+\_\+metric}}
+\subsubsection{\texorpdfstring{get\+\_\+unit()}{get\_unit()}}
+{\footnotesize\ttfamily std\+::string lbann\+::categorical\+\_\+accuracy\+\_\+metric\+::get\+\_\+unit (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Return \char`\"{}\%\char`\"{} as a display unit. 
+
+Reimplemented from \hyperlink{classlbann_1_1metric_a13fd302dec85190b877f7146529e516c}{lbann\+::metric}.
+
+
+
+Definition at line 58 of file categorical\+\_\+accuracy.\+hpp.
+
+
+\begin{DoxyCode}
+58 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"%"}; \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1categorical__accuracy__metric_a9c06851bc233a01b28c346a10d278d99_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1categorical__accuracy__metric_a6fea8e495ab4ec4b05546c794468fa12}\label{classlbann_1_1categorical__accuracy__metric_a6fea8e495ab4ec4b05546c794468fa12}} 
+\index{lbann\+::categorical\+\_\+accuracy\+\_\+metric@{lbann\+::categorical\+\_\+accuracy\+\_\+metric}!name@{name}}
+\index{name@{name}!lbann\+::categorical\+\_\+accuracy\+\_\+metric@{lbann\+::categorical\+\_\+accuracy\+\_\+metric}}
+\subsubsection{\texorpdfstring{name()}{name()}}
+{\footnotesize\ttfamily std\+::string lbann\+::categorical\+\_\+accuracy\+\_\+metric\+::name (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Return a string name for this metric. 
+
+Implements \hyperlink{classlbann_1_1metric_af455d7b6874d3491bc04f0f2ebfcab51}{lbann\+::metric}.
+
+
+
+Definition at line 56 of file categorical\+\_\+accuracy.\+hpp.
+
+
+\begin{DoxyCode}
+56 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"categorical accuracy"}; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1categorical__accuracy__metric_a859f8e13d7222c92e32b6751b194ef47}\label{classlbann_1_1categorical__accuracy__metric_a859f8e13d7222c92e32b6751b194ef47}} 
+\index{lbann\+::categorical\+\_\+accuracy\+\_\+metric@{lbann\+::categorical\+\_\+accuracy\+\_\+metric}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::categorical\+\_\+accuracy\+\_\+metric@{lbann\+::categorical\+\_\+accuracy\+\_\+metric}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1categorical__accuracy__metric}{categorical\+\_\+accuracy\+\_\+metric} \& lbann\+::categorical\+\_\+accuracy\+\_\+metric\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1categorical__accuracy__metric}{categorical\+\_\+accuracy\+\_\+metric} \&}]{other }\end{DoxyParamCaption})}
+
+Copy assignment operator. 
+
+Definition at line 44 of file categorical\+\_\+accuracy.\+cpp.
+
+
+\begin{DoxyCode}
+44                                                                                                            
+       \{
+45   \hyperlink{classlbann_1_1metric_a4324342dab4892199a47df1d78b2cef5}{metric::operator=}(other);
+46   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1categorical__accuracy__metric_a796e50da721050d30e0cea709484154e}{m\_prediction\_values} != \textcolor{keyword}{nullptr}) \textcolor{keyword}{delete} 
+      \hyperlink{classlbann_1_1categorical__accuracy__metric_a796e50da721050d30e0cea709484154e}{m\_prediction\_values};
+47   \hyperlink{classlbann_1_1categorical__accuracy__metric_a796e50da721050d30e0cea709484154e}{m\_prediction\_values} = other.m\_prediction\_values;
+48   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1categorical__accuracy__metric_a796e50da721050d30e0cea709484154e}{m\_prediction\_values} != \textcolor{keyword}{nullptr}) \{
+49     \hyperlink{classlbann_1_1categorical__accuracy__metric_a796e50da721050d30e0cea709484154e}{m\_prediction\_values} = \hyperlink{classlbann_1_1categorical__accuracy__metric_a796e50da721050d30e0cea709484154e}{m\_prediction\_values}->Copy();
+50   \}
+51   \hyperlink{classlbann_1_1categorical__accuracy__metric_a369a86a91f08f3ad3b12b870ccf2e427}{m\_prediction\_indices} = other.m\_prediction\_indices;
+52   \textcolor{keywordflow}{return} *\textcolor{keyword}{this};
+53 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1categorical__accuracy__metric_a859f8e13d7222c92e32b6751b194ef47_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1categorical__accuracy__metric_a328a63ccc21c31efd511445f5b060960}\label{classlbann_1_1categorical__accuracy__metric_a328a63ccc21c31efd511445f5b060960}} 
+\index{lbann\+::categorical\+\_\+accuracy\+\_\+metric@{lbann\+::categorical\+\_\+accuracy\+\_\+metric}!setup@{setup}}
+\index{setup@{setup}!lbann\+::categorical\+\_\+accuracy\+\_\+metric@{lbann\+::categorical\+\_\+accuracy\+\_\+metric}}
+\subsubsection{\texorpdfstring{setup()}{setup()}}
+{\footnotesize\ttfamily void lbann\+::categorical\+\_\+accuracy\+\_\+metric\+::setup (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} \&}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Setup metric. 
+
+Reimplemented from \hyperlink{classlbann_1_1metric_a898d23e410297378db2fe9f8d1754fe0}{lbann\+::metric}.
+
+
+
+Definition at line 59 of file categorical\+\_\+accuracy.\+cpp.
+
+
+\begin{DoxyCode}
+59                                                 \{
+60   \hyperlink{classlbann_1_1metric_a898d23e410297378db2fe9f8d1754fe0}{metric::setup}(m);
+61   \textcolor{keyword}{const} El::DistData dist\_data(\hyperlink{classlbann_1_1metric_aba7f7a12aeba6619f7b4330e9075f76e}{get\_target\_layer}().get\_prediction());
+62   \textcolor{keywordflow}{if} (dist\_data.colDist == El::MC
+63       && dist\_data.rowDist == El::MR) \{
+64     \hyperlink{classlbann_1_1categorical__accuracy__metric_a796e50da721050d30e0cea709484154e}{m\_prediction\_values} = \textcolor{keyword}{new} \hyperlink{base_8hpp_a638c3ca7c22f916d23415b234420b9f1}{StarMRMat}(*dist\_data.grid, dist\_data.root);
+65   \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (dist\_data.colDist == El::STAR
+66              && dist\_data.rowDist == El::VC) \{
+67     \hyperlink{classlbann_1_1categorical__accuracy__metric_a796e50da721050d30e0cea709484154e}{m\_prediction\_values} = \textcolor{keyword}{new} \hyperlink{base_8hpp_aa4ec814c4a8f15b4ea2b24b3af94ef23}{StarVCMat}(*dist\_data.grid, dist\_data.root);
+68   \} \textcolor{keywordflow}{else} \{
+69     std::stringstream err;
+70     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+71         << \textcolor{stringliteral}{"prediction matrix has invalid distribution "}
+72         << \textcolor{stringliteral}{"(colDist="} << dist\_data.colDist << \textcolor{stringliteral}{","}
+73         << \textcolor{stringliteral}{"rowDist="} << dist\_data.rowDist << \textcolor{stringliteral}{")"};
+74     \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+75   \}
+76   \hyperlink{classlbann_1_1categorical__accuracy__metric_a796e50da721050d30e0cea709484154e}{m\_prediction\_values}->Resize(1, m.get\_max\_mini\_batch\_size());
+77   \hyperlink{classlbann_1_1categorical__accuracy__metric_a369a86a91f08f3ad3b12b870ccf2e427}{m\_prediction\_indices}.resize(\hyperlink{classlbann_1_1categorical__accuracy__metric_a796e50da721050d30e0cea709484154e}{m\_prediction\_values}->LocalWidth());
+78 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1categorical__accuracy__metric_a328a63ccc21c31efd511445f5b060960_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1categorical__accuracy__metric_a328a63ccc21c31efd511445f5b060960_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1categorical__accuracy__metric_a369a86a91f08f3ad3b12b870ccf2e427}\label{classlbann_1_1categorical__accuracy__metric_a369a86a91f08f3ad3b12b870ccf2e427}} 
+\index{lbann\+::categorical\+\_\+accuracy\+\_\+metric@{lbann\+::categorical\+\_\+accuracy\+\_\+metric}!m\+\_\+prediction\+\_\+indices@{m\+\_\+prediction\+\_\+indices}}
+\index{m\+\_\+prediction\+\_\+indices@{m\+\_\+prediction\+\_\+indices}!lbann\+::categorical\+\_\+accuracy\+\_\+metric@{lbann\+::categorical\+\_\+accuracy\+\_\+metric}}
+\subsubsection{\texorpdfstring{m\+\_\+prediction\+\_\+indices}{m\_prediction\_indices}}
+{\footnotesize\ttfamily std\+::vector$<$int$>$ lbann\+::categorical\+\_\+accuracy\+\_\+metric\+::m\+\_\+prediction\+\_\+indices\hspace{0.3cm}{\ttfamily [private]}}
+
+Indices of maximum values in columns of prediction matrix. 
+
+Definition at line 77 of file categorical\+\_\+accuracy.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1categorical__accuracy__metric_a796e50da721050d30e0cea709484154e}\label{classlbann_1_1categorical__accuracy__metric_a796e50da721050d30e0cea709484154e}} 
+\index{lbann\+::categorical\+\_\+accuracy\+\_\+metric@{lbann\+::categorical\+\_\+accuracy\+\_\+metric}!m\+\_\+prediction\+\_\+values@{m\+\_\+prediction\+\_\+values}}
+\index{m\+\_\+prediction\+\_\+values@{m\+\_\+prediction\+\_\+values}!lbann\+::categorical\+\_\+accuracy\+\_\+metric@{lbann\+::categorical\+\_\+accuracy\+\_\+metric}}
+\subsubsection{\texorpdfstring{m\+\_\+prediction\+\_\+values}{m\_prediction\_values}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat}$\ast$ lbann\+::categorical\+\_\+accuracy\+\_\+metric\+::m\+\_\+prediction\+\_\+values\hspace{0.3cm}{\ttfamily [private]}}
+
+Maximum values in columns of prediction matrix. 
+
+Definition at line 75 of file categorical\+\_\+accuracy.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/metrics/\hyperlink{categorical__accuracy_8hpp}{categorical\+\_\+accuracy.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/metrics/\hyperlink{categorical__accuracy_8cpp}{categorical\+\_\+accuracy.\+cpp}\end{DoxyCompactItemize}

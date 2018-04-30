@@ -1,0 +1,328 @@
+\hypertarget{structlbann_1_1metric__statistics}{}\section{lbann\+:\+:metric\+\_\+statistics Struct Reference}
+\label{structlbann_1_1metric__statistics}\index{lbann\+::metric\+\_\+statistics@{lbann\+::metric\+\_\+statistics}}
+
+
+{\ttfamily \#include $<$metric.\+hpp$>$}
+
+\subsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \hyperlink{structlbann_1_1metric__statistics_1_1packing__header}{packing\+\_\+header}
+\end{DoxyCompactItemize}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{structlbann_1_1metric__statistics_ab1d7b4cee7135230e0b3c6f56a579879}{metric\+\_\+statistics} ()
+\item 
+\hyperlink{structlbann_1_1metric__statistics_a03e015279805c8f6b532ea9daa5edfdb}{metric\+\_\+statistics} (\hyperlink{structlbann_1_1metric__statistics}{metric\+\_\+statistics} \&other)=default
+\item 
+\hyperlink{structlbann_1_1metric__statistics_a4575aafb156f2d76a5bb29d7db1765c4}{metric\+\_\+statistics} (const \hyperlink{structlbann_1_1metric__statistics}{metric\+\_\+statistics} \&other)=default
+\item 
+\hyperlink{structlbann_1_1metric__statistics}{metric\+\_\+statistics} \& \hyperlink{structlbann_1_1metric__statistics_a4d9ae608667c58eda58be3f4a237122d}{operator=} (\hyperlink{structlbann_1_1metric__statistics}{metric\+\_\+statistics} \&other)=default
+\item 
+\hyperlink{structlbann_1_1metric__statistics}{metric\+\_\+statistics} \& \hyperlink{structlbann_1_1metric__statistics_abdd86ced3ca40a411ebc1db2b857653b}{operator=} (const \hyperlink{structlbann_1_1metric__statistics}{metric\+\_\+statistics} \&other)=default
+\item 
+\hyperlink{structlbann_1_1metric__statistics_aa25840fdf7ef1ea78523047cb904d2c3}{$\sim$metric\+\_\+statistics} ()=default
+\item 
+void \hyperlink{structlbann_1_1metric__statistics_a1933a2417f08d99b1ddfa2b883dae68a}{add\+\_\+value} (\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} value, int num\+\_\+samples=1)
+\item 
+\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} \hyperlink{structlbann_1_1metric__statistics_ac3cb1abfc32b090fa2a08bda6afa5c09}{get\+\_\+mean} () const
+\item 
+int \hyperlink{structlbann_1_1metric__statistics_a24e7c8d8ecc2a02279d73b908fc97133}{get\+\_\+num\+\_\+samples} () const
+\item 
+void \hyperlink{structlbann_1_1metric__statistics_a3ab2a4cd36c154e495bc8f18c4295907}{reset} ()
+\item 
+bool \hyperlink{structlbann_1_1metric__statistics_a88f5324c96cceb47d723d2acfddb41f1}{pack\+\_\+scalars} (\hyperlink{classlbann_1_1persist}{persist} \&p)
+\item 
+bool \hyperlink{structlbann_1_1metric__statistics_a4ff472c5d9155fe28c5a576c49f1e154}{unpack\+\_\+scalars} (\hyperlink{classlbann_1_1persist}{persist} \&p, struct \hyperlink{structlbann_1_1metric__statistics_1_1packing__header}{packing\+\_\+header} $\ast$header)
+\item 
+void \hyperlink{structlbann_1_1metric__statistics_acdc0ca1af87e9cbd615c6e77b9dba21c}{unpack\+\_\+header} (struct \hyperlink{structlbann_1_1metric__statistics_1_1packing__header}{packing\+\_\+header} \&header)
+\end{DoxyCompactItemize}
+\subsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} \hyperlink{structlbann_1_1metric__statistics_a3481b2bb165e12a52db847f40a70f800}{m\+\_\+sum}
+\item 
+int \hyperlink{structlbann_1_1metric__statistics_a6633bf91863b7e2327563ac93a9783f7}{m\+\_\+num\+\_\+samples}
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Metric statistics. 
+
+Definition at line 43 of file metric.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{structlbann_1_1metric__statistics_ab1d7b4cee7135230e0b3c6f56a579879}\label{structlbann_1_1metric__statistics_ab1d7b4cee7135230e0b3c6f56a579879}} 
+\index{lbann\+::metric\+\_\+statistics@{lbann\+::metric\+\_\+statistics}!metric\+\_\+statistics@{metric\+\_\+statistics}}
+\index{metric\+\_\+statistics@{metric\+\_\+statistics}!lbann\+::metric\+\_\+statistics@{lbann\+::metric\+\_\+statistics}}
+\subsubsection{\texorpdfstring{metric\+\_\+statistics()}{metric\_statistics()}\hspace{0.1cm}{\footnotesize\ttfamily [1/3]}}
+{\footnotesize\ttfamily lbann\+::metric\+\_\+statistics\+::metric\+\_\+statistics (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Default constructor. 
+
+Definition at line 49 of file metric.\+hpp.
+
+
+\begin{DoxyCode}
+49 \{ \hyperlink{structlbann_1_1metric__statistics_a3ab2a4cd36c154e495bc8f18c4295907}{reset}(); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{structlbann_1_1metric__statistics_ab1d7b4cee7135230e0b3c6f56a579879_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{structlbann_1_1metric__statistics_a03e015279805c8f6b532ea9daa5edfdb}\label{structlbann_1_1metric__statistics_a03e015279805c8f6b532ea9daa5edfdb}} 
+\index{lbann\+::metric\+\_\+statistics@{lbann\+::metric\+\_\+statistics}!metric\+\_\+statistics@{metric\+\_\+statistics}}
+\index{metric\+\_\+statistics@{metric\+\_\+statistics}!lbann\+::metric\+\_\+statistics@{lbann\+::metric\+\_\+statistics}}
+\subsubsection{\texorpdfstring{metric\+\_\+statistics()}{metric\_statistics()}\hspace{0.1cm}{\footnotesize\ttfamily [2/3]}}
+{\footnotesize\ttfamily lbann\+::metric\+\_\+statistics\+::metric\+\_\+statistics (\begin{DoxyParamCaption}\item[{\hyperlink{structlbann_1_1metric__statistics}{metric\+\_\+statistics} \&}]{other }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Move constructor. \mbox{\Hypertarget{structlbann_1_1metric__statistics_a4575aafb156f2d76a5bb29d7db1765c4}\label{structlbann_1_1metric__statistics_a4575aafb156f2d76a5bb29d7db1765c4}} 
+\index{lbann\+::metric\+\_\+statistics@{lbann\+::metric\+\_\+statistics}!metric\+\_\+statistics@{metric\+\_\+statistics}}
+\index{metric\+\_\+statistics@{metric\+\_\+statistics}!lbann\+::metric\+\_\+statistics@{lbann\+::metric\+\_\+statistics}}
+\subsubsection{\texorpdfstring{metric\+\_\+statistics()}{metric\_statistics()}\hspace{0.1cm}{\footnotesize\ttfamily [3/3]}}
+{\footnotesize\ttfamily lbann\+::metric\+\_\+statistics\+::metric\+\_\+statistics (\begin{DoxyParamCaption}\item[{const \hyperlink{structlbann_1_1metric__statistics}{metric\+\_\+statistics} \&}]{other }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Copy constructor. \mbox{\Hypertarget{structlbann_1_1metric__statistics_aa25840fdf7ef1ea78523047cb904d2c3}\label{structlbann_1_1metric__statistics_aa25840fdf7ef1ea78523047cb904d2c3}} 
+\index{lbann\+::metric\+\_\+statistics@{lbann\+::metric\+\_\+statistics}!````~metric\+\_\+statistics@{$\sim$metric\+\_\+statistics}}
+\index{````~metric\+\_\+statistics@{$\sim$metric\+\_\+statistics}!lbann\+::metric\+\_\+statistics@{lbann\+::metric\+\_\+statistics}}
+\subsubsection{\texorpdfstring{$\sim$metric\+\_\+statistics()}{~metric\_statistics()}}
+{\footnotesize\ttfamily lbann\+::metric\+\_\+statistics\+::$\sim$metric\+\_\+statistics (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Destructor. Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{structlbann_1_1metric__statistics_aa25840fdf7ef1ea78523047cb904d2c3_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{structlbann_1_1metric__statistics_a1933a2417f08d99b1ddfa2b883dae68a}\label{structlbann_1_1metric__statistics_a1933a2417f08d99b1ddfa2b883dae68a}} 
+\index{lbann\+::metric\+\_\+statistics@{lbann\+::metric\+\_\+statistics}!add\+\_\+value@{add\+\_\+value}}
+\index{add\+\_\+value@{add\+\_\+value}!lbann\+::metric\+\_\+statistics@{lbann\+::metric\+\_\+statistics}}
+\subsubsection{\texorpdfstring{add\+\_\+value()}{add\_value()}}
+{\footnotesize\ttfamily void lbann\+::metric\+\_\+statistics\+::add\+\_\+value (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type}}]{value,  }\item[{int}]{num\+\_\+samples = {\ttfamily 1} }\end{DoxyParamCaption})}
+
+Add metric value to statistics. 
+
+Definition at line 34 of file metric.\+cpp.
+
+
+\begin{DoxyCode}
+34                                                                        \{
+35   \hyperlink{structlbann_1_1metric__statistics_a3481b2bb165e12a52db847f40a70f800}{m\_sum} += total\_value;
+36   \hyperlink{structlbann_1_1metric__statistics_a6633bf91863b7e2327563ac93a9783f7}{m\_num\_samples} += num\_samples;
+37 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{structlbann_1_1metric__statistics_a1933a2417f08d99b1ddfa2b883dae68a_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{structlbann_1_1metric__statistics_ac3cb1abfc32b090fa2a08bda6afa5c09}\label{structlbann_1_1metric__statistics_ac3cb1abfc32b090fa2a08bda6afa5c09}} 
+\index{lbann\+::metric\+\_\+statistics@{lbann\+::metric\+\_\+statistics}!get\+\_\+mean@{get\+\_\+mean}}
+\index{get\+\_\+mean@{get\+\_\+mean}!lbann\+::metric\+\_\+statistics@{lbann\+::metric\+\_\+statistics}}
+\subsubsection{\texorpdfstring{get\+\_\+mean()}{get\_mean()}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} lbann\+::metric\+\_\+statistics\+::get\+\_\+mean (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const}
+
+Get mean metric value. If mini-\/batch sizes are not identical, the mean is over the sample values rather than over the mini-\/batch mean values. 
+
+Definition at line 39 of file metric.\+cpp.
+
+
+\begin{DoxyCode}
+39                                            \{
+40   \textcolor{keywordflow}{if} (\hyperlink{structlbann_1_1metric__statistics_a6633bf91863b7e2327563ac93a9783f7}{m\_num\_samples} == 0) \{
+41     std::stringstream err;
+42     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+43         << \textcolor{stringliteral}{"attempted to get mean metric value with no statistics"};
+44     \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+45   \}
+46   \textcolor{keywordflow}{return} \hyperlink{structlbann_1_1metric__statistics_a3481b2bb165e12a52db847f40a70f800}{m\_sum} / \hyperlink{structlbann_1_1metric__statistics_a6633bf91863b7e2327563ac93a9783f7}{m\_num\_samples};
+47 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{structlbann_1_1metric__statistics_ac3cb1abfc32b090fa2a08bda6afa5c09_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{structlbann_1_1metric__statistics_a24e7c8d8ecc2a02279d73b908fc97133}\label{structlbann_1_1metric__statistics_a24e7c8d8ecc2a02279d73b908fc97133}} 
+\index{lbann\+::metric\+\_\+statistics@{lbann\+::metric\+\_\+statistics}!get\+\_\+num\+\_\+samples@{get\+\_\+num\+\_\+samples}}
+\index{get\+\_\+num\+\_\+samples@{get\+\_\+num\+\_\+samples}!lbann\+::metric\+\_\+statistics@{lbann\+::metric\+\_\+statistics}}
+\subsubsection{\texorpdfstring{get\+\_\+num\+\_\+samples()}{get\_num\_samples()}}
+{\footnotesize\ttfamily int lbann\+::metric\+\_\+statistics\+::get\+\_\+num\+\_\+samples (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Get number of samples. 
+
+Definition at line 68 of file metric.\+hpp.
+
+
+\begin{DoxyCode}
+68 \{ \textcolor{keywordflow}{return} \hyperlink{structlbann_1_1metric__statistics_a6633bf91863b7e2327563ac93a9783f7}{m\_num\_samples}; \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{structlbann_1_1metric__statistics_a24e7c8d8ecc2a02279d73b908fc97133_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{structlbann_1_1metric__statistics_a4d9ae608667c58eda58be3f4a237122d}\label{structlbann_1_1metric__statistics_a4d9ae608667c58eda58be3f4a237122d}} 
+\index{lbann\+::metric\+\_\+statistics@{lbann\+::metric\+\_\+statistics}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::metric\+\_\+statistics@{lbann\+::metric\+\_\+statistics}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \hyperlink{structlbann_1_1metric__statistics}{metric\+\_\+statistics}\& lbann\+::metric\+\_\+statistics\+::operator= (\begin{DoxyParamCaption}\item[{\hyperlink{structlbann_1_1metric__statistics}{metric\+\_\+statistics} \&}]{other }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Move assignment operator. Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{structlbann_1_1metric__statistics_a4d9ae608667c58eda58be3f4a237122d_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{structlbann_1_1metric__statistics_abdd86ced3ca40a411ebc1db2b857653b}\label{structlbann_1_1metric__statistics_abdd86ced3ca40a411ebc1db2b857653b}} 
+\index{lbann\+::metric\+\_\+statistics@{lbann\+::metric\+\_\+statistics}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::metric\+\_\+statistics@{lbann\+::metric\+\_\+statistics}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \hyperlink{structlbann_1_1metric__statistics}{metric\+\_\+statistics}\& lbann\+::metric\+\_\+statistics\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{structlbann_1_1metric__statistics}{metric\+\_\+statistics} \&}]{other }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Copy assignment operator. \mbox{\Hypertarget{structlbann_1_1metric__statistics_a88f5324c96cceb47d723d2acfddb41f1}\label{structlbann_1_1metric__statistics_a88f5324c96cceb47d723d2acfddb41f1}} 
+\index{lbann\+::metric\+\_\+statistics@{lbann\+::metric\+\_\+statistics}!pack\+\_\+scalars@{pack\+\_\+scalars}}
+\index{pack\+\_\+scalars@{pack\+\_\+scalars}!lbann\+::metric\+\_\+statistics@{lbann\+::metric\+\_\+statistics}}
+\subsubsection{\texorpdfstring{pack\+\_\+scalars()}{pack\_scalars()}}
+{\footnotesize\ttfamily bool lbann\+::metric\+\_\+statistics\+::pack\+\_\+scalars (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1persist}{persist} \&}]{p }\end{DoxyParamCaption})}
+
+
+
+Definition at line 54 of file metric.\+cpp.
+
+
+\begin{DoxyCode}
+54                                                \{
+55   p.write\_double(\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56af9ab05454998236921a6b0e281fae632}{persist\_type::validate}, \textcolor{stringliteral}{"sum"}, \hyperlink{structlbann_1_1metric__statistics_a3481b2bb165e12a52db847f40a70f800}{m\_sum});
+56   p.write\_uint64(\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56af9ab05454998236921a6b0e281fae632}{persist\_type::validate}, \textcolor{stringliteral}{"num\_samples"}, 
+      \hyperlink{structlbann_1_1metric__statistics_a6633bf91863b7e2327563ac93a9783f7}{m\_num\_samples});
+57   \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+58 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{structlbann_1_1metric__statistics_a88f5324c96cceb47d723d2acfddb41f1_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{structlbann_1_1metric__statistics_a3ab2a4cd36c154e495bc8f18c4295907}\label{structlbann_1_1metric__statistics_a3ab2a4cd36c154e495bc8f18c4295907}} 
+\index{lbann\+::metric\+\_\+statistics@{lbann\+::metric\+\_\+statistics}!reset@{reset}}
+\index{reset@{reset}!lbann\+::metric\+\_\+statistics@{lbann\+::metric\+\_\+statistics}}
+\subsubsection{\texorpdfstring{reset()}{reset()}}
+{\footnotesize\ttfamily void lbann\+::metric\+\_\+statistics\+::reset (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+Reset statistics. 
+
+Definition at line 49 of file metric.\+cpp.
+
+
+\begin{DoxyCode}
+49                               \{
+50   \hyperlink{structlbann_1_1metric__statistics_a3481b2bb165e12a52db847f40a70f800}{m\_sum} = 0.0;
+51   \hyperlink{structlbann_1_1metric__statistics_a6633bf91863b7e2327563ac93a9783f7}{m\_num\_samples} = 0;
+52 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{structlbann_1_1metric__statistics_a3ab2a4cd36c154e495bc8f18c4295907_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{structlbann_1_1metric__statistics_acdc0ca1af87e9cbd615c6e77b9dba21c}\label{structlbann_1_1metric__statistics_acdc0ca1af87e9cbd615c6e77b9dba21c}} 
+\index{lbann\+::metric\+\_\+statistics@{lbann\+::metric\+\_\+statistics}!unpack\+\_\+header@{unpack\+\_\+header}}
+\index{unpack\+\_\+header@{unpack\+\_\+header}!lbann\+::metric\+\_\+statistics@{lbann\+::metric\+\_\+statistics}}
+\subsubsection{\texorpdfstring{unpack\+\_\+header()}{unpack\_header()}}
+{\footnotesize\ttfamily void lbann\+::metric\+\_\+statistics\+::unpack\+\_\+header (\begin{DoxyParamCaption}\item[{struct \hyperlink{structlbann_1_1metric__statistics_1_1packing__header}{packing\+\_\+header} \&}]{header }\end{DoxyParamCaption})}
+
+
+
+Definition at line 74 of file metric.\+cpp.
+
+
+\begin{DoxyCode}
+74                                                                    \{
+75   \hyperlink{structlbann_1_1metric__statistics_a3481b2bb165e12a52db847f40a70f800}{m\_sum} = header.sum;
+76   \hyperlink{structlbann_1_1metric__statistics_a6633bf91863b7e2327563ac93a9783f7}{m\_num\_samples} = header.num\_samples;
+77 \}
+\end{DoxyCode}
+\mbox{\Hypertarget{structlbann_1_1metric__statistics_a4ff472c5d9155fe28c5a576c49f1e154}\label{structlbann_1_1metric__statistics_a4ff472c5d9155fe28c5a576c49f1e154}} 
+\index{lbann\+::metric\+\_\+statistics@{lbann\+::metric\+\_\+statistics}!unpack\+\_\+scalars@{unpack\+\_\+scalars}}
+\index{unpack\+\_\+scalars@{unpack\+\_\+scalars}!lbann\+::metric\+\_\+statistics@{lbann\+::metric\+\_\+statistics}}
+\subsubsection{\texorpdfstring{unpack\+\_\+scalars()}{unpack\_scalars()}}
+{\footnotesize\ttfamily bool lbann\+::metric\+\_\+statistics\+::unpack\+\_\+scalars (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1persist}{persist} \&}]{p,  }\item[{struct \hyperlink{structlbann_1_1metric__statistics_1_1packing__header}{packing\+\_\+header} $\ast$}]{header }\end{DoxyParamCaption})}
+
+
+
+Definition at line 60 of file metric.\+cpp.
+
+
+\begin{DoxyCode}
+60                                                                                 \{
+61   \textcolor{keywordtype}{double} sum;
+62   uint64\_t num\_samples;
+63   p.read\_double(\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56af9ab05454998236921a6b0e281fae632}{persist\_type::validate}, \textcolor{stringliteral}{"sum"}, &sum);
+64   p.read\_uint64(\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56af9ab05454998236921a6b0e281fae632}{persist\_type::validate}, \textcolor{stringliteral}{"num\_samples"}, (uint64\_t *) &num\_samples);
+65   \hyperlink{structlbann_1_1metric__statistics_a3481b2bb165e12a52db847f40a70f800}{m\_sum} = sum;
+66   \hyperlink{structlbann_1_1metric__statistics_a6633bf91863b7e2327563ac93a9783f7}{m\_num\_samples} = num\_samples;
+67   \textcolor{keywordflow}{if} (header != \textcolor{keyword}{nullptr}) \{
+68     header->sum = sum;
+69     header->num\_samples = num\_samples;
+70   \}
+71   \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+72 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{structlbann_1_1metric__statistics_a4ff472c5d9155fe28c5a576c49f1e154_cgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{structlbann_1_1metric__statistics_a6633bf91863b7e2327563ac93a9783f7}\label{structlbann_1_1metric__statistics_a6633bf91863b7e2327563ac93a9783f7}} 
+\index{lbann\+::metric\+\_\+statistics@{lbann\+::metric\+\_\+statistics}!m\+\_\+num\+\_\+samples@{m\+\_\+num\+\_\+samples}}
+\index{m\+\_\+num\+\_\+samples@{m\+\_\+num\+\_\+samples}!lbann\+::metric\+\_\+statistics@{lbann\+::metric\+\_\+statistics}}
+\subsubsection{\texorpdfstring{m\+\_\+num\+\_\+samples}{m\_num\_samples}}
+{\footnotesize\ttfamily int lbann\+::metric\+\_\+statistics\+::m\+\_\+num\+\_\+samples}
+
+Number of samples. 
+
+Definition at line 47 of file metric.\+hpp.
+
+\mbox{\Hypertarget{structlbann_1_1metric__statistics_a3481b2bb165e12a52db847f40a70f800}\label{structlbann_1_1metric__statistics_a3481b2bb165e12a52db847f40a70f800}} 
+\index{lbann\+::metric\+\_\+statistics@{lbann\+::metric\+\_\+statistics}!m\+\_\+sum@{m\+\_\+sum}}
+\index{m\+\_\+sum@{m\+\_\+sum}!lbann\+::metric\+\_\+statistics@{lbann\+::metric\+\_\+statistics}}
+\subsubsection{\texorpdfstring{m\+\_\+sum}{m\_sum}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} lbann\+::metric\+\_\+statistics\+::m\+\_\+sum}
+
+Sum of metric values. 
+
+Definition at line 45 of file metric.\+hpp.
+
+
+
+The documentation for this struct was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/metrics/\hyperlink{metric_8hpp}{metric.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/metrics/\hyperlink{metric_8cpp}{metric.\+cpp}\end{DoxyCompactItemize}

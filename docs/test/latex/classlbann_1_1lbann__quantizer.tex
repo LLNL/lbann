@@ -1,0 +1,2317 @@
+\hypertarget{classlbann_1_1lbann__quantizer}{}\section{lbann\+:\+:lbann\+\_\+quantizer Class Reference}
+\label{classlbann_1_1lbann__quantizer}\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+
+
+{\ttfamily \#include $<$quantizer.\+hpp$>$}
+
+\subsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \hyperlink{structlbann_1_1lbann__quantizer_1_1adaptive__reconstructions}{adaptive\+\_\+reconstructions}
+\item 
+struct \hyperlink{structlbann_1_1lbann__quantizer_1_1adaptive__thresholds}{adaptive\+\_\+thresholds}
+\end{DoxyCompactItemize}
+\subsection*{Public Types}
+\begin{DoxyCompactItemize}
+\item 
+using \hyperlink{classlbann_1_1lbann__quantizer_ac8b63c86fc871e248ce20c7af19a7fad}{uqtype} = El\+::\+Unsigned
+\item 
+using \hyperlink{classlbann_1_1lbann__quantizer_afcda642ff1b44d31eec910909c3d013e}{qtype} = El\+::\+Int
+\item 
+using \hyperlink{classlbann_1_1lbann__quantizer_a399f3f8c393b6021b43e95d1ce6ea28c}{Quantized\+Matrix} = El\+::\+Matrix$<$ \hyperlink{classlbann_1_1lbann__quantizer_afcda642ff1b44d31eec910909c3d013e}{qtype} $>$
+\item 
+using \hyperlink{classlbann_1_1lbann__quantizer_a85ea8e298c2975b4f802855278406aa7}{Thresh\+Quantized} = std\+::vector$<$ \hyperlink{classlbann_1_1lbann__quantizer_ac8b63c86fc871e248ce20c7af19a7fad}{uqtype} $>$
+\item 
+using \hyperlink{classlbann_1_1lbann__quantizer_adb72778971f6bb914a14823dd5806702}{Thresh\+Quantized32} = std\+::vector$<$ uint32\+\_\+t $>$
+\item 
+using \hyperlink{classlbann_1_1lbann__quantizer_a2153502c89432e8762141d84794aac75}{Thresh\+Quantized64} = std\+::vector$<$ uint64\+\_\+t $>$
+\end{DoxyCompactItemize}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1lbann__quantizer_a430cd47f333c678d2cb77f4ab2693914}{lbann\+\_\+quantizer} ()
+\item 
+\hyperlink{classlbann_1_1lbann__quantizer_ac0cc07008ff963949c2cb7b91786c61c}{$\sim$lbann\+\_\+quantizer} ()
+\item 
+void \hyperlink{classlbann_1_1lbann__quantizer_a4dd4696cbbfd93c73e5fb3c40fcb16c3}{onebit\+\_\+quantize} (const \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&mat, \hyperlink{classlbann_1_1lbann__quantizer_a399f3f8c393b6021b43e95d1ce6ea28c}{Quantized\+Matrix} \&qmat, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&qerror, bool sample=true)
+\item 
+void \hyperlink{classlbann_1_1lbann__quantizer_a9eeb89150026bf4b7bea15bffdba10d3}{onebit\+\_\+quantize} (const \hyperlink{base_8hpp_a0fab5387556805cfeac3e7e567bf66c5}{Dist\+Mat} \&mat, \hyperlink{classlbann_1_1lbann__quantizer_a399f3f8c393b6021b43e95d1ce6ea28c}{Quantized\+Matrix} \&qmat, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&qerror, bool sample=true)
+\item 
+void \hyperlink{classlbann_1_1lbann__quantizer_ad5592daa122b40c275cce3dc93bba41e}{onebit\+\_\+unquantize} (const \hyperlink{classlbann_1_1lbann__quantizer_a399f3f8c393b6021b43e95d1ce6ea28c}{Quantized\+Matrix} \&qmat, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&mat)
+\item 
+void \hyperlink{classlbann_1_1lbann__quantizer_afc7a47fb5a5e87a09f2913a46a2bacf7}{onebit\+\_\+unquantize} (const \hyperlink{classlbann_1_1lbann__quantizer_a399f3f8c393b6021b43e95d1ce6ea28c}{Quantized\+Matrix} \&qmat, \hyperlink{base_8hpp_a0fab5387556805cfeac3e7e567bf66c5}{Dist\+Mat} \&mat)
+\item 
+void \hyperlink{classlbann_1_1lbann__quantizer_a4b326de1ca5b7eba6415b6f42f83335b}{intermodel\+\_\+sum\+\_\+onebit\+\_\+quantized} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&mat, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&qerror)
+\item 
+void \hyperlink{classlbann_1_1lbann__quantizer_af24e00e26e157f102f3cef547de40ae1}{intermodel\+\_\+sum\+\_\+onebit\+\_\+quantized} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, \hyperlink{base_8hpp_a0fab5387556805cfeac3e7e567bf66c5}{Dist\+Mat} \&mat, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&qerror)
+\item 
+void \hyperlink{classlbann_1_1lbann__quantizer_a00106e69ea8a6dfe9e9a91c75b845bcd}{threshold\+\_\+quantize} (const \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&mat, \hyperlink{classlbann_1_1lbann__quantizer_a85ea8e298c2975b4f802855278406aa7}{Thresh\+Quantized} \&q, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&qerror, Data\+Type pos\+\_\+thresh, Data\+Type neg\+\_\+thresh, bool delta=false)
+\item 
+void \hyperlink{classlbann_1_1lbann__quantizer_ae9949af6bec1e95adf5a32ba9bb4afd8}{threshold\+\_\+quantize} (const \hyperlink{base_8hpp_a0fab5387556805cfeac3e7e567bf66c5}{Dist\+Mat} \&mat, \hyperlink{classlbann_1_1lbann__quantizer_a85ea8e298c2975b4f802855278406aa7}{Thresh\+Quantized} \&q, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&qerror, Data\+Type pos\+\_\+thresh, Data\+Type neg\+\_\+thresh, bool delta=false)
+\item 
+void \hyperlink{classlbann_1_1lbann__quantizer_a0f5f3b0149715ab59202b8884a87c7d5}{threshold\+\_\+unquantize} (const \hyperlink{classlbann_1_1lbann__quantizer_a85ea8e298c2975b4f802855278406aa7}{Thresh\+Quantized} \&q, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&mat, Data\+Type pos\+\_\+thresh, Data\+Type neg\+\_\+thresh, bool delta=false)
+\item 
+void \hyperlink{classlbann_1_1lbann__quantizer_a2324bba3cbb6c0d3e51bbe21555e7f1a}{threshold\+\_\+unquantize} (const \hyperlink{classlbann_1_1lbann__quantizer_a85ea8e298c2975b4f802855278406aa7}{Thresh\+Quantized} \&q, \hyperlink{base_8hpp_a0fab5387556805cfeac3e7e567bf66c5}{Dist\+Mat} \&mat, Data\+Type pos\+\_\+thresh, Data\+Type neg\+\_\+thresh, bool delta=false)
+\item 
+void \hyperlink{classlbann_1_1lbann__quantizer_a0bd572557675705c5e080b92d74b02ae}{intermodel\+\_\+sum\+\_\+threshold\+\_\+quantized} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&mat, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&qerror, Data\+Type pos\+\_\+thresh, Data\+Type neg\+\_\+thresh)
+\item 
+void \hyperlink{classlbann_1_1lbann__quantizer_ac2afc78996f35d90b5d0462292a1a2e3}{intermodel\+\_\+sum\+\_\+threshold\+\_\+quantized} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, \hyperlink{base_8hpp_a0fab5387556805cfeac3e7e567bf66c5}{Dist\+Mat} \&mat, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&qerror, Data\+Type pos\+\_\+thresh, Data\+Type neg\+\_\+thresh)
+\item 
+{\footnotesize template$<$typename colT , typename rowT $>$ }\\void \hyperlink{classlbann_1_1lbann__quantizer_a7e4dfca5770dfd88ae6255b0407d8f80}{adaptive\+\_\+quantize} (const \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&mat, std\+::vector$<$ rowT $>$ \&q, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&qerror, int proportion)
+\item 
+{\footnotesize template$<$typename colT , typename rowT $>$ }\\void \hyperlink{classlbann_1_1lbann__quantizer_a737865bb555db8a8a104fb345f7626b2}{adaptive\+\_\+quantize} (const \hyperlink{base_8hpp_a0fab5387556805cfeac3e7e567bf66c5}{Dist\+Mat} \&mat, std\+::vector$<$ rowT $>$ \&q, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&qerror, int proportion)
+\item 
+{\footnotesize template$<$typename colT , typename rowT $>$ }\\void \hyperlink{classlbann_1_1lbann__quantizer_acf8d21e8114a00fdea53d919d76dd511}{adaptive\+\_\+unquantize} (const rowT $\ast$q, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&mat)
+\item 
+{\footnotesize template$<$typename colT , typename rowT $>$ }\\void \hyperlink{classlbann_1_1lbann__quantizer_a5456c31af080fce7f85aa7a01b7ee939}{adaptive\+\_\+unquantize} (const rowT $\ast$q, \hyperlink{base_8hpp_a0fab5387556805cfeac3e7e567bf66c5}{Dist\+Mat} \&mat)
+\item 
+void \hyperlink{classlbann_1_1lbann__quantizer_a87e856d8bf5e8a678a39cdb8f547dfd9}{intermodel\+\_\+sum\+\_\+adaptive\+\_\+quantized} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&mat, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&qerror, int proportion)
+\item 
+void \hyperlink{classlbann_1_1lbann__quantizer_aa2d4e5b9bc90f8feaaa32f3fc4183d10}{intermodel\+\_\+sum\+\_\+adaptive\+\_\+quantized} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, \hyperlink{base_8hpp_a0fab5387556805cfeac3e7e567bf66c5}{Dist\+Mat} \&mat, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&qerror, int proportion)
+\item 
+\hyperlink{structlbann_1_1lbann__quantizer_1_1adaptive__thresholds}{adaptive\+\_\+thresholds} \hyperlink{classlbann_1_1lbann__quantizer_aa5aabc1cb4163e95aee993d9b37b9b32}{proportion\+\_\+threshold} (const \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&mat, const \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&qerror, int proportion, bool sample=true)
+\item 
+\hyperlink{structlbann_1_1lbann__quantizer_1_1adaptive__reconstructions}{adaptive\+\_\+reconstructions} \hyperlink{classlbann_1_1lbann__quantizer_af77beca5905ff8601ca9b8231a2a16e0}{col\+\_\+reconstruction} (const \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&mat, const \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&qerror, El\+::\+Int col, const \hyperlink{structlbann_1_1lbann__quantizer_1_1adaptive__thresholds}{adaptive\+\_\+thresholds} threshes, bool sample=true)
+\item 
+double \hyperlink{classlbann_1_1lbann__quantizer_a71023cbf93b54d8e8707d137e3c6007a}{get\+\_\+proportion\+\_\+time} () const
+\item 
+void \hyperlink{classlbann_1_1lbann__quantizer_aee1ea46e3191ad25fd310938eaf5a2e0}{reset\+\_\+counters} ()
+\item 
+size\+\_\+t \hyperlink{classlbann_1_1lbann__quantizer_afe560823e51a64b1bb42c6f6cbd83ee0}{get\+\_\+quantized\+\_\+count} () const
+\end{DoxyCompactItemize}
+\subsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+El\+::\+Int \hyperlink{classlbann_1_1lbann__quantizer_aa1541b9afa60250dbd570acbbe98242f}{get\+\_\+onebit\+\_\+quantized\+\_\+matrix\+\_\+height} (const \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&mat) const
+\item 
+void \hyperlink{classlbann_1_1lbann__quantizer_a879cea8464408b8265be9e55edd83b2c}{onebit\+\_\+unquantize\+\_\+add} (const \hyperlink{classlbann_1_1lbann__quantizer_a399f3f8c393b6021b43e95d1ce6ea28c}{Quantized\+Matrix} \&qmat, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&mat)
+\item 
+void \hyperlink{classlbann_1_1lbann__quantizer_ab12b432ba2901347b025e8b6ec40a3c6}{threshold\+\_\+unquantize\+\_\+apply} (const \hyperlink{classlbann_1_1lbann__quantizer_a85ea8e298c2975b4f802855278406aa7}{Thresh\+Quantized} \&q, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&mat, Data\+Type pos\+\_\+thresh, Data\+Type neg\+\_\+thresh, std\+::vector$<$ El\+::\+Unsigned $>$ \&positions, bool delta=false)
+\item 
+void \hyperlink{classlbann_1_1lbann__quantizer_a2bcdf31781bf72bbe63940ea0d92990f}{threshold\+\_\+quantize\+\_\+apply} (const \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&mat, \hyperlink{classlbann_1_1lbann__quantizer_a85ea8e298c2975b4f802855278406aa7}{Thresh\+Quantized} \&q, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&qerror, Data\+Type pos\+\_\+thresh, Data\+Type neg\+\_\+thresh, std\+::vector$<$ El\+::\+Unsigned $>$ \&positions, bool delta=false)
+\item 
+{\footnotesize template$<$typename colT , typename rowT $>$ }\\void \hyperlink{classlbann_1_1lbann__quantizer_a1f63f7be2e227a48ebaa25056e6f85bc}{adaptive\+\_\+unquantize\+\_\+add} (const rowT $\ast$q, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&mat)
+\item 
+{\footnotesize template$<$typename colT , typename rowT $>$ }\\void \hyperlink{classlbann_1_1lbann__quantizer_a25ed3869c6bc615ae51198803ea4e33d}{adaptive\+\_\+quantize\+\_\+replace} (\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&mat, std\+::vector$<$ rowT $>$ \&q, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&qerror, int proportion)
+\item 
+{\footnotesize template$<$typename colT , typename rowT $>$ }\\void \hyperlink{classlbann_1_1lbann__quantizer_a9d6e80bd54d6eb03dc63c15861356557}{adaptive\+\_\+bound} (const \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&mat, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&qerror, std\+::vector$<$ rowT $>$ \&q, int proportion)
+\item 
+{\footnotesize template$<$typename colT , typename rowT $>$ }\\void \hyperlink{classlbann_1_1lbann__quantizer_ab3a0e79b571e7c016446c179eedd0dc1}{adaptive\+\_\+quantize\+\_\+slice} (const std\+::vector$<$ rowT $>$ \&q, const \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&mat, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&qerror, std\+::vector$<$ rowT $>$ \&slice, colT start, colT end, int proportion)
+\item 
+{\footnotesize template$<$typename colT , typename rowT $>$ }\\void \hyperlink{classlbann_1_1lbann__quantizer_a3fe3493cb16b85bd4eaf251980408f1b}{intermodel\+\_\+sum\+\_\+adaptive\+\_\+quantized\+\_\+impl} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&mat, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&qerror, int proportion)
+\item 
+int \hyperlink{classlbann_1_1lbann__quantizer_aaa0c20f755437130172c40ca8e95bc3f}{get\+\_\+adaptive\+\_\+quantization\+\_\+threads} (El\+::\+Int width)
+\item 
+int \hyperlink{classlbann_1_1lbann__quantizer_a22b898932caed41ccf24abcb67c00ba1}{get\+\_\+adaptive\+\_\+quantization\+\_\+copy\+\_\+threads} (El\+::\+Int width)
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+double \hyperlink{classlbann_1_1lbann__quantizer_a6bd266728f578df0c86fc2e493742cc1}{proportion\+\_\+time}
+\item 
+size\+\_\+t \hyperlink{classlbann_1_1lbann__quantizer_a716fae78ef5ba082a8093f0d06550804}{quantized\+\_\+count}
+\end{DoxyCompactItemize}
+\subsection*{Static Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+static const size\+\_\+t \hyperlink{classlbann_1_1lbann__quantizer_a33ea17392f53b90e91aea1ffb7e11d68}{N\+U\+M\+\_\+\+B\+I\+TS} = sizeof(\hyperlink{classlbann_1_1lbann__quantizer_afcda642ff1b44d31eec910909c3d013e}{qtype}) $\ast$ 8
+\item 
+static const El\+::\+Int \hyperlink{classlbann_1_1lbann__quantizer_a7745dbc282bebe812ff5523a4b3df3f2}{N\+U\+M\+\_\+\+T\+H\+R\+E\+S\+H\+O\+L\+D\+\_\+\+S\+A\+M\+P\+L\+ES} = 1024
+\item 
+static const El\+::\+Int \hyperlink{classlbann_1_1lbann__quantizer_a10667e56db4218aac3912c6bae28fc41}{N\+U\+M\+\_\+\+R\+E\+C\+O\+N\+\_\+\+S\+A\+M\+P\+L\+ES} = 128
+\item 
+static const El\+::\+Int \hyperlink{classlbann_1_1lbann__quantizer_a8e25785452736c54861a69207a48252d}{N\+U\+M\+\_\+\+O\+N\+E\+B\+I\+T\+\_\+\+S\+A\+M\+P\+L\+ES} = 128
+\item 
+static const int \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{H\+E\+A\+D\+E\+R\+\_\+\+F\+A\+C\+T\+OR} = 3
+\item 
+static const El\+::\+Int \hyperlink{classlbann_1_1lbann__quantizer_abe63d57e62be1b498848f7920de4433a}{M\+A\+X\+\_\+\+Q\+U\+A\+N\+T\+I\+Z\+E\+D\+\_\+\+E\+X\+C\+E\+SS} = 4
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Support different kinds of quantization. Relevant references\+: \char`\"{}1-\/\+Bit Stochastic Gradient Descent and its Application to Data-\/\+Parallel
+\+Distributed Training of Speech D\+N\+Ns\char`\"{} by Frank Seide et al. (M\+SR) \char`\"{}\+Scalable Distributed D\+N\+N Training Using Commodity G\+P\+U Cloud Computing\char`\"{} by Nikko Strom. (Amazon) \char`\"{}\+Communication Quantization for Data-\/parallel Training of Deep Neural
+\+Networks\char`\"{} by Nikoli Dryden et al. (L\+L\+N\+L/\+U\+I\+UC) 
+
+Definition at line 56 of file quantizer.\+hpp.
+
+
+
+\subsection{Member Typedef Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_afcda642ff1b44d31eec910909c3d013e}\label{classlbann_1_1lbann__quantizer_afcda642ff1b44d31eec910909c3d013e}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!qtype@{qtype}}
+\index{qtype@{qtype}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{qtype}{qtype}}
+{\footnotesize\ttfamily using \hyperlink{classlbann_1_1lbann__quantizer_afcda642ff1b44d31eec910909c3d013e}{lbann\+::lbann\+\_\+quantizer\+::qtype} =  El\+::\+Int}
+
+
+
+Definition at line 60 of file quantizer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_a399f3f8c393b6021b43e95d1ce6ea28c}\label{classlbann_1_1lbann__quantizer_a399f3f8c393b6021b43e95d1ce6ea28c}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!Quantized\+Matrix@{Quantized\+Matrix}}
+\index{Quantized\+Matrix@{Quantized\+Matrix}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{Quantized\+Matrix}{QuantizedMatrix}}
+{\footnotesize\ttfamily using \hyperlink{classlbann_1_1lbann__quantizer_a399f3f8c393b6021b43e95d1ce6ea28c}{lbann\+::lbann\+\_\+quantizer\+::\+Quantized\+Matrix} =  El\+::\+Matrix$<$\hyperlink{classlbann_1_1lbann__quantizer_afcda642ff1b44d31eec910909c3d013e}{qtype}$>$}
+
+This represents a quantized version of a matrix. Each column is quantized separately. The first two entries are floats representing the positive and negative averages for the column (used in dequantizion). The rest is one-\/bit quantized entries. Quantization is by column to keep averages nice and because Elemental uses column-\/major ordering. 
+
+Definition at line 69 of file quantizer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_a85ea8e298c2975b4f802855278406aa7}\label{classlbann_1_1lbann__quantizer_a85ea8e298c2975b4f802855278406aa7}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!Thresh\+Quantized@{Thresh\+Quantized}}
+\index{Thresh\+Quantized@{Thresh\+Quantized}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{Thresh\+Quantized}{ThreshQuantized}}
+{\footnotesize\ttfamily using \hyperlink{classlbann_1_1lbann__quantizer_a85ea8e298c2975b4f802855278406aa7}{lbann\+::lbann\+\_\+quantizer\+::\+Thresh\+Quantized} =  std\+::vector$<$\hyperlink{classlbann_1_1lbann__quantizer_ac8b63c86fc871e248ce20c7af19a7fad}{uqtype}$>$}
+
+
+
+Definition at line 70 of file quantizer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_adb72778971f6bb914a14823dd5806702}\label{classlbann_1_1lbann__quantizer_adb72778971f6bb914a14823dd5806702}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!Thresh\+Quantized32@{Thresh\+Quantized32}}
+\index{Thresh\+Quantized32@{Thresh\+Quantized32}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{Thresh\+Quantized32}{ThreshQuantized32}}
+{\footnotesize\ttfamily using \hyperlink{classlbann_1_1lbann__quantizer_adb72778971f6bb914a14823dd5806702}{lbann\+::lbann\+\_\+quantizer\+::\+Thresh\+Quantized32} =  std\+::vector$<$uint32\+\_\+t$>$}
+
+
+
+Definition at line 71 of file quantizer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_a2153502c89432e8762141d84794aac75}\label{classlbann_1_1lbann__quantizer_a2153502c89432e8762141d84794aac75}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!Thresh\+Quantized64@{Thresh\+Quantized64}}
+\index{Thresh\+Quantized64@{Thresh\+Quantized64}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{Thresh\+Quantized64}{ThreshQuantized64}}
+{\footnotesize\ttfamily using \hyperlink{classlbann_1_1lbann__quantizer_a2153502c89432e8762141d84794aac75}{lbann\+::lbann\+\_\+quantizer\+::\+Thresh\+Quantized64} =  std\+::vector$<$uint64\+\_\+t$>$}
+
+
+
+Definition at line 72 of file quantizer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_ac8b63c86fc871e248ce20c7af19a7fad}\label{classlbann_1_1lbann__quantizer_ac8b63c86fc871e248ce20c7af19a7fad}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!uqtype@{uqtype}}
+\index{uqtype@{uqtype}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{uqtype}{uqtype}}
+{\footnotesize\ttfamily using \hyperlink{classlbann_1_1lbann__quantizer_ac8b63c86fc871e248ce20c7af19a7fad}{lbann\+::lbann\+\_\+quantizer\+::uqtype} =  El\+::\+Unsigned}
+
+We require that sizeof(\+Data\+Type) $<$= sizeof(qtype) == sizeof(uqtype). 
+
+Definition at line 59 of file quantizer.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_a430cd47f333c678d2cb77f4ab2693914}\label{classlbann_1_1lbann__quantizer_a430cd47f333c678d2cb77f4ab2693914}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!lbann\+\_\+quantizer@{lbann\+\_\+quantizer}}
+\index{lbann\+\_\+quantizer@{lbann\+\_\+quantizer}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{lbann\+\_\+quantizer()}{lbann\_quantizer()}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+quantizer\+::lbann\+\_\+quantizer (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Definition at line 37 of file quantizer.\+cpp.
+
+
+\begin{DoxyCode}
+37                                  \{
+38   \hyperlink{classlbann_1_1lbann__quantizer_aee1ea46e3191ad25fd310938eaf5a2e0}{reset\_counters}();
+39 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_a430cd47f333c678d2cb77f4ab2693914_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_ac0cc07008ff963949c2cb7b91786c61c}\label{classlbann_1_1lbann__quantizer_ac0cc07008ff963949c2cb7b91786c61c}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!````~lbann\+\_\+quantizer@{$\sim$lbann\+\_\+quantizer}}
+\index{````~lbann\+\_\+quantizer@{$\sim$lbann\+\_\+quantizer}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{$\sim$lbann\+\_\+quantizer()}{~lbann\_quantizer()}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+quantizer\+::$\sim$lbann\+\_\+quantizer (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Definition at line 41 of file quantizer.\+cpp.
+
+
+\begin{DoxyCode}
+41                                   \{
+42 
+43 \}
+\end{DoxyCode}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_a9d6e80bd54d6eb03dc63c15861356557}\label{classlbann_1_1lbann__quantizer_a9d6e80bd54d6eb03dc63c15861356557}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!adaptive\+\_\+bound@{adaptive\+\_\+bound}}
+\index{adaptive\+\_\+bound@{adaptive\+\_\+bound}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{adaptive\+\_\+bound()}{adaptive\_bound()}}
+{\footnotesize\ttfamily template$<$typename colT , typename rowT $>$ \\
+void lbann\+::lbann\+\_\+quantizer\+::adaptive\+\_\+bound (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{mat,  }\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{qerror,  }\item[{std\+::vector$<$ rowT $>$ \&}]{q,  }\item[{int}]{proportion }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+Ensure that q is no more than a factor of M\+A\+X\+\_\+\+Q\+U\+A\+N\+T\+I\+Z\+E\+D\+\_\+\+E\+X\+C\+E\+SS larger than optimal. 
+
+Definition at line 397 of file quantizer\+\_\+impl.\+hpp.
+
+
+\begin{DoxyCode}
+398                                                                    \{
+399   \textcolor{comment}{// Ensure types are reasonable.}
+400   static\_assert(std::is\_integral<colT>::value && std::is\_integral<rowT>::value,
+401                 \textcolor{stringliteral}{"Types must be integral"});
+402   static\_assert(std::is\_unsigned<colT>::value && std::is\_unsigned<rowT>::value,
+403                 \textcolor{stringliteral}{"Types must be unsigned"});
+404   static\_assert(\textcolor{keyword}{sizeof}(colT) == 2 || \textcolor{keyword}{sizeof}(colT) == 4 || \textcolor{keyword}{sizeof}(colT) == 8,
+405                 \textcolor{stringliteral}{"colT must be 2, 4, or 8 bytes."});
+406   static\_assert(\textcolor{keyword}{sizeof}(rowT) == 2 || \textcolor{keyword}{sizeof}(rowT) == 4 || \textcolor{keyword}{sizeof}(rowT) == 8,
+407                 \textcolor{stringliteral}{"rowT must be 2, 4, or 8 bytes."});
+408   static\_assert(\textcolor{keyword}{sizeof}(colT) >= \textcolor{keyword}{sizeof}(DataType),
+409                 \textcolor{stringliteral}{"colT must be at least as large as DataType"});
+410   DataType *\_\_restrict\_\_ qerror\_buf = qerror.Buffer();
+411   \textcolor{keyword}{const} colT width = mat.Width();
+412   \textcolor{keyword}{const} colT height = mat.Height();
+413   \textcolor{keyword}{const} colT ldim = mat.LDim();
+414   \textcolor{keyword}{const} colT row\_header\_factor = \textcolor{keyword}{sizeof}(rowT) == 2 ? 2 : 1;
+415   \textcolor{keyword}{const} colT header\_len = row\_header\_factor * \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR} * width +
+416                           row\_header\_factor;
+417   \textcolor{keyword}{const} colT num\_quantized = q.size() - header\_len;
+418   \textcolor{keyword}{auto} *q\_col = (colT *) q.data();
+419   \textcolor{keywordflow}{if} (num\_quantized > \hyperlink{classlbann_1_1lbann__quantizer_abe63d57e62be1b498848f7920de4433a}{MAX\_QUANTIZED\_EXCESS} * width * height / proportion) \{
+420     \textcolor{comment}{// Ensure there is a maximum bound on the number of entries sent.}
+421     \textcolor{comment}{// This should only occur if the threshold sampling is really bad.}
+422     \textcolor{comment}{// As a simple recovery process, this just removes enough entries to fit}
+423     \textcolor{comment}{// within the appropriate size. Removals begin from the end to avoid copies}
+424     \textcolor{comment}{// when deleting entries.}
+425     colT excess = num\_quantized -
+426                   (\hyperlink{classlbann_1_1lbann__quantizer_abe63d57e62be1b498848f7920de4433a}{MAX\_QUANTIZED\_EXCESS} * width * height / proportion);
+427     std::vector<colT> remove\_counts(width, 0);
+428     \textcolor{keywordflow}{for} (colT header\_loc = (width - 1) * \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR};
+429          excess > 0;
+430          header\_loc -= \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR}) \{
+431       colT num\_in\_col = q\_col[header\_loc + \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR}] - q\_col[header\_loc];
+432       \textcolor{keywordflow}{if} (num\_in\_col == 0) \{
+433         \textcolor{keywordflow}{continue};
+434       \}
+435       \textcolor{keyword}{const} colT col\_offset = (header\_loc / \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR}) * ldim;
+436       colT num\_remove = std::min(excess, num\_in\_col);
+437       colT num\_left = num\_in\_col - num\_remove;
+438       DataType pos\_recon, neg\_recon;
+439       memcpy(&pos\_recon, &q\_col[header\_loc + 1], \textcolor{keyword}{sizeof}(pos\_recon));
+440       memcpy(&neg\_recon, &q\_col[header\_loc + 2], \textcolor{keyword}{sizeof}(neg\_recon));
+441       DataType *\_\_restrict\_\_ qerror\_col = &qerror\_buf[col\_offset];
+442       \textcolor{comment}{// Add the deleted portions to qerror.}
+443       \textcolor{keywordflow}{for} (colT i = q\_col[header\_loc] + num\_left;
+444            i < q\_col[header\_loc + \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR}]; ++i) \{
+445         \textcolor{keyword}{const} rowT val = q[i];
+446         \textcolor{keyword}{const} rowT row = val >> 1;
+447         \textcolor{keywordflow}{if} (val & 1) \{
+448           qerror\_col[row] += pos\_recon;
+449         \} \textcolor{keywordflow}{else} \{
+450           qerror\_col[row] += neg\_recon;
+451         \}
+452       \}
+453       \textcolor{comment}{// TODO: When this is called from quantize\_replace, this does not update}
+454       \textcolor{comment}{// the local matrix.}
+455       q.erase(q.begin() + q\_col[header\_loc] + num\_left, q.end());
+456       excess -= num\_remove;
+457       remove\_counts[header\_loc / \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR}] = num\_remove;
+458     \}
+459     \textcolor{comment}{// Update all the header locations.}
+460     std::partial\_sum(remove\_counts.begin(), remove\_counts.end(),
+461                      remove\_counts.begin());
+462     \textcolor{keywordflow}{for} (colT header\_loc = 0; header\_loc < width * \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR};
+463          header\_loc += \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR}) \{
+464       q\_col[header\_loc + \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR}] -= remove\_counts[header\_loc / 
+      \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR}];
+465     \}
+466   \}
+467 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_a9d6e80bd54d6eb03dc63c15861356557_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_a7e4dfca5770dfd88ae6255b0407d8f80}\label{classlbann_1_1lbann__quantizer_a7e4dfca5770dfd88ae6255b0407d8f80}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!adaptive\+\_\+quantize@{adaptive\+\_\+quantize}}
+\index{adaptive\+\_\+quantize@{adaptive\+\_\+quantize}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{adaptive\+\_\+quantize()}{adaptive\_quantize()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily template$<$typename colT , typename rowT $>$ \\
+void lbann\+::lbann\+\_\+quantizer\+::adaptive\+\_\+quantize (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{mat,  }\item[{std\+::vector$<$ rowT $>$ \&}]{q,  }\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{qerror,  }\item[{int}]{proportion }\end{DoxyParamCaption})}
+
+Adaptively quantize a matrix. qerror needs to be initialized with\+: Zeros(qerror, mat.\+Height(), mat.\+Width()). 
+\begin{DoxyParams}{Parameters}
+{\em mat} & The matrix to quantize. \\
+\hline
+{\em q} & The output list of quantized entries. \\
+\hline
+{\em qerror} & Running quantization error. \\
+\hline
+{\em proportion} & Quantize one in proportion of the values. \\
+\hline
+\end{DoxyParams}
+
+
+Definition at line 37 of file quantizer\+\_\+impl.\+hpp.
+
+
+\begin{DoxyCode}
+38                                                                    \{
+39   \textcolor{comment}{// Ensure types are reasonable.}
+40   static\_assert(std::is\_integral<colT>::value && std::is\_integral<rowT>::value,
+41                 \textcolor{stringliteral}{"Types must be integral"});
+42   static\_assert(std::is\_unsigned<colT>::value && std::is\_unsigned<rowT>::value,
+43                 \textcolor{stringliteral}{"Types must be unsigned"});
+44   static\_assert(\textcolor{keyword}{sizeof}(colT) == 2 || \textcolor{keyword}{sizeof}(colT) == 4 || \textcolor{keyword}{sizeof}(colT) == 8,
+45                 \textcolor{stringliteral}{"colT must be 2, 4, or 8 bytes."});
+46   static\_assert(\textcolor{keyword}{sizeof}(rowT) == 2 || \textcolor{keyword}{sizeof}(rowT) == 4 || \textcolor{keyword}{sizeof}(rowT) == 8,
+47                 \textcolor{stringliteral}{"rowT must be 2, 4, or 8 bytes."});
+48   static\_assert(\textcolor{keyword}{sizeof}(colT) >= \textcolor{keyword}{sizeof}(DataType),
+49                 \textcolor{stringliteral}{"colT must be at least as large as DataType"});
+50   \textcolor{comment}{// This uses a header to store all information needed to do unquantization in}
+51   \textcolor{comment}{// one spot, which makes unquantization easier to multi-thread. The header has}
+52   \textcolor{comment}{// one entry for each column, consisting of the starting offset of the}
+53   \textcolor{comment}{// quantized data in the array (including the header) and the two/three}
+54   \textcolor{comment}{// reconstruction values. The number of quantized entries is included as a}
+55   \textcolor{comment}{// final entry to simplify unquantization.}
+56   \textcolor{keyword}{const} colT width = mat.Width();
+57   \textcolor{keyword}{const} colT height = mat.Height();
+58   \textcolor{keyword}{const} colT ldim = mat.LDim();
+59   \textcolor{keyword}{const} DataType *\textcolor{keyword}{const} \_\_restrict\_\_ mat\_buf = mat.LockedBuffer();
+60   DataType *\_\_restrict\_\_ qerror\_buf = qerror.Buffer();
+61   \textcolor{keyword}{const} colT row\_header\_factor = \textcolor{keyword}{sizeof}(rowT) == 2 ? 2 : 1;
+62   \textcolor{keyword}{const} colT header\_len = row\_header\_factor * \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR} * width +
+63                           row\_header\_factor;
+64   q.resize(header\_len);  \textcolor{comment}{// Space for the header.}
+65   \textcolor{comment}{// Select the appropriate number of threads.}
+66   \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_threads = \hyperlink{classlbann_1_1lbann__quantizer_aaa0c20f755437130172c40ca8e95bc3f}{get\_adaptive\_quantization\_threads}(width);
+67   std::vector<std::vector<rowT>> thread\_qs(num\_threads);
+68   std::vector<colT> quantized\_sums(num\_threads, 0);
+69   std::vector<colT> quantized\_counts(num\_threads, 0);
+70   \textcolor{comment}{// Compute the thresholds.}
+71   \textcolor{keyword}{const} adaptive\_thresholds threshes =
+72     \hyperlink{classlbann_1_1lbann__quantizer_aa5aabc1cb4163e95aee993d9b37b9b32}{proportion\_threshold}(mat, qerror, proportion);
+73   \textcolor{comment}{// This is for accessing q in different ways.}
+74   \textcolor{keyword}{auto} *q\_col = (colT *) q.data();
+75 \textcolor{preprocessor}{  #pragma omp parallel firstprivate(threshes, height, width, ldim, mat\_buf, qerror\_buf)
+       num\_threads(num\_threads)}
+76   \{
+77     \textcolor{keyword}{const} \textcolor{keywordtype}{int} tid = omp\_get\_thread\_num();
+78     colT num\_quantized = 0;
+79     std::vector<rowT>& thread\_q = thread\_qs[tid];
+80     thread\_q.resize(std::max(
+81                       2 * height * width / proportion / num\_threads,
+82                       (colT) 4));
+83     colT size = thread\_q.size();
+84 \textcolor{preprocessor}{    #pragma omp for schedule(static)}
+85     \textcolor{keywordflow}{for} (colT col = 0; col < width; ++col) \{
+86       \textcolor{keyword}{const} colT header\_loc = \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR} * col;
+87       q\_col[header\_loc] = num\_quantized;
+88       \textcolor{keyword}{const} adaptive\_reconstructions recons =
+89         \hyperlink{classlbann_1_1lbann__quantizer_af77beca5905ff8601ca9b8231a2a16e0}{col\_reconstruction}(mat, qerror, col, threshes);
+90       \textcolor{comment}{// Store the averages for reconstruction.}
+91       q\_col[header\_loc + 1] = 0;
+92       memcpy(&q\_col[header\_loc + 1], &recons.pos\_recon, \textcolor{keyword}{sizeof}(recons.pos\_recon));
+93       q\_col[header\_loc + 2] = 0;
+94       memcpy(&q\_col[header\_loc + 2], &recons.neg\_recon, \textcolor{keyword}{sizeof}(recons.neg\_recon));
+95 \textcolor{preprocessor}{#if LBANN\_QUANTIZER\_TERNARY}
+96       q\_col[header\_loc + 3] = 0;
+97       memcpy(&q\_col[header\_loc + 3], &recons.zero\_recon, \textcolor{keyword}{sizeof}(recons.zero\_recon));
+98 \textcolor{preprocessor}{#endif}
+99       \textcolor{keyword}{const} colT col\_offset = col * ldim;
+100       \textcolor{keyword}{const} DataType *\textcolor{keyword}{const} \_\_restrict\_\_ mat\_col = &mat\_buf[col\_offset];
+101       DataType *\_\_restrict\_\_ qerror\_col = &qerror\_buf[col\_offset];
+102       \textcolor{keywordflow}{for} (rowT row = 0; row < height; ++row) \{
+103         \textcolor{keyword}{const} DataType val = mat\_col[row] + qerror\_col[row];
+104         \textcolor{keyword}{const} \textcolor{keywordtype}{bool} x = val >= threshes.pos\_thresh;
+105         \textcolor{keyword}{const} \textcolor{keywordtype}{bool} y = val <= threshes.neg\_thresh;
+106         \textcolor{keywordflow}{if} (\_\_builtin\_expect(!!(x || y), 0)) \{  \textcolor{comment}{// Unlikely.}
+107           \textcolor{keywordflow}{if} (x) \{
+108             qerror\_col[row] = val - recons.pos\_recon;
+109             thread\_q[num\_quantized++] = (row << 1) | 1;
+110           \} \textcolor{keywordflow}{else} \{
+111             qerror\_col[row] = val - recons.neg\_recon;
+112             thread\_q[num\_quantized++] = row << 1;
+113           \}
+114           \textcolor{keywordflow}{if} (\_\_builtin\_expect(!!(num\_quantized >= size), 0)) \{
+115             thread\_q.resize(2 * size);
+116             size *= 2;
+117           \}
+118         \} \textcolor{keywordflow}{else} \{
+119 \textcolor{preprocessor}{#if LBANN\_QUANTIZER\_TERNARY}
+120           qerror\_col[row] = val - recons.zero\_recon;
+121 \textcolor{preprocessor}{#else}
+122           qerror\_col[row] = val;
+123 \textcolor{preprocessor}{#endif}
+124         \}
+125       \}
+126     \}
+127     quantized\_counts[tid] = num\_quantized;
+128 \textcolor{preprocessor}{    #pragma omp barrier}
+129 \textcolor{preprocessor}{    #pragma omp single}
+130     \{
+131       \textcolor{comment}{// Compute the amount to adjust header counts by. This is essentially}
+132       \textcolor{comment}{// a shifted prefix-sum.}
+133       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} t = 1; t < num\_threads; ++t) \{
+134         quantized\_sums[t] = quantized\_sums[t - 1] + quantized\_counts[t - 1];
+135       \}
+136     \}
+137     \textcolor{comment}{// Have threads patch up the header counts.}
+138     \textcolor{comment}{// Static schedule guarantees threads are assigned the same way.}
+139 \textcolor{preprocessor}{    #pragma omp for schedule(static)}
+140     \textcolor{keywordflow}{for} (colT col = 0; col < width; ++col) \{
+141       q\_col[\hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR} * col] += quantized\_sums[tid] + header\_len;
+142     \}
+143   \}
+144   colT total\_quantized = std::accumulate(quantized\_counts.begin(),
+145                                          quantized\_counts.end(), 0);
+146   q.resize(header\_len + total\_quantized);
+147   \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_copy\_threads =
+148     \hyperlink{classlbann_1_1lbann__quantizer_a22b898932caed41ccf24abcb67c00ba1}{get\_adaptive\_quantization\_copy\_threads}(width);
+149 \textcolor{preprocessor}{  #pragma omp parallel for schedule(dynamic, 1) num\_threads(num\_copy\_threads)}
+150   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{unsigned} tid = 0; tid < thread\_qs.size(); ++tid) \{
+151     std::copy(thread\_qs[tid].begin(),
+152               thread\_qs[tid].begin() + quantized\_counts[tid],
+153               q.begin() + quantized\_sums[tid] + header\_len);
+154   \}
+155   \textcolor{comment}{// Store the final number of entries. Get a new q\_col pointer because of the}
+156   \textcolor{comment}{// resize.}
+157   q\_col = (colT *) q.data();
+158   q\_col[\hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR} * width] = (colT) q.size();
+159   \hyperlink{classlbann_1_1lbann__quantizer_a716fae78ef5ba082a8093f0d06550804}{quantized\_count} = q.size() - header\_len;
+160   adaptive\_bound<colT, rowT>(mat, qerror, q, proportion);
+161 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_a7e4dfca5770dfd88ae6255b0407d8f80_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_a737865bb555db8a8a104fb345f7626b2}\label{classlbann_1_1lbann__quantizer_a737865bb555db8a8a104fb345f7626b2}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!adaptive\+\_\+quantize@{adaptive\+\_\+quantize}}
+\index{adaptive\+\_\+quantize@{adaptive\+\_\+quantize}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{adaptive\+\_\+quantize()}{adaptive\_quantize()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily template$<$typename colT , typename rowT $>$ \\
+void lbann\+::lbann\+\_\+quantizer\+::adaptive\+\_\+quantize (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a0fab5387556805cfeac3e7e567bf66c5}{Dist\+Mat} \&}]{mat,  }\item[{std\+::vector$<$ rowT $>$ \&}]{q,  }\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{qerror,  }\item[{int}]{proportion }\end{DoxyParamCaption})}
+
+
+
+Definition at line 164 of file quantizer\+\_\+impl.\+hpp.
+
+
+\begin{DoxyCode}
+165                                                                        \{
+166   adaptive\_quantize<colT, rowT>(mat.LockedMatrix(), q, qerror, proportion);
+167 \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_a25ed3869c6bc615ae51198803ea4e33d}\label{classlbann_1_1lbann__quantizer_a25ed3869c6bc615ae51198803ea4e33d}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!adaptive\+\_\+quantize\+\_\+replace@{adaptive\+\_\+quantize\+\_\+replace}}
+\index{adaptive\+\_\+quantize\+\_\+replace@{adaptive\+\_\+quantize\+\_\+replace}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{adaptive\+\_\+quantize\+\_\+replace()}{adaptive\_quantize\_replace()}}
+{\footnotesize\ttfamily template$<$typename colT , typename rowT $>$ \\
+void lbann\+::lbann\+\_\+quantizer\+::adaptive\+\_\+quantize\+\_\+replace (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{mat,  }\item[{std\+::vector$<$ rowT $>$ \&}]{q,  }\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{qerror,  }\item[{int}]{proportion }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+Variant of adaptive\+\_\+quantize that also replaces entries in mat with their quantized version. This is equivalent to\+: adaptive\+\_\+quantize(mat, q, qerror, proportion); adaptive\+\_\+unquantize(q, mat); 
+
+Definition at line 274 of file quantizer\+\_\+impl.\+hpp.
+
+
+\begin{DoxyCode}
+275                                                              \{
+276   \textcolor{comment}{// Ensure types are reasonable.}
+277   static\_assert(std::is\_integral<colT>::value && std::is\_integral<rowT>::value,
+278                 \textcolor{stringliteral}{"Types must be integral"});
+279   static\_assert(std::is\_unsigned<colT>::value && std::is\_unsigned<rowT>::value,
+280                 \textcolor{stringliteral}{"Types must be unsigned"});
+281   static\_assert(\textcolor{keyword}{sizeof}(colT) == 2 || \textcolor{keyword}{sizeof}(colT) == 4 || \textcolor{keyword}{sizeof}(colT) == 8,
+282                 \textcolor{stringliteral}{"colT must be 2, 4, or 8 bytes."});
+283   static\_assert(\textcolor{keyword}{sizeof}(rowT) == 2 || \textcolor{keyword}{sizeof}(rowT) == 4 || \textcolor{keyword}{sizeof}(rowT) == 8,
+284                 \textcolor{stringliteral}{"rowT must be 2, 4, or 8 bytes."});
+285   static\_assert(\textcolor{keyword}{sizeof}(colT) >= \textcolor{keyword}{sizeof}(DataType),
+286                 \textcolor{stringliteral}{"colT must be at least as large as DataType"});
+287   \textcolor{keyword}{const} colT width = mat.Width();
+288   \textcolor{keyword}{const} colT height = mat.Height();
+289   \textcolor{keyword}{const} colT ldim = mat.LDim();
+290   DataType *\_\_restrict\_\_ mat\_buf = mat.Buffer();
+291   DataType *\_\_restrict\_\_ qerror\_buf = qerror.Buffer();
+292   \textcolor{keyword}{const} colT row\_header\_factor = \textcolor{keyword}{sizeof}(rowT) == 2 ? 2 : 1;
+293   \textcolor{keyword}{const} colT header\_len = row\_header\_factor * \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR} * width +
+294                           row\_header\_factor;
+295   q.resize(header\_len);  \textcolor{comment}{// Space for the header.}
+296   \textcolor{comment}{// Select the appropriate number of threads.}
+297   \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_threads = \hyperlink{classlbann_1_1lbann__quantizer_aaa0c20f755437130172c40ca8e95bc3f}{get\_adaptive\_quantization\_threads}(width);
+298   std::vector<std::vector<rowT>> thread\_qs(num\_threads);
+299   std::vector<colT> quantized\_sums(num\_threads, 0);
+300   std::vector<colT> quantized\_counts(num\_threads, 0);
+301   \textcolor{comment}{// Compute the thresholds.}
+302   \textcolor{keyword}{const} adaptive\_thresholds threshes =
+303     \hyperlink{classlbann_1_1lbann__quantizer_aa5aabc1cb4163e95aee993d9b37b9b32}{proportion\_threshold}(mat, qerror, proportion);
+304   \textcolor{keyword}{auto} *q\_col = (colT *) q.data();
+305 \textcolor{preprocessor}{  #pragma omp parallel firstprivate(threshes, height, width, ldim, mat\_buf, qerror\_buf)
+       num\_threads(num\_threads)}
+306   \{
+307     \textcolor{keyword}{const} \textcolor{keywordtype}{int} tid = omp\_get\_thread\_num();
+308     colT num\_quantized = 0;
+309     std::vector<rowT>& thread\_q = thread\_qs[tid];
+310     thread\_q.resize(std::max(
+311                       2 * height * width / proportion / num\_threads,
+312                       (colT) 4));
+313     colT size = thread\_q.size();
+314 \textcolor{preprocessor}{    #pragma omp for schedule(static)}
+315     \textcolor{keywordflow}{for} (colT col = 0; col < width; ++col) \{
+316       \textcolor{keyword}{const} colT header\_loc = \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR} * col;
+317       q\_col[header\_loc] = num\_quantized;
+318       \textcolor{keyword}{const} adaptive\_reconstructions recons =
+319         \hyperlink{classlbann_1_1lbann__quantizer_af77beca5905ff8601ca9b8231a2a16e0}{col\_reconstruction}(mat, qerror, col, threshes);
+320       \textcolor{comment}{// Store the averages for reconstruction.}
+321       q\_col[header\_loc + 1] = 0;
+322       memcpy(&q\_col[header\_loc + 1], &recons.pos\_recon, \textcolor{keyword}{sizeof}(recons.pos\_recon));
+323       q\_col[header\_loc + 2] = 0;
+324       memcpy(&q\_col[header\_loc + 2], &recons.neg\_recon, \textcolor{keyword}{sizeof}(recons.neg\_recon));
+325 \textcolor{preprocessor}{#if LBANN\_QUANTIZER\_TERNARY}
+326       q\_col[header\_loc + 3] = 0;
+327       memcpy(&q\_col[header\_loc + 3], &recons.zero\_recon, \textcolor{keyword}{sizeof}(recons.zero\_recon));
+328 \textcolor{preprocessor}{#endif}
+329       \textcolor{keyword}{const} colT col\_offset = col * ldim;
+330       DataType *\_\_restrict\_\_ mat\_col = &mat\_buf[col\_offset];
+331       DataType *\_\_restrict\_\_ qerror\_col = &qerror\_buf[col\_offset];
+332       \textcolor{keywordflow}{for} (rowT row = 0; row < height; ++row) \{
+333         \textcolor{keyword}{const} DataType val = mat\_col[row] + qerror\_col[row];
+334         \textcolor{keyword}{const} \textcolor{keywordtype}{bool} x = val >= threshes.pos\_thresh;
+335         \textcolor{keyword}{const} \textcolor{keywordtype}{bool} y = val <= threshes.neg\_thresh;
+336         \textcolor{keywordflow}{if} (\_\_builtin\_expect(!!(x || y), 0)) \{  \textcolor{comment}{// Unlikely.}
+337           \textcolor{keywordflow}{if} (x) \{
+338             qerror\_col[row] = val - recons.pos\_recon;
+339             thread\_q[num\_quantized++] = (row << 1) | 1;
+340             mat\_col[row] = recons.pos\_recon;
+341           \} \textcolor{keywordflow}{else} \{
+342             qerror\_col[row] = val - recons.neg\_recon;
+343             thread\_q[num\_quantized++] = row << 1;
+344             mat\_col[row] = recons.neg\_recon;
+345           \}
+346           \textcolor{keywordflow}{if} (\_\_builtin\_expect(!!(num\_quantized >= size), 0)) \{
+347             thread\_q.resize(2 * size);
+348             size *= 2;
+349           \}
+350         \} \textcolor{keywordflow}{else} \{
+351 \textcolor{preprocessor}{#if LBANN\_QUANTIZER\_TERNARY}
+352           qerror\_col[row] = val - recons.zero\_recon;
+353           mat\_col[row] = recons.zero\_recon;
+354 \textcolor{preprocessor}{#else}
+355           qerror\_col[row] = val;
+356 \textcolor{preprocessor}{#endif}
+357         \}
+358       \}
+359     \}
+360     quantized\_counts[tid] = num\_quantized;
+361 \textcolor{preprocessor}{    #pragma omp barrier}
+362 \textcolor{preprocessor}{    #pragma omp single}
+363     \{
+364       \textcolor{comment}{// Compute the amount to adjust header counts by. This is essentially}
+365       \textcolor{comment}{// a shifted prefix-sum.}
+366       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} t = 1; t < num\_threads; ++t) \{
+367         quantized\_sums[t] = quantized\_sums[t - 1] + quantized\_counts[t - 1];
+368       \}
+369     \}
+370     \textcolor{comment}{// Have threads patch up the header counts.}
+371     \textcolor{comment}{// Static schedule guarantees threads are assigned the same way.}
+372 \textcolor{preprocessor}{    #pragma omp for schedule(static)}
+373     \textcolor{keywordflow}{for} (colT col = 0; col < width; ++col) \{
+374       q\_col[\hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR} * col] += quantized\_sums[tid] + header\_len;
+375     \}
+376   \}
+377   colT total\_quantized = std::accumulate(quantized\_counts.begin(),
+378                                          quantized\_counts.end(), 0);
+379   q.resize(header\_len + total\_quantized);
+380   \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_copy\_threads =
+381     \hyperlink{classlbann_1_1lbann__quantizer_a22b898932caed41ccf24abcb67c00ba1}{get\_adaptive\_quantization\_copy\_threads}(width);
+382 \textcolor{preprocessor}{  #pragma omp parallel for schedule(dynamic, 1) num\_threads(num\_copy\_threads)}
+383   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{unsigned} tid = 0; tid < thread\_qs.size(); ++tid) \{
+384     std::copy(thread\_qs[tid].begin(),
+385               thread\_qs[tid].begin() + quantized\_counts[tid],
+386               q.begin() + quantized\_sums[tid] + header\_len);
+387   \}
+388   \textcolor{comment}{// Store the final number of entries. Get a new q\_col pointer because of the}
+389   \textcolor{comment}{// resize.}
+390   q\_col = (colT *) q.data();
+391   q\_col[\hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR} * width] = q.size();
+392   \hyperlink{classlbann_1_1lbann__quantizer_a716fae78ef5ba082a8093f0d06550804}{quantized\_count} = q.size() - header\_len;
+393   adaptive\_bound<colT, rowT>(mat, qerror, q, proportion);
+394 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_a25ed3869c6bc615ae51198803ea4e33d_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_a25ed3869c6bc615ae51198803ea4e33d_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_ab3a0e79b571e7c016446c179eedd0dc1}\label{classlbann_1_1lbann__quantizer_ab3a0e79b571e7c016446c179eedd0dc1}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!adaptive\+\_\+quantize\+\_\+slice@{adaptive\+\_\+quantize\+\_\+slice}}
+\index{adaptive\+\_\+quantize\+\_\+slice@{adaptive\+\_\+quantize\+\_\+slice}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{adaptive\+\_\+quantize\+\_\+slice()}{adaptive\_quantize\_slice()}}
+{\footnotesize\ttfamily template$<$typename colT , typename rowT $>$ \\
+void lbann\+::lbann\+\_\+quantizer\+::adaptive\+\_\+quantize\+\_\+slice (\begin{DoxyParamCaption}\item[{const std\+::vector$<$ rowT $>$ \&}]{q,  }\item[{const \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{mat,  }\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{qerror,  }\item[{std\+::vector$<$ rowT $>$ \&}]{slice,  }\item[{colT}]{start,  }\item[{colT}]{end,  }\item[{int}]{proportion }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Definition at line 470 of file quantizer\+\_\+impl.\+hpp.
+
+
+\begin{DoxyCode}
+472                                                                 \{
+473   \textcolor{keyword}{const} colT width = end - start;
+474   \textcolor{keyword}{const} colT row\_header\_factor = \textcolor{keyword}{sizeof}(rowT) == 2 ? 2 : 1;
+475   \textcolor{keyword}{const} colT header\_len = row\_header\_factor * width * \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR} +
+476                           row\_header\_factor;
+477   \textcolor{comment}{// Copy the header over. Locations will need to be adjusted later.}
+478   \textcolor{keyword}{const} \textcolor{keyword}{auto} *q\_col = (\textcolor{keyword}{const} colT *) q.data();
+479   \textcolor{keyword}{const} colT total\_len = header\_len + q\_col[\hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR} * end] - q\_col[
+      \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR} * start];
+480   slice.resize(total\_len);
+481   \textcolor{keyword}{auto} *slice\_col = (colT *) slice.data();
+482   std::copy(&q\_col[\hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR}*start], &q\_col[\hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR}*end + 1],
+483             slice\_col);
+484   \textcolor{comment}{// Copy data over.}
+485   std::copy(q.begin() + slice\_col[0], q.begin() + slice\_col[\hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR} * width],
+486             slice.begin() + header\_len);
+487   \textcolor{comment}{// Adjust locations.}
+488   \textcolor{keyword}{const} colT adjust = slice\_col[0] - header\_len;
+489   \textcolor{keywordflow}{for} (colT header\_loc = 0; header\_loc <= \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR} * width; header\_loc += 
+      \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR}) \{
+490     slice\_col[header\_loc] -= adjust;
+491   \}
+492   adaptive\_bound<colT, rowT>(mat, qerror, slice, proportion);
+493 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_ab3a0e79b571e7c016446c179eedd0dc1_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_acf8d21e8114a00fdea53d919d76dd511}\label{classlbann_1_1lbann__quantizer_acf8d21e8114a00fdea53d919d76dd511}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!adaptive\+\_\+unquantize@{adaptive\+\_\+unquantize}}
+\index{adaptive\+\_\+unquantize@{adaptive\+\_\+unquantize}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{adaptive\+\_\+unquantize()}{adaptive\_unquantize()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily template$<$typename colT , typename rowT $>$ \\
+void lbann\+::lbann\+\_\+quantizer\+::adaptive\+\_\+unquantize (\begin{DoxyParamCaption}\item[{const rowT $\ast$}]{q,  }\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{mat }\end{DoxyParamCaption})}
+
+Unquantize an adaptively-\/quantized matrix. 
+\begin{DoxyParams}{Parameters}
+{\em q} & The quantizd matrix. \\
+\hline
+{\em mat} & The output unquantized matrix. \\
+\hline
+\end{DoxyParams}
+
+
+Definition at line 170 of file quantizer\+\_\+impl.\+hpp.
+
+
+\begin{DoxyCode}
+171                            \{
+172   \textcolor{comment}{// Ensure types are reasonable.}
+173   static\_assert(std::is\_integral<colT>::value && std::is\_integral<rowT>::value,
+174                 \textcolor{stringliteral}{"Types must be integral"});
+175   static\_assert(std::is\_unsigned<colT>::value && std::is\_unsigned<rowT>::value,
+176                 \textcolor{stringliteral}{"Types must be unsigned"});
+177   static\_assert(\textcolor{keyword}{sizeof}(colT) == 2 || \textcolor{keyword}{sizeof}(colT) == 4 || \textcolor{keyword}{sizeof}(colT) == 8,
+178                 \textcolor{stringliteral}{"colT must be 2, 4, or 8 bytes."});
+179   static\_assert(\textcolor{keyword}{sizeof}(rowT) == 2 || \textcolor{keyword}{sizeof}(rowT) == 4 || \textcolor{keyword}{sizeof}(rowT) == 8,
+180                 \textcolor{stringliteral}{"rowT must be 2, 4, or 8 bytes."});
+181   static\_assert(\textcolor{keyword}{sizeof}(colT) >= \textcolor{keyword}{sizeof}(DataType),
+182                 \textcolor{stringliteral}{"colT must be at least as large as DataType"});
+183   DataType *\_\_restrict\_\_ buf = mat.Buffer();
+184   \textcolor{keyword}{const} colT header\_len = mat.Width() * \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR};
+185 \textcolor{preprocessor}{#if LBANN\_QUANTIZER\_TERNARY}
+186   \textcolor{keyword}{const} colT height = mat.Height();
+187 \textcolor{preprocessor}{#endif}
+188   \textcolor{keyword}{const} colT ldim = mat.LDim();
+189   \textcolor{keyword}{const} \textcolor{keyword}{auto} *q\_col = (\textcolor{keyword}{const} colT *) q;
+190   \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_threads = \hyperlink{classlbann_1_1lbann__quantizer_aaa0c20f755437130172c40ca8e95bc3f}{get\_adaptive\_quantization\_threads}(mat.Width());
+191 \textcolor{preprocessor}{  #pragma omp parallel for schedule(dynamic, 1), firstprivate(header\_len, buf) num\_threads(num\_threads)}
+192   \textcolor{keywordflow}{for} (colT header\_loc = 0; header\_loc < header\_len; header\_loc += \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR}) \{
+193     \textcolor{keyword}{const} colT col\_offset = (header\_loc / \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR}) * ldim;
+194     \textcolor{comment}{// Extract averages.}
+195     DataType pos\_recon, neg\_recon;
+196     memcpy(&pos\_recon, &q\_col[header\_loc + 1], \textcolor{keyword}{sizeof}(pos\_recon));
+197     memcpy(&neg\_recon, &q\_col[header\_loc + 2], \textcolor{keyword}{sizeof}(neg\_recon));
+198 \textcolor{preprocessor}{#if LBANN\_QUANTIZER\_TERNARY}
+199     DataType zero\_recon;
+200     memcpy(&zero\_recon, &q\_col[header\_loc + 3], \textcolor{keyword}{sizeof}(zero\_recon));
+201     \textcolor{comment}{// Fill the column, then update with the other values.}
+202     std::fill\_n(&buf[(header\_loc / \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR}) * ldim], height, zero\_recon);
+203 \textcolor{preprocessor}{#endif}
+204     DataType *\_\_restrict\_\_ buf\_col = &buf[col\_offset];
+205     \textcolor{keyword}{const} colT chunk\_start = q\_col[header\_loc];
+206     \textcolor{keyword}{const} colT chunk\_end = q\_col[header\_loc + \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR}] - chunk\_start;
+207     \textcolor{keyword}{const} rowT *\textcolor{keyword}{const} \_\_restrict\_\_ q\_ = &(q[chunk\_start]);
+208     \textcolor{keywordflow}{for} (rowT i = 0; i < chunk\_end; ++i) \{
+209       \textcolor{keyword}{const} rowT val = q\_[i];
+210       \textcolor{keyword}{const} rowT row = val >> 1;
+211       buf\_col[row] = val & 0x1 ? pos\_recon : neg\_recon;
+212     \}
+213   \}
+214 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_acf8d21e8114a00fdea53d919d76dd511_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_a5456c31af080fce7f85aa7a01b7ee939}\label{classlbann_1_1lbann__quantizer_a5456c31af080fce7f85aa7a01b7ee939}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!adaptive\+\_\+unquantize@{adaptive\+\_\+unquantize}}
+\index{adaptive\+\_\+unquantize@{adaptive\+\_\+unquantize}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{adaptive\+\_\+unquantize()}{adaptive\_unquantize()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily template$<$typename colT , typename rowT $>$ \\
+void lbann\+::lbann\+\_\+quantizer\+::adaptive\+\_\+unquantize (\begin{DoxyParamCaption}\item[{const rowT $\ast$}]{q,  }\item[{\hyperlink{base_8hpp_a0fab5387556805cfeac3e7e567bf66c5}{Dist\+Mat} \&}]{mat }\end{DoxyParamCaption})}
+
+
+
+Definition at line 217 of file quantizer\+\_\+impl.\+hpp.
+
+
+\begin{DoxyCode}
+218                                \{
+219   adaptive\_unquantize<colT, rowT>(q, mat.Matrix());
+220 \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_a1f63f7be2e227a48ebaa25056e6f85bc}\label{classlbann_1_1lbann__quantizer_a1f63f7be2e227a48ebaa25056e6f85bc}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!adaptive\+\_\+unquantize\+\_\+add@{adaptive\+\_\+unquantize\+\_\+add}}
+\index{adaptive\+\_\+unquantize\+\_\+add@{adaptive\+\_\+unquantize\+\_\+add}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{adaptive\+\_\+unquantize\+\_\+add()}{adaptive\_unquantize\_add()}}
+{\footnotesize\ttfamily template$<$typename colT , typename rowT $>$ \\
+void lbann\+::lbann\+\_\+quantizer\+::adaptive\+\_\+unquantize\+\_\+add (\begin{DoxyParamCaption}\item[{const rowT $\ast$}]{q,  }\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{mat }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+Variant of adaptive\+\_\+unquantize that adds its entries. 
+
+Definition at line 223 of file quantizer\+\_\+impl.\+hpp.
+
+
+\begin{DoxyCode}
+224                            \{
+225   \textcolor{comment}{// Ensure types are reasonable.}
+226   static\_assert(std::is\_integral<colT>::value && std::is\_integral<rowT>::value,
+227                 \textcolor{stringliteral}{"Types must be integral"});
+228   static\_assert(std::is\_unsigned<colT>::value && std::is\_unsigned<rowT>::value,
+229                 \textcolor{stringliteral}{"Types must be unsigned"});
+230   static\_assert(\textcolor{keyword}{sizeof}(colT) == 2 || \textcolor{keyword}{sizeof}(colT) == 4 || \textcolor{keyword}{sizeof}(colT) == 8,
+231                 \textcolor{stringliteral}{"colT must be 2, 4, or 8 bytes."});
+232   static\_assert(\textcolor{keyword}{sizeof}(rowT) == 2 || \textcolor{keyword}{sizeof}(rowT) == 4 || \textcolor{keyword}{sizeof}(rowT) == 8,
+233                 \textcolor{stringliteral}{"rowT must be 2, 4, or 8 bytes."});
+234   static\_assert(\textcolor{keyword}{sizeof}(colT) >= \textcolor{keyword}{sizeof}(DataType),
+235                 \textcolor{stringliteral}{"colT must be at least as large as DataType"});
+236   DataType *\_\_restrict\_\_ buf = mat.Buffer();
+237   \textcolor{keyword}{const} colT header\_len = mat.Width() * \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR};
+238 \textcolor{preprocessor}{#if LBANN\_QUANTIZER\_TERNARY}
+239   \textcolor{keyword}{const} colT height = mat.Height();
+240 \textcolor{preprocessor}{#endif}
+241   \textcolor{keyword}{const} colT ldim = mat.LDim();
+242   \textcolor{keyword}{const} \textcolor{keyword}{auto} *q\_col = (\textcolor{keyword}{const} colT *) q;
+243   \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_threads = \hyperlink{classlbann_1_1lbann__quantizer_aaa0c20f755437130172c40ca8e95bc3f}{get\_adaptive\_quantization\_threads}(mat.Width());
+244 \textcolor{preprocessor}{  #pragma omp parallel for schedule(dynamic, 1), firstprivate(header\_len, buf) num\_threads(num\_threads)}
+245   \textcolor{keywordflow}{for} (colT header\_loc = 0; header\_loc < header\_len; header\_loc += \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR}) \{
+246     \textcolor{keyword}{const} colT col\_offset = (header\_loc / \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR}) * ldim;
+247     \textcolor{comment}{// Extract averages.}
+248     DataType pos\_recon, neg\_recon;
+249     memcpy(&pos\_recon, &q\_col[header\_loc + 1], \textcolor{keyword}{sizeof}(pos\_recon));
+250     memcpy(&neg\_recon, &q\_col[header\_loc + 2], \textcolor{keyword}{sizeof}(neg\_recon));
+251 \textcolor{preprocessor}{#if LBANN\_QUANTIZER\_TERNARY}
+252     DataType zero\_recon;
+253     memcpy(&zero\_recon, &q\_col[header\_loc + 3], \textcolor{keyword}{sizeof}(zero\_recon));
+254     \textcolor{comment}{// Add zero\_recon to everything and adjust the other means.}
+255     \textcolor{keywordflow}{for} (rowT row = 0; row < height; ++row) \{
+256       buf[row + col\_offset] += zero\_recon;
+257     \}
+258     pos\_recon -= zero\_recon;
+259     neg\_recon += zero\_recon;
+260 \textcolor{preprocessor}{#endif}
+261     DataType *\_\_restrict\_\_ buf\_col = &buf[col\_offset];
+262     \textcolor{keyword}{const} colT chunk\_start = q\_col[header\_loc];
+263     \textcolor{keyword}{const} colT chunk\_end = q\_col[header\_loc + \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR}] - chunk\_start;
+264     \textcolor{keyword}{const} rowT *\textcolor{keyword}{const} \_\_restrict\_\_ q\_ = &(q[chunk\_start]);
+265     \textcolor{keywordflow}{for} (rowT i = 0; i < chunk\_end; ++i) \{
+266       \textcolor{keyword}{const} rowT val = q\_[i];
+267       \textcolor{keyword}{const} rowT row = val >> 1;
+268       buf\_col[row] += val & 0x1 ? pos\_recon : neg\_recon;
+269     \}
+270   \}
+271 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_a1f63f7be2e227a48ebaa25056e6f85bc_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_a1f63f7be2e227a48ebaa25056e6f85bc_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_af77beca5905ff8601ca9b8231a2a16e0}\label{classlbann_1_1lbann__quantizer_af77beca5905ff8601ca9b8231a2a16e0}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!col\+\_\+reconstruction@{col\+\_\+reconstruction}}
+\index{col\+\_\+reconstruction@{col\+\_\+reconstruction}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{col\+\_\+reconstruction()}{col\_reconstruction()}}
+{\footnotesize\ttfamily \hyperlink{structlbann_1_1lbann__quantizer_1_1adaptive__reconstructions}{lbann\+\_\+quantizer\+::adaptive\+\_\+reconstructions} lbann\+::lbann\+\_\+quantizer\+::col\+\_\+reconstruction (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{mat,  }\item[{const \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{qerror,  }\item[{El\+::\+Int}]{col,  }\item[{const \hyperlink{structlbann_1_1lbann__quantizer_1_1adaptive__thresholds}{adaptive\+\_\+thresholds}}]{threshes,  }\item[{bool}]{sample = {\ttfamily true} }\end{DoxyParamCaption})}
+
+Compute reconstruction values for col. 
+\begin{DoxyParams}{Parameters}
+{\em mat} & The matrix to compute reconstruction values for. \\
+\hline
+{\em qerror} & The accumulated quantization error in mat. \\
+\hline
+{\em col} & The column to compute reconstruction values for. \\
+\hline
+{\em ainfo} & Adaptive quantization info with thresholds filled in. \\
+\hline
+{\em sample} & Whether to approximate stats by randomly sampling mat. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Adaptive reconstruction values. 
+\end{DoxyReturn}
+
+
+Definition at line 582 of file quantizer.\+cpp.
+
+
+\begin{DoxyCode}
+584                                                    \{
+585   DataType pos\_sum = 0.0f;
+586   El::Unsigned pos\_count = 0;
+587   DataType neg\_sum = 0.0f;
+588   El::Unsigned neg\_count = 0;
+589 \textcolor{preprocessor}{#if LBANN\_QUANTIZER\_TERNARY}
+590   DataType zero\_sum = 0.0f;
+591   El::Unsigned zero\_count = 0;
+592 \textcolor{preprocessor}{#endif}
+593   \textcolor{keyword}{const} El::Int height = mat.Height();
+594   \textcolor{keyword}{const} El::Int col\_offset = col * mat.LDim();
+595   \textcolor{keyword}{const} DataType *\_\_restrict\_\_ mat\_buf = mat.LockedBuffer();
+596   \textcolor{keyword}{const} DataType *\_\_restrict\_\_ qerror\_buf = qerror.LockedBuffer();
+597   \textcolor{keywordflow}{if} (height <= \hyperlink{classlbann_1_1lbann__quantizer_a10667e56db4218aac3912c6bae28fc41}{NUM\_RECON\_SAMPLES} || !sample) \{
+598     \textcolor{keywordflow}{for} (El::Int row = 0; row < height; ++row) \{
+599       \textcolor{keyword}{const} El::Unsigned pos = row + col\_offset;
+600       \textcolor{keyword}{const} DataType val = mat\_buf[pos] + qerror\_buf[pos];
+601       \textcolor{keywordflow}{if} (val >= threshes.pos\_thresh) \{
+602         pos\_sum += val;
+603         ++pos\_count;
+604       \} \textcolor{keywordflow}{else} \{
+605         \textcolor{keywordflow}{if} (val <= threshes.neg\_thresh) \{
+606           neg\_sum += val;
+607           ++neg\_count;
+608         \}
+609 \textcolor{preprocessor}{#if LBANN\_QUANTIZER\_TERNARY}
+610         \textcolor{keywordflow}{else} \{
+611           zero\_sum += val;
+612           ++zero\_count;
+613         \}
+614 \textcolor{preprocessor}{#endif}
+615       \}
+616     \}
+617   \} \textcolor{keywordflow}{else} \{
+618     \textcolor{comment}{// Randomly sample entries to approximate the means.}
+619     \hyperlink{namespacelbann_af16616ffa6a3616836eabadd6ce837ec}{fast\_rng\_gen}& gen = \hyperlink{namespacelbann_ae6ce9c2fdec6f81803f6b1a6555c31c5}{get\_fast\_generator}();
+620     \textcolor{keywordtype}{bool} is\_pow2 = !(height & (height - 1));  \textcolor{comment}{// Assumes height != 0.}
+621     std::vector<El::Unsigned> poses(\hyperlink{classlbann_1_1lbann__quantizer_a10667e56db4218aac3912c6bae28fc41}{NUM\_RECON\_SAMPLES});
+622     \textcolor{keywordflow}{if} (is\_pow2) \{
+623       \textcolor{keywordflow}{for} (El::Unsigned i = 0; i < \hyperlink{classlbann_1_1lbann__quantizer_a10667e56db4218aac3912c6bae28fc41}{NUM\_RECON\_SAMPLES}; ++i) \{
+624         \textcolor{keyword}{const} El::Unsigned pos = \hyperlink{namespacelbann_a2fe8cea17a147566b73260f557b51006}{fast\_rand\_int\_pow2}(gen, height) + col\_offset;
+625         \_\_builtin\_prefetch(&mat\_buf[pos]);
+626         \_\_builtin\_prefetch(&qerror\_buf[pos]);
+627         poses[i] = pos;
+628       \}
+629     \} \textcolor{keywordflow}{else} \{
+630       \textcolor{keywordflow}{for} (El::Unsigned i = 0; i < \hyperlink{classlbann_1_1lbann__quantizer_a10667e56db4218aac3912c6bae28fc41}{NUM\_RECON\_SAMPLES}; ++i) \{
+631         \textcolor{keyword}{const} El::Unsigned pos = \hyperlink{namespacelbann_a557aaed6267e7aaf583a75149e9c670c}{fast\_rand\_int}(gen, height) + col\_offset;
+632         \_\_builtin\_prefetch(&mat\_buf[pos]);
+633         \_\_builtin\_prefetch(&qerror\_buf[pos]);
+634         poses[i] = pos;
+635       \}
+636     \}
+637     \textcolor{keywordflow}{for} (El::Unsigned i = 0; i < \hyperlink{classlbann_1_1lbann__quantizer_a10667e56db4218aac3912c6bae28fc41}{NUM\_RECON\_SAMPLES}; ++i) \{
+638       \textcolor{comment}{//const unsigned pos = row\_dist(gen) + col\_offset;}
+639       \textcolor{keyword}{const} El::Unsigned pos = poses[i];
+640       \textcolor{keyword}{const} DataType val = mat\_buf[pos] + qerror\_buf[pos];
+641       \textcolor{keywordflow}{if} (val >= threshes.pos\_thresh) \{
+642         pos\_sum += val;
+643         ++pos\_count;
+644       \} \textcolor{keywordflow}{else} \{
+645         \textcolor{keywordflow}{if} (val <= threshes.neg\_thresh) \{
+646           neg\_sum += val;
+647           ++neg\_count;
+648         \}
+649 \textcolor{preprocessor}{#if LBANN\_QUANTIZER\_TERNARY}
+650         \textcolor{keywordflow}{else} \{
+651           zero\_sum += val;
+652           ++zero\_count;
+653         \}
+654 \textcolor{preprocessor}{#endif}
+655       \}
+656     \}
+657   \}
+658   \textcolor{comment}{// Compute the means. Use the thresholds as initial values in case the}
+659   \textcolor{comment}{// sampling does not include any positive or negative values.}
+660   DataType pos\_recon = threshes.pos\_thresh;
+661   DataType neg\_recon = threshes.neg\_thresh;
+662 \textcolor{preprocessor}{#if LBANN\_QUANTIZER\_TERNARY}
+663   DataType zero\_recon = 0.0f;
+664 \textcolor{preprocessor}{#endif}
+665   \textcolor{keywordflow}{if} (pos\_count > 0) \{
+666     pos\_recon = pos\_sum / pos\_count;
+667   \}
+668   \textcolor{keywordflow}{if} (neg\_count > 0) \{
+669     neg\_recon = neg\_sum / neg\_count;
+670   \}
+671 \textcolor{preprocessor}{#if LBANN\_QUANTIZER\_TERNARY}
+672   \textcolor{keywordflow}{if} (zero\_count > 0) \{
+673     zero\_recon = zero\_sum / zero\_count;
+674   \}
+675   \textcolor{keywordflow}{return} \{ pos\_recon, neg\_recon, zero\_recon \};
+676 \textcolor{preprocessor}{#else}
+677   \textcolor{keywordflow}{return} \{ pos\_recon, neg\_recon \};
+678 \textcolor{preprocessor}{#endif}
+679 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_af77beca5905ff8601ca9b8231a2a16e0_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_af77beca5905ff8601ca9b8231a2a16e0_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_a22b898932caed41ccf24abcb67c00ba1}\label{classlbann_1_1lbann__quantizer_a22b898932caed41ccf24abcb67c00ba1}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!get\+\_\+adaptive\+\_\+quantization\+\_\+copy\+\_\+threads@{get\+\_\+adaptive\+\_\+quantization\+\_\+copy\+\_\+threads}}
+\index{get\+\_\+adaptive\+\_\+quantization\+\_\+copy\+\_\+threads@{get\+\_\+adaptive\+\_\+quantization\+\_\+copy\+\_\+threads}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{get\+\_\+adaptive\+\_\+quantization\+\_\+copy\+\_\+threads()}{get\_adaptive\_quantization\_copy\_threads()}}
+{\footnotesize\ttfamily int lbann\+::lbann\+\_\+quantizer\+::get\+\_\+adaptive\+\_\+quantization\+\_\+copy\+\_\+threads (\begin{DoxyParamCaption}\item[{El\+::\+Int}]{width }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [private]}}
+
+Return the number of threads adaptive quantization uses in its copy loop. This is empirically determined. 
+\begin{DoxyParams}{Parameters}
+{\em width} & The width of the matrix being quantized. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyRefDesc}{Todo}
+\item[\hyperlink{todo__todo000029}{Todo}]Make this configurable at compile time. \end{DoxyRefDesc}
+\begin{DoxyNote}{Note}
+If this and get\+\_\+adaptive\+\_\+quantization\+\_\+threads return different values for the same width, Open\+MP may reap its threads and add additional overhead when invoking a parallel region with more threads. 
+\end{DoxyNote}
+
+
+Definition at line 351 of file quantizer.\+hpp.
+
+
+\begin{DoxyCode}
+351                                                                  \{
+352     \textcolor{keywordtype}{int} num\_threads = \hyperlink{classlbann_1_1lbann__quantizer_aaa0c20f755437130172c40ca8e95bc3f}{get\_adaptive\_quantization\_threads}(width);
+353     \textcolor{keywordflow}{if} (width >= 16384) \{
+354       num\_threads /= 2;
+355     \}
+356     \textcolor{keywordflow}{return} num\_threads;
+357   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_a22b898932caed41ccf24abcb67c00ba1_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_a22b898932caed41ccf24abcb67c00ba1_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_aaa0c20f755437130172c40ca8e95bc3f}\label{classlbann_1_1lbann__quantizer_aaa0c20f755437130172c40ca8e95bc3f}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!get\+\_\+adaptive\+\_\+quantization\+\_\+threads@{get\+\_\+adaptive\+\_\+quantization\+\_\+threads}}
+\index{get\+\_\+adaptive\+\_\+quantization\+\_\+threads@{get\+\_\+adaptive\+\_\+quantization\+\_\+threads}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{get\+\_\+adaptive\+\_\+quantization\+\_\+threads()}{get\_adaptive\_quantization\_threads()}}
+{\footnotesize\ttfamily int lbann\+::lbann\+\_\+quantizer\+::get\+\_\+adaptive\+\_\+quantization\+\_\+threads (\begin{DoxyParamCaption}\item[{El\+::\+Int}]{width }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [private]}}
+
+Return the number of threads adaptive quantization should use for a matrix with the given width. This number of threads is empirically determined. \begin{DoxyRefDesc}{Todo}
+\item[\hyperlink{todo__todo000028}{Todo}]Make this configurable at compile time. \end{DoxyRefDesc}
+
+
+Definition at line 328 of file quantizer.\+hpp.
+
+
+\begin{DoxyCode}
+328                                                             \{
+329     \textcolor{keywordtype}{int} num\_threads = omp\_get\_max\_threads();
+330     \textcolor{keywordflow}{if} (width <= 64) \{
+331       num\_threads = 2;
+332     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (width <= 128) \{
+333       num\_threads = 8;
+334     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (width <= 256) \{
+335       num\_threads = 12;
+336     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (width <= 1024) \{
+337       num\_threads = 24;
+338     \}
+339     \textcolor{keywordflow}{return} std::min(omp\_get\_max\_threads(), num\_threads);
+340   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_aaa0c20f755437130172c40ca8e95bc3f_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_aa1541b9afa60250dbd570acbbe98242f}\label{classlbann_1_1lbann__quantizer_aa1541b9afa60250dbd570acbbe98242f}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!get\+\_\+onebit\+\_\+quantized\+\_\+matrix\+\_\+height@{get\+\_\+onebit\+\_\+quantized\+\_\+matrix\+\_\+height}}
+\index{get\+\_\+onebit\+\_\+quantized\+\_\+matrix\+\_\+height@{get\+\_\+onebit\+\_\+quantized\+\_\+matrix\+\_\+height}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{get\+\_\+onebit\+\_\+quantized\+\_\+matrix\+\_\+height()}{get\_onebit\_quantized\_matrix\_height()}}
+{\footnotesize\ttfamily El\+::\+Int lbann\+::lbann\+\_\+quantizer\+::get\+\_\+onebit\+\_\+quantized\+\_\+matrix\+\_\+height (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{mat }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [private]}}
+
+Return the height of mat after quantization with \hyperlink{classlbann_1_1lbann__quantizer_a4dd4696cbbfd93c73e5fb3c40fcb16c3}{onebit\+\_\+quantize()}. 
+
+Definition at line 267 of file quantizer.\+hpp.
+
+
+\begin{DoxyCode}
+267                                                                         \{
+268     \textcolor{keywordflow}{return} (mat.Height() + (\hyperlink{classlbann_1_1lbann__quantizer_a33ea17392f53b90e91aea1ffb7e11d68}{NUM\_BITS}-1)) / \hyperlink{classlbann_1_1lbann__quantizer_a33ea17392f53b90e91aea1ffb7e11d68}{NUM\_BITS} + 2;
+269   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_aa1541b9afa60250dbd570acbbe98242f_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_aa1541b9afa60250dbd570acbbe98242f_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_a71023cbf93b54d8e8707d137e3c6007a}\label{classlbann_1_1lbann__quantizer_a71023cbf93b54d8e8707d137e3c6007a}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!get\+\_\+proportion\+\_\+time@{get\+\_\+proportion\+\_\+time}}
+\index{get\+\_\+proportion\+\_\+time@{get\+\_\+proportion\+\_\+time}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{get\+\_\+proportion\+\_\+time()}{get\_proportion\_time()}}
+{\footnotesize\ttfamily double lbann\+::lbann\+\_\+quantizer\+::get\+\_\+proportion\+\_\+time (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 230 of file quantizer.\+hpp.
+
+
+\begin{DoxyCode}
+230                                      \{
+231     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1lbann__quantizer_a6bd266728f578df0c86fc2e493742cc1}{proportion\_time};
+232   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_afe560823e51a64b1bb42c6f6cbd83ee0}\label{classlbann_1_1lbann__quantizer_afe560823e51a64b1bb42c6f6cbd83ee0}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!get\+\_\+quantized\+\_\+count@{get\+\_\+quantized\+\_\+count}}
+\index{get\+\_\+quantized\+\_\+count@{get\+\_\+quantized\+\_\+count}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{get\+\_\+quantized\+\_\+count()}{get\_quantized\_count()}}
+{\footnotesize\ttfamily size\+\_\+t lbann\+::lbann\+\_\+quantizer\+::get\+\_\+quantized\+\_\+count (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Return the most recent number of quantized entries. 
+
+Definition at line 239 of file quantizer.\+hpp.
+
+
+\begin{DoxyCode}
+239                                      \{
+240     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1lbann__quantizer_a716fae78ef5ba082a8093f0d06550804}{quantized\_count};
+241   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_afe560823e51a64b1bb42c6f6cbd83ee0_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_a87e856d8bf5e8a678a39cdb8f547dfd9}\label{classlbann_1_1lbann__quantizer_a87e856d8bf5e8a678a39cdb8f547dfd9}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!intermodel\+\_\+sum\+\_\+adaptive\+\_\+quantized@{intermodel\+\_\+sum\+\_\+adaptive\+\_\+quantized}}
+\index{intermodel\+\_\+sum\+\_\+adaptive\+\_\+quantized@{intermodel\+\_\+sum\+\_\+adaptive\+\_\+quantized}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{intermodel\+\_\+sum\+\_\+adaptive\+\_\+quantized()}{intermodel\_sum\_adaptive\_quantized()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+quantizer\+::intermodel\+\_\+sum\+\_\+adaptive\+\_\+quantized (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{mat,  }\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{qerror,  }\item[{int}]{proportion }\end{DoxyParamCaption})}
+
+As with intermodel\+\_\+sum\+\_\+onebit\+\_\+quantized, but use adaptive quantization. 
+
+Definition at line 471 of file quantizer.\+cpp.
+
+
+\begin{DoxyCode}
+472                                                            \{
+473   \textcolor{comment}{// Select which algorithm to use based on the size of mat.}
+474   \textcolor{comment}{// Multiply at 64 bits to avoid overflows.}
+475   \textcolor{keywordtype}{size\_t} mat\_size = ((size\_t) mat.Height()) * ((\textcolor{keywordtype}{size\_t}) mat.Width());
+476   \textcolor{comment}{// Check signed version because we need one bit for the quantized value.}
+477   \textcolor{keywordflow}{if} (mat\_size > std::numeric\_limits<int32\_t>::max()) \{
+478     intermodel\_sum\_adaptive\_quantized\_impl<uint64\_t, uint64\_t>(
+479       \hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, mat, qerror, proportion);
+480   \} \textcolor{keywordflow}{else} \{
+481     \textcolor{comment}{// Check whether we can use 16-bit row indices.}
+482     \textcolor{comment}{// Determine the column type (at compile time) based upon DataType.}
+483     \textcolor{keyword}{using} colT = std::conditional<sizeof(DataType) <= 4, uint32\_t, uint64\_t>::type;
+484     \textcolor{keywordflow}{if} (mat.Height() > std::numeric\_limits<int16\_t>::max()) \{
+485       intermodel\_sum\_adaptive\_quantized\_impl<colT, uint32\_t>(
+486         \hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, mat, qerror, proportion);
+487     \} \textcolor{keywordflow}{else} \{
+488       intermodel\_sum\_adaptive\_quantized\_impl<colT, uint16\_t>(
+489         \hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, mat, qerror, proportion);
+490     \}
+491   \}
+492 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_a87e856d8bf5e8a678a39cdb8f547dfd9_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_aa2d4e5b9bc90f8feaaa32f3fc4183d10}\label{classlbann_1_1lbann__quantizer_aa2d4e5b9bc90f8feaaa32f3fc4183d10}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!intermodel\+\_\+sum\+\_\+adaptive\+\_\+quantized@{intermodel\+\_\+sum\+\_\+adaptive\+\_\+quantized}}
+\index{intermodel\+\_\+sum\+\_\+adaptive\+\_\+quantized@{intermodel\+\_\+sum\+\_\+adaptive\+\_\+quantized}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{intermodel\+\_\+sum\+\_\+adaptive\+\_\+quantized()}{intermodel\_sum\_adaptive\_quantized()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+quantizer\+::intermodel\+\_\+sum\+\_\+adaptive\+\_\+quantized (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{\hyperlink{base_8hpp_a0fab5387556805cfeac3e7e567bf66c5}{Dist\+Mat} \&}]{mat,  }\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{qerror,  }\item[{int}]{proportion }\end{DoxyParamCaption})}
+
+
+
+Definition at line 494 of file quantizer.\+cpp.
+
+
+\begin{DoxyCode}
+495                                                                \{
+496   \hyperlink{classlbann_1_1lbann__quantizer_a87e856d8bf5e8a678a39cdb8f547dfd9}{intermodel\_sum\_adaptive\_quantized}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, mat.Matrix(), qerror,
+497                                     proportion);
+498 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_aa2d4e5b9bc90f8feaaa32f3fc4183d10_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_a3fe3493cb16b85bd4eaf251980408f1b}\label{classlbann_1_1lbann__quantizer_a3fe3493cb16b85bd4eaf251980408f1b}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!intermodel\+\_\+sum\+\_\+adaptive\+\_\+quantized\+\_\+impl@{intermodel\+\_\+sum\+\_\+adaptive\+\_\+quantized\+\_\+impl}}
+\index{intermodel\+\_\+sum\+\_\+adaptive\+\_\+quantized\+\_\+impl@{intermodel\+\_\+sum\+\_\+adaptive\+\_\+quantized\+\_\+impl}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{intermodel\+\_\+sum\+\_\+adaptive\+\_\+quantized\+\_\+impl()}{intermodel\_sum\_adaptive\_quantized\_impl()}}
+{\footnotesize\ttfamily template$<$typename colT , typename rowT $>$ \\
+void lbann\+::lbann\+\_\+quantizer\+::intermodel\+\_\+sum\+\_\+adaptive\+\_\+quantized\+\_\+impl (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{mat,  }\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{qerror,  }\item[{int}]{proportion }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Definition at line 496 of file quantizer\+\_\+impl.\+hpp.
+
+
+\begin{DoxyCode}
+497                                                            \{
+498   \textcolor{comment}{// Ensure types are reasonable.}
+499   static\_assert(std::is\_integral<colT>::value && std::is\_integral<rowT>::value,
+500                 \textcolor{stringliteral}{"Types must be integral"});
+501   static\_assert(std::is\_unsigned<colT>::value && std::is\_unsigned<rowT>::value,
+502                 \textcolor{stringliteral}{"Types must be unsigned"});
+503   static\_assert(\textcolor{keyword}{sizeof}(colT) == 2 || \textcolor{keyword}{sizeof}(colT) == 4 || \textcolor{keyword}{sizeof}(colT) == 8,
+504                 \textcolor{stringliteral}{"colT must be 2, 4, or 8 bytes."});
+505   static\_assert(\textcolor{keyword}{sizeof}(rowT) == 2 || \textcolor{keyword}{sizeof}(rowT) == 4 || \textcolor{keyword}{sizeof}(rowT) == 8,
+506                 \textcolor{stringliteral}{"rowT must be 2, 4, or 8 bytes."});
+507   static\_assert(\textcolor{keyword}{sizeof}(colT) >= \textcolor{keyword}{sizeof}(DataType),
+508                 \textcolor{stringliteral}{"colT must be at least as large as DataType"});
+509   \textcolor{keywordflow}{if} (qerror.Height() == 0) \{
+510     qerror.Resize(mat.Height(), mat.Width(), mat.LDim());
+511     Zero(qerror);
+512   \}
+513   \textcolor{keyword}{const} colT row\_header\_factor = \textcolor{keyword}{sizeof}(rowT) == 2 ? 2 : 1;
+514   \textcolor{keyword}{const} colT header\_len = row\_header\_factor * \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR} * mat.Width() +
+515                           row\_header\_factor;
+516   \textcolor{keyword}{const} colT max\_size = (header\_len +
+517                          \hyperlink{classlbann_1_1lbann__quantizer_abe63d57e62be1b498848f7920de4433a}{MAX\_QUANTIZED\_EXCESS} * mat.Width() * mat.Height() / proportion
+      ) *
+518                          \textcolor{keyword}{sizeof}(rowT);
+519   std::vector<rowT> quant;
+520   std::vector<std::vector<rowT>> quant\_slices(4);
+521   \textcolor{keyword}{auto} send\_transform =
+522     [&qerror, &quant, &quant\_slices, proportion, \textcolor{keyword}{this}]
+523   (\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}& to\_trans, El::IR h, El::IR w, \textcolor{keywordtype}{int}& count, \textcolor{keywordtype}{bool} const\_data, \textcolor{keywordtype}{int} call\_idx) \{
+524     \textcolor{keyword}{auto} to\_send = to\_trans(h, w);
+525     \textcolor{keyword}{auto} to\_send\_qerr = qerror(h, w);
+526     \textcolor{keywordflow}{if} (const\_data) \{
+527       \textcolor{comment}{// In this case we can quantize the entire matrix then slice it.}
+528       \textcolor{keywordflow}{if} (quant.empty()) \{
+529         adaptive\_quantize<colT, rowT>(to\_trans, quant, qerror, proportion);
+530       \}
+531       std::vector<rowT>& quant\_slice = quant\_slices[call\_idx];
+532       quant\_slice.clear();
+533       adaptive\_quantize\_slice<colT, rowT>(quant, to\_send, to\_send\_qerr,
+534                                           quant\_slice, w.beg, w.end,
+535                                           proportion);
+536       count = \textcolor{keyword}{sizeof}(rowT) * quant\_slice.size();
+537       \textcolor{keywordflow}{return} (uint8\_t *) quant\_slice.data();
+538     \} \textcolor{keywordflow}{else} \{
+539       quant.clear();
+540       adaptive\_quantize\_replace<colT, rowT>(to\_send, quant, to\_send\_qerr,
+541                                             proportion);
+542       count = \textcolor{keyword}{sizeof}(rowT) * quant.size();
+543       \textcolor{keywordflow}{return} (uint8\_t *) quant.data();
+544     \}
+545   \};
+546   \textcolor{keyword}{auto} recv\_transform =
+547   [\textcolor{keyword}{this}] (uint8\_t *recv\_buf, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}& accum) \{
+548     adaptive\_unquantize<colT, rowT>((rowT *) recv\_buf, accum);
+549     \textcolor{keyword}{const} colT *q\_col = (colT *) recv\_buf;
+550     \textcolor{keywordflow}{return} \textcolor{keyword}{sizeof}(rowT) * q\_col[accum.Width() * \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR}];
+551   \};
+552   \textcolor{keyword}{auto} recv\_apply\_transform =
+553   [\textcolor{keyword}{this}] (uint8\_t *recv\_buf, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}& accum, \textcolor{keywordtype}{bool} is\_local) -> \textcolor{keywordtype}{int} \{
+554     \textcolor{keywordflow}{if} (is\_local) \{
+555       \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} recv\_mat;
+556       recv\_mat.LockedAttach(accum.Height(), accum.Width(),
+557                             (DataType *) recv\_buf, accum.LDim());
+558       accum += recv\_mat;
+559       \textcolor{keywordflow}{return} \textcolor{keyword}{sizeof}(DataType) * recv\_mat.Height() * recv\_mat.Width();
+560     \} \textcolor{keywordflow}{else} \{
+561       adaptive\_unquantize\_add<colT, rowT>((rowT *) recv\_buf, accum);
+562       \textcolor{keyword}{const} colT *q\_col = (colT *) recv\_buf;
+563       \textcolor{keywordflow}{return} \textcolor{keyword}{sizeof}(rowT) * q\_col[accum.Width() * \hyperlink{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}{HEADER\_FACTOR}];
+564     \}
+565   \};
+566   lbann\_comm::allreduce\_options opts;
+567   opts.max\_reduces = 4;
+568   \hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}->intermodel\_allreduce(
+569     mat, max\_size,
+570     std::function<uint8\_t *(\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}&, El::IR, El::IR, \textcolor{keywordtype}{int}&, \textcolor{keywordtype}{bool}, \textcolor{keywordtype}{int})>(send\_transform),
+571     std::function<\textcolor{keywordtype}{int}(uint8\_t *, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}&)>(recv\_transform),
+572     std::function<\textcolor{keywordtype}{int}(uint8\_t *, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}&, \textcolor{keywordtype}{bool})>(recv\_apply\_transform),
+573     opts);
+574 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_a3fe3493cb16b85bd4eaf251980408f1b_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_a3fe3493cb16b85bd4eaf251980408f1b_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_a4b326de1ca5b7eba6415b6f42f83335b}\label{classlbann_1_1lbann__quantizer_a4b326de1ca5b7eba6415b6f42f83335b}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!intermodel\+\_\+sum\+\_\+onebit\+\_\+quantized@{intermodel\+\_\+sum\+\_\+onebit\+\_\+quantized}}
+\index{intermodel\+\_\+sum\+\_\+onebit\+\_\+quantized@{intermodel\+\_\+sum\+\_\+onebit\+\_\+quantized}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{intermodel\+\_\+sum\+\_\+onebit\+\_\+quantized()}{intermodel\_sum\_onebit\_quantized()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+quantizer\+::intermodel\+\_\+sum\+\_\+onebit\+\_\+quantized (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{mat,  }\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{qerror }\end{DoxyParamCaption})}
+
+Do a sum reduction of mat over comm\textquotesingle{}s inter-\/model communicator, with all communication being quantized. im\+\_\+querror is a separate quantization error matrix that should be passed in each time this is called. This implements the allreduce using a ring-\/based reduce-\/scatter followed by a ring-\/based allgather. Matrices are sent quantized, are unquantized for the reduction, then the reduced matrix is requantized for the allgather. If do\+\_\+adagrad is true, this scales the inter-\/mediate unquantized result as in Ada\+Grad, and uses gradhist to store the gradient history. If used, you should use S\+GD as the optimizer for those layers to avoid applying Ada\+Grad twice. 
+
+Definition at line 210 of file quantizer.\+cpp.
+
+
+\begin{DoxyCode}
+211                                            \{
+212   \textcolor{comment}{// Initialize qerror.}
+213   \textcolor{keywordflow}{if} (qerror.Height() == 0) \{
+214     qerror.Resize(mat.Height(), mat.Width(), mat.LDim());
+215     Zero(qerror);
+216   \}
+217   std::vector<QuantizedMatrix> qmats(4);
+218   \textcolor{keyword}{auto} send\_transform =
+219     [&qerror, &qmats, \textcolor{keyword}{this}] (\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}& to\_trans, El::IR h, El::IR w, \textcolor{keywordtype}{int}& count,
+220                              \textcolor{keywordtype}{bool} const\_data, \textcolor{keywordtype}{int} call\_idx) \{
+221     \textcolor{keyword}{auto} to\_send = to\_trans(h, w);
+222     \textcolor{keyword}{auto} to\_send\_qerr = qerror(h, w);
+223     \hyperlink{classlbann_1_1lbann__quantizer_a399f3f8c393b6021b43e95d1ce6ea28c}{QuantizedMatrix}& qmat = qmats[call\_idx];
+224     \hyperlink{classlbann_1_1lbann__quantizer_a4dd4696cbbfd93c73e5fb3c40fcb16c3}{onebit\_quantize}(to\_send, qmat, to\_send\_qerr);
+225     count = \textcolor{keyword}{sizeof}(\hyperlink{classlbann_1_1lbann__quantizer_afcda642ff1b44d31eec910909c3d013e}{qtype}) * qmat.Height() * qmat.Width();
+226     \textcolor{keywordflow}{if} (!const\_data) \{
+227       \textcolor{comment}{// Need to accumulate local errors.}
+228       \hyperlink{classlbann_1_1lbann__quantizer_ad5592daa122b40c275cce3dc93bba41e}{onebit\_unquantize}(qmat, to\_send);
+229     \}
+230     \textcolor{keywordflow}{return} (uint8\_t *) qmat.Buffer();
+231   \};
+232   \textcolor{keyword}{auto} recv\_transform =
+233   [\textcolor{keyword}{this}] (uint8\_t *recv\_buf, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}& accum) \{
+234     \hyperlink{classlbann_1_1lbann__quantizer_a399f3f8c393b6021b43e95d1ce6ea28c}{QuantizedMatrix} recv\_mat;
+235     recv\_mat.LockedAttach(
+236       \hyperlink{classlbann_1_1lbann__quantizer_aa1541b9afa60250dbd570acbbe98242f}{get\_onebit\_quantized\_matrix\_height}(accum), accum.Width(),
+237       (\hyperlink{classlbann_1_1lbann__quantizer_afcda642ff1b44d31eec910909c3d013e}{qtype} *) recv\_buf, \hyperlink{classlbann_1_1lbann__quantizer_aa1541b9afa60250dbd570acbbe98242f}{get\_onebit\_quantized\_matrix\_height}(accum))
+      ;
+238     \hyperlink{classlbann_1_1lbann__quantizer_ad5592daa122b40c275cce3dc93bba41e}{onebit\_unquantize}(recv\_mat, accum);
+239     \textcolor{keywordflow}{return} \textcolor{keyword}{sizeof}(\hyperlink{classlbann_1_1lbann__quantizer_afcda642ff1b44d31eec910909c3d013e}{qtype}) * recv\_mat.Height() * recv\_mat.Width();
+240   \};
+241   \textcolor{keyword}{auto} recv\_apply\_transform =
+242   [\textcolor{keyword}{this}] (uint8\_t *recv\_buf, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}& accum, \textcolor{keywordtype}{bool} is\_local) \{
+243     \textcolor{keywordflow}{if} (is\_local) \{
+244       \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} recv\_mat;
+245       recv\_mat.LockedAttach(accum.Height(), accum.Width(),
+246                             (DataType *) recv\_buf, accum.LDim());
+247       accum += recv\_mat;
+248       \textcolor{keywordflow}{return} \textcolor{keyword}{sizeof}(DataType) * recv\_mat.Height() * recv\_mat.Width();
+249     \} \textcolor{keywordflow}{else} \{
+250       \hyperlink{classlbann_1_1lbann__quantizer_a399f3f8c393b6021b43e95d1ce6ea28c}{QuantizedMatrix} recv\_mat;
+251       recv\_mat.LockedAttach(\hyperlink{classlbann_1_1lbann__quantizer_aa1541b9afa60250dbd570acbbe98242f}{get\_onebit\_quantized\_matrix\_height}(accum),
+252                             accum.Width(), (\hyperlink{classlbann_1_1lbann__quantizer_afcda642ff1b44d31eec910909c3d013e}{qtype} *) recv\_buf,
+253                             \hyperlink{classlbann_1_1lbann__quantizer_aa1541b9afa60250dbd570acbbe98242f}{get\_onebit\_quantized\_matrix\_height}(accum));
+254       \hyperlink{classlbann_1_1lbann__quantizer_a879cea8464408b8265be9e55edd83b2c}{onebit\_unquantize\_add}(recv\_mat, accum);
+255       \textcolor{keywordflow}{return} \textcolor{keyword}{sizeof}(\hyperlink{classlbann_1_1lbann__quantizer_afcda642ff1b44d31eec910909c3d013e}{qtype}) * recv\_mat.Height() * recv\_mat.Width();
+256     \}
+257   \};
+258   lbann\_comm::allreduce\_options opts;
+259   opts.max\_reduces = 4;
+260   \hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}->intermodel\_allreduce(
+261     mat, \textcolor{keyword}{sizeof}(\hyperlink{classlbann_1_1lbann__quantizer_afcda642ff1b44d31eec910909c3d013e}{qtype}) * \hyperlink{classlbann_1_1lbann__quantizer_aa1541b9afa60250dbd570acbbe98242f}{get\_onebit\_quantized\_matrix\_height}(mat) * 
+      mat.Width(),
+262     std::function<uint8\_t *(Mat&, El::IR, El::IR, int&, bool, int)>(send\_transform),
+263     std::function<\textcolor{keywordtype}{int}(uint8\_t *, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}&)>(recv\_transform),
+264     std::function<\textcolor{keywordtype}{int}(uint8\_t *, \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}&, \textcolor{keywordtype}{bool})>(recv\_apply\_transform),
+265     opts);
+266 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_a4b326de1ca5b7eba6415b6f42f83335b_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_a4b326de1ca5b7eba6415b6f42f83335b_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_af24e00e26e157f102f3cef547de40ae1}\label{classlbann_1_1lbann__quantizer_af24e00e26e157f102f3cef547de40ae1}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!intermodel\+\_\+sum\+\_\+onebit\+\_\+quantized@{intermodel\+\_\+sum\+\_\+onebit\+\_\+quantized}}
+\index{intermodel\+\_\+sum\+\_\+onebit\+\_\+quantized@{intermodel\+\_\+sum\+\_\+onebit\+\_\+quantized}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{intermodel\+\_\+sum\+\_\+onebit\+\_\+quantized()}{intermodel\_sum\_onebit\_quantized()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+quantizer\+::intermodel\+\_\+sum\+\_\+onebit\+\_\+quantized (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{\hyperlink{base_8hpp_a0fab5387556805cfeac3e7e567bf66c5}{Dist\+Mat} \&}]{mat,  }\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{qerror }\end{DoxyParamCaption})}
+
+
+
+Definition at line 268 of file quantizer.\+cpp.
+
+
+\begin{DoxyCode}
+269                                                \{
+270   \hyperlink{classlbann_1_1lbann__quantizer_a4b326de1ca5b7eba6415b6f42f83335b}{intermodel\_sum\_onebit\_quantized}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, mat.Matrix(), qerror);
+271 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_af24e00e26e157f102f3cef547de40ae1_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_a0bd572557675705c5e080b92d74b02ae}\label{classlbann_1_1lbann__quantizer_a0bd572557675705c5e080b92d74b02ae}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!intermodel\+\_\+sum\+\_\+threshold\+\_\+quantized@{intermodel\+\_\+sum\+\_\+threshold\+\_\+quantized}}
+\index{intermodel\+\_\+sum\+\_\+threshold\+\_\+quantized@{intermodel\+\_\+sum\+\_\+threshold\+\_\+quantized}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{intermodel\+\_\+sum\+\_\+threshold\+\_\+quantized()}{intermodel\_sum\_threshold\_quantized()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+quantizer\+::intermodel\+\_\+sum\+\_\+threshold\+\_\+quantized (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{mat,  }\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{qerror,  }\item[{Data\+Type}]{pos\+\_\+thresh,  }\item[{Data\+Type}]{neg\+\_\+thresh }\end{DoxyParamCaption})}
+
+As with intermodel\+\_\+sum\+\_\+onebit\+\_\+quantized, but use threshold quantization. 
+
+Definition at line 456 of file quantizer.\+cpp.
+
+
+\begin{DoxyCode}
+458                        \{
+459   \textcolor{comment}{// Temporarily not supported until threshold quantization is updated to}
+460   \textcolor{comment}{// have upper bounds on its send size.}
+461   \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"Threshold quantized allreduce not supported"});
+462 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_a0bd572557675705c5e080b92d74b02ae_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_ac2afc78996f35d90b5d0462292a1a2e3}\label{classlbann_1_1lbann__quantizer_ac2afc78996f35d90b5d0462292a1a2e3}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!intermodel\+\_\+sum\+\_\+threshold\+\_\+quantized@{intermodel\+\_\+sum\+\_\+threshold\+\_\+quantized}}
+\index{intermodel\+\_\+sum\+\_\+threshold\+\_\+quantized@{intermodel\+\_\+sum\+\_\+threshold\+\_\+quantized}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{intermodel\+\_\+sum\+\_\+threshold\+\_\+quantized()}{intermodel\_sum\_threshold\_quantized()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+quantizer\+::intermodel\+\_\+sum\+\_\+threshold\+\_\+quantized (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{\hyperlink{base_8hpp_a0fab5387556805cfeac3e7e567bf66c5}{Dist\+Mat} \&}]{mat,  }\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{qerror,  }\item[{Data\+Type}]{pos\+\_\+thresh,  }\item[{Data\+Type}]{neg\+\_\+thresh }\end{DoxyParamCaption})}
+
+
+
+Definition at line 464 of file quantizer.\+cpp.
+
+
+\begin{DoxyCode}
+466                        \{
+467   \hyperlink{classlbann_1_1lbann__quantizer_a0bd572557675705c5e080b92d74b02ae}{intermodel\_sum\_threshold\_quantized}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, mat.Matrix(), qerror, 
+      pos\_thresh,
+468                                      neg\_thresh);
+469 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_ac2afc78996f35d90b5d0462292a1a2e3_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_a4dd4696cbbfd93c73e5fb3c40fcb16c3}\label{classlbann_1_1lbann__quantizer_a4dd4696cbbfd93c73e5fb3c40fcb16c3}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!onebit\+\_\+quantize@{onebit\+\_\+quantize}}
+\index{onebit\+\_\+quantize@{onebit\+\_\+quantize}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{onebit\+\_\+quantize()}{onebit\_quantize()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+quantizer\+::onebit\+\_\+quantize (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{mat,  }\item[{\hyperlink{classlbann_1_1lbann__quantizer_a399f3f8c393b6021b43e95d1ce6ea28c}{Quantized\+Matrix} \&}]{qmat,  }\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{qerror,  }\item[{bool}]{sample = {\ttfamily true} }\end{DoxyParamCaption})}
+
+Quantize a matrix with onebit quantization. qerror needs to be initialized with\+: Zeros(qerror, mat.\+Height(), mat.\+Width()). 
+\begin{DoxyParams}{Parameters}
+{\em mat} & The matrix to quantize. \\
+\hline
+{\em qmat} & The output quantized matrix (will be resized). \\
+\hline
+{\em qerror} & Running quantization error. \\
+\hline
+{\em sample} & Whether to use samples to approximate averages. \\
+\hline
+\end{DoxyParams}
+
+
+Definition at line 45 of file quantizer.\+cpp.
+
+
+\begin{DoxyCode}
+46                                                                    \{
+47   \textcolor{comment}{// Set up the quantized matrix. (+2 for the averages.)}
+48   \textcolor{keyword}{const} El::Int qheight = \hyperlink{classlbann_1_1lbann__quantizer_aa1541b9afa60250dbd570acbbe98242f}{get\_onebit\_quantized\_matrix\_height}(mat);
+49   \textcolor{keyword}{const} El::Int qwidth = mat.Width();
+50   qmat.Resize(qheight, qwidth);
+51 
+52   \textcolor{keyword}{const} El::Int width = mat.Width();
+53   \textcolor{keyword}{const} El::Int height = mat.Height();
+54   \textcolor{keyword}{const} El::Int ldim = mat.LDim();
+55   \textcolor{keyword}{const} El::Int qmat\_ldim = qmat.LDim();
+56   \textcolor{keyword}{const} DataType *\_\_restrict\_\_ mat\_buf = mat.LockedBuffer();
+57   DataType *\_\_restrict\_\_ qerror\_buf = qerror.Buffer();
+58   \hyperlink{classlbann_1_1lbann__quantizer_afcda642ff1b44d31eec910909c3d013e}{qtype} *\_\_restrict\_\_ qmat\_buf = qmat.Buffer();
+59 \textcolor{preprocessor}{  #pragma omp parallel for schedule(static)}
+60   \textcolor{keywordflow}{for} (El::Int col = 0; col < width; ++col) \{
+61     \textcolor{comment}{// First compute the positive and negative column averages.}
+62     DataType pos\_sum = 0.0f;
+63     DataType neg\_sum = 0.0f;
+64     El::Unsigned num\_pos = 0;
+65     El::Unsigned num\_neg = 0;
+66     \textcolor{keywordflow}{if} (height <= \hyperlink{classlbann_1_1lbann__quantizer_a8e25785452736c54861a69207a48252d}{NUM\_ONEBIT\_SAMPLES} || !sample) \{
+67       \textcolor{keywordflow}{for} (El::Int row = 0; row < height; ++row) \{
+68         \textcolor{keyword}{const} El::Int pos = row + col * ldim;
+69         \textcolor{keyword}{const} DataType val = mat\_buf[pos] + qerror\_buf[pos];
+70         \textcolor{keywordflow}{if} (val >= 0.0f) \{
+71           pos\_sum += val;
+72           ++num\_pos;
+73         \} \textcolor{keywordflow}{else} \{
+74           neg\_sum += val;
+75           ++num\_neg;
+76         \}
+77       \}
+78     \} \textcolor{keywordflow}{else} \{
+79       \textcolor{comment}{// Randomly sample NUM\_ONEBIT\_SAMPLES to approximate.}
+80       \hyperlink{namespacelbann_af16616ffa6a3616836eabadd6ce837ec}{fast\_rng\_gen}& gen = \hyperlink{namespacelbann_ae6ce9c2fdec6f81803f6b1a6555c31c5}{get\_fast\_generator}();
+81       \textcolor{keywordflow}{for} (El::Int i = 0; i < \hyperlink{classlbann_1_1lbann__quantizer_a8e25785452736c54861a69207a48252d}{NUM\_ONEBIT\_SAMPLES}; ++i) \{
+82         \textcolor{keyword}{const} El::Int pos = \hyperlink{namespacelbann_a557aaed6267e7aaf583a75149e9c670c}{fast\_rand\_int}(gen, height);
+83         \textcolor{keyword}{const} DataType val = mat\_buf[pos] + qerror\_buf[pos];
+84         \textcolor{keywordflow}{if} (val >= 0.0f) \{
+85           pos\_sum += val;
+86           ++num\_pos;
+87         \} \textcolor{keywordflow}{else} \{
+88           neg\_sum += val;
+89           ++num\_neg;
+90         \}
+91       \}
+92     \}
+93     DataType avg\_pos = 0.0f;
+94     \textcolor{keywordflow}{if} (num\_pos > 0) \{
+95       avg\_pos = pos\_sum / num\_pos;
+96     \}
+97     DataType avg\_neg = 0.0f;
+98     \textcolor{keywordflow}{if} (num\_neg > 0) \{
+99       avg\_neg = neg\_sum / num\_neg;
+100     \}
+101 
+102     \textcolor{comment}{// Store the averages.}
+103     \textcolor{comment}{// Use memcpy so that we don't violate aliasing rules.}
+104     \hyperlink{classlbann_1_1lbann__quantizer_afcda642ff1b44d31eec910909c3d013e}{qtype} tmp = 0;
+105     memcpy(&tmp, &avg\_pos, \textcolor{keyword}{sizeof}(avg\_pos));
+106     qmat.Set(0, col, tmp);
+107     tmp = 0;
+108     memcpy(&tmp, &avg\_neg, \textcolor{keyword}{sizeof}(avg\_neg));
+109     qmat.Set(1, col, tmp);
+110 
+111     \textcolor{comment}{// Now quantize the column, NUM\_BITS entries at a time.}
+112     El::Int qrow = 2;
+113     \textcolor{keywordflow}{for} (El::Int row\_chunk = 0; row\_chunk < height; row\_chunk += \hyperlink{classlbann_1_1lbann__quantizer_a33ea17392f53b90e91aea1ffb7e11d68}{NUM\_BITS}) \{
+114       \hyperlink{classlbann_1_1lbann__quantizer_ac8b63c86fc871e248ce20c7af19a7fad}{uqtype} q = 0;
+115       \textcolor{keywordflow}{for} (\hyperlink{classlbann_1_1lbann__quantizer_ac8b63c86fc871e248ce20c7af19a7fad}{uqtype} bit = 0; bit < \hyperlink{classlbann_1_1lbann__quantizer_a33ea17392f53b90e91aea1ffb7e11d68}{NUM\_BITS}; ++bit) \{
+116         El::Int row = row\_chunk + bit;
+117         \textcolor{keywordflow}{if} (row >= height) \{
+118           \textcolor{keywordflow}{break};
+119         \}
+120         \textcolor{keyword}{const} El::Int pos = row + col * ldim;
+121         \textcolor{keyword}{const} DataType val = mat\_buf[pos] + qerror\_buf[pos];
+122         \textcolor{keywordflow}{if} (val >= 0.0f) \{
+123           q |= \hyperlink{classlbann_1_1lbann__quantizer_ac8b63c86fc871e248ce20c7af19a7fad}{uqtype}(1) << bit;
+124           qerror\_buf[pos] = val - avg\_pos;
+125         \} \textcolor{keywordflow}{else} \{
+126           qerror\_buf[pos] = val - avg\_neg;
+127         \}
+128       \}
+129       qmat\_buf[qrow + col * qmat\_ldim] = (\hyperlink{classlbann_1_1lbann__quantizer_afcda642ff1b44d31eec910909c3d013e}{qtype}) q;
+130       ++qrow;
+131     \}
+132   \}
+133 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_a4dd4696cbbfd93c73e5fb3c40fcb16c3_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_a4dd4696cbbfd93c73e5fb3c40fcb16c3_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_a9eeb89150026bf4b7bea15bffdba10d3}\label{classlbann_1_1lbann__quantizer_a9eeb89150026bf4b7bea15bffdba10d3}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!onebit\+\_\+quantize@{onebit\+\_\+quantize}}
+\index{onebit\+\_\+quantize@{onebit\+\_\+quantize}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{onebit\+\_\+quantize()}{onebit\_quantize()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+quantizer\+::onebit\+\_\+quantize (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a0fab5387556805cfeac3e7e567bf66c5}{Dist\+Mat} \&}]{mat,  }\item[{\hyperlink{classlbann_1_1lbann__quantizer_a399f3f8c393b6021b43e95d1ce6ea28c}{Quantized\+Matrix} \&}]{qmat,  }\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{qerror,  }\item[{bool}]{sample = {\ttfamily true} }\end{DoxyParamCaption})}
+
+
+
+Definition at line 135 of file quantizer.\+cpp.
+
+
+\begin{DoxyCode}
+136                                                                 \{
+137   \hyperlink{classlbann_1_1lbann__quantizer_a4dd4696cbbfd93c73e5fb3c40fcb16c3}{onebit\_quantize}(mat.LockedMatrix(), qmat, qerror, sample);
+138 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_a9eeb89150026bf4b7bea15bffdba10d3_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_ad5592daa122b40c275cce3dc93bba41e}\label{classlbann_1_1lbann__quantizer_ad5592daa122b40c275cce3dc93bba41e}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!onebit\+\_\+unquantize@{onebit\+\_\+unquantize}}
+\index{onebit\+\_\+unquantize@{onebit\+\_\+unquantize}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{onebit\+\_\+unquantize()}{onebit\_unquantize()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+quantizer\+::onebit\+\_\+unquantize (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__quantizer_a399f3f8c393b6021b43e95d1ce6ea28c}{Quantized\+Matrix} \&}]{qmat,  }\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{mat }\end{DoxyParamCaption})}
+
+Unquantize a onebit-\/quantized matrix.. 
+\begin{DoxyParams}{Parameters}
+{\em qmat} & The matrix to unquantize. \\
+\hline
+{\em mat} & The output unquantized matrix. \\
+\hline
+\end{DoxyParams}
+
+
+Definition at line 140 of file quantizer.\+cpp.
+
+
+\begin{DoxyCode}
+140                                                                              \{
+141   \textcolor{keyword}{const} El::Int width = mat.Width();
+142   \textcolor{keyword}{const} El::Int height = mat.Height();
+143   \textcolor{keyword}{const} El::Int ldim = mat.LDim();
+144   \textcolor{keyword}{const} El::Int qmat\_ldim = qmat.LDim();
+145   \textcolor{keyword}{const} \hyperlink{classlbann_1_1lbann__quantizer_afcda642ff1b44d31eec910909c3d013e}{qtype} *\_\_restrict\_\_ qmat\_buf = qmat.LockedBuffer();
+146   DataType *\_\_restrict\_\_ mat\_buf = mat.Buffer();
+147 \textcolor{preprocessor}{  #pragma omp parallel for schedule(static)}
+148   \textcolor{keywordflow}{for} (El::Int col = 0; col < width; ++col) \{
+149     El::Int qrow = 2;
+150     \textcolor{comment}{// Extract the averages.}
+151     \hyperlink{classlbann_1_1lbann__quantizer_afcda642ff1b44d31eec910909c3d013e}{qtype} tmp = qmat.Get(0, col);
+152     DataType avg\_pos;
+153     memcpy(&avg\_pos, &tmp, \textcolor{keyword}{sizeof}(avg\_pos));
+154     tmp = qmat.Get(1, col);
+155     DataType avg\_neg;
+156     memcpy(&avg\_neg, &tmp, \textcolor{keyword}{sizeof}(avg\_neg));
+157     \textcolor{comment}{// Unquantize this column.}
+158     \textcolor{keywordflow}{for} (El::Int row\_chunk = 0; row\_chunk < height; row\_chunk += \hyperlink{classlbann_1_1lbann__quantizer_a33ea17392f53b90e91aea1ffb7e11d68}{NUM\_BITS}) \{
+159       \textcolor{keyword}{auto} q = (\hyperlink{classlbann_1_1lbann__quantizer_ac8b63c86fc871e248ce20c7af19a7fad}{uqtype}) qmat\_buf[qrow + col * qmat\_ldim];
+160       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} bit = 0; bit < \hyperlink{classlbann_1_1lbann__quantizer_a33ea17392f53b90e91aea1ffb7e11d68}{NUM\_BITS}; ++bit) \{
+161         El::Int row = row\_chunk + bit;
+162         \textcolor{keywordflow}{if} (row >= height) \{
+163           \textcolor{keywordflow}{break};
+164         \}
+165         mat\_buf[row + col * ldim] = (q >> bit) & 0x1 ? avg\_pos : avg\_neg;
+166       \}
+167       ++qrow;
+168     \}
+169   \}
+170 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_ad5592daa122b40c275cce3dc93bba41e_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_afc7a47fb5a5e87a09f2913a46a2bacf7}\label{classlbann_1_1lbann__quantizer_afc7a47fb5a5e87a09f2913a46a2bacf7}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!onebit\+\_\+unquantize@{onebit\+\_\+unquantize}}
+\index{onebit\+\_\+unquantize@{onebit\+\_\+unquantize}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{onebit\+\_\+unquantize()}{onebit\_unquantize()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+quantizer\+::onebit\+\_\+unquantize (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__quantizer_a399f3f8c393b6021b43e95d1ce6ea28c}{Quantized\+Matrix} \&}]{qmat,  }\item[{\hyperlink{base_8hpp_a0fab5387556805cfeac3e7e567bf66c5}{Dist\+Mat} \&}]{mat }\end{DoxyParamCaption})}
+
+
+
+Definition at line 172 of file quantizer.\+cpp.
+
+
+\begin{DoxyCode}
+173                                                       \{
+174   \hyperlink{classlbann_1_1lbann__quantizer_ad5592daa122b40c275cce3dc93bba41e}{onebit\_unquantize}(qmat, mat.Matrix());
+175 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_afc7a47fb5a5e87a09f2913a46a2bacf7_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_a879cea8464408b8265be9e55edd83b2c}\label{classlbann_1_1lbann__quantizer_a879cea8464408b8265be9e55edd83b2c}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!onebit\+\_\+unquantize\+\_\+add@{onebit\+\_\+unquantize\+\_\+add}}
+\index{onebit\+\_\+unquantize\+\_\+add@{onebit\+\_\+unquantize\+\_\+add}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{onebit\+\_\+unquantize\+\_\+add()}{onebit\_unquantize\_add()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+quantizer\+::onebit\+\_\+unquantize\+\_\+add (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__quantizer_a399f3f8c393b6021b43e95d1ce6ea28c}{Quantized\+Matrix} \&}]{qmat,  }\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{mat }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+Variant of unquantize that adds its entries. 
+
+Definition at line 177 of file quantizer.\+cpp.
+
+
+\begin{DoxyCode}
+178               \{
+179   \textcolor{keyword}{const} El::Int width = mat.Width();
+180   \textcolor{keyword}{const} El::Int height = mat.Height();
+181   \textcolor{keyword}{const} El::Int ldim = mat.LDim();
+182   \textcolor{keyword}{const} El::Int qmat\_ldim = qmat.LDim();
+183   \textcolor{keyword}{const} \hyperlink{classlbann_1_1lbann__quantizer_afcda642ff1b44d31eec910909c3d013e}{qtype} *\_\_restrict\_\_ qmat\_buf = qmat.LockedBuffer();
+184   DataType *\_\_restrict\_\_ mat\_buf = mat.Buffer();
+185 \textcolor{preprocessor}{  #pragma omp parallel for schedule(static)}
+186   \textcolor{keywordflow}{for} (El::Int col = 0; col < width; ++col) \{
+187     El::Int qrow = 2;
+188     \textcolor{comment}{// Extract the averages.}
+189     \hyperlink{classlbann_1_1lbann__quantizer_afcda642ff1b44d31eec910909c3d013e}{qtype} tmp = qmat.Get(0, col);
+190     DataType avg\_pos;
+191     memcpy(&avg\_pos, &tmp, \textcolor{keyword}{sizeof}(avg\_pos));
+192     tmp = qmat.Get(1, col);
+193     DataType avg\_neg;
+194     memcpy(&avg\_neg, &tmp, \textcolor{keyword}{sizeof}(avg\_neg));
+195     \textcolor{comment}{// Unquantize this column.}
+196     \textcolor{keywordflow}{for} (El::Int row\_chunk = 0; row\_chunk < height; row\_chunk += \hyperlink{classlbann_1_1lbann__quantizer_a33ea17392f53b90e91aea1ffb7e11d68}{NUM\_BITS}) \{
+197       \textcolor{keyword}{auto} q = (\hyperlink{classlbann_1_1lbann__quantizer_ac8b63c86fc871e248ce20c7af19a7fad}{uqtype}) qmat\_buf[qrow + col * qmat\_ldim];
+198       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} bit = 0; bit < \hyperlink{classlbann_1_1lbann__quantizer_a33ea17392f53b90e91aea1ffb7e11d68}{NUM\_BITS}; ++bit) \{
+199         El::Int row = row\_chunk + bit;
+200         \textcolor{keywordflow}{if} (row >= height) \{
+201           \textcolor{keywordflow}{break};
+202         \}
+203         mat\_buf[row + col * ldim] += (q >> bit) & 0x1 ? avg\_pos : avg\_neg;
+204       \}
+205       ++qrow;
+206     \}
+207   \}
+208 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_a879cea8464408b8265be9e55edd83b2c_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_aa5aabc1cb4163e95aee993d9b37b9b32}\label{classlbann_1_1lbann__quantizer_aa5aabc1cb4163e95aee993d9b37b9b32}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!proportion\+\_\+threshold@{proportion\+\_\+threshold}}
+\index{proportion\+\_\+threshold@{proportion\+\_\+threshold}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{proportion\+\_\+threshold()}{proportion\_threshold()}}
+{\footnotesize\ttfamily \hyperlink{structlbann_1_1lbann__quantizer_1_1adaptive__thresholds}{lbann\+\_\+quantizer\+::adaptive\+\_\+thresholds} lbann\+::lbann\+\_\+quantizer\+::proportion\+\_\+threshold (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{mat,  }\item[{const \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{qerror,  }\item[{int}]{proportion,  }\item[{bool}]{sample = {\ttfamily true} }\end{DoxyParamCaption})}
+
+Compute positive and negative thresholds such that only one in proportion of values in mat are $>$= to the positive threshold or $<$= to the negative threshold. 
+\begin{DoxyParams}{Parameters}
+{\em mat} & The matrix to compute threshold values for. \\
+\hline
+{\em qerror} & The accumulated quantization error in mat. \\
+\hline
+{\em proportion} & Proportion of entries to keep. \\
+\hline
+{\em sample} & Whether to approximate stats by randomly sampling mat. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The threshold values. 
+\end{DoxyReturn}
+
+
+Definition at line 500 of file quantizer.\+cpp.
+
+
+\begin{DoxyCode}
+501                                                                   \{
+502   \textcolor{keywordtype}{double} proportion\_start = \hyperlink{namespacelbann_a478d36031ff0659893c4322cd856157f}{get\_time}();
+503   std::vector<DataType> entries;
+504   \textcolor{keyword}{const} El::Int height = mat.Height();
+505   \textcolor{keyword}{const} El::Int width = mat.Width();
+506   \textcolor{keyword}{const} El::Int ldim = mat.LDim();
+507   \textcolor{keyword}{const} DataType *\_\_restrict\_\_ mat\_buf = mat.LockedBuffer();
+508   \textcolor{keyword}{const} DataType *\_\_restrict\_\_ qerror\_buf = qerror.LockedBuffer();
+509   \textcolor{comment}{// Bail out if needed.}
+510   \textcolor{keywordflow}{if} (width == 0) \{
+511     \textcolor{keywordflow}{return} \{ 0.0f, 0.0f \};
+512   \}
+513   \textcolor{keywordflow}{if} (width * height <= \hyperlink{classlbann_1_1lbann__quantizer_a7745dbc282bebe812ff5523a4b3df3f2}{NUM\_THRESHOLD\_SAMPLES} || !sample) \{
+514     \textcolor{comment}{// Copy entire matrix into vector.}
+515     entries.reserve(width * height);
+516     \textcolor{keywordflow}{for} (El::Int col = 0; col < width; ++col) \{
+517       \textcolor{keyword}{const} El::Int col\_offset = col * ldim;
+518       \textcolor{keywordflow}{for} (El::Int row = 0; row < height; ++row) \{
+519         \textcolor{keyword}{const} El::Unsigned pos = row + col\_offset;
+520         entries.emplace\_back(mat\_buf[pos] + qerror\_buf[pos]);
+521       \}
+522     \}
+523   \} \textcolor{keywordflow}{else} \{
+524     \textcolor{comment}{// Randomly sample entries to approximate everything.}
+525     entries.reserve(\hyperlink{classlbann_1_1lbann__quantizer_a7745dbc282bebe812ff5523a4b3df3f2}{NUM\_THRESHOLD\_SAMPLES});
+526     \hyperlink{namespacelbann_af16616ffa6a3616836eabadd6ce837ec}{fast\_rng\_gen}& gen = \hyperlink{namespacelbann_ae6ce9c2fdec6f81803f6b1a6555c31c5}{get\_fast\_generator}();
+527     std::vector<El::Unsigned> poses(\hyperlink{classlbann_1_1lbann__quantizer_a7745dbc282bebe812ff5523a4b3df3f2}{NUM\_THRESHOLD\_SAMPLES});
+528     \textcolor{keywordflow}{for} (El::Unsigned i = 0; i < \hyperlink{classlbann_1_1lbann__quantizer_a7745dbc282bebe812ff5523a4b3df3f2}{NUM\_THRESHOLD\_SAMPLES}; ++i) \{
+529       \textcolor{keyword}{const} El::Unsigned pos = \hyperlink{namespacelbann_a557aaed6267e7aaf583a75149e9c670c}{fast\_rand\_int}(gen, height) + 
+      \hyperlink{namespacelbann_a557aaed6267e7aaf583a75149e9c670c}{fast\_rand\_int}(gen, width) * ldim;
+530       \_\_builtin\_prefetch(&mat\_buf[pos]);
+531       \_\_builtin\_prefetch(&qerror\_buf[pos]);
+532       poses[i] = pos;
+533     \}
+534     \textcolor{keywordflow}{for} (El::Unsigned i = 0; i < \hyperlink{classlbann_1_1lbann__quantizer_a7745dbc282bebe812ff5523a4b3df3f2}{NUM\_THRESHOLD\_SAMPLES}; ++i) \{
+535       \textcolor{keyword}{const} El::Unsigned pos = poses[i];
+536       entries.emplace\_back(mat\_buf[pos] + qerror\_buf[pos]);
+537     \}
+538   \}
+539   \textcolor{comment}{// Determine the number of entries to keep.}
+540   El::Int num\_to\_keep = std::max(1, (\textcolor{keywordtype}{int}) entries.size() / proportion);
+541   \textcolor{comment}{// Determine the threshold values.}
+542   \textcolor{comment}{// This finds the num\_to\_keep'th value if sample were sorted by magnitude}
+543   \textcolor{comment}{// and assigns it to the appropriate threshold, then checks the upper portion}
+544   \textcolor{comment}{// of the partially-sorted vector to find the other threshold.}
+545   \textcolor{comment}{// In the case that the threshold would be 0, it is instead a small non-zero}
+546   \textcolor{comment}{// value.}
+547   DataType pos\_thresh = std::numeric\_limits<DataType>::max();
+548   DataType neg\_thresh = -std::numeric\_limits<DataType>::max();
+549   \textcolor{keyword}{auto} i = entries.begin() + (entries.size() - num\_to\_keep);
+550   std::nth\_element(entries.begin(), i, entries.end(),
+551   [] (\textcolor{keyword}{const} DataType a, \textcolor{keyword}{const} DataType b) \{
+552     \textcolor{keywordflow}{return} std::abs(a) < std::abs(b);
+553   \});
+554   \textcolor{keywordflow}{if} (*i > 0) \{
+555     pos\_thresh = *i;
+556     \textcolor{keywordflow}{for} (++i; i < entries.end(); ++i) \{
+557       \textcolor{comment}{// Find the largest (closest to 0) negative value.}
+558       \textcolor{keywordflow}{if} (*i < 0) \{
+559         neg\_thresh = std::max(neg\_thresh, *i);
+560       \}
+561     \}
+562   \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (*i < 0) \{
+563     neg\_thresh = *i;
+564     \textcolor{keywordflow}{for} (++i; i < entries.end(); ++i) \{
+565       \textcolor{comment}{// Find the smallest (closest to 0) positive value.}
+566       \textcolor{keywordflow}{if} (*i > 0) \{
+567         pos\_thresh = std::min(pos\_thresh, *i);
+568       \}
+569     \}
+570   \}
+571   \textcolor{comment}{// If there are no values of a sign, select threshold such that none are sent.}
+572   \textcolor{keywordflow}{if} (pos\_thresh == std::numeric\_limits<DataType>::max()) \{
+573     pos\_thresh = -neg\_thresh;
+574   \}
+575   \textcolor{keywordflow}{if} (neg\_thresh == -std::numeric\_limits<DataType>::max()) \{
+576     neg\_thresh = -pos\_thresh;
+577   \}
+578   \hyperlink{classlbann_1_1lbann__quantizer_a6bd266728f578df0c86fc2e493742cc1}{proportion\_time} += \hyperlink{namespacelbann_a478d36031ff0659893c4322cd856157f}{get\_time}() - proportion\_start;
+579   \textcolor{keywordflow}{return} \{ pos\_thresh, neg\_thresh \};
+580 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_aa5aabc1cb4163e95aee993d9b37b9b32_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_aa5aabc1cb4163e95aee993d9b37b9b32_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_aee1ea46e3191ad25fd310938eaf5a2e0}\label{classlbann_1_1lbann__quantizer_aee1ea46e3191ad25fd310938eaf5a2e0}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!reset\+\_\+counters@{reset\+\_\+counters}}
+\index{reset\+\_\+counters@{reset\+\_\+counters}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{reset\+\_\+counters()}{reset\_counters()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+quantizer\+::reset\+\_\+counters (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Reset recorded counters. 
+
+Definition at line 234 of file quantizer.\+hpp.
+
+
+\begin{DoxyCode}
+234                         \{
+235     \hyperlink{classlbann_1_1lbann__quantizer_a6bd266728f578df0c86fc2e493742cc1}{proportion\_time} = 0.0;
+236     \hyperlink{classlbann_1_1lbann__quantizer_a716fae78ef5ba082a8093f0d06550804}{quantized\_count} = 0;
+237   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_aee1ea46e3191ad25fd310938eaf5a2e0_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_a00106e69ea8a6dfe9e9a91c75b845bcd}\label{classlbann_1_1lbann__quantizer_a00106e69ea8a6dfe9e9a91c75b845bcd}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!threshold\+\_\+quantize@{threshold\+\_\+quantize}}
+\index{threshold\+\_\+quantize@{threshold\+\_\+quantize}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{threshold\+\_\+quantize()}{threshold\_quantize()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+quantizer\+::threshold\+\_\+quantize (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{mat,  }\item[{\hyperlink{classlbann_1_1lbann__quantizer_a85ea8e298c2975b4f802855278406aa7}{Thresh\+Quantized} \&}]{q,  }\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{qerror,  }\item[{Data\+Type}]{pos\+\_\+thresh,  }\item[{Data\+Type}]{neg\+\_\+thresh,  }\item[{bool}]{delta = {\ttfamily false} }\end{DoxyParamCaption})}
+
+Threshold and quantize a matrix. qerror needs to be initialized with\+: Zeros(qerror, mat.\+Height(), mat.\+Width())). 
+\begin{DoxyParams}{Parameters}
+{\em mat} & The matrix to quantize. \\
+\hline
+{\em q} & The output list of quantized entries. \\
+\hline
+{\em qerror} & Running quantization error. \\
+\hline
+{\em pos\+\_\+thresh} & The positive threshold level. \\
+\hline
+{\em neg\+\_\+thresh} & The negative threshold level. \\
+\hline
+{\em delta} & Whether to do delta encoding (default false). \\
+\hline
+\end{DoxyParams}
+
+
+Definition at line 273 of file quantizer.\+cpp.
+
+
+\begin{DoxyCode}
+275                                      \{
+276   \textcolor{keyword}{const} El::Int ldim = mat.LDim();
+277   \textcolor{keyword}{const} El::Int width = mat.Width();
+278   \textcolor{keyword}{const} El::Int height = mat.Height();
+279   \textcolor{keywordflow}{if} (ldim != qerror.LDim()) \{
+280     std::cout << \textcolor{stringliteral}{"ldims don't match!"} << std::endl;
+281   \}
+282   \textcolor{keyword}{const} DataType *\_\_restrict\_\_ mat\_buf = mat.LockedBuffer();
+283   DataType *\_\_restrict\_\_ qerror\_buf = qerror.Buffer();
+284   std::vector<ThreshQuantized> thread\_qs(omp\_get\_max\_threads());
+285   \textcolor{keywordflow}{if} (delta) \{
+286     El::Unsigned prev\_pos = 0;
+287     \textcolor{keywordflow}{for} (El::Int col = 0; col < width; ++col) \{
+288       \textcolor{keywordflow}{for} (El::Int row = 0; row < height; ++row) \{
+289         \textcolor{keyword}{const} El::Unsigned pos = row + col * ldim;
+290         \textcolor{keyword}{const} DataType val = mat\_buf[pos] + qerror\_buf[pos];
+291         \textcolor{keywordflow}{if} (val >= pos\_thresh) \{
+292           qerror\_buf[pos] = val - pos\_thresh;
+293           \textcolor{comment}{// Delta encode pos.}
+294           quant.emplace\_back(((pos - prev\_pos) << 1) | 1);
+295           prev\_pos = pos;
+296         \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (val <= neg\_thresh) \{
+297           qerror\_buf[pos] = val - neg\_thresh;
+298           quant.emplace\_back((pos - prev\_pos) << 1);
+299           prev\_pos = pos;
+300         \} \textcolor{keywordflow}{else} \{
+301           qerror\_buf[pos] = val;
+302         \}
+303       \}
+304     \}
+305   \} \textcolor{keywordflow}{else} \{
+306 \textcolor{preprocessor}{    #pragma omp parallel}
+307     \{
+308       \textcolor{keyword}{const} \textcolor{keywordtype}{int} tid = omp\_get\_thread\_num();
+309 \textcolor{preprocessor}{      #pragma omp for schedule(static)}
+310       \textcolor{keywordflow}{for} (El::Int col = 0; col < width; ++col) \{
+311         \textcolor{keywordflow}{for} (El::Int row = 0; row < height; ++row) \{
+312           \textcolor{keyword}{const} El::Unsigned pos = row + col * ldim;
+313           \textcolor{keyword}{const} DataType val = mat\_buf[pos] + qerror\_buf[pos];
+314           \textcolor{keywordflow}{if} (val >= pos\_thresh) \{
+315             qerror\_buf[pos] = val - pos\_thresh;
+316             thread\_qs[tid].emplace\_back((pos << 1) | 1);
+317           \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (val <= neg\_thresh) \{
+318             qerror\_buf[pos] = val - neg\_thresh;
+319             thread\_qs[tid].emplace\_back(pos << 1);
+320           \} \textcolor{keywordflow}{else} \{
+321             qerror\_buf[pos] = val;
+322           \}
+323         \}
+324       \}
+325     \}
+326     \textcolor{comment}{// Copy the temporary vectors.}
+327     \textcolor{keywordflow}{for} (\textcolor{keyword}{auto}&& thread\_q : thread\_qs) \{
+328       quant.insert(quant.end(), thread\_q.begin(), thread\_q.end());
+329     \}
+330   \}
+331 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_a00106e69ea8a6dfe9e9a91c75b845bcd_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_ae9949af6bec1e95adf5a32ba9bb4afd8}\label{classlbann_1_1lbann__quantizer_ae9949af6bec1e95adf5a32ba9bb4afd8}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!threshold\+\_\+quantize@{threshold\+\_\+quantize}}
+\index{threshold\+\_\+quantize@{threshold\+\_\+quantize}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{threshold\+\_\+quantize()}{threshold\_quantize()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+quantizer\+::threshold\+\_\+quantize (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a0fab5387556805cfeac3e7e567bf66c5}{Dist\+Mat} \&}]{mat,  }\item[{\hyperlink{classlbann_1_1lbann__quantizer_a85ea8e298c2975b4f802855278406aa7}{Thresh\+Quantized} \&}]{q,  }\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{qerror,  }\item[{Data\+Type}]{pos\+\_\+thresh,  }\item[{Data\+Type}]{neg\+\_\+thresh,  }\item[{bool}]{delta = {\ttfamily false} }\end{DoxyParamCaption})}
+
+
+
+Definition at line 333 of file quantizer.\+cpp.
+
+
+\begin{DoxyCode}
+335                                    \{
+336   \hyperlink{classlbann_1_1lbann__quantizer_a00106e69ea8a6dfe9e9a91c75b845bcd}{threshold\_quantize}(mat.LockedMatrix(), q, qerror, pos\_thresh, neg\_thresh,
+337                      delta);
+338 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_ae9949af6bec1e95adf5a32ba9bb4afd8_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_a2bcdf31781bf72bbe63940ea0d92990f}\label{classlbann_1_1lbann__quantizer_a2bcdf31781bf72bbe63940ea0d92990f}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!threshold\+\_\+quantize\+\_\+apply@{threshold\+\_\+quantize\+\_\+apply}}
+\index{threshold\+\_\+quantize\+\_\+apply@{threshold\+\_\+quantize\+\_\+apply}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{threshold\+\_\+quantize\+\_\+apply()}{threshold\_quantize\_apply()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+quantizer\+::threshold\+\_\+quantize\+\_\+apply (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{mat,  }\item[{\hyperlink{classlbann_1_1lbann__quantizer_a85ea8e298c2975b4f802855278406aa7}{Thresh\+Quantized} \&}]{q,  }\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{qerror,  }\item[{Data\+Type}]{pos\+\_\+thresh,  }\item[{Data\+Type}]{neg\+\_\+thresh,  }\item[{std\+::vector$<$ El\+::\+Unsigned $>$ \&}]{positions,  }\item[{bool}]{delta = {\ttfamily false} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+Quantize only the locations in mat in positions; the companion of threshold\+\_\+unquantize\+\_\+apply. 
+
+Definition at line 416 of file quantizer.\+cpp.
+
+
+\begin{DoxyCode}
+418                                                                      \{
+419   \textcolor{keyword}{const} DataType *\_\_restrict\_\_ mat\_buf = mat.LockedBuffer();
+420   DataType *\_\_restrict\_\_ qerror\_buf = qerror.Buffer();
+421   \textcolor{keywordflow}{if} (delta) \{
+422     \textcolor{comment}{// Need to sort so positions are in order, otherwise our delta encoding}
+423     \textcolor{comment}{// doesn't work. (Could be solved by adding stops, but maybe not worth it.)}
+424     std::sort(positions.begin(), positions.end());
+425     El::Unsigned prev\_pos = 0;
+426     \textcolor{keywordflow}{for} (\textcolor{keyword}{const} \textcolor{keyword}{auto}& pos : positions) \{
+427       \textcolor{keyword}{const} DataType val = mat\_buf[pos] + qerror\_buf[pos];
+428       \textcolor{keywordflow}{if} (val >= pos\_thresh) \{
+429         qerror\_buf[pos] = val - pos\_thresh;
+430         quant.emplace\_back(((pos - prev\_pos) << 1) | 1);
+431         prev\_pos = pos;
+432       \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (val <= neg\_thresh) \{
+433         qerror\_buf[pos] = val - neg\_thresh;
+434         quant.emplace\_back((pos - prev\_pos) << 1);
+435         prev\_pos = pos;
+436       \} \textcolor{keywordflow}{else} \{
+437         qerror\_buf[pos] = val;
+438       \}
+439     \}
+440   \} \textcolor{keywordflow}{else} \{
+441     \textcolor{keywordflow}{for} (\textcolor{keyword}{const} \textcolor{keyword}{auto}& pos : positions) \{
+442       \textcolor{keyword}{const} DataType val = mat\_buf[pos] + qerror\_buf[pos];
+443       \textcolor{keywordflow}{if} (val >= pos\_thresh) \{
+444         quant.emplace\_back((pos << 1) | 1);
+445         qerror\_buf[pos] = val - pos\_thresh;
+446       \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (val <= neg\_thresh) \{
+447         quant.emplace\_back(pos << 1);
+448         qerror\_buf[pos] = val - neg\_thresh;
+449       \} \textcolor{keywordflow}{else} \{
+450         qerror\_buf[pos] = val;
+451       \}
+452     \}
+453   \}
+454 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_a2bcdf31781bf72bbe63940ea0d92990f_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_a0f5f3b0149715ab59202b8884a87c7d5}\label{classlbann_1_1lbann__quantizer_a0f5f3b0149715ab59202b8884a87c7d5}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!threshold\+\_\+unquantize@{threshold\+\_\+unquantize}}
+\index{threshold\+\_\+unquantize@{threshold\+\_\+unquantize}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{threshold\+\_\+unquantize()}{threshold\_unquantize()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+quantizer\+::threshold\+\_\+unquantize (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__quantizer_a85ea8e298c2975b4f802855278406aa7}{Thresh\+Quantized} \&}]{q,  }\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{mat,  }\item[{Data\+Type}]{pos\+\_\+thresh,  }\item[{Data\+Type}]{neg\+\_\+thresh,  }\item[{bool}]{delta = {\ttfamily false} }\end{DoxyParamCaption})}
+
+Unquantize a thresholded-\/and-\/quantized matrix. 
+\begin{DoxyParams}{Parameters}
+{\em q} & The quantized matrix. \\
+\hline
+{\em mat} & The output unquantized matrix. \\
+\hline
+{\em pos\+\_\+thresh} & The positive threshold value. \\
+\hline
+{\em neg\+\_\+thresh} & The negative negative value. \\
+\hline
+{\em delta} & Whether q was quantized with delta encoding (default false). \\
+\hline
+\end{DoxyParams}
+
+
+Definition at line 340 of file quantizer.\+cpp.
+
+
+\begin{DoxyCode}
+342                                    \{
+343   DataType *\_\_restrict\_\_ buf = mat.Buffer();
+344   \textcolor{keywordflow}{if} (delta) \{
+345     El::Unsigned prev\_pos = 0;
+346     \textcolor{keywordflow}{for} (El::Unsigned i = 0; i < quant.size(); ++i) \{
+347       \textcolor{keyword}{const} \hyperlink{classlbann_1_1lbann__quantizer_ac8b63c86fc871e248ce20c7af19a7fad}{uqtype} q = quant[i];
+348       \textcolor{keyword}{const} El::Unsigned pos = (q >> 1) + prev\_pos;
+349       prev\_pos = pos;
+350       \textcolor{keywordflow}{if} (q & 1) \{
+351         buf[pos] = pos\_thresh;
+352       \} \textcolor{keywordflow}{else} \{
+353         buf[pos] = neg\_thresh;
+354       \}
+355     \}
+356   \} \textcolor{keywordflow}{else} \{
+357 \textcolor{preprocessor}{    #pragma omp parallel for schedule(static)}
+358     \textcolor{keywordflow}{for} (El::Unsigned i = 0; i < quant.size(); ++i) \{
+359       \textcolor{keyword}{const} \hyperlink{classlbann_1_1lbann__quantizer_ac8b63c86fc871e248ce20c7af19a7fad}{uqtype} q = quant[i];
+360       \textcolor{keyword}{const} El::Unsigned pos = q >> 1;
+361       \textcolor{keywordflow}{if} (q & 1) \{
+362         buf[pos] = pos\_thresh;
+363       \} \textcolor{keywordflow}{else} \{
+364         buf[pos] = neg\_thresh;
+365       \}
+366     \}
+367   \}
+368 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_a0f5f3b0149715ab59202b8884a87c7d5_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_a2324bba3cbb6c0d3e51bbe21555e7f1a}\label{classlbann_1_1lbann__quantizer_a2324bba3cbb6c0d3e51bbe21555e7f1a}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!threshold\+\_\+unquantize@{threshold\+\_\+unquantize}}
+\index{threshold\+\_\+unquantize@{threshold\+\_\+unquantize}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{threshold\+\_\+unquantize()}{threshold\_unquantize()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+quantizer\+::threshold\+\_\+unquantize (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__quantizer_a85ea8e298c2975b4f802855278406aa7}{Thresh\+Quantized} \&}]{q,  }\item[{\hyperlink{base_8hpp_a0fab5387556805cfeac3e7e567bf66c5}{Dist\+Mat} \&}]{mat,  }\item[{Data\+Type}]{pos\+\_\+thresh,  }\item[{Data\+Type}]{neg\+\_\+thresh,  }\item[{bool}]{delta = {\ttfamily false} }\end{DoxyParamCaption})}
+
+
+
+Definition at line 370 of file quantizer.\+cpp.
+
+
+\begin{DoxyCode}
+372                                    \{
+373   \hyperlink{classlbann_1_1lbann__quantizer_a0f5f3b0149715ab59202b8884a87c7d5}{threshold\_unquantize}(quant, mat.Matrix(), pos\_thresh, neg\_thresh, delta);
+374 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_a2324bba3cbb6c0d3e51bbe21555e7f1a_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_ab12b432ba2901347b025e8b6ec40a3c6}\label{classlbann_1_1lbann__quantizer_ab12b432ba2901347b025e8b6ec40a3c6}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!threshold\+\_\+unquantize\+\_\+apply@{threshold\+\_\+unquantize\+\_\+apply}}
+\index{threshold\+\_\+unquantize\+\_\+apply@{threshold\+\_\+unquantize\+\_\+apply}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{threshold\+\_\+unquantize\+\_\+apply()}{threshold\_unquantize\_apply()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+quantizer\+::threshold\+\_\+unquantize\+\_\+apply (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__quantizer_a85ea8e298c2975b4f802855278406aa7}{Thresh\+Quantized} \&}]{q,  }\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{mat,  }\item[{Data\+Type}]{pos\+\_\+thresh,  }\item[{Data\+Type}]{neg\+\_\+thresh,  }\item[{std\+::vector$<$ El\+::\+Unsigned $>$ \&}]{positions,  }\item[{bool}]{delta = {\ttfamily false} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+Do threshold unquantization from arbitrary locations, adding the unquantized values to existing ones instead of replacing them, and storing the locations applied. 
+
+Definition at line 376 of file quantizer.\+cpp.
+
+
+\begin{DoxyCode}
+378                                                                      \{
+379   \textcolor{comment}{// A general note on positions that I'm putting here because I'm not sure}
+380   \textcolor{comment}{// where else to: Using a vector admits the possibility that we have}
+381   \textcolor{comment}{// duplicate entries. This could be fixed by using an unordered\_set, but when}
+382   \textcolor{comment}{// I benchmarked this, it increased our runtime by ~5 times. Having duplicate}
+383   \textcolor{comment}{// entries should not change the final result: it means that}
+384   \textcolor{comment}{// threshold\_quantize\_apply may quantize the same entry multiple times, but}
+385   \textcolor{comment}{// the final unquantize is not an \_apply, and so will just set that entry to}
+386   \textcolor{comment}{// the same value multiple times. We send some extra data, but the overhead}
+387   \textcolor{comment}{// is small.}
+388   DataType *\_\_restrict\_\_ buf = mat.Buffer();
+389   \textcolor{keywordflow}{if} (delta) \{
+390     El::Unsigned prev\_pos = 0;
+391     \textcolor{keywordflow}{for} (El::Unsigned i = 0; i < quant.size(); ++i) \{
+392       \textcolor{keyword}{const} \hyperlink{classlbann_1_1lbann__quantizer_ac8b63c86fc871e248ce20c7af19a7fad}{uqtype} q = quant[i];
+393       \textcolor{keyword}{const} El::Unsigned pos = (q >> 1) + prev\_pos;
+394       prev\_pos = pos;
+395       positions.emplace\_back(pos);
+396       \textcolor{keywordflow}{if} (q & 1) \{
+397         buf[pos] += pos\_thresh;
+398       \} \textcolor{keywordflow}{else} \{
+399         buf[pos] += neg\_thresh;
+400       \}
+401     \}
+402   \} \textcolor{keywordflow}{else} \{
+403     \textcolor{keywordflow}{for} (El::Unsigned i = 0; i < quant.size(); ++i) \{
+404       \textcolor{keyword}{const} \hyperlink{classlbann_1_1lbann__quantizer_ac8b63c86fc871e248ce20c7af19a7fad}{uqtype} q = quant[i];
+405       \textcolor{keyword}{const} El::Unsigned pos = q >> 1;
+406       positions.emplace\_back(pos);
+407       \textcolor{keywordflow}{if} (q & 1) \{
+408         buf[pos] += pos\_thresh;
+409       \} \textcolor{keywordflow}{else} \{
+410         buf[pos] += neg\_thresh;
+411       \}
+412     \}
+413   \}
+414 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__quantizer_ab12b432ba2901347b025e8b6ec40a3c6_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}\label{classlbann_1_1lbann__quantizer_afb4315625e371169cabfac56c3f75d37}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!H\+E\+A\+D\+E\+R\+\_\+\+F\+A\+C\+T\+OR@{H\+E\+A\+D\+E\+R\+\_\+\+F\+A\+C\+T\+OR}}
+\index{H\+E\+A\+D\+E\+R\+\_\+\+F\+A\+C\+T\+OR@{H\+E\+A\+D\+E\+R\+\_\+\+F\+A\+C\+T\+OR}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{H\+E\+A\+D\+E\+R\+\_\+\+F\+A\+C\+T\+OR}{HEADER\_FACTOR}}
+{\footnotesize\ttfamily const int lbann\+::lbann\+\_\+quantizer\+::\+H\+E\+A\+D\+E\+R\+\_\+\+F\+A\+C\+T\+OR = 3\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+Factor used when computing header lengths in adaptive quantization. 
+
+Definition at line 256 of file quantizer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_abe63d57e62be1b498848f7920de4433a}\label{classlbann_1_1lbann__quantizer_abe63d57e62be1b498848f7920de4433a}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!M\+A\+X\+\_\+\+Q\+U\+A\+N\+T\+I\+Z\+E\+D\+\_\+\+E\+X\+C\+E\+SS@{M\+A\+X\+\_\+\+Q\+U\+A\+N\+T\+I\+Z\+E\+D\+\_\+\+E\+X\+C\+E\+SS}}
+\index{M\+A\+X\+\_\+\+Q\+U\+A\+N\+T\+I\+Z\+E\+D\+\_\+\+E\+X\+C\+E\+SS@{M\+A\+X\+\_\+\+Q\+U\+A\+N\+T\+I\+Z\+E\+D\+\_\+\+E\+X\+C\+E\+SS}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{M\+A\+X\+\_\+\+Q\+U\+A\+N\+T\+I\+Z\+E\+D\+\_\+\+E\+X\+C\+E\+SS}{MAX\_QUANTIZED\_EXCESS}}
+{\footnotesize\ttfamily const El\+::\+Int lbann\+::lbann\+\_\+quantizer\+::\+M\+A\+X\+\_\+\+Q\+U\+A\+N\+T\+I\+Z\+E\+D\+\_\+\+E\+X\+C\+E\+SS = 4\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+Max factor by which adaptive quantization can exceed optimal amount. 
+
+Definition at line 259 of file quantizer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_a33ea17392f53b90e91aea1ffb7e11d68}\label{classlbann_1_1lbann__quantizer_a33ea17392f53b90e91aea1ffb7e11d68}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!N\+U\+M\+\_\+\+B\+I\+TS@{N\+U\+M\+\_\+\+B\+I\+TS}}
+\index{N\+U\+M\+\_\+\+B\+I\+TS@{N\+U\+M\+\_\+\+B\+I\+TS}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{N\+U\+M\+\_\+\+B\+I\+TS}{NUM\_BITS}}
+{\footnotesize\ttfamily const size\+\_\+t lbann\+::lbann\+\_\+quantizer\+::\+N\+U\+M\+\_\+\+B\+I\+TS = sizeof(\hyperlink{classlbann_1_1lbann__quantizer_afcda642ff1b44d31eec910909c3d013e}{qtype}) $\ast$ 8\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+Number of bits per quantized word. 
+
+Definition at line 245 of file quantizer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_a8e25785452736c54861a69207a48252d}\label{classlbann_1_1lbann__quantizer_a8e25785452736c54861a69207a48252d}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!N\+U\+M\+\_\+\+O\+N\+E\+B\+I\+T\+\_\+\+S\+A\+M\+P\+L\+ES@{N\+U\+M\+\_\+\+O\+N\+E\+B\+I\+T\+\_\+\+S\+A\+M\+P\+L\+ES}}
+\index{N\+U\+M\+\_\+\+O\+N\+E\+B\+I\+T\+\_\+\+S\+A\+M\+P\+L\+ES@{N\+U\+M\+\_\+\+O\+N\+E\+B\+I\+T\+\_\+\+S\+A\+M\+P\+L\+ES}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{N\+U\+M\+\_\+\+O\+N\+E\+B\+I\+T\+\_\+\+S\+A\+M\+P\+L\+ES}{NUM\_ONEBIT\_SAMPLES}}
+{\footnotesize\ttfamily const El\+::\+Int lbann\+::lbann\+\_\+quantizer\+::\+N\+U\+M\+\_\+\+O\+N\+E\+B\+I\+T\+\_\+\+S\+A\+M\+P\+L\+ES = 128\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+Samples to use to approximate column averages in onebit quantization. 
+
+Definition at line 251 of file quantizer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_a10667e56db4218aac3912c6bae28fc41}\label{classlbann_1_1lbann__quantizer_a10667e56db4218aac3912c6bae28fc41}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!N\+U\+M\+\_\+\+R\+E\+C\+O\+N\+\_\+\+S\+A\+M\+P\+L\+ES@{N\+U\+M\+\_\+\+R\+E\+C\+O\+N\+\_\+\+S\+A\+M\+P\+L\+ES}}
+\index{N\+U\+M\+\_\+\+R\+E\+C\+O\+N\+\_\+\+S\+A\+M\+P\+L\+ES@{N\+U\+M\+\_\+\+R\+E\+C\+O\+N\+\_\+\+S\+A\+M\+P\+L\+ES}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{N\+U\+M\+\_\+\+R\+E\+C\+O\+N\+\_\+\+S\+A\+M\+P\+L\+ES}{NUM\_RECON\_SAMPLES}}
+{\footnotesize\ttfamily const El\+::\+Int lbann\+::lbann\+\_\+quantizer\+::\+N\+U\+M\+\_\+\+R\+E\+C\+O\+N\+\_\+\+S\+A\+M\+P\+L\+ES = 128\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+Number of samples to use in col\+\_\+reconstruction. 
+
+Definition at line 249 of file quantizer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_a7745dbc282bebe812ff5523a4b3df3f2}\label{classlbann_1_1lbann__quantizer_a7745dbc282bebe812ff5523a4b3df3f2}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!N\+U\+M\+\_\+\+T\+H\+R\+E\+S\+H\+O\+L\+D\+\_\+\+S\+A\+M\+P\+L\+ES@{N\+U\+M\+\_\+\+T\+H\+R\+E\+S\+H\+O\+L\+D\+\_\+\+S\+A\+M\+P\+L\+ES}}
+\index{N\+U\+M\+\_\+\+T\+H\+R\+E\+S\+H\+O\+L\+D\+\_\+\+S\+A\+M\+P\+L\+ES@{N\+U\+M\+\_\+\+T\+H\+R\+E\+S\+H\+O\+L\+D\+\_\+\+S\+A\+M\+P\+L\+ES}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{N\+U\+M\+\_\+\+T\+H\+R\+E\+S\+H\+O\+L\+D\+\_\+\+S\+A\+M\+P\+L\+ES}{NUM\_THRESHOLD\_SAMPLES}}
+{\footnotesize\ttfamily const El\+::\+Int lbann\+::lbann\+\_\+quantizer\+::\+N\+U\+M\+\_\+\+T\+H\+R\+E\+S\+H\+O\+L\+D\+\_\+\+S\+A\+M\+P\+L\+ES = 1024\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+Number of samples to use in proportion\+\_\+threshold. 
+
+Definition at line 247 of file quantizer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_a6bd266728f578df0c86fc2e493742cc1}\label{classlbann_1_1lbann__quantizer_a6bd266728f578df0c86fc2e493742cc1}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!proportion\+\_\+time@{proportion\+\_\+time}}
+\index{proportion\+\_\+time@{proportion\+\_\+time}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{proportion\+\_\+time}{proportion\_time}}
+{\footnotesize\ttfamily double lbann\+::lbann\+\_\+quantizer\+::proportion\+\_\+time\hspace{0.3cm}{\ttfamily [private]}}
+
+Time spent in proportion\+\_\+threshold. 
+
+Definition at line 262 of file quantizer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__quantizer_a716fae78ef5ba082a8093f0d06550804}\label{classlbann_1_1lbann__quantizer_a716fae78ef5ba082a8093f0d06550804}} 
+\index{lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}!quantized\+\_\+count@{quantized\+\_\+count}}
+\index{quantized\+\_\+count@{quantized\+\_\+count}!lbann\+::lbann\+\_\+quantizer@{lbann\+::lbann\+\_\+quantizer}}
+\subsubsection{\texorpdfstring{quantized\+\_\+count}{quantized\_count}}
+{\footnotesize\ttfamily size\+\_\+t lbann\+::lbann\+\_\+quantizer\+::quantized\+\_\+count\hspace{0.3cm}{\ttfamily [private]}}
+
+Most recent number of quantized entries. 
+
+Definition at line 264 of file quantizer.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/utils/\hyperlink{quantizer_8hpp}{quantizer.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/utils/\hyperlink{quantizer_8cpp}{quantizer.\+cpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/utils/\hyperlink{quantizer__impl_8hpp}{quantizer\+\_\+impl.\+hpp}\end{DoxyCompactItemize}

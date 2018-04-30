@@ -1,0 +1,7 @@
+<map id="lbann::lbann_comm::model_barrier" name="lbann::lbann_comm::model_barrier">
+<area shape="rect" id="node2" href="$classlbann_1_1lbann__callback__timeline.html#a35a431c2545b4087d6f970d45f86c054" title="lbann::lbann_callback\l_timeline::on_train_begin" alt="" coords="198,5,369,44"/>
+<area shape="rect" id="node4" href="$classlbann_1_1distributed__io__buffer.html#a3a770ec2314313761d6f0eccdb9dc09b" title="lbann::distributed\l_io_buffer::distribute\l_from_local_matrix" alt="" coords="213,68,355,120"/>
+<area shape="rect" id="node3" href="$classlbann_1_1lbann__callback__timeline.html#aaede0408ae30a3c82f567981e374a224" title="lbann::lbann_callback\l_timeline::name" alt="" coords="417,5,566,44"/>
+<area shape="rect" id="node5" href="$classlbann_1_1generic__input__layer.html#ae74c8c5a7e14b4fdd4902554bbc7bcef" title="lbann::generic_input\l_layer::fp_compute" alt="" coords="421,71,562,109"/>
+<area shape="rect" id="node6" href="$classlbann_1_1generic__target__layer.html#a57a60f5a28c9fb78d5151801123d4dba" title="lbann::generic_target\l_layer::fp_compute" alt="" coords="418,133,565,172"/>
+</map>

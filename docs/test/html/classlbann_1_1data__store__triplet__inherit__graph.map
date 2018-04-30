@@ -1,0 +1,6 @@
+<map id="lbann::data_store_triplet" name="lbann::data_store_triplet">
+<area shape="rect" id="node2" href="$classlbann_1_1data__store__multi__images.html" title="lbann::data_store_multi\l_images" alt="" coords="19,239,179,277"/>
+<area shape="rect" id="node3" href="$classlbann_1_1data__store__imagenet.html" title="lbann::data_store_imagenet" alt="" coords="5,165,192,191"/>
+<area shape="rect" id="node4" href="$classlbann_1_1data__store__image.html" title="lbann::data_store_image" alt="" coords="15,92,183,117"/>
+<area shape="rect" id="node5" href="$classlbann_1_1generic__data__store.html" title="lbann::generic_data\l_store" alt="" coords="29,5,168,44"/>
+</map>

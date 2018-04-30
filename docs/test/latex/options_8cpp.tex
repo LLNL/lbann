@@ -1,0 +1,121 @@
+\hypertarget{options_8cpp}{}\section{/\+Users/mckinney27/doxy-\/testbed/lbann/src/utils/options.cpp File Reference}
+\label{options_8cpp}\index{/\+Users/mckinney27/doxy-\/testbed/lbann/src/utils/options.\+cpp@{/\+Users/mckinney27/doxy-\/testbed/lbann/src/utils/options.\+cpp}}
+{\ttfamily \#include \char`\"{}mpi.\+h\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}lbann/utils/options.\+hpp\char`\"{}}\newline
+{\ttfamily \#include $<$ctime$>$}\newline
+{\ttfamily \#include $<$dirent.\+h$>$}\newline
+{\ttfamily \#include $<$iostream$>$}\newline
+{\ttfamily \#include $<$string$>$}\newline
+{\ttfamily \#include $<$sstream$>$}\newline
+{\ttfamily \#include $<$fstream$>$}\newline
+{\ttfamily \#include $<$cstring$>$}\newline
+{\ttfamily \#include $<$cstdlib$>$}\newline
+{\ttfamily \#include $<$stdexcept$>$}\newline
+Include dependency graph for options.\+cpp\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{options_8cpp__incl}
+\end{center}
+\end{figure}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{options_8cpp_a18f37a1b6f36c00656e52d130c2132d2}{m\+\_\+parse\+\_\+opt} (std\+::string tmp, std\+::string \&key, std\+::string \&val)
+\item 
+void \hyperlink{options_8cpp_a7a1c169fc6503243e8670fd2b30b06f1}{lower} (std\+::string \&s)
+\item 
+void \hyperlink{options_8cpp_a147b06b75c8644d3eb5918be2717e074}{lower} (char $\ast$s)
+\end{DoxyCompactItemize}
+
+
+\subsection{Function Documentation}
+\mbox{\Hypertarget{options_8cpp_a7a1c169fc6503243e8670fd2b30b06f1}\label{options_8cpp_a7a1c169fc6503243e8670fd2b30b06f1}} 
+\index{options.\+cpp@{options.\+cpp}!lower@{lower}}
+\index{lower@{lower}!options.\+cpp@{options.\+cpp}}
+\subsubsection{\texorpdfstring{lower()}{lower()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily void lower (\begin{DoxyParamCaption}\item[{std\+::string \&}]{s }\end{DoxyParamCaption})}
+
+
+
+Definition at line 71 of file options.\+cpp.
+
+
+\begin{DoxyCode}
+72 \{
+73   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{char} & j : s) \{
+74     \textcolor{keywordflow}{if} (isalpha(j)) \{
+75       j = tolower(j);
+76     \}
+77   \}
+78 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{options_8cpp_a7a1c169fc6503243e8670fd2b30b06f1_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{options_8cpp_a147b06b75c8644d3eb5918be2717e074}\label{options_8cpp_a147b06b75c8644d3eb5918be2717e074}} 
+\index{options.\+cpp@{options.\+cpp}!lower@{lower}}
+\index{lower@{lower}!options.\+cpp@{options.\+cpp}}
+\subsubsection{\texorpdfstring{lower()}{lower()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily void lower (\begin{DoxyParamCaption}\item[{char $\ast$}]{s }\end{DoxyParamCaption})}
+
+
+
+Definition at line 80 of file options.\+cpp.
+
+
+\begin{DoxyCode}
+81 \{
+82   \textcolor{keywordtype}{size\_t} len = strlen(s);
+83   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} j=0; j<len; j++) \{
+84     \textcolor{keywordflow}{if} (isalpha(s[j])) \{
+85       \textcolor{keywordtype}{char} a = tolower(s[j]);
+86       s[j] = a;
+87     \}
+88   \}
+89 \}
+\end{DoxyCode}
+\mbox{\Hypertarget{options_8cpp_a18f37a1b6f36c00656e52d130c2132d2}\label{options_8cpp_a18f37a1b6f36c00656e52d130c2132d2}} 
+\index{options.\+cpp@{options.\+cpp}!m\+\_\+parse\+\_\+opt@{m\+\_\+parse\+\_\+opt}}
+\index{m\+\_\+parse\+\_\+opt@{m\+\_\+parse\+\_\+opt}!options.\+cpp@{options.\+cpp}}
+\subsubsection{\texorpdfstring{m\+\_\+parse\+\_\+opt()}{m\_parse\_opt()}}
+{\footnotesize\ttfamily void m\+\_\+parse\+\_\+opt (\begin{DoxyParamCaption}\item[{std\+::string}]{tmp,  }\item[{std\+::string \&}]{key,  }\item[{std\+::string \&}]{val }\end{DoxyParamCaption})}
+
+
+
+Definition at line 17 of file options.\+cpp.
+
+
+\begin{DoxyCode}
+18 \{
+19   key = \textcolor{stringliteral}{""};
+20   val = \textcolor{stringliteral}{""};
+21   \textcolor{keywordflow}{if} (tmp.size() > 4 and tmp.substr(0,4) == \textcolor{stringliteral}{"# --"}) \{
+22     tmp = tmp.substr(2);
+23   \}
+24   \textcolor{keywordflow}{if} (tmp.size() > 2 and tmp[0] == \textcolor{charliteral}{'-'} and tmp[1] == \textcolor{charliteral}{'-'}) \{
+25     \textcolor{keywordtype}{size\_t} n = tmp.find(\textcolor{charliteral}{'='});
+26     \textcolor{keywordflow}{if} (n == std::string::npos) \{
+27       key = tmp.substr(2);
+28       val = \textcolor{stringliteral}{"1"};
+29     \} \textcolor{keywordflow}{else} \{
+30       key = tmp.substr(2, n-2);
+31       val = tmp.substr(n+1, tmp.size()-n+1);
+32       \textcolor{keywordflow}{if} (!val.size()) \{
+33         val = \textcolor{stringliteral}{"1"};
+34       \}
+35     \}
+36   \}
+37 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{options_8cpp_a18f37a1b6f36c00656e52d130c2132d2_icgraph}
+\end{center}
+\end{figure}

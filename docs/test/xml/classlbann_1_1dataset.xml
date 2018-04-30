@@ -1,0 +1,174 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1dataset" kind="class" language="C++" prot="public">
+    <compoundname>lbann::dataset</compoundname>
+    <includes refid="dataset_8hpp" local="no">dataset.hpp</includes>
+      <sectiondef kind="protected-attrib">
+      <memberdef kind="variable" id="classlbann_1_1dataset_1a68f4120cc4a7837e6a95b01358210cb5" prot="protected" static="no" mutable="no">
+        <type>long</type>
+        <definition>long lbann::dataset::m_num_samples_processed</definition>
+        <argsstring></argsstring>
+        <name>m_num_samples_processed</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/dataset.hpp" line="46" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/dataset.hpp" bodystart="46" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1dataset_1a73496347a477a5ebb0dbf30140295026" compoundref="dataset_8hpp" startline="41" endline="41">get_num_samples_processed</referencedby>
+        <referencedby refid="classlbann_1_1dataset_1a412b29a50638f7d8feea4ad368c6a4dc" compoundref="dataset_8hpp" startline="42" endline="42">num_samples_processed</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1dataset_1a2bfe72a2783e0a47e725e91dfb13d06a" prot="protected" static="no" mutable="no">
+        <type>long</type>
+        <definition>long lbann::dataset::m_total_samples</definition>
+        <argsstring></argsstring>
+        <name>m_total_samples</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/dataset.hpp" line="47" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/dataset.hpp" bodystart="47" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1dataset_1ad314847b347d413162a9d9eab759641f" compoundref="dataset_8hpp" startline="43" endline="43">get_total_samples</referencedby>
+        <referencedby refid="classlbann_1_1dataset_1ab951c879f151990613567e985fe1e278" compoundref="dataset_8hpp" startline="44" endline="44">total_samples</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1dataset_1ab2d74c40559624136c98b1e36193fbe3" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>lbann::dataset::dataset</definition>
+        <argsstring>()</argsstring>
+        <name>dataset</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/dataset.hpp" line="36" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/dataset.hpp" bodystart="36" bodyend="36"/>
+        <references refid="classlbann_1_1dataset_1a8806c93d49b1171a98f61f67de964f2b">operator=</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1dataset_1a505f3c75563db4728949ff6cdd328723" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::dataset::dataset</definition>
+        <argsstring>(const dataset &amp;other)=default</argsstring>
+        <name>dataset</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1dataset" kindref="compound">dataset</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/dataset.hpp" line="39" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1dataset_1a8806c93d49b1171a98f61f67de964f2b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classlbann_1_1dataset" kindref="compound">dataset</ref> &amp;</type>
+        <definition>dataset&amp; lbann::dataset::operator=</definition>
+        <argsstring>(const dataset &amp;other)=default</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1dataset" kindref="compound">dataset</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/dataset.hpp" line="40" column="1"/>
+        <referencedby refid="classlbann_1_1dataset_1ab2d74c40559624136c98b1e36193fbe3" compoundref="dataset_8hpp" startline="36" endline="36">dataset</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1dataset_1a73496347a477a5ebb0dbf30140295026" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>long</type>
+        <definition>long lbann::dataset::get_num_samples_processed</definition>
+        <argsstring>() const</argsstring>
+        <name>get_num_samples_processed</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/dataset.hpp" line="41" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/dataset.hpp" bodystart="41" bodyend="41"/>
+        <references refid="classlbann_1_1dataset_1a68f4120cc4a7837e6a95b01358210cb5" compoundref="dataset_8hpp" startline="46">m_num_samples_processed</references>
+        <referencedby refid="classlbann_1_1generic__input__layer_1a0c2f123432ec6af168012cc8699a1d3f" compoundref="generic__input__layer_8hpp" startline="467" endline="471">lbann::generic_input_layer::update_num_samples_processed</referencedby>
+        <referencedby refid="classlbann_1_1generic__input__layer_1a95a7a5ad2a6089ffb9197632015e6062" compoundref="generic__input__layer_8hpp" startline="600" endline="602">lbann::generic_input_layer::get_num_samples_trained</referencedby>
+        <referencedby refid="classlbann_1_1generic__input__layer_1a68b162bcc5fdfe2bb7279eb5d83cf884" compoundref="generic__input__layer_8hpp" startline="603" endline="605">lbann::generic_input_layer::get_num_samples_tested</referencedby>
+        <referencedby refid="classlbann_1_1generic__input__layer_1abae61e13f47205491a43e4842808945d" compoundref="generic__input__layer_8hpp" startline="627" endline="664">lbann::generic_input_layer::save_to_checkpoint_shared</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1dataset_1a412b29a50638f7d8feea4ad368c6a4dc" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>long &amp;</type>
+        <definition>long&amp; lbann::dataset::num_samples_processed</definition>
+        <argsstring>()</argsstring>
+        <name>num_samples_processed</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/dataset.hpp" line="42" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/dataset.hpp" bodystart="42" bodyend="42"/>
+        <references refid="classlbann_1_1dataset_1a68f4120cc4a7837e6a95b01358210cb5" compoundref="dataset_8hpp" startline="46">m_num_samples_processed</references>
+        <referencedby refid="classlbann_1_1generic__input__layer_1a0c2f123432ec6af168012cc8699a1d3f" compoundref="generic__input__layer_8hpp" startline="467" endline="471">lbann::generic_input_layer::update_num_samples_processed</referencedby>
+        <referencedby refid="classlbann_1_1generic__input__layer_1ae5a542333eaf447a05fc586848e7c94c" compoundref="generic__input__layer_8hpp" startline="676" endline="718">lbann::generic_input_layer::load_from_checkpoint_shared</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1dataset_1ad314847b347d413162a9d9eab759641f" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>long</type>
+        <definition>long lbann::dataset::get_total_samples</definition>
+        <argsstring>() const</argsstring>
+        <name>get_total_samples</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/dataset.hpp" line="43" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/dataset.hpp" bodystart="43" bodyend="43"/>
+        <references refid="classlbann_1_1dataset_1a2bfe72a2783e0a47e725e91dfb13d06a" compoundref="dataset_8hpp" startline="47">m_total_samples</references>
+        <referencedby refid="classlbann_1_1generic__input__layer_1a5fc757d16e26739cd10e5eabafa6a32b" compoundref="generic__input__layer_8hpp" startline="606" endline="608">lbann::generic_input_layer::get_total_num_training_samples</referencedby>
+        <referencedby refid="classlbann_1_1generic__input__layer_1ab5b5318cf000fbdaf35a3545335b60b2" compoundref="generic__input__layer_8hpp" startline="609" endline="611">lbann::generic_input_layer::get_total_num_testing_samples</referencedby>
+        <referencedby refid="classlbann_1_1generic__input__layer_1a31082076a8aad937eef3cadc0b5e1b27" compoundref="generic__input__layer_8hpp" startline="618" endline="621">lbann::generic_input_layer::is_execution_mode_valid</referencedby>
+        <referencedby refid="classlbann_1_1generic__input__layer_1abae61e13f47205491a43e4842808945d" compoundref="generic__input__layer_8hpp" startline="627" endline="664">lbann::generic_input_layer::save_to_checkpoint_shared</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1dataset_1ab951c879f151990613567e985fe1e278" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>long &amp;</type>
+        <definition>long&amp; lbann::dataset::total_samples</definition>
+        <argsstring>()</argsstring>
+        <name>total_samples</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/dataset.hpp" line="44" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/dataset.hpp" bodystart="44" bodyend="44"/>
+        <references refid="classlbann_1_1dataset_1a2bfe72a2783e0a47e725e91dfb13d06a" compoundref="dataset_8hpp" startline="47">m_total_samples</references>
+        <referencedby refid="classlbann_1_1generic__input__layer_1a0c7ce1625cd2be2368822c2662346538" compoundref="generic__input__layer_8hpp" startline="45" endline="70">lbann::generic_input_layer::generic_input_layer</referencedby>
+        <referencedby refid="classlbann_1_1generic__input__layer_1ae5a542333eaf447a05fc586848e7c94c" compoundref="generic__input__layer_8hpp" startline="676" endline="718">lbann::generic_input_layer::load_from_checkpoint_shared</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/dataset.hpp" line="34" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/dataset.hpp" bodystart="34" bodyend="48"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1dataset_1ab2d74c40559624136c98b1e36193fbe3" prot="public" virt="non-virtual"><scope>lbann::dataset</scope><name>dataset</name></member>
+      <member refid="classlbann_1_1dataset_1a505f3c75563db4728949ff6cdd328723" prot="public" virt="non-virtual"><scope>lbann::dataset</scope><name>dataset</name></member>
+      <member refid="classlbann_1_1dataset_1a73496347a477a5ebb0dbf30140295026" prot="public" virt="non-virtual"><scope>lbann::dataset</scope><name>get_num_samples_processed</name></member>
+      <member refid="classlbann_1_1dataset_1ad314847b347d413162a9d9eab759641f" prot="public" virt="non-virtual"><scope>lbann::dataset</scope><name>get_total_samples</name></member>
+      <member refid="classlbann_1_1dataset_1a68f4120cc4a7837e6a95b01358210cb5" prot="protected" virt="non-virtual"><scope>lbann::dataset</scope><name>m_num_samples_processed</name></member>
+      <member refid="classlbann_1_1dataset_1a2bfe72a2783e0a47e725e91dfb13d06a" prot="protected" virt="non-virtual"><scope>lbann::dataset</scope><name>m_total_samples</name></member>
+      <member refid="classlbann_1_1dataset_1a412b29a50638f7d8feea4ad368c6a4dc" prot="public" virt="non-virtual"><scope>lbann::dataset</scope><name>num_samples_processed</name></member>
+      <member refid="classlbann_1_1dataset_1a8806c93d49b1171a98f61f67de964f2b" prot="public" virt="non-virtual"><scope>lbann::dataset</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1dataset_1ab951c879f151990613567e985fe1e278" prot="public" virt="non-virtual"><scope>lbann::dataset</scope><name>total_samples</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

@@ -1,0 +1,4 @@
+<map id="lbann::data_reader_mnist_siamese::data_reader_mnist_siamese" name="lbann::data_reader_mnist_siamese::data_reader_mnist_siamese">
+<area shape="rect" id="node2" href="$classlbann_1_1data__reader__mnist__siamese.html#a7e1c9530b5d56a0835db8a30af980164" title="lbann::data_reader\l_mnist_siamese::set\l_defaults" alt="" coords="217,5,360,57"/>
+<area shape="rect" id="node3" href="$classlbann_1_1image__data__reader.html#a0164b0e3abbe92daef73b36fb925403e" title="lbann::image_data_reader\l::set_linearized_image_size" alt="" coords="408,12,594,51"/>
+</map>

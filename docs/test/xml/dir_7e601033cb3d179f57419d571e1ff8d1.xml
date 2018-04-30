@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="dir_7e601033cb3d179f57419d571e1ff8d1" kind="dir">
+    <compoundname>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io</compoundname>
+    <innerdir refid="dir_cb94879687d401976ff446d3f7108d96">/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/input</innerdir>
+    <innerdir refid="dir_c2b9d46e745a89bf73ee49c894ba0381">/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target</innerdir>
+    <innerfile refid="io__layer_8hpp">io_layer.hpp</innerfile>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/"/>
+  </compounddef>
+</doxygen>

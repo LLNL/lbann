@@ -1,0 +1,529 @@
+\hypertarget{classlbann_1_1lbann__callback__check__dataset}{}\section{lbann\+:\+:lbann\+\_\+callback\+\_\+check\+\_\+dataset Class Reference}
+\label{classlbann_1_1lbann__callback__check__dataset}\index{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}}
+
+
+{\ttfamily \#include $<$callback\+\_\+check\+\_\+dataset.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+check\+\_\+dataset\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=192pt]{classlbann_1_1lbann__callback__check__dataset__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+check\+\_\+dataset\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=207pt]{classlbann_1_1lbann__callback__check__dataset__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1lbann__callback__check__dataset_a79beae9767b50f7141bc5209ef5d696f}{lbann\+\_\+callback\+\_\+check\+\_\+dataset} ()
+\item 
+\hyperlink{classlbann_1_1lbann__callback__check__dataset_a453a843f6506051881b334760817467f}{lbann\+\_\+callback\+\_\+check\+\_\+dataset} (const \hyperlink{classlbann_1_1lbann__callback__check__dataset}{lbann\+\_\+callback\+\_\+check\+\_\+dataset} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__check__dataset}{lbann\+\_\+callback\+\_\+check\+\_\+dataset} \& \hyperlink{classlbann_1_1lbann__callback__check__dataset_a2b9ab1194196d9edc76eb89bc81257b8}{operator=} (const \hyperlink{classlbann_1_1lbann__callback__check__dataset}{lbann\+\_\+callback\+\_\+check\+\_\+dataset} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__check__dataset}{lbann\+\_\+callback\+\_\+check\+\_\+dataset} $\ast$ \hyperlink{classlbann_1_1lbann__callback__check__dataset_a8be592f1687aea003986c874dc5f7516}{copy} () const override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__check__dataset_acedc222fc108c156d089f1baa8c040af}{on\+\_\+forward\+\_\+prop\+\_\+end} (\hyperlink{classlbann_1_1model}{model} $\ast$m, \hyperlink{classlbann_1_1Layer}{Layer} $\ast$l) override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__check__dataset_a1223f07081d495d971cdf205f892c50d}{on\+\_\+evaluate\+\_\+forward\+\_\+prop\+\_\+end} (\hyperlink{classlbann_1_1model}{model} $\ast$m, \hyperlink{classlbann_1_1Layer}{Layer} $\ast$l) override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__check__dataset_a8cbc105d8bd9d3b493ef34de7c387929}{on\+\_\+epoch\+\_\+end} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__check__dataset_a9bcb1368152c621c4484136ec8eecff8}{on\+\_\+validation\+\_\+end} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__check__dataset_afe1fda5a6bfe632dc680230cc56dff3e}{on\+\_\+test\+\_\+end} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__check__dataset_a17aff74d9926e07bfa1f090ad39bb4b6}{add\+\_\+to\+\_\+set} (\hyperlink{classlbann_1_1model}{model} $\ast$m, \hyperlink{classlbann_1_1Layer}{Layer} $\ast$l, int64\+\_\+t step, std\+::set$<$ long $>$ \&set)
+\item 
+std\+::string \hyperlink{classlbann_1_1lbann__callback__check__dataset_a150273f878be4d4bf0cdcaf0ba52aef2}{name} () const override
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+std\+::string \hyperlink{classlbann_1_1lbann__callback__check__dataset_afb8f8ae1ddbd07bf816ee9e8fa84ca8f}{m\+\_\+basename}
+\item 
+std\+::set$<$ long $>$ \hyperlink{classlbann_1_1lbann__callback__check__dataset_a22d16efa2ec47759766f2f7478b11059}{training\+\_\+set}
+\item 
+std\+::set$<$ long $>$ \hyperlink{classlbann_1_1lbann__callback__check__dataset_aab6d04a40d20d1b0bf70f9bfdd85f84c}{validation\+\_\+set}
+\item 
+std\+::set$<$ long $>$ \hyperlink{classlbann_1_1lbann__callback__check__dataset_a15445849bae3621a3a4364b3ebbbc7f3}{testing\+\_\+set}
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+Save the sample indices for each mini-\/batch to ordered set. Check to make sure that all samples were properly processed. 
+
+Definition at line 39 of file callback\+\_\+check\+\_\+dataset.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__check__dataset_a79beae9767b50f7141bc5209ef5d696f}\label{classlbann_1_1lbann__callback__check__dataset_a79beae9767b50f7141bc5209ef5d696f}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}!lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+\_\+callback\+\_\+check\+\_\+dataset}}
+\index{lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+\_\+callback\+\_\+check\+\_\+dataset}!lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+check\+\_\+dataset()}{lbann\_callback\_check\_dataset()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+\begin{DoxyParams}{Parameters}
+{\em basename} & The basename for writing files. \\
+\hline
+\end{DoxyParams}
+
+
+Definition at line 47 of file callback\+\_\+check\+\_\+dataset.\+hpp.
+
+
+\begin{DoxyCode}
+47                                  :
+48     \hyperlink{classlbann_1_1lbann__callback_a679057298a41ddd47f08c157f756c584}{lbann\_callback}() \{\}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__check__dataset_a79beae9767b50f7141bc5209ef5d696f_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__check__dataset_a79beae9767b50f7141bc5209ef5d696f_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__check__dataset_a453a843f6506051881b334760817467f}\label{classlbann_1_1lbann__callback__check__dataset_a453a843f6506051881b334760817467f}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}!lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+\_\+callback\+\_\+check\+\_\+dataset}}
+\index{lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+\_\+callback\+\_\+check\+\_\+dataset}!lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+check\+\_\+dataset()}{lbann\_callback\_check\_dataset()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__check__dataset}{lbann\+\_\+callback\+\_\+check\+\_\+dataset} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__check__dataset_a17aff74d9926e07bfa1f090ad39bb4b6}\label{classlbann_1_1lbann__callback__check__dataset_a17aff74d9926e07bfa1f090ad39bb4b6}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}!add\+\_\+to\+\_\+set@{add\+\_\+to\+\_\+set}}
+\index{add\+\_\+to\+\_\+set@{add\+\_\+to\+\_\+set}!lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}}
+\subsubsection{\texorpdfstring{add\+\_\+to\+\_\+set()}{add\_to\_set()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset\+::add\+\_\+to\+\_\+set (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m,  }\item[{\hyperlink{classlbann_1_1Layer}{Layer} $\ast$}]{l,  }\item[{int64\+\_\+t}]{step,  }\item[{std\+::set$<$ long $>$ \&}]{set }\end{DoxyParamCaption})}
+
+
+
+Definition at line 35 of file callback\+\_\+check\+\_\+dataset.\+cpp.
+
+
+\begin{DoxyCode}
+35                                                                                                  \{
+36   \textcolor{keywordflow}{if} (!dynamic\_cast<io\_layer*>(l)) \{
+37     \textcolor{keywordflow}{return};
+38   \}
+39 
+40   El::Matrix<El::Int>* indices = l->get\_sample\_indices\_per\_mb();
+41 
+42   std::set<long>::iterator it;
+43 
+44   \textcolor{keywordflow}{for}(El::Int i = 0; i < indices->Height(); i++) \{
+45     \textcolor{keywordflow}{for}(El::Int j = 0; j < indices->Width(); j++) \{
+46       El::Int idx = indices->Get(i,j);
+47       it = \textcolor{keyword}{set}.find(idx);
+48       \textcolor{keywordflow}{if}(it != \textcolor{keyword}{set}.end()) \{
+49         \textcolor{keywordflow}{throw} lbann\_exception(
+50           std::string\{\} + \_\_FILE\_\_ + \textcolor{stringliteral}{" "} + std::to\_string(\_\_LINE\_\_)
+51           + \textcolor{stringliteral}{" :: @"} + std::to\_string(step)
+52           + \textcolor{stringliteral}{" :: found a duplicate index in being loaded: "} + std::to\_string(idx));
+53       \}\textcolor{keywordflow}{else} \{
+54         \textcolor{keyword}{set}.insert(idx);
+55       \}
+56     \}
+57   \}
+58 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__check__dataset_a17aff74d9926e07bfa1f090ad39bb4b6_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__check__dataset_a17aff74d9926e07bfa1f090ad39bb4b6_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__check__dataset_a8be592f1687aea003986c874dc5f7516}\label{classlbann_1_1lbann__callback__check__dataset_a8be592f1687aea003986c874dc5f7516}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}!copy@{copy}}
+\index{copy@{copy}!lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__check__dataset}{lbann\+\_\+callback\+\_\+check\+\_\+dataset}$\ast$ lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a9f545d1269a8c7af335625d049691f26}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 53 of file callback\+\_\+check\+\_\+dataset.\+hpp.
+
+
+\begin{DoxyCode}
+53                                                       \{
+54     \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1lbann__callback__check__dataset_a79beae9767b50f7141bc5209ef5d696f}{lbann\_callback\_check\_dataset}(*\textcolor{keyword}{this});
+55   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__check__dataset_a8be592f1687aea003986c874dc5f7516_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__check__dataset_a150273f878be4d4bf0cdcaf0ba52aef2}\label{classlbann_1_1lbann__callback__check__dataset_a150273f878be4d4bf0cdcaf0ba52aef2}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}!name@{name}}
+\index{name@{name}!lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}}
+\subsubsection{\texorpdfstring{name()}{name()}}
+{\footnotesize\ttfamily std\+::string lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset\+::name (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Return this callback\textquotesingle{}s name. 
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a7522c7a14f1d6a1ea762cc2d7248eb3a}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 64 of file callback\+\_\+check\+\_\+dataset.\+hpp.
+
+
+\begin{DoxyCode}
+64 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"check data set indices"}; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__check__dataset_a8cbc105d8bd9d3b493ef34de7c387929}\label{classlbann_1_1lbann__callback__check__dataset_a8cbc105d8bd9d3b493ef34de7c387929}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}!on\+\_\+epoch\+\_\+end@{on\+\_\+epoch\+\_\+end}}
+\index{on\+\_\+epoch\+\_\+end@{on\+\_\+epoch\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}}
+\subsubsection{\texorpdfstring{on\+\_\+epoch\+\_\+end()}{on\_epoch\_end()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset\+::on\+\_\+epoch\+\_\+end (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Called immediate after the end of each epoch. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_a1fc71110e7f754bf73c9e0f344a448a5}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 77 of file callback\+\_\+check\+\_\+dataset.\+cpp.
+
+
+\begin{DoxyCode}
+77                                                         \{
+78   lbann\_comm* \hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm} = m->get\_comm();
+79   std::cout << \textcolor{stringliteral}{"Training ["} << comm->get\_rank\_in\_model() <<
+80     \textcolor{stringliteral}{"] : I have processed "} << \hyperlink{classlbann_1_1lbann__callback__check__dataset_a22d16efa2ec47759766f2f7478b11059}{training\_set}.size() << \textcolor{stringliteral}{" elements"} << std::endl;
+81 
+82   \textcolor{comment}{// Get first input layer in model}
+83   generic\_input\_layer* input = \textcolor{keyword}{nullptr};
+84   \textcolor{keywordflow}{for} (\textcolor{keyword}{auto}&& l : m->get\_layers()) \{
+85     input = \textcolor{keyword}{dynamic\_cast<}generic\_input\_layer*\textcolor{keyword}{>}(l);
+86     \textcolor{keywordflow}{if} (input != \textcolor{keyword}{nullptr}) \{ \textcolor{keywordflow}{break}; \}
+87   \}
+88   \textcolor{keywordflow}{if} (input == \textcolor{keyword}{nullptr}) \{ \hyperlink{base_8hpp_a80b1d707117e968a6951b7222e4b2b87}{LBANN\_ERROR}(\textcolor{stringliteral}{"could not get input layer"}); \}
+89 
+90   \textcolor{keywordtype}{int} num\_samples = \hyperlink{classlbann_1_1lbann__callback__check__dataset_a22d16efa2ec47759766f2f7478b11059}{training\_set}.size();
+91   std::vector<int> vec\_num\_samples(comm->get\_procs\_per\_model());
+92   \textcolor{keywordflow}{if} (comm->am\_model\_master()) \{
+93     comm->model\_gather(num\_samples, vec\_num\_samples.data());
+94   \}\textcolor{keywordflow}{else} \{
+95     comm->model\_gather(num\_samples, comm->get\_model\_master());
+96   \}
+97   std::vector<int> sample\_offsets(comm->get\_procs\_per\_model());
+98   std::partial\_sum(vec\_num\_samples.begin(), vec\_num\_samples.end(), sample\_offsets.begin());
+99   std::cout << \textcolor{stringliteral}{"Training ["} << comm->get\_rank\_in\_model() << \textcolor{stringliteral}{"] offsets"};
+100   \textcolor{keywordflow}{for} (\textcolor{keyword}{const} \textcolor{keyword}{auto}& idx : sample\_offsets) \{
+101     std::cout << idx << \textcolor{stringliteral}{" "};
+102   \}
+103   std::cout << std::endl;
+104   std::cout << \textcolor{stringliteral}{"Training ["} << comm->get\_rank\_in\_model() << \textcolor{stringliteral}{"] counts"};
+105   \textcolor{keywordflow}{for} (\textcolor{keyword}{const} \textcolor{keyword}{auto}& idx : vec\_num\_samples) \{
+106     std::cout << idx << \textcolor{stringliteral}{" "};
+107   \}
+108   std::cout << std::endl;
+109 
+110   \textcolor{comment}{// sample\_offset[]}
+111   \textcolor{comment}{// for (int i = 0; i < vec\_num\_samples.size(); i++) \{}
+112   \textcolor{comment}{//   //  for (const auto& idx : vec\_num\_samples) \{}
+113 
+114   \textcolor{comment}{// \}}
+115 
+116   \textcolor{comment}{// Build a vector large enough to hold all the data indices for this rank.}
+117   std::vector<int> local\_data(\hyperlink{classlbann_1_1lbann__callback__check__dataset_a22d16efa2ec47759766f2f7478b11059}{training\_set}.size());
+118   std::copy(\hyperlink{classlbann_1_1lbann__callback__check__dataset_a22d16efa2ec47759766f2f7478b11059}{training\_set}.begin(), \hyperlink{classlbann_1_1lbann__callback__check__dataset_a22d16efa2ec47759766f2f7478b11059}{training\_set}.end(), local\_data.data());
+119 
+120   std::cout << \textcolor{stringliteral}{"Training: my local vector has size "} << local\_data.size() << std::endl;
+121   \textcolor{keywordflow}{if} (comm->am\_model\_master()) \{
+122     \textcolor{comment}{// Build a vector large enough to hold all indices for the model.}
+123     std::vector<int> model\_training\_set(
+124       input->get\_num\_iterations\_per\_epoch(\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training}) * m->
+      get\_max\_mini\_batch\_size());
+125 
+126     std::cout << \textcolor{stringliteral}{"Training: my model vector has size "} << model\_training\_set.size() << std::endl;
+127     \textcolor{comment}{// comm->model\_gatherv(local\_data.data(), local\_data.size(),}
+128     \textcolor{comment}{//                     model\_training\_set.data(), vec\_num\_samples.data(), sample\_offsets.data());}
+129 
+130     std::cout << \textcolor{stringliteral}{"Training: The entire model has processed "} << model\_training\_set.size() << \textcolor{stringliteral}{" elements"} <<
+       std::endl;
+131   \} \textcolor{keywordflow}{else} \{
+132     \textcolor{comment}{// comm->model\_gatherv(local\_data.data(), local\_data.size(),}
+133     \textcolor{comment}{//                     m->get\_comm()->get\_model\_master());}
+134   \}
+135 
+136   std::cout << \textcolor{stringliteral}{"Training ["} << comm->get\_rank\_in\_model() << \textcolor{stringliteral}{"] "};
+137   \textcolor{keywordflow}{for} (\textcolor{keyword}{const} \textcolor{keyword}{auto}& idx : \hyperlink{classlbann_1_1lbann__callback__check__dataset_a22d16efa2ec47759766f2f7478b11059}{training\_set}) \{
+138     std::cout << idx << \textcolor{stringliteral}{" "};
+139   \}
+140   std::cout << std::endl;
+141 
+142   training\_set.clear();
+143 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__check__dataset_a8cbc105d8bd9d3b493ef34de7c387929_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__check__dataset_a8cbc105d8bd9d3b493ef34de7c387929_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__check__dataset_a1223f07081d495d971cdf205f892c50d}\label{classlbann_1_1lbann__callback__check__dataset_a1223f07081d495d971cdf205f892c50d}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}!on\+\_\+evaluate\+\_\+forward\+\_\+prop\+\_\+end@{on\+\_\+evaluate\+\_\+forward\+\_\+prop\+\_\+end}}
+\index{on\+\_\+evaluate\+\_\+forward\+\_\+prop\+\_\+end@{on\+\_\+evaluate\+\_\+forward\+\_\+prop\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}}
+\subsubsection{\texorpdfstring{on\+\_\+evaluate\+\_\+forward\+\_\+prop\+\_\+end()}{on\_evaluate\_forward\_prop\_end()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset\+::on\+\_\+evaluate\+\_\+forward\+\_\+prop\+\_\+end (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m,  }\item[{\hyperlink{classlbann_1_1Layer}{Layer} $\ast$}]{l }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Called when a layer ends forward propagation for evaluation (validation / testing). 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_ae23c5a61b81dbdfbd79736ac2b6035aa}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 64 of file callback\+\_\+check\+\_\+dataset.\+cpp.
+
+
+\begin{DoxyCode}
+64                                                                                   \{
+65   \textcolor{keywordflow}{switch}(m->get\_execution\_mode()) \{
+66   \textcolor{keywordflow}{case} \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation}:
+67     \hyperlink{classlbann_1_1lbann__callback__check__dataset_a17aff74d9926e07bfa1f090ad39bb4b6}{add\_to\_set}(m, l, m->get\_cur\_validation\_step(), \hyperlink{classlbann_1_1lbann__callback__check__dataset_aab6d04a40d20d1b0bf70f9bfdd85f84c}{validation\_set});
+68     \textcolor{keywordflow}{break};
+69   \textcolor{keywordflow}{case} \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing}:
+70     \hyperlink{classlbann_1_1lbann__callback__check__dataset_a17aff74d9926e07bfa1f090ad39bb4b6}{add\_to\_set}(m, l, m->get\_cur\_testing\_step(), \hyperlink{classlbann_1_1lbann__callback__check__dataset_a15445849bae3621a3a4364b3ebbbc7f3}{testing\_set});
+71     \textcolor{keywordflow}{break};
+72   \textcolor{keywordflow}{default}:
+73     \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"lbann\_callback\_check\_dataset: invalid execution phase"});
+74   \}
+75 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__check__dataset_a1223f07081d495d971cdf205f892c50d_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__check__dataset_a1223f07081d495d971cdf205f892c50d_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__check__dataset_acedc222fc108c156d089f1baa8c040af}\label{classlbann_1_1lbann__callback__check__dataset_acedc222fc108c156d089f1baa8c040af}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}!on\+\_\+forward\+\_\+prop\+\_\+end@{on\+\_\+forward\+\_\+prop\+\_\+end}}
+\index{on\+\_\+forward\+\_\+prop\+\_\+end@{on\+\_\+forward\+\_\+prop\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}}
+\subsubsection{\texorpdfstring{on\+\_\+forward\+\_\+prop\+\_\+end()}{on\_forward\_prop\_end()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset\+::on\+\_\+forward\+\_\+prop\+\_\+end (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m,  }\item[{\hyperlink{classlbann_1_1Layer}{Layer} $\ast$}]{l }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Called when a layer ends forward propagation. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_a5eff0a59fbce98a981d9cdd0547a3ad5}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 60 of file callback\+\_\+check\+\_\+dataset.\+cpp.
+
+
+\begin{DoxyCode}
+60                                                                          \{
+61   \hyperlink{classlbann_1_1lbann__callback__check__dataset_a17aff74d9926e07bfa1f090ad39bb4b6}{add\_to\_set}(m, l, m->get\_cur\_step(), \hyperlink{classlbann_1_1lbann__callback__check__dataset_a22d16efa2ec47759766f2f7478b11059}{training\_set});
+62 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__check__dataset_acedc222fc108c156d089f1baa8c040af_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__check__dataset_acedc222fc108c156d089f1baa8c040af_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__check__dataset_afe1fda5a6bfe632dc680230cc56dff3e}\label{classlbann_1_1lbann__callback__check__dataset_afe1fda5a6bfe632dc680230cc56dff3e}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}!on\+\_\+test\+\_\+end@{on\+\_\+test\+\_\+end}}
+\index{on\+\_\+test\+\_\+end@{on\+\_\+test\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}}
+\subsubsection{\texorpdfstring{on\+\_\+test\+\_\+end()}{on\_test\_end()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset\+::on\+\_\+test\+\_\+end (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Called immediately after the end of testing. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_accbad4dd004c1ced33642db6398b2efe}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 157 of file callback\+\_\+check\+\_\+dataset.\+cpp.
+
+
+\begin{DoxyCode}
+157                                                        \{
+158   std::cout << \textcolor{stringliteral}{"Testing ["} << m->get\_comm()->get\_rank\_in\_model() << \textcolor{stringliteral}{"] : I have processed "} << 
+      \hyperlink{classlbann_1_1lbann__callback__check__dataset_a15445849bae3621a3a4364b3ebbbc7f3}{testing\_set}.size() << \textcolor{stringliteral}{" elements"} << std::endl;
+159   \hyperlink{classlbann_1_1lbann__callback__check__dataset_a15445849bae3621a3a4364b3ebbbc7f3}{testing\_set}.clear();
+160 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__check__dataset_afe1fda5a6bfe632dc680230cc56dff3e_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__check__dataset_afe1fda5a6bfe632dc680230cc56dff3e_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__check__dataset_a9bcb1368152c621c4484136ec8eecff8}\label{classlbann_1_1lbann__callback__check__dataset_a9bcb1368152c621c4484136ec8eecff8}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}!on\+\_\+validation\+\_\+end@{on\+\_\+validation\+\_\+end}}
+\index{on\+\_\+validation\+\_\+end@{on\+\_\+validation\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}}
+\subsubsection{\texorpdfstring{on\+\_\+validation\+\_\+end()}{on\_validation\_end()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset\+::on\+\_\+validation\+\_\+end (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Called immediately after the end of validation. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_adc16e42e5064dc2dc8d84dfbfc1325eb}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 145 of file callback\+\_\+check\+\_\+dataset.\+cpp.
+
+
+\begin{DoxyCode}
+145                                                              \{
+146   std::cout << \textcolor{stringliteral}{"Validation ["} << m->get\_comm()->get\_rank\_in\_model() << \textcolor{stringliteral}{"] : I have processed "} << 
+      \hyperlink{classlbann_1_1lbann__callback__check__dataset_aab6d04a40d20d1b0bf70f9bfdd85f84c}{validation\_set}.size() << \textcolor{stringliteral}{" elements"} << std::endl;
+147 \textcolor{preprocessor}{#if 0}
+148   std::cout << \textcolor{stringliteral}{"Validation ["} << m->get\_comm()->get\_rank\_in\_model() << \textcolor{stringliteral}{"] "};
+149   \textcolor{keywordflow}{for}(std::set<long>::iterator iter=\hyperlink{classlbann_1_1lbann__callback__check__dataset_aab6d04a40d20d1b0bf70f9bfdd85f84c}{validation\_set}.begin(); iter!=
+      \hyperlink{classlbann_1_1lbann__callback__check__dataset_aab6d04a40d20d1b0bf70f9bfdd85f84c}{validation\_set}.end();++iter) \{
+150     std::cout << *iter << \textcolor{stringliteral}{" "};
+151   \}
+152   std::cout << std::endl;
+153 \textcolor{preprocessor}{#endif}
+154   \hyperlink{classlbann_1_1lbann__callback__check__dataset_aab6d04a40d20d1b0bf70f9bfdd85f84c}{validation\_set}.clear();
+155 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__check__dataset_a9bcb1368152c621c4484136ec8eecff8_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__check__dataset_a9bcb1368152c621c4484136ec8eecff8_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__check__dataset_a2b9ab1194196d9edc76eb89bc81257b8}\label{classlbann_1_1lbann__callback__check__dataset_a2b9ab1194196d9edc76eb89bc81257b8}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__check__dataset}{lbann\+\_\+callback\+\_\+check\+\_\+dataset}\& lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__check__dataset}{lbann\+\_\+callback\+\_\+check\+\_\+dataset} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__check__dataset_a2b9ab1194196d9edc76eb89bc81257b8_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__check__dataset_afb8f8ae1ddbd07bf816ee9e8fa84ca8f}\label{classlbann_1_1lbann__callback__check__dataset_afb8f8ae1ddbd07bf816ee9e8fa84ca8f}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}!m\+\_\+basename@{m\+\_\+basename}}
+\index{m\+\_\+basename@{m\+\_\+basename}!lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}}
+\subsubsection{\texorpdfstring{m\+\_\+basename}{m\_basename}}
+{\footnotesize\ttfamily std\+::string lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset\+::m\+\_\+basename\hspace{0.3cm}{\ttfamily [private]}}
+
+Basename for writing files. 
+
+Definition at line 67 of file callback\+\_\+check\+\_\+dataset.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__check__dataset_a15445849bae3621a3a4364b3ebbbc7f3}\label{classlbann_1_1lbann__callback__check__dataset_a15445849bae3621a3a4364b3ebbbc7f3}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}!testing\+\_\+set@{testing\+\_\+set}}
+\index{testing\+\_\+set@{testing\+\_\+set}!lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}}
+\subsubsection{\texorpdfstring{testing\+\_\+set}{testing\_set}}
+{\footnotesize\ttfamily std\+::set$<$long$>$ lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset\+::testing\+\_\+set\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Definition at line 71 of file callback\+\_\+check\+\_\+dataset.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__check__dataset_a22d16efa2ec47759766f2f7478b11059}\label{classlbann_1_1lbann__callback__check__dataset_a22d16efa2ec47759766f2f7478b11059}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}!training\+\_\+set@{training\+\_\+set}}
+\index{training\+\_\+set@{training\+\_\+set}!lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}}
+\subsubsection{\texorpdfstring{training\+\_\+set}{training\_set}}
+{\footnotesize\ttfamily std\+::set$<$long$>$ lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset\+::training\+\_\+set\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Definition at line 69 of file callback\+\_\+check\+\_\+dataset.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__check__dataset_aab6d04a40d20d1b0bf70f9bfdd85f84c}\label{classlbann_1_1lbann__callback__check__dataset_aab6d04a40d20d1b0bf70f9bfdd85f84c}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}!validation\+\_\+set@{validation\+\_\+set}}
+\index{validation\+\_\+set@{validation\+\_\+set}!lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}}
+\subsubsection{\texorpdfstring{validation\+\_\+set}{validation\_set}}
+{\footnotesize\ttfamily std\+::set$<$long$>$ lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset\+::validation\+\_\+set\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Definition at line 70 of file callback\+\_\+check\+\_\+dataset.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/callbacks/\hyperlink{callback__check__dataset_8hpp}{callback\+\_\+check\+\_\+dataset.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/callbacks/\hyperlink{callback__check__dataset_8cpp}{callback\+\_\+check\+\_\+dataset.\+cpp}\end{DoxyCompactItemize}

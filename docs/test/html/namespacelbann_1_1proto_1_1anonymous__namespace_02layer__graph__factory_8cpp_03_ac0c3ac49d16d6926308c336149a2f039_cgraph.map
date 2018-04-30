@@ -1,0 +1,4 @@
+<map id="lbann::proto::anonymous_namespace{layer_graph_factory::cpp}::setup_reconstruction_pointers" name="lbann::proto::anonymous_namespace{layer_graph_factory::cpp}::setup_reconstruction_pointers">
+<area shape="rect" id="node2" href="$classlbann_1_1Layer.html#a80027550202fa7dbb1dd55fa8a66c84b" title="lbann::Layer::get_name" alt="" coords="291,5,452,31"/>
+<area shape="rect" id="node3" href="$classlbann_1_1reconstruction__layer.html#a57e3d25871c8472c5a8de71537fdedff" title="lbann::reconstruction\l_layer::set_original_layer" alt="" coords="287,55,456,93"/>
+</map>

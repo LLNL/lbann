@@ -1,0 +1,287 @@
+\hypertarget{classlbann_1_1safe__inv__layer}{}\section{lbann\+:\+:safe\+\_\+inv\+\_\+layer$<$ T\+\_\+layout $>$ Class Template Reference}
+\label{classlbann_1_1safe__inv__layer}\index{lbann\+::safe\+\_\+inv\+\_\+layer$<$ T\+\_\+layout $>$@{lbann\+::safe\+\_\+inv\+\_\+layer$<$ T\+\_\+layout $>$}}
+
+
+{\ttfamily \#include $<$safe\+\_\+inv.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:safe\+\_\+inv\+\_\+layer$<$ T\+\_\+layout $>$\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=195pt]{classlbann_1_1safe__inv__layer__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:safe\+\_\+inv\+\_\+layer$<$ T\+\_\+layout $>$\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1safe__inv__layer__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1safe__inv__layer_a8568b80fcabd1427eaa4b4deed294f5e}{safe\+\_\+inv\+\_\+layer} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, Data\+Type threshhold=Data\+Type(0), \hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$cudnn=nullptr)
+\item 
+\hyperlink{classlbann_1_1safe__inv__layer}{safe\+\_\+inv\+\_\+layer} $\ast$ \hyperlink{classlbann_1_1safe__inv__layer_aaaf9a3b769c579122cd361caa65c7958}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1safe__inv__layer_a6ee075564c6b683a42fc77b16638a588}{get\+\_\+type} () const override
+\item 
+\hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08db}{data\+\_\+layout} \hyperlink{classlbann_1_1safe__inv__layer_aa82e763a902004d7b0f05b390c3bd45f}{get\+\_\+data\+\_\+layout} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1safe__inv__layer_a1823f1ac48228eec1fa0c1578b2b1ab3}{get\+\_\+description} () const override
+\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{classlbann_1_1safe__inv__layer_a070fe64c2a605eb5624d509740de1c32}{fp\+\_\+compute} () override
+\item 
+void \hyperlink{classlbann_1_1safe__inv__layer_a6c9d917f226b718733ee60da9da0291b}{bp\+\_\+compute} () override
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+Data\+Type \hyperlink{classlbann_1_1safe__inv__layer_ae8978232b726f450b961a63e5ff33279}{m\+\_\+threshhold}
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+\subsubsection*{template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$\newline
+class lbann\+::safe\+\_\+inv\+\_\+layer$<$ T\+\_\+layout $>$}
+
+Safe entrywise inversion (reciprocal). Output is zero if input is zero. See \href{https://arxiv.org.abs/1606.06582}{\tt https\+://arxiv.\+org.\+abs/1606.\+06582} 
+
+Definition at line 40 of file safe\+\_\+inv.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1safe__inv__layer_a8568b80fcabd1427eaa4b4deed294f5e}\label{classlbann_1_1safe__inv__layer_a8568b80fcabd1427eaa4b4deed294f5e}} 
+\index{lbann\+::safe\+\_\+inv\+\_\+layer@{lbann\+::safe\+\_\+inv\+\_\+layer}!safe\+\_\+inv\+\_\+layer@{safe\+\_\+inv\+\_\+layer}}
+\index{safe\+\_\+inv\+\_\+layer@{safe\+\_\+inv\+\_\+layer}!lbann\+::safe\+\_\+inv\+\_\+layer@{lbann\+::safe\+\_\+inv\+\_\+layer}}
+\subsubsection{\texorpdfstring{safe\+\_\+inv\+\_\+layer()}{safe\_inv\_layer()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{classlbann_1_1safe__inv__layer}{lbann\+::safe\+\_\+inv\+\_\+layer}$<$ T\+\_\+layout $>$\+::\hyperlink{classlbann_1_1safe__inv__layer}{safe\+\_\+inv\+\_\+layer} (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{Data\+Type}]{threshhold = {\ttfamily DataType(0)},  }\item[{\hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$}]{cudnn = {\ttfamily nullptr} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 48 of file safe\+\_\+inv.\+hpp.
+
+
+\begin{DoxyCode}
+51     : \hyperlink{classlbann_1_1transform__layer_a4b72501e0f4d0745c8b13c5331055e65}{transform\_layer}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}), \hyperlink{classlbann_1_1safe__inv__layer_ae8978232b726f450b961a63e5ff33279}{m\_threshhold}(threshhold) \{\}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=337pt]{classlbann_1_1safe__inv__layer_a8568b80fcabd1427eaa4b4deed294f5e_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1safe__inv__layer_a6c9d917f226b718733ee60da9da0291b}\label{classlbann_1_1safe__inv__layer_a6c9d917f226b718733ee60da9da0291b}} 
+\index{lbann\+::safe\+\_\+inv\+\_\+layer@{lbann\+::safe\+\_\+inv\+\_\+layer}!bp\+\_\+compute@{bp\+\_\+compute}}
+\index{bp\+\_\+compute@{bp\+\_\+compute}!lbann\+::safe\+\_\+inv\+\_\+layer@{lbann\+::safe\+\_\+inv\+\_\+layer}}
+\subsubsection{\texorpdfstring{bp\+\_\+compute()}{bp\_compute()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1safe__inv__layer}{lbann\+::safe\+\_\+inv\+\_\+layer}$<$ T\+\_\+layout $>$\+::bp\+\_\+compute (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Perform the computation for the backward propagation step. 
+
+Implements \hyperlink{classlbann_1_1Layer_a7442e01f9ee1294df2de811efcf5171e}{lbann\+::\+Layer}.
+
+
+
+Definition at line 80 of file safe\+\_\+inv.\+hpp.
+
+
+\begin{DoxyCode}
+80                              \{
+81     \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_input = \hyperlink{classlbann_1_1Layer_a35397843bb0c84030000c7d872229acb}{get\_local\_prev\_activations}();
+82     \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_gradient\_wrt\_output = \hyperlink{classlbann_1_1Layer_a82827edc5e869960144f3ccb2172bfcd}{get\_local\_prev\_error\_signals}();
+83     \textcolor{keyword}{auto}& local\_gradient\_wrt\_input = \hyperlink{classlbann_1_1Layer_af178d00b9d878aa7d87754bff2a91f3a}{get\_local\_error\_signals}();
+84     \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_height = local\_input.Height();
+85     \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_width = local\_input.Width();
+86     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} col = 0; col < local\_width; ++col) \{
+87       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} row = 0; row < local\_height; ++row) \{
+88         \textcolor{keyword}{const} DataType x = local\_input(row, col);
+89         \textcolor{keyword}{const} DataType dy = local\_gradient\_wrt\_output(row, col);
+90         DataType& dx = local\_gradient\_wrt\_input(row, col);
+91         dx += std::fabs(x) > \hyperlink{classlbann_1_1safe__inv__layer_ae8978232b726f450b961a63e5ff33279}{m\_threshhold} ?  - dy / (x * x) : DataType(0);
+92       \}
+93     \}
+94   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1safe__inv__layer_a6c9d917f226b718733ee60da9da0291b_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1safe__inv__layer_aaaf9a3b769c579122cd361caa65c7958}\label{classlbann_1_1safe__inv__layer_aaaf9a3b769c579122cd361caa65c7958}} 
+\index{lbann\+::safe\+\_\+inv\+\_\+layer@{lbann\+::safe\+\_\+inv\+\_\+layer}!copy@{copy}}
+\index{copy@{copy}!lbann\+::safe\+\_\+inv\+\_\+layer@{lbann\+::safe\+\_\+inv\+\_\+layer}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{classlbann_1_1safe__inv__layer}{safe\+\_\+inv\+\_\+layer}$\ast$ \hyperlink{classlbann_1_1safe__inv__layer}{lbann\+::safe\+\_\+inv\+\_\+layer}$<$ T\+\_\+layout $>$\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Copy function. This function dynamically allocates memory for a layer instance and instantiates a copy. The caller is responsible for deallocating the instance. 
+
+Implements \hyperlink{classlbann_1_1Layer_af420f22bbac801c85483ade84588a23f}{lbann\+::\+Layer}.
+
+
+
+Definition at line 53 of file safe\+\_\+inv.\+hpp.
+
+
+\begin{DoxyCode}
+53 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1safe__inv__layer_a8568b80fcabd1427eaa4b4deed294f5e}{safe\_inv\_layer}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=337pt]{classlbann_1_1safe__inv__layer_aaaf9a3b769c579122cd361caa65c7958_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1safe__inv__layer_a070fe64c2a605eb5624d509740de1c32}\label{classlbann_1_1safe__inv__layer_a070fe64c2a605eb5624d509740de1c32}} 
+\index{lbann\+::safe\+\_\+inv\+\_\+layer@{lbann\+::safe\+\_\+inv\+\_\+layer}!fp\+\_\+compute@{fp\+\_\+compute}}
+\index{fp\+\_\+compute@{fp\+\_\+compute}!lbann\+::safe\+\_\+inv\+\_\+layer@{lbann\+::safe\+\_\+inv\+\_\+layer}}
+\subsubsection{\texorpdfstring{fp\+\_\+compute()}{fp\_compute()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1safe__inv__layer}{lbann\+::safe\+\_\+inv\+\_\+layer}$<$ T\+\_\+layout $>$\+::fp\+\_\+compute (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Perform the computation for the forward propagation step. 
+
+Implements \hyperlink{classlbann_1_1Layer_a523319dd1bd87a0612afa1912bb5aad7}{lbann\+::\+Layer}.
+
+
+
+Definition at line 66 of file safe\+\_\+inv.\+hpp.
+
+
+\begin{DoxyCode}
+66                              \{
+67     \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_input = \hyperlink{classlbann_1_1Layer_a35397843bb0c84030000c7d872229acb}{get\_local\_prev\_activations}();
+68     \textcolor{keyword}{auto}& local\_output = \hyperlink{classlbann_1_1Layer_a4248f27acebf72b7b7b3ee39c8bcb62a}{get\_local\_activations}();
+69     \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_height = local\_input.Height();
+70     \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_width = local\_input.Width();
+71     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} col = 0; col < local\_width; ++col) \{
+72       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} row = 0; row < local\_height; ++row) \{
+73         \textcolor{keyword}{const} DataType x = local\_input(row, col);
+74         DataType& y = local\_output(row, col);
+75         y = std::fabs(x) > \hyperlink{classlbann_1_1safe__inv__layer_ae8978232b726f450b961a63e5ff33279}{m\_threshhold} ? 1 / x : DataType(0);
+76       \}
+77     \}
+78   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1safe__inv__layer_a070fe64c2a605eb5624d509740de1c32_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1safe__inv__layer_aa82e763a902004d7b0f05b390c3bd45f}\label{classlbann_1_1safe__inv__layer_aa82e763a902004d7b0f05b390c3bd45f}} 
+\index{lbann\+::safe\+\_\+inv\+\_\+layer@{lbann\+::safe\+\_\+inv\+\_\+layer}!get\+\_\+data\+\_\+layout@{get\+\_\+data\+\_\+layout}}
+\index{get\+\_\+data\+\_\+layout@{get\+\_\+data\+\_\+layout}!lbann\+::safe\+\_\+inv\+\_\+layer@{lbann\+::safe\+\_\+inv\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+data\+\_\+layout()}{get\_data\_layout()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08db}{data\+\_\+layout} \hyperlink{classlbann_1_1safe__inv__layer}{lbann\+::safe\+\_\+inv\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+data\+\_\+layout (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get data layout of the data tensors. We assume that the data layouts of the previous activations, activations, previous error signals, and error signals are the same. Each concrete layer that is templated on its data layout should override this function to return its template parameter. 
+
+Implements \hyperlink{classlbann_1_1Layer_a5dfb66e81fc085997402a5e2241316bd}{lbann\+::\+Layer}.
+
+
+
+Definition at line 55 of file safe\+\_\+inv.\+hpp.
+
+
+\begin{DoxyCode}
+55 \{ \textcolor{keywordflow}{return} T\_layout; \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=337pt]{classlbann_1_1safe__inv__layer_aa82e763a902004d7b0f05b390c3bd45f_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1safe__inv__layer_a1823f1ac48228eec1fa0c1578b2b1ab3}\label{classlbann_1_1safe__inv__layer_a1823f1ac48228eec1fa0c1578b2b1ab3}} 
+\index{lbann\+::safe\+\_\+inv\+\_\+layer@{lbann\+::safe\+\_\+inv\+\_\+layer}!get\+\_\+description@{get\+\_\+description}}
+\index{get\+\_\+description@{get\+\_\+description}!lbann\+::safe\+\_\+inv\+\_\+layer@{lbann\+::safe\+\_\+inv\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+description()}{get\_description()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+std\+::string \hyperlink{classlbann_1_1safe__inv__layer}{lbann\+::safe\+\_\+inv\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+description (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Returns description of ctor params 
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_acc0803d3428914ca1eb5988c4309174a}{lbann\+::\+Layer}.
+
+
+
+Definition at line 58 of file safe\+\_\+inv.\+hpp.
+
+
+\begin{DoxyCode}
+58                                              \{
+59     std::stringstream s;
+60      s << \textcolor{stringliteral}{" dataLayout: "} << this->\hyperlink{classlbann_1_1Layer_ae3f4a5602df821f4221614b1e3782dc1}{get\_data\_layout\_string}(
+      \hyperlink{classlbann_1_1safe__inv__layer_aa82e763a902004d7b0f05b390c3bd45f}{get\_data\_layout}());
+61      \textcolor{keywordflow}{return} s.str();
+62   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=342pt]{classlbann_1_1safe__inv__layer_a1823f1ac48228eec1fa0c1578b2b1ab3_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1safe__inv__layer_a6ee075564c6b683a42fc77b16638a588}\label{classlbann_1_1safe__inv__layer_a6ee075564c6b683a42fc77b16638a588}} 
+\index{lbann\+::safe\+\_\+inv\+\_\+layer@{lbann\+::safe\+\_\+inv\+\_\+layer}!get\+\_\+type@{get\+\_\+type}}
+\index{get\+\_\+type@{get\+\_\+type}!lbann\+::safe\+\_\+inv\+\_\+layer@{lbann\+::safe\+\_\+inv\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+type()}{get\_type()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+std\+::string \hyperlink{classlbann_1_1safe__inv__layer}{lbann\+::safe\+\_\+inv\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+type (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get the layer type\textquotesingle{}s name. A layer type name should be brief, human-\/readable description of the layer\textquotesingle{}s mathematical operation. 
+
+Implements \hyperlink{classlbann_1_1Layer_a0fa0ea9160b490c151c0a17fde4f7239}{lbann\+::\+Layer}.
+
+
+
+Definition at line 54 of file safe\+\_\+inv.\+hpp.
+
+
+\begin{DoxyCode}
+54 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"safe\_inv"}; \}
+\end{DoxyCode}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1safe__inv__layer_ae8978232b726f450b961a63e5ff33279}\label{classlbann_1_1safe__inv__layer_ae8978232b726f450b961a63e5ff33279}} 
+\index{lbann\+::safe\+\_\+inv\+\_\+layer@{lbann\+::safe\+\_\+inv\+\_\+layer}!m\+\_\+threshhold@{m\+\_\+threshhold}}
+\index{m\+\_\+threshhold@{m\+\_\+threshhold}!lbann\+::safe\+\_\+inv\+\_\+layer@{lbann\+::safe\+\_\+inv\+\_\+layer}}
+\subsubsection{\texorpdfstring{m\+\_\+threshhold}{m\_threshhold}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+Data\+Type \hyperlink{classlbann_1_1safe__inv__layer}{lbann\+::safe\+\_\+inv\+\_\+layer}$<$ T\+\_\+layout $>$\+::m\+\_\+threshhold\hspace{0.3cm}{\ttfamily [private]}}
+
+Threshhold for computing inverse. 
+
+Definition at line 44 of file safe\+\_\+inv.\+hpp.
+
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/layers/transform/\hyperlink{safe__inv_8hpp}{safe\+\_\+inv.\+hpp}\end{DoxyCompactItemize}

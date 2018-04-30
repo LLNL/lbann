@@ -1,0 +1,26 @@
+<map id="lbann::data_store_pilot2_molecular::exchange_data" name="lbann::data_store_pilot2_molecular::exchange_data">
+<area shape="rect" id="node2" href="$namespacelbann.html#a478d36031ff0659893c4322cd856157f" title="lbann::get_time" alt="" coords="273,32,386,58"/>
+<area shape="rect" id="node3" href="$classlbann_1_1data__store__pilot2__molecular.html#a7eadb63f1c879c62b587a7b5d972d4e4" title="lbann::data_store_pilot2\l_molecular::get_required\l_molecules" alt="" coords="245,82,414,134"/>
+<area shape="rect" id="node4" href="$classlbann_1_1pilot2__molecular__reader.html#ad4fcb0da3f6964cbe24de4feac3f5f4a" title="support for data_store_pilot2_molecular " alt="" coords="238,158,421,196"/>
+<area shape="rect" id="node5" href="$namespacelbann_1_1cnpy__utils.html#a9ac86d96ccb1f8b4b2ea16441738781f" title="lbann::cnpy_utils::data" alt="" coords="253,220,407,246"/>
+<area shape="rect" id="node7" href="$classlbann_1_1generic__data__reader.html#a92982e1b399f37e2ead5aa440883cba5" title="lbann::generic_data\l_reader::get_role" alt="" coords="260,335,399,374"/>
+<area shape="rect" id="node6" href="$namespacelbann_1_1cnpy__utils.html#a39fd207d94d1333e6379c53423b6f1a1" title="lbann::cnpy_utils::\lcompute_cnpy_array_offset" alt="" coords="469,62,654,100"/>
+<area shape="rect" id="node8" href="$classlbann_1_1generic__data__reader.html#afeb47703d988a230a59859cbfc178215" title="lbann::generic_data\l_reader::load" alt="" coords="492,335,631,374"/>
+<area shape="rect" id="node9" href="$classlbann_1_1generic__data__reader.html#a879bb7dcb57a0aa1ef9c5039f5b0efda" title="lbann::generic_data\l_reader::setup" alt="" coords="492,124,631,163"/>
+<area shape="rect" id="node13" href="$classlbann_1_1generic__data__reader.html#abeb849fb8e10b4fa317c90bc33f61758" title="lbann::generic_data\l_reader::get_type" alt="" coords="492,460,631,499"/>
+<area shape="rect" id="node14" href="$classlbann_1_1generic__data__reader.html#a46b658ba4f6b746632b683568ab76f77" title="Fetch this mini&#45;batch&#39;s samples into X. " alt="" coords="492,272,631,311"/>
+<area shape="rect" id="node22" href="$classlbann_1_1generic__data__reader.html#a7e624f92e38b0ee4224a6afaaf2acbdb" title="Fetch this mini&#45;batch&#39;s labels into Y. " alt="" coords="489,398,634,436"/>
+<area shape="rect" id="node24" href="$classlbann_1_1generic__data__reader.html#aeaa97d3683add33d1c6d69a769dd6a20" title="Fetch this mini&#45;batch&#39;s responses into Y. " alt="" coords="475,523,648,562"/>
+<area shape="rect" id="node10" href="$classlbann_1_1generic__data__reader.html#ac6d4a5ba1d4e1134620cddcac343bf59" title="Set the current position based on the base and model offsets. " alt="" coords="716,40,854,92"/>
+<area shape="rect" id="node11" href="$classlbann_1_1generic__data__reader.html#af1aaa4d1a693974c1b1f1318b6ed60b8" title="Shuffle indices. " alt="" coords="916,84,1079,123"/>
+<area shape="rect" id="node12" href="$namespacelbann.html#aba9d11cb3a739cd84e7234ceeb32d098" title="lbann::get_data_seq\l_generator" alt="" coords="1127,84,1269,123"/>
+<area shape="rect" id="node15" href="$classlbann_1_1generic__data__reader.html#a2b10538440d784f0f12582a5407acef2" title="True if the data reader&#39;s current position is valid. " alt="" coords="707,532,863,571"/>
+<area shape="rect" id="node16" href="$classlbann_1_1generic__data__reader.html#ad613f95666b973d8da77773fb34c9b66" title="lbann::generic_data\l_reader::preprocess\l_data_source" alt="" coords="715,255,856,307"/>
+<area shape="rect" id="node17" href="$classlbann_1_1generic__data__reader.html#a850e99110dd1e9df2985f09ea196fea8" title="Get the loaded mini&#45;batch size. " alt="" coords="715,331,856,383"/>
+<area shape="rect" id="node18" href="$classlbann_1_1generic__data__reader.html#a0a3cd87ed4a7057df185e0087f2d21c1" title="lbann::generic_data\l_reader::fetch_datum" alt="" coords="711,116,859,155"/>
+<area shape="rect" id="node19" href="$namespacelbann.html#aedccb3bf2d674ccb5573ab9960720731" title="lbann::lbann_report\l_exception" alt="" coords="717,470,853,508"/>
+<area shape="rect" id="node21" href="$classlbann_1_1generic__data__reader.html#a7bbf74725a96235dc1cd20ff440a69bd" title="lbann::generic_data\l_reader::postprocess\l_data_source" alt="" coords="712,179,859,231"/>
+<area shape="rect" id="node20" href="$classlbann_1_1lbann__exception.html#ad36592ddd0ff6a24f31ec6a31b83e920" title="lbann::lbann_exception\l::what" alt="" coords="918,470,1077,508"/>
+<area shape="rect" id="node23" href="$classlbann_1_1generic__data__reader.html#a03627408c1d1aa28691d31232fe1dce5" title="lbann::generic_data\l_reader::fetch_label" alt="" coords="716,407,855,446"/>
+<area shape="rect" id="node25" href="$classlbann_1_1generic__data__reader.html#abe544ea807eed477f3636010d199b574" title="lbann::generic_data\l_reader::fetch_response" alt="" coords="702,595,868,634"/>
+</map>

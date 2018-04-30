@@ -1,0 +1,5 @@
+<map id="lbann::softmax_layer::setup_matrices" name="lbann::softmax_layer::setup_matrices">
+<area shape="rect" id="node2" href="$classlbann_1_1Layer.html#a57bbe21131dc00ab5cf9ea5e3656808e" title="lbann::Layer::setup\l_matrices" alt="" coords="198,37,332,76"/>
+<area shape="rect" id="node3" href="$classlbann_1_1Layer.html#a888392d6ac6906093a8125c6a37de075" title="lbann::Layer::deallocate\l_matrices" alt="" coords="380,5,543,44"/>
+<area shape="rect" id="node4" href="$classlbann_1_1Layer.html#a5dfb66e81fc085997402a5e2241316bd" title="lbann::Layer::get_data\l_layout" alt="" coords="385,68,539,107"/>
+</map>

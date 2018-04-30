@@ -1,0 +1,419 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1kl__divergence" kind="class" language="C++" prot="public">
+    <compoundname>lbann::kl_divergence</compoundname>
+    <basecompoundref refid="classlbann_1_1objective__function__term" prot="public" virt="non-virtual">lbann::objective_function_term</basecompoundref>
+    <includes refid="kl__divergence_8hpp" local="no">kl_divergence.hpp</includes>
+      <sectiondef kind="protected-attrib">
+      <memberdef kind="variable" id="classlbann_1_1kl__divergence_1ad9faebef778e49a01c094917bc5e72ed" prot="protected" static="no" mutable="no">
+        <type>std::string</type>
+        <definition>std::string lbann::kl_divergence::m_z_mean_layer_name</definition>
+        <argsstring></argsstring>
+        <name>m_z_mean_layer_name</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>input layer parameters to the KL-divergence function. z_mean is mean of Gaussian distribution in latent space z_log_sigma is (log) variance of distribution in latent space string and pointer variables are layer name and layer pointer respectively </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/kl_divergence.hpp" line="81" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/kl_divergence.hpp" bodystart="74" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1kl__divergence_1acaa96d2e2fcf164c2e7b5cd5a0bf222e" compoundref="kl__divergence_8cpp" startline="42" endline="57">setup</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1kl__divergence_1abb811a5ba98ee742838838a0137728a0" prot="protected" static="no" mutable="no">
+        <type>std::string</type>
+        <definition>std::string lbann::kl_divergence::m_z_log_sigma_layer_name</definition>
+        <argsstring></argsstring>
+        <name>m_z_log_sigma_layer_name</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/kl_divergence.hpp" line="82" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/kl_divergence.hpp" bodystart="82" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1kl__divergence_1acaa96d2e2fcf164c2e7b5cd5a0bf222e" compoundref="kl__divergence_8cpp" startline="42" endline="57">setup</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1kl__divergence_1a7665b4f12f4e842d1850102295c21e3e" prot="protected" static="no" mutable="no">
+        <type><ref refid="classlbann_1_1Layer" kindref="compound">Layer</ref> *</type>
+        <definition>Layer* lbann::kl_divergence::m_z_mean_layer</definition>
+        <argsstring></argsstring>
+        <name>m_z_mean_layer</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/kl_divergence.hpp" line="83" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/kl_divergence.hpp" bodystart="83" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1kl__divergence_1acaa96d2e2fcf164c2e7b5cd5a0bf222e" compoundref="kl__divergence_8cpp" startline="42" endline="57">setup</referencedby>
+        <referencedby refid="classlbann_1_1kl__divergence_1a93aab2ca89cdaab075a940184ae209d5" compoundref="kl__divergence_8cpp" startline="63" endline="92">finish_evaluation</referencedby>
+        <referencedby refid="classlbann_1_1kl__divergence_1aeb39d1ba1e74874cbf396fbe137ff601" compoundref="kl__divergence_8cpp" startline="94" endline="135">differentiate</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1kl__divergence_1aae1f6deb97728e09771840f447a571b1" prot="protected" static="no" mutable="no">
+        <type><ref refid="classlbann_1_1Layer" kindref="compound">Layer</ref> *</type>
+        <definition>Layer* lbann::kl_divergence::m_z_log_sigma_layer</definition>
+        <argsstring></argsstring>
+        <name>m_z_log_sigma_layer</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/kl_divergence.hpp" line="84" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/kl_divergence.hpp" bodystart="84" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1kl__divergence_1acaa96d2e2fcf164c2e7b5cd5a0bf222e" compoundref="kl__divergence_8cpp" startline="42" endline="57">setup</referencedby>
+        <referencedby refid="classlbann_1_1kl__divergence_1a93aab2ca89cdaab075a940184ae209d5" compoundref="kl__divergence_8cpp" startline="63" endline="92">finish_evaluation</referencedby>
+        <referencedby refid="classlbann_1_1kl__divergence_1aeb39d1ba1e74874cbf396fbe137ff601" compoundref="kl__divergence_8cpp" startline="94" endline="135">differentiate</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1kl__divergence_1a3084d98e61853086a207a3893421e4d9" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::kl_divergence::kl_divergence</definition>
+        <argsstring>(std::string layer1, std::string layer2)</argsstring>
+        <name>kl_divergence</name>
+        <param>
+          <type>std::string</type>
+          <declname>layer1</declname>
+        </param>
+        <param>
+          <type>std::string</type>
+          <declname>layer2</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Default constructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/kl_divergence.hpp" line="49" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/kl_divergence.cpp" bodystart="34" bodyend="40"/>
+        <referencedby refid="classlbann_1_1kl__divergence_1aa0265eb9f1cff77d4101137b09f87353" compoundref="kl__divergence_8hpp" startline="57" endline="59">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1kl__divergence_1a2262db9ab3c5383033d9e893bb4c7edd" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::kl_divergence::kl_divergence</definition>
+        <argsstring>(const kl_divergence &amp;other)=default</argsstring>
+        <name>kl_divergence</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1kl__divergence" kindref="compound">kl_divergence</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Copy constructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/kl_divergence.hpp" line="51" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1kl__divergence_1ac70fa0c7c0f1d97402a1ca73c0dfb927" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classlbann_1_1kl__divergence" kindref="compound">kl_divergence</ref> &amp;</type>
+        <definition>kl_divergence&amp; lbann::kl_divergence::operator=</definition>
+        <argsstring>(const kl_divergence &amp;other)=default</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1kl__divergence" kindref="compound">kl_divergence</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Copy assignment operator. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/kl_divergence.hpp" line="53" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1kl__divergence_1ad256b4593f170d9dfa5b17ca9a8ac0cc" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::kl_divergence::~kl_divergence</definition>
+        <argsstring>() override=default</argsstring>
+        <name>~kl_divergence</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Destructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/kl_divergence.hpp" line="55" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1kl__divergence_1aa0265eb9f1cff77d4101137b09f87353" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type><ref refid="classlbann_1_1kl__divergence" kindref="compound">kl_divergence</ref> *</type>
+        <definition>kl_divergence* lbann::kl_divergence::copy</definition>
+        <argsstring>() const override</argsstring>
+        <name>copy</name>
+        <reimplements refid="classlbann_1_1objective__function__term_1ae98a4ec173a602ad55d1df20dadd4cb9">copy</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Copy function. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/kl_divergence.hpp" line="57" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/kl_divergence.hpp" bodystart="57" bodyend="59"/>
+        <references refid="classlbann_1_1kl__divergence_1a3084d98e61853086a207a3893421e4d9" compoundref="kl__divergence_8cpp" startline="34" endline="40">kl_divergence</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1kl__divergence_1a42f016a75f640cb4ec9ceb9320da4a47" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>std::string</type>
+        <definition>std::string lbann::kl_divergence::name</definition>
+        <argsstring>() const override</argsstring>
+        <name>name</name>
+        <reimplements refid="classlbann_1_1objective__function__term_1a964fbfad3dd0434aa8f32c5fedf1079a">name</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Get the name of the objective function term. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/kl_divergence.hpp" line="61" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/kl_divergence.hpp" bodystart="61" bodyend="61"/>
+        <references refid="classlbann_1_1kl__divergence_1acaa96d2e2fcf164c2e7b5cd5a0bf222e" compoundref="kl__divergence_8cpp" startline="42" endline="57">setup</references>
+        <references refid="classlbann_1_1kl__divergence_1a0a77c724ff9b918e2c2eaf3944f50ac5" compoundref="kl__divergence_8cpp" startline="59" endline="61">start_evaluation</references>
+        <references refid="classlbann_1_1kl__divergence_1a93aab2ca89cdaab075a940184ae209d5" compoundref="kl__divergence_8cpp" startline="63" endline="92">finish_evaluation</references>
+        <references refid="classlbann_1_1kl__divergence_1aeb39d1ba1e74874cbf396fbe137ff601" compoundref="kl__divergence_8cpp" startline="94" endline="135">differentiate</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1kl__divergence_1acaa96d2e2fcf164c2e7b5cd5a0bf222e" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::kl_divergence::setup</definition>
+        <argsstring>(model &amp;m) override</argsstring>
+        <name>setup</name>
+        <reimplements refid="classlbann_1_1objective__function__term_1a6c8dbdf18aac8676098189fb7b178e91">setup</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> &amp;</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Setup KL divergence regularization term. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/kl_divergence.hpp" line="64" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/kl_divergence.cpp" bodystart="42" bodyend="57"/>
+        <references refid="classlbann_1_1objective__function__term_1a6c8dbdf18aac8676098189fb7b178e91" compoundref="objective__function__term_8cpp" startline="39" endline="41">lbann::objective_function_term::setup</references>
+        <references refid="classlbann_1_1model_1ae14f4b2cc8882b3739d4aeb25d9e73c9" compoundref="model_8hpp" startline="114" endline="114">lbann::model::get_layers</references>
+        <references refid="classlbann_1_1kl__divergence_1ad9faebef778e49a01c094917bc5e72ed" compoundref="kl__divergence_8hpp" startline="74">m_z_mean_layer_name</references>
+        <references refid="classlbann_1_1kl__divergence_1a7665b4f12f4e842d1850102295c21e3e" compoundref="kl__divergence_8hpp" startline="83">m_z_mean_layer</references>
+        <references refid="classlbann_1_1kl__divergence_1abb811a5ba98ee742838838a0137728a0" compoundref="kl__divergence_8hpp" startline="82">m_z_log_sigma_layer_name</references>
+        <references refid="classlbann_1_1kl__divergence_1aae1f6deb97728e09771840f447a571b1" compoundref="kl__divergence_8hpp" startline="84">m_z_log_sigma_layer</references>
+        <referencedby refid="classlbann_1_1kl__divergence_1a42f016a75f640cb4ec9ceb9320da4a47" compoundref="kl__divergence_8hpp" startline="61" endline="61">name</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1kl__divergence_1a0a77c724ff9b918e2c2eaf3944f50ac5" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::kl_divergence::start_evaluation</definition>
+        <argsstring>() override</argsstring>
+        <name>start_evaluation</name>
+        <reimplements refid="classlbann_1_1objective__function__term_1a0af4dfd71fb30e43d1ae7611172ad9b0">start_evaluation</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Start evaluation of the objective function term. This should include the scaling factor. The result is not available until finish_evaluation has been called. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/kl_divergence.hpp" line="66" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/kl_divergence.cpp" bodystart="59" bodyend="61"/>
+        <referencedby refid="classlbann_1_1kl__divergence_1a42f016a75f640cb4ec9ceb9320da4a47" compoundref="kl__divergence_8hpp" startline="61" endline="61">name</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1kl__divergence_1a93aab2ca89cdaab075a940184ae209d5" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref></type>
+        <definition>EvalType lbann::kl_divergence::finish_evaluation</definition>
+        <argsstring>() override</argsstring>
+        <name>finish_evaluation</name>
+        <reimplements refid="classlbann_1_1objective__function__term_1a7a82f2cdbc954655ac860896306aed0c">finish_evaluation</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Get the value of the KL divergence regularization term. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/kl_divergence.hpp" line="68" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/kl_divergence.cpp" bodystart="63" bodyend="92"/>
+        <references refid="classlbann_1_1objective__function__term_1a59a544b8ff0455ed5091de3bf0d81c3c" compoundref="objective__function__term_8hpp" startline="94">lbann::objective_function_term::m_scale_factor</references>
+        <references refid="classlbann_1_1kl__divergence_1a7665b4f12f4e842d1850102295c21e3e" compoundref="kl__divergence_8hpp" startline="83">m_z_mean_layer</references>
+        <references refid="classlbann_1_1Layer_1a1134b1a4385af199d7272c5aa827fa99" compoundref="layer_8cpp" startline="376" endline="378">lbann::Layer::get_activations</references>
+        <references refid="classlbann_1_1kl__divergence_1aae1f6deb97728e09771840f447a571b1" compoundref="kl__divergence_8hpp" startline="84">m_z_log_sigma_layer</references>
+        <references refid="classlbann_1_1Layer_1a4248f27acebf72b7b7b3ee39c8bcb62a" compoundref="layer_8cpp" startline="436" endline="438">lbann::Layer::get_local_activations</references>
+        <references refid="classlbann_1_1objective__function__term_1a5f89b676a26a6b76ddc26563ac87beb9" compoundref="objective__function__term_8hpp" startline="102" endline="102">lbann::objective_function_term::get_comm</references>
+        <references refid="classlbann_1_1lbann__comm_1af5631e5f0f54e4df4958eba9df2599ef" compoundref="comm_8hpp" startline="419" endline="424">lbann::lbann_comm::allreduce</references>
+        <referencedby refid="classlbann_1_1kl__divergence_1a42f016a75f640cb4ec9ceb9320da4a47" compoundref="kl__divergence_8hpp" startline="61" endline="61">name</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1kl__divergence_1aeb39d1ba1e74874cbf396fbe137ff601" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::kl_divergence::differentiate</definition>
+        <argsstring>() override</argsstring>
+        <name>differentiate</name>
+        <reimplements refid="classlbann_1_1objective__function__term_1ad009c3cfbe1cf2fbb6cce015b16fdac5">differentiate</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Regularization terms are applied to the objective function. Add kl_loss to gradient/error signal. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/kl_divergence.hpp" line="72" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/kl_divergence.cpp" bodystart="94" bodyend="135"/>
+        <references refid="classlbann_1_1objective__function__term_1a59a544b8ff0455ed5091de3bf0d81c3c" compoundref="objective__function__term_8hpp" startline="94">lbann::objective_function_term::m_scale_factor</references>
+        <references refid="classlbann_1_1kl__divergence_1a7665b4f12f4e842d1850102295c21e3e" compoundref="kl__divergence_8hpp" startline="83">m_z_mean_layer</references>
+        <references refid="classlbann_1_1Layer_1a1134b1a4385af199d7272c5aa827fa99" compoundref="layer_8cpp" startline="376" endline="378">lbann::Layer::get_activations</references>
+        <references refid="classlbann_1_1kl__divergence_1aae1f6deb97728e09771840f447a571b1" compoundref="kl__divergence_8hpp" startline="84">m_z_log_sigma_layer</references>
+        <references refid="classlbann_1_1Layer_1aa0058c8ec4913efc3e4de5d6f61eb8db" compoundref="layer_8hpp" startline="264" endline="264">lbann::Layer::get_child_layers</references>
+        <references refid="classlbann_1_1Layer_1a8d942eb2cd37c346edc5ff473e0494a2" compoundref="layer_8hpp" startline="253" endline="257">lbann::Layer::add_to_error_signal</references>
+        <referencedby refid="classlbann_1_1kl__divergence_1a42f016a75f640cb4ec9ceb9320da4a47" compoundref="kl__divergence_8hpp" startline="61" endline="61">name</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1kl__divergence_1a6f9e18587348fa8dc6871c404232f121" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::kl_divergence::compute_weight_regularization</definition>
+        <argsstring>() override</argsstring>
+        <name>compute_weight_regularization</name>
+        <reimplements refid="classlbann_1_1objective__function__term_1a134cf89caed45527bbe9d811a0b93dfc">compute_weight_regularization</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Compute the gradient of the weight regularization term. The gradient is computed w.r.t. the weights. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/kl_divergence.hpp" line="74" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/kl_divergence.hpp" bodystart="74" bodyend="74"/>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>Kullback Leibler (KL) divergence regularizer It compute latent loss between the distribution of latent space induced by an encoder on input data and some prior. It is acts as a kind of regularizer added to reconstruction cost. A good use is in Variational Autoencoder (VAE). kl_loss = -0.5 * mean(1 + z_log_sigma - square(z_mean) - exp(z_log_sigma)) See the following reference: Kingma and Welling, &quot;Auto-Encoding Variational Bayes&quot; Doersch, &quot;Tutorial on Variational Autoencoders&quot; <ulink url="https://blogs.keras.io/building-autoencoder-in-keras.html">https://blogs.keras.io/building-autoencoder-in-keras.html</ulink> TODO: Add checkpoint </para>    </detaileddescription>
+    <inheritancegraph>
+      <node id="1174">
+        <label>lbann::kl_divergence</label>
+        <link refid="classlbann_1_1kl__divergence"/>
+        <childnode refid="1175" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1175">
+        <label>lbann::objective_function_term</label>
+        <link refid="classlbann_1_1objective__function__term"/>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="1180">
+        <label>lbann::model</label>
+        <link refid="classlbann_1_1model"/>
+        <childnode refid="1181" relation="usage">
+          <edgelabel>m_default_optimizer</edgelabel>
+        </childnode>
+        <childnode refid="1178" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="1186" relation="usage">
+          <edgelabel>m_objective_function</edgelabel>
+        </childnode>
+      </node>
+      <node id="1181">
+        <label>lbann::optimizer</label>
+        <link refid="classlbann_1_1optimizer"/>
+        <childnode refid="1178" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="1182" relation="usage">
+          <edgelabel>m_cudnn</edgelabel>
+        </childnode>
+        <childnode refid="1183" relation="usage">
+          <edgelabel>m_gradient_allreduce_req</edgelabel>
+        </childnode>
+        <childnode refid="1184" relation="usage">
+          <edgelabel>m_weights</edgelabel>
+        </childnode>
+      </node>
+      <node id="1182">
+        <label>lbann::cudnn::cudnn_manager</label>
+        <link refid="classlbann_1_1cudnn_1_1cudnn__manager"/>
+      </node>
+      <node id="1176">
+        <label>lbann::kl_divergence</label>
+        <link refid="classlbann_1_1kl__divergence"/>
+        <childnode refid="1177" relation="public-inheritance">
+        </childnode>
+        <childnode refid="1179" relation="usage">
+          <edgelabel>m_z_log_sigma_layer</edgelabel>
+          <edgelabel>m_z_mean_layer</edgelabel>
+        </childnode>
+      </node>
+      <node id="1185">
+        <label>lbann::weights_initializer</label>
+        <link refid="classlbann_1_1weights__initializer"/>
+        <childnode refid="1178" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+      </node>
+      <node id="1179">
+        <label>lbann::Layer</label>
+        <link refid="classlbann_1_1Layer"/>
+        <childnode refid="1178" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="1180" relation="usage">
+          <edgelabel>m_model</edgelabel>
+        </childnode>
+        <childnode refid="1182" relation="usage">
+          <edgelabel>m_cudnn</edgelabel>
+        </childnode>
+      </node>
+      <node id="1184">
+        <label>lbann::weights</label>
+        <link refid="classlbann_1_1weights"/>
+        <childnode refid="1181" relation="usage">
+          <edgelabel>m_optimizer</edgelabel>
+        </childnode>
+        <childnode refid="1178" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="1185" relation="usage">
+          <edgelabel>m_initializer</edgelabel>
+        </childnode>
+        <childnode refid="1182" relation="usage">
+          <edgelabel>m_cudnn</edgelabel>
+        </childnode>
+      </node>
+      <node id="1178">
+        <label>lbann::lbann_comm</label>
+        <link refid="classlbann_1_1lbann__comm"/>
+      </node>
+      <node id="1177">
+        <label>lbann::objective_function_term</label>
+        <link refid="classlbann_1_1objective__function__term"/>
+        <childnode refid="1178" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+      </node>
+      <node id="1183">
+        <label>lbann::Al::request</label>
+        <link refid="structlbann_1_1Al_1_1request"/>
+      </node>
+      <node id="1186">
+        <label>lbann::objective_function</label>
+        <link refid="classlbann_1_1objective__function"/>
+      </node>
+    </collaborationgraph>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/kl_divergence.hpp" line="46" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/kl_divergence.hpp" bodystart="46" bodyend="86"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1kl__divergence_1a6f9e18587348fa8dc6871c404232f121" prot="public" virt="virtual"><scope>lbann::kl_divergence</scope><name>compute_weight_regularization</name></member>
+      <member refid="classlbann_1_1kl__divergence_1aa0265eb9f1cff77d4101137b09f87353" prot="public" virt="virtual"><scope>lbann::kl_divergence</scope><name>copy</name></member>
+      <member refid="classlbann_1_1kl__divergence_1aeb39d1ba1e74874cbf396fbe137ff601" prot="public" virt="virtual"><scope>lbann::kl_divergence</scope><name>differentiate</name></member>
+      <member refid="classlbann_1_1kl__divergence_1a93aab2ca89cdaab075a940184ae209d5" prot="public" virt="virtual"><scope>lbann::kl_divergence</scope><name>finish_evaluation</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a5f89b676a26a6b76ddc26563ac87beb9" prot="protected" virt="non-virtual"><scope>lbann::kl_divergence</scope><name>get_comm</name></member>
+      <member refid="classlbann_1_1objective__function__term_1aeeb85314738bec6e15877f68b3d422a0" prot="public" virt="non-virtual"><scope>lbann::kl_divergence</scope><name>get_layer_pointers</name></member>
+      <member refid="classlbann_1_1objective__function__term_1aea73505aed191bfb9336d9d46a69d586" prot="public" virt="non-virtual"><scope>lbann::kl_divergence</scope><name>get_weights_pointers</name></member>
+      <member refid="classlbann_1_1kl__divergence_1a3084d98e61853086a207a3893421e4d9" prot="public" virt="non-virtual"><scope>lbann::kl_divergence</scope><name>kl_divergence</name></member>
+      <member refid="classlbann_1_1kl__divergence_1a2262db9ab3c5383033d9e893bb4c7edd" prot="public" virt="non-virtual"><scope>lbann::kl_divergence</scope><name>kl_divergence</name></member>
+      <member refid="classlbann_1_1objective__function__term_1aac2240c9925c2b7bf436072a24f3eb30" prot="public" virt="virtual"><scope>lbann::kl_divergence</scope><name>load_from_checkpoint_shared</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a9269cf0a237eacd1e220ba2739f44334" prot="protected" virt="non-virtual"><scope>lbann::kl_divergence</scope><name>m_layers</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a59a544b8ff0455ed5091de3bf0d81c3c" prot="protected" virt="non-virtual"><scope>lbann::kl_divergence</scope><name>m_scale_factor</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a1d601c29153ae9cb54c585887608f2bf" prot="protected" virt="non-virtual"><scope>lbann::kl_divergence</scope><name>m_weights</name></member>
+      <member refid="classlbann_1_1kl__divergence_1aae1f6deb97728e09771840f447a571b1" prot="protected" virt="non-virtual"><scope>lbann::kl_divergence</scope><name>m_z_log_sigma_layer</name></member>
+      <member refid="classlbann_1_1kl__divergence_1abb811a5ba98ee742838838a0137728a0" prot="protected" virt="non-virtual"><scope>lbann::kl_divergence</scope><name>m_z_log_sigma_layer_name</name></member>
+      <member refid="classlbann_1_1kl__divergence_1a7665b4f12f4e842d1850102295c21e3e" prot="protected" virt="non-virtual"><scope>lbann::kl_divergence</scope><name>m_z_mean_layer</name></member>
+      <member refid="classlbann_1_1kl__divergence_1ad9faebef778e49a01c094917bc5e72ed" prot="protected" virt="non-virtual"><scope>lbann::kl_divergence</scope><name>m_z_mean_layer_name</name></member>
+      <member refid="classlbann_1_1kl__divergence_1a42f016a75f640cb4ec9ceb9320da4a47" prot="public" virt="virtual"><scope>lbann::kl_divergence</scope><name>name</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a8c019e3c880f38dc20275e395acaeca1" prot="public" virt="non-virtual"><scope>lbann::kl_divergence</scope><name>objective_function_term</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a791a33056717d8b3f5ca2288145d86c8" prot="public" virt="non-virtual"><scope>lbann::kl_divergence</scope><name>objective_function_term</name></member>
+      <member refid="classlbann_1_1kl__divergence_1ac70fa0c7c0f1d97402a1ca73c0dfb927" prot="public" virt="non-virtual"><scope>lbann::kl_divergence</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a8bbac194d96a854d5841817b67b63334" prot="public" virt="non-virtual" ambiguityscope="lbann::objective_function_term::"><scope>lbann::kl_divergence</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a4451a6a6fb4d70ac2aed2827f075cd71" prot="public" virt="virtual"><scope>lbann::kl_divergence</scope><name>save_to_checkpoint_shared</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a82656dfd81bf6b818b38d041d341bc3b" prot="public" virt="non-virtual"><scope>lbann::kl_divergence</scope><name>set_layer_pointers</name></member>
+      <member refid="classlbann_1_1objective__function__term_1aa8adaf01dd8bc535dd86f27fc53c276a" prot="public" virt="non-virtual"><scope>lbann::kl_divergence</scope><name>set_weights_pointers</name></member>
+      <member refid="classlbann_1_1kl__divergence_1acaa96d2e2fcf164c2e7b5cd5a0bf222e" prot="public" virt="virtual"><scope>lbann::kl_divergence</scope><name>setup</name></member>
+      <member refid="classlbann_1_1kl__divergence_1a0a77c724ff9b918e2c2eaf3944f50ac5" prot="public" virt="virtual"><scope>lbann::kl_divergence</scope><name>start_evaluation</name></member>
+      <member refid="classlbann_1_1kl__divergence_1ad256b4593f170d9dfa5b17ca9a8ac0cc" prot="public" virt="non-virtual"><scope>lbann::kl_divergence</scope><name>~kl_divergence</name></member>
+      <member refid="classlbann_1_1objective__function__term_1ad95920d424b3c248a2124827971451df" prot="public" virt="virtual"><scope>lbann::kl_divergence</scope><name>~objective_function_term</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

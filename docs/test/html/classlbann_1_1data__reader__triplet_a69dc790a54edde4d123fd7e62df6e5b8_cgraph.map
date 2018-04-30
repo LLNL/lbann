@@ -1,0 +1,4 @@
+<map id="lbann::data_reader_triplet::fetch_label" name="lbann::data_reader_triplet::fetch_label">
+<area shape="rect" id="node2" href="$classlbann_1_1offline__patches__npz.html#a7548019f8e7f768027b50d497c4e6e73" title="Return the label of idx&#45;th sample. " alt="" coords="187,5,338,44"/>
+<area shape="rect" id="node3" href="$classlbann_1_1offline__patches__npz.html#aa6fa05575f54a29b67d0bba8a2a9d363" title="Return the number of samples. " alt="" coords="386,5,552,44"/>
+</map>

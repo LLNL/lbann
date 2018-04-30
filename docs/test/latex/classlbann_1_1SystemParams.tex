@@ -1,0 +1,151 @@
+\hypertarget{classlbann_1_1SystemParams}{}\section{lbann\+:\+:System\+Params Class Reference}
+\label{classlbann_1_1SystemParams}\index{lbann\+::\+System\+Params@{lbann\+::\+System\+Params}}
+
+
+System parameters.  
+
+
+
+
+{\ttfamily \#include $<$params.\+hpp$>$}
+
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1SystemParams_a74bc72829591193eef9a59d0d53f782f}{System\+Params} ()
+\begin{DoxyCompactList}\small\item\em Constructor. \end{DoxyCompactList}\item 
+void \hyperlink{classlbann_1_1SystemParams_a730176df36a262f7ef141afda372488d}{parse\+\_\+params} ()
+\begin{DoxyCompactList}\small\item\em Parse command-\/line arguments. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+std\+::string \hyperlink{classlbann_1_1SystemParams_a4aa517715ee0a454ee7ca2cc23fe30ee}{Host\+Name}
+\begin{DoxyCompactList}\small\item\em H\+PC hostname. \end{DoxyCompactList}\item 
+int \hyperlink{classlbann_1_1SystemParams_ad63e9fea31313d45d13298e35b47982a}{Num\+Nodes}
+\begin{DoxyCompactList}\small\item\em Total allocation size. \end{DoxyCompactList}\item 
+int \hyperlink{classlbann_1_1SystemParams_aa4f76625da59edc74b6d9208cb60a3db}{Num\+Cores}
+\begin{DoxyCompactList}\small\item\em Number of cores per node. \end{DoxyCompactList}\item 
+int \hyperlink{classlbann_1_1SystemParams_a93758103d73bcd95146f99464203aa86}{Tasks\+Per\+Node}
+\begin{DoxyCompactList}\small\item\em M\+PI tasks allowed per node. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+System parameters. 
+
+Definition at line 169 of file params.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1SystemParams_a74bc72829591193eef9a59d0d53f782f}\label{classlbann_1_1SystemParams_a74bc72829591193eef9a59d0d53f782f}} 
+\index{lbann\+::\+System\+Params@{lbann\+::\+System\+Params}!System\+Params@{System\+Params}}
+\index{System\+Params@{System\+Params}!lbann\+::\+System\+Params@{lbann\+::\+System\+Params}}
+\subsubsection{\texorpdfstring{System\+Params()}{SystemParams()}}
+{\footnotesize\ttfamily lbann\+::\+System\+Params\+::\+System\+Params (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Constructor. 
+
+
+
+Definition at line 127 of file params.\+cpp.
+
+
+\begin{DoxyCode}
+128   : \hyperlink{classlbann_1_1SystemParams_a4aa517715ee0a454ee7ca2cc23fe30ee}{HostName}(\textcolor{stringliteral}{"Unknwn"}), \hyperlink{classlbann_1_1SystemParams_ad63e9fea31313d45d13298e35b47982a}{NumNodes}(-1), \hyperlink{classlbann_1_1SystemParams_aa4f76625da59edc74b6d9208cb60a3db}{NumCores}(-1), 
+      \hyperlink{classlbann_1_1SystemParams_a93758103d73bcd95146f99464203aa86}{TasksPerNode}(-1) \{\}
+\end{DoxyCode}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1SystemParams_a730176df36a262f7ef141afda372488d}\label{classlbann_1_1SystemParams_a730176df36a262f7ef141afda372488d}} 
+\index{lbann\+::\+System\+Params@{lbann\+::\+System\+Params}!parse\+\_\+params@{parse\+\_\+params}}
+\index{parse\+\_\+params@{parse\+\_\+params}!lbann\+::\+System\+Params@{lbann\+::\+System\+Params}}
+\subsubsection{\texorpdfstring{parse\+\_\+params()}{parse\_params()}}
+{\footnotesize\ttfamily void lbann\+::\+System\+Params\+::parse\+\_\+params (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Parse command-\/line arguments. 
+
+
+
+Definition at line 130 of file params.\+cpp.
+
+
+\begin{DoxyCode}
+130                                      \{
+131   \hyperlink{classlbann_1_1SystemParams_a4aa517715ee0a454ee7ca2cc23fe30ee}{HostName} = El::Input(\textcolor{stringliteral}{"--hostname"}, \textcolor{stringliteral}{"HPC hostname"}, \hyperlink{classlbann_1_1SystemParams_a4aa517715ee0a454ee7ca2cc23fe30ee}{HostName});
+132   \hyperlink{classlbann_1_1SystemParams_ad63e9fea31313d45d13298e35b47982a}{NumNodes} = El::Input(\textcolor{stringliteral}{"--num-nodes"}, \textcolor{stringliteral}{"Total allocation size"}, \hyperlink{classlbann_1_1SystemParams_ad63e9fea31313d45d13298e35b47982a}{NumNodes});
+133   \hyperlink{classlbann_1_1SystemParams_aa4f76625da59edc74b6d9208cb60a3db}{NumCores} = El::Input(\textcolor{stringliteral}{"--num-cores"}, \textcolor{stringliteral}{"Number of cores per node"}, 
+      \hyperlink{classlbann_1_1SystemParams_aa4f76625da59edc74b6d9208cb60a3db}{NumCores});
+134   \hyperlink{classlbann_1_1SystemParams_a93758103d73bcd95146f99464203aa86}{TasksPerNode} = El::Input(\textcolor{stringliteral}{"--tasks-per-node"}, \textcolor{stringliteral}{"MPI Tasks allowed per node"}, 
+      \hyperlink{classlbann_1_1SystemParams_a93758103d73bcd95146f99464203aa86}{TasksPerNode});
+135 \}
+\end{DoxyCode}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1SystemParams_a4aa517715ee0a454ee7ca2cc23fe30ee}\label{classlbann_1_1SystemParams_a4aa517715ee0a454ee7ca2cc23fe30ee}} 
+\index{lbann\+::\+System\+Params@{lbann\+::\+System\+Params}!Host\+Name@{Host\+Name}}
+\index{Host\+Name@{Host\+Name}!lbann\+::\+System\+Params@{lbann\+::\+System\+Params}}
+\subsubsection{\texorpdfstring{Host\+Name}{HostName}}
+{\footnotesize\ttfamily std\+::string lbann\+::\+System\+Params\+::\+Host\+Name}
+
+
+
+H\+PC hostname. 
+
+
+
+Definition at line 178 of file params.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1SystemParams_aa4f76625da59edc74b6d9208cb60a3db}\label{classlbann_1_1SystemParams_aa4f76625da59edc74b6d9208cb60a3db}} 
+\index{lbann\+::\+System\+Params@{lbann\+::\+System\+Params}!Num\+Cores@{Num\+Cores}}
+\index{Num\+Cores@{Num\+Cores}!lbann\+::\+System\+Params@{lbann\+::\+System\+Params}}
+\subsubsection{\texorpdfstring{Num\+Cores}{NumCores}}
+{\footnotesize\ttfamily int lbann\+::\+System\+Params\+::\+Num\+Cores}
+
+
+
+Number of cores per node. 
+
+
+
+Definition at line 182 of file params.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1SystemParams_ad63e9fea31313d45d13298e35b47982a}\label{classlbann_1_1SystemParams_ad63e9fea31313d45d13298e35b47982a}} 
+\index{lbann\+::\+System\+Params@{lbann\+::\+System\+Params}!Num\+Nodes@{Num\+Nodes}}
+\index{Num\+Nodes@{Num\+Nodes}!lbann\+::\+System\+Params@{lbann\+::\+System\+Params}}
+\subsubsection{\texorpdfstring{Num\+Nodes}{NumNodes}}
+{\footnotesize\ttfamily int lbann\+::\+System\+Params\+::\+Num\+Nodes}
+
+
+
+Total allocation size. 
+
+
+
+Definition at line 180 of file params.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1SystemParams_a93758103d73bcd95146f99464203aa86}\label{classlbann_1_1SystemParams_a93758103d73bcd95146f99464203aa86}} 
+\index{lbann\+::\+System\+Params@{lbann\+::\+System\+Params}!Tasks\+Per\+Node@{Tasks\+Per\+Node}}
+\index{Tasks\+Per\+Node@{Tasks\+Per\+Node}!lbann\+::\+System\+Params@{lbann\+::\+System\+Params}}
+\subsubsection{\texorpdfstring{Tasks\+Per\+Node}{TasksPerNode}}
+{\footnotesize\ttfamily int lbann\+::\+System\+Params\+::\+Tasks\+Per\+Node}
+
+
+
+M\+PI tasks allowed per node. 
+
+
+
+Definition at line 184 of file params.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/\hyperlink{params_8hpp}{params.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/\hyperlink{params_8cpp}{params.\+cpp}\end{DoxyCompactItemize}

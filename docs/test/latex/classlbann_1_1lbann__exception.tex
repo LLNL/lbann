@@ -1,0 +1,130 @@
+\hypertarget{classlbann_1_1lbann__exception}{}\section{lbann\+:\+:lbann\+\_\+exception Class Reference}
+\label{classlbann_1_1lbann__exception}\index{lbann\+::lbann\+\_\+exception@{lbann\+::lbann\+\_\+exception}}
+
+
+{\ttfamily \#include $<$exception.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:lbann\+\_\+exception\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=199pt]{classlbann_1_1lbann__exception__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:lbann\+\_\+exception\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=199pt]{classlbann_1_1lbann__exception__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1lbann__exception_adbbe5260b3e3bd951ed2cb9363040f4a}{lbann\+\_\+exception} (const std\+::string m=\char`\"{}my custom exception\char`\"{})
+\item 
+\hyperlink{classlbann_1_1lbann__exception_aac6b1cde216d2ba2d5becc11c17dfb2e}{$\sim$lbann\+\_\+exception} () override
+\item 
+const char $\ast$ \hyperlink{classlbann_1_1lbann__exception_ad36592ddd0ff6a24f31ec6a31b83e920}{what} () const noexcept override
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+std\+::string \hyperlink{classlbann_1_1lbann__exception_a8698ff209b53c8452b5ca1d0caf7b824}{msg}
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+
+
+Definition at line 40 of file exception.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__exception_adbbe5260b3e3bd951ed2cb9363040f4a}\label{classlbann_1_1lbann__exception_adbbe5260b3e3bd951ed2cb9363040f4a}} 
+\index{lbann\+::lbann\+\_\+exception@{lbann\+::lbann\+\_\+exception}!lbann\+\_\+exception@{lbann\+\_\+exception}}
+\index{lbann\+\_\+exception@{lbann\+\_\+exception}!lbann\+::lbann\+\_\+exception@{lbann\+::lbann\+\_\+exception}}
+\subsubsection{\texorpdfstring{lbann\+\_\+exception()}{lbann\_exception()}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+exception\+::lbann\+\_\+exception (\begin{DoxyParamCaption}\item[{const std\+::string}]{m = {\ttfamily \char`\"{}my~custom~exception\char`\"{}} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 42 of file exception.\+hpp.
+
+
+\begin{DoxyCode}
+42                                                           :\hyperlink{classlbann_1_1lbann__exception_a8698ff209b53c8452b5ca1d0caf7b824}{msg}(m) \{ 
+43     \hyperlink{namespacelbann_1_1stack__trace_ae7396b3b0ee5d087a045f04ce690cae4}{stack\_trace::print\_lbann\_exception\_stack\_trace}(
+      \hyperlink{classlbann_1_1lbann__exception_a8698ff209b53c8452b5ca1d0caf7b824}{msg});
+44   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__exception_adbbe5260b3e3bd951ed2cb9363040f4a_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__exception_aac6b1cde216d2ba2d5becc11c17dfb2e}\label{classlbann_1_1lbann__exception_aac6b1cde216d2ba2d5becc11c17dfb2e}} 
+\index{lbann\+::lbann\+\_\+exception@{lbann\+::lbann\+\_\+exception}!````~lbann\+\_\+exception@{$\sim$lbann\+\_\+exception}}
+\index{````~lbann\+\_\+exception@{$\sim$lbann\+\_\+exception}!lbann\+::lbann\+\_\+exception@{lbann\+::lbann\+\_\+exception}}
+\subsubsection{\texorpdfstring{$\sim$lbann\+\_\+exception()}{~lbann\_exception()}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+exception\+::$\sim$lbann\+\_\+exception (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}}
+
+
+
+Definition at line 46 of file exception.\+hpp.
+
+
+\begin{DoxyCode}
+46 \{\}
+\end{DoxyCode}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__exception_ad36592ddd0ff6a24f31ec6a31b83e920}\label{classlbann_1_1lbann__exception_ad36592ddd0ff6a24f31ec6a31b83e920}} 
+\index{lbann\+::lbann\+\_\+exception@{lbann\+::lbann\+\_\+exception}!what@{what}}
+\index{what@{what}!lbann\+::lbann\+\_\+exception@{lbann\+::lbann\+\_\+exception}}
+\subsubsection{\texorpdfstring{what()}{what()}}
+{\footnotesize\ttfamily const char$\ast$ lbann\+::lbann\+\_\+exception\+::what (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [noexcept]}}
+
+
+
+Definition at line 47 of file exception.\+hpp.
+
+
+\begin{DoxyCode}
+47                                              \{
+48     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1lbann__exception_a8698ff209b53c8452b5ca1d0caf7b824}{msg}.c\_str();
+49   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__exception_ad36592ddd0ff6a24f31ec6a31b83e920_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__exception_a8698ff209b53c8452b5ca1d0caf7b824}\label{classlbann_1_1lbann__exception_a8698ff209b53c8452b5ca1d0caf7b824}} 
+\index{lbann\+::lbann\+\_\+exception@{lbann\+::lbann\+\_\+exception}!msg@{msg}}
+\index{msg@{msg}!lbann\+::lbann\+\_\+exception@{lbann\+::lbann\+\_\+exception}}
+\subsubsection{\texorpdfstring{msg}{msg}}
+{\footnotesize\ttfamily std\+::string lbann\+::lbann\+\_\+exception\+::msg\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Definition at line 52 of file exception.\+hpp.
+
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/utils/\hyperlink{exception_8hpp}{exception.\+hpp}\end{DoxyCompactItemize}

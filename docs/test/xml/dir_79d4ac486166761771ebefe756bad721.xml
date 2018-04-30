@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="dir_79d4ac486166761771ebefe756bad721" kind="dir">
+    <compoundname>/Users/mckinney27/doxy-testbed/lbann/src/proto</compoundname>
+    <innerdir refid="dir_ddc5cc91ec8bac76aa28ce31158f2cab">/Users/mckinney27/doxy-testbed/lbann/src/proto/factories</innerdir>
+    <innerfile refid="init__image__data__readers_8cpp">init_image_data_readers.cpp</innerfile>
+    <innerfile refid="proto__common_8cpp">proto_common.cpp</innerfile>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/src/proto/"/>
+  </compounddef>
+</doxygen>

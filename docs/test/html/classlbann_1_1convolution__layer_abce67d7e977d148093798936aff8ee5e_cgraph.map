@@ -1,0 +1,12 @@
+<map id="lbann::convolution_layer::get_description" name="lbann::convolution_layer::get_description">
+<area shape="rect" id="node2" href="$classlbann_1_1convolution__layer.html#a5af5bb8b7fb68ed4e5085be676788eed" title="lbann::convolution\l_layer::get_topo_description" alt="" coords="209,92,398,131"/>
+<area shape="rect" id="node10" href="$classlbann_1_1Layer.html#ae3f4a5602df821f4221614b1e3782dc1" title="lbann::Layer::get_data\l_layout_string" alt="" coords="226,155,380,193"/>
+<area shape="rect" id="node11" href="$classlbann_1_1convolution__layer.html#a496e4bc7465269961603aba305700b84" title="lbann::convolution\l_layer::get_data_layout" alt="" coords="223,217,383,256"/>
+<area shape="rect" id="node3" href="$classlbann_1_1Layer.html#a147a7f7dcf0027a60f10109439e5dcea" title="lbann::Layer::get_topo\l_description" alt="" coords="446,92,600,131"/>
+<area shape="rect" id="node4" href="$classlbann_1_1Layer.html#a1409a117c31a7ea4f2c7a4d22a3e86c3" title="lbann::Layer::get_num\l_children" alt="" coords="673,36,827,75"/>
+<area shape="rect" id="node8" href="$classlbann_1_1Layer.html#a54f53393fadbfdc73b4e72489c868433" title="lbann::Layer::get_neuron_dims" alt="" coords="648,99,853,124"/>
+<area shape="rect" id="node9" href="$classlbann_1_1Layer.html#a1134b1a4385af199d7272c5aa827fa99" title="lbann::Layer::get_activations" alt="" coords="655,172,846,197"/>
+<area shape="rect" id="node5" href="$classlbann_1_1Layer.html#aa0058c8ec4913efc3e4de5d6f61eb8db" title="lbann::Layer::get_child\l_layers" alt="" coords="902,5,1057,44"/>
+<area shape="rect" id="node6" href="$classlbann_1_1Layer.html#af4a093d91552cf079217eb346bbb847f" title="lbann::Layer::get_layer\l_names" alt="" coords="901,68,1058,107"/>
+<area shape="rect" id="node7" href="$classlbann_1_1Layer.html#a80027550202fa7dbb1dd55fa8a66c84b" title="lbann::Layer::get_name" alt="" coords="1106,75,1267,100"/>
+</map>

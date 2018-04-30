@@ -1,0 +1,1096 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1lbann__image__preprocessor" kind="class" language="C++" prot="public">
+    <compoundname>lbann::lbann_image_preprocessor</compoundname>
+    <derivedcompoundref refid="classlbann_1_1generic__data__reader" prot="public" virt="non-virtual">lbann::generic_data_reader</derivedcompoundref>
+    <includes refid="image__preprocessor_8hpp" local="no">image_preprocessor.hpp</includes>
+      <sectiondef kind="protected-attrib">
+      <memberdef kind="variable" id="classlbann_1_1lbann__image__preprocessor_1a032397d6c642dccd43f4c38393f5d2c1" prot="protected" static="no" mutable="no">
+        <type>bool</type>
+        <definition>bool lbann::lbann_image_preprocessor::m_horizontal_flip</definition>
+        <argsstring></argsstring>
+        <name>m_horizontal_flip</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Whether to do horizontal flips. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="154" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" bodystart="154" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1a4ba2de0a781dfa0a2652ad4d777a241f" compoundref="image__preprocessor_8hpp" startline="64" endline="66">horizontal_flip</referencedby>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1a27cb5182c4f764cbfa4edecbb78ef29d" compoundref="image__preprocessor_8cpp" startline="55" endline="131">augment</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1lbann__image__preprocessor_1a7cfc687cce450403c7b46460f4d08d69" prot="protected" static="no" mutable="no">
+        <type>bool</type>
+        <definition>bool lbann::lbann_image_preprocessor::m_vertical_flip</definition>
+        <argsstring></argsstring>
+        <name>m_vertical_flip</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Whether to do vertical flips. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="156" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" bodystart="156" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1aeb7d75e4d3361ae2836afabc14510d74" compoundref="image__preprocessor_8hpp" startline="68" endline="70">vertical_flip</referencedby>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1a27cb5182c4f764cbfa4edecbb78ef29d" compoundref="image__preprocessor_8cpp" startline="55" endline="131">augment</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1lbann__image__preprocessor_1a7518ae40fe38862c831832fdaf948d45" prot="protected" static="no" mutable="no">
+        <type>float</type>
+        <definition>float lbann::lbann_image_preprocessor::m_rotation_range</definition>
+        <argsstring></argsstring>
+        <name>m_rotation_range</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Range in degrees for rotations (0-180). </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="158" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" bodystart="158" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1a1a293733368dd9eceba3e99cf9e5ae24" compoundref="image__preprocessor_8hpp" startline="72" endline="74">rotation</referencedby>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1a27cb5182c4f764cbfa4edecbb78ef29d" compoundref="image__preprocessor_8cpp" startline="55" endline="131">augment</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1lbann__image__preprocessor_1a636f59ffe470f996677601df6179bc41" prot="protected" static="no" mutable="no">
+        <type>float</type>
+        <definition>float lbann::lbann_image_preprocessor::m_horizontal_shift</definition>
+        <argsstring></argsstring>
+        <name>m_horizontal_shift</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Range (fraction of total width) for horizontal shifts. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="160" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" bodystart="160" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1ae62596b4af5d1940aa0499cde2bdd005" compoundref="image__preprocessor_8hpp" startline="76" endline="78">horizontal_shift</referencedby>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1a27cb5182c4f764cbfa4edecbb78ef29d" compoundref="image__preprocessor_8cpp" startline="55" endline="131">augment</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1lbann__image__preprocessor_1a06158637d634a4d123ee5501ddd0c7cb" prot="protected" static="no" mutable="no">
+        <type>float</type>
+        <definition>float lbann::lbann_image_preprocessor::m_vertical_shift</definition>
+        <argsstring></argsstring>
+        <name>m_vertical_shift</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Range (fraction of total height) for vertical shifts. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="162" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" bodystart="162" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1a50ac63e1f6b1b9806cbf6c06f53f4aca" compoundref="image__preprocessor_8hpp" startline="80" endline="82">vertical_shift</referencedby>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1a27cb5182c4f764cbfa4edecbb78ef29d" compoundref="image__preprocessor_8cpp" startline="55" endline="131">augment</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1lbann__image__preprocessor_1a237ead6488b2c04e982fd10510ae03b4" prot="protected" static="no" mutable="no">
+        <type>float</type>
+        <definition>float lbann::lbann_image_preprocessor::m_shear_range</definition>
+        <argsstring></argsstring>
+        <name>m_shear_range</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Shear angle (radians). </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="164" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" bodystart="164" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1aef1e2375fd518e69df800b0dcbcb37d0" compoundref="image__preprocessor_8hpp" startline="84" endline="86">shear_range</referencedby>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1a27cb5182c4f764cbfa4edecbb78ef29d" compoundref="image__preprocessor_8cpp" startline="55" endline="131">augment</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1lbann__image__preprocessor_1a734002307d0ef95a31d75a295fa5c3d1" prot="protected" static="no" mutable="no">
+        <type>bool</type>
+        <definition>bool lbann::lbann_image_preprocessor::m_mean_subtraction</definition>
+        <argsstring></argsstring>
+        <name>m_mean_subtraction</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Whether to normalize to 0 mean. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="166" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" bodystart="166" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1afa470b696ba435c20050187a0232717d" compoundref="image__preprocessor_8hpp" startline="88" endline="90">subtract_mean</referencedby>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1ae370cdc9f776ce8cce94a45cacf47425" compoundref="image__preprocessor_8cpp" startline="133" endline="147">normalize</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1lbann__image__preprocessor_1ae365a9e20f060b44de7835aceceb491c" prot="protected" static="no" mutable="no">
+        <type>bool</type>
+        <definition>bool lbann::lbann_image_preprocessor::m_unit_variance</definition>
+        <argsstring></argsstring>
+        <name>m_unit_variance</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Whether to normalize to unit variance. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="168" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" bodystart="168" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1a05c4cb5cb842df5d46eebe15c6ea9de3" compoundref="image__preprocessor_8hpp" startline="92" endline="94">unit_variance</referencedby>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1ae370cdc9f776ce8cce94a45cacf47425" compoundref="image__preprocessor_8cpp" startline="133" endline="147">normalize</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1lbann__image__preprocessor_1ae00af83d438ab27d6a7b996775fba3b3" prot="protected" static="no" mutable="no">
+        <type>bool</type>
+        <definition>bool lbann::lbann_image_preprocessor::m_scale</definition>
+        <argsstring></argsstring>
+        <name>m_scale</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Whether to scale to [0, 1]. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="170" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" bodystart="170" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1a977b2fdd417acb1eb37dbea0cfdd4b60" compoundref="image__preprocessor_8hpp" startline="96" endline="98">scale</referencedby>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1ae370cdc9f776ce8cce94a45cacf47425" compoundref="image__preprocessor_8cpp" startline="133" endline="147">normalize</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1lbann__image__preprocessor_1a6abe54ada0cacf23e8ac8b6d113bd26b" prot="protected" static="no" mutable="no">
+        <type>bool</type>
+        <definition>bool lbann::lbann_image_preprocessor::m_z_score</definition>
+        <argsstring></argsstring>
+        <name>m_z_score</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Whether to normalize via z-score. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="172" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" bodystart="172" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1a02cfd4d8c26a317540b587eb52cef0d5" compoundref="image__preprocessor_8hpp" startline="103" endline="105">z_score</referencedby>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1ae370cdc9f776ce8cce94a45cacf47425" compoundref="image__preprocessor_8cpp" startline="133" endline="147">normalize</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1lbann__image__preprocessor_1af860c1d78af06e4ae94ad68e3032fe92" prot="protected" static="no" mutable="no">
+        <type>float</type>
+        <definition>float lbann::lbann_image_preprocessor::m_noise_factor</definition>
+        <argsstring></argsstring>
+        <name>m_noise_factor</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="174" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" bodystart="174" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1a1726baf71e931108dc9192539e90c583" compoundref="image__preprocessor_8hpp" startline="121" endline="123">add_noise</referencedby>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1aece5b572d0a2fe123cc66412d7a5c91e" compoundref="image__preprocessor_8cpp" startline="199" endline="211">pixel_noise</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1lbann__image__preprocessor_1a6a0f92194d42e87d73b57ba0929e2b2d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::lbann_image_preprocessor::lbann_image_preprocessor</definition>
+        <argsstring>()</argsstring>
+        <name>lbann_image_preprocessor</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="57" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/image_preprocessor.cpp" bodystart="41" bodyend="53"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__image__preprocessor_1aeeca5696dbfde9ccb1112cbd8524940b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::lbann_image_preprocessor::lbann_image_preprocessor</definition>
+        <argsstring>(const lbann_image_preprocessor &amp;)=default</argsstring>
+        <name>lbann_image_preprocessor</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1lbann__image__preprocessor" kindref="compound">lbann_image_preprocessor</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="58" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__image__preprocessor_1af652494123a62e653cd7dc2d7c340219" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classlbann_1_1lbann__image__preprocessor" kindref="compound">lbann_image_preprocessor</ref> &amp;</type>
+        <definition>lbann_image_preprocessor&amp; lbann::lbann_image_preprocessor::operator=</definition>
+        <argsstring>(const lbann_image_preprocessor &amp;)=default</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1lbann__image__preprocessor" kindref="compound">lbann_image_preprocessor</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="59" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__image__preprocessor_1aaabfad8d6923680cf4943f6f5290c682" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type></type>
+        <definition>virtual lbann::lbann_image_preprocessor::~lbann_image_preprocessor</definition>
+        <argsstring>()</argsstring>
+        <name>~lbann_image_preprocessor</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="61" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" bodystart="61" bodyend="61"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__image__preprocessor_1a4ba2de0a781dfa0a2652ad4d777a241f" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_image_preprocessor::horizontal_flip</definition>
+        <argsstring>(bool b)</argsstring>
+        <name>horizontal_flip</name>
+        <param>
+          <type>bool</type>
+          <declname>b</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Whether to do random horizontal flips. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="64" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" bodystart="64" bodyend="66"/>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1a032397d6c642dccd43f4c38393f5d2c1" compoundref="image__preprocessor_8hpp" startline="154">m_horizontal_flip</references>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1a871cb543ee6c132a76e16045a1a2a9f3" compoundref="image__preprocessor_8hpp" startline="107" endline="114">disable_augmentation</referencedby>
+        <referencedby refid="init__image__data__readers_8hpp_1ac021d06bfe6825ec586927661254a546" compoundref="init__image__data__readers_8cpp" startline="334" endline="410">init_generic_preprocessor</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__image__preprocessor_1aeb7d75e4d3361ae2836afabc14510d74" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_image_preprocessor::vertical_flip</definition>
+        <argsstring>(bool b)</argsstring>
+        <name>vertical_flip</name>
+        <param>
+          <type>bool</type>
+          <declname>b</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Whether to do random vertical flips. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="68" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" bodystart="68" bodyend="70"/>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1a7cfc687cce450403c7b46460f4d08d69" compoundref="image__preprocessor_8hpp" startline="156">m_vertical_flip</references>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1a871cb543ee6c132a76e16045a1a2a9f3" compoundref="image__preprocessor_8hpp" startline="107" endline="114">disable_augmentation</referencedby>
+        <referencedby refid="init__image__data__readers_8hpp_1ac021d06bfe6825ec586927661254a546" compoundref="init__image__data__readers_8cpp" startline="334" endline="410">init_generic_preprocessor</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__image__preprocessor_1a1a293733368dd9eceba3e99cf9e5ae24" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_image_preprocessor::rotation</definition>
+        <argsstring>(float range)</argsstring>
+        <name>rotation</name>
+        <param>
+          <type>float</type>
+          <declname>range</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Do random rotations up to range degrees (0-180). </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="72" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" bodystart="72" bodyend="74"/>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1a7518ae40fe38862c831832fdaf948d45" compoundref="image__preprocessor_8hpp" startline="158">m_rotation_range</references>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1a871cb543ee6c132a76e16045a1a2a9f3" compoundref="image__preprocessor_8hpp" startline="107" endline="114">disable_augmentation</referencedby>
+        <referencedby refid="init__image__data__readers_8hpp_1ac021d06bfe6825ec586927661254a546" compoundref="init__image__data__readers_8cpp" startline="334" endline="410">init_generic_preprocessor</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__image__preprocessor_1ae62596b4af5d1940aa0499cde2bdd005" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_image_preprocessor::horizontal_shift</definition>
+        <argsstring>(float range)</argsstring>
+        <name>horizontal_shift</name>
+        <param>
+          <type>float</type>
+          <declname>range</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Do random horizontal shifts up to range (fraction of image width). </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="76" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" bodystart="76" bodyend="78"/>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1a636f59ffe470f996677601df6179bc41" compoundref="image__preprocessor_8hpp" startline="160">m_horizontal_shift</references>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1a871cb543ee6c132a76e16045a1a2a9f3" compoundref="image__preprocessor_8hpp" startline="107" endline="114">disable_augmentation</referencedby>
+        <referencedby refid="init__image__data__readers_8hpp_1ac021d06bfe6825ec586927661254a546" compoundref="init__image__data__readers_8cpp" startline="334" endline="410">init_generic_preprocessor</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__image__preprocessor_1a50ac63e1f6b1b9806cbf6c06f53f4aca" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_image_preprocessor::vertical_shift</definition>
+        <argsstring>(float range)</argsstring>
+        <name>vertical_shift</name>
+        <param>
+          <type>float</type>
+          <declname>range</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Do random vertical shifts up to range (fraction of image height). </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="80" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" bodystart="80" bodyend="82"/>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1a06158637d634a4d123ee5501ddd0c7cb" compoundref="image__preprocessor_8hpp" startline="162">m_vertical_shift</references>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1a871cb543ee6c132a76e16045a1a2a9f3" compoundref="image__preprocessor_8hpp" startline="107" endline="114">disable_augmentation</referencedby>
+        <referencedby refid="init__image__data__readers_8hpp_1ac021d06bfe6825ec586927661254a546" compoundref="init__image__data__readers_8cpp" startline="334" endline="410">init_generic_preprocessor</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__image__preprocessor_1aef1e2375fd518e69df800b0dcbcb37d0" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_image_preprocessor::shear_range</definition>
+        <argsstring>(float range)</argsstring>
+        <name>shear_range</name>
+        <param>
+          <type>float</type>
+          <declname>range</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Do random shears up to range (radians). </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="84" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" bodystart="84" bodyend="86"/>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1a237ead6488b2c04e982fd10510ae03b4" compoundref="image__preprocessor_8hpp" startline="164">m_shear_range</references>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1a871cb543ee6c132a76e16045a1a2a9f3" compoundref="image__preprocessor_8hpp" startline="107" endline="114">disable_augmentation</referencedby>
+        <referencedby refid="init__image__data__readers_8hpp_1ac021d06bfe6825ec586927661254a546" compoundref="init__image__data__readers_8cpp" startline="334" endline="410">init_generic_preprocessor</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__image__preprocessor_1afa470b696ba435c20050187a0232717d" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_image_preprocessor::subtract_mean</definition>
+        <argsstring>(bool b)</argsstring>
+        <name>subtract_mean</name>
+        <param>
+          <type>bool</type>
+          <declname>b</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Whether to subtract the sample-wise mean. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="88" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" bodystart="88" bodyend="90"/>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1a734002307d0ef95a31d75a295fa5c3d1" compoundref="image__preprocessor_8hpp" startline="166">m_mean_subtraction</references>
+        <referencedby refid="init__image__data__readers_8hpp_1ac021d06bfe6825ec586927661254a546" compoundref="init__image__data__readers_8cpp" startline="334" endline="410">init_generic_preprocessor</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__image__preprocessor_1a05c4cb5cb842df5d46eebe15c6ea9de3" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_image_preprocessor::unit_variance</definition>
+        <argsstring>(bool b)</argsstring>
+        <name>unit_variance</name>
+        <param>
+          <type>bool</type>
+          <declname>b</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Whether to normalize to unit variance, sample-wise. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="92" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" bodystart="92" bodyend="94"/>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1ae365a9e20f060b44de7835aceceb491c" compoundref="image__preprocessor_8hpp" startline="168">m_unit_variance</references>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1ae370cdc9f776ce8cce94a45cacf47425" compoundref="image__preprocessor_8cpp" startline="133" endline="147">normalize</referencedby>
+        <referencedby refid="init__image__data__readers_8hpp_1ac021d06bfe6825ec586927661254a546" compoundref="init__image__data__readers_8cpp" startline="334" endline="410">init_generic_preprocessor</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__image__preprocessor_1a977b2fdd417acb1eb37dbea0cfdd4b60" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_image_preprocessor::scale</definition>
+        <argsstring>(bool b)</argsstring>
+        <name>scale</name>
+        <param>
+          <type>bool</type>
+          <declname>b</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Whether to scale to [0, 1] (assumes max value is 255). </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="96" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" bodystart="96" bodyend="98"/>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1ae00af83d438ab27d6a7b996775fba3b3" compoundref="image__preprocessor_8hpp" startline="170">m_scale</references>
+        <referencedby refid="init__image__data__readers_8hpp_1ac021d06bfe6825ec586927661254a546" compoundref="init__image__data__readers_8cpp" startline="334" endline="410">init_generic_preprocessor</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__image__preprocessor_1a02cfd4d8c26a317540b587eb52cef0d5" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_image_preprocessor::z_score</definition>
+        <argsstring>(bool b)</argsstring>
+        <name>z_score</name>
+        <param>
+          <type>bool</type>
+          <declname>b</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Whether to normalize by z-scores, sample-wise. This and mean subtraction/unit variance are mutually exclusive. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="103" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" bodystart="103" bodyend="105"/>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1a6abe54ada0cacf23e8ac8b6d113bd26b" compoundref="image__preprocessor_8hpp" startline="172">m_z_score</references>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1ae370cdc9f776ce8cce94a45cacf47425" compoundref="image__preprocessor_8cpp" startline="133" endline="147">normalize</referencedby>
+        <referencedby refid="init__image__data__readers_8hpp_1ac021d06bfe6825ec586927661254a546" compoundref="init__image__data__readers_8cpp" startline="334" endline="410">init_generic_preprocessor</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__image__preprocessor_1a871cb543ee6c132a76e16045a1a2a9f3" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_image_preprocessor::disable_augmentation</definition>
+        <argsstring>()</argsstring>
+        <name>disable_augmentation</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Disable all data augmentation. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="107" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" bodystart="107" bodyend="114"/>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1a4ba2de0a781dfa0a2652ad4d777a241f" compoundref="image__preprocessor_8hpp" startline="64" endline="66">horizontal_flip</references>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1aeb7d75e4d3361ae2836afabc14510d74" compoundref="image__preprocessor_8hpp" startline="68" endline="70">vertical_flip</references>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1a1a293733368dd9eceba3e99cf9e5ae24" compoundref="image__preprocessor_8hpp" startline="72" endline="74">rotation</references>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1ae62596b4af5d1940aa0499cde2bdd005" compoundref="image__preprocessor_8hpp" startline="76" endline="78">horizontal_shift</references>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1a50ac63e1f6b1b9806cbf6c06f53f4aca" compoundref="image__preprocessor_8hpp" startline="80" endline="82">vertical_shift</references>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1aef1e2375fd518e69df800b0dcbcb37d0" compoundref="image__preprocessor_8hpp" startline="84" endline="86">shear_range</references>
+        <referencedby refid="init__image__data__readers_8hpp_1ac021d06bfe6825ec586927661254a546" compoundref="init__image__data__readers_8cpp" startline="334" endline="410">init_generic_preprocessor</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__image__preprocessor_1a1726baf71e931108dc9192539e90c583" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_image_preprocessor::add_noise</definition>
+        <argsstring>(float noise_factor=0.0f)</argsstring>
+        <name>add_noise</name>
+        <param>
+          <type>float</type>
+          <declname>noise_factor</declname>
+          <defval>0.0f</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Add noise to data (disable by default) noise_factor control the ammount of noise to be set to a value above zero but less than 1 (say 0.5) </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="121" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" bodystart="121" bodyend="123"/>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1af860c1d78af06e4ae94ad68e3032fe92" compoundref="image__preprocessor_8hpp" startline="174">m_noise_factor</references>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1a27cb5182c4f764cbfa4edecbb78ef29d" compoundref="image__preprocessor_8cpp" startline="55" endline="131">augment</references>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1ae370cdc9f776ce8cce94a45cacf47425" compoundref="image__preprocessor_8cpp" startline="133" endline="147">normalize</references>
+        <referencedby refid="init__image__data__readers_8hpp_1ac021d06bfe6825ec586927661254a546" compoundref="init__image__data__readers_8cpp" startline="334" endline="410">init_generic_preprocessor</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__image__preprocessor_1a27cb5182c4f764cbfa4edecbb78ef29d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_image_preprocessor::augment</definition>
+        <argsstring>(Mat &amp;pixels, unsigned imheight, unsigned imwidth, unsigned num_channels)</argsstring>
+        <name>augment</name>
+        <param>
+          <type><ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref> &amp;</type>
+          <declname>pixels</declname>
+        </param>
+        <param>
+          <type>unsigned</type>
+          <declname>imheight</declname>
+        </param>
+        <param>
+          <type>unsigned</type>
+          <declname>imwidth</declname>
+        </param>
+        <param>
+          <type>unsigned</type>
+          <declname>num_channels</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Preprocess pixels according to the currently-set augmentation transforms. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>pixels</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The pixels to process as a column vector (num x 1 mat). </para></parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>imheight</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Height of the image in pixels. </para></parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>imwidth</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Width of the image in pixels. </para></parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>num_channels</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The number of channels pixels has. </para></parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="132" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/image_preprocessor.cpp" bodystart="55" bodyend="131"/>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1a032397d6c642dccd43f4c38393f5d2c1" compoundref="image__preprocessor_8hpp" startline="154">m_horizontal_flip</references>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1a7cfc687cce450403c7b46460f4d08d69" compoundref="image__preprocessor_8hpp" startline="156">m_vertical_flip</references>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1a7518ae40fe38862c831832fdaf948d45" compoundref="image__preprocessor_8hpp" startline="158">m_rotation_range</references>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1a636f59ffe470f996677601df6179bc41" compoundref="image__preprocessor_8hpp" startline="160">m_horizontal_shift</references>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1a06158637d634a4d123ee5501ddd0c7cb" compoundref="image__preprocessor_8hpp" startline="162">m_vertical_shift</references>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1a237ead6488b2c04e982fd10510ae03b4" compoundref="image__preprocessor_8hpp" startline="164">m_shear_range</references>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1a7dc609e33febdc7fc29bdc9270594bea" compoundref="image__preprocessor_8cpp" startline="240" endline="270">cv_pixels</references>
+        <references refid="namespacelbann_1a4fea7ba21017b49d1e34394b4c20c764" compoundref="random_8cpp" startline="60" endline="62">lbann::get_generator</references>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1a12d9f7056a5e68185ea0e85e14c17bcf" compoundref="image__preprocessor_8cpp" startline="299" endline="303">flip</references>
+        <references refid="namespaceanonymous__namespace_02image__preprocessor_8cpp_03_1a9624405339d16214b745f28f39979c6d" compoundref="image__preprocessor_8cpp" startline="36">anonymous_namespace{image_preprocessor.cpp}::pi</references>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1adb9e017aeac52a9b5d392f17188d1057" compoundref="image__preprocessor_8cpp" startline="305" endline="318">affine_trans</references>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1a3e99be32b95a415fd8d616cb85075df1" compoundref="image__preprocessor_8cpp" startline="272" endline="297">col_pixels</references>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1a1726baf71e931108dc9192539e90c583" compoundref="image__preprocessor_8hpp" startline="121" endline="123">add_noise</referencedby>
+        <referencedby refid="classlbann_1_1cifar10__reader_1a590c672731bbdcb6e7fd8fd300d004d5" compoundref="data__reader__cifar10_8cpp" startline="94" endline="104">lbann::cifar10_reader::fetch_datum</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__org_1ad4c47413e16c1c53000b7d7be757ff6e" compoundref="data__reader__imagenet__org_8cpp" startline="63" endline="90">lbann::imagenet_reader_org::fetch_datum</referencedby>
+        <referencedby refid="classlbann_1_1mnist__reader_1af257b58b61ae9f3f623f1cb5d18c4841" compoundref="data__reader__mnist_8cpp" startline="51" endline="64">lbann::mnist_reader::fetch_datum</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__image__preprocessor_1ae370cdc9f776ce8cce94a45cacf47425" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_image_preprocessor::normalize</definition>
+        <argsstring>(Mat &amp;pixels, unsigned num_channels)</argsstring>
+        <name>normalize</name>
+        <param>
+          <type><ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref> &amp;</type>
+          <declname>pixels</declname>
+        </param>
+        <param>
+          <type>unsigned</type>
+          <declname>num_channels</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Normalize poxels according to the currently-set transforms. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>pixels</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The pixels to process as a column vector. </para></parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>num_channels</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The number of channels pixels has. </para></parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="139" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/image_preprocessor.cpp" bodystart="133" bodyend="147"/>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1a6abe54ada0cacf23e8ac8b6d113bd26b" compoundref="image__preprocessor_8hpp" startline="172">m_z_score</references>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1a734002307d0ef95a31d75a295fa5c3d1" compoundref="image__preprocessor_8hpp" startline="166">m_mean_subtraction</references>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1ae365a9e20f060b44de7835aceceb491c" compoundref="image__preprocessor_8hpp" startline="168">m_unit_variance</references>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1a02cfd4d8c26a317540b587eb52cef0d5" compoundref="image__preprocessor_8hpp" startline="103" endline="105">z_score</references>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1ae00af83d438ab27d6a7b996775fba3b3" compoundref="image__preprocessor_8hpp" startline="170">m_scale</references>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1aa7a8926d0544100f7d3caa9289d94826" compoundref="image__preprocessor_8cpp" startline="191" endline="196">unit_scale</references>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1ab499dd9f11d98998b5902d639f70fa8e" compoundref="image__preprocessor_8cpp" startline="149" endline="164">mean_subtraction</references>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1a05c4cb5cb842df5d46eebe15c6ea9de3" compoundref="image__preprocessor_8hpp" startline="92" endline="94">unit_variance</references>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1a1726baf71e931108dc9192539e90c583" compoundref="image__preprocessor_8hpp" startline="121" endline="123">add_noise</referencedby>
+        <referencedby refid="classlbann_1_1cifar10__reader_1a590c672731bbdcb6e7fd8fd300d004d5" compoundref="data__reader__cifar10_8cpp" startline="94" endline="104">lbann::cifar10_reader::fetch_datum</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__org_1ad4c47413e16c1c53000b7d7be757ff6e" compoundref="data__reader__imagenet__org_8cpp" startline="63" endline="90">lbann::imagenet_reader_org::fetch_datum</referencedby>
+        <referencedby refid="classlbann_1_1mnist__reader_1af257b58b61ae9f3f623f1cb5d18c4841" compoundref="data__reader__mnist_8cpp" startline="51" endline="64">lbann::mnist_reader::fetch_datum</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__image__preprocessor_1a67b11150501a829125e9c6999781bc67" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type>void</type>
+        <definition>virtual void lbann::lbann_image_preprocessor::save_image</definition>
+        <argsstring>(Mat &amp;pixels, const std::string filename, bool do_scale=true)</argsstring>
+        <name>save_image</name>
+        <reimplementedby refid="classlbann_1_1image__data__reader_1a71e4fa1eb8212cce88a2ed408ceeac51">save_image</reimplementedby>
+        <reimplementedby refid="classlbann_1_1data__reader__jag_1a396e7456d926ae9045011e7f28284946">save_image</reimplementedby>
+        <reimplementedby refid="classlbann_1_1generic__data__reader_1a8cf298061c73f55e2fe717acd2a9f178">save_image</reimplementedby>
+        <param>
+          <type><ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref> &amp;</type>
+          <declname>pixels</declname>
+        </param>
+        <param>
+          <type>const std::string</type>
+          <declname>filename</declname>
+        </param>
+        <param>
+          <type>bool</type>
+          <declname>do_scale</declname>
+          <defval>true</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>External interface to saving an image. Classes that want to support this should use it to interface with internal_save_image. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>pixels</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The image to save (as a column vector). </para></parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>filename</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The image filename (type inferred from extension). </para></parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>scale</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>Whether pixels has been scaled (default true). </para></parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="149" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" bodystart="149" bodyend="150"/>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="protected-func">
+      <memberdef kind="function" id="classlbann_1_1lbann__image__preprocessor_1ab499dd9f11d98998b5902d639f70fa8e" prot="protected" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_image_preprocessor::mean_subtraction</definition>
+        <argsstring>(Mat &amp;pixels, unsigned num_channels)</argsstring>
+        <name>mean_subtraction</name>
+        <param>
+          <type><ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref> &amp;</type>
+          <declname>pixels</declname>
+        </param>
+        <param>
+          <type>unsigned</type>
+          <declname>num_channels</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="176" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/image_preprocessor.cpp" bodystart="149" bodyend="164"/>
+        <references refid="namespacelbann_1a604ae9da0173b8be2bfb6877997d6d5c" compoundref="statistics_8cpp" startline="32" endline="65">lbann::entrywise_mean_and_stdev</references>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1ae370cdc9f776ce8cce94a45cacf47425" compoundref="image__preprocessor_8cpp" startline="133" endline="147">normalize</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__image__preprocessor_1af9fcb483843230008a53d60c12975f61" prot="protected" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_image_preprocessor::unit_variance</definition>
+        <argsstring>(Mat &amp;pixels, unsigned num_channels)</argsstring>
+        <name>unit_variance</name>
+        <param>
+          <type><ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref> &amp;</type>
+          <declname>pixels</declname>
+        </param>
+        <param>
+          <type>unsigned</type>
+          <declname>num_channels</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="177" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/image_preprocessor.cpp" bodystart="166" bodyend="189"/>
+        <references refid="namespacelbann_1a604ae9da0173b8be2bfb6877997d6d5c" compoundref="statistics_8cpp" startline="32" endline="65">lbann::entrywise_mean_and_stdev</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__image__preprocessor_1aa7a8926d0544100f7d3caa9289d94826" prot="protected" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_image_preprocessor::unit_scale</definition>
+        <argsstring>(Mat &amp;pixels, unsigned num_channels)</argsstring>
+        <name>unit_scale</name>
+        <param>
+          <type><ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref> &amp;</type>
+          <declname>pixels</declname>
+        </param>
+        <param>
+          <type>unsigned</type>
+          <declname>num_channels</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="178" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/image_preprocessor.cpp" bodystart="191" bodyend="196"/>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1ae370cdc9f776ce8cce94a45cacf47425" compoundref="image__preprocessor_8cpp" startline="133" endline="147">normalize</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__image__preprocessor_1aec67fb0dc7a1f5d718d5bb2e226f9b7a" prot="protected" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_image_preprocessor::z_score</definition>
+        <argsstring>(Mat &amp;pixels, unsigned num_channels)</argsstring>
+        <name>z_score</name>
+        <param>
+          <type><ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref> &amp;</type>
+          <declname>pixels</declname>
+        </param>
+        <param>
+          <type>unsigned</type>
+          <declname>num_channels</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="179" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/image_preprocessor.cpp" bodystart="213" bodyend="238"/>
+        <references refid="namespacelbann_1a604ae9da0173b8be2bfb6877997d6d5c" compoundref="statistics_8cpp" startline="32" endline="65">lbann::entrywise_mean_and_stdev</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__image__preprocessor_1aece5b572d0a2fe123cc66412d7a5c91e" prot="protected" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_image_preprocessor::pixel_noise</definition>
+        <argsstring>(Mat &amp;pixels)</argsstring>
+        <name>pixel_noise</name>
+        <param>
+          <type><ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref> &amp;</type>
+          <declname>pixels</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="181" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/image_preprocessor.cpp" bodystart="199" bodyend="211"/>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1af860c1d78af06e4ae94ad68e3032fe92" compoundref="image__preprocessor_8hpp" startline="174">m_noise_factor</references>
+        <referencedby refid="classlbann_1_1cifar10__reader_1a590c672731bbdcb6e7fd8fd300d004d5" compoundref="data__reader__cifar10_8cpp" startline="94" endline="104">lbann::cifar10_reader::fetch_datum</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__org_1ad4c47413e16c1c53000b7d7be757ff6e" compoundref="data__reader__imagenet__org_8cpp" startline="63" endline="90">lbann::imagenet_reader_org::fetch_datum</referencedby>
+        <referencedby refid="classlbann_1_1mnist__reader_1af257b58b61ae9f3f623f1cb5d18c4841" compoundref="data__reader__mnist_8cpp" startline="51" endline="64">lbann::mnist_reader::fetch_datum</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__image__preprocessor_1a7dc609e33febdc7fc29bdc9270594bea" prot="protected" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">cv::Mat</ref></type>
+        <definition>cv::Mat lbann::lbann_image_preprocessor::cv_pixels</definition>
+        <argsstring>(const Mat &amp;pixels, unsigned imheight, unsigned imwidth, unsigned num_channels)</argsstring>
+        <name>cv_pixels</name>
+        <param>
+          <type>const <ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref> &amp;</type>
+          <declname>pixels</declname>
+        </param>
+        <param>
+          <type>unsigned</type>
+          <declname>imheight</declname>
+        </param>
+        <param>
+          <type>unsigned</type>
+          <declname>imwidth</declname>
+        </param>
+        <param>
+          <type>unsigned</type>
+          <declname>num_channels</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Convert a column vector of pixels to an OpenCV matrix. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="186" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/image_preprocessor.cpp" bodystart="240" bodyend="270"/>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1a27cb5182c4f764cbfa4edecbb78ef29d" compoundref="image__preprocessor_8cpp" startline="55" endline="131">augment</referencedby>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1a3c4f4cc5c90233696566a35a62a1708c" compoundref="image__preprocessor_8cpp" startline="320" endline="333">internal_save_image</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__image__preprocessor_1a3e99be32b95a415fd8d616cb85075df1" prot="protected" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_image_preprocessor::col_pixels</definition>
+        <argsstring>(const cv::Mat &amp;sqpixels, Mat &amp;pixels, unsigned num_channels)</argsstring>
+        <name>col_pixels</name>
+        <param>
+          <type>const <ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">cv::Mat</ref> &amp;</type>
+          <declname>sqpixels</declname>
+        </param>
+        <param>
+          <type><ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref> &amp;</type>
+          <declname>pixels</declname>
+        </param>
+        <param>
+          <type>unsigned</type>
+          <declname>num_channels</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Undo cv_pixels. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="189" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/image_preprocessor.cpp" bodystart="272" bodyend="297"/>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1a27cb5182c4f764cbfa4edecbb78ef29d" compoundref="image__preprocessor_8cpp" startline="55" endline="131">augment</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__image__preprocessor_1a12d9f7056a5e68185ea0e85e14c17bcf" prot="protected" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_image_preprocessor::flip</definition>
+        <argsstring>(cv::Mat &amp;sqpixels, int flip_flag)</argsstring>
+        <name>flip</name>
+        <param>
+          <type><ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">cv::Mat</ref> &amp;</type>
+          <declname>sqpixels</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>flip_flag</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Flip sqpixels. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>flip_flag</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>OpenCV flip flag: 0=vertical, 1=horizontal, -1=both. </para></parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="195" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/image_preprocessor.cpp" bodystart="299" bodyend="303"/>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1a27cb5182c4f764cbfa4edecbb78ef29d" compoundref="image__preprocessor_8cpp" startline="55" endline="131">augment</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__image__preprocessor_1adb9e017aeac52a9b5d392f17188d1057" prot="protected" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_image_preprocessor::affine_trans</definition>
+        <argsstring>(cv::Mat &amp;sqpixels, const Mat &amp;trans)</argsstring>
+        <name>affine_trans</name>
+        <param>
+          <type><ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">cv::Mat</ref> &amp;</type>
+          <declname>sqpixels</declname>
+        </param>
+        <param>
+          <type>const <ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref> &amp;</type>
+          <declname>trans</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Apply the affine transformation in 3x3 matrix trans. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="197" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/image_preprocessor.cpp" bodystart="305" bodyend="318"/>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1a27cb5182c4f764cbfa4edecbb78ef29d" compoundref="image__preprocessor_8cpp" startline="55" endline="131">augment</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__image__preprocessor_1a3c4f4cc5c90233696566a35a62a1708c" prot="protected" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_image_preprocessor::internal_save_image</definition>
+        <argsstring>(Mat &amp;pixels, const std::string filename, unsigned imheight, unsigned imwidth, unsigned num_channels, bool do_scale)</argsstring>
+        <name>internal_save_image</name>
+        <param>
+          <type><ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref> &amp;</type>
+          <declname>pixels</declname>
+        </param>
+        <param>
+          <type>const std::string</type>
+          <declname>filename</declname>
+        </param>
+        <param>
+          <type>unsigned</type>
+          <declname>imheight</declname>
+        </param>
+        <param>
+          <type>unsigned</type>
+          <declname>imwidth</declname>
+        </param>
+        <param>
+          <type>unsigned</type>
+          <declname>num_channels</declname>
+        </param>
+        <param>
+          <type>bool</type>
+          <declname>do_scale</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Save pixels to filename. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="202" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/image_preprocessor.cpp" bodystart="320" bodyend="333"/>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1a7dc609e33febdc7fc29bdc9270594bea" compoundref="image__preprocessor_8cpp" startline="240" endline="270">cv_pixels</references>
+        <referencedby refid="classlbann_1_1image__data__reader_1a71e4fa1eb8212cce88a2ed408ceeac51" compoundref="data__reader__image_8hpp" startline="80" endline="83">lbann::image_data_reader::save_image</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__jag_1a396e7456d926ae9045011e7f28284946" compoundref="data__reader__jag_8cpp" startline="528" endline="530">lbann::data_reader_jag::save_image</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>Support class for preprocessing image inputs. Supports the following transforms:<itemizedlist>
+<listitem><para>Random horizontal and vertical flips</para></listitem><listitem><para>Random rotations</para></listitem><listitem><para>Random horizontal and vertical shifts</para></listitem><listitem><para>Random shearing</para></listitem><listitem><para>Standardize to 0 mean</para></listitem><listitem><para>Standardize to unit variance</para></listitem><listitem><para>Scale to the range [0, 1]</para></listitem><listitem><para>Normalize via z-score </para></listitem></itemizedlist>
+</para>    </detaileddescription>
+    <inheritancegraph>
+      <node id="1534">
+        <label>lbann::image_data_reader</label>
+        <link refid="classlbann_1_1image__data__reader"/>
+        <childnode refid="1525" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1543">
+        <label>lbann::mnist_reader</label>
+        <link refid="classlbann_1_1mnist__reader"/>
+        <childnode refid="1534" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1524">
+        <label>lbann::lbann_image_preprocessor</label>
+        <link refid="classlbann_1_1lbann__image__preprocessor"/>
+      </node>
+      <node id="1532">
+        <label>lbann::data_reader_merge_features</label>
+        <link refid="classlbann_1_1data__reader__merge__features"/>
+        <childnode refid="1531" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1530">
+        <label>lbann::data_reader_synthetic</label>
+        <link refid="classlbann_1_1data__reader__synthetic"/>
+        <childnode refid="1525" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1526">
+        <label>lbann::ascii_reader</label>
+        <link refid="classlbann_1_1ascii__reader"/>
+        <childnode refid="1525" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1541">
+        <label>lbann::imagenet_reader_org</label>
+        <link refid="classlbann_1_1imagenet__reader__org"/>
+        <childnode refid="1534" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1535">
+        <label>lbann::cifar10_reader</label>
+        <link refid="classlbann_1_1cifar10__reader"/>
+        <childnode refid="1534" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1525">
+        <label>lbann::generic_data_reader</label>
+        <link refid="classlbann_1_1generic__data__reader"/>
+        <childnode refid="1524" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1529">
+        <label>lbann::data_reader_jag</label>
+        <link refid="classlbann_1_1data__reader__jag"/>
+        <childnode refid="1525" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1536">
+        <label>lbann::imagenet_reader</label>
+        <link refid="classlbann_1_1imagenet__reader"/>
+        <childnode refid="1534" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1540">
+        <label>lbann::imagenet_reader_single</label>
+        <link refid="classlbann_1_1imagenet__reader__single"/>
+        <childnode refid="1536" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1533">
+        <label>lbann::data_reader_merge_samples</label>
+        <link refid="classlbann_1_1data__reader__merge__samples"/>
+        <childnode refid="1531" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1544">
+        <label>lbann::mesh_reader</label>
+        <link refid="classlbann_1_1mesh__reader"/>
+        <childnode refid="1525" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1527">
+        <label>lbann::csv_reader</label>
+        <link refid="classlbann_1_1csv__reader"/>
+        <childnode refid="1525" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1528">
+        <label>lbann::data_reader_nci</label>
+        <link refid="classlbann_1_1data__reader__nci"/>
+        <childnode refid="1527" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1542">
+        <label>lbann::imagenet_reader_patches</label>
+        <link refid="classlbann_1_1imagenet__reader__patches"/>
+        <childnode refid="1534" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1531">
+        <label>lbann::generic_compound_data_reader</label>
+        <link refid="classlbann_1_1generic__compound__data__reader"/>
+        <childnode refid="1525" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1545">
+        <label>lbann::numpy_reader</label>
+        <link refid="classlbann_1_1numpy__reader"/>
+        <childnode refid="1525" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1546">
+        <label>lbann::pilot2_molecular_reader</label>
+        <link refid="classlbann_1_1pilot2__molecular__reader"/>
+        <childnode refid="1525" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1537">
+        <label>lbann::data_reader_multi_images</label>
+        <link refid="classlbann_1_1data__reader__multi__images"/>
+        <childnode refid="1536" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1539">
+        <label>lbann::data_reader_triplet</label>
+        <link refid="classlbann_1_1data__reader__triplet"/>
+        <childnode refid="1537" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1538">
+        <label>lbann::data_reader_mnist_siamese</label>
+        <link refid="classlbann_1_1data__reader__mnist__siamese"/>
+        <childnode refid="1537" relation="public-inheritance">
+        </childnode>
+      </node>
+    </inheritancegraph>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" line="55" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp" bodystart="55" bodyend="205"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a1726baf71e931108dc9192539e90c583" prot="public" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>add_noise</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1adb9e017aeac52a9b5d392f17188d1057" prot="protected" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>affine_trans</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a27cb5182c4f764cbfa4edecbb78ef29d" prot="public" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>augment</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a3e99be32b95a415fd8d616cb85075df1" prot="protected" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>col_pixels</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a7dc609e33febdc7fc29bdc9270594bea" prot="protected" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>cv_pixels</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a871cb543ee6c132a76e16045a1a2a9f3" prot="public" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>disable_augmentation</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a12d9f7056a5e68185ea0e85e14c17bcf" prot="protected" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>flip</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a4ba2de0a781dfa0a2652ad4d777a241f" prot="public" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>horizontal_flip</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1ae62596b4af5d1940aa0499cde2bdd005" prot="public" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>horizontal_shift</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a3c4f4cc5c90233696566a35a62a1708c" prot="protected" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>internal_save_image</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a6a0f92194d42e87d73b57ba0929e2b2d" prot="public" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>lbann_image_preprocessor</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1aeeca5696dbfde9ccb1112cbd8524940b" prot="public" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>lbann_image_preprocessor</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a032397d6c642dccd43f4c38393f5d2c1" prot="protected" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>m_horizontal_flip</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a636f59ffe470f996677601df6179bc41" prot="protected" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>m_horizontal_shift</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a734002307d0ef95a31d75a295fa5c3d1" prot="protected" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>m_mean_subtraction</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1af860c1d78af06e4ae94ad68e3032fe92" prot="protected" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>m_noise_factor</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a7518ae40fe38862c831832fdaf948d45" prot="protected" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>m_rotation_range</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1ae00af83d438ab27d6a7b996775fba3b3" prot="protected" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>m_scale</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a237ead6488b2c04e982fd10510ae03b4" prot="protected" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>m_shear_range</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1ae365a9e20f060b44de7835aceceb491c" prot="protected" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>m_unit_variance</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a7cfc687cce450403c7b46460f4d08d69" prot="protected" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>m_vertical_flip</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a06158637d634a4d123ee5501ddd0c7cb" prot="protected" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>m_vertical_shift</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a6abe54ada0cacf23e8ac8b6d113bd26b" prot="protected" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>m_z_score</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1ab499dd9f11d98998b5902d639f70fa8e" prot="protected" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>mean_subtraction</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1ae370cdc9f776ce8cce94a45cacf47425" prot="public" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>normalize</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1af652494123a62e653cd7dc2d7c340219" prot="public" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1aece5b572d0a2fe123cc66412d7a5c91e" prot="protected" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>pixel_noise</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a1a293733368dd9eceba3e99cf9e5ae24" prot="public" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>rotation</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a67b11150501a829125e9c6999781bc67" prot="public" virt="virtual"><scope>lbann::lbann_image_preprocessor</scope><name>save_image</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a977b2fdd417acb1eb37dbea0cfdd4b60" prot="public" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>scale</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1aef1e2375fd518e69df800b0dcbcb37d0" prot="public" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>shear_range</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1afa470b696ba435c20050187a0232717d" prot="public" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>subtract_mean</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1aa7a8926d0544100f7d3caa9289d94826" prot="protected" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>unit_scale</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a05c4cb5cb842df5d46eebe15c6ea9de3" prot="public" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>unit_variance</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1af9fcb483843230008a53d60c12975f61" prot="protected" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>unit_variance</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1aeb7d75e4d3361ae2836afabc14510d74" prot="public" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>vertical_flip</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a50ac63e1f6b1b9806cbf6c06f53f4aca" prot="public" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>vertical_shift</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a02cfd4d8c26a317540b587eb52cef0d5" prot="public" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>z_score</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1aec67fb0dc7a1f5d718d5bb2e226f9b7a" prot="protected" virt="non-virtual"><scope>lbann::lbann_image_preprocessor</scope><name>z_score</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1aaabfad8d6923680cf4943f6f5290c682" prot="public" virt="virtual"><scope>lbann::lbann_image_preprocessor</scope><name>~lbann_image_preprocessor</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

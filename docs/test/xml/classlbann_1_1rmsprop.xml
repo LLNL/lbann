@@ -1,0 +1,489 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1rmsprop" kind="class" language="C++" prot="public">
+    <compoundname>lbann::rmsprop</compoundname>
+    <basecompoundref refid="classlbann_1_1optimizer" prot="public" virt="non-virtual">lbann::optimizer</basecompoundref>
+    <includes refid="rmsprop_8hpp" local="no">rmsprop.hpp</includes>
+    <innerclass refid="structlbann_1_1rmsprop_1_1packing__header" prot="private">lbann::rmsprop::packing_header</innerclass>
+      <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="classlbann_1_1rmsprop_1a9cd712c44e7c4995120e2933b0387d71" prot="private" static="no" mutable="no">
+        <type>DataType</type>
+        <definition>DataType lbann::rmsprop::m_decay_rate</definition>
+        <argsstring></argsstring>
+        <name>m_decay_rate</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Decay rate. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp" line="68" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp" bodystart="68" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1rmsprop_1a9b969263276b4d1aed93c3c82abf832d" compoundref="rmsprop_8hpp" startline="88" endline="96">unpack_scalars</referencedby>
+        <referencedby refid="classlbann_1_1rmsprop_1a3c7eb1fb105c7be762b97e4f947a2b94" compoundref="rmsprop_8cpp" startline="49" endline="66">operator=</referencedby>
+        <referencedby refid="classlbann_1_1rmsprop_1a4526482bf60f7f3fc3f60ff70b38cdb7" compoundref="rmsprop_8cpp" startline="72" endline="78">get_description</referencedby>
+        <referencedby refid="classlbann_1_1rmsprop_1a600e4b332299a6aaa36d0b7ff458e3f3" compoundref="rmsprop_8cpp" startline="87" endline="125">step_compute</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1rmsprop_1a6ea73caf5b2769451dfd798665877208" prot="private" static="no" mutable="no">
+        <type>DataType</type>
+        <definition>DataType lbann::rmsprop::m_eps</definition>
+        <argsstring></argsstring>
+        <name>m_eps</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Small factor to avoid division by zero. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp" line="70" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp" bodystart="70" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1rmsprop_1a3c7eb1fb105c7be762b97e4f947a2b94" compoundref="rmsprop_8cpp" startline="49" endline="66">operator=</referencedby>
+        <referencedby refid="classlbann_1_1rmsprop_1a4526482bf60f7f3fc3f60ff70b38cdb7" compoundref="rmsprop_8cpp" startline="72" endline="78">get_description</referencedby>
+        <referencedby refid="classlbann_1_1rmsprop_1a600e4b332299a6aaa36d0b7ff458e3f3" compoundref="rmsprop_8cpp" startline="87" endline="125">step_compute</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1rmsprop_1a2bbaa35bb209e971a5ac9e1dbb6ece76" prot="private" static="no" mutable="no">
+        <type><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> *</type>
+        <definition>AbsDistMat* lbann::rmsprop::m_cache</definition>
+        <argsstring></argsstring>
+        <name>m_cache</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>RMSprop cache. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp" line="72" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp" bodystart="72" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1rmsprop_1af70a9a2c9ff67d0d39f14c6e283abd95" compoundref="rmsprop_8cpp" startline="41" endline="47">rmsprop</referencedby>
+        <referencedby refid="classlbann_1_1rmsprop_1a3c7eb1fb105c7be762b97e4f947a2b94" compoundref="rmsprop_8cpp" startline="49" endline="66">operator=</referencedby>
+        <referencedby refid="classlbann_1_1rmsprop_1ae837f3c0e5b49f8baa42cc9c864259fc" compoundref="rmsprop_8cpp" startline="68" endline="70">~rmsprop</referencedby>
+        <referencedby refid="classlbann_1_1rmsprop_1a8f6111a36f9ad592d14e13b64a0f228f" compoundref="rmsprop_8cpp" startline="80" endline="85">setup</referencedby>
+        <referencedby refid="classlbann_1_1rmsprop_1a600e4b332299a6aaa36d0b7ff458e3f3" compoundref="rmsprop_8cpp" startline="87" endline="125">step_compute</referencedby>
+        <referencedby refid="classlbann_1_1rmsprop_1a8abe698168c2d1cb2c65d180552501ef" compoundref="rmsprop_8cpp" startline="127" endline="135">save_to_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1rmsprop_1a64db08f787ca8904a0ba4ecc37d5d1ed" compoundref="rmsprop_8cpp" startline="137" endline="145">load_from_checkpoint_shared</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1rmsprop_1af42c8e3336e72aac926e19c57b56e59f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::rmsprop::rmsprop</definition>
+        <argsstring>(lbann_comm *comm, DataType learning_rate, DataType decay_rate, DataType eps=DataType(1e-8))</argsstring>
+        <name>rmsprop</name>
+        <param>
+          <type><ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref> *</type>
+          <declname>comm</declname>
+        </param>
+        <param>
+          <type>DataType</type>
+          <declname>learning_rate</declname>
+        </param>
+        <param>
+          <type>DataType</type>
+          <declname>decay_rate</declname>
+        </param>
+        <param>
+          <type>DataType</type>
+          <declname>eps</declname>
+          <defval>DataType(1e-8)</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Constructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp" line="40" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/rmsprop.cpp" bodystart="32" bodyend="39"/>
+        <referencedby refid="classlbann_1_1rmsprop_1a1493737d356809ad5c94f77051de8814" compoundref="rmsprop_8hpp" startline="52" endline="52">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1rmsprop_1af70a9a2c9ff67d0d39f14c6e283abd95" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::rmsprop::rmsprop</definition>
+        <argsstring>(const rmsprop &amp;other)</argsstring>
+        <name>rmsprop</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1rmsprop" kindref="compound">rmsprop</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Copy constructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp" line="46" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/rmsprop.cpp" bodystart="41" bodyend="47"/>
+        <references refid="classlbann_1_1rmsprop_1a2bbaa35bb209e971a5ac9e1dbb6ece76" compoundref="rmsprop_8hpp" startline="72">m_cache</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1rmsprop_1a3c7eb1fb105c7be762b97e4f947a2b94" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classlbann_1_1rmsprop" kindref="compound">rmsprop</ref> &amp;</type>
+        <definition>rmsprop &amp; lbann::rmsprop::operator=</definition>
+        <argsstring>(const rmsprop &amp;other)</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1rmsprop" kindref="compound">rmsprop</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Copy assignment operator. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp" line="48" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/rmsprop.cpp" bodystart="49" bodyend="66"/>
+        <references refid="classlbann_1_1optimizer_1ab7811e0a4d2d9b594140aed78b6de743" compoundref="optimizer_8cpp" startline="70" endline="100">lbann::optimizer::operator=</references>
+        <references refid="classlbann_1_1rmsprop_1a9cd712c44e7c4995120e2933b0387d71" compoundref="rmsprop_8hpp" startline="68">m_decay_rate</references>
+        <references refid="classlbann_1_1rmsprop_1a6ea73caf5b2769451dfd798665877208" compoundref="rmsprop_8hpp" startline="70">m_eps</references>
+        <references refid="classlbann_1_1rmsprop_1a2bbaa35bb209e971a5ac9e1dbb6ece76" compoundref="rmsprop_8hpp" startline="72">m_cache</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1rmsprop_1ae837f3c0e5b49f8baa42cc9c864259fc" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::rmsprop::~rmsprop</definition>
+        <argsstring>() override</argsstring>
+        <name>~rmsprop</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Destructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp" line="50" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/rmsprop.cpp" bodystart="68" bodyend="70"/>
+        <references refid="classlbann_1_1rmsprop_1a2bbaa35bb209e971a5ac9e1dbb6ece76" compoundref="rmsprop_8hpp" startline="72">m_cache</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1rmsprop_1a1493737d356809ad5c94f77051de8814" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type><ref refid="classlbann_1_1rmsprop" kindref="compound">rmsprop</ref> *</type>
+        <definition>rmsprop* lbann::rmsprop::copy</definition>
+        <argsstring>() const override</argsstring>
+        <name>copy</name>
+        <reimplements refid="classlbann_1_1optimizer_1adf19a1d19d832ebfe70072cc202cdf39">copy</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Create a copy. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp" line="52" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp" bodystart="52" bodyend="52"/>
+        <references refid="classlbann_1_1rmsprop_1af42c8e3336e72aac926e19c57b56e59f" compoundref="rmsprop_8cpp" startline="32" endline="39">rmsprop</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1rmsprop_1aa4299a19c0ab81a41ccebb9486f106b6" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>std::string</type>
+        <definition>std::string lbann::rmsprop::get_type</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_type</name>
+        <reimplements refid="classlbann_1_1optimizer_1a7b7a6814e14eeee157e1cbb7f15dd4ff">get_type</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Get the optimizer name. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp" line="55" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp" bodystart="55" bodyend="55"/>
+        <references refid="classlbann_1_1rmsprop_1a4526482bf60f7f3fc3f60ff70b38cdb7" compoundref="rmsprop_8cpp" startline="72" endline="78">get_description</references>
+        <references refid="classlbann_1_1rmsprop_1a8f6111a36f9ad592d14e13b64a0f228f" compoundref="rmsprop_8cpp" startline="80" endline="85">setup</references>
+        <references refid="classlbann_1_1rmsprop_1a600e4b332299a6aaa36d0b7ff458e3f3" compoundref="rmsprop_8cpp" startline="87" endline="125">step_compute</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1rmsprop_1a4526482bf60f7f3fc3f60ff70b38cdb7" prot="public" static="no" const="yes" explicit="no" inline="no" virt="virtual">
+        <type>std::string</type>
+        <definition>std::string lbann::rmsprop::get_description</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_description</name>
+        <reimplements refid="classlbann_1_1optimizer_1a66bb8d28dfb41452ac1a75a3efd47723">get_description</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Get a human-readable description of the optimizer. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp" line="57" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/rmsprop.cpp" bodystart="72" bodyend="78"/>
+        <references refid="classlbann_1_1optimizer_1a66bb8d28dfb41452ac1a75a3efd47723" compoundref="optimizer_8cpp" startline="107" endline="115">lbann::optimizer::get_description</references>
+        <references refid="classlbann_1_1rmsprop_1a9cd712c44e7c4995120e2933b0387d71" compoundref="rmsprop_8hpp" startline="68">m_decay_rate</references>
+        <references refid="classlbann_1_1rmsprop_1a6ea73caf5b2769451dfd798665877208" compoundref="rmsprop_8hpp" startline="70">m_eps</references>
+        <referencedby refid="classlbann_1_1rmsprop_1aa4299a19c0ab81a41ccebb9486f106b6" compoundref="rmsprop_8hpp" startline="55" endline="55">get_type</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1rmsprop_1a8f6111a36f9ad592d14e13b64a0f228f" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::rmsprop::setup</definition>
+        <argsstring>(weights &amp;w) override</argsstring>
+        <name>setup</name>
+        <reimplements refid="classlbann_1_1optimizer_1a7641a88b3c166df2d974a298622b992b">setup</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1weights" kindref="compound">weights</ref> &amp;</type>
+          <declname>w</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Setup optimizer. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp" line="60" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/rmsprop.cpp" bodystart="80" bodyend="85"/>
+        <references refid="classlbann_1_1optimizer_1a7641a88b3c166df2d974a298622b992b" compoundref="optimizer_8cpp" startline="414" endline="442">lbann::optimizer::setup</references>
+        <references refid="classlbann_1_1rmsprop_1a2bbaa35bb209e971a5ac9e1dbb6ece76" compoundref="rmsprop_8hpp" startline="72">m_cache</references>
+        <references refid="classlbann_1_1optimizer_1a3df20cb0ae2b60430ad4fd235d66c12e" compoundref="optimizer_8hpp" startline="175">lbann::optimizer::m_gradient</references>
+        <referencedby refid="classlbann_1_1rmsprop_1aa4299a19c0ab81a41ccebb9486f106b6" compoundref="rmsprop_8hpp" startline="55" endline="55">get_type</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1rmsprop_1a600e4b332299a6aaa36d0b7ff458e3f3" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::rmsprop::step_compute</definition>
+        <argsstring>(AbsDistMat &amp;values, const AbsDistMat &amp;gradient) override</argsstring>
+        <name>step_compute</name>
+        <reimplements refid="classlbann_1_1optimizer_1a0db72c298a0bc3405fb0af97d104a036">step_compute</reimplements>
+        <param>
+          <type><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+          <declname>values</declname>
+        </param>
+        <param>
+          <type>const <ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+          <declname>gradient</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Perform the computation in an optimization step. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp" line="63" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/rmsprop.cpp" bodystart="87" bodyend="125"/>
+        <references refid="classlbann_1_1rmsprop_1a2bbaa35bb209e971a5ac9e1dbb6ece76" compoundref="rmsprop_8hpp" startline="72">m_cache</references>
+        <references refid="classlbann_1_1rmsprop_1a9cd712c44e7c4995120e2933b0387d71" compoundref="rmsprop_8hpp" startline="68">m_decay_rate</references>
+        <references refid="classlbann_1_1optimizer_1ad393dcdcb82b44510c586ed5ec46d4dd" compoundref="optimizer_8hpp" startline="172">lbann::optimizer::m_learning_rate</references>
+        <references refid="classlbann_1_1rmsprop_1a6ea73caf5b2769451dfd798665877208" compoundref="rmsprop_8hpp" startline="70">m_eps</references>
+        <referencedby refid="classlbann_1_1rmsprop_1aa4299a19c0ab81a41ccebb9486f106b6" compoundref="rmsprop_8hpp" startline="55" endline="55">get_type</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="private-func">
+      <memberdef kind="function" id="classlbann_1_1rmsprop_1ac2c5ae4dc2438da1da54072a297b148b" prot="private" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool lbann::rmsprop::pack_scalars</definition>
+        <argsstring>(persist &amp;p)</argsstring>
+        <name>pack_scalars</name>
+        <param>
+          <type><ref refid="classlbann_1_1persist" kindref="compound">persist</ref> &amp;</type>
+          <declname>p</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp" line="83" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp" bodystart="83" bodyend="86"/>
+        <references refid="classlbann_1_1persist_1a5edc3f9cc3540b50d417993da2a6b5ce" compoundref="persist_8cpp" startline="577" endline="579">lbann::persist::write_datatype</references>
+        <references refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64">lbann::train</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1rmsprop_1a9b969263276b4d1aed93c3c82abf832d" prot="private" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool lbann::rmsprop::unpack_scalars</definition>
+        <argsstring>(persist &amp;p, struct packing_header *header)</argsstring>
+        <name>unpack_scalars</name>
+        <param>
+          <type><ref refid="classlbann_1_1persist" kindref="compound">persist</ref> &amp;</type>
+          <declname>p</declname>
+        </param>
+        <param>
+          <type>struct <ref refid="structlbann_1_1rmsprop_1_1packing__header" kindref="compound">packing_header</ref> *</type>
+          <declname>header</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp" line="88" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp" bodystart="88" bodyend="96"/>
+        <references refid="classlbann_1_1persist_1a1e84eff891affad6001f3c5fa803cae2" compoundref="persist_8cpp" startline="581" endline="583">lbann::persist::read_datatype</references>
+        <references refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64">lbann::train</references>
+        <references refid="structlbann_1_1rmsprop_1_1packing__header_1afcc77a62f3887d880c35d2481031df44" compoundref="rmsprop_8hpp" startline="80">lbann::rmsprop::packing_header::decay_rate</references>
+        <references refid="classlbann_1_1rmsprop_1a9cd712c44e7c4995120e2933b0387d71" compoundref="rmsprop_8hpp" startline="68">m_decay_rate</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1rmsprop_1a1af03b4c5e744abae04ccec3e19a0cc6" prot="private" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::rmsprop::unpack_header</definition>
+        <argsstring>(struct packing_header &amp;header)</argsstring>
+        <name>unpack_header</name>
+        <param>
+          <type>struct <ref refid="structlbann_1_1rmsprop_1_1packing__header" kindref="compound">packing_header</ref> &amp;</type>
+          <declname>header</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp" line="98" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp" bodystart="98" bodyend="100"/>
+        <references refid="structlbann_1_1rmsprop_1_1packing__header_1afcc77a62f3887d880c35d2481031df44" compoundref="rmsprop_8hpp" startline="80">lbann::rmsprop::packing_header::decay_rate</references>
+        <references refid="classlbann_1_1rmsprop_1a8abe698168c2d1cb2c65d180552501ef" compoundref="rmsprop_8cpp" startline="127" endline="135">save_to_checkpoint_shared</references>
+        <references refid="classlbann_1_1rmsprop_1a64db08f787ca8904a0ba4ecc37d5d1ed" compoundref="rmsprop_8cpp" startline="137" endline="145">load_from_checkpoint_shared</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1rmsprop_1a8abe698168c2d1cb2c65d180552501ef" prot="private" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>bool</type>
+        <definition>bool lbann::rmsprop::save_to_checkpoint_shared</definition>
+        <argsstring>(persist &amp;p, std::string m_name) override</argsstring>
+        <name>save_to_checkpoint_shared</name>
+        <reimplements refid="classlbann_1_1optimizer_1afed10c6d8c5bd922f95075abeff711ce">save_to_checkpoint_shared</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1persist" kindref="compound">persist</ref> &amp;</type>
+          <declname>p</declname>
+        </param>
+        <param>
+          <type>std::string</type>
+          <declname>m_name</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp" line="102" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/rmsprop.cpp" bodystart="127" bodyend="135"/>
+        <references refid="classlbann_1_1optimizer_1afed10c6d8c5bd922f95075abeff711ce" compoundref="optimizer_8cpp" startline="487" endline="493">lbann::optimizer::save_to_checkpoint_shared</references>
+        <references refid="classlbann_1_1rmsprop_1a2bbaa35bb209e971a5ac9e1dbb6ece76" compoundref="rmsprop_8hpp" startline="72">m_cache</references>
+        <references refid="classlbann_1_1persist_1a9170de652405d86d9ba9b3793f8781c6" compoundref="persist_8cpp" startline="342" endline="360">lbann::persist::write_distmat</references>
+        <references refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64">lbann::train</references>
+        <referencedby refid="classlbann_1_1rmsprop_1a1af03b4c5e744abae04ccec3e19a0cc6" compoundref="rmsprop_8hpp" startline="98" endline="100">unpack_header</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1rmsprop_1a64db08f787ca8904a0ba4ecc37d5d1ed" prot="private" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>bool</type>
+        <definition>bool lbann::rmsprop::load_from_checkpoint_shared</definition>
+        <argsstring>(persist &amp;p, std::string m_name) override</argsstring>
+        <name>load_from_checkpoint_shared</name>
+        <reimplements refid="classlbann_1_1optimizer_1a42a52aab9a682fda57c1e639968a44b9">load_from_checkpoint_shared</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1persist" kindref="compound">persist</ref> &amp;</type>
+          <declname>p</declname>
+        </param>
+        <param>
+          <type>std::string</type>
+          <declname>m_name</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp" line="103" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/rmsprop.cpp" bodystart="137" bodyend="145"/>
+        <references refid="classlbann_1_1optimizer_1a42a52aab9a682fda57c1e639968a44b9" compoundref="optimizer_8cpp" startline="495" endline="499">lbann::optimizer::load_from_checkpoint_shared</references>
+        <references refid="classlbann_1_1rmsprop_1a2bbaa35bb209e971a5ac9e1dbb6ece76" compoundref="rmsprop_8hpp" startline="72">m_cache</references>
+        <references refid="classlbann_1_1persist_1aa98be93f33b510e5b506b61de6bd79bd" compoundref="persist_8cpp" startline="362" endline="387">lbann::persist::read_distmat</references>
+        <references refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64">lbann::train</references>
+        <referencedby refid="classlbann_1_1rmsprop_1a1af03b4c5e744abae04ccec3e19a0cc6" compoundref="rmsprop_8hpp" startline="98" endline="100">unpack_header</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>RMSprop optimizer. </para>    </detaileddescription>
+    <inheritancegraph>
+      <node id="2026">
+        <label>lbann::optimizer</label>
+        <link refid="classlbann_1_1optimizer"/>
+      </node>
+      <node id="2025">
+        <label>lbann::rmsprop</label>
+        <link refid="classlbann_1_1rmsprop"/>
+        <childnode refid="2026" relation="public-inheritance">
+        </childnode>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="2028">
+        <label>lbann::optimizer</label>
+        <link refid="classlbann_1_1optimizer"/>
+        <childnode refid="2029" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="2030" relation="usage">
+          <edgelabel>m_cudnn</edgelabel>
+        </childnode>
+        <childnode refid="2031" relation="usage">
+          <edgelabel>m_gradient_allreduce_req</edgelabel>
+        </childnode>
+        <childnode refid="2032" relation="usage">
+          <edgelabel>m_weights</edgelabel>
+        </childnode>
+      </node>
+      <node id="2030">
+        <label>lbann::cudnn::cudnn_manager</label>
+        <link refid="classlbann_1_1cudnn_1_1cudnn__manager"/>
+      </node>
+      <node id="2033">
+        <label>lbann::weights_initializer</label>
+        <link refid="classlbann_1_1weights__initializer"/>
+        <childnode refid="2029" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+      </node>
+      <node id="2032">
+        <label>lbann::weights</label>
+        <link refid="classlbann_1_1weights"/>
+        <childnode refid="2028" relation="usage">
+          <edgelabel>m_optimizer</edgelabel>
+        </childnode>
+        <childnode refid="2029" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="2033" relation="usage">
+          <edgelabel>m_initializer</edgelabel>
+        </childnode>
+        <childnode refid="2030" relation="usage">
+          <edgelabel>m_cudnn</edgelabel>
+        </childnode>
+      </node>
+      <node id="2029">
+        <label>lbann::lbann_comm</label>
+        <link refid="classlbann_1_1lbann__comm"/>
+      </node>
+      <node id="2031">
+        <label>lbann::Al::request</label>
+        <link refid="structlbann_1_1Al_1_1request"/>
+      </node>
+      <node id="2027">
+        <label>lbann::rmsprop</label>
+        <link refid="classlbann_1_1rmsprop"/>
+        <childnode refid="2028" relation="public-inheritance">
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp" line="36" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp" bodystart="36" bodyend="106"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1optimizer_1ade46d28f7df19cab6c6ee90c03e976ea" prot="public" virt="non-virtual"><scope>lbann::rmsprop</scope><name>add_gradient_source</name></member>
+      <member refid="classlbann_1_1optimizer_1a435d31e3b7a0302e36439ee36f62dba8" prot="public" virt="non-virtual"><scope>lbann::rmsprop</scope><name>add_to_gradient</name></member>
+      <member refid="classlbann_1_1optimizer_1ac23ebde61a225f70c27ab937df5755ed" prot="public" virt="non-virtual"><scope>lbann::rmsprop</scope><name>add_to_gradient_staging</name></member>
+      <member refid="classlbann_1_1optimizer_1a3f41360479fbd46c704342bb4ef36d09" prot="public" virt="non-virtual"><scope>lbann::rmsprop</scope><name>clear_gradient</name></member>
+      <member refid="classlbann_1_1rmsprop_1a1493737d356809ad5c94f77051de8814" prot="public" virt="virtual"><scope>lbann::rmsprop</scope><name>copy</name></member>
+      <member refid="classlbann_1_1rmsprop_1a4526482bf60f7f3fc3f60ff70b38cdb7" prot="public" virt="virtual"><scope>lbann::rmsprop</scope><name>get_description</name></member>
+      <member refid="classlbann_1_1optimizer_1a12b7dbc72eb2de78d6ad798b8939f349" prot="public" virt="non-virtual"><scope>lbann::rmsprop</scope><name>get_gradient</name></member>
+      <member refid="classlbann_1_1optimizer_1ac52867427b0d28ec6888b6344104791d" prot="public" virt="non-virtual"><scope>lbann::rmsprop</scope><name>get_learning_rate</name></member>
+      <member refid="classlbann_1_1optimizer_1a91370e4de6083e7cd464c809cf583eb3" prot="public" virt="non-virtual"><scope>lbann::rmsprop</scope><name>get_num_gradient_sources</name></member>
+      <member refid="classlbann_1_1optimizer_1afef81d54e836ba0177f7a411ba3aaf6e" prot="public" virt="non-virtual"><scope>lbann::rmsprop</scope><name>get_step_time</name></member>
+      <member refid="classlbann_1_1rmsprop_1aa4299a19c0ab81a41ccebb9486f106b6" prot="public" virt="virtual"><scope>lbann::rmsprop</scope><name>get_type</name></member>
+      <member refid="classlbann_1_1optimizer_1a9c3fc3f1d45da822676d5932a1c7af82" prot="public" virt="non-virtual"><scope>lbann::rmsprop</scope><name>get_weights</name></member>
+      <member refid="classlbann_1_1optimizer_1abccf0babf69e3d7c6e9a7fd0731c79b7" prot="public" virt="non-virtual"><scope>lbann::rmsprop</scope><name>is_initialized</name></member>
+      <member refid="classlbann_1_1rmsprop_1a64db08f787ca8904a0ba4ecc37d5d1ed" prot="private" virt="virtual"><scope>lbann::rmsprop</scope><name>load_from_checkpoint_shared</name></member>
+      <member refid="classlbann_1_1rmsprop_1a2bbaa35bb209e971a5ac9e1dbb6ece76" prot="private" virt="non-virtual"><scope>lbann::rmsprop</scope><name>m_cache</name></member>
+      <member refid="classlbann_1_1optimizer_1a8c2569a8fcf0ee969517067b81896c44" prot="protected" virt="non-virtual"><scope>lbann::rmsprop</scope><name>m_comm</name></member>
+      <member refid="classlbann_1_1optimizer_1a2f24dbeaca18b06f4aa7d179bbf96680" prot="protected" virt="non-virtual"><scope>lbann::rmsprop</scope><name>m_cudnn</name></member>
+      <member refid="classlbann_1_1rmsprop_1a9cd712c44e7c4995120e2933b0387d71" prot="private" virt="non-virtual"><scope>lbann::rmsprop</scope><name>m_decay_rate</name></member>
+      <member refid="classlbann_1_1rmsprop_1a6ea73caf5b2769451dfd798665877208" prot="private" virt="non-virtual"><scope>lbann::rmsprop</scope><name>m_eps</name></member>
+      <member refid="classlbann_1_1optimizer_1a3df20cb0ae2b60430ad4fd235d66c12e" prot="protected" virt="non-virtual"><scope>lbann::rmsprop</scope><name>m_gradient</name></member>
+      <member refid="classlbann_1_1optimizer_1ad393dcdcb82b44510c586ed5ec46d4dd" prot="protected" virt="non-virtual"><scope>lbann::rmsprop</scope><name>m_learning_rate</name></member>
+      <member refid="classlbann_1_1optimizer_1a33b57b578a089d9ffe6715bb3996907c" prot="protected" virt="non-virtual"><scope>lbann::rmsprop</scope><name>m_weights</name></member>
+      <member refid="classlbann_1_1rmsprop_1a3c7eb1fb105c7be762b97e4f947a2b94" prot="public" virt="non-virtual"><scope>lbann::rmsprop</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1optimizer_1ab7811e0a4d2d9b594140aed78b6de743" prot="public" virt="non-virtual" ambiguityscope="lbann::optimizer::"><scope>lbann::rmsprop</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1optimizer_1a136ed79c3f279ecded5be380fb67b05f" prot="public" virt="non-virtual"><scope>lbann::rmsprop</scope><name>optimizer</name></member>
+      <member refid="classlbann_1_1optimizer_1a300aa4928e2e4feeb5e99b9eb0a16632" prot="public" virt="non-virtual"><scope>lbann::rmsprop</scope><name>optimizer</name></member>
+      <member refid="classlbann_1_1rmsprop_1ac2c5ae4dc2438da1da54072a297b148b" prot="private" virt="non-virtual"><scope>lbann::rmsprop</scope><name>pack_scalars</name></member>
+      <member refid="classlbann_1_1optimizer_1a68ba7515d7eb4af38ff19607c13a111b" prot="public" virt="non-virtual"><scope>lbann::rmsprop</scope><name>remove_gradient_source</name></member>
+      <member refid="classlbann_1_1optimizer_1a067709debd4d2e7bfe1a35b5f6ced668" prot="public" virt="virtual"><scope>lbann::rmsprop</scope><name>reset_counters</name></member>
+      <member refid="classlbann_1_1rmsprop_1af42c8e3336e72aac926e19c57b56e59f" prot="public" virt="non-virtual"><scope>lbann::rmsprop</scope><name>rmsprop</name></member>
+      <member refid="classlbann_1_1rmsprop_1af70a9a2c9ff67d0d39f14c6e283abd95" prot="public" virt="non-virtual"><scope>lbann::rmsprop</scope><name>rmsprop</name></member>
+      <member refid="classlbann_1_1rmsprop_1a8abe698168c2d1cb2c65d180552501ef" prot="private" virt="virtual"><scope>lbann::rmsprop</scope><name>save_to_checkpoint_shared</name></member>
+      <member refid="classlbann_1_1optimizer_1a147cac09beaa17df4e0fc1fc1be3abce" prot="public" virt="non-virtual"><scope>lbann::rmsprop</scope><name>set_learning_rate</name></member>
+      <member refid="classlbann_1_1optimizer_1afc00daf2acb6af7e29786524126660c2" prot="public" virt="non-virtual"><scope>lbann::rmsprop</scope><name>set_weights</name></member>
+      <member refid="classlbann_1_1rmsprop_1a8f6111a36f9ad592d14e13b64a0f228f" prot="public" virt="virtual"><scope>lbann::rmsprop</scope><name>setup</name></member>
+      <member refid="classlbann_1_1optimizer_1a1fe495ccbd62d50735615818abecf454" prot="public" virt="non-virtual"><scope>lbann::rmsprop</scope><name>start_gradient_staging_allreduce</name></member>
+      <member refid="classlbann_1_1optimizer_1aa9f43ca3f22edc0a25d0509b6514a411" prot="public" virt="non-virtual"><scope>lbann::rmsprop</scope><name>step</name></member>
+      <member refid="classlbann_1_1rmsprop_1a600e4b332299a6aaa36d0b7ff458e3f3" prot="public" virt="virtual"><scope>lbann::rmsprop</scope><name>step_compute</name></member>
+      <member refid="classlbann_1_1rmsprop_1a1af03b4c5e744abae04ccec3e19a0cc6" prot="private" virt="non-virtual"><scope>lbann::rmsprop</scope><name>unpack_header</name></member>
+      <member refid="classlbann_1_1rmsprop_1a9b969263276b4d1aed93c3c82abf832d" prot="private" virt="non-virtual"><scope>lbann::rmsprop</scope><name>unpack_scalars</name></member>
+      <member refid="classlbann_1_1optimizer_1abbee0e2cb021f835b669d9ba0da5145a" prot="public" virt="virtual"><scope>lbann::rmsprop</scope><name>~optimizer</name></member>
+      <member refid="classlbann_1_1rmsprop_1ae837f3c0e5b49f8baa42cc9c864259fc" prot="public" virt="non-virtual"><scope>lbann::rmsprop</scope><name>~rmsprop</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

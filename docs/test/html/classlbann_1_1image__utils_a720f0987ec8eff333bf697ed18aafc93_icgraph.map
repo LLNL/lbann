@@ -1,0 +1,10 @@
+<map id="lbann::image_utils::import_image" name="lbann::image_utils::import_image">
+<area shape="rect" id="node2" href="$classlbann_1_1imagenet__reader__single.html#a77c576d6085d4a8674322275dd9bd133" title="lbann::imagenet_reader\l_single::fetch_datum" alt="" coords="182,5,344,44"/>
+<area shape="rect" id="node4" href="$classlbann_1_1data__reader__mnist__siamese.html#a1709140fcdcea9baaaf1bab7a48f3bce" title="Fetch this mini&#45;batch&#39;s labels into Y by calling the new overloaded fetch_label() ..." alt="" coords="186,113,340,165"/>
+<area shape="rect" id="node3" href="$classlbann_1_1imagenet__reader__single.html#aecd9cec6777e4a7485daa5b0396afee0" title="lbann::imagenet_reader\l_single::get_type" alt="" coords="399,5,562,44"/>
+<area shape="rect" id="node5" href="$classlbann_1_1data__reader__mnist__siamese.html#a2c5a29603f850bb0684dba1c64981604" title="lbann::data_reader\l_mnist_siamese::get_type" alt="" coords="392,120,569,159"/>
+<area shape="rect" id="node6" href="$classlbann_1_1data__reader__mnist__siamese.html#ac44a7118e94338e14f7b6a9e33239155" title="Fetch this mini&#45;batch&#39;s samples into X by calling the new overloaded fetch_datum() ..." alt="" coords="863,85,1050,124"/>
+<area shape="rect" id="node7" href="$classlbann_1_1data__reader__mnist__siamese.html#a299dd32be165c5acf320b6f40404cb17" title="lbann::data_reader\l_mnist_siamese::fetch_datum" alt="" coords="617,16,815,55"/>
+<area shape="rect" id="node8" href="$classlbann_1_1data__reader__mnist__siamese.html#a0f4171af4c56100c1c78cb53e938222c" title="lbann::data_reader\l_mnist_siamese::fetch_label" alt="" coords="621,217,811,256"/>
+<area shape="rect" id="node9" href="$classlbann_1_1data__reader__mnist__siamese.html#a2c60a89c5815fa24b34d4febfecfc3db" title="lbann::data_reader\l_mnist_siamese::load" alt="" coords="641,155,791,193"/>
+</map>

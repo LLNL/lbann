@@ -1,0 +1,345 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="pearson__correlation_8hpp" kind="file" language="C++">
+    <compoundname>pearson_correlation.hpp</compoundname>
+    <includes refid="metric_8hpp" local="yes">lbann/metrics/metric.hpp</includes>
+    <includedby refid="pearson__correlation_8cpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/src/metrics/pearson_correlation.cpp</includedby>
+    <includedby refid="lbann_8hpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/include/lbann/lbann.hpp</includedby>
+    <incdepgraph>
+      <node id="10632">
+        <label>lbann/io/persist.hpp</label>
+        <link refid="persist_8hpp"/>
+        <childnode refid="10613" relation="include">
+        </childnode>
+        <childnode refid="10614" relation="include">
+        </childnode>
+      </node>
+      <node id="10614">
+        <label>El.hpp</label>
+      </node>
+      <node id="10613">
+        <label>lbann/base.hpp</label>
+        <link refid="base_8hpp"/>
+        <childnode refid="10614" relation="include">
+        </childnode>
+        <childnode refid="10615" relation="include">
+        </childnode>
+        <childnode refid="10616" relation="include">
+        </childnode>
+        <childnode refid="10621" relation="include">
+        </childnode>
+      </node>
+      <node id="10612">
+        <label>lbann/metrics/metric.hpp</label>
+        <link refid="metric_8hpp"/>
+        <childnode refid="10613" relation="include">
+        </childnode>
+        <childnode refid="10622" relation="include">
+        </childnode>
+        <childnode refid="10626" relation="include">
+        </childnode>
+        <childnode refid="10632" relation="include">
+        </childnode>
+      </node>
+      <node id="10629">
+        <label>string</label>
+      </node>
+      <node id="10624">
+        <label>map</label>
+      </node>
+      <node id="10631">
+        <label>exception</label>
+      </node>
+      <node id="10618">
+        <label>cstdio</label>
+      </node>
+      <node id="10627">
+        <label>lbann/utils/stack_trace.hpp</label>
+        <link refid="stack__trace_8hpp"/>
+        <childnode refid="10628" relation="include">
+        </childnode>
+        <childnode refid="10629" relation="include">
+        </childnode>
+      </node>
+      <node id="10620">
+        <label>cxxabi.h</label>
+      </node>
+      <node id="10626">
+        <label>lbann/utils/exception.hpp</label>
+        <link refid="exception_8hpp"/>
+        <childnode refid="10613" relation="include">
+        </childnode>
+        <childnode refid="10622" relation="include">
+        </childnode>
+        <childnode refid="10627" relation="include">
+        </childnode>
+        <childnode refid="10630" relation="include">
+        </childnode>
+        <childnode refid="10631" relation="include">
+        </childnode>
+      </node>
+      <node id="10623">
+        <label>vector</label>
+      </node>
+      <node id="10622">
+        <label>lbann/comm.hpp</label>
+        <link refid="comm_8hpp"/>
+        <childnode refid="10623" relation="include">
+        </childnode>
+        <childnode refid="10624" relation="include">
+        </childnode>
+        <childnode refid="10625" relation="include">
+        </childnode>
+        <childnode refid="10613" relation="include">
+        </childnode>
+      </node>
+      <node id="10617">
+        <label>cstdlib</label>
+      </node>
+      <node id="10630">
+        <label>iostream</label>
+      </node>
+      <node id="10628">
+        <label>csignal</label>
+      </node>
+      <node id="10611">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/pearson_correlation.hpp</label>
+        <link refid="pearson__correlation_8hpp"/>
+        <childnode refid="10612" relation="include">
+        </childnode>
+      </node>
+      <node id="10621">
+        <label>lbann_config.hpp</label>
+      </node>
+      <node id="10616">
+        <label>lbann/utils/cyg_profile.hpp</label>
+        <link refid="cyg__profile_8hpp"/>
+        <childnode refid="10617" relation="include">
+        </childnode>
+        <childnode refid="10618" relation="include">
+        </childnode>
+        <childnode refid="10619" relation="include">
+        </childnode>
+        <childnode refid="10620" relation="include">
+        </childnode>
+      </node>
+      <node id="10615">
+        <label>lbann/Elemental_extensions.hpp</label>
+        <link refid="Elemental__extensions_8hpp"/>
+        <childnode refid="10614" relation="include">
+        </childnode>
+      </node>
+      <node id="10625">
+        <label>typeindex</label>
+      </node>
+      <node id="10619">
+        <label>dlfcn.h</label>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="10641">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/proto/factories.hpp</label>
+        <link refid="factories_8hpp"/>
+        <childnode refid="10642" relation="include">
+        </childnode>
+        <childnode refid="10643" relation="include">
+        </childnode>
+        <childnode refid="10644" relation="include">
+        </childnode>
+        <childnode refid="10645" relation="include">
+        </childnode>
+        <childnode refid="10646" relation="include">
+        </childnode>
+        <childnode refid="10647" relation="include">
+        </childnode>
+        <childnode refid="10648" relation="include">
+        </childnode>
+        <childnode refid="10649" relation="include">
+        </childnode>
+        <childnode refid="10639" relation="include">
+        </childnode>
+      </node>
+      <node id="10646">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/model_factory.cpp</label>
+        <link refid="model__factory_8cpp"/>
+      </node>
+      <node id="10634">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/metrics/pearson_correlation.cpp</label>
+        <link refid="pearson__correlation_8cpp"/>
+      </node>
+      <node id="10638">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/params.cpp</label>
+        <link refid="params_8cpp"/>
+      </node>
+      <node id="10639">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/proto/proto_common.hpp</label>
+        <link refid="proto__common_8hpp"/>
+        <childnode refid="10636" relation="include">
+        </childnode>
+        <childnode refid="10640" relation="include">
+        </childnode>
+        <childnode refid="10641" relation="include">
+        </childnode>
+        <childnode refid="10650" relation="include">
+        </childnode>
+      </node>
+      <node id="10637">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/params.hpp</label>
+        <link refid="params_8hpp"/>
+        <childnode refid="10638" relation="include">
+        </childnode>
+        <childnode refid="10635" relation="include">
+        </childnode>
+      </node>
+      <node id="10643">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/layer_factory.cpp</label>
+        <link refid="layer__factory_8cpp"/>
+      </node>
+      <node id="10640">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/utils/protobuf_utils.cpp</label>
+        <link refid="protobuf__utils_8cpp"/>
+      </node>
+      <node id="10651">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/init_image_data_readers.cpp</label>
+        <link refid="init__image__data__readers_8cpp"/>
+      </node>
+      <node id="10647">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/objective_function_factory.cpp</label>
+        <link refid="objective__function__factory_8cpp"/>
+      </node>
+      <node id="10636">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/proto_common.cpp</label>
+        <link refid="proto__common_8cpp"/>
+      </node>
+      <node id="10645">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/metric_factory.cpp</label>
+        <link refid="metric__factory_8cpp"/>
+      </node>
+      <node id="10635">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/lbann.hpp</label>
+        <link refid="lbann_8hpp"/>
+        <childnode refid="10636" relation="include">
+        </childnode>
+        <childnode refid="10637" relation="include">
+        </childnode>
+        <childnode refid="10639" relation="include">
+        </childnode>
+        <childnode refid="10652" relation="include">
+        </childnode>
+      </node>
+      <node id="10650">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/proto/init_image_data_readers.hpp</label>
+        <link refid="init__image__data__readers_8hpp"/>
+        <childnode refid="10651" relation="include">
+        </childnode>
+        <childnode refid="10636" relation="include">
+        </childnode>
+      </node>
+      <node id="10648">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/optimizer_factory.cpp</label>
+        <link refid="optimizer__factory_8cpp"/>
+      </node>
+      <node id="10649">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/weights_factory.cpp</label>
+        <link refid="weights__factory_8cpp"/>
+      </node>
+      <node id="10633">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/pearson_correlation.hpp</label>
+        <link refid="pearson__correlation_8hpp"/>
+        <childnode refid="10634" relation="include">
+        </childnode>
+        <childnode refid="10635" relation="include">
+        </childnode>
+      </node>
+      <node id="10642">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/callback_factory.cpp</label>
+        <link refid="callback__factory_8cpp"/>
+      </node>
+      <node id="10652">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/protobuf_utils.hpp</label>
+        <link refid="protobuf__utils_8hpp"/>
+        <childnode refid="10640" relation="include">
+        </childnode>
+      </node>
+      <node id="10644">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/layer_graph_factory.cpp</label>
+        <link refid="layer__graph__factory_8cpp"/>
+      </node>
+    </invincdepgraph>
+    <innerclass refid="classlbann_1_1pearson__correlation__metric" prot="public">lbann::pearson_correlation_metric</innerclass>
+    <innernamespace refid="namespacelbann">lbann</innernamespace>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>2014-2016,<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Security,<sp/>LLC.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Produced<sp/>at<sp/>the<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Laboratory.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Written<sp/>by<sp/>the<sp/>LBANN<sp/>Research<sp/>Team<sp/>(B.<sp/>Van<sp/>Essen,<sp/>et<sp/>al.)<sp/>listed<sp/>in</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="comment">//<sp/>the<sp/>CONTRIBUTORS<sp/>file.<sp/>&lt;lbann-dev@llnl.gov&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="comment">//<sp/>LLNL-CODE-697807.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="comment">//<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="comment">//<sp/>This<sp/>file<sp/>is<sp/>part<sp/>of<sp/>LBANN:<sp/>Livermore<sp/>Big<sp/>Artificial<sp/>Neural<sp/>Network</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Toolkit.<sp/>For<sp/>details,<sp/>see<sp/>http://software.llnl.gov/LBANN<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="comment">//<sp/>https://github.com/LLNL/LBANN.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Licensed<sp/>under<sp/>the<sp/>Apache<sp/>License,<sp/>Version<sp/>2.0<sp/>(the<sp/>&quot;Licensee&quot;);<sp/>you</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight><highlight class="comment">//<sp/>may<sp/>not<sp/>use<sp/>this<sp/>file<sp/>except<sp/>in<sp/>compliance<sp/>with<sp/>the<sp/>License.<sp/><sp/>You<sp/>may</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="comment">//<sp/>obtain<sp/>a<sp/>copy<sp/>of<sp/>the<sp/>License<sp/>at:</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight><highlight class="comment">//<sp/>http://www.apache.org/licenses/LICENSE-2.0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Unless<sp/>required<sp/>by<sp/>applicable<sp/>law<sp/>or<sp/>agreed<sp/>to<sp/>in<sp/>writing,<sp/>software</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight><highlight class="comment">//<sp/>distributed<sp/>under<sp/>the<sp/>License<sp/>is<sp/>distributed<sp/>on<sp/>an<sp/>&quot;AS<sp/>IS&quot;<sp/>BASIS,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight><highlight class="comment">//<sp/>WITHOUT<sp/>WARRANTIES<sp/>OR<sp/>CONDITIONS<sp/>OF<sp/>ANY<sp/>KIND,<sp/>either<sp/>express<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="comment">//<sp/>implied.<sp/>See<sp/>the<sp/>License<sp/>for<sp/>the<sp/>specific<sp/>language<sp/>governing</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="comment">//<sp/>permissions<sp/>and<sp/>limitations<sp/>under<sp/>the<sp/>license.</highlight></codeline>
+<codeline lineno="26"><highlight class="comment"></highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="27"><highlight class="normal"></highlight><highlight class="preprocessor">#ifndef<sp/>LBANN_METRIC_PEARSON_CORRELATION_HPP</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="28"><highlight class="normal"></highlight><highlight class="preprocessor">#define<sp/>LBANN_METRIC_PEARSON_CORRELATION_HPP</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="29"><highlight class="normal"></highlight></codeline>
+<codeline lineno="30"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="metric_8hpp" kindref="compound">lbann/metrics/metric.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight></codeline>
+<codeline lineno="32"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacelbann" kindref="compound">lbann</ref><sp/>{</highlight></codeline>
+<codeline lineno="33"><highlight class="normal"></highlight></codeline>
+<codeline lineno="35" refid="classlbann_1_1pearson__correlation__metric" refkind="compound"><highlight class="keyword">class<sp/></highlight><highlight class="normal"><ref refid="classlbann_1_1pearson__correlation__metric" kindref="compound">pearson_correlation_metric</ref><sp/>:<sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1metric" kindref="compound">metric</ref><sp/>{</highlight></codeline>
+<codeline lineno="36"><highlight class="normal"></highlight></codeline>
+<codeline lineno="37"><highlight class="normal"><sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="38"><highlight class="normal"></highlight></codeline>
+<codeline lineno="40"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1pearson__correlation__metric_1ac0d93a18b2eb500db51f40311a3b3634" kindref="member">pearson_correlation_metric</ref>(<ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref><sp/>*<ref refid="file__io_8cpp_1ab048c6f9fcbcfaa57ce68b00263dbebe" kindref="member">comm</ref>);</highlight></codeline>
+<codeline lineno="41"><highlight class="normal"></highlight></codeline>
+<codeline lineno="43"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1pearson__correlation__metric_1ac0d93a18b2eb500db51f40311a3b3634" kindref="member">pearson_correlation_metric</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pearson__correlation__metric" kindref="compound">pearson_correlation_metric</ref>&amp;<sp/>other);</highlight></codeline>
+<codeline lineno="45"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1pearson__correlation__metric" kindref="compound">pearson_correlation_metric</ref>&amp;<sp/><ref refid="classlbann_1_1pearson__correlation__metric_1a5b88759076bc2f827b726e1541467b56" kindref="member">operator=</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pearson__correlation__metric" kindref="compound">pearson_correlation_metric</ref>&amp;<sp/>other);</highlight></codeline>
+<codeline lineno="47"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">virtual</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pearson__correlation__metric_1adaa97af452924a44c3894e44e9835923" kindref="member">~pearson_correlation_metric</ref>();</highlight></codeline>
+<codeline lineno="49" refid="classlbann_1_1pearson__correlation__metric_1a2bb107028c6931a70ed7d886707b4006" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1pearson__correlation__metric" kindref="compound">pearson_correlation_metric</ref>*<sp/><ref refid="classlbann_1_1pearson__correlation__metric_1a2bb107028c6931a70ed7d886707b4006" kindref="member">copy</ref>()</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="50"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">new</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pearson__correlation__metric_1ac0d93a18b2eb500db51f40311a3b3634" kindref="member">pearson_correlation_metric</ref>(*</highlight><highlight class="keyword">this</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="51"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="52"><highlight class="normal"></highlight></codeline>
+<codeline lineno="54" refid="classlbann_1_1pearson__correlation__metric_1a7cbb12e258acdb0cbc4d521dc7163dd6" refkind="member"><highlight class="normal"><sp/><sp/>std::string<sp/><ref refid="classlbann_1_1pearson__correlation__metric_1a7cbb12e258acdb0cbc4d521dc7163dd6" kindref="member">name</ref>()</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="stringliteral">&quot;Pearson<sp/>correlation&quot;</highlight><highlight class="normal">;<sp/>}</highlight></codeline>
+<codeline lineno="55"><highlight class="normal"></highlight></codeline>
+<codeline lineno="57"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">virtual</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pearson__correlation__metric_1a4394c0ebb3cacdcec934e4ae322f9bb6" kindref="member">setup</ref>(<ref refid="classlbann_1_1model" kindref="compound">model</ref>&amp;<sp/>m)<sp/></highlight><highlight class="keyword">override</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="58"><highlight class="normal"></highlight></codeline>
+<codeline lineno="59"><highlight class="normal"><sp/></highlight><highlight class="keyword">protected</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="60"><highlight class="normal"></highlight></codeline>
+<codeline lineno="65"><highlight class="normal"><sp/><sp/><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref><sp/><ref refid="classlbann_1_1pearson__correlation__metric_1a28453718aa09d609ef5ab157823d8c24" kindref="member">evaluate_compute</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref>&amp;<sp/><ref refid="base_8hpp_1a2781a159088df64ed7d47cc91c4dc0a8ac41b9ec75e920b610e8907e066074b30" kindref="member">prediction</ref>,</highlight></codeline>
+<codeline lineno="66"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref>&amp;<sp/>ground_truth)<sp/></highlight><highlight class="keyword">override</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="67"><highlight class="normal"></highlight></codeline>
+<codeline lineno="68"><highlight class="normal"><sp/></highlight><highlight class="keyword">private</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="69"><highlight class="normal"></highlight></codeline>
+<codeline lineno="71" refid="classlbann_1_1pearson__correlation__metric_1ac664eebee2c3d3287848c570400bdddb" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref><sp/>*<ref refid="classlbann_1_1pearson__correlation__metric_1ac664eebee2c3d3287848c570400bdddb" kindref="member">m_prediction_means</ref>;</highlight></codeline>
+<codeline lineno="73" refid="classlbann_1_1pearson__correlation__metric_1ad288c4206078866feb39a4f982d8e975" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref><sp/>*<ref refid="classlbann_1_1pearson__correlation__metric_1ad288c4206078866feb39a4f982d8e975" kindref="member">m_prediction_stdevs</ref>;</highlight></codeline>
+<codeline lineno="75" refid="classlbann_1_1pearson__correlation__metric_1aa67f395597bf6bbf9bd57645877f26a5" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref><sp/>*<ref refid="classlbann_1_1pearson__correlation__metric_1aa67f395597bf6bbf9bd57645877f26a5" kindref="member">m_ground_truth_means</ref>;</highlight></codeline>
+<codeline lineno="77" refid="classlbann_1_1pearson__correlation__metric_1a7ed5e7a1778d17f852f4277afcaa31ed" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref><sp/>*<ref refid="classlbann_1_1pearson__correlation__metric_1a7ed5e7a1778d17f852f4277afcaa31ed" kindref="member">m_ground_truth_stdevs</ref>;</highlight></codeline>
+<codeline lineno="79" refid="classlbann_1_1pearson__correlation__metric_1aeabb941e22f2718a59103b7ec98a9c1e" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref><sp/>*<ref refid="classlbann_1_1pearson__correlation__metric_1aeabb941e22f2718a59103b7ec98a9c1e" kindref="member">m_covariances</ref>;</highlight></codeline>
+<codeline lineno="80"><highlight class="normal"></highlight></codeline>
+<codeline lineno="81"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="82"><highlight class="normal"></highlight></codeline>
+<codeline lineno="83"><highlight class="normal">}<sp/><sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>lbann</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="84"><highlight class="normal"></highlight></codeline>
+<codeline lineno="85"><highlight class="normal"></highlight><highlight class="preprocessor">#endif<sp/><sp/>//<sp/>LBANN_METRIC_PEARSON_CORRELATION_HPP</highlight></codeline>
+    </programlisting>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/pearson_correlation.hpp"/>
+  </compounddef>
+</doxygen>

@@ -1,0 +1,665 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="callback__learning__rate_8cpp" kind="file" language="C++">
+    <compoundname>callback_learning_rate.cpp</compoundname>
+    <includes refid="callback__learning__rate_8hpp" local="yes">lbann/callbacks/callback_learning_rate.hpp</includes>
+    <includes local="no">limits</includes>
+    <includes local="no">utility</includes>
+    <includes local="no">cmath</includes>
+    <incdepgraph>
+      <node id="18185">
+        <label>sys/stat.h</label>
+      </node>
+      <node id="18191">
+        <label>limits</label>
+      </node>
+      <node id="18160">
+        <label>lbann/utils/summary.hpp</label>
+        <link refid="summary_8hpp"/>
+        <childnode refid="18161" relation="include">
+        </childnode>
+        <childnode refid="18162" relation="include">
+        </childnode>
+        <childnode refid="18151" relation="include">
+        </childnode>
+        <childnode refid="18163" relation="include">
+        </childnode>
+      </node>
+      <node id="18178">
+        <label>lbann/io/persist.hpp</label>
+        <link refid="persist_8hpp"/>
+        <childnode refid="18151" relation="include">
+        </childnode>
+        <childnode refid="18152" relation="include">
+        </childnode>
+      </node>
+      <node id="18152">
+        <label>El.hpp</label>
+      </node>
+      <node id="18151">
+        <label>lbann/base.hpp</label>
+        <link refid="base_8hpp"/>
+        <childnode refid="18152" relation="include">
+        </childnode>
+        <childnode refid="18153" relation="include">
+        </childnode>
+        <childnode refid="18154" relation="include">
+        </childnode>
+        <childnode refid="18159" relation="include">
+        </childnode>
+      </node>
+      <node id="18193">
+        <label>cmath</label>
+      </node>
+      <node id="18147">
+        <label>lbann/callbacks/callback_learning_rate.hpp</label>
+        <link refid="callback__learning__rate_8hpp"/>
+        <childnode refid="18148" relation="include">
+        </childnode>
+        <childnode refid="18149" relation="include">
+        </childnode>
+        <childnode refid="18150" relation="include">
+        </childnode>
+      </node>
+      <node id="18187">
+        <label>fcntl.h</label>
+      </node>
+      <node id="18190">
+        <label>lbann/metrics/metric.hpp</label>
+        <link refid="metric_8hpp"/>
+        <childnode refid="18151" relation="include">
+        </childnode>
+        <childnode refid="18163" relation="include">
+        </childnode>
+        <childnode refid="18170" relation="include">
+        </childnode>
+        <childnode refid="18178" relation="include">
+        </childnode>
+      </node>
+      <node id="18161">
+        <label>string</label>
+      </node>
+      <node id="18175">
+        <label>lbann/utils/cudnn_wrapper.hpp</label>
+        <link refid="cudnn__wrapper_8hpp"/>
+        <childnode refid="18162" relation="include">
+        </childnode>
+        <childnode refid="18151" relation="include">
+        </childnode>
+        <childnode refid="18163" relation="include">
+        </childnode>
+        <childnode refid="18170" relation="include">
+        </childnode>
+      </node>
+      <node id="18180">
+        <label>lbann/utils/timer.hpp</label>
+        <link refid="timer_8hpp"/>
+        <childnode refid="18181" relation="include">
+        </childnode>
+      </node>
+      <node id="18164">
+        <label>map</label>
+      </node>
+      <node id="18148">
+        <label>unordered_set</label>
+      </node>
+      <node id="18146">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_learning_rate.cpp</label>
+        <link refid="callback__learning__rate_8cpp"/>
+        <childnode refid="18147" relation="include">
+        </childnode>
+        <childnode refid="18191" relation="include">
+        </childnode>
+        <childnode refid="18192" relation="include">
+        </childnode>
+        <childnode refid="18193" relation="include">
+        </childnode>
+      </node>
+      <node id="18174">
+        <label>exception</label>
+      </node>
+      <node id="18177">
+        <label>lbann/weights/initializer.hpp</label>
+        <link refid="initializer_8hpp"/>
+        <childnode refid="18151" relation="include">
+        </childnode>
+        <childnode refid="18163" relation="include">
+        </childnode>
+        <childnode refid="18170" relation="include">
+        </childnode>
+        <childnode refid="18175" relation="include">
+        </childnode>
+      </node>
+      <node id="18186">
+        <label>sys/types.h</label>
+      </node>
+      <node id="18150">
+        <label>lbann/callbacks/callback.hpp</label>
+        <link refid="callback_8hpp"/>
+        <childnode refid="18151" relation="include">
+        </childnode>
+        <childnode refid="18160" relation="include">
+        </childnode>
+        <childnode refid="18166" relation="include">
+        </childnode>
+        <childnode refid="18167" relation="include">
+        </childnode>
+      </node>
+      <node id="18182">
+        <label>lbann/utils/graph.hpp</label>
+        <link refid="graph_8hpp"/>
+        <childnode refid="18173" relation="include">
+        </childnode>
+        <childnode refid="18162" relation="include">
+        </childnode>
+        <childnode refid="18183" relation="include">
+        </childnode>
+        <childnode refid="18164" relation="include">
+        </childnode>
+      </node>
+      <node id="18156">
+        <label>cstdio</label>
+      </node>
+      <node id="18171">
+        <label>lbann/utils/stack_trace.hpp</label>
+        <link refid="stack__trace_8hpp"/>
+        <childnode refid="18172" relation="include">
+        </childnode>
+        <childnode refid="18161" relation="include">
+        </childnode>
+      </node>
+      <node id="18158">
+        <label>cxxabi.h</label>
+      </node>
+      <node id="18170">
+        <label>lbann/utils/exception.hpp</label>
+        <link refid="exception_8hpp"/>
+        <childnode refid="18151" relation="include">
+        </childnode>
+        <childnode refid="18163" relation="include">
+        </childnode>
+        <childnode refid="18171" relation="include">
+        </childnode>
+        <childnode refid="18173" relation="include">
+        </childnode>
+        <childnode refid="18174" relation="include">
+        </childnode>
+      </node>
+      <node id="18162">
+        <label>vector</label>
+      </node>
+      <node id="18163">
+        <label>lbann/comm.hpp</label>
+        <link refid="comm_8hpp"/>
+        <childnode refid="18162" relation="include">
+        </childnode>
+        <childnode refid="18164" relation="include">
+        </childnode>
+        <childnode refid="18165" relation="include">
+        </childnode>
+        <childnode refid="18151" relation="include">
+        </childnode>
+      </node>
+      <node id="18188">
+        <label>lbann/objective_functions/objective_function.hpp</label>
+        <link refid="objective__function_8hpp"/>
+        <childnode refid="18189" relation="include">
+        </childnode>
+        <childnode refid="18190" relation="include">
+        </childnode>
+      </node>
+      <node id="18192">
+        <label>utility</label>
+      </node>
+      <node id="18184">
+        <label>lbann/io/file_io.hpp</label>
+        <link refid="file__io_8hpp"/>
+        <childnode refid="18185" relation="include">
+        </childnode>
+        <childnode refid="18186" relation="include">
+        </childnode>
+        <childnode refid="18187" relation="include">
+        </childnode>
+      </node>
+      <node id="18179">
+        <label>lbann.pb.h</label>
+      </node>
+      <node id="18155">
+        <label>cstdlib</label>
+      </node>
+      <node id="18173">
+        <label>iostream</label>
+      </node>
+      <node id="18168">
+        <label>lbann/optimizers/optimizer.hpp</label>
+        <link refid="optimizer_8hpp"/>
+        <childnode refid="18169" relation="include">
+        </childnode>
+        <childnode refid="18151" relation="include">
+        </childnode>
+        <childnode refid="18163" relation="include">
+        </childnode>
+        <childnode refid="18170" relation="include">
+        </childnode>
+        <childnode refid="18175" relation="include">
+        </childnode>
+        <childnode refid="18176" relation="include">
+        </childnode>
+        <childnode refid="18161" relation="include">
+        </childnode>
+        <childnode refid="18148" relation="include">
+        </childnode>
+      </node>
+      <node id="18149">
+        <label>unordered_map</label>
+      </node>
+      <node id="18167">
+        <label>lbann/layers/layer.hpp</label>
+        <link refid="layer_8hpp"/>
+        <childnode refid="18151" relation="include">
+        </childnode>
+        <childnode refid="18163" relation="include">
+        </childnode>
+        <childnode refid="18160" relation="include">
+        </childnode>
+        <childnode refid="18168" relation="include">
+        </childnode>
+        <childnode refid="18170" relation="include">
+        </childnode>
+        <childnode refid="18175" relation="include">
+        </childnode>
+        <childnode refid="18180" relation="include">
+        </childnode>
+        <childnode refid="18178" relation="include">
+        </childnode>
+        <childnode refid="18179" relation="include">
+        </childnode>
+        <childnode refid="18161" relation="include">
+        </childnode>
+        <childnode refid="18162" relation="include">
+        </childnode>
+      </node>
+      <node id="18181">
+        <label>chrono</label>
+      </node>
+      <node id="18189">
+        <label>lbann/objective_functions/objective_function_term.hpp</label>
+        <link refid="objective__function__term_8hpp"/>
+        <childnode refid="18151" relation="include">
+        </childnode>
+        <childnode refid="18167" relation="include">
+        </childnode>
+        <childnode refid="18176" relation="include">
+        </childnode>
+      </node>
+      <node id="18172">
+        <label>csignal</label>
+      </node>
+      <node id="18176">
+        <label>lbann/weights/weights.hpp</label>
+        <link refid="weights_8hpp"/>
+        <childnode refid="18161" relation="include">
+        </childnode>
+        <childnode refid="18151" relation="include">
+        </childnode>
+        <childnode refid="18163" relation="include">
+        </childnode>
+        <childnode refid="18170" relation="include">
+        </childnode>
+        <childnode refid="18175" relation="include">
+        </childnode>
+        <childnode refid="18177" relation="include">
+        </childnode>
+        <childnode refid="18178" relation="include">
+        </childnode>
+        <childnode refid="18179" relation="include">
+        </childnode>
+      </node>
+      <node id="18159">
+        <label>lbann_config.hpp</label>
+      </node>
+      <node id="18183">
+        <label>set</label>
+      </node>
+      <node id="18166">
+        <label>lbann/models/model.hpp</label>
+        <link refid="model_8hpp"/>
+        <childnode refid="18151" relation="include">
+        </childnode>
+        <childnode refid="18163" relation="include">
+        </childnode>
+        <childnode refid="18167" relation="include">
+        </childnode>
+        <childnode refid="18160" relation="include">
+        </childnode>
+        <childnode refid="18182" relation="include">
+        </childnode>
+        <childnode refid="18184" relation="include">
+        </childnode>
+        <childnode refid="18178" relation="include">
+        </childnode>
+        <childnode refid="18188" relation="include">
+        </childnode>
+        <childnode refid="18190" relation="include">
+        </childnode>
+        <childnode refid="18176" relation="include">
+        </childnode>
+        <childnode refid="18168" relation="include">
+        </childnode>
+        <childnode refid="18179" relation="include">
+        </childnode>
+        <childnode refid="18162" relation="include">
+        </childnode>
+        <childnode refid="18161" relation="include">
+        </childnode>
+        <childnode refid="18149" relation="include">
+        </childnode>
+      </node>
+      <node id="18169">
+        <label>lbann/utils/compiler_control.hpp</label>
+        <link refid="compiler__control_8hpp"/>
+      </node>
+      <node id="18154">
+        <label>lbann/utils/cyg_profile.hpp</label>
+        <link refid="cyg__profile_8hpp"/>
+        <childnode refid="18155" relation="include">
+        </childnode>
+        <childnode refid="18156" relation="include">
+        </childnode>
+        <childnode refid="18157" relation="include">
+        </childnode>
+        <childnode refid="18158" relation="include">
+        </childnode>
+      </node>
+      <node id="18153">
+        <label>lbann/Elemental_extensions.hpp</label>
+        <link refid="Elemental__extensions_8hpp"/>
+        <childnode refid="18152" relation="include">
+        </childnode>
+      </node>
+      <node id="18165">
+        <label>typeindex</label>
+      </node>
+      <node id="18157">
+        <label>dlfcn.h</label>
+      </node>
+    </incdepgraph>
+    <innernamespace refid="namespacelbann">lbann</innernamespace>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>2014-2016,<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Security,<sp/>LLC.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Produced<sp/>at<sp/>the<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Laboratory.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Written<sp/>by<sp/>the<sp/>LBANN<sp/>Research<sp/>Team<sp/>(B.<sp/>Van<sp/>Essen,<sp/>et<sp/>al.)<sp/>listed<sp/>in</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="comment">//<sp/>the<sp/>CONTRIBUTORS<sp/>file.<sp/>&lt;lbann-dev@llnl.gov&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="comment">//<sp/>LLNL-CODE-697807.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="comment">//<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="comment">//<sp/>This<sp/>file<sp/>is<sp/>part<sp/>of<sp/>LBANN:<sp/>Livermore<sp/>Big<sp/>Artificial<sp/>Neural<sp/>Network</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Toolkit.<sp/>For<sp/>details,<sp/>see<sp/>http://software.llnl.gov/LBANN<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="comment">//<sp/>https://github.com/LLNL/LBANN.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Licensed<sp/>under<sp/>the<sp/>Apache<sp/>License,<sp/>Version<sp/>2.0<sp/>(the<sp/>&quot;Licensee&quot;);<sp/>you</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight><highlight class="comment">//<sp/>may<sp/>not<sp/>use<sp/>this<sp/>file<sp/>except<sp/>in<sp/>compliance<sp/>with<sp/>the<sp/>License.<sp/><sp/>You<sp/>may</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="comment">//<sp/>obtain<sp/>a<sp/>copy<sp/>of<sp/>the<sp/>License<sp/>at:</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight><highlight class="comment">//<sp/>http://www.apache.org/licenses/LICENSE-2.0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Unless<sp/>required<sp/>by<sp/>applicable<sp/>law<sp/>or<sp/>agreed<sp/>to<sp/>in<sp/>writing,<sp/>software</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight><highlight class="comment">//<sp/>distributed<sp/>under<sp/>the<sp/>License<sp/>is<sp/>distributed<sp/>on<sp/>an<sp/>&quot;AS<sp/>IS&quot;<sp/>BASIS,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight><highlight class="comment">//<sp/>WITHOUT<sp/>WARRANTIES<sp/>OR<sp/>CONDITIONS<sp/>OF<sp/>ANY<sp/>KIND,<sp/>either<sp/>express<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="comment">//<sp/>implied.<sp/>See<sp/>the<sp/>License<sp/>for<sp/>the<sp/>specific<sp/>language<sp/>governing</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="comment">//<sp/>permissions<sp/>and<sp/>limitations<sp/>under<sp/>the<sp/>license.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="25"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="26"><highlight class="normal"></highlight><highlight class="comment">//<sp/>lbann_learning_rate<sp/>.hpp<sp/>.cpp<sp/>-<sp/>Callback<sp/>hooks<sp/>for<sp/>learning<sp/>rate<sp/>schedules</highlight></codeline>
+<codeline lineno="28"><highlight class="comment"></highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="29"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="callback__learning__rate_8hpp" kindref="compound">lbann/callbacks/callback_learning_rate.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="30"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;limits&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;utility&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="32"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;cmath&gt;</highlight><highlight class="normal"><sp/></highlight><highlight class="comment">//<sp/>std::pow</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="33"><highlight class="normal"></highlight></codeline>
+<codeline lineno="34"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacelbann" kindref="compound">lbann</ref><sp/>{</highlight></codeline>
+<codeline lineno="35"><highlight class="normal"></highlight></codeline>
+<codeline lineno="36"><highlight class="normal"></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__learning__rate_1a97194f282c29a748c915d9811a8a99fb" kindref="member">lbann_callback_learning_rate::m_cur_global_lr</ref><sp/>=<sp/>0.0f;</highlight></codeline>
+<codeline lineno="37"><highlight class="normal"></highlight></codeline>
+<codeline lineno="38" refid="classlbann_1_1lbann__callback__learning__rate_1a69687cd55f4d09c480e08e18488519fe" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1lbann__callback__learning__rate_1a69687cd55f4d09c480e08e18488519fe" kindref="member">lbann_callback_learning_rate::lbann_callback_learning_rate</ref>()<sp/>{}</highlight></codeline>
+<codeline lineno="39"><highlight class="normal"></highlight></codeline>
+<codeline lineno="40" refid="classlbann_1_1lbann__callback__learning__rate_1a0c544d120f949cfc5c2dcb07d69b3cde" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1lbann__callback__learning__rate_1a69687cd55f4d09c480e08e18488519fe" kindref="member">lbann_callback_learning_rate::lbann_callback_learning_rate</ref>(</highlight></codeline>
+<codeline lineno="41"><highlight class="normal"><sp/><sp/>std::unordered_set&lt;weights<sp/>*&gt;<sp/>weights_list)<sp/>:<sp/><ref refid="classlbann_1_1lbann__callback__learning__rate_1a0b02e82190e04a22ab26d858041915d7" kindref="member">m_weights</ref>(std::move(weights_list))<sp/>{}</highlight></codeline>
+<codeline lineno="42"><highlight class="normal"></highlight></codeline>
+<codeline lineno="43" refid="classlbann_1_1lbann__callback__learning__rate_1a501f31a6b8fde1282a60e4b347e8d9d3" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__learning__rate_1a501f31a6b8fde1282a60e4b347e8d9d3" kindref="member">lbann_callback_learning_rate::setup</ref>(<ref refid="classlbann_1_1model" kindref="compound">model</ref><sp/>*m)<sp/>{</highlight></codeline>
+<codeline lineno="44"><highlight class="normal"></highlight></codeline>
+<codeline lineno="45"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Add<sp/>all<sp/>weights<sp/>if<sp/>list<sp/>of<sp/>weights<sp/>is<sp/>not<sp/>initialized</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="46"><highlight class="normal"><sp/><sp/>std::vector&lt;weights<sp/>*&gt;<sp/>weights_list(<ref refid="classlbann_1_1lbann__callback__learning__rate_1a0b02e82190e04a22ab26d858041915d7" kindref="member">m_weights</ref>.begin(),<sp/><ref refid="classlbann_1_1lbann__callback__learning__rate_1a0b02e82190e04a22ab26d858041915d7" kindref="member">m_weights</ref>.end());</highlight></codeline>
+<codeline lineno="47"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(weights_list.empty())<sp/>{</highlight></codeline>
+<codeline lineno="48"><highlight class="normal"><sp/><sp/><sp/><sp/>weights_list<sp/>=<sp/>m-&gt;<ref refid="classlbann_1_1model_1ac0a89794f1f51e7c502fff2745c973e6" kindref="member">get_weights</ref>();</highlight></codeline>
+<codeline lineno="49"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="50"><highlight class="normal"></highlight></codeline>
+<codeline lineno="51"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Remove<sp/>weights<sp/>that<sp/>are<sp/>not<sp/>being<sp/>optimized</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="52"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__learning__rate_1a0b02e82190e04a22ab26d858041915d7" kindref="member">m_weights</ref>.clear();</highlight></codeline>
+<codeline lineno="53"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1weights" kindref="compound">weights</ref><sp/>*w<sp/>:<sp/>weights_list)<sp/>{</highlight></codeline>
+<codeline lineno="54"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1optimizer" kindref="compound">optimizer</ref><sp/>*opt<sp/>=<sp/>w-&gt;get_optimizer();</highlight></codeline>
+<codeline lineno="55"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(opt<sp/>!=<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal">)<sp/>{</highlight></codeline>
+<codeline lineno="56"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1lbann__callback__learning__rate_1a0b02e82190e04a22ab26d858041915d7" kindref="member">m_weights</ref>.insert(w);</highlight></codeline>
+<codeline lineno="57"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Initialize<sp/>the<sp/>global<sp/>learning<sp/>rate,<sp/>exactly<sp/>once.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="58"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1lbann__callback__learning__rate_1a97194f282c29a748c915d9811a8a99fb" kindref="member">m_cur_global_lr</ref><sp/>==<sp/>0.0f)<sp/>{</highlight></codeline>
+<codeline lineno="59"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1lbann__callback__learning__rate_1a97194f282c29a748c915d9811a8a99fb" kindref="member">m_cur_global_lr</ref><sp/>=<sp/>opt-&gt;<ref refid="classlbann_1_1optimizer_1ac52867427b0d28ec6888b6344104791d" kindref="member">get_learning_rate</ref>();</highlight></codeline>
+<codeline lineno="60"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="61"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="62"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="63"><highlight class="normal"></highlight></codeline>
+<codeline lineno="64"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="65"><highlight class="normal"></highlight></codeline>
+<codeline lineno="66" refid="classlbann_1_1lbann__callback__learning__rate_1ab8eb509bdbea501882d6b248a814bb28" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__learning__rate_1ab8eb509bdbea501882d6b248a814bb28" kindref="member">lbann_callback_learning_rate::on_epoch_end</ref>(<ref refid="classlbann_1_1model" kindref="compound">model</ref><sp/>*m)<sp/>{</highlight></codeline>
+<codeline lineno="67"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>new_lr<sp/>=<sp/><ref refid="classlbann_1_1lbann__callback__learning__rate_1a7869b93e5963d6f76da68d8c8137b979" kindref="member">global_schedule</ref>(m);</highlight></codeline>
+<codeline lineno="68"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>old_global_lr<sp/>=<sp/><ref refid="classlbann_1_1lbann__callback__learning__rate_1a97194f282c29a748c915d9811a8a99fb" kindref="member">m_cur_global_lr</ref>;</highlight></codeline>
+<codeline lineno="69"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__learning__rate_1a97194f282c29a748c915d9811a8a99fb" kindref="member">m_cur_global_lr</ref><sp/>=<sp/>new_lr;</highlight></codeline>
+<codeline lineno="70"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref><sp/>*<ref refid="file__io_8cpp_1ab048c6f9fcbcfaa57ce68b00263dbebe" kindref="member">comm</ref><sp/>=<sp/>m-&gt;<ref refid="classlbann_1_1model_1a9e1cfe449d2f4858a32994f6be0042fb" kindref="member">get_comm</ref>();</highlight></codeline>
+<codeline lineno="71"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(comm-&gt;<ref refid="classlbann_1_1lbann__comm_1ad8a5790dfa9191d4b4f889e8707e57f1" kindref="member">am_model_master</ref>()<sp/>&amp;&amp;<sp/>new_lr<sp/>!=<sp/>old_global_lr)<sp/>{</highlight></codeline>
+<codeline lineno="72"><highlight class="normal"><sp/><sp/><sp/><sp/>std::cout<sp/>&lt;&lt;<sp/></highlight><highlight class="stringliteral">&quot;Model<sp/>&quot;</highlight><highlight class="normal"><sp/>&lt;&lt;<sp/>comm-&gt;<ref refid="classlbann_1_1lbann__comm_1a6422f70c92bed0b78179facc52b066f7" kindref="member">get_model_rank</ref>()<sp/>&lt;&lt;<sp/></highlight><highlight class="stringliteral">&quot;:<sp/>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="73"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>&lt;&lt;<sp/></highlight><highlight class="stringliteral">&quot;changing<sp/>global<sp/>learning<sp/>rate<sp/>to<sp/>&quot;</highlight><highlight class="normal"><sp/>&lt;&lt;<sp/>new_lr</highlight></codeline>
+<codeline lineno="74"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>&lt;&lt;<sp/></highlight><highlight class="stringliteral">&quot;<sp/>at<sp/>epoch<sp/>&quot;</highlight><highlight class="normal"><sp/>&lt;&lt;<sp/>m-&gt;<ref refid="classlbann_1_1model_1a1cf70e098524cc5013bce56edd96dfe7" kindref="member">get_cur_epoch</ref>()<sp/>&lt;&lt;<sp/>std::endl;</highlight></codeline>
+<codeline lineno="75"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="76"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1weights" kindref="compound">weights</ref><sp/>*w<sp/>:<sp/><ref refid="classlbann_1_1lbann__callback__learning__rate_1a0b02e82190e04a22ab26d858041915d7" kindref="member">m_weights</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="77"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1optimizer" kindref="compound">optimizer</ref><sp/>*opt<sp/>=<sp/>w-&gt;get_optimizer();</highlight></codeline>
+<codeline lineno="78"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>old_lr<sp/>=<sp/>opt-&gt;<ref refid="classlbann_1_1optimizer_1ac52867427b0d28ec6888b6344104791d" kindref="member">get_learning_rate</ref>();</highlight></codeline>
+<codeline lineno="79"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(old_lr<sp/>!=<sp/>new_lr)<sp/>{</highlight></codeline>
+<codeline lineno="80"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>opt-&gt;<ref refid="classlbann_1_1optimizer_1a147cac09beaa17df4e0fc1fc1be3abce" kindref="member">set_learning_rate</ref>(new_lr);</highlight></codeline>
+<codeline lineno="81"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="82"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="83"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="84"><highlight class="normal"></highlight></codeline>
+<codeline lineno="85" refid="classlbann_1_1lbann__callback__learning__rate_1ab6aa0530604e32a1be2b37f3933f6bf6" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__learning__rate_1ab6aa0530604e32a1be2b37f3933f6bf6" kindref="member">lbann_callback_learning_rate::on_backward_prop_end</ref>(<ref refid="classlbann_1_1model" kindref="compound">model</ref><sp/>*m)<sp/>{</highlight></codeline>
+<codeline lineno="86"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1weights" kindref="compound">weights</ref><sp/>*w<sp/>:<sp/><ref refid="classlbann_1_1lbann__callback__learning__rate_1a0b02e82190e04a22ab26d858041915d7" kindref="member">m_weights</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="87"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1optimizer" kindref="compound">optimizer</ref>&amp;<sp/>opt<sp/>=<sp/>*w-&gt;get_optimizer();</highlight></codeline>
+<codeline lineno="88"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>old_lr<sp/>=<sp/>opt.<ref refid="classlbann_1_1optimizer_1ac52867427b0d28ec6888b6344104791d" kindref="member">get_learning_rate</ref>();</highlight></codeline>
+<codeline lineno="89"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>new_lr<sp/>=<sp/><ref refid="classlbann_1_1lbann__callback__learning__rate_1acf7f3921a68e7f1f772106e18c545345" kindref="member">optimizer_schedule</ref>(m,<sp/>opt);</highlight></codeline>
+<codeline lineno="90"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(old_lr<sp/>!=<sp/>new_lr)<sp/>{</highlight></codeline>
+<codeline lineno="91"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>opt.<ref refid="classlbann_1_1optimizer_1a147cac09beaa17df4e0fc1fc1be3abce" kindref="member">set_learning_rate</ref>(new_lr);</highlight></codeline>
+<codeline lineno="92"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="93"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="94"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="95"><highlight class="normal"></highlight></codeline>
+<codeline lineno="96" refid="classlbann_1_1lbann__callback__step__learning__rate_1acaf6b1a65c8734b21a62a3c1f16447ca" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1lbann__callback__step__learning__rate_1acaf6b1a65c8734b21a62a3c1f16447ca" kindref="member">lbann_callback_step_learning_rate::lbann_callback_step_learning_rate</ref>(</highlight></codeline>
+<codeline lineno="97"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>step,<sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>amt)<sp/>:</highlight></codeline>
+<codeline lineno="98"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__learning__rate" kindref="compound">lbann_callback_learning_rate</ref>(),<sp/>m_step(step),<sp/>m_amt(amt)<sp/>{}</highlight></codeline>
+<codeline lineno="99"><highlight class="normal"></highlight></codeline>
+<codeline lineno="100" refid="classlbann_1_1lbann__callback__step__learning__rate_1a22ece9107d7aa79c6b849b251db036b0" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1lbann__callback__step__learning__rate_1acaf6b1a65c8734b21a62a3c1f16447ca" kindref="member">lbann_callback_step_learning_rate::lbann_callback_step_learning_rate</ref>(</highlight></codeline>
+<codeline lineno="101"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>step,<sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>amt,<sp/>std::unordered_set&lt;weights<sp/>*&gt;<sp/>weights_list)<sp/>:</highlight></codeline>
+<codeline lineno="102"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__learning__rate" kindref="compound">lbann_callback_learning_rate</ref>(weights_list),<sp/><ref refid="classlbann_1_1lbann__callback__step__learning__rate_1a804bffdc6bcc1e1f43dc068db852b993" kindref="member">m_step</ref>(step),<sp/><ref refid="classlbann_1_1lbann__callback__step__learning__rate_1ab6f5430cf862ec67392dc0f69ced81e6" kindref="member">m_amt</ref>(amt)<sp/>{}</highlight></codeline>
+<codeline lineno="103"><highlight class="normal"></highlight></codeline>
+<codeline lineno="104" refid="classlbann_1_1lbann__callback__step__learning__rate_1a440671682e8c041a7208af77231059ec" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__step__learning__rate_1a440671682e8c041a7208af77231059ec" kindref="member">lbann_callback_step_learning_rate::global_schedule</ref>(<ref refid="classlbann_1_1model" kindref="compound">model</ref><sp/>*m)<sp/>{</highlight></codeline>
+<codeline lineno="105"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(m-&gt;<ref refid="classlbann_1_1model_1a1cf70e098524cc5013bce56edd96dfe7" kindref="member">get_cur_epoch</ref>()<sp/>%<sp/><ref refid="classlbann_1_1lbann__callback__step__learning__rate_1a804bffdc6bcc1e1f43dc068db852b993" kindref="member">m_step</ref><sp/>==<sp/>0)<sp/>{</highlight></codeline>
+<codeline lineno="106"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__learning__rate_1a97194f282c29a748c915d9811a8a99fb" kindref="member">m_cur_global_lr</ref><sp/>*<sp/><ref refid="classlbann_1_1lbann__callback__step__learning__rate_1ab6f5430cf862ec67392dc0f69ced81e6" kindref="member">m_amt</ref>;</highlight></codeline>
+<codeline lineno="107"><highlight class="normal"><sp/><sp/>}<sp/></highlight><highlight class="keywordflow">else</highlight><highlight class="normal"><sp/>{</highlight></codeline>
+<codeline lineno="108"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__learning__rate_1a97194f282c29a748c915d9811a8a99fb" kindref="member">m_cur_global_lr</ref>;</highlight></codeline>
+<codeline lineno="109"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="110"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="111"><highlight class="normal"></highlight></codeline>
+<codeline lineno="112" refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1a2095e4c430b3c4f206e85c963e1ec2aa" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1a2095e4c430b3c4f206e85c963e1ec2aa" kindref="member">lbann_callback_adaptive_learning_rate::lbann_callback_adaptive_learning_rate</ref>(</highlight></codeline>
+<codeline lineno="113"><highlight class="normal"><sp/><sp/>int64_t<sp/>patience,<sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>amt)<sp/>:</highlight></codeline>
+<codeline lineno="114"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__adaptive__learning__rate" kindref="compound">lbann_callback_adaptive_learning_rate</ref>(patience,<sp/>amt,</highlight></codeline>
+<codeline lineno="115"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>std::unordered_set&lt;<ref refid="classlbann_1_1weights" kindref="compound">weights</ref><sp/>*&gt;())<sp/>{}</highlight></codeline>
+<codeline lineno="116"><highlight class="normal"></highlight></codeline>
+<codeline lineno="117" refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1a49343d73d0be9782b0480c07aeda6046" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1a2095e4c430b3c4f206e85c963e1ec2aa" kindref="member">lbann_callback_adaptive_learning_rate::lbann_callback_adaptive_learning_rate</ref>(</highlight></codeline>
+<codeline lineno="118"><highlight class="normal"><sp/><sp/>int64_t<sp/>patience,<sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>amt,<sp/>std::unordered_set&lt;weights<sp/>*&gt;<sp/>weights_list)<sp/>:</highlight></codeline>
+<codeline lineno="119"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__learning__rate" kindref="compound">lbann_callback_learning_rate</ref>(weights_list),<sp/><ref refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1ac3ac3c4d34d62608c54dfa3a41691217" kindref="member">m_patience</ref>(patience),<sp/><ref refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1ab9c76371184664ccd8e240e3b16a9736" kindref="member">m_amt</ref>(amt)<sp/>{}</highlight></codeline>
+<codeline lineno="120"><highlight class="normal"></highlight></codeline>
+<codeline lineno="121" refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1a6c64fae03736b8acba5c839f59d2ac6f" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1a6c64fae03736b8acba5c839f59d2ac6f" kindref="member">lbann_callback_adaptive_learning_rate::global_schedule</ref>(<ref refid="classlbann_1_1model" kindref="compound">model</ref><sp/>*m)<sp/>{</highlight></codeline>
+<codeline lineno="122"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Determine<sp/>behavior<sp/>the<sp/>first<sp/>time<sp/>this<sp/>is<sp/>called<sp/>in<sp/>an<sp/>epoch</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="123"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1a740b8b3bbb47312b48322f440f703222" kindref="member">m_cur_epoch</ref><sp/>!=<sp/>m-&gt;<ref refid="classlbann_1_1model_1a1cf70e098524cc5013bce56edd96dfe7" kindref="member">get_cur_epoch</ref>())<sp/>{</highlight></codeline>
+<codeline lineno="124"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1a740b8b3bbb47312b48322f440f703222" kindref="member">m_cur_epoch</ref><sp/>=<sp/>m-&gt;<ref refid="classlbann_1_1model_1a1cf70e098524cc5013bce56edd96dfe7" kindref="member">get_cur_epoch</ref>();</highlight></codeline>
+<codeline lineno="125"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="base_8hpp_1a2781a159088df64ed7d47cc91c4dc0a8" kindref="member">execution_mode</ref><sp/>mode<sp/>=<sp/>m-&gt;<ref refid="classlbann_1_1model_1addb40597cf29aa6d31b6a7d09ef48608" kindref="member">get_execution_mode</ref>();</highlight></codeline>
+<codeline lineno="126"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref><sp/>score<sp/>=<sp/>m-&gt;<ref refid="classlbann_1_1model_1aee5530467523924a662dec891b9a7993" kindref="member">get_objective_function</ref>()-&gt;<ref refid="classlbann_1_1objective__function_1a0aa271e497363e97ba3741292961d47d" kindref="member">get_mean_value</ref>(mode);</highlight></codeline>
+<codeline lineno="127"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(score<sp/>&lt;<sp/><ref refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1a7aa8aeed3df9cca131ace1ea9fbf1cd3" kindref="member">m_last_score</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="128"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Reset<sp/>wait<sp/>counter<sp/>if<sp/>score<sp/>has<sp/>decreased</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="129"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1a7aa8aeed3df9cca131ace1ea9fbf1cd3" kindref="member">m_last_score</ref><sp/>=<sp/>score;</highlight></codeline>
+<codeline lineno="130"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1aecfb70e4a366762305a2dbd8248471de" kindref="member">m_wait</ref><sp/>=<sp/>0;</highlight></codeline>
+<codeline lineno="131"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1aa3de3b7d67b5295058e9c2175d06212d" kindref="member">m_adjust_learning_rate</ref><sp/>=<sp/></highlight><highlight class="keyword">false</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="132"><highlight class="normal"><sp/><sp/><sp/><sp/>}<sp/></highlight><highlight class="keywordflow">else</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1aecfb70e4a366762305a2dbd8248471de" kindref="member">m_wait</ref><sp/>&gt;=<sp/><ref refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1ac3ac3c4d34d62608c54dfa3a41691217" kindref="member">m_patience</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="133"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Adjust<sp/>learning<sp/>rate<sp/>if<sp/>patience<sp/>has<sp/>been<sp/>exceeded</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="134"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1a7aa8aeed3df9cca131ace1ea9fbf1cd3" kindref="member">m_last_score</ref><sp/>=<sp/>score;</highlight></codeline>
+<codeline lineno="135"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1aecfb70e4a366762305a2dbd8248471de" kindref="member">m_wait</ref><sp/>=<sp/>0;</highlight></codeline>
+<codeline lineno="136"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1aa3de3b7d67b5295058e9c2175d06212d" kindref="member">m_adjust_learning_rate</ref><sp/>=<sp/></highlight><highlight class="keyword">true</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="137"><highlight class="normal"><sp/><sp/><sp/><sp/>}<sp/></highlight><highlight class="keywordflow">else</highlight><highlight class="normal"><sp/>{</highlight></codeline>
+<codeline lineno="138"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Otherwise<sp/>increment<sp/>wait<sp/>counter</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="139"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1aecfb70e4a366762305a2dbd8248471de" kindref="member">m_wait</ref>++;</highlight></codeline>
+<codeline lineno="140"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1aa3de3b7d67b5295058e9c2175d06212d" kindref="member">m_adjust_learning_rate</ref><sp/>=<sp/></highlight><highlight class="keyword">false</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="141"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="142"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="143"><highlight class="normal"></highlight></codeline>
+<codeline lineno="144"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Adjust<sp/>learning<sp/>rate<sp/>if<sp/>needed</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="145"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1aa3de3b7d67b5295058e9c2175d06212d" kindref="member">m_adjust_learning_rate</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="146"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__learning__rate_1a97194f282c29a748c915d9811a8a99fb" kindref="member">m_cur_global_lr</ref><sp/>*<sp/><ref refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1ab9c76371184664ccd8e240e3b16a9736" kindref="member">m_amt</ref>;</highlight></codeline>
+<codeline lineno="147"><highlight class="normal"><sp/><sp/>}<sp/></highlight><highlight class="keywordflow">else</highlight><highlight class="normal"><sp/>{</highlight></codeline>
+<codeline lineno="148"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__learning__rate_1a97194f282c29a748c915d9811a8a99fb" kindref="member">m_cur_global_lr</ref>;</highlight></codeline>
+<codeline lineno="149"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="150"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="151"><highlight class="normal"></highlight></codeline>
+<codeline lineno="152" refid="classlbann_1_1lbann__callback__drop__fixed__learning__rate_1a28f58eb50813e638d865179d645908f2" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1lbann__callback__drop__fixed__learning__rate_1a28f58eb50813e638d865179d645908f2" kindref="member">lbann_callback_drop_fixed_learning_rate::lbann_callback_drop_fixed_learning_rate</ref>(</highlight></codeline>
+<codeline lineno="153"><highlight class="normal"><sp/><sp/>std::vector&lt;int64_t&gt;<sp/>drop_epochs,<sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>amt)<sp/>:</highlight></codeline>
+<codeline lineno="154"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__drop__fixed__learning__rate" kindref="compound">lbann_callback_drop_fixed_learning_rate</ref>(drop_epochs,<sp/>amt,</highlight></codeline>
+<codeline lineno="155"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>std::unordered_set&lt;<ref refid="classlbann_1_1weights" kindref="compound">weights</ref><sp/>*&gt;())<sp/>{}</highlight></codeline>
+<codeline lineno="156"><highlight class="normal"></highlight></codeline>
+<codeline lineno="157" refid="classlbann_1_1lbann__callback__drop__fixed__learning__rate_1acd69c6b5aa7e4d799dba7dab2cd5daa4" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1lbann__callback__drop__fixed__learning__rate_1a28f58eb50813e638d865179d645908f2" kindref="member">lbann_callback_drop_fixed_learning_rate::lbann_callback_drop_fixed_learning_rate</ref>(</highlight></codeline>
+<codeline lineno="158"><highlight class="normal"><sp/><sp/>std::vector&lt;int64_t&gt;<sp/>drop_epochs,<sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>amt,<sp/>std::unordered_set&lt;weights<sp/>*&gt;<sp/>weights_list)<sp/>:</highlight></codeline>
+<codeline lineno="159"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__learning__rate" kindref="compound">lbann_callback_learning_rate</ref>(weights_list),<sp/><ref refid="classlbann_1_1lbann__callback__drop__fixed__learning__rate_1a3e38dc2b7dc92d29567091395de22546" kindref="member">m_amt</ref>(amt),<sp/><ref refid="classlbann_1_1lbann__callback__drop__fixed__learning__rate_1afc99419c3d818fe86d5865c8f7beae49" kindref="member">m_drop_epochs</ref>(std::move(drop_epochs))<sp/>{</highlight></codeline>
+<codeline lineno="160"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Sort<sp/>in<sp/>reverse<sp/>order.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="161"><highlight class="normal"><sp/><sp/>std::sort(<ref refid="classlbann_1_1lbann__callback__drop__fixed__learning__rate_1afc99419c3d818fe86d5865c8f7beae49" kindref="member">m_drop_epochs</ref>.rbegin(),<sp/><ref refid="classlbann_1_1lbann__callback__drop__fixed__learning__rate_1afc99419c3d818fe86d5865c8f7beae49" kindref="member">m_drop_epochs</ref>.rend());</highlight></codeline>
+<codeline lineno="162"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="163"><highlight class="normal"></highlight></codeline>
+<codeline lineno="164" refid="classlbann_1_1lbann__callback__drop__fixed__learning__rate_1a2ee62bfde00d7f1a4e55e4a334160fbe" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__drop__fixed__learning__rate_1a2ee62bfde00d7f1a4e55e4a334160fbe" kindref="member">lbann_callback_drop_fixed_learning_rate::global_schedule</ref>(<ref refid="classlbann_1_1model" kindref="compound">model</ref>*<sp/>m)<sp/>{</highlight></codeline>
+<codeline lineno="165"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Delete<sp/>last<sp/>drop<sp/>epoch<sp/>if<sp/>we<sp/>have<sp/>already<sp/>passed<sp/>it</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="166"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">while</highlight><highlight class="normal"><sp/>(!<ref refid="classlbann_1_1lbann__callback__drop__fixed__learning__rate_1afc99419c3d818fe86d5865c8f7beae49" kindref="member">m_drop_epochs</ref>.empty()</highlight></codeline>
+<codeline lineno="167"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>&amp;&amp;<sp/>m-&gt;<ref refid="classlbann_1_1model_1a1cf70e098524cc5013bce56edd96dfe7" kindref="member">get_cur_epoch</ref>()<sp/>&gt;<sp/><ref refid="classlbann_1_1lbann__callback__drop__fixed__learning__rate_1afc99419c3d818fe86d5865c8f7beae49" kindref="member">m_drop_epochs</ref>.back())<sp/>{</highlight></codeline>
+<codeline lineno="168"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1lbann__callback__drop__fixed__learning__rate_1afc99419c3d818fe86d5865c8f7beae49" kindref="member">m_drop_epochs</ref>.pop_back();</highlight></codeline>
+<codeline lineno="169"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="170"><highlight class="normal"></highlight></codeline>
+<codeline lineno="171"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Adjust<sp/>learning<sp/>rate<sp/>if<sp/>at<sp/>a<sp/>drop<sp/>epoch</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="172"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(!<ref refid="classlbann_1_1lbann__callback__drop__fixed__learning__rate_1afc99419c3d818fe86d5865c8f7beae49" kindref="member">m_drop_epochs</ref>.empty()<sp/>&amp;&amp;<sp/>m-&gt;<ref refid="classlbann_1_1model_1a1cf70e098524cc5013bce56edd96dfe7" kindref="member">get_cur_epoch</ref>()<sp/>==<sp/><ref refid="classlbann_1_1lbann__callback__drop__fixed__learning__rate_1afc99419c3d818fe86d5865c8f7beae49" kindref="member">m_drop_epochs</ref>.back())<sp/>{</highlight></codeline>
+<codeline lineno="173"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__learning__rate_1a97194f282c29a748c915d9811a8a99fb" kindref="member">m_cur_global_lr</ref><sp/>*<sp/><ref refid="classlbann_1_1lbann__callback__drop__fixed__learning__rate_1a3e38dc2b7dc92d29567091395de22546" kindref="member">m_amt</ref>;</highlight></codeline>
+<codeline lineno="174"><highlight class="normal"><sp/><sp/>}<sp/></highlight><highlight class="keywordflow">else</highlight><highlight class="normal"><sp/>{</highlight></codeline>
+<codeline lineno="175"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__learning__rate_1a97194f282c29a748c915d9811a8a99fb" kindref="member">m_cur_global_lr</ref>;</highlight></codeline>
+<codeline lineno="176"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="177"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="178"><highlight class="normal"></highlight></codeline>
+<codeline lineno="179" refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1a9eb24d8032af168a0eeec7e385909d55" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1a9eb24d8032af168a0eeec7e385909d55" kindref="member">lbann_callback_linear_growth_learning_rate::lbann_callback_linear_growth_learning_rate</ref>(</highlight></codeline>
+<codeline lineno="180"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>target,<sp/>int64_t<sp/>num_epochs)<sp/>:</highlight></codeline>
+<codeline lineno="181"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__linear__growth__learning__rate" kindref="compound">lbann_callback_linear_growth_learning_rate</ref>(target,<sp/>num_epochs,<sp/>0,</highlight></codeline>
+<codeline lineno="182"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>std::unordered_set&lt;<ref refid="classlbann_1_1weights" kindref="compound">weights</ref><sp/>*&gt;())<sp/>{}</highlight></codeline>
+<codeline lineno="183"><highlight class="normal"></highlight></codeline>
+<codeline lineno="184" refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1a288be0ef560e9169a634c2238b50370e" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1a9eb24d8032af168a0eeec7e385909d55" kindref="member">lbann_callback_linear_growth_learning_rate::lbann_callback_linear_growth_learning_rate</ref>(</highlight></codeline>
+<codeline lineno="185"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>target,<sp/>int64_t<sp/>num_epochs,<sp/>int64_t<sp/>delay)<sp/>:</highlight></codeline>
+<codeline lineno="186"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__linear__growth__learning__rate" kindref="compound">lbann_callback_linear_growth_learning_rate</ref>(target,<sp/>num_epochs,<sp/>delay,</highlight></codeline>
+<codeline lineno="187"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>std::unordered_set&lt;<ref refid="classlbann_1_1weights" kindref="compound">weights</ref><sp/>*&gt;())<sp/>{}</highlight></codeline>
+<codeline lineno="188"><highlight class="normal"></highlight></codeline>
+<codeline lineno="189" refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1a2382f7efb2bfe8b58fd68450b569a519" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1a9eb24d8032af168a0eeec7e385909d55" kindref="member">lbann_callback_linear_growth_learning_rate::lbann_callback_linear_growth_learning_rate</ref>(</highlight></codeline>
+<codeline lineno="190"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>target,<sp/>int64_t<sp/>num_epochs,<sp/>int64_t<sp/>delay,</highlight></codeline>
+<codeline lineno="191"><highlight class="normal"><sp/><sp/>std::unordered_set&lt;weights<sp/>*&gt;<sp/>weights_list)<sp/>:</highlight></codeline>
+<codeline lineno="192"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__learning__rate" kindref="compound">lbann_callback_learning_rate</ref>(weights_list),<sp/><ref refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1a56cc1954ef76d494c4b5d5074c326fca" kindref="member">m_target</ref>(target),<sp/><ref refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1ad68e1fbbe86eb692cf26d0d4a452c469" kindref="member">m_inc</ref>(0),</highlight></codeline>
+<codeline lineno="193"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1ac583819b3ee7fad93b9b96b44dfb4307" kindref="member">m_num_epochs</ref>(num_epochs),<sp/><ref refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1a0a0a9c7f9964e3f8693706800fcdf06a" kindref="member">m_delay</ref>(delay)<sp/>{}</highlight></codeline>
+<codeline lineno="194"><highlight class="normal"></highlight></codeline>
+<codeline lineno="195" refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1afaa81836e0dc1b6220212dad52df25fc" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1afaa81836e0dc1b6220212dad52df25fc" kindref="member">lbann_callback_linear_growth_learning_rate::setup</ref>(<ref refid="classlbann_1_1model" kindref="compound">model</ref><sp/>*m)<sp/>{</highlight></codeline>
+<codeline lineno="196"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__learning__rate_1a501f31a6b8fde1282a60e4b347e8d9d3" kindref="member">lbann_callback_learning_rate::setup</ref>(m);</highlight></codeline>
+<codeline lineno="197"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Compute<sp/>the<sp/>learning<sp/>rate<sp/>increase.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="198"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(!<ref refid="classlbann_1_1lbann__callback__learning__rate_1a0b02e82190e04a22ab26d858041915d7" kindref="member">m_weights</ref>.empty())<sp/>{</highlight></codeline>
+<codeline lineno="199"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Assumes<sp/>all<sp/>optimizers<sp/>have<sp/>the<sp/>same<sp/>initial<sp/>learning<sp/>rate.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="200"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1a2fe23a59744da5c0c737eb9d301bc23b" kindref="member">m_base_lr</ref><sp/>=<sp/><ref refid="classlbann_1_1lbann__callback__learning__rate_1a97194f282c29a748c915d9811a8a99fb" kindref="member">m_cur_global_lr</ref>;</highlight></codeline>
+<codeline lineno="201"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1ad68e1fbbe86eb692cf26d0d4a452c469" kindref="member">m_inc</ref><sp/>=<sp/>(<ref refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1a56cc1954ef76d494c4b5d5074c326fca" kindref="member">m_target</ref><sp/>-<sp/><ref refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1a2fe23a59744da5c0c737eb9d301bc23b" kindref="member">m_base_lr</ref>)<sp/>/<sp/><ref refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1ac583819b3ee7fad93b9b96b44dfb4307" kindref="member">m_num_epochs</ref>;</highlight></codeline>
+<codeline lineno="202"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="203"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="204"><highlight class="normal"></highlight></codeline>
+<codeline lineno="205" refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1ad292e2e7f4078162ed93b6e05d94e0e4" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1ad292e2e7f4078162ed93b6e05d94e0e4" kindref="member">lbann_callback_linear_growth_learning_rate::global_schedule</ref>(<ref refid="classlbann_1_1model" kindref="compound">model</ref><sp/>*m)<sp/>{</highlight></codeline>
+<codeline lineno="206"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(m-&gt;<ref refid="classlbann_1_1model_1a1cf70e098524cc5013bce56edd96dfe7" kindref="member">get_cur_epoch</ref>()<sp/>&lt;<sp/><ref refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1a0a0a9c7f9964e3f8693706800fcdf06a" kindref="member">m_delay</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="207"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__learning__rate_1a97194f282c29a748c915d9811a8a99fb" kindref="member">m_cur_global_lr</ref>;</highlight></codeline>
+<codeline lineno="208"><highlight class="normal"><sp/><sp/>}<sp/></highlight><highlight class="keywordflow">else</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(m-&gt;<ref refid="classlbann_1_1model_1a1cf70e098524cc5013bce56edd96dfe7" kindref="member">get_cur_epoch</ref>()<sp/>&lt;=<sp/><ref refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1ac583819b3ee7fad93b9b96b44dfb4307" kindref="member">m_num_epochs</ref><sp/>+<sp/><ref refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1a0a0a9c7f9964e3f8693706800fcdf06a" kindref="member">m_delay</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="209"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>num_left<sp/>=<sp/><ref refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1ac583819b3ee7fad93b9b96b44dfb4307" kindref="member">m_num_epochs</ref><sp/>+<sp/><ref refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1a0a0a9c7f9964e3f8693706800fcdf06a" kindref="member">m_delay</ref><sp/>-<sp/>m-&gt;<ref refid="classlbann_1_1model_1a1cf70e098524cc5013bce56edd96dfe7" kindref="member">get_cur_epoch</ref>();</highlight></codeline>
+<codeline lineno="210"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1a2fe23a59744da5c0c737eb9d301bc23b" kindref="member">m_base_lr</ref><sp/>+<sp/><ref refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1ad68e1fbbe86eb692cf26d0d4a452c469" kindref="member">m_inc</ref>*(<ref refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1ac583819b3ee7fad93b9b96b44dfb4307" kindref="member">m_num_epochs</ref><sp/>-<sp/>num_left);</highlight></codeline>
+<codeline lineno="211"><highlight class="normal"><sp/><sp/>}<sp/></highlight><highlight class="keywordflow">else</highlight><highlight class="normal"><sp/>{</highlight></codeline>
+<codeline lineno="212"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__learning__rate_1a97194f282c29a748c915d9811a8a99fb" kindref="member">m_cur_global_lr</ref>;</highlight></codeline>
+<codeline lineno="213"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="214"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="215"><highlight class="normal"></highlight></codeline>
+<codeline lineno="222" refid="classlbann_1_1lbann__callback__poly__learning__rate_1ac36d25516687e0d0c43b51acae9eb1ff" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1lbann__callback__poly__learning__rate_1ac36d25516687e0d0c43b51acae9eb1ff" kindref="member">lbann_callback_poly_learning_rate::lbann_callback_poly_learning_rate</ref>(</highlight></codeline>
+<codeline lineno="223"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">double</highlight><highlight class="normal"><sp/>p,<sp/>uint64_t<sp/>n_epochs,<sp/>uint64_t<sp/>max_iter)</highlight></codeline>
+<codeline lineno="224"><highlight class="normal"><sp/><sp/>:<sp/><ref refid="classlbann_1_1lbann__callback__learning__rate" kindref="compound">lbann_callback_learning_rate</ref>(std::unordered_set&lt;<ref refid="classlbann_1_1weights" kindref="compound">weights</ref><sp/>*&gt;()),</highlight></codeline>
+<codeline lineno="225"><highlight class="normal"><sp/><sp/><sp/><sp/>m_p(p),<sp/><ref refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1ac583819b3ee7fad93b9b96b44dfb4307" kindref="member">m_num_epochs</ref>(n_epochs),<sp/>m_max_iter(max_iter),</highlight></codeline>
+<codeline lineno="226"><highlight class="normal"><sp/><sp/><sp/><sp/>m_lr(1.0f),<sp/>m_last_epoch_lr(1.0f)<sp/>{}</highlight></codeline>
+<codeline lineno="227"><highlight class="normal"></highlight></codeline>
+<codeline lineno="228" refid="classlbann_1_1lbann__callback__poly__learning__rate_1a4aba2a61c3b5d08c08909b7a4d78ea74" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1lbann__callback__poly__learning__rate_1ac36d25516687e0d0c43b51acae9eb1ff" kindref="member">lbann_callback_poly_learning_rate::lbann_callback_poly_learning_rate</ref>(</highlight></codeline>
+<codeline lineno="229"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">double</highlight><highlight class="normal"><sp/>p,<sp/>uint64_t<sp/>n_epochs,<sp/>uint64_t<sp/>max_iter,<sp/>std::unordered_set&lt;weights<sp/>*&gt;<sp/>weights_list)</highlight></codeline>
+<codeline lineno="230"><highlight class="normal"><sp/><sp/>:<sp/><ref refid="classlbann_1_1lbann__callback__learning__rate" kindref="compound">lbann_callback_learning_rate</ref>(weights_list),</highlight></codeline>
+<codeline lineno="231"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1lbann__callback__poly__learning__rate_1a03c8c9a738036f9b778f11416112fd80" kindref="member">m_p</ref>(p),<sp/><ref refid="classlbann_1_1lbann__callback__poly__learning__rate_1a493de3bbdea4bed802e663af9b81af8e" kindref="member">m_num_epochs</ref>(n_epochs),<sp/><ref refid="classlbann_1_1lbann__callback__poly__learning__rate_1a43c06187577baff885bda6177fe56c3f" kindref="member">m_max_iter</ref>(max_iter),</highlight></codeline>
+<codeline lineno="232"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1lbann__callback__poly__learning__rate_1a02cb265abba03e10fcba2be3cbbafce4" kindref="member">m_lr</ref>(1.0f),<sp/><ref refid="classlbann_1_1lbann__callback__poly__learning__rate_1aad95c34cfb705392bf38ecbb0dc97b32" kindref="member">m_last_epoch_lr</ref>(1.0f)<sp/>{}</highlight></codeline>
+<codeline lineno="233"><highlight class="normal"></highlight></codeline>
+<codeline lineno="238" refid="classlbann_1_1lbann__callback__poly__learning__rate_1a47d3d2a94157f1992bf4a964620208f3" refkind="member"><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__poly__learning__rate_1a47d3d2a94157f1992bf4a964620208f3" kindref="member">lbann_callback_poly_learning_rate::setup</ref>(<ref refid="classlbann_1_1model" kindref="compound">model</ref><sp/>*m)<sp/>{</highlight></codeline>
+<codeline lineno="239"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__learning__rate_1a501f31a6b8fde1282a60e4b347e8d9d3" kindref="member">lbann_callback_learning_rate::setup</ref>(m);</highlight></codeline>
+<codeline lineno="240"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1lbann__callback__poly__learning__rate_1a43c06187577baff885bda6177fe56c3f" kindref="member">m_max_iter</ref><sp/>==<sp/>0ull)<sp/>{</highlight></codeline>
+<codeline lineno="241"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1lbann__callback__poly__learning__rate_1a43c06187577baff885bda6177fe56c3f" kindref="member">m_max_iter</ref><sp/>=<sp/><ref refid="classlbann_1_1lbann__callback__poly__learning__rate_1a493de3bbdea4bed802e663af9b81af8e" kindref="member">m_num_epochs</ref><sp/>*<sp/>m-&gt;<ref refid="classlbann_1_1model_1a32a189033b8ff92d233781b1039c70f1" kindref="member">get_num_iterations_per_epoch</ref>(<ref refid="base_8hpp_1a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214" kindref="member">execution_mode::training</ref>);</highlight></codeline>
+<codeline lineno="242"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="243"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="244"><highlight class="normal"></highlight></codeline>
+<codeline lineno="248" refid="classlbann_1_1lbann__callback__poly__learning__rate_1a6302be36ef16079105b812c7599dac76" refkind="member"><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__poly__learning__rate_1a6302be36ef16079105b812c7599dac76" kindref="member">lbann_callback_poly_learning_rate::global_schedule</ref>(<ref refid="classlbann_1_1model" kindref="compound">model</ref><sp/>*m)<sp/>{</highlight></codeline>
+<codeline lineno="249"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>scale<sp/>=<sp/><ref refid="classlbann_1_1lbann__callback__poly__learning__rate_1a02cb265abba03e10fcba2be3cbbafce4" kindref="member">m_lr</ref><sp/>/<sp/><ref refid="classlbann_1_1lbann__callback__poly__learning__rate_1aad95c34cfb705392bf38ecbb0dc97b32" kindref="member">m_last_epoch_lr</ref>;</highlight></codeline>
+<codeline lineno="250"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__poly__learning__rate_1aad95c34cfb705392bf38ecbb0dc97b32" kindref="member">m_last_epoch_lr</ref><sp/>=<sp/><ref refid="classlbann_1_1lbann__callback__poly__learning__rate_1a02cb265abba03e10fcba2be3cbbafce4" kindref="member">m_lr</ref>;</highlight></codeline>
+<codeline lineno="251"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__learning__rate_1a97194f282c29a748c915d9811a8a99fb" kindref="member">m_cur_global_lr</ref><sp/>*<sp/>scale;</highlight></codeline>
+<codeline lineno="252"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="253"><highlight class="normal"></highlight></codeline>
+<codeline lineno="257" refid="classlbann_1_1lbann__callback__poly__learning__rate_1a55414af733e519be126572ec92492bf7" refkind="member"><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__poly__learning__rate_1a55414af733e519be126572ec92492bf7" kindref="member">lbann_callback_poly_learning_rate::optimizer_schedule</ref>(<ref refid="classlbann_1_1model" kindref="compound">model</ref><sp/>*m,<sp/><ref refid="classlbann_1_1optimizer" kindref="compound">optimizer</ref><sp/>&amp;opt)<sp/>{</highlight></codeline>
+<codeline lineno="258"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>uint64_t<sp/>cur_iter<sp/>=<sp/></highlight><highlight class="keyword">static_cast&lt;</highlight><highlight class="normal">uint64_t</highlight><highlight class="keyword">&gt;</highlight><highlight class="normal">(m-&gt;<ref refid="classlbann_1_1model_1ad0cdcba177434b52dc9c4a97be183a92" kindref="member">get_cur_step</ref>());</highlight></codeline>
+<codeline lineno="259"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1lbann__callback__poly__learning__rate_1a43c06187577baff885bda6177fe56c3f" kindref="member">m_max_iter</ref><sp/>&gt;<sp/>cur_iter)<sp/>{</highlight></codeline>
+<codeline lineno="260"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1lbann__callback__poly__learning__rate_1a02cb265abba03e10fcba2be3cbbafce4" kindref="member">m_lr</ref><sp/>=<sp/></highlight><highlight class="keyword">static_cast&lt;</highlight><highlight class="keywordtype">float</highlight><highlight class="keyword">&gt;</highlight><highlight class="normal">(std::pow(static_cast&lt;double&gt;(<ref refid="classlbann_1_1lbann__callback__poly__learning__rate_1a43c06187577baff885bda6177fe56c3f" kindref="member">m_max_iter</ref><sp/>-<sp/>cur_iter)/<ref refid="classlbann_1_1lbann__callback__poly__learning__rate_1a43c06187577baff885bda6177fe56c3f" kindref="member">m_max_iter</ref>,<sp/><ref refid="classlbann_1_1lbann__callback__poly__learning__rate_1a03c8c9a738036f9b778f11416112fd80" kindref="member">m_p</ref>));</highlight></codeline>
+<codeline lineno="261"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="262"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>scale<sp/>=<sp/><ref refid="classlbann_1_1lbann__callback__poly__learning__rate_1a02cb265abba03e10fcba2be3cbbafce4" kindref="member">m_lr</ref><sp/>/<sp/><ref refid="classlbann_1_1lbann__callback__poly__learning__rate_1aad95c34cfb705392bf38ecbb0dc97b32" kindref="member">m_last_epoch_lr</ref>;</highlight></codeline>
+<codeline lineno="263"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__learning__rate_1a97194f282c29a748c915d9811a8a99fb" kindref="member">m_cur_global_lr</ref><sp/>*<sp/>scale;</highlight></codeline>
+<codeline lineno="264"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="265"><highlight class="normal"></highlight></codeline>
+<codeline lineno="266" refid="classlbann_1_1lbann__callback__optimizerwise__adaptive__learning__rate_1a4ab8768ad85fe17728d62eceb628cc9f" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1lbann__callback__optimizerwise__adaptive__learning__rate_1a4ab8768ad85fe17728d62eceb628cc9f" kindref="member">lbann_callback_optimizerwise_adaptive_learning_rate::lbann_callback_optimizerwise_adaptive_learning_rate</ref>(</highlight></codeline>
+<codeline lineno="267"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>scale)<sp/>:</highlight></codeline>
+<codeline lineno="268"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__optimizerwise__adaptive__learning__rate" kindref="compound">lbann_callback_optimizerwise_adaptive_learning_rate</ref>(scale,</highlight></codeline>
+<codeline lineno="269"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>std::unordered_set&lt;<ref refid="classlbann_1_1weights" kindref="compound">weights</ref><sp/>*&gt;())<sp/>{}</highlight></codeline>
+<codeline lineno="270"><highlight class="normal"></highlight></codeline>
+<codeline lineno="271" refid="classlbann_1_1lbann__callback__optimizerwise__adaptive__learning__rate_1a0084b1d49e37d5884f5e93455d9aa4b6" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1lbann__callback__optimizerwise__adaptive__learning__rate_1a4ab8768ad85fe17728d62eceb628cc9f" kindref="member">lbann_callback_optimizerwise_adaptive_learning_rate::lbann_callback_optimizerwise_adaptive_learning_rate</ref>(</highlight></codeline>
+<codeline lineno="272"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>scale,<sp/>std::unordered_set&lt;weights<sp/>*&gt;<sp/>weights_list)<sp/>:</highlight></codeline>
+<codeline lineno="273"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__learning__rate" kindref="compound">lbann_callback_learning_rate</ref>(weights_list),<sp/><ref refid="classlbann_1_1lbann__callback__optimizerwise__adaptive__learning__rate_1a332beb0eb4464929248f56e1815d4e69" kindref="member">m_scale</ref>(scale)<sp/>{}</highlight></codeline>
+<codeline lineno="274"><highlight class="normal"></highlight></codeline>
+<codeline lineno="275" refid="classlbann_1_1lbann__callback__optimizerwise__adaptive__learning__rate_1aa9ce00b0ad1fefb20a1108d1120e82d5" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__optimizerwise__adaptive__learning__rate_1aa9ce00b0ad1fefb20a1108d1120e82d5" kindref="member">lbann_callback_optimizerwise_adaptive_learning_rate::optimizer_schedule</ref>(</highlight></codeline>
+<codeline lineno="276"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1model" kindref="compound">model</ref><sp/>*m,<sp/><ref refid="classlbann_1_1optimizer" kindref="compound">optimizer</ref><sp/>&amp;opt)<sp/>{</highlight></codeline>
+<codeline lineno="277"><highlight class="normal"><sp/><sp/>DataType<sp/>param_norm<sp/>=<sp/>El::Nrm2(opt.<ref refid="classlbann_1_1optimizer_1a9c3fc3f1d45da822676d5932a1c7af82" kindref="member">get_weights</ref>().<ref refid="classlbann_1_1weights_1a09fa4082be905c0c124dde3033e2461b" kindref="member">get_values</ref>());</highlight></codeline>
+<codeline lineno="278"><highlight class="normal"><sp/><sp/>DataType<sp/>param_grad_norm<sp/>=<sp/>El::Nrm2(opt.<ref refid="classlbann_1_1optimizer_1a12b7dbc72eb2de78d6ad798b8939f349" kindref="member">get_gradient</ref>());</highlight></codeline>
+<codeline lineno="279"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(param_norm<sp/>&gt;<sp/>DataType(0)<sp/>&amp;&amp;<sp/>param_grad_norm<sp/>&gt;<sp/>DataType(0))<sp/>{</highlight></codeline>
+<codeline lineno="280"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>TODO:<sp/>Should<sp/>incorporate<sp/>weight<sp/>decay,<sp/>etc.<sp/>here.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="281"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__learning__rate_1a97194f282c29a748c915d9811a8a99fb" kindref="member">m_cur_global_lr</ref><sp/>*<sp/><ref refid="classlbann_1_1lbann__callback__optimizerwise__adaptive__learning__rate_1a332beb0eb4464929248f56e1815d4e69" kindref="member">m_scale</ref><sp/>*<sp/>param_norm<sp/>/<sp/>param_grad_norm;</highlight></codeline>
+<codeline lineno="282"><highlight class="normal"><sp/><sp/>}<sp/></highlight><highlight class="keywordflow">else</highlight><highlight class="normal"><sp/>{</highlight></codeline>
+<codeline lineno="283"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>opt.<ref refid="classlbann_1_1optimizer_1ac52867427b0d28ec6888b6344104791d" kindref="member">get_learning_rate</ref>();</highlight></codeline>
+<codeline lineno="284"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="285"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="286"><highlight class="normal"></highlight></codeline>
+<codeline lineno="287"><highlight class="normal">}<sp/><sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>lbann</highlight><highlight class="normal"></highlight></codeline>
+    </programlisting>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_learning_rate.cpp"/>
+  </compounddef>
+</doxygen>

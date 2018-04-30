@@ -1,0 +1,144 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="namespacelbann_1_1proto_1_1anonymous__namespace_02layer__graph__factory_8cpp_03" kind="namespace" language="C++">
+    <compoundname>lbann::proto::anonymous_namespace{layer_graph_factory.cpp}</compoundname>
+      <sectiondef kind="func">
+      <memberdef kind="function" id="namespacelbann_1_1proto_1_1anonymous__namespace_02layer__graph__factory_8cpp_03_1abbebb0b2e6ba1befb14b0b790eac96a0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::proto::anonymous_namespace{layer_graph_factory.cpp}::setup_parents_and_children</definition>
+        <argsstring>(lbann_comm *comm, std::vector&lt; Layer *&gt; &amp;layers, std::unordered_map&lt; std::string, Layer *&gt; &amp;names_to_layers, const lbann_data::Model &amp;proto_model)</argsstring>
+        <name>setup_parents_and_children</name>
+        <param>
+          <type><ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref> *</type>
+          <declname>comm</declname>
+        </param>
+        <param>
+          <type>std::vector&lt; <ref refid="classlbann_1_1Layer" kindref="compound">Layer</ref> *&gt; &amp;</type>
+          <declname>layers</declname>
+        </param>
+        <param>
+          <type>std::unordered_map&lt; std::string, <ref refid="classlbann_1_1Layer" kindref="compound">Layer</ref> *&gt; &amp;</type>
+          <declname>names_to_layers</declname>
+        </param>
+        <param>
+          <type>const lbann_data::Model &amp;</type>
+          <declname>proto_model</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Setup parent/child relationships between layers. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/layer_graph_factory.cpp" line="35" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/layer_graph_factory.cpp" bodystart="35" bodyend="61"/>
+        <references refid="base_8hpp_1a80b1d707117e968a6951b7222e4b2b87" compoundref="base_8hpp" startline="154">LBANN_ERROR</references>
+        <referencedby refid="namespacelbann_1_1proto_1a99e65cd4abb769d020ab76ff20c39d0b" compoundref="layer__graph__factory_8cpp" startline="156" endline="260">lbann::proto::construct_layer_graph</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="namespacelbann_1_1proto_1_1anonymous__namespace_02layer__graph__factory_8cpp_03_1a049fcca970d819d3c08bfdf71883de5c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::proto::anonymous_namespace{layer_graph_factory.cpp}::setup_target_pointers</definition>
+        <argsstring>(lbann_comm *comm, std::vector&lt; Layer *&gt; &amp;layers, std::unordered_map&lt; std::string, Layer *&gt; &amp;names_to_layers, const lbann_data::Model &amp;proto_model)</argsstring>
+        <name>setup_target_pointers</name>
+        <param>
+          <type><ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref> *</type>
+          <declname>comm</declname>
+        </param>
+        <param>
+          <type>std::vector&lt; <ref refid="classlbann_1_1Layer" kindref="compound">Layer</ref> *&gt; &amp;</type>
+          <declname>layers</declname>
+        </param>
+        <param>
+          <type>std::unordered_map&lt; std::string, <ref refid="classlbann_1_1Layer" kindref="compound">Layer</ref> *&gt; &amp;</type>
+          <declname>names_to_layers</declname>
+        </param>
+        <param>
+          <type>const lbann_data::Model &amp;</type>
+          <declname>proto_model</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Setup paired input layers for target layers. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/layer_graph_factory.cpp" line="64" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/layer_graph_factory.cpp" bodystart="64" bodyend="96"/>
+        <references refid="classlbann_1_1Layer_1a80027550202fa7dbb1dd55fa8a66c84b" compoundref="layer_8hpp" startline="85" endline="85">lbann::Layer::get_name</references>
+        <references refid="base_8hpp_1a80b1d707117e968a6951b7222e4b2b87" compoundref="base_8hpp" startline="154">LBANN_ERROR</references>
+        <references refid="classlbann_1_1io__layer_1a61f2e00334c820235795154492876476" compoundref="io__layer_8hpp" startline="180" endline="182">lbann::io_layer::is_for_regression</references>
+        <references refid="classlbann_1_1generic__target__layer_1ab1bf1a639db82f2dd6ef3994f2269ec2" compoundref="generic__target__layer_8hpp" startline="96" endline="98">lbann::generic_target_layer::set_paired_input_layer</references>
+        <referencedby refid="namespacelbann_1_1proto_1a99e65cd4abb769d020ab76ff20c39d0b" compoundref="layer__graph__factory_8cpp" startline="156" endline="260">lbann::proto::construct_layer_graph</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="namespacelbann_1_1proto_1_1anonymous__namespace_02layer__graph__factory_8cpp_03_1ac0c3ac49d16d6926308c336149a2f039" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::proto::anonymous_namespace{layer_graph_factory.cpp}::setup_reconstruction_pointers</definition>
+        <argsstring>(lbann_comm *comm, std::vector&lt; Layer *&gt; &amp;layers, std::unordered_map&lt; std::string, Layer *&gt; &amp;names_to_layers, const lbann_data::Model &amp;proto_model)</argsstring>
+        <name>setup_reconstruction_pointers</name>
+        <param>
+          <type><ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref> *</type>
+          <declname>comm</declname>
+        </param>
+        <param>
+          <type>std::vector&lt; <ref refid="classlbann_1_1Layer" kindref="compound">Layer</ref> *&gt; &amp;</type>
+          <declname>layers</declname>
+        </param>
+        <param>
+          <type>std::unordered_map&lt; std::string, <ref refid="classlbann_1_1Layer" kindref="compound">Layer</ref> *&gt; &amp;</type>
+          <declname>names_to_layers</declname>
+        </param>
+        <param>
+          <type>const lbann_data::Model &amp;</type>
+          <declname>proto_model</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Setup original layers for reconstruction layers. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/layer_graph_factory.cpp" line="99" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/layer_graph_factory.cpp" bodystart="99" bodyend="129"/>
+        <references refid="classlbann_1_1Layer_1a80027550202fa7dbb1dd55fa8a66c84b" compoundref="layer_8hpp" startline="85" endline="85">lbann::Layer::get_name</references>
+        <references refid="base_8hpp_1a80b1d707117e968a6951b7222e4b2b87" compoundref="base_8hpp" startline="154">LBANN_ERROR</references>
+        <references refid="classlbann_1_1reconstruction__layer_1a57e3d25871c8472c5a8de71537fdedff" compoundref="reconstruction_8hpp" startline="66" endline="68">lbann::reconstruction_layer&lt; T_layout &gt;::set_original_layer</references>
+        <referencedby refid="namespacelbann_1_1proto_1a99e65cd4abb769d020ab76ff20c39d0b" compoundref="layer__graph__factory_8cpp" startline="156" endline="260">lbann::proto::construct_layer_graph</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="namespacelbann_1_1proto_1_1anonymous__namespace_02layer__graph__factory_8cpp_03_1a68f963a80592c01832cacf2acd4bacc1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::proto::anonymous_namespace{layer_graph_factory.cpp}::setup_unpooling_pointers</definition>
+        <argsstring>(lbann_comm *comm, std::vector&lt; Layer *&gt; &amp;layers, std::unordered_map&lt; std::string, Layer *&gt; &amp;names_to_layers, const lbann_data::Model &amp;proto_model)</argsstring>
+        <name>setup_unpooling_pointers</name>
+        <param>
+          <type><ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref> *</type>
+          <declname>comm</declname>
+        </param>
+        <param>
+          <type>std::vector&lt; <ref refid="classlbann_1_1Layer" kindref="compound">Layer</ref> *&gt; &amp;</type>
+          <declname>layers</declname>
+        </param>
+        <param>
+          <type>std::unordered_map&lt; std::string, <ref refid="classlbann_1_1Layer" kindref="compound">Layer</ref> *&gt; &amp;</type>
+          <declname>names_to_layers</declname>
+        </param>
+        <param>
+          <type>const lbann_data::Model &amp;</type>
+          <declname>proto_model</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Setup paired pooling layers for unpooling layers. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/layer_graph_factory.cpp" line="132" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/layer_graph_factory.cpp" bodystart="132" bodyend="152"/>
+        <references refid="classlbann_1_1Layer_1a80027550202fa7dbb1dd55fa8a66c84b" compoundref="layer_8hpp" startline="85" endline="85">lbann::Layer::get_name</references>
+        <references refid="base_8hpp_1a80b1d707117e968a6951b7222e4b2b87" compoundref="base_8hpp" startline="154">LBANN_ERROR</references>
+        <references refid="classlbann_1_1unpooling__layer_1a5269d1939056430c0d8033629a770b38" compoundref="unpooling_8hpp" startline="92" endline="94">lbann::unpooling_layer&lt; T_layout &gt;::set_pooling_layer</references>
+        <referencedby refid="namespacelbann_1_1proto_1a99e65cd4abb769d020ab76ff20c39d0b" compoundref="layer__graph__factory_8cpp" startline="156" endline="260">lbann::proto::construct_layer_graph</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/layer_graph_factory.cpp" line="32" column="1"/>
+  </compounddef>
+</doxygen>

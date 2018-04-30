@@ -1,0 +1,302 @@
+\hypertarget{init__image__data__readers_8hpp}{}\section{/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/proto/init\+\_\+image\+\_\+data\+\_\+readers.hpp File Reference}
+\label{init__image__data__readers_8hpp}\index{/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/proto/init\+\_\+image\+\_\+data\+\_\+readers.\+hpp@{/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/proto/init\+\_\+image\+\_\+data\+\_\+readers.\+hpp}}
+{\ttfamily \#include \char`\"{}lbann/proto/proto\+\_\+common.\+hpp\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}lbann/comm.\+hpp\char`\"{}}\newline
+Include dependency graph for init\+\_\+image\+\_\+data\+\_\+readers.\+hpp\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{init__image__data__readers_8hpp__incl}
+\end{center}
+\end{figure}
+This graph shows which files directly or indirectly include this file\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{init__image__data__readers_8hpp__dep__incl}
+\end{center}
+\end{figure}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{init__image__data__readers_8hpp_a712004ee86a9e1de504f12e98aa51e24}{init\+\_\+image\+\_\+data\+\_\+reader} (const lbann\+\_\+data\+::\+Reader \&pb\+\_\+readme, const bool master, \hyperlink{classlbann_1_1generic__data__reader}{lbann\+::generic\+\_\+data\+\_\+reader} $\ast$\&reader)
+\item 
+void \hyperlink{init__image__data__readers_8hpp_ac021d06bfe6825ec586927661254a546}{init\+\_\+generic\+\_\+preprocessor} (const lbann\+\_\+data\+::\+Reader \&pb\+\_\+readme, const bool master, \hyperlink{classlbann_1_1generic__data__reader}{lbann\+::generic\+\_\+data\+\_\+reader} $\ast$reader)
+\item 
+void \hyperlink{init__image__data__readers_8hpp_a7cbc558e3233f04f7bbd6e96d199e387}{init\+\_\+org\+\_\+image\+\_\+data\+\_\+reader} (const lbann\+\_\+data\+::\+Reader \&pb\+\_\+readme, const bool master, \hyperlink{classlbann_1_1generic__data__reader}{lbann\+::generic\+\_\+data\+\_\+reader} $\ast$\&reader)
+\end{DoxyCompactItemize}
+
+
+\subsection{Function Documentation}
+\mbox{\Hypertarget{init__image__data__readers_8hpp_ac021d06bfe6825ec586927661254a546}\label{init__image__data__readers_8hpp_ac021d06bfe6825ec586927661254a546}} 
+\index{init\+\_\+image\+\_\+data\+\_\+readers.\+hpp@{init\+\_\+image\+\_\+data\+\_\+readers.\+hpp}!init\+\_\+generic\+\_\+preprocessor@{init\+\_\+generic\+\_\+preprocessor}}
+\index{init\+\_\+generic\+\_\+preprocessor@{init\+\_\+generic\+\_\+preprocessor}!init\+\_\+image\+\_\+data\+\_\+readers.\+hpp@{init\+\_\+image\+\_\+data\+\_\+readers.\+hpp}}
+\subsubsection{\texorpdfstring{init\+\_\+generic\+\_\+preprocessor()}{init\_generic\_preprocessor()}}
+{\footnotesize\ttfamily void init\+\_\+generic\+\_\+preprocessor (\begin{DoxyParamCaption}\item[{const lbann\+\_\+data\+::\+Reader \&}]{pb\+\_\+readme,  }\item[{const bool}]{master,  }\item[{\hyperlink{classlbann_1_1generic__data__reader}{lbann\+::generic\+\_\+data\+\_\+reader} $\ast$}]{reader }\end{DoxyParamCaption})}
+
+
+
+Definition at line 334 of file init\+\_\+image\+\_\+data\+\_\+readers.\+cpp.
+
+
+\begin{DoxyCode}
+334                                                                                                            
+             \{
+335   \textcolor{keywordflow}{if} (!pb\_readme.has\_image\_preprocessor()) \textcolor{keywordflow}{return};
+336 
+337   \textcolor{keyword}{const} lbann\_data::ImagePreprocessor& pb\_preprocessor = pb\_readme.image\_preprocessor();
+338   \textcolor{keywordflow}{if} (pb\_preprocessor.disable()) \textcolor{keywordflow}{return};
+339 
+340   \textcolor{comment}{// set up augmenter if necessary}
+341   \textcolor{keywordflow}{if} (pb\_preprocessor.has\_augmenter()) \{
+342     \textcolor{keyword}{const} lbann\_data::ImagePreprocessor::Augmenter& pb\_augmenter = pb\_preprocessor.augmenter();
+343     \textcolor{keywordflow}{if} (!pb\_augmenter.disable() &&
+344         (pb\_augmenter.name() == \textcolor{stringliteral}{""}) &&
+345         (pb\_augmenter.horizontal\_flip() ||
+346          pb\_augmenter.vertical\_flip() ||
+347          pb\_augmenter.rotation() != 0.0 ||
+348          pb\_augmenter.horizontal\_shift() != 0.0 ||
+349          pb\_augmenter.vertical\_shift() != 0.0 ||
+350          pb\_augmenter.shear\_range() != 0.0))
+351     \{
+352       reader->\hyperlink{classlbann_1_1lbann__image__preprocessor_a4ba2de0a781dfa0a2652ad4d777a241f}{horizontal\_flip}( pb\_augmenter.horizontal\_flip() );
+353       reader->\hyperlink{classlbann_1_1lbann__image__preprocessor_aeb7d75e4d3361ae2836afabc14510d74}{vertical\_flip}( pb\_augmenter.vertical\_flip() );
+354       reader->\hyperlink{classlbann_1_1lbann__image__preprocessor_a1a293733368dd9eceba3e99cf9e5ae24}{rotation}( pb\_augmenter.rotation() );
+355       reader->\hyperlink{classlbann_1_1lbann__image__preprocessor_ae62596b4af5d1940aa0499cde2bdd005}{horizontal\_shift}( pb\_augmenter.horizontal\_shift() );
+356       reader->\hyperlink{classlbann_1_1lbann__image__preprocessor_a50ac63e1f6b1b9806cbf6c06f53f4aca}{vertical\_shift}( pb\_augmenter.vertical\_shift() );
+357       reader->\hyperlink{classlbann_1_1lbann__image__preprocessor_aef1e2375fd518e69df800b0dcbcb37d0}{shear\_range}( pb\_augmenter.shear\_range() );
+358       \textcolor{keywordflow}{if} (master) std::cout << \textcolor{stringliteral}{"image processor: augmenter is set"} << std::endl;
+359     \} \textcolor{keywordflow}{else} \{
+360       reader->\hyperlink{classlbann_1_1lbann__image__preprocessor_a871cb543ee6c132a76e16045a1a2a9f3}{disable\_augmentation}();
+361     \}
+362   \} \textcolor{keywordflow}{else} \{ \textcolor{comment}{// For backward compatibility. TODO: will be deprecated}
+363     \textcolor{keywordflow}{if} (!pb\_preprocessor.disable\_augmentation() &&
+364         (pb\_preprocessor.horizontal\_flip() ||
+365          pb\_preprocessor.vertical\_flip() ||
+366          pb\_preprocessor.rotation() != 0.0 ||
+367          pb\_preprocessor.horizontal\_shift() != 0.0 ||
+368          pb\_preprocessor.vertical\_shift() != 0.0 ||
+369          pb\_preprocessor.shear\_range() != 0.0)) \{
+370       reader->\hyperlink{classlbann_1_1lbann__image__preprocessor_a4ba2de0a781dfa0a2652ad4d777a241f}{horizontal\_flip}( pb\_preprocessor.horizontal\_flip() );
+371       reader->\hyperlink{classlbann_1_1lbann__image__preprocessor_aeb7d75e4d3361ae2836afabc14510d74}{vertical\_flip}( pb\_preprocessor.vertical\_flip() );
+372       reader->\hyperlink{classlbann_1_1lbann__image__preprocessor_a1a293733368dd9eceba3e99cf9e5ae24}{rotation}( pb\_preprocessor.rotation() );
+373       reader->\hyperlink{classlbann_1_1lbann__image__preprocessor_ae62596b4af5d1940aa0499cde2bdd005}{horizontal\_shift}( pb\_preprocessor.horizontal\_shift() );
+374       reader->\hyperlink{classlbann_1_1lbann__image__preprocessor_a50ac63e1f6b1b9806cbf6c06f53f4aca}{vertical\_shift}( pb\_preprocessor.vertical\_shift() );
+375       reader->\hyperlink{classlbann_1_1lbann__image__preprocessor_aef1e2375fd518e69df800b0dcbcb37d0}{shear\_range}( pb\_preprocessor.shear\_range() );
+376       \textcolor{keywordflow}{if} (master) std::cout << \textcolor{stringliteral}{"image processor: deprecated syntax for augmenter"} << std::endl;
+377     \}
+378   \}
+379 
+380   \textcolor{comment}{// set up the normalizer}
+381   \textcolor{keywordflow}{if} (pb\_preprocessor.has\_normalizer()) \{
+382     \textcolor{keyword}{const} lbann\_data::ImagePreprocessor::Normalizer& pb\_normalizer = pb\_preprocessor.normalizer();
+383     \textcolor{keywordflow}{if} (!pb\_normalizer.disable() &&
+384         (pb\_normalizer.name() == \textcolor{stringliteral}{""})) \{
+385       reader->\hyperlink{classlbann_1_1lbann__image__preprocessor_afa470b696ba435c20050187a0232717d}{subtract\_mean}( pb\_normalizer.subtract\_mean() );
+386       reader->\hyperlink{classlbann_1_1lbann__image__preprocessor_a05c4cb5cb842df5d46eebe15c6ea9de3}{unit\_variance}( pb\_normalizer.unit\_variance() );
+387       reader->\hyperlink{classlbann_1_1lbann__image__preprocessor_a977b2fdd417acb1eb37dbea0cfdd4b60}{scale}( pb\_normalizer.scale() );
+388       reader->\hyperlink{classlbann_1_1lbann__image__preprocessor_a02cfd4d8c26a317540b587eb52cef0d5}{z\_score}( pb\_normalizer.z\_score() );
+389       \textcolor{keywordflow}{if} (master) std::cout << \textcolor{stringliteral}{"image processor: normalizer is set"} << std::endl;
+390     \}
+391   \} \textcolor{keywordflow}{else} \{ \textcolor{comment}{// For backward compatibility. TODO: will be deprecated}
+392       reader->\hyperlink{classlbann_1_1lbann__image__preprocessor_afa470b696ba435c20050187a0232717d}{subtract\_mean}( pb\_preprocessor.subtract\_mean() );
+393       reader->\hyperlink{classlbann_1_1lbann__image__preprocessor_a05c4cb5cb842df5d46eebe15c6ea9de3}{unit\_variance}( pb\_preprocessor.unit\_variance() );
+394       reader->\hyperlink{classlbann_1_1lbann__image__preprocessor_a977b2fdd417acb1eb37dbea0cfdd4b60}{scale}( pb\_preprocessor.scale() );
+395       reader->\hyperlink{classlbann_1_1lbann__image__preprocessor_a02cfd4d8c26a317540b587eb52cef0d5}{z\_score}( pb\_preprocessor.z\_score() );
+396       \textcolor{keywordflow}{if} (master) std::cout << \textcolor{stringliteral}{"image processor: deprecated syntax for normalizer"} << std::endl;
+397   \}
+398 
+399   \textcolor{keywordflow}{if} (pb\_preprocessor.has\_noiser()) \{
+400     \textcolor{keyword}{const} lbann\_data::ImagePreprocessor::Noiser& pb\_noiser = pb\_preprocessor.noiser();
+401     \textcolor{keywordflow}{if} (!pb\_noiser.disable() &&
+402         (pb\_noiser.name() == \textcolor{stringliteral}{""})) \{
+403       reader->\hyperlink{classlbann_1_1lbann__image__preprocessor_a1726baf71e931108dc9192539e90c583}{add\_noise}( pb\_noiser.factor() );
+404       \textcolor{keywordflow}{if} (master) std::cout << \textcolor{stringliteral}{"image processor: noiser is set"} << std::endl;
+405     \}
+406   \} \textcolor{keywordflow}{else} \{ \textcolor{comment}{// For backward compatibility. TODO: will be deprecated}
+407     reader->\hyperlink{classlbann_1_1lbann__image__preprocessor_a1726baf71e931108dc9192539e90c583}{add\_noise}( pb\_preprocessor.noise\_factor() );
+408     \textcolor{keywordflow}{if} (master && (pb\_preprocessor.noise\_factor()>0.0)) std::cout << \textcolor{stringliteral}{"image processor: deprecated syntax
+       for noiser"} << std::endl;
+409   \}
+410 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{init__image__data__readers_8hpp_ac021d06bfe6825ec586927661254a546_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{init__image__data__readers_8hpp_ac021d06bfe6825ec586927661254a546_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{init__image__data__readers_8hpp_a712004ee86a9e1de504f12e98aa51e24}\label{init__image__data__readers_8hpp_a712004ee86a9e1de504f12e98aa51e24}} 
+\index{init\+\_\+image\+\_\+data\+\_\+readers.\+hpp@{init\+\_\+image\+\_\+data\+\_\+readers.\+hpp}!init\+\_\+image\+\_\+data\+\_\+reader@{init\+\_\+image\+\_\+data\+\_\+reader}}
+\index{init\+\_\+image\+\_\+data\+\_\+reader@{init\+\_\+image\+\_\+data\+\_\+reader}!init\+\_\+image\+\_\+data\+\_\+readers.\+hpp@{init\+\_\+image\+\_\+data\+\_\+readers.\+hpp}}
+\subsubsection{\texorpdfstring{init\+\_\+image\+\_\+data\+\_\+reader()}{init\_image\_data\_reader()}}
+{\footnotesize\ttfamily void init\+\_\+image\+\_\+data\+\_\+reader (\begin{DoxyParamCaption}\item[{const lbann\+\_\+data\+::\+Reader \&}]{pb\+\_\+readme,  }\item[{const bool}]{master,  }\item[{\hyperlink{classlbann_1_1generic__data__reader}{lbann\+::generic\+\_\+data\+\_\+reader} $\ast$\&}]{reader }\end{DoxyParamCaption})}
+
+
+
+Definition at line 263 of file init\+\_\+image\+\_\+data\+\_\+readers.\+cpp.
+
+
+\begin{DoxyCode}
+263                                                                                                            
+           \{
+264   \textcolor{comment}{// data reader name}
+265   \textcolor{keyword}{const} std::string& name = pb\_readme.name();
+266   \textcolor{comment}{// whether to shuffle data}
+267   \textcolor{keyword}{const} \textcolor{keywordtype}{bool} shuffle = pb\_readme.shuffle();
+268   \textcolor{comment}{// number of labels}
+269   \textcolor{keyword}{const} \textcolor{keywordtype}{int} n\_labels = pb\_readme.num\_labels();
+270 
+271   std::shared\_ptr<cv\_process> pp;
+272   \textcolor{comment}{// set up the image preprocessor}
+273   \textcolor{keywordflow}{if} ((name == \textcolor{stringliteral}{"imagenet"}) || (name == \textcolor{stringliteral}{"imagenet\_single"}) ||
+274       (name == \textcolor{stringliteral}{"triplet"}) || (name == \textcolor{stringliteral}{"mnist\_siamese"}) || (name == \textcolor{stringliteral}{"multi\_images"})) \{
+275     pp = std::make\_shared<cv\_process>();
+276   \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"imagenet\_patches"}) \{
+277     pp = std::make\_shared<cv\_process\_patches>();
+278   \} \textcolor{keywordflow}{else} \{
+279     \textcolor{keywordflow}{if} (master) \{
+280       std::stringstream err;
+281       err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: unknown name for image data reader: "}
+282           << name;
+283       \textcolor{keywordflow}{throw} \hyperlink{classlbann_1_1lbann__exception}{lbann\_exception}(err.str());
+284     \}
+285   \}
+286 
+287   \textcolor{comment}{// final size of image}
+288   \textcolor{keywordtype}{int} width = 0, height = 0;
+289   \textcolor{keywordtype}{int} channels = 3;
+290 
+291   \textcolor{comment}{// setup preprocessor}
+292   \hyperlink{init__image__data__readers_8cpp_a12164f699122209432c4f8ae7505683d}{init\_image\_preprocessor}(pb\_readme, master, pp, width, height, channels);
+293 
+294   \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"imagenet\_patches"}) \{
+295     std::shared\_ptr<cv\_process\_patches> ppp = std::dynamic\_pointer\_cast<cv\_process\_patches>(pp);
+296     reader = \textcolor{keyword}{new} \hyperlink{classlbann_1_1imagenet__reader__patches}{imagenet\_reader\_patches}(ppp, shuffle);
+297   \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"imagenet"}) \{
+298     reader = \textcolor{keyword}{new} \hyperlink{classlbann_1_1imagenet__reader}{imagenet\_reader}(pp, shuffle);
+299   \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"triplet"}) \{
+300     reader = \textcolor{keyword}{new} \hyperlink{classlbann_1_1data__reader__triplet}{data\_reader\_triplet}(pp, shuffle);
+301   \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"mnist\_siamese"}) \{
+302     reader = \textcolor{keyword}{new} \hyperlink{classlbann_1_1data__reader__mnist__siamese}{data\_reader\_mnist\_siamese}(pp, shuffle);
+303   \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"multi\_images"}) \{
+304     reader = \textcolor{keyword}{new} \hyperlink{classlbann_1_1data__reader__multi__images}{data\_reader\_multi\_images}(pp, shuffle);
+305   \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"imagenet\_single"}) \{ \textcolor{comment}{// imagenet\_single}
+306     reader = \textcolor{keyword}{new} \hyperlink{classlbann_1_1imagenet__reader__single}{imagenet\_reader\_single}(pp, shuffle);
+307   \}
+308 
+309   \textcolor{keyword}{auto}* image\_data\_reader\_ptr = \textcolor{keyword}{dynamic\_cast<}\hyperlink{classlbann_1_1image__data__reader}{image\_data\_reader}*\textcolor{keyword}{>}(reader);
+310   \textcolor{keywordflow}{if} (!image\_data\_reader\_ptr && master) \{
+311     std::stringstream err;
+312     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: invalid image data reader pointer"};
+313     \textcolor{keywordflow}{throw} \hyperlink{classlbann_1_1lbann__exception}{lbann\_exception}(err.str());
+314   \}
+315   \textcolor{keywordflow}{if} (master) std::cout << reader->\hyperlink{classlbann_1_1generic__data__reader_abeb849fb8e10b4fa317c90bc33f61758}{get\_type}() << \textcolor{stringliteral}{" is set"} << std::endl;
+316 
+317   \textcolor{comment}{// configure the data reader}
+318   \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"multi\_images"}) \{
+319     \textcolor{keyword}{const} \textcolor{keywordtype}{int} n\_img\_srcs = pb\_readme.num\_image\_srcs();
+320     \hyperlink{classlbann_1_1data__reader__multi__images}{data\_reader\_multi\_images}* multi\_image\_dr\_ptr
+321       = \textcolor{keyword}{dynamic\_cast<}\hyperlink{classlbann_1_1data__reader__multi__images}{data\_reader\_multi\_images}*\textcolor{keyword}{>}(image\_data\_reader\_ptr);
+322     \textcolor{keywordflow}{if} (multi\_image\_dr\_ptr == \textcolor{keyword}{nullptr}) \{
+323       std::stringstream err;
+324       err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" no data\_reader\_multi\_images"};
+325       \textcolor{keywordflow}{throw} \hyperlink{classlbann_1_1lbann__exception}{lbann\_exception}(err.str());
+326     \}
+327     multi\_image\_dr\_ptr->\hyperlink{classlbann_1_1data__reader__multi__images_a57824ec9de5c1131b2f15a0cb3d4ab75}{set\_input\_params}(width, height, channels, n\_labels, n\_img\_srcs);
+328   \} \textcolor{keywordflow}{else} \{
+329     image\_data\_reader\_ptr->set\_input\_params(width, height, channels, n\_labels);
+330   \}
+331 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{init__image__data__readers_8hpp_a712004ee86a9e1de504f12e98aa51e24_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=330pt]{init__image__data__readers_8hpp_a712004ee86a9e1de504f12e98aa51e24_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{init__image__data__readers_8hpp_a7cbc558e3233f04f7bbd6e96d199e387}\label{init__image__data__readers_8hpp_a7cbc558e3233f04f7bbd6e96d199e387}} 
+\index{init\+\_\+image\+\_\+data\+\_\+readers.\+hpp@{init\+\_\+image\+\_\+data\+\_\+readers.\+hpp}!init\+\_\+org\+\_\+image\+\_\+data\+\_\+reader@{init\+\_\+org\+\_\+image\+\_\+data\+\_\+reader}}
+\index{init\+\_\+org\+\_\+image\+\_\+data\+\_\+reader@{init\+\_\+org\+\_\+image\+\_\+data\+\_\+reader}!init\+\_\+image\+\_\+data\+\_\+readers.\+hpp@{init\+\_\+image\+\_\+data\+\_\+readers.\+hpp}}
+\subsubsection{\texorpdfstring{init\+\_\+org\+\_\+image\+\_\+data\+\_\+reader()}{init\_org\_image\_data\_reader()}}
+{\footnotesize\ttfamily void init\+\_\+org\+\_\+image\+\_\+data\+\_\+reader (\begin{DoxyParamCaption}\item[{const lbann\+\_\+data\+::\+Reader \&}]{pb\+\_\+readme,  }\item[{const bool}]{master,  }\item[{\hyperlink{classlbann_1_1generic__data__reader}{lbann\+::generic\+\_\+data\+\_\+reader} $\ast$\&}]{reader }\end{DoxyParamCaption})}
+
+
+
+Definition at line 413 of file init\+\_\+image\+\_\+data\+\_\+readers.\+cpp.
+
+
+\begin{DoxyCode}
+413                                                                                                            
+               \{
+414   \textcolor{keyword}{const} lbann\_data::ImagePreprocessor& pb\_preprocessor = pb\_readme.image\_preprocessor();
+415 
+416   \textcolor{comment}{// data reader name}
+417   \textcolor{keyword}{const} std::string& name = pb\_readme.name();
+418   \textcolor{comment}{// whether to shuffle data}
+419   \textcolor{keyword}{const} \textcolor{keywordtype}{bool} shuffle = pb\_readme.shuffle();
+420   \textcolor{comment}{// final size of image. If image\_preprocessor is not set, the type-default value}
+421   \textcolor{comment}{// (i,e., 0) is used. Then,set\_input\_params() will not modify the current member value.}
+422   \textcolor{keyword}{const} \textcolor{keywordtype}{int} width = pb\_preprocessor.raw\_width();
+423   \textcolor{keyword}{const} \textcolor{keywordtype}{int} height = pb\_preprocessor.raw\_height();
+424 
+425   \textcolor{comment}{// number of labels}
+426   \textcolor{keyword}{const} \textcolor{keywordtype}{int} n\_labels = pb\_readme.num\_labels();
+427 
+428   \textcolor{comment}{// TODO: as imagenet\_org phases out, and mnist and cifar10 convert to use new}
+429   \textcolor{comment}{// imagenet data reader, this function will disappear}
+430   \textcolor{comment}{// create data reader}
+431   \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"imagenet\_org"}) \{
+432     reader = \textcolor{keyword}{new} \hyperlink{classlbann_1_1imagenet__reader__org}{imagenet\_reader\_org}(shuffle);
+433     \textcolor{keyword}{dynamic\_cast<}\hyperlink{classlbann_1_1imagenet__reader__org}{imagenet\_reader\_org}*\textcolor{keyword}{>}(reader)->set\_input\_params(width, height, 3, 
+      n\_labels);
+434     \textcolor{keywordflow}{if} (master) std::cout << \textcolor{stringliteral}{"imagenet\_reader\_org is set"} << std::endl;
+435   \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"mnist"}) \{
+436     reader = \textcolor{keyword}{new} \hyperlink{classlbann_1_1mnist__reader}{mnist\_reader}(shuffle);
+437     \textcolor{keywordflow}{if} (master) std::cout << \textcolor{stringliteral}{"mnist\_reader is set"} << std::endl;
+438   \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"cifar10"}) \{
+439     reader = \textcolor{keyword}{new} \hyperlink{classlbann_1_1cifar10__reader}{cifar10\_reader}(shuffle);
+440     \textcolor{keywordflow}{if} (master) std::cout << \textcolor{stringliteral}{"cifar10\_reader is set"} << std::endl;
+441   \} \textcolor{keywordflow}{else} \{
+442     \textcolor{keywordflow}{if} (master) \{
+443       std::stringstream err;
+444       err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: unknown name for image data reader: "}
+445           << name;
+446       \textcolor{keywordflow}{throw} \hyperlink{classlbann_1_1lbann__exception}{lbann\_exception}(err.str());
+447     \}
+448   \}
+449 
+450   \textcolor{comment}{// setup preprocessor}
+451   \hyperlink{init__image__data__readers_8cpp_a0e66a70e8fd1805c0a7433d359f73b85}{init\_generic\_preprocessor}(pb\_readme, master, reader);
+452 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{init__image__data__readers_8hpp_a7cbc558e3233f04f7bbd6e96d199e387_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=316pt]{init__image__data__readers_8hpp_a7cbc558e3233f04f7bbd6e96d199e387_icgraph}
+\end{center}
+\end{figure}

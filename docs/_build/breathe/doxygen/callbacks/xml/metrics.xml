@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="metrics" kind="page">
+    <compoundname>metrics</compoundname>
+    <title>Metrics</title>
+    <detaileddescription>
+<para>Metric functions can be specified on prototext model files. LBANN supported metrics are found below.</para><sect1 id="metrics_1cataccuracy">
+<title>Categorical Accuracy</title>
+<para>Implementation details: lbann::metrics::categorical_accuracy</para></sect1>
+<sect1 id="metrics_1mean_abs_dev">
+<title>Mean Absolute Deviation</title>
+<para>Implementation details: lbann::metrics::mean_absolute_deviation</para></sect1>
+<sect1 id="metrics_1mse">
+<title>Mean Squared Error</title>
+<para>Implementation details: lbann::metrics::mean_squared_error</para></sect1>
+<sect1 id="metrics_1pearson">
+<title>Pearson Correlation</title>
+<para>Implementation details: lbann::metrics::pearson_correlation</para></sect1>
+<sect1 id="metrics_1top_k">
+<title>Top K Categorical Accuracy</title>
+<para>Implementation details: lbann::metrics::top_k_categorical_accuracy </para></sect1>
+    </detaileddescription>
+  </compounddef>
+</doxygen>

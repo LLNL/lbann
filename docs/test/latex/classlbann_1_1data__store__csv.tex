@@ -1,0 +1,623 @@
+\hypertarget{classlbann_1_1data__store__csv}{}\section{lbann\+:\+:data\+\_\+store\+\_\+csv Class Reference}
+\label{classlbann_1_1data__store__csv}\index{lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}}
+
+
+{\ttfamily \#include $<$data\+\_\+store\+\_\+csv.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:data\+\_\+store\+\_\+csv\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=194pt]{classlbann_1_1data__store__csv__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:data\+\_\+store\+\_\+csv\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__csv__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1data__store__csv_add3e9e9c37f1cdf0e3dba00cc6f49507}{data\+\_\+store\+\_\+csv} (\hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$reader, \hyperlink{classlbann_1_1model}{model} $\ast$m)
+\begin{DoxyCompactList}\small\item\em ctor \end{DoxyCompactList}\item 
+\hyperlink{classlbann_1_1data__store__csv_af6bdd542f3e87528c3f2ee2b6f9fdff8}{data\+\_\+store\+\_\+csv} (const \hyperlink{classlbann_1_1data__store__csv}{data\+\_\+store\+\_\+csv} \&)=default
+\begin{DoxyCompactList}\small\item\em copy ctor \end{DoxyCompactList}\item 
+\hyperlink{classlbann_1_1data__store__csv}{data\+\_\+store\+\_\+csv} \& \hyperlink{classlbann_1_1data__store__csv_a9a8cadac9ca32ad0da758bfdd2112755}{operator=} (const \hyperlink{classlbann_1_1data__store__csv}{data\+\_\+store\+\_\+csv} \&)=default
+\begin{DoxyCompactList}\small\item\em operator= \end{DoxyCompactList}\item 
+\hyperlink{classlbann_1_1data__store__csv}{data\+\_\+store\+\_\+csv} $\ast$ \hyperlink{classlbann_1_1data__store__csv_a2e95f53f539a838e6c6484b9f4de5a45}{copy} () const override
+\item 
+\hyperlink{classlbann_1_1data__store__csv_a6e0928f649f9a808c4e73b77f34ffae3}{$\sim$data\+\_\+store\+\_\+csv} () override
+\begin{DoxyCompactList}\small\item\em dtor \end{DoxyCompactList}\item 
+void \hyperlink{classlbann_1_1data__store__csv_a3125cf637d40e8908c68bb74690f06da}{get\+\_\+data\+\_\+buf\+\_\+\+Data\+Type} (int data\+\_\+id, std\+::vector$<$ Data\+Type $>$ $\ast$\&buf) override
+\item 
+void \hyperlink{classlbann_1_1data__store__csv_a184c7e6f27c5e07255b9c889ace02407}{setup} () override
+\begin{DoxyCompactList}\small\item\em called by \hyperlink{classlbann_1_1generic__data__reader_a8b2a09d38512fc11f1b9d572c89100a7}{generic\+\_\+data\+\_\+reader\+::setup\+\_\+data\+\_\+store} \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{classlbann_1_1data__store__csv_acacd039d3ca8caf8958b731a1ce382c6}{exchange\+\_\+data} () override
+\begin{DoxyCompactList}\small\item\em retrive data needed for passing to the data reader for the next epoch \end{DoxyCompactList}\item 
+void \hyperlink{classlbann_1_1data__store__csv_ae0deaa88a2f5164569f796f7d35510d8}{get\+\_\+indices} (std\+::unordered\+\_\+set$<$ int $>$ \&indices, int p)
+\item 
+void \hyperlink{classlbann_1_1data__store__csv_ab0ebfe735a732205f7f3c66c876e20b9}{get\+\_\+my\+\_\+indices} (std\+::unordered\+\_\+set$<$ int $>$ \&indices, int p)
+\item 
+void \hyperlink{classlbann_1_1data__store__csv_a6184c48ec096372899e127235bb741da}{populate\+\_\+datastore} ()
+\begin{DoxyCompactList}\small\item\em fills in m\+\_\+data (the data store) \end{DoxyCompactList}\item 
+void \hyperlink{classlbann_1_1data__store__csv_afe48c08075e3327a2b9bb14c73a9c952}{printme} (const char $\ast$fn)
+\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1csv__reader}{csv\+\_\+reader} $\ast$ \hyperlink{classlbann_1_1data__store__csv_a8920e09beb3e40e59e2858daf95a6cf9}{m\+\_\+csv\+\_\+reader}
+\item 
+int \hyperlink{classlbann_1_1data__store__csv_acf75e96923877e10c8ed499ec48f9320}{m\+\_\+vector\+\_\+size}
+\item 
+std\+::unordered\+\_\+map$<$ int, size\+\_\+t $>$ \hyperlink{classlbann_1_1data__store__csv_a4cb571710d2fd2a088bb55b7ac7ca29b}{m\+\_\+offset\+\_\+mapping}
+\begin{DoxyCompactList}\small\item\em maps\+: shuffled index to offset in owner\textquotesingle{}s data store \end{DoxyCompactList}\item 
+std\+::unordered\+\_\+map$<$ int, std\+::vector$<$ Data\+Type $>$ $>$ \hyperlink{classlbann_1_1data__store__csv_a456bbbf6d09c1ec04cd6260cf11007d8}{m\+\_\+my\+\_\+minibatch\+\_\+data}
+\begin{DoxyCompactList}\small\item\em buffers for data that will be passed to the data reader\textquotesingle{}s fetch\+\_\+datum method \end{DoxyCompactList}\item 
+std\+::map$<$ int, std\+::vector$<$ Data\+Type $>$ $>$ \hyperlink{classlbann_1_1data__store__csv_a8f0ac398b2ed53c36594ca1baaf4bde0}{m\+\_\+data}
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+todo 
+
+Definition at line 43 of file data\+\_\+store\+\_\+csv.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1data__store__csv_add3e9e9c37f1cdf0e3dba00cc6f49507}\label{classlbann_1_1data__store__csv_add3e9e9c37f1cdf0e3dba00cc6f49507}} 
+\index{lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}!data\+\_\+store\+\_\+csv@{data\+\_\+store\+\_\+csv}}
+\index{data\+\_\+store\+\_\+csv@{data\+\_\+store\+\_\+csv}!lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}}
+\subsubsection{\texorpdfstring{data\+\_\+store\+\_\+csv()}{data\_store\_csv()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::data\+\_\+store\+\_\+csv\+::data\+\_\+store\+\_\+csv (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$}]{reader,  }\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})}
+
+
+
+ctor 
+
+
+
+Definition at line 37 of file data\+\_\+store\+\_\+csv.\+cpp.
+
+
+\begin{DoxyCode}
+38                                          :
+39   \hyperlink{classlbann_1_1generic__data__store_acbcd88161c06f4bb9a70bbae857d4ee0}{generic\_data\_store}(reader, m) \{
+40   \hyperlink{classlbann_1_1generic__data__store_a853741295a07b5687921fc56d0d7d5b2}{set\_name}(\textcolor{stringliteral}{"data\_store\_csv"});
+41 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=334pt]{classlbann_1_1data__store__csv_add3e9e9c37f1cdf0e3dba00cc6f49507_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=344pt]{classlbann_1_1data__store__csv_add3e9e9c37f1cdf0e3dba00cc6f49507_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__store__csv_af6bdd542f3e87528c3f2ee2b6f9fdff8}\label{classlbann_1_1data__store__csv_af6bdd542f3e87528c3f2ee2b6f9fdff8}} 
+\index{lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}!data\+\_\+store\+\_\+csv@{data\+\_\+store\+\_\+csv}}
+\index{data\+\_\+store\+\_\+csv@{data\+\_\+store\+\_\+csv}!lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}}
+\subsubsection{\texorpdfstring{data\+\_\+store\+\_\+csv()}{data\_store\_csv()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::data\+\_\+store\+\_\+csv\+::data\+\_\+store\+\_\+csv (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1data__store__csv}{data\+\_\+store\+\_\+csv} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+copy ctor 
+
+\mbox{\Hypertarget{classlbann_1_1data__store__csv_a6e0928f649f9a808c4e73b77f34ffae3}\label{classlbann_1_1data__store__csv_a6e0928f649f9a808c4e73b77f34ffae3}} 
+\index{lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}!````~data\+\_\+store\+\_\+csv@{$\sim$data\+\_\+store\+\_\+csv}}
+\index{````~data\+\_\+store\+\_\+csv@{$\sim$data\+\_\+store\+\_\+csv}!lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}}
+\subsubsection{\texorpdfstring{$\sim$data\+\_\+store\+\_\+csv()}{~data\_store\_csv()}}
+{\footnotesize\ttfamily lbann\+::data\+\_\+store\+\_\+csv\+::$\sim$data\+\_\+store\+\_\+csv (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}}
+
+
+
+dtor 
+
+
+
+Definition at line 43 of file data\+\_\+store\+\_\+csv.\+cpp.
+
+
+\begin{DoxyCode}
+43                                 \{
+44 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=344pt]{classlbann_1_1data__store__csv_a6e0928f649f9a808c4e73b77f34ffae3_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1data__store__csv_a2e95f53f539a838e6c6484b9f4de5a45}\label{classlbann_1_1data__store__csv_a2e95f53f539a838e6c6484b9f4de5a45}} 
+\index{lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}!copy@{copy}}
+\index{copy@{copy}!lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1data__store__csv}{data\+\_\+store\+\_\+csv}$\ast$ lbann\+::data\+\_\+store\+\_\+csv\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1generic__data__store_ae06e089790aa023b839be508a3c020c6}{lbann\+::generic\+\_\+data\+\_\+store}.
+
+
+
+Definition at line 55 of file data\+\_\+store\+\_\+csv.\+hpp.
+
+
+\begin{DoxyCode}
+55 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1data__store__csv_add3e9e9c37f1cdf0e3dba00cc6f49507}{data\_store\_csv}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__csv_a2e95f53f539a838e6c6484b9f4de5a45_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__store__csv_acacd039d3ca8caf8958b731a1ce382c6}\label{classlbann_1_1data__store__csv_acacd039d3ca8caf8958b731a1ce382c6}} 
+\index{lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}!exchange\+\_\+data@{exchange\+\_\+data}}
+\index{exchange\+\_\+data@{exchange\+\_\+data}!lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}}
+\subsubsection{\texorpdfstring{exchange\+\_\+data()}{exchange\_data()}}
+{\footnotesize\ttfamily void lbann\+::data\+\_\+store\+\_\+csv\+::exchange\+\_\+data (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+
+
+retrive data needed for passing to the data reader for the next epoch 
+
+
+
+Implements \hyperlink{classlbann_1_1generic__data__store_a5a34663fbbc3714d45743a6ca7195f51}{lbann\+::generic\+\_\+data\+\_\+store}.
+
+
+
+Definition at line 156 of file data\+\_\+store\+\_\+csv.\+cpp.
+
+
+\begin{DoxyCode}
+156                                    \{
+157   \textcolor{keywordtype}{double} tm1 = \hyperlink{namespacelbann_a478d36031ff0659893c4322cd856157f}{get\_time}();
+158   std::stringstream err;
+159 
+160   \textcolor{comment}{//get indices I need for the next epoch, and start receives}
+161   std::unordered\_set<int> indices;
+162   \hyperlink{classlbann_1_1data__store__csv_ae0deaa88a2f5164569f796f7d35510d8}{get\_indices}(indices, \hyperlink{classlbann_1_1generic__data__store_a87695bfd2d1ed0dbe01d99108e3f68b7}{m\_rank});
+163   std::vector<MPI\_Request> recv\_req(indices.size());
+164   std::vector<MPI\_Status> recv\_status(indices.size());
+165   \hyperlink{classlbann_1_1data__store__csv_a456bbbf6d09c1ec04cd6260cf11007d8}{m\_my\_minibatch\_data}.clear();
+166   \textcolor{keywordtype}{size\_t} jj = 0;
+167   \textcolor{keywordflow}{for} (\textcolor{keyword}{auto} t : indices) \{
+168     \hyperlink{classlbann_1_1data__store__csv_a456bbbf6d09c1ec04cd6260cf11007d8}{m\_my\_minibatch\_data}[t].resize(\hyperlink{classlbann_1_1data__store__csv_acf75e96923877e10c8ed499ec48f9320}{m\_vector\_size});
+169     \textcolor{keywordtype}{int} owner = \hyperlink{classlbann_1_1generic__data__store_ad0de5ac2cdcf3f692acb252a019a2aed}{get\_index\_owner}(t);
+170     \textcolor{keywordflow}{if} (owner >= \hyperlink{classlbann_1_1generic__data__store_afcd4f99959c265c8c03dcf8ad3779d85}{m\_np} or owner < 0) \{
+171       err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+172           << \textcolor{stringliteral}{" ERROR: bad rank for owner in MPI\_Irecv; owner: "} << owner << \textcolor{stringliteral}{" index: "} << t << \textcolor{stringliteral}{" jj: "} << 
+      jj+1 << \textcolor{stringliteral}{" of "} << indices.size();
+173       \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+174     \}
+175     MPI\_Irecv(
+176       \hyperlink{classlbann_1_1data__store__csv_a456bbbf6d09c1ec04cd6260cf11007d8}{m\_my\_minibatch\_data}[t].\hyperlink{namespacelbann_1_1cnpy__utils_a9ac86d96ccb1f8b4b2ea16441738781f}{data}(), \hyperlink{classlbann_1_1data__store__csv_acf75e96923877e10c8ed499ec48f9320}{m\_vector\_size}*\textcolor{keyword}{sizeof}(DataType),  
+      MPI\_BYTE,
+177       owner, t, \hyperlink{classlbann_1_1generic__data__store_ae2d2d61d5d766a7f525eedcb05e0dbf6}{m\_mpi\_comm}, &(recv\_req[jj++]));
+178   \}
+179 
+180   \textcolor{comment}{//start sends to all processors}
+181   std::vector<std::vector<MPI\_Request>> send\_req(\hyperlink{classlbann_1_1generic__data__store_afcd4f99959c265c8c03dcf8ad3779d85}{m\_np});
+182   std::vector<std::vector<MPI\_Status>> send\_status(\hyperlink{classlbann_1_1generic__data__store_afcd4f99959c265c8c03dcf8ad3779d85}{m\_np});
+183   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} p=0; p<\hyperlink{classlbann_1_1generic__data__store_afcd4f99959c265c8c03dcf8ad3779d85}{m\_np}; p++) \{
+184     \hyperlink{classlbann_1_1data__store__csv_ab0ebfe735a732205f7f3c66c876e20b9}{get\_my\_indices}(indices, p);
+185     send\_req[p].resize(indices.size());
+186     send\_status[p].resize(indices.size());
+187     jj = 0;
+188     \textcolor{keywordflow}{for} (\textcolor{keyword}{auto} t : indices) \{
+189       \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1data__store__csv_a8f0ac398b2ed53c36594ca1baaf4bde0}{m\_data}.find(t) == \hyperlink{classlbann_1_1data__store__csv_a8f0ac398b2ed53c36594ca1baaf4bde0}{m\_data}.end()) \{
+190         err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+191             << \textcolor{stringliteral}{" m\_data.find("} << t << \textcolor{stringliteral}{") failed."};
+192         \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+193       \}
+194       \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1data__store__csv_a8f0ac398b2ed53c36594ca1baaf4bde0}{m\_data}[t].size() != (size\_t)\hyperlink{classlbann_1_1data__store__csv_acf75e96923877e10c8ed499ec48f9320}{m\_vector\_size}) \{
+195         err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+196             << \textcolor{stringliteral}{" m\_data["} << t << \textcolor{stringliteral}{"].size = "} << \hyperlink{classlbann_1_1data__store__csv_a8f0ac398b2ed53c36594ca1baaf4bde0}{m\_data}[t].size()
+197             << \textcolor{stringliteral}{" should be: "} << \hyperlink{classlbann_1_1data__store__csv_acf75e96923877e10c8ed499ec48f9320}{m\_vector\_size} << \textcolor{stringliteral}{"; "} << jj+1
+198             << \textcolor{stringliteral}{" of "} << indices.size()
+199             << \textcolor{stringliteral}{" m\_reader->get\_role: "} << \hyperlink{classlbann_1_1generic__data__store_afa49ced0ab64c632371ea52532a91ec2}{m\_reader}->\hyperlink{classlbann_1_1generic__data__reader_a92982e1b399f37e2ead5aa440883cba5}{get\_role}();
+200         \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+201       \}
+202       MPI\_Isend(
+203         \hyperlink{classlbann_1_1data__store__csv_a8f0ac398b2ed53c36594ca1baaf4bde0}{m\_data}[t].\hyperlink{namespacelbann_1_1cnpy__utils_a9ac86d96ccb1f8b4b2ea16441738781f}{data}(), \hyperlink{classlbann_1_1data__store__csv_acf75e96923877e10c8ed499ec48f9320}{m\_vector\_size}*\textcolor{keyword}{sizeof}(DataType),  MPI\_BYTE,
+204         p, t, \hyperlink{classlbann_1_1generic__data__store_ae2d2d61d5d766a7f525eedcb05e0dbf6}{m\_mpi\_comm}, &(send\_req[p][jj++]));
+205     \}
+206   \}
+207 
+208   \textcolor{comment}{//wait for sends to finish}
+209   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__store_a143fd33ef3a53180bc62745e369c16f8}{m\_master}) \{
+210     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} i=0; i<send\_req.size(); i++) \{
+211       MPI\_Waitall(send\_req[i].size(), send\_req[i].\hyperlink{namespacelbann_1_1cnpy__utils_a9ac86d96ccb1f8b4b2ea16441738781f}{data}(), send\_status[i].
+      \hyperlink{namespacelbann_1_1cnpy__utils_a9ac86d96ccb1f8b4b2ea16441738781f}{data}());
+212     \}
+213   \}
+214 
+215   \textcolor{comment}{//wait for recvs to finish}
+216   MPI\_Waitall(recv\_req.size(), recv\_req.data(), recv\_status.data());
+217 
+218   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__store_a143fd33ef3a53180bc62745e369c16f8}{m\_master}) \{
+219     std::cout << \textcolor{stringliteral}{"role: "} << \hyperlink{classlbann_1_1generic__data__store_afa49ced0ab64c632371ea52532a91ec2}{m\_reader}->\hyperlink{classlbann_1_1generic__data__reader_a92982e1b399f37e2ead5aa440883cba5}{get\_role}() << \textcolor{stringliteral}{" data\_store\_csv::exchange\_data()
+       time: "} << \hyperlink{namespacelbann_a478d36031ff0659893c4322cd856157f}{get\_time}() - tm1 << std::endl;
+220   \}
+221 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__csv_acacd039d3ca8caf8958b731a1ce382c6_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__csv_acacd039d3ca8caf8958b731a1ce382c6_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__store__csv_a3125cf637d40e8908c68bb74690f06da}\label{classlbann_1_1data__store__csv_a3125cf637d40e8908c68bb74690f06da}} 
+\index{lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}!get\+\_\+data\+\_\+buf\+\_\+\+Data\+Type@{get\+\_\+data\+\_\+buf\+\_\+\+Data\+Type}}
+\index{get\+\_\+data\+\_\+buf\+\_\+\+Data\+Type@{get\+\_\+data\+\_\+buf\+\_\+\+Data\+Type}!lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}}
+\subsubsection{\texorpdfstring{get\+\_\+data\+\_\+buf\+\_\+\+Data\+Type()}{get\_data\_buf\_DataType()}}
+{\footnotesize\ttfamily void lbann\+::data\+\_\+store\+\_\+csv\+::get\+\_\+data\+\_\+buf\+\_\+\+Data\+Type (\begin{DoxyParamCaption}\item[{int}]{data\+\_\+id,  }\item[{std\+::vector$<$ Data\+Type $>$ $\ast$\&}]{buf }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1generic__data__store_ab3f8b7fe6d6631059d92714d4277a983}{lbann\+::generic\+\_\+data\+\_\+store}.
+
+
+
+Definition at line 111 of file data\+\_\+store\+\_\+csv.\+cpp.
+
+
+\begin{DoxyCode}
+111                                                                                  \{
+112   std::stringstream err;
+113   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1data__store__csv_a456bbbf6d09c1ec04cd6260cf11007d8}{m\_my\_minibatch\_data}.find(data\_id) == 
+      \hyperlink{classlbann_1_1data__store__csv_a456bbbf6d09c1ec04cd6260cf11007d8}{m\_my\_minibatch\_data}.end()) \{
+114     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+115         << \textcolor{stringliteral}{"failed to find data\_id: "} << data\_id << \textcolor{stringliteral}{" in m\_my\_minibatch\_data"};
+116     \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+117   \}
+118 \textcolor{preprocessor}{  #if 0}
+119   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__store_a5e64702aa4a38c8533fa52944a8473d5}{m\_extended\_testing}) \{
+120     \textcolor{keyword}{static} \textcolor{keywordtype}{bool} first = \textcolor{keyword}{true};
+121     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__store_a143fd33ef3a53180bc62745e369c16f8}{m\_master} && first) \{
+122       std::cerr << \textcolor{stringliteral}{"\(\backslash\)nrunning extended testing (in get\_data\_buf\_DataType)\(\backslash\)n\(\backslash\)n"};
+123       first = \textcolor{keyword}{false};
+124     \}
+125     std::vector<DataType> v = \hyperlink{classlbann_1_1data__store__csv_a8920e09beb3e40e59e2858daf95a6cf9}{m\_csv\_reader}->
+      \hyperlink{classlbann_1_1csv__reader_ae00ba61c2b9db1595ff62ab61a218cfb}{fetch\_line\_label\_response}(data\_id);
+126     \textcolor{keywordflow}{if} (v != \hyperlink{classlbann_1_1data__store__csv_a456bbbf6d09c1ec04cd6260cf11007d8}{m\_my\_minibatch\_data}[idx]) \{
+127       err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+128           << \textcolor{stringliteral}{" me: "} << \hyperlink{classlbann_1_1generic__data__store_a87695bfd2d1ed0dbe01d99108e3f68b7}{m\_rank} << \textcolor{stringliteral}{" extended testing failed for data\_id "}
+129           << data\_id;
+130       \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+131     \}
+132   \}
+133 \textcolor{preprocessor}{  #endif}
+134   buf = &\hyperlink{classlbann_1_1data__store__csv_a456bbbf6d09c1ec04cd6260cf11007d8}{m\_my\_minibatch\_data}[data\_id];
+135 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__csv_a3125cf637d40e8908c68bb74690f06da_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__csv_a3125cf637d40e8908c68bb74690f06da_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__store__csv_ae0deaa88a2f5164569f796f7d35510d8}\label{classlbann_1_1data__store__csv_ae0deaa88a2f5164569f796f7d35510d8}} 
+\index{lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}!get\+\_\+indices@{get\+\_\+indices}}
+\index{get\+\_\+indices@{get\+\_\+indices}!lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}}
+\subsubsection{\texorpdfstring{get\+\_\+indices()}{get\_indices()}}
+{\footnotesize\ttfamily void lbann\+::data\+\_\+store\+\_\+csv\+::get\+\_\+indices (\begin{DoxyParamCaption}\item[{std\+::unordered\+\_\+set$<$ int $>$ \&}]{indices,  }\item[{int}]{p }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [protected]}}
+
+returns, in \char`\"{}indices,\char`\"{} the set of indices that processor \char`\"{}p\char`\"{} needs for the next epoch. Called by exchange\+\_\+data 
+
+Definition at line 148 of file data\+\_\+store\+\_\+csv.\+cpp.
+
+
+\begin{DoxyCode}
+148                                                                       \{
+149   indices.clear();
+150   std::vector<int> &v = \hyperlink{classlbann_1_1generic__data__store_afd21d4f029e450328f8703dd72702e73}{m\_all\_minibatch\_indices}[p];
+151   \textcolor{keywordflow}{for} (\textcolor{keyword}{auto} t : v) \{
+152     indices.insert((*\hyperlink{classlbann_1_1generic__data__store_ad456f747ee07f63df15c60833dfb82ad}{m\_shuffled\_indices})[t]);
+153   \}
+154 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__csv_ae0deaa88a2f5164569f796f7d35510d8_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__store__csv_ab0ebfe735a732205f7f3c66c876e20b9}\label{classlbann_1_1data__store__csv_ab0ebfe735a732205f7f3c66c876e20b9}} 
+\index{lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}!get\+\_\+my\+\_\+indices@{get\+\_\+my\+\_\+indices}}
+\index{get\+\_\+my\+\_\+indices@{get\+\_\+my\+\_\+indices}!lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}}
+\subsubsection{\texorpdfstring{get\+\_\+my\+\_\+indices()}{get\_my\_indices()}}
+{\footnotesize\ttfamily void lbann\+::data\+\_\+store\+\_\+csv\+::get\+\_\+my\+\_\+indices (\begin{DoxyParamCaption}\item[{std\+::unordered\+\_\+set$<$ int $>$ \&}]{indices,  }\item[{int}]{p }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [protected]}}
+
+returns, in \char`\"{}indices,\char`\"{} the subset of indices that processor \char`\"{}p\char`\"{} needs for the next epoch and that this processor owns. Called by exchange\+\_\+data 
+
+Definition at line 137 of file data\+\_\+store\+\_\+csv.\+cpp.
+
+
+\begin{DoxyCode}
+137                                                                          \{
+138   indices.clear();
+139   std::vector<int> &v = \hyperlink{classlbann_1_1generic__data__store_afd21d4f029e450328f8703dd72702e73}{m\_all\_minibatch\_indices}[p];
+140   \textcolor{keywordflow}{for} (\textcolor{keyword}{auto} t : v) \{
+141     \textcolor{keywordtype}{int} index = (*m\_shuffled\_indices)[t];
+142     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1data__store__csv_a8f0ac398b2ed53c36594ca1baaf4bde0}{m\_data}.find(index) != \hyperlink{classlbann_1_1data__store__csv_a8f0ac398b2ed53c36594ca1baaf4bde0}{m\_data}.end()) \{
+143       indices.insert(index);
+144     \}
+145   \}
+146 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__csv_ab0ebfe735a732205f7f3c66c876e20b9_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__store__csv_a9a8cadac9ca32ad0da758bfdd2112755}\label{classlbann_1_1data__store__csv_a9a8cadac9ca32ad0da758bfdd2112755}} 
+\index{lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1data__store__csv}{data\+\_\+store\+\_\+csv}\& lbann\+::data\+\_\+store\+\_\+csv\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1data__store__csv}{data\+\_\+store\+\_\+csv} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+operator= 
+
+\mbox{\Hypertarget{classlbann_1_1data__store__csv_a6184c48ec096372899e127235bb741da}\label{classlbann_1_1data__store__csv_a6184c48ec096372899e127235bb741da}} 
+\index{lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}!populate\+\_\+datastore@{populate\+\_\+datastore}}
+\index{populate\+\_\+datastore@{populate\+\_\+datastore}!lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}}
+\subsubsection{\texorpdfstring{populate\+\_\+datastore()}{populate\_datastore()}}
+{\footnotesize\ttfamily void lbann\+::data\+\_\+store\+\_\+csv\+::populate\+\_\+datastore (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+fills in m\+\_\+data (the data store) 
+
+
+
+Definition at line 223 of file data\+\_\+store\+\_\+csv.\+cpp.
+
+
+\begin{DoxyCode}
+223                                         \{
+224   \textcolor{keywordflow}{for} (\textcolor{keyword}{auto} idx : \hyperlink{classlbann_1_1generic__data__store_abd38f8d8aab0648959e09d011abfe20a}{m\_my\_datastore\_indices}) \{
+225     \hyperlink{classlbann_1_1data__store__csv_a8f0ac398b2ed53c36594ca1baaf4bde0}{m\_data}[idx] = \hyperlink{classlbann_1_1data__store__csv_a8920e09beb3e40e59e2858daf95a6cf9}{m\_csv\_reader}->\hyperlink{classlbann_1_1csv__reader_ae00ba61c2b9db1595ff62ab61a218cfb}{fetch\_line\_label\_response}(idx);
+226     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1data__store__csv_a8f0ac398b2ed53c36594ca1baaf4bde0}{m\_data}[idx].size() != (\textcolor{keywordtype}{size\_t}) \hyperlink{classlbann_1_1data__store__csv_acf75e96923877e10c8ed499ec48f9320}{m\_vector\_size}) \{
+227       std::stringstream err;
+228       err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+229           << \textcolor{stringliteral}{"m\_data["} << idx << \textcolor{stringliteral}{"].size() is "} << \hyperlink{classlbann_1_1data__store__csv_a8f0ac398b2ed53c36594ca1baaf4bde0}{m\_data}[idx].size()
+230           << \textcolor{stringliteral}{" but should be: "} << m\_vector\_size
+231           << \textcolor{stringliteral}{"; m\_data.size: "} << \hyperlink{classlbann_1_1data__store__csv_a8f0ac398b2ed53c36594ca1baaf4bde0}{m\_data}.size() << \textcolor{stringliteral}{"\(\backslash\)n"};
+232       std::cerr << \hyperlink{classlbann_1_1generic__data__store_a87695bfd2d1ed0dbe01d99108e3f68b7}{m\_rank} << \textcolor{stringliteral}{" :: "} << err.str() << \textcolor{stringliteral}{"\(\backslash\)n"};
+233       \textcolor{comment}{//throw lbann\_exception(err.str());}
+234     \}
+235   \}
+236 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__csv_a6184c48ec096372899e127235bb741da_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__csv_a6184c48ec096372899e127235bb741da_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__store__csv_afe48c08075e3327a2b9bb14c73a9c952}\label{classlbann_1_1data__store__csv_afe48c08075e3327a2b9bb14c73a9c952}} 
+\index{lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}!printme@{printme}}
+\index{printme@{printme}!lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}}
+\subsubsection{\texorpdfstring{printme()}{printme()}}
+{\footnotesize\ttfamily void lbann\+::data\+\_\+store\+\_\+csv\+::printme (\begin{DoxyParamCaption}\item[{const char $\ast$}]{fn }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [protected]}}
+
+\mbox{\Hypertarget{classlbann_1_1data__store__csv_a184c7e6f27c5e07255b9c889ace02407}\label{classlbann_1_1data__store__csv_a184c7e6f27c5e07255b9c889ace02407}} 
+\index{lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}!setup@{setup}}
+\index{setup@{setup}!lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}}
+\subsubsection{\texorpdfstring{setup()}{setup()}}
+{\footnotesize\ttfamily void lbann\+::data\+\_\+store\+\_\+csv\+::setup (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+called by \hyperlink{classlbann_1_1generic__data__reader_a8b2a09d38512fc11f1b9d572c89100a7}{generic\+\_\+data\+\_\+reader\+::setup\+\_\+data\+\_\+store} 
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1generic__data__store_a1cff17def02ee21b6ca0befeb04bb582}{lbann\+::generic\+\_\+data\+\_\+store}.
+
+
+
+Definition at line 46 of file data\+\_\+store\+\_\+csv.\+cpp.
+
+
+\begin{DoxyCode}
+46                            \{
+47   \textcolor{keywordtype}{double} tm1 = \hyperlink{namespacelbann_a478d36031ff0659893c4322cd856157f}{get\_time}();
+48   std::stringstream err;
+49 
+50   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__store_a143fd33ef3a53180bc62745e369c16f8}{m\_master}) \{
+51     std::cerr << \textcolor{stringliteral}{"starting data\_store\_csv::setup() for role: "} 
+52               << \hyperlink{classlbann_1_1generic__data__store_afa49ced0ab64c632371ea52532a91ec2}{m\_reader}->\hyperlink{classlbann_1_1generic__data__reader_a92982e1b399f37e2ead5aa440883cba5}{get\_role}() << \textcolor{stringliteral}{"\(\backslash\)n"}
+53               << \textcolor{stringliteral}{"calling generic\_data\_store::setup()\(\backslash\)n"};
+54   \}
+55   \hyperlink{classlbann_1_1generic__data__store_a1cff17def02ee21b6ca0befeb04bb582}{generic\_data\_store::setup}();
+56 
+57   \textcolor{keywordflow}{if} (! \hyperlink{classlbann_1_1generic__data__store_a1a9cc7b097cd7dd6ae0d12d52bb43ea1}{m\_in\_memory}) \{
+58     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+59         << \textcolor{stringliteral}{"not yet implemented"};
+60     \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+61   \} 
+62   
+63   \textcolor{keywordflow}{else} \{
+64     \textcolor{comment}{//sanity check}
+65     csv\_reader *reader = \textcolor{keyword}{dynamic\_cast<}csv\_reader*\textcolor{keyword}{>}(\hyperlink{classlbann_1_1generic__data__store_afa49ced0ab64c632371ea52532a91ec2}{m\_reader});
+66     \textcolor{keywordflow}{if} (reader == \textcolor{keyword}{nullptr}) \{
+67       err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+68           << \textcolor{stringliteral}{"dynamic\_cast<data\_reader\_csv*>(m\_reader) failed"};
+69       \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+70     \}
+71     \hyperlink{classlbann_1_1data__store__csv_a8920e09beb3e40e59e2858daf95a6cf9}{m\_csv\_reader} = reader;
+72 
+73     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__store_afcd4f99959c265c8c03dcf8ad3779d85}{m\_np} != reader->get\_num\_parallel\_readers()) \{
+74       err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+75           << \textcolor{stringliteral}{"num\_parallel\_readers(): "} << reader->\hyperlink{classlbann_1_1generic__data__reader_ad15887cc31657d03925835aab0d4b675}{get\_num\_parallel\_readers}() 
+76           << \textcolor{stringliteral}{" m\_np: "} << \hyperlink{classlbann_1_1generic__data__store_afcd4f99959c265c8c03dcf8ad3779d85}{m\_np} 
+77           << \textcolor{stringliteral}{"; for this data\_store num\_readers must be the same as procs per model;\(\backslash\)n"}
+78           << \textcolor{stringliteral}{" if this isn't acceptable, please notify Dave Hysom so he can fix.\(\backslash\)n"}
+79           << \textcolor{stringliteral}{"reader role: "} << \hyperlink{classlbann_1_1generic__data__store_afa49ced0ab64c632371ea52532a91ec2}{m\_reader}->\hyperlink{classlbann_1_1generic__data__reader_a92982e1b399f37e2ead5aa440883cba5}{get\_role}();
+80       \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+81     \}
+82 
+83     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__store_a143fd33ef3a53180bc62745e369c16f8}{m\_master}) std::cerr << \textcolor{stringliteral}{"calling get\_minibatch\_index\_vector\(\backslash\)n"};
+84     \hyperlink{classlbann_1_1generic__data__store_ab861db5f81e45a6063b8922a331dd007}{get\_minibatch\_index\_vector}();
+85 
+86     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__store_a143fd33ef3a53180bc62745e369c16f8}{m\_master}) std::cerr << \textcolor{stringliteral}{"calling exchange\_mb\_indices()\(\backslash\)n"};
+87     \hyperlink{classlbann_1_1generic__data__store_aa0ef8d7528f6775d47641ffe5ac229da}{exchange\_mb\_indices}();
+88 
+89     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__store_a143fd33ef3a53180bc62745e369c16f8}{m\_master}) std::cerr << \textcolor{stringliteral}{"calling get\_my\_datastore\_indices\(\backslash\)n"};
+90     \hyperlink{classlbann_1_1generic__data__store_a3558f87939755b08ae151623a5799127}{get\_my\_datastore\_indices}();
+91     
+92     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__store_a143fd33ef3a53180bc62745e369c16f8}{m\_master}) \{
+93       std::cerr << \textcolor{stringliteral}{"calling: reader->fetch\_line\_label\_response("} << (*m\_shuffled\_indices)[0] << \textcolor{stringliteral}{");\(\backslash\)n"};
+94       std::vector<DataType> v = reader->fetch\_line\_label\_response((*m\_shuffled\_indices)[0]);
+95       \hyperlink{classlbann_1_1data__store__csv_acf75e96923877e10c8ed499ec48f9320}{m\_vector\_size} = v.size();
+96     \}
+97     MPI\_Bcast(&\hyperlink{classlbann_1_1data__store__csv_acf75e96923877e10c8ed499ec48f9320}{m\_vector\_size}, 1, MPI\_INT, 0, \hyperlink{classlbann_1_1generic__data__store_ae2d2d61d5d766a7f525eedcb05e0dbf6}{m\_mpi\_comm});
+98 
+99     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__store_a143fd33ef3a53180bc62745e369c16f8}{m\_master}) std::cerr << \textcolor{stringliteral}{"calling populate\_datastore()\(\backslash\)n"};
+100     \hyperlink{classlbann_1_1data__store__csv_a6184c48ec096372899e127235bb741da}{populate\_datastore}(); 
+101 
+102     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__store_a143fd33ef3a53180bc62745e369c16f8}{m\_master}) std::cerr << \textcolor{stringliteral}{"calling exchange\_data()\(\backslash\)n"};
+103     \hyperlink{classlbann_1_1data__store__csv_acacd039d3ca8caf8958b731a1ce382c6}{exchange\_data}();
+104   \}
+105 
+106   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__store_a143fd33ef3a53180bc62745e369c16f8}{m\_master}) \{
+107     std::cerr << \textcolor{stringliteral}{"data\_store\_csv::setup time: "} << \hyperlink{namespacelbann_a478d36031ff0659893c4322cd856157f}{get\_time}() - tm1 << \textcolor{stringliteral}{"\(\backslash\)n"};
+108   \}
+109 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__csv_a184c7e6f27c5e07255b9c889ace02407_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=344pt]{classlbann_1_1data__store__csv_a184c7e6f27c5e07255b9c889ace02407_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1data__store__csv_a8920e09beb3e40e59e2858daf95a6cf9}\label{classlbann_1_1data__store__csv_a8920e09beb3e40e59e2858daf95a6cf9}} 
+\index{lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}!m\+\_\+csv\+\_\+reader@{m\+\_\+csv\+\_\+reader}}
+\index{m\+\_\+csv\+\_\+reader@{m\+\_\+csv\+\_\+reader}!lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}}
+\subsubsection{\texorpdfstring{m\+\_\+csv\+\_\+reader}{m\_csv\_reader}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1csv__reader}{csv\+\_\+reader}$\ast$ lbann\+::data\+\_\+store\+\_\+csv\+::m\+\_\+csv\+\_\+reader\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 66 of file data\+\_\+store\+\_\+csv.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1data__store__csv_a8f0ac398b2ed53c36594ca1baaf4bde0}\label{classlbann_1_1data__store__csv_a8f0ac398b2ed53c36594ca1baaf4bde0}} 
+\index{lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}!m\+\_\+data@{m\+\_\+data}}
+\index{m\+\_\+data@{m\+\_\+data}!lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}}
+\subsubsection{\texorpdfstring{m\+\_\+data}{m\_data}}
+{\footnotesize\ttfamily std\+::map$<$int, std\+::vector$<$Data\+Type$>$ $>$ lbann\+::data\+\_\+store\+\_\+csv\+::m\+\_\+data\hspace{0.3cm}{\ttfamily [protected]}}
+
+will contain the data that this processor owns; Maps a global index to its associated data 
+
+Definition at line 91 of file data\+\_\+store\+\_\+csv.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1data__store__csv_a456bbbf6d09c1ec04cd6260cf11007d8}\label{classlbann_1_1data__store__csv_a456bbbf6d09c1ec04cd6260cf11007d8}} 
+\index{lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}!m\+\_\+my\+\_\+minibatch\+\_\+data@{m\+\_\+my\+\_\+minibatch\+\_\+data}}
+\index{m\+\_\+my\+\_\+minibatch\+\_\+data@{m\+\_\+my\+\_\+minibatch\+\_\+data}!lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}}
+\subsubsection{\texorpdfstring{m\+\_\+my\+\_\+minibatch\+\_\+data}{m\_my\_minibatch\_data}}
+{\footnotesize\ttfamily std\+::unordered\+\_\+map$<$int, std\+::vector$<$Data\+Type$>$ $>$ lbann\+::data\+\_\+store\+\_\+csv\+::m\+\_\+my\+\_\+minibatch\+\_\+data\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+buffers for data that will be passed to the data reader\textquotesingle{}s fetch\+\_\+datum method 
+
+
+
+Definition at line 76 of file data\+\_\+store\+\_\+csv.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1data__store__csv_a4cb571710d2fd2a088bb55b7ac7ca29b}\label{classlbann_1_1data__store__csv_a4cb571710d2fd2a088bb55b7ac7ca29b}} 
+\index{lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}!m\+\_\+offset\+\_\+mapping@{m\+\_\+offset\+\_\+mapping}}
+\index{m\+\_\+offset\+\_\+mapping@{m\+\_\+offset\+\_\+mapping}!lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}}
+\subsubsection{\texorpdfstring{m\+\_\+offset\+\_\+mapping}{m\_offset\_mapping}}
+{\footnotesize\ttfamily std\+::unordered\+\_\+map$<$int, size\+\_\+t$>$ lbann\+::data\+\_\+store\+\_\+csv\+::m\+\_\+offset\+\_\+mapping\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+maps\+: shuffled index to offset in owner\textquotesingle{}s data store 
+
+
+
+Definition at line 73 of file data\+\_\+store\+\_\+csv.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1data__store__csv_acf75e96923877e10c8ed499ec48f9320}\label{classlbann_1_1data__store__csv_acf75e96923877e10c8ed499ec48f9320}} 
+\index{lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}!m\+\_\+vector\+\_\+size@{m\+\_\+vector\+\_\+size}}
+\index{m\+\_\+vector\+\_\+size@{m\+\_\+vector\+\_\+size}!lbann\+::data\+\_\+store\+\_\+csv@{lbann\+::data\+\_\+store\+\_\+csv}}
+\subsubsection{\texorpdfstring{m\+\_\+vector\+\_\+size}{m\_vector\_size}}
+{\footnotesize\ttfamily int lbann\+::data\+\_\+store\+\_\+csv\+::m\+\_\+vector\+\_\+size\hspace{0.3cm}{\ttfamily [protected]}}
+
+size of the vectors that are returned by reader-\/$>$fetch\+\_\+line\+\_\+label\+\_\+response(data\+\_\+id) 
+
+Definition at line 70 of file data\+\_\+store\+\_\+csv.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/data\+\_\+store/\hyperlink{data__store__csv_8hpp}{data\+\_\+store\+\_\+csv.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/data\+\_\+store/\hyperlink{data__store__csv_8cpp}{data\+\_\+store\+\_\+csv.\+cpp}\end{DoxyCompactItemize}

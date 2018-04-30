@@ -1,0 +1,474 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1generic__io__buffer" kind="class" language="C++" prot="public" abstract="yes">
+    <compoundname>lbann::generic_io_buffer</compoundname>
+    <derivedcompoundref refid="classlbann_1_1distributed__io__buffer" prot="public" virt="non-virtual">lbann::distributed_io_buffer</derivedcompoundref>
+    <derivedcompoundref refid="classlbann_1_1partitioned__io__buffer" prot="public" virt="non-virtual">lbann::partitioned_io_buffer</derivedcompoundref>
+    <includes refid="generic__io__buffer_8hpp" local="no">generic_io_buffer.hpp</includes>
+      <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="classlbann_1_1generic__io__buffer_1a2e4a46c85c8b30e10b1cc5acaa2c4cca" prot="public" static="no" mutable="no">
+        <type><ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref> *</type>
+        <definition>lbann_comm* lbann::generic_io_buffer::m_comm</definition>
+        <argsstring></argsstring>
+        <name>m_comm</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/data_buffers/generic_io_buffer.hpp" line="105" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/data_buffers/generic_io_buffer.hpp" bodystart="105" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1distributed__io__buffer_1abfeb87d4dc402b482db60926ca9b3ec1" compoundref="distributed__io__buffer_8cpp" startline="38" endline="59">lbann::distributed_io_buffer::fetch_to_local_matrix</referencedby>
+        <referencedby refid="classlbann_1_1distributed__io__buffer_1a3a770ec2314313761d6f0eccdb9dc09b" compoundref="distributed__io__buffer_8cpp" startline="61" endline="88">lbann::distributed_io_buffer::distribute_from_local_matrix</referencedby>
+        <referencedby refid="classlbann_1_1distributed__io__buffer_1a2e214f6542d9b12c8a29bf41d0ee220e" compoundref="distributed__io__buffer_8cpp" startline="90" endline="122">lbann::distributed_io_buffer::is_data_set_processed</referencedby>
+        <referencedby refid="classlbann_1_1distributed__io__buffer_1af6653723714cf8cf51a928fc9f6e6728" compoundref="distributed__io__buffer_8cpp" startline="127" endline="157">lbann::distributed_io_buffer::compute_max_num_parallel_readers</referencedby>
+        <referencedby refid="classlbann_1_1distributed__io__buffer_1af63a8b162ed869393c5b604c5913c631" compoundref="distributed__io__buffer_8cpp" startline="159" endline="282">lbann::distributed_io_buffer::calculate_num_iterations_per_epoch</referencedby>
+        <referencedby refid="classlbann_1_1distributed__io__buffer_1aa1f5200f9646d38fe3b3adaf39645330" compoundref="distributed__io__buffer_8cpp" startline="284" endline="286">lbann::distributed_io_buffer::calculate_num_iterations_per_epoch_spanning_models</referencedby>
+        <referencedby refid="classlbann_1_1generic__io__buffer_1ae8d2b80e11cf780def151a425a6b1fa0" compoundref="generic__io__buffer_8cpp" startline="43" endline="59">operator=</referencedby>
+        <referencedby refid="classlbann_1_1partitioned__io__buffer_1a777719c9cebe912dc4c005e2c78d77c8" compoundref="partitioned__io__buffer_8cpp" startline="34" endline="53">lbann::partitioned_io_buffer::fetch_to_local_matrix</referencedby>
+        <referencedby refid="classlbann_1_1partitioned__io__buffer_1a5048100fb7cdc13908ecba6b4415b977" compoundref="partitioned__io__buffer_8cpp" startline="74" endline="102">lbann::partitioned_io_buffer::compute_max_num_parallel_readers</referencedby>
+        <referencedby refid="classlbann_1_1partitioned__io__buffer_1a50b6e2b7a82927526758f7cfb18a1ded" compoundref="partitioned__io__buffer_8cpp" startline="104" endline="196">lbann::partitioned_io_buffer::calculate_num_iterations_per_epoch_spanning_models</referencedby>
+        <referencedby refid="classlbann_1_1partitioned__io__buffer_1ad707e54827d6e537127341b10407b716" compoundref="partitioned__io__buffer_8cpp" startline="198" endline="243">lbann::partitioned_io_buffer::calculate_num_iterations_per_epoch_single_model</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1generic__io__buffer_1a267170b4fd11dc60c782a9cb2b7b06cc" prot="public" static="no" mutable="no">
+        <type>const <ref refid="classlbann_1_1fetch__data__functor" kindref="compound">fetch_data_functor</ref> *</type>
+        <definition>const fetch_data_functor* lbann::generic_io_buffer::fetch_data_fn</definition>
+        <argsstring></argsstring>
+        <name>fetch_data_fn</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/data_buffers/generic_io_buffer.hpp" line="106" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/data_buffers/generic_io_buffer.hpp" bodystart="106" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1input__layer_1aad8b042899d86f5b7904d9d2653b5181" compoundref="input__layer_8hpp" startline="45" endline="52">lbann::input_layer&lt; T_io_buffer, T_layout &gt;::input_layer</referencedby>
+        <referencedby refid="classlbann_1_1target__layer_1ab06729051345c739c33ea445ceed100a" compoundref="target__layer_8hpp" startline="43" endline="51">lbann::target_layer&lt; T_io_buffer, T_layout &gt;::target_layer</referencedby>
+        <referencedby refid="classlbann_1_1generic__io__buffer_1a0810bd8f8c803aa992e4c29b4eee3506" compoundref="generic__io__buffer_8cpp" startline="34" endline="41">generic_io_buffer</referencedby>
+        <referencedby refid="classlbann_1_1generic__io__buffer_1ae8d2b80e11cf780def151a425a6b1fa0" compoundref="generic__io__buffer_8cpp" startline="43" endline="59">operator=</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1generic__io__buffer_1a031eda7559a9e241afb3958b56088560" prot="public" static="no" mutable="no">
+        <type>const <ref refid="classlbann_1_1update__data__reader__functor" kindref="compound">update_data_reader_functor</ref> *</type>
+        <definition>const update_data_reader_functor* lbann::generic_io_buffer::update_data_reader_fn</definition>
+        <argsstring></argsstring>
+        <name>update_data_reader_fn</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/data_buffers/generic_io_buffer.hpp" line="107" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/data_buffers/generic_io_buffer.hpp" bodystart="107" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1input__layer_1aad8b042899d86f5b7904d9d2653b5181" compoundref="input__layer_8hpp" startline="45" endline="52">lbann::input_layer&lt; T_io_buffer, T_layout &gt;::input_layer</referencedby>
+        <referencedby refid="classlbann_1_1target__layer_1ab06729051345c739c33ea445ceed100a" compoundref="target__layer_8hpp" startline="43" endline="51">lbann::target_layer&lt; T_io_buffer, T_layout &gt;::target_layer</referencedby>
+        <referencedby refid="classlbann_1_1generic__io__buffer_1a0810bd8f8c803aa992e4c29b4eee3506" compoundref="generic__io__buffer_8cpp" startline="34" endline="41">generic_io_buffer</referencedby>
+        <referencedby refid="classlbann_1_1generic__io__buffer_1ae8d2b80e11cf780def151a425a6b1fa0" compoundref="generic__io__buffer_8cpp" startline="43" endline="59">operator=</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1generic__io__buffer_1a21e2ef867da6fb0fa334d751ae6b692f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::generic_io_buffer::generic_io_buffer</definition>
+        <argsstring>(lbann_comm *comm, int num_parallel_readers, std::map&lt; execution_mode, generic_data_reader *&gt; data_readers)</argsstring>
+        <name>generic_io_buffer</name>
+        <param>
+          <type><ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref> *</type>
+          <declname>comm</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>num_parallel_readers</declname>
+        </param>
+        <param>
+          <type>std::map&lt; <ref refid="base_8hpp_1a2781a159088df64ed7d47cc91c4dc0a8" kindref="member">execution_mode</ref>, <ref refid="classlbann_1_1generic__data__reader" kindref="compound">generic_data_reader</ref> *&gt;</type>
+          <declname>data_readers</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/data_buffers/generic_io_buffer.hpp" line="73" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/io/data_buffers/generic_io_buffer.cpp" bodystart="31" bodyend="32"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__io__buffer_1a0810bd8f8c803aa992e4c29b4eee3506" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::generic_io_buffer::generic_io_buffer</definition>
+        <argsstring>(const generic_io_buffer &amp;)</argsstring>
+        <name>generic_io_buffer</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1generic__io__buffer" kindref="compound">generic_io_buffer</ref> &amp;</type>
+          <defname>rhs</defname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/data_buffers/generic_io_buffer.hpp" line="74" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/io/data_buffers/generic_io_buffer.cpp" bodystart="34" bodyend="41"/>
+        <references refid="classlbann_1_1generic__io__buffer_1a267170b4fd11dc60c782a9cb2b7b06cc" compoundref="generic__io__buffer_8hpp" startline="106">fetch_data_fn</references>
+        <references refid="classlbann_1_1generic__io__buffer_1a031eda7559a9e241afb3958b56088560" compoundref="generic__io__buffer_8hpp" startline="107">update_data_reader_fn</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__io__buffer_1ae8d2b80e11cf780def151a425a6b1fa0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classlbann_1_1generic__io__buffer" kindref="compound">generic_io_buffer</ref> &amp;</type>
+        <definition>generic_io_buffer &amp; lbann::generic_io_buffer::operator=</definition>
+        <argsstring>(const generic_io_buffer &amp;)</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1generic__io__buffer" kindref="compound">generic_io_buffer</ref> &amp;</type>
+          <defname>rhs</defname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/data_buffers/generic_io_buffer.hpp" line="76" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/io/data_buffers/generic_io_buffer.cpp" bodystart="43" bodyend="59"/>
+        <references refid="classlbann_1_1generic__io__buffer_1a2e4a46c85c8b30e10b1cc5acaa2c4cca" compoundref="generic__io__buffer_8hpp" startline="105">m_comm</references>
+        <references refid="classlbann_1_1generic__io__buffer_1a267170b4fd11dc60c782a9cb2b7b06cc" compoundref="generic__io__buffer_8hpp" startline="106">fetch_data_fn</references>
+        <references refid="classlbann_1_1generic__io__buffer_1a031eda7559a9e241afb3958b56088560" compoundref="generic__io__buffer_8hpp" startline="107">update_data_reader_fn</references>
+        <referencedby refid="classlbann_1_1distributed__io__buffer_1a021724e36cc803bb8dabd747d1f49035" compoundref="distributed__io__buffer_8hpp" startline="81" endline="88">lbann::distributed_io_buffer::operator=</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__io__buffer_1a0b531621374f697db06d8a3feec095cf" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type></type>
+        <definition>virtual lbann::generic_io_buffer::~generic_io_buffer</definition>
+        <argsstring>()</argsstring>
+        <name>~generic_io_buffer</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/data_buffers/generic_io_buffer.hpp" line="78" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/data_buffers/generic_io_buffer.hpp" bodystart="78" bodyend="85"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__io__buffer_1a9d8020b82cf467c9148b0b37e7229262" prot="public" static="no" const="yes" explicit="no" inline="no" virt="pure-virtual">
+        <type><ref refid="classlbann_1_1generic__io__buffer" kindref="compound">generic_io_buffer</ref> *</type>
+        <definition>virtual generic_io_buffer* lbann::generic_io_buffer::copy</definition>
+        <argsstring>() const =0</argsstring>
+        <name>copy</name>
+        <reimplementedby refid="classlbann_1_1partitioned__io__buffer_1afce1a8859516dfaa482159806b75c263">copy</reimplementedby>
+        <reimplementedby refid="classlbann_1_1distributed__io__buffer_1a86a931528aa7a6e178cf6b55bf153881">copy</reimplementedby>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/data_buffers/generic_io_buffer.hpp" line="86" column="1"/>
+        <referencedby refid="classlbann_1_1generic__input__layer_1a76d36777d01144cafe7b33ab5ce739d2" compoundref="generic__input__layer_8hpp" startline="95" endline="102">lbann::generic_input_layer::operator=</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__io__buffer_1adc77c0a280f8a200a8d8495c3a371ebb" prot="public" static="no" const="yes" explicit="no" inline="no" virt="pure-virtual">
+        <type>std::string</type>
+        <definition>virtual std::string lbann::generic_io_buffer::get_type</definition>
+        <argsstring>() const =0</argsstring>
+        <name>get_type</name>
+        <reimplementedby refid="classlbann_1_1partitioned__io__buffer_1a55120307848cabf8ef12558594b4e9e5">get_type</reimplementedby>
+        <reimplementedby refid="classlbann_1_1distributed__io__buffer_1a58e30ff6d96678b35b2470e1d292967c">get_type</reimplementedby>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Return this buffer&apos;s type, e.g: &quot;partitioned_io_buffer,&quot; &quot;distributed_io_buffer,&quot; etc. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/data_buffers/generic_io_buffer.hpp" line="89" column="1"/>
+        <referencedby refid="classlbann_1_1generic__input__layer_1a8ffe91a3d5b6f37d2dc17e657898dcc8" compoundref="generic__input__layer_8hpp" startline="110" endline="115">lbann::generic_input_layer::get_description</referencedby>
+        <referencedby refid="classlbann_1_1input__layer_1af596126d1b2d1604743906d04d32419b" compoundref="input__layer_8hpp" startline="59" endline="63">lbann::input_layer&lt; T_io_buffer, T_layout &gt;::get_type</referencedby>
+        <referencedby refid="classlbann_1_1generic__target__layer_1aa2db5ccc0bbd40f081c8ff4501f3fc29" compoundref="generic__target__layer_8hpp" startline="101" endline="106">lbann::generic_target_layer::get_description</referencedby>
+        <referencedby refid="classlbann_1_1target__layer_1a6b5dad32cf3b771d6db1f99914ab63c4" compoundref="target__layer_8hpp" startline="65" endline="69">lbann::target_layer&lt; T_io_buffer, T_layout &gt;::get_type</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__io__buffer_1af84c26ab5ee77d1d9ed9ea5d62823815" prot="public" static="no" const="no" explicit="no" inline="no" virt="pure-virtual">
+        <type>void</type>
+        <definition>virtual void lbann::generic_io_buffer::set_local_matrix_bypass</definition>
+        <argsstring>(Mat *M_local)=0</argsstring>
+        <name>set_local_matrix_bypass</name>
+        <reimplementedby refid="classlbann_1_1partitioned__io__buffer_1a58412c3f37ea3fbcf492f127781c7617">set_local_matrix_bypass</reimplementedby>
+        <reimplementedby refid="classlbann_1_1distributed__io__buffer_1a6bdf8f670edc92902ee6222dde434c39">set_local_matrix_bypass</reimplementedby>
+        <param>
+          <type><ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref> *</type>
+          <declname>M_local</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/data_buffers/generic_io_buffer.hpp" line="90" column="1"/>
+        <referencedby refid="classlbann_1_1generic__input__layer_1ad0b8ea79bc508bd227e08124359531c8" compoundref="generic__input__layer_8hpp" startline="170" endline="196">lbann::generic_input_layer::fp_setup_data</referencedby>
+        <referencedby refid="classlbann_1_1generic__target__layer_1af89a8227784c005354bf937ec887a7ed" compoundref="generic__target__layer_8hpp" startline="147" endline="154">lbann::generic_target_layer::fp_setup_data</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__io__buffer_1a458d9bf722effce4177a0ac0aee9124f" prot="public" static="no" const="no" explicit="no" inline="no" virt="pure-virtual">
+        <type>void</type>
+        <definition>virtual void lbann::generic_io_buffer::set_std_matrix_view</definition>
+        <argsstring>(El::Int cur_mini_batch_size)=0</argsstring>
+        <name>set_std_matrix_view</name>
+        <reimplementedby refid="classlbann_1_1partitioned__io__buffer_1aa0a1d61dcecdd5c4091e0a97eb2d075a">set_std_matrix_view</reimplementedby>
+        <reimplementedby refid="classlbann_1_1distributed__io__buffer_1a996d9d20ad162b3edb06fb8aa04ecd3d">set_std_matrix_view</reimplementedby>
+        <param>
+          <type>El::Int</type>
+          <declname>cur_mini_batch_size</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/data_buffers/generic_io_buffer.hpp" line="91" column="1"/>
+        <referencedby refid="classlbann_1_1generic__input__layer_1ad0b8ea79bc508bd227e08124359531c8" compoundref="generic__input__layer_8hpp" startline="170" endline="196">lbann::generic_input_layer::fp_setup_data</referencedby>
+        <referencedby refid="classlbann_1_1generic__target__layer_1af89a8227784c005354bf937ec887a7ed" compoundref="generic__target__layer_8hpp" startline="147" endline="154">lbann::generic_target_layer::fp_setup_data</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__io__buffer_1a00f3920147f7f19eceb5336bd6ddb421" prot="public" static="no" const="no" explicit="no" inline="no" virt="pure-virtual">
+        <type>void</type>
+        <definition>virtual void lbann::generic_io_buffer::setup_data</definition>
+        <argsstring>(El::Int num_neurons, El::Int max_minibatch_size)=0</argsstring>
+        <name>setup_data</name>
+        <reimplementedby refid="classlbann_1_1partitioned__io__buffer_1a06a204fbf82f092b0225ab10c1bec98e">setup_data</reimplementedby>
+        <reimplementedby refid="classlbann_1_1distributed__io__buffer_1aec36cf1d148646f0e27d5939664f02d8">setup_data</reimplementedby>
+        <param>
+          <type>El::Int</type>
+          <declname>num_neurons</declname>
+        </param>
+        <param>
+          <type>El::Int</type>
+          <declname>max_minibatch_size</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/data_buffers/generic_io_buffer.hpp" line="92" column="1"/>
+        <referencedby refid="classlbann_1_1generic__input__layer_1a8ca316b0369689949f3f4106920ec28f" compoundref="generic__input__layer_8hpp" startline="139" endline="165">lbann::generic_input_layer::setup_data</referencedby>
+        <referencedby refid="classlbann_1_1generic__target__layer_1a73b35ee4dcb97a166369426d975596b2" compoundref="generic__target__layer_8hpp" startline="127" endline="133">lbann::generic_target_layer::setup_data</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__io__buffer_1af9fc2100d41328fe399acf7bced950d7" prot="public" static="no" const="no" explicit="no" inline="no" virt="pure-virtual">
+        <type>int</type>
+        <definition>virtual int lbann::generic_io_buffer::fetch_to_local_matrix</definition>
+        <argsstring>(generic_data_reader *data_reader, execution_mode mode)=0</argsstring>
+        <name>fetch_to_local_matrix</name>
+        <reimplementedby refid="classlbann_1_1partitioned__io__buffer_1a777719c9cebe912dc4c005e2c78d77c8">fetch_to_local_matrix</reimplementedby>
+        <reimplementedby refid="classlbann_1_1distributed__io__buffer_1abfeb87d4dc402b482db60926ca9b3ec1">fetch_to_local_matrix</reimplementedby>
+        <param>
+          <type><ref refid="classlbann_1_1generic__data__reader" kindref="compound">generic_data_reader</ref> *</type>
+          <declname>data_reader</declname>
+        </param>
+        <param>
+          <type><ref refid="base_8hpp_1a2781a159088df64ed7d47cc91c4dc0a8" kindref="member">execution_mode</ref></type>
+          <declname>mode</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/data_buffers/generic_io_buffer.hpp" line="94" column="1"/>
+        <referencedby refid="classlbann_1_1generic__input__layer_1ae74c8c5a7e14b4fdd4902554bbc7bcef" compoundref="generic__input__layer_8hpp" startline="198" endline="241">lbann::generic_input_layer::fp_compute</referencedby>
+        <referencedby refid="classlbann_1_1generic__target__layer_1a57a60f5a28c9fb78d5151801123d4dba" compoundref="generic__target__layer_8hpp" startline="156" endline="183">lbann::generic_target_layer::fp_compute</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__io__buffer_1a08c2bb93b86d2926df52ef9272a07d87" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type>void</type>
+        <definition>virtual void lbann::generic_io_buffer::distribute_from_local_matrix</definition>
+        <argsstring>(AbsDistMat &amp;Ms, generic_data_reader *data_reader, execution_mode mode)</argsstring>
+        <name>distribute_from_local_matrix</name>
+        <reimplementedby refid="classlbann_1_1partitioned__io__buffer_1a906b8b13a8b9a9e8080d4e4d4bba25bc">distribute_from_local_matrix</reimplementedby>
+        <reimplementedby refid="classlbann_1_1distributed__io__buffer_1a3a770ec2314313761d6f0eccdb9dc09b">distribute_from_local_matrix</reimplementedby>
+        <param>
+          <type><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+          <declname>Ms</declname>
+        </param>
+        <param>
+          <type><ref refid="classlbann_1_1generic__data__reader" kindref="compound">generic_data_reader</ref> *</type>
+          <declname>data_reader</declname>
+        </param>
+        <param>
+          <type><ref refid="base_8hpp_1a2781a159088df64ed7d47cc91c4dc0a8" kindref="member">execution_mode</ref></type>
+          <declname>mode</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/data_buffers/generic_io_buffer.hpp" line="95" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/data_buffers/generic_io_buffer.hpp" bodystart="95" bodyend="95"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__io__buffer_1a9a038d40aec50dbc24c0abe21ad0c0a9" prot="public" static="no" const="no" explicit="no" inline="no" virt="pure-virtual">
+        <type>bool</type>
+        <definition>virtual bool lbann::generic_io_buffer::is_data_set_processed</definition>
+        <argsstring>(generic_data_reader *data_reader, execution_mode mode)=0</argsstring>
+        <name>is_data_set_processed</name>
+        <reimplementedby refid="classlbann_1_1partitioned__io__buffer_1a0944161f90eb65286974c3e85155608f">is_data_set_processed</reimplementedby>
+        <reimplementedby refid="classlbann_1_1distributed__io__buffer_1a2e214f6542d9b12c8a29bf41d0ee220e">is_data_set_processed</reimplementedby>
+        <param>
+          <type><ref refid="classlbann_1_1generic__data__reader" kindref="compound">generic_data_reader</ref> *</type>
+          <declname>data_reader</declname>
+        </param>
+        <param>
+          <type><ref refid="base_8hpp_1a2781a159088df64ed7d47cc91c4dc0a8" kindref="member">execution_mode</ref></type>
+          <declname>mode</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/data_buffers/generic_io_buffer.hpp" line="96" column="1"/>
+        <referencedby refid="classlbann_1_1generic__input__layer_1aaf9ac19f7dd725230bde87d859ec0f35" compoundref="generic__input__layer_8hpp" startline="248" endline="250">lbann::generic_input_layer::update_compute</referencedby>
+        <referencedby refid="classlbann_1_1generic__target__layer_1a43f4de7c1846b605aa9bb6daf9338c78" compoundref="generic__target__layer_8hpp" startline="187" endline="193">lbann::generic_target_layer::update_compute</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__io__buffer_1ac943184cf364f7922648e3acb760b41e" prot="public" static="no" const="no" explicit="no" inline="no" virt="pure-virtual">
+        <type>void</type>
+        <definition>virtual void lbann::generic_io_buffer::calculate_num_iterations_per_epoch_spanning_models</definition>
+        <argsstring>(int max_mini_batch_size, generic_data_reader *data_reader)=0</argsstring>
+        <name>calculate_num_iterations_per_epoch_spanning_models</name>
+        <reimplementedby refid="classlbann_1_1partitioned__io__buffer_1a50b6e2b7a82927526758f7cfb18a1ded">calculate_num_iterations_per_epoch_spanning_models</reimplementedby>
+        <reimplementedby refid="classlbann_1_1distributed__io__buffer_1aa1f5200f9646d38fe3b3adaf39645330">calculate_num_iterations_per_epoch_spanning_models</reimplementedby>
+        <param>
+          <type>int</type>
+          <declname>max_mini_batch_size</declname>
+        </param>
+        <param>
+          <type><ref refid="classlbann_1_1generic__data__reader" kindref="compound">generic_data_reader</ref> *</type>
+          <declname>data_reader</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/data_buffers/generic_io_buffer.hpp" line="98" column="1"/>
+        <referencedby refid="classlbann_1_1generic__input__layer_1af108a5dc05276bc6bc57b306204b12e4" compoundref="generic__input__layer_8hpp" startline="372" endline="384">lbann::generic_input_layer::calculate_num_iterations_per_epoch_training_spans_models</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__io__buffer_1a4c71135fada7f0da0b315d538d327e59" prot="public" static="no" const="no" explicit="no" inline="no" virt="pure-virtual">
+        <type>void</type>
+        <definition>virtual void lbann::generic_io_buffer::calculate_num_iterations_per_epoch_single_model</definition>
+        <argsstring>(int max_mini_batch_size, generic_data_reader *data_reader)=0</argsstring>
+        <name>calculate_num_iterations_per_epoch_single_model</name>
+        <reimplementedby refid="classlbann_1_1partitioned__io__buffer_1ad707e54827d6e537127341b10407b716">calculate_num_iterations_per_epoch_single_model</reimplementedby>
+        <reimplementedby refid="classlbann_1_1distributed__io__buffer_1a2a611c36620155646e46e065e040541f">calculate_num_iterations_per_epoch_single_model</reimplementedby>
+        <param>
+          <type>int</type>
+          <declname>max_mini_batch_size</declname>
+        </param>
+        <param>
+          <type><ref refid="classlbann_1_1generic__data__reader" kindref="compound">generic_data_reader</ref> *</type>
+          <declname>data_reader</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/data_buffers/generic_io_buffer.hpp" line="99" column="1"/>
+        <referencedby refid="classlbann_1_1generic__input__layer_1af108a5dc05276bc6bc57b306204b12e4" compoundref="generic__input__layer_8hpp" startline="372" endline="384">lbann::generic_input_layer::calculate_num_iterations_per_epoch_training_spans_models</referencedby>
+        <referencedby refid="classlbann_1_1generic__input__layer_1a0f09422a09e76da77ac42b3037173041" compoundref="generic__input__layer_8hpp" startline="386" endline="398">lbann::generic_input_layer::calculate_num_iterations_per_epoch_training_unique_per_models</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__io__buffer_1affc26b29e3f9eaaae5c033648e1a0141" prot="public" static="no" const="yes" explicit="no" inline="no" virt="pure-virtual">
+        <type>int</type>
+        <definition>virtual int lbann::generic_io_buffer::compute_max_num_parallel_readers</definition>
+        <argsstring>(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const =0</argsstring>
+        <name>compute_max_num_parallel_readers</name>
+        <reimplementedby refid="classlbann_1_1partitioned__io__buffer_1a5048100fb7cdc13908ecba6b4415b977">compute_max_num_parallel_readers</reimplementedby>
+        <reimplementedby refid="classlbann_1_1distributed__io__buffer_1af6653723714cf8cf51a928fc9f6e6728">compute_max_num_parallel_readers</reimplementedby>
+        <param>
+          <type>long</type>
+          <declname>data_set_size</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>mini_batch_size</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>requested_num_parallel_readers</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/data_buffers/generic_io_buffer.hpp" line="101" column="1"/>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <inheritancegraph>
+      <node id="918">
+        <label>lbann::generic_io_buffer</label>
+        <link refid="classlbann_1_1generic__io__buffer"/>
+      </node>
+      <node id="919">
+        <label>lbann::distributed_io_buffer</label>
+        <link refid="classlbann_1_1distributed__io__buffer"/>
+        <childnode refid="918" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="920">
+        <label>lbann::partitioned_io_buffer</label>
+        <link refid="classlbann_1_1partitioned__io__buffer"/>
+        <childnode refid="918" relation="public-inheritance">
+        </childnode>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="922">
+        <label>lbann::fetch_data_functor</label>
+        <link refid="classlbann_1_1fetch__data__functor"/>
+      </node>
+      <node id="921">
+        <label>lbann::generic_io_buffer</label>
+        <link refid="classlbann_1_1generic__io__buffer"/>
+        <childnode refid="922" relation="usage">
+          <edgelabel>fetch_data_fn</edgelabel>
+        </childnode>
+        <childnode refid="923" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="924" relation="usage">
+          <edgelabel>update_data_reader_fn</edgelabel>
+        </childnode>
+      </node>
+      <node id="923">
+        <label>lbann::lbann_comm</label>
+        <link refid="classlbann_1_1lbann__comm"/>
+      </node>
+      <node id="924">
+        <label>lbann::update_data_reader_functor</label>
+        <link refid="classlbann_1_1update__data__reader__functor"/>
+      </node>
+    </collaborationgraph>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/data_buffers/generic_io_buffer.hpp" line="71" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/data_buffers/generic_io_buffer.hpp" bodystart="71" bodyend="108"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1generic__io__buffer_1a4c71135fada7f0da0b315d538d327e59" prot="public" virt="pure-virtual"><scope>lbann::generic_io_buffer</scope><name>calculate_num_iterations_per_epoch_single_model</name></member>
+      <member refid="classlbann_1_1generic__io__buffer_1ac943184cf364f7922648e3acb760b41e" prot="public" virt="pure-virtual"><scope>lbann::generic_io_buffer</scope><name>calculate_num_iterations_per_epoch_spanning_models</name></member>
+      <member refid="classlbann_1_1generic__io__buffer_1affc26b29e3f9eaaae5c033648e1a0141" prot="public" virt="pure-virtual"><scope>lbann::generic_io_buffer</scope><name>compute_max_num_parallel_readers</name></member>
+      <member refid="classlbann_1_1generic__io__buffer_1a9d8020b82cf467c9148b0b37e7229262" prot="public" virt="pure-virtual"><scope>lbann::generic_io_buffer</scope><name>copy</name></member>
+      <member refid="classlbann_1_1generic__io__buffer_1a08c2bb93b86d2926df52ef9272a07d87" prot="public" virt="virtual"><scope>lbann::generic_io_buffer</scope><name>distribute_from_local_matrix</name></member>
+      <member refid="classlbann_1_1generic__io__buffer_1a267170b4fd11dc60c782a9cb2b7b06cc" prot="public" virt="non-virtual"><scope>lbann::generic_io_buffer</scope><name>fetch_data_fn</name></member>
+      <member refid="classlbann_1_1generic__io__buffer_1af9fc2100d41328fe399acf7bced950d7" prot="public" virt="pure-virtual"><scope>lbann::generic_io_buffer</scope><name>fetch_to_local_matrix</name></member>
+      <member refid="classlbann_1_1generic__io__buffer_1a21e2ef867da6fb0fa334d751ae6b692f" prot="public" virt="non-virtual"><scope>lbann::generic_io_buffer</scope><name>generic_io_buffer</name></member>
+      <member refid="classlbann_1_1generic__io__buffer_1a0810bd8f8c803aa992e4c29b4eee3506" prot="public" virt="non-virtual"><scope>lbann::generic_io_buffer</scope><name>generic_io_buffer</name></member>
+      <member refid="classlbann_1_1generic__io__buffer_1adc77c0a280f8a200a8d8495c3a371ebb" prot="public" virt="pure-virtual"><scope>lbann::generic_io_buffer</scope><name>get_type</name></member>
+      <member refid="classlbann_1_1generic__io__buffer_1a9a038d40aec50dbc24c0abe21ad0c0a9" prot="public" virt="pure-virtual"><scope>lbann::generic_io_buffer</scope><name>is_data_set_processed</name></member>
+      <member refid="classlbann_1_1generic__io__buffer_1a2e4a46c85c8b30e10b1cc5acaa2c4cca" prot="public" virt="non-virtual"><scope>lbann::generic_io_buffer</scope><name>m_comm</name></member>
+      <member refid="classlbann_1_1generic__io__buffer_1ae8d2b80e11cf780def151a425a6b1fa0" prot="public" virt="non-virtual"><scope>lbann::generic_io_buffer</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1generic__io__buffer_1af84c26ab5ee77d1d9ed9ea5d62823815" prot="public" virt="pure-virtual"><scope>lbann::generic_io_buffer</scope><name>set_local_matrix_bypass</name></member>
+      <member refid="classlbann_1_1generic__io__buffer_1a458d9bf722effce4177a0ac0aee9124f" prot="public" virt="pure-virtual"><scope>lbann::generic_io_buffer</scope><name>set_std_matrix_view</name></member>
+      <member refid="classlbann_1_1generic__io__buffer_1a00f3920147f7f19eceb5336bd6ddb421" prot="public" virt="pure-virtual"><scope>lbann::generic_io_buffer</scope><name>setup_data</name></member>
+      <member refid="classlbann_1_1generic__io__buffer_1a031eda7559a9e241afb3958b56088560" prot="public" virt="non-virtual"><scope>lbann::generic_io_buffer</scope><name>update_data_reader_fn</name></member>
+      <member refid="classlbann_1_1generic__io__buffer_1a0b531621374f697db06d8a3feec095cf" prot="public" virt="virtual"><scope>lbann::generic_io_buffer</scope><name>~generic_io_buffer</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

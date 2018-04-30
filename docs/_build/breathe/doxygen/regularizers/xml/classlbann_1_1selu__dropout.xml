@@ -1,0 +1,304 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1selu__dropout" kind="class" language="C++" prot="public">
+    <compoundname>lbann::selu_dropout</compoundname>
+    <basecompoundref refid="classlbann_1_1regularizer__layer" prot="public" virt="non-virtual">lbann::regularizer_layer</basecompoundref>
+    <includes refid="selu__dropout_8hpp" local="no">selu_dropout.hpp</includes>
+    <templateparamlist>
+      <param>
+        <type>data_layout</type>
+        <declname>T_layout</declname>
+        <defname>T_layout</defname>
+      </param>
+    </templateparamlist>
+      <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="classlbann_1_1selu__dropout_1a8db065b13d8737e1bd4cf154ab3fe666" prot="private" static="no" mutable="no">
+        <type>DataType</type>
+        <definition>DataType lbann::selu_dropout&lt; T_layout &gt;::m_alpha_prime</definition>
+        <argsstring></argsstring>
+        <name>m_alpha_prime</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Alpha prime, the low-variance saturation point. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" line="158" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" bodystart="158" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1selu__dropout_1a52bd21583da68ba4e8a374fab259a3ef" prot="private" static="no" mutable="no">
+        <type>DataType</type>
+        <definition>DataType lbann::selu_dropout&lt; T_layout &gt;::m_a</definition>
+        <argsstring></argsstring>
+        <name>m_a</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Affine scaling parameter to keep mean/variance at desired value. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" line="160" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" bodystart="160" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1selu__dropout_1a456fa501b7df6b52701c1aa3639ebc42" prot="private" static="no" mutable="no">
+        <type>DataType</type>
+        <definition>DataType lbann::selu_dropout&lt; T_layout &gt;::m_b</definition>
+        <argsstring></argsstring>
+        <name>m_b</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Affine additive parameter to keep mean/variance at desired value. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" line="162" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" bodystart="162" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1selu__dropout_1a00bd2a07703e2e918af8ae68b58ff11b" prot="private" static="no" mutable="no">
+        <type>float</type>
+        <definition>float lbann::selu_dropout&lt; T_layout &gt;::m_keep_prob</definition>
+        <argsstring></argsstring>
+        <name>m_keep_prob</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Probability of keeping each unit. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" line="164" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" bodystart="164" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1selu__dropout_1a31aaadbc51d78673a84390b48d4e5950" prot="private" static="no" mutable="no">
+        <type>AbsDistMat *</type>
+        <definition>AbsDistMat* lbann::selu_dropout&lt; T_layout &gt;::m_mask</definition>
+        <argsstring></argsstring>
+        <name>m_mask</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Current dropout mask (a scaled Bernoulli random matrix). </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" line="166" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" bodystart="166" bodyend="-1"/>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1selu__dropout_1a988a7e6b7b85ef8ba08a2bc52537e6d3" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>lbann::selu_dropout&lt; T_layout &gt;::selu_dropout</definition>
+        <argsstring>(lbann_comm *comm, float keep_prob=0.95f, DataType alpha=DataType(1.6732632423543772848170429916717), DataType scale=DataType(1.0507009873554804934193349852946))</argsstring>
+        <name>selu_dropout</name>
+        <param>
+          <type>lbann_comm *</type>
+          <declname>comm</declname>
+        </param>
+        <param>
+          <type>float</type>
+          <declname>keep_prob</declname>
+          <defval>0.95f</defval>
+        </param>
+        <param>
+          <type>DataType</type>
+          <declname>alpha</declname>
+          <defval>DataType(1.6732632423543772848170429916717)</defval>
+        </param>
+        <param>
+          <type>DataType</type>
+          <declname>scale</declname>
+          <defval>DataType(1.0507009873554804934193349852946)</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Keep units with probabiliy keep_prob. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" line="44" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" bodystart="44" bodyend="60"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1selu__dropout_1ae8e81800cf4c75bcf449e192988832b5" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>lbann::selu_dropout&lt; T_layout &gt;::selu_dropout</definition>
+        <argsstring>(const selu_dropout &amp;other)</argsstring>
+        <name>selu_dropout</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1selu__dropout" kindref="compound">selu_dropout</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" line="62" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" bodystart="62" bodyend="70"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1selu__dropout_1aa4563c71596c91bb568a6808d38e8758" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type><ref refid="classlbann_1_1selu__dropout" kindref="compound">selu_dropout</ref> &amp;</type>
+        <definition>selu_dropout&amp; lbann::selu_dropout&lt; T_layout &gt;::operator=</definition>
+        <argsstring>(const selu_dropout &amp;other)</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1selu__dropout" kindref="compound">selu_dropout</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" line="72" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" bodystart="72" bodyend="82"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1selu__dropout_1af3cb2d8724ebca49934769be70e40b83" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>lbann::selu_dropout&lt; T_layout &gt;::~selu_dropout</definition>
+        <argsstring>() override</argsstring>
+        <name>~selu_dropout</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" line="84" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" bodystart="84" bodyend="86"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1selu__dropout_1a58659790298874e1dc15a45b3199db91" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type><ref refid="classlbann_1_1selu__dropout" kindref="compound">selu_dropout</ref> *</type>
+        <definition>selu_dropout* lbann::selu_dropout&lt; T_layout &gt;::copy</definition>
+        <argsstring>() const override</argsstring>
+        <name>copy</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" line="88" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" bodystart="88" bodyend="88"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1selu__dropout_1a983e7bf62f995a1fe24363f7b1ff0182" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>std::string</type>
+        <definition>std::string lbann::selu_dropout&lt; T_layout &gt;::get_type</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_type</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" line="90" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" bodystart="90" bodyend="90"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1selu__dropout_1ae33633add903276c87f725facf0dcd0c" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>data_layout</type>
+        <definition>data_layout lbann::selu_dropout&lt; T_layout &gt;::get_data_layout</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_data_layout</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" line="92" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" bodystart="92" bodyend="92"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1selu__dropout_1a8b6469a14cf093d48e42384aa4ee404a" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::selu_dropout&lt; T_layout &gt;::setup_matrices</definition>
+        <argsstring>(const El::Grid &amp;grid) override</argsstring>
+        <name>setup_matrices</name>
+        <param>
+          <type>const El::Grid &amp;</type>
+          <declname>grid</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" line="94" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" bodystart="94" bodyend="98"/>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="protected-func">
+      <memberdef kind="function" id="classlbann_1_1selu__dropout_1a50ccce3672873a12ae69cc76c91e767a" prot="protected" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::selu_dropout&lt; T_layout &gt;::fp_compute</definition>
+        <argsstring>() override</argsstring>
+        <name>fp_compute</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Drop out units in forward propagation. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" line="102" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" bodystart="102" bodyend="131"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1selu__dropout_1afc80277386fef53296368579876bdb55" prot="protected" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::selu_dropout&lt; T_layout &gt;::bp_compute</definition>
+        <argsstring>() override</argsstring>
+        <name>bp_compute</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Adjust gradients for dropout in backprop. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" line="134" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" bodystart="134" bodyend="154"/>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>SELU dropout: alpha-scaled dropout for use with SELU activations. See: Klambauer et al. &quot;Self-Normalizing Neural Networks&quot;, 2017. This makes the same default assumptions as our SELU activations. The paper recommends a default dropout rate of 0.05 (keep 0.95). </para>    </detaileddescription>
+    <inheritancegraph>
+      <node id="27">
+        <label>lbann::regularizer_layer</label>
+        <link refid="classlbann_1_1regularizer__layer"/>
+        <childnode refid="28" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="28">
+        <label>Layer</label>
+      </node>
+      <node id="26">
+        <label>lbann::selu_dropout&lt; T_layout &gt;</label>
+        <link refid="classlbann_1_1selu__dropout"/>
+        <childnode refid="27" relation="public-inheritance">
+        </childnode>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="30">
+        <label>lbann::regularizer_layer</label>
+        <link refid="classlbann_1_1regularizer__layer"/>
+        <childnode refid="31" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="31">
+        <label>Layer</label>
+      </node>
+      <node id="29">
+        <label>lbann::selu_dropout&lt; T_layout &gt;</label>
+        <link refid="classlbann_1_1selu__dropout"/>
+        <childnode refid="30" relation="public-inheritance">
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" line="41" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp" bodystart="41" bodyend="167"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1selu__dropout_1afc80277386fef53296368579876bdb55" prot="protected" virt="non-virtual"><scope>lbann::selu_dropout</scope><name>bp_compute</name></member>
+      <member refid="classlbann_1_1selu__dropout_1a58659790298874e1dc15a45b3199db91" prot="public" virt="non-virtual"><scope>lbann::selu_dropout</scope><name>copy</name></member>
+      <member refid="classlbann_1_1selu__dropout_1a50ccce3672873a12ae69cc76c91e767a" prot="protected" virt="non-virtual"><scope>lbann::selu_dropout</scope><name>fp_compute</name></member>
+      <member refid="classlbann_1_1selu__dropout_1ae33633add903276c87f725facf0dcd0c" prot="public" virt="non-virtual"><scope>lbann::selu_dropout</scope><name>get_data_layout</name></member>
+      <member refid="classlbann_1_1selu__dropout_1a983e7bf62f995a1fe24363f7b1ff0182" prot="public" virt="non-virtual"><scope>lbann::selu_dropout</scope><name>get_type</name></member>
+      <member refid="classlbann_1_1selu__dropout_1a52bd21583da68ba4e8a374fab259a3ef" prot="private" virt="non-virtual"><scope>lbann::selu_dropout</scope><name>m_a</name></member>
+      <member refid="classlbann_1_1selu__dropout_1a8db065b13d8737e1bd4cf154ab3fe666" prot="private" virt="non-virtual"><scope>lbann::selu_dropout</scope><name>m_alpha_prime</name></member>
+      <member refid="classlbann_1_1selu__dropout_1a456fa501b7df6b52701c1aa3639ebc42" prot="private" virt="non-virtual"><scope>lbann::selu_dropout</scope><name>m_b</name></member>
+      <member refid="classlbann_1_1selu__dropout_1a00bd2a07703e2e918af8ae68b58ff11b" prot="private" virt="non-virtual"><scope>lbann::selu_dropout</scope><name>m_keep_prob</name></member>
+      <member refid="classlbann_1_1selu__dropout_1a31aaadbc51d78673a84390b48d4e5950" prot="private" virt="non-virtual"><scope>lbann::selu_dropout</scope><name>m_mask</name></member>
+      <member refid="classlbann_1_1selu__dropout_1aa4563c71596c91bb568a6808d38e8758" prot="public" virt="non-virtual"><scope>lbann::selu_dropout</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1regularizer__layer_1a2ebf3877b905b479a0250b74cf8f68b3" prot="public" virt="non-virtual"><scope>lbann::selu_dropout</scope><name>regularizer_layer</name></member>
+      <member refid="classlbann_1_1selu__dropout_1a988a7e6b7b85ef8ba08a2bc52537e6d3" prot="public" virt="non-virtual"><scope>lbann::selu_dropout</scope><name>selu_dropout</name></member>
+      <member refid="classlbann_1_1selu__dropout_1ae8e81800cf4c75bcf449e192988832b5" prot="public" virt="non-virtual"><scope>lbann::selu_dropout</scope><name>selu_dropout</name></member>
+      <member refid="classlbann_1_1selu__dropout_1a8b6469a14cf093d48e42384aa4ee404a" prot="public" virt="non-virtual"><scope>lbann::selu_dropout</scope><name>setup_matrices</name></member>
+      <member refid="classlbann_1_1selu__dropout_1af3cb2d8724ebca49934769be70e40b83" prot="public" virt="non-virtual"><scope>lbann::selu_dropout</scope><name>~selu_dropout</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

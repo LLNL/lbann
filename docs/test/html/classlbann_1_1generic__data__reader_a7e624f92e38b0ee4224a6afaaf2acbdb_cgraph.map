@@ -1,0 +1,7 @@
+<map id="lbann::generic_data_reader::fetch_labels" name="lbann::generic_data_reader::fetch_labels">
+<area shape="rect" id="node2" href="$classlbann_1_1generic__data__reader.html#a2b10538440d784f0f12582a5407acef2" title="True if the data reader&#39;s current position is valid. " alt="" coords="199,5,355,44"/>
+<area shape="rect" id="node3" href="$classlbann_1_1generic__data__reader.html#a850e99110dd1e9df2985f09ea196fea8" title="Get the loaded mini&#45;batch size. " alt="" coords="207,68,347,120"/>
+<area shape="rect" id="node4" href="$classlbann_1_1generic__data__reader.html#a03627408c1d1aa28691d31232fe1dce5" title="lbann::generic_data\l_reader::fetch_label" alt="" coords="207,144,347,183"/>
+<area shape="rect" id="node5" href="$namespacelbann.html#aedccb3bf2d674ccb5573ab9960720731" title="lbann::lbann_report\l_exception" alt="" coords="209,207,345,245"/>
+<area shape="rect" id="node6" href="$classlbann_1_1lbann__exception.html#ad36592ddd0ff6a24f31ec6a31b83e920" title="lbann::lbann_exception\l::what" alt="" coords="403,207,561,245"/>
+</map>

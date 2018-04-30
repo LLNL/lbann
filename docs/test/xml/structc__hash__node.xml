@@ -1,0 +1,115 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="structc__hash__node" kind="struct" language="C++" prot="public">
+    <compoundname>c_hash_node</compoundname>
+    <includes refid="cyg__profile_8hpp" local="no">cyg_profile.hpp</includes>
+      <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structc__hash__node_1a83dedd9d9f8b425832404116b456b46d" prot="public" static="no" mutable="no">
+        <type>unsigned long</type>
+        <definition>unsigned long c_hash_node::key</definition>
+        <argsstring></argsstring>
+        <name>key</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/cyg_profile.hpp" line="67" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/cyg_profile.hpp" bodystart="67" bodyend="-1"/>
+        <referencedby refid="cyg__profile_8hpp_1ab51b5864ac189a74ae78a87749f2d85b" compoundref="cyg__profile_8hpp" startline="165" endline="210">c_hash_insert</referencedby>
+        <referencedby refid="cyg__profile_8hpp_1a180ca8d5835108eae791ba3ce34484f0" compoundref="cyg__profile_8hpp" startline="214" endline="236">c_hash_lookup</referencedby>
+        <referencedby refid="cyg__profile_8hpp_1ad1c2d92ab2c29021521d36cf4c97e488" compoundref="stack__profiler_8cpp" startline="37" endline="60">c_hash_create</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="structc__hash__node_1af5199f281a298c18ee13e8fc8a86359e" prot="public" static="no" mutable="no">
+        <type>long</type>
+        <definition>long c_hash_node::mark</definition>
+        <argsstring></argsstring>
+        <name>mark</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/cyg_profile.hpp" line="68" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/cyg_profile.hpp" bodystart="68" bodyend="-1"/>
+        <referencedby refid="cyg__profile_8hpp_1ab51b5864ac189a74ae78a87749f2d85b" compoundref="cyg__profile_8hpp" startline="165" endline="210">c_hash_insert</referencedby>
+        <referencedby refid="cyg__profile_8hpp_1a180ca8d5835108eae791ba3ce34484f0" compoundref="cyg__profile_8hpp" startline="214" endline="236">c_hash_lookup</referencedby>
+        <referencedby refid="cyg__profile_8hpp_1ad1c2d92ab2c29021521d36cf4c97e488" compoundref="stack__profiler_8cpp" startline="37" endline="60">c_hash_create</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="structc__hash__node_1adb4fc5dcf1d4a4e4b4b79db0bc40046f" prot="public" static="no" mutable="no">
+        <type>char *</type>
+        <definition>char* c_hash_node::name</definition>
+        <argsstring></argsstring>
+        <name>name</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/cyg_profile.hpp" line="71" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/cyg_profile.hpp" bodystart="71" bodyend="-1"/>
+        <referencedby refid="cyg__profile_8hpp_1ab51b5864ac189a74ae78a87749f2d85b" compoundref="cyg__profile_8hpp" startline="165" endline="210">c_hash_insert</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="structc__hash__node_1a560e0249668dacf880602ef181ad339c" prot="public" static="no" mutable="no">
+        <type>long</type>
+        <definition>long c_hash_node::count</definition>
+        <argsstring></argsstring>
+        <name>count</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/cyg_profile.hpp" line="72" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/cyg_profile.hpp" bodystart="72" bodyend="-1"/>
+        <referencedby refid="cyg__profile_8hpp_1ab51b5864ac189a74ae78a87749f2d85b" compoundref="cyg__profile_8hpp" startline="165" endline="210">c_hash_insert</referencedby>
+        <referencedby refid="cyg__profile_8hpp_1a0324b893ce3ef55f7b9ade478e27cdc2" compoundref="cyg__profile_8hpp" startline="241" endline="253">c_hash_insert_or_update</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="structc__hash__node_1a3b00ec567a576f3677911f8b8e421de0" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* c_hash_node::func</definition>
+        <argsstring></argsstring>
+        <name>func</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/cyg_profile.hpp" line="73" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/cyg_profile.hpp" bodystart="73" bodyend="-1"/>
+        <referencedby refid="cyg__profile_8hpp_1aedbd6097fb83d8aeb4f59fa458297e55" compoundref="cyg__profile_8hpp" startline="138" endline="147">djb2_hash</referencedby>
+        <referencedby refid="cyg__profile_8hpp_1ab51b5864ac189a74ae78a87749f2d85b" compoundref="cyg__profile_8hpp" startline="165" endline="210">c_hash_insert</referencedby>
+        <referencedby refid="cyg__profile_8hpp_1a180ca8d5835108eae791ba3ce34484f0" compoundref="cyg__profile_8hpp" startline="214" endline="236">c_hash_lookup</referencedby>
+        <referencedby refid="cyg__profile_8hpp_1ad1c2d92ab2c29021521d36cf4c97e488" compoundref="stack__profiler_8cpp" startline="37" endline="60">c_hash_create</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="structc__hash__node_1a1ef613164cb42133cc969fa92732cf5f" prot="public" static="no" mutable="no">
+        <type>short</type>
+        <definition>short c_hash_node::id</definition>
+        <argsstring></argsstring>
+        <name>id</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/cyg_profile.hpp" line="74" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/cyg_profile.hpp" bodystart="74" bodyend="-1"/>
+        <referencedby refid="cyg__profile_8hpp_1ab51b5864ac189a74ae78a87749f2d85b" compoundref="cyg__profile_8hpp" startline="165" endline="210">c_hash_insert</referencedby>
+        <referencedby refid="cyg__profile_8hpp_1a0324b893ce3ef55f7b9ade478e27cdc2" compoundref="cyg__profile_8hpp" startline="241" endline="253">c_hash_insert_or_update</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+<para>hash table slots </para>    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/cyg_profile.hpp" line="66" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/cyg_profile.hpp" bodystart="66" bodyend="75"/>
+    <listofallmembers>
+      <member refid="structc__hash__node_1a560e0249668dacf880602ef181ad339c" prot="public" virt="non-virtual"><scope>c_hash_node</scope><name>count</name></member>
+      <member refid="structc__hash__node_1a3b00ec567a576f3677911f8b8e421de0" prot="public" virt="non-virtual"><scope>c_hash_node</scope><name>func</name></member>
+      <member refid="structc__hash__node_1a1ef613164cb42133cc969fa92732cf5f" prot="public" virt="non-virtual"><scope>c_hash_node</scope><name>id</name></member>
+      <member refid="structc__hash__node_1a83dedd9d9f8b425832404116b456b46d" prot="public" virt="non-virtual"><scope>c_hash_node</scope><name>key</name></member>
+      <member refid="structc__hash__node_1af5199f281a298c18ee13e8fc8a86359e" prot="public" virt="non-virtual"><scope>c_hash_node</scope><name>mark</name></member>
+      <member refid="structc__hash__node_1adb4fc5dcf1d4a4e4b4b79db0bc40046f" prot="public" virt="non-virtual"><scope>c_hash_node</scope><name>name</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

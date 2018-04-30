@@ -1,0 +1,285 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="generic__io__buffer_8cpp" kind="file" language="C++">
+    <compoundname>generic_io_buffer.cpp</compoundname>
+    <includes refid="generic__io__buffer_8hpp" local="yes">lbann/io/data_buffers/generic_io_buffer.hpp</includes>
+    <includes refid="exception_8hpp" local="yes">lbann/utils/exception.hpp</includes>
+    <incdepgraph>
+      <node id="20727">
+        <label>sys/stat.h</label>
+      </node>
+      <node id="20730">
+        <label>lbann/data_readers/image_preprocessor.hpp</label>
+        <link refid="image__preprocessor_8hpp"/>
+        <childnode refid="20711" relation="include">
+        </childnode>
+        <childnode refid="20703" relation="include">
+        </childnode>
+      </node>
+      <node id="20718">
+        <label>lbann/io/persist.hpp</label>
+        <link refid="persist_8hpp"/>
+        <childnode refid="20703" relation="include">
+        </childnode>
+        <childnode refid="20704" relation="include">
+        </childnode>
+      </node>
+      <node id="20704">
+        <label>El.hpp</label>
+      </node>
+      <node id="20703">
+        <label>lbann/base.hpp</label>
+        <link refid="base_8hpp"/>
+        <childnode refid="20704" relation="include">
+        </childnode>
+        <childnode refid="20705" relation="include">
+        </childnode>
+        <childnode refid="20706" relation="include">
+        </childnode>
+        <childnode refid="20711" relation="include">
+        </childnode>
+      </node>
+      <node id="20731">
+        <label>cassert</label>
+      </node>
+      <node id="20729">
+        <label>fcntl.h</label>
+      </node>
+      <node id="20723">
+        <label>string</label>
+      </node>
+      <node id="20702">
+        <label>lbann/io/data_buffers/generic_io_buffer.hpp</label>
+        <link refid="generic__io__buffer_8hpp"/>
+        <childnode refid="20703" relation="include">
+        </childnode>
+        <childnode refid="20712" relation="include">
+        </childnode>
+        <childnode refid="20716" relation="include">
+        </childnode>
+      </node>
+      <node id="20714">
+        <label>map</label>
+      </node>
+      <node id="20725">
+        <label>exception</label>
+      </node>
+      <node id="20719">
+        <label>random</label>
+      </node>
+      <node id="20728">
+        <label>sys/types.h</label>
+      </node>
+      <node id="20708">
+        <label>cstdio</label>
+      </node>
+      <node id="20721">
+        <label>lbann/utils/stack_trace.hpp</label>
+        <link refid="stack__trace_8hpp"/>
+        <childnode refid="20722" relation="include">
+        </childnode>
+        <childnode refid="20723" relation="include">
+        </childnode>
+      </node>
+      <node id="20710">
+        <label>cxxabi.h</label>
+      </node>
+      <node id="20720">
+        <label>lbann/utils/exception.hpp</label>
+        <link refid="exception_8hpp"/>
+        <childnode refid="20703" relation="include">
+        </childnode>
+        <childnode refid="20712" relation="include">
+        </childnode>
+        <childnode refid="20721" relation="include">
+        </childnode>
+        <childnode refid="20724" relation="include">
+        </childnode>
+        <childnode refid="20725" relation="include">
+        </childnode>
+      </node>
+      <node id="20733">
+        <label>unistd.h</label>
+      </node>
+      <node id="20713">
+        <label>vector</label>
+      </node>
+      <node id="20701">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/io/data_buffers/generic_io_buffer.cpp</label>
+        <link refid="generic__io__buffer_8cpp"/>
+        <childnode refid="20702" relation="include">
+        </childnode>
+        <childnode refid="20720" relation="include">
+        </childnode>
+      </node>
+      <node id="20712">
+        <label>lbann/comm.hpp</label>
+        <link refid="comm_8hpp"/>
+        <childnode refid="20713" relation="include">
+        </childnode>
+        <childnode refid="20714" relation="include">
+        </childnode>
+        <childnode refid="20715" relation="include">
+        </childnode>
+        <childnode refid="20703" relation="include">
+        </childnode>
+      </node>
+      <node id="20726">
+        <label>lbann/io/file_io.hpp</label>
+        <link refid="file__io_8hpp"/>
+        <childnode refid="20727" relation="include">
+        </childnode>
+        <childnode refid="20728" relation="include">
+        </childnode>
+        <childnode refid="20729" relation="include">
+        </childnode>
+      </node>
+      <node id="20707">
+        <label>cstdlib</label>
+      </node>
+      <node id="20724">
+        <label>iostream</label>
+      </node>
+      <node id="20717">
+        <label>lbann/utils/random.hpp</label>
+        <link refid="random_8hpp"/>
+        <childnode refid="20703" relation="include">
+        </childnode>
+        <childnode refid="20712" relation="include">
+        </childnode>
+        <childnode refid="20718" relation="include">
+        </childnode>
+        <childnode refid="20719" relation="include">
+        </childnode>
+      </node>
+      <node id="20722">
+        <label>csignal</label>
+      </node>
+      <node id="20716">
+        <label>lbann/data_readers/data_reader.hpp</label>
+        <link refid="data__reader_8hpp"/>
+        <childnode refid="20703" relation="include">
+        </childnode>
+        <childnode refid="20717" relation="include">
+        </childnode>
+        <childnode refid="20720" relation="include">
+        </childnode>
+        <childnode refid="20712" relation="include">
+        </childnode>
+        <childnode refid="20726" relation="include">
+        </childnode>
+        <childnode refid="20718" relation="include">
+        </childnode>
+        <childnode refid="20730" relation="include">
+        </childnode>
+        <childnode refid="20731" relation="include">
+        </childnode>
+        <childnode refid="20732" relation="include">
+        </childnode>
+        <childnode refid="20723" relation="include">
+        </childnode>
+        <childnode refid="20713" relation="include">
+        </childnode>
+        <childnode refid="20733" relation="include">
+        </childnode>
+      </node>
+      <node id="20711">
+        <label>lbann_config.hpp</label>
+      </node>
+      <node id="20732">
+        <label>algorithm</label>
+      </node>
+      <node id="20706">
+        <label>lbann/utils/cyg_profile.hpp</label>
+        <link refid="cyg__profile_8hpp"/>
+        <childnode refid="20707" relation="include">
+        </childnode>
+        <childnode refid="20708" relation="include">
+        </childnode>
+        <childnode refid="20709" relation="include">
+        </childnode>
+        <childnode refid="20710" relation="include">
+        </childnode>
+      </node>
+      <node id="20705">
+        <label>lbann/Elemental_extensions.hpp</label>
+        <link refid="Elemental__extensions_8hpp"/>
+        <childnode refid="20704" relation="include">
+        </childnode>
+      </node>
+      <node id="20715">
+        <label>typeindex</label>
+      </node>
+      <node id="20709">
+        <label>dlfcn.h</label>
+      </node>
+    </incdepgraph>
+    <innernamespace refid="namespacelbann">lbann</innernamespace>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>2014-2016,<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Security,<sp/>LLC.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Produced<sp/>at<sp/>the<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Laboratory.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Written<sp/>by<sp/>the<sp/>LBANN<sp/>Research<sp/>Team<sp/>(B.<sp/>Van<sp/>Essen,<sp/>et<sp/>al.)<sp/>listed<sp/>in</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="comment">//<sp/>the<sp/>CONTRIBUTORS<sp/>file.<sp/>&lt;lbann-dev@llnl.gov&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="comment">//<sp/>LLNL-CODE-697807.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="comment">//<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="comment">//<sp/>This<sp/>file<sp/>is<sp/>part<sp/>of<sp/>LBANN:<sp/>Livermore<sp/>Big<sp/>Artificial<sp/>Neural<sp/>Network</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Toolkit.<sp/>For<sp/>details,<sp/>see<sp/>http://software.llnl.gov/LBANN<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="comment">//<sp/>https://github.com/LLNL/LBANN.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Licensed<sp/>under<sp/>the<sp/>Apache<sp/>License,<sp/>Version<sp/>2.0<sp/>(the<sp/>&quot;Licensee&quot;);<sp/>you</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight><highlight class="comment">//<sp/>may<sp/>not<sp/>use<sp/>this<sp/>file<sp/>except<sp/>in<sp/>compliance<sp/>with<sp/>the<sp/>License.<sp/><sp/>You<sp/>may</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="comment">//<sp/>obtain<sp/>a<sp/>copy<sp/>of<sp/>the<sp/>License<sp/>at:</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight><highlight class="comment">//<sp/>http://www.apache.org/licenses/LICENSE-2.0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Unless<sp/>required<sp/>by<sp/>applicable<sp/>law<sp/>or<sp/>agreed<sp/>to<sp/>in<sp/>writing,<sp/>software</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight><highlight class="comment">//<sp/>distributed<sp/>under<sp/>the<sp/>License<sp/>is<sp/>distributed<sp/>on<sp/>an<sp/>&quot;AS<sp/>IS&quot;<sp/>BASIS,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight><highlight class="comment">//<sp/>WITHOUT<sp/>WARRANTIES<sp/>OR<sp/>CONDITIONS<sp/>OF<sp/>ANY<sp/>KIND,<sp/>either<sp/>express<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="comment">//<sp/>implied.<sp/>See<sp/>the<sp/>License<sp/>for<sp/>the<sp/>specific<sp/>language<sp/>governing</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="comment">//<sp/>permissions<sp/>and<sp/>limitations<sp/>under<sp/>the<sp/>license.</highlight></codeline>
+<codeline lineno="26"><highlight class="comment"></highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="27"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="generic__io__buffer_8hpp" kindref="compound">lbann/io/data_buffers/generic_io_buffer.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="28"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="exception_8hpp" kindref="compound">lbann/utils/exception.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="29"><highlight class="normal"></highlight></codeline>
+<codeline lineno="30"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacelbann" kindref="compound">lbann</ref><sp/>{</highlight></codeline>
+<codeline lineno="31" refid="classlbann_1_1generic__io__buffer_1a21e2ef867da6fb0fa334d751ae6b692f" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1generic__io__buffer_1a21e2ef867da6fb0fa334d751ae6b692f" kindref="member">generic_io_buffer::generic_io_buffer</ref>(<ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref><sp/>*<ref refid="file__io_8cpp_1ab048c6f9fcbcfaa57ce68b00263dbebe" kindref="member">comm</ref>,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>num_parallel_readers,<sp/>std::map&lt;execution_mode,<sp/>generic_data_reader<sp/>*&gt;<sp/>data_readers)</highlight></codeline>
+<codeline lineno="32"><highlight class="normal"><sp/><sp/>:<sp/>m_comm(comm),<sp/>fetch_data_fn(nullptr),<sp/><sp/>update_data_reader_fn(nullptr)<sp/>{}</highlight></codeline>
+<codeline lineno="33"><highlight class="normal"></highlight></codeline>
+<codeline lineno="34" refid="classlbann_1_1generic__io__buffer_1a0810bd8f8c803aa992e4c29b4eee3506" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1generic__io__buffer_1a21e2ef867da6fb0fa334d751ae6b692f" kindref="member">generic_io_buffer::generic_io_buffer</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1generic__io__buffer" kindref="compound">generic_io_buffer</ref>&amp;<sp/>rhs)</highlight></codeline>
+<codeline lineno="35"><highlight class="normal">:<sp/><ref refid="classlbann_1_1generic__io__buffer_1a2e4a46c85c8b30e10b1cc5acaa2c4cca" kindref="member">m_comm</ref>(rhs.<ref refid="classlbann_1_1generic__io__buffer_1a2e4a46c85c8b30e10b1cc5acaa2c4cca" kindref="member">m_comm</ref>)</highlight></codeline>
+<codeline lineno="36"><highlight class="normal">{</highlight></codeline>
+<codeline lineno="37"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(rhs.<ref refid="classlbann_1_1generic__io__buffer_1a267170b4fd11dc60c782a9cb2b7b06cc" kindref="member">fetch_data_fn</ref>)</highlight></codeline>
+<codeline lineno="38"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1generic__io__buffer_1a267170b4fd11dc60c782a9cb2b7b06cc" kindref="member">fetch_data_fn</ref><sp/>=<sp/></highlight><highlight class="keyword">new</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1fetch__data__functor" kindref="compound">fetch_data_functor</ref>(*(rhs.<ref refid="classlbann_1_1generic__io__buffer_1a267170b4fd11dc60c782a9cb2b7b06cc" kindref="member">fetch_data_fn</ref>));</highlight></codeline>
+<codeline lineno="39"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(rhs.<ref refid="classlbann_1_1generic__io__buffer_1a031eda7559a9e241afb3958b56088560" kindref="member">update_data_reader_fn</ref>)</highlight></codeline>
+<codeline lineno="40"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1generic__io__buffer_1a031eda7559a9e241afb3958b56088560" kindref="member">update_data_reader_fn</ref><sp/>=<sp/></highlight><highlight class="keyword">new</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1update__data__reader__functor" kindref="compound">update_data_reader_functor</ref>(*(rhs.<ref refid="classlbann_1_1generic__io__buffer_1a031eda7559a9e241afb3958b56088560" kindref="member">update_data_reader_fn</ref>));</highlight></codeline>
+<codeline lineno="41"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="42"><highlight class="normal"></highlight></codeline>
+<codeline lineno="43" refid="classlbann_1_1generic__io__buffer_1ae8d2b80e11cf780def151a425a6b1fa0" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1generic__io__buffer" kindref="compound">generic_io_buffer</ref>&amp;<sp/><ref refid="classlbann_1_1generic__io__buffer_1ae8d2b80e11cf780def151a425a6b1fa0" kindref="member">generic_io_buffer::operator=</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1generic__io__buffer" kindref="compound">generic_io_buffer</ref>&amp;<sp/>rhs)<sp/>{</highlight></codeline>
+<codeline lineno="44"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1generic__io__buffer_1a2e4a46c85c8b30e10b1cc5acaa2c4cca" kindref="member">m_comm</ref><sp/>=<sp/>rhs.<ref refid="classlbann_1_1generic__io__buffer_1a2e4a46c85c8b30e10b1cc5acaa2c4cca" kindref="member">m_comm</ref>;</highlight></codeline>
+<codeline lineno="45"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1generic__io__buffer_1a267170b4fd11dc60c782a9cb2b7b06cc" kindref="member">fetch_data_fn</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="46"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">delete</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1generic__io__buffer_1a267170b4fd11dc60c782a9cb2b7b06cc" kindref="member">fetch_data_fn</ref>;</highlight></codeline>
+<codeline lineno="47"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1generic__io__buffer_1a267170b4fd11dc60c782a9cb2b7b06cc" kindref="member">fetch_data_fn</ref><sp/>=<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="48"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="49"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1generic__io__buffer_1a031eda7559a9e241afb3958b56088560" kindref="member">update_data_reader_fn</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="50"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">delete</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1generic__io__buffer_1a031eda7559a9e241afb3958b56088560" kindref="member">update_data_reader_fn</ref>;</highlight></codeline>
+<codeline lineno="51"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1generic__io__buffer_1a031eda7559a9e241afb3958b56088560" kindref="member">update_data_reader_fn</ref><sp/>=<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="52"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="53"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(rhs.<ref refid="classlbann_1_1generic__io__buffer_1a267170b4fd11dc60c782a9cb2b7b06cc" kindref="member">fetch_data_fn</ref>)</highlight></codeline>
+<codeline lineno="54"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1generic__io__buffer_1a267170b4fd11dc60c782a9cb2b7b06cc" kindref="member">fetch_data_fn</ref><sp/>=<sp/></highlight><highlight class="keyword">new</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1fetch__data__functor" kindref="compound">fetch_data_functor</ref>(*(rhs.<ref refid="classlbann_1_1generic__io__buffer_1a267170b4fd11dc60c782a9cb2b7b06cc" kindref="member">fetch_data_fn</ref>));</highlight></codeline>
+<codeline lineno="55"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(rhs.<ref refid="classlbann_1_1generic__io__buffer_1a031eda7559a9e241afb3958b56088560" kindref="member">update_data_reader_fn</ref>)</highlight></codeline>
+<codeline lineno="56"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1generic__io__buffer_1a031eda7559a9e241afb3958b56088560" kindref="member">update_data_reader_fn</ref><sp/>=<sp/></highlight><highlight class="keyword">new</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1update__data__reader__functor" kindref="compound">update_data_reader_functor</ref>(*(rhs.<ref refid="classlbann_1_1generic__io__buffer_1a031eda7559a9e241afb3958b56088560" kindref="member">update_data_reader_fn</ref>));</highlight></codeline>
+<codeline lineno="57"><highlight class="normal"></highlight></codeline>
+<codeline lineno="58"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>(*</highlight><highlight class="keyword">this</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="59"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="60"><highlight class="normal"></highlight></codeline>
+<codeline lineno="61"><highlight class="normal">}<sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>lbann</highlight><highlight class="normal"></highlight></codeline>
+    </programlisting>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/src/io/data_buffers/generic_io_buffer.cpp"/>
+  </compounddef>
+</doxygen>

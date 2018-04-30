@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="structlbann_1_1sgd_1_1packing__header" kind="struct" language="C++" prot="private">
+    <compoundname>lbann::sgd::packing_header</compoundname>
+      <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structlbann_1_1sgd_1_1packing__header_1a76cff0164cd32346eac4036a8a643776" prot="public" static="no" mutable="no">
+        <type>DataType</type>
+        <definition>DataType lbann::sgd::packing_header::momentum</definition>
+        <argsstring></argsstring>
+        <name>momentum</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/sgd.hpp" line="87" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/sgd.hpp" bodystart="87" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1sgd_1a2b4a91cbb155ed94a185db79fdbf6284" compoundref="sgd_8hpp" startline="95" endline="103">lbann::sgd::unpack_scalars</referencedby>
+        <referencedby refid="classlbann_1_1sgd_1a3afe5aa1f1861c390472ff6f53093386" compoundref="sgd_8hpp" startline="105" endline="107">lbann::sgd::unpack_header</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/sgd.hpp" line="86" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/sgd.hpp" bodystart="86" bodyend="88"/>
+    <listofallmembers>
+      <member refid="structlbann_1_1sgd_1_1packing__header_1a76cff0164cd32346eac4036a8a643776" prot="public" virt="non-virtual"><scope>lbann::sgd::packing_header</scope><name>momentum</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

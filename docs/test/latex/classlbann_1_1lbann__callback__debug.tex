@@ -1,0 +1,582 @@
+\hypertarget{classlbann_1_1lbann__callback__debug}{}\section{lbann\+:\+:lbann\+\_\+callback\+\_\+debug Class Reference}
+\label{classlbann_1_1lbann__callback__debug}\index{lbann\+::lbann\+\_\+callback\+\_\+debug@{lbann\+::lbann\+\_\+callback\+\_\+debug}}
+
+
+{\ttfamily \#include $<$callback\+\_\+debug.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+debug\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=192pt]{classlbann_1_1lbann__callback__debug__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+debug\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=207pt]{classlbann_1_1lbann__callback__debug__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1lbann__callback__debug_a775f2f407573526795a9b7ffc7bd3ded}{lbann\+\_\+callback\+\_\+debug} (\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode} phase=\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8afedb2d84cafe20862cb4399751a8a7e3}{execution\+\_\+mode\+::invalid}, \hyperlink{classlbann_1_1lbann__summary}{lbann\+\_\+summary} $\ast$summarizer=nullptr)
+\item 
+\hyperlink{classlbann_1_1lbann__callback__debug_a124703602aab20bcfabfca697e3a9ff1}{lbann\+\_\+callback\+\_\+debug} (const \hyperlink{classlbann_1_1lbann__callback__debug}{lbann\+\_\+callback\+\_\+debug} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__debug}{lbann\+\_\+callback\+\_\+debug} \& \hyperlink{classlbann_1_1lbann__callback__debug_ad30a57ba6ec0b7e479345647651a8e83}{operator=} (const \hyperlink{classlbann_1_1lbann__callback__debug}{lbann\+\_\+callback\+\_\+debug} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__debug}{lbann\+\_\+callback\+\_\+debug} $\ast$ \hyperlink{classlbann_1_1lbann__callback__debug_a76ffcfb7aca5ccce132ceae60e267472}{copy} () const override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__debug_abab8f3b9c1db3d0ef3a715afc7b880db}{on\+\_\+batch\+\_\+begin} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__debug_ac3e88ef582a7e3949b6e016ca2b17459}{on\+\_\+forward\+\_\+prop\+\_\+begin} (\hyperlink{classlbann_1_1model}{model} $\ast$m, \hyperlink{classlbann_1_1Layer}{Layer} $\ast$l) override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__debug_acb3d05be6c600f4d61957ccf10606ddc}{on\+\_\+forward\+\_\+prop\+\_\+end} (\hyperlink{classlbann_1_1model}{model} $\ast$m, \hyperlink{classlbann_1_1Layer}{Layer} $\ast$l) override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__debug_adaf60c995d2638a40d9c87a923c53865}{on\+\_\+backward\+\_\+prop\+\_\+begin} (\hyperlink{classlbann_1_1model}{model} $\ast$m, \hyperlink{classlbann_1_1Layer}{Layer} $\ast$l) override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__debug_a19a8ec63f55fc86024c9ab8fe0836500}{on\+\_\+backward\+\_\+prop\+\_\+end} (\hyperlink{classlbann_1_1model}{model} $\ast$m, \hyperlink{classlbann_1_1Layer}{Layer} $\ast$l) override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__debug_ac364fb6e77dc163e146af77bb670d74b}{on\+\_\+batch\+\_\+evaluate\+\_\+begin} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__debug_a07a02eb525ebe9c06b361c48fc2977c8}{on\+\_\+batch\+\_\+evaluate\+\_\+end} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__debug_a83fe16882119a54afe59ba616fe1722a}{on\+\_\+evaluate\+\_\+forward\+\_\+prop\+\_\+begin} (\hyperlink{classlbann_1_1model}{model} $\ast$m, \hyperlink{classlbann_1_1Layer}{Layer} $\ast$l) override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__debug_a19639823e288e7599947c0abfaa6d1f4}{on\+\_\+evaluate\+\_\+forward\+\_\+prop\+\_\+end} (\hyperlink{classlbann_1_1model}{model} $\ast$m, \hyperlink{classlbann_1_1Layer}{Layer} $\ast$l) override
+\item 
+std\+::string \hyperlink{classlbann_1_1lbann__callback__debug_ae9e892671f4959cfc915e1662afd6d60}{name} () const override
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode} \hyperlink{classlbann_1_1lbann__callback__debug_acc66ab699534e42aa958148f1fb3fd6f}{m\+\_\+debug\+\_\+phase}
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+Print status updates on where training is. 
+
+Definition at line 41 of file callback\+\_\+debug.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__debug_a775f2f407573526795a9b7ffc7bd3ded}\label{classlbann_1_1lbann__callback__debug_a775f2f407573526795a9b7ffc7bd3ded}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+debug@{lbann\+::lbann\+\_\+callback\+\_\+debug}!lbann\+\_\+callback\+\_\+debug@{lbann\+\_\+callback\+\_\+debug}}
+\index{lbann\+\_\+callback\+\_\+debug@{lbann\+\_\+callback\+\_\+debug}!lbann\+::lbann\+\_\+callback\+\_\+debug@{lbann\+::lbann\+\_\+callback\+\_\+debug}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+debug()}{lbann\_callback\_debug()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+debug\+::lbann\+\_\+callback\+\_\+debug (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}}]{phase = {\ttfamily \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8afedb2d84cafe20862cb4399751a8a7e3}{execution\+\_\+mode\+::invalid}},  }\item[{\hyperlink{classlbann_1_1lbann__summary}{lbann\+\_\+summary} $\ast$}]{summarizer = {\ttfamily nullptr} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Debug a particular phase; use invalid to debug every phase. 
+
+Definition at line 53 of file callback\+\_\+debug.\+hpp.
+
+
+\begin{DoxyCode}
+54                                                             :
+55     \hyperlink{classlbann_1_1lbann__callback_a679057298a41ddd47f08c157f756c584}{lbann\_callback}(1, summarizer), \hyperlink{classlbann_1_1lbann__callback__debug_acc66ab699534e42aa958148f1fb3fd6f}{m\_debug\_phase}(phase) \{\}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__debug_a775f2f407573526795a9b7ffc7bd3ded_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__debug_a775f2f407573526795a9b7ffc7bd3ded_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__debug_a124703602aab20bcfabfca697e3a9ff1}\label{classlbann_1_1lbann__callback__debug_a124703602aab20bcfabfca697e3a9ff1}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+debug@{lbann\+::lbann\+\_\+callback\+\_\+debug}!lbann\+\_\+callback\+\_\+debug@{lbann\+\_\+callback\+\_\+debug}}
+\index{lbann\+\_\+callback\+\_\+debug@{lbann\+\_\+callback\+\_\+debug}!lbann\+::lbann\+\_\+callback\+\_\+debug@{lbann\+::lbann\+\_\+callback\+\_\+debug}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+debug()}{lbann\_callback\_debug()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+debug\+::lbann\+\_\+callback\+\_\+debug (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__debug}{lbann\+\_\+callback\+\_\+debug} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__debug_a76ffcfb7aca5ccce132ceae60e267472}\label{classlbann_1_1lbann__callback__debug_a76ffcfb7aca5ccce132ceae60e267472}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+debug@{lbann\+::lbann\+\_\+callback\+\_\+debug}!copy@{copy}}
+\index{copy@{copy}!lbann\+::lbann\+\_\+callback\+\_\+debug@{lbann\+::lbann\+\_\+callback\+\_\+debug}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__debug}{lbann\+\_\+callback\+\_\+debug}$\ast$ lbann\+::lbann\+\_\+callback\+\_\+debug\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a9f545d1269a8c7af335625d049691f26}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 59 of file callback\+\_\+debug.\+hpp.
+
+
+\begin{DoxyCode}
+59 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1lbann__callback__debug_a775f2f407573526795a9b7ffc7bd3ded}{lbann\_callback\_debug}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__debug_a76ffcfb7aca5ccce132ceae60e267472_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__debug_ae9e892671f4959cfc915e1662afd6d60}\label{classlbann_1_1lbann__callback__debug_ae9e892671f4959cfc915e1662afd6d60}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+debug@{lbann\+::lbann\+\_\+callback\+\_\+debug}!name@{name}}
+\index{name@{name}!lbann\+::lbann\+\_\+callback\+\_\+debug@{lbann\+::lbann\+\_\+callback\+\_\+debug}}
+\subsubsection{\texorpdfstring{name()}{name()}}
+{\footnotesize\ttfamily std\+::string lbann\+::lbann\+\_\+callback\+\_\+debug\+::name (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Return this callback\textquotesingle{}s name. 
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a7522c7a14f1d6a1ea762cc2d7248eb3a}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 79 of file callback\+\_\+debug.\+hpp.
+
+
+\begin{DoxyCode}
+79 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"debug"}; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__debug_adaf60c995d2638a40d9c87a923c53865}\label{classlbann_1_1lbann__callback__debug_adaf60c995d2638a40d9c87a923c53865}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+debug@{lbann\+::lbann\+\_\+callback\+\_\+debug}!on\+\_\+backward\+\_\+prop\+\_\+begin@{on\+\_\+backward\+\_\+prop\+\_\+begin}}
+\index{on\+\_\+backward\+\_\+prop\+\_\+begin@{on\+\_\+backward\+\_\+prop\+\_\+begin}!lbann\+::lbann\+\_\+callback\+\_\+debug@{lbann\+::lbann\+\_\+callback\+\_\+debug}}
+\subsubsection{\texorpdfstring{on\+\_\+backward\+\_\+prop\+\_\+begin()}{on\_backward\_prop\_begin()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+debug\+::on\+\_\+backward\+\_\+prop\+\_\+begin (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m,  }\item[{\hyperlink{classlbann_1_1Layer}{Layer} $\ast$}]{l }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Print that backward prop for a layer is beginning. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_abeb1e486e259fd358332abf1e952f630}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 49 of file callback\+\_\+debug.\+cpp.
+
+
+\begin{DoxyCode}
+49                                                                          \{
+50   \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1lbann__callback__debug_acc66ab699534e42aa958148f1fb3fd6f}{m\_debug\_phase} == \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8afedb2d84cafe20862cb4399751a8a7e3}{execution\_mode::invalid} || 
+      \hyperlink{classlbann_1_1lbann__callback__debug_acc66ab699534e42aa958148f1fb3fd6f}{m\_debug\_phase} == m->get\_execution\_mode()) \{
+51     std::cout << \textcolor{stringliteral}{"["} << m->get\_comm()->get\_model\_rank() << \textcolor{stringliteral}{"."} << m->get\_comm()->get\_rank\_in\_model() << \textcolor{stringliteral}{"]
+       @"} << m->get\_cur\_epoch() << \textcolor{stringliteral}{"."} << m->get\_cur\_step() << \textcolor{stringliteral}{" Phase: "} << \hyperlink{base_8hpp_adeeaddd10bd31df0cae7cb0fcae45d5c}{\_to\_string}(m->
+      get\_execution\_mode()) << \textcolor{stringliteral}{" starting backward propagation for layer "} << l->get\_name() << \textcolor{stringliteral}{" type: "} << l->get\_type() << 
+      std::endl;
+52   \}
+53 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__debug_adaf60c995d2638a40d9c87a923c53865_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__debug_adaf60c995d2638a40d9c87a923c53865_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__debug_a19a8ec63f55fc86024c9ab8fe0836500}\label{classlbann_1_1lbann__callback__debug_a19a8ec63f55fc86024c9ab8fe0836500}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+debug@{lbann\+::lbann\+\_\+callback\+\_\+debug}!on\+\_\+backward\+\_\+prop\+\_\+end@{on\+\_\+backward\+\_\+prop\+\_\+end}}
+\index{on\+\_\+backward\+\_\+prop\+\_\+end@{on\+\_\+backward\+\_\+prop\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+debug@{lbann\+::lbann\+\_\+callback\+\_\+debug}}
+\subsubsection{\texorpdfstring{on\+\_\+backward\+\_\+prop\+\_\+end()}{on\_backward\_prop\_end()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+debug\+::on\+\_\+backward\+\_\+prop\+\_\+end (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m,  }\item[{\hyperlink{classlbann_1_1Layer}{Layer} $\ast$}]{l }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Print that backward prop for a layer has completed. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_aba03b59c056ace8094095c08e39b9ac4}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 55 of file callback\+\_\+debug.\+cpp.
+
+
+\begin{DoxyCode}
+55                                                                        \{
+56   \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1lbann__callback__debug_acc66ab699534e42aa958148f1fb3fd6f}{m\_debug\_phase} == \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8afedb2d84cafe20862cb4399751a8a7e3}{execution\_mode::invalid} || 
+      \hyperlink{classlbann_1_1lbann__callback__debug_acc66ab699534e42aa958148f1fb3fd6f}{m\_debug\_phase} == m->get\_execution\_mode()) \{
+57     std::cout << \textcolor{stringliteral}{"["} << m->get\_comm()->get\_model\_rank() << \textcolor{stringliteral}{"."} << m->get\_comm()->get\_rank\_in\_model() << \textcolor{stringliteral}{"]
+       @"} << m->get\_cur\_epoch() << \textcolor{stringliteral}{"."} << m->get\_cur\_step() << \textcolor{stringliteral}{" Phase: "} << \hyperlink{base_8hpp_adeeaddd10bd31df0cae7cb0fcae45d5c}{\_to\_string}(m->
+      get\_execution\_mode()) << \textcolor{stringliteral}{"   ending backward propagation for layer "} << l->get\_name() << \textcolor{stringliteral}{" type: "} << l->get\_type() << 
+      std::endl;
+58   \}
+59 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__debug_a19a8ec63f55fc86024c9ab8fe0836500_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__debug_a19a8ec63f55fc86024c9ab8fe0836500_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__debug_abab8f3b9c1db3d0ef3a715afc7b880db}\label{classlbann_1_1lbann__callback__debug_abab8f3b9c1db3d0ef3a715afc7b880db}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+debug@{lbann\+::lbann\+\_\+callback\+\_\+debug}!on\+\_\+batch\+\_\+begin@{on\+\_\+batch\+\_\+begin}}
+\index{on\+\_\+batch\+\_\+begin@{on\+\_\+batch\+\_\+begin}!lbann\+::lbann\+\_\+callback\+\_\+debug@{lbann\+::lbann\+\_\+callback\+\_\+debug}}
+\subsubsection{\texorpdfstring{on\+\_\+batch\+\_\+begin()}{on\_batch\_begin()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+debug\+::on\+\_\+batch\+\_\+begin (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Print that a batch is being started. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_a9ecf4e44cd4021cdd687de14c850cc83}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 31 of file callback\+\_\+debug.\+cpp.
+
+
+\begin{DoxyCode}
+31                                                        \{
+32   \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1lbann__callback__debug_acc66ab699534e42aa958148f1fb3fd6f}{m\_debug\_phase} == \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8afedb2d84cafe20862cb4399751a8a7e3}{execution\_mode::invalid} || 
+      \hyperlink{classlbann_1_1lbann__callback__debug_acc66ab699534e42aa958148f1fb3fd6f}{m\_debug\_phase} == m->get\_execution\_mode()) \{
+33     std::cout << \textcolor{stringliteral}{"Phase: "} << \hyperlink{base_8hpp_adeeaddd10bd31df0cae7cb0fcae45d5c}{\_to\_string}(m->get\_execution\_mode()) << \textcolor{stringliteral}{" starting batch"} << 
+      std::endl;
+34   \}
+35 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__debug_abab8f3b9c1db3d0ef3a715afc7b880db_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__debug_abab8f3b9c1db3d0ef3a715afc7b880db_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__debug_ac364fb6e77dc163e146af77bb670d74b}\label{classlbann_1_1lbann__callback__debug_ac364fb6e77dc163e146af77bb670d74b}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+debug@{lbann\+::lbann\+\_\+callback\+\_\+debug}!on\+\_\+batch\+\_\+evaluate\+\_\+begin@{on\+\_\+batch\+\_\+evaluate\+\_\+begin}}
+\index{on\+\_\+batch\+\_\+evaluate\+\_\+begin@{on\+\_\+batch\+\_\+evaluate\+\_\+begin}!lbann\+::lbann\+\_\+callback\+\_\+debug@{lbann\+::lbann\+\_\+callback\+\_\+debug}}
+\subsubsection{\texorpdfstring{on\+\_\+batch\+\_\+evaluate\+\_\+begin()}{on\_batch\_evaluate\_begin()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+debug\+::on\+\_\+batch\+\_\+evaluate\+\_\+begin (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Print that an evaluation batch is being started. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_a3462e54126adbd0082c22c98d8de5468}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 64 of file callback\+\_\+debug.\+cpp.
+
+
+\begin{DoxyCode}
+64                                                                 \{
+65   \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1lbann__callback__debug_acc66ab699534e42aa958148f1fb3fd6f}{m\_debug\_phase} == \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8afedb2d84cafe20862cb4399751a8a7e3}{execution\_mode::invalid} || 
+      \hyperlink{classlbann_1_1lbann__callback__debug_acc66ab699534e42aa958148f1fb3fd6f}{m\_debug\_phase} == m->get\_execution\_mode()) \{
+66     int64\_t step;
+67     \textcolor{keywordflow}{switch}(m->get\_execution\_mode()) \{
+68     \textcolor{keywordflow}{case} \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation}:
+69       step = m->get\_cur\_validation\_step();
+70       \textcolor{keywordflow}{break};
+71     \textcolor{keywordflow}{case} \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing}:
+72       step = m->get\_cur\_testing\_step();
+73       \textcolor{keywordflow}{break};
+74     \textcolor{keywordflow}{default}:
+75       \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"Illegal execution mode in evaluate forward prop function"});
+76     \}
+77     std::cout << \textcolor{stringliteral}{"["} << m->get\_comm()->get\_model\_rank() << \textcolor{stringliteral}{"."} << m->get\_comm()->get\_rank\_in\_model() << \textcolor{stringliteral}{"]
+       @"} << 0 << \textcolor{stringliteral}{"."} << step << \textcolor{stringliteral}{" Phase: "} << \hyperlink{base_8hpp_adeeaddd10bd31df0cae7cb0fcae45d5c}{\_to\_string}(m->get\_execution\_mode()) << \textcolor{stringliteral}{" starting batch"} 
+      << std::endl;
+78   \}
+79 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__debug_ac364fb6e77dc163e146af77bb670d74b_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__debug_ac364fb6e77dc163e146af77bb670d74b_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__debug_a07a02eb525ebe9c06b361c48fc2977c8}\label{classlbann_1_1lbann__callback__debug_a07a02eb525ebe9c06b361c48fc2977c8}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+debug@{lbann\+::lbann\+\_\+callback\+\_\+debug}!on\+\_\+batch\+\_\+evaluate\+\_\+end@{on\+\_\+batch\+\_\+evaluate\+\_\+end}}
+\index{on\+\_\+batch\+\_\+evaluate\+\_\+end@{on\+\_\+batch\+\_\+evaluate\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+debug@{lbann\+::lbann\+\_\+callback\+\_\+debug}}
+\subsubsection{\texorpdfstring{on\+\_\+batch\+\_\+evaluate\+\_\+end()}{on\_batch\_evaluate\_end()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+debug\+::on\+\_\+batch\+\_\+evaluate\+\_\+end (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Print that an evaluation batch has completed. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_ad10891b8ab3de74ee1a70e6255e7d58a}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 81 of file callback\+\_\+debug.\+cpp.
+
+
+\begin{DoxyCode}
+81                                                               \{
+82   \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1lbann__callback__debug_acc66ab699534e42aa958148f1fb3fd6f}{m\_debug\_phase} == \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8afedb2d84cafe20862cb4399751a8a7e3}{execution\_mode::invalid} || 
+      \hyperlink{classlbann_1_1lbann__callback__debug_acc66ab699534e42aa958148f1fb3fd6f}{m\_debug\_phase} == m->get\_execution\_mode()) \{
+83     int64\_t step;
+84     \textcolor{keywordflow}{switch}(m->get\_execution\_mode()) \{
+85     \textcolor{keywordflow}{case} \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation}:
+86       step = m->get\_cur\_validation\_step();
+87       \textcolor{keywordflow}{break};
+88     \textcolor{keywordflow}{case} \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing}:
+89       step = m->get\_cur\_testing\_step();
+90       \textcolor{keywordflow}{break};
+91     \textcolor{keywordflow}{default}:
+92       \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"Illegal execution mode in evaluate forward prop function"});
+93     \}
+94     std::cout << \textcolor{stringliteral}{"["} << m->get\_comm()->get\_model\_rank() << \textcolor{stringliteral}{"."} << m->get\_comm()->get\_rank\_in\_model() << \textcolor{stringliteral}{"]
+       @"} << 0 << \textcolor{stringliteral}{"."} << step << \textcolor{stringliteral}{" Phase: "} << \hyperlink{base_8hpp_adeeaddd10bd31df0cae7cb0fcae45d5c}{\_to\_string}(m->get\_execution\_mode()) << \textcolor{stringliteral}{" ending batch"} << 
+      std::endl;
+95   \}
+96 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__debug_a07a02eb525ebe9c06b361c48fc2977c8_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__debug_a07a02eb525ebe9c06b361c48fc2977c8_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__debug_a83fe16882119a54afe59ba616fe1722a}\label{classlbann_1_1lbann__callback__debug_a83fe16882119a54afe59ba616fe1722a}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+debug@{lbann\+::lbann\+\_\+callback\+\_\+debug}!on\+\_\+evaluate\+\_\+forward\+\_\+prop\+\_\+begin@{on\+\_\+evaluate\+\_\+forward\+\_\+prop\+\_\+begin}}
+\index{on\+\_\+evaluate\+\_\+forward\+\_\+prop\+\_\+begin@{on\+\_\+evaluate\+\_\+forward\+\_\+prop\+\_\+begin}!lbann\+::lbann\+\_\+callback\+\_\+debug@{lbann\+::lbann\+\_\+callback\+\_\+debug}}
+\subsubsection{\texorpdfstring{on\+\_\+evaluate\+\_\+forward\+\_\+prop\+\_\+begin()}{on\_evaluate\_forward\_prop\_begin()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+debug\+::on\+\_\+evaluate\+\_\+forward\+\_\+prop\+\_\+begin (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m,  }\item[{\hyperlink{classlbann_1_1Layer}{Layer} $\ast$}]{l }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Print that an evaluation forward prop is beginning. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_a044174864e4981a1dac093d58e8c4d6c}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 98 of file callback\+\_\+debug.\+cpp.
+
+
+\begin{DoxyCode}
+98                                                                                  \{
+99   \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1lbann__callback__debug_acc66ab699534e42aa958148f1fb3fd6f}{m\_debug\_phase} == \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8afedb2d84cafe20862cb4399751a8a7e3}{execution\_mode::invalid} || 
+      \hyperlink{classlbann_1_1lbann__callback__debug_acc66ab699534e42aa958148f1fb3fd6f}{m\_debug\_phase} == m->get\_execution\_mode()) \{
+100     int64\_t step;
+101     \textcolor{keywordflow}{switch}(m->get\_execution\_mode()) \{
+102     \textcolor{keywordflow}{case} \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation}:
+103       step = m->get\_cur\_validation\_step();
+104       \textcolor{keywordflow}{break};
+105     \textcolor{keywordflow}{case} \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing}:
+106       step = m->get\_cur\_testing\_step();
+107       \textcolor{keywordflow}{break};
+108     \textcolor{keywordflow}{default}:
+109       \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"Illegal execution mode in evaluate forward prop function"});
+110     \}
+111     std::cout << \textcolor{stringliteral}{"["} << m->get\_comm()->get\_model\_rank() << \textcolor{stringliteral}{"."} << m->get\_comm()->get\_rank\_in\_model() << \textcolor{stringliteral}{"]
+       @"} << 0 << \textcolor{stringliteral}{"."} << step << \textcolor{stringliteral}{" Phase: "} << \hyperlink{base_8hpp_adeeaddd10bd31df0cae7cb0fcae45d5c}{\_to\_string}(m->get\_execution\_mode()) << \textcolor{stringliteral}{" starting forward
+       propagation for layer "} << l->get\_name() << \textcolor{stringliteral}{" type: "} << l->get\_type() << std::endl;
+112   \}
+113 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__debug_a83fe16882119a54afe59ba616fe1722a_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__debug_a83fe16882119a54afe59ba616fe1722a_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__debug_a19639823e288e7599947c0abfaa6d1f4}\label{classlbann_1_1lbann__callback__debug_a19639823e288e7599947c0abfaa6d1f4}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+debug@{lbann\+::lbann\+\_\+callback\+\_\+debug}!on\+\_\+evaluate\+\_\+forward\+\_\+prop\+\_\+end@{on\+\_\+evaluate\+\_\+forward\+\_\+prop\+\_\+end}}
+\index{on\+\_\+evaluate\+\_\+forward\+\_\+prop\+\_\+end@{on\+\_\+evaluate\+\_\+forward\+\_\+prop\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+debug@{lbann\+::lbann\+\_\+callback\+\_\+debug}}
+\subsubsection{\texorpdfstring{on\+\_\+evaluate\+\_\+forward\+\_\+prop\+\_\+end()}{on\_evaluate\_forward\_prop\_end()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+debug\+::on\+\_\+evaluate\+\_\+forward\+\_\+prop\+\_\+end (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m,  }\item[{\hyperlink{classlbann_1_1Layer}{Layer} $\ast$}]{l }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Print that an evaluation forward prop has completed. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_ae23c5a61b81dbdfbd79736ac2b6035aa}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 115 of file callback\+\_\+debug.\+cpp.
+
+
+\begin{DoxyCode}
+115                                                                                \{
+116   \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1lbann__callback__debug_acc66ab699534e42aa958148f1fb3fd6f}{m\_debug\_phase} == \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8afedb2d84cafe20862cb4399751a8a7e3}{execution\_mode::invalid} || 
+      \hyperlink{classlbann_1_1lbann__callback__debug_acc66ab699534e42aa958148f1fb3fd6f}{m\_debug\_phase} == m->get\_execution\_mode()) \{
+117     int64\_t step;
+118     \textcolor{keywordflow}{switch}(m->get\_execution\_mode()) \{
+119     \textcolor{keywordflow}{case} \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation}:
+120       step = m->get\_cur\_validation\_step();
+121       \textcolor{keywordflow}{break};
+122     \textcolor{keywordflow}{case} \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing}:
+123       step = m->get\_cur\_testing\_step();
+124       \textcolor{keywordflow}{break};
+125     \textcolor{keywordflow}{default}:
+126       \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"Illegal execution mode in evaluate forward prop function"});
+127     \}
+128     std::cout << \textcolor{stringliteral}{"["} << m->get\_comm()->get\_model\_rank() << \textcolor{stringliteral}{"."} << m->get\_comm()->get\_rank\_in\_model() << \textcolor{stringliteral}{"]
+       @"} << 0 << \textcolor{stringliteral}{"."} << step << \textcolor{stringliteral}{" Phase: "} << \hyperlink{base_8hpp_adeeaddd10bd31df0cae7cb0fcae45d5c}{\_to\_string}(m->get\_execution\_mode()) << \textcolor{stringliteral}{"   ending forward
+       propagation for layer "} << l->get\_name() << \textcolor{stringliteral}{" type: "} << l->get\_type() << std::endl;
+129   \}
+130 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__debug_a19639823e288e7599947c0abfaa6d1f4_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__debug_a19639823e288e7599947c0abfaa6d1f4_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__debug_ac3e88ef582a7e3949b6e016ca2b17459}\label{classlbann_1_1lbann__callback__debug_ac3e88ef582a7e3949b6e016ca2b17459}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+debug@{lbann\+::lbann\+\_\+callback\+\_\+debug}!on\+\_\+forward\+\_\+prop\+\_\+begin@{on\+\_\+forward\+\_\+prop\+\_\+begin}}
+\index{on\+\_\+forward\+\_\+prop\+\_\+begin@{on\+\_\+forward\+\_\+prop\+\_\+begin}!lbann\+::lbann\+\_\+callback\+\_\+debug@{lbann\+::lbann\+\_\+callback\+\_\+debug}}
+\subsubsection{\texorpdfstring{on\+\_\+forward\+\_\+prop\+\_\+begin()}{on\_forward\_prop\_begin()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+debug\+::on\+\_\+forward\+\_\+prop\+\_\+begin (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m,  }\item[{\hyperlink{classlbann_1_1Layer}{Layer} $\ast$}]{l }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Print that forward prop for a layer is beginning. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_ab96adb1d77180e00fdd668cd381323fd}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 37 of file callback\+\_\+debug.\+cpp.
+
+
+\begin{DoxyCode}
+37                                                                         \{
+38   \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1lbann__callback__debug_acc66ab699534e42aa958148f1fb3fd6f}{m\_debug\_phase} == \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8afedb2d84cafe20862cb4399751a8a7e3}{execution\_mode::invalid} || 
+      \hyperlink{classlbann_1_1lbann__callback__debug_acc66ab699534e42aa958148f1fb3fd6f}{m\_debug\_phase} == m->get\_execution\_mode()) \{
+39     std::cout << \textcolor{stringliteral}{"["} << m->get\_comm()->get\_model\_rank() << \textcolor{stringliteral}{"."} << m->get\_comm()->get\_rank\_in\_model() << \textcolor{stringliteral}{"]
+       @"} << m->get\_cur\_epoch() << \textcolor{stringliteral}{"."} << m->get\_cur\_step() << \textcolor{stringliteral}{" Phase: "} << \hyperlink{base_8hpp_adeeaddd10bd31df0cae7cb0fcae45d5c}{\_to\_string}(m->
+      get\_execution\_mode()) << \textcolor{stringliteral}{" starting forward propagation for layer "} << l->get\_name() << \textcolor{stringliteral}{" type: "} << l->get\_type() << 
+      std::endl;
+40   \}
+41 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__debug_ac3e88ef582a7e3949b6e016ca2b17459_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__debug_ac3e88ef582a7e3949b6e016ca2b17459_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__debug_acb3d05be6c600f4d61957ccf10606ddc}\label{classlbann_1_1lbann__callback__debug_acb3d05be6c600f4d61957ccf10606ddc}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+debug@{lbann\+::lbann\+\_\+callback\+\_\+debug}!on\+\_\+forward\+\_\+prop\+\_\+end@{on\+\_\+forward\+\_\+prop\+\_\+end}}
+\index{on\+\_\+forward\+\_\+prop\+\_\+end@{on\+\_\+forward\+\_\+prop\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+debug@{lbann\+::lbann\+\_\+callback\+\_\+debug}}
+\subsubsection{\texorpdfstring{on\+\_\+forward\+\_\+prop\+\_\+end()}{on\_forward\_prop\_end()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+debug\+::on\+\_\+forward\+\_\+prop\+\_\+end (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m,  }\item[{\hyperlink{classlbann_1_1Layer}{Layer} $\ast$}]{l }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Print that forward prop for a layer has completed. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_a5eff0a59fbce98a981d9cdd0547a3ad5}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 43 of file callback\+\_\+debug.\+cpp.
+
+
+\begin{DoxyCode}
+43                                                                       \{
+44   \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1lbann__callback__debug_acc66ab699534e42aa958148f1fb3fd6f}{m\_debug\_phase} == \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8afedb2d84cafe20862cb4399751a8a7e3}{execution\_mode::invalid} || 
+      \hyperlink{classlbann_1_1lbann__callback__debug_acc66ab699534e42aa958148f1fb3fd6f}{m\_debug\_phase} == m->get\_execution\_mode()) \{
+45     std::cout << \textcolor{stringliteral}{"["} << m->get\_comm()->get\_model\_rank() << \textcolor{stringliteral}{"."} << m->get\_comm()->get\_rank\_in\_model() << \textcolor{stringliteral}{"]
+       @"} << m->get\_cur\_epoch() << \textcolor{stringliteral}{"."} << m->get\_cur\_step() << \textcolor{stringliteral}{" Phase: "} << \hyperlink{base_8hpp_adeeaddd10bd31df0cae7cb0fcae45d5c}{\_to\_string}(m->
+      get\_execution\_mode()) << \textcolor{stringliteral}{"   ending forward propagation for layer "} << l->get\_name() << \textcolor{stringliteral}{" type: "} << l->get\_type() << 
+      std::endl;
+46   \}
+47 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__debug_acb3d05be6c600f4d61957ccf10606ddc_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__debug_acb3d05be6c600f4d61957ccf10606ddc_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__debug_ad30a57ba6ec0b7e479345647651a8e83}\label{classlbann_1_1lbann__callback__debug_ad30a57ba6ec0b7e479345647651a8e83}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+debug@{lbann\+::lbann\+\_\+callback\+\_\+debug}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::lbann\+\_\+callback\+\_\+debug@{lbann\+::lbann\+\_\+callback\+\_\+debug}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__debug}{lbann\+\_\+callback\+\_\+debug}\& lbann\+::lbann\+\_\+callback\+\_\+debug\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__debug}{lbann\+\_\+callback\+\_\+debug} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__debug_ad30a57ba6ec0b7e479345647651a8e83_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__debug_acc66ab699534e42aa958148f1fb3fd6f}\label{classlbann_1_1lbann__callback__debug_acc66ab699534e42aa958148f1fb3fd6f}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+debug@{lbann\+::lbann\+\_\+callback\+\_\+debug}!m\+\_\+debug\+\_\+phase@{m\+\_\+debug\+\_\+phase}}
+\index{m\+\_\+debug\+\_\+phase@{m\+\_\+debug\+\_\+phase}!lbann\+::lbann\+\_\+callback\+\_\+debug@{lbann\+::lbann\+\_\+callback\+\_\+debug}}
+\subsubsection{\texorpdfstring{m\+\_\+debug\+\_\+phase}{m\_debug\_phase}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode} lbann\+::lbann\+\_\+callback\+\_\+debug\+::m\+\_\+debug\+\_\+phase\hspace{0.3cm}{\ttfamily [private]}}
+
+The phase to debug. 
+
+Definition at line 82 of file callback\+\_\+debug.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/callbacks/\hyperlink{callback__debug_8hpp}{callback\+\_\+debug.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/callbacks/\hyperlink{callback__debug_8cpp}{callback\+\_\+debug.\+cpp}\end{DoxyCompactItemize}

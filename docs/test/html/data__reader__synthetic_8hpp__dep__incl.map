@@ -1,0 +1,21 @@
+<map id="/Users/mckinney27/doxy&#45;testbed/lbann/include/lbann/data_readers/data_reader_synthetic.hpp" name="/Users/mckinney27/doxy&#45;testbed/lbann/include/lbann/data_readers/data_reader_synthetic.hpp">
+<area shape="rect" id="node2" href="$data__reader__synthetic_8cpp.html" title="/Users/mckinney27/doxy\l&#45;testbed/lbann/src/data\l_readers/data_reader_synthetic.cpp" alt="" coords="5,119,240,171"/>
+<area shape="rect" id="node3" href="$lbann_8hpp.html" title="/Users/mckinney27/doxy\l&#45;testbed/lbann/include\l/lbann/lbann.hpp" alt="" coords="265,119,431,171"/>
+<area shape="rect" id="node4" href="$proto__common_8cpp.html" title="/Users/mckinney27/doxy\l&#45;testbed/lbann/src/proto\l/proto_common.cpp" alt="" coords="317,439,483,491"/>
+<area shape="rect" id="node5" href="$params_8hpp.html" title="/Users/mckinney27/doxy\l&#45;testbed/lbann/include\l/lbann/params.hpp" alt="" coords="265,219,431,271"/>
+<area shape="rect" id="node7" href="$proto__common_8hpp.html" title="/Users/mckinney27/doxy\l&#45;testbed/lbann/include\l/lbann/proto/proto_common.hpp" alt="" coords="683,219,893,271"/>
+<area shape="rect" id="node20" href="$protobuf__utils_8hpp.html" title="/Users/mckinney27/doxy\l&#45;testbed/lbann/include\l/lbann/utils/protobuf_utils.hpp" alt="" coords="457,219,652,271"/>
+<area shape="rect" id="node6" href="$params_8cpp.html" title="/Users/mckinney27/doxy\l&#45;testbed/lbann/src/params.cpp" alt="" coords="248,332,448,371"/>
+<area shape="rect" id="node8" href="$protobuf__utils_8cpp.html" title="/Users/mckinney27/doxy\l&#45;testbed/lbann/src/utils\l/protobuf_utils.cpp" alt="" coords="473,325,639,377"/>
+<area shape="rect" id="node9" href="$factories_8hpp.html" title="/Users/mckinney27/doxy\l&#45;testbed/lbann/include\l/lbann/proto/factories.hpp" alt="" coords="1297,325,1469,377"/>
+<area shape="rect" id="node18" href="$init__image__data__readers_8hpp.html" title="/Users/mckinney27/doxy\l&#45;testbed/lbann/include\l/lbann/proto/init_image\l_data_readers.hpp" alt="" coords="713,319,879,384"/>
+<area shape="rect" id="node10" href="$callback__factory_8cpp.html" title="/Users/mckinney27/doxy\l&#45;testbed/lbann/src/proto\l/factories/callback_factory.cpp" alt="" coords="2054,439,2253,491"/>
+<area shape="rect" id="node11" href="$layer__factory_8cpp.html" title="/Users/mckinney27/doxy\l&#45;testbed/lbann/src/proto\l/factories/layer_factory.cpp" alt="" coords="2277,439,2457,491"/>
+<area shape="rect" id="node12" href="$layer__graph__factory_8cpp.html" title="/Users/mckinney27/doxy\l&#45;testbed/lbann/src/proto\l/factories/layer_graph_factory.cpp" alt="" coords="728,439,949,491"/>
+<area shape="rect" id="node13" href="$metric__factory_8cpp.html" title="/Users/mckinney27/doxy\l&#45;testbed/lbann/src/proto\l/factories/metric_factory.cpp" alt="" coords="973,439,1160,491"/>
+<area shape="rect" id="node14" href="$model__factory_8cpp.html" title="/Users/mckinney27/doxy\l&#45;testbed/lbann/src/proto\l/factories/model_factory.cpp" alt="" coords="1184,439,1371,491"/>
+<area shape="rect" id="node15" href="$objective__function__factory_8cpp.html" title="/Users/mckinney27/doxy\l&#45;testbed/lbann/src/proto\l/factories/objective_function\l_factory.cpp" alt="" coords="1395,432,1581,497"/>
+<area shape="rect" id="node16" href="$optimizer__factory_8cpp.html" title="/Users/mckinney27/doxy\l&#45;testbed/lbann/src/proto\l/factories/optimizer_factory.cpp" alt="" coords="1606,439,1811,491"/>
+<area shape="rect" id="node17" href="$weights__factory_8cpp.html" title="/Users/mckinney27/doxy\l&#45;testbed/lbann/src/proto\l/factories/weights_factory.cpp" alt="" coords="1834,439,2030,491"/>
+<area shape="rect" id="node19" href="$init__image__data__readers_8cpp.html" title="/Users/mckinney27/doxy\l&#45;testbed/lbann/src/proto\l/init_image_data_readers.cpp" alt="" coords="507,439,704,491"/>
+</map>

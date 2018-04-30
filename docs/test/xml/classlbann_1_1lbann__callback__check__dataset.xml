@@ -1,0 +1,413 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1lbann__callback__check__dataset" kind="class" language="C++" prot="public">
+    <compoundname>lbann::lbann_callback_check_dataset</compoundname>
+    <basecompoundref refid="classlbann_1_1lbann__callback" prot="public" virt="non-virtual">lbann::lbann_callback</basecompoundref>
+    <includes refid="callback__check__dataset_8hpp" local="no">callback_check_dataset.hpp</includes>
+      <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="classlbann_1_1lbann__callback__check__dataset_1afb8f8ae1ddbd07bf816ee9e8fa84ca8f" prot="private" static="no" mutable="no">
+        <type>std::string</type>
+        <definition>std::string lbann::lbann_callback_check_dataset::m_basename</definition>
+        <argsstring></argsstring>
+        <name>m_basename</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Basename for writing files. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_check_dataset.hpp" line="67" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_check_dataset.hpp" bodystart="67" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1lbann__callback__check__dataset_1a22d16efa2ec47759766f2f7478b11059" prot="private" static="no" mutable="no">
+        <type>std::set&lt; long &gt;</type>
+        <definition>std::set&lt;long&gt; lbann::lbann_callback_check_dataset::training_set</definition>
+        <argsstring></argsstring>
+        <name>training_set</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_check_dataset.hpp" line="69" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_check_dataset.hpp" bodystart="69" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__callback__check__dataset_1acedc222fc108c156d089f1baa8c040af" compoundref="callback__check__dataset_8cpp" startline="60" endline="62">on_forward_prop_end</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__check__dataset_1a8cbc105d8bd9d3b493ef34de7c387929" compoundref="callback__check__dataset_8cpp" startline="77" endline="143">on_epoch_end</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1lbann__callback__check__dataset_1aab6d04a40d20d1b0bf70f9bfdd85f84c" prot="private" static="no" mutable="no">
+        <type>std::set&lt; long &gt;</type>
+        <definition>std::set&lt;long&gt; lbann::lbann_callback_check_dataset::validation_set</definition>
+        <argsstring></argsstring>
+        <name>validation_set</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_check_dataset.hpp" line="70" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_check_dataset.hpp" bodystart="70" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__callback__check__dataset_1a1223f07081d495d971cdf205f892c50d" compoundref="callback__check__dataset_8cpp" startline="64" endline="75">on_evaluate_forward_prop_end</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__check__dataset_1a9bcb1368152c621c4484136ec8eecff8" compoundref="callback__check__dataset_8cpp" startline="145" endline="155">on_validation_end</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1lbann__callback__check__dataset_1a15445849bae3621a3a4364b3ebbbc7f3" prot="private" static="no" mutable="no">
+        <type>std::set&lt; long &gt;</type>
+        <definition>std::set&lt;long&gt; lbann::lbann_callback_check_dataset::testing_set</definition>
+        <argsstring></argsstring>
+        <name>testing_set</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_check_dataset.hpp" line="71" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_check_dataset.hpp" bodystart="71" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__callback__check__dataset_1a1223f07081d495d971cdf205f892c50d" compoundref="callback__check__dataset_8cpp" startline="64" endline="75">on_evaluate_forward_prop_end</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__check__dataset_1afe1fda5a6bfe632dc680230cc56dff3e" compoundref="callback__check__dataset_8cpp" startline="157" endline="160">on_test_end</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__check__dataset_1a79beae9767b50f7141bc5209ef5d696f" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>lbann::lbann_callback_check_dataset::lbann_callback_check_dataset</definition>
+        <argsstring>()</argsstring>
+        <name>lbann_callback_check_dataset</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>basename</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The basename for writing files. </para></parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_check_dataset.hpp" line="47" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_check_dataset.hpp" bodystart="47" bodyend="48"/>
+        <references refid="classlbann_1_1lbann__callback__check__dataset_1a2b9ab1194196d9edc76eb89bc81257b8">operator=</references>
+        <referencedby refid="classlbann_1_1lbann__callback__check__dataset_1a8be592f1687aea003986c874dc5f7516" compoundref="callback__check__dataset_8hpp" startline="53" endline="55">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__check__dataset_1a453a843f6506051881b334760817467f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::lbann_callback_check_dataset::lbann_callback_check_dataset</definition>
+        <argsstring>(const lbann_callback_check_dataset &amp;)=default</argsstring>
+        <name>lbann_callback_check_dataset</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1lbann__callback__check__dataset" kindref="compound">lbann_callback_check_dataset</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_check_dataset.hpp" line="49" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__check__dataset_1a2b9ab1194196d9edc76eb89bc81257b8" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classlbann_1_1lbann__callback__check__dataset" kindref="compound">lbann_callback_check_dataset</ref> &amp;</type>
+        <definition>lbann_callback_check_dataset&amp; lbann::lbann_callback_check_dataset::operator=</definition>
+        <argsstring>(const lbann_callback_check_dataset &amp;)=default</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1lbann__callback__check__dataset" kindref="compound">lbann_callback_check_dataset</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_check_dataset.hpp" line="51" column="1"/>
+        <referencedby refid="classlbann_1_1lbann__callback__check__dataset_1a79beae9767b50f7141bc5209ef5d696f" compoundref="callback__check__dataset_8hpp" startline="47" endline="48">lbann_callback_check_dataset</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__check__dataset_1a8be592f1687aea003986c874dc5f7516" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type><ref refid="classlbann_1_1lbann__callback__check__dataset" kindref="compound">lbann_callback_check_dataset</ref> *</type>
+        <definition>lbann_callback_check_dataset* lbann::lbann_callback_check_dataset::copy</definition>
+        <argsstring>() const override</argsstring>
+        <name>copy</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1a9f545d1269a8c7af335625d049691f26">copy</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_check_dataset.hpp" line="53" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_check_dataset.hpp" bodystart="53" bodyend="55"/>
+        <references refid="classlbann_1_1lbann__callback__check__dataset_1a79beae9767b50f7141bc5209ef5d696f" compoundref="callback__check__dataset_8hpp" startline="47" endline="48">lbann_callback_check_dataset</references>
+        <references refid="classlbann_1_1lbann__callback__check__dataset_1acedc222fc108c156d089f1baa8c040af" compoundref="callback__check__dataset_8cpp" startline="60" endline="62">on_forward_prop_end</references>
+        <references refid="classlbann_1_1lbann__callback__check__dataset_1a1223f07081d495d971cdf205f892c50d" compoundref="callback__check__dataset_8cpp" startline="64" endline="75">on_evaluate_forward_prop_end</references>
+        <references refid="classlbann_1_1lbann__callback__check__dataset_1a8cbc105d8bd9d3b493ef34de7c387929" compoundref="callback__check__dataset_8cpp" startline="77" endline="143">on_epoch_end</references>
+        <references refid="classlbann_1_1lbann__callback__check__dataset_1a9bcb1368152c621c4484136ec8eecff8" compoundref="callback__check__dataset_8cpp" startline="145" endline="155">on_validation_end</references>
+        <references refid="classlbann_1_1lbann__callback__check__dataset_1afe1fda5a6bfe632dc680230cc56dff3e" compoundref="callback__check__dataset_8cpp" startline="157" endline="160">on_test_end</references>
+        <references refid="classlbann_1_1lbann__callback__check__dataset_1a17aff74d9926e07bfa1f090ad39bb4b6" compoundref="callback__check__dataset_8cpp" startline="35" endline="58">add_to_set</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__check__dataset_1acedc222fc108c156d089f1baa8c040af" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_check_dataset::on_forward_prop_end</definition>
+        <argsstring>(model *m, Layer *l) override</argsstring>
+        <name>on_forward_prop_end</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1a5eff0a59fbce98a981d9cdd0547a3ad5">on_forward_prop_end</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+          <declname>m</declname>
+        </param>
+        <param>
+          <type><ref refid="classlbann_1_1Layer" kindref="compound">Layer</ref> *</type>
+          <declname>l</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Called when a layer ends forward propagation. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_check_dataset.hpp" line="56" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_check_dataset.cpp" bodystart="60" bodyend="62"/>
+        <references refid="classlbann_1_1lbann__callback__check__dataset_1a17aff74d9926e07bfa1f090ad39bb4b6" compoundref="callback__check__dataset_8cpp" startline="35" endline="58">add_to_set</references>
+        <references refid="classlbann_1_1model_1ad0cdcba177434b52dc9c4a97be183a92" compoundref="model_8hpp" startline="132" endline="134">lbann::model::get_cur_step</references>
+        <references refid="classlbann_1_1lbann__callback__check__dataset_1a22d16efa2ec47759766f2f7478b11059" compoundref="callback__check__dataset_8hpp" startline="69">training_set</references>
+        <referencedby refid="classlbann_1_1lbann__callback__check__dataset_1a8be592f1687aea003986c874dc5f7516" compoundref="callback__check__dataset_8hpp" startline="53" endline="55">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__check__dataset_1a1223f07081d495d971cdf205f892c50d" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_check_dataset::on_evaluate_forward_prop_end</definition>
+        <argsstring>(model *m, Layer *l) override</argsstring>
+        <name>on_evaluate_forward_prop_end</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1ae23c5a61b81dbdfbd79736ac2b6035aa">on_evaluate_forward_prop_end</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+          <declname>m</declname>
+        </param>
+        <param>
+          <type><ref refid="classlbann_1_1Layer" kindref="compound">Layer</ref> *</type>
+          <declname>l</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Called when a layer ends forward propagation for evaluation (validation / testing). </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_check_dataset.hpp" line="57" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_check_dataset.cpp" bodystart="64" bodyend="75"/>
+        <references refid="classlbann_1_1model_1addb40597cf29aa6d31b6a7d09ef48608" compoundref="model_8hpp" startline="149" endline="151">lbann::model::get_execution_mode</references>
+        <references refid="base_8hpp_1a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0">validation</references>
+        <references refid="classlbann_1_1lbann__callback__check__dataset_1a17aff74d9926e07bfa1f090ad39bb4b6" compoundref="callback__check__dataset_8cpp" startline="35" endline="58">add_to_set</references>
+        <references refid="classlbann_1_1model_1a680ef8ecf644dbc821b5e7488d3bd2c4" compoundref="model_8hpp" startline="137" endline="139">lbann::model::get_cur_validation_step</references>
+        <references refid="classlbann_1_1lbann__callback__check__dataset_1aab6d04a40d20d1b0bf70f9bfdd85f84c" compoundref="callback__check__dataset_8hpp" startline="70">validation_set</references>
+        <references refid="base_8hpp_1a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575">testing</references>
+        <references refid="classlbann_1_1model_1a4040b1f06a2a5d5187a72c06060124c1" compoundref="model_8hpp" startline="141" endline="143">lbann::model::get_cur_testing_step</references>
+        <references refid="classlbann_1_1lbann__callback__check__dataset_1a15445849bae3621a3a4364b3ebbbc7f3" compoundref="callback__check__dataset_8hpp" startline="71">testing_set</references>
+        <referencedby refid="classlbann_1_1lbann__callback__check__dataset_1a8be592f1687aea003986c874dc5f7516" compoundref="callback__check__dataset_8hpp" startline="53" endline="55">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__check__dataset_1a8cbc105d8bd9d3b493ef34de7c387929" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_check_dataset::on_epoch_end</definition>
+        <argsstring>(model *m) override</argsstring>
+        <name>on_epoch_end</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1a1fc71110e7f754bf73c9e0f344a448a5">on_epoch_end</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Called immediate after the end of each epoch. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_check_dataset.hpp" line="58" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_check_dataset.cpp" bodystart="77" bodyend="143"/>
+        <references refid="file__io_8cpp_1ab048c6f9fcbcfaa57ce68b00263dbebe" compoundref="file__io_8cpp" startline="44">comm</references>
+        <references refid="classlbann_1_1model_1a9e1cfe449d2f4858a32994f6be0042fb" compoundref="model_8hpp" startline="123" endline="125">lbann::model::get_comm</references>
+        <references refid="classlbann_1_1lbann__comm_1a789453454468a3b70de768537c50ca52" compoundref="comm_8hpp" startline="116" endline="118">lbann::lbann_comm::get_rank_in_model</references>
+        <references refid="classlbann_1_1lbann__callback__check__dataset_1a22d16efa2ec47759766f2f7478b11059" compoundref="callback__check__dataset_8hpp" startline="69">training_set</references>
+        <references refid="classlbann_1_1model_1ae14f4b2cc8882b3739d4aeb25d9e73c9" compoundref="model_8hpp" startline="114" endline="114">lbann::model::get_layers</references>
+        <references refid="base_8hpp_1a80b1d707117e968a6951b7222e4b2b87" compoundref="base_8hpp" startline="154">LBANN_ERROR</references>
+        <references refid="classlbann_1_1lbann__comm_1a5755dfdfc6377b4cae5ef8f7819e17de" compoundref="comm_8hpp" startline="156" endline="158">lbann::lbann_comm::get_procs_per_model</references>
+        <references refid="classlbann_1_1lbann__comm_1ad8a5790dfa9191d4b4f889e8707e57f1" compoundref="comm_8hpp" startline="140" endline="142">lbann::lbann_comm::am_model_master</references>
+        <references refid="classlbann_1_1lbann__comm_1ab7cdeca37f1fcd22a3b69f6134fb299f" compoundref="comm_8hpp" startline="247" endline="249">lbann::lbann_comm::model_gather</references>
+        <references refid="classlbann_1_1lbann__comm_1a96d8d7a0ff8ee1511f8c8b8fa92628af" compoundref="comm_8hpp" startline="128" endline="130">lbann::lbann_comm::get_model_master</references>
+        <references refid="classlbann_1_1generic__input__layer_1aa0fa6597ffce537f7cfba29dcc754ee1" compoundref="generic__input__layer_8hpp" startline="290" endline="293">lbann::generic_input_layer::get_num_iterations_per_epoch</references>
+        <references refid="base_8hpp_1a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214">training</references>
+        <references refid="classlbann_1_1model_1a8c311798ff4acaeafdfbf85162ba5084" compoundref="model_8hpp" startline="161" endline="163">lbann::model::get_max_mini_batch_size</references>
+        <referencedby refid="classlbann_1_1lbann__callback__check__dataset_1a8be592f1687aea003986c874dc5f7516" compoundref="callback__check__dataset_8hpp" startline="53" endline="55">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__check__dataset_1a9bcb1368152c621c4484136ec8eecff8" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_check_dataset::on_validation_end</definition>
+        <argsstring>(model *m) override</argsstring>
+        <name>on_validation_end</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1adc16e42e5064dc2dc8d84dfbfc1325eb">on_validation_end</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Called immediately after the end of validation. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_check_dataset.hpp" line="59" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_check_dataset.cpp" bodystart="145" bodyend="155"/>
+        <references refid="classlbann_1_1model_1a9e1cfe449d2f4858a32994f6be0042fb" compoundref="model_8hpp" startline="123" endline="125">lbann::model::get_comm</references>
+        <references refid="classlbann_1_1lbann__comm_1a789453454468a3b70de768537c50ca52" compoundref="comm_8hpp" startline="116" endline="118">lbann::lbann_comm::get_rank_in_model</references>
+        <references refid="classlbann_1_1lbann__callback__check__dataset_1aab6d04a40d20d1b0bf70f9bfdd85f84c" compoundref="callback__check__dataset_8hpp" startline="70">validation_set</references>
+        <referencedby refid="classlbann_1_1lbann__callback__check__dataset_1a8be592f1687aea003986c874dc5f7516" compoundref="callback__check__dataset_8hpp" startline="53" endline="55">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__check__dataset_1afe1fda5a6bfe632dc680230cc56dff3e" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_check_dataset::on_test_end</definition>
+        <argsstring>(model *m) override</argsstring>
+        <name>on_test_end</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1accbad4dd004c1ced33642db6398b2efe">on_test_end</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Called immediately after the end of testing. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_check_dataset.hpp" line="60" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_check_dataset.cpp" bodystart="157" bodyend="160"/>
+        <references refid="classlbann_1_1model_1a9e1cfe449d2f4858a32994f6be0042fb" compoundref="model_8hpp" startline="123" endline="125">lbann::model::get_comm</references>
+        <references refid="classlbann_1_1lbann__comm_1a789453454468a3b70de768537c50ca52" compoundref="comm_8hpp" startline="116" endline="118">lbann::lbann_comm::get_rank_in_model</references>
+        <references refid="classlbann_1_1lbann__callback__check__dataset_1a15445849bae3621a3a4364b3ebbbc7f3" compoundref="callback__check__dataset_8hpp" startline="71">testing_set</references>
+        <referencedby refid="classlbann_1_1lbann__callback__check__dataset_1a8be592f1687aea003986c874dc5f7516" compoundref="callback__check__dataset_8hpp" startline="53" endline="55">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__check__dataset_1a17aff74d9926e07bfa1f090ad39bb4b6" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_check_dataset::add_to_set</definition>
+        <argsstring>(model *m, Layer *l, int64_t step, std::set&lt; long &gt; &amp;set)</argsstring>
+        <name>add_to_set</name>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+          <declname>m</declname>
+        </param>
+        <param>
+          <type><ref refid="classlbann_1_1Layer" kindref="compound">Layer</ref> *</type>
+          <declname>l</declname>
+        </param>
+        <param>
+          <type>int64_t</type>
+          <declname>step</declname>
+        </param>
+        <param>
+          <type>std::set&lt; long &gt; &amp;</type>
+          <declname>set</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_check_dataset.hpp" line="62" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_check_dataset.cpp" bodystart="35" bodyend="58"/>
+        <references refid="classlbann_1_1Layer_1a0ac13af6f5ee8316d64c550bef919ee0" compoundref="layer_8hpp" startline="205" endline="205">lbann::Layer::get_sample_indices_per_mb</references>
+        <referencedby refid="classlbann_1_1lbann__callback__check__dataset_1a8be592f1687aea003986c874dc5f7516" compoundref="callback__check__dataset_8hpp" startline="53" endline="55">copy</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__check__dataset_1acedc222fc108c156d089f1baa8c040af" compoundref="callback__check__dataset_8cpp" startline="60" endline="62">on_forward_prop_end</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__check__dataset_1a1223f07081d495d971cdf205f892c50d" compoundref="callback__check__dataset_8cpp" startline="64" endline="75">on_evaluate_forward_prop_end</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__check__dataset_1a150273f878be4d4bf0cdcaf0ba52aef2" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>std::string</type>
+        <definition>std::string lbann::lbann_callback_check_dataset::name</definition>
+        <argsstring>() const override</argsstring>
+        <name>name</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1a7522c7a14f1d6a1ea762cc2d7248eb3a">name</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Return this callback&apos;s name. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_check_dataset.hpp" line="64" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_check_dataset.hpp" bodystart="64" bodyend="64"/>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>Save the sample indices for each mini-batch to ordered set. Check to make sure that all samples were properly processed. </para>    </detaileddescription>
+    <inheritancegraph>
+      <node id="1307">
+        <label>lbann::lbann_callback_check_dataset</label>
+        <link refid="classlbann_1_1lbann__callback__check__dataset"/>
+        <childnode refid="1308" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1308">
+        <label>lbann::lbann_callback</label>
+        <link refid="classlbann_1_1lbann__callback"/>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="1309">
+        <label>lbann::lbann_callback_check_dataset</label>
+        <link refid="classlbann_1_1lbann__callback__check__dataset"/>
+        <childnode refid="1310" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1310">
+        <label>lbann::lbann_callback</label>
+        <link refid="classlbann_1_1lbann__callback"/>
+        <childnode refid="1311" relation="usage">
+          <edgelabel>m_summarizer</edgelabel>
+        </childnode>
+      </node>
+      <node id="1311">
+        <label>lbann::lbann_summary</label>
+        <link refid="classlbann_1_1lbann__summary"/>
+      </node>
+    </collaborationgraph>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_check_dataset.hpp" line="39" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_check_dataset.hpp" bodystart="39" bodyend="72"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1lbann__callback__check__dataset_1a17aff74d9926e07bfa1f090ad39bb4b6" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>add_to_set</name></member>
+      <member refid="classlbann_1_1lbann__callback__check__dataset_1a8be592f1687aea003986c874dc5f7516" prot="public" virt="virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>copy</name></member>
+      <member refid="classlbann_1_1lbann__callback_1acec888932129f93ba2a0077192467c9e" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>get_batch_interval</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a679057298a41ddd47f08c157f756c584" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>lbann_callback</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a91d994616b8bf98685ac32939228f96a" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>lbann_callback</name></member>
+      <member refid="classlbann_1_1lbann__callback__check__dataset_1a79beae9767b50f7141bc5209ef5d696f" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>lbann_callback_check_dataset</name></member>
+      <member refid="classlbann_1_1lbann__callback__check__dataset_1a453a843f6506051881b334760817467f" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>lbann_callback_check_dataset</name></member>
+      <member refid="classlbann_1_1lbann__callback__check__dataset_1afb8f8ae1ddbd07bf816ee9e8fa84ca8f" prot="private" virt="non-virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>m_basename</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a6126e310e9924398c18ccf76bb91c705" prot="protected" virt="non-virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>m_batch_interval</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a277d46138184f85f161a8263b8322c76" prot="protected" virt="non-virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>m_summarizer</name></member>
+      <member refid="classlbann_1_1lbann__callback__check__dataset_1a150273f878be4d4bf0cdcaf0ba52aef2" prot="public" virt="virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>name</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a2c0709a26179d115ff85b7561786ee27" prot="public" virt="virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>on_backward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1abeb1e486e259fd358332abf1e952f630" prot="public" virt="virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>on_backward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1af183624e63ba65e0003fa988f53dee0c" prot="public" virt="virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>on_backward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1aba03b59c056ace8094095c08e39b9ac4" prot="public" virt="virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>on_backward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a9ecf4e44cd4021cdd687de14c850cc83" prot="public" virt="virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>on_batch_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a895ca577e358601fcae5c04749f60535" prot="public" virt="virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>on_batch_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a3462e54126adbd0082c22c98d8de5468" prot="public" virt="virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>on_batch_evaluate_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ad10891b8ab3de74ee1a70e6255e7d58a" prot="public" virt="virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>on_batch_evaluate_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a4ed9498763412a55953fff71ee3a9456" prot="public" virt="virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>on_epoch_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback__check__dataset_1a8cbc105d8bd9d3b493ef34de7c387929" prot="public" virt="virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>on_epoch_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a4a2cff48a688bb56ed14b8b53344f945" prot="public" virt="virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>on_evaluate_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a044174864e4981a1dac093d58e8c4d6c" prot="public" virt="virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>on_evaluate_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback__check__dataset_1a1223f07081d495d971cdf205f892c50d" prot="public" virt="virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>on_evaluate_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a0794f3fb88db6fef53f0e2f235f94424" prot="public" virt="virtual" ambiguityscope="lbann::lbann_callback::"><scope>lbann::lbann_callback_check_dataset</scope><name>on_evaluate_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a22ed977371173105b4aad3a20b9c59dc" prot="public" virt="virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>on_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ab96adb1d77180e00fdd668cd381323fd" prot="public" virt="virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>on_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback__check__dataset_1acedc222fc108c156d089f1baa8c040af" prot="public" virt="virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>on_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a79a0bb407852d7b330b74373647ffe46" prot="public" virt="virtual" ambiguityscope="lbann::lbann_callback::"><scope>lbann::lbann_callback_check_dataset</scope><name>on_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a1a9248b305f06419889c1b3b0f0893d8" prot="public" virt="virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>on_optimize_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a497e750da160e0071ce8864ccc3a1344" prot="public" virt="virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>on_optimize_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a235195d5fa4461835b861a03a5c0278f" prot="public" virt="virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>on_optimize_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a4653e2903bfd3903709a81eaf7eabc1a" prot="public" virt="virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>on_optimize_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ace7452239c9ad7aa6247e9496adbcffe" prot="public" virt="virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>on_phase_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a716bff45bdc5a88eed09c2231f5bc93a" prot="public" virt="virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>on_test_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback__check__dataset_1afe1fda5a6bfe632dc680230cc56dff3e" prot="public" virt="virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>on_test_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a7c8f0d211967ccc5219144e92571ab26" prot="public" virt="virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>on_train_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1af28078b0ddaef45124465bef01eefedf" prot="public" virt="virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>on_train_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a2bde303671110519388d9962bc3e5583" prot="public" virt="virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>on_validation_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback__check__dataset_1a9bcb1368152c621c4484136ec8eecff8" prot="public" virt="virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>on_validation_end</name></member>
+      <member refid="classlbann_1_1lbann__callback__check__dataset_1a2b9ab1194196d9edc76eb89bc81257b8" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a66b0a8c00a273669fa782ece59e8898b" prot="public" virt="non-virtual" ambiguityscope="lbann::lbann_callback::"><scope>lbann::lbann_callback_check_dataset</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a02d924df2f8ca851578dc76d9015e48d" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>set_summarizer</name></member>
+      <member refid="classlbann_1_1lbann__callback_1aab5086e27d9bb0a7c7ee8ffc1bc58671" prot="public" virt="virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>setup</name></member>
+      <member refid="classlbann_1_1lbann__callback__check__dataset_1a15445849bae3621a3a4364b3ebbbc7f3" prot="private" virt="non-virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>testing_set</name></member>
+      <member refid="classlbann_1_1lbann__callback__check__dataset_1a22d16efa2ec47759766f2f7478b11059" prot="private" virt="non-virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>training_set</name></member>
+      <member refid="classlbann_1_1lbann__callback__check__dataset_1aab6d04a40d20d1b0bf70f9bfdd85f84c" prot="private" virt="non-virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>validation_set</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ac91abaec389f8d2547512c45ae587304" prot="public" virt="virtual"><scope>lbann::lbann_callback_check_dataset</scope><name>~lbann_callback</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

@@ -1,0 +1,134 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1protobuf__utils" kind="class" language="C++" prot="public">
+    <compoundname>lbann::protobuf_utils</compoundname>
+    <includes refid="protobuf__utils_8hpp" local="no">protobuf_utils.hpp</includes>
+      <sectiondef kind="public-static-func">
+      <memberdef kind="function" id="classlbann_1_1protobuf__utils_1ad85c0f279c98fad3f9e9e6c54786acf1" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::protobuf_utils::load_prototext</definition>
+        <argsstring>(const bool master, const int argc, char **argv, std::vector&lt; lbann_data::LbannPB *&gt; &amp;models_out)</argsstring>
+        <name>load_prototext</name>
+        <param>
+          <type>const bool</type>
+          <declname>master</declname>
+        </param>
+        <param>
+          <type>const int</type>
+          <declname>argc</declname>
+        </param>
+        <param>
+          <type>char **</type>
+          <declname>argv</declname>
+        </param>
+        <param>
+          <type>std::vector&lt; lbann_data::LbannPB *&gt; &amp;</type>
+          <declname>models_out</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>convience wrapper: calls <ref refid="classlbann_1_1protobuf__utils_1a690c56a9ac8bcbc883751355b53e0006" kindref="member">parse_prototext_filenames_from_command_line()</ref>, then <ref refid="classlbann_1_1protobuf__utils_1ad85c0f279c98fad3f9e9e6c54786acf1" kindref="member">load_prototext()</ref>, then <ref refid="classlbann_1_1protobuf__utils_1a058d524e15fb811e0d193ffb308c5faf" kindref="member">verify_prototext()</ref>. This is the only function that needs to be called from, e.g, model_zoo/lbann.cpp; the three called functions are made public for testing. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/protobuf_utils.hpp" line="31" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/utils/protobuf_utils.cpp" bodystart="139" bodyend="156"/>
+        <references refid="classlbann_1_1protobuf__utils_1a690c56a9ac8bcbc883751355b53e0006" compoundref="protobuf__utils_8cpp" startline="38" endline="113">parse_prototext_filenames_from_command_line</references>
+        <references refid="classlbann_1_1protobuf__utils_1ab8470c35e353af71b04e1e853b99f8ae" compoundref="protobuf__utils_8cpp" startline="116" endline="137">read_in_prototext_files</references>
+        <references refid="classlbann_1_1protobuf__utils_1a058d524e15fb811e0d193ffb308c5faf" compoundref="protobuf__utils_8cpp" startline="158" endline="194">verify_prototext</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1protobuf__utils_1a690c56a9ac8bcbc883751355b53e0006" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::protobuf_utils::parse_prototext_filenames_from_command_line</definition>
+        <argsstring>(bool master, int argc, char **argv, std::vector&lt; prototext_fn_triple &gt; &amp;names)</argsstring>
+        <name>parse_prototext_filenames_from_command_line</name>
+        <param>
+          <type>bool</type>
+          <declname>master</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>argc</declname>
+        </param>
+        <param>
+          <type>char **</type>
+          <declname>argv</declname>
+        </param>
+        <param>
+          <type>std::vector&lt; <ref refid="structlbann_1_1prototext__fn__triple" kindref="compound">prototext_fn_triple</ref> &gt; &amp;</type>
+          <declname>names</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>parses the command line for <ndash/>model=&lt;string&gt; <ndash/>reader=&lt;string&gt; optimizer=&lt;string&gt; and their multi counterparts: <ndash/>model={&lt;string_1&gt;,&lt;string_2&gt;,...} <ndash/>reader={&lt;string_1&gt;,&lt;string_2&gt;,...} <ndash/>optimizer={&lt;string_1&gt;,&lt;string_2&gt;,...} If the multi-model option is given, the reader and optimzier can either be single, or contain the same number of filenames as does the <ndash/>model={...} specification </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/protobuf_utils.hpp" line="47" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/utils/protobuf_utils.cpp" bodystart="38" bodyend="113"/>
+        <references refid="structlbann_1_1prototext__fn__triple_1a5e90bdc322ecd0fb0701ad8554dc10e1" compoundref="protobuf__utils_8hpp" startline="16">lbann::prototext_fn_triple::model</references>
+        <references refid="structlbann_1_1prototext__fn__triple_1a6b8674014fe4a2ba4a0eb4eff4e927ed" compoundref="protobuf__utils_8hpp" startline="17">lbann::prototext_fn_triple::reader</references>
+        <references refid="structlbann_1_1prototext__fn__triple_1a223cbc06d9f15e322a3472b991137be4" compoundref="protobuf__utils_8hpp" startline="18">lbann::prototext_fn_triple::optimizer</references>
+        <referencedby refid="classlbann_1_1protobuf__utils_1ad85c0f279c98fad3f9e9e6c54786acf1" compoundref="protobuf__utils_8cpp" startline="139" endline="156">load_prototext</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1protobuf__utils_1ab8470c35e353af71b04e1e853b99f8ae" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::protobuf_utils::read_in_prototext_files</definition>
+        <argsstring>(bool master, std::vector&lt; prototext_fn_triple &gt; &amp;names, std::vector&lt; lbann_data::LbannPB *&gt; &amp;models_out)</argsstring>
+        <name>read_in_prototext_files</name>
+        <param>
+          <type>bool</type>
+          <declname>master</declname>
+        </param>
+        <param>
+          <type>std::vector&lt; <ref refid="structlbann_1_1prototext__fn__triple" kindref="compound">prototext_fn_triple</ref> &gt; &amp;</type>
+          <declname>names</declname>
+        </param>
+        <param>
+          <type>std::vector&lt; lbann_data::LbannPB *&gt; &amp;</type>
+          <declname>models_out</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/protobuf_utils.hpp" line="53" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/utils/protobuf_utils.cpp" bodystart="116" bodyend="137"/>
+        <references refid="proto__common_8cpp_1addbf693bd6d4a399daa599ba03509569" compoundref="proto__common_8cpp" startline="272" endline="292">read_prototext_file</references>
+        <referencedby refid="classlbann_1_1protobuf__utils_1ad85c0f279c98fad3f9e9e6c54786acf1" compoundref="protobuf__utils_8cpp" startline="139" endline="156">load_prototext</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1protobuf__utils_1a058d524e15fb811e0d193ffb308c5faf" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::protobuf_utils::verify_prototext</definition>
+        <argsstring>(bool master, const std::vector&lt; lbann_data::LbannPB *&gt; &amp;models)</argsstring>
+        <name>verify_prototext</name>
+        <param>
+          <type>bool</type>
+          <declname>master</declname>
+        </param>
+        <param>
+          <type>const std::vector&lt; lbann_data::LbannPB *&gt; &amp;</type>
+          <declname>models</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>attempts to verify the all models are valid, and contain an optimizer and reader </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/protobuf_utils.hpp" line="61" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/utils/protobuf_utils.cpp" bodystart="158" bodyend="194"/>
+        <referencedby refid="classlbann_1_1protobuf__utils_1ad85c0f279c98fad3f9e9e6c54786acf1" compoundref="protobuf__utils_8cpp" startline="139" endline="156">load_prototext</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/protobuf_utils.hpp" line="23" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/protobuf_utils.hpp" bodystart="22" bodyend="65"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1protobuf__utils_1ad85c0f279c98fad3f9e9e6c54786acf1" prot="public" virt="non-virtual"><scope>lbann::protobuf_utils</scope><name>load_prototext</name></member>
+      <member refid="classlbann_1_1protobuf__utils_1a690c56a9ac8bcbc883751355b53e0006" prot="public" virt="non-virtual"><scope>lbann::protobuf_utils</scope><name>parse_prototext_filenames_from_command_line</name></member>
+      <member refid="classlbann_1_1protobuf__utils_1ab8470c35e353af71b04e1e853b99f8ae" prot="public" virt="non-virtual"><scope>lbann::protobuf_utils</scope><name>read_in_prototext_files</name></member>
+      <member refid="classlbann_1_1protobuf__utils_1a058d524e15fb811e0d193ffb308c5faf" prot="public" virt="non-virtual"><scope>lbann::protobuf_utils</scope><name>verify_prototext</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

@@ -1,0 +1,5 @@
+<map id="lbann::data_reader_jag::get_input_ptr" name="lbann::data_reader_jag::get_input_ptr">
+<area shape="rect" id="node2" href="$classlbann_1_1data__reader__jag.html#ae3f45a65894cb60343676d75a8b7f99c" title="lbann::data_reader\l_jag::get_type" alt="" coords="380,25,513,63"/>
+<area shape="rect" id="node3" href="$classlbann_1_1data__reader__jag.html#aef236213fa1b229a2554c494fabb8873" title="Return the input values of the simulation correspoding to the i&#45;th sample. " alt="" coords="193,25,326,63"/>
+<area shape="rect" id="node4" href="$classlbann_1_1data__reader__jag.html#ad9b4259f23a9744ec1c86c688a67f583" title="lbann::data_reader\l_jag::fetch_response" alt="" coords="187,87,332,126"/>
+</map>

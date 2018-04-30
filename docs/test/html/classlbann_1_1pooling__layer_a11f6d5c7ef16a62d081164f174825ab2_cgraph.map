@@ -1,0 +1,5 @@
+<map id="lbann::pooling_layer::get_description" name="lbann::pooling_layer::get_description">
+<area shape="rect" id="node2" href="$base_8cpp.html#af3cdcb8265717e1115135deb3618e5dd" title="get_pool_mode_name" alt="" coords="194,5,348,31"/>
+<area shape="rect" id="node3" href="$classlbann_1_1Layer.html#ae3f4a5602df821f4221614b1e3782dc1" title="lbann::Layer::get_data\l_layout_string" alt="" coords="194,55,348,93"/>
+<area shape="rect" id="node4" href="$classlbann_1_1pooling__layer.html#ad6d7e7476521ed4a4c43db493807b2ca" title="lbann::pooling_layer\l::get_data_layout" alt="" coords="201,117,341,156"/>
+</map>

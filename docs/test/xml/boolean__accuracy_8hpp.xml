@@ -1,0 +1,333 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="boolean__accuracy_8hpp" kind="file" language="C++">
+    <compoundname>boolean_accuracy.hpp</compoundname>
+    <includes refid="metric_8hpp" local="yes">lbann/metrics/metric.hpp</includes>
+    <includedby refid="boolean__accuracy_8cpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/src/metrics/boolean_accuracy.cpp</includedby>
+    <includedby refid="lbann_8hpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/include/lbann/lbann.hpp</includedby>
+    <incdepgraph>
+      <node id="10049">
+        <label>lbann/io/persist.hpp</label>
+        <link refid="persist_8hpp"/>
+        <childnode refid="10030" relation="include">
+        </childnode>
+        <childnode refid="10031" relation="include">
+        </childnode>
+      </node>
+      <node id="10031">
+        <label>El.hpp</label>
+      </node>
+      <node id="10030">
+        <label>lbann/base.hpp</label>
+        <link refid="base_8hpp"/>
+        <childnode refid="10031" relation="include">
+        </childnode>
+        <childnode refid="10032" relation="include">
+        </childnode>
+        <childnode refid="10033" relation="include">
+        </childnode>
+        <childnode refid="10038" relation="include">
+        </childnode>
+      </node>
+      <node id="10029">
+        <label>lbann/metrics/metric.hpp</label>
+        <link refid="metric_8hpp"/>
+        <childnode refid="10030" relation="include">
+        </childnode>
+        <childnode refid="10039" relation="include">
+        </childnode>
+        <childnode refid="10043" relation="include">
+        </childnode>
+        <childnode refid="10049" relation="include">
+        </childnode>
+      </node>
+      <node id="10046">
+        <label>string</label>
+      </node>
+      <node id="10041">
+        <label>map</label>
+      </node>
+      <node id="10028">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/boolean_accuracy.hpp</label>
+        <link refid="boolean__accuracy_8hpp"/>
+        <childnode refid="10029" relation="include">
+        </childnode>
+      </node>
+      <node id="10048">
+        <label>exception</label>
+      </node>
+      <node id="10035">
+        <label>cstdio</label>
+      </node>
+      <node id="10044">
+        <label>lbann/utils/stack_trace.hpp</label>
+        <link refid="stack__trace_8hpp"/>
+        <childnode refid="10045" relation="include">
+        </childnode>
+        <childnode refid="10046" relation="include">
+        </childnode>
+      </node>
+      <node id="10037">
+        <label>cxxabi.h</label>
+      </node>
+      <node id="10043">
+        <label>lbann/utils/exception.hpp</label>
+        <link refid="exception_8hpp"/>
+        <childnode refid="10030" relation="include">
+        </childnode>
+        <childnode refid="10039" relation="include">
+        </childnode>
+        <childnode refid="10044" relation="include">
+        </childnode>
+        <childnode refid="10047" relation="include">
+        </childnode>
+        <childnode refid="10048" relation="include">
+        </childnode>
+      </node>
+      <node id="10040">
+        <label>vector</label>
+      </node>
+      <node id="10039">
+        <label>lbann/comm.hpp</label>
+        <link refid="comm_8hpp"/>
+        <childnode refid="10040" relation="include">
+        </childnode>
+        <childnode refid="10041" relation="include">
+        </childnode>
+        <childnode refid="10042" relation="include">
+        </childnode>
+        <childnode refid="10030" relation="include">
+        </childnode>
+      </node>
+      <node id="10034">
+        <label>cstdlib</label>
+      </node>
+      <node id="10047">
+        <label>iostream</label>
+      </node>
+      <node id="10045">
+        <label>csignal</label>
+      </node>
+      <node id="10038">
+        <label>lbann_config.hpp</label>
+      </node>
+      <node id="10033">
+        <label>lbann/utils/cyg_profile.hpp</label>
+        <link refid="cyg__profile_8hpp"/>
+        <childnode refid="10034" relation="include">
+        </childnode>
+        <childnode refid="10035" relation="include">
+        </childnode>
+        <childnode refid="10036" relation="include">
+        </childnode>
+        <childnode refid="10037" relation="include">
+        </childnode>
+      </node>
+      <node id="10032">
+        <label>lbann/Elemental_extensions.hpp</label>
+        <link refid="Elemental__extensions_8hpp"/>
+        <childnode refid="10031" relation="include">
+        </childnode>
+      </node>
+      <node id="10042">
+        <label>typeindex</label>
+      </node>
+      <node id="10036">
+        <label>dlfcn.h</label>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="10058">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/proto/factories.hpp</label>
+        <link refid="factories_8hpp"/>
+        <childnode refid="10059" relation="include">
+        </childnode>
+        <childnode refid="10060" relation="include">
+        </childnode>
+        <childnode refid="10061" relation="include">
+        </childnode>
+        <childnode refid="10062" relation="include">
+        </childnode>
+        <childnode refid="10063" relation="include">
+        </childnode>
+        <childnode refid="10064" relation="include">
+        </childnode>
+        <childnode refid="10065" relation="include">
+        </childnode>
+        <childnode refid="10066" relation="include">
+        </childnode>
+        <childnode refid="10056" relation="include">
+        </childnode>
+      </node>
+      <node id="10063">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/model_factory.cpp</label>
+        <link refid="model__factory_8cpp"/>
+      </node>
+      <node id="10055">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/params.cpp</label>
+        <link refid="params_8cpp"/>
+      </node>
+      <node id="10056">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/proto/proto_common.hpp</label>
+        <link refid="proto__common_8hpp"/>
+        <childnode refid="10053" relation="include">
+        </childnode>
+        <childnode refid="10057" relation="include">
+        </childnode>
+        <childnode refid="10058" relation="include">
+        </childnode>
+        <childnode refid="10067" relation="include">
+        </childnode>
+      </node>
+      <node id="10054">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/params.hpp</label>
+        <link refid="params_8hpp"/>
+        <childnode refid="10055" relation="include">
+        </childnode>
+        <childnode refid="10052" relation="include">
+        </childnode>
+      </node>
+      <node id="10060">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/layer_factory.cpp</label>
+        <link refid="layer__factory_8cpp"/>
+      </node>
+      <node id="10057">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/utils/protobuf_utils.cpp</label>
+        <link refid="protobuf__utils_8cpp"/>
+      </node>
+      <node id="10050">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/boolean_accuracy.hpp</label>
+        <link refid="boolean__accuracy_8hpp"/>
+        <childnode refid="10051" relation="include">
+        </childnode>
+        <childnode refid="10052" relation="include">
+        </childnode>
+      </node>
+      <node id="10068">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/init_image_data_readers.cpp</label>
+        <link refid="init__image__data__readers_8cpp"/>
+      </node>
+      <node id="10051">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/metrics/boolean_accuracy.cpp</label>
+        <link refid="boolean__accuracy_8cpp"/>
+      </node>
+      <node id="10064">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/objective_function_factory.cpp</label>
+        <link refid="objective__function__factory_8cpp"/>
+      </node>
+      <node id="10053">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/proto_common.cpp</label>
+        <link refid="proto__common_8cpp"/>
+      </node>
+      <node id="10062">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/metric_factory.cpp</label>
+        <link refid="metric__factory_8cpp"/>
+      </node>
+      <node id="10052">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/lbann.hpp</label>
+        <link refid="lbann_8hpp"/>
+        <childnode refid="10053" relation="include">
+        </childnode>
+        <childnode refid="10054" relation="include">
+        </childnode>
+        <childnode refid="10056" relation="include">
+        </childnode>
+        <childnode refid="10069" relation="include">
+        </childnode>
+      </node>
+      <node id="10067">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/proto/init_image_data_readers.hpp</label>
+        <link refid="init__image__data__readers_8hpp"/>
+        <childnode refid="10068" relation="include">
+        </childnode>
+        <childnode refid="10053" relation="include">
+        </childnode>
+      </node>
+      <node id="10065">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/optimizer_factory.cpp</label>
+        <link refid="optimizer__factory_8cpp"/>
+      </node>
+      <node id="10066">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/weights_factory.cpp</label>
+        <link refid="weights__factory_8cpp"/>
+      </node>
+      <node id="10059">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/callback_factory.cpp</label>
+        <link refid="callback__factory_8cpp"/>
+      </node>
+      <node id="10069">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/protobuf_utils.hpp</label>
+        <link refid="protobuf__utils_8hpp"/>
+        <childnode refid="10057" relation="include">
+        </childnode>
+      </node>
+      <node id="10061">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/layer_graph_factory.cpp</label>
+        <link refid="layer__graph__factory_8cpp"/>
+      </node>
+    </invincdepgraph>
+    <innerclass refid="classlbann_1_1boolean__accuracy__metric" prot="public">lbann::boolean_accuracy_metric</innerclass>
+    <innernamespace refid="namespacelbann">lbann</innernamespace>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>2014-2016,<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Security,<sp/>LLC.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Produced<sp/>at<sp/>the<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Laboratory.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Written<sp/>by<sp/>the<sp/>LBANN<sp/>Research<sp/>Team<sp/>(B.<sp/>Van<sp/>Essen,<sp/>et<sp/>al.)<sp/>listed<sp/>in</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="comment">//<sp/>the<sp/>CONTRIBUTORS<sp/>file.<sp/>&lt;lbann-dev@llnl.gov&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="comment">//<sp/>LLNL-CODE-697807.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="comment">//<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="comment">//<sp/>This<sp/>file<sp/>is<sp/>part<sp/>of<sp/>LBANN:<sp/>Livermore<sp/>Big<sp/>Artificial<sp/>Neural<sp/>Network</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Toolkit.<sp/>For<sp/>details,<sp/>see<sp/>http://software.llnl.gov/LBANN<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="comment">//<sp/>https://github.com/LLNL/LBANN.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Licensed<sp/>under<sp/>the<sp/>Apache<sp/>License,<sp/>Version<sp/>2.0<sp/>(the<sp/>&quot;Licensee&quot;);<sp/>you</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight><highlight class="comment">//<sp/>may<sp/>not<sp/>use<sp/>this<sp/>file<sp/>except<sp/>in<sp/>compliance<sp/>with<sp/>the<sp/>License.<sp/><sp/>You<sp/>may</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="comment">//<sp/>obtain<sp/>a<sp/>copy<sp/>of<sp/>the<sp/>License<sp/>at:</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight><highlight class="comment">//<sp/>http://www.apache.org/licenses/LICENSE-2.0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Unless<sp/>required<sp/>by<sp/>applicable<sp/>law<sp/>or<sp/>agreed<sp/>to<sp/>in<sp/>writing,<sp/>software</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight><highlight class="comment">//<sp/>distributed<sp/>under<sp/>the<sp/>License<sp/>is<sp/>distributed<sp/>on<sp/>an<sp/>&quot;AS<sp/>IS&quot;<sp/>BASIS,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight><highlight class="comment">//<sp/>WITHOUT<sp/>WARRANTIES<sp/>OR<sp/>CONDITIONS<sp/>OF<sp/>ANY<sp/>KIND,<sp/>either<sp/>express<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="comment">//<sp/>implied.<sp/>See<sp/>the<sp/>License<sp/>for<sp/>the<sp/>specific<sp/>language<sp/>governing</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="comment">//<sp/>permissions<sp/>and<sp/>limitations<sp/>under<sp/>the<sp/>license.</highlight></codeline>
+<codeline lineno="26"><highlight class="comment"></highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="27"><highlight class="normal"></highlight><highlight class="preprocessor">#ifndef<sp/>LBANN_METRIC_BOOLEAN_ACCURACY_HPP</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="28"><highlight class="normal"></highlight><highlight class="preprocessor">#define<sp/>LBANN_METRIC_BOOLEAN_ACCURACY_HPP</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="29"><highlight class="normal"></highlight></codeline>
+<codeline lineno="30"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="metric_8hpp" kindref="compound">lbann/metrics/metric.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight></codeline>
+<codeline lineno="32"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacelbann" kindref="compound">lbann</ref><sp/>{</highlight></codeline>
+<codeline lineno="33"><highlight class="normal"></highlight></codeline>
+<codeline lineno="38" refid="classlbann_1_1boolean__accuracy__metric" refkind="compound"><highlight class="keyword">class<sp/></highlight><highlight class="normal"><ref refid="classlbann_1_1boolean__accuracy__metric" kindref="compound">boolean_accuracy_metric</ref><sp/>:<sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1metric" kindref="compound">metric</ref><sp/>{</highlight></codeline>
+<codeline lineno="39"><highlight class="normal"></highlight></codeline>
+<codeline lineno="40"><highlight class="normal"><sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="41" refid="classlbann_1_1boolean__accuracy__metric_1a91e8f2a608e0594e8875c58d584bda9c" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1boolean__accuracy__metric_1a91e8f2a608e0594e8875c58d584bda9c" kindref="member">boolean_accuracy_metric</ref>(<ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref><sp/>*<ref refid="file__io_8cpp_1ab048c6f9fcbcfaa57ce68b00263dbebe" kindref="member">comm</ref>)<sp/>:<sp/><ref refid="classlbann_1_1metric" kindref="compound">metric</ref>(comm)<sp/>{}</highlight></codeline>
+<codeline lineno="42"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1boolean__accuracy__metric_1a91e8f2a608e0594e8875c58d584bda9c" kindref="member">boolean_accuracy_metric</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1boolean__accuracy__metric" kindref="compound">boolean_accuracy_metric</ref>&amp;<sp/>other)<sp/>=<sp/></highlight><highlight class="keywordflow">default</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="43"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1boolean__accuracy__metric" kindref="compound">boolean_accuracy_metric</ref>&amp;<sp/><ref refid="classlbann_1_1boolean__accuracy__metric_1afb79aa75d193aaa090ce81352a5690e6" kindref="member">operator=</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1boolean__accuracy__metric" kindref="compound">boolean_accuracy_metric</ref>&amp;<sp/>other)<sp/>=<sp/></highlight><highlight class="keywordflow">default</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="44"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">virtual</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1boolean__accuracy__metric_1a08f019909aa96a49a48d29fd8c2d1df4" kindref="member">~boolean_accuracy_metric</ref>()<sp/>=<sp/></highlight><highlight class="keywordflow">default</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="45" refid="classlbann_1_1boolean__accuracy__metric_1ae3a97a9ac1caccfe8ac46ad1a0df01a4" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1boolean__accuracy__metric" kindref="compound">boolean_accuracy_metric</ref>*<sp/><ref refid="classlbann_1_1boolean__accuracy__metric_1ae3a97a9ac1caccfe8ac46ad1a0df01a4" kindref="member">copy</ref>()</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="46"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">new</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1boolean__accuracy__metric_1a91e8f2a608e0594e8875c58d584bda9c" kindref="member">boolean_accuracy_metric</ref>(*</highlight><highlight class="keyword">this</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="47"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="48"><highlight class="normal"></highlight></codeline>
+<codeline lineno="50" refid="classlbann_1_1boolean__accuracy__metric_1a88edde5abce60809dbaaf034b166b09e" refkind="member"><highlight class="normal"><sp/><sp/>std::string<sp/><ref refid="classlbann_1_1boolean__accuracy__metric_1a88edde5abce60809dbaaf034b166b09e" kindref="member">name</ref>()</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="stringliteral">&quot;boolean<sp/>accuracy&quot;</highlight><highlight class="normal">;<sp/>}</highlight></codeline>
+<codeline lineno="51" refid="classlbann_1_1boolean__accuracy__metric_1abde43253ef54b243f9faa1b1adea0672" refkind="member"><highlight class="normal"><sp/><sp/>std::string<sp/><ref refid="classlbann_1_1boolean__accuracy__metric_1abde43253ef54b243f9faa1b1adea0672" kindref="member">get_unit</ref>()</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="stringliteral">&quot;%&quot;</highlight><highlight class="normal">;<sp/>}</highlight></codeline>
+<codeline lineno="52"><highlight class="normal"></highlight></codeline>
+<codeline lineno="53"><highlight class="normal"><sp/></highlight><highlight class="keyword">protected</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="58"><highlight class="normal"><sp/><sp/><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref><sp/><ref refid="classlbann_1_1boolean__accuracy__metric_1acac2d198f516990fe9b87f3abefae635" kindref="member">evaluate_compute</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref>&amp;<sp/><ref refid="base_8hpp_1a2781a159088df64ed7d47cc91c4dc0a8ac41b9ec75e920b610e8907e066074b30" kindref="member">prediction</ref>,</highlight></codeline>
+<codeline lineno="59"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref>&amp;<sp/>ground_truth)<sp/></highlight><highlight class="keyword">override</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="60"><highlight class="normal"></highlight></codeline>
+<codeline lineno="61"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="62"><highlight class="normal"></highlight></codeline>
+<codeline lineno="63"><highlight class="normal">}<sp/><sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>lbann</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="64"><highlight class="normal"></highlight></codeline>
+<codeline lineno="65"><highlight class="normal"></highlight><highlight class="preprocessor">#endif<sp/><sp/>//<sp/>LBANN_METRIC_BOOLEAN_ACCURACY_HPP</highlight></codeline>
+    </programlisting>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/boolean_accuracy.hpp"/>
+  </compounddef>
+</doxygen>

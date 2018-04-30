@@ -1,0 +1,1029 @@
+\hypertarget{classlbann_1_1generic__data__store}{}\section{lbann\+:\+:generic\+\_\+data\+\_\+store Class Reference}
+\label{classlbann_1_1generic__data__store}\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+
+
+{\ttfamily \#include $<$generic\+\_\+data\+\_\+store.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:generic\+\_\+data\+\_\+store\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__data__store__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:generic\+\_\+data\+\_\+store\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__data__store__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1generic__data__store_acbcd88161c06f4bb9a70bbae857d4ee0}{generic\+\_\+data\+\_\+store} (\hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$reader, \hyperlink{classlbann_1_1model}{model} $\ast$m)
+\begin{DoxyCompactList}\small\item\em ctor \end{DoxyCompactList}\item 
+\hyperlink{classlbann_1_1generic__data__store_a0198154e411a4952c2536af390551d13}{generic\+\_\+data\+\_\+store} (const \hyperlink{classlbann_1_1generic__data__store}{generic\+\_\+data\+\_\+store} \&)=default
+\begin{DoxyCompactList}\small\item\em copy ctor \end{DoxyCompactList}\item 
+\hyperlink{classlbann_1_1generic__data__store}{generic\+\_\+data\+\_\+store} \& \hyperlink{classlbann_1_1generic__data__store_a680cf1fc618f6505a04255920ee7d7f2}{operator=} (const \hyperlink{classlbann_1_1generic__data__store}{generic\+\_\+data\+\_\+store} \&)=default
+\begin{DoxyCompactList}\small\item\em operator= \end{DoxyCompactList}\item 
+virtual \hyperlink{classlbann_1_1generic__data__store_ac8f202a6aa5a3c5007a9d7d53c687851}{$\sim$generic\+\_\+data\+\_\+store} ()
+\begin{DoxyCompactList}\small\item\em dtor \end{DoxyCompactList}\item 
+virtual \hyperlink{classlbann_1_1generic__data__store}{generic\+\_\+data\+\_\+store} $\ast$ \hyperlink{classlbann_1_1generic__data__store_ae06e089790aa023b839be508a3c020c6}{copy} () const =0
+\item 
+virtual void \hyperlink{classlbann_1_1generic__data__store_a1cff17def02ee21b6ca0befeb04bb582}{setup} ()
+\begin{DoxyCompactList}\small\item\em called by \hyperlink{classlbann_1_1generic__data__reader_a8b2a09d38512fc11f1b9d572c89100a7}{generic\+\_\+data\+\_\+reader\+::setup\+\_\+data\+\_\+store} \end{DoxyCompactList}\item 
+void \hyperlink{classlbann_1_1generic__data__store_abdf41bf60ba37fa3de49c65c178dc7b0}{set\+\_\+shuffled\+\_\+indices} (const std\+::vector$<$ int $>$ $\ast$indices)
+\begin{DoxyCompactList}\small\item\em called by \hyperlink{classlbann_1_1generic__data__reader_a1d10dec5713fbe60e61b4dc400227ade}{generic\+\_\+data\+\_\+reader\+::update} \end{DoxyCompactList}\item 
+virtual void \hyperlink{classlbann_1_1generic__data__store_a2abb3d0327b528d36e23fcef9b937798}{get\+\_\+data\+\_\+buf} (int data\+\_\+id, std\+::vector$<$ unsigned char $>$ $\ast$\&buf, int multi\+\_\+idx=0)
+\begin{DoxyCompactList}\small\item\em called by various image data readers \end{DoxyCompactList}\item 
+virtual void \hyperlink{classlbann_1_1generic__data__store_abc3fecd958650a74e76070ea4f394bea}{get\+\_\+data\+\_\+buf} (int data\+\_\+id, int tid, std\+::vector$<$ double $>$ $\ast$\&buf)
+\item 
+virtual void \hyperlink{classlbann_1_1generic__data__store_ab3f8b7fe6d6631059d92714d4277a983}{get\+\_\+data\+\_\+buf\+\_\+\+Data\+Type} (int data\+\_\+id, std\+::vector$<$ Data\+Type $>$ $\ast$\&buf)
+\item 
+const std\+::string \& \hyperlink{classlbann_1_1generic__data__store_a53140adb8f7c2348986916a1abb85ffa}{get\+\_\+name} () const
+\item 
+void \hyperlink{classlbann_1_1generic__data__store_a853741295a07b5687921fc56d0d7d5b2}{set\+\_\+name} (std\+::string name)
+\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+size\+\_\+t \hyperlink{classlbann_1_1generic__data__store_a7641d15eba63426acf5071acb8026442}{get\+\_\+file\+\_\+size} (std\+::string dir, std\+::string fn)
+\begin{DoxyCompactList}\small\item\em returns the number of bytes in dir/fn; it\textquotesingle{}s OK if dir = \char`\"{}\char`\"{} \end{DoxyCompactList}\item 
+void \hyperlink{classlbann_1_1generic__data__store_a694438e0c70be757cc020ffc918fb165}{set\+\_\+num\+\_\+global\+\_\+indices} ()
+\item 
+void \hyperlink{classlbann_1_1generic__data__store_ab861db5f81e45a6063b8922a331dd007}{get\+\_\+minibatch\+\_\+index\+\_\+vector} ()
+\begin{DoxyCompactList}\small\item\em fills in m\+\_\+my\+\_\+minibatch\+\_\+indices\+\_\+v \end{DoxyCompactList}\item 
+void \hyperlink{classlbann_1_1generic__data__store_abd5bf0321c063996369e1e2659bd99aa}{exchange\+\_\+mb\+\_\+counts} ()
+\begin{DoxyCompactList}\small\item\em fills in m\+\_\+mb\+\_\+counts \end{DoxyCompactList}\item 
+void \hyperlink{classlbann_1_1generic__data__store_aa0ef8d7528f6775d47641ffe5ac229da}{exchange\+\_\+mb\+\_\+indices} ()
+\begin{DoxyCompactList}\small\item\em fills in m\+\_\+all\+\_\+minibatch\+\_\+indices \end{DoxyCompactList}\item 
+void \hyperlink{classlbann_1_1generic__data__store_a3558f87939755b08ae151623a5799127}{get\+\_\+my\+\_\+datastore\+\_\+indices} ()
+\begin{DoxyCompactList}\small\item\em fills in m\+\_\+my\+\_\+datastore\+\_\+indices and m\+\_\+num\+\_\+samples \end{DoxyCompactList}\item 
+virtual void \hyperlink{classlbann_1_1generic__data__store_a5a34663fbbc3714d45743a6ca7195f51}{exchange\+\_\+data} ()=0
+\item 
+int \hyperlink{classlbann_1_1generic__data__store_ad0de5ac2cdcf3f692acb252a019a2aed}{get\+\_\+index\+\_\+owner} (int idx)
+\item 
+virtual void \hyperlink{classlbann_1_1generic__data__store_ae569426f71f9317e88fe1078d58c98e7}{extended\+\_\+testing} ()
+\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$ \hyperlink{classlbann_1_1generic__data__store_afa49ced0ab64c632371ea52532a91ec2}{m\+\_\+reader}
+\item 
+\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$ \hyperlink{classlbann_1_1generic__data__store_a719b6b99c20f97a6cf25f6029582bf36}{m\+\_\+comm}
+\item 
+std\+::string \hyperlink{classlbann_1_1generic__data__store_ad2c2e241eefc6ff972169d757f8d2499}{m\+\_\+name}
+\item 
+size\+\_\+t \hyperlink{classlbann_1_1generic__data__store_a0dfa2ffa01845b84ca477fb3e14a36c6}{m\+\_\+num\+\_\+global\+\_\+indices}
+\item 
+const std\+::vector$<$ std\+::vector$<$ int $>$ $>$ $\ast$ \hyperlink{classlbann_1_1generic__data__store_a54c0a85cd536ef566604c4e9916910c8}{m\+\_\+my\+\_\+minibatch\+\_\+indices}
+\item 
+std\+::vector$<$ int $>$ \hyperlink{classlbann_1_1generic__data__store_a41f7fec1f1f3d6568a5765be7a6784eb}{m\+\_\+my\+\_\+minibatch\+\_\+indices\+\_\+v}
+\begin{DoxyCompactList}\small\item\em contains a concatenation of the indices in m\+\_\+my\+\_\+minibatch\+\_\+indices \end{DoxyCompactList}\item 
+std\+::vector$<$ int $>$ \hyperlink{classlbann_1_1generic__data__store_a8ba0cf1a3d83d835060f45a53d77fbfd}{m\+\_\+mb\+\_\+counts}
+\item 
+std\+::vector$<$ std\+::vector$<$ int $>$ $>$ \hyperlink{classlbann_1_1generic__data__store_afd21d4f029e450328f8703dd72702e73}{m\+\_\+all\+\_\+minibatch\+\_\+indices}
+\item 
+std\+::vector$<$ int $>$ \hyperlink{classlbann_1_1generic__data__store_a17d6f931e1a2f4ae9e2452b7d47ead43}{m\+\_\+num\+\_\+samples}
+\item 
+std\+::unordered\+\_\+set$<$ int $>$ \hyperlink{classlbann_1_1generic__data__store_abd38f8d8aab0648959e09d011abfe20a}{m\+\_\+my\+\_\+datastore\+\_\+indices}
+\begin{DoxyCompactList}\small\item\em the indices that this processor owns; \end{DoxyCompactList}\item 
+size\+\_\+t \hyperlink{classlbann_1_1generic__data__store_a4381c1192e029d24c5b02cbd68988f77}{m\+\_\+num\+\_\+readers}
+\item 
+int \hyperlink{classlbann_1_1generic__data__store_a87695bfd2d1ed0dbe01d99108e3f68b7}{m\+\_\+rank}
+\begin{DoxyCompactList}\small\item\em this processor\textquotesingle{}s rank \end{DoxyCompactList}\item 
+int \hyperlink{classlbann_1_1generic__data__store_afcd4f99959c265c8c03dcf8ad3779d85}{m\+\_\+np}
+\begin{DoxyCompactList}\small\item\em number of procs in the model \end{DoxyCompactList}\item 
+size\+\_\+t \hyperlink{classlbann_1_1generic__data__store_a1b373d13815ed7f9a7c1dae20b236e91}{m\+\_\+epoch}
+\item 
+bool \hyperlink{classlbann_1_1generic__data__store_a1a9cc7b097cd7dd6ae0d12d52bb43ea1}{m\+\_\+in\+\_\+memory}
+\item 
+bool \hyperlink{classlbann_1_1generic__data__store_a143fd33ef3a53180bc62745e369c16f8}{m\+\_\+master}
+\item 
+const std\+::vector$<$ int $>$ $\ast$ \hyperlink{classlbann_1_1generic__data__store_ad456f747ee07f63df15c60833dfb82ad}{m\+\_\+shuffled\+\_\+indices}
+\item 
+\hyperlink{classlbann_1_1model}{model} $\ast$ \hyperlink{classlbann_1_1generic__data__store_acf2fb76306c75f52de0d6ea92b0f38fc}{m\+\_\+model}
+\item 
+std\+::string \hyperlink{classlbann_1_1generic__data__store_ab479c127f00ce550c7433b90e40a5a3d}{m\+\_\+dir}
+\begin{DoxyCompactList}\small\item\em base directory for data \end{DoxyCompactList}\item 
+bool \hyperlink{classlbann_1_1generic__data__store_a5e64702aa4a38c8533fa52944a8473d5}{m\+\_\+extended\+\_\+testing}
+\begin{DoxyCompactList}\small\item\em conduct extensive testing \end{DoxyCompactList}\item 
+bool \hyperlink{classlbann_1_1generic__data__store_aa8ce7dae1eeb256820ac4f99893a6d32}{m\+\_\+collect\+\_\+minibatch\+\_\+indices}
+\item 
+M\+P\+I\+\_\+\+Comm \hyperlink{classlbann_1_1generic__data__store_ae2d2d61d5d766a7f525eedcb05e0dbf6}{m\+\_\+mpi\+\_\+comm}
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+todo 
+
+Definition at line 47 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_acbcd88161c06f4bb9a70bbae857d4ee0}\label{classlbann_1_1generic__data__store_acbcd88161c06f4bb9a70bbae857d4ee0}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!generic\+\_\+data\+\_\+store@{generic\+\_\+data\+\_\+store}}
+\index{generic\+\_\+data\+\_\+store@{generic\+\_\+data\+\_\+store}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{generic\+\_\+data\+\_\+store()}{generic\_data\_store()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::generic\+\_\+data\+\_\+store\+::generic\+\_\+data\+\_\+store (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$}]{reader,  }\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})}
+
+
+
+ctor 
+
+
+
+Definition at line 39 of file generic\+\_\+data\+\_\+store.\+cpp.
+
+
+\begin{DoxyCode}
+39                                                                             :
+40     \hyperlink{classlbann_1_1generic__data__store_afa49ced0ab64c632371ea52532a91ec2}{m\_reader}(reader), 
+41     \hyperlink{classlbann_1_1generic__data__store_a719b6b99c20f97a6cf25f6029582bf36}{m\_comm}(m->get\_comm()),
+42     \hyperlink{classlbann_1_1generic__data__store_a1b373d13815ed7f9a7c1dae20b236e91}{m\_epoch}(0),
+43     \hyperlink{classlbann_1_1generic__data__store_a1a9cc7b097cd7dd6ae0d12d52bb43ea1}{m\_in\_memory}(\textcolor{keyword}{true}),
+44     \hyperlink{classlbann_1_1generic__data__store_a143fd33ef3a53180bc62745e369c16f8}{m\_master}(\hyperlink{classlbann_1_1generic__data__store_a719b6b99c20f97a6cf25f6029582bf36}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_a1ef526486183a29feadca9bef096a534}{am\_world\_master}()), 
+45     \hyperlink{classlbann_1_1generic__data__store_acf2fb76306c75f52de0d6ea92b0f38fc}{m\_model}(m),
+46     \hyperlink{classlbann_1_1generic__data__store_ab479c127f00ce550c7433b90e40a5a3d}{m\_dir}(\hyperlink{classlbann_1_1generic__data__store_afa49ced0ab64c632371ea52532a91ec2}{m\_reader}->\hyperlink{classlbann_1_1generic__data__reader_ab4c6c2d4ba40ece809ce896828c8ff03}{get\_file\_dir}()),
+47     \hyperlink{classlbann_1_1generic__data__store_a5e64702aa4a38c8533fa52944a8473d5}{m\_extended\_testing}(\textcolor{keyword}{false}),
+48     \hyperlink{classlbann_1_1generic__data__store_aa8ce7dae1eeb256820ac4f99893a6d32}{m\_collect\_minibatch\_indices}(\textcolor{keyword}{true}),
+49     \hyperlink{classlbann_1_1generic__data__store_ae2d2d61d5d766a7f525eedcb05e0dbf6}{m\_mpi\_comm}(\hyperlink{classlbann_1_1generic__data__store_a719b6b99c20f97a6cf25f6029582bf36}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_acc06dd4de92e45030d6fbe5984ae58d1}{get\_model\_comm}().comm)
+50 \{
+51   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__store_a719b6b99c20f97a6cf25f6029582bf36}{m\_comm} == \textcolor{keyword}{nullptr}) \{
+52     std::stringstream err;
+53     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+54         << \textcolor{stringliteral}{" m\_reader->get\_comm is nullptr"};
+55         \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+56   \}
+57   \hyperlink{classlbann_1_1generic__data__store_a87695bfd2d1ed0dbe01d99108e3f68b7}{m\_rank} = \hyperlink{classlbann_1_1generic__data__store_a719b6b99c20f97a6cf25f6029582bf36}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_a789453454468a3b70de768537c50ca52}{get\_rank\_in\_model}();
+58   \hyperlink{classlbann_1_1generic__data__store_afcd4f99959c265c8c03dcf8ad3779d85}{m\_np} = \hyperlink{classlbann_1_1generic__data__store_a719b6b99c20f97a6cf25f6029582bf36}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_a5755dfdfc6377b4cae5ef8f7819e17de}{get\_procs\_per\_model}();
+59   \hyperlink{classlbann_1_1generic__data__store_a853741295a07b5687921fc56d0d7d5b2}{set\_name}(\textcolor{stringliteral}{"generic\_data\_store"});
+60   \hyperlink{classoptions}{options} *opts = \hyperlink{classoptions_a9ecfe9c365269df68a41b961c31ae3f5}{options::get}();
+61   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__store_a143fd33ef3a53180bc62745e369c16f8}{m\_master}) std::cerr << \textcolor{stringliteral}{"generic\_data\_store::generic\_data\_store; np: "} << 
+      \hyperlink{classlbann_1_1generic__data__store_afcd4f99959c265c8c03dcf8ad3779d85}{m\_np} << \textcolor{stringliteral}{"\(\backslash\)n"};
+62     \textcolor{keywordflow}{if} (opts->\hyperlink{classoptions_aafb1d2a7ccde0b1bf786230ba4080ecd}{has\_bool}(\textcolor{stringliteral}{"extended\_testing"}) && opts->\hyperlink{classoptions_a99aa190102de33e2aed39723929f9fad}{get\_bool}(\textcolor{stringliteral}{"extended\_testing"})) \{
+63       \hyperlink{classlbann_1_1generic__data__store_a5e64702aa4a38c8533fa52944a8473d5}{m\_extended\_testing} = \textcolor{keyword}{true};
+64     \}
+65 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__data__store_acbcd88161c06f4bb9a70bbae857d4ee0_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_a0198154e411a4952c2536af390551d13}\label{classlbann_1_1generic__data__store_a0198154e411a4952c2536af390551d13}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!generic\+\_\+data\+\_\+store@{generic\+\_\+data\+\_\+store}}
+\index{generic\+\_\+data\+\_\+store@{generic\+\_\+data\+\_\+store}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{generic\+\_\+data\+\_\+store()}{generic\_data\_store()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::generic\+\_\+data\+\_\+store\+::generic\+\_\+data\+\_\+store (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1generic__data__store}{generic\+\_\+data\+\_\+store} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+copy ctor 
+
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_ac8f202a6aa5a3c5007a9d7d53c687851}\label{classlbann_1_1generic__data__store_ac8f202a6aa5a3c5007a9d7d53c687851}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!````~generic\+\_\+data\+\_\+store@{$\sim$generic\+\_\+data\+\_\+store}}
+\index{````~generic\+\_\+data\+\_\+store@{$\sim$generic\+\_\+data\+\_\+store}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{$\sim$generic\+\_\+data\+\_\+store()}{~generic\_data\_store()}}
+{\footnotesize\ttfamily virtual lbann\+::generic\+\_\+data\+\_\+store\+::$\sim$generic\+\_\+data\+\_\+store (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+dtor 
+
+
+
+Definition at line 60 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+
+\begin{DoxyCode}
+60 \{\}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__data__store_ac8f202a6aa5a3c5007a9d7d53c687851_cgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_ae06e089790aa023b839be508a3c020c6}\label{classlbann_1_1generic__data__store_ae06e089790aa023b839be508a3c020c6}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!copy@{copy}}
+\index{copy@{copy}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily virtual \hyperlink{classlbann_1_1generic__data__store}{generic\+\_\+data\+\_\+store}$\ast$ lbann\+::generic\+\_\+data\+\_\+store\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [pure virtual]}}
+
+
+
+Implemented in \hyperlink{classlbann_1_1data__store__csv_a2e95f53f539a838e6c6484b9f4de5a45}{lbann\+::data\+\_\+store\+\_\+csv}, \hyperlink{classlbann_1_1data__store__pilot2__molecular_a1a59e48a8c7ca8efe86509e0d9cd1307}{lbann\+::data\+\_\+store\+\_\+pilot2\+\_\+molecular}, \hyperlink{classlbann_1_1data__store__image_ab62efcb2dbe3118bf2815fa5d51fee61}{lbann\+::data\+\_\+store\+\_\+image}, \hyperlink{classlbann_1_1data__store__merge__features_a00a6f7e1f07b5bc65d98c835925d1e08}{lbann\+::data\+\_\+store\+\_\+merge\+\_\+features}, \hyperlink{classlbann_1_1data__store__merge__samples_a37fc606c2347c6c6a24b588665e3cde5}{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples}, \hyperlink{classlbann_1_1data__store__multi__images_a1046efda9448bab9b42e9fcdf71e03f1}{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images}, \hyperlink{classlbann_1_1data__store__triplet_a446ee3b1fa3097e51bd0e198de960cd4}{lbann\+::data\+\_\+store\+\_\+triplet}, \hyperlink{classlbann_1_1data__store__imagenet_ae3b0d31ac020c36f41766999288e2d25}{lbann\+::data\+\_\+store\+\_\+imagenet}, and \hyperlink{classlbann_1_1data__store__imagenet__patches_a5067e8299f5cf073497a5005ee9db759}{lbann\+::data\+\_\+store\+\_\+imagenet\+\_\+patches}.
+
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__data__store_ae06e089790aa023b839be508a3c020c6_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_a5a34663fbbc3714d45743a6ca7195f51}\label{classlbann_1_1generic__data__store_a5a34663fbbc3714d45743a6ca7195f51}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!exchange\+\_\+data@{exchange\+\_\+data}}
+\index{exchange\+\_\+data@{exchange\+\_\+data}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{exchange\+\_\+data()}{exchange\_data()}}
+{\footnotesize\ttfamily virtual void lbann\+::generic\+\_\+data\+\_\+store\+::exchange\+\_\+data (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [protected]}, {\ttfamily [pure virtual]}}
+
+
+
+Implemented in \hyperlink{classlbann_1_1data__store__pilot2__molecular_addaa6db4e1b3a25424da9da63c0b3616}{lbann\+::data\+\_\+store\+\_\+pilot2\+\_\+molecular}, \hyperlink{classlbann_1_1data__store__csv_acacd039d3ca8caf8958b731a1ce382c6}{lbann\+::data\+\_\+store\+\_\+csv}, \hyperlink{classlbann_1_1data__store__image_a5ff5eccbd469caca692e8259f6f8c021}{lbann\+::data\+\_\+store\+\_\+image}, \hyperlink{classlbann_1_1data__store__merge__features_a6a55e3959727a104b4470ba51e0988c3}{lbann\+::data\+\_\+store\+\_\+merge\+\_\+features}, and \hyperlink{classlbann_1_1data__store__merge__samples_a89dc9b0e04c8279cee5e89be2f2ed2a3}{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples}.
+
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__data__store_a5a34663fbbc3714d45743a6ca7195f51_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_abd5bf0321c063996369e1e2659bd99aa}\label{classlbann_1_1generic__data__store_abd5bf0321c063996369e1e2659bd99aa}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!exchange\+\_\+mb\+\_\+counts@{exchange\+\_\+mb\+\_\+counts}}
+\index{exchange\+\_\+mb\+\_\+counts@{exchange\+\_\+mb\+\_\+counts}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{exchange\+\_\+mb\+\_\+counts()}{exchange\_mb\_counts()}}
+{\footnotesize\ttfamily void lbann\+::generic\+\_\+data\+\_\+store\+::exchange\+\_\+mb\+\_\+counts (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+fills in m\+\_\+mb\+\_\+counts 
+
+
+
+Definition at line 165 of file generic\+\_\+data\+\_\+store.\+cpp.
+
+
+\begin{DoxyCode}
+165                                             \{
+166   \textcolor{keywordtype}{int} my\_num\_indices = \hyperlink{classlbann_1_1generic__data__store_a41f7fec1f1f3d6568a5765be7a6784eb}{m\_my\_minibatch\_indices\_v}.size();
+167   \hyperlink{classlbann_1_1generic__data__store_a8ba0cf1a3d83d835060f45a53d77fbfd}{m\_mb\_counts}.resize(\hyperlink{classlbann_1_1generic__data__store_afcd4f99959c265c8c03dcf8ad3779d85}{m\_np});
+168   std::vector<int> num(\hyperlink{classlbann_1_1generic__data__store_afcd4f99959c265c8c03dcf8ad3779d85}{m\_np}, 1); \textcolor{comment}{//num elements to be received from P\_j}
+169   MPI\_Allgather(&my\_num\_indices, 1, MPI\_INT,
+170                  \hyperlink{classlbann_1_1generic__data__store_a8ba0cf1a3d83d835060f45a53d77fbfd}{m\_mb\_counts}.data(), 1, MPI\_INT, \hyperlink{classlbann_1_1generic__data__store_ae2d2d61d5d766a7f525eedcb05e0dbf6}{m\_mpi\_comm});
+171 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__data__store_abd5bf0321c063996369e1e2659bd99aa_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_aa0ef8d7528f6775d47641ffe5ac229da}\label{classlbann_1_1generic__data__store_aa0ef8d7528f6775d47641ffe5ac229da}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!exchange\+\_\+mb\+\_\+indices@{exchange\+\_\+mb\+\_\+indices}}
+\index{exchange\+\_\+mb\+\_\+indices@{exchange\+\_\+mb\+\_\+indices}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{exchange\+\_\+mb\+\_\+indices()}{exchange\_mb\_indices()}}
+{\footnotesize\ttfamily void lbann\+::generic\+\_\+data\+\_\+store\+::exchange\+\_\+mb\+\_\+indices (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+fills in m\+\_\+all\+\_\+minibatch\+\_\+indices 
+
+
+
+Definition at line 173 of file generic\+\_\+data\+\_\+store.\+cpp.
+
+
+\begin{DoxyCode}
+173                                              \{
+174   \hyperlink{classlbann_1_1generic__data__store_abd5bf0321c063996369e1e2659bd99aa}{exchange\_mb\_counts}();
+175   \textcolor{comment}{//setup data structures to exchange minibatch indices with all processors}
+176   \textcolor{comment}{//displacement vector}
+177   std::vector<int> displ(\hyperlink{classlbann_1_1generic__data__store_afcd4f99959c265c8c03dcf8ad3779d85}{m\_np});
+178   displ[0] = 0;
+179   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} j=1; j<\hyperlink{classlbann_1_1generic__data__store_a8ba0cf1a3d83d835060f45a53d77fbfd}{m\_mb\_counts}.size(); j++) \{
+180     displ[j] = displ[j-1] + \hyperlink{classlbann_1_1generic__data__store_a8ba0cf1a3d83d835060f45a53d77fbfd}{m\_mb\_counts}[j-1];
+181   \}
+182 
+183   \textcolor{comment}{//recv vector}
+184   \textcolor{keywordtype}{int} n = std::accumulate(\hyperlink{classlbann_1_1generic__data__store_a8ba0cf1a3d83d835060f45a53d77fbfd}{m\_mb\_counts}.begin(), \hyperlink{classlbann_1_1generic__data__store_a8ba0cf1a3d83d835060f45a53d77fbfd}{m\_mb\_counts}.end(), 0);
+185   std::vector<int> all\_indices(n);
+186 
+187   \textcolor{comment}{//receive the indices}
+188   MPI\_Allgatherv(
+189     \hyperlink{classlbann_1_1generic__data__store_a41f7fec1f1f3d6568a5765be7a6784eb}{m\_my\_minibatch\_indices\_v}.data(), 
+      \hyperlink{classlbann_1_1generic__data__store_a41f7fec1f1f3d6568a5765be7a6784eb}{m\_my\_minibatch\_indices\_v}.size(), MPI\_INT, 
+190     all\_indices.data(), \hyperlink{classlbann_1_1generic__data__store_a8ba0cf1a3d83d835060f45a53d77fbfd}{m\_mb\_counts}.data(), displ.data(),
+191     MPI\_INT, \hyperlink{classlbann_1_1generic__data__store_ae2d2d61d5d766a7f525eedcb05e0dbf6}{m\_mpi\_comm});
+192 
+193   \textcolor{comment}{//fill in the final data structure}
+194   \hyperlink{classlbann_1_1generic__data__store_afd21d4f029e450328f8703dd72702e73}{m\_all\_minibatch\_indices}.resize(\hyperlink{classlbann_1_1generic__data__store_afcd4f99959c265c8c03dcf8ad3779d85}{m\_np});
+195   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} j=0; j<\hyperlink{classlbann_1_1generic__data__store_afcd4f99959c265c8c03dcf8ad3779d85}{m\_np}; j++) \{
+196     \hyperlink{classlbann_1_1generic__data__store_afd21d4f029e450328f8703dd72702e73}{m\_all\_minibatch\_indices}[j].reserve(\hyperlink{classlbann_1_1generic__data__store_a8ba0cf1a3d83d835060f45a53d77fbfd}{m\_mb\_counts}[j]);
+197     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=displ[j]; i<displ[j]+\hyperlink{classlbann_1_1generic__data__store_a8ba0cf1a3d83d835060f45a53d77fbfd}{m\_mb\_counts}[j]; i++) \{
+198       \hyperlink{classlbann_1_1generic__data__store_afd21d4f029e450328f8703dd72702e73}{m\_all\_minibatch\_indices}[j].push\_back(all\_indices[i]);
+199     \}
+200   \}
+201 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=340pt]{classlbann_1_1generic__data__store_aa0ef8d7528f6775d47641ffe5ac229da_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__data__store_aa0ef8d7528f6775d47641ffe5ac229da_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_ae569426f71f9317e88fe1078d58c98e7}\label{classlbann_1_1generic__data__store_ae569426f71f9317e88fe1078d58c98e7}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!extended\+\_\+testing@{extended\+\_\+testing}}
+\index{extended\+\_\+testing@{extended\+\_\+testing}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{extended\+\_\+testing()}{extended\_testing()}}
+{\footnotesize\ttfamily virtual void lbann\+::generic\+\_\+data\+\_\+store\+::extended\+\_\+testing (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented in \hyperlink{classlbann_1_1data__store__multi__images_abe17bbf485f6da9d7dfa568e9e74a693}{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images}.
+
+
+
+Definition at line 168 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+
+\begin{DoxyCode}
+168 \{\}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__data__store_ae569426f71f9317e88fe1078d58c98e7_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_a2abb3d0327b528d36e23fcef9b937798}\label{classlbann_1_1generic__data__store_a2abb3d0327b528d36e23fcef9b937798}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!get\+\_\+data\+\_\+buf@{get\+\_\+data\+\_\+buf}}
+\index{get\+\_\+data\+\_\+buf@{get\+\_\+data\+\_\+buf}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{get\+\_\+data\+\_\+buf()}{get\_data\_buf()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily virtual void lbann\+::generic\+\_\+data\+\_\+store\+::get\+\_\+data\+\_\+buf (\begin{DoxyParamCaption}\item[{int}]{data\+\_\+id,  }\item[{std\+::vector$<$ unsigned char $>$ $\ast$\&}]{buf,  }\item[{int}]{multi\+\_\+idx = {\ttfamily 0} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+called by various image data readers 
+
+
+
+Reimplemented in \hyperlink{classlbann_1_1data__store__image_aa9e47fb3cad58dda4eaddcccc9bfa523}{lbann\+::data\+\_\+store\+\_\+image}, \hyperlink{classlbann_1_1data__store__merge__features_ac95dff58de75fba572f34d56ceec3732}{lbann\+::data\+\_\+store\+\_\+merge\+\_\+features}, and \hyperlink{classlbann_1_1data__store__merge__samples_a8b81d947c1f05c38b7f979ce7e3cef97}{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples}.
+
+
+
+Definition at line 71 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+
+\begin{DoxyCode}
+71 \{\}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__data__store_a2abb3d0327b528d36e23fcef9b937798_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_abc3fecd958650a74e76070ea4f394bea}\label{classlbann_1_1generic__data__store_abc3fecd958650a74e76070ea4f394bea}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!get\+\_\+data\+\_\+buf@{get\+\_\+data\+\_\+buf}}
+\index{get\+\_\+data\+\_\+buf@{get\+\_\+data\+\_\+buf}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{get\+\_\+data\+\_\+buf()}{get\_data\_buf()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily virtual void lbann\+::generic\+\_\+data\+\_\+store\+::get\+\_\+data\+\_\+buf (\begin{DoxyParamCaption}\item[{int}]{data\+\_\+id,  }\item[{int}]{tid,  }\item[{std\+::vector$<$ double $>$ $\ast$\&}]{buf }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented in \hyperlink{classlbann_1_1data__store__pilot2__molecular_ab0f82fb7fdec7779bbb693e06a206127}{lbann\+::data\+\_\+store\+\_\+pilot2\+\_\+molecular}.
+
+
+
+Definition at line 72 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+
+\begin{DoxyCode}
+72 \{\}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_ab3f8b7fe6d6631059d92714d4277a983}\label{classlbann_1_1generic__data__store_ab3f8b7fe6d6631059d92714d4277a983}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!get\+\_\+data\+\_\+buf\+\_\+\+Data\+Type@{get\+\_\+data\+\_\+buf\+\_\+\+Data\+Type}}
+\index{get\+\_\+data\+\_\+buf\+\_\+\+Data\+Type@{get\+\_\+data\+\_\+buf\+\_\+\+Data\+Type}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{get\+\_\+data\+\_\+buf\+\_\+\+Data\+Type()}{get\_data\_buf\_DataType()}}
+{\footnotesize\ttfamily virtual void lbann\+::generic\+\_\+data\+\_\+store\+::get\+\_\+data\+\_\+buf\+\_\+\+Data\+Type (\begin{DoxyParamCaption}\item[{int}]{data\+\_\+id,  }\item[{std\+::vector$<$ Data\+Type $>$ $\ast$\&}]{buf }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented in \hyperlink{classlbann_1_1data__store__csv_a3125cf637d40e8908c68bb74690f06da}{lbann\+::data\+\_\+store\+\_\+csv}.
+
+
+
+Definition at line 74 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+
+\begin{DoxyCode}
+74 \{\}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__data__store_ab3f8b7fe6d6631059d92714d4277a983_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_a7641d15eba63426acf5071acb8026442}\label{classlbann_1_1generic__data__store_a7641d15eba63426acf5071acb8026442}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!get\+\_\+file\+\_\+size@{get\+\_\+file\+\_\+size}}
+\index{get\+\_\+file\+\_\+size@{get\+\_\+file\+\_\+size}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{get\+\_\+file\+\_\+size()}{get\_file\_size()}}
+{\footnotesize\ttfamily size\+\_\+t lbann\+::generic\+\_\+data\+\_\+store\+::get\+\_\+file\+\_\+size (\begin{DoxyParamCaption}\item[{std\+::string}]{dir,  }\item[{std\+::string}]{fn }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+returns the number of bytes in dir/fn; it\textquotesingle{}s OK if dir = \char`\"{}\char`\"{} 
+
+
+
+Definition at line 127 of file generic\+\_\+data\+\_\+store.\+cpp.
+
+
+\begin{DoxyCode}
+127                                                                     \{
+128   std::string imagepath;
+129   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__store_ab479c127f00ce550c7433b90e40a5a3d}{m\_dir} == \textcolor{stringliteral}{""}) \{
+130     imagepath = fn;
+131   \} \textcolor{keywordflow}{else} \{
+132     imagepath = dir + fn;
+133   \}
+134   \textcolor{keyword}{struct }stat st;
+135   \textcolor{keywordflow}{if} (stat(imagepath.c\_str(), &st) != 0) \{
+136     std::stringstream err;
+137     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+138         << \textcolor{stringliteral}{"stat failed for dir: "} << dir
+139         << \textcolor{stringliteral}{" and fn: "} << fn;
+140     \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+141   \}
+142   \textcolor{keywordflow}{return} st.st\_size;   
+143 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__data__store_a7641d15eba63426acf5071acb8026442_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_ad0de5ac2cdcf3f692acb252a019a2aed}\label{classlbann_1_1generic__data__store_ad0de5ac2cdcf3f692acb252a019a2aed}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!get\+\_\+index\+\_\+owner@{get\+\_\+index\+\_\+owner}}
+\index{get\+\_\+index\+\_\+owner@{get\+\_\+index\+\_\+owner}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{get\+\_\+index\+\_\+owner()}{get\_index\_owner()}}
+{\footnotesize\ttfamily int lbann\+::generic\+\_\+data\+\_\+store\+::get\+\_\+index\+\_\+owner (\begin{DoxyParamCaption}\item[{int}]{idx }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [protected]}}
+
+returns the processor that owns the data associated with the index 
+
+Definition at line 164 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+
+\begin{DoxyCode}
+164                                \{
+165     \textcolor{keywordflow}{return} idx % \hyperlink{classlbann_1_1generic__data__store_afcd4f99959c265c8c03dcf8ad3779d85}{m\_np};
+166   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__data__store_ad0de5ac2cdcf3f692acb252a019a2aed_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_ab861db5f81e45a6063b8922a331dd007}\label{classlbann_1_1generic__data__store_ab861db5f81e45a6063b8922a331dd007}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!get\+\_\+minibatch\+\_\+index\+\_\+vector@{get\+\_\+minibatch\+\_\+index\+\_\+vector}}
+\index{get\+\_\+minibatch\+\_\+index\+\_\+vector@{get\+\_\+minibatch\+\_\+index\+\_\+vector}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{get\+\_\+minibatch\+\_\+index\+\_\+vector()}{get\_minibatch\_index\_vector()}}
+{\footnotesize\ttfamily void lbann\+::generic\+\_\+data\+\_\+store\+::get\+\_\+minibatch\+\_\+index\+\_\+vector (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+fills in m\+\_\+my\+\_\+minibatch\+\_\+indices\+\_\+v 
+
+
+
+Definition at line 67 of file generic\+\_\+data\+\_\+store.\+cpp.
+
+
+\begin{DoxyCode}
+67                                                     \{
+68   \textcolor{keywordtype}{size\_t} s2 = 0;
+69   \textcolor{keywordflow}{for} (\textcolor{keyword}{auto} t1 : (*\hyperlink{classlbann_1_1generic__data__store_a54c0a85cd536ef566604c4e9916910c8}{m\_my\_minibatch\_indices})) \{
+70     s2 += t1.size();
+71   \}
+72   \hyperlink{classlbann_1_1generic__data__store_a41f7fec1f1f3d6568a5765be7a6784eb}{m\_my\_minibatch\_indices\_v}.reserve(s2);
+73   \textcolor{keywordflow}{for} (\textcolor{keyword}{auto} t1 : (*\hyperlink{classlbann_1_1generic__data__store_a54c0a85cd536ef566604c4e9916910c8}{m\_my\_minibatch\_indices})) \{
+74     \textcolor{keywordflow}{for} (\textcolor{keyword}{auto} t2 : t1) \{
+75       \hyperlink{classlbann_1_1generic__data__store_a41f7fec1f1f3d6568a5765be7a6784eb}{m\_my\_minibatch\_indices\_v}.push\_back(t2);
+76     \}
+77   \}
+78 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__data__store_ab861db5f81e45a6063b8922a331dd007_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_a3558f87939755b08ae151623a5799127}\label{classlbann_1_1generic__data__store_a3558f87939755b08ae151623a5799127}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!get\+\_\+my\+\_\+datastore\+\_\+indices@{get\+\_\+my\+\_\+datastore\+\_\+indices}}
+\index{get\+\_\+my\+\_\+datastore\+\_\+indices@{get\+\_\+my\+\_\+datastore\+\_\+indices}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{get\+\_\+my\+\_\+datastore\+\_\+indices()}{get\_my\_datastore\_indices()}}
+{\footnotesize\ttfamily void lbann\+::generic\+\_\+data\+\_\+store\+::get\+\_\+my\+\_\+datastore\+\_\+indices (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+fills in m\+\_\+my\+\_\+datastore\+\_\+indices and m\+\_\+num\+\_\+samples 
+
+
+
+Definition at line 80 of file generic\+\_\+data\+\_\+store.\+cpp.
+
+
+\begin{DoxyCode}
+80                                                   \{
+81   \hyperlink{classlbann_1_1generic__data__store_a17d6f931e1a2f4ae9e2452b7d47ead43}{m\_num\_samples}.resize(\hyperlink{classlbann_1_1generic__data__store_afcd4f99959c265c8c03dcf8ad3779d85}{m\_np}, 0);
+82   std::unordered\_set<int> mine;
+83   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} j=0; j<\hyperlink{classlbann_1_1generic__data__store_ad456f747ee07f63df15c60833dfb82ad}{m\_shuffled\_indices}->size(); ++j) \{
+84     \textcolor{keywordtype}{int} idx = (*m\_shuffled\_indices)[j];
+85     \textcolor{keywordtype}{int} owner = idx % \hyperlink{classlbann_1_1generic__data__store_afcd4f99959c265c8c03dcf8ad3779d85}{m\_np};
+86     \hyperlink{classlbann_1_1generic__data__store_a17d6f931e1a2f4ae9e2452b7d47ead43}{m\_num\_samples}[owner] += 1;
+87     \textcolor{keywordflow}{if} (owner == \hyperlink{classlbann_1_1generic__data__store_a87695bfd2d1ed0dbe01d99108e3f68b7}{m\_rank}) \{
+88       \hyperlink{classlbann_1_1generic__data__store_abd38f8d8aab0648959e09d011abfe20a}{m\_my\_datastore\_indices}.insert(idx);
+89     \}
+90   \}
+91 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__data__store_a3558f87939755b08ae151623a5799127_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_a53140adb8f7c2348986916a1abb85ffa}\label{classlbann_1_1generic__data__store_a53140adb8f7c2348986916a1abb85ffa}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!get\+\_\+name@{get\+\_\+name}}
+\index{get\+\_\+name@{get\+\_\+name}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{get\+\_\+name()}{get\_name()}}
+{\footnotesize\ttfamily const std\+::string\& lbann\+::generic\+\_\+data\+\_\+store\+::get\+\_\+name (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 76 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+
+\begin{DoxyCode}
+76                                      \{
+77     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1generic__data__store_ad2c2e241eefc6ff972169d757f8d2499}{m\_name};
+78   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__data__store_a53140adb8f7c2348986916a1abb85ffa_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_a680cf1fc618f6505a04255920ee7d7f2}\label{classlbann_1_1generic__data__store_a680cf1fc618f6505a04255920ee7d7f2}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1generic__data__store}{generic\+\_\+data\+\_\+store}\& lbann\+::generic\+\_\+data\+\_\+store\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1generic__data__store}{generic\+\_\+data\+\_\+store} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+operator= 
+
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_a853741295a07b5687921fc56d0d7d5b2}\label{classlbann_1_1generic__data__store_a853741295a07b5687921fc56d0d7d5b2}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!set\+\_\+name@{set\+\_\+name}}
+\index{set\+\_\+name@{set\+\_\+name}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{set\+\_\+name()}{set\_name()}}
+{\footnotesize\ttfamily void lbann\+::generic\+\_\+data\+\_\+store\+::set\+\_\+name (\begin{DoxyParamCaption}\item[{std\+::string}]{name }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 80 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+
+\begin{DoxyCode}
+80                                 \{
+81     \hyperlink{classlbann_1_1generic__data__store_ad2c2e241eefc6ff972169d757f8d2499}{m\_name} = name;
+82   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__data__store_a853741295a07b5687921fc56d0d7d5b2_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_a694438e0c70be757cc020ffc918fb165}\label{classlbann_1_1generic__data__store_a694438e0c70be757cc020ffc918fb165}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!set\+\_\+num\+\_\+global\+\_\+indices@{set\+\_\+num\+\_\+global\+\_\+indices}}
+\index{set\+\_\+num\+\_\+global\+\_\+indices@{set\+\_\+num\+\_\+global\+\_\+indices}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{set\+\_\+num\+\_\+global\+\_\+indices()}{set\_num\_global\_indices()}}
+{\footnotesize\ttfamily void lbann\+::generic\+\_\+data\+\_\+store\+::set\+\_\+num\+\_\+global\+\_\+indices (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [protected]}}
+
+
+
+Definition at line 99 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+
+\begin{DoxyCode}
+99                                 \{
+100     \hyperlink{classlbann_1_1generic__data__store_a0dfa2ffa01845b84ca477fb3e14a36c6}{m\_num\_global\_indices} = \hyperlink{classlbann_1_1generic__data__store_ad456f747ee07f63df15c60833dfb82ad}{m\_shuffled\_indices}->size();
+101   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__data__store_a694438e0c70be757cc020ffc918fb165_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_abdf41bf60ba37fa3de49c65c178dc7b0}\label{classlbann_1_1generic__data__store_abdf41bf60ba37fa3de49c65c178dc7b0}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!set\+\_\+shuffled\+\_\+indices@{set\+\_\+shuffled\+\_\+indices}}
+\index{set\+\_\+shuffled\+\_\+indices@{set\+\_\+shuffled\+\_\+indices}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{set\+\_\+shuffled\+\_\+indices()}{set\_shuffled\_indices()}}
+{\footnotesize\ttfamily void lbann\+::generic\+\_\+data\+\_\+store\+::set\+\_\+shuffled\+\_\+indices (\begin{DoxyParamCaption}\item[{const std\+::vector$<$ int $>$ $\ast$}]{indices }\end{DoxyParamCaption})}
+
+
+
+called by \hyperlink{classlbann_1_1generic__data__reader_a1d10dec5713fbe60e61b4dc400227ade}{generic\+\_\+data\+\_\+reader\+::update} 
+
+
+
+Definition at line 145 of file generic\+\_\+data\+\_\+store.\+cpp.
+
+
+\begin{DoxyCode}
+145                                                                            \{
+146   \hyperlink{classlbann_1_1generic__data__store_ad456f747ee07f63df15c60833dfb82ad}{m\_shuffled\_indices} = indices;
+147   ++\hyperlink{classlbann_1_1generic__data__store_a1b373d13815ed7f9a7c1dae20b236e91}{m\_epoch};
+148   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__store_a1b373d13815ed7f9a7c1dae20b236e91}{m\_epoch} > 1) \{
+149     \hyperlink{classlbann_1_1generic__data__store_a5a34663fbbc3714d45743a6ca7195f51}{exchange\_data}();
+150   \}
+151   \textcolor{comment}{/*}
+152 \textcolor{comment}{  if (m\_rank == 0) \{}
+153 \textcolor{comment}{    bool is\_shuffled = false;}
+154 \textcolor{comment}{    for (size\_t j=1; j<indices->size(); j++) \{}
+155 \textcolor{comment}{      if ((*indices)[j-1]+1 != (*indices)[j]) \{}
+156 \textcolor{comment}{        is\_shuffled = true;}
+157 \textcolor{comment}{        break;}
+158 \textcolor{comment}{      \}}
+159 \textcolor{comment}{    \}}
+160 \textcolor{comment}{    //std::cerr << "IS\_SHUFFLED: " << is\_shuffled << "\(\backslash\)n";}
+161 \textcolor{comment}{  \}}
+162 \textcolor{comment}{  */}
+163 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=338pt]{classlbann_1_1generic__data__store_abdf41bf60ba37fa3de49c65c178dc7b0_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__data__store_abdf41bf60ba37fa3de49c65c178dc7b0_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_a1cff17def02ee21b6ca0befeb04bb582}\label{classlbann_1_1generic__data__store_a1cff17def02ee21b6ca0befeb04bb582}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!setup@{setup}}
+\index{setup@{setup}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{setup()}{setup()}}
+{\footnotesize\ttfamily void lbann\+::generic\+\_\+data\+\_\+store\+::setup (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [virtual]}}
+
+
+
+called by \hyperlink{classlbann_1_1generic__data__reader_a8b2a09d38512fc11f1b9d572c89100a7}{generic\+\_\+data\+\_\+reader\+::setup\+\_\+data\+\_\+store} 
+
+
+
+Reimplemented in \hyperlink{classlbann_1_1data__store__csv_a184c7e6f27c5e07255b9c889ace02407}{lbann\+::data\+\_\+store\+\_\+csv}, \hyperlink{classlbann_1_1data__store__pilot2__molecular_a975d7907053a8b2e92ea5f77ca4ae7a3}{lbann\+::data\+\_\+store\+\_\+pilot2\+\_\+molecular}, \hyperlink{classlbann_1_1data__store__merge__features_aecb1fbbbc0c0ee9647cf178487eb2c02}{lbann\+::data\+\_\+store\+\_\+merge\+\_\+features}, \hyperlink{classlbann_1_1data__store__merge__samples_a9f7f027eab6bfb65dd8001939769f476}{lbann\+::data\+\_\+store\+\_\+merge\+\_\+samples}, \hyperlink{classlbann_1_1data__store__image_a79280b3aa9a207dfacad2bcc9824ec73}{lbann\+::data\+\_\+store\+\_\+image}, \hyperlink{classlbann_1_1data__store__multi__images_a7b5e9ec7b7132872299a204d5d24ee62}{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images}, \hyperlink{classlbann_1_1data__store__triplet_aca66b9cf71d7ba2b9870e76c5b92b5e8}{lbann\+::data\+\_\+store\+\_\+triplet}, \hyperlink{classlbann_1_1data__store__imagenet_a611aa1734a491c443396a077b49fe4fe}{lbann\+::data\+\_\+store\+\_\+imagenet}, and \hyperlink{classlbann_1_1data__store__imagenet__patches_aa8cfaf12c87f3dbbbb4fc808f6ca26ad}{lbann\+::data\+\_\+store\+\_\+imagenet\+\_\+patches}.
+
+
+
+Definition at line 93 of file generic\+\_\+data\+\_\+store.\+cpp.
+
+
+\begin{DoxyCode}
+93                                \{
+94   \hyperlink{classlbann_1_1generic__data__store_abdf41bf60ba37fa3de49c65c178dc7b0}{set\_shuffled\_indices}( &(\hyperlink{classlbann_1_1generic__data__store_afa49ced0ab64c632371ea52532a91ec2}{m\_reader}->
+      \hyperlink{classlbann_1_1generic__data__reader_a38eedaa9c8680e885a3ec05009f5f492}{get\_shuffled\_indices}()) );
+95   \hyperlink{classlbann_1_1generic__data__store_a694438e0c70be757cc020ffc918fb165}{set\_num\_global\_indices}();
+96   \hyperlink{classlbann_1_1generic__data__store_a4381c1192e029d24c5b02cbd68988f77}{m\_num\_readers} = \hyperlink{classlbann_1_1generic__data__store_afa49ced0ab64c632371ea52532a91ec2}{m\_reader}->\hyperlink{classlbann_1_1generic__data__reader_ad15887cc31657d03925835aab0d4b675}{get\_num\_parallel\_readers}();
+97   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__store_a143fd33ef3a53180bc62745e369c16f8}{m\_master}) \{
+98     std::cerr << \textcolor{stringliteral}{"data\_reader type is: "} << \hyperlink{classlbann_1_1generic__data__store_afa49ced0ab64c632371ea52532a91ec2}{m\_reader}->\hyperlink{classlbann_1_1generic__data__reader_abeb849fb8e10b4fa317c90bc33f61758}{get\_type}() << \textcolor{stringliteral}{"\(\backslash\)n"};
+99   \}
+100 
+101   \textcolor{comment}{// get the set of global indices used by this processor in}
+102   \textcolor{comment}{// generic\_data\_reader::fetch\_data(). Note that these are}
+103   \textcolor{comment}{// "original' indices, not shuffled indices, i.e, these indices}
+104   \textcolor{comment}{// remain constant through all epochs}
+105   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__store_aa8ce7dae1eeb256820ac4f99893a6d32}{m\_collect\_minibatch\_indices}) \{
+106     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__store_a143fd33ef3a53180bc62745e369c16f8}{m\_master}) \{ std::cerr << \textcolor{stringliteral}{"calling m\_model->collect\_indices\(\backslash\)n"}; \}
+107     \hyperlink{classlbann_1_1generic__data__store_afa49ced0ab64c632371ea52532a91ec2}{m\_reader}->\hyperlink{classlbann_1_1generic__data__reader_a19fd7c4dc234fa09ac7619e47fe18454}{set\_save\_minibatch\_entries}(\textcolor{keyword}{true});
+108     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__store_afa49ced0ab64c632371ea52532a91ec2}{m\_reader}->\hyperlink{classlbann_1_1generic__data__reader_a92982e1b399f37e2ead5aa440883cba5}{get\_role}() == \textcolor{stringliteral}{"train"}) \{
+109       \hyperlink{classlbann_1_1generic__data__store_acf2fb76306c75f52de0d6ea92b0f38fc}{m\_model}->\hyperlink{classlbann_1_1model_aa819e0d7c8bb178155e40e33037cf054}{collect\_indices}(\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training});
+110     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__store_afa49ced0ab64c632371ea52532a91ec2}{m\_reader}->\hyperlink{classlbann_1_1generic__data__reader_a92982e1b399f37e2ead5aa440883cba5}{get\_role}() == \textcolor{stringliteral}{"validate"}) \{
+111       \hyperlink{classlbann_1_1generic__data__store_acf2fb76306c75f52de0d6ea92b0f38fc}{m\_model}->\hyperlink{classlbann_1_1model_aa819e0d7c8bb178155e40e33037cf054}{collect\_indices}(\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation});
+112     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__store_afa49ced0ab64c632371ea52532a91ec2}{m\_reader}->\hyperlink{classlbann_1_1generic__data__reader_a92982e1b399f37e2ead5aa440883cba5}{get\_role}() == \textcolor{stringliteral}{"test"}) \{
+113       \hyperlink{classlbann_1_1generic__data__store_acf2fb76306c75f52de0d6ea92b0f38fc}{m\_model}->\hyperlink{classlbann_1_1model_aa819e0d7c8bb178155e40e33037cf054}{collect\_indices}(\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing});
+114     \} \textcolor{keywordflow}{else} \{
+115       std::stringstream s2;
+116       s2 << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+117          << \textcolor{stringliteral}{" bad role; should be train, test, or validate;"}
+118          << \textcolor{stringliteral}{" we got: "} << \hyperlink{classlbann_1_1generic__data__store_afa49ced0ab64c632371ea52532a91ec2}{m\_reader}->\hyperlink{classlbann_1_1generic__data__reader_a92982e1b399f37e2ead5aa440883cba5}{get\_role}();
+119         \textcolor{keywordflow}{throw} lbann\_exception(s2.str());
+120     \}
+121     \hyperlink{classlbann_1_1generic__data__store_afa49ced0ab64c632371ea52532a91ec2}{m\_reader}->\hyperlink{classlbann_1_1generic__data__reader_a19fd7c4dc234fa09ac7619e47fe18454}{set\_save\_minibatch\_entries}(\textcolor{keyword}{false});
+122   \}
+123   \hyperlink{classlbann_1_1generic__data__store_a54c0a85cd536ef566604c4e9916910c8}{m\_my\_minibatch\_indices} = &(\hyperlink{classlbann_1_1generic__data__store_afa49ced0ab64c632371ea52532a91ec2}{m\_reader}->
+      \hyperlink{classlbann_1_1generic__data__reader_a192632a8037f6a1eef202747f5916bf3}{get\_minibatch\_indices}());
+124 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__data__store_a1cff17def02ee21b6ca0befeb04bb582_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__data__store_a1cff17def02ee21b6ca0befeb04bb582_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_afd21d4f029e450328f8703dd72702e73}\label{classlbann_1_1generic__data__store_afd21d4f029e450328f8703dd72702e73}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!m\+\_\+all\+\_\+minibatch\+\_\+indices@{m\+\_\+all\+\_\+minibatch\+\_\+indices}}
+\index{m\+\_\+all\+\_\+minibatch\+\_\+indices@{m\+\_\+all\+\_\+minibatch\+\_\+indices}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{m\+\_\+all\+\_\+minibatch\+\_\+indices}{m\_all\_minibatch\_indices}}
+{\footnotesize\ttfamily std\+::vector$<$std\+::vector$<$int$>$ $>$ lbann\+::generic\+\_\+data\+\_\+store\+::m\+\_\+all\+\_\+minibatch\+\_\+indices\hspace{0.3cm}{\ttfamily [protected]}}
+
+m\+\_\+all\+\_\+minibatch\+\_\+indices\mbox{[}j\mbox{]} will contain all indices that will be passed to data\+\_\+reader\+::fetch\+\_\+data in one epoch, for all processors 
+
+Definition at line 121 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_aa8ce7dae1eeb256820ac4f99893a6d32}\label{classlbann_1_1generic__data__store_aa8ce7dae1eeb256820ac4f99893a6d32}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!m\+\_\+collect\+\_\+minibatch\+\_\+indices@{m\+\_\+collect\+\_\+minibatch\+\_\+indices}}
+\index{m\+\_\+collect\+\_\+minibatch\+\_\+indices@{m\+\_\+collect\+\_\+minibatch\+\_\+indices}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{m\+\_\+collect\+\_\+minibatch\+\_\+indices}{m\_collect\_minibatch\_indices}}
+{\footnotesize\ttfamily bool lbann\+::generic\+\_\+data\+\_\+store\+::m\+\_\+collect\+\_\+minibatch\+\_\+indices\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 158 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_a719b6b99c20f97a6cf25f6029582bf36}\label{classlbann_1_1generic__data__store_a719b6b99c20f97a6cf25f6029582bf36}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!m\+\_\+comm@{m\+\_\+comm}}
+\index{m\+\_\+comm@{m\+\_\+comm}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{m\+\_\+comm}{m\_comm}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm}$\ast$ lbann\+::generic\+\_\+data\+\_\+store\+::m\+\_\+comm\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 88 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_ab479c127f00ce550c7433b90e40a5a3d}\label{classlbann_1_1generic__data__store_ab479c127f00ce550c7433b90e40a5a3d}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!m\+\_\+dir@{m\+\_\+dir}}
+\index{m\+\_\+dir@{m\+\_\+dir}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{m\+\_\+dir}{m\_dir}}
+{\footnotesize\ttfamily std\+::string lbann\+::generic\+\_\+data\+\_\+store\+::m\+\_\+dir\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+base directory for data 
+
+
+
+Definition at line 153 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_a1b373d13815ed7f9a7c1dae20b236e91}\label{classlbann_1_1generic__data__store_a1b373d13815ed7f9a7c1dae20b236e91}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!m\+\_\+epoch@{m\+\_\+epoch}}
+\index{m\+\_\+epoch@{m\+\_\+epoch}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{m\+\_\+epoch}{m\_epoch}}
+{\footnotesize\ttfamily size\+\_\+t lbann\+::generic\+\_\+data\+\_\+store\+::m\+\_\+epoch\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 142 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_a5e64702aa4a38c8533fa52944a8473d5}\label{classlbann_1_1generic__data__store_a5e64702aa4a38c8533fa52944a8473d5}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!m\+\_\+extended\+\_\+testing@{m\+\_\+extended\+\_\+testing}}
+\index{m\+\_\+extended\+\_\+testing@{m\+\_\+extended\+\_\+testing}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{m\+\_\+extended\+\_\+testing}{m\_extended\_testing}}
+{\footnotesize\ttfamily bool lbann\+::generic\+\_\+data\+\_\+store\+::m\+\_\+extended\+\_\+testing\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+conduct extensive testing 
+
+
+
+Definition at line 156 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_a1a9cc7b097cd7dd6ae0d12d52bb43ea1}\label{classlbann_1_1generic__data__store_a1a9cc7b097cd7dd6ae0d12d52bb43ea1}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!m\+\_\+in\+\_\+memory@{m\+\_\+in\+\_\+memory}}
+\index{m\+\_\+in\+\_\+memory@{m\+\_\+in\+\_\+memory}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{m\+\_\+in\+\_\+memory}{m\_in\_memory}}
+{\footnotesize\ttfamily bool lbann\+::generic\+\_\+data\+\_\+store\+::m\+\_\+in\+\_\+memory\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 144 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_a143fd33ef3a53180bc62745e369c16f8}\label{classlbann_1_1generic__data__store_a143fd33ef3a53180bc62745e369c16f8}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!m\+\_\+master@{m\+\_\+master}}
+\index{m\+\_\+master@{m\+\_\+master}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{m\+\_\+master}{m\_master}}
+{\footnotesize\ttfamily bool lbann\+::generic\+\_\+data\+\_\+store\+::m\+\_\+master\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 146 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_a8ba0cf1a3d83d835060f45a53d77fbfd}\label{classlbann_1_1generic__data__store_a8ba0cf1a3d83d835060f45a53d77fbfd}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!m\+\_\+mb\+\_\+counts@{m\+\_\+mb\+\_\+counts}}
+\index{m\+\_\+mb\+\_\+counts@{m\+\_\+mb\+\_\+counts}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{m\+\_\+mb\+\_\+counts}{m\_mb\_counts}}
+{\footnotesize\ttfamily std\+::vector$<$int$>$ lbann\+::generic\+\_\+data\+\_\+store\+::m\+\_\+mb\+\_\+counts\hspace{0.3cm}{\ttfamily [protected]}}
+
+m\+\_\+mb\+\_\+counts\mbox{[}j\mbox{]} contains the number of indices passed to data\+\_\+reader\+::fetch\+\_\+data in one epoch 
+
+Definition at line 114 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_acf2fb76306c75f52de0d6ea92b0f38fc}\label{classlbann_1_1generic__data__store_acf2fb76306c75f52de0d6ea92b0f38fc}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!m\+\_\+model@{m\+\_\+model}}
+\index{m\+\_\+model@{m\+\_\+model}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{m\+\_\+model}{m\_model}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1model}{model}$\ast$ lbann\+::generic\+\_\+data\+\_\+store\+::m\+\_\+model\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 150 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_ae2d2d61d5d766a7f525eedcb05e0dbf6}\label{classlbann_1_1generic__data__store_ae2d2d61d5d766a7f525eedcb05e0dbf6}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!m\+\_\+mpi\+\_\+comm@{m\+\_\+mpi\+\_\+comm}}
+\index{m\+\_\+mpi\+\_\+comm@{m\+\_\+mpi\+\_\+comm}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{m\+\_\+mpi\+\_\+comm}{m\_mpi\_comm}}
+{\footnotesize\ttfamily M\+P\+I\+\_\+\+Comm lbann\+::generic\+\_\+data\+\_\+store\+::m\+\_\+mpi\+\_\+comm\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 170 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_abd38f8d8aab0648959e09d011abfe20a}\label{classlbann_1_1generic__data__store_abd38f8d8aab0648959e09d011abfe20a}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!m\+\_\+my\+\_\+datastore\+\_\+indices@{m\+\_\+my\+\_\+datastore\+\_\+indices}}
+\index{m\+\_\+my\+\_\+datastore\+\_\+indices@{m\+\_\+my\+\_\+datastore\+\_\+indices}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{m\+\_\+my\+\_\+datastore\+\_\+indices}{m\_my\_datastore\_indices}}
+{\footnotesize\ttfamily std\+::unordered\+\_\+set$<$int$>$ lbann\+::generic\+\_\+data\+\_\+store\+::m\+\_\+my\+\_\+datastore\+\_\+indices\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+the indices that this processor owns; 
+
+
+
+Definition at line 130 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_a54c0a85cd536ef566604c4e9916910c8}\label{classlbann_1_1generic__data__store_a54c0a85cd536ef566604c4e9916910c8}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!m\+\_\+my\+\_\+minibatch\+\_\+indices@{m\+\_\+my\+\_\+minibatch\+\_\+indices}}
+\index{m\+\_\+my\+\_\+minibatch\+\_\+indices@{m\+\_\+my\+\_\+minibatch\+\_\+indices}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{m\+\_\+my\+\_\+minibatch\+\_\+indices}{m\_my\_minibatch\_indices}}
+{\footnotesize\ttfamily const std\+::vector$<$std\+::vector$<$int$>$ $>$$\ast$ lbann\+::generic\+\_\+data\+\_\+store\+::m\+\_\+my\+\_\+minibatch\+\_\+indices\hspace{0.3cm}{\ttfamily [protected]}}
+
+the indices that will be used locally; the inner j-\/th vector contains indices referenced during the j-\/th call to \hyperlink{classlbann_1_1generic__data__reader_a46b658ba4f6b746632b683568ab76f77}{generic\+\_\+data\+\_\+reader\+::fetch\+\_\+data}(...) 
+
+Definition at line 106 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_a41f7fec1f1f3d6568a5765be7a6784eb}\label{classlbann_1_1generic__data__store_a41f7fec1f1f3d6568a5765be7a6784eb}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!m\+\_\+my\+\_\+minibatch\+\_\+indices\+\_\+v@{m\+\_\+my\+\_\+minibatch\+\_\+indices\+\_\+v}}
+\index{m\+\_\+my\+\_\+minibatch\+\_\+indices\+\_\+v@{m\+\_\+my\+\_\+minibatch\+\_\+indices\+\_\+v}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{m\+\_\+my\+\_\+minibatch\+\_\+indices\+\_\+v}{m\_my\_minibatch\_indices\_v}}
+{\footnotesize\ttfamily std\+::vector$<$int$>$ lbann\+::generic\+\_\+data\+\_\+store\+::m\+\_\+my\+\_\+minibatch\+\_\+indices\+\_\+v\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+contains a concatenation of the indices in m\+\_\+my\+\_\+minibatch\+\_\+indices 
+
+
+
+Definition at line 108 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_ad2c2e241eefc6ff972169d757f8d2499}\label{classlbann_1_1generic__data__store_ad2c2e241eefc6ff972169d757f8d2499}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!m\+\_\+name@{m\+\_\+name}}
+\index{m\+\_\+name@{m\+\_\+name}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{m\+\_\+name}{m\_name}}
+{\footnotesize\ttfamily std\+::string lbann\+::generic\+\_\+data\+\_\+store\+::m\+\_\+name\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 90 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_afcd4f99959c265c8c03dcf8ad3779d85}\label{classlbann_1_1generic__data__store_afcd4f99959c265c8c03dcf8ad3779d85}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!m\+\_\+np@{m\+\_\+np}}
+\index{m\+\_\+np@{m\+\_\+np}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{m\+\_\+np}{m\_np}}
+{\footnotesize\ttfamily int lbann\+::generic\+\_\+data\+\_\+store\+::m\+\_\+np\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+number of procs in the model 
+
+
+
+Definition at line 140 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_a0dfa2ffa01845b84ca477fb3e14a36c6}\label{classlbann_1_1generic__data__store_a0dfa2ffa01845b84ca477fb3e14a36c6}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!m\+\_\+num\+\_\+global\+\_\+indices@{m\+\_\+num\+\_\+global\+\_\+indices}}
+\index{m\+\_\+num\+\_\+global\+\_\+indices@{m\+\_\+num\+\_\+global\+\_\+indices}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{m\+\_\+num\+\_\+global\+\_\+indices}{m\_num\_global\_indices}}
+{\footnotesize\ttfamily size\+\_\+t lbann\+::generic\+\_\+data\+\_\+store\+::m\+\_\+num\+\_\+global\+\_\+indices\hspace{0.3cm}{\ttfamily [protected]}}
+
+number of indices that m\+\_\+reader owns (in a global sense); equal to m\+\_\+shuffled\+\_\+indices-\/$>$size() 
+
+Definition at line 97 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_a4381c1192e029d24c5b02cbd68988f77}\label{classlbann_1_1generic__data__store_a4381c1192e029d24c5b02cbd68988f77}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!m\+\_\+num\+\_\+readers@{m\+\_\+num\+\_\+readers}}
+\index{m\+\_\+num\+\_\+readers@{m\+\_\+num\+\_\+readers}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{m\+\_\+num\+\_\+readers}{m\_num\_readers}}
+{\footnotesize\ttfamily size\+\_\+t lbann\+::generic\+\_\+data\+\_\+store\+::m\+\_\+num\+\_\+readers\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 134 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_a17d6f931e1a2f4ae9e2452b7d47ead43}\label{classlbann_1_1generic__data__store_a17d6f931e1a2f4ae9e2452b7d47ead43}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!m\+\_\+num\+\_\+samples@{m\+\_\+num\+\_\+samples}}
+\index{m\+\_\+num\+\_\+samples@{m\+\_\+num\+\_\+samples}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{m\+\_\+num\+\_\+samples}{m\_num\_samples}}
+{\footnotesize\ttfamily std\+::vector$<$int$>$ lbann\+::generic\+\_\+data\+\_\+store\+::m\+\_\+num\+\_\+samples\hspace{0.3cm}{\ttfamily [protected]}}
+
+m\+\_\+num\+\_\+samples\mbox{[}j\mbox{]} contains the number of samples (datastore indices) that are owned by P\+\_\+j 
+
+Definition at line 127 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_a87695bfd2d1ed0dbe01d99108e3f68b7}\label{classlbann_1_1generic__data__store_a87695bfd2d1ed0dbe01d99108e3f68b7}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!m\+\_\+rank@{m\+\_\+rank}}
+\index{m\+\_\+rank@{m\+\_\+rank}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{m\+\_\+rank}{m\_rank}}
+{\footnotesize\ttfamily int lbann\+::generic\+\_\+data\+\_\+store\+::m\+\_\+rank\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+this processor\textquotesingle{}s rank 
+
+
+
+Definition at line 137 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_afa49ced0ab64c632371ea52532a91ec2}\label{classlbann_1_1generic__data__store_afa49ced0ab64c632371ea52532a91ec2}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!m\+\_\+reader@{m\+\_\+reader}}
+\index{m\+\_\+reader@{m\+\_\+reader}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{m\+\_\+reader}{m\_reader}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader}$\ast$ lbann\+::generic\+\_\+data\+\_\+store\+::m\+\_\+reader\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 86 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1generic__data__store_ad456f747ee07f63df15c60833dfb82ad}\label{classlbann_1_1generic__data__store_ad456f747ee07f63df15c60833dfb82ad}} 
+\index{lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}!m\+\_\+shuffled\+\_\+indices@{m\+\_\+shuffled\+\_\+indices}}
+\index{m\+\_\+shuffled\+\_\+indices@{m\+\_\+shuffled\+\_\+indices}!lbann\+::generic\+\_\+data\+\_\+store@{lbann\+::generic\+\_\+data\+\_\+store}}
+\subsubsection{\texorpdfstring{m\+\_\+shuffled\+\_\+indices}{m\_shuffled\_indices}}
+{\footnotesize\ttfamily const std\+::vector$<$int$>$$\ast$ lbann\+::generic\+\_\+data\+\_\+store\+::m\+\_\+shuffled\+\_\+indices\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 148 of file generic\+\_\+data\+\_\+store.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/data\+\_\+store/\hyperlink{generic__data__store_8hpp}{generic\+\_\+data\+\_\+store.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/data\+\_\+store/\hyperlink{generic__data__store_8cpp}{generic\+\_\+data\+\_\+store.\+cpp}\end{DoxyCompactItemize}

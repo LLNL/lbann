@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="using_tensorboard" kind="page">
+    <compoundname>using_tensorboard</compoundname>
+    <title>Using TensorBoard to view LBANN results</title>
+    <detaileddescription>
+<para>To get summary statistics for training, do something like the following in your model zoo file:</para><para><programlisting><codeline><highlight class="preprocessor">#include<sp/>&quot;lbann/callbacks/lbann_callback_summary.hpp</highlight></codeline>
+<codeline><highlight class="preprocessor"></highlight><highlight class="comment">//<sp/>Set<sp/>up<sp/>your<sp/>model...</highlight><highlight class="normal"></highlight></codeline>
+<codeline><highlight class="normal">lbann_summary<sp/>summarizer(&quot;./out</highlight><highlight class="stringliteral">&quot;,<sp/>comm);<sp/><sp/>//<sp/>./out<sp/>can<sp/>be<sp/>changed<sp/>to<sp/>the<sp/>output<sp/>directory<sp/>of<sp/>your<sp/>choice<sp/>(ensure<sp/>it<sp/>exists).</highlight></codeline>
+<codeline><highlight class="stringliteral">lbann_callback_summary<sp/>summary_cb(summarizer,<sp/>25);<sp/><sp/>//<sp/>Summarize<sp/>results<sp/>every<sp/>25<sp/>mini-batches.</highlight></codeline>
+<codeline><highlight class="stringliteral">dnn.add_callback(&amp;summary_cb);</highlight></codeline>
+<codeline><highlight class="stringliteral">//<sp/>Continue<sp/>as<sp/>usual.</highlight></codeline>
+</programlisting></para><para>The model_zoo/lbann_dnn_multi_mnist.cpp example has a working demonstration of this.</para><para>When you run LBANN, Tensorboard output should automatically be written to the output directory you chose. To view it with Tensorboard on an LC machine:</para><para><programlisting><codeline><highlight class="normal">$<sp/>use<sp/>tensorflow-0.10.0</highlight></codeline>
+<codeline><highlight class="normal">$<sp/>tensorboard<sp/>--logdir=./out<sp/>--host=localhost</highlight></codeline>
+</programlisting></para><para>This will start a tensorboard instance on port 6006 on the machine you run it on. You can forward a local port on your laptop/desktop using SSH to access this if needed. E.g. for Catalyst: ssh -L 6006:localhost:6006 catalyst.llnl.gov will forward port 6006 on your local machine to the tensorboard instance running on the Catalyst login node. Navigate to localhost:6006 to view your graphs. </para>    </detaileddescription>
+  </compounddef>
+</doxygen>

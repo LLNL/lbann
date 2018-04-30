@@ -1,0 +1,614 @@
+\hypertarget{classlbann_1_1data__reader__merge__features}{}\section{lbann\+:\+:data\+\_\+reader\+\_\+merge\+\_\+features Class Reference}
+\label{classlbann_1_1data__reader__merge__features}\index{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}}
+
+
+{\ttfamily \#include $<$data\+\_\+reader\+\_\+merge\+\_\+features.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:data\+\_\+reader\+\_\+merge\+\_\+features\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=211pt]{classlbann_1_1data__reader__merge__features__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:data\+\_\+reader\+\_\+merge\+\_\+features\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__reader__merge__features__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1data__reader__merge__features_ac05d7a06c3a5749afc41c3b86bb2475d}{data\+\_\+reader\+\_\+merge\+\_\+features} (std\+::vector$<$ \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$$>$ data\+\_\+readers, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$label\+\_\+reader, bool shuffle=true)
+\item 
+\hyperlink{classlbann_1_1data__reader__merge__features_a41d55ea605d94ea010126b11ee420778}{data\+\_\+reader\+\_\+merge\+\_\+features} (const \hyperlink{classlbann_1_1data__reader__merge__features}{data\+\_\+reader\+\_\+merge\+\_\+features} \&)
+\item 
+\hyperlink{classlbann_1_1data__reader__merge__features}{data\+\_\+reader\+\_\+merge\+\_\+features} \& \hyperlink{classlbann_1_1data__reader__merge__features_a2df9360e463c2ceaf4ba42e287f673b9}{operator=} (const \hyperlink{classlbann_1_1data__reader__merge__features}{data\+\_\+reader\+\_\+merge\+\_\+features} \&)
+\item 
+\hyperlink{classlbann_1_1data__reader__merge__features_af194453b7028b116657b95631acca81d}{$\sim$data\+\_\+reader\+\_\+merge\+\_\+features} () override
+\item 
+\hyperlink{classlbann_1_1data__reader__merge__features}{data\+\_\+reader\+\_\+merge\+\_\+features} $\ast$ \hyperlink{classlbann_1_1data__reader__merge__features_aa079ec1e03557e2c469f9da6e8aa45a8}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1data__reader__merge__features_affcf91a640f964ba18de9cb650fb07ad}{get\+\_\+type} () const override
+\item 
+void \hyperlink{classlbann_1_1data__reader__merge__features_a8a618de9a92cb148746a83b0381ba781}{load} () override
+\begin{DoxyCompactList}\small\item\em Call load on the subsidiary data readers. \end{DoxyCompactList}\item 
+int \hyperlink{classlbann_1_1data__reader__merge__features_a63be746ea35e664b5cc8f8b973e86209}{get\+\_\+num\+\_\+labels} () const override
+\begin{DoxyCompactList}\small\item\em Return the number of labels (classes) in this dataset. \end{DoxyCompactList}\item 
+int \hyperlink{classlbann_1_1data__reader__merge__features_a9cf5a37a562c5bdd3861da9ec2e54638}{get\+\_\+linearized\+\_\+data\+\_\+size} () const override
+\begin{DoxyCompactList}\small\item\em Get the linearized size (i.\+e. number of elements) in a sample. \end{DoxyCompactList}\item 
+int \hyperlink{classlbann_1_1data__reader__merge__features_aa50959f29f761916a3cef60f33740516}{get\+\_\+linearized\+\_\+label\+\_\+size} () const override
+\begin{DoxyCompactList}\small\item\em Get the linearized size (i.\+e. number of elements) in a label. \end{DoxyCompactList}\item 
+const std\+::vector$<$ int $>$ \hyperlink{classlbann_1_1data__reader__merge__features_aa0cd0caf93ad18f496bf80d7cafa5527}{get\+\_\+data\+\_\+dims} () const override
+\begin{DoxyCompactList}\small\item\em Get the dimensions of the data. \end{DoxyCompactList}\item 
+void \hyperlink{classlbann_1_1data__reader__merge__features_a0ac1ade1b2abddfebe263b6f70a839cc}{setup\+\_\+data\+\_\+store} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\begin{DoxyCompactList}\small\item\em sets up a data\+\_\+store. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+bool \hyperlink{classlbann_1_1data__reader__merge__features_a9796a63e099e93114dc72decd187b3b4}{fetch\+\_\+datum} (\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&X, int data\+\_\+id, int mb\+\_\+idx, int tid) override
+\item 
+bool \hyperlink{classlbann_1_1data__reader__merge__features_aace9abfab36e0926832ed6773b41e0ea}{fetch\+\_\+label} (\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&Y, int data\+\_\+id, int mb\+\_\+idx, int tid) override
+\item 
+bool \hyperlink{classlbann_1_1data__reader__merge__features_afd9fa7d10c466eca62ac7af3cbc3ddcb}{fetch\+\_\+response} (\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&Y, int data\+\_\+id, int mb\+\_\+idx, int tid) override
+\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$ \hyperlink{classlbann_1_1data__reader__merge__features_a1e54a136c63b934f44ff91dc68ea3b27}{m\+\_\+label\+\_\+reader}
+\begin{DoxyCompactList}\small\item\em Reader providing label data. \end{DoxyCompactList}\item 
+int \hyperlink{classlbann_1_1data__reader__merge__features_ac9c56e08a45a5beac97e41e403fbaa12}{m\+\_\+data\+\_\+size} = 0
+\begin{DoxyCompactList}\small\item\em Sum of the size of data from all the data readers. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Data reader for merging multiple data readers. This can take any positive number of data readers, which will be concatenated in the order provided to provide the data, and a single data reader to provide the label. This data reader uses the fetch\+\_\+datum method of its subsidiary data readers to fetch all data, including the labels. 
+
+Definition at line 43 of file data\+\_\+reader\+\_\+merge\+\_\+features.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1data__reader__merge__features_ac05d7a06c3a5749afc41c3b86bb2475d}\label{classlbann_1_1data__reader__merge__features_ac05d7a06c3a5749afc41c3b86bb2475d}} 
+\index{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}!data\+\_\+reader\+\_\+merge\+\_\+features@{data\+\_\+reader\+\_\+merge\+\_\+features}}
+\index{data\+\_\+reader\+\_\+merge\+\_\+features@{data\+\_\+reader\+\_\+merge\+\_\+features}!lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}}
+\subsubsection{\texorpdfstring{data\+\_\+reader\+\_\+merge\+\_\+features()}{data\_reader\_merge\_features()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features\+::data\+\_\+reader\+\_\+merge\+\_\+features (\begin{DoxyParamCaption}\item[{std\+::vector$<$ \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$$>$}]{data\+\_\+readers,  }\item[{\hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$}]{label\+\_\+reader,  }\item[{bool}]{shuffle = {\ttfamily true} }\end{DoxyParamCaption})}
+
+
+
+Definition at line 34 of file data\+\_\+reader\+\_\+merge\+\_\+features.\+cpp.
+
+
+\begin{DoxyCode}
+36                                                    :
+37   \hyperlink{classlbann_1_1generic__compound__data__reader_ab2ed3059169e556e4310a55fa99c1f07}{generic\_compound\_data\_reader}(data\_readers, shuffle),
+38   \hyperlink{classlbann_1_1data__reader__merge__features_a1e54a136c63b934f44ff91dc68ea3b27}{m\_label\_reader}(label\_reader) \{\}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__reader__merge__features_ac05d7a06c3a5749afc41c3b86bb2475d_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__reader__merge__features_a41d55ea605d94ea010126b11ee420778}\label{classlbann_1_1data__reader__merge__features_a41d55ea605d94ea010126b11ee420778}} 
+\index{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}!data\+\_\+reader\+\_\+merge\+\_\+features@{data\+\_\+reader\+\_\+merge\+\_\+features}}
+\index{data\+\_\+reader\+\_\+merge\+\_\+features@{data\+\_\+reader\+\_\+merge\+\_\+features}!lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}}
+\subsubsection{\texorpdfstring{data\+\_\+reader\+\_\+merge\+\_\+features()}{data\_reader\_merge\_features()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features\+::data\+\_\+reader\+\_\+merge\+\_\+features (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1data__reader__merge__features}{data\+\_\+reader\+\_\+merge\+\_\+features} \&}]{other }\end{DoxyParamCaption})}
+
+
+
+Definition at line 40 of file data\+\_\+reader\+\_\+merge\+\_\+features.\+cpp.
+
+
+\begin{DoxyCode}
+41                                            :
+42   \hyperlink{classlbann_1_1generic__compound__data__reader_ab2ed3059169e556e4310a55fa99c1f07}{generic\_compound\_data\_reader}(other),
+43   \hyperlink{classlbann_1_1data__reader__merge__features_ac9c56e08a45a5beac97e41e403fbaa12}{m\_data\_size}(other.m\_data\_size) \{
+44   \hyperlink{classlbann_1_1data__reader__merge__features_a1e54a136c63b934f44ff91dc68ea3b27}{m\_label\_reader} = other.m\_label\_reader->\hyperlink{classlbann_1_1generic__data__reader_a208ba1223e7aaa75e94b728501f12f86}{copy}();
+45 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=346pt]{classlbann_1_1data__reader__merge__features_a41d55ea605d94ea010126b11ee420778_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__reader__merge__features_af194453b7028b116657b95631acca81d}\label{classlbann_1_1data__reader__merge__features_af194453b7028b116657b95631acca81d}} 
+\index{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}!````~data\+\_\+reader\+\_\+merge\+\_\+features@{$\sim$data\+\_\+reader\+\_\+merge\+\_\+features}}
+\index{````~data\+\_\+reader\+\_\+merge\+\_\+features@{$\sim$data\+\_\+reader\+\_\+merge\+\_\+features}!lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}}
+\subsubsection{\texorpdfstring{$\sim$data\+\_\+reader\+\_\+merge\+\_\+features()}{~data\_reader\_merge\_features()}}
+{\footnotesize\ttfamily lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features\+::$\sim$data\+\_\+reader\+\_\+merge\+\_\+features (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}}
+
+
+
+Definition at line 58 of file data\+\_\+reader\+\_\+merge\+\_\+features.\+cpp.
+
+
+\begin{DoxyCode}
+58                                                         \{
+59   \textcolor{keyword}{delete} \hyperlink{classlbann_1_1data__reader__merge__features_a1e54a136c63b934f44ff91dc68ea3b27}{m\_label\_reader};
+60 \}
+\end{DoxyCode}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1data__reader__merge__features_aa079ec1e03557e2c469f9da6e8aa45a8}\label{classlbann_1_1data__reader__merge__features_aa079ec1e03557e2c469f9da6e8aa45a8}} 
+\index{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}!copy@{copy}}
+\index{copy@{copy}!lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1data__reader__merge__features}{data\+\_\+reader\+\_\+merge\+\_\+features}$\ast$ lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1generic__compound__data__reader_a197f5fd06679f777a709453830fcc4f9}{lbann\+::generic\+\_\+compound\+\_\+data\+\_\+reader}.
+
+
+
+Definition at line 51 of file data\+\_\+reader\+\_\+merge\+\_\+features.\+hpp.
+
+
+\begin{DoxyCode}
+51                                                     \{
+52     \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1data__reader__merge__features_ac05d7a06c3a5749afc41c3b86bb2475d}{data\_reader\_merge\_features}(*\textcolor{keyword}{this});
+53   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__reader__merge__features_aa079ec1e03557e2c469f9da6e8aa45a8_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__reader__merge__features_a9796a63e099e93114dc72decd187b3b4}\label{classlbann_1_1data__reader__merge__features_a9796a63e099e93114dc72decd187b3b4}} 
+\index{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}!fetch\+\_\+datum@{fetch\+\_\+datum}}
+\index{fetch\+\_\+datum@{fetch\+\_\+datum}!lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}}
+\subsubsection{\texorpdfstring{fetch\+\_\+datum()}{fetch\_datum()}}
+{\footnotesize\ttfamily bool lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features\+::fetch\+\_\+datum (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{X,  }\item[{int}]{data\+\_\+id,  }\item[{int}]{mb\+\_\+idx,  }\item[{int}]{tid }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Fetch a single sample into a matrix. 
+\begin{DoxyParams}{Parameters}
+{\em X} & The matrix to load data into. \\
+\hline
+{\em data\+\_\+id} & The index of the datum to fetch. \\
+\hline
+{\em mb\+\_\+idx} & The index within the mini-\/batch. \\
+\hline
+\end{DoxyParams}
+
+
+Reimplemented from \hyperlink{classlbann_1_1generic__data__reader_a0a3cd87ed4a7057df185e0087f2d21c1}{lbann\+::generic\+\_\+data\+\_\+reader}.
+
+
+
+Definition at line 84 of file data\+\_\+reader\+\_\+merge\+\_\+features.\+cpp.
+
+
+\begin{DoxyCode}
+85                                                       \{
+86   \textcolor{keywordtype}{int} start = 0;
+87   \textcolor{keywordflow}{for} (\textcolor{keyword}{auto}&& reader : \hyperlink{classlbann_1_1generic__compound__data__reader_a9815e94ade5873415fd766e09d956d5b}{m\_data\_readers}) \{
+88     \textcolor{keyword}{auto} X\_view = X(El::IR(start, start + reader->get\_linearized\_data\_size()),
+89                     El::ALL);
+90     reader->fetch\_datum(X\_view, data\_id, mb\_idx, tid);
+91     start += reader->get\_linearized\_data\_size();
+92   \}
+93   \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+94 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__reader__merge__features_a9796a63e099e93114dc72decd187b3b4_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__reader__merge__features_aace9abfab36e0926832ed6773b41e0ea}\label{classlbann_1_1data__reader__merge__features_aace9abfab36e0926832ed6773b41e0ea}} 
+\index{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}!fetch\+\_\+label@{fetch\+\_\+label}}
+\index{fetch\+\_\+label@{fetch\+\_\+label}!lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}}
+\subsubsection{\texorpdfstring{fetch\+\_\+label()}{fetch\_label()}}
+{\footnotesize\ttfamily bool lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features\+::fetch\+\_\+label (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{Y,  }\item[{int}]{data\+\_\+id,  }\item[{int}]{mb\+\_\+idx,  }\item[{int}]{tid }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Fetch a single label into a matrix. 
+\begin{DoxyParams}{Parameters}
+{\em Y} & The matrix to load data into. \\
+\hline
+{\em data\+\_\+id} & The index of the datum to fetch. \\
+\hline
+{\em mb\+\_\+idx} & The index within the mini-\/batch. \\
+\hline
+\end{DoxyParams}
+
+
+Reimplemented from \hyperlink{classlbann_1_1generic__data__reader_a03627408c1d1aa28691d31232fe1dce5}{lbann\+::generic\+\_\+data\+\_\+reader}.
+
+
+
+Definition at line 96 of file data\+\_\+reader\+\_\+merge\+\_\+features.\+cpp.
+
+
+\begin{DoxyCode}
+97                                                       \{
+98   \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1data__reader__merge__features_a1e54a136c63b934f44ff91dc68ea3b27}{m\_label\_reader}->\hyperlink{classlbann_1_1generic__data__reader_a03627408c1d1aa28691d31232fe1dce5}{fetch\_label}(Y, data\_id, mb\_idx, tid);
+99 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__reader__merge__features_aace9abfab36e0926832ed6773b41e0ea_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__reader__merge__features_aace9abfab36e0926832ed6773b41e0ea_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__reader__merge__features_afd9fa7d10c466eca62ac7af3cbc3ddcb}\label{classlbann_1_1data__reader__merge__features_afd9fa7d10c466eca62ac7af3cbc3ddcb}} 
+\index{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}!fetch\+\_\+response@{fetch\+\_\+response}}
+\index{fetch\+\_\+response@{fetch\+\_\+response}!lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}}
+\subsubsection{\texorpdfstring{fetch\+\_\+response()}{fetch\_response()}}
+{\footnotesize\ttfamily bool lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features\+::fetch\+\_\+response (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{Y,  }\item[{int}]{data\+\_\+id,  }\item[{int}]{mb\+\_\+idx,  }\item[{int}]{tid }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Fetch a single response into a matrix. 
+\begin{DoxyParams}{Parameters}
+{\em Y} & The matrix to load data into. \\
+\hline
+{\em data\+\_\+id} & The index of the datum to fetch. \\
+\hline
+{\em mb\+\_\+idx} & The index within the mini-\/batch. \\
+\hline
+\end{DoxyParams}
+
+
+Reimplemented from \hyperlink{classlbann_1_1generic__data__reader_abe544ea807eed477f3636010d199b574}{lbann\+::generic\+\_\+data\+\_\+reader}.
+
+
+
+Definition at line 101 of file data\+\_\+reader\+\_\+merge\+\_\+features.\+cpp.
+
+
+\begin{DoxyCode}
+102                                                          \{
+103   \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1data__reader__merge__features_a1e54a136c63b934f44ff91dc68ea3b27}{m\_label\_reader}->\hyperlink{classlbann_1_1generic__data__reader_abe544ea807eed477f3636010d199b574}{fetch\_response}(Y, data\_id, mb\_idx, tid);
+104 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__reader__merge__features_afd9fa7d10c466eca62ac7af3cbc3ddcb_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=346pt]{classlbann_1_1data__reader__merge__features_afd9fa7d10c466eca62ac7af3cbc3ddcb_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__reader__merge__features_aa0cd0caf93ad18f496bf80d7cafa5527}\label{classlbann_1_1data__reader__merge__features_aa0cd0caf93ad18f496bf80d7cafa5527}} 
+\index{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}!get\+\_\+data\+\_\+dims@{get\+\_\+data\+\_\+dims}}
+\index{get\+\_\+data\+\_\+dims@{get\+\_\+data\+\_\+dims}!lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}}
+\subsubsection{\texorpdfstring{get\+\_\+data\+\_\+dims()}{get\_data\_dims()}}
+{\footnotesize\ttfamily const std\+::vector$<$int$>$ lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features\+::get\+\_\+data\+\_\+dims (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Get the dimensions of the data. 
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1generic__data__reader_ae06ff27459ac4a5d8ac14655d4b31318}{lbann\+::generic\+\_\+data\+\_\+reader}.
+
+
+
+Definition at line 67 of file data\+\_\+reader\+\_\+merge\+\_\+features.\+hpp.
+
+
+\begin{DoxyCode}
+67                                                       \{
+68     \textcolor{comment}{// Todo: Can we merge the dimensions of each reader sensibly?}
+69     \textcolor{keywordflow}{return} \{\hyperlink{classlbann_1_1data__reader__merge__features_a9cf5a37a562c5bdd3861da9ec2e54638}{get\_linearized\_data\_size}()\};
+70   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__reader__merge__features_aa0cd0caf93ad18f496bf80d7cafa5527_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__reader__merge__features_a9cf5a37a562c5bdd3861da9ec2e54638}\label{classlbann_1_1data__reader__merge__features_a9cf5a37a562c5bdd3861da9ec2e54638}} 
+\index{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}!get\+\_\+linearized\+\_\+data\+\_\+size@{get\+\_\+linearized\+\_\+data\+\_\+size}}
+\index{get\+\_\+linearized\+\_\+data\+\_\+size@{get\+\_\+linearized\+\_\+data\+\_\+size}!lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}}
+\subsubsection{\texorpdfstring{get\+\_\+linearized\+\_\+data\+\_\+size()}{get\_linearized\_data\_size()}}
+{\footnotesize\ttfamily int lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features\+::get\+\_\+linearized\+\_\+data\+\_\+size (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Get the linearized size (i.\+e. number of elements) in a sample. 
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1generic__data__reader_a246a719477c8c7b6122d41b6f5618d41}{lbann\+::generic\+\_\+data\+\_\+reader}.
+
+
+
+Definition at line 63 of file data\+\_\+reader\+\_\+merge\+\_\+features.\+hpp.
+
+
+\begin{DoxyCode}
+63 \{ \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1data__reader__merge__features_ac9c56e08a45a5beac97e41e403fbaa12}{m\_data\_size}; \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=340pt]{classlbann_1_1data__reader__merge__features_a9cf5a37a562c5bdd3861da9ec2e54638_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__reader__merge__features_aa50959f29f761916a3cef60f33740516}\label{classlbann_1_1data__reader__merge__features_aa50959f29f761916a3cef60f33740516}} 
+\index{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}!get\+\_\+linearized\+\_\+label\+\_\+size@{get\+\_\+linearized\+\_\+label\+\_\+size}}
+\index{get\+\_\+linearized\+\_\+label\+\_\+size@{get\+\_\+linearized\+\_\+label\+\_\+size}!lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}}
+\subsubsection{\texorpdfstring{get\+\_\+linearized\+\_\+label\+\_\+size()}{get\_linearized\_label\_size()}}
+{\footnotesize\ttfamily int lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features\+::get\+\_\+linearized\+\_\+label\+\_\+size (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Get the linearized size (i.\+e. number of elements) in a label. 
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1generic__data__reader_a99e8ba4f09fdc86d238ad7c8d2e2bce0}{lbann\+::generic\+\_\+data\+\_\+reader}.
+
+
+
+Definition at line 64 of file data\+\_\+reader\+\_\+merge\+\_\+features.\+hpp.
+
+
+\begin{DoxyCode}
+64                                                  \{
+65     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1data__reader__merge__features_a1e54a136c63b934f44ff91dc68ea3b27}{m\_label\_reader}->\hyperlink{classlbann_1_1generic__data__reader_a99e8ba4f09fdc86d238ad7c8d2e2bce0}{get\_linearized\_label\_size}();
+66   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=349pt]{classlbann_1_1data__reader__merge__features_aa50959f29f761916a3cef60f33740516_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__reader__merge__features_a63be746ea35e664b5cc8f8b973e86209}\label{classlbann_1_1data__reader__merge__features_a63be746ea35e664b5cc8f8b973e86209}} 
+\index{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}!get\+\_\+num\+\_\+labels@{get\+\_\+num\+\_\+labels}}
+\index{get\+\_\+num\+\_\+labels@{get\+\_\+num\+\_\+labels}!lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}}
+\subsubsection{\texorpdfstring{get\+\_\+num\+\_\+labels()}{get\_num\_labels()}}
+{\footnotesize\ttfamily int lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features\+::get\+\_\+num\+\_\+labels (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Return the number of labels (classes) in this dataset. 
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1generic__data__reader_a935ce6262d75f1834e550c3bc16a6547}{lbann\+::generic\+\_\+data\+\_\+reader}.
+
+
+
+Definition at line 62 of file data\+\_\+reader\+\_\+merge\+\_\+features.\+hpp.
+
+
+\begin{DoxyCode}
+62 \{ \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1data__reader__merge__features_a1e54a136c63b934f44ff91dc68ea3b27}{m\_label\_reader}->\hyperlink{classlbann_1_1generic__data__reader_a935ce6262d75f1834e550c3bc16a6547}{get\_num\_labels}(); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__reader__merge__features_a63be746ea35e664b5cc8f8b973e86209_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__reader__merge__features_affcf91a640f964ba18de9cb650fb07ad}\label{classlbann_1_1data__reader__merge__features_affcf91a640f964ba18de9cb650fb07ad}} 
+\index{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}!get\+\_\+type@{get\+\_\+type}}
+\index{get\+\_\+type@{get\+\_\+type}!lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}}
+\subsubsection{\texorpdfstring{get\+\_\+type()}{get\_type()}}
+{\footnotesize\ttfamily std\+::string lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features\+::get\+\_\+type (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Return this data\+\_\+reader\textquotesingle{}s type 
+
+Implements \hyperlink{classlbann_1_1generic__data__reader_abeb849fb8e10b4fa317c90bc33f61758}{lbann\+::generic\+\_\+data\+\_\+reader}.
+
+
+
+Definition at line 55 of file data\+\_\+reader\+\_\+merge\+\_\+features.\+hpp.
+
+
+\begin{DoxyCode}
+55                                       \{
+56     \textcolor{keywordflow}{return} \textcolor{stringliteral}{"data\_reader\_merge\_features"};
+57   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__reader__merge__features_affcf91a640f964ba18de9cb650fb07ad_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__reader__merge__features_a8a618de9a92cb148746a83b0381ba781}\label{classlbann_1_1data__reader__merge__features_a8a618de9a92cb148746a83b0381ba781}} 
+\index{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}!load@{load}}
+\index{load@{load}!lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}}
+\subsubsection{\texorpdfstring{load()}{load()}}
+{\footnotesize\ttfamily void lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features\+::load (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Call load on the subsidiary data readers. 
+
+
+
+Implements \hyperlink{classlbann_1_1generic__data__reader_afeb47703d988a230a59859cbfc178215}{lbann\+::generic\+\_\+data\+\_\+reader}.
+
+
+
+Definition at line 62 of file data\+\_\+reader\+\_\+merge\+\_\+features.\+cpp.
+
+
+\begin{DoxyCode}
+62                                       \{
+63   \textcolor{comment}{// Load each data reader separately.}
+64   \textcolor{keywordflow}{for} (\textcolor{keyword}{auto}&& reader : \hyperlink{classlbann_1_1generic__compound__data__reader_a9815e94ade5873415fd766e09d956d5b}{m\_data\_readers}) \{
+65     reader->set\_comm(\hyperlink{classlbann_1_1generic__data__reader_ad3976d4b7db2d404dbb87a56c33fd456}{m\_comm});
+66     reader->load();
+67     \hyperlink{classlbann_1_1data__reader__merge__features_ac9c56e08a45a5beac97e41e403fbaa12}{m\_data\_size} += reader->get\_linearized\_data\_size();
+68   \}
+69   \textcolor{comment}{// Verify the readers have the same number of samples.}
+70   \textcolor{keywordtype}{int} num\_samples = m\_data\_readers[0]->get\_num\_data();
+71   \textcolor{keywordflow}{for} (\textcolor{keyword}{auto}&& reader : m\_data\_readers) \{
+72     \textcolor{keywordflow}{if} (num\_samples != reader->get\_num\_data()) \{
+73       \textcolor{keywordflow}{throw} lbann\_exception(
+74         \textcolor{stringliteral}{"data\_reader\_merge\_features: data readers do not have the same amount of data"});
+75     \}
+76   \}
+77   \hyperlink{classlbann_1_1data__reader__merge__features_a1e54a136c63b934f44ff91dc68ea3b27}{m\_label\_reader}->\hyperlink{classlbann_1_1generic__data__reader_afeb47703d988a230a59859cbfc178215}{load}();
+78   \textcolor{comment}{// Reset indices.}
+79   \hyperlink{classlbann_1_1generic__data__reader_aaab6aeff67ffff1c689336851fec2c57}{m\_shuffled\_indices}.resize(num\_samples);
+80   std::iota(\hyperlink{classlbann_1_1generic__data__reader_aaab6aeff67ffff1c689336851fec2c57}{m\_shuffled\_indices}.begin(), \hyperlink{classlbann_1_1generic__data__reader_aaab6aeff67ffff1c689336851fec2c57}{m\_shuffled\_indices}.end(), 0);
+81   \hyperlink{classlbann_1_1generic__data__reader_aa28fdeeb6af492540f507e49adff5d6c}{select\_subset\_of\_data}();
+82 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__reader__merge__features_a8a618de9a92cb148746a83b0381ba781_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__reader__merge__features_a8a618de9a92cb148746a83b0381ba781_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__reader__merge__features_a2df9360e463c2ceaf4ba42e287f673b9}\label{classlbann_1_1data__reader__merge__features_a2df9360e463c2ceaf4ba42e287f673b9}} 
+\index{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1data__reader__merge__features}{data\+\_\+reader\+\_\+merge\+\_\+features} \& lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1data__reader__merge__features}{data\+\_\+reader\+\_\+merge\+\_\+features} \&}]{other }\end{DoxyParamCaption})}
+
+
+
+Definition at line 47 of file data\+\_\+reader\+\_\+merge\+\_\+features.\+cpp.
+
+
+\begin{DoxyCode}
+48                                            \{
+49   \hyperlink{classlbann_1_1generic__compound__data__reader_a7ece97b6fd2bc62da4d98f29cfb50155}{generic\_compound\_data\_reader::operator=}(other);
+50   \hyperlink{classlbann_1_1data__reader__merge__features_ac9c56e08a45a5beac97e41e403fbaa12}{m\_data\_size} = other.m\_data\_size;
+51   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1data__reader__merge__features_a1e54a136c63b934f44ff91dc68ea3b27}{m\_label\_reader}) \{
+52     \textcolor{keyword}{delete} \hyperlink{classlbann_1_1data__reader__merge__features_a1e54a136c63b934f44ff91dc68ea3b27}{m\_label\_reader};
+53   \}
+54   \hyperlink{classlbann_1_1data__reader__merge__features_a1e54a136c63b934f44ff91dc68ea3b27}{m\_label\_reader} = other.m\_label\_reader->\hyperlink{classlbann_1_1generic__data__reader_a208ba1223e7aaa75e94b728501f12f86}{copy}();
+55   \textcolor{keywordflow}{return} *\textcolor{keyword}{this};
+56 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__reader__merge__features_a2df9360e463c2ceaf4ba42e287f673b9_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__reader__merge__features_a0ac1ade1b2abddfebe263b6f70a839cc}\label{classlbann_1_1data__reader__merge__features_a0ac1ade1b2abddfebe263b6f70a839cc}} 
+\index{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}!setup\+\_\+data\+\_\+store@{setup\+\_\+data\+\_\+store}}
+\index{setup\+\_\+data\+\_\+store@{setup\+\_\+data\+\_\+store}!lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}}
+\subsubsection{\texorpdfstring{setup\+\_\+data\+\_\+store()}{setup\_data\_store()}}
+{\footnotesize\ttfamily void lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features\+::setup\+\_\+data\+\_\+store (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+sets up a data\+\_\+store. 
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1generic__data__reader_a8b2a09d38512fc11f1b9d572c89100a7}{lbann\+::generic\+\_\+data\+\_\+reader}.
+
+
+
+Definition at line 106 of file data\+\_\+reader\+\_\+merge\+\_\+features.\+cpp.
+
+
+\begin{DoxyCode}
+106                                                           \{
+107   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__reader_aefc076b842933a882214f4f709ca49c9}{m\_data\_store} != \textcolor{keyword}{nullptr}) \{
+108     \textcolor{keyword}{delete} \hyperlink{classlbann_1_1generic__data__reader_aefc076b842933a882214f4f709ca49c9}{m\_data\_store};
+109   \}
+110   \hyperlink{classlbann_1_1generic__data__reader_aefc076b842933a882214f4f709ca49c9}{m\_data\_store} = \textcolor{keyword}{new} data\_store\_merge\_features(\textcolor{keyword}{this}, m);
+111   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__reader_aefc076b842933a882214f4f709ca49c9}{m\_data\_store} != \textcolor{keyword}{nullptr}) \{
+112     \hyperlink{classlbann_1_1generic__data__reader_aefc076b842933a882214f4f709ca49c9}{m\_data\_store}->\hyperlink{classlbann_1_1generic__data__store_a1cff17def02ee21b6ca0befeb04bb582}{setup}();
+113   \}
+114 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__reader__merge__features_a0ac1ade1b2abddfebe263b6f70a839cc_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=349pt]{classlbann_1_1data__reader__merge__features_a0ac1ade1b2abddfebe263b6f70a839cc_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1data__reader__merge__features_ac9c56e08a45a5beac97e41e403fbaa12}\label{classlbann_1_1data__reader__merge__features_ac9c56e08a45a5beac97e41e403fbaa12}} 
+\index{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}!m\+\_\+data\+\_\+size@{m\+\_\+data\+\_\+size}}
+\index{m\+\_\+data\+\_\+size@{m\+\_\+data\+\_\+size}!lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}}
+\subsubsection{\texorpdfstring{m\+\_\+data\+\_\+size}{m\_data\_size}}
+{\footnotesize\ttfamily int lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features\+::m\+\_\+data\+\_\+size = 0\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Sum of the size of data from all the data readers. 
+
+
+
+Definition at line 83 of file data\+\_\+reader\+\_\+merge\+\_\+features.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1data__reader__merge__features_a1e54a136c63b934f44ff91dc68ea3b27}\label{classlbann_1_1data__reader__merge__features_a1e54a136c63b934f44ff91dc68ea3b27}} 
+\index{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}!m\+\_\+label\+\_\+reader@{m\+\_\+label\+\_\+reader}}
+\index{m\+\_\+label\+\_\+reader@{m\+\_\+label\+\_\+reader}!lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features@{lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features}}
+\subsubsection{\texorpdfstring{m\+\_\+label\+\_\+reader}{m\_label\_reader}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader}$\ast$ lbann\+::data\+\_\+reader\+\_\+merge\+\_\+features\+::m\+\_\+label\+\_\+reader\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Reader providing label data. 
+
+
+
+Definition at line 81 of file data\+\_\+reader\+\_\+merge\+\_\+features.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/data\+\_\+readers/\hyperlink{data__reader__merge__features_8hpp}{data\+\_\+reader\+\_\+merge\+\_\+features.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/data\+\_\+readers/\hyperlink{data__reader__merge__features_8cpp}{data\+\_\+reader\+\_\+merge\+\_\+features.\+cpp}\end{DoxyCompactItemize}

@@ -1,0 +1,667 @@
+\hypertarget{classlbann_1_1sgd}{}\section{lbann\+:\+:sgd Class Reference}
+\label{classlbann_1_1sgd}\index{lbann\+::sgd@{lbann\+::sgd}}
+
+
+{\ttfamily \#include $<$sgd.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:sgd\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=167pt]{classlbann_1_1sgd__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:sgd\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sgd__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \hyperlink{structlbann_1_1sgd_1_1packing__header}{packing\+\_\+header}
+\end{DoxyCompactItemize}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1sgd_a73baa574a5129872fe25f2a419c86baa}{sgd} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, Data\+Type learning\+\_\+rate, Data\+Type momentum=Data\+Type(0), bool nesterov=false)
+\item 
+\hyperlink{classlbann_1_1sgd_ac0a74200f44b45ced9b44e3b6349581a}{sgd} (const \hyperlink{classlbann_1_1sgd}{sgd} \&other)
+\item 
+\hyperlink{classlbann_1_1sgd}{sgd} \& \hyperlink{classlbann_1_1sgd_ad3949e74505cd25b267dbdd5b510a83f}{operator=} (const \hyperlink{classlbann_1_1sgd}{sgd} \&other)
+\item 
+\hyperlink{classlbann_1_1sgd_a0d0410edb1ca4510509cc9a5de105b4f}{$\sim$sgd} () override
+\item 
+\hyperlink{classlbann_1_1sgd}{sgd} $\ast$ \hyperlink{classlbann_1_1sgd_a91572d383ad42584bf917e7d62bebe82}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1sgd_ad24efbeadae61890d07fa9e95aa91c61}{get\+\_\+type} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1sgd_a2022661b9ef83e418a0a980207cb231e}{get\+\_\+description} () const override
+\item 
+void \hyperlink{classlbann_1_1sgd_a616c3cfd457ae1e771710b481b4c1bbb}{setup} (\hyperlink{classlbann_1_1weights}{weights} \&w) override
+\item 
+void \hyperlink{classlbann_1_1sgd_a083a44b456939b58f531cea1fde2378b}{step\+\_\+compute} (\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&values, const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&gradient) override
+\end{DoxyCompactItemize}
+\subsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+bool \hyperlink{classlbann_1_1sgd_ab95756a63ec3fa0100d436a5a9addfeb}{pack\+\_\+scalars} (\hyperlink{classlbann_1_1persist}{persist} \&p)
+\item 
+bool \hyperlink{classlbann_1_1sgd_a2b4a91cbb155ed94a185db79fdbf6284}{unpack\+\_\+scalars} (\hyperlink{classlbann_1_1persist}{persist} \&p, struct \hyperlink{structlbann_1_1sgd_1_1packing__header}{packing\+\_\+header} $\ast$header)
+\item 
+void \hyperlink{classlbann_1_1sgd_a3afe5aa1f1861c390472ff6f53093386}{unpack\+\_\+header} (struct \hyperlink{structlbann_1_1sgd_1_1packing__header}{packing\+\_\+header} \&header)
+\item 
+bool \hyperlink{classlbann_1_1sgd_a78ad11ca7424d50a9f2ba29e5f725e21}{save\+\_\+to\+\_\+checkpoint\+\_\+shared} (\hyperlink{classlbann_1_1persist}{persist} \&p, std\+::string m\+\_\+name) override
+\item 
+bool \hyperlink{classlbann_1_1sgd_aa3e3237a59b0593d7caf7357b7c181cf}{load\+\_\+from\+\_\+checkpoint\+\_\+shared} (\hyperlink{classlbann_1_1persist}{persist} \&p, std\+::string m\+\_\+name) override
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+Data\+Type \hyperlink{classlbann_1_1sgd_a2e56d66d350debcf0d2c3ad76c214074}{m\+\_\+momentum}
+\item 
+bool \hyperlink{classlbann_1_1sgd_a82da488e5d1530f50f67cd4ea30909cb}{m\+\_\+nesterov}
+\item 
+\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} $\ast$ \hyperlink{classlbann_1_1sgd_a27f2d893014cef8357edffb63bf649f0}{m\+\_\+velocity}
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+Stochastic gradient descent optimizer. Supports momentum and Nesterov acceleration. 
+
+Definition at line 37 of file sgd.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1sgd_a73baa574a5129872fe25f2a419c86baa}\label{classlbann_1_1sgd_a73baa574a5129872fe25f2a419c86baa}} 
+\index{lbann\+::sgd@{lbann\+::sgd}!sgd@{sgd}}
+\index{sgd@{sgd}!lbann\+::sgd@{lbann\+::sgd}}
+\subsubsection{\texorpdfstring{sgd()}{sgd()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::sgd\+::sgd (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{Data\+Type}]{learning\+\_\+rate,  }\item[{Data\+Type}]{momentum = {\ttfamily DataType(0)},  }\item[{bool}]{nesterov = {\ttfamily false} }\end{DoxyParamCaption})}
+
+Constructor. 
+
+Definition at line 32 of file sgd.\+cpp.
+
+
+\begin{DoxyCode}
+36   : \hyperlink{classlbann_1_1optimizer_a136ed79c3f279ecded5be380fb67b05f}{optimizer}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, learning\_rate),
+37     \hyperlink{classlbann_1_1sgd_a2e56d66d350debcf0d2c3ad76c214074}{m\_momentum}(momentum),
+38     \hyperlink{classlbann_1_1sgd_a82da488e5d1530f50f67cd4ea30909cb}{m\_nesterov}(nesterov),
+39     \hyperlink{classlbann_1_1sgd_a27f2d893014cef8357edffb63bf649f0}{m\_velocity}(\textcolor{keyword}{nullptr}) \{\}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=289pt]{classlbann_1_1sgd_a73baa574a5129872fe25f2a419c86baa_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1sgd_ac0a74200f44b45ced9b44e3b6349581a}\label{classlbann_1_1sgd_ac0a74200f44b45ced9b44e3b6349581a}} 
+\index{lbann\+::sgd@{lbann\+::sgd}!sgd@{sgd}}
+\index{sgd@{sgd}!lbann\+::sgd@{lbann\+::sgd}}
+\subsubsection{\texorpdfstring{sgd()}{sgd()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::sgd\+::sgd (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1sgd}{sgd} \&}]{other }\end{DoxyParamCaption})}
+
+Copy constructor. 
+
+Definition at line 41 of file sgd.\+cpp.
+
+
+\begin{DoxyCode}
+42   : \hyperlink{classlbann_1_1optimizer_a136ed79c3f279ecded5be380fb67b05f}{optimizer}(other),
+43     \hyperlink{classlbann_1_1sgd_a2e56d66d350debcf0d2c3ad76c214074}{m\_momentum}(other.m\_momentum),
+44     \hyperlink{classlbann_1_1sgd_a82da488e5d1530f50f67cd4ea30909cb}{m\_nesterov}(other.m\_nesterov),
+45     \hyperlink{classlbann_1_1sgd_a27f2d893014cef8357edffb63bf649f0}{m\_velocity}(other.m\_velocity) \{
+46   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1sgd_a27f2d893014cef8357edffb63bf649f0}{m\_velocity} != \textcolor{keyword}{nullptr}) \{ \hyperlink{classlbann_1_1sgd_a27f2d893014cef8357edffb63bf649f0}{m\_velocity} = \hyperlink{classlbann_1_1sgd_a27f2d893014cef8357edffb63bf649f0}{m\_velocity}->Copy(); \}
+47 \textcolor{preprocessor}{  #ifdef LBANN\_HAS\_CUDNN}
+48   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn} != \textcolor{keyword}{nullptr} && other.m\_weights != \textcolor{keyword}{nullptr}) \{
+49     \textcolor{keyword}{const} \textcolor{keywordtype}{int} height = other.m\_weights->get\_matrix\_height();
+50     \textcolor{keyword}{const} \textcolor{keywordtype}{int} width = other.m\_weights->get\_matrix\_width();
+51     m\_velocity\_d = \hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn}->copy(other.m\_velocity\_d, height, width);
+52   \}
+53 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+54 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sgd_ac0a74200f44b45ced9b44e3b6349581a_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1sgd_a0d0410edb1ca4510509cc9a5de105b4f}\label{classlbann_1_1sgd_a0d0410edb1ca4510509cc9a5de105b4f}} 
+\index{lbann\+::sgd@{lbann\+::sgd}!````~sgd@{$\sim$sgd}}
+\index{````~sgd@{$\sim$sgd}!lbann\+::sgd@{lbann\+::sgd}}
+\subsubsection{\texorpdfstring{$\sim$sgd()}{~sgd()}}
+{\footnotesize\ttfamily lbann\+::sgd\+::$\sim$sgd (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}}
+
+Destructor. 
+
+Definition at line 85 of file sgd.\+cpp.
+
+
+\begin{DoxyCode}
+85           \{
+86   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1sgd_a27f2d893014cef8357edffb63bf649f0}{m\_velocity} != \textcolor{keyword}{nullptr}) \{ \textcolor{keyword}{delete} \hyperlink{classlbann_1_1sgd_a27f2d893014cef8357edffb63bf649f0}{m\_velocity}; \}
+87 \textcolor{preprocessor}{  #ifdef LBANN\_HAS\_CUDNN}
+88   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn} != \textcolor{keyword}{nullptr}) \{
+89     \hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn}->deallocate\_on\_gpus(m\_velocity\_d);
+90   \}
+91 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+92 \}
+\end{DoxyCode}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1sgd_a91572d383ad42584bf917e7d62bebe82}\label{classlbann_1_1sgd_a91572d383ad42584bf917e7d62bebe82}} 
+\index{lbann\+::sgd@{lbann\+::sgd}!copy@{copy}}
+\index{copy@{copy}!lbann\+::sgd@{lbann\+::sgd}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1sgd}{sgd}$\ast$ lbann\+::sgd\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Create a copy. 
+
+Implements \hyperlink{classlbann_1_1optimizer_adf19a1d19d832ebfe70072cc202cdf39}{lbann\+::optimizer}.
+
+
+
+Definition at line 54 of file sgd.\+hpp.
+
+
+\begin{DoxyCode}
+54 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1sgd_a73baa574a5129872fe25f2a419c86baa}{sgd}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=289pt]{classlbann_1_1sgd_a91572d383ad42584bf917e7d62bebe82_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1sgd_a2022661b9ef83e418a0a980207cb231e}\label{classlbann_1_1sgd_a2022661b9ef83e418a0a980207cb231e}} 
+\index{lbann\+::sgd@{lbann\+::sgd}!get\+\_\+description@{get\+\_\+description}}
+\index{get\+\_\+description@{get\+\_\+description}!lbann\+::sgd@{lbann\+::sgd}}
+\subsubsection{\texorpdfstring{get\+\_\+description()}{get\_description()}}
+{\footnotesize\ttfamily std\+::string lbann\+::sgd\+::get\+\_\+description (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get a human-\/readable description of the optimizer. 
+
+Reimplemented from \hyperlink{classlbann_1_1optimizer_a66bb8d28dfb41452ac1a75a3efd47723}{lbann\+::optimizer}.
+
+
+
+Definition at line 94 of file sgd.\+cpp.
+
+
+\begin{DoxyCode}
+94                                      \{
+95   std::stringstream ss;
+96   ss << \hyperlink{classlbann_1_1optimizer_a66bb8d28dfb41452ac1a75a3efd47723}{optimizer::get\_description}() << \textcolor{stringliteral}{", "}
+97      << \textcolor{stringliteral}{"momentum="} << \hyperlink{classlbann_1_1sgd_a2e56d66d350debcf0d2c3ad76c214074}{m\_momentum} << \textcolor{stringliteral}{", "}
+98      << \textcolor{stringliteral}{"nesterov="} << \hyperlink{classlbann_1_1sgd_a82da488e5d1530f50f67cd4ea30909cb}{m\_nesterov};
+99   \textcolor{keywordflow}{return} ss.str();
+100 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sgd_a2022661b9ef83e418a0a980207cb231e_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sgd_a2022661b9ef83e418a0a980207cb231e_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1sgd_ad24efbeadae61890d07fa9e95aa91c61}\label{classlbann_1_1sgd_ad24efbeadae61890d07fa9e95aa91c61}} 
+\index{lbann\+::sgd@{lbann\+::sgd}!get\+\_\+type@{get\+\_\+type}}
+\index{get\+\_\+type@{get\+\_\+type}!lbann\+::sgd@{lbann\+::sgd}}
+\subsubsection{\texorpdfstring{get\+\_\+type()}{get\_type()}}
+{\footnotesize\ttfamily std\+::string lbann\+::sgd\+::get\+\_\+type (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get the optimizer name. 
+
+Implements \hyperlink{classlbann_1_1optimizer_a7b7a6814e14eeee157e1cbb7f15dd4ff}{lbann\+::optimizer}.
+
+
+
+Definition at line 57 of file sgd.\+hpp.
+
+
+\begin{DoxyCode}
+57 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"sgd"}; \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sgd_ad24efbeadae61890d07fa9e95aa91c61_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1sgd_aa3e3237a59b0593d7caf7357b7c181cf}\label{classlbann_1_1sgd_aa3e3237a59b0593d7caf7357b7c181cf}} 
+\index{lbann\+::sgd@{lbann\+::sgd}!load\+\_\+from\+\_\+checkpoint\+\_\+shared@{load\+\_\+from\+\_\+checkpoint\+\_\+shared}}
+\index{load\+\_\+from\+\_\+checkpoint\+\_\+shared@{load\+\_\+from\+\_\+checkpoint\+\_\+shared}!lbann\+::sgd@{lbann\+::sgd}}
+\subsubsection{\texorpdfstring{load\+\_\+from\+\_\+checkpoint\+\_\+shared()}{load\_from\_checkpoint\_shared()}}
+{\footnotesize\ttfamily bool lbann\+::sgd\+::load\+\_\+from\+\_\+checkpoint\+\_\+shared (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1persist}{persist} \&}]{p,  }\item[{std\+::string}]{m\+\_\+name }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [private]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1optimizer_a42a52aab9a682fda57c1e639968a44b9}{lbann\+::optimizer}.
+
+
+
+Definition at line 200 of file sgd.\+cpp.
+
+
+\begin{DoxyCode}
+200                                                                          \{
+201     \hyperlink{classlbann_1_1optimizer_a42a52aab9a682fda57c1e639968a44b9}{optimizer::load\_from\_checkpoint\_shared}(p, name\_prefix);
+202     \textcolor{keyword}{struct }packing\_header header;
+203     \textcolor{keywordflow}{if} (p.get\_rank() == 0) \{
+204       \hyperlink{classlbann_1_1sgd_a2b4a91cbb155ed94a185db79fdbf6284}{unpack\_scalars}(p, &header);
+205     \}
+206     
+207     MPI\_Bcast(&header, \textcolor{keyword}{sizeof}(header), MPI\_BYTE, 0, MPI\_COMM\_WORLD);
+208 
+209     \hyperlink{classlbann_1_1sgd_a3afe5aa1f1861c390472ff6f53093386}{unpack\_header}(header);
+210     \textcolor{keywordtype}{char} l\_name[512];
+211     
+212     sprintf(l\_name, \textcolor{stringliteral}{"%s\_optimizer\_velocity\_%lldx%lld.bin"}, name\_prefix.c\_str(), 
+      \hyperlink{classlbann_1_1sgd_a27f2d893014cef8357edffb63bf649f0}{m\_velocity}->Height(), \hyperlink{classlbann_1_1sgd_a27f2d893014cef8357edffb63bf649f0}{m\_velocity}->Width());
+213     p.read\_distmat(\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64}{persist\_type::train}, l\_name, (\hyperlink{base_8hpp_a0fab5387556805cfeac3e7e567bf66c5}{DistMat} *)
+      \hyperlink{classlbann_1_1sgd_a27f2d893014cef8357edffb63bf649f0}{m\_velocity});
+214     
+215     \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+216   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sgd_aa3e3237a59b0593d7caf7357b7c181cf_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=328pt]{classlbann_1_1sgd_aa3e3237a59b0593d7caf7357b7c181cf_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1sgd_ad3949e74505cd25b267dbdd5b510a83f}\label{classlbann_1_1sgd_ad3949e74505cd25b267dbdd5b510a83f}} 
+\index{lbann\+::sgd@{lbann\+::sgd}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::sgd@{lbann\+::sgd}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1sgd}{sgd} \& lbann\+::sgd\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1sgd}{sgd} \&}]{other }\end{DoxyParamCaption})}
+
+Copy assignment operator. 
+
+Definition at line 56 of file sgd.\+cpp.
+
+
+\begin{DoxyCode}
+56                                     \{
+57   \hyperlink{classlbann_1_1optimizer_ab7811e0a4d2d9b594140aed78b6de743}{optimizer::operator=}(other);
+58   \hyperlink{classlbann_1_1sgd_a2e56d66d350debcf0d2c3ad76c214074}{m\_momentum} = other.m\_momentum;
+59   \hyperlink{classlbann_1_1sgd_a82da488e5d1530f50f67cd4ea30909cb}{m\_nesterov} = other.m\_nesterov;
+60 
+61   \textcolor{comment}{// Copy velocity matrix}
+62   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1sgd_a27f2d893014cef8357edffb63bf649f0}{m\_velocity} != \textcolor{keyword}{nullptr} && other.m\_velocity != \textcolor{keyword}{nullptr}
+63       && \hyperlink{classlbann_1_1sgd_a27f2d893014cef8357edffb63bf649f0}{m\_velocity}->DistData() == other.m\_velocity->DistData()) \{
+64     El::Copy(*other.m\_velocity, *\hyperlink{classlbann_1_1sgd_a27f2d893014cef8357edffb63bf649f0}{m\_velocity});
+65   \}
+66   \textcolor{keywordflow}{else} \{
+67     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1sgd_a27f2d893014cef8357edffb63bf649f0}{m\_velocity} != \textcolor{keyword}{nullptr}) \{ \textcolor{keyword}{delete} \hyperlink{classlbann_1_1sgd_a27f2d893014cef8357edffb63bf649f0}{m\_velocity}; \}
+68     \hyperlink{classlbann_1_1sgd_a27f2d893014cef8357edffb63bf649f0}{m\_velocity} = other.m\_velocity;
+69     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1sgd_a27f2d893014cef8357edffb63bf649f0}{m\_velocity} != \textcolor{keyword}{nullptr}) \{ \hyperlink{classlbann_1_1sgd_a27f2d893014cef8357edffb63bf649f0}{m\_velocity} = \hyperlink{classlbann_1_1sgd_a27f2d893014cef8357edffb63bf649f0}{m\_velocity}->Copy(); \}
+70   \}
+71 
+72   \textcolor{comment}{// Copy GPU data}
+73 \textcolor{preprocessor}{  #ifdef LBANN\_HAS\_CUDNN}
+74   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn} != \textcolor{keyword}{nullptr} && other.m\_weights != \textcolor{keyword}{nullptr}) \{
+75     \textcolor{keyword}{const} \textcolor{keywordtype}{int} height = other.m\_weights->get\_matrix\_height();
+76     \textcolor{keyword}{const} \textcolor{keywordtype}{int} width = other.m\_weights->get\_matrix\_width();
+77     \hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn}->deallocate\_on\_gpus(m\_velocity\_d);
+78     m\_velocity\_d = \hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn}->copy(other.m\_velocity\_d, height, width);
+79   \}
+80 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+81 
+82   \textcolor{keywordflow}{return} *\textcolor{keyword}{this};
+83 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sgd_ad3949e74505cd25b267dbdd5b510a83f_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1sgd_ab95756a63ec3fa0100d436a5a9addfeb}\label{classlbann_1_1sgd_ab95756a63ec3fa0100d436a5a9addfeb}} 
+\index{lbann\+::sgd@{lbann\+::sgd}!pack\+\_\+scalars@{pack\+\_\+scalars}}
+\index{pack\+\_\+scalars@{pack\+\_\+scalars}!lbann\+::sgd@{lbann\+::sgd}}
+\subsubsection{\texorpdfstring{pack\+\_\+scalars()}{pack\_scalars()}}
+{\footnotesize\ttfamily bool lbann\+::sgd\+::pack\+\_\+scalars (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1persist}{persist} \&}]{p }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [private]}}
+
+
+
+Definition at line 90 of file sgd.\+hpp.
+
+
+\begin{DoxyCode}
+90                                 \{
+91     p.write\_datatype(\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64}{persist\_type::train}, \textcolor{stringliteral}{"momentum"}, 
+      \hyperlink{classlbann_1_1sgd_a2e56d66d350debcf0d2c3ad76c214074}{m\_momentum});
+92     \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+93   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sgd_ab95756a63ec3fa0100d436a5a9addfeb_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sgd_ab95756a63ec3fa0100d436a5a9addfeb_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1sgd_a78ad11ca7424d50a9f2ba29e5f725e21}\label{classlbann_1_1sgd_a78ad11ca7424d50a9f2ba29e5f725e21}} 
+\index{lbann\+::sgd@{lbann\+::sgd}!save\+\_\+to\+\_\+checkpoint\+\_\+shared@{save\+\_\+to\+\_\+checkpoint\+\_\+shared}}
+\index{save\+\_\+to\+\_\+checkpoint\+\_\+shared@{save\+\_\+to\+\_\+checkpoint\+\_\+shared}!lbann\+::sgd@{lbann\+::sgd}}
+\subsubsection{\texorpdfstring{save\+\_\+to\+\_\+checkpoint\+\_\+shared()}{save\_to\_checkpoint\_shared()}}
+{\footnotesize\ttfamily bool lbann\+::sgd\+::save\+\_\+to\+\_\+checkpoint\+\_\+shared (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1persist}{persist} \&}]{p,  }\item[{std\+::string}]{m\+\_\+name }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [private]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1optimizer_afed10c6d8c5bd922f95075abeff711ce}{lbann\+::optimizer}.
+
+
+
+Definition at line 186 of file sgd.\+cpp.
+
+
+\begin{DoxyCode}
+186                                                                        \{
+187     \hyperlink{classlbann_1_1optimizer_afed10c6d8c5bd922f95075abeff711ce}{optimizer::save\_to\_checkpoint\_shared}(p, name\_prefix);
+188     
+189     \textcolor{keywordflow}{if}(p.get\_rank() == 0)\{
+190       \hyperlink{classlbann_1_1sgd_ab95756a63ec3fa0100d436a5a9addfeb}{pack\_scalars}(p);
+191     \}
+192 
+193     \textcolor{keywordtype}{char} l\_name[512];
+194     sprintf(l\_name, \textcolor{stringliteral}{"%s\_optimizer\_velocity\_%lldx%lld"}, name\_prefix.c\_str(), 
+      \hyperlink{classlbann_1_1sgd_a27f2d893014cef8357edffb63bf649f0}{m\_velocity}->Height(), \hyperlink{classlbann_1_1sgd_a27f2d893014cef8357edffb63bf649f0}{m\_velocity}->Width());
+195     p.write\_distmat(\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64}{persist\_type::train}, l\_name, (\hyperlink{base_8hpp_a0fab5387556805cfeac3e7e567bf66c5}{DistMat} *)
+      \hyperlink{classlbann_1_1sgd_a27f2d893014cef8357edffb63bf649f0}{m\_velocity});
+196     
+197     \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+198   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sgd_a78ad11ca7424d50a9f2ba29e5f725e21_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sgd_a78ad11ca7424d50a9f2ba29e5f725e21_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1sgd_a616c3cfd457ae1e771710b481b4c1bbb}\label{classlbann_1_1sgd_a616c3cfd457ae1e771710b481b4c1bbb}} 
+\index{lbann\+::sgd@{lbann\+::sgd}!setup@{setup}}
+\index{setup@{setup}!lbann\+::sgd@{lbann\+::sgd}}
+\subsubsection{\texorpdfstring{setup()}{setup()}}
+{\footnotesize\ttfamily void lbann\+::sgd\+::setup (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1weights}{weights} \&}]{w }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Setup optimizer. 
+
+Reimplemented from \hyperlink{classlbann_1_1optimizer_a7641a88b3c166df2d974a298622b992b}{lbann\+::optimizer}.
+
+
+
+Definition at line 102 of file sgd.\+cpp.
+
+
+\begin{DoxyCode}
+102                           \{
+103   \hyperlink{classlbann_1_1optimizer_a7641a88b3c166df2d974a298622b992b}{optimizer::setup}(w);
+104 
+105   \textcolor{comment}{// Allocate matrices}
+106   \textcolor{keyword}{const} \textcolor{keywordtype}{int} height = \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Height();
+107   \textcolor{keyword}{const} \textcolor{keywordtype}{int} width = \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Width();
+108   \hyperlink{classlbann_1_1sgd_a27f2d893014cef8357edffb63bf649f0}{m\_velocity} = \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Construct(\hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Grid(),
+109                                      \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Root());
+110   El::Zeros(*\hyperlink{classlbann_1_1sgd_a27f2d893014cef8357edffb63bf649f0}{m\_velocity}, height, width);
+111 
+112   \textcolor{comment}{// Allocate GPU objects}
+113   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn} != \textcolor{keyword}{nullptr}) \{
+114 \textcolor{preprocessor}{#ifdef LBANN\_HAS\_CUDNN}
+115     \hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn}->allocate\_on\_gpus(m\_velocity\_d, height, width);
+116 \textcolor{preprocessor}{#endif // LBANN\_HAS\_CUDNN}
+117   \}
+118   
+119 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sgd_a616c3cfd457ae1e771710b481b4c1bbb_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=314pt]{classlbann_1_1sgd_a616c3cfd457ae1e771710b481b4c1bbb_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1sgd_a083a44b456939b58f531cea1fde2378b}\label{classlbann_1_1sgd_a083a44b456939b58f531cea1fde2378b}} 
+\index{lbann\+::sgd@{lbann\+::sgd}!step\+\_\+compute@{step\+\_\+compute}}
+\index{step\+\_\+compute@{step\+\_\+compute}!lbann\+::sgd@{lbann\+::sgd}}
+\subsubsection{\texorpdfstring{step\+\_\+compute()}{step\_compute()}}
+{\footnotesize\ttfamily void lbann\+::sgd\+::step\+\_\+compute (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{values,  }\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{gradient }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Perform the computation in an optimization step. 
+
+Implements \hyperlink{classlbann_1_1optimizer_a0db72c298a0bc3405fb0af97d104a036}{lbann\+::optimizer}.
+
+
+
+Definition at line 121 of file sgd.\+cpp.
+
+
+\begin{DoxyCode}
+121                                                                      \{
+122 
+123   \textcolor{comment}{// SGD without momentum is just an Axpy}
+124   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1sgd_a2e56d66d350debcf0d2c3ad76c214074}{m\_momentum} == DataType(0)) \{
+125     El::Axpy(-\hyperlink{classlbann_1_1optimizer_ad393dcdcb82b44510c586ed5ec46d4dd}{m\_learning\_rate}, gradient, values);
+126     \textcolor{keywordflow}{return};
+127   \}
+128   
+129   \textcolor{comment}{// Get local matrix data}
+130   \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_height = values.LocalHeight();
+131   \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_width = values.LocalWidth();
+132   DataType* \_\_restrict\_\_ values\_buffer = values.Buffer();
+133   \textcolor{keyword}{const} \textcolor{keywordtype}{int} values\_ldim = values.LDim();
+134   \textcolor{keyword}{const} DataType* \_\_restrict\_\_ gradient\_buffer = gradient.LockedBuffer();
+135   \textcolor{keyword}{const} \textcolor{keywordtype}{int} gradient\_ldim = gradient.LDim();
+136   DataType* \_\_restrict\_\_ velocity\_buffer = \hyperlink{classlbann_1_1sgd_a27f2d893014cef8357edffb63bf649f0}{m\_velocity}->Buffer();
+137   \textcolor{keyword}{const} \textcolor{keywordtype}{int} velocity\_ldim = \hyperlink{classlbann_1_1sgd_a27f2d893014cef8357edffb63bf649f0}{m\_velocity}->LDim();
+138   
+139   \textcolor{comment}{// Check if matrix data is contiguous}
+140   \textcolor{keywordflow}{if} (values\_ldim != local\_height
+141       || gradient\_ldim != local\_height
+142       || velocity\_ldim != local\_height) \{
+143     \textcolor{comment}{// (Nesterov) momentum SGD for non-contiguous data}
+144 \textcolor{preprocessor}{    #pragma omp parallel for collapse(2)}
+145     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} j=0; j<local\_width; ++j) \{
+146       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<local\_height; ++i) \{
+147         \textcolor{keyword}{const} DataType g = gradient\_buffer[i+j*gradient\_ldim];
+148         DataType& v = velocity\_buffer[i+j*velocity\_ldim];
+149         DataType& x = values\_buffer[i+j*values\_ldim];
+150         v = \hyperlink{classlbann_1_1sgd_a2e56d66d350debcf0d2c3ad76c214074}{m\_momentum} * v + g;
+151         x -= (\hyperlink{classlbann_1_1sgd_a82da488e5d1530f50f67cd4ea30909cb}{m\_nesterov} ?
+152               \hyperlink{classlbann_1_1optimizer_ad393dcdcb82b44510c586ed5ec46d4dd}{m\_learning\_rate} * (\hyperlink{classlbann_1_1sgd_a2e56d66d350debcf0d2c3ad76c214074}{m\_momentum} * v + g) :
+153               \hyperlink{classlbann_1_1optimizer_ad393dcdcb82b44510c586ed5ec46d4dd}{m\_learning\_rate} * v);
+154       \}
+155     \}
+156   \} \textcolor{keywordflow}{else} \{
+157     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1sgd_a82da488e5d1530f50f67cd4ea30909cb}{m\_nesterov}) \{
+158       \textcolor{comment}{// Nesterov's accelerated gradient descent for contiguous data}
+159 \textcolor{preprocessor}{      #pragma omp parallel for}
+160       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<local\_height*local\_width; ++i) \{
+161         DataType& x = values\_buffer[i];
+162         \textcolor{keyword}{const} DataType g = gradient\_buffer[i];
+163         DataType& v = velocity\_buffer[i];
+164         v = \hyperlink{classlbann_1_1sgd_a2e56d66d350debcf0d2c3ad76c214074}{m\_momentum} * v + g;
+165         x -= \hyperlink{classlbann_1_1optimizer_ad393dcdcb82b44510c586ed5ec46d4dd}{m\_learning\_rate} * (\hyperlink{classlbann_1_1sgd_a2e56d66d350debcf0d2c3ad76c214074}{m\_momentum} * v + g);
+166       \}
+167     \} \textcolor{keywordflow}{else} \{
+168       \textcolor{comment}{// Momentum SGD for contiguous data}
+169 \textcolor{preprocessor}{#pragma omp parallel for}
+170       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<local\_height*local\_width; ++i) \{
+171         DataType& x = values\_buffer[i];
+172         \textcolor{keyword}{const} DataType g = gradient\_buffer[i];
+173         DataType& v = velocity\_buffer[i];
+174         v = \hyperlink{classlbann_1_1sgd_a2e56d66d350debcf0d2c3ad76c214074}{m\_momentum} * v + g;
+175         x -= \hyperlink{classlbann_1_1optimizer_ad393dcdcb82b44510c586ed5ec46d4dd}{m\_learning\_rate} * v;
+176       \}
+177     \}
+178   \}
+179 
+180 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sgd_a083a44b456939b58f531cea1fde2378b_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1sgd_a3afe5aa1f1861c390472ff6f53093386}\label{classlbann_1_1sgd_a3afe5aa1f1861c390472ff6f53093386}} 
+\index{lbann\+::sgd@{lbann\+::sgd}!unpack\+\_\+header@{unpack\+\_\+header}}
+\index{unpack\+\_\+header@{unpack\+\_\+header}!lbann\+::sgd@{lbann\+::sgd}}
+\subsubsection{\texorpdfstring{unpack\+\_\+header()}{unpack\_header()}}
+{\footnotesize\ttfamily void lbann\+::sgd\+::unpack\+\_\+header (\begin{DoxyParamCaption}\item[{struct \hyperlink{structlbann_1_1sgd_1_1packing__header}{packing\+\_\+header} \&}]{header }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [private]}}
+
+
+
+Definition at line 105 of file sgd.\+hpp.
+
+
+\begin{DoxyCode}
+105                                                    \{
+106     \hyperlink{classlbann_1_1sgd_a2e56d66d350debcf0d2c3ad76c214074}{m\_momentum} = header.momentum;
+107   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sgd_a3afe5aa1f1861c390472ff6f53093386_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=328pt]{classlbann_1_1sgd_a3afe5aa1f1861c390472ff6f53093386_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1sgd_a2b4a91cbb155ed94a185db79fdbf6284}\label{classlbann_1_1sgd_a2b4a91cbb155ed94a185db79fdbf6284}} 
+\index{lbann\+::sgd@{lbann\+::sgd}!unpack\+\_\+scalars@{unpack\+\_\+scalars}}
+\index{unpack\+\_\+scalars@{unpack\+\_\+scalars}!lbann\+::sgd@{lbann\+::sgd}}
+\subsubsection{\texorpdfstring{unpack\+\_\+scalars()}{unpack\_scalars()}}
+{\footnotesize\ttfamily bool lbann\+::sgd\+::unpack\+\_\+scalars (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1persist}{persist} \&}]{p,  }\item[{struct \hyperlink{structlbann_1_1sgd_1_1packing__header}{packing\+\_\+header} $\ast$}]{header }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [private]}}
+
+
+
+Definition at line 95 of file sgd.\+hpp.
+
+
+\begin{DoxyCode}
+95                                                                 \{
+96     p.read\_datatype(\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64}{persist\_type::train}, \textcolor{stringliteral}{"momentum"},  &
+      \hyperlink{classlbann_1_1sgd_a2e56d66d350debcf0d2c3ad76c214074}{m\_momentum});
+97     
+98     \textcolor{keywordflow}{if}(header != \textcolor{keyword}{nullptr})\{
+99       header->momentum = \hyperlink{classlbann_1_1sgd_a2e56d66d350debcf0d2c3ad76c214074}{m\_momentum};
+100     \}
+101    
+102   \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+103   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sgd_a2b4a91cbb155ed94a185db79fdbf6284_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sgd_a2b4a91cbb155ed94a185db79fdbf6284_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1sgd_a2e56d66d350debcf0d2c3ad76c214074}\label{classlbann_1_1sgd_a2e56d66d350debcf0d2c3ad76c214074}} 
+\index{lbann\+::sgd@{lbann\+::sgd}!m\+\_\+momentum@{m\+\_\+momentum}}
+\index{m\+\_\+momentum@{m\+\_\+momentum}!lbann\+::sgd@{lbann\+::sgd}}
+\subsubsection{\texorpdfstring{m\+\_\+momentum}{m\_momentum}}
+{\footnotesize\ttfamily Data\+Type lbann\+::sgd\+::m\+\_\+momentum\hspace{0.3cm}{\ttfamily [private]}}
+
+Momentum. 
+
+Definition at line 75 of file sgd.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1sgd_a82da488e5d1530f50f67cd4ea30909cb}\label{classlbann_1_1sgd_a82da488e5d1530f50f67cd4ea30909cb}} 
+\index{lbann\+::sgd@{lbann\+::sgd}!m\+\_\+nesterov@{m\+\_\+nesterov}}
+\index{m\+\_\+nesterov@{m\+\_\+nesterov}!lbann\+::sgd@{lbann\+::sgd}}
+\subsubsection{\texorpdfstring{m\+\_\+nesterov}{m\_nesterov}}
+{\footnotesize\ttfamily bool lbann\+::sgd\+::m\+\_\+nesterov\hspace{0.3cm}{\ttfamily [private]}}
+
+Nesterov acceleration. 
+
+Definition at line 77 of file sgd.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1sgd_a27f2d893014cef8357edffb63bf649f0}\label{classlbann_1_1sgd_a27f2d893014cef8357edffb63bf649f0}} 
+\index{lbann\+::sgd@{lbann\+::sgd}!m\+\_\+velocity@{m\+\_\+velocity}}
+\index{m\+\_\+velocity@{m\+\_\+velocity}!lbann\+::sgd@{lbann\+::sgd}}
+\subsubsection{\texorpdfstring{m\+\_\+velocity}{m\_velocity}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat}$\ast$ lbann\+::sgd\+::m\+\_\+velocity\hspace{0.3cm}{\ttfamily [private]}}
+
+Velocity term for momentum S\+GD. 
+
+Definition at line 79 of file sgd.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/optimizers/\hyperlink{sgd_8hpp}{sgd.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/optimizers/\hyperlink{sgd_8cpp}{sgd.\+cpp}\end{DoxyCompactItemize}

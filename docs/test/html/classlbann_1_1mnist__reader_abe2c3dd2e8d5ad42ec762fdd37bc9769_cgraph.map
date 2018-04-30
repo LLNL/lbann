@@ -1,0 +1,4 @@
+<map id="lbann::mnist_reader::mnist_reader" name="lbann::mnist_reader::mnist_reader">
+<area shape="rect" id="node2" href="$classlbann_1_1mnist__reader.html#a5b9a3d56e2d1e1c6820b3c7cc8cde17d" title="Set the default values for the width, the height, the number of channels, and the number of labels of..." alt="" coords="193,5,332,44"/>
+<area shape="rect" id="node3" href="$classlbann_1_1image__data__reader.html#a0164b0e3abbe92daef73b36fb925403e" title="lbann::image_data_reader\l::set_linearized_image_size" alt="" coords="380,5,566,44"/>
+</map>

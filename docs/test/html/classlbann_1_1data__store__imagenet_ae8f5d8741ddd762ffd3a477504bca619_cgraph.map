@@ -1,0 +1,5 @@
+<map id="lbann::data_store_imagenet::get_file_sizes" name="lbann::data_store_imagenet::get_file_sizes">
+<area shape="rect" id="node2" href="$classlbann_1_1image__data__reader.html#aa03599a5f66d498d4bb90c50ae70c82a" title="Allow read&#45;only access to the entire sample list. " alt="" coords="240,5,417,44"/>
+<area shape="rect" id="node3" href="$classlbann_1_1generic__data__store.html#a7641d15eba63426acf5071acb8026442" title="returns the number of bytes in dir/fn; it&#39;s OK if dir = &quot;&quot; " alt="" coords="259,68,398,107"/>
+<area shape="rect" id="node4" href="$classlbann_1_1data__store__image.html#a477529f2ba3f86598bbd409d3c2b6901" title="called by get_file_sizes " alt="" coords="244,131,413,169"/>
+</map>

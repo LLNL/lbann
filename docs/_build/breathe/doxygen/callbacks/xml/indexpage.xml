@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="indexpage" kind="page">
+    <compoundname>index</compoundname>
+    <title>Overview</title>
+    <detaileddescription>
+<para>This is the API documentation for LBANN ( Livermore Big Artificial Neural Network). LBANN is a toolkit for deep learning training on HPC systems. To get started with LBANN please refer to the <ref refid="getting_started" kindref="compound">Getting Started pages </ref> for installation and basic usage information. To see detailed information on the neural network features available in LBANN refer to the following pages:</para><para>-<ref refid="layers" kindref="compound">Layers </ref></para><para>-<ref refid="metrics" kindref="compound">Metrics </ref></para><para>-<ref refid="obj_fn" kindref="compound">Objective Functions </ref></para><para>-<ref refid="optimizers" kindref="compound">Optimizers </ref></para><para>-<ref refid="callbacks" kindref="compound">Callbacks </ref></para><para><simplesect kind="warning"><para>This manual is under construction. Please direct questions to <ulink url="mailto:lbann-dev@llnl.gov">lbann-dev@llnl.gov</ulink>. Users are encourage to join <ulink url="mailto:lbann-users@llnl.gov">lbann-users@llnl.gov</ulink>.</para></simplesect>
+</para><sect1 id="index_1team">
+<title>LBANN Development Team</title>
+<para>LLNL Team<itemizedlist>
+<listitem><para><ulink url="http://people.llnl.gov/vanessen1">Brian Van Essen</ulink> &lt;<ulink url="mailto:vanessen1@llnl.gov">vanessen1@llnl.gov</ulink>&gt;</para></listitem><listitem><para><ulink url="http://people.llnl.gov/kim63">Hyojin Kim</ulink> &lt;<ulink url="mailto:kim63@llnl.gov">kim63@llnl.gov</ulink>&gt;</para></listitem><listitem><para><ulink url="http://people.llnl.gov/jacobs32">Sam Jacobs</ulink> &lt;<ulink url="mailto:jacobs32@llnl.gov">jacobs32@llnl.gov</ulink>&gt;</para></listitem><listitem><para><ulink url="http://people.llnl.gov/moody20">Adam Moody</ulink> &lt;<ulink url="mailto:moody20@llnl.gov">moody20@llnl.gov</ulink>&gt;</para></listitem></itemizedlist>
+</para><para>LLNL Summer Interns</para><para><itemizedlist>
+<listitem><para>Nikoli Dryden &lt;<ulink url="mailto:dryden1@llnl.gov">dryden1@llnl.gov</ulink>&gt;</para></listitem><listitem><para><ulink url="https://web.stanford.edu/~tym1">Tim Moon</ulink> &lt;<ulink url="mailto:tym1@stanford.edu">tym1@stanford.edu</ulink>&gt;</para></listitem></itemizedlist>
+</para></sect1>
+<sect1 id="index_1license">
+<title>License</title>
+<para>Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC. Produced at the Lawrence Livermore National Laboratory. Written by the LBANN Research Team (B. Van Essen, et al.) listed in the CONTRIBUTORS file. &lt;<ulink url="mailto:lbann-dev@llnl.gov">lbann-dev@llnl.gov</ulink>&gt;</para><para>LLNL-CODE-697807. All rights reserved.</para><para>This file is part of LBANN: Livermore Big Artificial Neural Network Toolkit. For details, see <ulink url="http://software.llnl.gov/LBANN">http://software.llnl.gov/LBANN</ulink> or <ulink url="https://github.com/LLNL/LBANN">https://github.com/LLNL/LBANN</ulink>. Licensed under the Apache License, Version 2.0 (the “Licensee”); you may not use this file except in compliance with the License. You may obtain a copy of the License at:</para><para><ulink url="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</ulink></para><para>Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the license. </para></sect1>
+    </detaileddescription>
+  </compounddef>
+</doxygen>

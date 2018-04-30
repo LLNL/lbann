@@ -1,0 +1,5 @@
+<map id="lbann::model::train" name="lbann::model::train">
+<area shape="rect" id="node2" href="$classlbann_1_1model.html#a5bafc4e84671490c6118959becb22e16" title="lbann::model::set_terminate\l_training" alt="" coords="184,5,370,44"/>
+<area shape="rect" id="node3" href="$classlbann_1_1lbann__callback__early__stopping.html#a32eb9c5e763c97ab1162cfebea7ad049" title="lbann::lbann_callback\l_early_stopping::on_validation_end" alt="" coords="418,5,649,44"/>
+<area shape="rect" id="node4" href="$classlbann_1_1lbann__callback__early__stopping.html#aa8e7bd4e9dde8e57dbc416dc75e25cc6" title="lbann::lbann_callback\l_early_stopping::copy" alt="" coords="697,5,848,44"/>
+</map>

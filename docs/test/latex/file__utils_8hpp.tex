@@ -1,0 +1,56 @@
+\hypertarget{file__utils_8hpp}{}\section{/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/utils/file\+\_\+utils.hpp File Reference}
+\label{file__utils_8hpp}\index{/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/utils/file\+\_\+utils.\+hpp@{/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/utils/file\+\_\+utils.\+hpp}}
+{\ttfamily \#include $<$string$>$}\newline
+{\ttfamily \#include $<$vector$>$}\newline
+{\ttfamily \#include $<$iostream$>$}\newline
+{\ttfamily \#include $<$fstream$>$}\newline
+{\ttfamily \#include $<$iterator$>$}\newline
+Include dependency graph for file\+\_\+utils.\+hpp\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{file__utils_8hpp__incl}
+\end{center}
+\end{figure}
+This graph shows which files directly or indirectly include this file\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{file__utils_8hpp__dep__incl}
+\end{center}
+\end{figure}
+\subsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \hyperlink{structlbann_1_1path__delimiter}{lbann\+::path\+\_\+delimiter}
+\end{DoxyCompactItemize}
+\subsection*{Namespaces}
+\begin{DoxyCompactItemize}
+\item 
+ \hyperlink{namespacelbann}{lbann}
+\begin{DoxyCompactList}\small\item\em Open\+MP Diagnostic code from Edgar Leon at L\+L\+NL. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+std\+::vector$<$ int $>$ \hyperlink{namespacelbann_af3f2c9055423e1fe3380b1ad4c4ab5ef}{lbann\+::get\+\_\+tokens} (std\+::string str, const std\+::vector$<$ char $>$ delims)
+\begin{DoxyCompactList}\small\item\em Tokenize a string into integers by an ordered sequence of delimiter characters. \end{DoxyCompactList}\item 
+std\+::vector$<$ std\+::string $>$ \hyperlink{namespacelbann_ac02a174553cf05f779743be1c92f1912}{lbann\+::get\+\_\+tokens} (const std\+::string str, const std\+::string delims=\char`\"{} \+:;\textbackslash{}\textbackslash{}\textbackslash{}\char`\"{})
+\begin{DoxyCompactList}\small\item\em Tokenize a string into substrings by set of delimiter characters. \end{DoxyCompactList}\item 
+bool \hyperlink{namespacelbann_a1ce6832a54235a5fb333f50fffbe1b63}{lbann\+::parse\+\_\+path} (const std\+::string \&path, std\+::string \&dir, std\+::string \&basename)
+\begin{DoxyCompactList}\small\item\em Divide a given path into dir and basename. \end{DoxyCompactList}\item 
+std\+::string \hyperlink{namespacelbann_ad9a28639b0953886bbcb7fc366783a17}{lbann\+::get\+\_\+ext\+\_\+name} (const std\+::string file\+\_\+name)
+\begin{DoxyCompactList}\small\item\em Return file extention name. \end{DoxyCompactList}\item 
+std\+::string \hyperlink{namespacelbann_aea9a4378326fd51236a8343c43cc4a7c}{lbann\+::get\+\_\+basename\+\_\+without\+\_\+ext} (const std\+::string file\+\_\+name)
+\begin{DoxyCompactList}\small\item\em Return basename without extention. \end{DoxyCompactList}\item 
+std\+::string \hyperlink{namespacelbann_a1b8b05bbf2e59808a51ead80c47a9359}{lbann\+::add\+\_\+delimiter} (const std\+::string dir)
+\item 
+std\+::string \hyperlink{namespacelbann_a351610c8df00514e8942756c2099fedc}{lbann\+::modify\+\_\+file\+\_\+name} (const std\+::string file\+\_\+name, const std\+::string tag, const std\+::string new\+\_\+ext)
+\item 
+bool \hyperlink{namespacelbann_a4fac6c6483965395fa79d31061485f9f}{lbann\+::check\+\_\+if\+\_\+file\+\_\+exists} (const std\+::string \&filename)
+\begin{DoxyCompactList}\small\item\em Return true if a file with the given name exists. \end{DoxyCompactList}\item 
+bool \hyperlink{namespacelbann_a1208673c880ccf0e1a9c5db6a8ed81f8}{lbann\+::create\+\_\+dir} (const std\+::string dirname)
+\item 
+{\footnotesize template$<$typename T  = std\+::vector$<$unsigned char$>$$>$ }\\bool \hyperlink{namespacelbann_a9c2447a7dfde8f6fb73c5f12f20046f9}{lbann\+::load\+\_\+file} (const std\+::string filename, T \&buf)
+\begin{DoxyCompactList}\small\item\em Load a file into a buffer. \end{DoxyCompactList}\item 
+void \hyperlink{namespacelbann_a0fd8bc0ad31da913a124683f5ec4fdf1}{lbann\+::\+\_\+\+\_\+swap\+Endian\+Int} (unsigned int \&ui)
+\end{DoxyCompactItemize}

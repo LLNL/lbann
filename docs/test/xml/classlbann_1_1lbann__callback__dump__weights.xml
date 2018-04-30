@@ -1,0 +1,276 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1lbann__callback__dump__weights" kind="class" language="C++" prot="public">
+    <compoundname>lbann::lbann_callback_dump_weights</compoundname>
+    <basecompoundref refid="classlbann_1_1lbann__callback" prot="public" virt="non-virtual">lbann::lbann_callback</basecompoundref>
+    <includes refid="callback__dump__weights_8hpp" local="no">callback_dump_weights.hpp</includes>
+      <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="classlbann_1_1lbann__callback__dump__weights_1a6c73416bd2edd414e7c4094a19ae2d79" prot="private" static="no" mutable="no">
+        <type>std::string</type>
+        <definition>std::string lbann::lbann_callback_dump_weights::m_basename</definition>
+        <argsstring></argsstring>
+        <name>m_basename</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Basename for writing files. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_dump_weights.hpp" line="64" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_dump_weights.hpp" bodystart="64" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__callback__dump__weights_1a5902fb87255b410a5d777ea385813416" compoundref="callback__dump__weights_8cpp" startline="42" endline="56">dump_weights</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__dump__weights_1a6ad86c6dec233324f013e9d83e574267" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>lbann::lbann_callback_dump_weights::lbann_callback_dump_weights</definition>
+        <argsstring>(std::string basename, int batch_interval=1)</argsstring>
+        <name>lbann_callback_dump_weights</name>
+        <param>
+          <type>std::string</type>
+          <declname>basename</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>batch_interval</declname>
+          <defval>1</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>basename</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The basename for writing files. </para></parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_dump_weights.hpp" line="51" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_dump_weights.hpp" bodystart="51" bodyend="52"/>
+        <references refid="classlbann_1_1lbann__callback__dump__weights_1a6f4608e843c2d33e1082498ba34dd8e0">operator=</references>
+        <referencedby refid="classlbann_1_1lbann__callback__dump__weights_1a5e3d078ea54f8768e23aac2393b1bc3c" compoundref="callback__dump__weights_8hpp" startline="56" endline="58">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__dump__weights_1aeae4724a0e8f9129d76d6822205d854f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::lbann_callback_dump_weights::lbann_callback_dump_weights</definition>
+        <argsstring>(const lbann_callback_dump_weights &amp;)=default</argsstring>
+        <name>lbann_callback_dump_weights</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1lbann__callback__dump__weights" kindref="compound">lbann_callback_dump_weights</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_dump_weights.hpp" line="53" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__dump__weights_1a6f4608e843c2d33e1082498ba34dd8e0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classlbann_1_1lbann__callback__dump__weights" kindref="compound">lbann_callback_dump_weights</ref> &amp;</type>
+        <definition>lbann_callback_dump_weights&amp; lbann::lbann_callback_dump_weights::operator=</definition>
+        <argsstring>(const lbann_callback_dump_weights &amp;)=default</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1lbann__callback__dump__weights" kindref="compound">lbann_callback_dump_weights</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_dump_weights.hpp" line="54" column="1"/>
+        <referencedby refid="classlbann_1_1lbann__callback__dump__weights_1a6ad86c6dec233324f013e9d83e574267" compoundref="callback__dump__weights_8hpp" startline="51" endline="52">lbann_callback_dump_weights</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__dump__weights_1a5e3d078ea54f8768e23aac2393b1bc3c" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type><ref refid="classlbann_1_1lbann__callback__dump__weights" kindref="compound">lbann_callback_dump_weights</ref> *</type>
+        <definition>lbann_callback_dump_weights* lbann::lbann_callback_dump_weights::copy</definition>
+        <argsstring>() const override</argsstring>
+        <name>copy</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1a9f545d1269a8c7af335625d049691f26">copy</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_dump_weights.hpp" line="56" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_dump_weights.hpp" bodystart="56" bodyend="58"/>
+        <references refid="classlbann_1_1lbann__callback__dump__weights_1a6ad86c6dec233324f013e9d83e574267" compoundref="callback__dump__weights_8hpp" startline="51" endline="52">lbann_callback_dump_weights</references>
+        <references refid="classlbann_1_1lbann__callback__dump__weights_1a46db01d535414a0965caae709a08a150" compoundref="callback__dump__weights_8cpp" startline="34" endline="36">on_train_begin</references>
+        <references refid="classlbann_1_1lbann__callback__dump__weights_1aa73068d94b2408fc0124b2a05b4e2b8a" compoundref="callback__dump__weights_8cpp" startline="38" endline="40">on_epoch_end</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__dump__weights_1a46db01d535414a0965caae709a08a150" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_dump_weights::on_train_begin</definition>
+        <argsstring>(model *m) override</argsstring>
+        <name>on_train_begin</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1a7c8f0d211967ccc5219144e92571ab26">on_train_begin</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Called at the beginning of training. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_dump_weights.hpp" line="59" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_dump_weights.cpp" bodystart="34" bodyend="36"/>
+        <references refid="classlbann_1_1lbann__callback__dump__weights_1a5902fb87255b410a5d777ea385813416" compoundref="callback__dump__weights_8cpp" startline="42" endline="56">dump_weights</references>
+        <referencedby refid="classlbann_1_1lbann__callback__dump__weights_1a5e3d078ea54f8768e23aac2393b1bc3c" compoundref="callback__dump__weights_8hpp" startline="56" endline="58">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__dump__weights_1aa73068d94b2408fc0124b2a05b4e2b8a" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_dump_weights::on_epoch_end</definition>
+        <argsstring>(model *m) override</argsstring>
+        <name>on_epoch_end</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1a1fc71110e7f754bf73c9e0f344a448a5">on_epoch_end</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Called immediate after the end of each epoch. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_dump_weights.hpp" line="60" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_dump_weights.cpp" bodystart="38" bodyend="40"/>
+        <references refid="classlbann_1_1lbann__callback__dump__weights_1a5902fb87255b410a5d777ea385813416" compoundref="callback__dump__weights_8cpp" startline="42" endline="56">dump_weights</references>
+        <referencedby refid="classlbann_1_1lbann__callback__dump__weights_1a5e3d078ea54f8768e23aac2393b1bc3c" compoundref="callback__dump__weights_8hpp" startline="56" endline="58">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__dump__weights_1ae6c0fee627651edaff778b1fd4b0e0c4" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>std::string</type>
+        <definition>std::string lbann::lbann_callback_dump_weights::name</definition>
+        <argsstring>() const override</argsstring>
+        <name>name</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1a7522c7a14f1d6a1ea762cc2d7248eb3a">name</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Return this callback&apos;s name. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_dump_weights.hpp" line="61" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_dump_weights.hpp" bodystart="61" bodyend="61"/>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="private-func">
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__dump__weights_1a5902fb87255b410a5d777ea385813416" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_dump_weights::dump_weights</definition>
+        <argsstring>(model *m, std::string s=&quot;&quot;)</argsstring>
+        <name>dump_weights</name>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+          <declname>m</declname>
+        </param>
+        <param>
+          <type>std::string</type>
+          <declname>s</declname>
+          <defval>&quot;&quot;</defval>
+        </param>
+        <briefdescription>
+<para>Dump weights from learning layers. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_dump_weights.hpp" line="66" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_dump_weights.cpp" bodystart="42" bodyend="56"/>
+        <references refid="classlbann_1_1model_1ac0a89794f1f51e7c502fff2745c973e6" compoundref="model_8hpp" startline="120" endline="120">lbann::model::get_weights</references>
+        <references refid="classlbann_1_1model_1a1cf70e098524cc5013bce56edd96dfe7" compoundref="model_8hpp" startline="128" endline="130">lbann::model::get_cur_epoch</references>
+        <references refid="classlbann_1_1lbann__callback__dump__weights_1a6c73416bd2edd414e7c4094a19ae2d79" compoundref="callback__dump__weights_8hpp" startline="64">m_basename</references>
+        <references refid="classlbann_1_1model_1a9e1cfe449d2f4858a32994f6be0042fb" compoundref="model_8hpp" startline="123" endline="125">lbann::model::get_comm</references>
+        <references refid="classlbann_1_1lbann__comm_1a6422f70c92bed0b78179facc52b066f7" compoundref="comm_8hpp" startline="112" endline="114">lbann::lbann_comm::get_model_rank</references>
+        <referencedby refid="classlbann_1_1lbann__callback__dump__weights_1a46db01d535414a0965caae709a08a150" compoundref="callback__dump__weights_8cpp" startline="34" endline="36">on_train_begin</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__dump__weights_1aa73068d94b2408fc0124b2a05b4e2b8a" compoundref="callback__dump__weights_8cpp" startline="38" endline="40">on_epoch_end</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <inheritancegraph>
+      <node id="1370">
+        <label>lbann::lbann_callback</label>
+        <link refid="classlbann_1_1lbann__callback"/>
+      </node>
+      <node id="1369">
+        <label>lbann::lbann_callback_dump_weights</label>
+        <link refid="classlbann_1_1lbann__callback__dump__weights"/>
+        <childnode refid="1370" relation="public-inheritance">
+        </childnode>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="1372">
+        <label>lbann::lbann_callback</label>
+        <link refid="classlbann_1_1lbann__callback"/>
+        <childnode refid="1373" relation="usage">
+          <edgelabel>m_summarizer</edgelabel>
+        </childnode>
+      </node>
+      <node id="1373">
+        <label>lbann::lbann_summary</label>
+        <link refid="classlbann_1_1lbann__summary"/>
+      </node>
+      <node id="1371">
+        <label>lbann::lbann_callback_dump_weights</label>
+        <link refid="classlbann_1_1lbann__callback__dump__weights"/>
+        <childnode refid="1372" relation="public-inheritance">
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_dump_weights.hpp" line="46" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_dump_weights.hpp" bodystart="46" bodyend="67"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1lbann__callback__dump__weights_1a5e3d078ea54f8768e23aac2393b1bc3c" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>copy</name></member>
+      <member refid="classlbann_1_1lbann__callback__dump__weights_1a5902fb87255b410a5d777ea385813416" prot="private" virt="non-virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>dump_weights</name></member>
+      <member refid="classlbann_1_1lbann__callback_1acec888932129f93ba2a0077192467c9e" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>get_batch_interval</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a679057298a41ddd47f08c157f756c584" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>lbann_callback</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a91d994616b8bf98685ac32939228f96a" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>lbann_callback</name></member>
+      <member refid="classlbann_1_1lbann__callback__dump__weights_1a6ad86c6dec233324f013e9d83e574267" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>lbann_callback_dump_weights</name></member>
+      <member refid="classlbann_1_1lbann__callback__dump__weights_1aeae4724a0e8f9129d76d6822205d854f" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>lbann_callback_dump_weights</name></member>
+      <member refid="classlbann_1_1lbann__callback__dump__weights_1a6c73416bd2edd414e7c4094a19ae2d79" prot="private" virt="non-virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>m_basename</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a6126e310e9924398c18ccf76bb91c705" prot="protected" virt="non-virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>m_batch_interval</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a277d46138184f85f161a8263b8322c76" prot="protected" virt="non-virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>m_summarizer</name></member>
+      <member refid="classlbann_1_1lbann__callback__dump__weights_1ae6c0fee627651edaff778b1fd4b0e0c4" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>name</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a2c0709a26179d115ff85b7561786ee27" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>on_backward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1abeb1e486e259fd358332abf1e952f630" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>on_backward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1af183624e63ba65e0003fa988f53dee0c" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>on_backward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1aba03b59c056ace8094095c08e39b9ac4" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>on_backward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a9ecf4e44cd4021cdd687de14c850cc83" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>on_batch_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a895ca577e358601fcae5c04749f60535" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>on_batch_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a3462e54126adbd0082c22c98d8de5468" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>on_batch_evaluate_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ad10891b8ab3de74ee1a70e6255e7d58a" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>on_batch_evaluate_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a4ed9498763412a55953fff71ee3a9456" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>on_epoch_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback__dump__weights_1aa73068d94b2408fc0124b2a05b4e2b8a" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>on_epoch_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a4a2cff48a688bb56ed14b8b53344f945" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>on_evaluate_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a044174864e4981a1dac093d58e8c4d6c" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>on_evaluate_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a0794f3fb88db6fef53f0e2f235f94424" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>on_evaluate_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ae23c5a61b81dbdfbd79736ac2b6035aa" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>on_evaluate_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a22ed977371173105b4aad3a20b9c59dc" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>on_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ab96adb1d77180e00fdd668cd381323fd" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>on_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a79a0bb407852d7b330b74373647ffe46" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>on_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a5eff0a59fbce98a981d9cdd0547a3ad5" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>on_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a1a9248b305f06419889c1b3b0f0893d8" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>on_optimize_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a497e750da160e0071ce8864ccc3a1344" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>on_optimize_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a235195d5fa4461835b861a03a5c0278f" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>on_optimize_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a4653e2903bfd3903709a81eaf7eabc1a" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>on_optimize_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ace7452239c9ad7aa6247e9496adbcffe" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>on_phase_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a716bff45bdc5a88eed09c2231f5bc93a" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>on_test_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1accbad4dd004c1ced33642db6398b2efe" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>on_test_end</name></member>
+      <member refid="classlbann_1_1lbann__callback__dump__weights_1a46db01d535414a0965caae709a08a150" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>on_train_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1af28078b0ddaef45124465bef01eefedf" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>on_train_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a2bde303671110519388d9962bc3e5583" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>on_validation_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1adc16e42e5064dc2dc8d84dfbfc1325eb" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>on_validation_end</name></member>
+      <member refid="classlbann_1_1lbann__callback__dump__weights_1a6f4608e843c2d33e1082498ba34dd8e0" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a66b0a8c00a273669fa782ece59e8898b" prot="public" virt="non-virtual" ambiguityscope="lbann::lbann_callback::"><scope>lbann::lbann_callback_dump_weights</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a02d924df2f8ca851578dc76d9015e48d" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>set_summarizer</name></member>
+      <member refid="classlbann_1_1lbann__callback_1aab5086e27d9bb0a7c7ee8ffc1bc58671" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>setup</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ac91abaec389f8d2547512c45ae587304" prot="public" virt="virtual"><scope>lbann::lbann_callback_dump_weights</scope><name>~lbann_callback</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

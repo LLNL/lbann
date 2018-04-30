@@ -1,0 +1,4 @@
+<map id="lbann::generic_data_reader::set_data_filename" name="lbann::generic_data_reader::set_data_filename">
+<area shape="rect" id="node2" href="$classlbann_1_1generic__data__reader.html#aedca18323a7777180fc12d73d809fb84" title="returns a (possibly nullptr) to comm " alt="" coords="237,5,375,44"/>
+<area shape="rect" id="node3" href="$proto__common_8hpp.html#a32d4c032abc19c091fa65ace580fc057" title="instantiates one or more generic_data_readers and inserts them in &amp;data_readers " alt="" coords="244,68,368,93"/>
+</map>

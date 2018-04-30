@@ -1,0 +1,249 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1lbann__callback__early__stopping" kind="class" language="C++" prot="public">
+    <compoundname>lbann::lbann_callback_early_stopping</compoundname>
+    <basecompoundref refid="classlbann_1_1lbann__callback" prot="public" virt="non-virtual">lbann::lbann_callback</basecompoundref>
+    <includes refid="callback__early__stopping_8hpp" local="no">callback_early_stopping.hpp</includes>
+      <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="classlbann_1_1lbann__callback__early__stopping_1ada95898e18dbed5adf1848919affd6ee" prot="private" static="no" mutable="no">
+        <type>int64_t</type>
+        <definition>int64_t lbann::lbann_callback_early_stopping::m_patience</definition>
+        <argsstring></argsstring>
+        <name>m_patience</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Number of epochs to wait for improvements. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_early_stopping.hpp" line="58" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_early_stopping.hpp" bodystart="58" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__callback__early__stopping_1a32eb9c5e763c97ab1162cfebea7ad049" compoundref="callback__early__stopping_8cpp" startline="38" endline="61">on_validation_end</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1lbann__callback__early__stopping_1a64868be121d63a94344023b466cec494" prot="private" static="no" mutable="no">
+        <type><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref></type>
+        <definition>EvalType lbann::lbann_callback_early_stopping::m_last_score</definition>
+        <argsstring></argsstring>
+        <name>m_last_score</name>
+        <initializer>= std::numeric_limits&lt;<ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref>&gt;::max()</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Last recorded score. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_early_stopping.hpp" line="60" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_early_stopping.hpp" bodystart="60" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__callback__early__stopping_1a32eb9c5e763c97ab1162cfebea7ad049" compoundref="callback__early__stopping_8cpp" startline="38" endline="61">on_validation_end</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1lbann__callback__early__stopping_1acd0363fdc85a9ab0a77687ecfa827a1e" prot="private" static="no" mutable="no">
+        <type>int64_t</type>
+        <definition>int64_t lbann::lbann_callback_early_stopping::m_wait</definition>
+        <argsstring></argsstring>
+        <name>m_wait</name>
+        <initializer>= 0</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Current number of epochs without improvement. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_early_stopping.hpp" line="62" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_early_stopping.hpp" bodystart="62" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__callback__early__stopping_1a32eb9c5e763c97ab1162cfebea7ad049" compoundref="callback__early__stopping_8cpp" startline="38" endline="61">on_validation_end</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__early__stopping_1ac0140e05eccd5280d53a8e8d480c0ce3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::lbann_callback_early_stopping::lbann_callback_early_stopping</definition>
+        <argsstring>(int64_t patience)</argsstring>
+        <name>lbann_callback_early_stopping</name>
+        <param>
+          <type>int64_t</type>
+          <declname>patience</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Continue training until score has not improved for patience epochs. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_early_stopping.hpp" line="46" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_early_stopping.cpp" bodystart="33" bodyend="34"/>
+        <referencedby refid="classlbann_1_1lbann__callback__early__stopping_1aa8e7bd4e9dde8e57dbc416dc75e25cc6" compoundref="callback__early__stopping_8hpp" startline="50" endline="52">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__early__stopping_1a7ff0175e34065c24d2c4090ff90ef614" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::lbann_callback_early_stopping::lbann_callback_early_stopping</definition>
+        <argsstring>(const lbann_callback_early_stopping &amp;)=default</argsstring>
+        <name>lbann_callback_early_stopping</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1lbann__callback__early__stopping" kindref="compound">lbann_callback_early_stopping</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_early_stopping.hpp" line="47" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__early__stopping_1a34c805a2d45651efe3adaa012dc53fa5" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classlbann_1_1lbann__callback__early__stopping" kindref="compound">lbann_callback_early_stopping</ref> &amp;</type>
+        <definition>lbann_callback_early_stopping&amp; lbann::lbann_callback_early_stopping::operator=</definition>
+        <argsstring>(const lbann_callback_early_stopping &amp;)=default</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1lbann__callback__early__stopping" kindref="compound">lbann_callback_early_stopping</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_early_stopping.hpp" line="48" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__early__stopping_1aa8e7bd4e9dde8e57dbc416dc75e25cc6" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type><ref refid="classlbann_1_1lbann__callback__early__stopping" kindref="compound">lbann_callback_early_stopping</ref> *</type>
+        <definition>lbann_callback_early_stopping* lbann::lbann_callback_early_stopping::copy</definition>
+        <argsstring>() const override</argsstring>
+        <name>copy</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1a9f545d1269a8c7af335625d049691f26">copy</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_early_stopping.hpp" line="50" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_early_stopping.hpp" bodystart="50" bodyend="52"/>
+        <references refid="classlbann_1_1lbann__callback__early__stopping_1ac0140e05eccd5280d53a8e8d480c0ce3" compoundref="callback__early__stopping_8cpp" startline="33" endline="34">lbann_callback_early_stopping</references>
+        <references refid="classlbann_1_1lbann__callback__early__stopping_1a32eb9c5e763c97ab1162cfebea7ad049" compoundref="callback__early__stopping_8cpp" startline="38" endline="61">on_validation_end</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__early__stopping_1a32eb9c5e763c97ab1162cfebea7ad049" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_early_stopping::on_validation_end</definition>
+        <argsstring>(model *m) override</argsstring>
+        <name>on_validation_end</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1adc16e42e5064dc2dc8d84dfbfc1325eb">on_validation_end</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Update validation score and check for early stopping.</para><para>Monitor the objective function to see if the validation score continues to improve </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_early_stopping.hpp" line="54" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_early_stopping.cpp" bodystart="38" bodyend="61"/>
+        <references refid="classlbann_1_1model_1addb40597cf29aa6d31b6a7d09ef48608" compoundref="model_8hpp" startline="149" endline="151">lbann::model::get_execution_mode</references>
+        <references refid="classlbann_1_1model_1aee5530467523924a662dec891b9a7993" compoundref="model_8hpp" startline="101" endline="103">lbann::model::get_objective_function</references>
+        <references refid="classlbann_1_1objective__function_1a0aa271e497363e97ba3741292961d47d" compoundref="objective__function_8cpp" startline="113" endline="122">lbann::objective_function::get_mean_value</references>
+        <references refid="classlbann_1_1lbann__callback__early__stopping_1a64868be121d63a94344023b466cec494" compoundref="callback__early__stopping_8hpp" startline="60">m_last_score</references>
+        <references refid="classlbann_1_1model_1a9e1cfe449d2f4858a32994f6be0042fb" compoundref="model_8hpp" startline="123" endline="125">lbann::model::get_comm</references>
+        <references refid="classlbann_1_1lbann__comm_1ad8a5790dfa9191d4b4f889e8707e57f1" compoundref="comm_8hpp" startline="140" endline="142">lbann::lbann_comm::am_model_master</references>
+        <references refid="classlbann_1_1lbann__comm_1a6422f70c92bed0b78179facc52b066f7" compoundref="comm_8hpp" startline="112" endline="114">lbann::lbann_comm::get_model_rank</references>
+        <references refid="classlbann_1_1lbann__callback__early__stopping_1acd0363fdc85a9ab0a77687ecfa827a1e" compoundref="callback__early__stopping_8hpp" startline="62">m_wait</references>
+        <references refid="classlbann_1_1lbann__callback__early__stopping_1ada95898e18dbed5adf1848919affd6ee" compoundref="callback__early__stopping_8hpp" startline="58">m_patience</references>
+        <references refid="classlbann_1_1model_1a5bafc4e84671490c6118959becb22e16" compoundref="model_8hpp" startline="195" endline="197">lbann::model::set_terminate_training</references>
+        <referencedby refid="classlbann_1_1lbann__callback__early__stopping_1aa8e7bd4e9dde8e57dbc416dc75e25cc6" compoundref="callback__early__stopping_8hpp" startline="50" endline="52">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__early__stopping_1a3fce0ab7696bc24dd9b3330815c5a495" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>std::string</type>
+        <definition>std::string lbann::lbann_callback_early_stopping::name</definition>
+        <argsstring>() const override</argsstring>
+        <name>name</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1a7522c7a14f1d6a1ea762cc2d7248eb3a">name</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Return this callback&apos;s name. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_early_stopping.hpp" line="55" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_early_stopping.hpp" bodystart="55" bodyend="55"/>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>Stop training after validation error stops improving. </para>    </detaileddescription>
+    <inheritancegraph>
+      <node id="1375">
+        <label>lbann::lbann_callback</label>
+        <link refid="classlbann_1_1lbann__callback"/>
+      </node>
+      <node id="1374">
+        <label>lbann::lbann_callback_early_stopping</label>
+        <link refid="classlbann_1_1lbann__callback__early__stopping"/>
+        <childnode refid="1375" relation="public-inheritance">
+        </childnode>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="1377">
+        <label>lbann::lbann_callback</label>
+        <link refid="classlbann_1_1lbann__callback"/>
+        <childnode refid="1378" relation="usage">
+          <edgelabel>m_summarizer</edgelabel>
+        </childnode>
+      </node>
+      <node id="1378">
+        <label>lbann::lbann_summary</label>
+        <link refid="classlbann_1_1lbann__summary"/>
+      </node>
+      <node id="1376">
+        <label>lbann::lbann_callback_early_stopping</label>
+        <link refid="classlbann_1_1lbann__callback__early__stopping"/>
+        <childnode refid="1377" relation="public-inheritance">
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_early_stopping.hpp" line="41" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_early_stopping.hpp" bodystart="41" bodyend="63"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1lbann__callback__early__stopping_1aa8e7bd4e9dde8e57dbc416dc75e25cc6" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>copy</name></member>
+      <member refid="classlbann_1_1lbann__callback_1acec888932129f93ba2a0077192467c9e" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>get_batch_interval</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a679057298a41ddd47f08c157f756c584" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>lbann_callback</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a91d994616b8bf98685ac32939228f96a" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>lbann_callback</name></member>
+      <member refid="classlbann_1_1lbann__callback__early__stopping_1ac0140e05eccd5280d53a8e8d480c0ce3" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>lbann_callback_early_stopping</name></member>
+      <member refid="classlbann_1_1lbann__callback__early__stopping_1a7ff0175e34065c24d2c4090ff90ef614" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>lbann_callback_early_stopping</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a6126e310e9924398c18ccf76bb91c705" prot="protected" virt="non-virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>m_batch_interval</name></member>
+      <member refid="classlbann_1_1lbann__callback__early__stopping_1a64868be121d63a94344023b466cec494" prot="private" virt="non-virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>m_last_score</name></member>
+      <member refid="classlbann_1_1lbann__callback__early__stopping_1ada95898e18dbed5adf1848919affd6ee" prot="private" virt="non-virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>m_patience</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a277d46138184f85f161a8263b8322c76" prot="protected" virt="non-virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>m_summarizer</name></member>
+      <member refid="classlbann_1_1lbann__callback__early__stopping_1acd0363fdc85a9ab0a77687ecfa827a1e" prot="private" virt="non-virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>m_wait</name></member>
+      <member refid="classlbann_1_1lbann__callback__early__stopping_1a3fce0ab7696bc24dd9b3330815c5a495" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>name</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a2c0709a26179d115ff85b7561786ee27" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>on_backward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1abeb1e486e259fd358332abf1e952f630" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>on_backward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1af183624e63ba65e0003fa988f53dee0c" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>on_backward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1aba03b59c056ace8094095c08e39b9ac4" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>on_backward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a9ecf4e44cd4021cdd687de14c850cc83" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>on_batch_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a895ca577e358601fcae5c04749f60535" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>on_batch_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a3462e54126adbd0082c22c98d8de5468" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>on_batch_evaluate_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ad10891b8ab3de74ee1a70e6255e7d58a" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>on_batch_evaluate_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a4ed9498763412a55953fff71ee3a9456" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>on_epoch_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a1fc71110e7f754bf73c9e0f344a448a5" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>on_epoch_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a4a2cff48a688bb56ed14b8b53344f945" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>on_evaluate_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a044174864e4981a1dac093d58e8c4d6c" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>on_evaluate_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a0794f3fb88db6fef53f0e2f235f94424" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>on_evaluate_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ae23c5a61b81dbdfbd79736ac2b6035aa" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>on_evaluate_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a22ed977371173105b4aad3a20b9c59dc" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>on_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ab96adb1d77180e00fdd668cd381323fd" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>on_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a79a0bb407852d7b330b74373647ffe46" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>on_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a5eff0a59fbce98a981d9cdd0547a3ad5" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>on_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a1a9248b305f06419889c1b3b0f0893d8" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>on_optimize_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a497e750da160e0071ce8864ccc3a1344" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>on_optimize_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a235195d5fa4461835b861a03a5c0278f" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>on_optimize_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a4653e2903bfd3903709a81eaf7eabc1a" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>on_optimize_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ace7452239c9ad7aa6247e9496adbcffe" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>on_phase_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a716bff45bdc5a88eed09c2231f5bc93a" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>on_test_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1accbad4dd004c1ced33642db6398b2efe" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>on_test_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a7c8f0d211967ccc5219144e92571ab26" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>on_train_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1af28078b0ddaef45124465bef01eefedf" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>on_train_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a2bde303671110519388d9962bc3e5583" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>on_validation_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback__early__stopping_1a32eb9c5e763c97ab1162cfebea7ad049" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>on_validation_end</name></member>
+      <member refid="classlbann_1_1lbann__callback__early__stopping_1a34c805a2d45651efe3adaa012dc53fa5" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a66b0a8c00a273669fa782ece59e8898b" prot="public" virt="non-virtual" ambiguityscope="lbann::lbann_callback::"><scope>lbann::lbann_callback_early_stopping</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a02d924df2f8ca851578dc76d9015e48d" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>set_summarizer</name></member>
+      <member refid="classlbann_1_1lbann__callback_1aab5086e27d9bb0a7c7ee8ffc1bc58671" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>setup</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ac91abaec389f8d2547512c45ae587304" prot="public" virt="virtual"><scope>lbann::lbann_callback_early_stopping</scope><name>~lbann_callback</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

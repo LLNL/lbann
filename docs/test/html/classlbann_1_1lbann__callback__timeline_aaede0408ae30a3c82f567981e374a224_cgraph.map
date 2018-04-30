@@ -1,0 +1,33 @@
+<map id="lbann::lbann_callback_timeline::name" name="lbann::lbann_callback_timeline::name">
+<area shape="rect" id="node2" href="$classlbann_1_1lbann__callback__timeline.html#a35a431c2545b4087d6f970d45f86c054" title="lbann::lbann_callback\l_timeline::on_train_begin" alt="" coords="215,236,385,275"/>
+<area shape="rect" id="node15" href="$classlbann_1_1lbann__callback__timeline.html#a7af247d7f016db358da0a57f8a4b76c6" title="lbann::lbann_callback\l_timeline::on_train_end" alt="" coords="220,317,380,356"/>
+<area shape="rect" id="node18" href="$classlbann_1_1lbann__callback.html#a22ed977371173105b4aad3a20b9c59dc" title="lbann::lbann_callback\l::on_forward_prop_begin" alt="" coords="215,809,385,848"/>
+<area shape="rect" id="node19" href="$classlbann_1_1lbann__callback.html#a79a0bb407852d7b330b74373647ffe46" title="lbann::lbann_callback\l::on_forward_prop_end" alt="" coords="220,872,380,911"/>
+<area shape="rect" id="node20" href="$classlbann_1_1lbann__callback.html#a2c0709a26179d115ff85b7561786ee27" title="lbann::lbann_callback\l::on_backward_prop_begin" alt="" coords="209,935,391,973"/>
+<area shape="rect" id="node21" href="$classlbann_1_1lbann__callback.html#af183624e63ba65e0003fa988f53dee0c" title="lbann::lbann_callback\l::on_backward_prop_end" alt="" coords="214,997,386,1036"/>
+<area shape="rect" id="node22" href="$classlbann_1_1lbann__callback.html#a1a9248b305f06419889c1b3b0f0893d8" title="lbann::lbann_callback\l::on_optimize_begin" alt="" coords="225,1060,375,1099"/>
+<area shape="rect" id="node23" href="$classlbann_1_1lbann__callback.html#a235195d5fa4461835b861a03a5c0278f" title="lbann::lbann_callback\l::on_optimize_end" alt="" coords="225,1123,375,1161"/>
+<area shape="rect" id="node24" href="$classlbann_1_1lbann__callback__timeline.html#a9c093b091fd38b79f8632cf786d29ce2" title="lbann::lbann_callback\l_timeline::on_forward\l_prop_begin" alt="" coords="225,380,375,432"/>
+<area shape="rect" id="node26" href="$classlbann_1_1lbann__callback__timeline.html#a28f4387fda222bf988d744e0b2ec8b4b" title="lbann::lbann_callback\l_timeline::on_forward\l_prop_end" alt="" coords="225,595,375,647"/>
+<area shape="rect" id="node28" href="$classlbann_1_1lbann__callback__timeline.html#a81d50e48462765b5e9913ae357b5a412" title="lbann::lbann_callback\l_timeline::on_backward\l_prop_begin" alt="" coords="219,456,381,508"/>
+<area shape="rect" id="node29" href="$classlbann_1_1lbann__callback__timeline.html#a0de42325a96128f7e41ecf8004b99b26" title="lbann::lbann_callback\l_timeline::on_backward\l_prop_end" alt="" coords="219,671,381,723"/>
+<area shape="rect" id="node30" href="$classlbann_1_1lbann__callback__timeline.html#a2037300798c70d831845c7efaf5de6c2" title="lbann::lbann_callback\l_timeline::on_optimize_begin" alt="" coords="203,532,397,571"/>
+<area shape="rect" id="node31" href="$classlbann_1_1lbann__callback__timeline.html#afdf506e2c2d40c7b0d1f845fb0ed077e" title="lbann::lbann_callback\l_timeline::on_optimize_end" alt="" coords="208,747,392,785"/>
+<area shape="rect" id="node3" href="$classlbann_1_1model.html#ae14f4b2cc8882b3739d4aeb25d9e73c9" title="lbann::model::get_layers" alt="" coords="450,108,616,133"/>
+<area shape="rect" id="node10" href="$classlbann_1_1model.html#ac0a89794f1f51e7c502fff2745c973e6" title="lbann::model::get_weights" alt="" coords="445,275,621,300"/>
+<area shape="rect" id="node11" href="$classlbann_1_1model.html#a9e1cfe449d2f4858a32994f6be0042fb" title="lbann::model::get_comm" alt="" coords="449,324,617,349"/>
+<area shape="rect" id="node12" href="$classlbann_1_1lbann__comm.html#a6086ced12c3eefeea6e2a78eff286983" title="lbann::lbann_comm::\lmodel_barrier" alt="" coords="461,160,606,199"/>
+<area shape="rect" id="node14" href="$namespacelbann.html#a478d36031ff0659893c4322cd856157f" title="lbann::get_time" alt="" coords="687,381,800,407"/>
+<area shape="rect" id="node4" href="$classlbann_1_1model.html#aaed20219476dc1458bbd058be36de1ec" title="lbann::model::replace\l_weights" alt="" coords="669,100,818,139"/>
+<area shape="rect" id="node5" href="$classlbann_1_1model.html#ac6cc0f5d850cfb997bbbc70eefa0d68f" title="lbann::model::remap\l_pointers" alt="" coords="866,100,1009,139"/>
+<area shape="rect" id="node6" href="$classlbann_1_1objective__function.html#a1055da2236a7faf79c5a2632f8dfc683" title="lbann::objective_function\l::get_layer_pointers" alt="" coords="1057,5,1225,44"/>
+<area shape="rect" id="node7" href="$classlbann_1_1objective__function.html#a0f934e078b55528dd0ec1ec8ad34c73b" title="lbann::objective_function\l::set_layer_pointers" alt="" coords="1057,68,1225,107"/>
+<area shape="rect" id="node8" href="$classlbann_1_1objective__function.html#a8e37f76e42f6f341ea3592001b3794e5" title="lbann::objective_function\l::get_weights_pointers" alt="" coords="1057,131,1225,169"/>
+<area shape="rect" id="node9" href="$classlbann_1_1objective__function.html#a9c3211354ca1cee8a7ba219f4e56e03c" title="lbann::objective_function\l::set_weights_pointers" alt="" coords="1057,193,1225,232"/>
+<area shape="rect" id="node13" href="$classlbann_1_1lbann__comm.html#a303c02c5a127f3ed21f12c9a71cc90a6" title="lbann::lbann_comm::\lbarrier" alt="" coords="671,163,816,201"/>
+<area shape="rect" id="node16" href="$classlbann_1_1lbann__comm.html#a6422f70c92bed0b78179facc52b066f7" title="lbann::lbann_comm::\lget_model_rank" alt="" coords="461,373,606,412"/>
+<area shape="rect" id="node17" href="$classlbann_1_1lbann__comm.html#a789453454468a3b70de768537c50ca52" title="lbann::lbann_comm::\lget_rank_in_model" alt="" coords="461,436,606,475"/>
+<area shape="rect" id="node25" href="$classlbann_1_1lbann__callback__timeline.html#a67da1376356bf2153ab67489014e0ad4" title="Get time relative to the start time. " alt="" coords="455,532,611,571"/>
+<area shape="rect" id="node27" href="$classlbann_1_1Layer.html#a80027550202fa7dbb1dd55fa8a66c84b" title="lbann::Layer::get_name" alt="" coords="452,647,614,672"/>
+<area shape="rect" id="node32" href="$classlbann_1_1weights.html#a272f80766f31a5add7a970e5e8fcc352" title="lbann::weights::get_name" alt="" coords="446,753,620,779"/>
+</map>

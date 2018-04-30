@@ -1,0 +1,140 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1glorot__normal__initializer" kind="class" language="C++" prot="public">
+    <compoundname>lbann::glorot_normal_initializer</compoundname>
+    <basecompoundref refid="classlbann_1_1fan__in__fan__out__initializer" prot="public" virt="non-virtual">lbann::fan_in_fan_out_initializer</basecompoundref>
+    <includes refid="fan__in__fan__out__initializers_8hpp" local="no">fan_in_fan_out_initializers.hpp</includes>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1glorot__normal__initializer_1ab2f600c58e8f5d978adf06802e6330d3" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>lbann::glorot_normal_initializer::glorot_normal_initializer</definition>
+        <argsstring>(lbann_comm *comm)</argsstring>
+        <name>glorot_normal_initializer</name>
+        <param>
+          <type><ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref> *</type>
+          <declname>comm</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Constructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/weights/fan_in_fan_out_initializers.hpp" line="70" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/weights/fan_in_fan_out_initializers.hpp" bodystart="70" bodyend="71"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1glorot__normal__initializer_1ac32dcf5794eae771955feaaf4557760b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::glorot_normal_initializer::~glorot_normal_initializer</definition>
+        <argsstring>() override=default</argsstring>
+        <name>~glorot_normal_initializer</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Destructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/weights/fan_in_fan_out_initializers.hpp" line="73" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1glorot__normal__initializer_1a8d05bb2c3d56a5dc3ca4be2a62640470" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type><ref refid="classlbann_1_1glorot__normal__initializer" kindref="compound">glorot_normal_initializer</ref> *</type>
+        <definition>glorot_normal_initializer* lbann::glorot_normal_initializer::copy</definition>
+        <argsstring>() const override</argsstring>
+        <name>copy</name>
+        <reimplements refid="classlbann_1_1weights__initializer_1acc84ce49188b74b23987cef3db18525a">copy</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Create a copy. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/weights/fan_in_fan_out_initializers.hpp" line="76" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/weights/fan_in_fan_out_initializers.hpp" bodystart="76" bodyend="78"/>
+        <references refid="classlbann_1_1weights__initializer_1a2ad6acf904c0c7bc7406dbd9851107be">lbann::weights_initializer::initialize_entries</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1glorot__normal__initializer_1a0bd7253159fe5ca9039af44b7fca1709" prot="public" static="no" const="yes" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::glorot_normal_initializer::initialize_entries</definition>
+        <argsstring>(AbsDistMat &amp;weights_matrix) const override</argsstring>
+        <name>initialize_entries</name>
+        <reimplements refid="classlbann_1_1weights__initializer_1a2ad6acf904c0c7bc7406dbd9851107be">initialize_entries</reimplements>
+        <param>
+          <type><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+          <declname>weights_matrix</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Initialize weights matrix entries. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/weights/fan_in_fan_out_initializers.hpp" line="81" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/weights/fan_in_fan_out_initializers.cpp" bodystart="34" bodyend="48"/>
+        <references refid="classlbann_1_1fan__in__fan__out__initializer_1aea6639db271d9050f0a2e4f8c8dfa6cd" compoundref="fan__in__fan__out__initializers_8hpp" startline="57">lbann::fan_in_fan_out_initializer::m_fan_in</references>
+        <references refid="classlbann_1_1fan__in__fan__out__initializer_1ac67d275ab8574780525d2af59b738338" compoundref="fan__in__fan__out__initializers_8hpp" startline="59">lbann::fan_in_fan_out_initializer::m_fan_out</references>
+        <references refid="namespacelbann_1abd116f95f55d0e29d9a0cc386139c4b4" compoundref="random_8cpp" startline="166" endline="173">lbann::gaussian_fill</references>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>Glorot normal initializer. Also called Xavier normal initialization. </para>    </detaileddescription>
+    <inheritancegraph>
+      <node id="954">
+        <label>lbann::fan_in_fan_out_initializer</label>
+        <link refid="classlbann_1_1fan__in__fan__out__initializer"/>
+        <childnode refid="955" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="953">
+        <label>lbann::glorot_normal_initializer</label>
+        <link refid="classlbann_1_1glorot__normal__initializer"/>
+        <childnode refid="954" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="955">
+        <label>lbann::weights_initializer</label>
+        <link refid="classlbann_1_1weights__initializer"/>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="957">
+        <label>lbann::fan_in_fan_out_initializer</label>
+        <link refid="classlbann_1_1fan__in__fan__out__initializer"/>
+        <childnode refid="958" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="956">
+        <label>lbann::glorot_normal_initializer</label>
+        <link refid="classlbann_1_1glorot__normal__initializer"/>
+        <childnode refid="957" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="958">
+        <label>lbann::weights_initializer</label>
+        <link refid="classlbann_1_1weights__initializer"/>
+        <childnode refid="959" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+      </node>
+      <node id="959">
+        <label>lbann::lbann_comm</label>
+        <link refid="classlbann_1_1lbann__comm"/>
+      </node>
+    </collaborationgraph>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/weights/fan_in_fan_out_initializers.hpp" line="66" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/weights/fan_in_fan_out_initializers.hpp" bodystart="66" bodyend="83"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1weights__initializer_1a693fd517e4162029eafdfdee537c7066" prot="public" virt="non-virtual"><scope>lbann::glorot_normal_initializer</scope><name>construct_matrix</name></member>
+      <member refid="classlbann_1_1glorot__normal__initializer_1a8d05bb2c3d56a5dc3ca4be2a62640470" prot="public" virt="virtual"><scope>lbann::glorot_normal_initializer</scope><name>copy</name></member>
+      <member refid="classlbann_1_1fan__in__fan__out__initializer_1a3a3811af11b1a70a57af846ae2cdf668" prot="public" virt="non-virtual"><scope>lbann::glorot_normal_initializer</scope><name>fan_in_fan_out_initializer</name></member>
+      <member refid="classlbann_1_1glorot__normal__initializer_1ab2f600c58e8f5d978adf06802e6330d3" prot="public" virt="non-virtual"><scope>lbann::glorot_normal_initializer</scope><name>glorot_normal_initializer</name></member>
+      <member refid="classlbann_1_1glorot__normal__initializer_1a0bd7253159fe5ca9039af44b7fca1709" prot="public" virt="virtual"><scope>lbann::glorot_normal_initializer</scope><name>initialize_entries</name></member>
+      <member refid="classlbann_1_1weights__initializer_1a4273257d92237a75ef9f3614f7e5ddde" prot="protected" virt="non-virtual"><scope>lbann::glorot_normal_initializer</scope><name>m_comm</name></member>
+      <member refid="classlbann_1_1fan__in__fan__out__initializer_1aea6639db271d9050f0a2e4f8c8dfa6cd" prot="protected" virt="non-virtual"><scope>lbann::glorot_normal_initializer</scope><name>m_fan_in</name></member>
+      <member refid="classlbann_1_1fan__in__fan__out__initializer_1ac67d275ab8574780525d2af59b738338" prot="protected" virt="non-virtual"><scope>lbann::glorot_normal_initializer</scope><name>m_fan_out</name></member>
+      <member refid="classlbann_1_1fan__in__fan__out__initializer_1a6da7299bd2fb6aa1b549125fc62ffafc" prot="public" virt="non-virtual"><scope>lbann::glorot_normal_initializer</scope><name>set_fan_in</name></member>
+      <member refid="classlbann_1_1fan__in__fan__out__initializer_1a4464e05d66e938058a01be04a2495452" prot="public" virt="non-virtual"><scope>lbann::glorot_normal_initializer</scope><name>set_fan_out</name></member>
+      <member refid="classlbann_1_1weights__initializer_1a3b65043cb6d76dcfcb07387392429755" prot="public" virt="non-virtual"><scope>lbann::glorot_normal_initializer</scope><name>weights_initializer</name></member>
+      <member refid="classlbann_1_1fan__in__fan__out__initializer_1ab351750e3f776aa6748053f29d5d031c" prot="public" virt="non-virtual"><scope>lbann::glorot_normal_initializer</scope><name>~fan_in_fan_out_initializer</name></member>
+      <member refid="classlbann_1_1glorot__normal__initializer_1ac32dcf5794eae771955feaaf4557760b" prot="public" virt="non-virtual"><scope>lbann::glorot_normal_initializer</scope><name>~glorot_normal_initializer</name></member>
+      <member refid="classlbann_1_1weights__initializer_1a9fba102d897402d3df37776d8aa99549" prot="public" virt="virtual"><scope>lbann::glorot_normal_initializer</scope><name>~weights_initializer</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

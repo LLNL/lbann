@@ -1,0 +1,415 @@
+\hypertarget{classlbann_1_1cross__entropy__with__uncertainty}{}\section{lbann\+:\+:cross\+\_\+entropy\+\_\+with\+\_\+uncertainty Class Reference}
+\label{classlbann_1_1cross__entropy__with__uncertainty}\index{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty@{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty}}
+
+
+{\ttfamily \#include $<$cross\+\_\+entropy\+\_\+with\+\_\+uncertainty.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:cross\+\_\+entropy\+\_\+with\+\_\+uncertainty\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=232pt]{classlbann_1_1cross__entropy__with__uncertainty__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:cross\+\_\+entropy\+\_\+with\+\_\+uncertainty\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=232pt]{classlbann_1_1cross__entropy__with__uncertainty__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1cross__entropy__with__uncertainty_a93f0ab9861859a3b54fc5c723a27aaaa}{cross\+\_\+entropy\+\_\+with\+\_\+uncertainty} (\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} scale\+\_\+factor=\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type}(1))
+\item 
+\hyperlink{classlbann_1_1cross__entropy__with__uncertainty_ae6d8025fb046ae3bd3d05321fb1b40d4}{cross\+\_\+entropy\+\_\+with\+\_\+uncertainty} (const \hyperlink{classlbann_1_1cross__entropy__with__uncertainty}{cross\+\_\+entropy\+\_\+with\+\_\+uncertainty} \&other)
+\item 
+\hyperlink{classlbann_1_1cross__entropy__with__uncertainty}{cross\+\_\+entropy\+\_\+with\+\_\+uncertainty} \& \hyperlink{classlbann_1_1cross__entropy__with__uncertainty_a036433c9c57e030d1923543dc211813a}{operator=} (const \hyperlink{classlbann_1_1cross__entropy__with__uncertainty}{cross\+\_\+entropy\+\_\+with\+\_\+uncertainty} \&other)
+\item 
+\hyperlink{classlbann_1_1cross__entropy__with__uncertainty_a617b8a1a308c086284ca6f43e88acca6}{$\sim$cross\+\_\+entropy\+\_\+with\+\_\+uncertainty} () override
+\item 
+\hyperlink{classlbann_1_1cross__entropy__with__uncertainty}{cross\+\_\+entropy\+\_\+with\+\_\+uncertainty} $\ast$ \hyperlink{classlbann_1_1cross__entropy__with__uncertainty_a3df6ab2f0b06922f860096636242b1bd}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1cross__entropy__with__uncertainty_a56d734c6665ac1752d8ef821edf2f464}{name} () const override
+\item 
+void \hyperlink{classlbann_1_1cross__entropy__with__uncertainty_a44a47468f1d04734068d085417eeab93}{setup} (\hyperlink{classlbann_1_1model}{model} \&m) override
+\item 
+void \hyperlink{classlbann_1_1cross__entropy__with__uncertainty_abed10e5c6eb2fd72b3b72ad1042fe35c}{start\+\_\+evaluate\+\_\+compute} (const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&prediction, const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&ground\+\_\+truth) override
+\item 
+\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} \hyperlink{classlbann_1_1cross__entropy__with__uncertainty_abb9b240766b395dab052e3225a0888f6}{finish\+\_\+evaluate\+\_\+compute} (const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&prediction, const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&ground\+\_\+truth) override
+\item 
+void \hyperlink{classlbann_1_1cross__entropy__with__uncertainty_a48ebe2b7a2193c124df0cd15813835d0}{differentiate\+\_\+compute} (const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&prediction, const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&ground\+\_\+truth, \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&gradient) override
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} $\ast$ \hyperlink{classlbann_1_1cross__entropy__with__uncertainty_a4b45767c526e7ebe4a55ff1a1ddbd7ba}{m\+\_\+prediction\+\_\+sums}
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+Cross entropy with uncertainty loss function. 
+
+Definition at line 35 of file cross\+\_\+entropy\+\_\+with\+\_\+uncertainty.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1cross__entropy__with__uncertainty_a93f0ab9861859a3b54fc5c723a27aaaa}\label{classlbann_1_1cross__entropy__with__uncertainty_a93f0ab9861859a3b54fc5c723a27aaaa}} 
+\index{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty@{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty}!cross\+\_\+entropy\+\_\+with\+\_\+uncertainty@{cross\+\_\+entropy\+\_\+with\+\_\+uncertainty}}
+\index{cross\+\_\+entropy\+\_\+with\+\_\+uncertainty@{cross\+\_\+entropy\+\_\+with\+\_\+uncertainty}!lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty@{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty}}
+\subsubsection{\texorpdfstring{cross\+\_\+entropy\+\_\+with\+\_\+uncertainty()}{cross\_entropy\_with\_uncertainty()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type}}]{scale\+\_\+factor = {\ttfamily \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type}(1)} }\end{DoxyParamCaption})}
+
+Default constructor. 
+
+Definition at line 31 of file cross\+\_\+entropy\+\_\+with\+\_\+uncertainty.\+cpp.
+
+
+\begin{DoxyCode}
+32   : \hyperlink{classlbann_1_1loss__function_a0c5745e661c59e3e5496888d233c07cf}{loss\_function}(scale\_factor),
+33     \hyperlink{classlbann_1_1cross__entropy__with__uncertainty_a4b45767c526e7ebe4a55ff1a1ddbd7ba}{m\_prediction\_sums}(\textcolor{keyword}{nullptr}) \{\}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1cross__entropy__with__uncertainty_a93f0ab9861859a3b54fc5c723a27aaaa_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1cross__entropy__with__uncertainty_ae6d8025fb046ae3bd3d05321fb1b40d4}\label{classlbann_1_1cross__entropy__with__uncertainty_ae6d8025fb046ae3bd3d05321fb1b40d4}} 
+\index{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty@{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty}!cross\+\_\+entropy\+\_\+with\+\_\+uncertainty@{cross\+\_\+entropy\+\_\+with\+\_\+uncertainty}}
+\index{cross\+\_\+entropy\+\_\+with\+\_\+uncertainty@{cross\+\_\+entropy\+\_\+with\+\_\+uncertainty}!lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty@{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty}}
+\subsubsection{\texorpdfstring{cross\+\_\+entropy\+\_\+with\+\_\+uncertainty()}{cross\_entropy\_with\_uncertainty()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1cross__entropy__with__uncertainty}{cross\+\_\+entropy\+\_\+with\+\_\+uncertainty} \&}]{other }\end{DoxyParamCaption})}
+
+Copy constructor. 
+
+Definition at line 35 of file cross\+\_\+entropy\+\_\+with\+\_\+uncertainty.\+cpp.
+
+
+\begin{DoxyCode}
+36   : \hyperlink{classlbann_1_1loss__function_a0c5745e661c59e3e5496888d233c07cf}{loss\_function}(other),
+37     \hyperlink{classlbann_1_1cross__entropy__with__uncertainty_a4b45767c526e7ebe4a55ff1a1ddbd7ba}{m\_prediction\_sums}(other.m\_prediction\_sums) \{
+38   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1cross__entropy__with__uncertainty_a4b45767c526e7ebe4a55ff1a1ddbd7ba}{m\_prediction\_sums} != \textcolor{keyword}{nullptr}) \{
+39     \hyperlink{classlbann_1_1cross__entropy__with__uncertainty_a4b45767c526e7ebe4a55ff1a1ddbd7ba}{m\_prediction\_sums} = \hyperlink{classlbann_1_1cross__entropy__with__uncertainty_a4b45767c526e7ebe4a55ff1a1ddbd7ba}{m\_prediction\_sums}->Copy();
+40   \}
+41 \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1cross__entropy__with__uncertainty_a617b8a1a308c086284ca6f43e88acca6}\label{classlbann_1_1cross__entropy__with__uncertainty_a617b8a1a308c086284ca6f43e88acca6}} 
+\index{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty@{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty}!````~cross\+\_\+entropy\+\_\+with\+\_\+uncertainty@{$\sim$cross\+\_\+entropy\+\_\+with\+\_\+uncertainty}}
+\index{````~cross\+\_\+entropy\+\_\+with\+\_\+uncertainty@{$\sim$cross\+\_\+entropy\+\_\+with\+\_\+uncertainty}!lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty@{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty}}
+\subsubsection{\texorpdfstring{$\sim$cross\+\_\+entropy\+\_\+with\+\_\+uncertainty()}{~cross\_entropy\_with\_uncertainty()}}
+{\footnotesize\ttfamily lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty\+::$\sim$cross\+\_\+entropy\+\_\+with\+\_\+uncertainty (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}}
+
+Destructor. 
+
+Definition at line 53 of file cross\+\_\+entropy\+\_\+with\+\_\+uncertainty.\+cpp.
+
+
+\begin{DoxyCode}
+53                                                                 \{
+54   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1cross__entropy__with__uncertainty_a4b45767c526e7ebe4a55ff1a1ddbd7ba}{m\_prediction\_sums} != \textcolor{keyword}{nullptr}) \textcolor{keyword}{delete} \hyperlink{classlbann_1_1cross__entropy__with__uncertainty_a4b45767c526e7ebe4a55ff1a1ddbd7ba}{m\_prediction\_sums};
+55 \}
+\end{DoxyCode}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1cross__entropy__with__uncertainty_a3df6ab2f0b06922f860096636242b1bd}\label{classlbann_1_1cross__entropy__with__uncertainty_a3df6ab2f0b06922f860096636242b1bd}} 
+\index{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty@{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty}!copy@{copy}}
+\index{copy@{copy}!lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty@{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1cross__entropy__with__uncertainty}{cross\+\_\+entropy\+\_\+with\+\_\+uncertainty}$\ast$ lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Copy function. 
+
+Implements \hyperlink{classlbann_1_1objective__function__term_ae98a4ec173a602ad55d1df20dadd4cb9}{lbann\+::objective\+\_\+function\+\_\+term}.
+
+
+
+Definition at line 47 of file cross\+\_\+entropy\+\_\+with\+\_\+uncertainty.\+hpp.
+
+
+\begin{DoxyCode}
+47                                                         \{
+48     \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1cross__entropy__with__uncertainty_a93f0ab9861859a3b54fc5c723a27aaaa}{cross\_entropy\_with\_uncertainty}(*\textcolor{keyword}{this});
+49   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1cross__entropy__with__uncertainty_a3df6ab2f0b06922f860096636242b1bd_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1cross__entropy__with__uncertainty_a48ebe2b7a2193c124df0cd15813835d0}\label{classlbann_1_1cross__entropy__with__uncertainty_a48ebe2b7a2193c124df0cd15813835d0}} 
+\index{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty@{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty}!differentiate\+\_\+compute@{differentiate\+\_\+compute}}
+\index{differentiate\+\_\+compute@{differentiate\+\_\+compute}!lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty@{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty}}
+\subsubsection{\texorpdfstring{differentiate\+\_\+compute()}{differentiate\_compute()}}
+{\footnotesize\ttfamily void lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty\+::differentiate\+\_\+compute (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{prediction,  }\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{ground\+\_\+truth,  }\item[{\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{gradient }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Compute the gradient of the cross entropy objective function. Given a predicted distribution $y$ and ground truth distribution $\hat{y}$, the gradient of the cross entropy is \[ \nabla_y CE (y,\hat{y}) = - \hat{y} . / y \] 
+
+Implements \hyperlink{classlbann_1_1loss__function_aefccc2b4f5a02664002d12630cf369e7}{lbann\+::loss\+\_\+function}.
+
+
+
+Definition at line 114 of file cross\+\_\+entropy\+\_\+with\+\_\+uncertainty.\+cpp.
+
+
+\begin{DoxyCode}
+116                                                                                  \{
+117 
+118   \textcolor{comment}{// Local matrices}
+119   \textcolor{keyword}{const} \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}& ground\_truth\_local = ground\_truth.LockedMatrix();
+120   \textcolor{keyword}{const} \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}& prediction\_sums\_local = \hyperlink{classlbann_1_1cross__entropy__with__uncertainty_a4b45767c526e7ebe4a55ff1a1ddbd7ba}{m\_prediction\_sums}->LockedMatrix();
+121   \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}& gradient\_local = gradient.Matrix();
+122 
+123   \textcolor{comment}{// Matrix parameters}
+124   \textcolor{keyword}{const} El::Int local\_height = gradient\_local.Height();
+125   \textcolor{keyword}{const} El::Int local\_width = gradient\_local.Width();
+126 
+127   \textcolor{comment}{// Compute gradient}
+128 \textcolor{preprocessor}{  #pragma omp parallel for collapse(2)}
+129   \textcolor{keywordflow}{for} (El::Int col = 0; col < local\_width; ++col) \{
+130     \textcolor{keywordflow}{for} (El::Int row = 0; row < local\_height; ++row) \{
+131       \textcolor{keyword}{const} DataType true\_val = ground\_truth\_local(row, col);
+132       DataType& grad\_val = gradient\_local(row, col);
+133       \textcolor{keywordflow}{if} (true\_val != DataType(0)) \{
+134         grad\_val = -true\_val / prediction\_sums\_local(0, col);
+135       \} \textcolor{keywordflow}{else} \{
+136         grad\_val = DataType(0);
+137       \}
+138     \}
+139   \}
+140 
+141 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1cross__entropy__with__uncertainty_a48ebe2b7a2193c124df0cd15813835d0_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1cross__entropy__with__uncertainty_abb9b240766b395dab052e3225a0888f6}\label{classlbann_1_1cross__entropy__with__uncertainty_abb9b240766b395dab052e3225a0888f6}} 
+\index{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty@{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty}!finish\+\_\+evaluate\+\_\+compute@{finish\+\_\+evaluate\+\_\+compute}}
+\index{finish\+\_\+evaluate\+\_\+compute@{finish\+\_\+evaluate\+\_\+compute}!lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty@{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty}}
+\subsubsection{\texorpdfstring{finish\+\_\+evaluate\+\_\+compute()}{finish\_evaluate\_compute()}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty\+::finish\+\_\+evaluate\+\_\+compute (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{prediction,  }\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{ground\+\_\+truth }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Finish evaluation of the loss function. This should not include the scale factor. 
+
+Implements \hyperlink{classlbann_1_1loss__function_a3ea8553a4e9c75477d7d4fc533c4d4fd}{lbann\+::loss\+\_\+function}.
+
+
+
+Definition at line 74 of file cross\+\_\+entropy\+\_\+with\+\_\+uncertainty.\+cpp.
+
+
+\begin{DoxyCode}
+75                                                                  \{
+76 
+77   \textcolor{comment}{// Initialize workspace}
+78   \hyperlink{classlbann_1_1cross__entropy__with__uncertainty_a4b45767c526e7ebe4a55ff1a1ddbd7ba}{m\_prediction\_sums}->Resize(1, predictions.Width());
+79   \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}& prediction\_sums\_local = \hyperlink{classlbann_1_1cross__entropy__with__uncertainty_a4b45767c526e7ebe4a55ff1a1ddbd7ba}{m\_prediction\_sums}->Matrix();
+80 
+81   \textcolor{comment}{// Local matrices}
+82   \textcolor{keyword}{const} \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}& predictions\_local = predictions.LockedMatrix();
+83   \textcolor{keyword}{const} \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}& ground\_truth\_local = ground\_truth.LockedMatrix();
+84   
+85   \textcolor{comment}{// Matrix parameters}
+86   \textcolor{keyword}{const} \textcolor{keywordtype}{int} width = predictions.Width();
+87   \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_height = predictions\_local.Height();
+88   \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_width = predictions\_local.Width();
+89 
+90   \textcolor{comment}{// Compute sum of predictions}
+91 \textcolor{preprocessor}{  #pragma omp parallel for}
+92   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} col = 0; col < local\_width; ++col) \{
+93     \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType} pred\_sum = \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType}(0);
+94     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} row = 0; row < local\_height; ++row) \{
+95       \textcolor{keywordflow}{if} (ground\_truth\_local(row, col) != \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType}(0)) \{
+96         pred\_sum += predictions\_local(row, col);
+97       \}
+98     \}
+99     prediction\_sums\_local(0, col) = pred\_sum;
+100   \}
+101   \hyperlink{classlbann_1_1objective__function__term_a5f89b676a26a6b76ddc26563ac87beb9}{get\_comm}().\hyperlink{classlbann_1_1lbann__comm_af5631e5f0f54e4df4958eba9df2599ef}{allreduce}(*\hyperlink{classlbann_1_1cross__entropy__with__uncertainty_a4b45767c526e7ebe4a55ff1a1ddbd7ba}{m\_prediction\_sums},
+102                         \hyperlink{classlbann_1_1cross__entropy__with__uncertainty_a4b45767c526e7ebe4a55ff1a1ddbd7ba}{m\_prediction\_sums}->RedundantComm());
+103 
+104   \textcolor{comment}{// Compute mean objective function value}
+105   \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType} local\_sum = \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType}(0);
+106   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} col = 0; col < local\_width; ++col) \{
+107     local\_sum += -std::log(prediction\_sums\_local(0, col));
+108   \}
+109   \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1objective__function__term_a5f89b676a26a6b76ddc26563ac87beb9}{get\_comm}().\hyperlink{classlbann_1_1lbann__comm_af5631e5f0f54e4df4958eba9df2599ef}{allreduce}(local\_sum / width,
+110                               \hyperlink{classlbann_1_1cross__entropy__with__uncertainty_a4b45767c526e7ebe4a55ff1a1ddbd7ba}{m\_prediction\_sums}->DistComm());
+111 
+112 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1cross__entropy__with__uncertainty_abb9b240766b395dab052e3225a0888f6_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1cross__entropy__with__uncertainty_abb9b240766b395dab052e3225a0888f6_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1cross__entropy__with__uncertainty_a56d734c6665ac1752d8ef821edf2f464}\label{classlbann_1_1cross__entropy__with__uncertainty_a56d734c6665ac1752d8ef821edf2f464}} 
+\index{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty@{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty}!name@{name}}
+\index{name@{name}!lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty@{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty}}
+\subsubsection{\texorpdfstring{name()}{name()}}
+{\footnotesize\ttfamily std\+::string lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty\+::name (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get the name of the objective function term. 
+
+Implements \hyperlink{classlbann_1_1objective__function__term_a964fbfad3dd0434aa8f32c5fedf1079a}{lbann\+::objective\+\_\+function\+\_\+term}.
+
+
+
+Definition at line 52 of file cross\+\_\+entropy\+\_\+with\+\_\+uncertainty.\+hpp.
+
+
+\begin{DoxyCode}
+52 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"cross entropy with uncertainty"}; \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1cross__entropy__with__uncertainty_a56d734c6665ac1752d8ef821edf2f464_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1cross__entropy__with__uncertainty_a036433c9c57e030d1923543dc211813a}\label{classlbann_1_1cross__entropy__with__uncertainty_a036433c9c57e030d1923543dc211813a}} 
+\index{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty@{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty@{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1cross__entropy__with__uncertainty}{cross\+\_\+entropy\+\_\+with\+\_\+uncertainty} \& lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1cross__entropy__with__uncertainty}{cross\+\_\+entropy\+\_\+with\+\_\+uncertainty} \&}]{other }\end{DoxyParamCaption})}
+
+Copy assignment operator. 
+
+Definition at line 43 of file cross\+\_\+entropy\+\_\+with\+\_\+uncertainty.\+cpp.
+
+
+\begin{DoxyCode}
+43                                                                                                            
+                \{
+44   \hyperlink{classlbann_1_1loss__function_ab882c642619ea4285b61e735d84e401c}{loss\_function::operator=}(other);
+45   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1cross__entropy__with__uncertainty_a4b45767c526e7ebe4a55ff1a1ddbd7ba}{m\_prediction\_sums} != \textcolor{keyword}{nullptr}) \textcolor{keyword}{delete} \hyperlink{classlbann_1_1cross__entropy__with__uncertainty_a4b45767c526e7ebe4a55ff1a1ddbd7ba}{m\_prediction\_sums};
+46   \hyperlink{classlbann_1_1cross__entropy__with__uncertainty_a4b45767c526e7ebe4a55ff1a1ddbd7ba}{m\_prediction\_sums} = other.m\_prediction\_sums;
+47   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1cross__entropy__with__uncertainty_a4b45767c526e7ebe4a55ff1a1ddbd7ba}{m\_prediction\_sums} != \textcolor{keyword}{nullptr}) \{
+48     \hyperlink{classlbann_1_1cross__entropy__with__uncertainty_a4b45767c526e7ebe4a55ff1a1ddbd7ba}{m\_prediction\_sums} = \hyperlink{classlbann_1_1cross__entropy__with__uncertainty_a4b45767c526e7ebe4a55ff1a1ddbd7ba}{m\_prediction\_sums}->Copy();
+49   \}
+50   \textcolor{keywordflow}{return} *\textcolor{keyword}{this};
+51 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1cross__entropy__with__uncertainty_a036433c9c57e030d1923543dc211813a_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1cross__entropy__with__uncertainty_a44a47468f1d04734068d085417eeab93}\label{classlbann_1_1cross__entropy__with__uncertainty_a44a47468f1d04734068d085417eeab93}} 
+\index{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty@{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty}!setup@{setup}}
+\index{setup@{setup}!lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty@{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty}}
+\subsubsection{\texorpdfstring{setup()}{setup()}}
+{\footnotesize\ttfamily void lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty\+::setup (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} \&}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Setup cross entropy term. 
+
+Reimplemented from \hyperlink{classlbann_1_1loss__function_a17a3629e8519c4215ad776a0c7b522ae}{lbann\+::loss\+\_\+function}.
+
+
+
+Definition at line 57 of file cross\+\_\+entropy\+\_\+with\+\_\+uncertainty.\+cpp.
+
+
+\begin{DoxyCode}
+57                                                    \{
+58   \hyperlink{classlbann_1_1loss__function_a17a3629e8519c4215ad776a0c7b522ae}{loss\_function::setup}(m);
+59 
+60   \textcolor{keyword}{const} El::DistData dist(*\hyperlink{classlbann_1_1loss__function_ac6ac9f8f2cef7a4daa1b282dba914975}{m\_gradient});
+61   \textcolor{keywordflow}{if} (dist.colDist == El::MC && dist.rowDist == El::MR) \{
+62     \hyperlink{classlbann_1_1cross__entropy__with__uncertainty_a4b45767c526e7ebe4a55ff1a1ddbd7ba}{m\_prediction\_sums} = \textcolor{keyword}{new} \hyperlink{base_8hpp_a638c3ca7c22f916d23415b234420b9f1}{StarMRMat}(*dist.grid);
+63   \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (dist.colDist == El::STAR && dist.rowDist == El::VC) \{
+64     \hyperlink{classlbann_1_1cross__entropy__with__uncertainty_a4b45767c526e7ebe4a55ff1a1ddbd7ba}{m\_prediction\_sums} = \textcolor{keyword}{new} \hyperlink{base_8hpp_aa4ec814c4a8f15b4ea2b24b3af94ef23}{StarVCMat}(*dist.grid);
+65   \} \textcolor{keywordflow}{else} \{
+66     std::stringstream err;
+67     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+68         << \textcolor{stringliteral}{"invalid matrix distribution"};
+69     \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+70   \}
+71 
+72 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1cross__entropy__with__uncertainty_a44a47468f1d04734068d085417eeab93_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1cross__entropy__with__uncertainty_a44a47468f1d04734068d085417eeab93_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1cross__entropy__with__uncertainty_abed10e5c6eb2fd72b3b72ad1042fe35c}\label{classlbann_1_1cross__entropy__with__uncertainty_abed10e5c6eb2fd72b3b72ad1042fe35c}} 
+\index{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty@{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty}!start\+\_\+evaluate\+\_\+compute@{start\+\_\+evaluate\+\_\+compute}}
+\index{start\+\_\+evaluate\+\_\+compute@{start\+\_\+evaluate\+\_\+compute}!lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty@{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty}}
+\subsubsection{\texorpdfstring{start\+\_\+evaluate\+\_\+compute()}{start\_evaluate\_compute()}}
+{\footnotesize\ttfamily void lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty\+::start\+\_\+evaluate\+\_\+compute (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{prediction,  }\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{ground\+\_\+truth }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Compute the cross entropy objective function. Given a predicted distribution $y$ and ground truth distribution $\hat{y}$, the cross entropy is \[ CE(y,\hat{y}) = - \sum\limits_{i} \hat{y}_i \log y_i \] This function updates the objective function value with the mean cross entropy across the mini-\/batch. Note that each column of the predictions matrix should have non-\/negative entries that add up to one. 
+
+Implements \hyperlink{classlbann_1_1loss__function_a0bbe41060d788dc7a29f3737761a6f7d}{lbann\+::loss\+\_\+function}.
+
+
+
+Definition at line 68 of file cross\+\_\+entropy\+\_\+with\+\_\+uncertainty.\+hpp.
+
+
+\begin{DoxyCode}
+69                                                                        \{\}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1cross__entropy__with__uncertainty_abed10e5c6eb2fd72b3b72ad1042fe35c_cgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1cross__entropy__with__uncertainty_a4b45767c526e7ebe4a55ff1a1ddbd7ba}\label{classlbann_1_1cross__entropy__with__uncertainty_a4b45767c526e7ebe4a55ff1a1ddbd7ba}} 
+\index{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty@{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty}!m\+\_\+prediction\+\_\+sums@{m\+\_\+prediction\+\_\+sums}}
+\index{m\+\_\+prediction\+\_\+sums@{m\+\_\+prediction\+\_\+sums}!lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty@{lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty}}
+\subsubsection{\texorpdfstring{m\+\_\+prediction\+\_\+sums}{m\_prediction\_sums}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat}$\ast$ lbann\+::cross\+\_\+entropy\+\_\+with\+\_\+uncertainty\+::m\+\_\+prediction\+\_\+sums\hspace{0.3cm}{\ttfamily [private]}}
+
+Workspace. 
+
+Definition at line 88 of file cross\+\_\+entropy\+\_\+with\+\_\+uncertainty.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/objective\+\_\+functions/loss\+\_\+functions/\hyperlink{cross__entropy__with__uncertainty_8hpp}{cross\+\_\+entropy\+\_\+with\+\_\+uncertainty.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/objective\+\_\+functions/loss\+\_\+functions/\hyperlink{cross__entropy__with__uncertainty_8cpp}{cross\+\_\+entropy\+\_\+with\+\_\+uncertainty.\+cpp}\end{DoxyCompactItemize}

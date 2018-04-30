@@ -1,0 +1,4 @@
+<map id="lbann::imagenet_reader_patches::create_datum_views" name="lbann::imagenet_reader_patches::create_datum_views">
+<area shape="rect" id="node2" href="$classlbann_1_1imagenet__reader__patches.html#a4d5c6b9780908d9beb5c6d3f017c38b5" title="Get the dimensions of the data. " alt="" coords="469,5,639,44"/>
+<area shape="rect" id="node3" href="$classlbann_1_1imagenet__reader__patches.html#a8a9e4a1339f2e9676a0e653853ebff3c" title="lbann::imagenet_reader\l_patches::fetch_datum" alt="" coords="258,33,421,72"/>
+</map>

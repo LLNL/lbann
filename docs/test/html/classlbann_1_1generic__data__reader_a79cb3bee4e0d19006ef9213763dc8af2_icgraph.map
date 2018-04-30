@@ -1,0 +1,15 @@
+<map id="lbann::generic_data_reader::get_last_mini_batch_size" name="lbann::generic_data_reader::get_last_mini_batch_size">
+<area shape="rect" id="node2" href="$classlbann_1_1generic__input__layer.html#a5e3c66c5726ab4a00d75bdcd2c07b640" title="lbann::generic_input\l_layer::get_last_mini\l_batch_size" alt="" coords="232,53,375,105"/>
+<area shape="rect" id="node5" href="$classlbann_1_1lbann__callback__debug__io.html#a528f4aea5f657f40b27c58a164d4095a" title="lbann::lbann_callback\l_debug_io::print_phase_start" alt="" coords="207,183,401,221"/>
+<area shape="rect" id="node10" href="$classlbann_1_1distributed__io__buffer.html#af63a8b162ed869393c5b604c5913c631" title="lbann::distributed\l_io_buffer::calculate\l_num_iterations_per_epoch" alt="" coords="210,315,397,367"/>
+<area shape="rect" id="node13" href="$classlbann_1_1partitioned__io__buffer.html#a50b6e2b7a82927526758f7cfb18a1ded" title="lbann::partitioned\l_io_buffer::calculate\l_num_iterations_per_epoch\l_spanning_models" alt="" coords="210,432,397,497"/>
+<area shape="rect" id="node3" href="$classlbann_1_1lbann__callback__print.html#ae3c99d7c56ac33ab7e09880134b43cad" title="lbann::lbann_callback\l_print::on_epoch_begin" alt="" coords="473,5,634,44"/>
+<area shape="rect" id="node4" href="$classlbann_1_1lbann__callback__print.html#aa75e076c3d840a2186825be2e8dbac8c" title="lbann::lbann_callback\l_print::copy" alt="" coords="706,5,856,44"/>
+<area shape="rect" id="node6" href="$classlbann_1_1lbann__callback__debug__io.html#a91fb292d9dff96dbf72ecc16855c4092" title="lbann::lbann_callback\l_debug_io::copy" alt="" coords="706,151,856,189"/>
+<area shape="rect" id="node7" href="$classlbann_1_1lbann__callback__debug__io.html#aa3d2a6fb4d7375c05ece0058224ea792" title="BVE FIXME. " alt="" coords="459,120,648,159"/>
+<area shape="rect" id="node8" href="$classlbann_1_1lbann__callback__debug__io.html#ac26d9c113c1345cc1d6390141e1a894b" title="lbann::lbann_callback\l_debug_io::on_validation_begin" alt="" coords="449,183,658,221"/>
+<area shape="rect" id="node9" href="$classlbann_1_1lbann__callback__debug__io.html#a469dfa4eece0a707a2d56f4c67aea9b7" title="lbann::lbann_callback\l_debug_io::on_test_begin" alt="" coords="466,245,641,284"/>
+<area shape="rect" id="node11" href="$classlbann_1_1distributed__io__buffer.html#aa1f5200f9646d38fe3b3adaf39645330" title="lbann::distributed\l_io_buffer::calculate\l_num_iterations_per_epoch\l_spanning_models" alt="" coords="460,308,647,373"/>
+<area shape="rect" id="node12" href="$classlbann_1_1distributed__io__buffer.html#a2a611c36620155646e46e065e040541f" title="lbann::distributed\l_io_buffer::calculate\l_num_iterations_per_epoch\l_single_model" alt="" coords="460,397,647,463"/>
+<area shape="rect" id="node14" href="$classlbann_1_1partitioned__io__buffer.html#a06a204fbf82f092b0225ab10c1bec98e" title="lbann::partitioned\l_io_buffer::setup_data" alt="" coords="477,487,630,525"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="lbann::generic_data_reader::set_compound_rank" name="lbann::generic_data_reader::set_compound_rank">
+<area shape="rect" id="node2" href="$classlbann_1_1generic__data__reader.html#a1e8655cd1883d850566694bcf2ad60ab" title="lbann::generic_data\l_reader::get_absolute\l_sample_count" alt="" coords="260,5,411,57"/>
+<area shape="rect" id="node3" href="$classlbann_1_1generic__data__reader.html#a5853fa5e619b886699954aca6440dd8a" title="lbann::generic_data\l_reader::get_use_percent" alt="" coords="249,81,423,120"/>
+<area shape="rect" id="node4" href="$classlbann_1_1generic__data__reader.html#ab06058b5fa1d74239998358b02f73132" title="lbann::generic_data\l_reader::get_validation\l_percent" alt="" coords="257,144,414,196"/>
+</map>

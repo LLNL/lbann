@@ -1,0 +1,5 @@
+<map id="lbann::lbann_image_preprocessor::internal_save_image" name="lbann::lbann_image_preprocessor::internal_save_image">
+<area shape="rect" id="node2" href="$classlbann_1_1image__data__reader.html#a71e4fa1eb8212cce88a2ed408ceeac51" title="lbann::image_data_reader\l::save_image" alt="" coords="211,5,388,44"/>
+<area shape="rect" id="node3" href="$classlbann_1_1data__reader__jag.html#a396e7456d926ae9045011e7f28284946" title="lbann::data_reader\l_jag::save_image" alt="" coords="233,68,366,107"/>
+<area shape="rect" id="node4" href="$classlbann_1_1data__reader__jag.html#ae3f45a65894cb60343676d75a8b7f99c" title="lbann::data_reader\l_jag::get_type" alt="" coords="436,68,569,107"/>
+</map>

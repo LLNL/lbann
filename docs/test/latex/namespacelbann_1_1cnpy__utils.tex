@@ -1,0 +1,221 @@
+\hypertarget{namespacelbann_1_1cnpy__utils}{}\section{lbann\+:\+:cnpy\+\_\+utils Namespace Reference}
+\label{namespacelbann_1_1cnpy__utils}\index{lbann\+::cnpy\+\_\+utils@{lbann\+::cnpy\+\_\+utils}}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+size\+\_\+t \hyperlink{namespacelbann_1_1cnpy__utils_a39fd207d94d1333e6379c53423b6f1a1}{compute\+\_\+cnpy\+\_\+array\+\_\+offset} (const cnpy\+::\+Npy\+Array \&na, std\+::vector$<$ size\+\_\+t $>$ indices)
+\item 
+void \hyperlink{namespacelbann_1_1cnpy__utils_ab19ad0a361570b7e78e203c02d6ba13a}{shrink\+\_\+to\+\_\+fit} (cnpy\+::\+Npy\+Array \&na, size\+\_\+t sz)
+\item 
+std\+::string \hyperlink{namespacelbann_1_1cnpy__utils_a120e5719167d6d20b2a98c4282fd7a50}{show\+\_\+shape} (const cnpy\+::\+Npy\+Array \&na)
+\begin{DoxyCompactList}\small\item\em Show the dimensions of loaded data. \end{DoxyCompactList}\item 
+{\footnotesize template$<$typename T $>$ }\\T \& \hyperlink{namespacelbann_1_1cnpy__utils_a9ac86d96ccb1f8b4b2ea16441738781f}{data} (const cnpy\+::\+Npy\+Array \&na, const std\+::vector$<$ size\+\_\+t $>$ indices)
+\item 
+{\footnotesize template$<$typename T $>$ }\\T $\ast$ \hyperlink{namespacelbann_1_1cnpy__utils_a348a4aa859715e5859ddd1a5e3a269c9}{data\+\_\+ptr} (const cnpy\+::\+Npy\+Array \&na, const std\+::vector$<$ size\+\_\+t $>$ indices)
+\item 
+{\footnotesize template$<$$>$ }\\void $\ast$ \hyperlink{namespacelbann_1_1cnpy__utils_aba43b785d14caa5c5df74674f10f0dd8}{data\+\_\+ptr$<$ void $>$} (const cnpy\+::\+Npy\+Array \&na, const std\+::vector$<$ size\+\_\+t $>$ indices)
+\end{DoxyCompactItemize}
+
+
+\subsection{Function Documentation}
+\mbox{\Hypertarget{namespacelbann_1_1cnpy__utils_a39fd207d94d1333e6379c53423b6f1a1}\label{namespacelbann_1_1cnpy__utils_a39fd207d94d1333e6379c53423b6f1a1}} 
+\index{lbann\+::cnpy\+\_\+utils@{lbann\+::cnpy\+\_\+utils}!compute\+\_\+cnpy\+\_\+array\+\_\+offset@{compute\+\_\+cnpy\+\_\+array\+\_\+offset}}
+\index{compute\+\_\+cnpy\+\_\+array\+\_\+offset@{compute\+\_\+cnpy\+\_\+array\+\_\+offset}!lbann\+::cnpy\+\_\+utils@{lbann\+::cnpy\+\_\+utils}}
+\subsubsection{\texorpdfstring{compute\+\_\+cnpy\+\_\+array\+\_\+offset()}{compute\_cnpy\_array\_offset()}}
+{\footnotesize\ttfamily size\+\_\+t lbann\+::cnpy\+\_\+utils\+::compute\+\_\+cnpy\+\_\+array\+\_\+offset (\begin{DoxyParamCaption}\item[{const cnpy\+::\+Npy\+Array \&}]{na,  }\item[{std\+::vector$<$ size\+\_\+t $>$}]{indices }\end{DoxyParamCaption})}
+
+Return the offset to the element (in terms of the number of elements from the beginning of the array) of a loaded numpy array na specified by indices If the number of indices is less than the dimension of na array, the indices vector is appended with zeros to match the dimension. 
+
+Definition at line 32 of file cnpy\+\_\+utils.\+cpp.
+
+
+\begin{DoxyCode}
+33                                                      \{
+34 
+35   \textcolor{keywordflow}{if} (indices.size() < na.shape.size()) \{
+36     indices.resize(na.shape.size(), 0u);
+37   \}
+38   \textcolor{keywordtype}{bool} ok = (indices.size() == na.shape.size());
+39   \textcolor{keywordtype}{size\_t} unit\_stride = 1u;
+40   \textcolor{keywordtype}{size\_t} offset = 0u;
+41 
+42   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} i = indices.size(); ok && (i-- > 0u); ) \{
+43     ok = (indices[i] < na.shape[i]);
+44     offset += indices[i] * unit\_stride;
+45     unit\_stride *= na.shape[i];
+46   \}
+47   \textcolor{keywordflow}{if} (!ok) \{
+48     \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"compute\_cnpy\_array\_offset(): invalid data index"});
+49   \}
+50   \textcolor{keywordflow}{return} offset;
+51 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{namespacelbann_1_1cnpy__utils_a39fd207d94d1333e6379c53423b6f1a1_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{namespacelbann_1_1cnpy__utils_a9ac86d96ccb1f8b4b2ea16441738781f}\label{namespacelbann_1_1cnpy__utils_a9ac86d96ccb1f8b4b2ea16441738781f}} 
+\index{lbann\+::cnpy\+\_\+utils@{lbann\+::cnpy\+\_\+utils}!data@{data}}
+\index{data@{data}!lbann\+::cnpy\+\_\+utils@{lbann\+::cnpy\+\_\+utils}}
+\subsubsection{\texorpdfstring{data()}{data()}}
+{\footnotesize\ttfamily template$<$typename T $>$ \\
+T\& lbann\+::cnpy\+\_\+utils\+::data (\begin{DoxyParamCaption}\item[{const cnpy\+::\+Npy\+Array \&}]{na,  }\item[{const std\+::vector$<$ size\+\_\+t $>$}]{indices }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Allow the access to the data element identified by the indices and the word\+\_\+size of the array na, but present it as a type T element at the address. 
+
+Definition at line 52 of file cnpy\+\_\+utils.\+hpp.
+
+
+\begin{DoxyCode}
+52                                                                         \{
+53   \textcolor{keywordflow}{if} ((\textcolor{keyword}{sizeof}(T) != na.word\_size) && (\textcolor{keyword}{sizeof}(T) != 1u)) \{
+54     \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"cnpy\_utils::data() : The data type is not consistent with the word size of the
+       array."});
+55   \}
+56   \textcolor{keyword}{const} \textcolor{keywordtype}{size\_t} offset = \hyperlink{namespacelbann_1_1cnpy__utils_a39fd207d94d1333e6379c53423b6f1a1}{compute\_cnpy\_array\_offset}(na, indices)
+57                         * ((\textcolor{keyword}{sizeof}(T) == 1u)? na.word\_size : 1u);
+58   \textcolor{keywordflow}{return} *(\textcolor{keyword}{reinterpret\_cast<}T*\textcolor{keyword}{>}(&(* na.data\_holder)[0]) + offset);
+59 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{namespacelbann_1_1cnpy__utils_a9ac86d96ccb1f8b4b2ea16441738781f_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{namespacelbann_1_1cnpy__utils_a9ac86d96ccb1f8b4b2ea16441738781f_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{namespacelbann_1_1cnpy__utils_a348a4aa859715e5859ddd1a5e3a269c9}\label{namespacelbann_1_1cnpy__utils_a348a4aa859715e5859ddd1a5e3a269c9}} 
+\index{lbann\+::cnpy\+\_\+utils@{lbann\+::cnpy\+\_\+utils}!data\+\_\+ptr@{data\+\_\+ptr}}
+\index{data\+\_\+ptr@{data\+\_\+ptr}!lbann\+::cnpy\+\_\+utils@{lbann\+::cnpy\+\_\+utils}}
+\subsubsection{\texorpdfstring{data\+\_\+ptr()}{data\_ptr()}}
+{\footnotesize\ttfamily template$<$typename T $>$ \\
+T$\ast$ lbann\+::cnpy\+\_\+utils\+::data\+\_\+ptr (\begin{DoxyParamCaption}\item[{const cnpy\+::\+Npy\+Array \&}]{na,  }\item[{const std\+::vector$<$ size\+\_\+t $>$}]{indices }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Return the address of the data element identified by the indices and the word\+\_\+size of the array na, but present it as the address of a type T element 
+
+Definition at line 67 of file cnpy\+\_\+utils.\+hpp.
+
+
+\begin{DoxyCode}
+67                                                                             \{
+68   \textcolor{keywordflow}{if} ((\textcolor{keyword}{sizeof}(T) != na.word\_size) && (\textcolor{keyword}{sizeof}(T) != 1u)) \{
+69     \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"cnpy\_utils::data\_ptr() : The data type is not consistent with the word size of
+       the array."});
+70   \}
+71   \textcolor{keyword}{const} \textcolor{keywordtype}{size\_t} offset = \hyperlink{namespacelbann_1_1cnpy__utils_a39fd207d94d1333e6379c53423b6f1a1}{compute\_cnpy\_array\_offset}(na, indices)
+72                         * ((\textcolor{keyword}{sizeof}(T) == 1u)? na.word\_size : 1u);
+73   \textcolor{keywordflow}{return} (reinterpret\_cast<T*>(&(* na.data\_holder)[0]) + offset);
+74 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{namespacelbann_1_1cnpy__utils_a348a4aa859715e5859ddd1a5e3a269c9_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{namespacelbann_1_1cnpy__utils_aba43b785d14caa5c5df74674f10f0dd8}\label{namespacelbann_1_1cnpy__utils_aba43b785d14caa5c5df74674f10f0dd8}} 
+\index{lbann\+::cnpy\+\_\+utils@{lbann\+::cnpy\+\_\+utils}!data\+\_\+ptr$<$ void $>$@{data\+\_\+ptr$<$ void $>$}}
+\index{data\+\_\+ptr$<$ void $>$@{data\+\_\+ptr$<$ void $>$}!lbann\+::cnpy\+\_\+utils@{lbann\+::cnpy\+\_\+utils}}
+\subsubsection{\texorpdfstring{data\+\_\+ptr$<$ void $>$()}{data\_ptr< void >()}}
+{\footnotesize\ttfamily template$<$$>$ \\
+void$\ast$ \hyperlink{namespacelbann_1_1cnpy__utils_a348a4aa859715e5859ddd1a5e3a269c9}{lbann\+::cnpy\+\_\+utils\+::data\+\_\+ptr}$<$ void $>$ (\begin{DoxyParamCaption}\item[{const cnpy\+::\+Npy\+Array \&}]{na,  }\item[{const std\+::vector$<$ size\+\_\+t $>$}]{indices }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 77 of file cnpy\+\_\+utils.\+hpp.
+
+
+\begin{DoxyCode}
+77                                                                                      \{
+78   \textcolor{keywordflow}{return} data\_ptr<uint8\_t>(na, indices);
+79 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=308pt]{namespacelbann_1_1cnpy__utils_aba43b785d14caa5c5df74674f10f0dd8_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{namespacelbann_1_1cnpy__utils_a120e5719167d6d20b2a98c4282fd7a50}\label{namespacelbann_1_1cnpy__utils_a120e5719167d6d20b2a98c4282fd7a50}} 
+\index{lbann\+::cnpy\+\_\+utils@{lbann\+::cnpy\+\_\+utils}!show\+\_\+shape@{show\+\_\+shape}}
+\index{show\+\_\+shape@{show\+\_\+shape}!lbann\+::cnpy\+\_\+utils@{lbann\+::cnpy\+\_\+utils}}
+\subsubsection{\texorpdfstring{show\+\_\+shape()}{show\_shape()}}
+{\footnotesize\ttfamily std\+::string lbann\+::cnpy\+\_\+utils\+::show\+\_\+shape (\begin{DoxyParamCaption}\item[{const cnpy\+::\+Npy\+Array \&}]{na }\end{DoxyParamCaption})}
+
+
+
+Show the dimensions of loaded data. 
+
+
+
+Definition at line 70 of file cnpy\+\_\+utils.\+cpp.
+
+
+\begin{DoxyCode}
+70                                              \{
+71   std::string ret;
+72   \textcolor{keywordflow}{for} (\textcolor{keyword}{const} \textcolor{keywordtype}{size\_t} s: na.shape) \{
+73     ret += std::to\_string(s) + \textcolor{charliteral}{'x'};
+74   \}
+75   \textcolor{keywordflow}{if} (ret.size() == 0u) \{
+76     \textcolor{keywordflow}{return} \textcolor{stringliteral}{"empty"};
+77   \} \textcolor{keywordflow}{else} \{
+78     ret.pop\_back(); \textcolor{comment}{// remove the last 'x'}
+79     ret += \textcolor{stringliteral}{" "} + std::to\_string(na.word\_size);
+80   \}
+81   \textcolor{keywordflow}{return} ret;
+82 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{namespacelbann_1_1cnpy__utils_a120e5719167d6d20b2a98c4282fd7a50_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{namespacelbann_1_1cnpy__utils_ab19ad0a361570b7e78e203c02d6ba13a}\label{namespacelbann_1_1cnpy__utils_ab19ad0a361570b7e78e203c02d6ba13a}} 
+\index{lbann\+::cnpy\+\_\+utils@{lbann\+::cnpy\+\_\+utils}!shrink\+\_\+to\+\_\+fit@{shrink\+\_\+to\+\_\+fit}}
+\index{shrink\+\_\+to\+\_\+fit@{shrink\+\_\+to\+\_\+fit}!lbann\+::cnpy\+\_\+utils@{lbann\+::cnpy\+\_\+utils}}
+\subsubsection{\texorpdfstring{shrink\+\_\+to\+\_\+fit()}{shrink\_to\_fit()}}
+{\footnotesize\ttfamily void lbann\+::cnpy\+\_\+utils\+::shrink\+\_\+to\+\_\+fit (\begin{DoxyParamCaption}\item[{cnpy\+::\+Npy\+Array \&}]{na,  }\item[{size\+\_\+t}]{sz }\end{DoxyParamCaption})}
+
+Shrink the first dimension of cnpy\+::\+Npy\+Array to the given size. This is used to choose only first sz samples in data. 
+
+Definition at line 54 of file cnpy\+\_\+utils.\+cpp.
+
+
+\begin{DoxyCode}
+54                                                 \{
+55   \textcolor{keywordflow}{if} ((na.shape.size() == 0u) || (na.shape[0] <= sz)) \{
+56     \textcolor{comment}{//std::cerr << "not able to shrink to " << sz << std::endl;}
+57     \textcolor{keywordflow}{return};
+58   \}
+59   \textcolor{keywordtype}{size\_t} new\_size = sz;
+60   \textcolor{keywordflow}{for}(\textcolor{keywordtype}{size\_t} i = 1u; i < na.shape.size(); ++i) \{
+61     new\_size *= na.shape[i];
+62   \}
+63   na.data\_holder->resize(new\_size*na.word\_size);
+64   na.data\_holder->shrink\_to\_fit();
+65   na.num\_vals = new\_size;
+66   na.shape[0] = sz;
+67 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{namespacelbann_1_1cnpy__utils_ab19ad0a361570b7e78e203c02d6ba13a_icgraph}
+\end{center}
+\end{figure}

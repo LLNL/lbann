@@ -1,0 +1,7 @@
+<map id="lbann::pilot2_molecular_reader::fetch_datum" name="lbann::pilot2_molecular_reader::fetch_datum">
+<area shape="rect" id="node2" href="$classlbann_1_1generic__data__store.html#a2abb3d0327b528d36e23fcef9b937798" title="called by various image data readers " alt="" coords="222,5,366,44"/>
+<area shape="rect" id="node3" href="$classlbann_1_1pilot2__molecular__reader.html#ac95223a0829a83a5d400c4d66efdcb93" title="lbann::pilot2_molecular\l_reader::get_frame" alt="" coords="424,64,583,103"/>
+<area shape="rect" id="node4" href="$classlbann_1_1pilot2__molecular__reader.html#ae45c583f72e11aeb5d955e2657a9a3e8" title="Fetch molecule data_id into X at molecule offset idx. " alt="" coords="212,120,376,159"/>
+<area shape="rect" id="node5" href="$namespacelbann_1_1cnpy__utils.html#a9ac86d96ccb1f8b4b2ea16441738781f" title="lbann::cnpy_utils::data" alt="" coords="426,127,580,152"/>
+<area shape="rect" id="node6" href="$namespacelbann_1_1cnpy__utils.html#a39fd207d94d1333e6379c53423b6f1a1" title="lbann::cnpy_utils::\lcompute_cnpy_array_offset" alt="" coords="631,120,816,159"/>
+</map>

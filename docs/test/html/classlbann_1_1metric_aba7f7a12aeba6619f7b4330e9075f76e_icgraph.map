@@ -1,0 +1,6 @@
+<map id="lbann::metric::get_target_layer" name="lbann::metric::get_target_layer">
+<area shape="rect" id="node2" href="$classlbann_1_1categorical__accuracy__metric.html#a328a63ccc21c31efd511445f5b060960" title="lbann::categorical\l_accuracy_metric::setup" alt="" coords="184,5,349,44"/>
+<area shape="rect" id="node4" href="$classlbann_1_1pearson__correlation__metric.html#a4394c0ebb3cacdcec934e4ae322f9bb6" title="lbann::pearson_correlation\l_metric::setup" alt="" coords="177,68,356,107"/>
+<area shape="rect" id="node3" href="$classlbann_1_1categorical__accuracy__metric.html#a9c06851bc233a01b28c346a10d278d99" title="lbann::categorical\l_accuracy_metric::get_unit" alt="" coords="404,5,585,44"/>
+<area shape="rect" id="node5" href="$classlbann_1_1pearson__correlation__metric.html#a7cbb12e258acdb0cbc4d521dc7163dd6" title="lbann::pearson_correlation\l_metric::name" alt="" coords="405,68,584,107"/>
+</map>

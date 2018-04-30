@@ -1,0 +1,501 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1loss__function" kind="class" language="C++" prot="public" abstract="yes">
+    <compoundname>lbann::loss_function</compoundname>
+    <basecompoundref refid="classlbann_1_1objective__function__term" prot="public" virt="non-virtual">lbann::objective_function_term</basecompoundref>
+    <derivedcompoundref refid="classlbann_1_1binary__cross__entropy" prot="public" virt="non-virtual">lbann::binary_cross_entropy</derivedcompoundref>
+    <derivedcompoundref refid="classlbann_1_1cross__entropy" prot="public" virt="non-virtual">lbann::cross_entropy</derivedcompoundref>
+    <derivedcompoundref refid="classlbann_1_1cross__entropy__with__uncertainty" prot="public" virt="non-virtual">lbann::cross_entropy_with_uncertainty</derivedcompoundref>
+    <derivedcompoundref refid="classlbann_1_1geom__negloglike" prot="public" virt="non-virtual">lbann::geom_negloglike</derivedcompoundref>
+    <derivedcompoundref refid="classlbann_1_1mean__absolute__deviation__loss" prot="public" virt="non-virtual">lbann::mean_absolute_deviation_loss</derivedcompoundref>
+    <derivedcompoundref refid="classlbann_1_1mean__absolute__error__loss" prot="public" virt="non-virtual">lbann::mean_absolute_error_loss</derivedcompoundref>
+    <derivedcompoundref refid="classlbann_1_1mean__squared__error__loss" prot="public" virt="non-virtual">lbann::mean_squared_error_loss</derivedcompoundref>
+    <derivedcompoundref refid="classlbann_1_1poisson__negloglike" prot="public" virt="non-virtual">lbann::poisson_negloglike</derivedcompoundref>
+    <derivedcompoundref refid="classlbann_1_1polya__negloglike" prot="public" virt="non-virtual">lbann::polya_negloglike</derivedcompoundref>
+    <includes refid="loss__function_8hpp" local="no">loss_function.hpp</includes>
+      <sectiondef kind="protected-attrib">
+      <memberdef kind="variable" id="classlbann_1_1loss__function_1ac6ac9f8f2cef7a4daa1b282dba914975" prot="protected" static="no" mutable="no">
+        <type><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> *</type>
+        <definition>AbsDistMat* lbann::loss_function::m_gradient</definition>
+        <argsstring></argsstring>
+        <name>m_gradient</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Gradient matrix. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/loss_function.hpp" line="105" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/loss_function.hpp" bodystart="105" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1cross__entropy__with__uncertainty_1a44a47468f1d04734068d085417eeab93" compoundref="cross__entropy__with__uncertainty_8cpp" startline="57" endline="72">lbann::cross_entropy_with_uncertainty::setup</referencedby>
+        <referencedby refid="classlbann_1_1loss__function_1aaebcff849004392decc9850c4c75ead5" compoundref="loss__function_8cpp" startline="36" endline="40">loss_function</referencedby>
+        <referencedby refid="classlbann_1_1loss__function_1ab882c642619ea4285b61e735d84e401c" compoundref="loss__function_8cpp" startline="42" endline="54">operator=</referencedby>
+        <referencedby refid="classlbann_1_1loss__function_1a21c59d9c3db798c330ff8297f6374747" compoundref="loss__function_8cpp" startline="56" endline="58">~loss_function</referencedby>
+        <referencedby refid="classlbann_1_1loss__function_1a17a3629e8519c4215ad776a0c7b522ae" compoundref="loss__function_8cpp" startline="68" endline="112">setup</referencedby>
+        <referencedby refid="classlbann_1_1loss__function_1adbd03ef952ee1055e3dd98f06d33324f" compoundref="loss__function_8cpp" startline="129" endline="137">differentiate</referencedby>
+        <referencedby refid="classlbann_1_1loss__function_1ac44929838f3c3f0a34e1532530422dad" compoundref="loss__function_8cpp" startline="139" endline="145">save_to_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1loss__function_1ae948babd62a110e2407271f24dcaec1b" compoundref="loss__function_8cpp" startline="147" endline="152">load_from_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1polya__negloglike_1a4a7ae8eef1ef216f60b158acb1853355" compoundref="polya__negloglike_8cpp" startline="106" endline="127">lbann::polya_negloglike::setup</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1loss__function_1a0c5745e661c59e3e5496888d233c07cf" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::loss_function::loss_function</definition>
+        <argsstring>(EvalType scale_factor=EvalType(1))</argsstring>
+        <name>loss_function</name>
+        <param>
+          <type><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref></type>
+          <declname>scale_factor</declname>
+          <defval><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref>(1)</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Default constructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/loss_function.hpp" line="39" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/loss_functions/loss_function.cpp" bodystart="32" bodyend="34"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1loss__function_1aaebcff849004392decc9850c4c75ead5" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::loss_function::loss_function</definition>
+        <argsstring>(const loss_function &amp;other)</argsstring>
+        <name>loss_function</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1loss__function" kindref="compound">loss_function</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Copy constructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/loss_function.hpp" line="42" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/loss_functions/loss_function.cpp" bodystart="36" bodyend="40"/>
+        <references refid="classlbann_1_1loss__function_1ac6ac9f8f2cef7a4daa1b282dba914975" compoundref="loss__function_8hpp" startline="105">m_gradient</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1loss__function_1ab882c642619ea4285b61e735d84e401c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classlbann_1_1loss__function" kindref="compound">loss_function</ref> &amp;</type>
+        <definition>loss_function &amp; lbann::loss_function::operator=</definition>
+        <argsstring>(const loss_function &amp;other)</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1loss__function" kindref="compound">loss_function</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Copy assignment operator. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/loss_function.hpp" line="44" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/loss_functions/loss_function.cpp" bodystart="42" bodyend="54"/>
+        <references refid="classlbann_1_1objective__function__term_1a8bbac194d96a854d5841817b67b63334">lbann::objective_function_term::operator=</references>
+        <references refid="classlbann_1_1loss__function_1ac6ac9f8f2cef7a4daa1b282dba914975" compoundref="loss__function_8hpp" startline="105">m_gradient</references>
+        <referencedby refid="classlbann_1_1cross__entropy__with__uncertainty_1a036433c9c57e030d1923543dc211813a" compoundref="cross__entropy__with__uncertainty_8cpp" startline="43" endline="51">lbann::cross_entropy_with_uncertainty::operator=</referencedby>
+        <referencedby refid="classlbann_1_1polya__negloglike_1a13d1e4b96c6e99bb39afc2b349ad9588" compoundref="polya__negloglike_8cpp" startline="74" endline="97">lbann::polya_negloglike::operator=</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1loss__function_1a21c59d9c3db798c330ff8297f6374747" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::loss_function::~loss_function</definition>
+        <argsstring>() override</argsstring>
+        <name>~loss_function</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Destructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/loss_function.hpp" line="46" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/loss_functions/loss_function.cpp" bodystart="56" bodyend="58"/>
+        <references refid="classlbann_1_1loss__function_1ac6ac9f8f2cef7a4daa1b282dba914975" compoundref="loss__function_8hpp" startline="105">m_gradient</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1loss__function_1a9ef5356468c892c2c0221f8acd6b5471" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::loss_function::set_target_layer</definition>
+        <argsstring>(generic_target_layer *layer)</argsstring>
+        <name>set_target_layer</name>
+        <param>
+          <type><ref refid="classlbann_1_1generic__target__layer" kindref="compound">generic_target_layer</ref> *</type>
+          <declname>layer</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/loss_function.hpp" line="48" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/loss_functions/loss_function.cpp" bodystart="60" bodyend="66"/>
+        <references refid="classlbann_1_1objective__function__term_1a9269cf0a237eacd1e220ba2739f44334" compoundref="objective__function__term_8hpp" startline="97">lbann::objective_function_term::m_layers</references>
+        <referencedby refid="classlbann_1_1greedy__layerwise__autoencoder_1a5f237f1f6285475c5493a7d15dc32096" compoundref="greedy__layerwise__autoencoder_8cpp" startline="160" endline="212">lbann::greedy_layerwise_autoencoder::set_phase</referencedby>
+        <referencedby refid="classlbann_1_1greedy__layerwise__autoencoder_1a82b8ced756904a2423a65cd0e329b4e2" compoundref="greedy__layerwise__autoencoder_8cpp" startline="214" endline="244">lbann::greedy_layerwise_autoencoder::restore_sequential_model</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1loss__function_1a17a3629e8519c4215ad776a0c7b522ae" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::loss_function::setup</definition>
+        <argsstring>(model &amp;m) override</argsstring>
+        <name>setup</name>
+        <reimplements refid="classlbann_1_1objective__function__term_1a6c8dbdf18aac8676098189fb7b178e91">setup</reimplements>
+        <reimplementedby refid="classlbann_1_1polya__negloglike_1a4a7ae8eef1ef216f60b158acb1853355">setup</reimplementedby>
+        <reimplementedby refid="classlbann_1_1cross__entropy__with__uncertainty_1a44a47468f1d04734068d085417eeab93">setup</reimplementedby>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> &amp;</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Setup objective function term. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/loss_function.hpp" line="51" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/loss_functions/loss_function.cpp" bodystart="68" bodyend="112"/>
+        <references refid="classlbann_1_1objective__function__term_1a6c8dbdf18aac8676098189fb7b178e91" compoundref="objective__function__term_8cpp" startline="39" endline="41">lbann::objective_function_term::setup</references>
+        <references refid="classlbann_1_1objective__function__term_1a9269cf0a237eacd1e220ba2739f44334" compoundref="objective__function__term_8hpp" startline="97">lbann::objective_function_term::m_layers</references>
+        <references refid="classlbann_1_1model_1ae14f4b2cc8882b3739d4aeb25d9e73c9" compoundref="model_8hpp" startline="114" endline="114">lbann::model::get_layers</references>
+        <references refid="classlbann_1_1objective__function__term_1a1d601c29153ae9cb54c585887608f2bf" compoundref="objective__function__term_8hpp" startline="99">lbann::objective_function_term::m_weights</references>
+        <references refid="classlbann_1_1loss__function_1ac6ac9f8f2cef7a4daa1b282dba914975" compoundref="loss__function_8hpp" startline="105">m_gradient</references>
+        <referencedby refid="classlbann_1_1cross__entropy__with__uncertainty_1a44a47468f1d04734068d085417eeab93" compoundref="cross__entropy__with__uncertainty_8cpp" startline="57" endline="72">lbann::cross_entropy_with_uncertainty::setup</referencedby>
+        <referencedby refid="classlbann_1_1polya__negloglike_1a4a7ae8eef1ef216f60b158acb1853355" compoundref="polya__negloglike_8cpp" startline="106" endline="127">lbann::polya_negloglike::setup</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1loss__function_1a90f4126b0b4d47838ef3cc154c6d9705" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::loss_function::start_evaluation</definition>
+        <argsstring>() override</argsstring>
+        <name>start_evaluation</name>
+        <reimplements refid="classlbann_1_1objective__function__term_1a0af4dfd71fb30e43d1ae7611172ad9b0">start_evaluation</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Start evaluation of the objective function term. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/loss_function.hpp" line="54" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/loss_functions/loss_function.cpp" bodystart="114" bodyend="119"/>
+        <references refid="classlbann_1_1objective__function__term_1a9269cf0a237eacd1e220ba2739f44334" compoundref="objective__function__term_8hpp" startline="97">lbann::objective_function_term::m_layers</references>
+        <references refid="base_8hpp_1a2781a159088df64ed7d47cc91c4dc0a8ac41b9ec75e920b610e8907e066074b30">prediction</references>
+        <references refid="classlbann_1_1loss__function_1a0bbe41060d788dc7a29f3737761a6f7d">start_evaluate_compute</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1loss__function_1a5264d3e71125b7ce8694f73bf25662f7" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref></type>
+        <definition>EvalType lbann::loss_function::finish_evaluation</definition>
+        <argsstring>() override</argsstring>
+        <name>finish_evaluation</name>
+        <reimplements refid="classlbann_1_1objective__function__term_1a7a82f2cdbc954655ac860896306aed0c">finish_evaluation</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Finish evaluation of the objective function term. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/loss_function.hpp" line="56" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/loss_functions/loss_function.cpp" bodystart="121" bodyend="127"/>
+        <references refid="classlbann_1_1objective__function__term_1a59a544b8ff0455ed5091de3bf0d81c3c" compoundref="objective__function__term_8hpp" startline="94">lbann::objective_function_term::m_scale_factor</references>
+        <references refid="classlbann_1_1objective__function__term_1a9269cf0a237eacd1e220ba2739f44334" compoundref="objective__function__term_8hpp" startline="97">lbann::objective_function_term::m_layers</references>
+        <references refid="base_8hpp_1a2781a159088df64ed7d47cc91c4dc0a8ac41b9ec75e920b610e8907e066074b30">prediction</references>
+        <references refid="classlbann_1_1loss__function_1a3ea8553a4e9c75477d7d4fc533c4d4fd">finish_evaluate_compute</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1loss__function_1adbd03ef952ee1055e3dd98f06d33324f" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::loss_function::differentiate</definition>
+        <argsstring>() override</argsstring>
+        <name>differentiate</name>
+        <reimplements refid="classlbann_1_1objective__function__term_1ad009c3cfbe1cf2fbb6cce015b16fdac5">differentiate</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Compute the gradient of the objective function term. The gradient is computed w.r.t. the objective function term inputs. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/loss_function.hpp" line="62" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/loss_functions/loss_function.cpp" bodystart="129" bodyend="137"/>
+        <references refid="classlbann_1_1objective__function__term_1a59a544b8ff0455ed5091de3bf0d81c3c" compoundref="objective__function__term_8hpp" startline="94">lbann::objective_function_term::m_scale_factor</references>
+        <references refid="classlbann_1_1objective__function__term_1a9269cf0a237eacd1e220ba2739f44334" compoundref="objective__function__term_8hpp" startline="97">lbann::objective_function_term::m_layers</references>
+        <references refid="base_8hpp_1a2781a159088df64ed7d47cc91c4dc0a8ac41b9ec75e920b610e8907e066074b30">prediction</references>
+        <references refid="classlbann_1_1loss__function_1ac6ac9f8f2cef7a4daa1b282dba914975" compoundref="loss__function_8hpp" startline="105">m_gradient</references>
+        <references refid="classlbann_1_1loss__function_1aefccc2b4f5a02664002d12630cf369e7">differentiate_compute</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1loss__function_1acd6e3bdcf33235208db03ab7af88e961" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::loss_function::compute_weight_regularization</definition>
+        <argsstring>() override</argsstring>
+        <name>compute_weight_regularization</name>
+        <reimplements refid="classlbann_1_1objective__function__term_1a134cf89caed45527bbe9d811a0b93dfc">compute_weight_regularization</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Loss functions do not directly contribute to the gradient update of the weight matrix, they are applied through backprop </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/loss_function.hpp" line="67" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/loss_function.hpp" bodystart="67" bodyend="67"/>
+        <references refid="classlbann_1_1loss__function_1a0bbe41060d788dc7a29f3737761a6f7d">start_evaluate_compute</references>
+        <references refid="base_8hpp_1a2781a159088df64ed7d47cc91c4dc0a8ac41b9ec75e920b610e8907e066074b30">prediction</references>
+        <references refid="classlbann_1_1loss__function_1a3ea8553a4e9c75477d7d4fc533c4d4fd">finish_evaluate_compute</references>
+        <references refid="classlbann_1_1loss__function_1aefccc2b4f5a02664002d12630cf369e7">differentiate_compute</references>
+        <references refid="classlbann_1_1loss__function_1ac44929838f3c3f0a34e1532530422dad" compoundref="loss__function_8cpp" startline="139" endline="145">save_to_checkpoint_shared</references>
+        <references refid="classlbann_1_1loss__function_1ae948babd62a110e2407271f24dcaec1b" compoundref="loss__function_8cpp" startline="147" endline="152">load_from_checkpoint_shared</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1loss__function_1a0bbe41060d788dc7a29f3737761a6f7d" prot="public" static="no" const="no" explicit="no" inline="no" virt="pure-virtual">
+        <type>void</type>
+        <definition>virtual void lbann::loss_function::start_evaluate_compute</definition>
+        <argsstring>(const AbsDistMat &amp;prediction, const AbsDistMat &amp;ground_truth)=0</argsstring>
+        <name>start_evaluate_compute</name>
+        <reimplementedby refid="classlbann_1_1poisson__negloglike_1ad69c0a20f5015ee02eb0c20e87129ffa">start_evaluate_compute</reimplementedby>
+        <reimplementedby refid="classlbann_1_1geom__negloglike_1ae17106630ad2f85df0dbd528bfbbea7d">start_evaluate_compute</reimplementedby>
+        <reimplementedby refid="classlbann_1_1binary__cross__entropy_1a4acaf96a18b00b38adae375a69740071">start_evaluate_compute</reimplementedby>
+        <reimplementedby refid="classlbann_1_1cross__entropy_1a5167b7709499516c6a4dbebfc561f6a7">start_evaluate_compute</reimplementedby>
+        <reimplementedby refid="classlbann_1_1mean__squared__error__loss_1a5cfc9b54a4161015f63e5445e34f49f4">start_evaluate_compute</reimplementedby>
+        <reimplementedby refid="classlbann_1_1mean__absolute__error__loss_1a6c93ac9c9dbcdec66e2a63caf25bccf9">start_evaluate_compute</reimplementedby>
+        <reimplementedby refid="classlbann_1_1mean__absolute__deviation__loss_1a4e4340e4370b824c56b76ed59e2ba879">start_evaluate_compute</reimplementedby>
+        <reimplementedby refid="classlbann_1_1polya__negloglike_1aea7e92b3d290f3d11b6f8c93f9f9d3e6">start_evaluate_compute</reimplementedby>
+        <reimplementedby refid="classlbann_1_1cross__entropy__with__uncertainty_1abed10e5c6eb2fd72b3b72ad1042fe35c">start_evaluate_compute</reimplementedby>
+        <param>
+          <type>const <ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+          <declname>prediction</declname>
+        </param>
+        <param>
+          <type>const <ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+          <declname>ground_truth</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Start evaluation the loss function. This should not include the scale factor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/loss_function.hpp" line="72" column="1"/>
+        <referencedby refid="classlbann_1_1loss__function_1acd6e3bdcf33235208db03ab7af88e961" compoundref="loss__function_8hpp" startline="67" endline="67">compute_weight_regularization</referencedby>
+        <referencedby refid="classlbann_1_1loss__function_1a90f4126b0b4d47838ef3cc154c6d9705" compoundref="loss__function_8cpp" startline="114" endline="119">start_evaluation</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1loss__function_1a3ea8553a4e9c75477d7d4fc533c4d4fd" prot="public" static="no" const="no" explicit="no" inline="no" virt="pure-virtual">
+        <type><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref></type>
+        <definition>virtual EvalType lbann::loss_function::finish_evaluate_compute</definition>
+        <argsstring>(const AbsDistMat &amp;prediction, const AbsDistMat &amp;ground_truth)=0</argsstring>
+        <name>finish_evaluate_compute</name>
+        <reimplementedby refid="classlbann_1_1poisson__negloglike_1a67c3cb239905fa9ee57369dddbbe76ed">finish_evaluate_compute</reimplementedby>
+        <reimplementedby refid="classlbann_1_1geom__negloglike_1a320ac2f029e0a43640878bc052bf5299">finish_evaluate_compute</reimplementedby>
+        <reimplementedby refid="classlbann_1_1binary__cross__entropy_1acedb440a94926866c4de4fdeeb5165bd">finish_evaluate_compute</reimplementedby>
+        <reimplementedby refid="classlbann_1_1cross__entropy_1a85d6937dc70217062f7b45cb678ea1f9">finish_evaluate_compute</reimplementedby>
+        <reimplementedby refid="classlbann_1_1mean__squared__error__loss_1a5486b4e6d6b6fbfdd6fdd381f7cbd7eb">finish_evaluate_compute</reimplementedby>
+        <reimplementedby refid="classlbann_1_1mean__absolute__error__loss_1a0b6518199e86abc197e811f0a1ff7868">finish_evaluate_compute</reimplementedby>
+        <reimplementedby refid="classlbann_1_1mean__absolute__deviation__loss_1ab0a19f6393ef5df9275f1ed4802e8cf6">finish_evaluate_compute</reimplementedby>
+        <reimplementedby refid="classlbann_1_1polya__negloglike_1a81dbe71fef52ee0874549c4cf96c01e3">finish_evaluate_compute</reimplementedby>
+        <reimplementedby refid="classlbann_1_1cross__entropy__with__uncertainty_1abb9b240766b395dab052e3225a0888f6">finish_evaluate_compute</reimplementedby>
+        <param>
+          <type>const <ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+          <declname>prediction</declname>
+        </param>
+        <param>
+          <type>const <ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+          <declname>ground_truth</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Finish evaluation of the loss function. This should not include the scale factor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/loss_function.hpp" line="78" column="1"/>
+        <referencedby refid="classlbann_1_1loss__function_1acd6e3bdcf33235208db03ab7af88e961" compoundref="loss__function_8hpp" startline="67" endline="67">compute_weight_regularization</referencedby>
+        <referencedby refid="classlbann_1_1loss__function_1a5264d3e71125b7ce8694f73bf25662f7" compoundref="loss__function_8cpp" startline="121" endline="127">finish_evaluation</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1loss__function_1aefccc2b4f5a02664002d12630cf369e7" prot="public" static="no" const="no" explicit="no" inline="no" virt="pure-virtual">
+        <type>void</type>
+        <definition>virtual void lbann::loss_function::differentiate_compute</definition>
+        <argsstring>(const AbsDistMat &amp;prediction, const AbsDistMat &amp;ground_truth, AbsDistMat &amp;gradient)=0</argsstring>
+        <name>differentiate_compute</name>
+        <reimplementedby refid="classlbann_1_1poisson__negloglike_1a9b6e6632bb6424551b38b8748ff64edd">differentiate_compute</reimplementedby>
+        <reimplementedby refid="classlbann_1_1mean__absolute__deviation__loss_1a3ed0cbe4e405c10bf3f6a80eb693390e">differentiate_compute</reimplementedby>
+        <reimplementedby refid="classlbann_1_1geom__negloglike_1ac87d97a78cc3bb00f976bcd604fc72d7">differentiate_compute</reimplementedby>
+        <reimplementedby refid="classlbann_1_1binary__cross__entropy_1aeb1d10100a565e1c92a4f75fb7f58829">differentiate_compute</reimplementedby>
+        <reimplementedby refid="classlbann_1_1cross__entropy_1a5a91b6dac7d27980c47f6fd818963d1b">differentiate_compute</reimplementedby>
+        <reimplementedby refid="classlbann_1_1mean__squared__error__loss_1aef698469d2e70a5d42e402eeca50efa3">differentiate_compute</reimplementedby>
+        <reimplementedby refid="classlbann_1_1mean__absolute__error__loss_1af1d8c8bacc959273f9f54eafbe5c1f7d">differentiate_compute</reimplementedby>
+        <reimplementedby refid="classlbann_1_1cross__entropy__with__uncertainty_1a48ebe2b7a2193c124df0cd15813835d0">differentiate_compute</reimplementedby>
+        <reimplementedby refid="classlbann_1_1polya__negloglike_1a95fea60663d86cab31d89531046cc32c">differentiate_compute</reimplementedby>
+        <param>
+          <type>const <ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+          <declname>prediction</declname>
+        </param>
+        <param>
+          <type>const <ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+          <declname>ground_truth</declname>
+        </param>
+        <param>
+          <type><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+          <declname>gradient</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Compute the loss function gradient. The gradient should be w.r.t. the prediction vector. This should not include the scale factor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/loss_function.hpp" line="85" column="1"/>
+        <referencedby refid="classlbann_1_1loss__function_1acd6e3bdcf33235208db03ab7af88e961" compoundref="loss__function_8hpp" startline="67" endline="67">compute_weight_regularization</referencedby>
+        <referencedby refid="classlbann_1_1loss__function_1adbd03ef952ee1055e3dd98f06d33324f" compoundref="loss__function_8cpp" startline="129" endline="137">differentiate</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1loss__function_1ac44929838f3c3f0a34e1532530422dad" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>bool</type>
+        <definition>bool lbann::loss_function::save_to_checkpoint_shared</definition>
+        <argsstring>(lbann::persist &amp;p) override</argsstring>
+        <name>save_to_checkpoint_shared</name>
+        <reimplements refid="classlbann_1_1objective__function__term_1a4451a6a6fb4d70ac2aed2827f075cd71">save_to_checkpoint_shared</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1persist" kindref="compound">lbann::persist</ref> &amp;</type>
+          <declname>p</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/loss_function.hpp" line="89" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/loss_functions/loss_function.cpp" bodystart="139" bodyend="145"/>
+        <references refid="classlbann_1_1persist_1a9170de652405d86d9ba9b3793f8781c6" compoundref="persist_8cpp" startline="342" endline="360">lbann::persist::write_distmat</references>
+        <references refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64">lbann::train</references>
+        <references refid="classlbann_1_1loss__function_1ac6ac9f8f2cef7a4daa1b282dba914975" compoundref="loss__function_8hpp" startline="105">m_gradient</references>
+        <referencedby refid="classlbann_1_1loss__function_1acd6e3bdcf33235208db03ab7af88e961" compoundref="loss__function_8hpp" startline="67" endline="67">compute_weight_regularization</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1loss__function_1ae948babd62a110e2407271f24dcaec1b" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>bool</type>
+        <definition>bool lbann::loss_function::load_from_checkpoint_shared</definition>
+        <argsstring>(lbann::persist &amp;p) override</argsstring>
+        <name>load_from_checkpoint_shared</name>
+        <reimplements refid="classlbann_1_1objective__function__term_1aac2240c9925c2b7bf436072a24f3eb30">load_from_checkpoint_shared</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1persist" kindref="compound">lbann::persist</ref> &amp;</type>
+          <declname>p</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/loss_function.hpp" line="95" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/loss_functions/loss_function.cpp" bodystart="147" bodyend="152"/>
+        <references refid="classlbann_1_1persist_1aa98be93f33b510e5b506b61de6bd79bd" compoundref="persist_8cpp" startline="362" endline="387">lbann::persist::read_distmat</references>
+        <references refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64">lbann::train</references>
+        <references refid="classlbann_1_1loss__function_1ac6ac9f8f2cef7a4daa1b282dba914975" compoundref="loss__function_8hpp" startline="105">m_gradient</references>
+        <referencedby refid="classlbann_1_1loss__function_1acd6e3bdcf33235208db03ab7af88e961" compoundref="loss__function_8hpp" startline="67" endline="67">compute_weight_regularization</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>Abstract class for loss functions. </para>    </detaileddescription>
+    <inheritancegraph>
+      <node id="1608">
+        <label>lbann::binary_cross_entropy</label>
+        <link refid="classlbann_1_1binary__cross__entropy"/>
+        <childnode refid="1606" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1614">
+        <label>lbann::mean_squared_error_loss</label>
+        <link refid="classlbann_1_1mean__squared__error__loss"/>
+        <childnode refid="1606" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1606">
+        <label>lbann::loss_function</label>
+        <link refid="classlbann_1_1loss__function"/>
+        <childnode refid="1607" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1611">
+        <label>lbann::geom_negloglike</label>
+        <link refid="classlbann_1_1geom__negloglike"/>
+        <childnode refid="1606" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1612">
+        <label>lbann::mean_absolute_deviation_loss</label>
+        <link refid="classlbann_1_1mean__absolute__deviation__loss"/>
+        <childnode refid="1606" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1610">
+        <label>lbann::cross_entropy_with_uncertainty</label>
+        <link refid="classlbann_1_1cross__entropy__with__uncertainty"/>
+        <childnode refid="1606" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1615">
+        <label>lbann::poisson_negloglike</label>
+        <link refid="classlbann_1_1poisson__negloglike"/>
+        <childnode refid="1606" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1613">
+        <label>lbann::mean_absolute_error_loss</label>
+        <link refid="classlbann_1_1mean__absolute__error__loss"/>
+        <childnode refid="1606" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1616">
+        <label>lbann::polya_negloglike</label>
+        <link refid="classlbann_1_1polya__negloglike"/>
+        <childnode refid="1606" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1607">
+        <label>lbann::objective_function_term</label>
+        <link refid="classlbann_1_1objective__function__term"/>
+      </node>
+      <node id="1609">
+        <label>lbann::cross_entropy</label>
+        <link refid="classlbann_1_1cross__entropy"/>
+        <childnode refid="1606" relation="public-inheritance">
+        </childnode>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="1617">
+        <label>lbann::loss_function</label>
+        <link refid="classlbann_1_1loss__function"/>
+        <childnode refid="1618" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1619">
+        <label>lbann::lbann_comm</label>
+        <link refid="classlbann_1_1lbann__comm"/>
+      </node>
+      <node id="1618">
+        <label>lbann::objective_function_term</label>
+        <link refid="classlbann_1_1objective__function__term"/>
+        <childnode refid="1619" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/loss_function.hpp" line="36" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/loss_function.hpp" bodystart="36" bodyend="107"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1loss__function_1acd6e3bdcf33235208db03ab7af88e961" prot="public" virt="virtual"><scope>lbann::loss_function</scope><name>compute_weight_regularization</name></member>
+      <member refid="classlbann_1_1objective__function__term_1ae98a4ec173a602ad55d1df20dadd4cb9" prot="public" virt="pure-virtual"><scope>lbann::loss_function</scope><name>copy</name></member>
+      <member refid="classlbann_1_1loss__function_1adbd03ef952ee1055e3dd98f06d33324f" prot="public" virt="virtual"><scope>lbann::loss_function</scope><name>differentiate</name></member>
+      <member refid="classlbann_1_1loss__function_1aefccc2b4f5a02664002d12630cf369e7" prot="public" virt="pure-virtual"><scope>lbann::loss_function</scope><name>differentiate_compute</name></member>
+      <member refid="classlbann_1_1loss__function_1a3ea8553a4e9c75477d7d4fc533c4d4fd" prot="public" virt="pure-virtual"><scope>lbann::loss_function</scope><name>finish_evaluate_compute</name></member>
+      <member refid="classlbann_1_1loss__function_1a5264d3e71125b7ce8694f73bf25662f7" prot="public" virt="virtual"><scope>lbann::loss_function</scope><name>finish_evaluation</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a5f89b676a26a6b76ddc26563ac87beb9" prot="protected" virt="non-virtual"><scope>lbann::loss_function</scope><name>get_comm</name></member>
+      <member refid="classlbann_1_1objective__function__term_1aeeb85314738bec6e15877f68b3d422a0" prot="public" virt="non-virtual"><scope>lbann::loss_function</scope><name>get_layer_pointers</name></member>
+      <member refid="classlbann_1_1objective__function__term_1aea73505aed191bfb9336d9d46a69d586" prot="public" virt="non-virtual"><scope>lbann::loss_function</scope><name>get_weights_pointers</name></member>
+      <member refid="classlbann_1_1loss__function_1ae948babd62a110e2407271f24dcaec1b" prot="public" virt="virtual"><scope>lbann::loss_function</scope><name>load_from_checkpoint_shared</name></member>
+      <member refid="classlbann_1_1loss__function_1a0c5745e661c59e3e5496888d233c07cf" prot="public" virt="non-virtual"><scope>lbann::loss_function</scope><name>loss_function</name></member>
+      <member refid="classlbann_1_1loss__function_1aaebcff849004392decc9850c4c75ead5" prot="public" virt="non-virtual"><scope>lbann::loss_function</scope><name>loss_function</name></member>
+      <member refid="classlbann_1_1loss__function_1ac6ac9f8f2cef7a4daa1b282dba914975" prot="protected" virt="non-virtual"><scope>lbann::loss_function</scope><name>m_gradient</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a9269cf0a237eacd1e220ba2739f44334" prot="protected" virt="non-virtual"><scope>lbann::loss_function</scope><name>m_layers</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a59a544b8ff0455ed5091de3bf0d81c3c" prot="protected" virt="non-virtual"><scope>lbann::loss_function</scope><name>m_scale_factor</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a1d601c29153ae9cb54c585887608f2bf" prot="protected" virt="non-virtual"><scope>lbann::loss_function</scope><name>m_weights</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a964fbfad3dd0434aa8f32c5fedf1079a" prot="public" virt="pure-virtual"><scope>lbann::loss_function</scope><name>name</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a8c019e3c880f38dc20275e395acaeca1" prot="public" virt="non-virtual"><scope>lbann::loss_function</scope><name>objective_function_term</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a791a33056717d8b3f5ca2288145d86c8" prot="public" virt="non-virtual"><scope>lbann::loss_function</scope><name>objective_function_term</name></member>
+      <member refid="classlbann_1_1loss__function_1ab882c642619ea4285b61e735d84e401c" prot="public" virt="non-virtual"><scope>lbann::loss_function</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a8bbac194d96a854d5841817b67b63334" prot="public" virt="non-virtual" ambiguityscope="lbann::objective_function_term::"><scope>lbann::loss_function</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1loss__function_1ac44929838f3c3f0a34e1532530422dad" prot="public" virt="virtual"><scope>lbann::loss_function</scope><name>save_to_checkpoint_shared</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a82656dfd81bf6b818b38d041d341bc3b" prot="public" virt="non-virtual"><scope>lbann::loss_function</scope><name>set_layer_pointers</name></member>
+      <member refid="classlbann_1_1loss__function_1a9ef5356468c892c2c0221f8acd6b5471" prot="public" virt="non-virtual"><scope>lbann::loss_function</scope><name>set_target_layer</name></member>
+      <member refid="classlbann_1_1objective__function__term_1aa8adaf01dd8bc535dd86f27fc53c276a" prot="public" virt="non-virtual"><scope>lbann::loss_function</scope><name>set_weights_pointers</name></member>
+      <member refid="classlbann_1_1loss__function_1a17a3629e8519c4215ad776a0c7b522ae" prot="public" virt="virtual"><scope>lbann::loss_function</scope><name>setup</name></member>
+      <member refid="classlbann_1_1loss__function_1a0bbe41060d788dc7a29f3737761a6f7d" prot="public" virt="pure-virtual"><scope>lbann::loss_function</scope><name>start_evaluate_compute</name></member>
+      <member refid="classlbann_1_1loss__function_1a90f4126b0b4d47838ef3cc154c6d9705" prot="public" virt="virtual"><scope>lbann::loss_function</scope><name>start_evaluation</name></member>
+      <member refid="classlbann_1_1loss__function_1a21c59d9c3db798c330ff8297f6374747" prot="public" virt="non-virtual"><scope>lbann::loss_function</scope><name>~loss_function</name></member>
+      <member refid="classlbann_1_1objective__function__term_1ad95920d424b3c248a2124827971451df" prot="public" virt="virtual"><scope>lbann::loss_function</scope><name>~objective_function_term</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

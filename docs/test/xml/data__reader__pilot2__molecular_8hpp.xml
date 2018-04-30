@@ -1,0 +1,510 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="data__reader__pilot2__molecular_8hpp" kind="file" language="C++">
+    <compoundname>data_reader_pilot2_molecular.hpp</compoundname>
+    <includes refid="data__reader_8hpp" local="yes">data_reader.hpp</includes>
+    <includes local="no">cnpy.h</includes>
+    <includedby refid="data__reader__pilot2__molecular_8cpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_pilot2_molecular.cpp</includedby>
+    <includedby refid="data__store__merge__samples_8cpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_merge_samples.cpp</includedby>
+    <includedby refid="data__store__pilot2__molecular_8cpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_pilot2_molecular.cpp</includedby>
+    <includedby refid="lbann_8hpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/include/lbann/lbann.hpp</includedby>
+    <incdepgraph>
+      <node id="4638">
+        <label>sys/stat.h</label>
+      </node>
+      <node id="4641">
+        <label>lbann/data_readers/image_preprocessor.hpp</label>
+        <link refid="image__preprocessor_8hpp"/>
+        <childnode refid="4623" relation="include">
+        </childnode>
+        <childnode refid="4615" relation="include">
+        </childnode>
+      </node>
+      <node id="4629">
+        <label>lbann/io/persist.hpp</label>
+        <link refid="persist_8hpp"/>
+        <childnode refid="4615" relation="include">
+        </childnode>
+        <childnode refid="4616" relation="include">
+        </childnode>
+      </node>
+      <node id="4616">
+        <label>El.hpp</label>
+      </node>
+      <node id="4615">
+        <label>lbann/base.hpp</label>
+        <link refid="base_8hpp"/>
+        <childnode refid="4616" relation="include">
+        </childnode>
+        <childnode refid="4617" relation="include">
+        </childnode>
+        <childnode refid="4618" relation="include">
+        </childnode>
+        <childnode refid="4623" relation="include">
+        </childnode>
+      </node>
+      <node id="4642">
+        <label>cassert</label>
+      </node>
+      <node id="4640">
+        <label>fcntl.h</label>
+      </node>
+      <node id="4634">
+        <label>string</label>
+      </node>
+      <node id="4627">
+        <label>map</label>
+      </node>
+      <node id="4636">
+        <label>exception</label>
+      </node>
+      <node id="4630">
+        <label>random</label>
+      </node>
+      <node id="4639">
+        <label>sys/types.h</label>
+      </node>
+      <node id="4620">
+        <label>cstdio</label>
+      </node>
+      <node id="4632">
+        <label>lbann/utils/stack_trace.hpp</label>
+        <link refid="stack__trace_8hpp"/>
+        <childnode refid="4633" relation="include">
+        </childnode>
+        <childnode refid="4634" relation="include">
+        </childnode>
+      </node>
+      <node id="4622">
+        <label>cxxabi.h</label>
+      </node>
+      <node id="4631">
+        <label>lbann/utils/exception.hpp</label>
+        <link refid="exception_8hpp"/>
+        <childnode refid="4615" relation="include">
+        </childnode>
+        <childnode refid="4625" relation="include">
+        </childnode>
+        <childnode refid="4632" relation="include">
+        </childnode>
+        <childnode refid="4635" relation="include">
+        </childnode>
+        <childnode refid="4636" relation="include">
+        </childnode>
+      </node>
+      <node id="4644">
+        <label>unistd.h</label>
+      </node>
+      <node id="4626">
+        <label>vector</label>
+      </node>
+      <node id="4625">
+        <label>lbann/comm.hpp</label>
+        <link refid="comm_8hpp"/>
+        <childnode refid="4626" relation="include">
+        </childnode>
+        <childnode refid="4627" relation="include">
+        </childnode>
+        <childnode refid="4628" relation="include">
+        </childnode>
+        <childnode refid="4615" relation="include">
+        </childnode>
+      </node>
+      <node id="4637">
+        <label>lbann/io/file_io.hpp</label>
+        <link refid="file__io_8hpp"/>
+        <childnode refid="4638" relation="include">
+        </childnode>
+        <childnode refid="4639" relation="include">
+        </childnode>
+        <childnode refid="4640" relation="include">
+        </childnode>
+      </node>
+      <node id="4613">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_pilot2_molecular.hpp</label>
+        <link refid="data__reader__pilot2__molecular_8hpp"/>
+        <childnode refid="4614" relation="include">
+        </childnode>
+        <childnode refid="4645" relation="include">
+        </childnode>
+      </node>
+      <node id="4619">
+        <label>cstdlib</label>
+      </node>
+      <node id="4635">
+        <label>iostream</label>
+      </node>
+      <node id="4624">
+        <label>lbann/utils/random.hpp</label>
+        <link refid="random_8hpp"/>
+        <childnode refid="4615" relation="include">
+        </childnode>
+        <childnode refid="4625" relation="include">
+        </childnode>
+        <childnode refid="4629" relation="include">
+        </childnode>
+        <childnode refid="4630" relation="include">
+        </childnode>
+      </node>
+      <node id="4633">
+        <label>csignal</label>
+      </node>
+      <node id="4614">
+        <label>data_reader.hpp</label>
+        <link refid="data__reader_8hpp"/>
+        <childnode refid="4615" relation="include">
+        </childnode>
+        <childnode refid="4624" relation="include">
+        </childnode>
+        <childnode refid="4631" relation="include">
+        </childnode>
+        <childnode refid="4625" relation="include">
+        </childnode>
+        <childnode refid="4637" relation="include">
+        </childnode>
+        <childnode refid="4629" relation="include">
+        </childnode>
+        <childnode refid="4641" relation="include">
+        </childnode>
+        <childnode refid="4642" relation="include">
+        </childnode>
+        <childnode refid="4643" relation="include">
+        </childnode>
+        <childnode refid="4634" relation="include">
+        </childnode>
+        <childnode refid="4626" relation="include">
+        </childnode>
+        <childnode refid="4644" relation="include">
+        </childnode>
+      </node>
+      <node id="4623">
+        <label>lbann_config.hpp</label>
+      </node>
+      <node id="4643">
+        <label>algorithm</label>
+      </node>
+      <node id="4618">
+        <label>lbann/utils/cyg_profile.hpp</label>
+        <link refid="cyg__profile_8hpp"/>
+        <childnode refid="4619" relation="include">
+        </childnode>
+        <childnode refid="4620" relation="include">
+        </childnode>
+        <childnode refid="4621" relation="include">
+        </childnode>
+        <childnode refid="4622" relation="include">
+        </childnode>
+      </node>
+      <node id="4645">
+        <label>cnpy.h</label>
+      </node>
+      <node id="4617">
+        <label>lbann/Elemental_extensions.hpp</label>
+        <link refid="Elemental__extensions_8hpp"/>
+        <childnode refid="4616" relation="include">
+        </childnode>
+      </node>
+      <node id="4628">
+        <label>typeindex</label>
+      </node>
+      <node id="4621">
+        <label>dlfcn.h</label>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="4656">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/proto/factories.hpp</label>
+        <link refid="factories_8hpp"/>
+        <childnode refid="4657" relation="include">
+        </childnode>
+        <childnode refid="4658" relation="include">
+        </childnode>
+        <childnode refid="4659" relation="include">
+        </childnode>
+        <childnode refid="4660" relation="include">
+        </childnode>
+        <childnode refid="4661" relation="include">
+        </childnode>
+        <childnode refid="4662" relation="include">
+        </childnode>
+        <childnode refid="4663" relation="include">
+        </childnode>
+        <childnode refid="4664" relation="include">
+        </childnode>
+        <childnode refid="4654" relation="include">
+        </childnode>
+      </node>
+      <node id="4661">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/model_factory.cpp</label>
+        <link refid="model__factory_8cpp"/>
+      </node>
+      <node id="4653">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/params.cpp</label>
+        <link refid="params_8cpp"/>
+      </node>
+      <node id="4654">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/proto/proto_common.hpp</label>
+        <link refid="proto__common_8hpp"/>
+        <childnode refid="4651" relation="include">
+        </childnode>
+        <childnode refid="4655" relation="include">
+        </childnode>
+        <childnode refid="4656" relation="include">
+        </childnode>
+        <childnode refid="4665" relation="include">
+        </childnode>
+      </node>
+      <node id="4652">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/params.hpp</label>
+        <link refid="params_8hpp"/>
+        <childnode refid="4653" relation="include">
+        </childnode>
+        <childnode refid="4650" relation="include">
+        </childnode>
+      </node>
+      <node id="4658">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/layer_factory.cpp</label>
+        <link refid="layer__factory_8cpp"/>
+      </node>
+      <node id="4655">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/utils/protobuf_utils.cpp</label>
+        <link refid="protobuf__utils_8cpp"/>
+      </node>
+      <node id="4666">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/init_image_data_readers.cpp</label>
+        <link refid="init__image__data__readers_8cpp"/>
+      </node>
+      <node id="4662">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/objective_function_factory.cpp</label>
+        <link refid="objective__function__factory_8cpp"/>
+      </node>
+      <node id="4651">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/proto_common.cpp</label>
+        <link refid="proto__common_8cpp"/>
+      </node>
+      <node id="4660">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/metric_factory.cpp</label>
+        <link refid="metric__factory_8cpp"/>
+      </node>
+      <node id="4649">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_pilot2_molecular.cpp</label>
+        <link refid="data__store__pilot2__molecular_8cpp"/>
+      </node>
+      <node id="4650">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/lbann.hpp</label>
+        <link refid="lbann_8hpp"/>
+        <childnode refid="4651" relation="include">
+        </childnode>
+        <childnode refid="4652" relation="include">
+        </childnode>
+        <childnode refid="4654" relation="include">
+        </childnode>
+        <childnode refid="4667" relation="include">
+        </childnode>
+      </node>
+      <node id="4648">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_merge_samples.cpp</label>
+        <link refid="data__store__merge__samples_8cpp"/>
+      </node>
+      <node id="4665">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/proto/init_image_data_readers.hpp</label>
+        <link refid="init__image__data__readers_8hpp"/>
+        <childnode refid="4666" relation="include">
+        </childnode>
+        <childnode refid="4651" relation="include">
+        </childnode>
+      </node>
+      <node id="4646">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_pilot2_molecular.hpp</label>
+        <link refid="data__reader__pilot2__molecular_8hpp"/>
+        <childnode refid="4647" relation="include">
+        </childnode>
+        <childnode refid="4648" relation="include">
+        </childnode>
+        <childnode refid="4649" relation="include">
+        </childnode>
+        <childnode refid="4650" relation="include">
+        </childnode>
+      </node>
+      <node id="4647">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_pilot2_molecular.cpp</label>
+        <link refid="data__reader__pilot2__molecular_8cpp"/>
+      </node>
+      <node id="4663">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/optimizer_factory.cpp</label>
+        <link refid="optimizer__factory_8cpp"/>
+      </node>
+      <node id="4664">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/weights_factory.cpp</label>
+        <link refid="weights__factory_8cpp"/>
+      </node>
+      <node id="4657">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/callback_factory.cpp</label>
+        <link refid="callback__factory_8cpp"/>
+      </node>
+      <node id="4667">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/protobuf_utils.hpp</label>
+        <link refid="protobuf__utils_8hpp"/>
+        <childnode refid="4655" relation="include">
+        </childnode>
+      </node>
+      <node id="4659">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/layer_graph_factory.cpp</label>
+        <link refid="layer__graph__factory_8cpp"/>
+      </node>
+    </invincdepgraph>
+    <innerclass refid="classlbann_1_1pilot2__molecular__reader" prot="public">lbann::pilot2_molecular_reader</innerclass>
+    <innernamespace refid="namespacelbann">lbann</innernamespace>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>2014-2016,<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Security,<sp/>LLC.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Produced<sp/>at<sp/>the<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Laboratory.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Written<sp/>by<sp/>the<sp/>LBANN<sp/>Research<sp/>Team<sp/>(B.<sp/>Van<sp/>Essen,<sp/>et<sp/>al.)<sp/>listed<sp/>in</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="comment">//<sp/>the<sp/>CONTRIBUTORS<sp/>file.<sp/>&lt;lbann-dev@llnl.gov&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="comment">//<sp/>LLNL-CODE-697807.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="comment">//<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="comment">//<sp/>This<sp/>file<sp/>is<sp/>part<sp/>of<sp/>LBANN:<sp/>Livermore<sp/>Big<sp/>Artificial<sp/>Neural<sp/>Network</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Toolkit.<sp/>For<sp/>details,<sp/>see<sp/>http://software.llnl.gov/LBANN<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="comment">//<sp/>https://github.com/LLNL/LBANN.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Licensed<sp/>under<sp/>the<sp/>Apache<sp/>License,<sp/>Version<sp/>2.0<sp/>(the<sp/>&quot;Licensee&quot;);<sp/>you</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight><highlight class="comment">//<sp/>may<sp/>not<sp/>use<sp/>this<sp/>file<sp/>except<sp/>in<sp/>compliance<sp/>with<sp/>the<sp/>License.<sp/><sp/>You<sp/>may</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="comment">//<sp/>obtain<sp/>a<sp/>copy<sp/>of<sp/>the<sp/>License<sp/>at:</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight><highlight class="comment">//<sp/>http://www.apache.org/licenses/LICENSE-2.0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Unless<sp/>required<sp/>by<sp/>applicable<sp/>law<sp/>or<sp/>agreed<sp/>to<sp/>in<sp/>writing,<sp/>software</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight><highlight class="comment">//<sp/>distributed<sp/>under<sp/>the<sp/>License<sp/>is<sp/>distributed<sp/>on<sp/>an<sp/>&quot;AS<sp/>IS&quot;<sp/>BASIS,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight><highlight class="comment">//<sp/>WITHOUT<sp/>WARRANTIES<sp/>OR<sp/>CONDITIONS<sp/>OF<sp/>ANY<sp/>KIND,<sp/>either<sp/>express<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="comment">//<sp/>implied.<sp/>See<sp/>the<sp/>License<sp/>for<sp/>the<sp/>specific<sp/>language<sp/>governing</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="comment">//<sp/>permissions<sp/>and<sp/>limitations<sp/>under<sp/>the<sp/>license.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="25"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="26"><highlight class="normal"></highlight><highlight class="comment">//<sp/>data_reader_pilot2_molecular<sp/>.hpp<sp/>.cpp<sp/>-<sp/>data<sp/>reader<sp/>for<sp/>Pilot<sp/>2<sp/>molecular<sp/>data</highlight></codeline>
+<codeline lineno="28"><highlight class="comment"></highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="29"><highlight class="normal"></highlight><highlight class="preprocessor">#ifndef<sp/>LBANN_DATA_READER_PILOT2_MOLECULAR_HPP</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="30"><highlight class="normal"></highlight><highlight class="preprocessor">#define<sp/>LBANN_DATA_READER_PILOT2_MOLECULAR_HPP</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight></codeline>
+<codeline lineno="32"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="data__reader_8hpp" kindref="compound">data_reader.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="33"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;cnpy.h&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="34"><highlight class="normal"></highlight></codeline>
+<codeline lineno="35"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacelbann" kindref="compound">lbann</ref><sp/>{</highlight></codeline>
+<codeline lineno="36"><highlight class="normal"></highlight></codeline>
+<codeline lineno="40" refid="classlbann_1_1pilot2__molecular__reader" refkind="compound"><highlight class="keyword">class<sp/></highlight><highlight class="normal"><ref refid="classlbann_1_1pilot2__molecular__reader" kindref="compound">pilot2_molecular_reader</ref><sp/>:<sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1generic__data__reader" kindref="compound">generic_data_reader</ref><sp/>{</highlight></codeline>
+<codeline lineno="41"><highlight class="normal"><sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="42"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1ac883c7e0fcc935bc6573efa3352275ca" kindref="member">pilot2_molecular_reader</ref>(</highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>num_neighbors,</highlight></codeline>
+<codeline lineno="43"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>max_neighborhood,</highlight></codeline>
+<codeline lineno="44"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/>shuffle<sp/>=<sp/></highlight><highlight class="keyword">true</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="45"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1ac883c7e0fcc935bc6573efa3352275ca" kindref="member">pilot2_molecular_reader</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader" kindref="compound">pilot2_molecular_reader</ref>&amp;)<sp/>=<sp/></highlight><highlight class="keywordflow">default</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="46"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1pilot2__molecular__reader" kindref="compound">pilot2_molecular_reader</ref>&amp;<sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a12df3df74aa901cb7304903ad99f5df6" kindref="member">operator=</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader" kindref="compound">pilot2_molecular_reader</ref>&amp;)<sp/>=<sp/></highlight><highlight class="keywordflow">default</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="47" refid="classlbann_1_1pilot2__molecular__reader_1a8e55c88f83639d421b5f2f1556f8a590" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a8e55c88f83639d421b5f2f1556f8a590" kindref="member">~pilot2_molecular_reader</ref>()</highlight><highlight class="keyword"><sp/>override<sp/></highlight><highlight class="normal">{}</highlight></codeline>
+<codeline lineno="48" refid="classlbann_1_1pilot2__molecular__reader_1a6582f4c77b62df27aa603dc58a4f4512" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1pilot2__molecular__reader" kindref="compound">pilot2_molecular_reader</ref>*<sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a6582f4c77b62df27aa603dc58a4f4512" kindref="member">copy</ref>()</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="49"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">new</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1ac883c7e0fcc935bc6573efa3352275ca" kindref="member">pilot2_molecular_reader</ref>(*</highlight><highlight class="keyword">this</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="50"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="51" refid="classlbann_1_1pilot2__molecular__reader_1a8548d10554c6e1ef921cf5d113530e72" refkind="member"><highlight class="normal"><sp/><sp/>std::string<sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a8548d10554c6e1ef921cf5d113530e72" kindref="member">get_type</ref>()</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="52"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="stringliteral">&quot;pilot2_molecular_reader&quot;</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="53"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="54"><highlight class="normal"></highlight></codeline>
+<codeline lineno="55"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a1b5160021a532f5f19897bd2250e3a46" kindref="member">load</ref>()<sp/></highlight><highlight class="keyword">override</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="56"><highlight class="normal"></highlight></codeline>
+<codeline lineno="57" refid="classlbann_1_1pilot2__molecular__reader_1ad8d83938c6878019dd0c5945483e0504" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1ad8d83938c6878019dd0c5945483e0504" kindref="member">get_linearized_data_size</ref>()</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="58"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a7fd7dac6f280fd8ef92bd5d2ffc89e36" kindref="member">m_num_features</ref><sp/>*<sp/>(<ref refid="classlbann_1_1pilot2__molecular__reader_1aaf41323e4da85467de398b4ab4b58c2c" kindref="member">m_num_neighbors</ref><sp/>+<sp/>1);</highlight></codeline>
+<codeline lineno="59"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="60" refid="classlbann_1_1pilot2__molecular__reader_1a0a59a7a38c01c4d8716fb24d36663c99" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::vector&lt;int&gt;<sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a0a59a7a38c01c4d8716fb24d36663c99" kindref="member">get_data_dims</ref>()</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="61"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1ae02769bc68f1e079c740f724ec6bd0c0" kindref="member">m_shape</ref>;</highlight></codeline>
+<codeline lineno="62"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//return<sp/>{m_num_neighbors<sp/>+<sp/>1,<sp/>(int)<sp/>m_features.shape[2],</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="63"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/><sp/><sp/><sp/>(int)<sp/>m_features.shape[3]};</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="64"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="65"><highlight class="normal"></highlight></codeline>
+<codeline lineno="71"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">template</highlight><highlight class="normal"><sp/>&lt;</highlight><highlight class="keyword">class</highlight><highlight class="normal"><sp/>T&gt;</highlight></codeline>
+<codeline lineno="72" refid="classlbann_1_1pilot2__molecular__reader_1add998998fa16444e4509b08f79b291da" refkind="member"><highlight class="normal"><sp/><sp/>T<sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1add998998fa16444e4509b08f79b291da" kindref="member">scale_data</ref>(</highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>idx,<sp/>T<sp/>datum)<sp/>{</highlight></codeline>
+<codeline lineno="73"><highlight class="normal"><sp/><sp/><sp/><sp/>idx<sp/>=<sp/>idx<sp/>%<sp/>20;</highlight></codeline>
+<codeline lineno="74"><highlight class="normal"><sp/><sp/><sp/><sp/>T<sp/>scaled_datum<sp/>=<sp/>datum;</highlight></codeline>
+<codeline lineno="75"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal">(idx<sp/>&gt;=<sp/>0<sp/>&amp;&amp;<sp/>idx<sp/>&lt;=<sp/>2)<sp/>{<sp/></highlight></codeline>
+<codeline lineno="76"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>scaled_datum<sp/>/=<sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a0f85cc2fc807d8c7dc6fb4f93db5e09a" kindref="member">position_scale_factor</ref>;</highlight></codeline>
+<codeline lineno="77"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="78"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal">(idx<sp/>&gt;=<sp/>8<sp/>&amp;&amp;<sp/>idx<sp/>&lt;=<sp/>19)<sp/>{</highlight></codeline>
+<codeline lineno="79"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>scaled_datum<sp/>/=<sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1aa300abb1c1b72776c129487e57a7b70f" kindref="member">bond_len_scale_factor</ref>;</highlight></codeline>
+<codeline lineno="80"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="81"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>scaled_datum;</highlight></codeline>
+<codeline lineno="82"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="83"><highlight class="normal"></highlight></codeline>
+<codeline lineno="85" refid="classlbann_1_1pilot2__molecular__reader_1a5d3bef36247e9279dc237826ac5ff322" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>*<sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a5d3bef36247e9279dc237826ac5ff322" kindref="member">get_features_4</ref>()<sp/>{</highlight></codeline>
+<codeline lineno="86"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a6b273890ecd01754e21be87da68b57bc" kindref="member">m_features</ref>.data&lt;</highlight><highlight class="keywordtype">float</highlight><highlight class="normal">&gt;();</highlight></codeline>
+<codeline lineno="87"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="88" refid="classlbann_1_1pilot2__molecular__reader_1a6694fec3678fd8a883d5d8de6c2c74d5" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">double</highlight><highlight class="normal"><sp/>*<sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a6694fec3678fd8a883d5d8de6c2c74d5" kindref="member">get_features_8</ref>()<sp/>{</highlight></codeline>
+<codeline lineno="89"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a6b273890ecd01754e21be87da68b57bc" kindref="member">m_features</ref>.data&lt;</highlight><highlight class="keywordtype">double</highlight><highlight class="normal">&gt;();</highlight></codeline>
+<codeline lineno="90"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="91" refid="classlbann_1_1pilot2__molecular__reader_1a5f3ad4f22a32db2af4a8136fdc0579eb" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>*<sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a5f3ad4f22a32db2af4a8136fdc0579eb" kindref="member">get_neighbors_4</ref>()<sp/>{</highlight></codeline>
+<codeline lineno="92"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a0d8dc24b8ea66352a4d45a157b3a3c04" kindref="member">m_neighbors</ref>.data&lt;</highlight><highlight class="keywordtype">float</highlight><highlight class="normal">&gt;();</highlight></codeline>
+<codeline lineno="93"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="94" refid="classlbann_1_1pilot2__molecular__reader_1a9553eeece9aa1658cdc986b3ef803dea" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">double</highlight><highlight class="normal"><sp/>*<sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a9553eeece9aa1658cdc986b3ef803dea" kindref="member">get_neighbors_8</ref>()<sp/>{</highlight></codeline>
+<codeline lineno="95"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a0d8dc24b8ea66352a4d45a157b3a3c04" kindref="member">m_neighbors</ref>.data&lt;</highlight><highlight class="keywordtype">double</highlight><highlight class="normal">&gt;();</highlight></codeline>
+<codeline lineno="96"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="97"><highlight class="normal"></highlight></codeline>
+<codeline lineno="98"><highlight class="normal"></highlight></codeline>
+<codeline lineno="100" refid="classlbann_1_1pilot2__molecular__reader_1abba5a68c484be69a441e5e9711356a46" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1abba5a68c484be69a441e5e9711356a46" kindref="member">get_word_size</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="101"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a1093a0518b7913c91e9b36679b198948" kindref="member">m_word_size</ref>;</highlight></codeline>
+<codeline lineno="102"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="103"><highlight class="normal"></highlight></codeline>
+<codeline lineno="105" refid="classlbann_1_1pilot2__molecular__reader_1a7c379056841cda42247ff518270bcfdf" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a7c379056841cda42247ff518270bcfdf" kindref="member">get_num_neighbors</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="106"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1aaf41323e4da85467de398b4ab4b58c2c" kindref="member">m_num_neighbors</ref>;</highlight></codeline>
+<codeline lineno="107"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="108"><highlight class="normal"></highlight></codeline>
+<codeline lineno="111" refid="classlbann_1_1pilot2__molecular__reader_1ac95223a0829a83a5d400c4d66efdcb93" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1ac95223a0829a83a5d400c4d66efdcb93" kindref="member">get_frame</ref>(</highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>data_id)</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="112"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>data_id<sp/>/<sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a1aa5896276d8a0576f7b3c2b955130be" kindref="member">m_num_samples_per_frame</ref>;</highlight></codeline>
+<codeline lineno="113"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="114"><highlight class="normal"></highlight></codeline>
+<codeline lineno="116" refid="classlbann_1_1pilot2__molecular__reader_1a91e233f9878e93e31de2085cbcad1f10" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a91e233f9878e93e31de2085cbcad1f10" kindref="member">get_num_samples_per_frame</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="117"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a1aa5896276d8a0576f7b3c2b955130be" kindref="member">m_num_samples_per_frame</ref>;</highlight></codeline>
+<codeline lineno="118"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="119"><highlight class="normal"></highlight></codeline>
+<codeline lineno="121" refid="classlbann_1_1pilot2__molecular__reader_1a1dcc424e004681f9287453df64bb751f" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a1dcc424e004681f9287453df64bb751f" kindref="member">get_max_neighborhood</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="122"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a0c9e71035cf47191002d1b164d056f50" kindref="member">m_max_neighborhood</ref>;</highlight></codeline>
+<codeline lineno="123"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="124"><highlight class="normal"></highlight></codeline>
+<codeline lineno="126" refid="classlbann_1_1pilot2__molecular__reader_1ad4fcb0da3f6964cbe24de4feac3f5f4a" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1ad4fcb0da3f6964cbe24de4feac3f5f4a" kindref="member">get_num_features</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="127"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a7fd7dac6f280fd8ef92bd5d2ffc89e36" kindref="member">m_num_features</ref>;</highlight></codeline>
+<codeline lineno="128"><highlight class="normal"><sp/><sp/>}<sp/><sp/></highlight></codeline>
+<codeline lineno="129"><highlight class="normal"></highlight></codeline>
+<codeline lineno="131" refid="classlbann_1_1pilot2__molecular__reader_1a628d96b642e913550316076a11ba5285" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a628d96b642e913550316076a11ba5285" kindref="member">get_neighbors_data_size</ref>()<sp/>{</highlight></codeline>
+<codeline lineno="132"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a0d61b0b65b1998694272a5d2173cbac7" kindref="member">m_neighbors_data_size</ref>;</highlight></codeline>
+<codeline lineno="133"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="134"><highlight class="normal"></highlight></codeline>
+<codeline lineno="136"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a0c18335afe5625a7aa8b8275392c0317" kindref="member">setup_data_store</ref>(<ref refid="classlbann_1_1model" kindref="compound">model</ref><sp/>*m)<sp/></highlight><highlight class="keyword">override</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="137"><highlight class="normal"></highlight></codeline>
+<codeline lineno="138"><highlight class="normal"><sp/></highlight><highlight class="keyword">protected</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="140"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a9ad317abcd6f5de777d536f7796a3b12" kindref="member">fetch_datum</ref>(<ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref>&amp;<sp/>X,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>data_id,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>mb_idx,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>tid)<sp/></highlight><highlight class="keyword">override</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="142"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1ae45c583f72e11aeb5d955e2657a9a3e8" kindref="member">fetch_molecule</ref>(<ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref>&amp;<sp/>X,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>data_id,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>idx,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>mb_idx);</highlight></codeline>
+<codeline lineno="143"><highlight class="normal"></highlight></codeline>
+<codeline lineno="145" refid="classlbann_1_1pilot2__molecular__reader_1a9db4542fcce68a2a60ad5aad9d211dee" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a9db4542fcce68a2a60ad5aad9d211dee" kindref="member">m_num_samples</ref><sp/>=<sp/>0;</highlight></codeline>
+<codeline lineno="147" refid="classlbann_1_1pilot2__molecular__reader_1a7fd7dac6f280fd8ef92bd5d2ffc89e36" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a7fd7dac6f280fd8ef92bd5d2ffc89e36" kindref="member">m_num_features</ref><sp/>=<sp/>0;</highlight></codeline>
+<codeline lineno="149" refid="classlbann_1_1pilot2__molecular__reader_1a1aa5896276d8a0576f7b3c2b955130be" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a1aa5896276d8a0576f7b3c2b955130be" kindref="member">m_num_samples_per_frame</ref><sp/>=<sp/>0;</highlight></codeline>
+<codeline lineno="150"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Number<sp/>of<sp/>neighbors<sp/>to<sp/>fetch<sp/>for<sp/>each<sp/>molecule.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="151" refid="classlbann_1_1pilot2__molecular__reader_1aaf41323e4da85467de398b4ab4b58c2c" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1aaf41323e4da85467de398b4ab4b58c2c" kindref="member">m_num_neighbors</ref>;</highlight></codeline>
+<codeline lineno="152"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Size<sp/>of<sp/>the<sp/>neighborhood<sp/>in<sp/>the<sp/>data<sp/>set</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="153" refid="classlbann_1_1pilot2__molecular__reader_1a0c9e71035cf47191002d1b164d056f50" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a0c9e71035cf47191002d1b164d056f50" kindref="member">m_max_neighborhood</ref>;</highlight></codeline>
+<codeline lineno="155" refid="classlbann_1_1pilot2__molecular__reader_1a6b273890ecd01754e21be87da68b57bc" refkind="member"><highlight class="normal"><sp/><sp/>cnpy::NpyArray<sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a6b273890ecd01754e21be87da68b57bc" kindref="member">m_features</ref>;</highlight></codeline>
+<codeline lineno="157" refid="classlbann_1_1pilot2__molecular__reader_1a0d8dc24b8ea66352a4d45a157b3a3c04" refkind="member"><highlight class="normal"><sp/><sp/>cnpy::NpyArray<sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a0d8dc24b8ea66352a4d45a157b3a3c04" kindref="member">m_neighbors</ref>;</highlight></codeline>
+<codeline lineno="158"><highlight class="normal"></highlight></codeline>
+<codeline lineno="159" refid="classlbann_1_1pilot2__molecular__reader_1a0f85cc2fc807d8c7dc6fb4f93db5e09a" refkind="member"><highlight class="normal"><sp/><sp/>DataType<sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a0f85cc2fc807d8c7dc6fb4f93db5e09a" kindref="member">position_scale_factor</ref><sp/>=<sp/>320.0;</highlight></codeline>
+<codeline lineno="160" refid="classlbann_1_1pilot2__molecular__reader_1aa300abb1c1b72776c129487e57a7b70f" refkind="member"><highlight class="normal"><sp/><sp/>DataType<sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1aa300abb1c1b72776c129487e57a7b70f" kindref="member">bond_len_scale_factor</ref><sp/>=<sp/>10.0;</highlight></codeline>
+<codeline lineno="161"><highlight class="normal"></highlight></codeline>
+<codeline lineno="163" refid="classlbann_1_1pilot2__molecular__reader_1ae02769bc68f1e079c740f724ec6bd0c0" refkind="member"><highlight class="normal"><sp/><sp/>std::vector&lt;int&gt;<sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1ae02769bc68f1e079c740f724ec6bd0c0" kindref="member">m_shape</ref>;</highlight></codeline>
+<codeline lineno="164"><highlight class="normal"></highlight></codeline>
+<codeline lineno="166" refid="classlbann_1_1pilot2__molecular__reader_1a1093a0518b7913c91e9b36679b198948" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a1093a0518b7913c91e9b36679b198948" kindref="member">m_word_size</ref>;</highlight></codeline>
+<codeline lineno="168" refid="classlbann_1_1pilot2__molecular__reader_1aa68c3ad1768cdd66188225b0136663b7" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1aa68c3ad1768cdd66188225b0136663b7" kindref="member">m_owner</ref>;</highlight></codeline>
+<codeline lineno="170" refid="classlbann_1_1pilot2__molecular__reader_1a0d61b0b65b1998694272a5d2173cbac7" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1pilot2__molecular__reader_1a0d61b0b65b1998694272a5d2173cbac7" kindref="member">m_neighbors_data_size</ref>;</highlight></codeline>
+<codeline lineno="171"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="172"><highlight class="normal"></highlight></codeline>
+<codeline lineno="173"><highlight class="normal">}<sp/><sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>lbann</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="174"><highlight class="normal"></highlight></codeline>
+<codeline lineno="175"><highlight class="normal"></highlight><highlight class="preprocessor">#endif<sp/><sp/>//<sp/>LBANN_DATA_READER_PILOT2_MOLECULAR_HPP</highlight></codeline>
+    </programlisting>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_pilot2_molecular.hpp"/>
+  </compounddef>
+</doxygen>

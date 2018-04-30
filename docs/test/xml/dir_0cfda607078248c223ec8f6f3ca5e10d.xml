@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="dir_0cfda607078248c223ec8f6f3ca5e10d" kind="dir">
+    <compoundname>/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers</compoundname>
+    <innerfile refid="adagrad_8hpp">adagrad.hpp</innerfile>
+    <innerfile refid="adam_8hpp">adam.hpp</innerfile>
+    <innerfile refid="hypergradient__adam_8hpp">hypergradient_adam.hpp</innerfile>
+    <innerfile refid="optimizer_8hpp">optimizer.hpp</innerfile>
+    <innerfile refid="rmsprop_8hpp">rmsprop.hpp</innerfile>
+    <innerfile refid="sgd_8hpp">sgd.hpp</innerfile>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/"/>
+  </compounddef>
+</doxygen>

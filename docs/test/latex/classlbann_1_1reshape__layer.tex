@@ -1,0 +1,279 @@
+\hypertarget{classlbann_1_1reshape__layer}{}\section{lbann\+:\+:reshape\+\_\+layer$<$ T\+\_\+layout $>$ Class Template Reference}
+\label{classlbann_1_1reshape__layer}\index{lbann\+::reshape\+\_\+layer$<$ T\+\_\+layout $>$@{lbann\+::reshape\+\_\+layer$<$ T\+\_\+layout $>$}}
+
+
+{\ttfamily \#include $<$reshape.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:reshape\+\_\+layer$<$ T\+\_\+layout $>$\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=195pt]{classlbann_1_1reshape__layer__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:reshape\+\_\+layer$<$ T\+\_\+layout $>$\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1reshape__layer__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1reshape__layer_a6161e3231e7a120bdfc0739eac08d196}{reshape\+\_\+layer} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, int num\+\_\+dims, const int $\ast$dims)
+\item 
+\hyperlink{classlbann_1_1reshape__layer}{reshape\+\_\+layer} $\ast$ \hyperlink{classlbann_1_1reshape__layer_a41685576d72830e400c31536d1d5bab2}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1reshape__layer_af8ed6ed2bb208478ec7a339ee58e0aa6}{get\+\_\+type} () const override
+\item 
+\hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08db}{data\+\_\+layout} \hyperlink{classlbann_1_1reshape__layer_a5c3b5585fd6242de0630e643a4dfd992}{get\+\_\+data\+\_\+layout} () const override
+\item 
+void \hyperlink{classlbann_1_1reshape__layer_a60fd29f11e62137a0808ffe4b3730344}{setup\+\_\+dims} () override
+\item 
+void \hyperlink{classlbann_1_1reshape__layer_a6a8567b61a1f911f52419ecd2346fcac}{fp\+\_\+compute} () override
+\item 
+void \hyperlink{classlbann_1_1reshape__layer_a31d90673a9d98ccba0eafb4bf76cbe20}{bp\+\_\+compute} () override
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+\subsubsection*{template$<$data\+\_\+layout T\+\_\+layout$>$\newline
+class lbann\+::reshape\+\_\+layer$<$ T\+\_\+layout $>$}
+
+Reshape layer 
+
+Definition at line 36 of file reshape.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1reshape__layer_a6161e3231e7a120bdfc0739eac08d196}\label{classlbann_1_1reshape__layer_a6161e3231e7a120bdfc0739eac08d196}} 
+\index{lbann\+::reshape\+\_\+layer@{lbann\+::reshape\+\_\+layer}!reshape\+\_\+layer@{reshape\+\_\+layer}}
+\index{reshape\+\_\+layer@{reshape\+\_\+layer}!lbann\+::reshape\+\_\+layer@{lbann\+::reshape\+\_\+layer}}
+\subsubsection{\texorpdfstring{reshape\+\_\+layer()}{reshape\_layer()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{classlbann_1_1reshape__layer}{lbann\+::reshape\+\_\+layer}$<$ T\+\_\+layout $>$\+::\hyperlink{classlbann_1_1reshape__layer}{reshape\+\_\+layer} (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{int}]{num\+\_\+dims,  }\item[{const int $\ast$}]{dims }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 38 of file reshape.\+hpp.
+
+
+\begin{DoxyCode}
+40                                  :
+41     \hyperlink{classlbann_1_1transform__layer_a4b72501e0f4d0745c8b13c5331055e65}{transform\_layer}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}) \{
+42     this->\hyperlink{classlbann_1_1Layer_adfd6178d21498c9095cd947ae1eb2d6a}{m\_num\_neuron\_dims} = num\_dims;
+43     this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}.assign(dims, dims+num\_dims);
+44     this->\hyperlink{classlbann_1_1Layer_a6b5ebc8a7d9329d8a773ed787e7b41d8}{m\_num\_neurons} = std::accumulate(dims, dims+num\_dims, 1,
+45                                           std::multiplies<int>());
+46   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=335pt]{classlbann_1_1reshape__layer_a6161e3231e7a120bdfc0739eac08d196_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1reshape__layer_a31d90673a9d98ccba0eafb4bf76cbe20}\label{classlbann_1_1reshape__layer_a31d90673a9d98ccba0eafb4bf76cbe20}} 
+\index{lbann\+::reshape\+\_\+layer@{lbann\+::reshape\+\_\+layer}!bp\+\_\+compute@{bp\+\_\+compute}}
+\index{bp\+\_\+compute@{bp\+\_\+compute}!lbann\+::reshape\+\_\+layer@{lbann\+::reshape\+\_\+layer}}
+\subsubsection{\texorpdfstring{bp\+\_\+compute()}{bp\_compute()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+void \hyperlink{classlbann_1_1reshape__layer}{lbann\+::reshape\+\_\+layer}$<$ T\+\_\+layout $>$\+::bp\+\_\+compute (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Perform the computation for the backward propagation step. 
+
+Implements \hyperlink{classlbann_1_1Layer_a7442e01f9ee1294df2de811efcf5171e}{lbann\+::\+Layer}.
+
+
+
+Definition at line 97 of file reshape.\+hpp.
+
+
+\begin{DoxyCode}
+97                              \{
+98     El::Axpy(DataType(1), \hyperlink{classlbann_1_1Layer_a7ac4579d3c1671dfaf86e3b618d6938a}{get\_prev\_error\_signals}(), 
+      \hyperlink{classlbann_1_1Layer_adb561e140e0bb601f3c5a8ee053a71d2}{get\_error\_signals}());
+99   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=343pt]{classlbann_1_1reshape__layer_a31d90673a9d98ccba0eafb4bf76cbe20_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1reshape__layer_a41685576d72830e400c31536d1d5bab2}\label{classlbann_1_1reshape__layer_a41685576d72830e400c31536d1d5bab2}} 
+\index{lbann\+::reshape\+\_\+layer@{lbann\+::reshape\+\_\+layer}!copy@{copy}}
+\index{copy@{copy}!lbann\+::reshape\+\_\+layer@{lbann\+::reshape\+\_\+layer}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{classlbann_1_1reshape__layer}{reshape\+\_\+layer}$\ast$ \hyperlink{classlbann_1_1reshape__layer}{lbann\+::reshape\+\_\+layer}$<$ T\+\_\+layout $>$\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Copy function. This function dynamically allocates memory for a layer instance and instantiates a copy. The caller is responsible for deallocating the instance. 
+
+Implements \hyperlink{classlbann_1_1Layer_af420f22bbac801c85483ade84588a23f}{lbann\+::\+Layer}.
+
+
+
+Definition at line 47 of file reshape.\+hpp.
+
+
+\begin{DoxyCode}
+47 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1reshape__layer_a6161e3231e7a120bdfc0739eac08d196}{reshape\_layer}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=335pt]{classlbann_1_1reshape__layer_a41685576d72830e400c31536d1d5bab2_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1reshape__layer_a6a8567b61a1f911f52419ecd2346fcac}\label{classlbann_1_1reshape__layer_a6a8567b61a1f911f52419ecd2346fcac}} 
+\index{lbann\+::reshape\+\_\+layer@{lbann\+::reshape\+\_\+layer}!fp\+\_\+compute@{fp\+\_\+compute}}
+\index{fp\+\_\+compute@{fp\+\_\+compute}!lbann\+::reshape\+\_\+layer@{lbann\+::reshape\+\_\+layer}}
+\subsubsection{\texorpdfstring{fp\+\_\+compute()}{fp\_compute()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+void \hyperlink{classlbann_1_1reshape__layer}{lbann\+::reshape\+\_\+layer}$<$ T\+\_\+layout $>$\+::fp\+\_\+compute (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Perform the computation for the forward propagation step. 
+
+Implements \hyperlink{classlbann_1_1Layer_a523319dd1bd87a0612afa1912bb5aad7}{lbann\+::\+Layer}.
+
+
+
+Definition at line 93 of file reshape.\+hpp.
+
+
+\begin{DoxyCode}
+93                              \{
+94     El::LockedView(\hyperlink{classlbann_1_1Layer_a1134b1a4385af199d7272c5aa827fa99}{get\_activations}(), \hyperlink{classlbann_1_1Layer_a45853df73a2e72bfaa774665a0f37ed7}{get\_prev\_activations}());
+95   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1reshape__layer_a6a8567b61a1f911f52419ecd2346fcac_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1reshape__layer_a5c3b5585fd6242de0630e643a4dfd992}\label{classlbann_1_1reshape__layer_a5c3b5585fd6242de0630e643a4dfd992}} 
+\index{lbann\+::reshape\+\_\+layer@{lbann\+::reshape\+\_\+layer}!get\+\_\+data\+\_\+layout@{get\+\_\+data\+\_\+layout}}
+\index{get\+\_\+data\+\_\+layout@{get\+\_\+data\+\_\+layout}!lbann\+::reshape\+\_\+layer@{lbann\+::reshape\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+data\+\_\+layout()}{get\_data\_layout()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08db}{data\+\_\+layout} \hyperlink{classlbann_1_1reshape__layer}{lbann\+::reshape\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+data\+\_\+layout (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get data layout of the data tensors. We assume that the data layouts of the previous activations, activations, previous error signals, and error signals are the same. Each concrete layer that is templated on its data layout should override this function to return its template parameter. 
+
+Implements \hyperlink{classlbann_1_1Layer_a5dfb66e81fc085997402a5e2241316bd}{lbann\+::\+Layer}.
+
+
+
+Definition at line 49 of file reshape.\+hpp.
+
+
+\begin{DoxyCode}
+49 \{ \textcolor{keywordflow}{return} T\_layout; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1reshape__layer_af8ed6ed2bb208478ec7a339ee58e0aa6}\label{classlbann_1_1reshape__layer_af8ed6ed2bb208478ec7a339ee58e0aa6}} 
+\index{lbann\+::reshape\+\_\+layer@{lbann\+::reshape\+\_\+layer}!get\+\_\+type@{get\+\_\+type}}
+\index{get\+\_\+type@{get\+\_\+type}!lbann\+::reshape\+\_\+layer@{lbann\+::reshape\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+type()}{get\_type()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+std\+::string \hyperlink{classlbann_1_1reshape__layer}{lbann\+::reshape\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+type (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get the layer type\textquotesingle{}s name. A layer type name should be brief, human-\/readable description of the layer\textquotesingle{}s mathematical operation. 
+
+Implements \hyperlink{classlbann_1_1Layer_a0fa0ea9160b490c151c0a17fde4f7239}{lbann\+::\+Layer}.
+
+
+
+Definition at line 48 of file reshape.\+hpp.
+
+
+\begin{DoxyCode}
+48 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"reshape"}; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1reshape__layer_a60fd29f11e62137a0808ffe4b3730344}\label{classlbann_1_1reshape__layer_a60fd29f11e62137a0808ffe4b3730344}} 
+\index{lbann\+::reshape\+\_\+layer@{lbann\+::reshape\+\_\+layer}!setup\+\_\+dims@{setup\+\_\+dims}}
+\index{setup\+\_\+dims@{setup\+\_\+dims}!lbann\+::reshape\+\_\+layer@{lbann\+::reshape\+\_\+layer}}
+\subsubsection{\texorpdfstring{setup\+\_\+dims()}{setup\_dims()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+void \hyperlink{classlbann_1_1reshape__layer}{lbann\+::reshape\+\_\+layer}$<$ T\+\_\+layout $>$\+::setup\+\_\+dims (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Setup tensor dimensions Called by the setup function. The base method sets the dimensions of the activation tensors equal to the dimensions of the first previous activation tensor. 
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_a90fce1b06c1f2abb480e18cfe08a9746}{lbann\+::\+Layer}.
+
+
+
+Definition at line 51 of file reshape.\+hpp.
+
+
+\begin{DoxyCode}
+51                              \{
+52     \textcolor{comment}{// Store neuron tensor dimensions}
+53     \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_neuron\_dims = this->\hyperlink{classlbann_1_1Layer_adfd6178d21498c9095cd947ae1eb2d6a}{m\_num\_neuron\_dims};
+54     \textcolor{keyword}{const} std::vector<int> neuron\_dims = this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims};
+55 
+56     \textcolor{comment}{// Initialize previous neuron tensor dimensions}
+57     \hyperlink{classlbann_1_1Layer_a90fce1b06c1f2abb480e18cfe08a9746}{transform\_layer::setup\_dims}();
+58 
+59     \textcolor{comment}{// Initialize neuron tensor dimensions}
+60     this->\hyperlink{classlbann_1_1Layer_adfd6178d21498c9095cd947ae1eb2d6a}{m\_num\_neuron\_dims} = num\_neuron\_dims;
+61     this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims} = neuron\_dims;
+62 
+63     \textcolor{comment}{// Determine any unspecified dimensions}
+64     \textcolor{keywordtype}{int} unspecified\_dim = -1;
+65     \textcolor{keywordflow}{for}(\textcolor{keywordtype}{int} dim = 0; dim < this->\hyperlink{classlbann_1_1Layer_adfd6178d21498c9095cd947ae1eb2d6a}{m\_num\_neuron\_dims}; ++dim) \{
+66       \textcolor{keywordflow}{if}(this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}[dim] <= 0) \{
+67         unspecified\_dim = dim;
+68         this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}[dim] = 1;
+69       \}
+70     \}
+71     \textcolor{keywordflow}{if}(unspecified\_dim >= 0) \{
+72       \textcolor{keyword}{const} \textcolor{keywordtype}{int} specified\_size = std::accumulate(this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}.begin(),
+73                                                  this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}.end(),
+74                                                  1,
+75                                                  std::multiplies<int>());
+76       this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}[unspecified\_dim] = this->\hyperlink{classlbann_1_1Layer_a6b5ebc8a7d9329d8a773ed787e7b41d8}{m\_num\_neurons} / specified\_size
+      ;
+77     \}
+78 
+79     \textcolor{comment}{// Check that reshape is valid}
+80     \textcolor{keywordflow}{if}(this->\hyperlink{classlbann_1_1Layer_a6b5ebc8a7d9329d8a773ed787e7b41d8}{m\_num\_neurons} != std::accumulate(this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}.begin(),
+81                                               this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}.end(),
+82                                               1,
+83                                               std::multiplies<int>())) \{
+84       std::string num\_neurons = \textcolor{stringliteral}{" \{"};
+85       \textcolor{keywordflow}{for}(\textcolor{keywordtype}{int} n: \hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}) num\_neurons += \textcolor{stringliteral}{" "} + std::to\_string(n);
+86       num\_neurons += \textcolor{stringliteral}{" \}"};
+87       \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"reshape\_layer: invalid neuron dimensions, "} +
+88                              std::to\_string(\hyperlink{classlbann_1_1Layer_a6b5ebc8a7d9329d8a773ed787e7b41d8}{m\_num\_neurons}) + \textcolor{stringliteral}{" != "} + num\_neurons);
+89     \}
+90 
+91   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1reshape__layer_a60fd29f11e62137a0808ffe4b3730344_cgraph}
+\end{center}
+\end{figure}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/layers/transform/\hyperlink{reshape_8hpp}{reshape.\+hpp}\end{DoxyCompactItemize}

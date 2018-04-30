@@ -1,0 +1,7 @@
+<map id="lbann::generic_data_reader::get_stride_to_last_mini_batch" name="lbann::generic_data_reader::get_stride_to_last_mini_batch">
+<area shape="rect" id="node2" href="$classlbann_1_1lbann__callback__debug__io.html#a528f4aea5f657f40b27c58a164d4095a" title="lbann::lbann_callback\l_debug_io::print_phase_start" alt="" coords="193,66,387,104"/>
+<area shape="rect" id="node3" href="$classlbann_1_1lbann__callback__debug__io.html#a91fb292d9dff96dbf72ecc16855c4092" title="lbann::lbann_callback\l_debug_io::copy" alt="" coords="693,66,843,104"/>
+<area shape="rect" id="node4" href="$classlbann_1_1lbann__callback__debug__io.html#aa3d2a6fb4d7375c05ece0058224ea792" title="BVE FIXME. " alt="" coords="445,34,635,72"/>
+<area shape="rect" id="node5" href="$classlbann_1_1lbann__callback__debug__io.html#ac26d9c113c1345cc1d6390141e1a894b" title="lbann::lbann_callback\l_debug_io::on_validation_begin" alt="" coords="435,96,645,135"/>
+<area shape="rect" id="node6" href="$classlbann_1_1lbann__callback__debug__io.html#a469dfa4eece0a707a2d56f4c67aea9b7" title="lbann::lbann_callback\l_debug_io::on_test_begin" alt="" coords="453,159,628,198"/>
+</map>

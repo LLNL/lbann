@@ -1,0 +1,10 @@
+<map id="lbann::model::summarize_stats" name="lbann::model::summarize_stats">
+<area shape="rect" id="node2" href="$classlbann_1_1model.html#ad0cdcba177434b52dc9c4a97be183a92" title="lbann::model::get_cur_step" alt="" coords="224,5,406,31"/>
+<area shape="rect" id="node3" href="$classlbann_1_1lbann__summary.html#a3e0b9aae1f80403a195567fd25ea2525" title="lbann::lbann_summary\l::reduce_scalar" alt="" coords="237,55,393,93"/>
+<area shape="rect" id="node4" href="$classlbann_1_1objective__function.html#a0aa271e497363e97ba3741292961d47d" title="lbann::objective_function\l::get_mean_value" alt="" coords="231,117,399,156"/>
+<area shape="rect" id="node5" href="$classlbann_1_1objective__function.html#a4a23b4c51fe61584c97a471d28f7b8d7" title="lbann::objective_function\l::get_evaluation_time" alt="" coords="231,180,399,219"/>
+<area shape="rect" id="node6" href="$classlbann_1_1objective__function.html#af968b6949c170721d04895f1268b03dd" title="lbann::objective_function\l::get_differentiation_time" alt="" coords="231,243,399,281"/>
+<area shape="rect" id="node7" href="$classlbann_1_1objective__function.html#a92b248be17049b1d7e82accbd913d6f1" title="lbann::objective_function\l::reset_counters" alt="" coords="231,305,399,344"/>
+<area shape="rect" id="node8" href="$classlbann_1_1objective__function.html#a5c7de99300ce17535648bfcbc3b97aeb" title="lbann::objective_function\l::save_to_checkpoint_shared" alt="" coords="460,273,655,312"/>
+<area shape="rect" id="node9" href="$classlbann_1_1objective__function.html#a82fec97efbb8c4f68a674d42e0f2faa4" title="lbann::objective_function\l::load_from_checkpoint_shared" alt="" coords="454,336,661,375"/>
+</map>

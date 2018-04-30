@@ -1,0 +1,312 @@
+\hypertarget{classlbann_1_1entrywise__activation__layer}{}\section{lbann\+:\+:entrywise\+\_\+activation\+\_\+layer Class Reference}
+\label{classlbann_1_1entrywise__activation__layer}\index{lbann\+::entrywise\+\_\+activation\+\_\+layer@{lbann\+::entrywise\+\_\+activation\+\_\+layer}}
+
+
+{\ttfamily \#include $<$activation.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:entrywise\+\_\+activation\+\_\+layer\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1entrywise__activation__layer__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:entrywise\+\_\+activation\+\_\+layer\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1entrywise__activation__layer__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1entrywise__activation__layer_aada1d9200612dcd13259799ef327c557}{entrywise\+\_\+activation\+\_\+layer} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm})
+\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+virtual Data\+Type \hyperlink{classlbann_1_1entrywise__activation__layer_a69269401530a2112b66660383464bab9}{activation} (Data\+Type x) const =0
+\item 
+virtual Data\+Type \hyperlink{classlbann_1_1entrywise__activation__layer_a7676a4c5060452a38264993554e79f8e}{activation\+\_\+derivative} (Data\+Type x) const =0
+\item 
+void \hyperlink{classlbann_1_1entrywise__activation__layer_a2ec05802115c5f029fa106c88ada89db}{fp\+\_\+compute} () override
+\item 
+void \hyperlink{classlbann_1_1entrywise__activation__layer_af632a590e26f335205994f1d715ae1a4}{bp\+\_\+compute} () override
+\item 
+virtual void \hyperlink{classlbann_1_1entrywise__activation__layer_aeb270dda0c2ec95dd34c35e1e8300f11}{fp\+\_\+compute\+\_\+gpu} ()
+\item 
+virtual void \hyperlink{classlbann_1_1entrywise__activation__layer_a569674cb4c0f50ea76acc0733fc53ba9}{bp\+\_\+compute\+\_\+gpu} ()
+\item 
+virtual void \hyperlink{classlbann_1_1entrywise__activation__layer_a8d4b0376b9783414c1cb7812351122ce}{fp\+\_\+compute\+\_\+cpu} ()
+\item 
+virtual void \hyperlink{classlbann_1_1entrywise__activation__layer_a38c2c090f26fb8ca269bef45989564a5}{bp\+\_\+compute\+\_\+cpu} ()
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+Abstract base class for entry-\/wise activation layer. A nonlinear activation function is applied independently to each input entry. 
+
+Definition at line 48 of file activation.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1entrywise__activation__layer_aada1d9200612dcd13259799ef327c557}\label{classlbann_1_1entrywise__activation__layer_aada1d9200612dcd13259799ef327c557}} 
+\index{lbann\+::entrywise\+\_\+activation\+\_\+layer@{lbann\+::entrywise\+\_\+activation\+\_\+layer}!entrywise\+\_\+activation\+\_\+layer@{entrywise\+\_\+activation\+\_\+layer}}
+\index{entrywise\+\_\+activation\+\_\+layer@{entrywise\+\_\+activation\+\_\+layer}!lbann\+::entrywise\+\_\+activation\+\_\+layer@{lbann\+::entrywise\+\_\+activation\+\_\+layer}}
+\subsubsection{\texorpdfstring{entrywise\+\_\+activation\+\_\+layer()}{entrywise\_activation\_layer()}}
+{\footnotesize\ttfamily lbann\+::entrywise\+\_\+activation\+\_\+layer\+::entrywise\+\_\+activation\+\_\+layer (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 50 of file activation.\+hpp.
+
+
+\begin{DoxyCode}
+50 : \hyperlink{classlbann_1_1activation__layer_a7df6f5d21ccdd5a24ad6233a52807c6d}{activation\_layer}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}) \{\}
+\end{DoxyCode}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1entrywise__activation__layer_a69269401530a2112b66660383464bab9}\label{classlbann_1_1entrywise__activation__layer_a69269401530a2112b66660383464bab9}} 
+\index{lbann\+::entrywise\+\_\+activation\+\_\+layer@{lbann\+::entrywise\+\_\+activation\+\_\+layer}!activation@{activation}}
+\index{activation@{activation}!lbann\+::entrywise\+\_\+activation\+\_\+layer@{lbann\+::entrywise\+\_\+activation\+\_\+layer}}
+\subsubsection{\texorpdfstring{activation()}{activation()}}
+{\footnotesize\ttfamily virtual Data\+Type lbann\+::entrywise\+\_\+activation\+\_\+layer\+::activation (\begin{DoxyParamCaption}\item[{Data\+Type}]{x }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [protected]}, {\ttfamily [pure virtual]}}
+
+Activation function. This function is applied independently to each input entry. 
+
+Implemented in \hyperlink{classlbann_1_1relu__layer_a24c9b5e006e4a0b3f8992c1c44ce9ba5}{lbann\+::relu\+\_\+layer$<$ T\+\_\+layout $>$}, \hyperlink{classlbann_1_1sigmoid__layer_ab6a237e0a10be2599474dcd2cd73e767}{lbann\+::sigmoid\+\_\+layer$<$ T\+\_\+layout $>$}, \hyperlink{classlbann_1_1selu__layer_a266c894e3e1ed4028c1acfe671773524}{lbann\+::selu\+\_\+layer$<$ T\+\_\+layout $>$}, \hyperlink{classlbann_1_1elu__layer_a36412ea7156d5c433e31681e70222ad6}{lbann\+::elu\+\_\+layer$<$ T\+\_\+layout $>$}, \hyperlink{classlbann_1_1leaky__relu__layer_a173d09aa2c6d699634b2ef64a5952ba9}{lbann\+::leaky\+\_\+relu\+\_\+layer$<$ T\+\_\+layout $>$}, \hyperlink{classlbann_1_1smooth__relu__layer_a7fa882bb89a244a5a4ccb6614815f1c6}{lbann\+::smooth\+\_\+relu\+\_\+layer$<$ T\+\_\+layout $>$}, \hyperlink{classlbann_1_1bent__identity__layer_a496012ccbb6601afb8de972e943d7942}{lbann\+::bent\+\_\+identity\+\_\+layer$<$ T\+\_\+layout $>$}, \hyperlink{classlbann_1_1softplus__layer_aff73da03e891b4ea54d5ffc0618425b4}{lbann\+::softplus\+\_\+layer$<$ T\+\_\+layout $>$}, \hyperlink{classlbann_1_1swish__layer_aeab50ff2ad06d89a54953efdf7c09ed4}{lbann\+::swish\+\_\+layer$<$ T\+\_\+layout $>$}, \hyperlink{classlbann_1_1power__layer_ad7b7265367e2623fcd242920737a3acb}{lbann\+::power\+\_\+layer$<$ T\+\_\+layout $>$}, \hyperlink{classlbann_1_1atan__layer_acb40bcd43b2c974b1355a93aea1c5290}{lbann\+::atan\+\_\+layer$<$ T\+\_\+layout $>$}, \hyperlink{classlbann_1_1exponential__layer_a7e1a5b088bb129b065dd01438e6604af}{lbann\+::exponential\+\_\+layer$<$ T\+\_\+layout $>$}, and \hyperlink{classlbann_1_1tanh__layer_a48df029cc99589384dec7de3d7d77ad0}{lbann\+::tanh\+\_\+layer$<$ T\+\_\+layout $>$}.
+
+\mbox{\Hypertarget{classlbann_1_1entrywise__activation__layer_a7676a4c5060452a38264993554e79f8e}\label{classlbann_1_1entrywise__activation__layer_a7676a4c5060452a38264993554e79f8e}} 
+\index{lbann\+::entrywise\+\_\+activation\+\_\+layer@{lbann\+::entrywise\+\_\+activation\+\_\+layer}!activation\+\_\+derivative@{activation\+\_\+derivative}}
+\index{activation\+\_\+derivative@{activation\+\_\+derivative}!lbann\+::entrywise\+\_\+activation\+\_\+layer@{lbann\+::entrywise\+\_\+activation\+\_\+layer}}
+\subsubsection{\texorpdfstring{activation\+\_\+derivative()}{activation\_derivative()}}
+{\footnotesize\ttfamily virtual Data\+Type lbann\+::entrywise\+\_\+activation\+\_\+layer\+::activation\+\_\+derivative (\begin{DoxyParamCaption}\item[{Data\+Type}]{x }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [protected]}, {\ttfamily [pure virtual]}}
+
+Derivative of activation function. 
+
+Implemented in \hyperlink{classlbann_1_1relu__layer_a70cbfb59155a255b1422995875868790}{lbann\+::relu\+\_\+layer$<$ T\+\_\+layout $>$}, \hyperlink{classlbann_1_1sigmoid__layer_a2736bf99e3304083cd964f6707c2f666}{lbann\+::sigmoid\+\_\+layer$<$ T\+\_\+layout $>$}, \hyperlink{classlbann_1_1selu__layer_ac5500795e66343c0c8968c24683b79f0}{lbann\+::selu\+\_\+layer$<$ T\+\_\+layout $>$}, \hyperlink{classlbann_1_1elu__layer_ae972ed930008d1bbe499996a6f55de7e}{lbann\+::elu\+\_\+layer$<$ T\+\_\+layout $>$}, \hyperlink{classlbann_1_1leaky__relu__layer_af37ff5bcaefa8e533b3c497611ff43d4}{lbann\+::leaky\+\_\+relu\+\_\+layer$<$ T\+\_\+layout $>$}, \hyperlink{classlbann_1_1softplus__layer_a164deff1fd79a8eea743580eba4f6a60}{lbann\+::softplus\+\_\+layer$<$ T\+\_\+layout $>$}, \hyperlink{classlbann_1_1power__layer_af879c6b5488e1c8efe9e8c92b1be474c}{lbann\+::power\+\_\+layer$<$ T\+\_\+layout $>$}, \hyperlink{classlbann_1_1bent__identity__layer_ae331e8e0f830641cba6b3561f5474eb3}{lbann\+::bent\+\_\+identity\+\_\+layer$<$ T\+\_\+layout $>$}, \hyperlink{classlbann_1_1smooth__relu__layer_a44b4b163830213b9fb270e9ef2cc70ae}{lbann\+::smooth\+\_\+relu\+\_\+layer$<$ T\+\_\+layout $>$}, \hyperlink{classlbann_1_1swish__layer_a42d0ffb540fe1c12fbb571abf7048c2a}{lbann\+::swish\+\_\+layer$<$ T\+\_\+layout $>$}, \hyperlink{classlbann_1_1atan__layer_a2df8ba467a7375eab14d1b821e1386f0}{lbann\+::atan\+\_\+layer$<$ T\+\_\+layout $>$}, \hyperlink{classlbann_1_1exponential__layer_a5d432d9bd73c02e2a22d313c9d2dfcd7}{lbann\+::exponential\+\_\+layer$<$ T\+\_\+layout $>$}, and \hyperlink{classlbann_1_1tanh__layer_abd215b554cdb1e6eed1c651772a227e9}{lbann\+::tanh\+\_\+layer$<$ T\+\_\+layout $>$}.
+
+\mbox{\Hypertarget{classlbann_1_1entrywise__activation__layer_af632a590e26f335205994f1d715ae1a4}\label{classlbann_1_1entrywise__activation__layer_af632a590e26f335205994f1d715ae1a4}} 
+\index{lbann\+::entrywise\+\_\+activation\+\_\+layer@{lbann\+::entrywise\+\_\+activation\+\_\+layer}!bp\+\_\+compute@{bp\+\_\+compute}}
+\index{bp\+\_\+compute@{bp\+\_\+compute}!lbann\+::entrywise\+\_\+activation\+\_\+layer@{lbann\+::entrywise\+\_\+activation\+\_\+layer}}
+\subsubsection{\texorpdfstring{bp\+\_\+compute()}{bp\_compute()}}
+{\footnotesize\ttfamily void lbann\+::entrywise\+\_\+activation\+\_\+layer\+::bp\+\_\+compute (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Perform the computation for the backward propagation step. 
+
+Implements \hyperlink{classlbann_1_1Layer_a7442e01f9ee1294df2de811efcf5171e}{lbann\+::\+Layer}.
+
+
+
+Definition at line 70 of file activation.\+hpp.
+
+
+\begin{DoxyCode}
+70                              \{
+71     \textcolor{keywordflow}{if}(this->\hyperlink{classlbann_1_1Layer_af7881cb5eff5207c15fa835d65462e8f}{m\_using\_gpus}) \{
+72       \hyperlink{classlbann_1_1entrywise__activation__layer_a569674cb4c0f50ea76acc0733fc53ba9}{bp\_compute\_gpu}();
+73     \} \textcolor{keywordflow}{else} \{
+74       \hyperlink{classlbann_1_1entrywise__activation__layer_a38c2c090f26fb8ca269bef45989564a5}{bp\_compute\_cpu}();
+75     \}
+76   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1entrywise__activation__layer_a38c2c090f26fb8ca269bef45989564a5}\label{classlbann_1_1entrywise__activation__layer_a38c2c090f26fb8ca269bef45989564a5}} 
+\index{lbann\+::entrywise\+\_\+activation\+\_\+layer@{lbann\+::entrywise\+\_\+activation\+\_\+layer}!bp\+\_\+compute\+\_\+cpu@{bp\+\_\+compute\+\_\+cpu}}
+\index{bp\+\_\+compute\+\_\+cpu@{bp\+\_\+compute\+\_\+cpu}!lbann\+::entrywise\+\_\+activation\+\_\+layer@{lbann\+::entrywise\+\_\+activation\+\_\+layer}}
+\subsubsection{\texorpdfstring{bp\+\_\+compute\+\_\+cpu()}{bp\_compute\_cpu()}}
+{\footnotesize\ttfamily virtual void lbann\+::entrywise\+\_\+activation\+\_\+layer\+::bp\+\_\+compute\+\_\+cpu (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+
+
+Definition at line 122 of file activation.\+hpp.
+
+
+\begin{DoxyCode}
+122                                 \{
+123 
+124     \textcolor{comment}{// Input and output matrices}
+125     \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_input = \hyperlink{classlbann_1_1Layer_a35397843bb0c84030000c7d872229acb}{get\_local\_prev\_activations}();
+126     \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_gradient\_wrt\_output = \hyperlink{classlbann_1_1Layer_a82827edc5e869960144f3ccb2172bfcd}{get\_local\_prev\_error\_signals}();
+127     \textcolor{keyword}{auto}& local\_gradient\_wrt\_input = \hyperlink{classlbann_1_1Layer_af178d00b9d878aa7d87754bff2a91f3a}{get\_local\_error\_signals}();
+128 
+129     \textcolor{comment}{// Matrix parameters}
+130     \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_height = local\_input.Height();
+131     \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_width = local\_input.Width();
+132     \textcolor{keyword}{const} \textcolor{keywordtype}{int} input\_ldim = local\_input.LDim();
+133     \textcolor{keyword}{const} \textcolor{keywordtype}{int} gradient\_wrt\_output\_ldim = local\_gradient\_wrt\_output.LDim();
+134     \textcolor{keyword}{const} \textcolor{keywordtype}{int} gradient\_wrt\_input\_ldim = local\_gradient\_wrt\_input.LDim();
+135     \textcolor{keyword}{const} DataType* \_\_restrict\_\_ input\_buffer = local\_input.LockedBuffer();
+136     \textcolor{keyword}{const} DataType* \_\_restrict\_\_ gradient\_wrt\_output\_buffer
+137       = local\_gradient\_wrt\_output.LockedBuffer();
+138     DataType* \_\_restrict\_\_ gradient\_wrt\_input\_buffer
+139       = local\_gradient\_wrt\_input.Buffer();
+140 
+141     \textcolor{comment}{// Apply activation function to each input entry}
+142     \textcolor{keywordflow}{if} (input\_ldim == local\_height
+143         && gradient\_wrt\_output\_ldim == local\_height
+144         && gradient\_wrt\_input\_ldim == local\_height) \{
+145       \textcolor{comment}{// Contiguous data}
+146       \textcolor{keyword}{const} \textcolor{keywordtype}{size\_t} buffer\_size = local\_height * local\_width;
+147 \textcolor{preprocessor}{      #pragma omp parallel for}
+148       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} i = 0; i < buffer\_size; ++i) \{
+149         \textcolor{keyword}{const} \textcolor{keyword}{auto}& x = input\_buffer[i];
+150         \textcolor{keyword}{const} \textcolor{keyword}{auto}& dy = gradient\_wrt\_output\_buffer[i];
+151         \textcolor{keyword}{auto}& dx = gradient\_wrt\_input\_buffer[i];
+152         dx += dy * \hyperlink{classlbann_1_1entrywise__activation__layer_a7676a4c5060452a38264993554e79f8e}{activation\_derivative}(x);
+153       \}
+154     \} \textcolor{keywordflow}{else} \{
+155       \textcolor{comment}{// Non-contiguous data}
+156 \textcolor{preprocessor}{      #pragma omp parallel for collapse(2)}
+157       \textcolor{keywordflow}{for}(\textcolor{keywordtype}{int} col = 0; col < local\_width; ++col) \{
+158         \textcolor{keywordflow}{for}(\textcolor{keywordtype}{int} row = 0; row < local\_height; ++row) \{
+159           \textcolor{keyword}{const} \textcolor{keyword}{auto}& x = input\_buffer[row + col * input\_ldim];
+160           \textcolor{keyword}{const} \textcolor{keyword}{auto}& dy
+161             = gradient\_wrt\_output\_buffer[row + col * gradient\_wrt\_output\_ldim];
+162           \textcolor{keyword}{auto}& dx
+163             = gradient\_wrt\_input\_buffer[row + col * gradient\_wrt\_input\_ldim];
+164           dx += dy * \hyperlink{classlbann_1_1entrywise__activation__layer_a7676a4c5060452a38264993554e79f8e}{activation\_derivative}(x);
+165         \}
+166       \}
+167     \}
+168 
+169   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1entrywise__activation__layer_a38c2c090f26fb8ca269bef45989564a5_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1entrywise__activation__layer_a569674cb4c0f50ea76acc0733fc53ba9}\label{classlbann_1_1entrywise__activation__layer_a569674cb4c0f50ea76acc0733fc53ba9}} 
+\index{lbann\+::entrywise\+\_\+activation\+\_\+layer@{lbann\+::entrywise\+\_\+activation\+\_\+layer}!bp\+\_\+compute\+\_\+gpu@{bp\+\_\+compute\+\_\+gpu}}
+\index{bp\+\_\+compute\+\_\+gpu@{bp\+\_\+compute\+\_\+gpu}!lbann\+::entrywise\+\_\+activation\+\_\+layer@{lbann\+::entrywise\+\_\+activation\+\_\+layer}}
+\subsubsection{\texorpdfstring{bp\+\_\+compute\+\_\+gpu()}{bp\_compute\_gpu()}}
+{\footnotesize\ttfamily virtual void lbann\+::entrywise\+\_\+activation\+\_\+layer\+::bp\+\_\+compute\+\_\+gpu (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented in \hyperlink{classlbann_1_1relu__layer_a236d3e3c92376465d79104703bc8b005}{lbann\+::relu\+\_\+layer$<$ T\+\_\+layout $>$}, and \hyperlink{classlbann_1_1sigmoid__layer_a30a9ff1cd4ec6d4ef4e60859a10b5936}{lbann\+::sigmoid\+\_\+layer$<$ T\+\_\+layout $>$}.
+
+
+
+Definition at line 82 of file activation.\+hpp.
+
+
+\begin{DoxyCode}
+82                                 \{
+83     \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"entrywise\_activation\_layer: no backward propagation GPU implementation"});
+84   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1entrywise__activation__layer_a2ec05802115c5f029fa106c88ada89db}\label{classlbann_1_1entrywise__activation__layer_a2ec05802115c5f029fa106c88ada89db}} 
+\index{lbann\+::entrywise\+\_\+activation\+\_\+layer@{lbann\+::entrywise\+\_\+activation\+\_\+layer}!fp\+\_\+compute@{fp\+\_\+compute}}
+\index{fp\+\_\+compute@{fp\+\_\+compute}!lbann\+::entrywise\+\_\+activation\+\_\+layer@{lbann\+::entrywise\+\_\+activation\+\_\+layer}}
+\subsubsection{\texorpdfstring{fp\+\_\+compute()}{fp\_compute()}}
+{\footnotesize\ttfamily void lbann\+::entrywise\+\_\+activation\+\_\+layer\+::fp\+\_\+compute (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Perform the computation for the forward propagation step. 
+
+Implements \hyperlink{classlbann_1_1Layer_a523319dd1bd87a0612afa1912bb5aad7}{lbann\+::\+Layer}.
+
+
+
+Definition at line 62 of file activation.\+hpp.
+
+
+\begin{DoxyCode}
+62                              \{
+63     \textcolor{keywordflow}{if}(this->\hyperlink{classlbann_1_1Layer_af7881cb5eff5207c15fa835d65462e8f}{m\_using\_gpus}) \{
+64       \hyperlink{classlbann_1_1entrywise__activation__layer_aeb270dda0c2ec95dd34c35e1e8300f11}{fp\_compute\_gpu}();
+65     \} \textcolor{keywordflow}{else} \{
+66       \hyperlink{classlbann_1_1entrywise__activation__layer_a8d4b0376b9783414c1cb7812351122ce}{fp\_compute\_cpu}();
+67     \}
+68   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1entrywise__activation__layer_a8d4b0376b9783414c1cb7812351122ce}\label{classlbann_1_1entrywise__activation__layer_a8d4b0376b9783414c1cb7812351122ce}} 
+\index{lbann\+::entrywise\+\_\+activation\+\_\+layer@{lbann\+::entrywise\+\_\+activation\+\_\+layer}!fp\+\_\+compute\+\_\+cpu@{fp\+\_\+compute\+\_\+cpu}}
+\index{fp\+\_\+compute\+\_\+cpu@{fp\+\_\+compute\+\_\+cpu}!lbann\+::entrywise\+\_\+activation\+\_\+layer@{lbann\+::entrywise\+\_\+activation\+\_\+layer}}
+\subsubsection{\texorpdfstring{fp\+\_\+compute\+\_\+cpu()}{fp\_compute\_cpu()}}
+{\footnotesize\ttfamily virtual void lbann\+::entrywise\+\_\+activation\+\_\+layer\+::fp\+\_\+compute\+\_\+cpu (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+
+
+Definition at line 86 of file activation.\+hpp.
+
+
+\begin{DoxyCode}
+86                                 \{
+87 
+88     \textcolor{comment}{// Input and output matrices}
+89     \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_input = \hyperlink{classlbann_1_1Layer_a35397843bb0c84030000c7d872229acb}{get\_local\_prev\_activations}();
+90     \textcolor{keyword}{auto}& local\_output = \hyperlink{classlbann_1_1Layer_a4248f27acebf72b7b7b3ee39c8bcb62a}{get\_local\_activations}();
+91 
+92     \textcolor{comment}{// Matrix parameters}
+93     \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_height = local\_input.Height();
+94     \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_width = local\_input.Width();
+95     \textcolor{keyword}{const} \textcolor{keywordtype}{int} input\_ldim = local\_input.LDim();
+96     \textcolor{keyword}{const} \textcolor{keywordtype}{int} output\_ldim = local\_output.LDim();
+97     \textcolor{keyword}{const} DataType* \_\_restrict\_\_ input\_buffer = local\_input.LockedBuffer();
+98     DataType* \_\_restrict\_\_ output\_buffer = local\_output.Buffer();
+99 
+100     \textcolor{comment}{// Apply activation function to each input entry}
+101     \textcolor{keywordflow}{if} (input\_ldim == local\_height && output\_ldim == local\_height) \{
+102       \textcolor{comment}{// Contiguous data}
+103       \textcolor{keyword}{const} \textcolor{keywordtype}{size\_t} buffer\_size = local\_height * local\_width;
+104 \textcolor{preprocessor}{      #pragma omp parallel for}
+105       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} i = 0; i < buffer\_size; ++i) \{
+106         output\_buffer[i] = \hyperlink{classlbann_1_1entrywise__activation__layer_a69269401530a2112b66660383464bab9}{activation}(input\_buffer[i]);
+107       \}
+108     \} \textcolor{keywordflow}{else} \{
+109       \textcolor{comment}{// Non-contiguous data}
+110 \textcolor{preprocessor}{      #pragma omp parallel for collapse(2)}
+111       \textcolor{keywordflow}{for}(\textcolor{keywordtype}{int} col = 0; col < local\_width; ++col) \{
+112         \textcolor{keywordflow}{for}(\textcolor{keywordtype}{int} row = 0; row < local\_height; ++row) \{
+113           \textcolor{keyword}{const} \textcolor{keyword}{auto}& x = input\_buffer[row + col * input\_ldim];
+114           \textcolor{keyword}{auto}& y = output\_buffer[row + col * output\_ldim];
+115           y = \hyperlink{classlbann_1_1entrywise__activation__layer_a69269401530a2112b66660383464bab9}{activation}(x);
+116         \}
+117       \}
+118     \}
+119 
+120   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1entrywise__activation__layer_a8d4b0376b9783414c1cb7812351122ce_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1entrywise__activation__layer_aeb270dda0c2ec95dd34c35e1e8300f11}\label{classlbann_1_1entrywise__activation__layer_aeb270dda0c2ec95dd34c35e1e8300f11}} 
+\index{lbann\+::entrywise\+\_\+activation\+\_\+layer@{lbann\+::entrywise\+\_\+activation\+\_\+layer}!fp\+\_\+compute\+\_\+gpu@{fp\+\_\+compute\+\_\+gpu}}
+\index{fp\+\_\+compute\+\_\+gpu@{fp\+\_\+compute\+\_\+gpu}!lbann\+::entrywise\+\_\+activation\+\_\+layer@{lbann\+::entrywise\+\_\+activation\+\_\+layer}}
+\subsubsection{\texorpdfstring{fp\+\_\+compute\+\_\+gpu()}{fp\_compute\_gpu()}}
+{\footnotesize\ttfamily virtual void lbann\+::entrywise\+\_\+activation\+\_\+layer\+::fp\+\_\+compute\+\_\+gpu (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented in \hyperlink{classlbann_1_1relu__layer_a682fbf36187cb7f985581b5d4095ae14}{lbann\+::relu\+\_\+layer$<$ T\+\_\+layout $>$}, and \hyperlink{classlbann_1_1sigmoid__layer_a1a2c1a56ca20677d4278a5787fa7fc86}{lbann\+::sigmoid\+\_\+layer$<$ T\+\_\+layout $>$}.
+
+
+
+Definition at line 78 of file activation.\+hpp.
+
+
+\begin{DoxyCode}
+78                                 \{
+79     \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"entrywise\_activation\_layer: no forward propagation GPU implementation"});
+80   \}
+\end{DoxyCode}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/layers/activations/\hyperlink{activation_8hpp}{activation.\+hpp}\end{DoxyCompactItemize}

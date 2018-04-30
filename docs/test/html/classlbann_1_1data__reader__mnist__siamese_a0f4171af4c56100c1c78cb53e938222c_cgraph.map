@@ -1,0 +1,45 @@
+<map id="lbann::data_reader_mnist_siamese::fetch_label" name="lbann::data_reader_mnist_siamese::fetch_label">
+<area shape="rect" id="node2" href="$classlbann_1_1data__reader__mnist__siamese.html#a2c5a29603f850bb0684dba1c64981604" title="lbann::data_reader\l_mnist_siamese::get_type" alt="" coords="243,503,419,541"/>
+<area shape="rect" id="node11" href="$namespacelbann.html#a59f65281406da5bc57f49d8ec682be2d" title="lbann::load_mnist_data" alt="" coords="723,1231,882,1256"/>
+<area shape="rect" id="node3" href="$classlbann_1_1data__reader__mnist__siamese.html#abe572754f0b1415407c1b698b0f83656" title="lbann::data_reader\l_mnist_siamese::set\l_input_params" alt="" coords="490,403,633,455"/>
+<area shape="rect" id="node4" href="$classlbann_1_1data__reader__mnist__siamese.html#a7e1c9530b5d56a0835db8a30af980164" title="lbann::data_reader\l_mnist_siamese::set\l_defaults" alt="" coords="731,460,874,512"/>
+<area shape="rect" id="node6" href="$classlbann_1_1data__reader__mnist__siamese.html#a2c60a89c5815fa24b34d4febfecfc3db" title="lbann::data_reader\l_mnist_siamese::load" alt="" coords="486,945,636,984"/>
+<area shape="rect" id="node22" href="$classlbann_1_1data__reader__mnist__siamese.html#ac44a7118e94338e14f7b6a9e33239155" title="Fetch this mini&#45;batch&#39;s samples into X by calling the new overloaded fetch_datum() ..." alt="" coords="467,340,655,379"/>
+<area shape="rect" id="node26" href="$classlbann_1_1data__reader__mnist__siamese.html#a299dd32be165c5acf320b6f40404cb17" title="lbann::data_reader\l_mnist_siamese::fetch_datum" alt="" coords="703,397,902,436"/>
+<area shape="rect" id="node30" href="$classlbann_1_1data__reader__mnist__siamese.html#a1709140fcdcea9baaaf1bab7a48f3bce" title="Fetch this mini&#45;batch&#39;s labels into Y by calling the new overloaded fetch_label() ..." alt="" coords="484,188,638,240"/>
+<area shape="rect" id="node33" href="$classlbann_1_1data__reader__mnist__siamese.html#a410d8aa510fb2f3f4d1a257d5b308819" title="sets up a data_store. " alt="" coords="482,264,640,316"/>
+<area shape="rect" id="node34" href="$classlbann_1_1data__reader__multi__images.html#a37ef2f4e641c074d0f3bd51f11682fc7" title="lbann::data_reader\l_multi_images::fetch_datum" alt="" coords="467,672,655,711"/>
+<area shape="rect" id="node43" href="$classlbann_1_1data__reader__multi__images.html#a96baf61a6207a76060afeaa31b55b671" title="lbann::data_reader\l_multi_images::fetch_label" alt="" coords="472,531,651,569"/>
+<area shape="rect" id="node44" href="$classlbann_1_1data__reader__mnist__siamese.html#ad1949fc1a71af86d792e927c0181f87d" title="lbann::data_reader\l_mnist_siamese::shuffle\l_indices" alt="" coords="1177,1233,1341,1285"/>
+<area shape="rect" id="node5" href="$classlbann_1_1image__data__reader.html#a0164b0e3abbe92daef73b36fb925403e" title="lbann::image_data_reader\l::set_linearized_image_size" alt="" coords="1399,600,1585,639"/>
+<area shape="rect" id="node7" href="$classlbann_1_1generic__data__reader.html#ae82c40eebc05e2f0c1198afcc7a7f009" title="only the master may write to cerr or cout; primarily for use in debugging during development ..." alt="" coords="733,1040,872,1079"/>
+<area shape="rect" id="node8" href="$classlbann_1_1generic__data__reader.html#ab4c6c2d4ba40ece809ce896828c8ff03" title="lbann::generic_data\l_reader::get_file_dir" alt="" coords="732,800,872,839"/>
+<area shape="rect" id="node9" href="$classlbann_1_1generic__data__reader.html#a56664e1b43f3fe923cf6d652f14b40a9" title="lbann::generic_data\l_reader::get_data_filename" alt="" coords="1166,857,1351,896"/>
+<area shape="rect" id="node10" href="$classlbann_1_1generic__data__reader.html#af0f82d719fcd6e0668414836f2673d5c" title="lbann::generic_data\l_reader::get_label_filename" alt="" coords="709,915,896,953"/>
+<area shape="rect" id="node13" href="$classlbann_1_1generic__data__reader.html#ae6929a8bd2e59da72a8c2e537f0b2b37" title="lbann::generic_data\l_reader::set_use_percent" alt="" coords="716,977,889,1016"/>
+<area shape="rect" id="node14" href="$classlbann_1_1generic__data__reader.html#aa2d83c4ffc58534e0c193b6b9f9fb925" title="lbann::generic_data\l_reader::set_absolute\l_sample_count" alt="" coords="727,1155,878,1207"/>
+<area shape="rect" id="node15" href="$classlbann_1_1generic__data__reader.html#aa28fdeeb6af492540f507e49adff5d6c" title="lbann::generic_data\l_reader::select_subset\l_of_data" alt="" coords="1181,920,1337,972"/>
+<area shape="rect" id="node12" href="$namespacelbann.html#a0fd8bc0ad31da913a124683f5ec4fdf1" title="lbann::__swapEndianInt" alt="" coords="952,1231,1116,1256"/>
+<area shape="rect" id="node16" href="$classlbann_1_1generic__data__reader.html#af1aaa4d1a693974c1b1f1318b6ed60b8" title="Shuffle indices. " alt="" coords="1410,725,1573,764"/>
+<area shape="rect" id="node18" href="$classlbann_1_1generic__data__reader.html#a1e8655cd1883d850566694bcf2ad60ab" title="lbann::generic_data\l_reader::get_absolute\l_sample_count" alt="" coords="1416,1065,1567,1117"/>
+<area shape="rect" id="node19" href="$classlbann_1_1generic__data__reader.html#a5853fa5e619b886699954aca6440dd8a" title="lbann::generic_data\l_reader::get_use_percent" alt="" coords="1405,864,1579,903"/>
+<area shape="rect" id="node20" href="$classlbann_1_1generic__data__reader.html#adcdb833aff7ce85b0879334b252f357a" title="Get the number of samples in this dataset. " alt="" coords="1412,927,1572,965"/>
+<area shape="rect" id="node21" href="$classlbann_1_1generic__data__reader.html#ab06058b5fa1d74239998358b02f73132" title="lbann::generic_data\l_reader::get_validation\l_percent" alt="" coords="1413,989,1570,1041"/>
+<area shape="rect" id="node17" href="$namespacelbann.html#aba9d11cb3a739cd84e7234ceeb32d098" title="lbann::get_data_seq\l_generator" alt="" coords="1633,965,1775,1004"/>
+<area shape="rect" id="node23" href="$classlbann_1_1generic__data__reader.html#a2b10538440d784f0f12582a5407acef2" title="True if the data reader&#39;s current position is valid. " alt="" coords="725,131,880,169"/>
+<area shape="rect" id="node24" href="$classlbann_1_1generic__data__reader.html#ad613f95666b973d8da77773fb34c9b66" title="lbann::generic_data\l_reader::preprocess\l_data_source" alt="" coords="732,269,873,321"/>
+<area shape="rect" id="node25" href="$classlbann_1_1generic__data__reader.html#a850e99110dd1e9df2985f09ea196fea8" title="Get the loaded mini&#45;batch size. " alt="" coords="732,193,873,245"/>
+<area shape="rect" id="node27" href="$namespacelbann.html#aedccb3bf2d674ccb5573ab9960720731" title="lbann::lbann_report\l_exception" alt="" coords="734,68,871,107"/>
+<area shape="rect" id="node29" href="$classlbann_1_1generic__data__reader.html#a7bbf74725a96235dc1cd20ff440a69bd" title="lbann::generic_data\l_reader::postprocess\l_data_source" alt="" coords="961,388,1107,440"/>
+<area shape="rect" id="node28" href="$classlbann_1_1lbann__exception.html#ad36592ddd0ff6a24f31ec6a31b83e920" title="lbann::lbann_exception\l::what" alt="" coords="955,68,1113,107"/>
+<area shape="rect" id="node31" href="$classlbann_1_1data__reader__multi__images.html#a713e4cc80a2d3a2b721d0912e3773baa" title="lbann::data_reader\l_multi_images::create\l_datum_views" alt="" coords="727,536,878,588"/>
+<area shape="rect" id="node32" href="$classlbann_1_1image__utils.html#a720f0987ec8eff333bf697ed18aafc93" title="Import an image from a file buffer (inbuf) and put it into an LBANN Mat data block. " alt="" coords="738,5,867,44"/>
+<area shape="rect" id="node35" href="$classlbann_1_1generic__data__store.html#a2abb3d0327b528d36e23fcef9b937798" title="called by various image data readers " alt="" coords="731,737,874,776"/>
+<area shape="rect" id="node36" href="$classlbann_1_1image__utils.html#ac324a04f877601387cfb10750f1f6b8d" title="Load an image from a file and put it into a serialized buffer. " alt="" coords="738,612,867,651"/>
+<area shape="rect" id="node37" href="$classlbann_1_1data__reader__multi__images.html#a9939a88a40caf7b2a27de08deca54ac1" title="lbann::data_reader\l_multi_images::get_type" alt="" coords="720,675,885,713"/>
+<area shape="rect" id="node38" href="$classlbann_1_1data__reader__multi__images.html#a57824ec9de5c1131b2f15a0cb3d4ab75" title="lbann::data_reader\l_multi_images::set_input\l_params" alt="" coords="950,668,1118,720"/>
+<area shape="rect" id="node40" href="$classlbann_1_1data__reader__multi__images.html#afb8adef1f9ac6723d71ae5afc29b01ec" title="lbann::data_reader\l_multi_images::load" alt="" coords="964,797,1104,836"/>
+<area shape="rect" id="node39" href="$classlbann_1_1image__data__reader.html#a6ed9b8b12ad3ffa93ad458d872f8c044" title="lbann::image_data_reader\l::set_input_params" alt="" coords="1170,637,1347,676"/>
+<area shape="rect" id="node41" href="$classlbann_1_1data__reader__multi__images.html#a31763c860d3e3cc57a6af0158b9977f7" title="lbann::data_reader\l_multi_images::load_list" alt="" coords="1177,795,1341,833"/>
+<area shape="rect" id="node42" href="$classlbann_1_1data__reader__multi__images.html#a3160c8ee0e30304a1f5fc07d08e6cb40" title="lbann::data_reader\l_multi_images::read\l_text_stream" alt="" coords="1421,788,1563,840"/>
+</map>

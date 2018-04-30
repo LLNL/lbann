@@ -1,0 +1,23 @@
+<map id="lbann::get_fast_generator" name="lbann::get_fast_generator">
+<area shape="rect" id="node2" href="$classlbann_1_1dropout.html#a358c502d8e7eeb1fed8b5df468793b09" title="lbann::dropout::fp\l_compute_cpu" alt="" coords="267,5,393,44"/>
+<area shape="rect" id="node4" href="$namespacelbann_1_1anonymous__namespace_02callback__ltfb_8cpp_03.html#a1865e25ff1f3b6ad417d1853ea0bc6f4" title="lbann::anonymous_namespace\l\{callback_ltfb::cpp\}::assign\l_partners" alt="" coords="227,68,433,120"/>
+<area shape="rect" id="node7" href="$classlbann_1_1mesh__reader.html#a0ed2aa6d5ec6509c15d0cf7d9657df29" title="lbann::mesh_reader\l::fetch_datum" alt="" coords="260,144,400,183"/>
+<area shape="rect" id="node9" href="$classlbann_1_1lbann__quantizer.html#a4dd4696cbbfd93c73e5fb3c40fcb16c3" title="lbann::lbann_quantizer\l::onebit_quantize" alt="" coords="1352,233,1508,272"/>
+<area shape="rect" id="node15" href="$classlbann_1_1lbann__quantizer.html#aa5aabc1cb4163e95aee993d9b37b9b32" title="lbann::lbann_quantizer\l::proportion_threshold" alt="" coords="707,259,863,297"/>
+<area shape="rect" id="node19" href="$classlbann_1_1lbann__quantizer.html#af77beca5905ff8601ca9b8231a2a16e0" title="lbann::lbann_quantizer\l::col_reconstruction" alt="" coords="707,321,863,360"/>
+<area shape="rect" id="node20" href="$namespacelbann.html#acef152f20e422b3aea1a3c1691a533ac" title="lbann::init_random" alt="" coords="264,360,395,385"/>
+<area shape="rect" id="node3" href="$classlbann_1_1dropout.html#a9ed94f278835b6c9e8185de01705e53a" title="lbann::dropout::fp\l_compute" alt="" coords="508,5,633,44"/>
+<area shape="rect" id="node5" href="$classlbann_1_1lbann__callback__ltfb.html#a7d2d1682c4a6a6b7e8ea1e3f4bf33c84" title="lbann::lbann_callback\l_ltfb::on_batch_begin" alt="" coords="495,75,645,113"/>
+<area shape="rect" id="node6" href="$classlbann_1_1lbann__callback__ltfb.html#aaf259b187e956282807d4daa03beb502" title="lbann::lbann_callback\l_ltfb::name" alt="" coords="710,75,860,113"/>
+<area shape="rect" id="node8" href="$classlbann_1_1mesh__reader.html#a8845023baeb8e9c51f3d690347b1213f" title="Get the dimensions of the data. " alt="" coords="500,144,640,183"/>
+<area shape="rect" id="node10" href="$classlbann_1_1lbann__quantizer.html#a9eeb89150026bf4b7bea15bffdba10d3" title="lbann::lbann_quantizer\l::onebit_quantize" alt="" coords="1561,224,1718,263"/>
+<area shape="rect" id="node11" href="$classlbann_1_1lbann__quantizer.html#a4b326de1ca5b7eba6415b6f42f83335b" title="lbann::lbann_quantizer\l::intermodel_sum_onebit\l_quantized" alt="" coords="1556,287,1723,339"/>
+<area shape="rect" id="node12" href="$classlbann_1_1lbann__callback__imcomm.html#a0a425ba562f7637b25cd6ba094e7885b" title="lbann::lbann_callback\l_imcomm::on_backward\l_prop_end" alt="" coords="1772,248,1938,300"/>
+<area shape="rect" id="node14" href="$classlbann_1_1lbann__quantizer.html#af24e00e26e157f102f3cef547de40ae1" title="lbann::lbann_quantizer\l::intermodel_sum_onebit\l_quantized" alt="" coords="1771,324,1939,376"/>
+<area shape="rect" id="node13" href="$classlbann_1_1lbann__callback__imcomm.html#a9d59535b4789389a8c3c9e406cd1e2d3" title="lbann::lbann_callback\l_imcomm::copy" alt="" coords="1987,255,2136,293"/>
+<area shape="rect" id="node16" href="$classlbann_1_1lbann__quantizer.html#a7e4dfca5770dfd88ae6255b0407d8f80" title="lbann::lbann_quantizer\l::adaptive_quantize" alt="" coords="927,259,1083,297"/>
+<area shape="rect" id="node17" href="$classlbann_1_1lbann__quantizer.html#a25ed3869c6bc615ae51198803ea4e33d" title="lbann::lbann_quantizer\l::adaptive_quantize_replace" alt="" coords="911,321,1099,360"/>
+<area shape="rect" id="node18" href="$classlbann_1_1lbann__quantizer.html#aa1541b9afa60250dbd570acbbe98242f" title="lbann::lbann_quantizer\l::get_onebit_quantized\l_matrix_height" alt="" coords="1147,287,1304,339"/>
+<area shape="rect" id="node21" href="$namespacelbann.html#a2fe8cea17a147566b73260f557b51006" title="lbann::fast_rand_int_pow2" alt="" coords="481,360,659,385"/>
+<area shape="rect" id="node22" href="$namespacelbann.html#a3d91b615e42bf5744deeed770879bc8c" title="lbann::initialize" alt="" coords="516,409,625,435"/>
+</map>

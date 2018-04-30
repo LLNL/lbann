@@ -1,0 +1,416 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="data__store__merge__features_8cpp" kind="file" language="C++">
+    <compoundname>data_store_merge_features.cpp</compoundname>
+    <includes refid="data__store__merge__features_8hpp" local="yes">lbann/data_store/data_store_merge_features.hpp</includes>
+    <includes refid="data__store__csv_8hpp" local="yes">lbann/data_store/data_store_csv.hpp</includes>
+    <includes refid="data__reader__merge__features_8hpp" local="yes">lbann/data_readers/data_reader_merge_features.hpp</includes>
+    <includes refid="exception_8hpp" local="yes">lbann/utils/exception.hpp</includes>
+    <includes refid="options_8hpp" local="yes">lbann/utils/options.hpp</includes>
+    <includes refid="timer_8hpp" local="yes">lbann/utils/timer.hpp</includes>
+    <incdepgraph>
+      <node id="20376">
+        <label>sys/stat.h</label>
+      </node>
+      <node id="20379">
+        <label>lbann/data_readers/image_preprocessor.hpp</label>
+        <link refid="image__preprocessor_8hpp"/>
+        <childnode refid="20355" relation="include">
+        </childnode>
+        <childnode refid="20347" relation="include">
+        </childnode>
+      </node>
+      <node id="20346">
+        <label>lbann/data_store/generic_data_store.hpp</label>
+        <link refid="generic__data__store_8hpp"/>
+        <childnode refid="20347" relation="include">
+        </childnode>
+        <childnode refid="20356" relation="include">
+        </childnode>
+        <childnode refid="20357" relation="include">
+        </childnode>
+        <childnode refid="20360" relation="include">
+        </childnode>
+      </node>
+      <node id="20367">
+        <label>lbann/io/persist.hpp</label>
+        <link refid="persist_8hpp"/>
+        <childnode refid="20347" relation="include">
+        </childnode>
+        <childnode refid="20348" relation="include">
+        </childnode>
+      </node>
+      <node id="20348">
+        <label>El.hpp</label>
+      </node>
+      <node id="20347">
+        <label>lbann/base.hpp</label>
+        <link refid="base_8hpp"/>
+        <childnode refid="20348" relation="include">
+        </childnode>
+        <childnode refid="20349" relation="include">
+        </childnode>
+        <childnode refid="20350" relation="include">
+        </childnode>
+        <childnode refid="20355" relation="include">
+        </childnode>
+      </node>
+      <node id="20380">
+        <label>cassert</label>
+      </node>
+      <node id="20344">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_merge_features.cpp</label>
+        <link refid="data__store__merge__features_8cpp"/>
+        <childnode refid="20345" relation="include">
+        </childnode>
+        <childnode refid="20361" relation="include">
+        </childnode>
+        <childnode refid="20363" relation="include">
+        </childnode>
+        <childnode refid="20369" relation="include">
+        </childnode>
+        <childnode refid="20384" relation="include">
+        </childnode>
+        <childnode refid="20385" relation="include">
+        </childnode>
+      </node>
+      <node id="20378">
+        <label>fcntl.h</label>
+      </node>
+      <node id="20372">
+        <label>string</label>
+      </node>
+      <node id="20385">
+        <label>lbann/utils/timer.hpp</label>
+        <link refid="timer_8hpp"/>
+        <childnode refid="20386" relation="include">
+        </childnode>
+      </node>
+      <node id="20358">
+        <label>map</label>
+      </node>
+      <node id="20364">
+        <label>compound_data_reader.hpp</label>
+        <link refid="compound__data__reader_8hpp"/>
+        <childnode refid="20365" relation="include">
+        </childnode>
+        <childnode refid="20383" relation="include">
+        </childnode>
+      </node>
+      <node id="20360">
+        <label>unordered_set</label>
+      </node>
+      <node id="20374">
+        <label>exception</label>
+      </node>
+      <node id="20363">
+        <label>lbann/data_readers/data_reader_merge_features.hpp</label>
+        <link refid="data__reader__merge__features_8hpp"/>
+        <childnode refid="20364" relation="include">
+        </childnode>
+      </node>
+      <node id="20368">
+        <label>random</label>
+      </node>
+      <node id="20377">
+        <label>sys/types.h</label>
+      </node>
+      <node id="20352">
+        <label>cstdio</label>
+      </node>
+      <node id="20370">
+        <label>lbann/utils/stack_trace.hpp</label>
+        <link refid="stack__trace_8hpp"/>
+        <childnode refid="20371" relation="include">
+        </childnode>
+        <childnode refid="20372" relation="include">
+        </childnode>
+      </node>
+      <node id="20354">
+        <label>cxxabi.h</label>
+      </node>
+      <node id="20369">
+        <label>lbann/utils/exception.hpp</label>
+        <link refid="exception_8hpp"/>
+        <childnode refid="20347" relation="include">
+        </childnode>
+        <childnode refid="20356" relation="include">
+        </childnode>
+        <childnode refid="20370" relation="include">
+        </childnode>
+        <childnode refid="20373" relation="include">
+        </childnode>
+        <childnode refid="20374" relation="include">
+        </childnode>
+      </node>
+      <node id="20382">
+        <label>unistd.h</label>
+      </node>
+      <node id="20357">
+        <label>vector</label>
+      </node>
+      <node id="20356">
+        <label>lbann/comm.hpp</label>
+        <link refid="comm_8hpp"/>
+        <childnode refid="20357" relation="include">
+        </childnode>
+        <childnode refid="20358" relation="include">
+        </childnode>
+        <childnode refid="20359" relation="include">
+        </childnode>
+        <childnode refid="20347" relation="include">
+        </childnode>
+      </node>
+      <node id="20345">
+        <label>lbann/data_store/data_store_merge_features.hpp</label>
+        <link refid="data__store__merge__features_8hpp"/>
+        <childnode refid="20346" relation="include">
+        </childnode>
+      </node>
+      <node id="20383">
+        <label>utility</label>
+      </node>
+      <node id="20375">
+        <label>lbann/io/file_io.hpp</label>
+        <link refid="file__io_8hpp"/>
+        <childnode refid="20376" relation="include">
+        </childnode>
+        <childnode refid="20377" relation="include">
+        </childnode>
+        <childnode refid="20378" relation="include">
+        </childnode>
+      </node>
+      <node id="20351">
+        <label>cstdlib</label>
+      </node>
+      <node id="20373">
+        <label>iostream</label>
+      </node>
+      <node id="20362">
+        <label>unordered_map</label>
+      </node>
+      <node id="20366">
+        <label>lbann/utils/random.hpp</label>
+        <link refid="random_8hpp"/>
+        <childnode refid="20347" relation="include">
+        </childnode>
+        <childnode refid="20356" relation="include">
+        </childnode>
+        <childnode refid="20367" relation="include">
+        </childnode>
+        <childnode refid="20368" relation="include">
+        </childnode>
+      </node>
+      <node id="20361">
+        <label>lbann/data_store/data_store_csv.hpp</label>
+        <link refid="data__store__csv_8hpp"/>
+        <childnode refid="20346" relation="include">
+        </childnode>
+        <childnode refid="20362" relation="include">
+        </childnode>
+      </node>
+      <node id="20386">
+        <label>chrono</label>
+      </node>
+      <node id="20371">
+        <label>csignal</label>
+      </node>
+      <node id="20384">
+        <label>lbann/utils/options.hpp</label>
+        <link refid="options_8hpp"/>
+        <childnode refid="20373" relation="include">
+        </childnode>
+        <childnode refid="20358" relation="include">
+        </childnode>
+        <childnode refid="20357" relation="include">
+        </childnode>
+        <childnode refid="20372" relation="include">
+        </childnode>
+      </node>
+      <node id="20365">
+        <label>data_reader.hpp</label>
+        <link refid="data__reader_8hpp"/>
+        <childnode refid="20347" relation="include">
+        </childnode>
+        <childnode refid="20366" relation="include">
+        </childnode>
+        <childnode refid="20369" relation="include">
+        </childnode>
+        <childnode refid="20356" relation="include">
+        </childnode>
+        <childnode refid="20375" relation="include">
+        </childnode>
+        <childnode refid="20367" relation="include">
+        </childnode>
+        <childnode refid="20379" relation="include">
+        </childnode>
+        <childnode refid="20380" relation="include">
+        </childnode>
+        <childnode refid="20381" relation="include">
+        </childnode>
+        <childnode refid="20372" relation="include">
+        </childnode>
+        <childnode refid="20357" relation="include">
+        </childnode>
+        <childnode refid="20382" relation="include">
+        </childnode>
+      </node>
+      <node id="20355">
+        <label>lbann_config.hpp</label>
+      </node>
+      <node id="20381">
+        <label>algorithm</label>
+      </node>
+      <node id="20350">
+        <label>lbann/utils/cyg_profile.hpp</label>
+        <link refid="cyg__profile_8hpp"/>
+        <childnode refid="20351" relation="include">
+        </childnode>
+        <childnode refid="20352" relation="include">
+        </childnode>
+        <childnode refid="20353" relation="include">
+        </childnode>
+        <childnode refid="20354" relation="include">
+        </childnode>
+      </node>
+      <node id="20349">
+        <label>lbann/Elemental_extensions.hpp</label>
+        <link refid="Elemental__extensions_8hpp"/>
+        <childnode refid="20348" relation="include">
+        </childnode>
+      </node>
+      <node id="20359">
+        <label>typeindex</label>
+      </node>
+      <node id="20353">
+        <label>dlfcn.h</label>
+      </node>
+    </incdepgraph>
+    <innernamespace refid="namespacelbann">lbann</innernamespace>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>2014-2016,<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Security,<sp/>LLC.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Produced<sp/>at<sp/>the<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Laboratory.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Written<sp/>by<sp/>the<sp/>LBANN<sp/>Research<sp/>Team<sp/>(B.<sp/>Van<sp/>Essen,<sp/>et<sp/>al.)<sp/>listed<sp/>in</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="comment">//<sp/>the<sp/>CONTRIBUTORS<sp/>file.<sp/>&lt;lbann-dev@llnl.gov&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="comment">//<sp/>LLNL-CODE-697807.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="comment">//<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="comment">//<sp/>This<sp/>file<sp/>is<sp/>part<sp/>of<sp/>LBANN:<sp/>Livermore<sp/>Big<sp/>Artificial<sp/>Neural<sp/>Network</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Toolkit.<sp/>For<sp/>details,<sp/>see<sp/>http://software.llnl.gov/LBANN<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="comment">//<sp/>https://github.com/LLNL/LBANN.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Licensed<sp/>under<sp/>the<sp/>Apache<sp/>License,<sp/>Version<sp/>2.0<sp/>(the<sp/>&quot;Licensee&quot;);<sp/>you</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight><highlight class="comment">//<sp/>may<sp/>not<sp/>use<sp/>this<sp/>file<sp/>except<sp/>in<sp/>compliance<sp/>with<sp/>the<sp/>License.<sp/><sp/>You<sp/>may</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="comment">//<sp/>obtain<sp/>a<sp/>copy<sp/>of<sp/>the<sp/>License<sp/>at:</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight><highlight class="comment">//<sp/>http://www.apache.org/licenses/LICENSE-2.0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Unless<sp/>required<sp/>by<sp/>applicable<sp/>law<sp/>or<sp/>agreed<sp/>to<sp/>in<sp/>writing,<sp/>software</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight><highlight class="comment">//<sp/>distributed<sp/>under<sp/>the<sp/>License<sp/>is<sp/>distributed<sp/>on<sp/>an<sp/>&quot;AS<sp/>IS&quot;<sp/>BASIS,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight><highlight class="comment">//<sp/>WITHOUT<sp/>WARRANTIES<sp/>OR<sp/>CONDITIONS<sp/>OF<sp/>ANY<sp/>KIND,<sp/>either<sp/>express<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="comment">//<sp/>implied.<sp/>See<sp/>the<sp/>License<sp/>for<sp/>the<sp/>specific<sp/>language<sp/>governing</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="comment">//<sp/>permissions<sp/>and<sp/>limitations<sp/>under<sp/>the<sp/>license.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="25"><highlight class="normal"></highlight><highlight class="comment">//</highlight></codeline>
+<codeline lineno="27"><highlight class="comment"></highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="28"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="data__store__merge__features_8hpp" kindref="compound">lbann/data_store/data_store_merge_features.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="29"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="data__store__csv_8hpp" kindref="compound">lbann/data_store/data_store_csv.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="30"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="data__reader__merge__features_8hpp" kindref="compound">lbann/data_readers/data_reader_merge_features.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="exception_8hpp" kindref="compound">lbann/utils/exception.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="32"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="options_8hpp" kindref="compound">lbann/utils/options.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="33"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="timer_8hpp" kindref="compound">lbann/utils/timer.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="34"><highlight class="normal"></highlight></codeline>
+<codeline lineno="35"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacelbann" kindref="compound">lbann</ref><sp/>{</highlight></codeline>
+<codeline lineno="36"><highlight class="normal"></highlight></codeline>
+<codeline lineno="37" refid="classlbann_1_1data__store__merge__features_1a4a2d9d0460f657a38397cf3a48c4d83e" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1data__store__merge__features_1a4a2d9d0460f657a38397cf3a48c4d83e" kindref="member">data_store_merge_features::data_store_merge_features</ref>(<ref refid="classlbann_1_1generic__data__reader" kindref="compound">generic_data_reader</ref><sp/>*reader,<sp/><ref refid="classlbann_1_1model" kindref="compound">model</ref><sp/>*m)<sp/>:</highlight></codeline>
+<codeline lineno="38"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1generic__data__store" kindref="compound">generic_data_store</ref>(reader,<sp/>m)<sp/>{</highlight></codeline>
+<codeline lineno="39"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1generic__data__store_1a853741295a07b5687921fc56d0d7d5b2" kindref="member">set_name</ref>(</highlight><highlight class="stringliteral">&quot;data_store_merge_features&quot;</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="40"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="41"><highlight class="normal"></highlight></codeline>
+<codeline lineno="42"><highlight class="normal"></highlight></codeline>
+<codeline lineno="43" refid="classlbann_1_1data__store__merge__features_1ade3b7b138376880121d16f40255e5f54" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1data__store__merge__features_1ade3b7b138376880121d16f40255e5f54" kindref="member">data_store_merge_features::~data_store_merge_features</ref>()<sp/>{</highlight></codeline>
+<codeline lineno="44"><highlight class="normal"><sp/><sp/>MPI_Win_free(<sp/>&amp;<ref refid="classlbann_1_1data__store__merge__features_1a98f2c892955666c136ea4bb8aeba5e2b" kindref="member">m_win</ref><sp/>);</highlight></codeline>
+<codeline lineno="45"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="46"><highlight class="normal"></highlight></codeline>
+<codeline lineno="47"><highlight class="normal"></highlight></codeline>
+<codeline lineno="48"><highlight class="normal"></highlight></codeline>
+<codeline lineno="49"><highlight class="normal"></highlight><highlight class="preprocessor">#if<sp/>0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="50"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__store__merge__features_1aecb1fbbbc0c0ee9647cf178487eb2c02" kindref="member">data_store_merge_features::setup</ref>()<sp/>{</highlight></codeline>
+<codeline lineno="51"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1generic__data__store_1a87695bfd2d1ed0dbe01d99108e3f68b7" kindref="member">m_rank</ref><sp/>==<sp/>0)<sp/>std::cerr<sp/>&lt;&lt;<sp/></highlight><highlight class="stringliteral">&quot;STARTING<sp/>data_store_merge_features::setup()\n&quot;</highlight><highlight class="normal">;<sp/></highlight></codeline>
+<codeline lineno="52"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//double<sp/>tm1<sp/>=<sp/>get_time();</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="53"><highlight class="normal"></highlight></codeline>
+<codeline lineno="54"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1generic__data__store_1a1cff17def02ee21b6ca0befeb04bb582" kindref="member">generic_data_store::setup</ref>();</highlight></codeline>
+<codeline lineno="55"><highlight class="normal"></highlight></codeline>
+<codeline lineno="56"><highlight class="normal"></highlight><highlight class="comment">/*</highlight></codeline>
+<codeline lineno="57"><highlight class="comment"><sp/><sp/>bool<sp/>run_tests<sp/>=<sp/>false;</highlight></codeline>
+<codeline lineno="58"><highlight class="comment"><sp/><sp/>if<sp/>(options::get()-&gt;has_bool(&quot;test_data_store&quot;)<sp/>&amp;&amp;<sp/>options::get()-&gt;get_bool(&quot;test_data_store&quot;))<sp/>{</highlight></codeline>
+<codeline lineno="59"><highlight class="comment"><sp/><sp/><sp/><sp/>run_tests<sp/>=<sp/>true;</highlight></codeline>
+<codeline lineno="60"><highlight class="comment"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="61"><highlight class="comment"><sp/><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="62"><highlight class="normal"></highlight></codeline>
+<codeline lineno="63"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1generic__data__store_1a87695bfd2d1ed0dbe01d99108e3f68b7" kindref="member">m_rank</ref><sp/>==<sp/>0)<sp/>{</highlight></codeline>
+<codeline lineno="64"><highlight class="normal"><sp/><sp/><sp/><sp/>std::cout<sp/>&lt;&lt;<sp/></highlight><highlight class="stringliteral">&quot;starting<sp/>data_store_merge_features::setup()<sp/>for<sp/>data<sp/>reader<sp/>with<sp/>role:<sp/>&quot;</highlight><highlight class="normal"><sp/>&lt;&lt;<sp/><ref refid="classlbann_1_1generic__data__store_1afa49ced0ab64c632371ea52532a91ec2" kindref="member">m_reader</ref>-&gt;<ref refid="classlbann_1_1generic__data__reader_1a92982e1b399f37e2ead5aa440883cba5" kindref="member">get_role</ref>()<sp/>&lt;&lt;<sp/>std::endl;</highlight></codeline>
+<codeline lineno="65"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="66"><highlight class="normal"><sp/><sp/></highlight></codeline>
+<codeline lineno="67"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(!<sp/><ref refid="classlbann_1_1generic__data__store_1a1a9cc7b097cd7dd6ae0d12d52bb43ea1" kindref="member">m_in_memory</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="68"><highlight class="normal"><sp/><sp/><sp/><sp/>std::stringstream<sp/>err;</highlight></codeline>
+<codeline lineno="69"><highlight class="normal"><sp/><sp/><sp/><sp/>err<sp/>&lt;&lt;<sp/>__FILE__<sp/>&lt;&lt;<sp/></highlight><highlight class="stringliteral">&quot;<sp/>&quot;</highlight><highlight class="normal"><sp/>&lt;&lt;<sp/>__LINE__<sp/>&lt;&lt;<sp/></highlight><highlight class="stringliteral">&quot;<sp/>::<sp/>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="70"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>&lt;&lt;<sp/></highlight><highlight class="stringliteral">&quot;not<sp/>yet<sp/>implemented&quot;</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="71"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">throw</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__exception" kindref="compound">lbann_exception</ref>(err.str());</highlight></codeline>
+<codeline lineno="72"><highlight class="normal"><sp/><sp/>}<sp/></highlight></codeline>
+<codeline lineno="73"><highlight class="normal"><sp/><sp/></highlight></codeline>
+<codeline lineno="74"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">else</highlight><highlight class="normal"><sp/>{</highlight></codeline>
+<codeline lineno="75"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//sanity<sp/>check</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="76"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1data__reader__merge__features" kindref="compound">data_reader_merge_features</ref><sp/>*reader<sp/>=<sp/></highlight><highlight class="keyword">dynamic_cast&lt;</highlight><highlight class="normal"><ref refid="classlbann_1_1data__reader__merge__features" kindref="compound">data_reader_merge_features</ref>*</highlight><highlight class="keyword">&gt;</highlight><highlight class="normal">(<ref refid="classlbann_1_1generic__data__store_1afa49ced0ab64c632371ea52532a91ec2" kindref="member">m_reader</ref>);</highlight></codeline>
+<codeline lineno="77"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(reader<sp/>==<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal">)<sp/>{</highlight></codeline>
+<codeline lineno="78"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>std::stringstream<sp/>err;</highlight></codeline>
+<codeline lineno="79"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>err<sp/>&lt;&lt;<sp/>__FILE__<sp/>&lt;&lt;<sp/></highlight><highlight class="stringliteral">&quot;<sp/>&quot;</highlight><highlight class="normal"><sp/>&lt;&lt;<sp/>__LINE__<sp/>&lt;&lt;<sp/></highlight><highlight class="stringliteral">&quot;<sp/>::<sp/>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="80"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>&lt;&lt;<sp/></highlight><highlight class="stringliteral">&quot;dynamic_cast&lt;merge_features_reader*&gt;(m_reader)<sp/>failed&quot;</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="81"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">throw</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__exception" kindref="compound">lbann_exception</ref>(err.str());</highlight></codeline>
+<codeline lineno="82"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="83"><highlight class="normal"></highlight></codeline>
+<codeline lineno="84"><highlight class="normal"></highlight></codeline>
+<codeline lineno="85"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>get<sp/>list<sp/>of<sp/>indices<sp/>used<sp/>in<sp/>calls<sp/>to<sp/>generic_data_reader::fetch_data</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="86"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1generic__data__store_1ab861db5f81e45a6063b8922a331dd007" kindref="member">get_minibatch_index_vector</ref>();</highlight></codeline>
+<codeline lineno="87"><highlight class="normal"></highlight></codeline>
+<codeline lineno="88"><highlight class="normal"><sp/><sp/><sp/><sp/>std::vector&lt;generic_data_reader*&gt;<sp/>&amp;readers<sp/>=<sp/>reader-&gt;<ref refid="classlbann_1_1generic__compound__data__reader_1a3ba33e29527963baf182b2c034b8ba2d" kindref="member">get_data_readers</ref>();</highlight></codeline>
+<codeline lineno="89"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(</highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>j=0;<sp/>j&lt;readers.size();<sp/>j++)<sp/>{</highlight></codeline>
+<codeline lineno="90"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>readers[j]-&gt;get_data_store();</highlight></codeline>
+<codeline lineno="91"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1pilot2__molecular__reader" kindref="compound">pilot2_molecular_reader</ref><sp/>*pilot2_reader<sp/>=<sp/></highlight><highlight class="keyword">dynamic_cast&lt;</highlight><highlight class="normal"><ref refid="classlbann_1_1pilot2__molecular__reader" kindref="compound">pilot2_molecular_reader</ref>*</highlight><highlight class="keyword">&gt;</highlight><highlight class="normal">(<ref refid="classlbann_1_1generic__data__store_1afa49ced0ab64c632371ea52532a91ec2" kindref="member">m_reader</ref>);</highlight></codeline>
+<codeline lineno="92"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1generic__data__store" kindref="compound">generic_data_store</ref><sp/>*store<sp/>=<sp/>pilot2_reader-&gt;<ref refid="classlbann_1_1generic__data__reader_1a2f1f018beecb1295c00a1ffdfa03f638" kindref="member">get_data_store</ref>();</highlight></codeline>
+<codeline lineno="93"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1data__store__pilot2__molecular" kindref="compound">data_store_pilot2_molecular</ref><sp/>*s<sp/>=<sp/></highlight><highlight class="keyword">dynamic_cast&lt;</highlight><highlight class="normal"><ref refid="classlbann_1_1data__store__pilot2__molecular" kindref="compound">data_store_pilot2_molecular</ref>*</highlight><highlight class="keyword">&gt;</highlight><highlight class="normal">(store);</highlight></codeline>
+<codeline lineno="94"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>s-&gt;<ref refid="classlbann_1_1data__store__pilot2__molecular_1a246274b369ed60bf214cf503019ab2ca" kindref="member">clear_minibatch_indices</ref>();</highlight></codeline>
+<codeline lineno="95"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>m_subsidiary_stores.push_back(s);</highlight></codeline>
+<codeline lineno="96"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="97"><highlight class="normal"></highlight></codeline>
+<codeline lineno="98"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(</highlight><highlight class="keyword">auto</highlight><highlight class="normal"><sp/>t<sp/>:<sp/>m_subsidiary_stores)<sp/>{</highlight></codeline>
+<codeline lineno="99"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>t-&gt;set_no_shuffle();</highlight></codeline>
+<codeline lineno="100"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="101"><highlight class="normal"></highlight></codeline>
+<codeline lineno="102"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::vector&lt;int&gt;<sp/>&amp;num_samples_psum<sp/>=<sp/>reader-&gt;get_num_samples_psum();</highlight></codeline>
+<codeline lineno="103"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(</highlight><highlight class="keyword">auto</highlight><highlight class="normal"><sp/>data_id<sp/>:<sp/><ref refid="classlbann_1_1generic__data__store_1a41f7fec1f1f3d6568a5765be7a6784eb" kindref="member">m_my_minibatch_indices_v</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="104"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(</highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>i<sp/>=<sp/>0;<sp/>i<sp/>&lt;<sp/>m_subsidiary_stores.size();<sp/>++i)<sp/>{</highlight></codeline>
+<codeline lineno="105"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(data_id<sp/>&lt;<sp/>num_samples_psum[i<sp/>+<sp/>1])<sp/>{</highlight></codeline>
+<codeline lineno="106"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>data_id<sp/>-=<sp/>num_samples_psum[i];</highlight></codeline>
+<codeline lineno="107"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>m_subsidiary_stores[i]-&gt;add_minibatch_index(data_id);</highlight></codeline>
+<codeline lineno="108"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="109"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="110"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="111"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="112"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="113"><highlight class="normal"></highlight></codeline>
+<codeline lineno="114"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__store__merge__features_1a6a55e3959727a104b4470ba51e0988c3" kindref="member">data_store_merge_features::exchange_data</ref>()<sp/>{</highlight></codeline>
+<codeline lineno="115"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//for<sp/>(auto<sp/>t<sp/>:<sp/>m_subsidiary_stores)<sp/>{</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="116"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight></codeline>
+<codeline lineno="117"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="118"><highlight class="normal"></highlight><highlight class="preprocessor">#endif</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="119"><highlight class="normal"></highlight></codeline>
+<codeline lineno="120"><highlight class="normal">}<sp/><sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>lbann</highlight><highlight class="normal"></highlight></codeline>
+    </programlisting>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_merge_features.cpp"/>
+  </compounddef>
+</doxygen>

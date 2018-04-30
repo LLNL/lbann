@@ -1,0 +1,8 @@
+<map id="lbann::anonymous_namespace{callback_ltfb::cpp}::assign_partners" name="lbann::anonymous_namespace{callback_ltfb::cpp}::assign_partners">
+<area shape="rect" id="node2" href="$classlbann_1_1lbann__comm.html#a1ef526486183a29feadca9bef096a534" title="lbann::lbann_comm::\lam_world_master" alt="" coords="274,5,419,44"/>
+<area shape="rect" id="node3" href="$classlbann_1_1lbann__comm.html#aeb8ef8f13bbb324e3e1f656998198f3f" title="lbann::lbann_comm::\lget_num_models" alt="" coords="274,68,419,107"/>
+<area shape="rect" id="node4" href="$classlbann_1_1lbann__comm.html#a5755dfdfc6377b4cae5ef8f7819e17de" title="lbann::lbann_comm::\lget_procs_per_model" alt="" coords="271,131,422,169"/>
+<area shape="rect" id="node5" href="$namespacelbann.html#ae6ce9c2fdec6f81803f6b1a6555c31c5" title="lbann::get_fast_generator" alt="" coords="260,193,433,219"/>
+<area shape="rect" id="node6" href="$classlbann_1_1lbann__comm.html#a74b5c594bfa5aec03af9ad2bd8f5e979" title="lbann::lbann_comm::\lscatter" alt="" coords="274,243,419,281"/>
+<area shape="rect" id="node7" href="$classlbann_1_1lbann__comm.html#a0493f1f0c42b95674daacf5288fdb073" title="lbann::lbann_comm::\lget_world_comm" alt="" coords="274,305,419,344"/>
+</map>

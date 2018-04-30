@@ -1,0 +1,139 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1constant__initializer" kind="class" language="C++" prot="public">
+    <compoundname>lbann::constant_initializer</compoundname>
+    <basecompoundref refid="classlbann_1_1weights__initializer" prot="public" virt="non-virtual">lbann::weights_initializer</basecompoundref>
+    <includes refid="initializer_8hpp" local="no">initializer.hpp</includes>
+      <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="classlbann_1_1constant__initializer_1ac0f04ad951799fa970f3dea78988cdb5" prot="private" static="no" mutable="no">
+        <type>DataType</type>
+        <definition>DataType lbann::constant_initializer::m_value</definition>
+        <argsstring></argsstring>
+        <name>m_value</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Constant value. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/weights/initializer.hpp" line="91" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/weights/initializer.hpp" bodystart="91" bodyend="-1"/>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1constant__initializer_1a2b8096bcc8c5a8c780926594d1b8441d" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>lbann::constant_initializer::constant_initializer</definition>
+        <argsstring>(lbann_comm *comm, DataType value)</argsstring>
+        <name>constant_initializer</name>
+        <param>
+          <type><ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref> *</type>
+          <declname>comm</declname>
+        </param>
+        <param>
+          <type>DataType</type>
+          <declname>value</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Constructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/weights/initializer.hpp" line="75" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/weights/initializer.hpp" bodystart="75" bodyend="76"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1constant__initializer_1af134f1b82a60829d9fdf2eabc32356ed" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::constant_initializer::~constant_initializer</definition>
+        <argsstring>() override=default</argsstring>
+        <name>~constant_initializer</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Destructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/weights/initializer.hpp" line="78" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1constant__initializer_1a1af9be89f528045f47abf13818d814ce" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type><ref refid="classlbann_1_1constant__initializer" kindref="compound">constant_initializer</ref> *</type>
+        <definition>constant_initializer* lbann::constant_initializer::copy</definition>
+        <argsstring>() const override</argsstring>
+        <name>copy</name>
+        <reimplements refid="classlbann_1_1weights__initializer_1acc84ce49188b74b23987cef3db18525a">copy</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Create a copy. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/weights/initializer.hpp" line="81" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/weights/initializer.hpp" bodystart="81" bodyend="83"/>
+        <references refid="classlbann_1_1weights__initializer_1a2ad6acf904c0c7bc7406dbd9851107be">lbann::weights_initializer::initialize_entries</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1constant__initializer_1ae3fb3bba90bd6a7e393ecc223aa5d62c" prot="public" static="no" const="yes" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::constant_initializer::initialize_entries</definition>
+        <argsstring>(AbsDistMat &amp;weights_matrix) const override</argsstring>
+        <name>initialize_entries</name>
+        <reimplements refid="classlbann_1_1weights__initializer_1a2ad6acf904c0c7bc7406dbd9851107be">initialize_entries</reimplements>
+        <param>
+          <type><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+          <declname>weights_matrix</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Initialize entries in a weights matrix to a constant value. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/weights/initializer.hpp" line="86" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/weights/initializer.cpp" bodystart="76" bodyend="82"/>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>Constant weights initializer. </para>    </detaileddescription>
+    <inheritancegraph>
+      <node id="268">
+        <label>lbann::constant_initializer</label>
+        <link refid="classlbann_1_1constant__initializer"/>
+        <childnode refid="269" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="269">
+        <label>lbann::weights_initializer</label>
+        <link refid="classlbann_1_1weights__initializer"/>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="270">
+        <label>lbann::constant_initializer</label>
+        <link refid="classlbann_1_1constant__initializer"/>
+        <childnode refid="271" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="271">
+        <label>lbann::weights_initializer</label>
+        <link refid="classlbann_1_1weights__initializer"/>
+        <childnode refid="272" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+      </node>
+      <node id="272">
+        <label>lbann::lbann_comm</label>
+        <link refid="classlbann_1_1lbann__comm"/>
+      </node>
+    </collaborationgraph>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/weights/initializer.hpp" line="71" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/weights/initializer.hpp" bodystart="71" bodyend="93"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1constant__initializer_1a2b8096bcc8c5a8c780926594d1b8441d" prot="public" virt="non-virtual"><scope>lbann::constant_initializer</scope><name>constant_initializer</name></member>
+      <member refid="classlbann_1_1weights__initializer_1a693fd517e4162029eafdfdee537c7066" prot="public" virt="non-virtual"><scope>lbann::constant_initializer</scope><name>construct_matrix</name></member>
+      <member refid="classlbann_1_1constant__initializer_1a1af9be89f528045f47abf13818d814ce" prot="public" virt="virtual"><scope>lbann::constant_initializer</scope><name>copy</name></member>
+      <member refid="classlbann_1_1constant__initializer_1ae3fb3bba90bd6a7e393ecc223aa5d62c" prot="public" virt="virtual"><scope>lbann::constant_initializer</scope><name>initialize_entries</name></member>
+      <member refid="classlbann_1_1weights__initializer_1a4273257d92237a75ef9f3614f7e5ddde" prot="protected" virt="non-virtual"><scope>lbann::constant_initializer</scope><name>m_comm</name></member>
+      <member refid="classlbann_1_1constant__initializer_1ac0f04ad951799fa970f3dea78988cdb5" prot="private" virt="non-virtual"><scope>lbann::constant_initializer</scope><name>m_value</name></member>
+      <member refid="classlbann_1_1weights__initializer_1a3b65043cb6d76dcfcb07387392429755" prot="public" virt="non-virtual"><scope>lbann::constant_initializer</scope><name>weights_initializer</name></member>
+      <member refid="classlbann_1_1constant__initializer_1af134f1b82a60829d9fdf2eabc32356ed" prot="public" virt="non-virtual"><scope>lbann::constant_initializer</scope><name>~constant_initializer</name></member>
+      <member refid="classlbann_1_1weights__initializer_1a9fba102d897402d3df37776d8aa99549" prot="public" virt="virtual"><scope>lbann::constant_initializer</scope><name>~weights_initializer</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

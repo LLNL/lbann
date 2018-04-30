@@ -1,0 +1,8 @@
+<map id="lbann::entrywise_activation_layer::bp_compute_cpu" name="lbann::entrywise_activation_layer::bp_compute_cpu">
+<area shape="rect" id="node2" href="$classlbann_1_1Layer.html#a35397843bb0c84030000c7d872229acb" title="lbann::Layer::get_local\l_prev_activations" alt="" coords="235,41,390,80"/>
+<area shape="rect" id="node4" href="$classlbann_1_1Layer.html#a82827edc5e869960144f3ccb2172bfcd" title="lbann::Layer::get_local\l_prev_error_signals" alt="" coords="235,116,390,155"/>
+<area shape="rect" id="node6" href="$classlbann_1_1Layer.html#af178d00b9d878aa7d87754bff2a91f3a" title="lbann::Layer::get_local\l_error_signals" alt="" coords="235,191,390,229"/>
+<area shape="rect" id="node3" href="$classlbann_1_1Layer.html#a45853df73a2e72bfaa774665a0f37ed7" title="lbann::Layer::get_prev\l_activations" alt="" coords="439,29,593,68"/>
+<area shape="rect" id="node5" href="$classlbann_1_1Layer.html#a7ac4579d3c1671dfaf86e3b618d6938a" title="lbann::Layer::get_prev\l_error_signals" alt="" coords="439,116,593,155"/>
+<area shape="rect" id="node7" href="$classlbann_1_1Layer.html#adb561e140e0bb601f3c5a8ee053a71d2" title="lbann::Layer::get_error\l_signals" alt="" coords="438,203,594,241"/>
+</map>

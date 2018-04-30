@@ -1,0 +1,74 @@
+\hypertarget{namespacelbann_1_1proto_1_1anonymous__namespace_02weights__factory_8cpp_03}{}\section{lbann\+:\+:proto\+:\+:anonymous\+\_\+namespace\{weights\+\_\+factory.\+cpp\} Namespace Reference}
+\label{namespacelbann_1_1proto_1_1anonymous__namespace_02weights__factory_8cpp_03}\index{lbann\+::proto\+::anonymous\+\_\+namespace\lcurly{}weights\+\_\+factory.\+cpp\rcurly{}@{lbann\+::proto\+::anonymous\+\_\+namespace\lcurly{}weights\+\_\+factory.\+cpp\rcurly{}}}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1weights__initializer}{weights\+\_\+initializer} $\ast$ \hyperlink{namespacelbann_1_1proto_1_1anonymous__namespace_02weights__factory_8cpp_03_a2bbaafd93915c6f2334e16f0afcd4ee5}{construct\+\_\+initializer} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, const lbann\+\_\+data\+::\+Weights \&proto\+\_\+weights)
+\end{DoxyCompactItemize}
+
+
+\subsection{Function Documentation}
+\mbox{\Hypertarget{namespacelbann_1_1proto_1_1anonymous__namespace_02weights__factory_8cpp_03_a2bbaafd93915c6f2334e16f0afcd4ee5}\label{namespacelbann_1_1proto_1_1anonymous__namespace_02weights__factory_8cpp_03_a2bbaafd93915c6f2334e16f0afcd4ee5}} 
+\index{lbann\+::proto\+::anonymous\+\_\+namespace\lcurly{}weights\+\_\+factory.\+cpp\rcurly{}@{lbann\+::proto\+::anonymous\+\_\+namespace\lcurly{}weights\+\_\+factory.\+cpp\rcurly{}}!construct\+\_\+initializer@{construct\+\_\+initializer}}
+\index{construct\+\_\+initializer@{construct\+\_\+initializer}!lbann\+::proto\+::anonymous\+\_\+namespace\lcurly{}weights\+\_\+factory.\+cpp\rcurly{}@{lbann\+::proto\+::anonymous\+\_\+namespace\lcurly{}weights\+\_\+factory.\+cpp\rcurly{}}}
+\subsubsection{\texorpdfstring{construct\+\_\+initializer()}{construct\_initializer()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1weights__initializer}{weights\+\_\+initializer}$\ast$ lbann\+::proto\+::anonymous\+\_\+namespace\{weights\+\_\+factory.\+cpp\}\+::construct\+\_\+initializer (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{const lbann\+\_\+data\+::\+Weights \&}]{proto\+\_\+weights }\end{DoxyParamCaption})}
+
+Construct a weights initialization specified with prototext. 
+
+Definition at line 35 of file weights\+\_\+factory.\+cpp.
+
+
+\begin{DoxyCode}
+36                                                                                    \{
+37 
+38   \textcolor{comment}{// Random initialization}
+39   \textcolor{keywordflow}{if} (proto\_weights.has\_uniform\_initializer()) \{
+40     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_weights.uniform\_initializer();
+41     \textcolor{keyword}{const} \textcolor{keyword}{auto}& min = params.min();
+42     \textcolor{keyword}{const} \textcolor{keyword}{auto}& \hyperlink{base_8hpp_ac47a6ee5278a53898222a48639a2bf39a2ffe4e77325d9a7152f7086ea7aa5114}{max} = params.max();
+43     \textcolor{keywordflow}{if} (min != 0.0 || \hyperlink{base_8hpp_ac47a6ee5278a53898222a48639a2bf39a2ffe4e77325d9a7152f7086ea7aa5114}{max} != 0.0) \{
+44       \textcolor{keywordflow}{return} \textcolor{keyword}{new} uniform\_initializer(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, min, \hyperlink{base_8hpp_ac47a6ee5278a53898222a48639a2bf39a2ffe4e77325d9a7152f7086ea7aa5114}{max});
+45     \} \textcolor{keywordflow}{else} \{
+46       \textcolor{keywordflow}{return} \textcolor{keyword}{new} uniform\_initializer(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm});
+47     \}
+48   \}
+49   \textcolor{keywordflow}{if} (proto\_weights.has\_normal\_initializer()) \{
+50     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_weights.normal\_initializer();
+51     \textcolor{keyword}{const} \textcolor{keyword}{auto}& mean = params.mean();
+52     \textcolor{keyword}{const} \textcolor{keyword}{auto}& standard\_deviation = params.standard\_deviation();
+53     \textcolor{keywordflow}{if} (mean != 0.0 || standard\_deviation != 0.0) \{
+54       \textcolor{keywordflow}{return} \textcolor{keyword}{new} normal\_initializer(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, mean, standard\_deviation);
+55     \} \textcolor{keywordflow}{else} \{
+56       \textcolor{keywordflow}{return} \textcolor{keyword}{new} normal\_initializer(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm});
+57     \}
+58   \}
+59 
+60   \textcolor{comment}{// Glorot and He initialization}
+61   \textcolor{keywordflow}{if} (proto\_weights.has\_glorot\_normal\_initializer()) \{
+62     \textcolor{keywordflow}{return} \textcolor{keyword}{new} glorot\_normal\_initializer(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm});
+63   \}
+64   \textcolor{keywordflow}{if} (proto\_weights.has\_glorot\_uniform\_initializer()) \{
+65     \textcolor{keywordflow}{return} \textcolor{keyword}{new} glorot\_uniform\_initializer(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm});
+66   \}
+67   \textcolor{keywordflow}{if} (proto\_weights.has\_he\_normal\_initializer()) \{
+68     \textcolor{keywordflow}{return} \textcolor{keyword}{new} he\_normal\_initializer(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm});
+69   \}
+70   \textcolor{keywordflow}{if} (proto\_weights.has\_he\_uniform\_initializer()) \{
+71     \textcolor{keywordflow}{return} \textcolor{keyword}{new} he\_uniform\_initializer(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm});
+72   \}
+73 
+74   \textcolor{comment}{// Constant initialization}
+75   \textcolor{comment}{// Note: default is zero-initialization}
+76   \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_weights.constant\_initializer();
+77   \textcolor{keywordflow}{return} \textcolor{keyword}{new} constant\_initializer(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, params.value());
+78 
+79 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{namespacelbann_1_1proto_1_1anonymous__namespace_02weights__factory_8cpp_03_a2bbaafd93915c6f2334e16f0afcd4ee5_icgraph}
+\end{center}
+\end{figure}

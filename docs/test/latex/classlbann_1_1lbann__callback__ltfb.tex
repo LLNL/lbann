@@ -1,0 +1,376 @@
+\hypertarget{classlbann_1_1lbann__callback__ltfb}{}\section{lbann\+:\+:lbann\+\_\+callback\+\_\+ltfb Class Reference}
+\label{classlbann_1_1lbann__callback__ltfb}\index{lbann\+::lbann\+\_\+callback\+\_\+ltfb@{lbann\+::lbann\+\_\+callback\+\_\+ltfb}}
+
+
+{\ttfamily \#include $<$callback\+\_\+ltfb.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+ltfb\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=211pt]{classlbann_1_1lbann__callback__ltfb__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+ltfb\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=316pt]{classlbann_1_1lbann__callback__ltfb__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1lbann__callback__ltfb_a44cb8fdfa7aae5d35543e47f3105f8cb}{lbann\+\_\+callback\+\_\+ltfb} (int round\+\_\+size, \hyperlink{classlbann_1_1lbann__summary}{lbann\+\_\+summary} $\ast$summarizer=nullptr)
+\item 
+\hyperlink{classlbann_1_1lbann__callback__ltfb_af589490a67c5490ac91210c89ab66295}{lbann\+\_\+callback\+\_\+ltfb} (const \hyperlink{classlbann_1_1lbann__callback__ltfb}{lbann\+\_\+callback\+\_\+ltfb} \&other)
+\item 
+\hyperlink{classlbann_1_1lbann__callback__ltfb}{lbann\+\_\+callback\+\_\+ltfb} \& \hyperlink{classlbann_1_1lbann__callback__ltfb_a19467cc32f7a1960ec6d62ca1c0cb6b8}{operator=} (const \hyperlink{classlbann_1_1lbann__callback__ltfb}{lbann\+\_\+callback\+\_\+ltfb} \&other)
+\item 
+\hyperlink{classlbann_1_1lbann__callback__ltfb_abfb61fe2c92147dff98f861adb2d5c74}{$\sim$lbann\+\_\+callback\+\_\+ltfb} () override
+\item 
+\hyperlink{classlbann_1_1lbann__callback__ltfb}{lbann\+\_\+callback\+\_\+ltfb} $\ast$ \hyperlink{classlbann_1_1lbann__callback__ltfb_a62daf57a8c34fd301e24ba4fa2dd6630}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1lbann__callback__ltfb_aaf259b187e956282807d4daa03beb502}{name} () const override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__ltfb_a7548166d170eda00e4e0cba6626a1a78}{setup} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__ltfb_a7d2d1682c4a6a6b7e8ea1e3f4bf33c84}{on\+\_\+batch\+\_\+begin} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$ \hyperlink{classlbann_1_1lbann__callback__ltfb_a7536bb519c8a89b518a3196f953ac048}{m\+\_\+comm}
+\item 
+int \hyperlink{classlbann_1_1lbann__callback__ltfb_a78434b8e8b1dfa43a68a9707473cf789}{m\+\_\+round\+\_\+size}
+\item 
+std\+::vector$<$ \hyperlink{classlbann_1_1weights}{weights} $\ast$ $>$ \hyperlink{classlbann_1_1lbann__callback__ltfb_a5e5b9917b9eee67b8e14c6e8f95a85a3}{m\+\_\+local\+\_\+weights}
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+Manage L\+T\+FB training. L\+T\+FB works in rounds, which are made up of some number of mini-\/batches (that evenly divide the number of minibatches in an epoch). In each round, the model trains as usual, and at the end it is randomly paired with another model. The pairs exchange their models and evaluate both their local and the received model on their validation data. The model achieving the highest accuracy is retained and training continues. Current limitations\+:
+\begin{DoxyItemize}
+\item Does not transfer optimizer state, so it\textquotesingle{}s best to stick to S\+GD without momentum.
+\item Uses the validation data for the tournament (we may not want this).
+\item Requires a manually-\/created model duplicate. 
+\end{DoxyItemize}
+
+Definition at line 48 of file callback\+\_\+ltfb.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__ltfb_a44cb8fdfa7aae5d35543e47f3105f8cb}\label{classlbann_1_1lbann__callback__ltfb_a44cb8fdfa7aae5d35543e47f3105f8cb}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+ltfb@{lbann\+::lbann\+\_\+callback\+\_\+ltfb}!lbann\+\_\+callback\+\_\+ltfb@{lbann\+\_\+callback\+\_\+ltfb}}
+\index{lbann\+\_\+callback\+\_\+ltfb@{lbann\+\_\+callback\+\_\+ltfb}!lbann\+::lbann\+\_\+callback\+\_\+ltfb@{lbann\+::lbann\+\_\+callback\+\_\+ltfb}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+ltfb()}{lbann\_callback\_ltfb()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+ltfb\+::lbann\+\_\+callback\+\_\+ltfb (\begin{DoxyParamCaption}\item[{int}]{round\+\_\+size,  }\item[{\hyperlink{classlbann_1_1lbann__summary}{lbann\+\_\+summary} $\ast$}]{summarizer = {\ttfamily nullptr} }\end{DoxyParamCaption})}
+
+Constructor. 
+\begin{DoxyParams}{Parameters}
+{\em round\+\_\+size} & The number of minibatches in each round. \\
+\hline
+\end{DoxyParams}
+
+
+Definition at line 108 of file callback\+\_\+ltfb.\+cpp.
+
+
+\begin{DoxyCode}
+110   : \hyperlink{classlbann_1_1lbann__callback_a679057298a41ddd47f08c157f756c584}{lbann\_callback}(1, summarizer), \hyperlink{classlbann_1_1lbann__callback__ltfb_a78434b8e8b1dfa43a68a9707473cf789}{m\_round\_size}(round\_size) \{\}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__ltfb_a44cb8fdfa7aae5d35543e47f3105f8cb_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__ltfb_af589490a67c5490ac91210c89ab66295}\label{classlbann_1_1lbann__callback__ltfb_af589490a67c5490ac91210c89ab66295}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+ltfb@{lbann\+::lbann\+\_\+callback\+\_\+ltfb}!lbann\+\_\+callback\+\_\+ltfb@{lbann\+\_\+callback\+\_\+ltfb}}
+\index{lbann\+\_\+callback\+\_\+ltfb@{lbann\+\_\+callback\+\_\+ltfb}!lbann\+::lbann\+\_\+callback\+\_\+ltfb@{lbann\+::lbann\+\_\+callback\+\_\+ltfb}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+ltfb()}{lbann\_callback\_ltfb()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+ltfb\+::lbann\+\_\+callback\+\_\+ltfb (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__ltfb}{lbann\+\_\+callback\+\_\+ltfb} \&}]{other }\end{DoxyParamCaption})}
+
+
+
+Definition at line 112 of file callback\+\_\+ltfb.\+cpp.
+
+
+\begin{DoxyCode}
+112                                                                          :
+113   \hyperlink{classlbann_1_1lbann__callback_a679057298a41ddd47f08c157f756c584}{lbann\_callback}(other),
+114   \hyperlink{classlbann_1_1lbann__callback__ltfb_a7536bb519c8a89b518a3196f953ac048}{m\_comm}(other.m\_comm),
+115   \hyperlink{classlbann_1_1lbann__callback__ltfb_a78434b8e8b1dfa43a68a9707473cf789}{m\_round\_size}(other.m\_round\_size),
+116   \hyperlink{classlbann_1_1lbann__callback__ltfb_a5e5b9917b9eee67b8e14c6e8f95a85a3}{m\_local\_weights}(other.m\_local\_weights) \{
+117   \textcolor{keywordflow}{for} (\textcolor{keyword}{auto}& w : \hyperlink{classlbann_1_1lbann__callback__ltfb_a5e5b9917b9eee67b8e14c6e8f95a85a3}{m\_local\_weights}) \{ w = w->copy(); \}
+118 \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__ltfb_abfb61fe2c92147dff98f861adb2d5c74}\label{classlbann_1_1lbann__callback__ltfb_abfb61fe2c92147dff98f861adb2d5c74}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+ltfb@{lbann\+::lbann\+\_\+callback\+\_\+ltfb}!````~lbann\+\_\+callback\+\_\+ltfb@{$\sim$lbann\+\_\+callback\+\_\+ltfb}}
+\index{````~lbann\+\_\+callback\+\_\+ltfb@{$\sim$lbann\+\_\+callback\+\_\+ltfb}!lbann\+::lbann\+\_\+callback\+\_\+ltfb@{lbann\+::lbann\+\_\+callback\+\_\+ltfb}}
+\subsubsection{\texorpdfstring{$\sim$lbann\+\_\+callback\+\_\+ltfb()}{~lbann\_callback\_ltfb()}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+ltfb\+::$\sim$lbann\+\_\+callback\+\_\+ltfb (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}}
+
+
+
+Definition at line 134 of file callback\+\_\+ltfb.\+cpp.
+
+
+\begin{DoxyCode}
+134                                           \{
+135   \textcolor{keywordflow}{for} (\textcolor{keyword}{auto}& w : \hyperlink{classlbann_1_1lbann__callback__ltfb_a5e5b9917b9eee67b8e14c6e8f95a85a3}{m\_local\_weights}) \{ \textcolor{keyword}{delete} w; \}
+136 \}
+\end{DoxyCode}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__ltfb_a62daf57a8c34fd301e24ba4fa2dd6630}\label{classlbann_1_1lbann__callback__ltfb_a62daf57a8c34fd301e24ba4fa2dd6630}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+ltfb@{lbann\+::lbann\+\_\+callback\+\_\+ltfb}!copy@{copy}}
+\index{copy@{copy}!lbann\+::lbann\+\_\+callback\+\_\+ltfb@{lbann\+::lbann\+\_\+callback\+\_\+ltfb}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__ltfb}{lbann\+\_\+callback\+\_\+ltfb}$\ast$ lbann\+::lbann\+\_\+callback\+\_\+ltfb\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a9f545d1269a8c7af335625d049691f26}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 58 of file callback\+\_\+ltfb.\+hpp.
+
+
+\begin{DoxyCode}
+58 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1lbann__callback__ltfb_a44cb8fdfa7aae5d35543e47f3105f8cb}{lbann\_callback\_ltfb}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__ltfb_a62daf57a8c34fd301e24ba4fa2dd6630_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__ltfb_aaf259b187e956282807d4daa03beb502}\label{classlbann_1_1lbann__callback__ltfb_aaf259b187e956282807d4daa03beb502}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+ltfb@{lbann\+::lbann\+\_\+callback\+\_\+ltfb}!name@{name}}
+\index{name@{name}!lbann\+::lbann\+\_\+callback\+\_\+ltfb@{lbann\+::lbann\+\_\+callback\+\_\+ltfb}}
+\subsubsection{\texorpdfstring{name()}{name()}}
+{\footnotesize\ttfamily std\+::string lbann\+::lbann\+\_\+callback\+\_\+ltfb\+::name (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Return this callback\textquotesingle{}s name. 
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a7522c7a14f1d6a1ea762cc2d7248eb3a}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 59 of file callback\+\_\+ltfb.\+hpp.
+
+
+\begin{DoxyCode}
+59 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"ltfb"}; \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__ltfb_aaf259b187e956282807d4daa03beb502_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__ltfb_a7d2d1682c4a6a6b7e8ea1e3f4bf33c84}\label{classlbann_1_1lbann__callback__ltfb_a7d2d1682c4a6a6b7e8ea1e3f4bf33c84}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+ltfb@{lbann\+::lbann\+\_\+callback\+\_\+ltfb}!on\+\_\+batch\+\_\+begin@{on\+\_\+batch\+\_\+begin}}
+\index{on\+\_\+batch\+\_\+begin@{on\+\_\+batch\+\_\+begin}!lbann\+::lbann\+\_\+callback\+\_\+ltfb@{lbann\+::lbann\+\_\+callback\+\_\+ltfb}}
+\subsubsection{\texorpdfstring{on\+\_\+batch\+\_\+begin()}{on\_batch\_begin()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+ltfb\+::on\+\_\+batch\+\_\+begin (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Potentially run an L\+T\+FB round. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_a9ecf4e44cd4021cdd687de14c850cc83}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 156 of file callback\+\_\+ltfb.\+cpp.
+
+
+\begin{DoxyCode}
+156                                                  \{
+157 
+158   \textcolor{comment}{// Check whether to start LTFB round}
+159   \textcolor{keyword}{const} \textcolor{keyword}{auto}& mode = m->get\_execution\_mode();
+160   \textcolor{keyword}{const} \textcolor{keyword}{auto}& step = m->get\_cur\_step();
+161   \textcolor{keywordflow}{if} (mode != \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training}) \{ \textcolor{keywordflow}{return}; \}
+162   \textcolor{keywordflow}{if} (step % \hyperlink{classlbann_1_1lbann__callback__ltfb_a78434b8e8b1dfa43a68a9707473cf789}{m\_round\_size} != 0 || step == 0) \{ \textcolor{keywordflow}{return}; \}
+163   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1lbann__callback__ltfb_a7536bb519c8a89b518a3196f953ac048}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_a1ef526486183a29feadca9bef096a534}{am\_world\_master}()) \{
+164     std::cout << \textcolor{stringliteral}{"---- LTFB round (step "} << step << \textcolor{stringliteral}{") ----"} << std::endl;
+165   \}
+166 
+167   \textcolor{comment}{// Determine partner model for tournament}
+168   \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_model = \hyperlink{classlbann_1_1lbann__callback__ltfb_a7536bb519c8a89b518a3196f953ac048}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_a6422f70c92bed0b78179facc52b066f7}{get\_model\_rank}();
+169   \textcolor{keyword}{const} \textcolor{keyword}{auto}& remote\_model = \hyperlink{namespacelbann_1_1anonymous__namespace_02callback__ltfb_8cpp_03_a1865e25ff1f3b6ad417d1853ea0bc6f4}{assign\_partners}(\hyperlink{classlbann_1_1lbann__callback__ltfb_a7536bb519c8a89b518a3196f953ac048}{m\_comm});
+170   \textcolor{keywordflow}{if} (remote\_model == local\_model) \{ \textcolor{keywordflow}{return}; \}
+171 
+172   \textcolor{comment}{// Evaluate local model on tournament data}
+173   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1lbann__callback__ltfb_a7536bb519c8a89b518a3196f953ac048}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_a1ef526486183a29feadca9bef096a534}{am\_world\_master}()) \{
+174     std::cout << \textcolor{stringliteral}{"LTFB: evaluating local model..."} << std::endl;
+175   \}
+176   \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_score = \hyperlink{namespacelbann_1_1anonymous__namespace_02callback__ltfb_8cpp_03_a2525bf058156612d7847d0754277e4fc}{evaluate}(m);
+177 
+178   \textcolor{comment}{// Evaluate remote model on tournament data}
+179   \textcolor{comment}{// Note: Weights from remote model are copied into local model}
+180   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1lbann__callback__ltfb_a7536bb519c8a89b518a3196f953ac048}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_a1ef526486183a29feadca9bef096a534}{am\_world\_master}()) \{
+181     std::cout << \textcolor{stringliteral}{"LTFB: evaluating remote model..."} << std::endl;
+182   \}
+183   \textcolor{keyword}{auto} model\_weights = m->get\_weights();
+184   \hyperlink{namespacelbann_1_1anonymous__namespace_02callback__ltfb_8cpp_03_a2b155d39e6dba02a34a7c58d804d865e}{exchange\_weights}(\hyperlink{classlbann_1_1lbann__callback__ltfb_a7536bb519c8a89b518a3196f953ac048}{m\_comm}, model\_weights, \hyperlink{classlbann_1_1lbann__callback__ltfb_a5e5b9917b9eee67b8e14c6e8f95a85a3}{m\_local\_weights}, 
+      remote\_model);
+185   \textcolor{keyword}{const} \textcolor{keyword}{auto}& remote\_score = \hyperlink{namespacelbann_1_1anonymous__namespace_02callback__ltfb_8cpp_03_a2525bf058156612d7847d0754277e4fc}{evaluate}(m);
+186 
+187   \textcolor{comment}{// Restore local weights if they achieve a better score}
+188   \textcolor{keywordflow}{if} (remote\_score <= local\_score) \{
+189     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} i = 0; i < model\_weights.size(); ++i) \{
+190       *model\_weights[i] = *\hyperlink{classlbann_1_1lbann__callback__ltfb_a5e5b9917b9eee67b8e14c6e8f95a85a3}{m\_local\_weights}[i];
+191     \}
+192   \} \textcolor{keywordflow}{else} \{
+193     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1lbann__callback__ltfb_a7536bb519c8a89b518a3196f953ac048}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_ad8a5790dfa9191d4b4f889e8707e57f1}{am\_model\_master}()) \{
+194       std::cout << \textcolor{stringliteral}{"LTFB: replacing model "} << local\_model << \textcolor{stringliteral}{" "}
+195                 << \textcolor{stringliteral}{"("} << local\_score << \textcolor{stringliteral}{"% categorical accuracy) "}
+196                 << \textcolor{stringliteral}{"with model "} << remote\_model << \textcolor{stringliteral}{" "}
+197                 << \textcolor{stringliteral}{"("} << remote\_score << \textcolor{stringliteral}{"% categorical accuracy)"}
+198                 << std::endl;
+199     \}
+200   \}
+201 
+202 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__ltfb_a7d2d1682c4a6a6b7e8ea1e3f4bf33c84_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=340pt]{classlbann_1_1lbann__callback__ltfb_a7d2d1682c4a6a6b7e8ea1e3f4bf33c84_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__ltfb_a19467cc32f7a1960ec6d62ca1c0cb6b8}\label{classlbann_1_1lbann__callback__ltfb_a19467cc32f7a1960ec6d62ca1c0cb6b8}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+ltfb@{lbann\+::lbann\+\_\+callback\+\_\+ltfb}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::lbann\+\_\+callback\+\_\+ltfb@{lbann\+::lbann\+\_\+callback\+\_\+ltfb}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__ltfb}{lbann\+\_\+callback\+\_\+ltfb} \& lbann\+::lbann\+\_\+callback\+\_\+ltfb\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__ltfb}{lbann\+\_\+callback\+\_\+ltfb} \&}]{other }\end{DoxyParamCaption})}
+
+
+
+Definition at line 120 of file callback\+\_\+ltfb.\+cpp.
+
+
+\begin{DoxyCode}
+120                                                                                     \{
+121 
+122   \textcolor{comment}{// Shallow copies}
+123   \hyperlink{classlbann_1_1lbann__callback__ltfb_a7536bb519c8a89b518a3196f953ac048}{m\_comm} = other.m\_comm;
+124   \hyperlink{classlbann_1_1lbann__callback__ltfb_a78434b8e8b1dfa43a68a9707473cf789}{m\_round\_size} = other.m\_round\_size;
+125 
+126   \textcolor{comment}{// Deep copy}
+127   \textcolor{keywordflow}{for} (\textcolor{keyword}{auto}& w : \hyperlink{classlbann_1_1lbann__callback__ltfb_a5e5b9917b9eee67b8e14c6e8f95a85a3}{m\_local\_weights}) \{ \textcolor{keyword}{delete} w; \}
+128   m\_local\_weights = other.m\_local\_weights;
+129   \textcolor{keywordflow}{for} (\textcolor{keyword}{auto}& w : m\_local\_weights) \{ w = w->copy(); \}
+130 
+131   \textcolor{keywordflow}{return} *\textcolor{keyword}{this};
+132 \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__ltfb_a7548166d170eda00e4e0cba6626a1a78}\label{classlbann_1_1lbann__callback__ltfb_a7548166d170eda00e4e0cba6626a1a78}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+ltfb@{lbann\+::lbann\+\_\+callback\+\_\+ltfb}!setup@{setup}}
+\index{setup@{setup}!lbann\+::lbann\+\_\+callback\+\_\+ltfb@{lbann\+::lbann\+\_\+callback\+\_\+ltfb}}
+\subsubsection{\texorpdfstring{setup()}{setup()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+ltfb\+::setup (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Set up L\+T\+FB. \begin{DoxyRefDesc}{Todo}
+\item[\hyperlink{todo__todo000002}{Todo}]Support L\+T\+FB with different models \end{DoxyRefDesc}
+
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_aab5086e27d9bb0a7c7ee8ffc1bc58671}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 138 of file callback\+\_\+ltfb.\+cpp.
+
+
+\begin{DoxyCode}
+138                                         \{
+139   \hyperlink{classlbann_1_1lbann__callback__ltfb_a7536bb519c8a89b518a3196f953ac048}{m\_comm} = m->get\_comm();
+140 
+141   \textcolor{comment}{// Create copy of model weights}
+143 \textcolor{comment}{}  \textcolor{keywordflow}{for} (\textcolor{keyword}{auto}& w : \hyperlink{classlbann_1_1lbann__callback__ltfb_a5e5b9917b9eee67b8e14c6e8f95a85a3}{m\_local\_weights}) \{ \textcolor{keyword}{delete} w; \}
+144   m\_local\_weights = m->get\_weights();
+145   \textcolor{keywordflow}{for} (\textcolor{keyword}{auto}& w : m\_local\_weights) \{ w = w->copy(); \}
+146 
+147   \textcolor{comment}{// Make sure model does not have inter-model communication callback}
+148   \textcolor{keywordflow}{for} (\textcolor{keyword}{auto}&& cb : m->get\_callbacks()) \{
+149     \textcolor{keywordflow}{if} (dynamic\_cast<lbann\_callback\_imcomm*>(cb) != \textcolor{keyword}{nullptr}) \{
+150       \hyperlink{base_8hpp_a80b1d707117e968a6951b7222e4b2b87}{LBANN\_ERROR}(\textcolor{stringliteral}{"Detected both LTFB and imcomm callbacks. "});
+151     \}
+152   \}
+153 
+154 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__ltfb_a7548166d170eda00e4e0cba6626a1a78_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=340pt]{classlbann_1_1lbann__callback__ltfb_a7548166d170eda00e4e0cba6626a1a78_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__ltfb_a7536bb519c8a89b518a3196f953ac048}\label{classlbann_1_1lbann__callback__ltfb_a7536bb519c8a89b518a3196f953ac048}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+ltfb@{lbann\+::lbann\+\_\+callback\+\_\+ltfb}!m\+\_\+comm@{m\+\_\+comm}}
+\index{m\+\_\+comm@{m\+\_\+comm}!lbann\+::lbann\+\_\+callback\+\_\+ltfb@{lbann\+::lbann\+\_\+callback\+\_\+ltfb}}
+\subsubsection{\texorpdfstring{m\+\_\+comm}{m\_comm}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm}$\ast$ lbann\+::lbann\+\_\+callback\+\_\+ltfb\+::m\+\_\+comm\hspace{0.3cm}{\ttfamily [private]}}
+
+L\+B\+A\+NN communicator. 
+
+Definition at line 69 of file callback\+\_\+ltfb.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__ltfb_a5e5b9917b9eee67b8e14c6e8f95a85a3}\label{classlbann_1_1lbann__callback__ltfb_a5e5b9917b9eee67b8e14c6e8f95a85a3}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+ltfb@{lbann\+::lbann\+\_\+callback\+\_\+ltfb}!m\+\_\+local\+\_\+weights@{m\+\_\+local\+\_\+weights}}
+\index{m\+\_\+local\+\_\+weights@{m\+\_\+local\+\_\+weights}!lbann\+::lbann\+\_\+callback\+\_\+ltfb@{lbann\+::lbann\+\_\+callback\+\_\+ltfb}}
+\subsubsection{\texorpdfstring{m\+\_\+local\+\_\+weights}{m\_local\_weights}}
+{\footnotesize\ttfamily std\+::vector$<$\hyperlink{classlbann_1_1weights}{weights}$\ast$$>$ lbann\+::lbann\+\_\+callback\+\_\+ltfb\+::m\+\_\+local\+\_\+weights\hspace{0.3cm}{\ttfamily [private]}}
+
+Weights from local model. 
+
+Definition at line 73 of file callback\+\_\+ltfb.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__ltfb_a78434b8e8b1dfa43a68a9707473cf789}\label{classlbann_1_1lbann__callback__ltfb_a78434b8e8b1dfa43a68a9707473cf789}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+ltfb@{lbann\+::lbann\+\_\+callback\+\_\+ltfb}!m\+\_\+round\+\_\+size@{m\+\_\+round\+\_\+size}}
+\index{m\+\_\+round\+\_\+size@{m\+\_\+round\+\_\+size}!lbann\+::lbann\+\_\+callback\+\_\+ltfb@{lbann\+::lbann\+\_\+callback\+\_\+ltfb}}
+\subsubsection{\texorpdfstring{m\+\_\+round\+\_\+size}{m\_round\_size}}
+{\footnotesize\ttfamily int lbann\+::lbann\+\_\+callback\+\_\+ltfb\+::m\+\_\+round\+\_\+size\hspace{0.3cm}{\ttfamily [private]}}
+
+Number of minibatches in a round. 
+
+Definition at line 71 of file callback\+\_\+ltfb.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/callbacks/\hyperlink{callback__ltfb_8hpp}{callback\+\_\+ltfb.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/callbacks/\hyperlink{callback__ltfb_8cpp}{callback\+\_\+ltfb.\+cpp}\end{DoxyCompactItemize}

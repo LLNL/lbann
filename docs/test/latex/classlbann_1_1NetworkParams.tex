@@ -1,0 +1,172 @@
+\hypertarget{classlbann_1_1NetworkParams}{}\section{lbann\+:\+:Network\+Params Class Reference}
+\label{classlbann_1_1NetworkParams}\index{lbann\+::\+Network\+Params@{lbann\+::\+Network\+Params}}
+
+
+Network parameters.  
+
+
+
+
+{\ttfamily \#include $<$params.\+hpp$>$}
+
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1NetworkParams_ad915e046e5e001f37a5d0124809dd07b}{Network\+Params} ()
+\begin{DoxyCompactList}\small\item\em Constructor. \end{DoxyCompactList}\item 
+void \hyperlink{classlbann_1_1NetworkParams_a9b6f7e0330547330238085f3fd0e3702}{parse\+\_\+params} ()
+\begin{DoxyCompactList}\small\item\em Parse command-\/line arguments. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+std\+::string \hyperlink{classlbann_1_1NetworkParams_a8b503690c7475582b5a843f0959c3f2a}{Network\+Str}
+\begin{DoxyCompactList}\small\item\em String specifying the hidden layers of the topology. \end{DoxyCompactList}\item 
+std\+::vector$<$ int $>$ \hyperlink{classlbann_1_1NetworkParams_a17ccde99dec30d27c836a23f003fa34d}{Network}
+\begin{DoxyCompactList}\small\item\em The hidden layers of the topology. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{classlbann_1_1NetworkParams_a14954fcbacb6c9522bd3cf6c28bc93d5}{parse\+\_\+network\+\_\+string} ()
+\begin{DoxyCompactList}\small\item\em Parse network string. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Network parameters. 
+
+Definition at line 149 of file params.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1NetworkParams_ad915e046e5e001f37a5d0124809dd07b}\label{classlbann_1_1NetworkParams_ad915e046e5e001f37a5d0124809dd07b}} 
+\index{lbann\+::\+Network\+Params@{lbann\+::\+Network\+Params}!Network\+Params@{Network\+Params}}
+\index{Network\+Params@{Network\+Params}!lbann\+::\+Network\+Params@{lbann\+::\+Network\+Params}}
+\subsubsection{\texorpdfstring{Network\+Params()}{NetworkParams()}}
+{\footnotesize\ttfamily lbann\+::\+Network\+Params\+::\+Network\+Params (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Constructor. 
+
+
+
+Definition at line 105 of file params.\+cpp.
+
+
+\begin{DoxyCode}
+105                                   : \hyperlink{classlbann_1_1NetworkParams_a8b503690c7475582b5a843f0959c3f2a}{NetworkStr}(\textcolor{stringliteral}{"1000"}) \{
+106   \hyperlink{classlbann_1_1NetworkParams_a14954fcbacb6c9522bd3cf6c28bc93d5}{parse\_network\_string}();
+107 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1NetworkParams_ad915e046e5e001f37a5d0124809dd07b_cgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1NetworkParams_a14954fcbacb6c9522bd3cf6c28bc93d5}\label{classlbann_1_1NetworkParams_a14954fcbacb6c9522bd3cf6c28bc93d5}} 
+\index{lbann\+::\+Network\+Params@{lbann\+::\+Network\+Params}!parse\+\_\+network\+\_\+string@{parse\+\_\+network\+\_\+string}}
+\index{parse\+\_\+network\+\_\+string@{parse\+\_\+network\+\_\+string}!lbann\+::\+Network\+Params@{lbann\+::\+Network\+Params}}
+\subsubsection{\texorpdfstring{parse\+\_\+network\+\_\+string()}{parse\_network\_string()}}
+{\footnotesize\ttfamily void lbann\+::\+Network\+Params\+::parse\+\_\+network\+\_\+string (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Parse network string. 
+
+
+
+Definition at line 114 of file params.\+cpp.
+
+
+\begin{DoxyCode}
+114                                               \{
+115   \hyperlink{classlbann_1_1NetworkParams_a17ccde99dec30d27c836a23f003fa34d}{Network}.clear();
+116   \textcolor{keyword}{const} std::string delim = \textcolor{stringliteral}{","};
+117   \textcolor{keywordtype}{size\_t} start = 0U;
+118   \textcolor{keywordtype}{size\_t} end = \hyperlink{classlbann_1_1NetworkParams_a8b503690c7475582b5a843f0959c3f2a}{NetworkStr}.find(delim);
+119   \textcolor{keywordflow}{while}(end != std::string::npos) \{
+120     \hyperlink{classlbann_1_1NetworkParams_a17ccde99dec30d27c836a23f003fa34d}{Network}.push\_back(std::stoi(\hyperlink{classlbann_1_1NetworkParams_a8b503690c7475582b5a843f0959c3f2a}{NetworkStr}.substr(start, end - start), \textcolor{keyword}{nullptr}, 0));
+121     start = end + delim.length();
+122     end = \hyperlink{classlbann_1_1NetworkParams_a8b503690c7475582b5a843f0959c3f2a}{NetworkStr}.find(delim, start);
+123   \}
+124   \hyperlink{classlbann_1_1NetworkParams_a17ccde99dec30d27c836a23f003fa34d}{Network}.push\_back(std::stoi(\hyperlink{classlbann_1_1NetworkParams_a8b503690c7475582b5a843f0959c3f2a}{NetworkStr}.substr(start, end), \textcolor{keyword}{nullptr}, 0));
+125 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1NetworkParams_a14954fcbacb6c9522bd3cf6c28bc93d5_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1NetworkParams_a9b6f7e0330547330238085f3fd0e3702}\label{classlbann_1_1NetworkParams_a9b6f7e0330547330238085f3fd0e3702}} 
+\index{lbann\+::\+Network\+Params@{lbann\+::\+Network\+Params}!parse\+\_\+params@{parse\+\_\+params}}
+\index{parse\+\_\+params@{parse\+\_\+params}!lbann\+::\+Network\+Params@{lbann\+::\+Network\+Params}}
+\subsubsection{\texorpdfstring{parse\+\_\+params()}{parse\_params()}}
+{\footnotesize\ttfamily void lbann\+::\+Network\+Params\+::parse\+\_\+params (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Parse command-\/line arguments. 
+
+
+
+Definition at line 109 of file params.\+cpp.
+
+
+\begin{DoxyCode}
+109                                       \{
+110   \hyperlink{classlbann_1_1NetworkParams_a8b503690c7475582b5a843f0959c3f2a}{NetworkStr} = El::Input(\textcolor{stringliteral}{"--network"}, \textcolor{stringliteral}{"Specify the hidden layers of the topology"}, 
+      \hyperlink{classlbann_1_1NetworkParams_a8b503690c7475582b5a843f0959c3f2a}{NetworkStr});
+111   \hyperlink{classlbann_1_1NetworkParams_a14954fcbacb6c9522bd3cf6c28bc93d5}{parse\_network\_string}();
+112 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1NetworkParams_a9b6f7e0330547330238085f3fd0e3702_cgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1NetworkParams_a17ccde99dec30d27c836a23f003fa34d}\label{classlbann_1_1NetworkParams_a17ccde99dec30d27c836a23f003fa34d}} 
+\index{lbann\+::\+Network\+Params@{lbann\+::\+Network\+Params}!Network@{Network}}
+\index{Network@{Network}!lbann\+::\+Network\+Params@{lbann\+::\+Network\+Params}}
+\subsubsection{\texorpdfstring{Network}{Network}}
+{\footnotesize\ttfamily std\+::vector$<$int$>$ lbann\+::\+Network\+Params\+::\+Network}
+
+
+
+The hidden layers of the topology. 
+
+
+
+Definition at line 165 of file params.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1NetworkParams_a8b503690c7475582b5a843f0959c3f2a}\label{classlbann_1_1NetworkParams_a8b503690c7475582b5a843f0959c3f2a}} 
+\index{lbann\+::\+Network\+Params@{lbann\+::\+Network\+Params}!Network\+Str@{Network\+Str}}
+\index{Network\+Str@{Network\+Str}!lbann\+::\+Network\+Params@{lbann\+::\+Network\+Params}}
+\subsubsection{\texorpdfstring{Network\+Str}{NetworkStr}}
+{\footnotesize\ttfamily std\+::string lbann\+::\+Network\+Params\+::\+Network\+Str}
+
+
+
+String specifying the hidden layers of the topology. 
+
+
+
+Definition at line 163 of file params.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/\hyperlink{params_8hpp}{params.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/\hyperlink{params_8cpp}{params.\+cpp}\end{DoxyCompactItemize}

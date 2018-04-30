@@ -1,0 +1,318 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="structlbann_1_1metric__statistics" kind="struct" language="C++" prot="public">
+    <compoundname>lbann::metric_statistics</compoundname>
+    <includes refid="metric_8hpp" local="no">metric.hpp</includes>
+    <innerclass refid="structlbann_1_1metric__statistics_1_1packing__header" prot="public">lbann::metric_statistics::packing_header</innerclass>
+      <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structlbann_1_1metric__statistics_1a3481b2bb165e12a52db847f40a70f800" prot="public" static="no" mutable="no">
+        <type><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref></type>
+        <definition>EvalType lbann::metric_statistics::m_sum</definition>
+        <argsstring></argsstring>
+        <name>m_sum</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Sum of metric values. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/metric.hpp" line="45" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/metric.hpp" bodystart="45" bodyend="-1"/>
+        <referencedby refid="structlbann_1_1metric__statistics_1a1933a2417f08d99b1ddfa2b883dae68a" compoundref="metric_8cpp" startline="34" endline="37">add_value</referencedby>
+        <referencedby refid="structlbann_1_1metric__statistics_1ac3cb1abfc32b090fa2a08bda6afa5c09" compoundref="metric_8cpp" startline="39" endline="47">get_mean</referencedby>
+        <referencedby refid="structlbann_1_1metric__statistics_1a3ab2a4cd36c154e495bc8f18c4295907" compoundref="metric_8cpp" startline="49" endline="52">reset</referencedby>
+        <referencedby refid="structlbann_1_1metric__statistics_1a88f5324c96cceb47d723d2acfddb41f1" compoundref="metric_8cpp" startline="54" endline="58">pack_scalars</referencedby>
+        <referencedby refid="structlbann_1_1metric__statistics_1a4ff472c5d9155fe28c5a576c49f1e154" compoundref="metric_8cpp" startline="60" endline="72">unpack_scalars</referencedby>
+        <referencedby refid="structlbann_1_1metric__statistics_1acdc0ca1af87e9cbd615c6e77b9dba21c" compoundref="metric_8cpp" startline="74" endline="77">unpack_header</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="structlbann_1_1metric__statistics_1a6633bf91863b7e2327563ac93a9783f7" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int lbann::metric_statistics::m_num_samples</definition>
+        <argsstring></argsstring>
+        <name>m_num_samples</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Number of samples. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/metric.hpp" line="47" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/metric.hpp" bodystart="47" bodyend="-1"/>
+        <referencedby refid="structlbann_1_1metric__statistics_1a24e7c8d8ecc2a02279d73b908fc97133" compoundref="metric_8hpp" startline="68" endline="68">get_num_samples</referencedby>
+        <referencedby refid="structlbann_1_1metric__statistics_1a1933a2417f08d99b1ddfa2b883dae68a" compoundref="metric_8cpp" startline="34" endline="37">add_value</referencedby>
+        <referencedby refid="structlbann_1_1metric__statistics_1ac3cb1abfc32b090fa2a08bda6afa5c09" compoundref="metric_8cpp" startline="39" endline="47">get_mean</referencedby>
+        <referencedby refid="structlbann_1_1metric__statistics_1a3ab2a4cd36c154e495bc8f18c4295907" compoundref="metric_8cpp" startline="49" endline="52">reset</referencedby>
+        <referencedby refid="structlbann_1_1metric__statistics_1a88f5324c96cceb47d723d2acfddb41f1" compoundref="metric_8cpp" startline="54" endline="58">pack_scalars</referencedby>
+        <referencedby refid="structlbann_1_1metric__statistics_1a4ff472c5d9155fe28c5a576c49f1e154" compoundref="metric_8cpp" startline="60" endline="72">unpack_scalars</referencedby>
+        <referencedby refid="structlbann_1_1metric__statistics_1acdc0ca1af87e9cbd615c6e77b9dba21c" compoundref="metric_8cpp" startline="74" endline="77">unpack_header</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="structlbann_1_1metric__statistics_1ab1d7b4cee7135230e0b3c6f56a579879" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>lbann::metric_statistics::metric_statistics</definition>
+        <argsstring>()</argsstring>
+        <name>metric_statistics</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Default constructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/metric.hpp" line="49" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/metric.hpp" bodystart="49" bodyend="49"/>
+        <references refid="structlbann_1_1metric__statistics_1a3ab2a4cd36c154e495bc8f18c4295907" compoundref="metric_8cpp" startline="49" endline="52">reset</references>
+        <references refid="structlbann_1_1metric__statistics_1a4d9ae608667c58eda58be3f4a237122d">operator=</references>
+        <references refid="structlbann_1_1metric__statistics_1aa25840fdf7ef1ea78523047cb904d2c3">~metric_statistics</references>
+        <references refid="structlbann_1_1metric__statistics_1a1933a2417f08d99b1ddfa2b883dae68a" compoundref="metric_8cpp" startline="34" endline="37">add_value</references>
+        <references refid="structlbann_1_1metric__statistics_1ac3cb1abfc32b090fa2a08bda6afa5c09" compoundref="metric_8cpp" startline="39" endline="47">get_mean</references>
+      </memberdef>
+      <memberdef kind="function" id="structlbann_1_1metric__statistics_1a03e015279805c8f6b532ea9daa5edfdb" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::metric_statistics::metric_statistics</definition>
+        <argsstring>(metric_statistics &amp;other)=default</argsstring>
+        <name>metric_statistics</name>
+        <param>
+          <type><ref refid="structlbann_1_1metric__statistics" kindref="compound">metric_statistics</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Move constructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/metric.hpp" line="51" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="structlbann_1_1metric__statistics_1a4575aafb156f2d76a5bb29d7db1765c4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::metric_statistics::metric_statistics</definition>
+        <argsstring>(const metric_statistics &amp;other)=default</argsstring>
+        <name>metric_statistics</name>
+        <param>
+          <type>const <ref refid="structlbann_1_1metric__statistics" kindref="compound">metric_statistics</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Copy constructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/metric.hpp" line="53" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="structlbann_1_1metric__statistics_1a4d9ae608667c58eda58be3f4a237122d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="structlbann_1_1metric__statistics" kindref="compound">metric_statistics</ref> &amp;</type>
+        <definition>metric_statistics&amp; lbann::metric_statistics::operator=</definition>
+        <argsstring>(metric_statistics &amp;other)=default</argsstring>
+        <name>operator=</name>
+        <param>
+          <type><ref refid="structlbann_1_1metric__statistics" kindref="compound">metric_statistics</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Move assignment operator. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/metric.hpp" line="55" column="1"/>
+        <referencedby refid="structlbann_1_1metric__statistics_1ab1d7b4cee7135230e0b3c6f56a579879" compoundref="metric_8hpp" startline="49" endline="49">metric_statistics</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="structlbann_1_1metric__statistics_1abdd86ced3ca40a411ebc1db2b857653b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="structlbann_1_1metric__statistics" kindref="compound">metric_statistics</ref> &amp;</type>
+        <definition>metric_statistics&amp; lbann::metric_statistics::operator=</definition>
+        <argsstring>(const metric_statistics &amp;other)=default</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="structlbann_1_1metric__statistics" kindref="compound">metric_statistics</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Copy assignment operator. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/metric.hpp" line="57" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="structlbann_1_1metric__statistics_1aa25840fdf7ef1ea78523047cb904d2c3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::metric_statistics::~metric_statistics</definition>
+        <argsstring>()=default</argsstring>
+        <name>~metric_statistics</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Destructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/metric.hpp" line="59" column="1"/>
+        <referencedby refid="structlbann_1_1metric__statistics_1ab1d7b4cee7135230e0b3c6f56a579879" compoundref="metric_8hpp" startline="49" endline="49">metric_statistics</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="structlbann_1_1metric__statistics_1a1933a2417f08d99b1ddfa2b883dae68a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::metric_statistics::add_value</definition>
+        <argsstring>(EvalType value, int num_samples=1)</argsstring>
+        <name>add_value</name>
+        <param>
+          <type><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref></type>
+          <declname>value</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>num_samples</declname>
+          <defval>1</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Add metric value to statistics. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/metric.hpp" line="61" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/metrics/metric.cpp" bodystart="34" bodyend="37"/>
+        <references refid="structlbann_1_1metric__statistics_1a3481b2bb165e12a52db847f40a70f800" compoundref="metric_8hpp" startline="45">m_sum</references>
+        <references refid="structlbann_1_1metric__statistics_1a6633bf91863b7e2327563ac93a9783f7" compoundref="metric_8hpp" startline="47">m_num_samples</references>
+        <referencedby refid="structlbann_1_1metric__statistics_1ab1d7b4cee7135230e0b3c6f56a579879" compoundref="metric_8hpp" startline="49" endline="49">metric_statistics</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="structlbann_1_1metric__statistics_1ac3cb1abfc32b090fa2a08bda6afa5c09" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref></type>
+        <definition>EvalType lbann::metric_statistics::get_mean</definition>
+        <argsstring>() const</argsstring>
+        <name>get_mean</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Get mean metric value. If mini-batch sizes are not identical, the mean is over the sample values rather than over the mini-batch mean values. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/metric.hpp" line="66" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/metrics/metric.cpp" bodystart="39" bodyend="47"/>
+        <references refid="structlbann_1_1metric__statistics_1a6633bf91863b7e2327563ac93a9783f7" compoundref="metric_8hpp" startline="47">m_num_samples</references>
+        <references refid="structlbann_1_1metric__statistics_1a3481b2bb165e12a52db847f40a70f800" compoundref="metric_8hpp" startline="45">m_sum</references>
+        <referencedby refid="structlbann_1_1metric__statistics_1ab1d7b4cee7135230e0b3c6f56a579879" compoundref="metric_8hpp" startline="49" endline="49">metric_statistics</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="structlbann_1_1metric__statistics_1a24e7c8d8ecc2a02279d73b908fc97133" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>int</type>
+        <definition>int lbann::metric_statistics::get_num_samples</definition>
+        <argsstring>() const</argsstring>
+        <name>get_num_samples</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Get number of samples. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/metric.hpp" line="68" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/metric.hpp" bodystart="68" bodyend="68"/>
+        <references refid="structlbann_1_1metric__statistics_1a6633bf91863b7e2327563ac93a9783f7" compoundref="metric_8hpp" startline="47">m_num_samples</references>
+        <references refid="structlbann_1_1metric__statistics_1a3ab2a4cd36c154e495bc8f18c4295907" compoundref="metric_8cpp" startline="49" endline="52">reset</references>
+      </memberdef>
+      <memberdef kind="function" id="structlbann_1_1metric__statistics_1a3ab2a4cd36c154e495bc8f18c4295907" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::metric_statistics::reset</definition>
+        <argsstring>()</argsstring>
+        <name>reset</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Reset statistics. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/metric.hpp" line="70" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/metrics/metric.cpp" bodystart="49" bodyend="52"/>
+        <references refid="structlbann_1_1metric__statistics_1a3481b2bb165e12a52db847f40a70f800" compoundref="metric_8hpp" startline="45">m_sum</references>
+        <references refid="structlbann_1_1metric__statistics_1a6633bf91863b7e2327563ac93a9783f7" compoundref="metric_8hpp" startline="47">m_num_samples</references>
+        <referencedby refid="structlbann_1_1metric__statistics_1ab1d7b4cee7135230e0b3c6f56a579879" compoundref="metric_8hpp" startline="49" endline="49">metric_statistics</referencedby>
+        <referencedby refid="structlbann_1_1metric__statistics_1a24e7c8d8ecc2a02279d73b908fc97133" compoundref="metric_8hpp" startline="68" endline="68">get_num_samples</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="structlbann_1_1metric__statistics_1a88f5324c96cceb47d723d2acfddb41f1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool lbann::metric_statistics::pack_scalars</definition>
+        <argsstring>(persist &amp;p)</argsstring>
+        <name>pack_scalars</name>
+        <param>
+          <type><ref refid="classlbann_1_1persist" kindref="compound">persist</ref> &amp;</type>
+          <declname>p</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/metric.hpp" line="80" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/metrics/metric.cpp" bodystart="54" bodyend="58"/>
+        <references refid="classlbann_1_1persist_1ad29ebcbacdef90a91a9d474d4d6e1bcd" compoundref="persist_8cpp" startline="569" endline="571">lbann::persist::write_double</references>
+        <references refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56af9ab05454998236921a6b0e281fae632">lbann::validate</references>
+        <references refid="structlbann_1_1metric__statistics_1a3481b2bb165e12a52db847f40a70f800" compoundref="metric_8hpp" startline="45">m_sum</references>
+        <references refid="classlbann_1_1persist_1aced95e3bc711276b072af97b65ef9fc1" compoundref="persist_8cpp" startline="423" endline="425">lbann::persist::write_uint64</references>
+        <references refid="structlbann_1_1metric__statistics_1a6633bf91863b7e2327563ac93a9783f7" compoundref="metric_8hpp" startline="47">m_num_samples</references>
+      </memberdef>
+      <memberdef kind="function" id="structlbann_1_1metric__statistics_1a4ff472c5d9155fe28c5a576c49f1e154" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool lbann::metric_statistics::unpack_scalars</definition>
+        <argsstring>(persist &amp;p, struct packing_header *header)</argsstring>
+        <name>unpack_scalars</name>
+        <param>
+          <type><ref refid="classlbann_1_1persist" kindref="compound">persist</ref> &amp;</type>
+          <declname>p</declname>
+        </param>
+        <param>
+          <type>struct <ref refid="structlbann_1_1metric__statistics_1_1packing__header" kindref="compound">packing_header</ref> *</type>
+          <declname>header</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/metric.hpp" line="81" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/metrics/metric.cpp" bodystart="60" bodyend="72"/>
+        <references refid="classlbann_1_1persist_1ae3a0b96ece72901bb0a05d26a4eb4791" compoundref="persist_8cpp" startline="573" endline="575">lbann::persist::read_double</references>
+        <references refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56af9ab05454998236921a6b0e281fae632">lbann::validate</references>
+        <references refid="classlbann_1_1persist_1aa6d996db3714a7ae055adac0d8e8ac63" compoundref="persist_8cpp" startline="427" endline="429">lbann::persist::read_uint64</references>
+        <references refid="structlbann_1_1metric__statistics_1a3481b2bb165e12a52db847f40a70f800" compoundref="metric_8hpp" startline="45">m_sum</references>
+        <references refid="structlbann_1_1metric__statistics_1a6633bf91863b7e2327563ac93a9783f7" compoundref="metric_8hpp" startline="47">m_num_samples</references>
+        <references refid="structlbann_1_1metric__statistics_1_1packing__header_1a33dd5f49566506d8fc5b6662e5c5a40f" compoundref="metric_8hpp" startline="77">lbann::metric_statistics::packing_header::sum</references>
+        <references refid="structlbann_1_1metric__statistics_1_1packing__header_1ab580e8e40a8b894bcae9755e10dae183" compoundref="metric_8hpp" startline="78">lbann::metric_statistics::packing_header::num_samples</references>
+      </memberdef>
+      <memberdef kind="function" id="structlbann_1_1metric__statistics_1acdc0ca1af87e9cbd615c6e77b9dba21c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::metric_statistics::unpack_header</definition>
+        <argsstring>(struct packing_header &amp;header)</argsstring>
+        <name>unpack_header</name>
+        <param>
+          <type>struct <ref refid="structlbann_1_1metric__statistics_1_1packing__header" kindref="compound">packing_header</ref> &amp;</type>
+          <declname>header</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/metric.hpp" line="82" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/metrics/metric.cpp" bodystart="74" bodyend="77"/>
+        <references refid="structlbann_1_1metric__statistics_1a3481b2bb165e12a52db847f40a70f800" compoundref="metric_8hpp" startline="45">m_sum</references>
+        <references refid="structlbann_1_1metric__statistics_1_1packing__header_1a33dd5f49566506d8fc5b6662e5c5a40f" compoundref="metric_8hpp" startline="77">lbann::metric_statistics::packing_header::sum</references>
+        <references refid="structlbann_1_1metric__statistics_1a6633bf91863b7e2327563ac93a9783f7" compoundref="metric_8hpp" startline="47">m_num_samples</references>
+        <references refid="structlbann_1_1metric__statistics_1_1packing__header_1ab580e8e40a8b894bcae9755e10dae183" compoundref="metric_8hpp" startline="78">lbann::metric_statistics::packing_header::num_samples</references>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>Metric statistics. </para>    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/metric.hpp" line="43" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/metric.hpp" bodystart="43" bodyend="84"/>
+    <listofallmembers>
+      <member refid="structlbann_1_1metric__statistics_1a1933a2417f08d99b1ddfa2b883dae68a" prot="public" virt="non-virtual"><scope>lbann::metric_statistics</scope><name>add_value</name></member>
+      <member refid="structlbann_1_1metric__statistics_1ac3cb1abfc32b090fa2a08bda6afa5c09" prot="public" virt="non-virtual"><scope>lbann::metric_statistics</scope><name>get_mean</name></member>
+      <member refid="structlbann_1_1metric__statistics_1a24e7c8d8ecc2a02279d73b908fc97133" prot="public" virt="non-virtual"><scope>lbann::metric_statistics</scope><name>get_num_samples</name></member>
+      <member refid="structlbann_1_1metric__statistics_1a6633bf91863b7e2327563ac93a9783f7" prot="public" virt="non-virtual"><scope>lbann::metric_statistics</scope><name>m_num_samples</name></member>
+      <member refid="structlbann_1_1metric__statistics_1a3481b2bb165e12a52db847f40a70f800" prot="public" virt="non-virtual"><scope>lbann::metric_statistics</scope><name>m_sum</name></member>
+      <member refid="structlbann_1_1metric__statistics_1ab1d7b4cee7135230e0b3c6f56a579879" prot="public" virt="non-virtual"><scope>lbann::metric_statistics</scope><name>metric_statistics</name></member>
+      <member refid="structlbann_1_1metric__statistics_1a03e015279805c8f6b532ea9daa5edfdb" prot="public" virt="non-virtual"><scope>lbann::metric_statistics</scope><name>metric_statistics</name></member>
+      <member refid="structlbann_1_1metric__statistics_1a4575aafb156f2d76a5bb29d7db1765c4" prot="public" virt="non-virtual"><scope>lbann::metric_statistics</scope><name>metric_statistics</name></member>
+      <member refid="structlbann_1_1metric__statistics_1a4d9ae608667c58eda58be3f4a237122d" prot="public" virt="non-virtual"><scope>lbann::metric_statistics</scope><name>operator=</name></member>
+      <member refid="structlbann_1_1metric__statistics_1abdd86ced3ca40a411ebc1db2b857653b" prot="public" virt="non-virtual"><scope>lbann::metric_statistics</scope><name>operator=</name></member>
+      <member refid="structlbann_1_1metric__statistics_1a88f5324c96cceb47d723d2acfddb41f1" prot="public" virt="non-virtual"><scope>lbann::metric_statistics</scope><name>pack_scalars</name></member>
+      <member refid="structlbann_1_1metric__statistics_1a3ab2a4cd36c154e495bc8f18c4295907" prot="public" virt="non-virtual"><scope>lbann::metric_statistics</scope><name>reset</name></member>
+      <member refid="structlbann_1_1metric__statistics_1acdc0ca1af87e9cbd615c6e77b9dba21c" prot="public" virt="non-virtual"><scope>lbann::metric_statistics</scope><name>unpack_header</name></member>
+      <member refid="structlbann_1_1metric__statistics_1a4ff472c5d9155fe28c5a576c49f1e154" prot="public" virt="non-virtual"><scope>lbann::metric_statistics</scope><name>unpack_scalars</name></member>
+      <member refid="structlbann_1_1metric__statistics_1aa25840fdf7ef1ea78523047cb904d2c3" prot="public" virt="non-virtual"><scope>lbann::metric_statistics</scope><name>~metric_statistics</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

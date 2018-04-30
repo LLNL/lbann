@@ -1,0 +1,5 @@
+<map id="lbann::batch_normalization::deallocate_matrices" name="lbann::batch_normalization::deallocate_matrices">
+<area shape="rect" id="node2" href="$classlbann_1_1batch__normalization.html#aeb3c03a8dd166a64a77a26ee06ba81cd" title="lbann::batch_normalization\l::operator=" alt="" coords="234,5,415,44"/>
+<area shape="rect" id="node3" href="$classlbann_1_1batch__normalization.html#a6aeb06e13733560fb2203ea08df42632" title="lbann::batch_normalization\l::~batch_normalization" alt="" coords="234,68,415,107"/>
+<area shape="rect" id="node4" href="$classlbann_1_1batch__normalization.html#a4ddf27efaf48f0726dc4356a3a0b40a9" title="lbann::batch_normalization\l::setup_matrices" alt="" coords="234,131,415,169"/>
+</map>

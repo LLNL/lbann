@@ -1,0 +1,26 @@
+<map id="/Users/mckinney27/doxy&#45;testbed/lbann/include/lbann/data_readers/data_reader_mnist.hpp" name="/Users/mckinney27/doxy&#45;testbed/lbann/include/lbann/data_readers/data_reader_mnist.hpp">
+<area shape="rect" id="node2" href="$data__reader__image_8hpp.html" title="data_reader_image.hpp" alt="" coords="303,119,466,144"/>
+<area shape="rect" id="node30" href="$image__preprocessor_8hpp.html" title="lbann/data_readers\l/image_preprocessor.hpp" alt="" coords="5,265,177,304"/>
+<area shape="rect" id="node3" href="$data__reader_8hpp.html" title="data_reader.hpp" alt="" coords="515,192,633,217"/>
+<area shape="rect" id="node34" href="$cv__process_8hpp.html" title="cv_process.hpp" alt="" coords="2075,192,2190,217"/>
+<area shape="rect" id="node4" href="$base_8hpp.html" title="lbann/base.hpp" alt="" coords="612,425,725,451"/>
+<area shape="rect" id="node13" href="$random_8hpp.html" title="lbann/utils/random.hpp" alt="" coords="329,272,485,297"/>
+<area shape="rect" id="node14" href="$comm_8hpp.html" title="lbann/comm.hpp" alt="" coords="463,352,583,377"/>
+<area shape="rect" id="node18" href="$persist_8hpp.html" title="lbann/io/persist.hpp" alt="" coords="212,352,349,377"/>
+<area shape="rect" id="node20" href="$exception_8hpp.html" title="lbann/utils/exception.hpp" alt="" coords="893,272,1061,297"/>
+<area shape="rect" id="node26" href="$file__io_8hpp.html" title="lbann/io/file_io.hpp" alt="" coords="1126,272,1259,297"/>
+<area shape="rect" id="node6" href="$Elemental__extensions_8hpp.html" title="lbann/Elemental_extensions.hpp" alt="" coords="374,499,588,524"/>
+<area shape="rect" id="node7" href="$cyg__profile_8hpp.html" title="lbann/utils/cyg_profile.hpp" alt="" coords="662,499,838,524"/>
+<area shape="rect" id="node21" href="$stack__trace_8hpp.html" title="lbann/utils/stack_trace.hpp" alt="" coords="862,352,1041,377"/>
+<area shape="rect" id="node35" href="$cv__transform_8hpp.html" title="cv_transform.hpp" alt="" coords="2264,352,2388,377"/>
+<area shape="rect" id="node38" href="$cv__normalizer_8hpp.html" title="cv_normalizer.hpp" alt="" coords="1760,272,1889,297"/>
+<area shape="rect" id="node41" href="$cv__subtractor_8hpp.html" title="cv_subtractor.hpp" alt="" coords="1453,272,1580,297"/>
+<area shape="rect" id="node42" href="$cv__augmenter_8hpp.html" title="cv_augmenter.hpp" alt="" coords="1604,272,1735,297"/>
+<area shape="rect" id="node45" href="$cv__colorizer_8hpp.html" title="cv_colorizer.hpp" alt="" coords="2267,272,2385,297"/>
+<area shape="rect" id="node46" href="$cv__decolorizer_8hpp.html" title="cv_decolorizer.hpp" alt="" coords="2596,272,2728,297"/>
+<area shape="rect" id="node47" href="$cv__cropper_8hpp.html" title="cv_cropper.hpp" alt="" coords="2459,272,2571,297"/>
+<area shape="rect" id="node49" href="$cv__mean__extractor_8hpp.html" title="cv_mean_extractor.hpp" alt="" coords="1914,272,2074,297"/>
+<area shape="rect" id="node36" href="$opencv_8hpp.html" title="opencv.hpp" alt="" coords="1927,425,2016,451"/>
+<area shape="rect" id="node37" href="$opencv__extensions_8hpp.html" title="opencv_extensions.hpp" alt="" coords="2245,425,2407,451"/>
+<area shape="rect" id="node40" href="$mild__exception_8hpp.html" title="lbann/utils/mild_exception.hpp" alt="" coords="1841,352,2041,377"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="lbann::lbann_callback_check_init::check_equal" name="lbann::lbann_callback_check_init::check_equal">
+<area shape="rect" id="node2" href="$classlbann_1_1lbann__callback__check__init.html#a4f8507c26f8e467697fef29ab8463b0f" title="lbann::lbann_callback\l_check_init::name" alt="" coords="241,5,390,44"/>
+<area shape="rect" id="node3" href="$classlbann_1_1lbann__callback__check__init.html#a037f1371c56c1b528f487517a58ce3fb" title="lbann::lbann_callback\l_check_init::on_train_begin" alt="" coords="224,68,407,107"/>
+<area shape="rect" id="node4" href="$classlbann_1_1lbann__callback__check__init.html#aa210192427df3f6aa7e12509e9b57f56" title="lbann::lbann_callback\l_check_init::copy" alt="" coords="455,68,605,107"/>
+</map>

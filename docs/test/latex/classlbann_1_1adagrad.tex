@@ -1,0 +1,517 @@
+\hypertarget{classlbann_1_1adagrad}{}\section{lbann\+:\+:adagrad Class Reference}
+\label{classlbann_1_1adagrad}\index{lbann\+::adagrad@{lbann\+::adagrad}}
+
+
+{\ttfamily \#include $<$adagrad.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:adagrad\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=167pt]{classlbann_1_1adagrad__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:adagrad\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1adagrad__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1adagrad_a26d826ba89053481a26573a592ff2f8a}{adagrad} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, Data\+Type learning\+\_\+rate, Data\+Type eps=Data\+Type(1e-\/8))
+\item 
+\hyperlink{classlbann_1_1adagrad_aee9814a21ad8c44b402c77f244235597}{adagrad} (const \hyperlink{classlbann_1_1adagrad}{adagrad} \&other)
+\item 
+\hyperlink{classlbann_1_1adagrad}{adagrad} \& \hyperlink{classlbann_1_1adagrad_a9c9b59e0dfdfa32a3a9596a38fd95af6}{operator=} (const \hyperlink{classlbann_1_1adagrad}{adagrad} \&other)
+\item 
+\hyperlink{classlbann_1_1adagrad_aa8dcd50b119871cbe1db9817fc00ea52}{$\sim$adagrad} () override
+\item 
+\hyperlink{classlbann_1_1adagrad}{adagrad} $\ast$ \hyperlink{classlbann_1_1adagrad_a4e8a72adf65df84d15f24fe6be03d1b1}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1adagrad_a7a287b367af6ef6f7f21141ad78732a7}{get\+\_\+type} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1adagrad_ad8c3000c84809fab63672e9eb35c5370}{get\+\_\+description} () const override
+\item 
+void \hyperlink{classlbann_1_1adagrad_ab027f2979a6df453eb588b1961afd77a}{setup} (\hyperlink{classlbann_1_1weights}{weights} \&w) override
+\item 
+void \hyperlink{classlbann_1_1adagrad_a99dbaed2a331ce8d13a73e7beb7f5aba}{step\+\_\+compute} (\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&values, const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&gradient) override
+\item 
+void \hyperlink{classlbann_1_1adagrad_a90644f13d0a46e0f52122037f363aaa0}{setup} (\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} $\ast$parameters)
+\begin{DoxyCompactList}\small\item\em Set parameters to optimize and initialize optimizer. \end{DoxyCompactList}\item 
+void \hyperlink{classlbann_1_1adagrad_a2189fad7d43175458d613bd078ff2b78}{update} (const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} $\ast$gradient)
+\begin{DoxyCompactList}\small\item\em Update parameters using objective function gradient. \end{DoxyCompactList}\item 
+std\+::string \hyperlink{classlbann_1_1adagrad_af0fe80dbe6525509aae3ef2dea62a018}{name} () const
+\end{DoxyCompactItemize}
+\subsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+bool \hyperlink{classlbann_1_1adagrad_a94282e58af6bb1e9af27255e23bd3d3d}{save\+\_\+to\+\_\+checkpoint\+\_\+shared} (\hyperlink{classlbann_1_1persist}{persist} \&p, std\+::string m\+\_\+name) override
+\item 
+bool \hyperlink{classlbann_1_1adagrad_ac6b6eb0c4d393679f69281c072dbc4fa}{load\+\_\+from\+\_\+checkpoint\+\_\+shared} (\hyperlink{classlbann_1_1persist}{persist} \&p, std\+::string m\+\_\+name) override
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+Data\+Type \hyperlink{classlbann_1_1adagrad_aace057f88a46dab327f6409716dbe8de}{m\+\_\+eps}
+\item 
+\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} $\ast$ \hyperlink{classlbann_1_1adagrad_a5eaf0d220d2be78d91455ba85eef3e9a}{m\+\_\+cache}
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+Ada\+Grad optimizer. 
+
+Definition at line 35 of file adagrad.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1adagrad_a26d826ba89053481a26573a592ff2f8a}\label{classlbann_1_1adagrad_a26d826ba89053481a26573a592ff2f8a}} 
+\index{lbann\+::adagrad@{lbann\+::adagrad}!adagrad@{adagrad}}
+\index{adagrad@{adagrad}!lbann\+::adagrad@{lbann\+::adagrad}}
+\subsubsection{\texorpdfstring{adagrad()}{adagrad()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::adagrad\+::adagrad (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{Data\+Type}]{learning\+\_\+rate,  }\item[{Data\+Type}]{eps = {\ttfamily DataType(1e-\/8)} }\end{DoxyParamCaption})}
+
+Constructor. 
+
+Definition at line 32 of file adagrad.\+cpp.
+
+
+\begin{DoxyCode}
+33   : \hyperlink{classlbann_1_1optimizer_a136ed79c3f279ecded5be380fb67b05f}{optimizer}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, learning\_rate), \hyperlink{classlbann_1_1adagrad_aace057f88a46dab327f6409716dbe8de}{m\_eps}(eps), \hyperlink{classlbann_1_1adagrad_a5eaf0d220d2be78d91455ba85eef3e9a}{m\_cache}(\textcolor{keyword}{nullptr}) \{\}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1adagrad_a26d826ba89053481a26573a592ff2f8a_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1adagrad_aee9814a21ad8c44b402c77f244235597}\label{classlbann_1_1adagrad_aee9814a21ad8c44b402c77f244235597}} 
+\index{lbann\+::adagrad@{lbann\+::adagrad}!adagrad@{adagrad}}
+\index{adagrad@{adagrad}!lbann\+::adagrad@{lbann\+::adagrad}}
+\subsubsection{\texorpdfstring{adagrad()}{adagrad()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::adagrad\+::adagrad (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1adagrad}{adagrad} \&}]{other }\end{DoxyParamCaption})}
+
+Copy constructor. 
+
+Definition at line 35 of file adagrad.\+cpp.
+
+
+\begin{DoxyCode}
+36   : \hyperlink{classlbann_1_1optimizer_a136ed79c3f279ecded5be380fb67b05f}{optimizer}(other), \hyperlink{classlbann_1_1adagrad_aace057f88a46dab327f6409716dbe8de}{m\_eps}(other.m\_eps), \hyperlink{classlbann_1_1adagrad_a5eaf0d220d2be78d91455ba85eef3e9a}{m\_cache}(other.m\_cache) \{
+37   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1adagrad_a5eaf0d220d2be78d91455ba85eef3e9a}{m\_cache} != \textcolor{keyword}{nullptr}) \{ \hyperlink{classlbann_1_1adagrad_a5eaf0d220d2be78d91455ba85eef3e9a}{m\_cache} = \hyperlink{classlbann_1_1adagrad_a5eaf0d220d2be78d91455ba85eef3e9a}{m\_cache}->Copy(); \}
+38 \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1adagrad_aa8dcd50b119871cbe1db9817fc00ea52}\label{classlbann_1_1adagrad_aa8dcd50b119871cbe1db9817fc00ea52}} 
+\index{lbann\+::adagrad@{lbann\+::adagrad}!````~adagrad@{$\sim$adagrad}}
+\index{````~adagrad@{$\sim$adagrad}!lbann\+::adagrad@{lbann\+::adagrad}}
+\subsubsection{\texorpdfstring{$\sim$adagrad()}{~adagrad()}}
+{\footnotesize\ttfamily lbann\+::adagrad\+::$\sim$adagrad (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}}
+
+Destructor. 
+
+Definition at line 58 of file adagrad.\+cpp.
+
+
+\begin{DoxyCode}
+58                   \{
+59   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1adagrad_a5eaf0d220d2be78d91455ba85eef3e9a}{m\_cache} != \textcolor{keyword}{nullptr}) \{ \textcolor{keyword}{delete} \hyperlink{classlbann_1_1adagrad_a5eaf0d220d2be78d91455ba85eef3e9a}{m\_cache}; \}
+60 \}
+\end{DoxyCode}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1adagrad_a4e8a72adf65df84d15f24fe6be03d1b1}\label{classlbann_1_1adagrad_a4e8a72adf65df84d15f24fe6be03d1b1}} 
+\index{lbann\+::adagrad@{lbann\+::adagrad}!copy@{copy}}
+\index{copy@{copy}!lbann\+::adagrad@{lbann\+::adagrad}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1adagrad}{adagrad}$\ast$ lbann\+::adagrad\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Create a copy. 
+
+Implements \hyperlink{classlbann_1_1optimizer_adf19a1d19d832ebfe70072cc202cdf39}{lbann\+::optimizer}.
+
+
+
+Definition at line 50 of file adagrad.\+hpp.
+
+
+\begin{DoxyCode}
+50 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1adagrad_a26d826ba89053481a26573a592ff2f8a}{adagrad}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1adagrad_a4e8a72adf65df84d15f24fe6be03d1b1_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1adagrad_ad8c3000c84809fab63672e9eb35c5370}\label{classlbann_1_1adagrad_ad8c3000c84809fab63672e9eb35c5370}} 
+\index{lbann\+::adagrad@{lbann\+::adagrad}!get\+\_\+description@{get\+\_\+description}}
+\index{get\+\_\+description@{get\+\_\+description}!lbann\+::adagrad@{lbann\+::adagrad}}
+\subsubsection{\texorpdfstring{get\+\_\+description()}{get\_description()}}
+{\footnotesize\ttfamily std\+::string lbann\+::adagrad\+::get\+\_\+description (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get a human-\/readable description of the optimizer. 
+
+Reimplemented from \hyperlink{classlbann_1_1optimizer_a66bb8d28dfb41452ac1a75a3efd47723}{lbann\+::optimizer}.
+
+
+
+Definition at line 62 of file adagrad.\+cpp.
+
+
+\begin{DoxyCode}
+62                                          \{
+63   std::stringstream ss;
+64   ss << \hyperlink{classlbann_1_1optimizer_a66bb8d28dfb41452ac1a75a3efd47723}{optimizer::get\_description}() << \textcolor{stringliteral}{", "}
+65      << \textcolor{stringliteral}{"eps="} << \hyperlink{classlbann_1_1adagrad_aace057f88a46dab327f6409716dbe8de}{m\_eps};
+66   \textcolor{keywordflow}{return} ss.str();
+67 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1adagrad_ad8c3000c84809fab63672e9eb35c5370_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=345pt]{classlbann_1_1adagrad_ad8c3000c84809fab63672e9eb35c5370_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1adagrad_a7a287b367af6ef6f7f21141ad78732a7}\label{classlbann_1_1adagrad_a7a287b367af6ef6f7f21141ad78732a7}} 
+\index{lbann\+::adagrad@{lbann\+::adagrad}!get\+\_\+type@{get\+\_\+type}}
+\index{get\+\_\+type@{get\+\_\+type}!lbann\+::adagrad@{lbann\+::adagrad}}
+\subsubsection{\texorpdfstring{get\+\_\+type()}{get\_type()}}
+{\footnotesize\ttfamily std\+::string lbann\+::adagrad\+::get\+\_\+type (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get the optimizer name. 
+
+Implements \hyperlink{classlbann_1_1optimizer_a7b7a6814e14eeee157e1cbb7f15dd4ff}{lbann\+::optimizer}.
+
+
+
+Definition at line 53 of file adagrad.\+hpp.
+
+
+\begin{DoxyCode}
+53 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"adagrad"}; \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1adagrad_a7a287b367af6ef6f7f21141ad78732a7_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1adagrad_ac6b6eb0c4d393679f69281c072dbc4fa}\label{classlbann_1_1adagrad_ac6b6eb0c4d393679f69281c072dbc4fa}} 
+\index{lbann\+::adagrad@{lbann\+::adagrad}!load\+\_\+from\+\_\+checkpoint\+\_\+shared@{load\+\_\+from\+\_\+checkpoint\+\_\+shared}}
+\index{load\+\_\+from\+\_\+checkpoint\+\_\+shared@{load\+\_\+from\+\_\+checkpoint\+\_\+shared}!lbann\+::adagrad@{lbann\+::adagrad}}
+\subsubsection{\texorpdfstring{load\+\_\+from\+\_\+checkpoint\+\_\+shared()}{load\_from\_checkpoint\_shared()}}
+{\footnotesize\ttfamily bool lbann\+::adagrad\+::load\+\_\+from\+\_\+checkpoint\+\_\+shared (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1persist}{persist} \&}]{p,  }\item[{std\+::string}]{m\+\_\+name }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [private]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1optimizer_a42a52aab9a682fda57c1e639968a44b9}{lbann\+::optimizer}.
+
+
+
+Definition at line 130 of file adagrad.\+cpp.
+
+
+\begin{DoxyCode}
+130                                                                              \{
+131     \hyperlink{classlbann_1_1optimizer_a42a52aab9a682fda57c1e639968a44b9}{optimizer::load\_from\_checkpoint\_shared}(p, name\_prefix);
+132     \textcolor{keywordtype}{char} l\_name[512];
+133     
+134     sprintf(l\_name, \textcolor{stringliteral}{"%s\_optimizer\_cache\_%lldx%lld.bin"}, name\_prefix.c\_str(), 
+      \hyperlink{classlbann_1_1adagrad_a5eaf0d220d2be78d91455ba85eef3e9a}{m\_cache}->Height(), \hyperlink{classlbann_1_1adagrad_a5eaf0d220d2be78d91455ba85eef3e9a}{m\_cache}->Width());
+135     p.read\_distmat(\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64}{persist\_type::train}, l\_name, (\hyperlink{base_8hpp_a0fab5387556805cfeac3e7e567bf66c5}{DistMat} *)
+      \hyperlink{classlbann_1_1adagrad_a5eaf0d220d2be78d91455ba85eef3e9a}{m\_cache});
+136     
+137     \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+138   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1adagrad_ac6b6eb0c4d393679f69281c072dbc4fa_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1adagrad_ac6b6eb0c4d393679f69281c072dbc4fa_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1adagrad_af0fe80dbe6525509aae3ef2dea62a018}\label{classlbann_1_1adagrad_af0fe80dbe6525509aae3ef2dea62a018}} 
+\index{lbann\+::adagrad@{lbann\+::adagrad}!name@{name}}
+\index{name@{name}!lbann\+::adagrad@{lbann\+::adagrad}}
+\subsubsection{\texorpdfstring{name()}{name()}}
+{\footnotesize\ttfamily std\+::string lbann\+::adagrad\+::name (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 68 of file adagrad.\+hpp.
+
+
+\begin{DoxyCode}
+68 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"adagrad"}; \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1adagrad_af0fe80dbe6525509aae3ef2dea62a018_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1adagrad_a9c9b59e0dfdfa32a3a9596a38fd95af6}\label{classlbann_1_1adagrad_a9c9b59e0dfdfa32a3a9596a38fd95af6}} 
+\index{lbann\+::adagrad@{lbann\+::adagrad}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::adagrad@{lbann\+::adagrad}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1adagrad}{adagrad} \& lbann\+::adagrad\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1adagrad}{adagrad} \&}]{other }\end{DoxyParamCaption})}
+
+Copy assignment operator. 
+
+Definition at line 40 of file adagrad.\+cpp.
+
+
+\begin{DoxyCode}
+40                                                 \{
+41   \hyperlink{classlbann_1_1optimizer_ab7811e0a4d2d9b594140aed78b6de743}{optimizer::operator=}(other);
+42   \hyperlink{classlbann_1_1adagrad_aace057f88a46dab327f6409716dbe8de}{m\_eps} = other.m\_eps;
+43 
+44   \textcolor{comment}{// Copy cache matrix}
+45   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1adagrad_a5eaf0d220d2be78d91455ba85eef3e9a}{m\_cache} != \textcolor{keyword}{nullptr} && other.m\_cache != \textcolor{keyword}{nullptr}
+46       && \hyperlink{classlbann_1_1adagrad_a5eaf0d220d2be78d91455ba85eef3e9a}{m\_cache}->DistData() == other.m\_cache->DistData()) \{
+47     El::Copy(*other.m\_cache, *\hyperlink{classlbann_1_1adagrad_a5eaf0d220d2be78d91455ba85eef3e9a}{m\_cache});
+48   \}
+49   \textcolor{keywordflow}{else} \{
+50     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1adagrad_a5eaf0d220d2be78d91455ba85eef3e9a}{m\_cache} != \textcolor{keyword}{nullptr}) \{ \textcolor{keyword}{delete} \hyperlink{classlbann_1_1adagrad_a5eaf0d220d2be78d91455ba85eef3e9a}{m\_cache}; \}
+51     \hyperlink{classlbann_1_1adagrad_a5eaf0d220d2be78d91455ba85eef3e9a}{m\_cache} = other.m\_cache;
+52     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1adagrad_a5eaf0d220d2be78d91455ba85eef3e9a}{m\_cache} != \textcolor{keyword}{nullptr}) \{ \hyperlink{classlbann_1_1adagrad_a5eaf0d220d2be78d91455ba85eef3e9a}{m\_cache} = \hyperlink{classlbann_1_1adagrad_a5eaf0d220d2be78d91455ba85eef3e9a}{m\_cache}->Copy(); \}
+53   \}
+54 
+55   \textcolor{keywordflow}{return} *\textcolor{keyword}{this};
+56 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1adagrad_a9c9b59e0dfdfa32a3a9596a38fd95af6_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1adagrad_a94282e58af6bb1e9af27255e23bd3d3d}\label{classlbann_1_1adagrad_a94282e58af6bb1e9af27255e23bd3d3d}} 
+\index{lbann\+::adagrad@{lbann\+::adagrad}!save\+\_\+to\+\_\+checkpoint\+\_\+shared@{save\+\_\+to\+\_\+checkpoint\+\_\+shared}}
+\index{save\+\_\+to\+\_\+checkpoint\+\_\+shared@{save\+\_\+to\+\_\+checkpoint\+\_\+shared}!lbann\+::adagrad@{lbann\+::adagrad}}
+\subsubsection{\texorpdfstring{save\+\_\+to\+\_\+checkpoint\+\_\+shared()}{save\_to\_checkpoint\_shared()}}
+{\footnotesize\ttfamily bool lbann\+::adagrad\+::save\+\_\+to\+\_\+checkpoint\+\_\+shared (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1persist}{persist} \&}]{p,  }\item[{std\+::string}]{m\+\_\+name }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [private]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1optimizer_afed10c6d8c5bd922f95075abeff711ce}{lbann\+::optimizer}.
+
+
+
+Definition at line 120 of file adagrad.\+cpp.
+
+
+\begin{DoxyCode}
+120                                                                            \{
+121     \hyperlink{classlbann_1_1optimizer_afed10c6d8c5bd922f95075abeff711ce}{optimizer::save\_to\_checkpoint\_shared}(p, name\_prefix);
+122 
+123     \textcolor{keywordtype}{char} l\_name[512];
+124     sprintf(l\_name, \textcolor{stringliteral}{"%s\_optimizer\_cache\_%lldx%lld"}, name\_prefix.c\_str(), \hyperlink{classlbann_1_1adagrad_a5eaf0d220d2be78d91455ba85eef3e9a}{m\_cache}->Height(), 
+      \hyperlink{classlbann_1_1adagrad_a5eaf0d220d2be78d91455ba85eef3e9a}{m\_cache}->Width());
+125     p.write\_distmat(\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64}{persist\_type::train}, l\_name, (\hyperlink{base_8hpp_a0fab5387556805cfeac3e7e567bf66c5}{DistMat} *)
+      \hyperlink{classlbann_1_1adagrad_a5eaf0d220d2be78d91455ba85eef3e9a}{m\_cache});
+126     
+127     \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+128   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1adagrad_a94282e58af6bb1e9af27255e23bd3d3d_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=349pt]{classlbann_1_1adagrad_a94282e58af6bb1e9af27255e23bd3d3d_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1adagrad_ab027f2979a6df453eb588b1961afd77a}\label{classlbann_1_1adagrad_ab027f2979a6df453eb588b1961afd77a}} 
+\index{lbann\+::adagrad@{lbann\+::adagrad}!setup@{setup}}
+\index{setup@{setup}!lbann\+::adagrad@{lbann\+::adagrad}}
+\subsubsection{\texorpdfstring{setup()}{setup()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily void lbann\+::adagrad\+::setup (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1weights}{weights} \&}]{w }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Setup optimizer. 
+
+Reimplemented from \hyperlink{classlbann_1_1optimizer_a7641a88b3c166df2d974a298622b992b}{lbann\+::optimizer}.
+
+
+
+Definition at line 69 of file adagrad.\+cpp.
+
+
+\begin{DoxyCode}
+69                               \{
+70   \hyperlink{classlbann_1_1optimizer_a7641a88b3c166df2d974a298622b992b}{optimizer::setup}(w);
+71   \hyperlink{classlbann_1_1adagrad_a5eaf0d220d2be78d91455ba85eef3e9a}{m\_cache} = \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Construct(\hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Grid(),
+72                                   \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Root());
+73   El::Zeros(*\hyperlink{classlbann_1_1adagrad_a5eaf0d220d2be78d91455ba85eef3e9a}{m\_cache}, \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Height(), \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Width());
+74 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1adagrad_ab027f2979a6df453eb588b1961afd77a_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1adagrad_ab027f2979a6df453eb588b1961afd77a_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1adagrad_a90644f13d0a46e0f52122037f363aaa0}\label{classlbann_1_1adagrad_a90644f13d0a46e0f52122037f363aaa0}} 
+\index{lbann\+::adagrad@{lbann\+::adagrad}!setup@{setup}}
+\index{setup@{setup}!lbann\+::adagrad@{lbann\+::adagrad}}
+\subsubsection{\texorpdfstring{setup()}{setup()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily void lbann\+::adagrad\+::setup (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} $\ast$}]{parameters }\end{DoxyParamCaption})}
+
+
+
+Set parameters to optimize and initialize optimizer. 
+
+\mbox{\Hypertarget{classlbann_1_1adagrad_a99dbaed2a331ce8d13a73e7beb7f5aba}\label{classlbann_1_1adagrad_a99dbaed2a331ce8d13a73e7beb7f5aba}} 
+\index{lbann\+::adagrad@{lbann\+::adagrad}!step\+\_\+compute@{step\+\_\+compute}}
+\index{step\+\_\+compute@{step\+\_\+compute}!lbann\+::adagrad@{lbann\+::adagrad}}
+\subsubsection{\texorpdfstring{step\+\_\+compute()}{step\_compute()}}
+{\footnotesize\ttfamily void lbann\+::adagrad\+::step\+\_\+compute (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{values,  }\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{gradient }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Perform the computation in an optimization step. 
+
+Implements \hyperlink{classlbann_1_1optimizer_a0db72c298a0bc3405fb0af97d104a036}{lbann\+::optimizer}.
+
+
+
+Definition at line 76 of file adagrad.\+cpp.
+
+
+\begin{DoxyCode}
+76                                                                          \{
+77 
+78   \textcolor{comment}{// Get local matrix data}
+79   \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_height = values.LocalHeight();
+80   \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_width = values.LocalWidth();
+81   DataType* \_\_restrict\_\_ values\_buffer = values.Buffer();
+82   \textcolor{keyword}{const} \textcolor{keywordtype}{int} values\_ldim = values.LDim();
+83   \textcolor{keyword}{const} DataType* \_\_restrict\_\_ gradient\_buffer = gradient.LockedBuffer();
+84   \textcolor{keyword}{const} \textcolor{keywordtype}{int} gradient\_ldim = gradient.LDim();
+85   DataType* \_\_restrict\_\_ cache\_buffer = \hyperlink{classlbann_1_1adagrad_a5eaf0d220d2be78d91455ba85eef3e9a}{m\_cache}->Buffer();
+86   \textcolor{keyword}{const} \textcolor{keywordtype}{int} cache\_ldim = \hyperlink{classlbann_1_1adagrad_a5eaf0d220d2be78d91455ba85eef3e9a}{m\_cache}->LDim();
+87 
+88   \textcolor{comment}{// Check if matrix data is contiguous}
+89   \textcolor{keywordflow}{if} (values\_ldim != local\_height
+90       || gradient\_ldim != local\_height
+91       || cache\_ldim != local\_height) \{
+92     \textcolor{comment}{// Update with non-contiguous data}
+93 \textcolor{preprocessor}{    #pragma omp parallel for collapse(2)}
+94     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} j=0; j<local\_width; ++j) \{
+95       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<local\_height; ++i) \{
+96         DataType& x = values\_buffer[i+j*values\_ldim];
+97         \textcolor{keyword}{const} DataType g = gradient\_buffer[i+j*gradient\_ldim];
+98         DataType& c = cache\_buffer[i+j*cache\_ldim];
+99         c += g * g;
+100         x -= \hyperlink{classlbann_1_1optimizer_ad393dcdcb82b44510c586ed5ec46d4dd}{m\_learning\_rate} * g / (std::sqrt(c) + \hyperlink{classlbann_1_1adagrad_aace057f88a46dab327f6409716dbe8de}{m\_eps});
+101       \}
+102     \}
+103   \} \textcolor{keywordflow}{else} \{
+104     \textcolor{comment}{// Update with contiguous data}
+105 \textcolor{preprocessor}{    #pragma omp parallel for}
+106     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<local\_height*local\_width; ++i) \{
+107       DataType& x = values\_buffer[i];
+108       \textcolor{keyword}{const} DataType g = gradient\_buffer[i];
+109       DataType& c = cache\_buffer[i];
+110       c += g * g;
+111       x -= \hyperlink{classlbann_1_1optimizer_ad393dcdcb82b44510c586ed5ec46d4dd}{m\_learning\_rate} * g / (std::sqrt(c) + \hyperlink{classlbann_1_1adagrad_aace057f88a46dab327f6409716dbe8de}{m\_eps});
+112     \}
+113   \}
+114 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1adagrad_a99dbaed2a331ce8d13a73e7beb7f5aba_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1adagrad_a2189fad7d43175458d613bd078ff2b78}\label{classlbann_1_1adagrad_a2189fad7d43175458d613bd078ff2b78}} 
+\index{lbann\+::adagrad@{lbann\+::adagrad}!update@{update}}
+\index{update@{update}!lbann\+::adagrad@{lbann\+::adagrad}}
+\subsubsection{\texorpdfstring{update()}{update()}}
+{\footnotesize\ttfamily void lbann\+::adagrad\+::update (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} $\ast$}]{gradient }\end{DoxyParamCaption})}
+
+
+
+Update parameters using objective function gradient. 
+
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1adagrad_a2189fad7d43175458d613bd078ff2b78_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1adagrad_a5eaf0d220d2be78d91455ba85eef3e9a}\label{classlbann_1_1adagrad_a5eaf0d220d2be78d91455ba85eef3e9a}} 
+\index{lbann\+::adagrad@{lbann\+::adagrad}!m\+\_\+cache@{m\+\_\+cache}}
+\index{m\+\_\+cache@{m\+\_\+cache}!lbann\+::adagrad@{lbann\+::adagrad}}
+\subsubsection{\texorpdfstring{m\+\_\+cache}{m\_cache}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat}$\ast$ lbann\+::adagrad\+::m\+\_\+cache\hspace{0.3cm}{\ttfamily [private]}}
+
+Ada\+Grad cache. 
+
+Definition at line 78 of file adagrad.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1adagrad_aace057f88a46dab327f6409716dbe8de}\label{classlbann_1_1adagrad_aace057f88a46dab327f6409716dbe8de}} 
+\index{lbann\+::adagrad@{lbann\+::adagrad}!m\+\_\+eps@{m\+\_\+eps}}
+\index{m\+\_\+eps@{m\+\_\+eps}!lbann\+::adagrad@{lbann\+::adagrad}}
+\subsubsection{\texorpdfstring{m\+\_\+eps}{m\_eps}}
+{\footnotesize\ttfamily Data\+Type lbann\+::adagrad\+::m\+\_\+eps\hspace{0.3cm}{\ttfamily [private]}}
+
+Small factor to avoid division by zero. 
+
+Definition at line 76 of file adagrad.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/optimizers/\hyperlink{adagrad_8hpp}{adagrad.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/optimizers/\hyperlink{adagrad_8cpp}{adagrad.\+cpp}\end{DoxyCompactItemize}

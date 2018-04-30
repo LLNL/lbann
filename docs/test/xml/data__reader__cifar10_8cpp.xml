@@ -1,0 +1,474 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="data__reader__cifar10_8cpp" kind="file" language="C++">
+    <compoundname>data_reader_cifar10.cpp</compoundname>
+    <includes refid="data__reader__cifar10_8hpp" local="yes">lbann/data_readers/data_reader_cifar10.hpp</includes>
+    <incdepgraph>
+      <node id="19074">
+        <label>sys/stat.h</label>
+      </node>
+      <node id="19081">
+        <label>cv_process.hpp</label>
+        <link refid="cv__process_8hpp"/>
+        <childnode refid="19082" relation="include">
+        </childnode>
+        <childnode refid="19085" relation="include">
+        </childnode>
+        <childnode refid="19088" relation="include">
+        </childnode>
+        <childnode refid="19089" relation="include">
+        </childnode>
+        <childnode refid="19092" relation="include">
+        </childnode>
+        <childnode refid="19093" relation="include">
+        </childnode>
+        <childnode refid="19094" relation="include">
+        </childnode>
+        <childnode refid="19096" relation="include">
+        </childnode>
+        <childnode refid="19098" relation="include">
+        </childnode>
+        <childnode refid="19099" relation="include">
+        </childnode>
+      </node>
+      <node id="19096">
+        <label>cv_mean_extractor.hpp</label>
+        <link refid="cv__mean__extractor_8hpp"/>
+        <childnode refid="19082" relation="include">
+        </childnode>
+        <childnode refid="19097" relation="include">
+        </childnode>
+      </node>
+      <node id="19099">
+        <label>limits</label>
+      </node>
+      <node id="19077">
+        <label>lbann/data_readers/image_preprocessor.hpp</label>
+        <link refid="image__preprocessor_8hpp"/>
+        <childnode refid="19059" relation="include">
+        </childnode>
+        <childnode refid="19051" relation="include">
+        </childnode>
+      </node>
+      <node id="19065">
+        <label>lbann/io/persist.hpp</label>
+        <link refid="persist_8hpp"/>
+        <childnode refid="19051" relation="include">
+        </childnode>
+        <childnode refid="19052" relation="include">
+        </childnode>
+      </node>
+      <node id="19052">
+        <label>El.hpp</label>
+      </node>
+      <node id="19087">
+        <label>lbann/utils/mild_exception.hpp</label>
+        <link refid="mild__exception_8hpp"/>
+        <childnode refid="19071" relation="include">
+        </childnode>
+      </node>
+      <node id="19051">
+        <label>lbann/base.hpp</label>
+        <link refid="base_8hpp"/>
+        <childnode refid="19052" relation="include">
+        </childnode>
+        <childnode refid="19053" relation="include">
+        </childnode>
+        <childnode refid="19054" relation="include">
+        </childnode>
+        <childnode refid="19059" relation="include">
+        </childnode>
+      </node>
+      <node id="19049">
+        <label>data_reader_image.hpp</label>
+        <link refid="data__reader__image_8hpp"/>
+        <childnode refid="19050" relation="include">
+        </childnode>
+        <childnode refid="19077" relation="include">
+        </childnode>
+        <childnode refid="19081" relation="include">
+        </childnode>
+      </node>
+      <node id="19078">
+        <label>cassert</label>
+      </node>
+      <node id="19076">
+        <label>fcntl.h</label>
+      </node>
+      <node id="19084">
+        <label>opencv_extensions.hpp</label>
+        <link refid="opencv__extensions_8hpp"/>
+      </node>
+      <node id="19092">
+        <label>cv_colorizer.hpp</label>
+        <link refid="cv__colorizer_8hpp"/>
+        <childnode refid="19082" relation="include">
+        </childnode>
+      </node>
+      <node id="19070">
+        <label>string</label>
+      </node>
+      <node id="19063">
+        <label>map</label>
+      </node>
+      <node id="19088">
+        <label>cv_subtractor.hpp</label>
+        <link refid="cv__subtractor_8hpp"/>
+        <childnode refid="19082" relation="include">
+        </childnode>
+        <childnode refid="19051" relation="include">
+        </childnode>
+      </node>
+      <node id="19072">
+        <label>exception</label>
+      </node>
+      <node id="19090">
+        <label>ostream</label>
+      </node>
+      <node id="19048">
+        <label>lbann/data_readers/data_reader_cifar10.hpp</label>
+        <link refid="data__reader__cifar10_8hpp"/>
+        <childnode refid="19049" relation="include">
+        </childnode>
+      </node>
+      <node id="19047">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_cifar10.cpp</label>
+        <link refid="data__reader__cifar10_8cpp"/>
+        <childnode refid="19048" relation="include">
+        </childnode>
+      </node>
+      <node id="19066">
+        <label>random</label>
+      </node>
+      <node id="19075">
+        <label>sys/types.h</label>
+      </node>
+      <node id="19086">
+        <label>typeinfo</label>
+      </node>
+      <node id="19056">
+        <label>cstdio</label>
+      </node>
+      <node id="19093">
+        <label>cv_decolorizer.hpp</label>
+        <link refid="cv__decolorizer_8hpp"/>
+        <childnode refid="19059" relation="include">
+        </childnode>
+        <childnode refid="19082" relation="include">
+        </childnode>
+      </node>
+      <node id="19068">
+        <label>lbann/utils/stack_trace.hpp</label>
+        <link refid="stack__trace_8hpp"/>
+        <childnode refid="19069" relation="include">
+        </childnode>
+        <childnode refid="19070" relation="include">
+        </childnode>
+      </node>
+      <node id="19058">
+        <label>cxxabi.h</label>
+      </node>
+      <node id="19067">
+        <label>lbann/utils/exception.hpp</label>
+        <link refid="exception_8hpp"/>
+        <childnode refid="19051" relation="include">
+        </childnode>
+        <childnode refid="19061" relation="include">
+        </childnode>
+        <childnode refid="19068" relation="include">
+        </childnode>
+        <childnode refid="19071" relation="include">
+        </childnode>
+        <childnode refid="19072" relation="include">
+        </childnode>
+      </node>
+      <node id="19080">
+        <label>unistd.h</label>
+      </node>
+      <node id="19062">
+        <label>vector</label>
+      </node>
+      <node id="19061">
+        <label>lbann/comm.hpp</label>
+        <link refid="comm_8hpp"/>
+        <childnode refid="19062" relation="include">
+        </childnode>
+        <childnode refid="19063" relation="include">
+        </childnode>
+        <childnode refid="19064" relation="include">
+        </childnode>
+        <childnode refid="19051" relation="include">
+        </childnode>
+      </node>
+      <node id="19095">
+        <label>utility</label>
+      </node>
+      <node id="19073">
+        <label>lbann/io/file_io.hpp</label>
+        <link refid="file__io_8hpp"/>
+        <childnode refid="19074" relation="include">
+        </childnode>
+        <childnode refid="19075" relation="include">
+        </childnode>
+        <childnode refid="19076" relation="include">
+        </childnode>
+      </node>
+      <node id="19055">
+        <label>cstdlib</label>
+      </node>
+      <node id="19083">
+        <label>opencv.hpp</label>
+        <link refid="opencv_8hpp"/>
+        <childnode refid="19059" relation="include">
+        </childnode>
+      </node>
+      <node id="19071">
+        <label>iostream</label>
+      </node>
+      <node id="19085">
+        <label>cv_normalizer.hpp</label>
+        <link refid="cv__normalizer_8hpp"/>
+        <childnode refid="19086" relation="include">
+        </childnode>
+        <childnode refid="19082" relation="include">
+        </childnode>
+        <childnode refid="19051" relation="include">
+        </childnode>
+        <childnode refid="19087" relation="include">
+        </childnode>
+      </node>
+      <node id="19060">
+        <label>lbann/utils/random.hpp</label>
+        <link refid="random_8hpp"/>
+        <childnode refid="19051" relation="include">
+        </childnode>
+        <childnode refid="19061" relation="include">
+        </childnode>
+        <childnode refid="19065" relation="include">
+        </childnode>
+        <childnode refid="19066" relation="include">
+        </childnode>
+      </node>
+      <node id="19082">
+        <label>cv_transform.hpp</label>
+        <link refid="cv__transform_8hpp"/>
+        <childnode refid="19083" relation="include">
+        </childnode>
+        <childnode refid="19084" relation="include">
+        </childnode>
+      </node>
+      <node id="19089">
+        <label>cv_augmenter.hpp</label>
+        <link refid="cv__augmenter_8hpp"/>
+        <childnode refid="19082" relation="include">
+        </childnode>
+        <childnode refid="19071" relation="include">
+        </childnode>
+        <childnode refid="19090" relation="include">
+        </childnode>
+        <childnode refid="19091" relation="include">
+        </childnode>
+        <childnode refid="19070" relation="include">
+        </childnode>
+      </node>
+      <node id="19069">
+        <label>csignal</label>
+      </node>
+      <node id="19094">
+        <label>cv_cropper.hpp</label>
+        <link refid="cv__cropper_8hpp"/>
+        <childnode refid="19082" relation="include">
+        </childnode>
+        <childnode refid="19095" relation="include">
+        </childnode>
+        <childnode refid="19090" relation="include">
+        </childnode>
+      </node>
+      <node id="19050">
+        <label>data_reader.hpp</label>
+        <link refid="data__reader_8hpp"/>
+        <childnode refid="19051" relation="include">
+        </childnode>
+        <childnode refid="19060" relation="include">
+        </childnode>
+        <childnode refid="19067" relation="include">
+        </childnode>
+        <childnode refid="19061" relation="include">
+        </childnode>
+        <childnode refid="19073" relation="include">
+        </childnode>
+        <childnode refid="19065" relation="include">
+        </childnode>
+        <childnode refid="19077" relation="include">
+        </childnode>
+        <childnode refid="19078" relation="include">
+        </childnode>
+        <childnode refid="19079" relation="include">
+        </childnode>
+        <childnode refid="19070" relation="include">
+        </childnode>
+        <childnode refid="19062" relation="include">
+        </childnode>
+        <childnode refid="19080" relation="include">
+        </childnode>
+      </node>
+      <node id="19059">
+        <label>lbann_config.hpp</label>
+      </node>
+      <node id="19097">
+        <label>type_traits</label>
+      </node>
+      <node id="19079">
+        <label>algorithm</label>
+      </node>
+      <node id="19054">
+        <label>lbann/utils/cyg_profile.hpp</label>
+        <link refid="cyg__profile_8hpp"/>
+        <childnode refid="19055" relation="include">
+        </childnode>
+        <childnode refid="19056" relation="include">
+        </childnode>
+        <childnode refid="19057" relation="include">
+        </childnode>
+        <childnode refid="19058" relation="include">
+        </childnode>
+      </node>
+      <node id="19091">
+        <label>cstring</label>
+      </node>
+      <node id="19053">
+        <label>lbann/Elemental_extensions.hpp</label>
+        <link refid="Elemental__extensions_8hpp"/>
+        <childnode refid="19052" relation="include">
+        </childnode>
+      </node>
+      <node id="19098">
+        <label>memory</label>
+      </node>
+      <node id="19064">
+        <label>typeindex</label>
+      </node>
+      <node id="19057">
+        <label>dlfcn.h</label>
+      </node>
+    </incdepgraph>
+    <innernamespace refid="namespacelbann">lbann</innernamespace>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>2014-2016,<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Security,<sp/>LLC.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Produced<sp/>at<sp/>the<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Laboratory.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Written<sp/>by<sp/>the<sp/>LBANN<sp/>Research<sp/>Team<sp/>(B.<sp/>Van<sp/>Essen,<sp/>et<sp/>al.)<sp/>listed<sp/>in</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="comment">//<sp/>the<sp/>CONTRIBUTORS<sp/>file.<sp/>&lt;lbann-dev@llnl.gov&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="comment">//<sp/>LLNL-CODE-697807.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="comment">//<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="comment">//<sp/>This<sp/>file<sp/>is<sp/>part<sp/>of<sp/>LBANN:<sp/>Livermore<sp/>Big<sp/>Artificial<sp/>Neural<sp/>Network</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Toolkit.<sp/>For<sp/>details,<sp/>see<sp/>http://software.llnl.gov/LBANN<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="comment">//<sp/>https://github.com/LLNL/LBANN.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Licensed<sp/>under<sp/>the<sp/>Apache<sp/>License,<sp/>Version<sp/>2.0<sp/>(the<sp/>&quot;Licensee&quot;);<sp/>you</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight><highlight class="comment">//<sp/>may<sp/>not<sp/>use<sp/>this<sp/>file<sp/>except<sp/>in<sp/>compliance<sp/>with<sp/>the<sp/>License.<sp/><sp/>You<sp/>may</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="comment">//<sp/>obtain<sp/>a<sp/>copy<sp/>of<sp/>the<sp/>License<sp/>at:</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight><highlight class="comment">//<sp/>http://www.apache.org/licenses/LICENSE-2.0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Unless<sp/>required<sp/>by<sp/>applicable<sp/>law<sp/>or<sp/>agreed<sp/>to<sp/>in<sp/>writing,<sp/>software</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight><highlight class="comment">//<sp/>distributed<sp/>under<sp/>the<sp/>License<sp/>is<sp/>distributed<sp/>on<sp/>an<sp/>&quot;AS<sp/>IS&quot;<sp/>BASIS,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight><highlight class="comment">//<sp/>WITHOUT<sp/>WARRANTIES<sp/>OR<sp/>CONDITIONS<sp/>OF<sp/>ANY<sp/>KIND,<sp/>either<sp/>express<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="comment">//<sp/>implied.<sp/>See<sp/>the<sp/>License<sp/>for<sp/>the<sp/>specific<sp/>language<sp/>governing</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="comment">//<sp/>permissions<sp/>and<sp/>limitations<sp/>under<sp/>the<sp/>license.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="25"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="26"><highlight class="normal"></highlight><highlight class="comment">//<sp/>lbann_data_reader_cifar10<sp/>.hpp<sp/>.cpp<sp/>-<sp/>generic_data_reader<sp/>class<sp/>for<sp/>CIFAR10<sp/>dataset</highlight></codeline>
+<codeline lineno="28"><highlight class="comment"></highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="29"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="data__reader__cifar10_8hpp" kindref="compound">lbann/data_readers/data_reader_cifar10.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="30"><highlight class="normal"></highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacelbann" kindref="compound">lbann</ref><sp/>{</highlight></codeline>
+<codeline lineno="32"><highlight class="normal"></highlight></codeline>
+<codeline lineno="33" refid="classlbann_1_1cifar10__reader_1a3e4fca66c9bd38798e56379d4a2cd6c0" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1cifar10__reader_1a3e4fca66c9bd38798e56379d4a2cd6c0" kindref="member">cifar10_reader::cifar10_reader</ref>(</highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/>shuffle)</highlight></codeline>
+<codeline lineno="34"><highlight class="normal"><sp/><sp/>:<sp/><ref refid="classlbann_1_1image__data__reader" kindref="compound">image_data_reader</ref>(shuffle)<sp/>{</highlight></codeline>
+<codeline lineno="35"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1cifar10__reader_1a4c5389d0a6641716c96aa07e58fa4e88" kindref="member">set_defaults</ref>();</highlight></codeline>
+<codeline lineno="36"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="37"><highlight class="normal"></highlight></codeline>
+<codeline lineno="38" refid="classlbann_1_1cifar10__reader_1a7830763d48562f43af206d2b0f4497c3" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1cifar10__reader_1a7830763d48562f43af206d2b0f4497c3" kindref="member">cifar10_reader::~cifar10_reader</ref>()<sp/>{}</highlight></codeline>
+<codeline lineno="39"><highlight class="normal"></highlight></codeline>
+<codeline lineno="40" refid="classlbann_1_1cifar10__reader_1a4c5389d0a6641716c96aa07e58fa4e88" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1cifar10__reader_1a4c5389d0a6641716c96aa07e58fa4e88" kindref="member">cifar10_reader::set_defaults</ref>()<sp/>{</highlight></codeline>
+<codeline lineno="41"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1image__data__reader_1af001f3d1c0f1c580b66988233b3a64f0" kindref="member">m_image_width</ref><sp/>=<sp/>32;</highlight></codeline>
+<codeline lineno="42"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1image__data__reader_1a0632efa3deaa9d61e671f741909eb3fe" kindref="member">m_image_height</ref><sp/>=<sp/>32;</highlight></codeline>
+<codeline lineno="43"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1image__data__reader_1aab1a440f361521dc7bd583cefe1061f8" kindref="member">m_image_num_channels</ref><sp/>=<sp/>3;</highlight></codeline>
+<codeline lineno="44"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1image__data__reader_1a0164b0e3abbe92daef73b36fb925403e" kindref="member">set_linearized_image_size</ref>();</highlight></codeline>
+<codeline lineno="45"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1image__data__reader_1af280e8758a6ec3acee7c62e6351d17e0" kindref="member">m_num_labels</ref><sp/>=<sp/>10;</highlight></codeline>
+<codeline lineno="46"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="47"><highlight class="normal"></highlight></codeline>
+<codeline lineno="48" refid="classlbann_1_1cifar10__reader_1aee797d547e651e1b0fd5dedc95edd0e0" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1cifar10__reader_1aee797d547e651e1b0fd5dedc95edd0e0" kindref="member">cifar10_reader::load</ref>()<sp/>{</highlight></codeline>
+<codeline lineno="49"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//open<sp/>data<sp/>file</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="50"><highlight class="normal"><sp/><sp/>std::string<sp/>image_dir<sp/>=<sp/><ref refid="classlbann_1_1generic__data__reader_1ab4c6c2d4ba40ece809ce896828c8ff03" kindref="member">get_file_dir</ref>();</highlight></codeline>
+<codeline lineno="51"><highlight class="normal"><sp/><sp/>std::string<sp/>filename<sp/>=<sp/><ref refid="classlbann_1_1generic__data__reader_1a56664e1b43f3fe923cf6d652f14b40a9" kindref="member">get_data_filename</ref>();</highlight></codeline>
+<codeline lineno="52"><highlight class="normal"><sp/><sp/>std::string<sp/>path<sp/>=<sp/>image_dir<sp/>+<sp/></highlight><highlight class="stringliteral">&quot;/&quot;</highlight><highlight class="normal"><sp/>+<sp/>filename;</highlight></codeline>
+<codeline lineno="53"><highlight class="normal"><sp/><sp/>std::ifstream<sp/>in(path,<sp/>std::ios::binary);</highlight></codeline>
+<codeline lineno="54"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(!in.good())<sp/>{</highlight></codeline>
+<codeline lineno="55"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">throw</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__exception" kindref="compound">lbann_exception</ref>(</highlight></codeline>
+<codeline lineno="56"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>std::string{}<sp/>+<sp/>__FILE__<sp/>+<sp/></highlight><highlight class="stringliteral">&quot;<sp/>&quot;</highlight><highlight class="normal"><sp/>+<sp/>std::to_string(__LINE__)<sp/>+</highlight></codeline>
+<codeline lineno="57"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="stringliteral">&quot;<sp/>::<sp/>failed<sp/>to<sp/>open<sp/>&quot;</highlight><highlight class="normal"><sp/>+<sp/>path<sp/>+<sp/></highlight><highlight class="stringliteral">&quot;<sp/>for<sp/>reading&quot;</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="58"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="59"><highlight class="normal"></highlight></codeline>
+<codeline lineno="60"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//get<sp/>number<sp/>of<sp/>images,<sp/>with<sp/>error<sp/>checking</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="61"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>len<sp/>=<sp/><ref refid="classlbann_1_1image__data__reader_1a26b8566e76ba99c017a84c49a9dec37c" kindref="member">get_linearized_data_size</ref>()<sp/>+<sp/>1;<sp/><sp/></highlight><highlight class="comment">//should<sp/>be<sp/>3073</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="62"><highlight class="normal"><sp/><sp/>in.seekg(0,<sp/>in.end);</highlight></codeline>
+<codeline lineno="63"><highlight class="normal"><sp/><sp/>std::streampos<sp/>fs<sp/>=<sp/>in.tellg();</highlight></codeline>
+<codeline lineno="64"><highlight class="normal"><sp/><sp/>in.seekg(0,<sp/>in.beg);</highlight></codeline>
+<codeline lineno="65"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(fs<sp/>%<sp/>len<sp/>!=<sp/>0)<sp/>{</highlight></codeline>
+<codeline lineno="66"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">throw</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__exception" kindref="compound">lbann_exception</ref>(</highlight></codeline>
+<codeline lineno="67"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>std::string{}<sp/>+<sp/>__FILE__<sp/>+<sp/></highlight><highlight class="stringliteral">&quot;<sp/>&quot;</highlight><highlight class="normal"><sp/>+<sp/>std::to_string(__LINE__)<sp/>+</highlight></codeline>
+<codeline lineno="68"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="stringliteral">&quot;<sp/>::<sp/><sp/>fs<sp/>%<sp/>len<sp/>!=<sp/>0;<sp/>fs:<sp/>&quot;</highlight><highlight class="normal"><sp/>+<sp/>std::to_string(fs)<sp/>+<sp/></highlight><highlight class="stringliteral">&quot;<sp/>len:<sp/>&quot;</highlight><highlight class="normal"><sp/>+</highlight></codeline>
+<codeline lineno="69"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>std::to_string(len));</highlight></codeline>
+<codeline lineno="70"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="71"><highlight class="normal"></highlight></codeline>
+<codeline lineno="72"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//reserve<sp/>space<sp/>for<sp/>string<sp/>images</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="73"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>num_images<sp/>=<sp/>fs<sp/>/<sp/>len;</highlight></codeline>
+<codeline lineno="74"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1cifar10__reader_1a9b47dab5c16987441ec5276d91a5aab5" kindref="member">m_data</ref>.resize(num_images);</highlight></codeline>
+<codeline lineno="75"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(</highlight><highlight class="keyword">auto</highlight><highlight class="normal"><sp/>&amp;<sp/>h<sp/>:<sp/><ref refid="classlbann_1_1cifar10__reader_1a9b47dab5c16987441ec5276d91a5aab5" kindref="member">m_data</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="76"><highlight class="normal"><sp/><sp/><sp/><sp/>h.resize(len);</highlight></codeline>
+<codeline lineno="77"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="78"><highlight class="normal"></highlight></codeline>
+<codeline lineno="79"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//read<sp/>in<sp/>the<sp/>images;<sp/>each<sp/>image<sp/>is<sp/>1<sp/>byte,<sp/>which<sp/>is<sp/>the</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="80"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//label<sp/>(0-9),<sp/>and<sp/>3072<sp/>pixels</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="81"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(</highlight><highlight class="keyword">auto</highlight><highlight class="normal"><sp/>&amp;<sp/>h<sp/>:<sp/>m_data)<sp/>{</highlight></codeline>
+<codeline lineno="82"><highlight class="normal"><sp/><sp/><sp/><sp/>in.read((</highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>*)&amp;(h[0]),<sp/>len);</highlight></codeline>
+<codeline lineno="83"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="84"><highlight class="normal"><sp/><sp/>in.close();</highlight></codeline>
+<codeline lineno="85"><highlight class="normal"></highlight></codeline>
+<codeline lineno="86"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1generic__data__reader_1aaab6aeff67ffff1c689336851fec2c57" kindref="member">m_shuffled_indices</ref>.resize(m_data.size());</highlight></codeline>
+<codeline lineno="87"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(</highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>n<sp/>=<sp/>0;<sp/>n<sp/>&lt;<sp/>m_data.size();<sp/>n++)<sp/>{</highlight></codeline>
+<codeline lineno="88"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1generic__data__reader_1aaab6aeff67ffff1c689336851fec2c57" kindref="member">m_shuffled_indices</ref>[n]<sp/>=<sp/>n;</highlight></codeline>
+<codeline lineno="89"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="90"><highlight class="normal"></highlight></codeline>
+<codeline lineno="91"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1generic__data__reader_1aa28fdeeb6af492540f507e49adff5d6c" kindref="member">select_subset_of_data</ref>();</highlight></codeline>
+<codeline lineno="92"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="93"><highlight class="normal"></highlight></codeline>
+<codeline lineno="94" refid="classlbann_1_1cifar10__reader_1a590c672731bbdcb6e7fd8fd300d004d5" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1cifar10__reader_1a590c672731bbdcb6e7fd8fd300d004d5" kindref="member">cifar10_reader::fetch_datum</ref>(<ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref>&amp;<sp/>X,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>data_id,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>mb_idx,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>tid)<sp/>{</highlight></codeline>
+<codeline lineno="95"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(</highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>p<sp/>=<sp/>1;<sp/>p&lt;<ref refid="classlbann_1_1cifar10__reader_1a9b47dab5c16987441ec5276d91a5aab5" kindref="member">m_data</ref>[data_id].size();<sp/>p++)<sp/>{</highlight></codeline>
+<codeline lineno="96"><highlight class="normal"><sp/><sp/><sp/><sp/>X.Set(p-1,<sp/>mb_idx,<sp/><ref refid="classlbann_1_1cifar10__reader_1a9b47dab5c16987441ec5276d91a5aab5" kindref="member">m_data</ref>[data_id][p]);</highlight></codeline>
+<codeline lineno="97"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="98"><highlight class="normal"></highlight></codeline>
+<codeline lineno="99"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">auto</highlight><highlight class="normal"><sp/>pixel_col<sp/>=<sp/>X(El::IR(0,<sp/>X.Height()),<sp/>El::IR(mb_idx,<sp/>mb_idx<sp/>+<sp/>1));</highlight></codeline>
+<codeline lineno="100"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__image__preprocessor_1a27cb5182c4f764cbfa4edecbb78ef29d" kindref="member">augment</ref>(pixel_col,<sp/><ref refid="classlbann_1_1image__data__reader_1a0632efa3deaa9d61e671f741909eb3fe" kindref="member">m_image_height</ref>,<sp/><ref refid="classlbann_1_1image__data__reader_1af001f3d1c0f1c580b66988233b3a64f0" kindref="member">m_image_width</ref>,<sp/><ref refid="classlbann_1_1image__data__reader_1aab1a440f361521dc7bd583cefe1061f8" kindref="member">m_image_num_channels</ref>);</highlight></codeline>
+<codeline lineno="101"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__image__preprocessor_1ae370cdc9f776ce8cce94a45cacf47425" kindref="member">normalize</ref>(pixel_col,<sp/><ref refid="classlbann_1_1image__data__reader_1aab1a440f361521dc7bd583cefe1061f8" kindref="member">m_image_num_channels</ref>);</highlight></codeline>
+<codeline lineno="102"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__image__preprocessor_1aece5b572d0a2fe123cc66412d7a5c91e" kindref="member">pixel_noise</ref>(pixel_col);<sp/></highlight><highlight class="comment">//add<sp/>noise<sp/>to<sp/>image,<sp/>disable<sp/>by<sp/>default</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="103"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">true</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="104"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="105"><highlight class="normal"></highlight></codeline>
+<codeline lineno="106" refid="classlbann_1_1cifar10__reader_1a7419de03462b5ff38b8174695a9c06dd" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1cifar10__reader_1a7419de03462b5ff38b8174695a9c06dd" kindref="member">cifar10_reader::fetch_label</ref>(<ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref>&amp;<sp/>Y,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>data_id,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>mb_idx,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>tid)<sp/>{</highlight></codeline>
+<codeline lineno="107"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">auto</highlight><highlight class="normal"><sp/>label<sp/>=<sp/>(int)<ref refid="classlbann_1_1cifar10__reader_1a9b47dab5c16987441ec5276d91a5aab5" kindref="member">m_data</ref>[data_id][0];</highlight></codeline>
+<codeline lineno="108"><highlight class="normal"><sp/><sp/>Y.Set(label,<sp/>mb_idx,<sp/>1);</highlight></codeline>
+<codeline lineno="109"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">true</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="110"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="111"><highlight class="normal"></highlight></codeline>
+<codeline lineno="112"><highlight class="normal">}<sp/><sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>lbann</highlight><highlight class="normal"></highlight></codeline>
+    </programlisting>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_cifar10.cpp"/>
+  </compounddef>
+</doxygen>

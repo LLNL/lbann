@@ -1,0 +1,52 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="structlbann_1_1lbann__quantizer_1_1adaptive__thresholds" kind="struct" language="C++" prot="public">
+    <compoundname>lbann::lbann_quantizer::adaptive_thresholds</compoundname>
+    <includes refid="quantizer_8hpp" local="no">quantizer.hpp</includes>
+      <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structlbann_1_1lbann__quantizer_1_1adaptive__thresholds_1a6f6aee51ed629c2ab68666d577189bb9" prot="public" static="no" mutable="no">
+        <type>DataType</type>
+        <definition>DataType lbann::lbann_quantizer::adaptive_thresholds::pos_thresh</definition>
+        <argsstring></argsstring>
+        <name>pos_thresh</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>The positive/upper threshold. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/quantizer.hpp" line="77" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/quantizer.hpp" bodystart="77" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__quantizer_1aa1541b9afa60250dbd570acbbe98242f" compoundref="quantizer_8hpp" startline="267" endline="269">lbann::lbann_quantizer::get_onebit_quantized_matrix_height</referencedby>
+        <referencedby refid="classlbann_1_1lbann__quantizer_1a7e4dfca5770dfd88ae6255b0407d8f80" compoundref="quantizer__impl_8hpp" startline="37" endline="161">lbann::lbann_quantizer::adaptive_quantize</referencedby>
+        <referencedby refid="classlbann_1_1lbann__quantizer_1a25ed3869c6bc615ae51198803ea4e33d" compoundref="quantizer__impl_8hpp" startline="274" endline="394">lbann::lbann_quantizer::adaptive_quantize_replace</referencedby>
+        <referencedby refid="classlbann_1_1lbann__quantizer_1af77beca5905ff8601ca9b8231a2a16e0" compoundref="quantizer_8cpp" startline="582" endline="679">lbann::lbann_quantizer::col_reconstruction</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="structlbann_1_1lbann__quantizer_1_1adaptive__thresholds_1a4626553695545cf0783c3f7302f92fbf" prot="public" static="no" mutable="no">
+        <type>DataType</type>
+        <definition>DataType lbann::lbann_quantizer::adaptive_thresholds::neg_thresh</definition>
+        <argsstring></argsstring>
+        <name>neg_thresh</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>The negative/lower threshold. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/quantizer.hpp" line="79" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/quantizer.hpp" bodystart="79" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__quantizer_1aa1541b9afa60250dbd570acbbe98242f" compoundref="quantizer_8hpp" startline="267" endline="269">lbann::lbann_quantizer::get_onebit_quantized_matrix_height</referencedby>
+        <referencedby refid="classlbann_1_1lbann__quantizer_1a7e4dfca5770dfd88ae6255b0407d8f80" compoundref="quantizer__impl_8hpp" startline="37" endline="161">lbann::lbann_quantizer::adaptive_quantize</referencedby>
+        <referencedby refid="classlbann_1_1lbann__quantizer_1a25ed3869c6bc615ae51198803ea4e33d" compoundref="quantizer__impl_8hpp" startline="274" endline="394">lbann::lbann_quantizer::adaptive_quantize_replace</referencedby>
+        <referencedby refid="classlbann_1_1lbann__quantizer_1af77beca5905ff8601ca9b8231a2a16e0" compoundref="quantizer_8cpp" startline="582" endline="679">lbann::lbann_quantizer::col_reconstruction</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>Thresholds for use in adaptive quantization. </para>    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/quantizer.hpp" line="75" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/quantizer.hpp" bodystart="75" bodyend="80"/>
+    <listofallmembers>
+      <member refid="structlbann_1_1lbann__quantizer_1_1adaptive__thresholds_1a4626553695545cf0783c3f7302f92fbf" prot="public" virt="non-virtual"><scope>lbann::lbann_quantizer::adaptive_thresholds</scope><name>neg_thresh</name></member>
+      <member refid="structlbann_1_1lbann__quantizer_1_1adaptive__thresholds_1a6f6aee51ed629c2ab68666d577189bb9" prot="public" virt="non-virtual"><scope>lbann::lbann_quantizer::adaptive_thresholds</scope><name>pos_thresh</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

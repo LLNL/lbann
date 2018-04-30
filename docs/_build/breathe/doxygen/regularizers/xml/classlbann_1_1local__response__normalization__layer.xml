@@ -1,0 +1,363 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1local__response__normalization__layer" kind="class" language="C++" prot="public">
+    <compoundname>lbann::local_response_normalization_layer</compoundname>
+    <basecompoundref refid="classlbann_1_1regularizer__layer" prot="public" virt="non-virtual">lbann::regularizer_layer</basecompoundref>
+    <includes refid="local__response__normalization_8hpp" local="no">local_response_normalization.hpp</includes>
+    <templateparamlist>
+      <param>
+        <type>data_layout</type>
+        <declname>T_layout</declname>
+        <defname>T_layout</defname>
+        <defval>data_layout::DATA_PARALLEL</defval>
+      </param>
+    </templateparamlist>
+      <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="classlbann_1_1local__response__normalization__layer_1a4914619a19eb43efcf8240b8a1e0c090" prot="private" static="no" mutable="no">
+        <type>int</type>
+        <definition>int lbann::local_response_normalization_layer&lt; T_layout &gt;::m_window_width</definition>
+        <argsstring></argsstring>
+        <name>m_window_width</name>
+        <briefdescription>
+<para>Normalization window width. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" line="43" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" bodystart="43" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1local__response__normalization__layer_1a85c25a68888e2e9d163a820326fc09ff" prot="private" static="no" mutable="no">
+        <type>DataType</type>
+        <definition>DataType lbann::local_response_normalization_layer&lt; T_layout &gt;::m_lrn_alpha</definition>
+        <argsstring></argsstring>
+        <name>m_lrn_alpha</name>
+        <briefdescription>
+<para>LRN alpha scaling parameter. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" line="45" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" bodystart="45" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1local__response__normalization__layer_1ad06848e9d59664be86aecbc1e2ba556f" prot="private" static="no" mutable="no">
+        <type>DataType</type>
+        <definition>DataType lbann::local_response_normalization_layer&lt; T_layout &gt;::m_lrn_beta</definition>
+        <argsstring></argsstring>
+        <name>m_lrn_beta</name>
+        <briefdescription>
+<para>LRN beta power parameter. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" line="47" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" bodystart="47" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1local__response__normalization__layer_1a896f875d6f6a763c1cb0dbd43679164e" prot="private" static="no" mutable="no">
+        <type>DataType</type>
+        <definition>DataType lbann::local_response_normalization_layer&lt; T_layout &gt;::m_lrn_k</definition>
+        <argsstring></argsstring>
+        <name>m_lrn_k</name>
+        <briefdescription>
+<para>LRN k parameter. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" line="49" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" bodystart="49" bodyend="-1"/>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1local__response__normalization__layer_1a5fa2f3175590cc85aa984c42cc9acd95" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>lbann::local_response_normalization_layer&lt; T_layout &gt;::local_response_normalization_layer</definition>
+        <argsstring>(lbann_comm *comm, int window_width, DataType lrn_alpha, DataType lrn_beta, DataType lrn_k, cudnn::cudnn_manager *cudnn=nullptr)</argsstring>
+        <name>local_response_normalization_layer</name>
+        <param>
+          <type>lbann_comm *</type>
+          <declname>comm</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>window_width</declname>
+        </param>
+        <param>
+          <type>DataType</type>
+          <declname>lrn_alpha</declname>
+        </param>
+        <param>
+          <type>DataType</type>
+          <declname>lrn_beta</declname>
+        </param>
+        <param>
+          <type>DataType</type>
+          <declname>lrn_k</declname>
+        </param>
+        <param>
+          <type>cudnn::cudnn_manager *</type>
+          <declname>cudnn</declname>
+          <defval>nullptr</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" line="57" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" bodystart="58" bodyend="77"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1local__response__normalization__layer_1a95f89c53da64c319def098a7153c57f6" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>lbann::local_response_normalization_layer&lt; T_layout &gt;::local_response_normalization_layer</definition>
+        <argsstring>(const local_response_normalization_layer &amp;other)</argsstring>
+        <name>local_response_normalization_layer</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1local__response__normalization__layer" kindref="compound">local_response_normalization_layer</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" line="79" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" bodystart="79" bodyend="89"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1local__response__normalization__layer_1a7a1e5eb532bbf72c6334ac865d0694a3" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type><ref refid="classlbann_1_1local__response__normalization__layer" kindref="compound">local_response_normalization_layer</ref> &amp;</type>
+        <definition>local_response_normalization_layer&amp; lbann::local_response_normalization_layer&lt; T_layout &gt;::operator=</definition>
+        <argsstring>(const local_response_normalization_layer &amp;other)</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1local__response__normalization__layer" kindref="compound">local_response_normalization_layer</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" line="91" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" bodystart="91" bodyend="100"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1local__response__normalization__layer_1a7896161e3667a69f0fd66cda3b4af421" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>lbann::local_response_normalization_layer&lt; T_layout &gt;::~local_response_normalization_layer</definition>
+        <argsstring>() override</argsstring>
+        <name>~local_response_normalization_layer</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" line="102" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" bodystart="102" bodyend="109"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1local__response__normalization__layer_1a2bccec49f9b3840a2d9170cb202c1397" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type><ref refid="classlbann_1_1local__response__normalization__layer" kindref="compound">local_response_normalization_layer</ref> *</type>
+        <definition>local_response_normalization_layer* lbann::local_response_normalization_layer&lt; T_layout &gt;::copy</definition>
+        <argsstring>() const override</argsstring>
+        <name>copy</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" line="111" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" bodystart="111" bodyend="113"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1local__response__normalization__layer_1ad566e7894d7eb1eb0fd1560686bf2388" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>std::string</type>
+        <definition>std::string lbann::local_response_normalization_layer&lt; T_layout &gt;::get_type</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_type</name>
+        <briefdescription>
+<para>Use LRN rather than local response normalization for better formatting. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" line="116" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" bodystart="116" bodyend="116"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1local__response__normalization__layer_1a31f4ab1700e2e1c69a0ccb44c6f0fd69" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>std::string</type>
+        <definition>std::string lbann::local_response_normalization_layer&lt; T_layout &gt;::get_description</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_description</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" line="118" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" bodystart="118" bodyend="123"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1local__response__normalization__layer_1a7a161dde860f17264077a0cc4797fe36" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>data_layout</type>
+        <definition>data_layout lbann::local_response_normalization_layer&lt; T_layout &gt;::get_data_layout</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_data_layout</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" line="125" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" bodystart="125" bodyend="125"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1local__response__normalization__layer_1aff5210d74db5f8302989cca12d04263d" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::local_response_normalization_layer&lt; T_layout &gt;::setup_gpu</definition>
+        <argsstring>() override</argsstring>
+        <name>setup_gpu</name>
+        <briefdescription>
+<para>Initialize GPU objects. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" line="128" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" bodystart="128" bodyend="140"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1local__response__normalization__layer_1ac7b2ce4970eb7163685fb0a4a69328fc" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::local_response_normalization_layer&lt; T_layout &gt;::fp_compute</definition>
+        <argsstring>() override</argsstring>
+        <name>fp_compute</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" line="142" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" bodystart="142" bodyend="148"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1local__response__normalization__layer_1ae94544765a459a6609f2c2ebbbc3e9d9" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::local_response_normalization_layer&lt; T_layout &gt;::bp_compute</definition>
+        <argsstring>() override</argsstring>
+        <name>bp_compute</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" line="150" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" bodystart="150" bodyend="156"/>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="private-func">
+      <memberdef kind="function" id="classlbann_1_1local__response__normalization__layer_1a715b08cfc4bfed730a066f6d9cedef86" prot="private" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::local_response_normalization_layer&lt; T_layout &gt;::fp_compute_cudnn</definition>
+        <argsstring>()</argsstring>
+        <name>fp_compute_cudnn</name>
+        <briefdescription>
+<para>GPU implementation of forward propagation. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" line="160" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" bodystart="160" bodyend="187"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1local__response__normalization__layer_1a78b0d081956abf4f09874d59b4bf4fc8" prot="private" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::local_response_normalization_layer&lt; T_layout &gt;::bp_compute_cudnn</definition>
+        <argsstring>()</argsstring>
+        <name>bp_compute_cudnn</name>
+        <briefdescription>
+<para>GPU implementation of backward propagation. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" line="190" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" bodystart="190" bodyend="220"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1local__response__normalization__layer_1a79c72491b5b74b64d2b10ac2636cddce" prot="private" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::local_response_normalization_layer&lt; T_layout &gt;::fp_compute_cpu</definition>
+        <argsstring>()</argsstring>
+        <name>fp_compute_cpu</name>
+        <briefdescription>
+<para>CPU implementation of forward propagation. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" line="223" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" bodystart="223" bodyend="302"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1local__response__normalization__layer_1a1aac4bf5e2500749bc8bafcd254f5699" prot="private" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::local_response_normalization_layer&lt; T_layout &gt;::bp_compute_cpu</definition>
+        <argsstring>()</argsstring>
+        <name>bp_compute_cpu</name>
+        <briefdescription>
+<para>CPU implementation of backward propagation. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" line="305" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" bodystart="305" bodyend="417"/>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>Local Response Normalization layer. </para>    </detaileddescription>
+    <inheritancegraph>
+      <node id="13">
+        <label>lbann::regularizer_layer</label>
+        <link refid="classlbann_1_1regularizer__layer"/>
+        <childnode refid="14" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="14">
+        <label>Layer</label>
+      </node>
+      <node id="12">
+        <label>lbann::local_response_normalization_layer&lt; T_layout &gt;</label>
+        <link refid="classlbann_1_1local__response__normalization__layer"/>
+        <childnode refid="13" relation="public-inheritance">
+        </childnode>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="16">
+        <label>lbann::regularizer_layer</label>
+        <link refid="classlbann_1_1regularizer__layer"/>
+        <childnode refid="17" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="17">
+        <label>Layer</label>
+      </node>
+      <node id="15">
+        <label>lbann::local_response_normalization_layer&lt; T_layout &gt;</label>
+        <link refid="classlbann_1_1local__response__normalization__layer"/>
+        <childnode refid="16" relation="public-inheritance">
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" line="39" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp" bodystart="39" bodyend="419"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1local__response__normalization__layer_1ae94544765a459a6609f2c2ebbbc3e9d9" prot="public" virt="non-virtual"><scope>lbann::local_response_normalization_layer</scope><name>bp_compute</name></member>
+      <member refid="classlbann_1_1local__response__normalization__layer_1a1aac4bf5e2500749bc8bafcd254f5699" prot="private" virt="non-virtual"><scope>lbann::local_response_normalization_layer</scope><name>bp_compute_cpu</name></member>
+      <member refid="classlbann_1_1local__response__normalization__layer_1a78b0d081956abf4f09874d59b4bf4fc8" prot="private" virt="non-virtual"><scope>lbann::local_response_normalization_layer</scope><name>bp_compute_cudnn</name></member>
+      <member refid="classlbann_1_1local__response__normalization__layer_1a2bccec49f9b3840a2d9170cb202c1397" prot="public" virt="non-virtual"><scope>lbann::local_response_normalization_layer</scope><name>copy</name></member>
+      <member refid="classlbann_1_1local__response__normalization__layer_1ac7b2ce4970eb7163685fb0a4a69328fc" prot="public" virt="non-virtual"><scope>lbann::local_response_normalization_layer</scope><name>fp_compute</name></member>
+      <member refid="classlbann_1_1local__response__normalization__layer_1a79c72491b5b74b64d2b10ac2636cddce" prot="private" virt="non-virtual"><scope>lbann::local_response_normalization_layer</scope><name>fp_compute_cpu</name></member>
+      <member refid="classlbann_1_1local__response__normalization__layer_1a715b08cfc4bfed730a066f6d9cedef86" prot="private" virt="non-virtual"><scope>lbann::local_response_normalization_layer</scope><name>fp_compute_cudnn</name></member>
+      <member refid="classlbann_1_1local__response__normalization__layer_1a7a161dde860f17264077a0cc4797fe36" prot="public" virt="non-virtual"><scope>lbann::local_response_normalization_layer</scope><name>get_data_layout</name></member>
+      <member refid="classlbann_1_1local__response__normalization__layer_1a31f4ab1700e2e1c69a0ccb44c6f0fd69" prot="public" virt="non-virtual"><scope>lbann::local_response_normalization_layer</scope><name>get_description</name></member>
+      <member refid="classlbann_1_1local__response__normalization__layer_1ad566e7894d7eb1eb0fd1560686bf2388" prot="public" virt="non-virtual"><scope>lbann::local_response_normalization_layer</scope><name>get_type</name></member>
+      <member refid="classlbann_1_1local__response__normalization__layer_1a5fa2f3175590cc85aa984c42cc9acd95" prot="public" virt="non-virtual"><scope>lbann::local_response_normalization_layer</scope><name>local_response_normalization_layer</name></member>
+      <member refid="classlbann_1_1local__response__normalization__layer_1a95f89c53da64c319def098a7153c57f6" prot="public" virt="non-virtual"><scope>lbann::local_response_normalization_layer</scope><name>local_response_normalization_layer</name></member>
+      <member refid="classlbann_1_1local__response__normalization__layer_1a85c25a68888e2e9d163a820326fc09ff" prot="private" virt="non-virtual"><scope>lbann::local_response_normalization_layer</scope><name>m_lrn_alpha</name></member>
+      <member refid="classlbann_1_1local__response__normalization__layer_1ad06848e9d59664be86aecbc1e2ba556f" prot="private" virt="non-virtual"><scope>lbann::local_response_normalization_layer</scope><name>m_lrn_beta</name></member>
+      <member refid="classlbann_1_1local__response__normalization__layer_1a896f875d6f6a763c1cb0dbd43679164e" prot="private" virt="non-virtual"><scope>lbann::local_response_normalization_layer</scope><name>m_lrn_k</name></member>
+      <member refid="classlbann_1_1local__response__normalization__layer_1a4914619a19eb43efcf8240b8a1e0c090" prot="private" virt="non-virtual"><scope>lbann::local_response_normalization_layer</scope><name>m_window_width</name></member>
+      <member refid="classlbann_1_1local__response__normalization__layer_1a7a1e5eb532bbf72c6334ac865d0694a3" prot="public" virt="non-virtual"><scope>lbann::local_response_normalization_layer</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1regularizer__layer_1a2ebf3877b905b479a0250b74cf8f68b3" prot="public" virt="non-virtual"><scope>lbann::local_response_normalization_layer</scope><name>regularizer_layer</name></member>
+      <member refid="classlbann_1_1local__response__normalization__layer_1aff5210d74db5f8302989cca12d04263d" prot="public" virt="non-virtual"><scope>lbann::local_response_normalization_layer</scope><name>setup_gpu</name></member>
+      <member refid="classlbann_1_1local__response__normalization__layer_1a7896161e3667a69f0fd66cda3b4af421" prot="public" virt="non-virtual"><scope>lbann::local_response_normalization_layer</scope><name>~local_response_normalization_layer</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

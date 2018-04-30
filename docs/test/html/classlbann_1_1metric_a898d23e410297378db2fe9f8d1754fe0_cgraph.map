@@ -1,0 +1,9 @@
+<map id="lbann::metric::setup" name="lbann::metric::setup">
+<area shape="rect" id="node2" href="$classlbann_1_1model.html#ae14f4b2cc8882b3739d4aeb25d9e73c9" title="lbann::model::get_layers" alt="" coords="191,107,358,132"/>
+<area shape="rect" id="node3" href="$classlbann_1_1model.html#aaed20219476dc1458bbd058be36de1ec" title="lbann::model::replace\l_weights" alt="" coords="406,100,554,139"/>
+<area shape="rect" id="node4" href="$classlbann_1_1model.html#ac6cc0f5d850cfb997bbbc70eefa0d68f" title="lbann::model::remap\l_pointers" alt="" coords="602,100,745,139"/>
+<area shape="rect" id="node5" href="$classlbann_1_1objective__function.html#a1055da2236a7faf79c5a2632f8dfc683" title="lbann::objective_function\l::get_layer_pointers" alt="" coords="793,5,961,44"/>
+<area shape="rect" id="node6" href="$classlbann_1_1objective__function.html#a0f934e078b55528dd0ec1ec8ad34c73b" title="lbann::objective_function\l::set_layer_pointers" alt="" coords="793,68,961,107"/>
+<area shape="rect" id="node7" href="$classlbann_1_1objective__function.html#a8e37f76e42f6f341ea3592001b3794e5" title="lbann::objective_function\l::get_weights_pointers" alt="" coords="793,131,961,169"/>
+<area shape="rect" id="node8" href="$classlbann_1_1objective__function.html#a9c3211354ca1cee8a7ba219f4e56e03c" title="lbann::objective_function\l::set_weights_pointers" alt="" coords="793,193,961,232"/>
+</map>

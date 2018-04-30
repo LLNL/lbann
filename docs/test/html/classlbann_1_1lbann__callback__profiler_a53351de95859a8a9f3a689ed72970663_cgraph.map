@@ -1,0 +1,14 @@
+<map id="lbann::lbann_callback_profiler::copy" name="lbann::lbann_callback_profiler::copy">
+<area shape="rect" id="node2" href="$classlbann_1_1lbann__callback__profiler.html#aa1df0f5400362d0b4c469df5d4657eed" title="lbann::lbann_callback\l_profiler::lbann_callback\l_profiler" alt="" coords="208,5,373,57"/>
+<area shape="rect" id="node4" href="$classlbann_1_1lbann__callback__profiler.html#abd30d11df631eea086cdf213c9f0f4f9" title="lbann::lbann_callback\l_profiler::on_epoch_begin" alt="" coords="203,81,378,120"/>
+<area shape="rect" id="node6" href="$classlbann_1_1lbann__callback__profiler.html#a86e0fbe550ff42660766977604d9d5a6" title="lbann::lbann_callback\l_profiler::on_epoch_end" alt="" coords="208,359,373,397"/>
+<area shape="rect" id="node8" href="$classlbann_1_1lbann__callback__profiler.html#a4a60f7470bf36c6833862d47d1a7ce01" title="lbann::lbann_callback\l_profiler::on_batch_begin" alt="" coords="205,144,377,183"/>
+<area shape="rect" id="node9" href="$classlbann_1_1lbann__callback__profiler.html#ad7db0233f3a0c91c10a15d0951bb1747" title="lbann::lbann_callback\l_profiler::on_batch_end" alt="" coords="210,421,371,460"/>
+<area shape="rect" id="node10" href="$classlbann_1_1lbann__callback__profiler.html#a027fe89a27c52ae80a1982f96dd62455" title="lbann::lbann_callback\l_profiler::on_forward\l_prop_begin" alt="" coords="216,207,365,259"/>
+<area shape="rect" id="node11" href="$classlbann_1_1lbann__callback__profiler.html#a63e3ad301cf8529acda00ac8f2531c93" title="lbann::lbann_callback\l_profiler::on_forward\l_prop_end" alt="" coords="216,484,365,536"/>
+<area shape="rect" id="node12" href="$classlbann_1_1lbann__callback__profiler.html#a7905ac8f79a71731c8e388cdb4385023" title="lbann::lbann_callback\l_profiler::on_backward\l_prop_begin" alt="" coords="213,283,369,335"/>
+<area shape="rect" id="node13" href="$classlbann_1_1lbann__callback__profiler.html#a8a4ba2640d128992a519ab4a2b7c44aa" title="lbann::lbann_callback\l_profiler::on_backward\l_prop_end" alt="" coords="213,560,369,612"/>
+<area shape="rect" id="node3" href="$classlbann_1_1lbann__callback__profiler.html#ad9c93def349b324a9f3a20c73a5f29a0" title="lbann::lbann_callback\l_profiler::operator=" alt="" coords="435,12,585,51"/>
+<area shape="rect" id="node5" href="$namespaceanonymous__namespace_02profiler_8cpp_03.html#ad2ea0278cd1f25dc30ddd76194ace64b" title="anonymous_namespace\l\{profiler::cpp\}::prof\l_region_begin" alt="" coords="426,172,593,224"/>
+<area shape="rect" id="node7" href="$namespaceanonymous__namespace_02profiler_8cpp_03.html#a7984c26fb186307873a2f83f91715a99" title="anonymous_namespace\l\{profiler::cpp\}::prof\l_region_end" alt="" coords="426,449,593,501"/>
+</map>

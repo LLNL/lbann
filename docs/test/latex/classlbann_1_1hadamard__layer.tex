@@ -1,0 +1,360 @@
+\hypertarget{classlbann_1_1hadamard__layer}{}\section{lbann\+:\+:hadamard\+\_\+layer$<$ T\+\_\+layout $>$ Class Template Reference}
+\label{classlbann_1_1hadamard__layer}\index{lbann\+::hadamard\+\_\+layer$<$ T\+\_\+layout $>$@{lbann\+::hadamard\+\_\+layer$<$ T\+\_\+layout $>$}}
+
+
+{\ttfamily \#include $<$hadamard.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:hadamard\+\_\+layer$<$ T\+\_\+layout $>$\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=198pt]{classlbann_1_1hadamard__layer__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:hadamard\+\_\+layer$<$ T\+\_\+layout $>$\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1hadamard__layer__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1hadamard__layer_af79b4f3d1e2709092b36fb0f38d30430}{hadamard\+\_\+layer} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, \hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$cudnn=nullptr)
+\item 
+\hyperlink{classlbann_1_1hadamard__layer}{hadamard\+\_\+layer} $\ast$ \hyperlink{classlbann_1_1hadamard__layer_ae194aeb83fefa09a45ff4b534839e667}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1hadamard__layer_a2981073aa177cc71da8c0e83563a7fa0}{get\+\_\+type} () const override
+\item 
+\hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08db}{data\+\_\+layout} \hyperlink{classlbann_1_1hadamard__layer_ac7a67a906eaa7810997fa6448337f192}{get\+\_\+data\+\_\+layout} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1hadamard__layer_ad575b8b5efddaf3ee64c358b28198de9}{get\+\_\+description} () const override
+\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{classlbann_1_1hadamard__layer_a712faa83429f6a77a6c43c8afde4ddaa}{setup\+\_\+pointers} () override
+\item 
+void \hyperlink{classlbann_1_1hadamard__layer_a8be44f24f2290b06b104294d1fe31d41}{fp\+\_\+compute} () override
+\item 
+void \hyperlink{classlbann_1_1hadamard__layer_a2150c54cc21fb5dc51d77119c20c6c21}{bp\+\_\+compute} () override
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+\subsubsection*{template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$\newline
+class lbann\+::hadamard\+\_\+layer$<$ T\+\_\+layout $>$}
+
+Hadamard layer. This layer computes the entrywise product of the input tensors. 
+
+Definition at line 40 of file hadamard.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1hadamard__layer_af79b4f3d1e2709092b36fb0f38d30430}\label{classlbann_1_1hadamard__layer_af79b4f3d1e2709092b36fb0f38d30430}} 
+\index{lbann\+::hadamard\+\_\+layer@{lbann\+::hadamard\+\_\+layer}!hadamard\+\_\+layer@{hadamard\+\_\+layer}}
+\index{hadamard\+\_\+layer@{hadamard\+\_\+layer}!lbann\+::hadamard\+\_\+layer@{lbann\+::hadamard\+\_\+layer}}
+\subsubsection{\texorpdfstring{hadamard\+\_\+layer()}{hadamard\_layer()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{classlbann_1_1hadamard__layer}{lbann\+::hadamard\+\_\+layer}$<$ T\+\_\+layout $>$\+::\hyperlink{classlbann_1_1hadamard__layer}{hadamard\+\_\+layer} (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{\hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$}]{cudnn = {\ttfamily nullptr} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 43 of file hadamard.\+hpp.
+
+
+\begin{DoxyCode}
+45     : \hyperlink{classlbann_1_1transform__layer_a4b72501e0f4d0745c8b13c5331055e65}{transform\_layer}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}) \{
+46 
+47     \textcolor{comment}{// Hadamard layer has no limit on parents}
+48     \hyperlink{classlbann_1_1Layer_a841b96b25555247f52921c7f13ae1dfa}{m\_expected\_num\_parent\_layers} = -1;
+49 
+50   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1hadamard__layer_af79b4f3d1e2709092b36fb0f38d30430_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1hadamard__layer_a2150c54cc21fb5dc51d77119c20c6c21}\label{classlbann_1_1hadamard__layer_a2150c54cc21fb5dc51d77119c20c6c21}} 
+\index{lbann\+::hadamard\+\_\+layer@{lbann\+::hadamard\+\_\+layer}!bp\+\_\+compute@{bp\+\_\+compute}}
+\index{bp\+\_\+compute@{bp\+\_\+compute}!lbann\+::hadamard\+\_\+layer@{lbann\+::hadamard\+\_\+layer}}
+\subsubsection{\texorpdfstring{bp\+\_\+compute()}{bp\_compute()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1hadamard__layer}{lbann\+::hadamard\+\_\+layer}$<$ T\+\_\+layout $>$\+::bp\+\_\+compute (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Perform the computation for the backward propagation step. 
+
+Implements \hyperlink{classlbann_1_1Layer_a7442e01f9ee1294df2de811efcf5171e}{lbann\+::\+Layer}.
+
+
+
+Definition at line 112 of file hadamard.\+hpp.
+
+
+\begin{DoxyCode}
+112                              \{
+113     \textcolor{keywordflow}{if}(this->\hyperlink{classlbann_1_1Layer_af7881cb5eff5207c15fa835d65462e8f}{m\_using\_gpus}) \{
+114 \textcolor{preprocessor}{  #ifndef LBANN\_HAS\_CUDNN}
+115       \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"hadamard\_layer: cuDNN not detected"});
+116 \textcolor{preprocessor}{  #else}
+117       \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"hadamard\_layer: no GPU implementation"});
+118 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+119     \} \textcolor{keywordflow}{else} \{
+120 
+121       \textcolor{comment}{// Get local matrices}
+122       std::vector<const Mat*> local\_inputs;
+123       \textcolor{keywordflow}{for} (\textcolor{keyword}{const} \textcolor{keyword}{auto}& input : this->\hyperlink{classlbann_1_1Layer_a52314601c3458268f56e017dc2ade357}{m\_prev\_activations}) \{
+124         local\_inputs.push\_back(&input->LockedMatrix());
+125       \}
+126       \textcolor{keyword}{auto}& local\_gradient\_wrt\_output = \hyperlink{classlbann_1_1Layer_a82827edc5e869960144f3ccb2172bfcd}{get\_local\_prev\_error\_signals}();
+127       std::vector<Mat*> local\_gradient\_wrt\_inputs;
+128       \textcolor{keywordflow}{for} (\textcolor{keyword}{auto}& gradient\_wrt\_input : this->\hyperlink{classlbann_1_1Layer_a452e22ac81c1a799f0614b3e942ea726}{m\_error\_signals}) \{
+129         local\_gradient\_wrt\_inputs.push\_back(&gradient\_wrt\_input->Matrix());
+130       \}
+131 
+132       \textcolor{comment}{// Compute derivative of entrywise product}
+133       \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_height = local\_gradient\_wrt\_output.Height();
+134       \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_width = local\_gradient\_wrt\_output.Width();
+135       \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_parents = \hyperlink{classlbann_1_1Layer_ac9290d4a6453ccda5f6b4d8b57b49ba3}{get\_num\_parents}();
+136 \textcolor{preprocessor}{      #pragma omp parallel for collapse(2)}
+137       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} col = 0; col < local\_width; ++col) \{
+138         \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} row = 0; row < local\_height; ++row) \{
+139           \textcolor{keyword}{const} DataType dy = local\_gradient\_wrt\_output(row, col);
+140           \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} parent = 0; parent < num\_parents; ++parent) \{
+141             DataType dx = dy;
+142             \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i = 0; i < num\_parents; ++i) \{
+143               \textcolor{keywordflow}{if} (i != parent) \{
+144                 dx *= (*local\_inputs[i])(row, col);
+145               \}
+146             \}
+147             (*local\_gradient\_wrt\_inputs[parent])(row, col) += dx;
+148           \}
+149         \}
+150       \}
+151 
+152     \}
+153   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1hadamard__layer_a2150c54cc21fb5dc51d77119c20c6c21_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1hadamard__layer_ae194aeb83fefa09a45ff4b534839e667}\label{classlbann_1_1hadamard__layer_ae194aeb83fefa09a45ff4b534839e667}} 
+\index{lbann\+::hadamard\+\_\+layer@{lbann\+::hadamard\+\_\+layer}!copy@{copy}}
+\index{copy@{copy}!lbann\+::hadamard\+\_\+layer@{lbann\+::hadamard\+\_\+layer}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{classlbann_1_1hadamard__layer}{hadamard\+\_\+layer}$\ast$ \hyperlink{classlbann_1_1hadamard__layer}{lbann\+::hadamard\+\_\+layer}$<$ T\+\_\+layout $>$\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Copy function. This function dynamically allocates memory for a layer instance and instantiates a copy. The caller is responsible for deallocating the instance. 
+
+Implements \hyperlink{classlbann_1_1Layer_af420f22bbac801c85483ade84588a23f}{lbann\+::\+Layer}.
+
+
+
+Definition at line 52 of file hadamard.\+hpp.
+
+
+\begin{DoxyCode}
+52 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1hadamard__layer_af79b4f3d1e2709092b36fb0f38d30430}{hadamard\_layer}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1hadamard__layer_ae194aeb83fefa09a45ff4b534839e667_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1hadamard__layer_a8be44f24f2290b06b104294d1fe31d41}\label{classlbann_1_1hadamard__layer_a8be44f24f2290b06b104294d1fe31d41}} 
+\index{lbann\+::hadamard\+\_\+layer@{lbann\+::hadamard\+\_\+layer}!fp\+\_\+compute@{fp\+\_\+compute}}
+\index{fp\+\_\+compute@{fp\+\_\+compute}!lbann\+::hadamard\+\_\+layer@{lbann\+::hadamard\+\_\+layer}}
+\subsubsection{\texorpdfstring{fp\+\_\+compute()}{fp\_compute()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1hadamard__layer}{lbann\+::hadamard\+\_\+layer}$<$ T\+\_\+layout $>$\+::fp\+\_\+compute (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Perform the computation for the forward propagation step. 
+
+Implements \hyperlink{classlbann_1_1Layer_a523319dd1bd87a0612afa1912bb5aad7}{lbann\+::\+Layer}.
+
+
+
+Definition at line 79 of file hadamard.\+hpp.
+
+
+\begin{DoxyCode}
+79                              \{
+80     \textcolor{keywordflow}{if}(this->\hyperlink{classlbann_1_1Layer_af7881cb5eff5207c15fa835d65462e8f}{m\_using\_gpus}) \{
+81 \textcolor{preprocessor}{  #ifndef LBANN\_HAS\_CUDNN}
+82       \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"hadamard\_layer: cuDNN not detected"});
+83 \textcolor{preprocessor}{  #else}
+84       \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"hadamard\_layer: no GPU implementation"});
+85 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+86     \} \textcolor{keywordflow}{else} \{
+87 
+88       \textcolor{comment}{// Get local matrices}
+89       std::vector<const Mat*> local\_inputs;
+90       \textcolor{keywordflow}{for} (\textcolor{keyword}{const} \textcolor{keyword}{auto}& input : this->\hyperlink{classlbann_1_1Layer_a52314601c3458268f56e017dc2ade357}{m\_prev\_activations}) \{
+91         local\_inputs.push\_back(&input->LockedMatrix());
+92       \}
+93       \textcolor{keyword}{auto}& local\_output = \hyperlink{classlbann_1_1Layer_a4248f27acebf72b7b7b3ee39c8bcb62a}{get\_local\_activations}();
+94 
+95       \textcolor{comment}{// Compute entrywise product}
+96       \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_height = local\_output.Height();
+97       \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_width = local\_output.Width();
+98 \textcolor{preprocessor}{      #pragma omp parallel for collapse(2)}
+99       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} col = 0; col < local\_width; ++col) \{
+100         \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} row = 0; row < local\_height; ++row) \{
+101           DataType y = DataType(1);
+102           \textcolor{keywordflow}{for} (\textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_input : local\_inputs) \{
+103             y *= (*local\_input)(row, col);
+104           \}
+105           local\_output(row, col) = y;
+106         \}
+107       \}
+108 
+109     \}
+110   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1hadamard__layer_a8be44f24f2290b06b104294d1fe31d41_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1hadamard__layer_ac7a67a906eaa7810997fa6448337f192}\label{classlbann_1_1hadamard__layer_ac7a67a906eaa7810997fa6448337f192}} 
+\index{lbann\+::hadamard\+\_\+layer@{lbann\+::hadamard\+\_\+layer}!get\+\_\+data\+\_\+layout@{get\+\_\+data\+\_\+layout}}
+\index{get\+\_\+data\+\_\+layout@{get\+\_\+data\+\_\+layout}!lbann\+::hadamard\+\_\+layer@{lbann\+::hadamard\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+data\+\_\+layout()}{get\_data\_layout()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08db}{data\+\_\+layout} \hyperlink{classlbann_1_1hadamard__layer}{lbann\+::hadamard\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+data\+\_\+layout (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get data layout of the data tensors. We assume that the data layouts of the previous activations, activations, previous error signals, and error signals are the same. Each concrete layer that is templated on its data layout should override this function to return its template parameter. 
+
+Implements \hyperlink{classlbann_1_1Layer_a5dfb66e81fc085997402a5e2241316bd}{lbann\+::\+Layer}.
+
+
+
+Definition at line 54 of file hadamard.\+hpp.
+
+
+\begin{DoxyCode}
+54 \{ \textcolor{keywordflow}{return} T\_layout; \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1hadamard__layer_ac7a67a906eaa7810997fa6448337f192_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1hadamard__layer_ad575b8b5efddaf3ee64c358b28198de9}\label{classlbann_1_1hadamard__layer_ad575b8b5efddaf3ee64c358b28198de9}} 
+\index{lbann\+::hadamard\+\_\+layer@{lbann\+::hadamard\+\_\+layer}!get\+\_\+description@{get\+\_\+description}}
+\index{get\+\_\+description@{get\+\_\+description}!lbann\+::hadamard\+\_\+layer@{lbann\+::hadamard\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+description()}{get\_description()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+std\+::string \hyperlink{classlbann_1_1hadamard__layer}{lbann\+::hadamard\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+description (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Returns description of ctor params 
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_acc0803d3428914ca1eb5988c4309174a}{lbann\+::\+Layer}.
+
+
+
+Definition at line 57 of file hadamard.\+hpp.
+
+
+\begin{DoxyCode}
+57                                              \{
+58     std::stringstream s;
+59     s << \textcolor{stringliteral}{" Hadamard; parents: "};
+60     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} i=0; i<this->\hyperlink{classlbann_1_1Layer_a3fa7c6cf1a22bb14ab0e85e3dc6027c5}{m\_parent\_layers}.size(); i++) \{
+61       s << this->\hyperlink{classlbann_1_1Layer_a3fa7c6cf1a22bb14ab0e85e3dc6027c5}{m\_parent\_layers}[i]->get\_name() << \textcolor{stringliteral}{" "} << this->
+      \hyperlink{classlbann_1_1Layer_a3fa7c6cf1a22bb14ab0e85e3dc6027c5}{m\_parent\_layers}[i]->get\_type() << \textcolor{stringliteral}{" "};
+62     \}
+63     s << \textcolor{stringliteral}{" dataLayout: "} << this->\hyperlink{classlbann_1_1Layer_ae3f4a5602df821f4221614b1e3782dc1}{get\_data\_layout\_string}(
+      \hyperlink{classlbann_1_1hadamard__layer_ac7a67a906eaa7810997fa6448337f192}{get\_data\_layout}());
+64     \textcolor{keywordflow}{return} s.str();
+65   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1hadamard__layer_ad575b8b5efddaf3ee64c358b28198de9_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1hadamard__layer_a2981073aa177cc71da8c0e83563a7fa0}\label{classlbann_1_1hadamard__layer_a2981073aa177cc71da8c0e83563a7fa0}} 
+\index{lbann\+::hadamard\+\_\+layer@{lbann\+::hadamard\+\_\+layer}!get\+\_\+type@{get\+\_\+type}}
+\index{get\+\_\+type@{get\+\_\+type}!lbann\+::hadamard\+\_\+layer@{lbann\+::hadamard\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+type()}{get\_type()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+std\+::string \hyperlink{classlbann_1_1hadamard__layer}{lbann\+::hadamard\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+type (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get the layer type\textquotesingle{}s name. A layer type name should be brief, human-\/readable description of the layer\textquotesingle{}s mathematical operation. 
+
+Implements \hyperlink{classlbann_1_1Layer_a0fa0ea9160b490c151c0a17fde4f7239}{lbann\+::\+Layer}.
+
+
+
+Definition at line 53 of file hadamard.\+hpp.
+
+
+\begin{DoxyCode}
+53 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"Hadamard"}; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1hadamard__layer_a712faa83429f6a77a6c43c8afde4ddaa}\label{classlbann_1_1hadamard__layer_a712faa83429f6a77a6c43c8afde4ddaa}} 
+\index{lbann\+::hadamard\+\_\+layer@{lbann\+::hadamard\+\_\+layer}!setup\+\_\+pointers@{setup\+\_\+pointers}}
+\index{setup\+\_\+pointers@{setup\+\_\+pointers}!lbann\+::hadamard\+\_\+layer@{lbann\+::hadamard\+\_\+layer}}
+\subsubsection{\texorpdfstring{setup\+\_\+pointers()}{setup\_pointers()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1hadamard__layer}{lbann\+::hadamard\+\_\+layer}$<$ T\+\_\+layout $>$\+::setup\+\_\+pointers (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Setup pointers to parent and child layers. Called by the setup function. The base method checks that the number of parents and children are valid. Pointers to the parent/child layers are assumed to be already initialized. 
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_a71b7a62afd9b73c23b2c0267b8ba0981}{lbann\+::\+Layer}.
+
+
+
+Definition at line 69 of file hadamard.\+hpp.
+
+
+\begin{DoxyCode}
+69                                  \{
+70     \hyperlink{classlbann_1_1Layer_a71b7a62afd9b73c23b2c0267b8ba0981}{transform\_layer::setup\_pointers}();
+71     std::stringstream err;
+72     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1Layer_ac9290d4a6453ccda5f6b4d8b57b49ba3}{get\_num\_parents}() <= 0) \{
+73       err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: hadamard\_layer: "}
+74           << \textcolor{stringliteral}{"Hadamard layer has no parents"};
+75       \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+76     \}
+77   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1hadamard__layer_a712faa83429f6a77a6c43c8afde4ddaa_cgraph}
+\end{center}
+\end{figure}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/layers/transform/\hyperlink{hadamard_8hpp}{hadamard.\+hpp}\end{DoxyCompactItemize}

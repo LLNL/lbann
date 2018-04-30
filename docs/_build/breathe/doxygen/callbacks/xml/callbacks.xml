@@ -1,0 +1,75 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="callbacks" kind="page">
+    <compoundname>callbacks</compoundname>
+    <title>Callbacks</title>
+    <detaileddescription>
+<para>LBANN supported callbacks are found below.</para><sect1 id="callbacks_1checkdata">
+<title>Check Dataset</title>
+<para>Implementation details: lbann::lbann_callback_check_dataset</para></sect1>
+<sect1 id="callbacks_1checkinit">
+<title>Check Initialization</title>
+<para>Implementation details: lbann::lbann_callback_check_init</para></sect1>
+<sect1 id="callbacks_1checkreconstruction">
+<title>Check Reconstruction</title>
+<para>Implementation details: lbann::lbann_callback_check_reconstruction_erro</para></sect1>
+<sect1 id="callbacks_1checknan">
+<title>Check NAN</title>
+<para>Implementation details: lbann::lbann_callback_checknan</para></sect1>
+<sect1 id="callbacks_1checksmall">
+<title>Check Small</title>
+<para>Implementation details: lbann::lbann_callback_checksmall</para></sect1>
+<sect1 id="callbacks_1dump_acts">
+<title>Dump Activations</title>
+<para>Implementation details: lbann::lbann_callback_dump_activations</para></sect1>
+<sect1 id="callbacks_1dump_grads">
+<title>Dump Gradients</title>
+<para>Implementation details: lbann::lbann_callback_dump_gradients</para></sect1>
+<sect1 id="callbacks_1dump_mb_sample_indices">
+<title>Dump Minibatch Sample Indices</title>
+<para>Implementation details: lbann::lbann_callback_dump_minibatch_sample_indices</para></sect1>
+<sect1 id="callbacks_1dump_wei">
+<title>Dump Weights</title>
+<para>Implementation details: lbann::lbann_callback_dump_weights</para></sect1>
+<sect1 id="callbacks_1earlystop">
+<title>Early Stopping</title>
+<para>Implementation details: lbann::lbann_callback_early_stopping</para></sect1>
+<sect1 id="callbacks_1gradientcheck">
+<title>Gradient Check</title>
+<para>Implementation details: lbann::lbann_callback_gradient_check</para></sect1>
+<sect1 id="callbacks_1hang">
+<title>Hang</title>
+<para>Implementation details: lbann::lbann_callback_hang</para></sect1>
+<sect1 id="callbacks_1im_comm">
+<title>Inter-model Communication</title>
+<para>Implementation details: lbann::lbann_callback_imcomm</para></sect1>
+<sect1 id="callbacks_1io">
+<title>Print IO</title>
+<para>Implementation details: lbann::lbann_callback_io</para></sect1>
+<sect1 id="callbacks_1learningrate">
+<title>Learning Rate</title>
+<para>Implementation details: lbann::lbann_callback_learning_rate</para></sect1>
+<sect1 id="callbacks_1LTFB">
+<title>Manage LTFB</title>
+<para>Implementation details: lbann::lbann_callback_ltfb</para></sect1>
+<sect1 id="callbacks_1print_acc">
+<title>Print Accuracy</title>
+<para>Implementation details: lbann::lbann_callback_print</para></sect1>
+<sect1 id="callbacks_1save_images">
+<title>Save Images</title>
+<para>Implementation details: lbann::lbann_callback_save_images</para></sect1>
+<sect1 id="callbacks_1summary">
+<title>Summary</title>
+<para>Implementation details: lbann::lbann_callback_summary</para></sect1>
+<sect1 id="callbacks_1timer">
+<title>Timer</title>
+<para>Implementation details: lbann::lbann_callback_timer</para></sect1>
+<sect1 id="callbacks_1dbg">
+<title>Debug</title>
+<para>Implementation details: lbann::lbann_callback_debug</para></sect1>
+<sect1 id="callbacks_1variable_mb">
+<title>Variable Minibatch</title>
+<para>Implementation details: lbann::lbann_callback_variable_minibatch </para></sect1>
+    </detaileddescription>
+  </compounddef>
+</doxygen>

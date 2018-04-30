@@ -1,0 +1,5 @@
+<map id="lbann::generic_input_layer::get_world_master_mini_batch_adjustment" name="lbann::generic_input_layer::get_world_master_mini_batch_adjustment">
+<area shape="rect" id="node2" href="$classlbann_1_1generic__input__layer.html#aba732becdb02627e3ad4493ac19e8fb6" title="lbann::generic_input\l_layer::get_data_reader" alt="" coords="233,5,396,44"/>
+<area shape="rect" id="node4" href="$classlbann_1_1generic__data__reader.html#a0d0f7d684970b5cc59c63050555df302" title="Return the world master mini batch adjustment (global) " alt="" coords="224,68,405,120"/>
+<area shape="rect" id="node3" href="$classlbann_1_1model.html#addb40597cf29aa6d31b6a7d09ef48608" title="lbann::model::get_execution_mode" alt="" coords="453,12,682,37"/>
+</map>

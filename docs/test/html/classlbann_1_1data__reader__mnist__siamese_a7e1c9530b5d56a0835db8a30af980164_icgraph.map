@@ -1,0 +1,11 @@
+<map id="lbann::data_reader_mnist_siamese::set_defaults" name="lbann::data_reader_mnist_siamese::set_defaults">
+<area shape="rect" id="node2" href="$classlbann_1_1data__reader__mnist__siamese.html#a2c5a29603f850bb0684dba1c64981604" title="lbann::data_reader\l_mnist_siamese::get_type" alt="" coords="408,144,584,183"/>
+<area shape="rect" id="node8" href="$classlbann_1_1data__reader__mnist__siamese.html#af10a15ece71ae9c20069161a1c83abcd" title="lbann::data_reader\l_mnist_siamese::data\l_reader_mnist_siamese" alt="" coords="196,245,360,297"/>
+<area shape="rect" id="node10" href="$classlbann_1_1data__reader__mnist__siamese.html#abe572754f0b1415407c1b698b0f83656" title="lbann::data_reader\l_mnist_siamese::set\l_input_params" alt="" coords="207,169,349,221"/>
+<area shape="rect" id="node3" href="$classlbann_1_1data__reader__mnist__siamese.html#ac44a7118e94338e14f7b6a9e33239155" title="Fetch this mini&#45;batch&#39;s samples into X by calling the new overloaded fetch_datum() ..." alt="" coords="879,5,1066,44"/>
+<area shape="rect" id="node4" href="$classlbann_1_1data__reader__mnist__siamese.html#a1709140fcdcea9baaaf1bab7a48f3bce" title="Fetch this mini&#45;batch&#39;s labels into Y by calling the new overloaded fetch_label() ..." alt="" coords="895,137,1049,189"/>
+<area shape="rect" id="node5" href="$classlbann_1_1data__reader__mnist__siamese.html#a299dd32be165c5acf320b6f40404cb17" title="lbann::data_reader\l_mnist_siamese::fetch_datum" alt="" coords="632,75,831,113"/>
+<area shape="rect" id="node6" href="$classlbann_1_1data__reader__mnist__siamese.html#a0f4171af4c56100c1c78cb53e938222c" title="lbann::data_reader\l_mnist_siamese::fetch_label" alt="" coords="636,213,826,252"/>
+<area shape="rect" id="node7" href="$classlbann_1_1data__reader__mnist__siamese.html#a2c60a89c5815fa24b34d4febfecfc3db" title="lbann::data_reader\l_mnist_siamese::load" alt="" coords="656,276,806,315"/>
+<area shape="rect" id="node9" href="$classlbann_1_1data__reader__mnist__siamese.html#a0b9750c72f9fdb28499b6dfe70bc9a6f" title="lbann::data_reader\l_mnist_siamese::copy" alt="" coords="419,252,573,291"/>
+</map>

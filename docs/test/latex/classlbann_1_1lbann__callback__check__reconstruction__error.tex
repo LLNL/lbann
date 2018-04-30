@@ -1,0 +1,198 @@
+\hypertarget{classlbann_1_1lbann__callback__check__reconstruction__error}{}\section{lbann\+:\+:lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error Class Reference}
+\label{classlbann_1_1lbann__callback__check__reconstruction__error}\index{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error}}
+
+
+{\ttfamily \#include $<$callback\+\_\+check\+\_\+reconstruction\+\_\+error.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=223pt]{classlbann_1_1lbann__callback__check__reconstruction__error__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=223pt]{classlbann_1_1lbann__callback__check__reconstruction__error__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1lbann__callback__check__reconstruction__error_aaed51def6fe5ba7093e3d2cc41637a2a}{lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error} (\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} max\+\_\+error=\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type}(1))
+\item 
+\hyperlink{classlbann_1_1lbann__callback__check__reconstruction__error_ad277f418a2c28db941ab44398ee8be5e}{lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error} (const \hyperlink{classlbann_1_1lbann__callback__check__reconstruction__error}{lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__check__reconstruction__error}{lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error} \& \hyperlink{classlbann_1_1lbann__callback__check__reconstruction__error_aef722b1c0145d58928389c0ca3464ee6}{operator=} (const \hyperlink{classlbann_1_1lbann__callback__check__reconstruction__error}{lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__check__reconstruction__error}{lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error} $\ast$ \hyperlink{classlbann_1_1lbann__callback__check__reconstruction__error_a7c2367fdebae1798c6cbf2846c7492a3}{copy} () const override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__check__reconstruction__error_a8a6a72b8016d3ba3ad11b5e7e2f3f5df}{on\+\_\+epoch\+\_\+end} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\item 
+std\+::string \hyperlink{classlbann_1_1lbann__callback__check__reconstruction__error_a604bb361e11774cb5d047d65a5d6508e}{name} () const override
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} \hyperlink{classlbann_1_1lbann__callback__check__reconstruction__error_a04e779b9e10a909f63f941ea036b3ef4}{m\+\_\+max\+\_\+error}
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+Stop training after reconstruction error has reached a given value. 
+
+Definition at line 42 of file callback\+\_\+check\+\_\+reconstruction\+\_\+error.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__check__reconstruction__error_aaed51def6fe5ba7093e3d2cc41637a2a}\label{classlbann_1_1lbann__callback__check__reconstruction__error_aaed51def6fe5ba7093e3d2cc41637a2a}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error}!lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error@{lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error}}
+\index{lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error@{lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error}!lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error()}{lbann\_callback\_check\_reconstruction\_error()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type}}]{max\+\_\+error = {\ttfamily \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type}(1)} }\end{DoxyParamCaption})}
+
+
+
+Definition at line 34 of file callback\+\_\+check\+\_\+reconstruction\+\_\+error.\+cpp.
+
+
+\begin{DoxyCode}
+34                                                                                                        :
+35   \hyperlink{classlbann_1_1lbann__callback_a679057298a41ddd47f08c157f756c584}{lbann\_callback}(), \hyperlink{classlbann_1_1lbann__callback__check__reconstruction__error_a04e779b9e10a909f63f941ea036b3ef4}{m\_max\_error}(max\_error) \{\}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__check__reconstruction__error_aaed51def6fe5ba7093e3d2cc41637a2a_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__check__reconstruction__error_ad277f418a2c28db941ab44398ee8be5e}\label{classlbann_1_1lbann__callback__check__reconstruction__error_ad277f418a2c28db941ab44398ee8be5e}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error}!lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error@{lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error}}
+\index{lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error@{lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error}!lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error()}{lbann\_callback\_check\_reconstruction\_error()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__check__reconstruction__error}{lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__check__reconstruction__error_a7c2367fdebae1798c6cbf2846c7492a3}\label{classlbann_1_1lbann__callback__check__reconstruction__error_a7c2367fdebae1798c6cbf2846c7492a3}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error}!copy@{copy}}
+\index{copy@{copy}!lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__check__reconstruction__error}{lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error}$\ast$ lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a9f545d1269a8c7af335625d049691f26}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 48 of file callback\+\_\+check\+\_\+reconstruction\+\_\+error.\+hpp.
+
+
+\begin{DoxyCode}
+48                                                                    \{
+49     \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1lbann__callback__check__reconstruction__error_aaed51def6fe5ba7093e3d2cc41637a2a}{lbann\_callback\_check\_reconstruction\_error}(*\textcolor{keyword}{this});
+50   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__check__reconstruction__error_a7c2367fdebae1798c6cbf2846c7492a3_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__check__reconstruction__error_a604bb361e11774cb5d047d65a5d6508e}\label{classlbann_1_1lbann__callback__check__reconstruction__error_a604bb361e11774cb5d047d65a5d6508e}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error}!name@{name}}
+\index{name@{name}!lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error}}
+\subsubsection{\texorpdfstring{name()}{name()}}
+{\footnotesize\ttfamily std\+::string lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error\+::name (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Return this callback\textquotesingle{}s name. 
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a7522c7a14f1d6a1ea762cc2d7248eb3a}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 53 of file callback\+\_\+check\+\_\+reconstruction\+\_\+error.\+hpp.
+
+
+\begin{DoxyCode}
+53 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"check reconstruction error"}; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__check__reconstruction__error_a8a6a72b8016d3ba3ad11b5e7e2f3f5df}\label{classlbann_1_1lbann__callback__check__reconstruction__error_a8a6a72b8016d3ba3ad11b5e7e2f3f5df}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error}!on\+\_\+epoch\+\_\+end@{on\+\_\+epoch\+\_\+end}}
+\index{on\+\_\+epoch\+\_\+end@{on\+\_\+epoch\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error}}
+\subsubsection{\texorpdfstring{on\+\_\+epoch\+\_\+end()}{on\_epoch\_end()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error\+::on\+\_\+epoch\+\_\+end (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Check if reconstruction error has reached a given value. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_a1fc71110e7f754bf73c9e0f344a448a5}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 38 of file callback\+\_\+check\+\_\+reconstruction\+\_\+error.\+cpp.
+
+
+\begin{DoxyCode}
+38                                                                      \{
+39   \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType} reconstr\_error  = m->get\_objective\_function()->get\_mean\_value(m->get\_execution\_mode());
+40   \textcolor{keywordflow}{if}( reconstr\_error < \hyperlink{classlbann_1_1lbann__callback__check__reconstruction__error_a04e779b9e10a909f63f941ea036b3ef4}{m\_max\_error}) \{
+41     \textcolor{keywordflow}{if} (m->get\_comm()->am\_model\_master()) \{
+42       std::cout << \textcolor{stringliteral}{"Reconstruction error "} << reconstr\_error << \textcolor{stringliteral}{"is less than "} <<  
+      \hyperlink{classlbann_1_1lbann__callback__check__reconstruction__error_a04e779b9e10a909f63f941ea036b3ef4}{m\_max\_error} << 
+43         \textcolor{stringliteral}{" TEST PASSED"} << std::endl;
+44     \}
+45      exit(0);
+46   \}
+47 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__check__reconstruction__error_a8a6a72b8016d3ba3ad11b5e7e2f3f5df_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=348pt]{classlbann_1_1lbann__callback__check__reconstruction__error_a8a6a72b8016d3ba3ad11b5e7e2f3f5df_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__check__reconstruction__error_aef722b1c0145d58928389c0ca3464ee6}\label{classlbann_1_1lbann__callback__check__reconstruction__error_aef722b1c0145d58928389c0ca3464ee6}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__check__reconstruction__error}{lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error}\& lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__check__reconstruction__error}{lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__check__reconstruction__error_a04e779b9e10a909f63f941ea036b3ef4}\label{classlbann_1_1lbann__callback__check__reconstruction__error_a04e779b9e10a909f63f941ea036b3ef4}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error}!m\+\_\+max\+\_\+error@{m\+\_\+max\+\_\+error}}
+\index{m\+\_\+max\+\_\+error@{m\+\_\+max\+\_\+error}!lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error@{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error}}
+\subsubsection{\texorpdfstring{m\+\_\+max\+\_\+error}{m\_max\_error}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+error\+::m\+\_\+max\+\_\+error\hspace{0.3cm}{\ttfamily [private]}}
+
+maximum error value, default is 1.\+0 
+
+Definition at line 56 of file callback\+\_\+check\+\_\+reconstruction\+\_\+error.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/callbacks/\hyperlink{callback__check__reconstruction__error_8hpp}{callback\+\_\+check\+\_\+reconstruction\+\_\+error.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/callbacks/\hyperlink{callback__check__reconstruction__error_8cpp}{callback\+\_\+check\+\_\+reconstruction\+\_\+error.\+cpp}\end{DoxyCompactItemize}

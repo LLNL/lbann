@@ -1,0 +1,1243 @@
+\hypertarget{namespacelbann_1_1proto}{}\section{lbann\+:\+:proto Namespace Reference}
+\label{namespacelbann_1_1proto}\index{lbann\+::proto@{lbann\+::proto}}
+\subsection*{Namespaces}
+\begin{DoxyCompactItemize}
+\item 
+ \hyperlink{namespacelbann_1_1proto_1_1anonymous__namespace_02callback__factory_8cpp_03}{anonymous\+\_\+namespace\{callback\+\_\+factory.\+cpp\}}
+\item 
+ \hyperlink{namespacelbann_1_1proto_1_1anonymous__namespace_02layer__graph__factory_8cpp_03}{anonymous\+\_\+namespace\{layer\+\_\+graph\+\_\+factory.\+cpp\}}
+\item 
+ \hyperlink{namespacelbann_1_1proto_1_1anonymous__namespace_02model__factory_8cpp_03}{anonymous\+\_\+namespace\{model\+\_\+factory.\+cpp\}}
+\item 
+ \hyperlink{namespacelbann_1_1proto_1_1anonymous__namespace_02weights__factory_8cpp_03}{anonymous\+\_\+namespace\{weights\+\_\+factory.\+cpp\}}
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1lbann__callback}{lbann\+\_\+callback} $\ast$ \hyperlink{namespacelbann_1_1proto_a00597c8b7450c389847980cf6934a619}{construct\+\_\+callback} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, const lbann\+\_\+data\+::\+Callback \&proto\+\_\+cb, std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$$>$ \&data\+\_\+readers, std\+::vector$<$ \hyperlink{classlbann_1_1Layer}{Layer} $\ast$$>$ layer\+\_\+list, std\+::vector$<$ \hyperlink{classlbann_1_1weights}{weights} $\ast$$>$ weights\+\_\+list, \hyperlink{classlbann_1_1lbann__summary}{lbann\+\_\+summary} $\ast$summarizer)
+\item 
+\hyperlink{classlbann_1_1lbann__summary}{lbann\+\_\+summary} $\ast$ \hyperlink{namespacelbann_1_1proto_abf0988db9cd58f9ef013588b440c14bd}{construct\+\_\+summarizer} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, const lbann\+\_\+data\+::\+Model \&m)
+\item 
+{\footnotesize template$<$data\+\_\+layout layout$>$ }\\\hyperlink{classlbann_1_1Layer}{Layer} $\ast$ \hyperlink{namespacelbann_1_1proto_a7e4b0a66836712b1713ae4a121453cde}{construct\+\_\+layer} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$$>$ \&data\+\_\+readers, int num\+\_\+parallel\+\_\+readers, \hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$cudnn, const lbann\+\_\+data\+::\+Layer \&proto\+\_\+layer)
+\item 
+template \hyperlink{classlbann_1_1Layer}{Layer} $\ast$ \hyperlink{namespacelbann_1_1proto_a258c17f551e470e3bcab9f5fa7cf0950}{construct\+\_\+layer$<$ data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+E\+L $>$} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$$>$ \&data\+\_\+readers, int num\+\_\+parallel\+\_\+readers, \hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$cudnn, const lbann\+\_\+data\+::\+Layer \&proto\+\_\+layer)
+\item 
+template \hyperlink{classlbann_1_1Layer}{Layer} $\ast$ \hyperlink{namespacelbann_1_1proto_a36c1ccd8022c3a9708ea8e17f8ec2ee1}{construct\+\_\+layer$<$ data\+\_\+layout\+::\+M\+O\+D\+E\+L\+\_\+\+P\+A\+R\+A\+L\+L\+E\+L $>$} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$$>$ \&data\+\_\+readers, int num\+\_\+parallel\+\_\+readers, \hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$cudnn, const lbann\+\_\+data\+::\+Layer \&proto\+\_\+layer)
+\item 
+std\+::vector$<$ \hyperlink{classlbann_1_1Layer}{Layer} $\ast$ $>$ \hyperlink{namespacelbann_1_1proto_a99e65cd4abb769d020ab76ff20c39d0b}{construct\+\_\+layer\+\_\+graph} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$$>$ \&data\+\_\+readers, \hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$cudnn, const lbann\+\_\+data\+::\+Model \&proto\+\_\+model)
+\item 
+\hyperlink{classlbann_1_1metric}{metric} $\ast$ \hyperlink{namespacelbann_1_1proto_a5b2f4094ce02245e778cfd2fa254d7b4}{construct\+\_\+metric} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, const lbann\+\_\+data\+::\+Metric \&proto\+\_\+metric)
+\item 
+\hyperlink{classlbann_1_1model}{model} $\ast$ \hyperlink{namespacelbann_1_1proto_a6c051439c9c5cbbfb1a2387d5a3fc902}{construct\+\_\+model} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, \hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$cudnn, std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$$>$ \&data\+\_\+readers, const lbann\+\_\+data\+::\+Optimizer \&proto\+\_\+opt, const lbann\+\_\+data\+::\+Model \&proto\+\_\+model)
+\item 
+\hyperlink{classlbann_1_1objective__function}{objective\+\_\+function} $\ast$ \hyperlink{namespacelbann_1_1proto_a2b55ede441a057291e047cf4e7352481}{construct\+\_\+objective\+\_\+function} (const lbann\+\_\+data\+::\+Objective\+Function \&proto\+\_\+obj)
+\item 
+\hyperlink{classlbann_1_1optimizer}{optimizer} $\ast$ \hyperlink{namespacelbann_1_1proto_af85d2b9f1e986bbab4feccfaa19c9960}{construct\+\_\+optimizer} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, const lbann\+\_\+data\+::\+Optimizer \&proto\+\_\+opt)
+\item 
+\hyperlink{classlbann_1_1weights}{weights} $\ast$ \hyperlink{namespacelbann_1_1proto_a1e95259d3e7fd20a9c361850940a398a}{construct\+\_\+weights} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, \hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$cudnn, const lbann\+\_\+data\+::\+Optimizer \&proto\+\_\+opt, const lbann\+\_\+data\+::\+Weights \&proto\+\_\+weights)
+\item 
+{\footnotesize template$<$typename T  = std\+::string$>$ }\\std\+::vector$<$ T $>$ \hyperlink{namespacelbann_1_1proto_a6c6742da9015768123b7cddd74d17399}{parse\+\_\+list} (std\+::string str)
+\end{DoxyCompactItemize}
+
+
+\subsection{Function Documentation}
+\mbox{\Hypertarget{namespacelbann_1_1proto_a00597c8b7450c389847980cf6934a619}\label{namespacelbann_1_1proto_a00597c8b7450c389847980cf6934a619}} 
+\index{lbann\+::proto@{lbann\+::proto}!construct\+\_\+callback@{construct\+\_\+callback}}
+\index{construct\+\_\+callback@{construct\+\_\+callback}!lbann\+::proto@{lbann\+::proto}}
+\subsubsection{\texorpdfstring{construct\+\_\+callback()}{construct\_callback()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback}{lbann\+\_\+callback} $\ast$ lbann\+::proto\+::construct\+\_\+callback (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{const lbann\+\_\+data\+::\+Callback \&}]{proto\+\_\+cb,  }\item[{std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$ $>$ \&}]{data\+\_\+readers,  }\item[{std\+::vector$<$ \hyperlink{classlbann_1_1Layer}{Layer} $\ast$ $>$}]{layer\+\_\+list,  }\item[{std\+::vector$<$ \hyperlink{classlbann_1_1weights}{weights} $\ast$ $>$}]{weights\+\_\+list,  }\item[{\hyperlink{classlbann_1_1lbann__summary}{lbann\+\_\+summary} $\ast$}]{summarizer }\end{DoxyParamCaption})}
+
+Construct a callback specified with prototext. \begin{DoxyRefDesc}{Todo}
+\item[\hyperlink{todo__todo000004}{Todo}]\end{DoxyRefDesc}
+
+
+\begin{DoxyRefDesc}{Todo}
+\item[\hyperlink{todo__todo000005}{Todo}]Initialize weights \end{DoxyRefDesc}
+
+
+Definition at line 54 of file callback\+\_\+factory.\+cpp.
+
+
+\begin{DoxyCode}
+59                                                               \{
+60   std::stringstream err;
+61 
+63   \textcolor{comment}{// Display information}
+65 \textcolor{comment}{}  \textcolor{keywordflow}{if} (proto\_cb.has\_print()) \{
+66     \textcolor{keyword}{const} \textcolor{keyword}{auto}& interval = proto\_cb.print().interval();
+67     \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_print(interval);
+68   \}
+69   \textcolor{keywordflow}{if} (proto\_cb.has\_timer()) \{
+70     \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_timer(summarizer);
+71   \}
+72   \textcolor{keywordflow}{if} (proto\_cb.has\_disp\_io\_stats()) \{
+73     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_cb.disp\_io\_stats();
+74     \textcolor{keyword}{auto}&& selected\_layers = select\_from\_list<Layer>(params.layers(),
+75                                                      layer\_list);
+76     \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_io(selected\_layers);
+77   \}
+78   \textcolor{keywordflow}{if} (proto\_cb.has\_save\_images()) \{
+79     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_cb.save\_images();
+80     \textcolor{keyword}{auto}&& reader = data\_readers[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training}] ;
+81     \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_save\_images(reader,
+82                                           params.image\_dir(),
+83                                           params.extension());
+84   \}
+85 
+87   \textcolor{comment}{// Inter-model communication}
+89 \textcolor{comment}{}  \textcolor{keywordflow}{if} (proto\_cb.has\_ltfb()) \{
+90     \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_ltfb(proto\_cb.ltfb().round\_size(),
+91                                    summarizer);
+92   \}  
+94   \textcolor{keywordflow}{if} (proto\_cb.has\_imcomm()) \{
+95     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_cb.imcomm();
+96     \textcolor{keyword}{const} \textcolor{keyword}{auto}& type\_str = params.intermodel\_comm\_method();
+97     lbann\_callback\_imcomm::comm\_type type = lbann\_callback\_imcomm::comm\_type::NONE;
+98     \textcolor{keywordflow}{if} (type\_str == \textcolor{stringliteral}{"none"}) \{
+99       type = lbann\_callback\_imcomm::comm\_type::NONE;
+100     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (type\_str == \textcolor{stringliteral}{"normal"}) \{
+101       type = lbann\_callback\_imcomm::comm\_type::NORMAL;
+102     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (type\_str == \textcolor{stringliteral}{"onebit\_quantization"}) \{
+103       type = lbann\_callback\_imcomm::comm\_type::ONEBIT\_QUANTIZATION;
+104     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (type\_str == \textcolor{stringliteral}{"thresh\_quantization"}) \{
+105       type = lbann\_callback\_imcomm::comm\_type::THRESH\_QUANTIZATION;
+106     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (type\_str == \textcolor{stringliteral}{"adaptive\_quantization"}) \{
+107       type = lbann\_callback\_imcomm::comm\_type::ADAPTIVE\_QUANTIZATION;
+108     \} \textcolor{keywordflow}{else} \{
+109       err << \textcolor{stringliteral}{"invalid inter-model communication type ("} << type\_str << \textcolor{stringliteral}{")"};
+110       \hyperlink{base_8hpp_a80b1d707117e968a6951b7222e4b2b87}{LBANN\_ERROR}(err.str());
+111     \}
+112     std::unordered\_set<weights*> selected\_weights; 
+113     \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_imcomm(type, selected\_weights, summarizer);
+114   \}
+115 
+117   \textcolor{comment}{// Learning rate schedules}
+119 \textcolor{comment}{}  \textcolor{keywordflow}{if} (proto\_cb.has\_step\_learning\_rate()) \{
+120     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_cb.step\_learning\_rate();
+121     \textcolor{keyword}{auto}&& selected\_weights = select\_from\_list<weights>(params.weights(),
+122                                                         weights\_list);
+123     \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_step\_learning\_rate(params.step(),
+124                                                  params.amt(),
+125                                                  selected\_weights);
+126   \}
+127   \textcolor{keywordflow}{if} (proto\_cb.has\_adaptive\_learning\_rate()) \{
+128     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_cb.adaptive\_learning\_rate();
+129     \textcolor{keyword}{auto}&& selected\_weights = select\_from\_list<weights>(params.weights(),
+130                                                         weights\_list);
+131     \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_adaptive\_learning\_rate(params.patience(),
+132                                                      params.amt(),
+133                                                      selected\_weights);
+134   \}
+135   \textcolor{keywordflow}{if} (proto\_cb.has\_drop\_fixed\_learning\_rate()) \{
+136     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_cb.drop\_fixed\_learning\_rate();
+137     std::vector<int64\_t> drop\_epochs;
+138     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i = 0; i < params.drop\_epoch\_size(); ++i) \{
+139       drop\_epochs.push\_back(params.drop\_epoch(i));
+140     \}
+141     \textcolor{keyword}{auto}&& selected\_weights = select\_from\_list<weights>(params.weights(),
+142                                                         weights\_list);
+143     \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_drop\_fixed\_learning\_rate(drop\_epochs,
+144                                                        params.amt(),
+145                                                        selected\_weights);
+146   \}
+147   \textcolor{keywordflow}{if} (proto\_cb.has\_linear\_growth\_learning\_rate()) \{
+148     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_cb.linear\_growth\_learning\_rate();
+149     \textcolor{keyword}{auto}&& selected\_weights = select\_from\_list<weights>(params.weights(),
+150                                                         weights\_list);
+151     \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_linear\_growth\_learning\_rate(params.target(),
+152                                                           params.num\_epochs(),
+153                                                           params.delay(),
+154                                                           selected\_weights);
+155   \}
+156   \textcolor{keywordflow}{if} (proto\_cb.has\_optimizerwise\_adaptive\_learning\_rate()) \{
+157     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_cb.optimizerwise\_adaptive\_learning\_rate();
+158     \textcolor{keyword}{auto}&& selected\_weights = select\_from\_list<weights>(params.weights(),
+159                                                         weights\_list);
+160     \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_optimizerwise\_adaptive\_learning\_rate(params.scale(),
+161                                                                    selected\_weights);
+162   \}
+163   \textcolor{keywordflow}{if} (proto\_cb.has\_poly\_learning\_rate()) \{
+164     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_cb.poly\_learning\_rate();
+165     \textcolor{keyword}{auto}&& selected\_weights = select\_from\_list<weights>(params.weights(),
+166                                                         weights\_list);
+167     \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_poly\_learning\_rate(params.power(),
+168                                                  params.num\_epochs(),
+169                                                  params.max\_iter(),
+170                                                  selected\_weights);
+171   \}
+172 
+174   \textcolor{comment}{// Mini-batch schedules}
+176 \textcolor{comment}{}  \textcolor{keywordflow}{if} (proto\_cb.has\_step\_minibatch()) \{
+177     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_cb.step\_minibatch();
+178     \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_step\_minibatch(params.starting\_mbsize(),
+179                                              params.step(),
+180                                              params.ramp\_time());
+181   \}
+182   \textcolor{keywordflow}{if} (proto\_cb.has\_minibatch\_schedule()) \{
+183     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_cb.minibatch\_schedule();
+184     std::vector<lbann\_callback\_minibatch\_schedule::minibatch\_step> steps;
+185     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i = 0; i < params.step\_size(); ++i) \{
+186       \textcolor{keyword}{const} \textcolor{keyword}{auto}& proto\_step = params.step(i);
+187       steps.emplace\_back(proto\_step.epoch(),
+188                          proto\_step.mbsize(),
+189                          proto\_step.lr(),
+190                          proto\_step.ramp\_time());
+191     \}
+192     \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_minibatch\_schedule(params.starting\_mbsize(),
+193                                                  steps);
+194   \}
+195 
+197   \textcolor{comment}{// Checkpointing and exporting}
+199 \textcolor{comment}{}  \textcolor{keywordflow}{if} (proto\_cb.has\_checkpoint()) \{
+200     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_cb.checkpoint();
+201     \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_checkpoint(params.checkpoint\_dir(),
+202                                          params.checkpoint\_epochs(),
+203                                          params.checkpoint\_steps(),
+204                                          params.checkpoint\_secs(),
+205                                          params.checkpoint\_per\_rank());
+206   \}
+207   \textcolor{keywordflow}{if} (proto\_cb.has\_save\_model()) \{
+208     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_cb.save\_model();
+209     \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_save\_model(params.dir(),
+210                                          params.extension());
+211   \}
+212 
+214   \textcolor{comment}{// Profiling}
+216 \textcolor{comment}{}  \textcolor{keywordflow}{if} (proto\_cb.has\_summary()) \{
+217     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_cb.summary();
+218     \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_summary(summarizer,
+219                                       params.batch\_interval(),
+220                                       params.mat\_interval());
+221   \}
+222   \textcolor{keywordflow}{if} (proto\_cb.has\_profiler()) \{
+223     \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_profiler();
+224   \}
+225 
+227   \textcolor{comment}{// Debugging}
+229 \textcolor{comment}{}  \textcolor{keywordflow}{if} (proto\_cb.has\_debug()) \{
+230     \textcolor{keyword}{const} \textcolor{keyword}{auto}& phase = proto\_cb.debug().phase();
+231     \textcolor{keywordflow}{if} (phase == \textcolor{stringliteral}{"train"} || phase == \textcolor{stringliteral}{"training"}) \{
+232       \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_debug(\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training}, summarizer);
+233     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (phase == \textcolor{stringliteral}{"validate"} || phase == \textcolor{stringliteral}{"validation"}) \{
+234       \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_debug(\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation}, summarizer);
+235     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (phase == \textcolor{stringliteral}{"test"} || phase == \textcolor{stringliteral}{"testing"}) \{
+236       \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_debug(\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing}, summarizer);
+237     \} \textcolor{keywordflow}{else} \{
+238       \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_debug();
+239     \}
+240   \}
+241   \textcolor{keywordflow}{if} (proto\_cb.has\_debug\_io()) \{
+242     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_cb.debug\_io();
+243     \textcolor{keyword}{const} \textcolor{keyword}{auto}& phase = params.phase();
+244     \textcolor{keyword}{const} \textcolor{keyword}{auto}& lvl = params.lvl();
+245     \textcolor{keywordflow}{if} (phase == \textcolor{stringliteral}{"train"} || phase == \textcolor{stringliteral}{"training"}) \{
+246       \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_debug\_io(\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training}, lvl);
+247     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (phase == \textcolor{stringliteral}{"validate"} || phase == \textcolor{stringliteral}{"validation"}) \{
+248       \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_debug\_io(\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation}, lvl);
+249     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (phase == \textcolor{stringliteral}{"test"} || phase == \textcolor{stringliteral}{"testing"}) \{
+250       \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_debug\_io(\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing}, lvl);
+251     \} \textcolor{keywordflow}{else} \{
+252       \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_debug\_io();
+253     \}
+254   \}
+255   \textcolor{keywordflow}{if} (proto\_cb.has\_dump\_weights()) \{
+256     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_cb.dump\_weights();
+257     \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_dump\_weights(params.basename(),
+258                                            params.interval());
+259   \}
+260   \textcolor{keywordflow}{if} (proto\_cb.has\_dump\_activations()) \{
+261     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_cb.dump\_activations();
+262     \textcolor{keyword}{const} \textcolor{keyword}{auto}& layer\_names = parse\_list<>(params.layer\_names());
+263     \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_dump\_activations(params.basename(),
+264                                                params.interval(),
+265                                                layer\_names);
+266   \}
+267   \textcolor{keywordflow}{if} (proto\_cb.has\_dump\_gradients()) \{
+268     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_cb.dump\_gradients();
+269     \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_dump\_gradients(params.basename(),
+270                                              params.interval());
+271   \}
+272   \textcolor{keywordflow}{if} (proto\_cb.has\_dump\_mb\_indices()) \{
+273     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_cb.dump\_mb\_indices();
+274     \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_dump\_minibatch\_sample\_indices(params.basename(),
+275                                                             params.interval());
+276   \}
+277   \textcolor{keywordflow}{if} (proto\_cb.has\_check\_dataset()) \{
+278     \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_check\_dataset();
+279   \}
+280   \textcolor{keywordflow}{if} (proto\_cb.has\_check\_small()) \{
+281     \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_checksmall();
+282   \}
+283   \textcolor{keywordflow}{if} (proto\_cb.has\_check\_nan()) \{
+284     \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_checknan();
+285   \}
+286   \textcolor{keywordflow}{if} (proto\_cb.has\_hang()) \{
+287     \textcolor{keyword}{const} \textcolor{keyword}{auto}& rank\_to\_hang = proto\_cb.hang().rank();
+288     \textcolor{keywordflow}{if} (\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}->am\_world\_master()) \{
+289       \textcolor{keywordflow}{if} (rank\_to\_hang == -1) \{
+290         std::cout << \textcolor{stringliteral}{"*** HANGING EVERY RANK IN HANG CALLBACK ***"}
+291                   << std::endl;
+292       \} \textcolor{keywordflow}{else} \{
+293         std::cout << \textcolor{stringliteral}{"*** HANGING RANK "} << rank\_to\_hang
+294                   << \textcolor{stringliteral}{" IN HANG CALLBACK ***"} << std::endl;
+295       \}
+296     \}
+297     \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_hang(rank\_to\_hang);
+298   \}
+299 
+301   \textcolor{comment}{// Gradient checking}
+303 \textcolor{comment}{}  \textcolor{keywordflow}{if} (proto\_cb.has\_gradient\_check()) \{
+304     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_cb.gradient\_check();
+305     \textcolor{keywordflow}{return} \textcolor{keyword}{new} lbann\_callback\_gradient\_check(params.step\_size(),
+306                                              params.verbose(),
+307                                              params.fail\_on\_error());
+308   \}
+309 
+310   \textcolor{keywordflow}{return} \textcolor{keyword}{nullptr};
+311 
+312 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=340pt]{namespacelbann_1_1proto_a00597c8b7450c389847980cf6934a619_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=346pt]{namespacelbann_1_1proto_a00597c8b7450c389847980cf6934a619_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{namespacelbann_1_1proto_a7e4b0a66836712b1713ae4a121453cde}\label{namespacelbann_1_1proto_a7e4b0a66836712b1713ae4a121453cde}} 
+\index{lbann\+::proto@{lbann\+::proto}!construct\+\_\+layer@{construct\+\_\+layer}}
+\index{construct\+\_\+layer@{construct\+\_\+layer}!lbann\+::proto@{lbann\+::proto}}
+\subsubsection{\texorpdfstring{construct\+\_\+layer()}{construct\_layer()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout layout$>$ \\
+\hyperlink{classlbann_1_1Layer}{Layer} $\ast$ lbann\+::proto\+::construct\+\_\+layer (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$ $>$ \&}]{data\+\_\+readers,  }\item[{int}]{num\+\_\+parallel\+\_\+readers,  }\item[{\hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$}]{cudnn,  }\item[{const lbann\+\_\+data\+::\+Layer \&}]{proto\+\_\+layer }\end{DoxyParamCaption})}
+
+Construct a layer specified with prototext. \begin{DoxyRefDesc}{Todo}
+\item[\hyperlink{todo__todo000006}{Todo}]Support for G\+PU model-\/parallel layers \end{DoxyRefDesc}
+
+
+Definition at line 33 of file layer\+\_\+factory.\+cpp.
+
+
+\begin{DoxyCode}
+37                                                            \{
+38   std::stringstream err;
+39 
+40   \textcolor{comment}{// Currently only data-parallel layers have GPU support}
+42 \textcolor{comment}{}  \textcolor{keywordflow}{if} (layout == \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08dbac94d7b0e44ab8bdcdad694a673cdeae0}{data\_layout::MODEL\_PARALLEL}) \{ cudnn = \textcolor{keyword}{nullptr}; \}
+43 
+44   \textcolor{comment}{// Input layers}
+45   \textcolor{keywordflow}{if} (proto\_layer.has\_input()) \{
+46     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_layer.input();
+47     \textcolor{keyword}{const} \textcolor{keyword}{auto}& io\_buffer = params.io\_buffer();
+48     \textcolor{keywordflow}{if} (io\_buffer == \textcolor{stringliteral}{"distributed"}) \{
+49       \textcolor{keywordflow}{return} \textcolor{keyword}{new} input\_layer<distributed\_io\_buffer, layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm},
+50                                                             num\_parallel\_readers,
+51                                                             data\_readers,
+52                                                             !params.data\_set\_per\_model(),
+53                                                             params.for\_regression());
+54     \}
+55     \textcolor{keywordflow}{if} (io\_buffer == \textcolor{stringliteral}{"partitioned"}) \{
+56       \textcolor{keywordflow}{return} \textcolor{keyword}{new} input\_layer<partitioned\_io\_buffer, layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm},
+57                                                             num\_parallel\_readers,
+58                                                             data\_readers,
+59                                                             !params.data\_set\_per\_model(),
+60                                                             params.for\_regression());
+61     \}
+62   \}
+63 
+64   \textcolor{comment}{// Target layers}
+65   \textcolor{keywordflow}{if} (proto\_layer.has\_target()) \{
+66     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_layer.target();
+67     \textcolor{keyword}{const} \textcolor{keyword}{auto}& io\_buffer = params.io\_buffer();
+68     \textcolor{keywordflow}{if} (io\_buffer == \textcolor{stringliteral}{"distributed"}) \{
+69       \textcolor{keywordflow}{return} \textcolor{keyword}{new} target\_layer<distributed\_io\_buffer, layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm},
+70                                                              \textcolor{keyword}{nullptr},
+71                                                              num\_parallel\_readers,
+72                                                              data\_readers,
+73                                                              params.shared\_data\_reader(),
+74                                                              params.for\_regression());
+75     \}
+76     \textcolor{keywordflow}{if} (io\_buffer == \textcolor{stringliteral}{"partitioned"}) \{
+77       \textcolor{keywordflow}{return} \textcolor{keyword}{new} target\_layer<partitioned\_io\_buffer, layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm},
+78                                                              \textcolor{keyword}{nullptr},
+79                                                              num\_parallel\_readers,
+80                                                              data\_readers,
+81                                                              params.shared\_data\_reader(),
+82                                                              params.for\_regression());
+83     \}
+84   \}
+85   \textcolor{keywordflow}{if} (proto\_layer.has\_reconstruction()) \{
+86     \textcolor{keywordflow}{return} \textcolor{keyword}{new} reconstruction\_layer<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, \textcolor{keyword}{nullptr});
+87   \}
+88 
+89   \textcolor{comment}{// Fully connected layer}
+90   \textcolor{keywordflow}{if} (proto\_layer.has\_fully\_connected()) \{
+91     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_layer.fully\_connected();
+92     \textcolor{keywordtype}{int} num\_neurons = params.num\_neurons();
+93     \textcolor{keywordflow}{if} (proto\_layer.num\_neurons\_from\_data\_reader()) \{
+94       num\_neurons = data\_readers[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training}]->
+      get\_linearized\_data\_size();
+95     \}
+96     \textcolor{keywordflow}{return} \textcolor{keyword}{new} fully\_connected\_layer<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm},
+97                                              num\_neurons,
+98                                              \textcolor{keyword}{nullptr},
+99                                              params.has\_bias(),
+100                                              cudnn);
+101   \}
+102 
+103   \textcolor{comment}{// Convolution and deconvolution layer}
+104   \textcolor{keywordflow}{if} (proto\_layer.has\_convolution()) \{
+105     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_layer.convolution();
+106     \textcolor{keyword}{const} \textcolor{keyword}{auto}& num\_output\_channels = params.num\_output\_channels();
+107     \textcolor{keyword}{const} \textcolor{keyword}{auto}& bias = params.has\_bias();
+108     \textcolor{keywordflow}{if} (params.has\_vectors()) \{
+109       \textcolor{keyword}{const} \textcolor{keyword}{auto}& dims = parse\_list<int>(params.conv\_dims());
+110       \textcolor{keyword}{const} \textcolor{keyword}{auto}& pads = parse\_list<int>(params.conv\_pads());
+111       \textcolor{keyword}{const} \textcolor{keyword}{auto}& strides = parse\_list<int>(params.conv\_strides());
+112       \textcolor{keywordflow}{if} (layout == \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08dba37d2a3465f7cbf4ab60f4e79944d0638}{data\_layout::DATA\_PARALLEL}) \{
+113         \textcolor{keywordflow}{return} \textcolor{keyword}{new} convolution\_layer<data\_layout::DATA\_PARALLEL>(
+114                      \hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, dims.size(), num\_output\_channels,
+115                      dims, pads, strides, bias, cudnn
+116                    );
+117       \}
+118     \} \textcolor{keywordflow}{else} \{
+119       \textcolor{keyword}{const} \textcolor{keyword}{auto}& num\_dims = params.num\_dims();
+120       \textcolor{keyword}{const} \textcolor{keyword}{auto}& dim = params.conv\_dims\_i();
+121       \textcolor{keyword}{const} \textcolor{keyword}{auto}& pad = params.conv\_pads\_i();
+122       \textcolor{keyword}{const} \textcolor{keyword}{auto}& stride = params.conv\_strides\_i();
+123       \textcolor{keywordflow}{if} (layout == \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08dba37d2a3465f7cbf4ab60f4e79944d0638}{data\_layout::DATA\_PARALLEL}) \{
+124         \textcolor{keywordflow}{return} \textcolor{keyword}{new} convolution\_layer<data\_layout::DATA\_PARALLEL>(
+125                      \hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, num\_dims, num\_output\_channels,
+126                      dim, pad, stride, bias, cudnn
+127                    );
+128       \}
+129     \}
+130   \}
+131   \textcolor{keywordflow}{if} (proto\_layer.has\_deconvolution()) \{
+132     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_layer.deconvolution();
+133     \textcolor{keyword}{const} \textcolor{keyword}{auto}& bias = params.has\_bias();
+134     \textcolor{keywordtype}{int} num\_output\_channels = params.num\_output\_channels();
+135     \textcolor{keywordflow}{if} (proto\_layer.num\_neurons\_from\_data\_reader()) \{
+136       num\_output\_channels = data\_readers[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training}]->
+      get\_linearized\_data\_size();
+137     \}
+138     \textcolor{keywordflow}{if} (params.has\_vectors()) \{
+139       \textcolor{keyword}{const} \textcolor{keyword}{auto}& dims = parse\_list<int>(params.conv\_dims());
+140       \textcolor{keyword}{const} \textcolor{keyword}{auto}& pads = parse\_list<int>(params.conv\_pads());
+141       \textcolor{keyword}{const} \textcolor{keyword}{auto}& strides = parse\_list<int>(params.conv\_strides());
+142       \textcolor{keywordflow}{if} (layout == \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08dba37d2a3465f7cbf4ab60f4e79944d0638}{data\_layout::DATA\_PARALLEL}) \{
+143         \textcolor{keywordflow}{return} \textcolor{keyword}{new} deconvolution\_layer<data\_layout::DATA\_PARALLEL>(
+144                      \hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, dims.size(), num\_output\_channels,
+145                      dims, pads, strides, bias, cudnn
+146                    );
+147       \}
+148     \} \textcolor{keywordflow}{else} \{
+149       \textcolor{keyword}{const} \textcolor{keyword}{auto}& num\_dims = params.num\_dims();
+150       \textcolor{keyword}{const} \textcolor{keyword}{auto}& dim = params.conv\_dims\_i();
+151       \textcolor{keyword}{const} \textcolor{keyword}{auto}& pad = params.conv\_pads\_i();
+152       \textcolor{keyword}{const} \textcolor{keyword}{auto}& stride = params.conv\_strides\_i();
+153       \textcolor{keywordflow}{if} (layout == \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08dba37d2a3465f7cbf4ab60f4e79944d0638}{data\_layout::DATA\_PARALLEL}) \{
+154         \textcolor{keywordflow}{return} \textcolor{keyword}{new} deconvolution\_layer<data\_layout::DATA\_PARALLEL>(
+155                      \hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, num\_dims, num\_output\_channels,
+156                      dim, pad, stride, bias, cudnn
+157                    );
+158       \}
+159     \}
+160   \}
+161 
+162   \textcolor{comment}{// Transform layers}
+163   \textcolor{keywordflow}{if} (proto\_layer.has\_reshape()) \{
+164     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_layer.reshape();
+165     std::vector<int> dims = parse\_list<int>(params.dims());
+166     \textcolor{keywordflow}{if} (proto\_layer.num\_neurons\_from\_data\_reader()) \{
+167       dims.clear();
+168       \textcolor{keywordflow}{if} (params.reshape\_to\_flattened\_conv\_format()) \{
+169         dims.push\_back(1);
+170       \}
+171       dims.push\_back(data\_readers[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training}]->
+      get\_linearized\_data\_size());
+172     \}
+173     \textcolor{keywordflow}{return} \textcolor{keyword}{new} reshape\_layer<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, dims.size(), dims.data());
+174   \}
+175   \textcolor{keywordflow}{if} (proto\_layer.has\_sum()) \{
+176     \textcolor{keyword}{const} \textcolor{keyword}{auto}& scaling\_factors = parse\_list<DataType>(proto\_layer.sum().scaling\_factors());
+177     \textcolor{keywordflow}{return} \textcolor{keyword}{new} sum\_layer<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, scaling\_factors, cudnn);
+178   \}
+179   \textcolor{keywordflow}{if} (proto\_layer.has\_split()) \{
+180     \textcolor{keywordflow}{return} \textcolor{keyword}{new} split\_layer<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, cudnn);
+181   \}
+182   \textcolor{keywordflow}{if} (proto\_layer.has\_concatenation()) \{
+183     \textcolor{keyword}{const} \textcolor{keyword}{auto}& axis = proto\_layer.concatenation().concatenation\_axis();
+184     \textcolor{keywordflow}{return} \textcolor{keyword}{new} concatenation\_layer<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, axis, cudnn);
+185   \}
+186   \textcolor{keywordflow}{if} (proto\_layer.has\_slice()) \{
+187     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_layer.slice();
+188     \textcolor{keyword}{const} \textcolor{keyword}{auto}& slice\_points = parse\_list<int>(params.slice\_points());
+189     \textcolor{keywordflow}{return} \textcolor{keyword}{new} slice\_layer<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm},
+190                                    params.slice\_axis(),
+191                                    slice\_points,
+192                                    cudnn);
+193   \}
+194   \textcolor{keywordflow}{if} (proto\_layer.has\_hadamard()) \{
+195     \textcolor{keywordflow}{return} \textcolor{keyword}{new} hadamard\_layer<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, cudnn);
+196   \}
+197   \textcolor{keywordflow}{if} (proto\_layer.has\_constant()) \{
+198     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_layer.constant();
+199     \textcolor{keyword}{const} \textcolor{keyword}{auto}& dims = parse\_list<int>(params.num\_neurons());
+200     \textcolor{keywordflow}{return} \textcolor{keyword}{new} constant\_layer<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, params.value(), dims, cudnn);
+201   \}
+202   \textcolor{keywordflow}{if} (proto\_layer.has\_gaussian()) \{
+203     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_layer.gaussian();
+204     \textcolor{keyword}{const} \textcolor{keyword}{auto}& dims = parse\_list<int>(params.neuron\_dims());
+205     \textcolor{keywordflow}{return} \textcolor{keyword}{new} gaussian\_layer<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm},
+206                                       dims,
+207                                       params.mean(),
+208                                       params.stdev(),
+209                                       cudnn);
+210   \}
+211   \textcolor{keywordflow}{if} (proto\_layer.has\_bernoulli()) \{
+212     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_layer.bernoulli();
+213     \textcolor{keyword}{const} \textcolor{keyword}{auto}& dims = parse\_list<int>(params.neuron\_dims());
+214     \textcolor{keywordflow}{return} \textcolor{keyword}{new} bernoulli\_layer<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm},
+215                                        dims,
+216                                        params.prob(),
+217                                        cudnn);
+218   \}
+219   \textcolor{keywordflow}{if} (proto\_layer.has\_uniform()) \{
+220     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_layer.uniform();
+221     \textcolor{keyword}{const} \textcolor{keyword}{auto}& dims = parse\_list<int>(params.neuron\_dims());
+222     \textcolor{keywordflow}{return} \textcolor{keyword}{new} uniform\_layer<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm},
+223                                      dims,
+224                                      params.min(),
+225                                      params.max(),
+226                                      cudnn);
+227   \}
+228   \textcolor{keywordflow}{if} (proto\_layer.has\_pooling()) \{
+229     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_layer.pooling();
+230     \textcolor{keyword}{const} \textcolor{keyword}{auto}& mode\_str = params.pool\_mode();
+231     \hyperlink{base_8hpp_ac47a6ee5278a53898222a48639a2bf39}{pool\_mode} mode = \hyperlink{base_8hpp_ac47a6ee5278a53898222a48639a2bf39afedb2d84cafe20862cb4399751a8a7e3}{pool\_mode::invalid};
+232     \textcolor{keywordflow}{if} (mode\_str == \textcolor{stringliteral}{"max"} )            \{ mode = \hyperlink{base_8hpp_ac47a6ee5278a53898222a48639a2bf39a2ffe4e77325d9a7152f7086ea7aa5114}{pool\_mode::max}; \}
+233     \textcolor{keywordflow}{if} (mode\_str == \textcolor{stringliteral}{"average"} )        \{ mode = \hyperlink{base_8hpp_ac47a6ee5278a53898222a48639a2bf39a6927a3a7218a3195858411433ec20a21}{pool\_mode::average}; \}
+234     \textcolor{keywordflow}{if} (mode\_str == \textcolor{stringliteral}{"average\_no\_pad"} ) \{ mode = \hyperlink{base_8hpp_ac47a6ee5278a53898222a48639a2bf39ad91c68878ae16f6dfcd4e1551c33cdd1}{pool\_mode::average\_no\_pad}; \}
+235     \textcolor{keywordflow}{if} (params.has\_vectors()) \{
+236       \textcolor{keyword}{const} \textcolor{keyword}{auto}& dims = parse\_list<int>(params.pool\_dims());
+237       \textcolor{keyword}{const} \textcolor{keyword}{auto}& pads = parse\_list<int>(params.pool\_pads());
+238       \textcolor{keyword}{const} \textcolor{keyword}{auto}& strides = parse\_list<int>(params.pool\_strides());
+239       \textcolor{keywordflow}{if} (layout == \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08dba37d2a3465f7cbf4ab60f4e79944d0638}{data\_layout::DATA\_PARALLEL}) \{
+240         \textcolor{keywordflow}{return} \textcolor{keyword}{new} pooling\_layer<data\_layout::DATA\_PARALLEL>(
+241                      \hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, dims.size(), dims, pads, strides, mode, cudnn
+242                    );
+243       \}
+244     \} \textcolor{keywordflow}{else} \{
+245       \textcolor{keyword}{const} \textcolor{keyword}{auto}& num\_dims = params.num\_dims();
+246       \textcolor{keyword}{const} \textcolor{keyword}{auto}& dim = params.pool\_dims\_i();
+247       \textcolor{keyword}{const} \textcolor{keyword}{auto}& pad = params.pool\_pads\_i();
+248       \textcolor{keyword}{const} \textcolor{keyword}{auto}& stride = params.pool\_strides\_i();
+249       \textcolor{keywordflow}{if} (layout == \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08dba37d2a3465f7cbf4ab60f4e79944d0638}{data\_layout::DATA\_PARALLEL}) \{
+250         \textcolor{keywordflow}{return} \textcolor{keyword}{new} pooling\_layer<data\_layout::DATA\_PARALLEL>(
+251                      \hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, num\_dims, dim, pad, stride, mode, cudnn
+252                    );
+253       \}
+254     \}
+255   \}
+256   \textcolor{keywordflow}{if} (proto\_layer.has\_unpooling()) \{
+257     \textcolor{keywordflow}{if} (layout == \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08dba37d2a3465f7cbf4ab60f4e79944d0638}{data\_layout::DATA\_PARALLEL}) \{
+258       \textcolor{keywordflow}{return} \textcolor{keyword}{new} unpooling\_layer<data\_layout::DATA\_PARALLEL>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm});
+259     \}
+260   \}
+261   \textcolor{keywordflow}{if} (proto\_layer.has\_reduction()) \{
+262     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_layer.reduction();
+263     \textcolor{keyword}{const} \textcolor{keyword}{auto}& mode\_str = params.mode();
+264     \hyperlink{namespacelbann_a5975e1fb530a267728bfb01dc5c1be9b}{reduction\_mode} mode = reduction\_mode::INVALID;
+265     \textcolor{keywordflow}{if} (mode\_str == \textcolor{stringliteral}{"sum"} || mode\_str.empty()) \{ mode = reduction\_mode::SUM; \}
+266     \textcolor{keywordflow}{if} (mode\_str == \textcolor{stringliteral}{"average"}) \{ mode = reduction\_mode::AVERAGE; \}
+267     \textcolor{keywordflow}{if} (layout == \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08dba37d2a3465f7cbf4ab60f4e79944d0638}{data\_layout::DATA\_PARALLEL}) \{
+268       \textcolor{keywordflow}{return} \textcolor{keyword}{new} reduction\_layer<data\_layout::DATA\_PARALLEL>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, mode, cudnn);
+269     \}
+270   \}
+271   \textcolor{keywordflow}{if} (proto\_layer.has\_evaluation()) \{
+272     \textcolor{keywordflow}{return} \textcolor{keyword}{new} evaluation\_layer<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, cudnn);
+273   \}
+274 
+275   \textcolor{comment}{// Regularizer layers}
+276   \textcolor{keywordflow}{if} (proto\_layer.has\_batch\_normalization()) \{
+277     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_layer.batch\_normalization();
+278     \textcolor{keywordflow}{if} (layout == \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08dba37d2a3465f7cbf4ab60f4e79944d0638}{data\_layout::DATA\_PARALLEL}) \{
+279       \textcolor{keywordflow}{return} \textcolor{keyword}{new} batch\_normalization<data\_layout::DATA\_PARALLEL>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm},
+280                                                                  params.decay(),
+281                                                                  params.epsilon(),
+282                                                                  params.global\_stats(),
+283                                                                  cudnn);
+284     \}
+285   \}
+286   \textcolor{keywordflow}{if} (proto\_layer.has\_dropout()) \{
+287     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_layer.dropout();
+288     \textcolor{keywordflow}{return} \textcolor{keyword}{new} dropout<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, params.keep\_prob(), cudnn);
+289   \}
+290   \textcolor{keywordflow}{if} (proto\_layer.has\_local\_response\_normalization()) \{
+291     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_layer.local\_response\_normalization();
+292     \textcolor{keywordflow}{if} (layout == \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08dba37d2a3465f7cbf4ab60f4e79944d0638}{data\_layout::DATA\_PARALLEL}) \{
+293       \textcolor{keywordflow}{return} \textcolor{keyword}{new} local\_response\_normalization\_layer<data\_layout::DATA\_PARALLEL>(
+      \hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm},
+294                                                                                 params.window\_width(),
+295                                                                                 params.lrn\_alpha(),
+296                                                                                 params.lrn\_beta(),
+297                                                                                 params.lrn\_k(),
+298                                                                                 cudnn);
+299     \}
+300   \}
+301   \textcolor{keywordflow}{if} (proto\_layer.has\_selu\_dropout()) \{
+302     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_layer.selu\_dropout();
+303     \textcolor{keyword}{const} \textcolor{keyword}{auto}& keep\_prob = params.keep\_prob();
+304     \textcolor{keyword}{const} \textcolor{keyword}{auto}& alpha = params.alpha();
+305     \textcolor{keyword}{const} \textcolor{keyword}{auto}& scale = params.scale();
+306     \textcolor{keywordflow}{if} (alpha != 0.0 && scale != 0.0) \{
+307       \textcolor{keywordflow}{return} \textcolor{keyword}{new} selu\_dropout<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, keep\_prob, alpha, scale);
+308     \} \textcolor{keywordflow}{else} \{
+309       \textcolor{keywordflow}{return} \textcolor{keyword}{new} selu\_dropout<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, keep\_prob);
+310     \}
+311   \}
+312 
+313   \textcolor{comment}{// Activation layers}
+314   \textcolor{keywordflow}{if} (proto\_layer.has\_softmax()) \{
+315     \textcolor{keywordflow}{return} \textcolor{keyword}{new} softmax\_layer<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, cudnn);
+316   \}
+317   \textcolor{keywordflow}{if} (proto\_layer.has\_relu()) \{
+318     \textcolor{keywordflow}{return} \textcolor{keyword}{new} relu\_layer<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, cudnn);
+319   \}
+320   \textcolor{keywordflow}{if} (proto\_layer.has\_sigmoid()) \{
+321     \textcolor{keywordflow}{return} \textcolor{keyword}{new} sigmoid\_layer<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, cudnn);
+322   \}
+323   \textcolor{keywordflow}{if} (proto\_layer.has\_tanh()) \{
+324     \textcolor{keywordflow}{return} \textcolor{keyword}{new} tanh\_layer<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm});
+325   \}
+326   \textcolor{keywordflow}{if} (proto\_layer.has\_atan()) \{
+327     \textcolor{keywordflow}{return} \textcolor{keyword}{new} atan\_layer<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm});
+328   \}
+329   \textcolor{keywordflow}{if} (proto\_layer.has\_exponential()) \{
+330     \textcolor{keywordflow}{return} \textcolor{keyword}{new} exponential\_layer<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm});
+331   \}
+332   \textcolor{keywordflow}{if} (proto\_layer.has\_identity()) \{
+333     \textcolor{keywordflow}{return} \textcolor{keyword}{new} identity\_layer<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm});
+334   \}
+335   \textcolor{keywordflow}{if} (proto\_layer.has\_bent\_identity()) \{
+336     \textcolor{keywordflow}{return} \textcolor{keyword}{new} bent\_identity\_layer<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm});
+337   \}
+338   \textcolor{keywordflow}{if} (proto\_layer.has\_softplus()) \{
+339     \textcolor{keywordflow}{return} \textcolor{keyword}{new} softplus\_layer<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm});
+340   \}
+341   \textcolor{keywordflow}{if} (proto\_layer.has\_smooth\_relu()) \{
+342     \textcolor{keywordflow}{return} \textcolor{keyword}{new} smooth\_relu\_layer<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm});
+343   \}
+344   \textcolor{keywordflow}{if} (proto\_layer.has\_leaky\_relu()) \{
+345     \textcolor{keywordflow}{return} \textcolor{keyword}{new} leaky\_relu\_layer<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm});
+346   \}
+347   \textcolor{keywordflow}{if} (proto\_layer.has\_swish()) \{
+348     \textcolor{keywordflow}{return} \textcolor{keyword}{new} swish\_layer<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm});
+349   \}
+350   \textcolor{keywordflow}{if} (proto\_layer.has\_elu()) \{
+351     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_layer.elu();
+352     \textcolor{keywordflow}{return} \textcolor{keyword}{new} elu\_layer<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, params.alpha());
+353   \}
+354   \textcolor{keywordflow}{if} (proto\_layer.has\_selu()) \{
+355     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_layer.selu();
+356     \textcolor{keyword}{const} \textcolor{keyword}{auto}& alpha = params.alpha();
+357     \textcolor{keyword}{const} \textcolor{keyword}{auto}& scale = params.scale();
+358     \textcolor{keywordflow}{if} (alpha != 0.0 && scale != 0.0) \{
+359       \textcolor{keywordflow}{return} \textcolor{keyword}{new} selu\_layer<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, alpha, scale);
+360     \} \textcolor{keywordflow}{else} \{
+361       \textcolor{keywordflow}{return} \textcolor{keyword}{new} selu\_layer<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm});
+362     \}
+363   \}
+364   \textcolor{keywordflow}{if} (proto\_layer.has\_power()) \{
+365     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_layer.power();
+366     \textcolor{keywordflow}{return} \textcolor{keyword}{new} power\_layer<layout>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, params.exponent());
+367   \}
+368 
+369   \textcolor{comment}{// Throw exception if layer has not been constructed}
+370   err << \textcolor{stringliteral}{"could not construct layer "} << proto\_layer.name();
+371   \hyperlink{base_8hpp_a80b1d707117e968a6951b7222e4b2b87}{LBANN\_ERROR}(err.str());
+372   \textcolor{keywordflow}{return} \textcolor{keyword}{nullptr};
+373 
+374 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{namespacelbann_1_1proto_a7e4b0a66836712b1713ae4a121453cde_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{namespacelbann_1_1proto_a258c17f551e470e3bcab9f5fa7cf0950}\label{namespacelbann_1_1proto_a258c17f551e470e3bcab9f5fa7cf0950}} 
+\index{lbann\+::proto@{lbann\+::proto}!construct\+\_\+layer$<$ data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+E\+L $>$@{construct\+\_\+layer$<$ data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+E\+L $>$}}
+\index{construct\+\_\+layer$<$ data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+E\+L $>$@{construct\+\_\+layer$<$ data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+E\+L $>$}!lbann\+::proto@{lbann\+::proto}}
+\subsubsection{\texorpdfstring{construct\+\_\+layer$<$ data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+E\+L $>$()}{construct\_layer< data\_layout::DATA\_PARALLEL >()}}
+{\footnotesize\ttfamily template \hyperlink{classlbann_1_1Layer}{Layer}$\ast$ \hyperlink{namespacelbann_1_1proto_a7e4b0a66836712b1713ae4a121453cde}{lbann\+::proto\+::construct\+\_\+layer}$<$ \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08dba37d2a3465f7cbf4ab60f4e79944d0638}{data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL} $>$ (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$$>$ \&}]{data\+\_\+readers,  }\item[{int}]{num\+\_\+parallel\+\_\+readers,  }\item[{\hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$}]{cudnn,  }\item[{const lbann\+\_\+data\+::\+Layer \&}]{proto\+\_\+layer }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{namespacelbann_1_1proto_a36c1ccd8022c3a9708ea8e17f8ec2ee1}\label{namespacelbann_1_1proto_a36c1ccd8022c3a9708ea8e17f8ec2ee1}} 
+\index{lbann\+::proto@{lbann\+::proto}!construct\+\_\+layer$<$ data\+\_\+layout\+::\+M\+O\+D\+E\+L\+\_\+\+P\+A\+R\+A\+L\+L\+E\+L $>$@{construct\+\_\+layer$<$ data\+\_\+layout\+::\+M\+O\+D\+E\+L\+\_\+\+P\+A\+R\+A\+L\+L\+E\+L $>$}}
+\index{construct\+\_\+layer$<$ data\+\_\+layout\+::\+M\+O\+D\+E\+L\+\_\+\+P\+A\+R\+A\+L\+L\+E\+L $>$@{construct\+\_\+layer$<$ data\+\_\+layout\+::\+M\+O\+D\+E\+L\+\_\+\+P\+A\+R\+A\+L\+L\+E\+L $>$}!lbann\+::proto@{lbann\+::proto}}
+\subsubsection{\texorpdfstring{construct\+\_\+layer$<$ data\+\_\+layout\+::\+M\+O\+D\+E\+L\+\_\+\+P\+A\+R\+A\+L\+L\+E\+L $>$()}{construct\_layer< data\_layout::MODEL\_PARALLEL >()}}
+{\footnotesize\ttfamily template \hyperlink{classlbann_1_1Layer}{Layer}$\ast$ \hyperlink{namespacelbann_1_1proto_a7e4b0a66836712b1713ae4a121453cde}{lbann\+::proto\+::construct\+\_\+layer}$<$ \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08dbac94d7b0e44ab8bdcdad694a673cdeae0}{data\+\_\+layout\+::\+M\+O\+D\+E\+L\+\_\+\+P\+A\+R\+A\+L\+L\+EL} $>$ (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$$>$ \&}]{data\+\_\+readers,  }\item[{int}]{num\+\_\+parallel\+\_\+readers,  }\item[{\hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$}]{cudnn,  }\item[{const lbann\+\_\+data\+::\+Layer \&}]{proto\+\_\+layer }\end{DoxyParamCaption})}
+
+\mbox{\Hypertarget{namespacelbann_1_1proto_a99e65cd4abb769d020ab76ff20c39d0b}\label{namespacelbann_1_1proto_a99e65cd4abb769d020ab76ff20c39d0b}} 
+\index{lbann\+::proto@{lbann\+::proto}!construct\+\_\+layer\+\_\+graph@{construct\+\_\+layer\+\_\+graph}}
+\index{construct\+\_\+layer\+\_\+graph@{construct\+\_\+layer\+\_\+graph}!lbann\+::proto@{lbann\+::proto}}
+\subsubsection{\texorpdfstring{construct\+\_\+layer\+\_\+graph()}{construct\_layer\_graph()}}
+{\footnotesize\ttfamily std\+::vector$<$ \hyperlink{classlbann_1_1Layer}{Layer} $\ast$ $>$ lbann\+::proto\+::construct\+\_\+layer\+\_\+graph (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$ $>$ \&}]{data\+\_\+readers,  }\item[{\hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$}]{cudnn,  }\item[{const lbann\+\_\+data\+::\+Model \&}]{proto\+\_\+model }\end{DoxyParamCaption})}
+
+Construct a layer graph specified with a prototext. 
+
+Definition at line 156 of file layer\+\_\+graph\+\_\+factory.\+cpp.
+
+
+\begin{DoxyCode}
+159                                                                               \{
+160   std::stringstream err;
+161 
+162   \textcolor{comment}{// List of layers}
+163   std::vector<Layer*> layers;
+164 
+165   \textcolor{comment}{// Map from names to layer pointers}
+166   std::unordered\_map<std::string, Layer*> names\_to\_layers;
+167 
+168   \textcolor{comment}{// Create each layer in prototext}
+169   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<proto\_model.layer\_size(); ++i) \{
+170     \textcolor{keyword}{const} \textcolor{keyword}{auto}& proto\_layer = proto\_model.layer(i);
+171 
+172     \textcolor{comment}{// Check that layer name is valid}
+173     \textcolor{keyword}{auto} name = proto\_layer.name();
+174     \textcolor{keyword}{const} \textcolor{keyword}{auto}& parsed\_name = parse\_list<std::string>(name);
+175     \textcolor{keywordflow}{if} (!name.empty()) \{
+176       \textcolor{keywordflow}{if} (parsed\_name.empty() || parsed\_name.front() != name) \{
+177         err << \textcolor{stringliteral}{"weights name \(\backslash\)""} << name << \textcolor{stringliteral}{"\(\backslash\)" is invalid since it "}
+178             << \textcolor{stringliteral}{"contains whitespace"};
+179         \hyperlink{base_8hpp_a80b1d707117e968a6951b7222e4b2b87}{LBANN\_ERROR}(err.str());
+180       \}
+181       \textcolor{keywordflow}{if} (names\_to\_layers.count(name) != 0) \{
+182         err << \textcolor{stringliteral}{"layer name \(\backslash\)""} << name << \textcolor{stringliteral}{"\(\backslash\)" is not unique"};
+183         \hyperlink{base_8hpp_a80b1d707117e968a6951b7222e4b2b87}{LBANN\_ERROR}(err.str());
+184       \}
+185     \}
+186     
+187     \textcolor{comment}{// Get parameters from prototext}
+188     \textcolor{keyword}{const} \textcolor{keyword}{auto}& layout\_str = proto\_layer.data\_layout();
+189     \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08db}{data\_layout} layout = \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08dbafedb2d84cafe20862cb4399751a8a7e3}{data\_layout::invalid};
+190     \textcolor{keywordflow}{if} (layout\_str.empty())             \{ layout = \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08dba37d2a3465f7cbf4ab60f4e79944d0638}{data\_layout::DATA\_PARALLEL}; \}
+191     \textcolor{keywordflow}{if} (layout\_str == \textcolor{stringliteral}{"data\_parallel"})  \{ layout = \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08dba37d2a3465f7cbf4ab60f4e79944d0638}{data\_layout::DATA\_PARALLEL}; \}
+192     \textcolor{keywordflow}{if} (layout\_str == \textcolor{stringliteral}{"model\_parallel"}) \{ layout = \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08dbac94d7b0e44ab8bdcdad694a673cdeae0}{data\_layout::MODEL\_PARALLEL}; 
+      \}
+193     \textcolor{keyword}{const} \textcolor{keyword}{auto}& num\_parallel\_readers = proto\_model.num\_parallel\_readers();
+194 
+195     \textcolor{comment}{// Construct layer}
+196     Layer* l = \textcolor{keyword}{nullptr};
+197     \textcolor{keywordflow}{switch} (layout) \{
+198     \textcolor{keywordflow}{case} \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08dba37d2a3465f7cbf4ab60f4e79944d0638}{data\_layout::DATA\_PARALLEL}:
+199       l = construct\_layer<data\_layout::DATA\_PARALLEL>(
+200             \hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm},
+201             data\_readers,
+202             num\_parallel\_readers,
+203             cudnn,
+204             proto\_layer
+205           );
+206       \textcolor{keywordflow}{break};
+207     \textcolor{keywordflow}{case} \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08dbac94d7b0e44ab8bdcdad694a673cdeae0}{data\_layout::MODEL\_PARALLEL}:
+208       l = construct\_layer<data\_layout::MODEL\_PARALLEL>(
+209             \hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm},
+210             data\_readers,
+211             num\_parallel\_readers,
+212             cudnn,
+213             proto\_layer
+214           );
+215       \textcolor{keywordflow}{break};
+216     \textcolor{keywordflow}{case} \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08dbafedb2d84cafe20862cb4399751a8a7e3}{data\_layout::invalid}:
+217     \textcolor{keywordflow}{default}:
+218       err << \textcolor{stringliteral}{"layer "} << name << \textcolor{stringliteral}{" has an invalid data layout "}
+219           << \textcolor{stringliteral}{"("} << layout\_str << \textcolor{stringliteral}{")"};
+220       \hyperlink{base_8hpp_a80b1d707117e968a6951b7222e4b2b87}{LBANN\_ERROR}(err.str());
+221     \}
+222 
+223     \textcolor{comment}{// Check that layer has been constructed}
+224     \textcolor{keywordflow}{if} (l == \textcolor{keyword}{nullptr}) \{
+225       err << \textcolor{stringliteral}{"could not construct layer "} << name;
+226       \hyperlink{base_8hpp_a80b1d707117e968a6951b7222e4b2b87}{LBANN\_ERROR}(err.str());
+227     \}
+228 
+229     \textcolor{comment}{// Initialize layer name and check it is unique}
+230     \textcolor{keywordflow}{if} (!name.empty()) \{
+231       l->set\_name(name);
+232     \}
+233     name = l->get\_name();
+234     \textcolor{keywordflow}{if} (names\_to\_layers.count(name) != 0) \{
+235       err << \textcolor{stringliteral}{"layer name \(\backslash\)""} << name << \textcolor{stringliteral}{"\(\backslash\)" is not unique"};
+236       \hyperlink{base_8hpp_a80b1d707117e968a6951b7222e4b2b87}{LBANN\_ERROR}(err.str());
+237     \}
+238     names\_to\_layers[name] = l;
+239 
+240     \textcolor{keywordflow}{if} (proto\_layer.freeze()) \{
+241       \textcolor{keywordflow}{if} (comm->am\_world\_master()) \{
+242         std::cout << \textcolor{stringliteral}{"freezing "} << l->get\_name() << std::endl;
+243       \}
+244       l->freeze();
+245     \}
+246     \textcolor{comment}{// Add layer to list}
+247     layers.push\_back(l);
+248 
+249   \}
+250 
+251   \textcolor{comment}{// Setup pointers between layers}
+252   \hyperlink{namespacelbann_1_1proto_1_1anonymous__namespace_02layer__graph__factory_8cpp_03_abbebb0b2e6ba1befb14b0b790eac96a0}{setup\_parents\_and\_children}(comm, layers, names\_to\_layers, proto\_model);
+253   \hyperlink{namespacelbann_1_1proto_1_1anonymous__namespace_02layer__graph__factory_8cpp_03_a049fcca970d819d3c08bfdf71883de5c}{setup\_target\_pointers}(comm, layers, names\_to\_layers, proto\_model);
+254   \hyperlink{namespacelbann_1_1proto_1_1anonymous__namespace_02layer__graph__factory_8cpp_03_ac0c3ac49d16d6926308c336149a2f039}{setup\_reconstruction\_pointers}(comm, layers, names\_to\_layers, proto\_model);
+255   \hyperlink{namespacelbann_1_1proto_1_1anonymous__namespace_02layer__graph__factory_8cpp_03_a68f963a80592c01832cacf2acd4bacc1}{setup\_unpooling\_pointers}(comm, layers, names\_to\_layers, proto\_model);
+256 
+257   \textcolor{comment}{// Return layer list}
+258   \textcolor{keywordflow}{return} layers;
+259 
+260 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{namespacelbann_1_1proto_a99e65cd4abb769d020ab76ff20c39d0b_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=346pt]{namespacelbann_1_1proto_a99e65cd4abb769d020ab76ff20c39d0b_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{namespacelbann_1_1proto_a5b2f4094ce02245e778cfd2fa254d7b4}\label{namespacelbann_1_1proto_a5b2f4094ce02245e778cfd2fa254d7b4}} 
+\index{lbann\+::proto@{lbann\+::proto}!construct\+\_\+metric@{construct\+\_\+metric}}
+\index{construct\+\_\+metric@{construct\+\_\+metric}!lbann\+::proto@{lbann\+::proto}}
+\subsubsection{\texorpdfstring{construct\+\_\+metric()}{construct\_metric()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1metric}{metric} $\ast$ lbann\+::proto\+::construct\+\_\+metric (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{const lbann\+\_\+data\+::\+Metric \&}]{proto\+\_\+metric }\end{DoxyParamCaption})}
+
+Construct a metric specified with prototext. 
+
+Definition at line 32 of file metric\+\_\+factory.\+cpp.
+
+
+\begin{DoxyCode}
+33                                                                \{
+34 
+35   \textcolor{comment}{// Construct metric}
+36   \textcolor{keywordflow}{if} (proto\_metric.has\_categorical\_accuracy()) \{
+37     \textcolor{keywordflow}{return} \textcolor{keyword}{new} categorical\_accuracy\_metric(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm});
+38   \}
+39   \textcolor{keywordflow}{if} (proto\_metric.has\_top\_k\_categorical\_accuracy()) \{
+40     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_metric.top\_k\_categorical\_accuracy();
+41     \textcolor{keywordflow}{return} \textcolor{keyword}{new} top\_k\_categorical\_accuracy\_metric(params.top\_k(), \hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm});
+42   \}
+43   \textcolor{keywordflow}{if} (proto\_metric.has\_mean\_squared\_error()) \{
+44     \textcolor{keywordflow}{return} \textcolor{keyword}{new} mean\_squared\_error\_metric(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm});
+45   \}
+46   \textcolor{keywordflow}{if} (proto\_metric.has\_mean\_absolute\_deviation()) \{
+47     \textcolor{keywordflow}{return} \textcolor{keyword}{new} mean\_absolute\_deviation\_metric(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm});
+48   \}
+49   \textcolor{keywordflow}{if} (proto\_metric.has\_pearson\_correlation()) \{
+50     \textcolor{keywordflow}{return} \textcolor{keyword}{new} pearson\_correlation\_metric(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm});
+51   \}
+52   \textcolor{keywordflow}{if} (proto\_metric.has\_r2()) \{
+53     \textcolor{keywordflow}{return} \textcolor{keyword}{new} r2\_metric(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm});
+54   \}
+55   \textcolor{keywordflow}{if} (proto\_metric.has\_boolean\_accuracy()) \{
+56     \textcolor{keywordflow}{return} \textcolor{keyword}{new} boolean\_accuracy\_metric(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm});
+57   \}
+58   \textcolor{keywordflow}{if} (proto\_metric.has\_boolean\_false\_positives()) \{
+59     \textcolor{keywordflow}{return} \textcolor{keyword}{new} boolean\_false\_positives\_metric(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm});
+60   \}
+61   \textcolor{keywordflow}{if} (proto\_metric.has\_boolean\_false\_negatives()) \{
+62     \textcolor{keywordflow}{return} \textcolor{keyword}{new} boolean\_false\_negatives\_metric(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm});
+63   \}
+64 
+65   \textcolor{comment}{// Return null pointer if no optimizer is specified}
+66   \textcolor{keywordflow}{return} \textcolor{keyword}{nullptr};
+67 
+68 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=346pt]{namespacelbann_1_1proto_a5b2f4094ce02245e778cfd2fa254d7b4_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{namespacelbann_1_1proto_a6c051439c9c5cbbfb1a2387d5a3fc902}\label{namespacelbann_1_1proto_a6c051439c9c5cbbfb1a2387d5a3fc902}} 
+\index{lbann\+::proto@{lbann\+::proto}!construct\+\_\+model@{construct\+\_\+model}}
+\index{construct\+\_\+model@{construct\+\_\+model}!lbann\+::proto@{lbann\+::proto}}
+\subsubsection{\texorpdfstring{construct\+\_\+model()}{construct\_model()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1model}{model} $\ast$ lbann\+::proto\+::construct\+\_\+model (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{\hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$}]{cudnn,  }\item[{std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$ $>$ \&}]{data\+\_\+readers,  }\item[{const lbann\+\_\+data\+::\+Optimizer \&}]{proto\+\_\+opt,  }\item[{const lbann\+\_\+data\+::\+Model \&}]{proto\+\_\+model }\end{DoxyParamCaption})}
+
+Construct a model specified with a prototext. 
+
+Definition at line 154 of file model\+\_\+factory.\+cpp.
+
+
+\begin{DoxyCode}
+158                                                            \{
+159 
+160   \textcolor{comment}{// Add layer graph}
+161   \textcolor{keyword}{auto}&& layer\_list = \hyperlink{namespacelbann_1_1proto_a99e65cd4abb769d020ab76ff20c39d0b}{construct\_layer\_graph}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm},
+162                                             data\_readers,
+163                                             cudnn,
+164                                             proto\_model);
+165 
+166   \textcolor{comment}{// Construct objective function}
+167   \textcolor{keyword}{const} \textcolor{keyword}{auto}& proto\_obj = proto\_model.objective\_function();
+168   \textcolor{keyword}{auto}&& obj = \hyperlink{namespacelbann_1_1proto_a2b55ede441a057291e047cf4e7352481}{construct\_objective\_function}(proto\_obj);
+169   \hyperlink{namespacelbann_1_1proto_1_1anonymous__namespace_02model__factory_8cpp_03_a3406a809935f319486cf8fd017b58417}{assign\_layers\_to\_objective\_function}(layer\_list, obj, proto\_obj);
+170   
+171   \textcolor{comment}{// Instantiate model}
+172   \textcolor{keyword}{auto}&& m = \hyperlink{namespacelbann_1_1proto_1_1anonymous__namespace_02model__factory_8cpp_03_a6a08f0b26d015824ef28ddbb66b6d4c0}{instantiate\_model}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, obj, proto\_opt, proto\_model);
+173   \textcolor{keywordflow}{for} (\textcolor{keyword}{auto}&& l : layer\_list) \{ m->add\_layer(l); \}
+174 
+175   \textcolor{comment}{// Add weights and assign to layers}
+176   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<proto\_model.weights\_size(); i++) \{
+177     m->add\_weights(\hyperlink{namespacelbann_1_1proto_a1e95259d3e7fd20a9c361850940a398a}{construct\_weights}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm},
+178                                      cudnn,
+179                                      proto\_opt,
+180                                      proto\_model.weights(i)));
+181   \}
+182   \textcolor{keyword}{auto} weights\_list = m->get\_weights();
+183   \hyperlink{namespacelbann_1_1proto_1_1anonymous__namespace_02model__factory_8cpp_03_a19d0eaf0259647155039ed45eb980b05}{assign\_weights\_to\_layers}(layer\_list, weights\_list, proto\_model);
+184 
+185   \textcolor{comment}{// Add metrics}
+186   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<proto\_model.metric\_size(); ++i) \{
+187     m->add\_metric(\hyperlink{namespacelbann_1_1proto_a5b2f4094ce02245e778cfd2fa254d7b4}{construct\_metric}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, proto\_model.metric(i)));
+188   \}
+189 
+190   \textcolor{comment}{// Add callbacks}
+191   \textcolor{keyword}{auto}&& summarizer = \hyperlink{namespacelbann_1_1proto_abf0988db9cd58f9ef013588b440c14bd}{construct\_summarizer}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, proto\_model);
+192   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<proto\_model.callback\_size(); i++) \{
+193     m->add\_callback(\hyperlink{namespacelbann_1_1proto_a00597c8b7450c389847980cf6934a619}{construct\_callback}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm},
+194                                        proto\_model.callback(i),
+195                                        data\_readers,
+196                                        layer\_list,
+197                                        weights\_list,
+198                                        summarizer));
+199   \}
+200 
+201   \textcolor{keywordflow}{return} m;
+202 
+203 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{namespacelbann_1_1proto_a6c051439c9c5cbbfb1a2387d5a3fc902_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{namespacelbann_1_1proto_a2b55ede441a057291e047cf4e7352481}\label{namespacelbann_1_1proto_a2b55ede441a057291e047cf4e7352481}} 
+\index{lbann\+::proto@{lbann\+::proto}!construct\+\_\+objective\+\_\+function@{construct\+\_\+objective\+\_\+function}}
+\index{construct\+\_\+objective\+\_\+function@{construct\+\_\+objective\+\_\+function}!lbann\+::proto@{lbann\+::proto}}
+\subsubsection{\texorpdfstring{construct\+\_\+objective\+\_\+function()}{construct\_objective\_function()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1objective__function}{objective\+\_\+function} $\ast$ lbann\+::proto\+::construct\+\_\+objective\+\_\+function (\begin{DoxyParamCaption}\item[{const lbann\+\_\+data\+::\+Objective\+Function \&}]{proto\+\_\+obj }\end{DoxyParamCaption})}
+
+Construct an objective function specified with prototext. 
+
+Definition at line 32 of file objective\+\_\+function\+\_\+factory.\+cpp.
+
+
+\begin{DoxyCode}
+32                                                                                                \{
+33 
+34   \textcolor{comment}{// Instantiate objective function}
+35   objective\_function* obj = \textcolor{keyword}{new} objective\_function();
+36 
+37   \textcolor{comment}{// Loss functions}
+38   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<proto\_obj.mean\_squared\_error\_size(); ++i) \{
+39     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_obj.mean\_squared\_error(i);
+40     obj->add\_term(\textcolor{keyword}{new} mean\_squared\_error\_loss(params.scale\_factor()));
+41   \}
+42   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<proto\_obj.mean\_absolute\_deviation\_size(); ++i) \{
+43     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_obj.mean\_absolute\_deviation(i);
+44     obj->add\_term(\textcolor{keyword}{new} mean\_absolute\_deviation\_loss(params.scale\_factor()));
+45   \}
+46   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<proto\_obj.mean\_absolute\_error\_size(); ++i) \{
+47     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_obj.mean\_absolute\_error(i);
+48     obj->add\_term(\textcolor{keyword}{new} mean\_absolute\_error\_loss(params.scale\_factor()));
+49   \}
+50   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<proto\_obj.cross\_entropy\_size(); ++i) \{
+51     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_obj.cross\_entropy(i);
+52     obj->add\_term(\textcolor{keyword}{new} cross\_entropy(params.scale\_factor()));
+53   \}
+54   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<proto\_obj.binary\_cross\_entropy\_size(); ++i) \{
+55     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_obj.binary\_cross\_entropy(i);
+56     obj->add\_term(\textcolor{keyword}{new} binary\_cross\_entropy(params.scale\_factor()));
+57   \}
+58   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<proto\_obj.cross\_entropy\_with\_uncertainty\_size(); ++i) \{
+59     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_obj.cross\_entropy\_with\_uncertainty(i);
+60     obj->add\_term(\textcolor{keyword}{new} cross\_entropy\_with\_uncertainty(params.scale\_factor()));
+61   \}
+62   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<proto\_obj.geom\_negloglike\_size(); ++i) \{
+63     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_obj.geom\_negloglike(i);
+64     obj->add\_term(\textcolor{keyword}{new} geom\_negloglike(params.scale\_factor()));
+65   \}
+66   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<proto\_obj.poisson\_negloglike\_size(); ++i) \{
+67     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_obj.poisson\_negloglike(i);
+68     obj->add\_term(\textcolor{keyword}{new} poisson\_negloglike(params.scale\_factor()));
+69   \}
+70   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<proto\_obj.polya\_negloglike\_size(); ++i) \{
+71     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_obj.polya\_negloglike(i);
+72     obj->add\_term(\textcolor{keyword}{new} polya\_negloglike(params.scale\_factor()));
+73   \}
+74 
+75   \textcolor{comment}{// Weight regularization terms}
+76   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<proto\_obj.l1\_weight\_regularization\_size(); ++i) \{
+77     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_obj.l1\_weight\_regularization(i);
+78     obj->add\_term(\textcolor{keyword}{new} l1\_weight\_regularization(params.scale\_factor()));
+79   \}
+80   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<proto\_obj.l2\_weight\_regularization\_size(); ++i) \{
+81     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_obj.l2\_weight\_regularization(i);
+82     obj->add\_term(\textcolor{keyword}{new} l2\_weight\_regularization(params.scale\_factor()));
+83   \}
+84   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<proto\_obj.group\_lasso\_weight\_regularization\_size(); ++i) \{
+85     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_obj.group\_lasso\_weight\_regularization(i);
+86     obj->add\_term(\textcolor{keyword}{new} group\_lasso\_weight\_regularization(params.scale\_factor()));
+87   \}
+88 
+89   \textcolor{comment}{// Activation regularization terms}
+90   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<proto\_obj.kl\_divergence\_size(); ++i) \{
+91     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_obj.kl\_divergence(i);
+92     obj->add\_term(\textcolor{keyword}{new} kl\_divergence(params.layer1(), params.layer2()));
+93   \}
+94 
+95   \textcolor{comment}{// Layer terms}
+96   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<proto\_obj.layer\_term\_size(); ++i) \{
+97     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_obj.layer\_term(i);
+98     obj->add\_term(\textcolor{keyword}{new} layer\_term(params.scale\_factor()));
+99   \}
+100 
+101   \textcolor{comment}{// Return objective function}
+102   \textcolor{keywordflow}{return} obj;
+103 
+104 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{namespacelbann_1_1proto_a2b55ede441a057291e047cf4e7352481_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=346pt]{namespacelbann_1_1proto_a2b55ede441a057291e047cf4e7352481_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{namespacelbann_1_1proto_af85d2b9f1e986bbab4feccfaa19c9960}\label{namespacelbann_1_1proto_af85d2b9f1e986bbab4feccfaa19c9960}} 
+\index{lbann\+::proto@{lbann\+::proto}!construct\+\_\+optimizer@{construct\+\_\+optimizer}}
+\index{construct\+\_\+optimizer@{construct\+\_\+optimizer}!lbann\+::proto@{lbann\+::proto}}
+\subsubsection{\texorpdfstring{construct\+\_\+optimizer()}{construct\_optimizer()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1optimizer}{optimizer} $\ast$ lbann\+::proto\+::construct\+\_\+optimizer (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{const lbann\+\_\+data\+::\+Optimizer \&}]{proto\+\_\+opt }\end{DoxyParamCaption})}
+
+Construct an optimizer specified with prototext. 
+
+Definition at line 32 of file optimizer\+\_\+factory.\+cpp.
+
+
+\begin{DoxyCode}
+33                                                                      \{
+34 
+35   \textcolor{comment}{// Stochastic gradient descent}
+36   \textcolor{keywordflow}{if} (proto\_opt.has\_sgd()) \{
+37     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_opt.sgd();
+38     \textcolor{keywordflow}{return} \textcolor{keyword}{new} sgd(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm},
+39                    params.learn\_rate(),
+40                    params.momentum(),
+41                    params.nesterov());
+42   \}
+43 
+44   \textcolor{comment}{// AdaGrad}
+45   \textcolor{keywordflow}{if} (proto\_opt.has\_adagrad()) \{
+46     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_opt.adagrad();
+47     \textcolor{keywordflow}{return} \textcolor{keyword}{new} adagrad(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, params.learn\_rate(), params.eps());
+48   \}
+49 
+50   \textcolor{comment}{// RMSProp}
+51   \textcolor{keywordflow}{if} (proto\_opt.has\_rmsprop()) \{
+52     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_opt.rmsprop();
+53     \textcolor{keywordflow}{return} \textcolor{keyword}{new} rmsprop(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm},
+54                        params.learn\_rate(),
+55                        params.decay\_rate(),
+56                        params.eps());
+57   \}
+58 
+59   \textcolor{comment}{// Adam}
+60   \textcolor{keywordflow}{if} (proto\_opt.has\_adam()) \{
+61     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_opt.adam();
+62     \textcolor{keywordflow}{return} \textcolor{keyword}{new} adam(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm},
+63                     params.learn\_rate(),
+64                     params.beta1(),
+65                     params.beta2(),
+66                     params.eps());
+67   \}
+68 
+69   \textcolor{comment}{// Hypergradient Adam}
+70   \textcolor{keywordflow}{if} (proto\_opt.has\_hypergradient\_adam()) \{
+71     \textcolor{keyword}{const} \textcolor{keyword}{auto}& params = proto\_opt.hypergradient\_adam();
+72     \textcolor{keywordflow}{return} \textcolor{keyword}{new} hypergradient\_adam(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm},
+73                                   params.init\_learning\_rate(),
+74                                   params.hyper\_learning\_rate(),
+75                                   params.beta1(),
+76                                   params.beta2(),
+77                                   params.eps());
+78   \}
+79 
+80   \textcolor{comment}{// Return null pointer if no optimizer is specified}
+81   \textcolor{keywordflow}{return} \textcolor{keyword}{nullptr};
+82 
+83 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{namespacelbann_1_1proto_af85d2b9f1e986bbab4feccfaa19c9960_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{namespacelbann_1_1proto_abf0988db9cd58f9ef013588b440c14bd}\label{namespacelbann_1_1proto_abf0988db9cd58f9ef013588b440c14bd}} 
+\index{lbann\+::proto@{lbann\+::proto}!construct\+\_\+summarizer@{construct\+\_\+summarizer}}
+\index{construct\+\_\+summarizer@{construct\+\_\+summarizer}!lbann\+::proto@{lbann\+::proto}}
+\subsubsection{\texorpdfstring{construct\+\_\+summarizer()}{construct\_summarizer()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__summary}{lbann\+\_\+summary} $\ast$ lbann\+::proto\+::construct\+\_\+summarizer (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{const lbann\+\_\+data\+::\+Model \&}]{m }\end{DoxyParamCaption})}
+
+Construct a summarizer specified with prototext. The summarizer is only constructed if the summarizer callback is enabled. 
+
+Definition at line 314 of file callback\+\_\+factory.\+cpp.
+
+
+\begin{DoxyCode}
+315                                                               \{
+316   lbann\_summary *summary = \textcolor{keyword}{nullptr};
+317   \textcolor{keywordtype}{bool} master = \hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}->am\_world\_master();
+318   \textcolor{keywordtype}{int} size = m.callback\_size();
+319   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} j=0; j<size; j++) \{
+320     \textcolor{keyword}{const} lbann\_data::Callback& callback = m.callback(j);
+321     \textcolor{keywordflow}{if} (callback.has\_summary()) \{
+322       \textcolor{keyword}{const} lbann\_data::CallbackSummary& c = callback.summary();
+323       \textcolor{keywordflow}{if} (master) \{
+324         std::cout << \textcolor{stringliteral}{"constructing summarizer with dir: "} << c.dir() << std::endl;
+325       \}
+326 
+327       \textcolor{comment}{//check to see if directory exists}
+328       \textcolor{keyword}{struct }stat sb;
+329       \textcolor{keywordflow}{if} (! ( stat(c.dir().c\_str(), &sb) == 0 && S\_ISDIR(sb.st\_mode) )) \{
+330         \textcolor{keywordflow}{if} (master) \{
+331           \textcolor{keywordflow}{throw} lbann\_exception(
+332             std::string \{\} + \_\_FILE\_\_ + \textcolor{stringliteral}{" "} + std::to\_string(\_\_LINE\_\_) + \textcolor{stringliteral}{" :: "} +
+333             \textcolor{stringliteral}{"summary directory "} + c.dir() + \textcolor{stringliteral}{" does not exist"});
+334         \}
+335       \}
+336       summary = \textcolor{keyword}{new} lbann\_summary(c.dir(), \hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm});
+337     \}
+338   \}
+339   \textcolor{keywordflow}{return} summary;
+340 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=340pt]{namespacelbann_1_1proto_abf0988db9cd58f9ef013588b440c14bd_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=346pt]{namespacelbann_1_1proto_abf0988db9cd58f9ef013588b440c14bd_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{namespacelbann_1_1proto_a1e95259d3e7fd20a9c361850940a398a}\label{namespacelbann_1_1proto_a1e95259d3e7fd20a9c361850940a398a}} 
+\index{lbann\+::proto@{lbann\+::proto}!construct\+\_\+weights@{construct\+\_\+weights}}
+\index{construct\+\_\+weights@{construct\+\_\+weights}!lbann\+::proto@{lbann\+::proto}}
+\subsubsection{\texorpdfstring{construct\+\_\+weights()}{construct\_weights()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1weights}{weights} $\ast$ lbann\+::proto\+::construct\+\_\+weights (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{\hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$}]{cudnn,  }\item[{const lbann\+\_\+data\+::\+Optimizer \&}]{proto\+\_\+opt,  }\item[{const lbann\+\_\+data\+::\+Weights \&}]{proto\+\_\+weights }\end{DoxyParamCaption})}
+
+Construct weights specified with prototext. 
+
+Definition at line 83 of file weights\+\_\+factory.\+cpp.
+
+
+\begin{DoxyCode}
+86                                                                    \{
+87   std::stringstream err;
+88 
+89   \textcolor{comment}{// Instantiate weights}
+90   weights* w = \textcolor{keyword}{new} weights(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, cudnn);
+91   
+92   \textcolor{comment}{// Set weights name if provided}
+93   \textcolor{keyword}{const} \textcolor{keyword}{auto}& name = proto\_weights.name();
+94   \textcolor{keyword}{const} \textcolor{keyword}{auto}& parsed\_name = parse\_list<std::string>(name);
+95   \textcolor{keywordflow}{if} (!name.empty()) \{
+96     \textcolor{keywordflow}{if} (parsed\_name.empty() || parsed\_name.front() != name) \{
+97       err << \textcolor{stringliteral}{"weights name \(\backslash\)""} << name << \textcolor{stringliteral}{"\(\backslash\)" is invalid since it "}
+98           << \textcolor{stringliteral}{"contains whitespace"};
+99       \hyperlink{base_8hpp_a80b1d707117e968a6951b7222e4b2b87}{LBANN\_ERROR}(err.str());
+100     \}
+101     w->set\_name(name);
+102   \}
+103 
+104   \textcolor{comment}{// Set weights initializer and optimizer}
+105   w->set\_initializer(\hyperlink{namespacelbann_1_1proto_1_1anonymous__namespace_02weights__factory_8cpp_03_a2bbaafd93915c6f2334e16f0afcd4ee5}{construct\_initializer}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, proto\_weights));
+106   \textcolor{keywordflow}{if} (proto\_weights.has\_optimizer()) \{
+107     w->set\_optimizer(\hyperlink{namespacelbann_1_1proto_af85d2b9f1e986bbab4feccfaa19c9960}{construct\_optimizer}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, proto\_weights.optimizer()));
+108   \} \textcolor{keywordflow}{else} \{
+109     w->set\_optimizer(\hyperlink{namespacelbann_1_1proto_af85d2b9f1e986bbab4feccfaa19c9960}{construct\_optimizer}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, proto\_opt));
+110   \}
+111 
+112   \textcolor{keywordflow}{return} w;
+113 
+114 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{namespacelbann_1_1proto_a1e95259d3e7fd20a9c361850940a398a_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=346pt]{namespacelbann_1_1proto_a1e95259d3e7fd20a9c361850940a398a_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{namespacelbann_1_1proto_a6c6742da9015768123b7cddd74d17399}\label{namespacelbann_1_1proto_a6c6742da9015768123b7cddd74d17399}} 
+\index{lbann\+::proto@{lbann\+::proto}!parse\+\_\+list@{parse\+\_\+list}}
+\index{parse\+\_\+list@{parse\+\_\+list}!lbann\+::proto@{lbann\+::proto}}
+\subsubsection{\texorpdfstring{parse\+\_\+list()}{parse\_list()}}
+{\footnotesize\ttfamily template$<$typename T  = std\+::string$>$ \\
+std\+::vector$<$T$>$ lbann\+::proto\+::parse\+\_\+list (\begin{DoxyParamCaption}\item[{std\+::string}]{str }\end{DoxyParamCaption})}
+
+Parse a space-\/separated list. 
+
+Definition at line 90 of file factories.\+hpp.
+
+
+\begin{DoxyCode}
+90                                        \{
+91   std::vector<T> list;
+92   std::stringstream ss(str);
+93   \textcolor{keywordflow}{for} (T entry; ss >> entry;) \{
+94     list.push\_back(entry);
+95   \}
+96   \textcolor{keywordflow}{return} list;
+97 \}
+\end{DoxyCode}

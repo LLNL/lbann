@@ -1,0 +1,58 @@
+<map id="lbann::cnpy_utils::compute_cnpy_array_offset" name="lbann::cnpy_utils::compute_cnpy_array_offset">
+<area shape="rect" id="node2" href="$namespacelbann_1_1cnpy__utils.html#a9ac86d96ccb1f8b4b2ea16441738781f" title="lbann::cnpy_utils::data" alt="" coords="239,445,393,471"/>
+<area shape="rect" id="node57" href="$namespacelbann_1_1cnpy__utils.html#a348a4aa859715e5859ddd1a5e3a269c9" title="lbann::cnpy_utils::\ldata_ptr" alt="" coords="252,495,380,533"/>
+<area shape="rect" id="node3" href="$classlbann_1_1lbann__comm.html#a14adb0771b966f40536bf0e92fb00ebb" title="lbann::lbann_comm::\lallreduce" alt="" coords="454,5,599,44"/>
+<area shape="rect" id="node4" href="$classlbann_1_1lbann__comm.html#afb144a99e0cd2241f5fb05cad68b1f08" title="lbann::lbann_comm::\lnb_allreduce" alt="" coords="454,68,599,107"/>
+<area shape="rect" id="node5" href="$classlbann_1_1numpy__reader.html#aafc34d19b30845d54175911d143349de" title="lbann::numpy_reader\l::load" alt="" coords="453,131,601,169"/>
+<area shape="rect" id="node7" href="$classlbann_1_1numpy__reader.html#ab08dc207eaae7c7f5a70e602da3c1be0" title="lbann::numpy_reader\l::fetch_datum" alt="" coords="453,193,601,232"/>
+<area shape="rect" id="node9" href="$classlbann_1_1numpy__reader.html#a67691517fc4da98ca95dfc934e847067" title="lbann::numpy_reader\l::fetch_label" alt="" coords="453,256,601,295"/>
+<area shape="rect" id="node10" href="$classlbann_1_1numpy__reader.html#ad7c3a680426ffcf467d74ba3a5e6eb20" title="lbann::numpy_reader\l::fetch_response" alt="" coords="453,319,601,357"/>
+<area shape="rect" id="node11" href="$classlbann_1_1pilot2__molecular__reader.html#ae45c583f72e11aeb5d955e2657a9a3e8" title="Fetch molecule data_id into X at molecule offset idx. " alt="" coords="445,381,609,420"/>
+<area shape="rect" id="node17" href="$classlbann_1_1data__store__csv.html#acacd039d3ca8caf8958b731a1ce382c6" title="retrive data needed for passing to the data reader for the next epoch " alt="" coords="451,547,603,585"/>
+<area shape="rect" id="node20" href="$classlbann_1_1data__store__image.html#a5ff5eccbd469caca692e8259f6f8c021" title="lbann::data_store_image\l::exchange_data" alt="" coords="443,609,611,648"/>
+<area shape="rect" id="node31" href="$classlbann_1_1data__store__pilot2__molecular.html#a0157fe4d04961c03c0d983cb43aa1cec" title="called by construct_data_store() " alt="" coords="670,432,833,471"/>
+<area shape="rect" id="node33" href="$classlbann_1_1data__store__pilot2__molecular.html#addaa6db4e1b3a25424da9da63c0b3616" title="fills in m_my_molecules using non&#45;blocking MPI send/recv " alt="" coords="907,484,1092,523"/>
+<area shape="rect" id="node34" href="$classlbann_1_1stack__profiler.html#a27d55f6551cf445d3d0e9836858f6872" title="lbann::stack_profiler\l::print" alt="" coords="457,695,597,733"/>
+<area shape="rect" id="node36" href="$namespacelbann.html#a604ae9da0173b8be2bfb6877997d6d5c" title="Compute mean and standard deviation over matrix entries. " alt="" coords="448,817,606,856"/>
+<area shape="rect" id="node53" href="$namespacelbann.html#a213d429a27c3e8676a3ebec40c24005c" title="Compute column&#45;wise means and standard deviations. " alt="" coords="441,880,613,919"/>
+<area shape="rect" id="node56" href="$namespacelbann.html#a0c713b77f8e191addc1e0210037f9e5f" title="Compute row&#45;wise means and standard deviations. " alt="" coords="452,943,602,981"/>
+<area shape="rect" id="node6" href="$classlbann_1_1numpy__reader.html#a511981e78b175345b6b8a84b5f688774" title="Set whether to fetch responses. " alt="" coords="678,131,825,169"/>
+<area shape="rect" id="node8" href="$classlbann_1_1numpy__reader.html#aad4adc242e92334d016127cedc66fc70" title="Get the dimensions of the data. " alt="" coords="678,255,825,293"/>
+<area shape="rect" id="node12" href="$classlbann_1_1pilot2__molecular__reader.html#a628d96b642e913550316076a11ba5285" title="support for data_store_pilot2_molecular " alt="" coords="920,345,1079,397"/>
+<area shape="rect" id="node16" href="$classlbann_1_1pilot2__molecular__reader.html#a9ad317abcd6f5de777d536f7796a3b12" title="Fetch a molecule and its neighbors. " alt="" coords="672,369,831,408"/>
+<area shape="rect" id="node13" href="$classlbann_1_1data__store__pilot2__molecular.html#af70726cfb8377832ce457d9b874bf34e" title="fills in m_neighbors " alt="" coords="1157,357,1354,396"/>
+<area shape="rect" id="node14" href="$classlbann_1_1data__store__pilot2__molecular.html#a975d7907053a8b2e92ea5f77ca4ae7a3" title="called by generic_data_reader::setup_data_store " alt="" coords="1428,421,1591,460"/>
+<area shape="rect" id="node15" href="$classlbann_1_1data__store__pilot2__molecular.html#a1a59e48a8c7ca8efe86509e0d9cd1307" title="lbann::data_store_pilot2\l_molecular::copy" alt="" coords="1666,421,1830,460"/>
+<area shape="rect" id="node18" href="$classlbann_1_1data__store__csv.html#a184c7e6f27c5e07255b9c889ace02407" title="called by generic_data_reader::setup_data_store " alt="" coords="676,547,827,585"/>
+<area shape="rect" id="node19" href="$classlbann_1_1data__store__csv.html#a2e95f53f539a838e6c6484b9f4de5a45" title="lbann::data_store_csv\l::copy" alt="" coords="924,547,1075,585"/>
+<area shape="rect" id="node21" href="$classlbann_1_1data__store__image.html#a8fd8c5546f405a964511823aed8ac986" title="ctor " alt="" coords="915,609,1083,648"/>
+<area shape="rect" id="node22" href="$classlbann_1_1data__store__image.html#a79280b3aa9a207dfacad2bcc9824ec73" title="called by generic_data_reader::setup_data_store " alt="" coords="667,661,836,700"/>
+<area shape="rect" id="node23" href="$classlbann_1_1data__store__imagenet.html#a611aa1734a491c443396a077b49fe4fe" title="called by generic_data_reader::setup_data_store " alt="" coords="906,672,1093,711"/>
+<area shape="rect" id="node24" href="$classlbann_1_1data__store__imagenet.html#aa6f4479472b06cd7a8da399dd23b7487" title="dtor " alt="" coords="1162,577,1348,616"/>
+<area shape="rect" id="node25" href="$classlbann_1_1data__store__imagenet__patches.html#aa8cfaf12c87f3dbbbb4fc808f6ca26ad" title="called by generic_data_reader::setup_data_store " alt="" coords="1162,640,1348,679"/>
+<area shape="rect" id="node27" href="$classlbann_1_1data__store__multi__images.html#a7b5e9ec7b7132872299a204d5d24ee62" title="called by generic_data_reader::setup_data_store " alt="" coords="1175,703,1335,741"/>
+<area shape="rect" id="node26" href="$classlbann_1_1data__store__imagenet__patches.html#ac4b8e5f893a4eccdeceee9c872a4b5b9" title="dtor " alt="" coords="1402,591,1618,643"/>
+<area shape="rect" id="node28" href="$classlbann_1_1data__store__multi__images.html#addafae542acaa1ef218759030719b6d3" title="dtor " alt="" coords="1417,667,1602,719"/>
+<area shape="rect" id="node29" href="$classlbann_1_1data__store__triplet.html#aca66b9cf71d7ba2b9870e76c5b92b5e8" title="called by generic_data_reader::setup_data_store " alt="" coords="1427,743,1592,781"/>
+<area shape="rect" id="node30" href="$classlbann_1_1data__store__triplet.html#a4051f8b3236f06554c2f35e71d3fdf70" title="dtor " alt="" coords="1666,743,1830,781"/>
+<area shape="rect" id="node32" href="$classlbann_1_1data__store__pilot2__molecular.html#a8021fa0a93e39c9d43de6ecc2d72e14e" title="fills in m_data " alt="" coords="890,421,1109,460"/>
+<area shape="rect" id="node35" href="$classlbann_1_1stack__profiler.html#ab1a7c0531a78ad7e2181a10daee44def" title="lbann::stack_profiler::get" alt="" coords="668,724,835,749"/>
+<area shape="rect" id="node37" href="$classlbann_1_1lbann__image__preprocessor.html#ab499dd9f11d98998b5902d639f70fa8e" title="lbann::lbann_image\l_preprocessor::mean\l_subtraction" alt="" coords="678,773,825,825"/>
+<area shape="rect" id="node49" href="$classlbann_1_1lbann__image__preprocessor.html#af9fcb483843230008a53d60c12975f61" title="lbann::lbann_image\l_preprocessor::unit\l_variance" alt="" coords="683,849,820,901"/>
+<area shape="rect" id="node50" href="$classlbann_1_1lbann__image__preprocessor.html#aec67fb0dc7a1f5d718d5bb2e226f9b7a" title="lbann::lbann_image\l_preprocessor::z_score" alt="" coords="671,925,832,964"/>
+<area shape="rect" id="node51" href="$classlbann_1_1r2__metric.html#a06c84d7944d1d5be896de6b98950e05e" title="lbann::r2_metric::evaluate\l_compute" alt="" coords="664,988,839,1027"/>
+<area shape="rect" id="node38" href="$classlbann_1_1lbann__image__preprocessor.html#ae370cdc9f776ce8cce94a45cacf47425" title="lbann::lbann_image\l_preprocessor::normalize" alt="" coords="914,860,1085,899"/>
+<area shape="rect" id="node39" href="$classlbann_1_1lbann__image__preprocessor.html#a1726baf71e931108dc9192539e90c583" title="lbann::lbann_image\l_preprocessor::add_noise" alt="" coords="1167,797,1343,836"/>
+<area shape="rect" id="node43" href="$classlbann_1_1cifar10__reader.html#a590c672731bbdcb6e7fd8fd300d004d5" title="lbann::cifar10_reader\l::fetch_datum" alt="" coords="1181,860,1329,899"/>
+<area shape="rect" id="node45" href="$classlbann_1_1imagenet__reader__org.html#ad4c47413e16c1c53000b7d7be757ff6e" title="lbann::imagenet_reader\l_org::fetch_datum" alt="" coords="1174,923,1336,961"/>
+<area shape="rect" id="node47" href="$classlbann_1_1mnist__reader.html#af257b58b61ae9f3f623f1cb5d18c4841" title="lbann::mnist_reader\l::fetch_datum" alt="" coords="1186,985,1325,1024"/>
+<area shape="rect" id="node40" href="$init__image__data__readers_8hpp.html#ac021d06bfe6825ec586927661254a546" title="init_generic_preprocessor" alt="" coords="1422,807,1597,832"/>
+<area shape="rect" id="node41" href="$init__image__data__readers_8hpp.html#a7cbc558e3233f04f7bbd6e96d199e387" title="init_org_image_data\l_reader" alt="" coords="1677,857,1819,896"/>
+<area shape="rect" id="node42" href="$proto__common_8hpp.html#a32d4c032abc19c091fa65ace580fc057" title="instantiates one or more generic_data_readers and inserts them in &amp;data_readers " alt="" coords="1878,836,2002,861"/>
+<area shape="rect" id="node44" href="$classlbann_1_1cifar10__reader.html#a3915005f1278a840869b8519c30c808b" title="lbann::cifar10_reader\l::set_input_params" alt="" coords="1436,860,1583,899"/>
+<area shape="rect" id="node46" href="$classlbann_1_1imagenet__reader__org.html#ade6e7e9bc1a3f9562c0f274a3d665e0a" title="lbann::imagenet_reader\l_org::get_type" alt="" coords="1429,923,1591,961"/>
+<area shape="rect" id="node48" href="$classlbann_1_1mnist__reader.html#aa50ae6f2aeb5800de0e15e3ab9046338" title="lbann::mnist_reader\l::set_input_params" alt="" coords="1440,985,1579,1024"/>
+<area shape="rect" id="node52" href="$classlbann_1_1r2__metric.html#a66f9280c69b9b079d40b70b9c9c43ad9" title="lbann::r2_metric::name" alt="" coords="921,995,1078,1020"/>
+<area shape="rect" id="node54" href="$classlbann_1_1pearson__correlation__metric.html#a28453718aa09d609ef5ab157823d8c24" title="lbann::pearson_correlation\l_metric::evaluate_compute" alt="" coords="661,1051,842,1089"/>
+<area shape="rect" id="node55" href="$classlbann_1_1pearson__correlation__metric.html#a7cbb12e258acdb0cbc4d521dc7163dd6" title="lbann::pearson_correlation\l_metric::name" alt="" coords="910,1051,1089,1089"/>
+</map>

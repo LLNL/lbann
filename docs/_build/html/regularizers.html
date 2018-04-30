@@ -1,0 +1,822 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Regularizers &mdash; lbann  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Layers" href="layers.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> lbann
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="callbacks.html">Callbacks</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="layers.html">Layers</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Regularizers</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">lbann</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="layers.html">Layers</a> &raquo;</li>
+        
+      <li>Regularizers</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/regularizers.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="regularizers">
+<h1>Regularizers<a class="headerlink" href="#regularizers" title="Permalink to this headline">¶</a></h1>
+<p>Template regularizer description</p>
+<dl class="class">
+<dt>
+<span class="target" id="classlbann_1_1batch__normalization"></span><em class="property">template </em>&lt;data_layout <em>T_layout</em>&gt;</dt>
+<dt id="_CPPv2N5lbann19batch_normalizationE">
+<span id="lbann::batch_normalization"></span><em class="property">class </em><code class="descname">batch_normalization</code><a class="headerlink" href="#_CPPv2N5lbann19batch_normalizationE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><em>#include &lt;batch_normalization.hpp&gt;</em><p>Batch normalization layer. Each input channel is normalized across the mini-batch to have zero mean and unit standard deviation. Learned scaling factors and biases are then applied. See: Sergey Ioffe and Christian Szegedy. “Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift.” ICML 2015. This uses the standard approach of maintaining the running mean and standard deviation (with exponential decay) for use at test time. See: <a class="reference external" href="https://cthorey.github.io/backpropagation/">https://cthorey.github.io/backpropagation/</a> </p>
+<p>Inherits from <a class="reference internal" href="#classlbann_1_1regularizer__layer"><span class="std std-ref">lbann::regularizer_layer</span></a></p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Public Functions</p>
+<dl class="function">
+<dt id="_CPPv2N5lbann19batch_normalization19batch_normalizationEP10lbann_comm8DataType8DataTypebPN5cudnn13cudnn_managerE">
+<span id="lbann::batch_normalization::batch_normalization__lbann_commP.DataType.DataType.b.cudnn::cudnn_managerP"></span><span class="target" id="classlbann_1_1batch__normalization_1a04f092712566fd732e5fc5e48ee16f4d"></span><code class="descname">batch_normalization</code><span class="sig-paren">(</span>lbann_comm *<em>comm</em>, DataType <em>decay</em> = 0.9, DataType <em>epsilon</em> = 1e-5, bool <em>use_global_stats</em> = false, cudnn::cudnn_manager *<em>cudnn</em> = nullptr<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann19batch_normalization19batch_normalizationEP10lbann_comm8DataType8DataTypebPN5cudnn13cudnn_managerE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Set up batch normalization. <dl class="docutils">
+<dt><strong>Parameters</strong></dt>
+<dd><ul class="breatheparameterlist first last simple">
+<li><code class="docutils literal"><span class="pre">decay</span></code>: Controls the momentum of the running mean/standard deviation averages. </li>
+<li><code class="docutils literal"><span class="pre">epsilon</span></code>: A small number to avoid division by zero. </li>
+<li><code class="docutils literal"><span class="pre">use_global_stats</span></code>: Whether to use global statistics when training. </li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann19batch_normalization19batch_normalizationERK19batch_normalization">
+<span id="lbann::batch_normalization::batch_normalization__batch_normalizationCR"></span><span class="target" id="classlbann_1_1batch__normalization_1a62e642fc7c064a49826e5d4a10a87e5c"></span><code class="descname">batch_normalization</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="#_CPPv2N5lbann19batch_normalization19batch_normalizationEP10lbann_comm8DataType8DataTypebPN5cudnn13cudnn_managerE" title="lbann::batch_normalization::batch_normalization">batch_normalization</a> &amp;<em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann19batch_normalization19batch_normalizationERK19batch_normalization" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann19batch_normalizationaSERK19batch_normalization">
+<span id="lbann::batch_normalization::assign-operator__batch_normalizationCR"></span><span class="target" id="classlbann_1_1batch__normalization_1aeb3c03a8dd166a64a77a26ee06ba81cd"></span><a class="reference internal" href="#_CPPv2N5lbann19batch_normalizationE" title="lbann::batch_normalization">batch_normalization</a> &amp;<code class="descname">operator=</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="#_CPPv2N5lbann19batch_normalizationE" title="lbann::batch_normalization">batch_normalization</a> &amp;<em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann19batch_normalizationaSERK19batch_normalization" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2NK5lbann19batch_normalization15get_descriptionEv">
+<span id="lbann::batch_normalization::get_descriptionC"></span><span class="target" id="classlbann_1_1batch__normalization_1a331738f02157f9e1e21f212c41feb86c"></span>std::string <code class="descname">get_description</code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv2NK5lbann19batch_normalization15get_descriptionEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Returns description of ctor params </p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann19batch_normalizationD0Ev">
+<span id="lbann::batch_normalization::~batch_normalization"></span><span class="target" id="classlbann_1_1batch__normalization_1a6aeb06e13733560fb2203ea08df42632"></span><em class="property">virtual</em> <code class="descname">~batch_normalization</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann19batch_normalizationD0Ev" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2NK5lbann19batch_normalization4copyEv">
+<span id="lbann::batch_normalization::copyC"></span><span class="target" id="classlbann_1_1batch__normalization_1af149d82996f351a5897a16a78ced113d"></span><a class="reference internal" href="#_CPPv2N5lbann19batch_normalizationE" title="lbann::batch_normalization">batch_normalization</a> *<code class="descname">copy</code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv2NK5lbann19batch_normalization4copyEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2NK5lbann19batch_normalization8get_typeEv">
+<span id="lbann::batch_normalization::get_typeC"></span><span class="target" id="classlbann_1_1batch__normalization_1a1a773049354935cc2841bea8aa8bd94f"></span>std::string <code class="descname">get_type</code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv2NK5lbann19batch_normalization8get_typeEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann19batch_normalization14setup_matricesERKN2El4GridE">
+<span id="lbann::batch_normalization::setup_matrices__El::GridCR"></span><span class="target" id="classlbann_1_1batch__normalization_1a4ddf27efaf48f0726dc4356a3a0b40a9"></span>void <code class="descname">setup_matrices</code><span class="sig-paren">(</span><em class="property">const</em> El::Grid &amp;<em>grid</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann19batch_normalization14setup_matricesERKN2El4GridE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2NK5lbann19batch_normalization15get_data_layoutEv">
+<span id="lbann::batch_normalization::get_data_layoutC"></span><span class="target" id="classlbann_1_1batch__normalization_1ac97c038b9dec333a7fb285c196429e2d"></span>data_layout <code class="descname">get_data_layout</code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv2NK5lbann19batch_normalization15get_data_layoutEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann19batch_normalization10setup_dataEv">
+<span id="lbann::batch_normalization::setup_data"></span><span class="target" id="classlbann_1_1batch__normalization_1ac046a5ab567cc01f9a36c6b0fc4e3b55"></span>void <code class="descname">setup_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann19batch_normalization10setup_dataEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann19batch_normalization9setup_gpuEv">
+<span id="lbann::batch_normalization::setup_gpu"></span><span class="target" id="classlbann_1_1batch__normalization_1ab4737c3efcafa9bff1e68084b7f36283"></span>void <code class="descname">setup_gpu</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann19batch_normalization9setup_gpuEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann19batch_normalization10fp_computeEv">
+<span id="lbann::batch_normalization::fp_compute"></span><span class="target" id="classlbann_1_1batch__normalization_1a92ad52396d7083c84ec20016ad5e994b"></span>void <code class="descname">fp_compute</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann19batch_normalization10fp_computeEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann19batch_normalization10bp_computeEv">
+<span id="lbann::batch_normalization::bp_compute"></span><span class="target" id="classlbann_1_1batch__normalization_1ad9aedd689cd8923d8c8e9c4e57a4e8b7"></span>void <code class="descname">bp_compute</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann19batch_normalization10bp_computeEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann19batch_normalization14fp_compute_gpuEv">
+<span id="lbann::batch_normalization::fp_compute_gpu"></span><span class="target" id="classlbann_1_1batch__normalization_1aacff2c47a5455a4c28b9695f4fb37249"></span>void <code class="descname">fp_compute_gpu</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann19batch_normalization14fp_compute_gpuEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann19batch_normalization14bp_compute_gpuEv">
+<span id="lbann::batch_normalization::bp_compute_gpu"></span><span class="target" id="classlbann_1_1batch__normalization_1a7d48ad1531825fc9745c77f9ae5f68d6"></span>void <code class="descname">bp_compute_gpu</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann19batch_normalization14bp_compute_gpuEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann19batch_normalization14fp_compute_cpuEv">
+<span id="lbann::batch_normalization::fp_compute_cpu"></span><span class="target" id="classlbann_1_1batch__normalization_1ae4cad47f456752e4ea20add0f6f38819"></span>void <code class="descname">fp_compute_cpu</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann19batch_normalization14fp_compute_cpuEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann19batch_normalization14bp_compute_cpuEv">
+<span id="lbann::batch_normalization::bp_compute_cpu"></span><span class="target" id="classlbann_1_1batch__normalization_1a83e40edd001a0b71c31fbc9a3acb2231"></span>void <code class="descname">bp_compute_cpu</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann19batch_normalization14bp_compute_cpuEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Private Functions</p>
+<dl class="function">
+<dt id="_CPPv2N5lbann19batch_normalization19deallocate_matricesEv">
+<span id="lbann::batch_normalization::deallocate_matrices"></span><span class="target" id="classlbann_1_1batch__normalization_1ac98f8fbb6e5ea998a06cef2c2cac9f03"></span>void <code class="descname">deallocate_matrices</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann19batch_normalization19deallocate_matricesEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Private Members</p>
+<dl class="member">
+<dt id="_CPPv2N5lbann19batch_normalization7m_decayE">
+<span id="lbann::batch_normalization::m_decay__DataType"></span><span class="target" id="classlbann_1_1batch__normalization_1aa2ee72d5efbf47c74796510ee61dbb14"></span>DataType <code class="descname">m_decay</code><a class="headerlink" href="#_CPPv2N5lbann19batch_normalization7m_decayE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Decay rate for the running statistics. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv2N5lbann19batch_normalization9m_epsilonE">
+<span id="lbann::batch_normalization::m_epsilon__DataType"></span><span class="target" id="classlbann_1_1batch__normalization_1ab82e74f905b7a117d9940f8542451e37"></span>DataType <code class="descname">m_epsilon</code><a class="headerlink" href="#_CPPv2N5lbann19batch_normalization9m_epsilonE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Small number to avoid division by zero. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv2N5lbann19batch_normalization18m_use_global_statsE">
+<span id="lbann::batch_normalization::m_use_global_stats__b"></span><span class="target" id="classlbann_1_1batch__normalization_1a0a33289150c01899f4b7ef2980771899"></span>bool <code class="descname">m_use_global_stats</code><a class="headerlink" href="#_CPPv2N5lbann19batch_normalization18m_use_global_statsE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Whether to use global statistics when training. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv2N5lbann19batch_normalization6m_meanE">
+<span id="lbann::batch_normalization::m_mean__AbsDistMatP"></span><span class="target" id="classlbann_1_1batch__normalization_1a7c0db2315a4c5bb662da7a740ae76e24"></span>AbsDistMat *<code class="descname">m_mean</code><a class="headerlink" href="#_CPPv2N5lbann19batch_normalization6m_meanE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Current minibatch means. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv2N5lbann19batch_normalization5m_varE">
+<span id="lbann::batch_normalization::m_var__AbsDistMatP"></span><span class="target" id="classlbann_1_1batch__normalization_1aba533149e4179378ab23443b0a2a7dc6"></span>AbsDistMat *<code class="descname">m_var</code><a class="headerlink" href="#_CPPv2N5lbann19batch_normalization5m_varE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Current minibatch standard deviations. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv2N5lbann19batch_normalization15m_mean_gradientE">
+<span id="lbann::batch_normalization::m_mean_gradient__AbsDistMatP"></span><span class="target" id="classlbann_1_1batch__normalization_1aa4677c2f7d5ea27c53bf0f61f280a2a3"></span>AbsDistMat *<code class="descname">m_mean_gradient</code><a class="headerlink" href="#_CPPv2N5lbann19batch_normalization15m_mean_gradientE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Gradient w.r.t. means. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv2N5lbann19batch_normalization14m_var_gradientE">
+<span id="lbann::batch_normalization::m_var_gradient__AbsDistMatP"></span><span class="target" id="classlbann_1_1batch__normalization_1aa2d2050a265eed854aa8950cd1461af9"></span>AbsDistMat *<code class="descname">m_var_gradient</code><a class="headerlink" href="#_CPPv2N5lbann19batch_normalization14m_var_gradientE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Gradient w.r.t. standard deviations. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv2N5lbann19batch_normalization16m_scale_gradientE">
+<span id="lbann::batch_normalization::m_scale_gradient__AbsDistMatP"></span><span class="target" id="classlbann_1_1batch__normalization_1a66364e1b0c9afb40a4c03ee1869d264c"></span>AbsDistMat *<code class="descname">m_scale_gradient</code><a class="headerlink" href="#_CPPv2N5lbann19batch_normalization16m_scale_gradientE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Gradient w.r.t. scaling terms. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv2N5lbann19batch_normalization15m_bias_gradientE">
+<span id="lbann::batch_normalization::m_bias_gradient__AbsDistMatP"></span><span class="target" id="classlbann_1_1batch__normalization_1aa0f1e9a9f48f67544618e239167494bb"></span>AbsDistMat *<code class="descname">m_bias_gradient</code><a class="headerlink" href="#_CPPv2N5lbann19batch_normalization15m_bias_gradientE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Gradient w.r.t. bias terms. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt>
+<span class="target" id="classlbann_1_1dropout"></span><em class="property">template </em>&lt;data_layout <em>T_layout</em>&gt;</dt>
+<dt id="_CPPv2N5lbann7dropoutE">
+<span id="lbann::dropout"></span><em class="property">class </em><code class="descname">dropout</code><a class="headerlink" href="#_CPPv2N5lbann7dropoutE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><em>#include &lt;dropout.hpp&gt;</em><p>Dropout layer: Probabilistically drop layer outputs. See: Srivastava, Nitish, et al. “Dropout: a simple way to prevent
+  neural networks from overfitting.” Journal of Machine Learning Research 15.1 (2014). The weights are multiplied by 1/(keep probability) at training time, as discussed in section 10 of the paper. Keep probabilities of 0.5 for fully-connected layers and 0.8 for input layers are good starting points. </p>
+<p>Inherits from <a class="reference internal" href="#classlbann_1_1regularizer__layer"><span class="std std-ref">lbann::regularizer_layer</span></a></p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Public Functions</p>
+<dl class="function">
+<dt id="_CPPv2N5lbann7dropout7dropoutEP10lbann_comm8EvalTypePN5cudnn13cudnn_managerE">
+<span id="lbann::dropout::dropout__lbann_commP.EvalType.cudnn::cudnn_managerP"></span><span class="target" id="classlbann_1_1dropout_1a301be902f285c5cf1d0cd743119a09d8"></span><code class="descname">dropout</code><span class="sig-paren">(</span>lbann_comm *<em>comm</em>, EvalType <em>keep_prob</em> = EvalType(0.5), cudnn::cudnn_manager *<em>cudnn</em> = nullptr<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann7dropout7dropoutEP10lbann_comm8EvalTypePN5cudnn13cudnn_managerE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p><dl class="docutils">
+<dt><strong>Parameters</strong></dt>
+<dd><ul class="breatheparameterlist first last simple">
+<li><code class="docutils literal"><span class="pre">keep_prob</span></code>: dropout probability. Keep units with probabiliy keep_prob. </li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann7dropout7dropoutERK7dropout">
+<span id="lbann::dropout::dropout__dropoutCR"></span><span class="target" id="classlbann_1_1dropout_1ab2057d4abf48b96f8f6e9f64bdb0fc7e"></span><code class="descname">dropout</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="#_CPPv2N5lbann7dropout7dropoutEP10lbann_comm8EvalTypePN5cudnn13cudnn_managerE" title="lbann::dropout::dropout">dropout</a> &amp;<em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann7dropout7dropoutERK7dropout" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann7dropoutaSERK7dropout">
+<span id="lbann::dropout::assign-operator__dropoutCR"></span><span class="target" id="classlbann_1_1dropout_1a0243b0bc3c2a4239a5ba6d64e6566a15"></span><a class="reference internal" href="#_CPPv2N5lbann7dropoutE" title="lbann::dropout">dropout</a> &amp;<code class="descname">operator=</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="#_CPPv2N5lbann7dropoutE" title="lbann::dropout">dropout</a> &amp;<em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann7dropoutaSERK7dropout" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann7dropoutD0Ev">
+<span id="lbann::dropout::~dropout"></span><span class="target" id="classlbann_1_1dropout_1a4b18d1195a176f4dd653767bfc0a9f6b"></span><code class="descname">~dropout</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann7dropoutD0Ev" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2NK5lbann7dropout4copyEv">
+<span id="lbann::dropout::copyC"></span><span class="target" id="classlbann_1_1dropout_1a0e6e50b50f8c2620315f3257bbab41b3"></span><a class="reference internal" href="#_CPPv2N5lbann7dropoutE" title="lbann::dropout">dropout</a> *<code class="descname">copy</code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv2NK5lbann7dropout4copyEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2NK5lbann7dropout8get_typeEv">
+<span id="lbann::dropout::get_typeC"></span><span class="target" id="classlbann_1_1dropout_1a4d07cd79c7a4ab29db233a361aede358"></span>std::string <code class="descname">get_type</code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv2NK5lbann7dropout8get_typeEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2NK5lbann7dropout15get_descriptionEv">
+<span id="lbann::dropout::get_descriptionC"></span><span class="target" id="classlbann_1_1dropout_1a7b53ee7d758337fe40788a567b5d092c"></span>std::string <code class="descname">get_description</code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv2NK5lbann7dropout15get_descriptionEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann7dropout14setup_matricesERKN2El4GridE">
+<span id="lbann::dropout::setup_matrices__El::GridCR"></span><span class="target" id="classlbann_1_1dropout_1abf399d8463721d322aedbb76d60534c6"></span>void <code class="descname">setup_matrices</code><span class="sig-paren">(</span><em class="property">const</em> El::Grid &amp;<em>grid</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann7dropout14setup_matricesERKN2El4GridE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2NK5lbann7dropout15get_data_layoutEv">
+<span id="lbann::dropout::get_data_layoutC"></span><span class="target" id="classlbann_1_1dropout_1aefeb16614f9bf4b9e643e1d5b48ec62d"></span>data_layout <code class="descname">get_data_layout</code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv2NK5lbann7dropout15get_data_layoutEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann7dropout9setup_gpuEv">
+<span id="lbann::dropout::setup_gpu"></span><span class="target" id="classlbann_1_1dropout_1abaa3d0c6d99200b186d0a55201f77b6a"></span>void <code class="descname">setup_gpu</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann7dropout9setup_gpuEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Protected Functions</p>
+<dl class="function">
+<dt id="_CPPv2N5lbann7dropout10fp_computeEv">
+<span id="lbann::dropout::fp_compute"></span><span class="target" id="classlbann_1_1dropout_1a9ed94f278835b6c9e8185de01705e53a"></span>void <code class="descname">fp_compute</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann7dropout10fp_computeEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann7dropout10bp_computeEv">
+<span id="lbann::dropout::bp_compute"></span><span class="target" id="classlbann_1_1dropout_1a053e3f392a6a90b3bcc07f62f3818bce"></span>void <code class="descname">bp_compute</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann7dropout10bp_computeEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Private Functions</p>
+<dl class="function">
+<dt id="_CPPv2N5lbann7dropout13fp_setup_dataEi">
+<span id="lbann::dropout::fp_setup_data__i"></span><span class="target" id="classlbann_1_1dropout_1a478368964f515f5456324b6504a5358f"></span>void <code class="descname">fp_setup_data</code><span class="sig-paren">(</span>int <em>mini_batch_size</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann7dropout13fp_setup_dataEi" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann7dropout14fp_compute_cpuEv">
+<span id="lbann::dropout::fp_compute_cpu"></span><span class="target" id="classlbann_1_1dropout_1a358c502d8e7eeb1fed8b5df468793b09"></span>void <code class="descname">fp_compute_cpu</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann7dropout14fp_compute_cpuEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann7dropout14bp_compute_cpuEv">
+<span id="lbann::dropout::bp_compute_cpu"></span><span class="target" id="classlbann_1_1dropout_1aca0160de0c3db5c29a0c4c6bddd0cf4f"></span>void <code class="descname">bp_compute_cpu</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann7dropout14bp_compute_cpuEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Adjust gradients for dropout in backprop. </p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann7dropout14fp_compute_gpuEv">
+<span id="lbann::dropout::fp_compute_gpu"></span><span class="target" id="classlbann_1_1dropout_1ad71de4282d2164171bbcad158a7bf1e7"></span>void <code class="descname">fp_compute_gpu</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann7dropout14fp_compute_gpuEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann7dropout14bp_compute_gpuEv">
+<span id="lbann::dropout::bp_compute_gpu"></span><span class="target" id="classlbann_1_1dropout_1aeafadecbcfc81734d0c1850b4004dcc3"></span>void <code class="descname">bp_compute_gpu</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann7dropout14bp_compute_gpuEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Private Members</p>
+<dl class="member">
+<dt id="_CPPv2N5lbann7dropout11m_keep_probE">
+<span id="lbann::dropout::m_keep_prob__EvalType"></span><span class="target" id="classlbann_1_1dropout_1aa06cbee70f3426b589990889b8ac8872"></span>EvalType <code class="descname">m_keep_prob</code><a class="headerlink" href="#_CPPv2N5lbann7dropout11m_keep_probE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Probability of keeping each unit. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv2N5lbann7dropout6m_maskE">
+<span id="lbann::dropout::m_mask__std::unique_ptr:AbsDistMat:"></span><span class="target" id="classlbann_1_1dropout_1ad7d359957d41adcb64e6e3a2d4ad278d"></span>std::unique_ptr&lt;AbsDistMat&gt; <code class="descname">m_mask</code><a class="headerlink" href="#_CPPv2N5lbann7dropout6m_maskE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Current dropout mask (a scaled Bernoulli random matrix). </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt>
+<span class="target" id="classlbann_1_1local__response__normalization__layer"></span><em class="property">template </em>&lt;data_layout <em>T_layout</em> = data_layout::DATA_PARALLEL&gt;</dt>
+<dt id="_CPPv2N5lbann34local_response_normalization_layerE">
+<span id="lbann::local_response_normalization_layer"></span><em class="property">class </em><code class="descname">local_response_normalization_layer</code><a class="headerlink" href="#_CPPv2N5lbann34local_response_normalization_layerE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><em>#include &lt;local_response_normalization.hpp&gt;</em><p>Local Response Normalization layer. </p>
+<p>Inherits from <a class="reference internal" href="#classlbann_1_1regularizer__layer"><span class="std std-ref">lbann::regularizer_layer</span></a></p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Public Functions</p>
+<dl class="function">
+<dt id="_CPPv2N5lbann34local_response_normalization_layer34local_response_normalization_layerEP10lbann_commi8DataType8DataType8DataTypePN5cudnn13cudnn_managerE">
+<span id="lbann::local_response_normalization_layer::local_response_normalization_layer__lbann_commP.i.DataType.DataType.DataType.cudnn::cudnn_managerP"></span><span class="target" id="classlbann_1_1local__response__normalization__layer_1a5fa2f3175590cc85aa984c42cc9acd95"></span><code class="descname">local_response_normalization_layer</code><span class="sig-paren">(</span>lbann_comm *<em>comm</em>, int <em>window_width</em>, DataType <em>lrn_alpha</em>, DataType <em>lrn_beta</em>, DataType <em>lrn_k</em>, cudnn::cudnn_manager *<em>cudnn</em> = nullptr<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann34local_response_normalization_layer34local_response_normalization_layerEP10lbann_commi8DataType8DataType8DataTypePN5cudnn13cudnn_managerE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann34local_response_normalization_layer34local_response_normalization_layerERK34local_response_normalization_layer">
+<span id="lbann::local_response_normalization_layer::local_response_normalization_layer__local_response_normalization_layerCR"></span><span class="target" id="classlbann_1_1local__response__normalization__layer_1a95f89c53da64c319def098a7153c57f6"></span><code class="descname">local_response_normalization_layer</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="#_CPPv2N5lbann34local_response_normalization_layer34local_response_normalization_layerEP10lbann_commi8DataType8DataType8DataTypePN5cudnn13cudnn_managerE" title="lbann::local_response_normalization_layer::local_response_normalization_layer">local_response_normalization_layer</a> &amp;<em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann34local_response_normalization_layer34local_response_normalization_layerERK34local_response_normalization_layer" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann34local_response_normalization_layeraSERK34local_response_normalization_layer">
+<span id="lbann::local_response_normalization_layer::assign-operator__local_response_normalization_layerCR"></span><span class="target" id="classlbann_1_1local__response__normalization__layer_1a7a1e5eb532bbf72c6334ac865d0694a3"></span><a class="reference internal" href="#_CPPv2N5lbann34local_response_normalization_layerE" title="lbann::local_response_normalization_layer">local_response_normalization_layer</a> &amp;<code class="descname">operator=</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="#_CPPv2N5lbann34local_response_normalization_layerE" title="lbann::local_response_normalization_layer">local_response_normalization_layer</a> &amp;<em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann34local_response_normalization_layeraSERK34local_response_normalization_layer" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann34local_response_normalization_layerD0Ev">
+<span id="lbann::local_response_normalization_layer::~local_response_normalization_layer"></span><span class="target" id="classlbann_1_1local__response__normalization__layer_1a7896161e3667a69f0fd66cda3b4af421"></span><code class="descname">~local_response_normalization_layer</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann34local_response_normalization_layerD0Ev" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2NK5lbann34local_response_normalization_layer4copyEv">
+<span id="lbann::local_response_normalization_layer::copyC"></span><span class="target" id="classlbann_1_1local__response__normalization__layer_1a2bccec49f9b3840a2d9170cb202c1397"></span><a class="reference internal" href="#_CPPv2N5lbann34local_response_normalization_layerE" title="lbann::local_response_normalization_layer">local_response_normalization_layer</a> *<code class="descname">copy</code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv2NK5lbann34local_response_normalization_layer4copyEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2NK5lbann34local_response_normalization_layer8get_typeEv">
+<span id="lbann::local_response_normalization_layer::get_typeC"></span><span class="target" id="classlbann_1_1local__response__normalization__layer_1ad566e7894d7eb1eb0fd1560686bf2388"></span>std::string <code class="descname">get_type</code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv2NK5lbann34local_response_normalization_layer8get_typeEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Use LRN rather than local response normalization for better formatting. </p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2NK5lbann34local_response_normalization_layer15get_descriptionEv">
+<span id="lbann::local_response_normalization_layer::get_descriptionC"></span><span class="target" id="classlbann_1_1local__response__normalization__layer_1a31f4ab1700e2e1c69a0ccb44c6f0fd69"></span>std::string <code class="descname">get_description</code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv2NK5lbann34local_response_normalization_layer15get_descriptionEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2NK5lbann34local_response_normalization_layer15get_data_layoutEv">
+<span id="lbann::local_response_normalization_layer::get_data_layoutC"></span><span class="target" id="classlbann_1_1local__response__normalization__layer_1a7a161dde860f17264077a0cc4797fe36"></span>data_layout <code class="descname">get_data_layout</code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv2NK5lbann34local_response_normalization_layer15get_data_layoutEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann34local_response_normalization_layer9setup_gpuEv">
+<span id="lbann::local_response_normalization_layer::setup_gpu"></span><span class="target" id="classlbann_1_1local__response__normalization__layer_1aff5210d74db5f8302989cca12d04263d"></span>void <code class="descname">setup_gpu</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann34local_response_normalization_layer9setup_gpuEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Initialize GPU objects. </p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann34local_response_normalization_layer10fp_computeEv">
+<span id="lbann::local_response_normalization_layer::fp_compute"></span><span class="target" id="classlbann_1_1local__response__normalization__layer_1ac7b2ce4970eb7163685fb0a4a69328fc"></span>void <code class="descname">fp_compute</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann34local_response_normalization_layer10fp_computeEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann34local_response_normalization_layer10bp_computeEv">
+<span id="lbann::local_response_normalization_layer::bp_compute"></span><span class="target" id="classlbann_1_1local__response__normalization__layer_1ae94544765a459a6609f2c2ebbbc3e9d9"></span>void <code class="descname">bp_compute</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann34local_response_normalization_layer10bp_computeEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Private Functions</p>
+<dl class="function">
+<dt id="_CPPv2N5lbann34local_response_normalization_layer16fp_compute_cudnnEv">
+<span id="lbann::local_response_normalization_layer::fp_compute_cudnn"></span><span class="target" id="classlbann_1_1local__response__normalization__layer_1a715b08cfc4bfed730a066f6d9cedef86"></span>void <code class="descname">fp_compute_cudnn</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann34local_response_normalization_layer16fp_compute_cudnnEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>GPU implementation of forward propagation. </p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann34local_response_normalization_layer16bp_compute_cudnnEv">
+<span id="lbann::local_response_normalization_layer::bp_compute_cudnn"></span><span class="target" id="classlbann_1_1local__response__normalization__layer_1a78b0d081956abf4f09874d59b4bf4fc8"></span>void <code class="descname">bp_compute_cudnn</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann34local_response_normalization_layer16bp_compute_cudnnEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>GPU implementation of backward propagation. </p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann34local_response_normalization_layer14fp_compute_cpuEv">
+<span id="lbann::local_response_normalization_layer::fp_compute_cpu"></span><span class="target" id="classlbann_1_1local__response__normalization__layer_1a79c72491b5b74b64d2b10ac2636cddce"></span>void <code class="descname">fp_compute_cpu</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann34local_response_normalization_layer14fp_compute_cpuEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>CPU implementation of forward propagation. </p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann34local_response_normalization_layer14bp_compute_cpuEv">
+<span id="lbann::local_response_normalization_layer::bp_compute_cpu"></span><span class="target" id="classlbann_1_1local__response__normalization__layer_1a1aac4bf5e2500749bc8bafcd254f5699"></span>void <code class="descname">bp_compute_cpu</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann34local_response_normalization_layer14bp_compute_cpuEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>CPU implementation of backward propagation. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Private Members</p>
+<dl class="member">
+<dt id="_CPPv2N5lbann34local_response_normalization_layer14m_window_widthE">
+<span id="lbann::local_response_normalization_layer::m_window_width__i"></span><span class="target" id="classlbann_1_1local__response__normalization__layer_1a4914619a19eb43efcf8240b8a1e0c090"></span>int <code class="descname">m_window_width</code><a class="headerlink" href="#_CPPv2N5lbann34local_response_normalization_layer14m_window_widthE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Normalization window width. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv2N5lbann34local_response_normalization_layer11m_lrn_alphaE">
+<span id="lbann::local_response_normalization_layer::m_lrn_alpha__DataType"></span><span class="target" id="classlbann_1_1local__response__normalization__layer_1a85c25a68888e2e9d163a820326fc09ff"></span>DataType <code class="descname">m_lrn_alpha</code><a class="headerlink" href="#_CPPv2N5lbann34local_response_normalization_layer11m_lrn_alphaE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>LRN alpha scaling parameter. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv2N5lbann34local_response_normalization_layer10m_lrn_betaE">
+<span id="lbann::local_response_normalization_layer::m_lrn_beta__DataType"></span><span class="target" id="classlbann_1_1local__response__normalization__layer_1ad06848e9d59664be86aecbc1e2ba556f"></span>DataType <code class="descname">m_lrn_beta</code><a class="headerlink" href="#_CPPv2N5lbann34local_response_normalization_layer10m_lrn_betaE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>LRN beta power parameter. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv2N5lbann34local_response_normalization_layer7m_lrn_kE">
+<span id="lbann::local_response_normalization_layer::m_lrn_k__DataType"></span><span class="target" id="classlbann_1_1local__response__normalization__layer_1a896f875d6f6a763c1cb0dbd43679164e"></span>DataType <code class="descname">m_lrn_k</code><a class="headerlink" href="#_CPPv2N5lbann34local_response_normalization_layer7m_lrn_kE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>LRN k parameter. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="_CPPv2N5lbann17regularizer_layerE">
+<span id="lbann::regularizer_layer"></span><span class="target" id="classlbann_1_1regularizer__layer"></span><em class="property">class </em><code class="descname">regularizer_layer</code><a class="headerlink" href="#_CPPv2N5lbann17regularizer_layerE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><em>#include &lt;regularizer.hpp&gt;</em><p>Abstract base class for regularizer layers. Regularizer layers are designed to reduce generalization error. </p>
+<p>Inherits from Layer</p>
+<p>Subclassed by <a class="reference internal" href="#classlbann_1_1batch__normalization"><span class="std std-ref">lbann::batch_normalization&lt; T_layout &gt;</span></a>, <a class="reference internal" href="#classlbann_1_1dropout"><span class="std std-ref">lbann::dropout&lt; T_layout &gt;</span></a>, <a class="reference internal" href="#classlbann_1_1local__response__normalization__layer"><span class="std std-ref">lbann::local_response_normalization_layer&lt; T_layout &gt;</span></a>, <a class="reference internal" href="#classlbann_1_1selu__dropout"><span class="std std-ref">lbann::selu_dropout&lt; T_layout &gt;</span></a></p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Public Functions</p>
+<dl class="function">
+<dt id="_CPPv2N5lbann17regularizer_layer17regularizer_layerEP10lbann_comm">
+<span id="lbann::regularizer_layer::regularizer_layer__lbann_commP"></span><span class="target" id="classlbann_1_1regularizer__layer_1a2ebf3877b905b479a0250b74cf8f68b3"></span><code class="descname">regularizer_layer</code><span class="sig-paren">(</span>lbann_comm *<em>comm</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann17regularizer_layer17regularizer_layerEP10lbann_comm" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt>
+<span class="target" id="classlbann_1_1selu__dropout"></span><em class="property">template </em>&lt;data_layout <em>T_layout</em>&gt;</dt>
+<dt id="_CPPv2N5lbann12selu_dropoutE">
+<span id="lbann::selu_dropout"></span><em class="property">class </em><code class="descname">selu_dropout</code><a class="headerlink" href="#_CPPv2N5lbann12selu_dropoutE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><em>#include &lt;selu_dropout.hpp&gt;</em><p>SELU dropout: alpha-scaled dropout for use with SELU activations. See: Klambauer et al. “Self-Normalizing Neural Networks”, 2017. This makes the same default assumptions as our SELU activations. The paper recommends a default dropout rate of 0.05 (keep 0.95). </p>
+<p>Inherits from <a class="reference internal" href="#classlbann_1_1regularizer__layer"><span class="std std-ref">lbann::regularizer_layer</span></a></p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Public Functions</p>
+<dl class="function">
+<dt id="_CPPv2N5lbann12selu_dropout12selu_dropoutEP10lbann_commf8DataType8DataType">
+<span id="lbann::selu_dropout::selu_dropout__lbann_commP.float.DataType.DataType"></span><span class="target" id="classlbann_1_1selu__dropout_1a988a7e6b7b85ef8ba08a2bc52537e6d3"></span><code class="descname">selu_dropout</code><span class="sig-paren">(</span>lbann_comm *<em>comm</em>, float <em>keep_prob</em> = 0.95f, DataType <em>alpha</em> = DataType(1.6732632423543772848170429916717), DataType <em>scale</em> = DataType(1.0507009873554804934193349852946)<span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann12selu_dropout12selu_dropoutEP10lbann_commf8DataType8DataType" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Keep units with probabiliy keep_prob. </p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann12selu_dropout12selu_dropoutERK12selu_dropout">
+<span id="lbann::selu_dropout::selu_dropout__selu_dropoutCR"></span><span class="target" id="classlbann_1_1selu__dropout_1ae8e81800cf4c75bcf449e192988832b5"></span><code class="descname">selu_dropout</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="#_CPPv2N5lbann12selu_dropout12selu_dropoutEP10lbann_commf8DataType8DataType" title="lbann::selu_dropout::selu_dropout">selu_dropout</a> &amp;<em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann12selu_dropout12selu_dropoutERK12selu_dropout" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann12selu_dropoutaSERK12selu_dropout">
+<span id="lbann::selu_dropout::assign-operator__selu_dropoutCR"></span><span class="target" id="classlbann_1_1selu__dropout_1aa4563c71596c91bb568a6808d38e8758"></span><a class="reference internal" href="#_CPPv2N5lbann12selu_dropoutE" title="lbann::selu_dropout">selu_dropout</a> &amp;<code class="descname">operator=</code><span class="sig-paren">(</span><em class="property">const</em> <a class="reference internal" href="#_CPPv2N5lbann12selu_dropoutE" title="lbann::selu_dropout">selu_dropout</a> &amp;<em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann12selu_dropoutaSERK12selu_dropout" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann12selu_dropoutD0Ev">
+<span id="lbann::selu_dropout::~selu_dropout"></span><span class="target" id="classlbann_1_1selu__dropout_1af3cb2d8724ebca49934769be70e40b83"></span><code class="descname">~selu_dropout</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann12selu_dropoutD0Ev" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2NK5lbann12selu_dropout4copyEv">
+<span id="lbann::selu_dropout::copyC"></span><span class="target" id="classlbann_1_1selu__dropout_1a58659790298874e1dc15a45b3199db91"></span><a class="reference internal" href="#_CPPv2N5lbann12selu_dropoutE" title="lbann::selu_dropout">selu_dropout</a> *<code class="descname">copy</code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv2NK5lbann12selu_dropout4copyEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2NK5lbann12selu_dropout8get_typeEv">
+<span id="lbann::selu_dropout::get_typeC"></span><span class="target" id="classlbann_1_1selu__dropout_1a983e7bf62f995a1fe24363f7b1ff0182"></span>std::string <code class="descname">get_type</code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv2NK5lbann12selu_dropout8get_typeEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2NK5lbann12selu_dropout15get_data_layoutEv">
+<span id="lbann::selu_dropout::get_data_layoutC"></span><span class="target" id="classlbann_1_1selu__dropout_1ae33633add903276c87f725facf0dcd0c"></span>data_layout <code class="descname">get_data_layout</code><span class="sig-paren">(</span><span class="sig-paren">)</span> <em class="property">const</em><a class="headerlink" href="#_CPPv2NK5lbann12selu_dropout15get_data_layoutEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann12selu_dropout14setup_matricesERKN2El4GridE">
+<span id="lbann::selu_dropout::setup_matrices__El::GridCR"></span><span class="target" id="classlbann_1_1selu__dropout_1a8b6469a14cf093d48e42384aa4ee404a"></span>void <code class="descname">setup_matrices</code><span class="sig-paren">(</span><em class="property">const</em> El::Grid &amp;<em>grid</em><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann12selu_dropout14setup_matricesERKN2El4GridE" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Protected Functions</p>
+<dl class="function">
+<dt id="_CPPv2N5lbann12selu_dropout10fp_computeEv">
+<span id="lbann::selu_dropout::fp_compute"></span><span class="target" id="classlbann_1_1selu__dropout_1a50ccce3672873a12ae69cc76c91e767a"></span>void <code class="descname">fp_compute</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann12selu_dropout10fp_computeEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Drop out units in forward propagation. </p>
+</dd></dl>
+
+<dl class="function">
+<dt id="_CPPv2N5lbann12selu_dropout10bp_computeEv">
+<span id="lbann::selu_dropout::bp_compute"></span><span class="target" id="classlbann_1_1selu__dropout_1afc80277386fef53296368579876bdb55"></span>void <code class="descname">bp_compute</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv2N5lbann12selu_dropout10bp_computeEv" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Adjust gradients for dropout in backprop. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric">Private Members</p>
+<dl class="member">
+<dt id="_CPPv2N5lbann12selu_dropout13m_alpha_primeE">
+<span id="lbann::selu_dropout::m_alpha_prime__DataType"></span><span class="target" id="classlbann_1_1selu__dropout_1a8db065b13d8737e1bd4cf154ab3fe666"></span>DataType <code class="descname">m_alpha_prime</code><a class="headerlink" href="#_CPPv2N5lbann12selu_dropout13m_alpha_primeE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Alpha prime, the low-variance saturation point. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv2N5lbann12selu_dropout3m_aE">
+<span id="lbann::selu_dropout::m_a__DataType"></span><span class="target" id="classlbann_1_1selu__dropout_1a52bd21583da68ba4e8a374fab259a3ef"></span>DataType <code class="descname">m_a</code><a class="headerlink" href="#_CPPv2N5lbann12selu_dropout3m_aE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Affine scaling parameter to keep mean/variance at desired value. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv2N5lbann12selu_dropout3m_bE">
+<span id="lbann::selu_dropout::m_b__DataType"></span><span class="target" id="classlbann_1_1selu__dropout_1a456fa501b7df6b52701c1aa3639ebc42"></span>DataType <code class="descname">m_b</code><a class="headerlink" href="#_CPPv2N5lbann12selu_dropout3m_bE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Affine additive parameter to keep mean/variance at desired value. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv2N5lbann12selu_dropout11m_keep_probE">
+<span id="lbann::selu_dropout::m_keep_prob__float"></span><span class="target" id="classlbann_1_1selu__dropout_1a00bd2a07703e2e918af8ae68b58ff11b"></span>float <code class="descname">m_keep_prob</code><a class="headerlink" href="#_CPPv2N5lbann12selu_dropout11m_keep_probE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Probability of keeping each unit. </p>
+</dd></dl>
+
+<dl class="member">
+<dt id="_CPPv2N5lbann12selu_dropout6m_maskE">
+<span id="lbann::selu_dropout::m_mask__AbsDistMatP"></span><span class="target" id="classlbann_1_1selu__dropout_1a31aaadbc51d78673a84390b48d4e5950"></span>AbsDistMat *<code class="descname">m_mask</code><a class="headerlink" href="#_CPPv2N5lbann12selu_dropout6m_maskE" title="Permalink to this definition">¶</a><br /></dt>
+<dd><p>Current dropout mask (a scaled Bernoulli random matrix). </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="type">
+<dt id="_CPPv25lbann">
+<span id="lbann"></span><span class="target" id="namespacelbann"></span><em class="property">namespace </em><code class="descname">lbann</code><a class="headerlink" href="#_CPPv25lbann" title="Permalink to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="file">
+<dt>
+<span class="target" id="batch__normalization_8hpp"></span><em>file</em> <code class="descname">batch_normalization.hpp</code></dt>
+<dd><em>#include “lbann/layers/regularizers/regularizer.hpp”</em></dd></dl>
+
+<dl class="file">
+<dt>
+<span class="target" id="batch__normalization__cuda_8hpp"></span><em>file</em> <code class="descname">batch_normalization_cuda.hpp</code></dt>
+<dd><em>#include “lbann/base.hpp”</em></dd></dl>
+
+<dl class="file">
+<dt>
+<span class="target" id="dropout_8hpp"></span><em>file</em> <code class="descname">dropout.hpp</code></dt>
+<dd><em>#include “lbann/layers/regularizers/regularizer.hpp”</em></dd></dl>
+
+<dl class="file">
+<dt>
+<span class="target" id="local__response__normalization_8hpp"></span><em>file</em> <code class="descname">local_response_normalization.hpp</code></dt>
+<dd><em>#include &lt;vector&gt;</em><em>#include “lbann/layers/regularizers/regularizer.hpp”</em><em>#include “lbann/utils/cudnn_wrapper.hpp”</em><em>#include “lbann/utils/exception.hpp”</em></dd></dl>
+
+<dl class="file">
+<dt>
+<span class="target" id="regularizer_8hpp"></span><em>file</em> <code class="descname">regularizer.hpp</code></dt>
+<dd><em>#include “lbann/layers/layer.hpp”</em></dd></dl>
+
+<dl class="file">
+<dt>
+<span class="target" id="selu__dropout_8hpp"></span><em>file</em> <code class="descname">selu_dropout.hpp</code></dt>
+<dd><em>#include “lbann/layers/regularizers/regularizer.hpp”</em></dd></dl>
+
+<dl class="dir">
+<dt>
+<span class="target" id="dir_d44c64559bbebec7f509842c48db8b23"></span><em>dir</em> <code class="descname">/Users/mckinney27/doxy-testbed/lbann/include</code></dt>
+<dd></dd></dl>
+
+<dl class="dir">
+<dt>
+<span class="target" id="dir_445e0a10e5d20483755fa6ed3d05a6ba"></span><em>dir</em> <code class="descname">/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers</code></dt>
+<dd></dd></dl>
+
+<dl class="dir">
+<dt>
+<span class="target" id="dir_3df4a43ca73d8751de1358d9734fd210"></span><em>dir</em> <code class="descname">/Users/mckinney27/doxy-testbed/lbann/include/lbann</code></dt>
+<dd></dd></dl>
+
+<dl class="dir">
+<dt>
+<span class="target" id="dir_bf74b808aa226cce84c5796fd148e8e1"></span><em>dir</em> <code class="descname">/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers</code></dt>
+<dd></dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="layers.html" class="btn btn-neutral" title="Layers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Dylan.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

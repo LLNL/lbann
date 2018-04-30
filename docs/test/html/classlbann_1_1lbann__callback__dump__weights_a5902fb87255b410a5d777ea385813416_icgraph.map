@@ -1,0 +1,5 @@
+<map id="lbann::lbann_callback_dump_weights::dump_weights" name="lbann::lbann_callback_dump_weights::dump_weights">
+<area shape="rect" id="node2" href="$classlbann_1_1lbann__callback__dump__weights.html#a46db01d535414a0965caae709a08a150" title="lbann::lbann_callback\l_dump_weights::on_train_begin" alt="" coords="261,5,472,44"/>
+<area shape="rect" id="node4" href="$classlbann_1_1lbann__callback__dump__weights.html#aa73068d94b2408fc0124b2a05b4e2b8a" title="lbann::lbann_callback\l_dump_weights::on_epoch_end" alt="" coords="261,68,472,107"/>
+<area shape="rect" id="node3" href="$classlbann_1_1lbann__callback__dump__weights.html#a5e3d078ea54f8768e23aac2393b1bc3c" title="lbann::lbann_callback\l_dump_weights::copy" alt="" coords="520,37,670,76"/>
+</map>

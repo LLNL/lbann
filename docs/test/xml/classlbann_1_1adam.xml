@@ -1,0 +1,618 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1adam" kind="class" language="C++" prot="public">
+    <compoundname>lbann::adam</compoundname>
+    <basecompoundref refid="classlbann_1_1optimizer" prot="public" virt="non-virtual">lbann::optimizer</basecompoundref>
+    <includes refid="adam_8hpp" local="no">adam.hpp</includes>
+    <innerclass refid="structlbann_1_1adam_1_1packing__header" prot="private">lbann::adam::packing_header</innerclass>
+      <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="classlbann_1_1adam_1a73af15a28066edbfad9ba6a900746a19" prot="private" static="no" mutable="no">
+        <type>DataType</type>
+        <definition>DataType lbann::adam::m_beta1</definition>
+        <argsstring></argsstring>
+        <name>m_beta1</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Update factor for first moment estimate. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" line="78" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" bodystart="78" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1adam_1a21a3d2bce0bac5e6c022c5d95ec6348b" compoundref="adam_8hpp" startline="121" endline="136">unpack_scalars</referencedby>
+        <referencedby refid="classlbann_1_1adam_1a00051b788b2bb34102a6bad5a380fc85" compoundref="adam_8cpp" startline="68" endline="109">operator=</referencedby>
+        <referencedby refid="classlbann_1_1adam_1a14eb9754e2aa38a732d92b6d42311676" compoundref="adam_8cpp" startline="122" endline="129">get_description</referencedby>
+        <referencedby refid="classlbann_1_1adam_1a3bcd1bcbbed2b99c407eb0cd9fd6d449" compoundref="adam_8cpp" startline="154" endline="210">step_compute</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1adam_1ab1f2a16b8eb7e265895ea9eef3fe87b2" prot="private" static="no" mutable="no">
+        <type>DataType</type>
+        <definition>DataType lbann::adam::m_beta2</definition>
+        <argsstring></argsstring>
+        <name>m_beta2</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Update factor for second moment estimate. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" line="80" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" bodystart="80" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1adam_1a21a3d2bce0bac5e6c022c5d95ec6348b" compoundref="adam_8hpp" startline="121" endline="136">unpack_scalars</referencedby>
+        <referencedby refid="classlbann_1_1adam_1a00051b788b2bb34102a6bad5a380fc85" compoundref="adam_8cpp" startline="68" endline="109">operator=</referencedby>
+        <referencedby refid="classlbann_1_1adam_1a14eb9754e2aa38a732d92b6d42311676" compoundref="adam_8cpp" startline="122" endline="129">get_description</referencedby>
+        <referencedby refid="classlbann_1_1adam_1a3bcd1bcbbed2b99c407eb0cd9fd6d449" compoundref="adam_8cpp" startline="154" endline="210">step_compute</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1adam_1a751102f0fd866612f5685050a08020a9" prot="private" static="no" mutable="no">
+        <type>DataType</type>
+        <definition>DataType lbann::adam::m_eps</definition>
+        <argsstring></argsstring>
+        <name>m_eps</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Small factor to avoid division by zero. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" line="82" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" bodystart="82" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1adam_1a21a3d2bce0bac5e6c022c5d95ec6348b" compoundref="adam_8hpp" startline="121" endline="136">unpack_scalars</referencedby>
+        <referencedby refid="classlbann_1_1adam_1a00051b788b2bb34102a6bad5a380fc85" compoundref="adam_8cpp" startline="68" endline="109">operator=</referencedby>
+        <referencedby refid="classlbann_1_1adam_1a14eb9754e2aa38a732d92b6d42311676" compoundref="adam_8cpp" startline="122" endline="129">get_description</referencedby>
+        <referencedby refid="classlbann_1_1adam_1a3bcd1bcbbed2b99c407eb0cd9fd6d449" compoundref="adam_8cpp" startline="154" endline="210">step_compute</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1adam_1a53c3034e187da2720447bbb4f2b59a5d" prot="private" static="no" mutable="no">
+        <type>DataType</type>
+        <definition>DataType lbann::adam::m_current_beta1</definition>
+        <argsstring></argsstring>
+        <name>m_current_beta1</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>beta1 ^ iteration. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" line="84" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" bodystart="84" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1adam_1a21a3d2bce0bac5e6c022c5d95ec6348b" compoundref="adam_8hpp" startline="121" endline="136">unpack_scalars</referencedby>
+        <referencedby refid="classlbann_1_1adam_1a00051b788b2bb34102a6bad5a380fc85" compoundref="adam_8cpp" startline="68" endline="109">operator=</referencedby>
+        <referencedby refid="classlbann_1_1adam_1a3bcd1bcbbed2b99c407eb0cd9fd6d449" compoundref="adam_8cpp" startline="154" endline="210">step_compute</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1adam_1ad38376b684d69d4a15da1d11f8808ca7" prot="private" static="no" mutable="no">
+        <type>DataType</type>
+        <definition>DataType lbann::adam::m_current_beta2</definition>
+        <argsstring></argsstring>
+        <name>m_current_beta2</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>beta2 ^ iteration. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" line="86" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" bodystart="86" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1adam_1a21a3d2bce0bac5e6c022c5d95ec6348b" compoundref="adam_8hpp" startline="121" endline="136">unpack_scalars</referencedby>
+        <referencedby refid="classlbann_1_1adam_1a00051b788b2bb34102a6bad5a380fc85" compoundref="adam_8cpp" startline="68" endline="109">operator=</referencedby>
+        <referencedby refid="classlbann_1_1adam_1a3bcd1bcbbed2b99c407eb0cd9fd6d449" compoundref="adam_8cpp" startline="154" endline="210">step_compute</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" prot="private" static="no" mutable="no">
+        <type><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> *</type>
+        <definition>AbsDistMat* lbann::adam::m_moment1</definition>
+        <argsstring></argsstring>
+        <name>m_moment1</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>First moment estimates. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" line="88" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" bodystart="88" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1adam_1a77464b030ec2be620155eff22acdff76" compoundref="adam_8cpp" startline="47" endline="66">adam</referencedby>
+        <referencedby refid="classlbann_1_1adam_1a00051b788b2bb34102a6bad5a380fc85" compoundref="adam_8cpp" startline="68" endline="109">operator=</referencedby>
+        <referencedby refid="classlbann_1_1adam_1a5ab2783191786e2c9c1c71d6edecfb2e" compoundref="adam_8cpp" startline="111" endline="120">~adam</referencedby>
+        <referencedby refid="classlbann_1_1adam_1aea0b1fa44197fe184a6feca5ec5c808e" compoundref="adam_8cpp" startline="131" endline="152">setup</referencedby>
+        <referencedby refid="classlbann_1_1adam_1a3bcd1bcbbed2b99c407eb0cd9fd6d449" compoundref="adam_8cpp" startline="154" endline="210">step_compute</referencedby>
+        <referencedby refid="classlbann_1_1adam_1a8070db0a451bdbc6e86200eaa14f6ac7" compoundref="adam_8cpp" startline="216" endline="232">save_to_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1adam_1aca07e925a4751fc5c10a62fb9c72c896" compoundref="adam_8cpp" startline="234" endline="253">load_from_checkpoint_shared</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" prot="private" static="no" mutable="no">
+        <type><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> *</type>
+        <definition>AbsDistMat* lbann::adam::m_moment2</definition>
+        <argsstring></argsstring>
+        <name>m_moment2</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Second moment estimates. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" line="90" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" bodystart="90" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1adam_1a77464b030ec2be620155eff22acdff76" compoundref="adam_8cpp" startline="47" endline="66">adam</referencedby>
+        <referencedby refid="classlbann_1_1adam_1a00051b788b2bb34102a6bad5a380fc85" compoundref="adam_8cpp" startline="68" endline="109">operator=</referencedby>
+        <referencedby refid="classlbann_1_1adam_1a5ab2783191786e2c9c1c71d6edecfb2e" compoundref="adam_8cpp" startline="111" endline="120">~adam</referencedby>
+        <referencedby refid="classlbann_1_1adam_1aea0b1fa44197fe184a6feca5ec5c808e" compoundref="adam_8cpp" startline="131" endline="152">setup</referencedby>
+        <referencedby refid="classlbann_1_1adam_1a3bcd1bcbbed2b99c407eb0cd9fd6d449" compoundref="adam_8cpp" startline="154" endline="210">step_compute</referencedby>
+        <referencedby refid="classlbann_1_1adam_1a8070db0a451bdbc6e86200eaa14f6ac7" compoundref="adam_8cpp" startline="216" endline="232">save_to_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1adam_1aca07e925a4751fc5c10a62fb9c72c896" compoundref="adam_8cpp" startline="234" endline="253">load_from_checkpoint_shared</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1adam_1a9d6848fa245bc2adfe142ae3aeb4e33d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::adam::adam</definition>
+        <argsstring>(lbann_comm *comm, DataType learning_rate, DataType beta1=DataType(0.9), DataType beta2=DataType(0.99), DataType eps=DataType(1e-8), cudnn::cudnn_manager *cudnn=nullptr)</argsstring>
+        <name>adam</name>
+        <param>
+          <type><ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref> *</type>
+          <declname>comm</declname>
+        </param>
+        <param>
+          <type>DataType</type>
+          <declname>learning_rate</declname>
+        </param>
+        <param>
+          <type>DataType</type>
+          <declname>beta1</declname>
+          <defval>DataType(0.9)</defval>
+        </param>
+        <param>
+          <type>DataType</type>
+          <declname>beta2</declname>
+          <defval>DataType(0.99)</defval>
+        </param>
+        <param>
+          <type>DataType</type>
+          <declname>eps</declname>
+          <defval>DataType(1e-8)</defval>
+        </param>
+        <param>
+          <type><ref refid="classlbann_1_1cudnn_1_1cudnn__manager" kindref="compound">cudnn::cudnn_manager</ref> *</type>
+          <declname>cudnn</declname>
+          <defval>nullptr</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Constructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" line="42" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/adam.cpp" bodystart="32" bodyend="45"/>
+        <referencedby refid="classlbann_1_1adam_1a95866f94044a4e7bb34bf35551ade4cc" compoundref="adam_8hpp" startline="57" endline="57">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1adam_1a77464b030ec2be620155eff22acdff76" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::adam::adam</definition>
+        <argsstring>(const adam &amp;other)</argsstring>
+        <name>adam</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1adam" kindref="compound">adam</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Copy constructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" line="51" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/adam.cpp" bodystart="47" bodyend="66"/>
+        <references refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" compoundref="adam_8hpp" startline="88">m_moment1</references>
+        <references refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" compoundref="adam_8hpp" startline="90">m_moment2</references>
+        <references refid="classlbann_1_1optimizer_1a2f24dbeaca18b06f4aa7d179bbf96680" compoundref="optimizer_8hpp" startline="166">lbann::optimizer::m_cudnn</references>
+        <references refid="classlbann_1_1optimizer_1a33b57b578a089d9ffe6715bb3996907c" compoundref="optimizer_8hpp" startline="169">lbann::optimizer::m_weights</references>
+        <references refid="classlbann_1_1weights_1ad36676b9b43bced1cc7e332e3745411f" compoundref="weights_8cpp" startline="248" endline="252">lbann::weights::get_matrix_height</references>
+        <references refid="classlbann_1_1weights_1abc3cf3a5b992302b1eaaea1fdf3b377d" compoundref="weights_8cpp" startline="254" endline="258">lbann::weights::get_matrix_width</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1adam_1a00051b788b2bb34102a6bad5a380fc85" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classlbann_1_1adam" kindref="compound">adam</ref> &amp;</type>
+        <definition>adam &amp; lbann::adam::operator=</definition>
+        <argsstring>(const adam &amp;other)</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1adam" kindref="compound">adam</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Copy assignment operator. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" line="53" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/adam.cpp" bodystart="68" bodyend="109"/>
+        <references refid="classlbann_1_1optimizer_1ab7811e0a4d2d9b594140aed78b6de743" compoundref="optimizer_8cpp" startline="70" endline="100">lbann::optimizer::operator=</references>
+        <references refid="classlbann_1_1adam_1a73af15a28066edbfad9ba6a900746a19" compoundref="adam_8hpp" startline="78">m_beta1</references>
+        <references refid="classlbann_1_1adam_1ab1f2a16b8eb7e265895ea9eef3fe87b2" compoundref="adam_8hpp" startline="80">m_beta2</references>
+        <references refid="classlbann_1_1adam_1a751102f0fd866612f5685050a08020a9" compoundref="adam_8hpp" startline="82">m_eps</references>
+        <references refid="classlbann_1_1adam_1a53c3034e187da2720447bbb4f2b59a5d" compoundref="adam_8hpp" startline="84">m_current_beta1</references>
+        <references refid="classlbann_1_1adam_1ad38376b684d69d4a15da1d11f8808ca7" compoundref="adam_8hpp" startline="86">m_current_beta2</references>
+        <references refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" compoundref="adam_8hpp" startline="88">m_moment1</references>
+        <references refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" compoundref="adam_8hpp" startline="90">m_moment2</references>
+        <references refid="classlbann_1_1optimizer_1a2f24dbeaca18b06f4aa7d179bbf96680" compoundref="optimizer_8hpp" startline="166">lbann::optimizer::m_cudnn</references>
+        <references refid="classlbann_1_1optimizer_1a33b57b578a089d9ffe6715bb3996907c" compoundref="optimizer_8hpp" startline="169">lbann::optimizer::m_weights</references>
+        <references refid="classlbann_1_1weights_1ad36676b9b43bced1cc7e332e3745411f" compoundref="weights_8cpp" startline="248" endline="252">lbann::weights::get_matrix_height</references>
+        <references refid="classlbann_1_1weights_1abc3cf3a5b992302b1eaaea1fdf3b377d" compoundref="weights_8cpp" startline="254" endline="258">lbann::weights::get_matrix_width</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1adam_1a5ab2783191786e2c9c1c71d6edecfb2e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::adam::~adam</definition>
+        <argsstring>() override</argsstring>
+        <name>~adam</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Destructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" line="55" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/adam.cpp" bodystart="111" bodyend="120"/>
+        <references refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" compoundref="adam_8hpp" startline="88">m_moment1</references>
+        <references refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" compoundref="adam_8hpp" startline="90">m_moment2</references>
+        <references refid="classlbann_1_1optimizer_1a2f24dbeaca18b06f4aa7d179bbf96680" compoundref="optimizer_8hpp" startline="166">lbann::optimizer::m_cudnn</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1adam_1a95866f94044a4e7bb34bf35551ade4cc" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type><ref refid="classlbann_1_1adam" kindref="compound">adam</ref> *</type>
+        <definition>adam* lbann::adam::copy</definition>
+        <argsstring>() const override</argsstring>
+        <name>copy</name>
+        <reimplements refid="classlbann_1_1optimizer_1adf19a1d19d832ebfe70072cc202cdf39">copy</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Create a copy. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" line="57" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" bodystart="57" bodyend="57"/>
+        <references refid="classlbann_1_1adam_1a9d6848fa245bc2adfe142ae3aeb4e33d" compoundref="adam_8cpp" startline="32" endline="45">adam</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1adam_1a091b61b0125d2da89d4029dd30ca1ce7" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>std::string</type>
+        <definition>std::string lbann::adam::get_type</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_type</name>
+        <reimplements refid="classlbann_1_1optimizer_1a7b7a6814e14eeee157e1cbb7f15dd4ff">get_type</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Returns the optimizer name. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" line="60" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" bodystart="60" bodyend="60"/>
+        <references refid="classlbann_1_1adam_1a14eb9754e2aa38a732d92b6d42311676" compoundref="adam_8cpp" startline="122" endline="129">get_description</references>
+        <references refid="classlbann_1_1adam_1aea0b1fa44197fe184a6feca5ec5c808e" compoundref="adam_8cpp" startline="131" endline="152">setup</references>
+        <references refid="classlbann_1_1adam_1a3bcd1bcbbed2b99c407eb0cd9fd6d449" compoundref="adam_8cpp" startline="154" endline="210">step_compute</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1adam_1a14eb9754e2aa38a732d92b6d42311676" prot="public" static="no" const="yes" explicit="no" inline="no" virt="virtual">
+        <type>std::string</type>
+        <definition>std::string lbann::adam::get_description</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_description</name>
+        <reimplements refid="classlbann_1_1optimizer_1a66bb8d28dfb41452ac1a75a3efd47723">get_description</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Get a human-readable description of the optimizer. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" line="62" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/adam.cpp" bodystart="122" bodyend="129"/>
+        <references refid="classlbann_1_1optimizer_1a66bb8d28dfb41452ac1a75a3efd47723" compoundref="optimizer_8cpp" startline="107" endline="115">lbann::optimizer::get_description</references>
+        <references refid="classlbann_1_1adam_1a73af15a28066edbfad9ba6a900746a19" compoundref="adam_8hpp" startline="78">m_beta1</references>
+        <references refid="classlbann_1_1adam_1ab1f2a16b8eb7e265895ea9eef3fe87b2" compoundref="adam_8hpp" startline="80">m_beta2</references>
+        <references refid="classlbann_1_1adam_1a751102f0fd866612f5685050a08020a9" compoundref="adam_8hpp" startline="82">m_eps</references>
+        <referencedby refid="classlbann_1_1adam_1a091b61b0125d2da89d4029dd30ca1ce7" compoundref="adam_8hpp" startline="60" endline="60">get_type</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1adam_1aea0b1fa44197fe184a6feca5ec5c808e" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::adam::setup</definition>
+        <argsstring>(weights &amp;w) override</argsstring>
+        <name>setup</name>
+        <reimplements refid="classlbann_1_1optimizer_1a7641a88b3c166df2d974a298622b992b">setup</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1weights" kindref="compound">weights</ref> &amp;</type>
+          <declname>w</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Setup optimizer. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" line="65" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/adam.cpp" bodystart="131" bodyend="152"/>
+        <references refid="classlbann_1_1optimizer_1a7641a88b3c166df2d974a298622b992b" compoundref="optimizer_8cpp" startline="414" endline="442">lbann::optimizer::setup</references>
+        <references refid="classlbann_1_1optimizer_1a3df20cb0ae2b60430ad4fd235d66c12e" compoundref="optimizer_8hpp" startline="175">lbann::optimizer::m_gradient</references>
+        <references refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" compoundref="adam_8hpp" startline="88">m_moment1</references>
+        <references refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" compoundref="adam_8hpp" startline="90">m_moment2</references>
+        <references refid="classlbann_1_1optimizer_1a2f24dbeaca18b06f4aa7d179bbf96680" compoundref="optimizer_8hpp" startline="166">lbann::optimizer::m_cudnn</references>
+        <referencedby refid="classlbann_1_1adam_1a091b61b0125d2da89d4029dd30ca1ce7" compoundref="adam_8hpp" startline="60" endline="60">get_type</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1adam_1a3bcd1bcbbed2b99c407eb0cd9fd6d449" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::adam::step_compute</definition>
+        <argsstring>(AbsDistMat &amp;values, const AbsDistMat &amp;gradient) override</argsstring>
+        <name>step_compute</name>
+        <reimplements refid="classlbann_1_1optimizer_1a0db72c298a0bc3405fb0af97d104a036">step_compute</reimplements>
+        <param>
+          <type><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+          <declname>values</declname>
+        </param>
+        <param>
+          <type>const <ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+          <declname>gradient</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Perform the computation in an optimization step. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" line="68" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/adam.cpp" bodystart="154" bodyend="210"/>
+        <references refid="classlbann_1_1adam_1a53c3034e187da2720447bbb4f2b59a5d" compoundref="adam_8hpp" startline="84">m_current_beta1</references>
+        <references refid="classlbann_1_1adam_1a73af15a28066edbfad9ba6a900746a19" compoundref="adam_8hpp" startline="78">m_beta1</references>
+        <references refid="classlbann_1_1adam_1ad38376b684d69d4a15da1d11f8808ca7" compoundref="adam_8hpp" startline="86">m_current_beta2</references>
+        <references refid="classlbann_1_1adam_1ab1f2a16b8eb7e265895ea9eef3fe87b2" compoundref="adam_8hpp" startline="80">m_beta2</references>
+        <references refid="classlbann_1_1optimizer_1ad393dcdcb82b44510c586ed5ec46d4dd" compoundref="optimizer_8hpp" startline="172">lbann::optimizer::m_learning_rate</references>
+        <references refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" compoundref="adam_8hpp" startline="88">m_moment1</references>
+        <references refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" compoundref="adam_8hpp" startline="90">m_moment2</references>
+        <references refid="classlbann_1_1adam_1a751102f0fd866612f5685050a08020a9" compoundref="adam_8hpp" startline="82">m_eps</references>
+        <referencedby refid="classlbann_1_1adam_1a091b61b0125d2da89d4029dd30ca1ce7" compoundref="adam_8hpp" startline="60" endline="60">get_type</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="private-func">
+      <memberdef kind="function" id="classlbann_1_1adam_1a43e941b596c5d1cc68b795b0399398c4" prot="private" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool lbann::adam::pack_scalars</definition>
+        <argsstring>(persist &amp;p)</argsstring>
+        <name>pack_scalars</name>
+        <param>
+          <type><ref refid="classlbann_1_1persist" kindref="compound">persist</ref> &amp;</type>
+          <declname>p</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" line="112" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" bodystart="112" bodyend="119"/>
+        <references refid="classlbann_1_1persist_1a5edc3f9cc3540b50d417993da2a6b5ce" compoundref="persist_8cpp" startline="577" endline="579">lbann::persist::write_datatype</references>
+        <references refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64">lbann::train</references>
+        <referencedby refid="classlbann_1_1adam_1a8070db0a451bdbc6e86200eaa14f6ac7" compoundref="adam_8cpp" startline="216" endline="232">save_to_checkpoint_shared</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1adam_1a21a3d2bce0bac5e6c022c5d95ec6348b" prot="private" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>bool</type>
+        <definition>bool lbann::adam::unpack_scalars</definition>
+        <argsstring>(persist &amp;p, struct packing_header *header)</argsstring>
+        <name>unpack_scalars</name>
+        <param>
+          <type><ref refid="classlbann_1_1persist" kindref="compound">persist</ref> &amp;</type>
+          <declname>p</declname>
+        </param>
+        <param>
+          <type>struct <ref refid="structlbann_1_1adam_1_1packing__header" kindref="compound">packing_header</ref> *</type>
+          <declname>header</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" line="121" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" bodystart="121" bodyend="136"/>
+        <references refid="classlbann_1_1persist_1a1e84eff891affad6001f3c5fa803cae2" compoundref="persist_8cpp" startline="581" endline="583">lbann::persist::read_datatype</references>
+        <references refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64">lbann::train</references>
+        <references refid="structlbann_1_1adam_1_1packing__header_1a7078ddcfad050544473744a3a7b87899" compoundref="adam_8hpp" startline="105">lbann::adam::packing_header::beta1</references>
+        <references refid="classlbann_1_1adam_1a73af15a28066edbfad9ba6a900746a19" compoundref="adam_8hpp" startline="78">m_beta1</references>
+        <references refid="structlbann_1_1adam_1_1packing__header_1a91d43f487f4c5da1694671fa5966964c" compoundref="adam_8hpp" startline="106">lbann::adam::packing_header::beta2</references>
+        <references refid="classlbann_1_1adam_1ab1f2a16b8eb7e265895ea9eef3fe87b2" compoundref="adam_8hpp" startline="80">m_beta2</references>
+        <references refid="structlbann_1_1adam_1_1packing__header_1a31051ef5ef2bac2c34eb0fc959dc7494" compoundref="adam_8hpp" startline="107">lbann::adam::packing_header::eps</references>
+        <references refid="classlbann_1_1adam_1a751102f0fd866612f5685050a08020a9" compoundref="adam_8hpp" startline="82">m_eps</references>
+        <references refid="structlbann_1_1adam_1_1packing__header_1a641d0ce43601873c94d5c9e649125e4e" compoundref="adam_8hpp" startline="108">lbann::adam::packing_header::current_beta1</references>
+        <references refid="classlbann_1_1adam_1a53c3034e187da2720447bbb4f2b59a5d" compoundref="adam_8hpp" startline="84">m_current_beta1</references>
+        <references refid="structlbann_1_1adam_1_1packing__header_1a813bafcd1aeb3443c4349f29a5231561" compoundref="adam_8hpp" startline="109">lbann::adam::packing_header::current_beta2</references>
+        <references refid="classlbann_1_1adam_1ad38376b684d69d4a15da1d11f8808ca7" compoundref="adam_8hpp" startline="86">m_current_beta2</references>
+        <referencedby refid="classlbann_1_1adam_1aca07e925a4751fc5c10a62fb9c72c896" compoundref="adam_8cpp" startline="234" endline="253">load_from_checkpoint_shared</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1adam_1ae5b6108946e6a09b4e13e4285350aa05" prot="private" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::adam::unpack_header</definition>
+        <argsstring>(struct packing_header &amp;header)</argsstring>
+        <name>unpack_header</name>
+        <param>
+          <type>struct <ref refid="structlbann_1_1adam_1_1packing__header" kindref="compound">packing_header</ref> &amp;</type>
+          <declname>header</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" line="138" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" bodystart="138" bodyend="144"/>
+        <references refid="structlbann_1_1adam_1_1packing__header_1a7078ddcfad050544473744a3a7b87899" compoundref="adam_8hpp" startline="105">lbann::adam::packing_header::beta1</references>
+        <references refid="structlbann_1_1adam_1_1packing__header_1a91d43f487f4c5da1694671fa5966964c" compoundref="adam_8hpp" startline="106">lbann::adam::packing_header::beta2</references>
+        <references refid="structlbann_1_1adam_1_1packing__header_1a31051ef5ef2bac2c34eb0fc959dc7494" compoundref="adam_8hpp" startline="107">lbann::adam::packing_header::eps</references>
+        <references refid="structlbann_1_1adam_1_1packing__header_1a641d0ce43601873c94d5c9e649125e4e" compoundref="adam_8hpp" startline="108">lbann::adam::packing_header::current_beta1</references>
+        <references refid="structlbann_1_1adam_1_1packing__header_1a813bafcd1aeb3443c4349f29a5231561" compoundref="adam_8hpp" startline="109">lbann::adam::packing_header::current_beta2</references>
+        <references refid="classlbann_1_1adam_1a8070db0a451bdbc6e86200eaa14f6ac7" compoundref="adam_8cpp" startline="216" endline="232">save_to_checkpoint_shared</references>
+        <references refid="classlbann_1_1adam_1aca07e925a4751fc5c10a62fb9c72c896" compoundref="adam_8cpp" startline="234" endline="253">load_from_checkpoint_shared</references>
+        <referencedby refid="classlbann_1_1adam_1aca07e925a4751fc5c10a62fb9c72c896" compoundref="adam_8cpp" startline="234" endline="253">load_from_checkpoint_shared</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1adam_1a8070db0a451bdbc6e86200eaa14f6ac7" prot="private" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>bool</type>
+        <definition>bool lbann::adam::save_to_checkpoint_shared</definition>
+        <argsstring>(persist &amp;p, std::string m_name) override</argsstring>
+        <name>save_to_checkpoint_shared</name>
+        <reimplements refid="classlbann_1_1optimizer_1afed10c6d8c5bd922f95075abeff711ce">save_to_checkpoint_shared</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1persist" kindref="compound">persist</ref> &amp;</type>
+          <declname>p</declname>
+        </param>
+        <param>
+          <type>std::string</type>
+          <declname>m_name</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" line="146" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/adam.cpp" bodystart="216" bodyend="232"/>
+        <references refid="classlbann_1_1optimizer_1afed10c6d8c5bd922f95075abeff711ce" compoundref="optimizer_8cpp" startline="487" endline="493">lbann::optimizer::save_to_checkpoint_shared</references>
+        <references refid="classlbann_1_1persist_1a34eb918a890ab49dcbeedddf27ec1616" compoundref="persist_8hpp" startline="60" endline="62">lbann::persist::get_rank</references>
+        <references refid="classlbann_1_1adam_1a43e941b596c5d1cc68b795b0399398c4" compoundref="adam_8hpp" startline="112" endline="119">pack_scalars</references>
+        <references refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" compoundref="adam_8hpp" startline="88">m_moment1</references>
+        <references refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" compoundref="adam_8hpp" startline="90">m_moment2</references>
+        <references refid="classlbann_1_1persist_1a9170de652405d86d9ba9b3793f8781c6" compoundref="persist_8cpp" startline="342" endline="360">lbann::persist::write_distmat</references>
+        <references refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64">lbann::train</references>
+        <referencedby refid="classlbann_1_1adam_1ae5b6108946e6a09b4e13e4285350aa05" compoundref="adam_8hpp" startline="138" endline="144">unpack_header</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1adam_1aca07e925a4751fc5c10a62fb9c72c896" prot="private" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>bool</type>
+        <definition>bool lbann::adam::load_from_checkpoint_shared</definition>
+        <argsstring>(persist &amp;p, std::string m_name) override</argsstring>
+        <name>load_from_checkpoint_shared</name>
+        <reimplements refid="classlbann_1_1optimizer_1a42a52aab9a682fda57c1e639968a44b9">load_from_checkpoint_shared</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1persist" kindref="compound">persist</ref> &amp;</type>
+          <declname>p</declname>
+        </param>
+        <param>
+          <type>std::string</type>
+          <declname>m_name</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" line="147" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/adam.cpp" bodystart="234" bodyend="253"/>
+        <references refid="classlbann_1_1optimizer_1a42a52aab9a682fda57c1e639968a44b9" compoundref="optimizer_8cpp" startline="495" endline="499">lbann::optimizer::load_from_checkpoint_shared</references>
+        <references refid="classlbann_1_1persist_1a34eb918a890ab49dcbeedddf27ec1616" compoundref="persist_8hpp" startline="60" endline="62">lbann::persist::get_rank</references>
+        <references refid="classlbann_1_1adam_1a21a3d2bce0bac5e6c022c5d95ec6348b" compoundref="adam_8hpp" startline="121" endline="136">unpack_scalars</references>
+        <references refid="classlbann_1_1adam_1ae5b6108946e6a09b4e13e4285350aa05" compoundref="adam_8hpp" startline="138" endline="144">unpack_header</references>
+        <references refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" compoundref="adam_8hpp" startline="88">m_moment1</references>
+        <references refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" compoundref="adam_8hpp" startline="90">m_moment2</references>
+        <references refid="classlbann_1_1persist_1aa98be93f33b510e5b506b61de6bd79bd" compoundref="persist_8cpp" startline="362" endline="387">lbann::persist::read_distmat</references>
+        <references refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64">lbann::train</references>
+        <referencedby refid="classlbann_1_1adam_1ae5b6108946e6a09b4e13e4285350aa05" compoundref="adam_8hpp" startline="138" endline="144">unpack_header</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>Adam optimizer. Reference: Kingma, D. and Ba, J. 2014. Adam: A Method for Stochastic Optimization. </para>    </detaileddescription>
+    <inheritancegraph>
+      <node id="45">
+        <label>lbann::optimizer</label>
+        <link refid="classlbann_1_1optimizer"/>
+      </node>
+      <node id="44">
+        <label>lbann::adam</label>
+        <link refid="classlbann_1_1adam"/>
+        <childnode refid="45" relation="public-inheritance">
+        </childnode>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="47">
+        <label>lbann::optimizer</label>
+        <link refid="classlbann_1_1optimizer"/>
+        <childnode refid="48" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="49" relation="usage">
+          <edgelabel>m_cudnn</edgelabel>
+        </childnode>
+        <childnode refid="50" relation="usage">
+          <edgelabel>m_gradient_allreduce_req</edgelabel>
+        </childnode>
+        <childnode refid="51" relation="usage">
+          <edgelabel>m_weights</edgelabel>
+        </childnode>
+      </node>
+      <node id="46">
+        <label>lbann::adam</label>
+        <link refid="classlbann_1_1adam"/>
+        <childnode refid="47" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="49">
+        <label>lbann::cudnn::cudnn_manager</label>
+        <link refid="classlbann_1_1cudnn_1_1cudnn__manager"/>
+      </node>
+      <node id="52">
+        <label>lbann::weights_initializer</label>
+        <link refid="classlbann_1_1weights__initializer"/>
+        <childnode refid="48" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+      </node>
+      <node id="51">
+        <label>lbann::weights</label>
+        <link refid="classlbann_1_1weights"/>
+        <childnode refid="47" relation="usage">
+          <edgelabel>m_optimizer</edgelabel>
+        </childnode>
+        <childnode refid="48" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="52" relation="usage">
+          <edgelabel>m_initializer</edgelabel>
+        </childnode>
+        <childnode refid="49" relation="usage">
+          <edgelabel>m_cudnn</edgelabel>
+        </childnode>
+      </node>
+      <node id="48">
+        <label>lbann::lbann_comm</label>
+        <link refid="classlbann_1_1lbann__comm"/>
+      </node>
+      <node id="50">
+        <label>lbann::Al::request</label>
+        <link refid="structlbann_1_1Al_1_1request"/>
+      </node>
+    </collaborationgraph>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" line="38" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" bodystart="38" bodyend="149"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1adam_1a9d6848fa245bc2adfe142ae3aeb4e33d" prot="public" virt="non-virtual"><scope>lbann::adam</scope><name>adam</name></member>
+      <member refid="classlbann_1_1adam_1a77464b030ec2be620155eff22acdff76" prot="public" virt="non-virtual"><scope>lbann::adam</scope><name>adam</name></member>
+      <member refid="classlbann_1_1optimizer_1ade46d28f7df19cab6c6ee90c03e976ea" prot="public" virt="non-virtual"><scope>lbann::adam</scope><name>add_gradient_source</name></member>
+      <member refid="classlbann_1_1optimizer_1a435d31e3b7a0302e36439ee36f62dba8" prot="public" virt="non-virtual"><scope>lbann::adam</scope><name>add_to_gradient</name></member>
+      <member refid="classlbann_1_1optimizer_1ac23ebde61a225f70c27ab937df5755ed" prot="public" virt="non-virtual"><scope>lbann::adam</scope><name>add_to_gradient_staging</name></member>
+      <member refid="classlbann_1_1optimizer_1a3f41360479fbd46c704342bb4ef36d09" prot="public" virt="non-virtual"><scope>lbann::adam</scope><name>clear_gradient</name></member>
+      <member refid="classlbann_1_1adam_1a95866f94044a4e7bb34bf35551ade4cc" prot="public" virt="virtual"><scope>lbann::adam</scope><name>copy</name></member>
+      <member refid="classlbann_1_1adam_1a14eb9754e2aa38a732d92b6d42311676" prot="public" virt="virtual"><scope>lbann::adam</scope><name>get_description</name></member>
+      <member refid="classlbann_1_1optimizer_1a12b7dbc72eb2de78d6ad798b8939f349" prot="public" virt="non-virtual"><scope>lbann::adam</scope><name>get_gradient</name></member>
+      <member refid="classlbann_1_1optimizer_1ac52867427b0d28ec6888b6344104791d" prot="public" virt="non-virtual"><scope>lbann::adam</scope><name>get_learning_rate</name></member>
+      <member refid="classlbann_1_1optimizer_1a91370e4de6083e7cd464c809cf583eb3" prot="public" virt="non-virtual"><scope>lbann::adam</scope><name>get_num_gradient_sources</name></member>
+      <member refid="classlbann_1_1optimizer_1afef81d54e836ba0177f7a411ba3aaf6e" prot="public" virt="non-virtual"><scope>lbann::adam</scope><name>get_step_time</name></member>
+      <member refid="classlbann_1_1adam_1a091b61b0125d2da89d4029dd30ca1ce7" prot="public" virt="virtual"><scope>lbann::adam</scope><name>get_type</name></member>
+      <member refid="classlbann_1_1optimizer_1a9c3fc3f1d45da822676d5932a1c7af82" prot="public" virt="non-virtual"><scope>lbann::adam</scope><name>get_weights</name></member>
+      <member refid="classlbann_1_1optimizer_1abccf0babf69e3d7c6e9a7fd0731c79b7" prot="public" virt="non-virtual"><scope>lbann::adam</scope><name>is_initialized</name></member>
+      <member refid="classlbann_1_1adam_1aca07e925a4751fc5c10a62fb9c72c896" prot="private" virt="virtual"><scope>lbann::adam</scope><name>load_from_checkpoint_shared</name></member>
+      <member refid="classlbann_1_1adam_1a73af15a28066edbfad9ba6a900746a19" prot="private" virt="non-virtual"><scope>lbann::adam</scope><name>m_beta1</name></member>
+      <member refid="classlbann_1_1adam_1ab1f2a16b8eb7e265895ea9eef3fe87b2" prot="private" virt="non-virtual"><scope>lbann::adam</scope><name>m_beta2</name></member>
+      <member refid="classlbann_1_1optimizer_1a8c2569a8fcf0ee969517067b81896c44" prot="protected" virt="non-virtual"><scope>lbann::adam</scope><name>m_comm</name></member>
+      <member refid="classlbann_1_1optimizer_1a2f24dbeaca18b06f4aa7d179bbf96680" prot="protected" virt="non-virtual"><scope>lbann::adam</scope><name>m_cudnn</name></member>
+      <member refid="classlbann_1_1adam_1a53c3034e187da2720447bbb4f2b59a5d" prot="private" virt="non-virtual"><scope>lbann::adam</scope><name>m_current_beta1</name></member>
+      <member refid="classlbann_1_1adam_1ad38376b684d69d4a15da1d11f8808ca7" prot="private" virt="non-virtual"><scope>lbann::adam</scope><name>m_current_beta2</name></member>
+      <member refid="classlbann_1_1adam_1a751102f0fd866612f5685050a08020a9" prot="private" virt="non-virtual"><scope>lbann::adam</scope><name>m_eps</name></member>
+      <member refid="classlbann_1_1optimizer_1a3df20cb0ae2b60430ad4fd235d66c12e" prot="protected" virt="non-virtual"><scope>lbann::adam</scope><name>m_gradient</name></member>
+      <member refid="classlbann_1_1optimizer_1ad393dcdcb82b44510c586ed5ec46d4dd" prot="protected" virt="non-virtual"><scope>lbann::adam</scope><name>m_learning_rate</name></member>
+      <member refid="classlbann_1_1adam_1aa10a518a5356257bc69e655b88b0ed67" prot="private" virt="non-virtual"><scope>lbann::adam</scope><name>m_moment1</name></member>
+      <member refid="classlbann_1_1adam_1aea3295a0ee7da5e9c56fd6ff2f05c63f" prot="private" virt="non-virtual"><scope>lbann::adam</scope><name>m_moment2</name></member>
+      <member refid="classlbann_1_1optimizer_1a33b57b578a089d9ffe6715bb3996907c" prot="protected" virt="non-virtual"><scope>lbann::adam</scope><name>m_weights</name></member>
+      <member refid="classlbann_1_1adam_1a00051b788b2bb34102a6bad5a380fc85" prot="public" virt="non-virtual"><scope>lbann::adam</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1optimizer_1ab7811e0a4d2d9b594140aed78b6de743" prot="public" virt="non-virtual" ambiguityscope="lbann::optimizer::"><scope>lbann::adam</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1optimizer_1a136ed79c3f279ecded5be380fb67b05f" prot="public" virt="non-virtual"><scope>lbann::adam</scope><name>optimizer</name></member>
+      <member refid="classlbann_1_1optimizer_1a300aa4928e2e4feeb5e99b9eb0a16632" prot="public" virt="non-virtual"><scope>lbann::adam</scope><name>optimizer</name></member>
+      <member refid="classlbann_1_1adam_1a43e941b596c5d1cc68b795b0399398c4" prot="private" virt="non-virtual"><scope>lbann::adam</scope><name>pack_scalars</name></member>
+      <member refid="classlbann_1_1optimizer_1a68ba7515d7eb4af38ff19607c13a111b" prot="public" virt="non-virtual"><scope>lbann::adam</scope><name>remove_gradient_source</name></member>
+      <member refid="classlbann_1_1optimizer_1a067709debd4d2e7bfe1a35b5f6ced668" prot="public" virt="virtual"><scope>lbann::adam</scope><name>reset_counters</name></member>
+      <member refid="classlbann_1_1adam_1a8070db0a451bdbc6e86200eaa14f6ac7" prot="private" virt="virtual"><scope>lbann::adam</scope><name>save_to_checkpoint_shared</name></member>
+      <member refid="classlbann_1_1optimizer_1a147cac09beaa17df4e0fc1fc1be3abce" prot="public" virt="non-virtual"><scope>lbann::adam</scope><name>set_learning_rate</name></member>
+      <member refid="classlbann_1_1optimizer_1afc00daf2acb6af7e29786524126660c2" prot="public" virt="non-virtual"><scope>lbann::adam</scope><name>set_weights</name></member>
+      <member refid="classlbann_1_1adam_1aea0b1fa44197fe184a6feca5ec5c808e" prot="public" virt="virtual"><scope>lbann::adam</scope><name>setup</name></member>
+      <member refid="classlbann_1_1optimizer_1a1fe495ccbd62d50735615818abecf454" prot="public" virt="non-virtual"><scope>lbann::adam</scope><name>start_gradient_staging_allreduce</name></member>
+      <member refid="classlbann_1_1optimizer_1aa9f43ca3f22edc0a25d0509b6514a411" prot="public" virt="non-virtual"><scope>lbann::adam</scope><name>step</name></member>
+      <member refid="classlbann_1_1adam_1a3bcd1bcbbed2b99c407eb0cd9fd6d449" prot="public" virt="virtual"><scope>lbann::adam</scope><name>step_compute</name></member>
+      <member refid="classlbann_1_1adam_1ae5b6108946e6a09b4e13e4285350aa05" prot="private" virt="non-virtual"><scope>lbann::adam</scope><name>unpack_header</name></member>
+      <member refid="classlbann_1_1adam_1a21a3d2bce0bac5e6c022c5d95ec6348b" prot="private" virt="non-virtual"><scope>lbann::adam</scope><name>unpack_scalars</name></member>
+      <member refid="classlbann_1_1adam_1a5ab2783191786e2c9c1c71d6edecfb2e" prot="public" virt="non-virtual"><scope>lbann::adam</scope><name>~adam</name></member>
+      <member refid="classlbann_1_1optimizer_1abbee0e2cb021f835b669d9ba0da5145a" prot="public" virt="virtual"><scope>lbann::adam</scope><name>~optimizer</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

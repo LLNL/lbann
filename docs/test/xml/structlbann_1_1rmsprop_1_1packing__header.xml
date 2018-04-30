@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="structlbann_1_1rmsprop_1_1packing__header" kind="struct" language="C++" prot="private">
+    <compoundname>lbann::rmsprop::packing_header</compoundname>
+      <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structlbann_1_1rmsprop_1_1packing__header_1afcc77a62f3887d880c35d2481031df44" prot="public" static="no" mutable="no">
+        <type>DataType</type>
+        <definition>DataType lbann::rmsprop::packing_header::decay_rate</definition>
+        <argsstring></argsstring>
+        <name>decay_rate</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp" line="80" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp" bodystart="80" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1rmsprop_1a9b969263276b4d1aed93c3c82abf832d" compoundref="rmsprop_8hpp" startline="88" endline="96">lbann::rmsprop::unpack_scalars</referencedby>
+        <referencedby refid="classlbann_1_1rmsprop_1a1af03b4c5e744abae04ccec3e19a0cc6" compoundref="rmsprop_8hpp" startline="98" endline="100">lbann::rmsprop::unpack_header</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp" line="79" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp" bodystart="79" bodyend="81"/>
+    <listofallmembers>
+      <member refid="structlbann_1_1rmsprop_1_1packing__header_1afcc77a62f3887d880c35d2481031df44" prot="public" virt="non-virtual"><scope>lbann::rmsprop::packing_header</scope><name>decay_rate</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

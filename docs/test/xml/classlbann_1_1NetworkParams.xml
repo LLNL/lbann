@@ -1,0 +1,100 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1NetworkParams" kind="class" language="C++" prot="public">
+    <compoundname>lbann::NetworkParams</compoundname>
+    <includes refid="params_8hpp" local="no">params.hpp</includes>
+      <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="classlbann_1_1NetworkParams_1a8b503690c7475582b5a843f0959c3f2a" prot="public" static="no" mutable="no">
+        <type>std::string</type>
+        <definition>std::string lbann::NetworkParams::NetworkStr</definition>
+        <argsstring></argsstring>
+        <name>NetworkStr</name>
+        <briefdescription>
+<para>String specifying the hidden layers of the topology. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/params.hpp" line="163" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/params.hpp" bodystart="163" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1NetworkParams_1a9b6f7e0330547330238085f3fd0e3702" compoundref="params_8cpp" startline="109" endline="112">parse_params</referencedby>
+        <referencedby refid="classlbann_1_1NetworkParams_1a14954fcbacb6c9522bd3cf6c28bc93d5" compoundref="params_8cpp" startline="114" endline="125">parse_network_string</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1NetworkParams_1a17ccde99dec30d27c836a23f003fa34d" prot="public" static="no" mutable="no">
+        <type>std::vector&lt; int &gt;</type>
+        <definition>std::vector&lt;int&gt; lbann::NetworkParams::Network</definition>
+        <argsstring></argsstring>
+        <name>Network</name>
+        <briefdescription>
+<para>The hidden layers of the topology. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/params.hpp" line="165" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/params.hpp" bodystart="165" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1NetworkParams_1a14954fcbacb6c9522bd3cf6c28bc93d5" compoundref="params_8cpp" startline="114" endline="125">parse_network_string</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1NetworkParams_1ad915e046e5e001f37a5d0124809dd07b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::NetworkParams::NetworkParams</definition>
+        <argsstring>()</argsstring>
+        <name>NetworkParams</name>
+        <briefdescription>
+<para>Constructor. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/params.hpp" line="153" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/params.cpp" bodystart="105" bodyend="107"/>
+        <references refid="classlbann_1_1NetworkParams_1a14954fcbacb6c9522bd3cf6c28bc93d5" compoundref="params_8cpp" startline="114" endline="125">parse_network_string</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1NetworkParams_1a9b6f7e0330547330238085f3fd0e3702" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::NetworkParams::parse_params</definition>
+        <argsstring>()</argsstring>
+        <name>parse_params</name>
+        <briefdescription>
+<para>Parse command-line arguments. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/params.hpp" line="155" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/params.cpp" bodystart="109" bodyend="112"/>
+        <references refid="classlbann_1_1NetworkParams_1a8b503690c7475582b5a843f0959c3f2a" compoundref="params_8hpp" startline="163">NetworkStr</references>
+        <references refid="classlbann_1_1NetworkParams_1a14954fcbacb6c9522bd3cf6c28bc93d5" compoundref="params_8cpp" startline="114" endline="125">parse_network_string</references>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="private-func">
+      <memberdef kind="function" id="classlbann_1_1NetworkParams_1a14954fcbacb6c9522bd3cf6c28bc93d5" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::NetworkParams::parse_network_string</definition>
+        <argsstring>()</argsstring>
+        <name>parse_network_string</name>
+        <briefdescription>
+<para>Parse network string. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/params.hpp" line="159" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/params.cpp" bodystart="114" bodyend="125"/>
+        <references refid="classlbann_1_1NetworkParams_1a17ccde99dec30d27c836a23f003fa34d" compoundref="params_8hpp" startline="165">Network</references>
+        <references refid="classlbann_1_1NetworkParams_1a8b503690c7475582b5a843f0959c3f2a" compoundref="params_8hpp" startline="163">NetworkStr</references>
+        <referencedby refid="classlbann_1_1NetworkParams_1ad915e046e5e001f37a5d0124809dd07b" compoundref="params_8cpp" startline="105" endline="107">NetworkParams</referencedby>
+        <referencedby refid="classlbann_1_1NetworkParams_1a9b6f7e0330547330238085f3fd0e3702" compoundref="params_8cpp" startline="109" endline="112">parse_params</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+<para>Network parameters. </para>    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/params.hpp" line="149" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/params.hpp" bodystart="149" bodyend="166"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1NetworkParams_1a17ccde99dec30d27c836a23f003fa34d" prot="public" virt="non-virtual"><scope>lbann::NetworkParams</scope><name>Network</name></member>
+      <member refid="classlbann_1_1NetworkParams_1ad915e046e5e001f37a5d0124809dd07b" prot="public" virt="non-virtual"><scope>lbann::NetworkParams</scope><name>NetworkParams</name></member>
+      <member refid="classlbann_1_1NetworkParams_1a8b503690c7475582b5a843f0959c3f2a" prot="public" virt="non-virtual"><scope>lbann::NetworkParams</scope><name>NetworkStr</name></member>
+      <member refid="classlbann_1_1NetworkParams_1a14954fcbacb6c9522bd3cf6c28bc93d5" prot="private" virt="non-virtual"><scope>lbann::NetworkParams</scope><name>parse_network_string</name></member>
+      <member refid="classlbann_1_1NetworkParams_1a9b6f7e0330547330238085f3fd0e3702" prot="public" virt="non-virtual"><scope>lbann::NetworkParams</scope><name>parse_params</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

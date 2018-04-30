@@ -1,0 +1,442 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="swish_8hpp" kind="file" language="C++">
+    <compoundname>swish.hpp</compoundname>
+    <includes refid="activation_8hpp" local="yes">lbann/layers/activations/activation.hpp</includes>
+    <includedby refid="lbann_8hpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/include/lbann/lbann.hpp</includedby>
+    <incdepgraph>
+      <node id="7392">
+        <label>lbann/utils/summary.hpp</label>
+        <link refid="summary_8hpp"/>
+        <childnode refid="7393" relation="include">
+        </childnode>
+        <childnode refid="7389" relation="include">
+        </childnode>
+        <childnode refid="7379" relation="include">
+        </childnode>
+        <childnode refid="7388" relation="include">
+        </childnode>
+      </node>
+      <node id="7404">
+        <label>lbann/io/persist.hpp</label>
+        <link refid="persist_8hpp"/>
+        <childnode refid="7379" relation="include">
+        </childnode>
+        <childnode refid="7380" relation="include">
+        </childnode>
+      </node>
+      <node id="7380">
+        <label>El.hpp</label>
+      </node>
+      <node id="7379">
+        <label>lbann/base.hpp</label>
+        <link refid="base_8hpp"/>
+        <childnode refid="7380" relation="include">
+        </childnode>
+        <childnode refid="7381" relation="include">
+        </childnode>
+        <childnode refid="7382" relation="include">
+        </childnode>
+        <childnode refid="7387" relation="include">
+        </childnode>
+      </node>
+      <node id="7393">
+        <label>string</label>
+      </node>
+      <node id="7401">
+        <label>lbann/utils/cudnn_wrapper.hpp</label>
+        <link refid="cudnn__wrapper_8hpp"/>
+        <childnode refid="7389" relation="include">
+        </childnode>
+        <childnode refid="7379" relation="include">
+        </childnode>
+        <childnode refid="7388" relation="include">
+        </childnode>
+        <childnode refid="7396" relation="include">
+        </childnode>
+      </node>
+      <node id="7407">
+        <label>lbann/utils/timer.hpp</label>
+        <link refid="timer_8hpp"/>
+        <childnode refid="7408" relation="include">
+        </childnode>
+      </node>
+      <node id="7390">
+        <label>map</label>
+      </node>
+      <node id="7406">
+        <label>unordered_set</label>
+      </node>
+      <node id="7400">
+        <label>exception</label>
+      </node>
+      <node id="7376">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/activations/swish.hpp</label>
+        <link refid="swish_8hpp"/>
+        <childnode refid="7377" relation="include">
+        </childnode>
+      </node>
+      <node id="7403">
+        <label>lbann/weights/initializer.hpp</label>
+        <link refid="initializer_8hpp"/>
+        <childnode refid="7379" relation="include">
+        </childnode>
+        <childnode refid="7388" relation="include">
+        </childnode>
+        <childnode refid="7396" relation="include">
+        </childnode>
+        <childnode refid="7401" relation="include">
+        </childnode>
+      </node>
+      <node id="7384">
+        <label>cstdio</label>
+      </node>
+      <node id="7397">
+        <label>lbann/utils/stack_trace.hpp</label>
+        <link refid="stack__trace_8hpp"/>
+        <childnode refid="7398" relation="include">
+        </childnode>
+        <childnode refid="7393" relation="include">
+        </childnode>
+      </node>
+      <node id="7386">
+        <label>cxxabi.h</label>
+      </node>
+      <node id="7396">
+        <label>lbann/utils/exception.hpp</label>
+        <link refid="exception_8hpp"/>
+        <childnode refid="7379" relation="include">
+        </childnode>
+        <childnode refid="7388" relation="include">
+        </childnode>
+        <childnode refid="7397" relation="include">
+        </childnode>
+        <childnode refid="7399" relation="include">
+        </childnode>
+        <childnode refid="7400" relation="include">
+        </childnode>
+      </node>
+      <node id="7377">
+        <label>lbann/layers/activations/activation.hpp</label>
+        <link refid="activation_8hpp"/>
+        <childnode refid="7378" relation="include">
+        </childnode>
+        <childnode refid="7396" relation="include">
+        </childnode>
+      </node>
+      <node id="7389">
+        <label>vector</label>
+      </node>
+      <node id="7388">
+        <label>lbann/comm.hpp</label>
+        <link refid="comm_8hpp"/>
+        <childnode refid="7389" relation="include">
+        </childnode>
+        <childnode refid="7390" relation="include">
+        </childnode>
+        <childnode refid="7391" relation="include">
+        </childnode>
+        <childnode refid="7379" relation="include">
+        </childnode>
+      </node>
+      <node id="7405">
+        <label>lbann.pb.h</label>
+      </node>
+      <node id="7383">
+        <label>cstdlib</label>
+      </node>
+      <node id="7399">
+        <label>iostream</label>
+      </node>
+      <node id="7394">
+        <label>lbann/optimizers/optimizer.hpp</label>
+        <link refid="optimizer_8hpp"/>
+        <childnode refid="7395" relation="include">
+        </childnode>
+        <childnode refid="7379" relation="include">
+        </childnode>
+        <childnode refid="7388" relation="include">
+        </childnode>
+        <childnode refid="7396" relation="include">
+        </childnode>
+        <childnode refid="7401" relation="include">
+        </childnode>
+        <childnode refid="7402" relation="include">
+        </childnode>
+        <childnode refid="7393" relation="include">
+        </childnode>
+        <childnode refid="7406" relation="include">
+        </childnode>
+      </node>
+      <node id="7378">
+        <label>lbann/layers/layer.hpp</label>
+        <link refid="layer_8hpp"/>
+        <childnode refid="7379" relation="include">
+        </childnode>
+        <childnode refid="7388" relation="include">
+        </childnode>
+        <childnode refid="7392" relation="include">
+        </childnode>
+        <childnode refid="7394" relation="include">
+        </childnode>
+        <childnode refid="7396" relation="include">
+        </childnode>
+        <childnode refid="7401" relation="include">
+        </childnode>
+        <childnode refid="7407" relation="include">
+        </childnode>
+        <childnode refid="7404" relation="include">
+        </childnode>
+        <childnode refid="7405" relation="include">
+        </childnode>
+        <childnode refid="7393" relation="include">
+        </childnode>
+        <childnode refid="7389" relation="include">
+        </childnode>
+      </node>
+      <node id="7408">
+        <label>chrono</label>
+      </node>
+      <node id="7398">
+        <label>csignal</label>
+      </node>
+      <node id="7402">
+        <label>lbann/weights/weights.hpp</label>
+        <link refid="weights_8hpp"/>
+        <childnode refid="7393" relation="include">
+        </childnode>
+        <childnode refid="7379" relation="include">
+        </childnode>
+        <childnode refid="7388" relation="include">
+        </childnode>
+        <childnode refid="7396" relation="include">
+        </childnode>
+        <childnode refid="7401" relation="include">
+        </childnode>
+        <childnode refid="7403" relation="include">
+        </childnode>
+        <childnode refid="7404" relation="include">
+        </childnode>
+        <childnode refid="7405" relation="include">
+        </childnode>
+      </node>
+      <node id="7387">
+        <label>lbann_config.hpp</label>
+      </node>
+      <node id="7395">
+        <label>lbann/utils/compiler_control.hpp</label>
+        <link refid="compiler__control_8hpp"/>
+      </node>
+      <node id="7382">
+        <label>lbann/utils/cyg_profile.hpp</label>
+        <link refid="cyg__profile_8hpp"/>
+        <childnode refid="7383" relation="include">
+        </childnode>
+        <childnode refid="7384" relation="include">
+        </childnode>
+        <childnode refid="7385" relation="include">
+        </childnode>
+        <childnode refid="7386" relation="include">
+        </childnode>
+      </node>
+      <node id="7381">
+        <label>lbann/Elemental_extensions.hpp</label>
+        <link refid="Elemental__extensions_8hpp"/>
+        <childnode refid="7380" relation="include">
+        </childnode>
+      </node>
+      <node id="7391">
+        <label>typeindex</label>
+      </node>
+      <node id="7385">
+        <label>dlfcn.h</label>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="7416">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/proto/factories.hpp</label>
+        <link refid="factories_8hpp"/>
+        <childnode refid="7417" relation="include">
+        </childnode>
+        <childnode refid="7418" relation="include">
+        </childnode>
+        <childnode refid="7419" relation="include">
+        </childnode>
+        <childnode refid="7420" relation="include">
+        </childnode>
+        <childnode refid="7421" relation="include">
+        </childnode>
+        <childnode refid="7422" relation="include">
+        </childnode>
+        <childnode refid="7423" relation="include">
+        </childnode>
+        <childnode refid="7424" relation="include">
+        </childnode>
+        <childnode refid="7414" relation="include">
+        </childnode>
+      </node>
+      <node id="7421">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/model_factory.cpp</label>
+        <link refid="model__factory_8cpp"/>
+      </node>
+      <node id="7413">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/params.cpp</label>
+        <link refid="params_8cpp"/>
+      </node>
+      <node id="7414">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/proto/proto_common.hpp</label>
+        <link refid="proto__common_8hpp"/>
+        <childnode refid="7411" relation="include">
+        </childnode>
+        <childnode refid="7415" relation="include">
+        </childnode>
+        <childnode refid="7416" relation="include">
+        </childnode>
+        <childnode refid="7425" relation="include">
+        </childnode>
+      </node>
+      <node id="7412">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/params.hpp</label>
+        <link refid="params_8hpp"/>
+        <childnode refid="7413" relation="include">
+        </childnode>
+        <childnode refid="7410" relation="include">
+        </childnode>
+      </node>
+      <node id="7418">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/layer_factory.cpp</label>
+        <link refid="layer__factory_8cpp"/>
+      </node>
+      <node id="7415">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/utils/protobuf_utils.cpp</label>
+        <link refid="protobuf__utils_8cpp"/>
+      </node>
+      <node id="7426">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/init_image_data_readers.cpp</label>
+        <link refid="init__image__data__readers_8cpp"/>
+      </node>
+      <node id="7422">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/objective_function_factory.cpp</label>
+        <link refid="objective__function__factory_8cpp"/>
+      </node>
+      <node id="7409">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/activations/swish.hpp</label>
+        <link refid="swish_8hpp"/>
+        <childnode refid="7410" relation="include">
+        </childnode>
+      </node>
+      <node id="7411">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/proto_common.cpp</label>
+        <link refid="proto__common_8cpp"/>
+      </node>
+      <node id="7420">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/metric_factory.cpp</label>
+        <link refid="metric__factory_8cpp"/>
+      </node>
+      <node id="7410">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/lbann.hpp</label>
+        <link refid="lbann_8hpp"/>
+        <childnode refid="7411" relation="include">
+        </childnode>
+        <childnode refid="7412" relation="include">
+        </childnode>
+        <childnode refid="7414" relation="include">
+        </childnode>
+        <childnode refid="7427" relation="include">
+        </childnode>
+      </node>
+      <node id="7425">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/proto/init_image_data_readers.hpp</label>
+        <link refid="init__image__data__readers_8hpp"/>
+        <childnode refid="7426" relation="include">
+        </childnode>
+        <childnode refid="7411" relation="include">
+        </childnode>
+      </node>
+      <node id="7423">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/optimizer_factory.cpp</label>
+        <link refid="optimizer__factory_8cpp"/>
+      </node>
+      <node id="7424">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/weights_factory.cpp</label>
+        <link refid="weights__factory_8cpp"/>
+      </node>
+      <node id="7417">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/callback_factory.cpp</label>
+        <link refid="callback__factory_8cpp"/>
+      </node>
+      <node id="7427">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/protobuf_utils.hpp</label>
+        <link refid="protobuf__utils_8hpp"/>
+        <childnode refid="7415" relation="include">
+        </childnode>
+      </node>
+      <node id="7419">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/layer_graph_factory.cpp</label>
+        <link refid="layer__graph__factory_8cpp"/>
+      </node>
+    </invincdepgraph>
+    <innerclass refid="classlbann_1_1swish__layer" prot="public">lbann::swish_layer</innerclass>
+    <innernamespace refid="namespacelbann">lbann</innernamespace>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>2014-2016,<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Security,<sp/>LLC.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Produced<sp/>at<sp/>the<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Laboratory.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Written<sp/>by<sp/>the<sp/>LBANN<sp/>Research<sp/>Team<sp/>(B.<sp/>Van<sp/>Essen,<sp/>et<sp/>al.)<sp/>listed<sp/>in</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="comment">//<sp/>the<sp/>CONTRIBUTORS<sp/>file.<sp/>&lt;lbann-dev@llnl.gov&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="comment">//<sp/>LLNL-CODE-697807.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="comment">//<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="comment">//<sp/>This<sp/>file<sp/>is<sp/>part<sp/>of<sp/>LBANN:<sp/>Livermore<sp/>Big<sp/>Artificial<sp/>Neural<sp/>Network</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Toolkit.<sp/>For<sp/>details,<sp/>see<sp/>http://software.llnl.gov/LBANN<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="comment">//<sp/>https://github.com/LLNL/LBANN.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Licensed<sp/>under<sp/>the<sp/>Apache<sp/>License,<sp/>Version<sp/>2.0<sp/>(the<sp/>&quot;Licensee&quot;);<sp/>you</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight><highlight class="comment">//<sp/>may<sp/>not<sp/>use<sp/>this<sp/>file<sp/>except<sp/>in<sp/>compliance<sp/>with<sp/>the<sp/>License.<sp/><sp/>You<sp/>may</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="comment">//<sp/>obtain<sp/>a<sp/>copy<sp/>of<sp/>the<sp/>License<sp/>at:</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight><highlight class="comment">//<sp/>http://www.apache.org/licenses/LICENSE-2.0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Unless<sp/>required<sp/>by<sp/>applicable<sp/>law<sp/>or<sp/>agreed<sp/>to<sp/>in<sp/>writing,<sp/>software</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight><highlight class="comment">//<sp/>distributed<sp/>under<sp/>the<sp/>License<sp/>is<sp/>distributed<sp/>on<sp/>an<sp/>&quot;AS<sp/>IS&quot;<sp/>BASIS,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight><highlight class="comment">//<sp/>WITHOUT<sp/>WARRANTIES<sp/>OR<sp/>CONDITIONS<sp/>OF<sp/>ANY<sp/>KIND,<sp/>either<sp/>express<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="comment">//<sp/>implied.<sp/>See<sp/>the<sp/>License<sp/>for<sp/>the<sp/>specific<sp/>language<sp/>governing</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="comment">//<sp/>permissions<sp/>and<sp/>limitations<sp/>under<sp/>the<sp/>license.</highlight></codeline>
+<codeline lineno="26"><highlight class="comment"></highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="27"><highlight class="normal"></highlight><highlight class="preprocessor">#ifndef<sp/>SWISH_HPP_INCLUDED</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="28"><highlight class="normal"></highlight><highlight class="preprocessor">#define<sp/>SWISH_HPP_INCLUDED</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="29"><highlight class="normal"></highlight></codeline>
+<codeline lineno="30"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="activation_8hpp" kindref="compound">lbann/layers/activations/activation.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight></codeline>
+<codeline lineno="32"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacelbann" kindref="compound">lbann</ref><sp/>{</highlight></codeline>
+<codeline lineno="33"><highlight class="normal"></highlight></codeline>
+<codeline lineno="38"><highlight class="keyword">template</highlight><highlight class="normal"><sp/>&lt;data_layout<sp/>T_layout&gt;</highlight></codeline>
+<codeline lineno="39" refid="classlbann_1_1swish__layer" refkind="compound"><highlight class="normal"></highlight><highlight class="keyword">class<sp/></highlight><highlight class="normal"><ref refid="classlbann_1_1swish__layer" kindref="compound">swish_layer</ref><sp/>:<sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1entrywise__activation__layer" kindref="compound">entrywise_activation_layer</ref><sp/>{</highlight></codeline>
+<codeline lineno="40"><highlight class="normal"><sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="41" refid="classlbann_1_1swish__layer_1a63d8d4087762ff49954270fde6b03707" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1swish__layer_1a63d8d4087762ff49954270fde6b03707" kindref="member">swish_layer</ref>(<ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref><sp/>*<ref refid="file__io_8cpp_1ab048c6f9fcbcfaa57ce68b00263dbebe" kindref="member">comm</ref>)<sp/>:<sp/><ref refid="classlbann_1_1entrywise__activation__layer" kindref="compound">entrywise_activation_layer</ref>(comm)<sp/>{}</highlight></codeline>
+<codeline lineno="42" refid="classlbann_1_1swish__layer_1ad88f1660edf910883ab89ef66e4cf14d" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1swish__layer" kindref="compound">swish_layer</ref>*<sp/><ref refid="classlbann_1_1swish__layer_1ad88f1660edf910883ab89ef66e4cf14d" kindref="member">copy</ref>()</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">new</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1swish__layer_1a63d8d4087762ff49954270fde6b03707" kindref="member">swish_layer</ref>(*</highlight><highlight class="keyword">this</highlight><highlight class="normal">);<sp/>}</highlight></codeline>
+<codeline lineno="43" refid="classlbann_1_1swish__layer_1a136f8194f91a1148ab31bce29c08e3c8" refkind="member"><highlight class="normal"><sp/><sp/>std::string<sp/><ref refid="classlbann_1_1swish__layer_1a136f8194f91a1148ab31bce29c08e3c8" kindref="member">get_type</ref>()</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="stringliteral">&quot;swish&quot;</highlight><highlight class="normal">;<sp/>}</highlight></codeline>
+<codeline lineno="44" refid="classlbann_1_1swish__layer_1ac7d29fc0d26bdb58df88e43635141275" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="base_8hpp_1a786677cbfb3f5677b4d84f3056eb08db" kindref="member">data_layout</ref><sp/><ref refid="classlbann_1_1swish__layer_1ac7d29fc0d26bdb58df88e43635141275" kindref="member">get_data_layout</ref>()</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>T_layout;<sp/>}</highlight></codeline>
+<codeline lineno="45"><highlight class="normal"></highlight></codeline>
+<codeline lineno="46"><highlight class="normal"><sp/></highlight><highlight class="keyword">protected</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="47" refid="classlbann_1_1swish__layer_1aeab50ff2ad06d89a54953efdf7c09ed4" refkind="member"><highlight class="normal"><sp/><sp/>DataType<sp/><ref refid="classlbann_1_1swish__layer_1aeab50ff2ad06d89a54953efdf7c09ed4" kindref="member">activation</ref>(DataType<sp/>z)</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="48"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>z<sp/>/<sp/>(DataType(1)<sp/>+<sp/>std::exp(-z));</highlight></codeline>
+<codeline lineno="49"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="50" refid="classlbann_1_1swish__layer_1a42d0ffb540fe1c12fbb571abf7048c2a" refkind="member"><highlight class="normal"><sp/><sp/>DataType<sp/><ref refid="classlbann_1_1swish__layer_1a42d0ffb540fe1c12fbb571abf7048c2a" kindref="member">activation_derivative</ref>(DataType<sp/>z)</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="51"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>DataType<sp/>one<sp/>=<sp/>DataType(1);</highlight></codeline>
+<codeline lineno="52"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>DataType<sp/>sigz<sp/>=<sp/>1<sp/>/<sp/>(one<sp/>+<sp/>std::exp(-z));</highlight></codeline>
+<codeline lineno="53"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>sigz<sp/>*<sp/>(one<sp/>+<sp/>z<sp/>*<sp/>(one<sp/>-<sp/>sigz));</highlight></codeline>
+<codeline lineno="54"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="55"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="56"><highlight class="normal"></highlight></codeline>
+<codeline lineno="57"><highlight class="normal">}<sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>lbann</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="58"><highlight class="normal"></highlight></codeline>
+<codeline lineno="59"><highlight class="normal"></highlight><highlight class="preprocessor">#endif<sp/>//<sp/>SWISH_HPP_INCLUDED</highlight></codeline>
+    </programlisting>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/activations/swish.hpp"/>
+  </compounddef>
+</doxygen>

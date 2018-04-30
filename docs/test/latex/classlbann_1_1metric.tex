@@ -1,0 +1,622 @@
+\hypertarget{classlbann_1_1metric}{}\section{lbann\+:\+:metric Class Reference}
+\label{classlbann_1_1metric}\index{lbann\+::metric@{lbann\+::metric}}
+
+
+{\ttfamily \#include $<$metric.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:metric\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=324pt]{classlbann_1_1metric__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:metric\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1metric__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1metric_a3cd2d4f7dcbf94f70b3b8560a3171d9d}{metric} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm})
+\item 
+\hyperlink{classlbann_1_1metric_ac2fc993e31fed5298c4e321b315b77a0}{metric} (const \hyperlink{classlbann_1_1metric}{metric} \&other)=default
+\item 
+\hyperlink{classlbann_1_1metric}{metric} \& \hyperlink{classlbann_1_1metric_a4324342dab4892199a47df1d78b2cef5}{operator=} (const \hyperlink{classlbann_1_1metric}{metric} \&other)=default
+\item 
+virtual \hyperlink{classlbann_1_1metric_ae173eae981ed474f125a5462e734802b}{$\sim$metric} ()=default
+\item 
+virtual \hyperlink{classlbann_1_1metric}{metric} $\ast$ \hyperlink{classlbann_1_1metric_a2a4498d41f77da8585552f485caab167}{copy} () const =0
+\item 
+virtual std\+::string \hyperlink{classlbann_1_1metric_af455d7b6874d3491bc04f0f2ebfcab51}{name} () const =0
+\item 
+virtual std\+::string \hyperlink{classlbann_1_1metric_a13fd302dec85190b877f7146529e516c}{get\+\_\+unit} () const
+\item 
+virtual void \hyperlink{classlbann_1_1metric_a898d23e410297378db2fe9f8d1754fe0}{setup} (\hyperlink{classlbann_1_1model}{model} \&m)
+\item 
+\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} \hyperlink{classlbann_1_1metric_ab4e14cb4296c7b47719071b210448dec}{evaluate} (\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode} mode, int mini\+\_\+batch\+\_\+size)
+\item 
+void \hyperlink{classlbann_1_1metric_af7747feb8bc7a5ee039876a70fae1b0c}{reset\+\_\+statistics} ()
+\item 
+void \hyperlink{classlbann_1_1metric_a27a3d8c073b85297b902ba35137926b4}{reset\+\_\+statistics} (\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode} mode)
+\item 
+\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} \hyperlink{classlbann_1_1metric_a2926c6b391dc8c3e3d13d0199317c570}{get\+\_\+mean\+\_\+value} (\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode} mode) const
+\item 
+int \hyperlink{classlbann_1_1metric_a489feb28d318bd8405133f9f8c94cc10}{get\+\_\+statistics\+\_\+num\+\_\+samples} (\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode} mode) const
+\item 
+void \hyperlink{classlbann_1_1metric_a8367719e2c7816a4c718c049ea97b709}{set\+\_\+target\+\_\+layer} (const \hyperlink{classlbann_1_1generic__target__layer}{generic\+\_\+target\+\_\+layer} $\ast$target)
+\item 
+const \hyperlink{classlbann_1_1generic__target__layer}{generic\+\_\+target\+\_\+layer} \& \hyperlink{classlbann_1_1metric_aba7f7a12aeba6619f7b4330e9075f76e}{get\+\_\+target\+\_\+layer} () const
+\item 
+std\+::vector$<$ \hyperlink{classlbann_1_1Layer}{Layer} $\ast$ $>$ \hyperlink{classlbann_1_1metric_a7f97c998fa64475f9ef7f066237b0695}{get\+\_\+layer\+\_\+pointers} () const
+\item 
+void \hyperlink{classlbann_1_1metric_a5de0c336b93f2c03f37f38047d401f99}{set\+\_\+layer\+\_\+pointers} (std\+::vector$<$ \hyperlink{classlbann_1_1Layer}{Layer} $\ast$$>$ layers)
+\item 
+double \hyperlink{classlbann_1_1metric_a686239cad1f25628c9b298f9233cc9f3}{get\+\_\+evaluate\+\_\+time} () const
+\item 
+void \hyperlink{classlbann_1_1metric_ab93708cd870277eb7865655e075620c9}{reset\+\_\+counters} ()
+\item 
+virtual bool \hyperlink{classlbann_1_1metric_a9728b02a240dfd9faa61b7dfeb3feede}{save\+\_\+to\+\_\+checkpoint\+\_\+shared} (\hyperlink{classlbann_1_1persist}{persist} \&p)
+\item 
+virtual bool \hyperlink{classlbann_1_1metric_ab3d1ec8247352467790be036a07cfc2b}{load\+\_\+from\+\_\+checkpoint\+\_\+shared} (\hyperlink{classlbann_1_1persist}{persist} \&p)
+\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+virtual \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} \hyperlink{classlbann_1_1metric_aab79147ff480675db2e01d7a889a4296}{evaluate\+\_\+compute} (const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&prediction, const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&ground\+\_\+truth)=0
+\item 
+\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} \& \hyperlink{classlbann_1_1metric_a464120720df6bfdf91bffe353e562964}{get\+\_\+comm} ()
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$ \hyperlink{classlbann_1_1metric_a547077709911e30c7d070545936c9c85}{m\+\_\+comm}
+\item 
+const \hyperlink{classlbann_1_1generic__target__layer}{generic\+\_\+target\+\_\+layer} $\ast$ \hyperlink{classlbann_1_1metric_a2bf6c53efb1b525bfa63a8c3167968d9}{m\+\_\+target\+\_\+layer}
+\item 
+std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{structlbann_1_1metric__statistics}{metric\+\_\+statistics} $>$ \hyperlink{classlbann_1_1metric_a9949d8aceedbc113aa2c356046ed73fc}{m\+\_\+statistics}
+\item 
+double \hyperlink{classlbann_1_1metric_a4c77a1bd1db77e9d837a72128e3d687f}{m\+\_\+evaluate\+\_\+time} = 0.\+0
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Abstract base class for metric functions. A metric function can be used to evaluate the performance of a model without affecting the training process. 
+
+Definition at line 90 of file metric.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1metric_a3cd2d4f7dcbf94f70b3b8560a3171d9d}\label{classlbann_1_1metric_a3cd2d4f7dcbf94f70b3b8560a3171d9d}} 
+\index{lbann\+::metric@{lbann\+::metric}!metric@{metric}}
+\index{metric@{metric}!lbann\+::metric@{lbann\+::metric}}
+\subsubsection{\texorpdfstring{metric()}{metric()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::metric\+::metric (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm }\end{DoxyParamCaption})}
+
+Constructor. 
+
+Definition at line 79 of file metric.\+cpp.
+
+
+\begin{DoxyCode}
+80   : \hyperlink{classlbann_1_1metric_a547077709911e30c7d070545936c9c85}{m\_comm}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}),
+81     \hyperlink{classlbann_1_1metric_a2bf6c53efb1b525bfa63a8c3167968d9}{m\_target\_layer}(\textcolor{keyword}{nullptr}) \{\}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1metric_ac2fc993e31fed5298c4e321b315b77a0}\label{classlbann_1_1metric_ac2fc993e31fed5298c4e321b315b77a0}} 
+\index{lbann\+::metric@{lbann\+::metric}!metric@{metric}}
+\index{metric@{metric}!lbann\+::metric@{lbann\+::metric}}
+\subsubsection{\texorpdfstring{metric()}{metric()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::metric\+::metric (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1metric}{metric} \&}]{other }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Copy constructor. \mbox{\Hypertarget{classlbann_1_1metric_ae173eae981ed474f125a5462e734802b}\label{classlbann_1_1metric_ae173eae981ed474f125a5462e734802b}} 
+\index{lbann\+::metric@{lbann\+::metric}!````~metric@{$\sim$metric}}
+\index{````~metric@{$\sim$metric}!lbann\+::metric@{lbann\+::metric}}
+\subsubsection{\texorpdfstring{$\sim$metric()}{~metric()}}
+{\footnotesize\ttfamily virtual lbann\+::metric\+::$\sim$metric (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [virtual]}, {\ttfamily [default]}}
+
+Destructor. 
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1metric_a2a4498d41f77da8585552f485caab167}\label{classlbann_1_1metric_a2a4498d41f77da8585552f485caab167}} 
+\index{lbann\+::metric@{lbann\+::metric}!copy@{copy}}
+\index{copy@{copy}!lbann\+::metric@{lbann\+::metric}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily virtual \hyperlink{classlbann_1_1metric}{metric}$\ast$ lbann\+::metric\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [pure virtual]}}
+
+Copy function. 
+
+Implemented in \hyperlink{classlbann_1_1top__k__categorical__accuracy__metric_a2d93a9bca14d52bda02a58e4c58b800e}{lbann\+::top\+\_\+k\+\_\+categorical\+\_\+accuracy\+\_\+metric}, \hyperlink{classlbann_1_1categorical__accuracy__metric_a46ce5b6eb09fecc8b0029fb62ba8cf66}{lbann\+::categorical\+\_\+accuracy\+\_\+metric}, \hyperlink{classlbann_1_1mean__absolute__deviation__metric_ad49148043214908a671799bcdd0b120b}{lbann\+::mean\+\_\+absolute\+\_\+deviation\+\_\+metric}, \hyperlink{classlbann_1_1mean__squared__error__metric_a4caa0dfc86361a1c9a91fb64efecfcc9}{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+metric}, \hyperlink{classlbann_1_1r2__metric_a2536209f1d575b639ab351854d54f207}{lbann\+::r2\+\_\+metric}, \hyperlink{classlbann_1_1boolean__false__negatives__metric_abd0e7a6040232d5b6d8b10e79a3208c1}{lbann\+::boolean\+\_\+false\+\_\+negatives\+\_\+metric}, \hyperlink{classlbann_1_1boolean__false__positives__metric_a5d9544f3f4dc7e086cf203f5666a7660}{lbann\+::boolean\+\_\+false\+\_\+positives\+\_\+metric}, \hyperlink{classlbann_1_1pearson__correlation__metric_a2bb107028c6931a70ed7d886707b4006}{lbann\+::pearson\+\_\+correlation\+\_\+metric}, and \hyperlink{classlbann_1_1boolean__accuracy__metric_ae3a97a9ac1caccfe8ac46ad1a0df01a4}{lbann\+::boolean\+\_\+accuracy\+\_\+metric}.
+
+\mbox{\Hypertarget{classlbann_1_1metric_ab4e14cb4296c7b47719071b210448dec}\label{classlbann_1_1metric_ab4e14cb4296c7b47719071b210448dec}} 
+\index{lbann\+::metric@{lbann\+::metric}!evaluate@{evaluate}}
+\index{evaluate@{evaluate}!lbann\+::metric@{lbann\+::metric}}
+\subsubsection{\texorpdfstring{evaluate()}{evaluate()}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} lbann\+::metric\+::evaluate (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}}]{mode,  }\item[{int}]{mini\+\_\+batch\+\_\+size }\end{DoxyParamCaption})}
+
+Evaluate the metric value. This function takes the model\textquotesingle{}s current mini-\/batch size. If multiple models are being trained, the current mini-\/batch size may be different from the effective mini-\/batch size. The result is stored in history. 
+
+Definition at line 105 of file metric.\+cpp.
+
+
+\begin{DoxyCode}
+106                                                \{
+107 
+108   \textcolor{comment}{// Check if target layer pointer has been setup}
+109   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1metric_a2bf6c53efb1b525bfa63a8c3167968d9}{m\_target\_layer} == \textcolor{keyword}{nullptr}) \{
+110     std::stringstream err;
+111     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+112         << \textcolor{stringliteral}{"attempted to evaluate metric without setting a target layer"};
+113     \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+114   \}
+115 
+116   \textcolor{comment}{// Evaluate objective function}
+117   \textcolor{keywordtype}{double} start = \hyperlink{namespacelbann_a478d36031ff0659893c4322cd856157f}{get\_time}();
+118   \textcolor{keyword}{const} \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType} total\_value = \hyperlink{classlbann_1_1metric_aab79147ff480675db2e01d7a889a4296}{evaluate\_compute}(
+      \hyperlink{classlbann_1_1metric_a2bf6c53efb1b525bfa63a8c3167968d9}{m\_target\_layer}->\hyperlink{classlbann_1_1generic__target__layer_ac0b88a705256ab06bbba6bbffbc7ebc1}{get\_prediction}(),
+119                                                 \hyperlink{classlbann_1_1metric_a2bf6c53efb1b525bfa63a8c3167968d9}{m\_target\_layer}->
+      \hyperlink{classlbann_1_1generic__target__layer_a9cbe476f3e447bc91e2834921ca7da9f}{get\_ground\_truth}());
+120   \hyperlink{classlbann_1_1metric_a4c77a1bd1db77e9d837a72128e3d687f}{m\_evaluate\_time} += \hyperlink{namespacelbann_a478d36031ff0659893c4322cd856157f}{get\_time}() - start;
+121 
+122   \textcolor{comment}{// Record result in statistics and return}
+123   \hyperlink{classlbann_1_1metric_a9949d8aceedbc113aa2c356046ed73fc}{m\_statistics}[mode].add\_value(total\_value, mini\_batch\_size);
+124   \textcolor{keywordflow}{return} total\_value / mini\_batch\_size;
+125 
+126 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1metric_ab4e14cb4296c7b47719071b210448dec_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1metric_aab79147ff480675db2e01d7a889a4296}\label{classlbann_1_1metric_aab79147ff480675db2e01d7a889a4296}} 
+\index{lbann\+::metric@{lbann\+::metric}!evaluate\+\_\+compute@{evaluate\+\_\+compute}}
+\index{evaluate\+\_\+compute@{evaluate\+\_\+compute}!lbann\+::metric@{lbann\+::metric}}
+\subsubsection{\texorpdfstring{evaluate\+\_\+compute()}{evaluate\_compute()}}
+{\footnotesize\ttfamily virtual \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} lbann\+::metric\+::evaluate\+\_\+compute (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{prediction,  }\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{ground\+\_\+truth }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [protected]}, {\ttfamily [pure virtual]}}
+
+Computation to evaluate the metric function. This should return the sum of metric values across the mini-\/batch, not the mean value. 
+
+Implemented in \hyperlink{classlbann_1_1categorical__accuracy__metric_a0ec8c3254569c9f9855675243ac51612}{lbann\+::categorical\+\_\+accuracy\+\_\+metric}, \hyperlink{classlbann_1_1top__k__categorical__accuracy__metric_a3449bdb835e7e5bd7d17cd001fb4ae38}{lbann\+::top\+\_\+k\+\_\+categorical\+\_\+accuracy\+\_\+metric}, \hyperlink{classlbann_1_1pearson__correlation__metric_a28453718aa09d609ef5ab157823d8c24}{lbann\+::pearson\+\_\+correlation\+\_\+metric}, \hyperlink{classlbann_1_1mean__absolute__deviation__metric_a4096a6f389b2f18ff6c19428313f2969}{lbann\+::mean\+\_\+absolute\+\_\+deviation\+\_\+metric}, \hyperlink{classlbann_1_1mean__squared__error__metric_a81a2aa469f965d526a489214b3e73e4f}{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+metric}, \hyperlink{classlbann_1_1r2__metric_a06c84d7944d1d5be896de6b98950e05e}{lbann\+::r2\+\_\+metric}, \hyperlink{classlbann_1_1boolean__false__negatives__metric_a598dfc1ee40c4e11f001cbf8899e0e0a}{lbann\+::boolean\+\_\+false\+\_\+negatives\+\_\+metric}, \hyperlink{classlbann_1_1boolean__false__positives__metric_abb6573a4e32e97316c69ce9fc24214f0}{lbann\+::boolean\+\_\+false\+\_\+positives\+\_\+metric}, and \hyperlink{classlbann_1_1boolean__accuracy__metric_acac2d198f516990fe9b87f3abefae635}{lbann\+::boolean\+\_\+accuracy\+\_\+metric}.
+
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=349pt]{classlbann_1_1metric_aab79147ff480675db2e01d7a889a4296_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1metric_a464120720df6bfdf91bffe353e562964}\label{classlbann_1_1metric_a464120720df6bfdf91bffe353e562964}} 
+\index{lbann\+::metric@{lbann\+::metric}!get\+\_\+comm@{get\+\_\+comm}}
+\index{get\+\_\+comm@{get\+\_\+comm}!lbann\+::metric@{lbann\+::metric}}
+\subsubsection{\texorpdfstring{get\+\_\+comm()}{get\_comm()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm}\& lbann\+::metric\+::get\+\_\+comm (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [protected]}}
+
+Get L\+B\+A\+NN communicator. 
+
+Definition at line 171 of file metric.\+hpp.
+
+
+\begin{DoxyCode}
+171 \{ \textcolor{keywordflow}{return} *\hyperlink{classlbann_1_1metric_a547077709911e30c7d070545936c9c85}{m\_comm}; \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1metric_a464120720df6bfdf91bffe353e562964_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1metric_a686239cad1f25628c9b298f9233cc9f3}\label{classlbann_1_1metric_a686239cad1f25628c9b298f9233cc9f3}} 
+\index{lbann\+::metric@{lbann\+::metric}!get\+\_\+evaluate\+\_\+time@{get\+\_\+evaluate\+\_\+time}}
+\index{get\+\_\+evaluate\+\_\+time@{get\+\_\+evaluate\+\_\+time}!lbann\+::metric@{lbann\+::metric}}
+\subsubsection{\texorpdfstring{get\+\_\+evaluate\+\_\+time()}{get\_evaluate\_time()}}
+{\footnotesize\ttfamily double lbann\+::metric\+::get\+\_\+evaluate\+\_\+time (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Get the time spent in evaluation for this metric. 
+
+Definition at line 150 of file metric.\+hpp.
+
+
+\begin{DoxyCode}
+150 \{ \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1metric_a4c77a1bd1db77e9d837a72128e3d687f}{m\_evaluate\_time}; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1metric_a7f97c998fa64475f9ef7f066237b0695}\label{classlbann_1_1metric_a7f97c998fa64475f9ef7f066237b0695}} 
+\index{lbann\+::metric@{lbann\+::metric}!get\+\_\+layer\+\_\+pointers@{get\+\_\+layer\+\_\+pointers}}
+\index{get\+\_\+layer\+\_\+pointers@{get\+\_\+layer\+\_\+pointers}!lbann\+::metric@{lbann\+::metric}}
+\subsubsection{\texorpdfstring{get\+\_\+layer\+\_\+pointers()}{get\_layer\_pointers()}}
+{\footnotesize\ttfamily std\+::vector$<$ \hyperlink{classlbann_1_1Layer}{Layer} $\ast$ $>$ lbann\+::metric\+::get\+\_\+layer\+\_\+pointers (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const}
+
+Get list of pointers to layers. 
+
+Definition at line 157 of file metric.\+cpp.
+
+
+\begin{DoxyCode}
+157                                                    \{
+158   \textcolor{keywordflow}{return} std::vector<Layer*>(1, \textcolor{keyword}{const\_cast<}generic\_target\_layer *\textcolor{keyword}{>}(
+      \hyperlink{classlbann_1_1metric_a2bf6c53efb1b525bfa63a8c3167968d9}{m\_target\_layer}));
+159 \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1metric_a2926c6b391dc8c3e3d13d0199317c570}\label{classlbann_1_1metric_a2926c6b391dc8c3e3d13d0199317c570}} 
+\index{lbann\+::metric@{lbann\+::metric}!get\+\_\+mean\+\_\+value@{get\+\_\+mean\+\_\+value}}
+\index{get\+\_\+mean\+\_\+value@{get\+\_\+mean\+\_\+value}!lbann\+::metric@{lbann\+::metric}}
+\subsubsection{\texorpdfstring{get\+\_\+mean\+\_\+value()}{get\_mean\_value()}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} lbann\+::metric\+::get\+\_\+mean\+\_\+value (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}}]{mode }\end{DoxyParamCaption}) const}
+
+Get mean metric value. If mini-\/batch sizes are not identical, the mean is over the sample values rather than over the mini-\/batch mean values. 
+
+Definition at line 128 of file metric.\+cpp.
+
+
+\begin{DoxyCode}
+128                                                          \{
+129   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1metric_a9949d8aceedbc113aa2c356046ed73fc}{m\_statistics}.count(mode) == 0
+130       || \hyperlink{classlbann_1_1metric_a9949d8aceedbc113aa2c356046ed73fc}{m\_statistics}.at(mode).get\_num\_samples() == 0) \{
+131     std::stringstream err;
+132     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+133         << \textcolor{stringliteral}{"attempted to get mean metric value with no samples for statistics"};
+134     \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+135   \}
+136   \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1metric_a9949d8aceedbc113aa2c356046ed73fc}{m\_statistics}.at(mode).get\_mean();
+137 \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1metric_a489feb28d318bd8405133f9f8c94cc10}\label{classlbann_1_1metric_a489feb28d318bd8405133f9f8c94cc10}} 
+\index{lbann\+::metric@{lbann\+::metric}!get\+\_\+statistics\+\_\+num\+\_\+samples@{get\+\_\+statistics\+\_\+num\+\_\+samples}}
+\index{get\+\_\+statistics\+\_\+num\+\_\+samples@{get\+\_\+statistics\+\_\+num\+\_\+samples}!lbann\+::metric@{lbann\+::metric}}
+\subsubsection{\texorpdfstring{get\+\_\+statistics\+\_\+num\+\_\+samples()}{get\_statistics\_num\_samples()}}
+{\footnotesize\ttfamily int lbann\+::metric\+::get\+\_\+statistics\+\_\+num\+\_\+samples (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}}]{mode }\end{DoxyParamCaption}) const}
+
+Get number of samples for statistics. 
+
+Definition at line 139 of file metric.\+cpp.
+
+
+\begin{DoxyCode}
+139                                                                 \{
+140   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1metric_a9949d8aceedbc113aa2c356046ed73fc}{m\_statistics}.count(mode) == 0) \{
+141     \textcolor{keywordflow}{return} 0;
+142   \} \textcolor{keywordflow}{else} \{
+143     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1metric_a9949d8aceedbc113aa2c356046ed73fc}{m\_statistics}.at(mode).get\_num\_samples();
+144   \}
+145 \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1metric_aba7f7a12aeba6619f7b4330e9075f76e}\label{classlbann_1_1metric_aba7f7a12aeba6619f7b4330e9075f76e}} 
+\index{lbann\+::metric@{lbann\+::metric}!get\+\_\+target\+\_\+layer@{get\+\_\+target\+\_\+layer}}
+\index{get\+\_\+target\+\_\+layer@{get\+\_\+target\+\_\+layer}!lbann\+::metric@{lbann\+::metric}}
+\subsubsection{\texorpdfstring{get\+\_\+target\+\_\+layer()}{get\_target\_layer()}}
+{\footnotesize\ttfamily const \hyperlink{classlbann_1_1generic__target__layer}{generic\+\_\+target\+\_\+layer} \& lbann\+::metric\+::get\+\_\+target\+\_\+layer (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const}
+
+Get target layer. 
+
+Definition at line 147 of file metric.\+cpp.
+
+
+\begin{DoxyCode}
+147                                                            \{
+148   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1metric_a2bf6c53efb1b525bfa63a8c3167968d9}{m\_target\_layer} == \textcolor{keyword}{nullptr}) \{
+149     std::stringstream err;
+150     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+151         << \textcolor{stringliteral}{"attempted to access target layer before it is set"};
+152     \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+153   \}
+154   \textcolor{keywordflow}{return} *\hyperlink{classlbann_1_1metric_a2bf6c53efb1b525bfa63a8c3167968d9}{m\_target\_layer};
+155 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1metric_aba7f7a12aeba6619f7b4330e9075f76e_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1metric_a13fd302dec85190b877f7146529e516c}\label{classlbann_1_1metric_a13fd302dec85190b877f7146529e516c}} 
+\index{lbann\+::metric@{lbann\+::metric}!get\+\_\+unit@{get\+\_\+unit}}
+\index{get\+\_\+unit@{get\+\_\+unit}!lbann\+::metric@{lbann\+::metric}}
+\subsubsection{\texorpdfstring{get\+\_\+unit()}{get\_unit()}}
+{\footnotesize\ttfamily virtual std\+::string lbann\+::metric\+::get\+\_\+unit (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+Return a display unit for this metric. Default is an empty string. This is overriden if the metric has units, e.\+g. \char`\"{}\%\char`\"{} or \char`\"{}sec\char`\"{}. 
+
+Reimplemented in \hyperlink{classlbann_1_1top__k__categorical__accuracy__metric_a0531d4f199fa61ce448af8c945ff3dfc}{lbann\+::top\+\_\+k\+\_\+categorical\+\_\+accuracy\+\_\+metric}, \hyperlink{classlbann_1_1categorical__accuracy__metric_a9c06851bc233a01b28c346a10d278d99}{lbann\+::categorical\+\_\+accuracy\+\_\+metric}, \hyperlink{classlbann_1_1boolean__false__negatives__metric_abe2bdb0c15ff481caa234e13fe7df2b9}{lbann\+::boolean\+\_\+false\+\_\+negatives\+\_\+metric}, \hyperlink{classlbann_1_1boolean__false__positives__metric_ab42b53134f128d26e3df37ca7a3d4cea}{lbann\+::boolean\+\_\+false\+\_\+positives\+\_\+metric}, and \hyperlink{classlbann_1_1boolean__accuracy__metric_abde43253ef54b243f9faa1b1adea0672}{lbann\+::boolean\+\_\+accuracy\+\_\+metric}.
+
+
+
+Definition at line 112 of file metric.\+hpp.
+
+
+\begin{DoxyCode}
+112 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{""}; \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1metric_a13fd302dec85190b877f7146529e516c_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1metric_ab3d1ec8247352467790be036a07cfc2b}\label{classlbann_1_1metric_ab3d1ec8247352467790be036a07cfc2b}} 
+\index{lbann\+::metric@{lbann\+::metric}!load\+\_\+from\+\_\+checkpoint\+\_\+shared@{load\+\_\+from\+\_\+checkpoint\+\_\+shared}}
+\index{load\+\_\+from\+\_\+checkpoint\+\_\+shared@{load\+\_\+from\+\_\+checkpoint\+\_\+shared}!lbann\+::metric@{lbann\+::metric}}
+\subsubsection{\texorpdfstring{load\+\_\+from\+\_\+checkpoint\+\_\+shared()}{load\_from\_checkpoint\_shared()}}
+{\footnotesize\ttfamily bool lbann\+::metric\+::load\+\_\+from\+\_\+checkpoint\+\_\+shared (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1persist}{persist} \&}]{p }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [virtual]}}
+
+Load metric state from checkpoint. 
+
+Definition at line 182 of file metric.\+cpp.
+
+
+\begin{DoxyCode}
+182                                                    \{
+183   \textcolor{keyword}{struct }metric\_statistics::packing\_header training\_header, validation\_header, testing\_header;
+184   \textcolor{keywordflow}{if} (p.get\_rank() == 0) \{
+185     \hyperlink{classlbann_1_1metric_a9949d8aceedbc113aa2c356046ed73fc}{m\_statistics}[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training}].unpack\_scalars(p, &
+      training\_header);
+186     \hyperlink{classlbann_1_1metric_a9949d8aceedbc113aa2c356046ed73fc}{m\_statistics}[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation}].unpack\_scalars(p, &
+      validation\_header);
+187     \hyperlink{classlbann_1_1metric_a9949d8aceedbc113aa2c356046ed73fc}{m\_statistics}[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing}].unpack\_scalars(p, &
+      testing\_header);
+188   \}
+189 
+190   MPI\_Bcast(&training\_header, \textcolor{keyword}{sizeof}(training\_header), MPI\_BYTE, 0, MPI\_COMM\_WORLD);
+191   MPI\_Bcast(&validation\_header, \textcolor{keyword}{sizeof}(validation\_header), MPI\_BYTE, 0, MPI\_COMM\_WORLD);
+192   MPI\_Bcast(&testing\_header, \textcolor{keyword}{sizeof}(testing\_header), MPI\_BYTE, 0, MPI\_COMM\_WORLD);
+193 
+194   \hyperlink{classlbann_1_1metric_a9949d8aceedbc113aa2c356046ed73fc}{m\_statistics}[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training}].unpack\_header(training\_header)
+      ;
+195   \hyperlink{classlbann_1_1metric_a9949d8aceedbc113aa2c356046ed73fc}{m\_statistics}[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation}].unpack\_header(
+      validation\_header);
+196   \hyperlink{classlbann_1_1metric_a9949d8aceedbc113aa2c356046ed73fc}{m\_statistics}[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing}].unpack\_header(testing\_header);
+197   \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+198 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1metric_ab3d1ec8247352467790be036a07cfc2b_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1metric_af455d7b6874d3491bc04f0f2ebfcab51}\label{classlbann_1_1metric_af455d7b6874d3491bc04f0f2ebfcab51}} 
+\index{lbann\+::metric@{lbann\+::metric}!name@{name}}
+\index{name@{name}!lbann\+::metric@{lbann\+::metric}}
+\subsubsection{\texorpdfstring{name()}{name()}}
+{\footnotesize\ttfamily virtual std\+::string lbann\+::metric\+::name (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [pure virtual]}}
+
+Return a string name for this metric. 
+
+Implemented in \hyperlink{classlbann_1_1top__k__categorical__accuracy__metric_a7b49f722f75dabe73c0fc3500d72ef63}{lbann\+::top\+\_\+k\+\_\+categorical\+\_\+accuracy\+\_\+metric}, \hyperlink{classlbann_1_1categorical__accuracy__metric_a6fea8e495ab4ec4b05546c794468fa12}{lbann\+::categorical\+\_\+accuracy\+\_\+metric}, \hyperlink{classlbann_1_1mean__absolute__deviation__metric_a6b2f0542a991b632414dc217586db905}{lbann\+::mean\+\_\+absolute\+\_\+deviation\+\_\+metric}, \hyperlink{classlbann_1_1mean__squared__error__metric_ac5477e6104eaf87fbbe2a13232ee2d9f}{lbann\+::mean\+\_\+squared\+\_\+error\+\_\+metric}, \hyperlink{classlbann_1_1r2__metric_a66f9280c69b9b079d40b70b9c9c43ad9}{lbann\+::r2\+\_\+metric}, \hyperlink{classlbann_1_1boolean__false__negatives__metric_a7e7f60e7babfbaad2dce5def175a8fbd}{lbann\+::boolean\+\_\+false\+\_\+negatives\+\_\+metric}, \hyperlink{classlbann_1_1boolean__false__positives__metric_aa1089643938285ab8c563e5aaccf9652}{lbann\+::boolean\+\_\+false\+\_\+positives\+\_\+metric}, \hyperlink{classlbann_1_1pearson__correlation__metric_a7cbb12e258acdb0cbc4d521dc7163dd6}{lbann\+::pearson\+\_\+correlation\+\_\+metric}, and \hyperlink{classlbann_1_1boolean__accuracy__metric_a88edde5abce60809dbaaf034b166b09e}{lbann\+::boolean\+\_\+accuracy\+\_\+metric}.
+
+\mbox{\Hypertarget{classlbann_1_1metric_a4324342dab4892199a47df1d78b2cef5}\label{classlbann_1_1metric_a4324342dab4892199a47df1d78b2cef5}} 
+\index{lbann\+::metric@{lbann\+::metric}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::metric@{lbann\+::metric}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1metric}{metric}\& lbann\+::metric\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1metric}{metric} \&}]{other }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Copy assignment operator. Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1metric_a4324342dab4892199a47df1d78b2cef5_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1metric_ab93708cd870277eb7865655e075620c9}\label{classlbann_1_1metric_ab93708cd870277eb7865655e075620c9}} 
+\index{lbann\+::metric@{lbann\+::metric}!reset\+\_\+counters@{reset\+\_\+counters}}
+\index{reset\+\_\+counters@{reset\+\_\+counters}!lbann\+::metric@{lbann\+::metric}}
+\subsubsection{\texorpdfstring{reset\+\_\+counters()}{reset\_counters()}}
+{\footnotesize\ttfamily void lbann\+::metric\+::reset\+\_\+counters (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Reset timing counters. 
+
+Definition at line 152 of file metric.\+hpp.
+
+
+\begin{DoxyCode}
+152                         \{
+153     \hyperlink{classlbann_1_1metric_a4c77a1bd1db77e9d837a72128e3d687f}{m\_evaluate\_time} = 0.0;
+154   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1metric_af7747feb8bc7a5ee039876a70fae1b0c}\label{classlbann_1_1metric_af7747feb8bc7a5ee039876a70fae1b0c}} 
+\index{lbann\+::metric@{lbann\+::metric}!reset\+\_\+statistics@{reset\+\_\+statistics}}
+\index{reset\+\_\+statistics@{reset\+\_\+statistics}!lbann\+::metric@{lbann\+::metric}}
+\subsubsection{\texorpdfstring{reset\+\_\+statistics()}{reset\_statistics()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily void lbann\+::metric\+::reset\+\_\+statistics (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Clear all statistics. 
+
+Definition at line 127 of file metric.\+hpp.
+
+
+\begin{DoxyCode}
+127 \{ \hyperlink{classlbann_1_1metric_a9949d8aceedbc113aa2c356046ed73fc}{m\_statistics}.clear(); \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1metric_a27a3d8c073b85297b902ba35137926b4}\label{classlbann_1_1metric_a27a3d8c073b85297b902ba35137926b4}} 
+\index{lbann\+::metric@{lbann\+::metric}!reset\+\_\+statistics@{reset\+\_\+statistics}}
+\index{reset\+\_\+statistics@{reset\+\_\+statistics}!lbann\+::metric@{lbann\+::metric}}
+\subsubsection{\texorpdfstring{reset\+\_\+statistics()}{reset\_statistics()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily void lbann\+::metric\+::reset\+\_\+statistics (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}}]{mode }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Clear statistics for an execution mode. 
+
+Definition at line 129 of file metric.\+hpp.
+
+
+\begin{DoxyCode}
+129 \{ \hyperlink{classlbann_1_1metric_a9949d8aceedbc113aa2c356046ed73fc}{m\_statistics}.erase(mode); \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1metric_a9728b02a240dfd9faa61b7dfeb3feede}\label{classlbann_1_1metric_a9728b02a240dfd9faa61b7dfeb3feede}} 
+\index{lbann\+::metric@{lbann\+::metric}!save\+\_\+to\+\_\+checkpoint\+\_\+shared@{save\+\_\+to\+\_\+checkpoint\+\_\+shared}}
+\index{save\+\_\+to\+\_\+checkpoint\+\_\+shared@{save\+\_\+to\+\_\+checkpoint\+\_\+shared}!lbann\+::metric@{lbann\+::metric}}
+\subsubsection{\texorpdfstring{save\+\_\+to\+\_\+checkpoint\+\_\+shared()}{save\_to\_checkpoint\_shared()}}
+{\footnotesize\ttfamily bool lbann\+::metric\+::save\+\_\+to\+\_\+checkpoint\+\_\+shared (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1persist}{persist} \&}]{p }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [virtual]}}
+
+Save metric state to checkpoint. 
+
+Definition at line 172 of file metric.\+cpp.
+
+
+\begin{DoxyCode}
+172                                                  \{
+173   \textcolor{comment}{// write out fields we need to save for model}
+174   \textcolor{keywordflow}{if} (p.get\_rank() == 0) \{
+175     \hyperlink{classlbann_1_1metric_a9949d8aceedbc113aa2c356046ed73fc}{m\_statistics}[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training}].pack\_scalars(p);
+176     \hyperlink{classlbann_1_1metric_a9949d8aceedbc113aa2c356046ed73fc}{m\_statistics}[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation}].pack\_scalars(p);
+177     \hyperlink{classlbann_1_1metric_a9949d8aceedbc113aa2c356046ed73fc}{m\_statistics}[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing}].pack\_scalars(p);
+178   \}
+179   \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+180 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1metric_a9728b02a240dfd9faa61b7dfeb3feede_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1metric_a5de0c336b93f2c03f37f38047d401f99}\label{classlbann_1_1metric_a5de0c336b93f2c03f37f38047d401f99}} 
+\index{lbann\+::metric@{lbann\+::metric}!set\+\_\+layer\+\_\+pointers@{set\+\_\+layer\+\_\+pointers}}
+\index{set\+\_\+layer\+\_\+pointers@{set\+\_\+layer\+\_\+pointers}!lbann\+::metric@{lbann\+::metric}}
+\subsubsection{\texorpdfstring{set\+\_\+layer\+\_\+pointers()}{set\_layer\_pointers()}}
+{\footnotesize\ttfamily void lbann\+::metric\+::set\+\_\+layer\+\_\+pointers (\begin{DoxyParamCaption}\item[{std\+::vector$<$ \hyperlink{classlbann_1_1Layer}{Layer} $\ast$$>$}]{layers }\end{DoxyParamCaption})}
+
+Set list of pointers to layers. 
+
+Definition at line 161 of file metric.\+cpp.
+
+
+\begin{DoxyCode}
+161                                                         \{
+162   \textcolor{keywordflow}{if} (layers.size() != 1) \{
+163     std::stringstream err;
+164     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+165         << \textcolor{stringliteral}{"attempted to set layer pointers with an invalid number of pointers "}
+166         << \textcolor{stringliteral}{"(expected 1, found "} << layers.size() << \textcolor{stringliteral}{")"};
+167     \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+168   \}
+169   \hyperlink{classlbann_1_1metric_a2bf6c53efb1b525bfa63a8c3167968d9}{m\_target\_layer} = \textcolor{keyword}{dynamic\_cast<}\textcolor{keyword}{const }generic\_target\_layer *\textcolor{keyword}{>}(layers[0]);
+170 \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1metric_a8367719e2c7816a4c718c049ea97b709}\label{classlbann_1_1metric_a8367719e2c7816a4c718c049ea97b709}} 
+\index{lbann\+::metric@{lbann\+::metric}!set\+\_\+target\+\_\+layer@{set\+\_\+target\+\_\+layer}}
+\index{set\+\_\+target\+\_\+layer@{set\+\_\+target\+\_\+layer}!lbann\+::metric@{lbann\+::metric}}
+\subsubsection{\texorpdfstring{set\+\_\+target\+\_\+layer()}{set\_target\_layer()}}
+{\footnotesize\ttfamily void lbann\+::metric\+::set\+\_\+target\+\_\+layer (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1generic__target__layer}{generic\+\_\+target\+\_\+layer} $\ast$}]{target }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Set pointer to target layer. 
+
+Definition at line 140 of file metric.\+hpp.
+
+
+\begin{DoxyCode}
+140 \{ \hyperlink{classlbann_1_1metric_a2bf6c53efb1b525bfa63a8c3167968d9}{m\_target\_layer} = target; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1metric_a898d23e410297378db2fe9f8d1754fe0}\label{classlbann_1_1metric_a898d23e410297378db2fe9f8d1754fe0}} 
+\index{lbann\+::metric@{lbann\+::metric}!setup@{setup}}
+\index{setup@{setup}!lbann\+::metric@{lbann\+::metric}}
+\subsubsection{\texorpdfstring{setup()}{setup()}}
+{\footnotesize\ttfamily void lbann\+::metric\+::setup (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} \&}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [virtual]}}
+
+Setup metric. 
+
+Reimplemented in \hyperlink{classlbann_1_1categorical__accuracy__metric_a328a63ccc21c31efd511445f5b060960}{lbann\+::categorical\+\_\+accuracy\+\_\+metric}, and \hyperlink{classlbann_1_1pearson__correlation__metric_a4394c0ebb3cacdcec934e4ae322f9bb6}{lbann\+::pearson\+\_\+correlation\+\_\+metric}.
+
+
+
+Definition at line 83 of file metric.\+cpp.
+
+
+\begin{DoxyCode}
+83                            \{
+84 
+85   \textcolor{comment}{// Set target layer if needed}
+86   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1metric_a2bf6c53efb1b525bfa63a8c3167968d9}{m\_target\_layer} == \textcolor{keyword}{nullptr}) \{
+87     \textcolor{keyword}{const} std::vector<Layer*> layers = m.get\_layers();
+88     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i = layers.size() - 1; i >= 0; --i) \{
+89       \textcolor{keyword}{const} generic\_target\_layer *target = \textcolor{keyword}{dynamic\_cast<}\textcolor{keyword}{const }generic\_target\_layer*\textcolor{keyword}{>}(layers[i]);
+90       \textcolor{keywordflow}{if} (target != \textcolor{keyword}{nullptr}) \{
+91         \hyperlink{classlbann_1_1metric_a2bf6c53efb1b525bfa63a8c3167968d9}{m\_target\_layer} = target;
+92         \textcolor{keywordflow}{break};
+93       \}
+94     \}
+95     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1metric_a2bf6c53efb1b525bfa63a8c3167968d9}{m\_target\_layer} == \textcolor{keyword}{nullptr}) \{
+96       std::stringstream err;
+97       err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+98           << \textcolor{stringliteral}{"could not setup metric with target layer"};
+99       \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+100     \}
+101   \}
+102 
+103 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1metric_a898d23e410297378db2fe9f8d1754fe0_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1metric_a898d23e410297378db2fe9f8d1754fe0_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1metric_a547077709911e30c7d070545936c9c85}\label{classlbann_1_1metric_a547077709911e30c7d070545936c9c85}} 
+\index{lbann\+::metric@{lbann\+::metric}!m\+\_\+comm@{m\+\_\+comm}}
+\index{m\+\_\+comm@{m\+\_\+comm}!lbann\+::metric@{lbann\+::metric}}
+\subsubsection{\texorpdfstring{m\+\_\+comm}{m\_comm}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm}$\ast$ lbann\+::metric\+::m\+\_\+comm\hspace{0.3cm}{\ttfamily [private]}}
+
+L\+B\+A\+NN communicator. 
+
+Definition at line 176 of file metric.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1metric_a4c77a1bd1db77e9d837a72128e3d687f}\label{classlbann_1_1metric_a4c77a1bd1db77e9d837a72128e3d687f}} 
+\index{lbann\+::metric@{lbann\+::metric}!m\+\_\+evaluate\+\_\+time@{m\+\_\+evaluate\+\_\+time}}
+\index{m\+\_\+evaluate\+\_\+time@{m\+\_\+evaluate\+\_\+time}!lbann\+::metric@{lbann\+::metric}}
+\subsubsection{\texorpdfstring{m\+\_\+evaluate\+\_\+time}{m\_evaluate\_time}}
+{\footnotesize\ttfamily double lbann\+::metric\+::m\+\_\+evaluate\+\_\+time = 0.\+0\hspace{0.3cm}{\ttfamily [private]}}
+
+Runtime for the metric evaluation. 
+
+Definition at line 185 of file metric.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1metric_a9949d8aceedbc113aa2c356046ed73fc}\label{classlbann_1_1metric_a9949d8aceedbc113aa2c356046ed73fc}} 
+\index{lbann\+::metric@{lbann\+::metric}!m\+\_\+statistics@{m\+\_\+statistics}}
+\index{m\+\_\+statistics@{m\+\_\+statistics}!lbann\+::metric@{lbann\+::metric}}
+\subsubsection{\texorpdfstring{m\+\_\+statistics}{m\_statistics}}
+{\footnotesize\ttfamily std\+::map$<$\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode},\hyperlink{structlbann_1_1metric__statistics}{metric\+\_\+statistics}$>$ lbann\+::metric\+::m\+\_\+statistics\hspace{0.3cm}{\ttfamily [private]}}
+
+Metric statistics. 
+
+Definition at line 182 of file metric.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1metric_a2bf6c53efb1b525bfa63a8c3167968d9}\label{classlbann_1_1metric_a2bf6c53efb1b525bfa63a8c3167968d9}} 
+\index{lbann\+::metric@{lbann\+::metric}!m\+\_\+target\+\_\+layer@{m\+\_\+target\+\_\+layer}}
+\index{m\+\_\+target\+\_\+layer@{m\+\_\+target\+\_\+layer}!lbann\+::metric@{lbann\+::metric}}
+\subsubsection{\texorpdfstring{m\+\_\+target\+\_\+layer}{m\_target\_layer}}
+{\footnotesize\ttfamily const \hyperlink{classlbann_1_1generic__target__layer}{generic\+\_\+target\+\_\+layer}$\ast$ lbann\+::metric\+::m\+\_\+target\+\_\+layer\hspace{0.3cm}{\ttfamily [private]}}
+
+Pointer to target layer. 
+
+Definition at line 179 of file metric.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/metrics/\hyperlink{metric_8hpp}{metric.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/metrics/\hyperlink{metric_8cpp}{metric.\+cpp}\end{DoxyCompactItemize}

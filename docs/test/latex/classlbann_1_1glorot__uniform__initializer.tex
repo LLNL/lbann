@@ -1,0 +1,142 @@
+\hypertarget{classlbann_1_1glorot__uniform__initializer}{}\section{lbann\+:\+:glorot\+\_\+uniform\+\_\+initializer Class Reference}
+\label{classlbann_1_1glorot__uniform__initializer}\index{lbann\+::glorot\+\_\+uniform\+\_\+initializer@{lbann\+::glorot\+\_\+uniform\+\_\+initializer}}
+
+
+{\ttfamily \#include $<$fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializers.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:glorot\+\_\+uniform\+\_\+initializer\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=204pt]{classlbann_1_1glorot__uniform__initializer__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:glorot\+\_\+uniform\+\_\+initializer\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=204pt]{classlbann_1_1glorot__uniform__initializer__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1glorot__uniform__initializer_a1958289232a04f13ce340a684620be55}{glorot\+\_\+uniform\+\_\+initializer} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm})
+\item 
+\hyperlink{classlbann_1_1glorot__uniform__initializer_ae48941eb831bc30cc405db1f4ef62583}{$\sim$glorot\+\_\+uniform\+\_\+initializer} () override=default
+\item 
+\hyperlink{classlbann_1_1glorot__uniform__initializer}{glorot\+\_\+uniform\+\_\+initializer} $\ast$ \hyperlink{classlbann_1_1glorot__uniform__initializer_a3c5790bf2e7b0e771d3ed1d93c8f255f}{copy} () const override
+\item 
+void \hyperlink{classlbann_1_1glorot__uniform__initializer_a3a44410934f791cee272183a6a36ae0c}{initialize\+\_\+entries} (\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&weights\+\_\+matrix) const override
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+Glorot uniform initializer. Also called Xavier uniform initialization. 
+
+Definition at line 88 of file fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializers.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1glorot__uniform__initializer_a1958289232a04f13ce340a684620be55}\label{classlbann_1_1glorot__uniform__initializer_a1958289232a04f13ce340a684620be55}} 
+\index{lbann\+::glorot\+\_\+uniform\+\_\+initializer@{lbann\+::glorot\+\_\+uniform\+\_\+initializer}!glorot\+\_\+uniform\+\_\+initializer@{glorot\+\_\+uniform\+\_\+initializer}}
+\index{glorot\+\_\+uniform\+\_\+initializer@{glorot\+\_\+uniform\+\_\+initializer}!lbann\+::glorot\+\_\+uniform\+\_\+initializer@{lbann\+::glorot\+\_\+uniform\+\_\+initializer}}
+\subsubsection{\texorpdfstring{glorot\+\_\+uniform\+\_\+initializer()}{glorot\_uniform\_initializer()}}
+{\footnotesize\ttfamily lbann\+::glorot\+\_\+uniform\+\_\+initializer\+::glorot\+\_\+uniform\+\_\+initializer (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Constructor. 
+
+Definition at line 92 of file fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializers.\+hpp.
+
+
+\begin{DoxyCode}
+93     : \hyperlink{classlbann_1_1fan__in__fan__out__initializer_a3a3811af11b1a70a57af846ae2cdf668}{fan\_in\_fan\_out\_initializer}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}) \{\}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1glorot__uniform__initializer_ae48941eb831bc30cc405db1f4ef62583}\label{classlbann_1_1glorot__uniform__initializer_ae48941eb831bc30cc405db1f4ef62583}} 
+\index{lbann\+::glorot\+\_\+uniform\+\_\+initializer@{lbann\+::glorot\+\_\+uniform\+\_\+initializer}!````~glorot\+\_\+uniform\+\_\+initializer@{$\sim$glorot\+\_\+uniform\+\_\+initializer}}
+\index{````~glorot\+\_\+uniform\+\_\+initializer@{$\sim$glorot\+\_\+uniform\+\_\+initializer}!lbann\+::glorot\+\_\+uniform\+\_\+initializer@{lbann\+::glorot\+\_\+uniform\+\_\+initializer}}
+\subsubsection{\texorpdfstring{$\sim$glorot\+\_\+uniform\+\_\+initializer()}{~glorot\_uniform\_initializer()}}
+{\footnotesize\ttfamily lbann\+::glorot\+\_\+uniform\+\_\+initializer\+::$\sim$glorot\+\_\+uniform\+\_\+initializer (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [default]}}
+
+Destructor. 
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1glorot__uniform__initializer_a3c5790bf2e7b0e771d3ed1d93c8f255f}\label{classlbann_1_1glorot__uniform__initializer_a3c5790bf2e7b0e771d3ed1d93c8f255f}} 
+\index{lbann\+::glorot\+\_\+uniform\+\_\+initializer@{lbann\+::glorot\+\_\+uniform\+\_\+initializer}!copy@{copy}}
+\index{copy@{copy}!lbann\+::glorot\+\_\+uniform\+\_\+initializer@{lbann\+::glorot\+\_\+uniform\+\_\+initializer}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1glorot__uniform__initializer}{glorot\+\_\+uniform\+\_\+initializer}$\ast$ lbann\+::glorot\+\_\+uniform\+\_\+initializer\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Create a copy. 
+
+Implements \hyperlink{classlbann_1_1weights__initializer_acc84ce49188b74b23987cef3db18525a}{lbann\+::weights\+\_\+initializer}.
+
+
+
+Definition at line 98 of file fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializers.\+hpp.
+
+
+\begin{DoxyCode}
+98                                                     \{
+99     \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1glorot__uniform__initializer_a1958289232a04f13ce340a684620be55}{glorot\_uniform\_initializer}(*\textcolor{keyword}{this});
+100   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1glorot__uniform__initializer_a3c5790bf2e7b0e771d3ed1d93c8f255f_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1glorot__uniform__initializer_a3a44410934f791cee272183a6a36ae0c}\label{classlbann_1_1glorot__uniform__initializer_a3a44410934f791cee272183a6a36ae0c}} 
+\index{lbann\+::glorot\+\_\+uniform\+\_\+initializer@{lbann\+::glorot\+\_\+uniform\+\_\+initializer}!initialize\+\_\+entries@{initialize\+\_\+entries}}
+\index{initialize\+\_\+entries@{initialize\+\_\+entries}!lbann\+::glorot\+\_\+uniform\+\_\+initializer@{lbann\+::glorot\+\_\+uniform\+\_\+initializer}}
+\subsubsection{\texorpdfstring{initialize\+\_\+entries()}{initialize\_entries()}}
+{\footnotesize\ttfamily void lbann\+::glorot\+\_\+uniform\+\_\+initializer\+::initialize\+\_\+entries (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{weights\+\_\+matrix }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Initialize weights matrix entries. 
+
+Implements \hyperlink{classlbann_1_1weights__initializer_a2ad6acf904c0c7bc7406dbd9851107be}{lbann\+::weights\+\_\+initializer}.
+
+
+
+Definition at line 50 of file fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializers.\+cpp.
+
+
+\begin{DoxyCode}
+50                                                                                     \{
+51   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1fan__in__fan__out__initializer_aea6639db271d9050f0a2e4f8c8dfa6cd}{m\_fan\_in} <= 0 || \hyperlink{classlbann_1_1fan__in__fan__out__initializer_ac67d275ab8574780525d2af59b738338}{m\_fan\_out} <= 0) \{
+52     std::stringstream err;
+53     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+54         << \textcolor{stringliteral}{"invalid dimensions for Glorot uniform initialization "}
+55         << \textcolor{stringliteral}{"(fan\_in="} << this->\hyperlink{classlbann_1_1fan__in__fan__out__initializer_aea6639db271d9050f0a2e4f8c8dfa6cd}{m\_fan\_in} << \textcolor{stringliteral}{",fan\_out="} << this->
+      \hyperlink{classlbann_1_1fan__in__fan__out__initializer_ac67d275ab8574780525d2af59b738338}{m\_fan\_out} << \textcolor{stringliteral}{")"};
+56     \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+57   \}
+58   \textcolor{keyword}{const} DataType variance = DataType(2) / (\hyperlink{classlbann_1_1fan__in__fan__out__initializer_aea6639db271d9050f0a2e4f8c8dfa6cd}{m\_fan\_in} + \hyperlink{classlbann_1_1fan__in__fan__out__initializer_ac67d275ab8574780525d2af59b738338}{m\_fan\_out});
+59   \hyperlink{namespacelbann_abd116f95f55d0e29d9a0cc386139c4b4}{gaussian\_fill}(weights\_matrix,
+60                 weights\_matrix.Height(),
+61                 weights\_matrix.Width(),
+62                 DataType(0),
+63                 std::sqrt(3*variance));
+64 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1glorot__uniform__initializer_a3a44410934f791cee272183a6a36ae0c_cgraph}
+\end{center}
+\end{figure}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/weights/\hyperlink{fan__in__fan__out__initializers_8hpp}{fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializers.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/weights/\hyperlink{fan__in__fan__out__initializers_8cpp}{fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializers.\+cpp}\end{DoxyCompactItemize}

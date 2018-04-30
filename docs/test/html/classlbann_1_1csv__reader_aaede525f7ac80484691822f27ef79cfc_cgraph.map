@@ -1,0 +1,6 @@
+<map id="lbann::csv_reader::operator=" name="lbann::csv_reader::operator=">
+<area shape="rect" id="node2" href="$classlbann_1_1generic__data__reader.html#aec7e626e6efa2a4bf23f931e2ef8f607" title="lbann::generic_data\l_reader::operator=" alt="" coords="188,5,327,44"/>
+<area shape="rect" id="node3" href="$classlbann_1_1csv__reader.html#afc689f206192339770ee9fbd132492bb" title="Initialize the ifstreams vector. " alt="" coords="190,68,325,107"/>
+<area shape="rect" id="node4" href="$classlbann_1_1generic__data__reader.html#ab4c6c2d4ba40ece809ce896828c8ff03" title="lbann::generic_data\l_reader::get_file_dir" alt="" coords="397,36,537,75"/>
+<area shape="rect" id="node5" href="$classlbann_1_1generic__data__reader.html#a56664e1b43f3fe923cf6d652f14b40a9" title="lbann::generic_data\l_reader::get_data_filename" alt="" coords="375,99,559,137"/>
+</map>

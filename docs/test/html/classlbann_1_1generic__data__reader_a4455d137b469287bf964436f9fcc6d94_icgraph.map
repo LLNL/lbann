@@ -1,0 +1,8 @@
+<map id="lbann::generic_data_reader::set_global_last_mini_batch_size" name="lbann::generic_data_reader::set_global_last_mini_batch_size">
+<area shape="rect" id="node2" href="$classlbann_1_1distributed__io__buffer.html#af63a8b162ed869393c5b604c5913c631" title="lbann::distributed\l_io_buffer::calculate\l_num_iterations_per_epoch" alt="" coords="206,55,392,107"/>
+<area shape="rect" id="node5" href="$classlbann_1_1partitioned__io__buffer.html#a50b6e2b7a82927526758f7cfb18a1ded" title="lbann::partitioned\l_io_buffer::calculate\l_num_iterations_per_epoch\l_spanning_models" alt="" coords="206,131,392,196"/>
+<area shape="rect" id="node7" href="$classlbann_1_1partitioned__io__buffer.html#ad707e54827d6e537127341b10407b716" title="lbann::partitioned\l_io_buffer::calculate\l_num_iterations_per_epoch\l_single_model" alt="" coords="206,220,392,285"/>
+<area shape="rect" id="node3" href="$classlbann_1_1distributed__io__buffer.html#aa1f5200f9646d38fe3b3adaf39645330" title="lbann::distributed\l_io_buffer::calculate\l_num_iterations_per_epoch\l_spanning_models" alt="" coords="440,5,627,71"/>
+<area shape="rect" id="node4" href="$classlbann_1_1distributed__io__buffer.html#a2a611c36620155646e46e065e040541f" title="lbann::distributed\l_io_buffer::calculate\l_num_iterations_per_epoch\l_single_model" alt="" coords="440,95,627,160"/>
+<area shape="rect" id="node6" href="$classlbann_1_1partitioned__io__buffer.html#a06a204fbf82f092b0225ab10c1bec98e" title="lbann::partitioned\l_io_buffer::setup_data" alt="" coords="457,187,611,225"/>
+</map>

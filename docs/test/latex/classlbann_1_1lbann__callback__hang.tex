@@ -1,0 +1,211 @@
+\hypertarget{classlbann_1_1lbann__callback__hang}{}\section{lbann\+:\+:lbann\+\_\+callback\+\_\+hang Class Reference}
+\label{classlbann_1_1lbann__callback__hang}\index{lbann\+::lbann\+\_\+callback\+\_\+hang@{lbann\+::lbann\+\_\+callback\+\_\+hang}}
+
+
+{\ttfamily \#include $<$callback\+\_\+hang.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+hang\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=220pt]{classlbann_1_1lbann__callback__hang__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+hang\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=220pt]{classlbann_1_1lbann__callback__hang__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1lbann__callback__hang_af5e29a2d416e3268a495df8370b272b6}{lbann\+\_\+callback\+\_\+hang} (int rank\+\_\+to\+\_\+hang=-\/1)
+\item 
+\hyperlink{classlbann_1_1lbann__callback__hang_a0633c81998abdfea74a2bdcc38245217}{lbann\+\_\+callback\+\_\+hang} (const \hyperlink{classlbann_1_1lbann__callback__hang}{lbann\+\_\+callback\+\_\+hang} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__hang}{lbann\+\_\+callback\+\_\+hang} \& \hyperlink{classlbann_1_1lbann__callback__hang_aef5c147b4f6cf94492564238d049f34d}{operator=} (const \hyperlink{classlbann_1_1lbann__callback__hang}{lbann\+\_\+callback\+\_\+hang} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__hang}{lbann\+\_\+callback\+\_\+hang} $\ast$ \hyperlink{classlbann_1_1lbann__callback__hang_a047660bd517f5c669c8e2abc4f2e951f}{copy} () const override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__hang_ada39fd10375143a26c99e0a32d4368ce}{on\+\_\+train\+\_\+begin} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\begin{DoxyCompactList}\small\item\em Hang on train begin. \end{DoxyCompactList}\item 
+std\+::string \hyperlink{classlbann_1_1lbann__callback__hang_a3aa4a28d16f21dd6bd86fd6ebaa0e0fa}{name} () const override
+\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{classlbann_1_1lbann__callback__hang_a6dbd84f40c31b3b1ec3247c8da08a954}{m\+\_\+rank\+\_\+to\+\_\+hang}
+\begin{DoxyCompactList}\small\item\em The rank that will hang; -\/1 for every rank. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Hang L\+B\+A\+NN as training starts so debuggers can attach. This will cause either a specific rank (in C\+O\+M\+M\+\_\+\+W\+O\+R\+LD) or every rank to hang. Attach to the hung ranks and set the hang flag to false with a debugger to proceed. 
+
+Definition at line 42 of file callback\+\_\+hang.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__hang_af5e29a2d416e3268a495df8370b272b6}\label{classlbann_1_1lbann__callback__hang_af5e29a2d416e3268a495df8370b272b6}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+hang@{lbann\+::lbann\+\_\+callback\+\_\+hang}!lbann\+\_\+callback\+\_\+hang@{lbann\+\_\+callback\+\_\+hang}}
+\index{lbann\+\_\+callback\+\_\+hang@{lbann\+\_\+callback\+\_\+hang}!lbann\+::lbann\+\_\+callback\+\_\+hang@{lbann\+::lbann\+\_\+callback\+\_\+hang}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+hang()}{lbann\_callback\_hang()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+hang\+::lbann\+\_\+callback\+\_\+hang (\begin{DoxyParamCaption}\item[{int}]{rank\+\_\+to\+\_\+hang = {\ttfamily -\/1} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+\begin{DoxyParams}{Parameters}
+{\em rank\+\_\+to\+\_\+hang} & The rank to hang; -\/1 for every rank (default). \\
+\hline
+\end{DoxyParams}
+
+
+Definition at line 47 of file callback\+\_\+hang.\+hpp.
+
+
+\begin{DoxyCode}
+47                                              :
+48     \hyperlink{classlbann_1_1lbann__callback__hang_a6dbd84f40c31b3b1ec3247c8da08a954}{m\_rank\_to\_hang}(rank\_to\_hang) \{\}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__hang_af5e29a2d416e3268a495df8370b272b6_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__hang_af5e29a2d416e3268a495df8370b272b6_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__hang_a0633c81998abdfea74a2bdcc38245217}\label{classlbann_1_1lbann__callback__hang_a0633c81998abdfea74a2bdcc38245217}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+hang@{lbann\+::lbann\+\_\+callback\+\_\+hang}!lbann\+\_\+callback\+\_\+hang@{lbann\+\_\+callback\+\_\+hang}}
+\index{lbann\+\_\+callback\+\_\+hang@{lbann\+\_\+callback\+\_\+hang}!lbann\+::lbann\+\_\+callback\+\_\+hang@{lbann\+::lbann\+\_\+callback\+\_\+hang}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+hang()}{lbann\_callback\_hang()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+hang\+::lbann\+\_\+callback\+\_\+hang (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__hang}{lbann\+\_\+callback\+\_\+hang} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__hang_a047660bd517f5c669c8e2abc4f2e951f}\label{classlbann_1_1lbann__callback__hang_a047660bd517f5c669c8e2abc4f2e951f}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+hang@{lbann\+::lbann\+\_\+callback\+\_\+hang}!copy@{copy}}
+\index{copy@{copy}!lbann\+::lbann\+\_\+callback\+\_\+hang@{lbann\+::lbann\+\_\+callback\+\_\+hang}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__hang}{lbann\+\_\+callback\+\_\+hang}$\ast$ lbann\+::lbann\+\_\+callback\+\_\+hang\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a9f545d1269a8c7af335625d049691f26}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 51 of file callback\+\_\+hang.\+hpp.
+
+
+\begin{DoxyCode}
+51 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1lbann__callback__hang_af5e29a2d416e3268a495df8370b272b6}{lbann\_callback\_hang}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__hang_a047660bd517f5c669c8e2abc4f2e951f_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__hang_a3aa4a28d16f21dd6bd86fd6ebaa0e0fa}\label{classlbann_1_1lbann__callback__hang_a3aa4a28d16f21dd6bd86fd6ebaa0e0fa}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+hang@{lbann\+::lbann\+\_\+callback\+\_\+hang}!name@{name}}
+\index{name@{name}!lbann\+::lbann\+\_\+callback\+\_\+hang@{lbann\+::lbann\+\_\+callback\+\_\+hang}}
+\subsubsection{\texorpdfstring{name()}{name()}}
+{\footnotesize\ttfamily std\+::string lbann\+::lbann\+\_\+callback\+\_\+hang\+::name (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Return this callback\textquotesingle{}s name. 
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a7522c7a14f1d6a1ea762cc2d7248eb3a}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 61 of file callback\+\_\+hang.\+hpp.
+
+
+\begin{DoxyCode}
+61 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"hang"}; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__hang_ada39fd10375143a26c99e0a32d4368ce}\label{classlbann_1_1lbann__callback__hang_ada39fd10375143a26c99e0a32d4368ce}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+hang@{lbann\+::lbann\+\_\+callback\+\_\+hang}!on\+\_\+train\+\_\+begin@{on\+\_\+train\+\_\+begin}}
+\index{on\+\_\+train\+\_\+begin@{on\+\_\+train\+\_\+begin}!lbann\+::lbann\+\_\+callback\+\_\+hang@{lbann\+::lbann\+\_\+callback\+\_\+hang}}
+\subsubsection{\texorpdfstring{on\+\_\+train\+\_\+begin()}{on\_train\_begin()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+hang\+::on\+\_\+train\+\_\+begin (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Hang on train begin. 
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_a7c8f0d211967ccc5219144e92571ab26}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 53 of file callback\+\_\+hang.\+hpp.
+
+
+\begin{DoxyCode}
+53                                          \{
+54     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1lbann__callback__hang_a6dbd84f40c31b3b1ec3247c8da08a954}{m\_rank\_to\_hang} == -1 ||
+55         \hyperlink{classlbann_1_1lbann__callback__hang_a6dbd84f40c31b3b1ec3247c8da08a954}{m\_rank\_to\_hang} == m->get\_comm()->get\_rank\_in\_world()) \{
+56       \textcolor{comment}{// Set this flag to false with your debugger to resume execution.}
+57       \textcolor{keyword}{volatile} \textcolor{keywordtype}{bool} lbann\_hang = \textcolor{keyword}{true};
+58       \textcolor{keywordflow}{while} (lbann\_hang) \{\}
+59     \}
+60   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__hang_ada39fd10375143a26c99e0a32d4368ce_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__hang_aef5c147b4f6cf94492564238d049f34d}\label{classlbann_1_1lbann__callback__hang_aef5c147b4f6cf94492564238d049f34d}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+hang@{lbann\+::lbann\+\_\+callback\+\_\+hang}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::lbann\+\_\+callback\+\_\+hang@{lbann\+::lbann\+\_\+callback\+\_\+hang}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__hang}{lbann\+\_\+callback\+\_\+hang}\& lbann\+::lbann\+\_\+callback\+\_\+hang\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__hang}{lbann\+\_\+callback\+\_\+hang} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__hang_aef5c147b4f6cf94492564238d049f34d_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__hang_a6dbd84f40c31b3b1ec3247c8da08a954}\label{classlbann_1_1lbann__callback__hang_a6dbd84f40c31b3b1ec3247c8da08a954}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+hang@{lbann\+::lbann\+\_\+callback\+\_\+hang}!m\+\_\+rank\+\_\+to\+\_\+hang@{m\+\_\+rank\+\_\+to\+\_\+hang}}
+\index{m\+\_\+rank\+\_\+to\+\_\+hang@{m\+\_\+rank\+\_\+to\+\_\+hang}!lbann\+::lbann\+\_\+callback\+\_\+hang@{lbann\+::lbann\+\_\+callback\+\_\+hang}}
+\subsubsection{\texorpdfstring{m\+\_\+rank\+\_\+to\+\_\+hang}{m\_rank\_to\_hang}}
+{\footnotesize\ttfamily int lbann\+::lbann\+\_\+callback\+\_\+hang\+::m\+\_\+rank\+\_\+to\+\_\+hang\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+The rank that will hang; -\/1 for every rank. 
+
+
+
+Definition at line 64 of file callback\+\_\+hang.\+hpp.
+
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/callbacks/\hyperlink{callback__hang_8hpp}{callback\+\_\+hang.\+hpp}\end{DoxyCompactItemize}

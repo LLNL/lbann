@@ -1,0 +1,13 @@
+<map id="/Users/mckinney27/doxy&#45;testbed/lbann/include/lbann/data_readers/data_reader_ascii.hpp" name="/Users/mckinney27/doxy&#45;testbed/lbann/include/lbann/data_readers/data_reader_ascii.hpp">
+<area shape="rect" id="node2" href="$data__reader_8hpp.html" title="data_reader.hpp" alt="" coords="852,119,970,144"/>
+<area shape="rect" id="node3" href="$base_8hpp.html" title="lbann/base.hpp" alt="" coords="307,352,419,377"/>
+<area shape="rect" id="node12" href="$random_8hpp.html" title="lbann/utils/random.hpp" alt="" coords="126,192,283,217"/>
+<area shape="rect" id="node13" href="$comm_8hpp.html" title="lbann/comm.hpp" alt="" coords="603,272,723,297"/>
+<area shape="rect" id="node17" href="$persist_8hpp.html" title="lbann/io/persist.hpp" alt="" coords="5,272,142,297"/>
+<area shape="rect" id="node19" href="$exception_8hpp.html" title="lbann/utils/exception.hpp" alt="" coords="740,192,909,217"/>
+<area shape="rect" id="node25" href="$file__io_8hpp.html" title="lbann/io/file_io.hpp" alt="" coords="1236,192,1368,217"/>
+<area shape="rect" id="node29" href="$image__preprocessor_8hpp.html" title="lbann/data_readers\l/image_preprocessor.hpp" alt="" coords="357,265,529,304"/>
+<area shape="rect" id="node5" href="$Elemental__extensions_8hpp.html" title="lbann/Elemental_extensions.hpp" alt="" coords="91,425,305,451"/>
+<area shape="rect" id="node6" href="$cyg__profile_8hpp.html" title="lbann/utils/cyg_profile.hpp" alt="" coords="379,425,555,451"/>
+<area shape="rect" id="node20" href="$stack__trace_8hpp.html" title="lbann/utils/stack_trace.hpp" alt="" coords="996,272,1175,297"/>
+</map>

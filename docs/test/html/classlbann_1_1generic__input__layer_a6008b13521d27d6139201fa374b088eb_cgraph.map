@@ -1,0 +1,5 @@
+<map id="lbann::generic_input_layer::get_data_dims" name="lbann::generic_input_layer::get_data_dims">
+<area shape="rect" id="node2" href="$classlbann_1_1generic__input__layer.html#aba732becdb02627e3ad4493ac19e8fb6" title="lbann::generic_input\l_layer::get_data_reader" alt="" coords="206,5,369,44"/>
+<area shape="rect" id="node4" href="$classlbann_1_1generic__data__reader.html#ae06ff27459ac4a5d8ac14655d4b31318" title="Get the dimensions of the data. " alt="" coords="206,68,368,107"/>
+<area shape="rect" id="node3" href="$classlbann_1_1model.html#addb40597cf29aa6d31b6a7d09ef48608" title="lbann::model::get_execution_mode" alt="" coords="417,12,646,37"/>
+</map>

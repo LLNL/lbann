@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="namespaceanonymous__namespace_02l2_8cpp_03" kind="namespace" language="C++">
+    <compoundname>anonymous_namespace{l2.cpp}</compoundname>
+      <sectiondef kind="func">
+      <memberdef kind="function" id="namespaceanonymous__namespace_02l2_8cpp_03_1a32724e48048319cd99337131ba70d4c4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref></type>
+        <definition>EvalType anonymous_namespace{l2.cpp}::sum_of_squares</definition>
+        <argsstring>(const Mat &amp;mat)</argsstring>
+        <name>sum_of_squares</name>
+        <param>
+          <type>const <ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref> &amp;</type>
+          <declname>mat</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Compute the entry-wise sum of squares of a local matrix. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/weight_regularization/l2.cpp" line="36" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/weight_regularization/l2.cpp" bodystart="36" bodyend="61"/>
+        <referencedby refid="classlbann_1_1l2__weight__regularization_1ab3a47d8ef5b8c8e16f076659e864f683" compoundref="l2_8cpp" startline="100" endline="153">lbann::l2_weight_regularization::start_evaluation</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/weight_regularization/l2.cpp" line="33" column="1"/>
+  </compounddef>
+</doxygen>

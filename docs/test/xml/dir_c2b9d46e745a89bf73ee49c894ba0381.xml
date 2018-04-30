@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="dir_c2b9d46e745a89bf73ee49c894ba0381" kind="dir">
+    <compoundname>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target</compoundname>
+    <innerfile refid="generic__target__layer_8hpp">generic_target_layer.hpp</innerfile>
+    <innerfile refid="reconstruction_8hpp">reconstruction.hpp</innerfile>
+    <innerfile refid="target__layer_8hpp">target_layer.hpp</innerfile>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/"/>
+  </compounddef>
+</doxygen>

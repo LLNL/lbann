@@ -1,0 +1,315 @@
+\hypertarget{classlbann_1_1bernoulli__layer}{}\section{lbann\+:\+:bernoulli\+\_\+layer$<$ T\+\_\+layout $>$ Class Template Reference}
+\label{classlbann_1_1bernoulli__layer}\index{lbann\+::bernoulli\+\_\+layer$<$ T\+\_\+layout $>$@{lbann\+::bernoulli\+\_\+layer$<$ T\+\_\+layout $>$}}
+
+
+{\ttfamily \#include $<$bernoulli.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:bernoulli\+\_\+layer$<$ T\+\_\+layout $>$\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=195pt]{classlbann_1_1bernoulli__layer__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:bernoulli\+\_\+layer$<$ T\+\_\+layout $>$\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1bernoulli__layer__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1bernoulli__layer_a59ea36ca262436f918f06cf3ea43d999}{bernoulli\+\_\+layer} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, const std\+::vector$<$ int $>$ \&neuron\+\_\+dims, Data\+Type prob=Data\+Type(0.\+5), \hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$cudnn=nullptr)
+\item 
+\hyperlink{classlbann_1_1bernoulli__layer}{bernoulli\+\_\+layer} $\ast$ \hyperlink{classlbann_1_1bernoulli__layer_acf1c58e256f8f5c494a15be4537cdb37}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1bernoulli__layer_a077a9d4c6846e97c6d6f2614898d44b8}{get\+\_\+type} () const override
+\item 
+\hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08db}{data\+\_\+layout} \hyperlink{classlbann_1_1bernoulli__layer_aad1be2449edaa224b44bb6cef47599e9}{get\+\_\+data\+\_\+layout} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1bernoulli__layer_a9d46943959793d5ba5e5eebe26063dad}{get\+\_\+description} () const override
+\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{classlbann_1_1bernoulli__layer_aabaf1d2ba92aa4c708d3a76d82bdbdb6}{setup\+\_\+dims} () override
+\item 
+void \hyperlink{classlbann_1_1bernoulli__layer_ad3b8939b6df375880247ef54f370ceb1}{fp\+\_\+compute} () override
+\item 
+void \hyperlink{classlbann_1_1bernoulli__layer_ae7e19bd34b17e1503755ac6e6b1260aa}{bp\+\_\+compute} () override
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+Data\+Type \hyperlink{classlbann_1_1bernoulli__layer_a4f4b68b455233b5e4c5c6f992289669c}{m\+\_\+prob}
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+\subsubsection*{template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$\newline
+class lbann\+::bernoulli\+\_\+layer$<$ T\+\_\+layout $>$}
+
+Activations are drawn from Bernoulli distribution. During validation and testing, the layer outputs 0. 
+
+Definition at line 39 of file bernoulli.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1bernoulli__layer_a59ea36ca262436f918f06cf3ea43d999}\label{classlbann_1_1bernoulli__layer_a59ea36ca262436f918f06cf3ea43d999}} 
+\index{lbann\+::bernoulli\+\_\+layer@{lbann\+::bernoulli\+\_\+layer}!bernoulli\+\_\+layer@{bernoulli\+\_\+layer}}
+\index{bernoulli\+\_\+layer@{bernoulli\+\_\+layer}!lbann\+::bernoulli\+\_\+layer@{lbann\+::bernoulli\+\_\+layer}}
+\subsubsection{\texorpdfstring{bernoulli\+\_\+layer()}{bernoulli\_layer()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{classlbann_1_1bernoulli__layer}{lbann\+::bernoulli\+\_\+layer}$<$ T\+\_\+layout $>$\+::\hyperlink{classlbann_1_1bernoulli__layer}{bernoulli\+\_\+layer} (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{const std\+::vector$<$ int $>$ \&}]{neuron\+\_\+dims,  }\item[{Data\+Type}]{prob = {\ttfamily DataType(0.5)},  }\item[{\hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$}]{cudnn = {\ttfamily nullptr} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 45 of file bernoulli.\+hpp.
+
+
+\begin{DoxyCode}
+49     : \hyperlink{classlbann_1_1transform__layer_a4b72501e0f4d0745c8b13c5331055e65}{transform\_layer}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}), \hyperlink{classlbann_1_1bernoulli__layer_a4f4b68b455233b5e4c5c6f992289669c}{m\_prob}(prob) \{
+50 
+51     \textcolor{comment}{// Record neuron dimensions}
+52     this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims} = neuron\_dims;
+53     this->\hyperlink{classlbann_1_1Layer_adfd6178d21498c9095cd947ae1eb2d6a}{m\_num\_neuron\_dims} = neuron\_dims.size();
+54     this->\hyperlink{classlbann_1_1Layer_a6b5ebc8a7d9329d8a773ed787e7b41d8}{m\_num\_neurons} = std::accumulate(neuron\_dims.begin(),
+55                                           neuron\_dims.end(),
+56                                           1,
+57                                           std::multiplies<int>());
+58 
+59     \textcolor{comment}{// Bernoulli layer has no parents}
+60     \hyperlink{classlbann_1_1Layer_a841b96b25555247f52921c7f13ae1dfa}{m\_expected\_num\_parent\_layers} = 0;
+61 
+62   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=338pt]{classlbann_1_1bernoulli__layer_a59ea36ca262436f918f06cf3ea43d999_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1bernoulli__layer_ae7e19bd34b17e1503755ac6e6b1260aa}\label{classlbann_1_1bernoulli__layer_ae7e19bd34b17e1503755ac6e6b1260aa}} 
+\index{lbann\+::bernoulli\+\_\+layer@{lbann\+::bernoulli\+\_\+layer}!bp\+\_\+compute@{bp\+\_\+compute}}
+\index{bp\+\_\+compute@{bp\+\_\+compute}!lbann\+::bernoulli\+\_\+layer@{lbann\+::bernoulli\+\_\+layer}}
+\subsubsection{\texorpdfstring{bp\+\_\+compute()}{bp\_compute()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1bernoulli__layer}{lbann\+::bernoulli\+\_\+layer}$<$ T\+\_\+layout $>$\+::bp\+\_\+compute (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Perform the computation for the backward propagation step. 
+
+Implements \hyperlink{classlbann_1_1Layer_a7442e01f9ee1294df2de811efcf5171e}{lbann\+::\+Layer}.
+
+
+
+Definition at line 98 of file bernoulli.\+hpp.
+
+
+\begin{DoxyCode}
+98 \{\}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1bernoulli__layer_acf1c58e256f8f5c494a15be4537cdb37}\label{classlbann_1_1bernoulli__layer_acf1c58e256f8f5c494a15be4537cdb37}} 
+\index{lbann\+::bernoulli\+\_\+layer@{lbann\+::bernoulli\+\_\+layer}!copy@{copy}}
+\index{copy@{copy}!lbann\+::bernoulli\+\_\+layer@{lbann\+::bernoulli\+\_\+layer}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{classlbann_1_1bernoulli__layer}{bernoulli\+\_\+layer}$\ast$ \hyperlink{classlbann_1_1bernoulli__layer}{lbann\+::bernoulli\+\_\+layer}$<$ T\+\_\+layout $>$\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Copy function. This function dynamically allocates memory for a layer instance and instantiates a copy. The caller is responsible for deallocating the instance. 
+
+Implements \hyperlink{classlbann_1_1Layer_af420f22bbac801c85483ade84588a23f}{lbann\+::\+Layer}.
+
+
+
+Definition at line 63 of file bernoulli.\+hpp.
+
+
+\begin{DoxyCode}
+63 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1bernoulli__layer_a59ea36ca262436f918f06cf3ea43d999}{bernoulli\_layer}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=338pt]{classlbann_1_1bernoulli__layer_acf1c58e256f8f5c494a15be4537cdb37_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1bernoulli__layer_ad3b8939b6df375880247ef54f370ceb1}\label{classlbann_1_1bernoulli__layer_ad3b8939b6df375880247ef54f370ceb1}} 
+\index{lbann\+::bernoulli\+\_\+layer@{lbann\+::bernoulli\+\_\+layer}!fp\+\_\+compute@{fp\+\_\+compute}}
+\index{fp\+\_\+compute@{fp\+\_\+compute}!lbann\+::bernoulli\+\_\+layer@{lbann\+::bernoulli\+\_\+layer}}
+\subsubsection{\texorpdfstring{fp\+\_\+compute()}{fp\_compute()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1bernoulli__layer}{lbann\+::bernoulli\+\_\+layer}$<$ T\+\_\+layout $>$\+::fp\+\_\+compute (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Perform the computation for the forward propagation step. 
+
+Implements \hyperlink{classlbann_1_1Layer_a523319dd1bd87a0612afa1912bb5aad7}{lbann\+::\+Layer}.
+
+
+
+Definition at line 89 of file bernoulli.\+hpp.
+
+
+\begin{DoxyCode}
+89                              \{
+90     \textcolor{keyword}{auto}& output = \hyperlink{classlbann_1_1Layer_a1134b1a4385af199d7272c5aa827fa99}{get\_activations}();
+91     \textcolor{keywordflow}{if} (this->\hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->\hyperlink{classlbann_1_1model_addb40597cf29aa6d31b6a7d09ef48608}{get\_execution\_mode}() == 
+      \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training}) \{
+92       \hyperlink{namespacelbann_ae8bc674a3d676391666524b44cbc4068}{bernoulli\_fill}(output, output.Height(), output.Width(), 
+      \hyperlink{classlbann_1_1bernoulli__layer_a4f4b68b455233b5e4c5c6f992289669c}{m\_prob});
+93     \} \textcolor{keywordflow}{else} \{
+94       El::Zero(output);
+95     \}
+96   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1bernoulli__layer_ad3b8939b6df375880247ef54f370ceb1_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1bernoulli__layer_aad1be2449edaa224b44bb6cef47599e9}\label{classlbann_1_1bernoulli__layer_aad1be2449edaa224b44bb6cef47599e9}} 
+\index{lbann\+::bernoulli\+\_\+layer@{lbann\+::bernoulli\+\_\+layer}!get\+\_\+data\+\_\+layout@{get\+\_\+data\+\_\+layout}}
+\index{get\+\_\+data\+\_\+layout@{get\+\_\+data\+\_\+layout}!lbann\+::bernoulli\+\_\+layer@{lbann\+::bernoulli\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+data\+\_\+layout()}{get\_data\_layout()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08db}{data\+\_\+layout} \hyperlink{classlbann_1_1bernoulli__layer}{lbann\+::bernoulli\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+data\+\_\+layout (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get data layout of the data tensors. We assume that the data layouts of the previous activations, activations, previous error signals, and error signals are the same. Each concrete layer that is templated on its data layout should override this function to return its template parameter. 
+
+Implements \hyperlink{classlbann_1_1Layer_a5dfb66e81fc085997402a5e2241316bd}{lbann\+::\+Layer}.
+
+
+
+Definition at line 65 of file bernoulli.\+hpp.
+
+
+\begin{DoxyCode}
+65 \{ \textcolor{keywordflow}{return} T\_layout; \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=338pt]{classlbann_1_1bernoulli__layer_aad1be2449edaa224b44bb6cef47599e9_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1bernoulli__layer_a9d46943959793d5ba5e5eebe26063dad}\label{classlbann_1_1bernoulli__layer_a9d46943959793d5ba5e5eebe26063dad}} 
+\index{lbann\+::bernoulli\+\_\+layer@{lbann\+::bernoulli\+\_\+layer}!get\+\_\+description@{get\+\_\+description}}
+\index{get\+\_\+description@{get\+\_\+description}!lbann\+::bernoulli\+\_\+layer@{lbann\+::bernoulli\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+description()}{get\_description()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+std\+::string \hyperlink{classlbann_1_1bernoulli__layer}{lbann\+::bernoulli\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+description (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Returns description of ctor params 
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_acc0803d3428914ca1eb5988c4309174a}{lbann\+::\+Layer}.
+
+
+
+Definition at line 68 of file bernoulli.\+hpp.
+
+
+\begin{DoxyCode}
+68                                              \{
+69     std::stringstream ss;
+70     ss << \textcolor{stringliteral}{"bernoulli\_layer"} << \textcolor{stringliteral}{"  "}
+71        << \textcolor{stringliteral}{"prob: "} << \hyperlink{classlbann_1_1bernoulli__layer_a4f4b68b455233b5e4c5c6f992289669c}{m\_prob} << \textcolor{stringliteral}{" "}
+72        << \textcolor{stringliteral}{"dataLayout: "} << this->\hyperlink{classlbann_1_1Layer_ae3f4a5602df821f4221614b1e3782dc1}{get\_data\_layout\_string}(
+      \hyperlink{classlbann_1_1bernoulli__layer_aad1be2449edaa224b44bb6cef47599e9}{get\_data\_layout}());
+73      \textcolor{keywordflow}{return} ss.str();
+74   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=343pt]{classlbann_1_1bernoulli__layer_a9d46943959793d5ba5e5eebe26063dad_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1bernoulli__layer_a077a9d4c6846e97c6d6f2614898d44b8}\label{classlbann_1_1bernoulli__layer_a077a9d4c6846e97c6d6f2614898d44b8}} 
+\index{lbann\+::bernoulli\+\_\+layer@{lbann\+::bernoulli\+\_\+layer}!get\+\_\+type@{get\+\_\+type}}
+\index{get\+\_\+type@{get\+\_\+type}!lbann\+::bernoulli\+\_\+layer@{lbann\+::bernoulli\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+type()}{get\_type()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+std\+::string \hyperlink{classlbann_1_1bernoulli__layer}{lbann\+::bernoulli\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+type (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get the layer type\textquotesingle{}s name. A layer type name should be brief, human-\/readable description of the layer\textquotesingle{}s mathematical operation. 
+
+Implements \hyperlink{classlbann_1_1Layer_a0fa0ea9160b490c151c0a17fde4f7239}{lbann\+::\+Layer}.
+
+
+
+Definition at line 64 of file bernoulli.\+hpp.
+
+
+\begin{DoxyCode}
+64 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"Bernoulli"}; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1bernoulli__layer_aabaf1d2ba92aa4c708d3a76d82bdbdb6}\label{classlbann_1_1bernoulli__layer_aabaf1d2ba92aa4c708d3a76d82bdbdb6}} 
+\index{lbann\+::bernoulli\+\_\+layer@{lbann\+::bernoulli\+\_\+layer}!setup\+\_\+dims@{setup\+\_\+dims}}
+\index{setup\+\_\+dims@{setup\+\_\+dims}!lbann\+::bernoulli\+\_\+layer@{lbann\+::bernoulli\+\_\+layer}}
+\subsubsection{\texorpdfstring{setup\+\_\+dims()}{setup\_dims()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1bernoulli__layer}{lbann\+::bernoulli\+\_\+layer}$<$ T\+\_\+layout $>$\+::setup\+\_\+dims (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Setup tensor dimensions Called by the setup function. The base method sets the dimensions of the activation tensors equal to the dimensions of the first previous activation tensor. 
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_a90fce1b06c1f2abb480e18cfe08a9746}{lbann\+::\+Layer}.
+
+
+
+Definition at line 78 of file bernoulli.\+hpp.
+
+
+\begin{DoxyCode}
+78                              \{
+79     \textcolor{keyword}{const} \textcolor{keyword}{auto} neuron\_dims = this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims};
+80     \hyperlink{classlbann_1_1Layer_a90fce1b06c1f2abb480e18cfe08a9746}{transform\_layer::setup\_dims}();
+81     this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims} = neuron\_dims;
+82     this->\hyperlink{classlbann_1_1Layer_adfd6178d21498c9095cd947ae1eb2d6a}{m\_num\_neuron\_dims} = neuron\_dims.size();
+83     this->\hyperlink{classlbann_1_1Layer_a6b5ebc8a7d9329d8a773ed787e7b41d8}{m\_num\_neurons} = std::accumulate(neuron\_dims.begin(),
+84                                           neuron\_dims.end(),
+85                                           1,
+86                                           std::multiplies<int>());
+87   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1bernoulli__layer_aabaf1d2ba92aa4c708d3a76d82bdbdb6_cgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1bernoulli__layer_a4f4b68b455233b5e4c5c6f992289669c}\label{classlbann_1_1bernoulli__layer_a4f4b68b455233b5e4c5c6f992289669c}} 
+\index{lbann\+::bernoulli\+\_\+layer@{lbann\+::bernoulli\+\_\+layer}!m\+\_\+prob@{m\+\_\+prob}}
+\index{m\+\_\+prob@{m\+\_\+prob}!lbann\+::bernoulli\+\_\+layer@{lbann\+::bernoulli\+\_\+layer}}
+\subsubsection{\texorpdfstring{m\+\_\+prob}{m\_prob}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+Data\+Type \hyperlink{classlbann_1_1bernoulli__layer}{lbann\+::bernoulli\+\_\+layer}$<$ T\+\_\+layout $>$\+::m\+\_\+prob\hspace{0.3cm}{\ttfamily [private]}}
+
+Probability of outputting 1. 
+
+Definition at line 42 of file bernoulli.\+hpp.
+
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/layers/transform/\hyperlink{bernoulli_8hpp}{bernoulli.\+hpp}\end{DoxyCompactItemize}

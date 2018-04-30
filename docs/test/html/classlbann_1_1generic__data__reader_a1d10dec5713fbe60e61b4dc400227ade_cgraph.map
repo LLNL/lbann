@@ -1,0 +1,27 @@
+<map id="lbann::generic_data_reader::update" name="lbann::generic_data_reader::update">
+<area shape="rect" id="node2" href="$classlbann_1_1generic__data__reader.html#ab11a9eca77ac9018bdab45ead7ef5e13" title="Get the next position in the data reader. " alt="" coords="192,413,371,452"/>
+<area shape="rect" id="node3" href="$classlbann_1_1generic__data__reader.html#ab5321bd7c6e83845785753366e6d9e64" title="Allow the reader to know where it is in the model hierarchy. " alt="" coords="212,476,351,515"/>
+<area shape="rect" id="node6" href="$namespacelbann.html#aba9d11cb3a739cd84e7234ceeb32d098" title="lbann::get_data_seq\l_generator" alt="" coords="894,497,1036,536"/>
+<area shape="rect" id="node24" href="$classlbann_1_1generic__data__reader.html#ac6d4a5ba1d4e1134620cddcac343bf59" title="Set the current position based on the base and model offsets. " alt="" coords="212,684,351,736"/>
+<area shape="rect" id="node25" href="$classlbann_1_1generic__data__store.html#abdf41bf60ba37fa3de49c65c178dc7b0" title="called by generic_data_reader::update " alt="" coords="212,760,351,812"/>
+<area shape="rect" id="node4" href="$classlbann_1_1generic__data__reader.html#aa28fdeeb6af492540f507e49adff5d6c" title="lbann::generic_data\l_reader::select_subset\l_of_data" alt="" coords="443,431,600,483"/>
+<area shape="rect" id="node11" href="$classlbann_1_1generic__data__reader.html#afa621af16f1a582b5a22405b79dbe052" title="lbann::generic_data\l_reader::use_unused\l_index_set" alt="" coords="448,507,595,559"/>
+<area shape="rect" id="node12" href="$classlbann_1_1generic__data__reader.html#a6f49d945610f35335fce4a422a432cc1" title="Given directory to store checkpoint files, write state to file and add to number of bytes written..." alt="" coords="425,104,618,156"/>
+<area shape="rect" id="node18" href="$classlbann_1_1generic__data__reader.html#a85119fae17feb8fda32f8a2f40869436" title="Given directory to store checkpoint files, read state from file and add to number of bytes read..." alt="" coords="419,201,624,253"/>
+<area shape="rect" id="node5" href="$classlbann_1_1generic__data__reader.html#af1aaa4d1a693974c1b1f1318b6ed60b8" title="Shuffle indices. " alt="" coords="678,368,841,407"/>
+<area shape="rect" id="node7" href="$classlbann_1_1generic__data__reader.html#a1e8655cd1883d850566694bcf2ad60ab" title="lbann::generic_data\l_reader::get_absolute\l_sample_count" alt="" coords="684,431,835,483"/>
+<area shape="rect" id="node8" href="$classlbann_1_1generic__data__reader.html#a5853fa5e619b886699954aca6440dd8a" title="lbann::generic_data\l_reader::get_use_percent" alt="" coords="672,507,846,545"/>
+<area shape="rect" id="node9" href="$classlbann_1_1generic__data__reader.html#adcdb833aff7ce85b0879334b252f357a" title="Get the number of samples in this dataset. " alt="" coords="679,569,839,608"/>
+<area shape="rect" id="node10" href="$classlbann_1_1generic__data__reader.html#ab06058b5fa1d74239998358b02f73132" title="lbann::generic_data\l_reader::get_validation\l_percent" alt="" coords="681,292,838,344"/>
+<area shape="rect" id="node13" href="$classlbann_1_1persist.html#a34eb918a890ab49dcbeedddf27ec1616" title="lbann::persist::get_rank" alt="" coords="679,117,839,143"/>
+<area shape="rect" id="node14" href="$classlbann_1_1generic__data__reader.html#a93dddd2276ddc34cc97922ee27c44582" title="lbann::generic_data\l_reader::pack_scalars" alt="" coords="683,55,835,93"/>
+<area shape="rect" id="node15" href="$classlbann_1_1persist.html#aced95e3bc711276b072af97b65ef9fc1" title="lbann::persist::write\l_uint64" alt="" coords="897,68,1033,107"/>
+<area shape="rect" id="node17" href="$classlbann_1_1persist.html#a199cd86b1e1f0fd5f2d0458fc6d25828" title="lbann::persist::write\l_int32_contig" alt="" coords="897,5,1033,44"/>
+<area shape="rect" id="node16" href="$namespacelbann.html#aed95061796f19fa1648dcc99dc335abd" title="lbann::write_bytes" alt="" coords="1084,44,1213,69"/>
+<area shape="rect" id="node19" href="$classlbann_1_1generic__data__reader.html#a8de5c2e24d4cc2211145ed5dc37cf228" title="lbann::generic_data\l_reader::unpack_scalars" alt="" coords="676,167,843,205"/>
+<area shape="rect" id="node23" href="$classlbann_1_1generic__data__reader.html#a3e1c13778c04ca9fa5136ee7ee3893fb" title="lbann::generic_data\l_reader::unpack_header" alt="" coords="676,229,842,268"/>
+<area shape="rect" id="node20" href="$classlbann_1_1persist.html#aa6d996db3714a7ae055adac0d8e8ac63" title="lbann::persist::read\l_uint64" alt="" coords="898,217,1033,256"/>
+<area shape="rect" id="node22" href="$classlbann_1_1persist.html#a2944c32f6634223c0902b38a697a0957" title="lbann::persist::read\l_int32_contig" alt="" coords="898,155,1033,193"/>
+<area shape="rect" id="node21" href="$namespacelbann.html#a85385e2a9e058b6720300b4cbdd2b1d0" title="lbann::read_bytes" alt="" coords="1085,192,1212,217"/>
+<area shape="rect" id="node26" href="$classlbann_1_1generic__data__store.html#a5a34663fbbc3714d45743a6ca7195f51" title="lbann::generic_data\l_store::exchange_data" alt="" coords="443,767,600,805"/>
+</map>

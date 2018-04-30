@@ -1,0 +1,116 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygenindex xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="index.xsd" version="1.8.13">
+  <compound refid="classlbann_1_1batch__normalization" kind="class"><name>lbann::batch_normalization</name>
+    <member refid="classlbann_1_1batch__normalization_1aa2ee72d5efbf47c74796510ee61dbb14" kind="variable"><name>m_decay</name></member>
+    <member refid="classlbann_1_1batch__normalization_1ab82e74f905b7a117d9940f8542451e37" kind="variable"><name>m_epsilon</name></member>
+    <member refid="classlbann_1_1batch__normalization_1a0a33289150c01899f4b7ef2980771899" kind="variable"><name>m_use_global_stats</name></member>
+    <member refid="classlbann_1_1batch__normalization_1a7c0db2315a4c5bb662da7a740ae76e24" kind="variable"><name>m_mean</name></member>
+    <member refid="classlbann_1_1batch__normalization_1aba533149e4179378ab23443b0a2a7dc6" kind="variable"><name>m_var</name></member>
+    <member refid="classlbann_1_1batch__normalization_1aa4677c2f7d5ea27c53bf0f61f280a2a3" kind="variable"><name>m_mean_gradient</name></member>
+    <member refid="classlbann_1_1batch__normalization_1aa2d2050a265eed854aa8950cd1461af9" kind="variable"><name>m_var_gradient</name></member>
+    <member refid="classlbann_1_1batch__normalization_1a66364e1b0c9afb40a4c03ee1869d264c" kind="variable"><name>m_scale_gradient</name></member>
+    <member refid="classlbann_1_1batch__normalization_1aa0f1e9a9f48f67544618e239167494bb" kind="variable"><name>m_bias_gradient</name></member>
+    <member refid="classlbann_1_1batch__normalization_1a04f092712566fd732e5fc5e48ee16f4d" kind="function"><name>batch_normalization</name></member>
+    <member refid="classlbann_1_1batch__normalization_1a62e642fc7c064a49826e5d4a10a87e5c" kind="function"><name>batch_normalization</name></member>
+    <member refid="classlbann_1_1batch__normalization_1aeb3c03a8dd166a64a77a26ee06ba81cd" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1batch__normalization_1a331738f02157f9e1e21f212c41feb86c" kind="function"><name>get_description</name></member>
+    <member refid="classlbann_1_1batch__normalization_1a6aeb06e13733560fb2203ea08df42632" kind="function"><name>~batch_normalization</name></member>
+    <member refid="classlbann_1_1batch__normalization_1af149d82996f351a5897a16a78ced113d" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1batch__normalization_1a1a773049354935cc2841bea8aa8bd94f" kind="function"><name>get_type</name></member>
+    <member refid="classlbann_1_1batch__normalization_1a4ddf27efaf48f0726dc4356a3a0b40a9" kind="function"><name>setup_matrices</name></member>
+    <member refid="classlbann_1_1batch__normalization_1ac97c038b9dec333a7fb285c196429e2d" kind="function"><name>get_data_layout</name></member>
+    <member refid="classlbann_1_1batch__normalization_1ac046a5ab567cc01f9a36c6b0fc4e3b55" kind="function"><name>setup_data</name></member>
+    <member refid="classlbann_1_1batch__normalization_1ab4737c3efcafa9bff1e68084b7f36283" kind="function"><name>setup_gpu</name></member>
+    <member refid="classlbann_1_1batch__normalization_1a92ad52396d7083c84ec20016ad5e994b" kind="function"><name>fp_compute</name></member>
+    <member refid="classlbann_1_1batch__normalization_1ad9aedd689cd8923d8c8e9c4e57a4e8b7" kind="function"><name>bp_compute</name></member>
+    <member refid="classlbann_1_1batch__normalization_1aacff2c47a5455a4c28b9695f4fb37249" kind="function"><name>fp_compute_gpu</name></member>
+    <member refid="classlbann_1_1batch__normalization_1a7d48ad1531825fc9745c77f9ae5f68d6" kind="function"><name>bp_compute_gpu</name></member>
+    <member refid="classlbann_1_1batch__normalization_1ae4cad47f456752e4ea20add0f6f38819" kind="function"><name>fp_compute_cpu</name></member>
+    <member refid="classlbann_1_1batch__normalization_1a83e40edd001a0b71c31fbc9a3acb2231" kind="function"><name>bp_compute_cpu</name></member>
+    <member refid="classlbann_1_1batch__normalization_1ac98f8fbb6e5ea998a06cef2c2cac9f03" kind="function"><name>deallocate_matrices</name></member>
+  </compound>
+  <compound refid="classlbann_1_1dropout" kind="class"><name>lbann::dropout</name>
+    <member refid="classlbann_1_1dropout_1aa06cbee70f3426b589990889b8ac8872" kind="variable"><name>m_keep_prob</name></member>
+    <member refid="classlbann_1_1dropout_1ad7d359957d41adcb64e6e3a2d4ad278d" kind="variable"><name>m_mask</name></member>
+    <member refid="classlbann_1_1dropout_1a301be902f285c5cf1d0cd743119a09d8" kind="function"><name>dropout</name></member>
+    <member refid="classlbann_1_1dropout_1ab2057d4abf48b96f8f6e9f64bdb0fc7e" kind="function"><name>dropout</name></member>
+    <member refid="classlbann_1_1dropout_1a0243b0bc3c2a4239a5ba6d64e6566a15" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1dropout_1a4b18d1195a176f4dd653767bfc0a9f6b" kind="function"><name>~dropout</name></member>
+    <member refid="classlbann_1_1dropout_1a0e6e50b50f8c2620315f3257bbab41b3" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1dropout_1a4d07cd79c7a4ab29db233a361aede358" kind="function"><name>get_type</name></member>
+    <member refid="classlbann_1_1dropout_1a7b53ee7d758337fe40788a567b5d092c" kind="function"><name>get_description</name></member>
+    <member refid="classlbann_1_1dropout_1abf399d8463721d322aedbb76d60534c6" kind="function"><name>setup_matrices</name></member>
+    <member refid="classlbann_1_1dropout_1aefeb16614f9bf4b9e643e1d5b48ec62d" kind="function"><name>get_data_layout</name></member>
+    <member refid="classlbann_1_1dropout_1abaa3d0c6d99200b186d0a55201f77b6a" kind="function"><name>setup_gpu</name></member>
+    <member refid="classlbann_1_1dropout_1a9ed94f278835b6c9e8185de01705e53a" kind="function"><name>fp_compute</name></member>
+    <member refid="classlbann_1_1dropout_1a053e3f392a6a90b3bcc07f62f3818bce" kind="function"><name>bp_compute</name></member>
+    <member refid="classlbann_1_1dropout_1a478368964f515f5456324b6504a5358f" kind="function"><name>fp_setup_data</name></member>
+    <member refid="classlbann_1_1dropout_1a358c502d8e7eeb1fed8b5df468793b09" kind="function"><name>fp_compute_cpu</name></member>
+    <member refid="classlbann_1_1dropout_1aca0160de0c3db5c29a0c4c6bddd0cf4f" kind="function"><name>bp_compute_cpu</name></member>
+    <member refid="classlbann_1_1dropout_1ad71de4282d2164171bbcad158a7bf1e7" kind="function"><name>fp_compute_gpu</name></member>
+    <member refid="classlbann_1_1dropout_1aeafadecbcfc81734d0c1850b4004dcc3" kind="function"><name>bp_compute_gpu</name></member>
+  </compound>
+  <compound refid="classlbann_1_1local__response__normalization__layer" kind="class"><name>lbann::local_response_normalization_layer</name>
+    <member refid="classlbann_1_1local__response__normalization__layer_1a4914619a19eb43efcf8240b8a1e0c090" kind="variable"><name>m_window_width</name></member>
+    <member refid="classlbann_1_1local__response__normalization__layer_1a85c25a68888e2e9d163a820326fc09ff" kind="variable"><name>m_lrn_alpha</name></member>
+    <member refid="classlbann_1_1local__response__normalization__layer_1ad06848e9d59664be86aecbc1e2ba556f" kind="variable"><name>m_lrn_beta</name></member>
+    <member refid="classlbann_1_1local__response__normalization__layer_1a896f875d6f6a763c1cb0dbd43679164e" kind="variable"><name>m_lrn_k</name></member>
+    <member refid="classlbann_1_1local__response__normalization__layer_1a5fa2f3175590cc85aa984c42cc9acd95" kind="function"><name>local_response_normalization_layer</name></member>
+    <member refid="classlbann_1_1local__response__normalization__layer_1a95f89c53da64c319def098a7153c57f6" kind="function"><name>local_response_normalization_layer</name></member>
+    <member refid="classlbann_1_1local__response__normalization__layer_1a7a1e5eb532bbf72c6334ac865d0694a3" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1local__response__normalization__layer_1a7896161e3667a69f0fd66cda3b4af421" kind="function"><name>~local_response_normalization_layer</name></member>
+    <member refid="classlbann_1_1local__response__normalization__layer_1a2bccec49f9b3840a2d9170cb202c1397" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1local__response__normalization__layer_1ad566e7894d7eb1eb0fd1560686bf2388" kind="function"><name>get_type</name></member>
+    <member refid="classlbann_1_1local__response__normalization__layer_1a31f4ab1700e2e1c69a0ccb44c6f0fd69" kind="function"><name>get_description</name></member>
+    <member refid="classlbann_1_1local__response__normalization__layer_1a7a161dde860f17264077a0cc4797fe36" kind="function"><name>get_data_layout</name></member>
+    <member refid="classlbann_1_1local__response__normalization__layer_1aff5210d74db5f8302989cca12d04263d" kind="function"><name>setup_gpu</name></member>
+    <member refid="classlbann_1_1local__response__normalization__layer_1ac7b2ce4970eb7163685fb0a4a69328fc" kind="function"><name>fp_compute</name></member>
+    <member refid="classlbann_1_1local__response__normalization__layer_1ae94544765a459a6609f2c2ebbbc3e9d9" kind="function"><name>bp_compute</name></member>
+    <member refid="classlbann_1_1local__response__normalization__layer_1a715b08cfc4bfed730a066f6d9cedef86" kind="function"><name>fp_compute_cudnn</name></member>
+    <member refid="classlbann_1_1local__response__normalization__layer_1a78b0d081956abf4f09874d59b4bf4fc8" kind="function"><name>bp_compute_cudnn</name></member>
+    <member refid="classlbann_1_1local__response__normalization__layer_1a79c72491b5b74b64d2b10ac2636cddce" kind="function"><name>fp_compute_cpu</name></member>
+    <member refid="classlbann_1_1local__response__normalization__layer_1a1aac4bf5e2500749bc8bafcd254f5699" kind="function"><name>bp_compute_cpu</name></member>
+  </compound>
+  <compound refid="classlbann_1_1regularizer__layer" kind="class"><name>lbann::regularizer_layer</name>
+    <member refid="classlbann_1_1regularizer__layer_1a2ebf3877b905b479a0250b74cf8f68b3" kind="function"><name>regularizer_layer</name></member>
+  </compound>
+  <compound refid="classlbann_1_1selu__dropout" kind="class"><name>lbann::selu_dropout</name>
+    <member refid="classlbann_1_1selu__dropout_1a8db065b13d8737e1bd4cf154ab3fe666" kind="variable"><name>m_alpha_prime</name></member>
+    <member refid="classlbann_1_1selu__dropout_1a52bd21583da68ba4e8a374fab259a3ef" kind="variable"><name>m_a</name></member>
+    <member refid="classlbann_1_1selu__dropout_1a456fa501b7df6b52701c1aa3639ebc42" kind="variable"><name>m_b</name></member>
+    <member refid="classlbann_1_1selu__dropout_1a00bd2a07703e2e918af8ae68b58ff11b" kind="variable"><name>m_keep_prob</name></member>
+    <member refid="classlbann_1_1selu__dropout_1a31aaadbc51d78673a84390b48d4e5950" kind="variable"><name>m_mask</name></member>
+    <member refid="classlbann_1_1selu__dropout_1a988a7e6b7b85ef8ba08a2bc52537e6d3" kind="function"><name>selu_dropout</name></member>
+    <member refid="classlbann_1_1selu__dropout_1ae8e81800cf4c75bcf449e192988832b5" kind="function"><name>selu_dropout</name></member>
+    <member refid="classlbann_1_1selu__dropout_1aa4563c71596c91bb568a6808d38e8758" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1selu__dropout_1af3cb2d8724ebca49934769be70e40b83" kind="function"><name>~selu_dropout</name></member>
+    <member refid="classlbann_1_1selu__dropout_1a58659790298874e1dc15a45b3199db91" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1selu__dropout_1a983e7bf62f995a1fe24363f7b1ff0182" kind="function"><name>get_type</name></member>
+    <member refid="classlbann_1_1selu__dropout_1ae33633add903276c87f725facf0dcd0c" kind="function"><name>get_data_layout</name></member>
+    <member refid="classlbann_1_1selu__dropout_1a8b6469a14cf093d48e42384aa4ee404a" kind="function"><name>setup_matrices</name></member>
+    <member refid="classlbann_1_1selu__dropout_1a50ccce3672873a12ae69cc76c91e767a" kind="function"><name>fp_compute</name></member>
+    <member refid="classlbann_1_1selu__dropout_1afc80277386fef53296368579876bdb55" kind="function"><name>bp_compute</name></member>
+  </compound>
+  <compound refid="namespacelbann" kind="namespace"><name>lbann</name>
+  </compound>
+  <compound refid="batch__normalization_8hpp" kind="file"><name>batch_normalization.hpp</name>
+  </compound>
+  <compound refid="batch__normalization__cuda_8hpp" kind="file"><name>batch_normalization_cuda.hpp</name>
+  </compound>
+  <compound refid="dropout_8hpp" kind="file"><name>dropout.hpp</name>
+  </compound>
+  <compound refid="local__response__normalization_8hpp" kind="file"><name>local_response_normalization.hpp</name>
+  </compound>
+  <compound refid="regularizer_8hpp" kind="file"><name>regularizer.hpp</name>
+  </compound>
+  <compound refid="selu__dropout_8hpp" kind="file"><name>selu_dropout.hpp</name>
+  </compound>
+  <compound refid="dir_d44c64559bbebec7f509842c48db8b23" kind="dir"><name>/Users/mckinney27/doxy-testbed/lbann/include</name>
+  </compound>
+  <compound refid="dir_445e0a10e5d20483755fa6ed3d05a6ba" kind="dir"><name>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers</name>
+  </compound>
+  <compound refid="dir_3df4a43ca73d8751de1358d9734fd210" kind="dir"><name>/Users/mckinney27/doxy-testbed/lbann/include/lbann</name>
+  </compound>
+  <compound refid="dir_bf74b808aa226cce84c5796fd148e8e1" kind="dir"><name>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers</name>
+  </compound>
+</doxygenindex>

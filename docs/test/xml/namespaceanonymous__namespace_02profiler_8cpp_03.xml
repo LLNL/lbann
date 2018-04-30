@@ -1,0 +1,59 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="namespaceanonymous__namespace_02profiler_8cpp_03" kind="namespace" language="C++">
+    <compoundname>anonymous_namespace{profiler.cpp}</compoundname>
+      <sectiondef kind="func">
+      <memberdef kind="function" id="namespaceanonymous__namespace_02profiler_8cpp_03_1ad2ea0278cd1f25dc30ddd76194ace64b" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void anonymous_namespace{profiler.cpp}::prof_region_begin</definition>
+        <argsstring>(const char *s, int c)</argsstring>
+        <name>prof_region_begin</name>
+        <param>
+          <type>const char *</type>
+          <declname>s</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>c</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/profiler.cpp" line="78" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/profiler.cpp" bodystart="78" bodyend="80"/>
+        <referencedby refid="classlbann_1_1lbann__callback__profiler_1abd30d11df631eea086cdf213c9f0f4f9" compoundref="profiler_8cpp" startline="89" endline="91">lbann::lbann_callback_profiler::on_epoch_begin</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__profiler_1a4a60f7470bf36c6833862d47d1a7ce01" compoundref="profiler_8cpp" startline="97" endline="99">lbann::lbann_callback_profiler::on_batch_begin</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__profiler_1a027fe89a27c52ae80a1982f96dd62455" compoundref="profiler_8cpp" startline="105" endline="107">lbann::lbann_callback_profiler::on_forward_prop_begin</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__profiler_1a7905ac8f79a71731c8e388cdb4385023" compoundref="profiler_8cpp" startline="113" endline="115">lbann::lbann_callback_profiler::on_backward_prop_begin</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="namespaceanonymous__namespace_02profiler_8cpp_03_1a7984c26fb186307873a2f83f91715a99" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void anonymous_namespace{profiler.cpp}::prof_region_end</definition>
+        <argsstring>(const char *s)</argsstring>
+        <name>prof_region_end</name>
+        <param>
+          <type>const char *</type>
+          <declname>s</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/profiler.cpp" line="81" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/profiler.cpp" bodystart="81" bodyend="83"/>
+        <referencedby refid="classlbann_1_1lbann__callback__profiler_1a86e0fbe550ff42660766977604d9d5a6" compoundref="profiler_8cpp" startline="93" endline="95">lbann::lbann_callback_profiler::on_epoch_end</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__profiler_1ad7db0233f3a0c91c10a15d0951bb1747" compoundref="profiler_8cpp" startline="101" endline="103">lbann::lbann_callback_profiler::on_batch_end</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__profiler_1a63e3ad301cf8529acda00ac8f2531c93" compoundref="profiler_8cpp" startline="109" endline="111">lbann::lbann_callback_profiler::on_forward_prop_end</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__profiler_1a8a4ba2640d128992a519ab4a2b7c44aa" compoundref="profiler_8cpp" startline="117" endline="119">lbann::lbann_callback_profiler::on_backward_prop_end</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/profiler.cpp" line="39" column="1"/>
+  </compounddef>
+</doxygen>

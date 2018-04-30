@@ -1,0 +1,7 @@
+<map id="lbann::model::summarize_matrices" name="lbann::model::summarize_matrices">
+<area shape="rect" id="node2" href="$classlbann_1_1model.html#afd569027be9b7a6adb08f486331384ac" title="lbann::model::get_current\l_phase" alt="" coords="225,5,398,44"/>
+<area shape="rect" id="node5" href="$classlbann_1_1lbann__callback__summary.html#a89b18186fdaa7b6a7a0e9ab8ee334d88" title="lbann::lbann_callback\l_summary::on_batch_end" alt="" coords="224,68,399,107"/>
+<area shape="rect" id="node3" href="$classlbann_1_1lbann__callback__save__images.html#a4591438de0b52467988e2bd34b55c0dd" title="lbann::lbann_callback\l_save_images::on_phase_end" alt="" coords="447,5,650,44"/>
+<area shape="rect" id="node4" href="$classlbann_1_1lbann__callback__save__images.html#a6abba6b6a94080c09f52f1aac8773461" title="lbann::lbann_callback\l_save_images::copy" alt="" coords="698,5,848,44"/>
+<area shape="rect" id="node6" href="$classlbann_1_1lbann__callback__summary.html#ae6f1ba60d92f4599361ce5bd5f70caa7" title="lbann::lbann_callback\l_summary::copy" alt="" coords="474,68,623,107"/>
+</map>

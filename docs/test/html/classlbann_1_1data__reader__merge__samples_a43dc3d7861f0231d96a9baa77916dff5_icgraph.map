@@ -1,0 +1,4 @@
+<map id="lbann::data_reader_merge_samples::get_num_samples_psum" name="lbann::data_reader_merge_samples::get_num_samples_psum">
+<area shape="rect" id="node2" href="$classlbann_1_1data__store__merge__samples.html#a9f7f027eab6bfb65dd8001939769f476" title="called by generic_data_reader::setup_data_store " alt="" coords="205,12,375,51"/>
+<area shape="rect" id="node3" href="$classlbann_1_1data__store__merge__samples.html#a8b81d947c1f05c38b7f979ce7e3cef97" title="called by various image data readers " alt="" coords="423,12,592,51"/>
+</map>

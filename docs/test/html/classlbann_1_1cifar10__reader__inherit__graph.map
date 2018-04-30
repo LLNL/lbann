@@ -1,0 +1,5 @@
+<map id="lbann::cifar10_reader" name="lbann::cifar10_reader">
+<area shape="rect" id="node2" href="$classlbann_1_1image__data__reader.html" title="lbann::image_data_reader" alt="" coords="5,179,182,204"/>
+<area shape="rect" id="node3" href="$classlbann_1_1generic__data__reader.html" title="lbann::generic_data\l_reader" alt="" coords="25,92,163,131"/>
+<area shape="rect" id="node4" href="$classlbann_1_1lbann__image__preprocessor.html" title="lbann::lbann_image\l_preprocessor" alt="" coords="25,5,163,44"/>
+</map>

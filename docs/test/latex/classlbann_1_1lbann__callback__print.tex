@@ -1,0 +1,548 @@
+\hypertarget{classlbann_1_1lbann__callback__print}{}\section{lbann\+:\+:lbann\+\_\+callback\+\_\+print Class Reference}
+\label{classlbann_1_1lbann__callback__print}\index{lbann\+::lbann\+\_\+callback\+\_\+print@{lbann\+::lbann\+\_\+callback\+\_\+print}}
+
+
+{\ttfamily \#include $<$callback\+\_\+print.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+print\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=192pt]{classlbann_1_1lbann__callback__print__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+print\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=207pt]{classlbann_1_1lbann__callback__print__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1lbann__callback__print_ac31f404ac68a2cb24cd3d544d128f1d9}{lbann\+\_\+callback\+\_\+print} (int batch\+\_\+interval=1)
+\item 
+\hyperlink{classlbann_1_1lbann__callback__print_aca5b4f8a44d6194a31c08aabc59c9748}{lbann\+\_\+callback\+\_\+print} (const \hyperlink{classlbann_1_1lbann__callback__print}{lbann\+\_\+callback\+\_\+print} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__print}{lbann\+\_\+callback\+\_\+print} \& \hyperlink{classlbann_1_1lbann__callback__print_a4924cd2aebecdca00dbc0ac9d71df666}{operator=} (const \hyperlink{classlbann_1_1lbann__callback__print}{lbann\+\_\+callback\+\_\+print} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__print}{lbann\+\_\+callback\+\_\+print} $\ast$ \hyperlink{classlbann_1_1lbann__callback__print_aa75e076c3d840a2186825be2e8dbac8c}{copy} () const override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__print_a405e20e9fa137bd377faf692cc3c54aa}{setup} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__print_ae3c99d7c56ac33ab7e09880134b43cad}{on\+\_\+epoch\+\_\+begin} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__print_a28f2b022193c62f3af40364d2c5b14b2}{on\+\_\+epoch\+\_\+end} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__print_a7090572e2f89e7994872b5fdb612dd3f}{on\+\_\+validation\+\_\+end} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__print_a1f72a486004af859823f75c311dcff42}{on\+\_\+test\+\_\+end} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\item 
+std\+::string \hyperlink{classlbann_1_1lbann__callback__print_a212640539d73eec3317572150a11b71b}{name} () const override
+\end{DoxyCompactItemize}
+\subsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__print_a50117faa3edb961ddd87c5c5806820b2}{report\+\_\+results} (\hyperlink{classlbann_1_1model}{model} $\ast$m)
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+Periodically print computational results. Prints average objective function value and metric scores after each training epoch and evaluation. 
+
+Definition at line 40 of file callback\+\_\+print.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__print_ac31f404ac68a2cb24cd3d544d128f1d9}\label{classlbann_1_1lbann__callback__print_ac31f404ac68a2cb24cd3d544d128f1d9}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+print@{lbann\+::lbann\+\_\+callback\+\_\+print}!lbann\+\_\+callback\+\_\+print@{lbann\+\_\+callback\+\_\+print}}
+\index{lbann\+\_\+callback\+\_\+print@{lbann\+\_\+callback\+\_\+print}!lbann\+::lbann\+\_\+callback\+\_\+print@{lbann\+::lbann\+\_\+callback\+\_\+print}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+print()}{lbann\_callback\_print()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+print\+::lbann\+\_\+callback\+\_\+print (\begin{DoxyParamCaption}\item[{int}]{batch\+\_\+interval = {\ttfamily 1} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 42 of file callback\+\_\+print.\+hpp.
+
+
+\begin{DoxyCode}
+42 : \hyperlink{classlbann_1_1lbann__callback_a679057298a41ddd47f08c157f756c584}{lbann\_callback}(batch\_interval) \{\}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__print_ac31f404ac68a2cb24cd3d544d128f1d9_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__print_ac31f404ac68a2cb24cd3d544d128f1d9_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__print_aca5b4f8a44d6194a31c08aabc59c9748}\label{classlbann_1_1lbann__callback__print_aca5b4f8a44d6194a31c08aabc59c9748}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+print@{lbann\+::lbann\+\_\+callback\+\_\+print}!lbann\+\_\+callback\+\_\+print@{lbann\+\_\+callback\+\_\+print}}
+\index{lbann\+\_\+callback\+\_\+print@{lbann\+\_\+callback\+\_\+print}!lbann\+::lbann\+\_\+callback\+\_\+print@{lbann\+::lbann\+\_\+callback\+\_\+print}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+print()}{lbann\_callback\_print()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+print\+::lbann\+\_\+callback\+\_\+print (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__print}{lbann\+\_\+callback\+\_\+print} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__print_aa75e076c3d840a2186825be2e8dbac8c}\label{classlbann_1_1lbann__callback__print_aa75e076c3d840a2186825be2e8dbac8c}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+print@{lbann\+::lbann\+\_\+callback\+\_\+print}!copy@{copy}}
+\index{copy@{copy}!lbann\+::lbann\+\_\+callback\+\_\+print@{lbann\+::lbann\+\_\+callback\+\_\+print}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__print}{lbann\+\_\+callback\+\_\+print}$\ast$ lbann\+::lbann\+\_\+callback\+\_\+print\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a9f545d1269a8c7af335625d049691f26}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 45 of file callback\+\_\+print.\+hpp.
+
+
+\begin{DoxyCode}
+45 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1lbann__callback__print_ac31f404ac68a2cb24cd3d544d128f1d9}{lbann\_callback\_print}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__print_aa75e076c3d840a2186825be2e8dbac8c_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__print_a212640539d73eec3317572150a11b71b}\label{classlbann_1_1lbann__callback__print_a212640539d73eec3317572150a11b71b}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+print@{lbann\+::lbann\+\_\+callback\+\_\+print}!name@{name}}
+\index{name@{name}!lbann\+::lbann\+\_\+callback\+\_\+print@{lbann\+::lbann\+\_\+callback\+\_\+print}}
+\subsubsection{\texorpdfstring{name()}{name()}}
+{\footnotesize\ttfamily std\+::string lbann\+::lbann\+\_\+callback\+\_\+print\+::name (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Return this callback\textquotesingle{}s name. 
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a7522c7a14f1d6a1ea762cc2d7248eb3a}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 51 of file callback\+\_\+print.\+hpp.
+
+
+\begin{DoxyCode}
+51 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"print"}; \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__print_a212640539d73eec3317572150a11b71b_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__print_ae3c99d7c56ac33ab7e09880134b43cad}\label{classlbann_1_1lbann__callback__print_ae3c99d7c56ac33ab7e09880134b43cad}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+print@{lbann\+::lbann\+\_\+callback\+\_\+print}!on\+\_\+epoch\+\_\+begin@{on\+\_\+epoch\+\_\+begin}}
+\index{on\+\_\+epoch\+\_\+begin@{on\+\_\+epoch\+\_\+begin}!lbann\+::lbann\+\_\+callback\+\_\+print@{lbann\+::lbann\+\_\+callback\+\_\+print}}
+\subsubsection{\texorpdfstring{on\+\_\+epoch\+\_\+begin()}{on\_epoch\_begin()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+print\+::on\+\_\+epoch\+\_\+begin (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Called at the beginning of each epoch. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_a4ed9498763412a55953fff71ee3a9456}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 46 of file callback\+\_\+print.\+cpp.
+
+
+\begin{DoxyCode}
+46                                                   \{
+47   lbann\_comm *\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm} = m->get\_comm();
+48   \textcolor{keywordflow}{if} (comm->am\_world\_master()) \{
+49 
+50     \textcolor{comment}{// Get first input layer in model}
+51     generic\_input\_layer* input = \textcolor{keyword}{nullptr};
+52     \textcolor{keywordflow}{for} (\textcolor{keyword}{auto}&& l : m->get\_layers()) \{
+53       input = \textcolor{keyword}{dynamic\_cast<}generic\_input\_layer*\textcolor{keyword}{>}(l);
+54       \textcolor{keywordflow}{if} (input != \textcolor{keyword}{nullptr}) \{ \textcolor{keywordflow}{break}; \}
+55     \}
+56     \textcolor{keywordflow}{if} (input == \textcolor{keyword}{nullptr}) \{ \hyperlink{base_8hpp_a80b1d707117e968a6951b7222e4b2b87}{LBANN\_ERROR}(\textcolor{stringliteral}{"could not get input layer"}); \}
+57 
+58     \textcolor{comment}{// Print message}
+59     std::cout << \textcolor{stringliteral}{"--------------------------------------------------------------------------------"}
+60               << std::endl;
+61     std::cout << \textcolor{stringliteral}{"["} << m->get\_cur\_epoch() << \textcolor{stringliteral}{"] Epoch : stats formated [tr/v/te]"}
+62               << \textcolor{stringliteral}{" iter/epoch ="}
+63               << \textcolor{stringliteral}{" ["}
+64               << input->get\_num\_iterations\_per\_epoch(\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training})
+65               << \textcolor{stringliteral}{"/"}
+66               << input->get\_num\_iterations\_per\_epoch(\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation})
+67               << \textcolor{stringliteral}{"/"}
+68               << input->get\_num\_iterations\_per\_epoch(\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing})
+69               << \textcolor{stringliteral}{"]"}
+70               << std::endl;
+71     std::cout << std::setfill(\textcolor{charliteral}{' '}) << std::setw(23)
+72               << \textcolor{stringliteral}{" global MB ="}
+73               << \textcolor{stringliteral}{" ["}
+74               << std::setw(4) << input->get\_global\_mini\_batch\_size(
+      \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training})
+75               << \textcolor{stringliteral}{"/"}
+76               << std::setw(4) << input->get\_global\_mini\_batch\_size(
+      \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation})
+77               << \textcolor{stringliteral}{"/"}
+78               << std::setw(4) << input->get\_global\_mini\_batch\_size(
+      \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing})
+79               << \textcolor{stringliteral}{"]"}
+80               << \textcolor{stringliteral}{" global last MB ="}
+81               << \textcolor{stringliteral}{" ["}
+82               << std::setw(4) << input->get\_global\_last\_mini\_batch\_size(
+      \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training})
+83               << std::setw(2) << \textcolor{stringliteral}{" "}
+84               << \textcolor{stringliteral}{"/"}
+85               << std::setw(4) << input->get\_global\_last\_mini\_batch\_size(
+      \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation})
+86               << std::setw(2) << \textcolor{stringliteral}{" "}
+87               << \textcolor{stringliteral}{"/"}
+88               << std::setw(4) << input->get\_global\_last\_mini\_batch\_size(
+      \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing})
+89               << std::setw(2) << \textcolor{stringliteral}{" "}
+90               << \textcolor{stringliteral}{"]"}
+91               << std::endl;
+92     std::cout << std::setfill(\textcolor{charliteral}{' '}) << std::setw(23)
+93               << \textcolor{stringliteral}{"  local MB ="}
+94               << \textcolor{stringliteral}{" ["}
+95               << std::setw(4) << input->get\_mini\_batch\_size(
+      \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training})
+96               << \textcolor{stringliteral}{"/"}
+97               << std::setw(4) << input->get\_mini\_batch\_size(
+      \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation})
+98               << \textcolor{stringliteral}{"/"}
+99               << std::setw(4) << input->get\_mini\_batch\_size(
+      \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing})
+100               << \textcolor{stringliteral}{"]"}
+101               << \textcolor{stringliteral}{"  local last MB ="}
+102               << \textcolor{stringliteral}{" ["}
+103               << std::setw(4) << input->get\_last\_mini\_batch\_size(
+      \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training})
+104               << \textcolor{stringliteral}{"+"} << input->get\_world\_master\_mini\_batch\_adjustment(
+      \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training})
+105               << \textcolor{stringliteral}{"/"}
+106               << std::setw(4) << input->get\_last\_mini\_batch\_size(
+      \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation})
+107               << \textcolor{stringliteral}{"+"} << input->get\_world\_master\_mini\_batch\_adjustment(
+      \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation})
+108               << \textcolor{stringliteral}{"/"}
+109               << std::setw(4) << input->get\_last\_mini\_batch\_size(
+      \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing})
+110               << \textcolor{stringliteral}{"+"} << input->get\_world\_master\_mini\_batch\_adjustment(
+      \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing})
+111               << \textcolor{stringliteral}{"]"}
+112               << std::endl;
+113     std::cout << \textcolor{stringliteral}{"--------------------------------------------------------------------------------"}
+114               << std::endl;
+115   \}
+116 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__print_ae3c99d7c56ac33ab7e09880134b43cad_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=349pt]{classlbann_1_1lbann__callback__print_ae3c99d7c56ac33ab7e09880134b43cad_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__print_a28f2b022193c62f3af40364d2c5b14b2}\label{classlbann_1_1lbann__callback__print_a28f2b022193c62f3af40364d2c5b14b2}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+print@{lbann\+::lbann\+\_\+callback\+\_\+print}!on\+\_\+epoch\+\_\+end@{on\+\_\+epoch\+\_\+end}}
+\index{on\+\_\+epoch\+\_\+end@{on\+\_\+epoch\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+print@{lbann\+::lbann\+\_\+callback\+\_\+print}}
+\subsubsection{\texorpdfstring{on\+\_\+epoch\+\_\+end()}{on\_epoch\_end()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+print\+::on\+\_\+epoch\+\_\+end (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Called immediate after the end of each epoch. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_a1fc71110e7f754bf73c9e0f344a448a5}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 118 of file callback\+\_\+print.\+cpp.
+
+
+\begin{DoxyCode}
+118                                                 \{
+119   \hyperlink{classlbann_1_1lbann__callback__print_a50117faa3edb961ddd87c5c5806820b2}{report\_results}(m);
+120 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__print_a28f2b022193c62f3af40364d2c5b14b2_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=341pt]{classlbann_1_1lbann__callback__print_a28f2b022193c62f3af40364d2c5b14b2_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__print_a1f72a486004af859823f75c311dcff42}\label{classlbann_1_1lbann__callback__print_a1f72a486004af859823f75c311dcff42}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+print@{lbann\+::lbann\+\_\+callback\+\_\+print}!on\+\_\+test\+\_\+end@{on\+\_\+test\+\_\+end}}
+\index{on\+\_\+test\+\_\+end@{on\+\_\+test\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+print@{lbann\+::lbann\+\_\+callback\+\_\+print}}
+\subsubsection{\texorpdfstring{on\+\_\+test\+\_\+end()}{on\_test\_end()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+print\+::on\+\_\+test\+\_\+end (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Called immediately after the end of testing. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_accbad4dd004c1ced33642db6398b2efe}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 126 of file callback\+\_\+print.\+cpp.
+
+
+\begin{DoxyCode}
+126                                                \{
+127   \hyperlink{classlbann_1_1lbann__callback__print_a50117faa3edb961ddd87c5c5806820b2}{report\_results}(m);
+128 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__print_a1f72a486004af859823f75c311dcff42_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=340pt]{classlbann_1_1lbann__callback__print_a1f72a486004af859823f75c311dcff42_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__print_a7090572e2f89e7994872b5fdb612dd3f}\label{classlbann_1_1lbann__callback__print_a7090572e2f89e7994872b5fdb612dd3f}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+print@{lbann\+::lbann\+\_\+callback\+\_\+print}!on\+\_\+validation\+\_\+end@{on\+\_\+validation\+\_\+end}}
+\index{on\+\_\+validation\+\_\+end@{on\+\_\+validation\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+print@{lbann\+::lbann\+\_\+callback\+\_\+print}}
+\subsubsection{\texorpdfstring{on\+\_\+validation\+\_\+end()}{on\_validation\_end()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+print\+::on\+\_\+validation\+\_\+end (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Called immediately after the end of validation. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_adc16e42e5064dc2dc8d84dfbfc1325eb}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 122 of file callback\+\_\+print.\+cpp.
+
+
+\begin{DoxyCode}
+122                                                      \{
+123   \hyperlink{classlbann_1_1lbann__callback__print_a50117faa3edb961ddd87c5c5806820b2}{report\_results}(m);
+124 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__print_a7090572e2f89e7994872b5fdb612dd3f_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__print_a7090572e2f89e7994872b5fdb612dd3f_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__print_a4924cd2aebecdca00dbc0ac9d71df666}\label{classlbann_1_1lbann__callback__print_a4924cd2aebecdca00dbc0ac9d71df666}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+print@{lbann\+::lbann\+\_\+callback\+\_\+print}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::lbann\+\_\+callback\+\_\+print@{lbann\+::lbann\+\_\+callback\+\_\+print}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__print}{lbann\+\_\+callback\+\_\+print}\& lbann\+::lbann\+\_\+callback\+\_\+print\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__print}{lbann\+\_\+callback\+\_\+print} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__print_a4924cd2aebecdca00dbc0ac9d71df666_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__print_a50117faa3edb961ddd87c5c5806820b2}\label{classlbann_1_1lbann__callback__print_a50117faa3edb961ddd87c5c5806820b2}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+print@{lbann\+::lbann\+\_\+callback\+\_\+print}!report\+\_\+results@{report\+\_\+results}}
+\index{report\+\_\+results@{report\+\_\+results}!lbann\+::lbann\+\_\+callback\+\_\+print@{lbann\+::lbann\+\_\+callback\+\_\+print}}
+\subsubsection{\texorpdfstring{report\+\_\+results()}{report\_results()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+print\+::report\+\_\+results (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+Print objective function and metrics to standard output. 
+
+Definition at line 130 of file callback\+\_\+print.\+cpp.
+
+
+\begin{DoxyCode}
+130                                                   \{
+131   lbann\_comm *\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm} = m->get\_comm();
+132 
+133   \textcolor{comment}{// Get string for execution mode}
+134   \textcolor{keyword}{const} \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\_mode} mode = m->get\_execution\_mode();
+135   std::string mode\_string;
+136   \textcolor{keywordflow}{switch} (mode) \{
+137   \textcolor{keywordflow}{case} \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training}:
+138     mode\_string = \textcolor{stringliteral}{"training epoch "} + std::to\_string(m->get\_cur\_epoch()-1);
+139     \textcolor{keywordflow}{break};
+140   \textcolor{keywordflow}{case} \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation}:
+141     mode\_string = \textcolor{stringliteral}{"validation"};
+142     \textcolor{keywordflow}{break};
+143   \textcolor{keywordflow}{case} \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing}:
+144     mode\_string = \textcolor{stringliteral}{"test"};
+145     \textcolor{keywordflow}{break};
+146   \textcolor{keywordflow}{default}:
+147     std::stringstream err;
+148     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+149         << \textcolor{stringliteral}{"invalid execution mode for reporting results"};
+150     \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+151   \}
+152 
+153   \textcolor{keywordflow}{if} (comm->am\_model\_master()) \{
+154     \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_models = comm->get\_num\_models();
+155     
+156     \textcolor{comment}{// Report objective function value}
+157     \textcolor{keyword}{const} \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType} obj\_fn = m->get\_objective\_function()->get\_mean\_value(mode);
+158     \textcolor{keyword}{const} \textcolor{keywordtype}{int} obj\_fn\_samples = m->get\_objective\_function()->get\_statistics\_num\_samples(mode);
+159     \textcolor{keywordflow}{if} (comm->am\_world\_master()) \{
+160       std::vector<EvalType> obj\_fn\_list(comm->get\_num\_models());
+161       std::vector<int> num\_samples\_list(comm->get\_num\_models());
+162       comm->intermodel\_gather(obj\_fn, obj\_fn\_list);
+163       comm->intermodel\_gather(obj\_fn\_samples, num\_samples\_list);
+164       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i = 0; i < num\_models; ++i) \{
+165         std::cout << \textcolor{stringliteral}{"Model "} << i << \textcolor{stringliteral}{" "} << mode\_string << \textcolor{stringliteral}{" "}
+166                   << \textcolor{stringliteral}{"objective function : "} << obj\_fn\_list[i]
+167                   << std::endl;
+168       \}
+169       \textcolor{keywordflow}{if} (num\_models > 1) \{
+170         \textcolor{keyword}{const} \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType} avg\_obj\_fn = (std::inner\_product(num\_samples\_list.begin(),
+171                                                         num\_samples\_list.end(),
+172                                                         obj\_fn\_list.begin(),
+173                                                         \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType}(0))
+174                                      / std::accumulate(num\_samples\_list.begin(),
+175                                                        num\_samples\_list.end(),
+176                                                        0));
+177         std::cout << \textcolor{stringliteral}{"World average "} << mode\_string << \textcolor{stringliteral}{" "}
+178                   << \textcolor{stringliteral}{"objective function : "} << avg\_obj\_fn
+179                   << std::endl;
+180       \}
+181     \} \textcolor{keywordflow}{else} \{
+182       comm->intermodel\_gather(obj\_fn, comm->get\_world\_master());
+183       comm->intermodel\_gather(obj\_fn\_samples, comm->get\_world\_master());
+184     \}
+185 
+186     \textcolor{comment}{// Report score for each metric}
+187     \textcolor{keywordflow}{for} (\textcolor{keyword}{const} \textcolor{keyword}{auto}& met : m->get\_metrics()) \{
+188       \textcolor{keyword}{const} \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType} score = met->get\_mean\_value(mode);
+189       \textcolor{keyword}{const} \textcolor{keywordtype}{int} score\_samples = met->get\_statistics\_num\_samples(mode);
+190       \textcolor{keywordflow}{if} (comm->am\_world\_master()) \{
+191         std::vector<EvalType> score\_list(comm->get\_num\_models());
+192         std::vector<int> num\_samples\_list(comm->get\_num\_models());
+193         comm->intermodel\_gather(score, score\_list);
+194         comm->intermodel\_gather(score\_samples, num\_samples\_list);
+195         \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i = 0; i < num\_models; ++i) \{
+196           std::cout << \textcolor{stringliteral}{"Model "} << i << \textcolor{stringliteral}{" "} << mode\_string << \textcolor{stringliteral}{" "}
+197                     << met->name() << \textcolor{stringliteral}{" : "}
+198                     << score\_list[i] << met->get\_unit()
+199                     << std::endl;
+200         \}
+201         \textcolor{keywordflow}{if} (num\_models > 1) \{
+202           \textcolor{keyword}{const} \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType} avg\_score = (std::inner\_product(num\_samples\_list.begin(),
+203                                                          num\_samples\_list.end(),
+204                                                          score\_list.begin(),
+205                                                          \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType}(0))
+206                                       / std::accumulate(num\_samples\_list.begin(),
+207                                                         num\_samples\_list.end(),
+208                                                         0));
+209           std::cout << \textcolor{stringliteral}{"World "} << mode\_string << \textcolor{stringliteral}{" "}
+210                     << met->name() << \textcolor{stringliteral}{" : "}
+211                     << avg\_score << met->get\_unit()
+212                     << std::endl;
+213         \}
+214       \} \textcolor{keywordflow}{else} \{
+215         comm->intermodel\_gather(score, comm->get\_intermodel\_master());
+216         comm->intermodel\_gather(score\_samples, comm->get\_intermodel\_master());
+217       \}
+218     \}
+219 
+220   \}
+221 
+222 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__print_a50117faa3edb961ddd87c5c5806820b2_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__print_a50117faa3edb961ddd87c5c5806820b2_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__print_a405e20e9fa137bd377faf692cc3c54aa}\label{classlbann_1_1lbann__callback__print_a405e20e9fa137bd377faf692cc3c54aa}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+print@{lbann\+::lbann\+\_\+callback\+\_\+print}!setup@{setup}}
+\index{setup@{setup}!lbann\+::lbann\+\_\+callback\+\_\+print@{lbann\+::lbann\+\_\+callback\+\_\+print}}
+\subsubsection{\texorpdfstring{setup()}{setup()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+print\+::setup (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Called once to set up the callback (after all layers are set up). 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_aab5086e27d9bb0a7c7ee8ffc1bc58671}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 36 of file callback\+\_\+print.\+cpp.
+
+
+\begin{DoxyCode}
+36                                          \{
+37 \textcolor{preprocessor}{#ifdef LBANN\_VERSION}
+38   lbann\_comm *\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm} = m->get\_comm();
+39   \textcolor{keywordflow}{if} (comm->am\_world\_master()) \{
+40     std::cout << \textcolor{stringliteral}{"Training with LLNL LBANN version "}
+41               << \hyperlink{base_8hpp_a78b291de8c80b35c360c22d46d44498a}{LBANN\_MAKE\_STR}(LBANN\_VERSION) << std::endl;
+42   \}
+43 \textcolor{preprocessor}{#endif}
+44 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__print_a405e20e9fa137bd377faf692cc3c54aa_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=340pt]{classlbann_1_1lbann__callback__print_a405e20e9fa137bd377faf692cc3c54aa_icgraph}
+\end{center}
+\end{figure}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/callbacks/\hyperlink{callback__print_8hpp}{callback\+\_\+print.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/callbacks/\hyperlink{callback__print_8cpp}{callback\+\_\+print.\+cpp}\end{DoxyCompactItemize}

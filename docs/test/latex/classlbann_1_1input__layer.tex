@@ -1,0 +1,311 @@
+\hypertarget{classlbann_1_1input__layer}{}\section{lbann\+:\+:input\+\_\+layer$<$ T\+\_\+io\+\_\+buffer, T\+\_\+layout $>$ Class Template Reference}
+\label{classlbann_1_1input__layer}\index{lbann\+::input\+\_\+layer$<$ T\+\_\+io\+\_\+buffer, T\+\_\+layout $>$@{lbann\+::input\+\_\+layer$<$ T\+\_\+io\+\_\+buffer, T\+\_\+layout $>$}}
+
+
+{\ttfamily \#include $<$input\+\_\+layer.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:input\+\_\+layer$<$ T\+\_\+io\+\_\+buffer, T\+\_\+layout $>$\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=207pt]{classlbann_1_1input__layer__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:input\+\_\+layer$<$ T\+\_\+io\+\_\+buffer, T\+\_\+layout $>$\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1input__layer__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1input__layer_aad8b042899d86f5b7904d9d2653b5181}{input\+\_\+layer} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, int num\+\_\+parallel\+\_\+readers, std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$$>$ data\+\_\+readers, bool data\+\_\+set\+\_\+spans\+\_\+models=true, bool for\+\_\+regression=false)
+\item 
+\hyperlink{classlbann_1_1input__layer_a5f009de9aa2d51c78cf28068218d8bb9}{input\+\_\+layer} (const \hyperlink{classlbann_1_1input__layer}{input\+\_\+layer} \&)=default
+\item 
+\hyperlink{classlbann_1_1input__layer}{input\+\_\+layer} \& \hyperlink{classlbann_1_1input__layer_a8b00d107daef436d141344277526b682}{operator=} (const \hyperlink{classlbann_1_1input__layer}{input\+\_\+layer} \&)=default
+\item 
+\hyperlink{classlbann_1_1input__layer}{input\+\_\+layer} $\ast$ \hyperlink{classlbann_1_1input__layer_a02eb5e9b97c1da48997995cb89d297ec}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1input__layer_af596126d1b2d1604743906d04d32419b}{get\+\_\+type} () const override
+\item 
+void \hyperlink{classlbann_1_1input__layer_ae3c46c7e4d99b736ce8a3261abeac3e7}{validate\+\_\+data\+\_\+layout} ()
+\item 
+void \hyperlink{classlbann_1_1input__layer_a645fce2e882892ac0ad8c9b06ea6ed09}{initialize\+\_\+io\+\_\+buffer} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, int num\+\_\+parallel\+\_\+readers, std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$$>$ data\+\_\+readers)
+\item 
+\hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08db}{data\+\_\+layout} \hyperlink{classlbann_1_1input__layer_ae8556702a6c04aeeec8d5eea2d0e90e6}{get\+\_\+data\+\_\+layout} () const override
+\item 
+{\footnotesize template$<$$>$ }\\void \hyperlink{classlbann_1_1input__layer_a002a1f299fd8e63c13c4e27a61e86d61}{validate\+\_\+data\+\_\+layout} ()
+\item 
+{\footnotesize template$<$$>$ }\\void \hyperlink{classlbann_1_1input__layer_a129f797705ae7584d6bc612b15aeb294}{validate\+\_\+data\+\_\+layout} ()
+\item 
+{\footnotesize template$<$$>$ }\\void \hyperlink{classlbann_1_1input__layer_a4335c1d23efe251f7d7164d907a11d65}{validate\+\_\+data\+\_\+layout} ()
+\item 
+{\footnotesize template$<$$>$ }\\void \hyperlink{classlbann_1_1input__layer_a26ae8f3e7a583bda6ead168b2be77fa1}{validate\+\_\+data\+\_\+layout} ()
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+\subsubsection*{template$<$typename T\+\_\+io\+\_\+buffer, data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$\newline
+class lbann\+::input\+\_\+layer$<$ T\+\_\+io\+\_\+buffer, T\+\_\+layout $>$}
+
+
+
+Definition at line 41 of file input\+\_\+layer.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1input__layer_aad8b042899d86f5b7904d9d2653b5181}\label{classlbann_1_1input__layer_aad8b042899d86f5b7904d9d2653b5181}} 
+\index{lbann\+::input\+\_\+layer@{lbann\+::input\+\_\+layer}!input\+\_\+layer@{input\+\_\+layer}}
+\index{input\+\_\+layer@{input\+\_\+layer}!lbann\+::input\+\_\+layer@{lbann\+::input\+\_\+layer}}
+\subsubsection{\texorpdfstring{input\+\_\+layer()}{input\_layer()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily template$<$typename T\+\_\+io\+\_\+buffer, data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{classlbann_1_1input__layer}{lbann\+::input\+\_\+layer}$<$ T\+\_\+io\+\_\+buffer, T\+\_\+layout $>$\+::\hyperlink{classlbann_1_1input__layer}{input\+\_\+layer} (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{int}]{num\+\_\+parallel\+\_\+readers,  }\item[{std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$$>$}]{data\+\_\+readers,  }\item[{bool}]{data\+\_\+set\+\_\+spans\+\_\+models = {\ttfamily true},  }\item[{bool}]{for\+\_\+regression = {\ttfamily false} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\begin{DoxyRefDesc}{Todo}
+\item[\hyperlink{todo__todo000021}{Todo}]make the map and vector references \end{DoxyRefDesc}
+
+
+Definition at line 45 of file input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+47     : \hyperlink{classlbann_1_1generic__input__layer_a0c7ce1625cd2be2368822c2662346538}{generic\_input\_layer}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, num\_parallel\_readers, data\_readers, 
+      data\_set\_spans\_models, for\_regression) \{
+48     \hyperlink{classlbann_1_1input__layer_ae3c46c7e4d99b736ce8a3261abeac3e7}{validate\_data\_layout}();
+49     \hyperlink{classlbann_1_1input__layer_a645fce2e882892ac0ad8c9b06ea6ed09}{initialize\_io\_buffer}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, std::min(num\_parallel\_readers, 
+      \hyperlink{classlbann_1_1Layer_a5de05c52f22e0bbd7c703bec3ad4dbf2}{Layer::m\_comm}->get\_procs\_per\_model()), data\_readers);
+50     \hyperlink{classlbann_1_1generic__input__layer_a9dfe8b9afaebc7a5bcb0177ee2ab428f}{io\_buffer}->\hyperlink{classlbann_1_1generic__io__buffer_a267170b4fd11dc60c782a9cb2b7b06cc}{fetch\_data\_fn} = \textcolor{keyword}{new} fetch\_data\_functor(\textcolor{keyword}{true}, \textcolor{keyword}{false});
+51     \hyperlink{classlbann_1_1generic__input__layer_a9dfe8b9afaebc7a5bcb0177ee2ab428f}{io\_buffer}->\hyperlink{classlbann_1_1generic__io__buffer_a031eda7559a9e241afb3958b56088560}{update\_data\_reader\_fn} = \textcolor{keyword}{new} update\_data\_reader\_functor(\textcolor{keyword}{true});
+52   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=324pt]{classlbann_1_1input__layer_aad8b042899d86f5b7904d9d2653b5181_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=306pt]{classlbann_1_1input__layer_aad8b042899d86f5b7904d9d2653b5181_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1input__layer_a5f009de9aa2d51c78cf28068218d8bb9}\label{classlbann_1_1input__layer_a5f009de9aa2d51c78cf28068218d8bb9}} 
+\index{lbann\+::input\+\_\+layer@{lbann\+::input\+\_\+layer}!input\+\_\+layer@{input\+\_\+layer}}
+\index{input\+\_\+layer@{input\+\_\+layer}!lbann\+::input\+\_\+layer@{lbann\+::input\+\_\+layer}}
+\subsubsection{\texorpdfstring{input\+\_\+layer()}{input\_layer()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily template$<$typename T\+\_\+io\+\_\+buffer, data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{classlbann_1_1input__layer}{lbann\+::input\+\_\+layer}$<$ T\+\_\+io\+\_\+buffer, T\+\_\+layout $>$\+::\hyperlink{classlbann_1_1input__layer}{input\+\_\+layer} (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1input__layer}{input\+\_\+layer}$<$ T\+\_\+io\+\_\+buffer, T\+\_\+layout $>$ \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1input__layer_a02eb5e9b97c1da48997995cb89d297ec}\label{classlbann_1_1input__layer_a02eb5e9b97c1da48997995cb89d297ec}} 
+\index{lbann\+::input\+\_\+layer@{lbann\+::input\+\_\+layer}!copy@{copy}}
+\index{copy@{copy}!lbann\+::input\+\_\+layer@{lbann\+::input\+\_\+layer}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily template$<$typename T\+\_\+io\+\_\+buffer, data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{classlbann_1_1input__layer}{input\+\_\+layer}$\ast$ \hyperlink{classlbann_1_1input__layer}{lbann\+::input\+\_\+layer}$<$ T\+\_\+io\+\_\+buffer, T\+\_\+layout $>$\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Copy function. This function dynamically allocates memory for a layer instance and instantiates a copy. The caller is responsible for deallocating the instance. 
+
+Implements \hyperlink{classlbann_1_1Layer_af420f22bbac801c85483ade84588a23f}{lbann\+::\+Layer}.
+
+
+
+Definition at line 55 of file input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+55                                      \{
+56     \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1input__layer_aad8b042899d86f5b7904d9d2653b5181}{input\_layer}(*\textcolor{keyword}{this});
+57   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1input__layer_a02eb5e9b97c1da48997995cb89d297ec_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1input__layer_ae8556702a6c04aeeec8d5eea2d0e90e6}\label{classlbann_1_1input__layer_ae8556702a6c04aeeec8d5eea2d0e90e6}} 
+\index{lbann\+::input\+\_\+layer@{lbann\+::input\+\_\+layer}!get\+\_\+data\+\_\+layout@{get\+\_\+data\+\_\+layout}}
+\index{get\+\_\+data\+\_\+layout@{get\+\_\+data\+\_\+layout}!lbann\+::input\+\_\+layer@{lbann\+::input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+data\+\_\+layout()}{get\_data\_layout()}}
+{\footnotesize\ttfamily template$<$typename T\+\_\+io\+\_\+buffer, data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08db}{data\+\_\+layout} \hyperlink{classlbann_1_1input__layer}{lbann\+::input\+\_\+layer}$<$ T\+\_\+io\+\_\+buffer, T\+\_\+layout $>$\+::get\+\_\+data\+\_\+layout (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get data layout of the data tensors. We assume that the data layouts of the previous activations, activations, previous error signals, and error signals are the same. Each concrete layer that is templated on its data layout should override this function to return its template parameter. 
+
+Implements \hyperlink{classlbann_1_1Layer_a5dfb66e81fc085997402a5e2241316bd}{lbann\+::\+Layer}.
+
+
+
+Definition at line 71 of file input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+71 \{ \textcolor{keywordflow}{return} T\_layout; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1input__layer_af596126d1b2d1604743906d04d32419b}\label{classlbann_1_1input__layer_af596126d1b2d1604743906d04d32419b}} 
+\index{lbann\+::input\+\_\+layer@{lbann\+::input\+\_\+layer}!get\+\_\+type@{get\+\_\+type}}
+\index{get\+\_\+type@{get\+\_\+type}!lbann\+::input\+\_\+layer@{lbann\+::input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+type()}{get\_type()}}
+{\footnotesize\ttfamily template$<$typename T\+\_\+io\+\_\+buffer, data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+std\+::string \hyperlink{classlbann_1_1input__layer}{lbann\+::input\+\_\+layer}$<$ T\+\_\+io\+\_\+buffer, T\+\_\+layout $>$\+::get\+\_\+type (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get the layer type\textquotesingle{}s name. A layer type name should be brief, human-\/readable description of the layer\textquotesingle{}s mathematical operation. 
+
+Reimplemented from \hyperlink{classlbann_1_1generic__input__layer_a5392ea11b5eb98a8040bf5b5deed836a}{lbann\+::generic\+\_\+input\+\_\+layer}.
+
+
+
+Definition at line 59 of file input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+59                                       \{
+60     \textcolor{keywordflow}{return} std::string \{\}
+61       + \textcolor{stringliteral}{"input:"}
+62       + \hyperlink{classlbann_1_1generic__input__layer_a9dfe8b9afaebc7a5bcb0177ee2ab428f}{io\_buffer}->\hyperlink{classlbann_1_1generic__io__buffer_adc77c0a280f8a200a8d8495c3a371ebb}{get\_type}();
+63   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=334pt]{classlbann_1_1input__layer_af596126d1b2d1604743906d04d32419b_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1input__layer_a645fce2e882892ac0ad8c9b06ea6ed09}\label{classlbann_1_1input__layer_a645fce2e882892ac0ad8c9b06ea6ed09}} 
+\index{lbann\+::input\+\_\+layer@{lbann\+::input\+\_\+layer}!initialize\+\_\+io\+\_\+buffer@{initialize\+\_\+io\+\_\+buffer}}
+\index{initialize\+\_\+io\+\_\+buffer@{initialize\+\_\+io\+\_\+buffer}!lbann\+::input\+\_\+layer@{lbann\+::input\+\_\+layer}}
+\subsubsection{\texorpdfstring{initialize\+\_\+io\+\_\+buffer()}{initialize\_io\_buffer()}}
+{\footnotesize\ttfamily template$<$typename T\+\_\+io\+\_\+buffer, data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1input__layer}{lbann\+::input\+\_\+layer}$<$ T\+\_\+io\+\_\+buffer, T\+\_\+layout $>$\+::initialize\+\_\+io\+\_\+buffer (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{int}]{num\+\_\+parallel\+\_\+readers,  }\item[{std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$$>$}]{data\+\_\+readers }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 67 of file input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+67                                                                                                            
+                                      \{
+68     generic\_input\_layer::initialize\_io\_buffer<T\_io\_buffer>(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, num\_parallel\_readers, data\_readers);
+69   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1input__layer_a645fce2e882892ac0ad8c9b06ea6ed09_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1input__layer_a8b00d107daef436d141344277526b682}\label{classlbann_1_1input__layer_a8b00d107daef436d141344277526b682}} 
+\index{lbann\+::input\+\_\+layer@{lbann\+::input\+\_\+layer}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::input\+\_\+layer@{lbann\+::input\+\_\+layer}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily template$<$typename T\+\_\+io\+\_\+buffer, data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{classlbann_1_1input__layer}{input\+\_\+layer}\& \hyperlink{classlbann_1_1input__layer}{lbann\+::input\+\_\+layer}$<$ T\+\_\+io\+\_\+buffer, T\+\_\+layout $>$\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1input__layer}{input\+\_\+layer}$<$ T\+\_\+io\+\_\+buffer, T\+\_\+layout $>$ \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1input__layer_a8b00d107daef436d141344277526b682_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1input__layer_ae3c46c7e4d99b736ce8a3261abeac3e7}\label{classlbann_1_1input__layer_ae3c46c7e4d99b736ce8a3261abeac3e7}} 
+\index{lbann\+::input\+\_\+layer@{lbann\+::input\+\_\+layer}!validate\+\_\+data\+\_\+layout@{validate\+\_\+data\+\_\+layout}}
+\index{validate\+\_\+data\+\_\+layout@{validate\+\_\+data\+\_\+layout}!lbann\+::input\+\_\+layer@{lbann\+::input\+\_\+layer}}
+\subsubsection{\texorpdfstring{validate\+\_\+data\+\_\+layout()}{validate\_data\_layout()}\hspace{0.1cm}{\footnotesize\ttfamily [1/5]}}
+{\footnotesize\ttfamily template$<$typename T\+\_\+io\+\_\+buffer, data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1input__layer}{lbann\+::input\+\_\+layer}$<$ T\+\_\+io\+\_\+buffer, T\+\_\+layout $>$\+::validate\+\_\+data\+\_\+layout (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1input__layer_ae3c46c7e4d99b736ce8a3261abeac3e7_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1input__layer_a002a1f299fd8e63c13c4e27a61e86d61}\label{classlbann_1_1input__layer_a002a1f299fd8e63c13c4e27a61e86d61}} 
+\index{lbann\+::input\+\_\+layer@{lbann\+::input\+\_\+layer}!validate\+\_\+data\+\_\+layout@{validate\+\_\+data\+\_\+layout}}
+\index{validate\+\_\+data\+\_\+layout@{validate\+\_\+data\+\_\+layout}!lbann\+::input\+\_\+layer@{lbann\+::input\+\_\+layer}}
+\subsubsection{\texorpdfstring{validate\+\_\+data\+\_\+layout()}{validate\_data\_layout()}\hspace{0.1cm}{\footnotesize\ttfamily [2/5]}}
+{\footnotesize\ttfamily template$<$$>$ \\
+void \hyperlink{classlbann_1_1input__layer}{lbann\+::input\+\_\+layer}$<$ \hyperlink{classlbann_1_1partitioned__io__buffer}{partitioned\+\_\+io\+\_\+buffer}, \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08dbac94d7b0e44ab8bdcdad694a673cdeae0}{data\+\_\+layout\+::\+M\+O\+D\+E\+L\+\_\+\+P\+A\+R\+A\+L\+L\+EL} $>$\+::validate\+\_\+data\+\_\+layout (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 76 of file input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+76                                                                                                 \{
+77   static\_assert(\textcolor{keyword}{true}, \textcolor{stringliteral}{"input\_layer with partitioned\_io\_buffer does not supports MODEL\_PARALLEL data layout"}
+      );
+78 \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1input__layer_a129f797705ae7584d6bc612b15aeb294}\label{classlbann_1_1input__layer_a129f797705ae7584d6bc612b15aeb294}} 
+\index{lbann\+::input\+\_\+layer@{lbann\+::input\+\_\+layer}!validate\+\_\+data\+\_\+layout@{validate\+\_\+data\+\_\+layout}}
+\index{validate\+\_\+data\+\_\+layout@{validate\+\_\+data\+\_\+layout}!lbann\+::input\+\_\+layer@{lbann\+::input\+\_\+layer}}
+\subsubsection{\texorpdfstring{validate\+\_\+data\+\_\+layout()}{validate\_data\_layout()}\hspace{0.1cm}{\footnotesize\ttfamily [3/5]}}
+{\footnotesize\ttfamily template$<$$>$ \\
+void \hyperlink{classlbann_1_1input__layer}{lbann\+::input\+\_\+layer}$<$ \hyperlink{classlbann_1_1partitioned__io__buffer}{partitioned\+\_\+io\+\_\+buffer}, \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08dba37d2a3465f7cbf4ab60f4e79944d0638}{data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL} $>$\+::validate\+\_\+data\+\_\+layout (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 81 of file input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+81 \{\}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1input__layer_a4335c1d23efe251f7d7164d907a11d65}\label{classlbann_1_1input__layer_a4335c1d23efe251f7d7164d907a11d65}} 
+\index{lbann\+::input\+\_\+layer@{lbann\+::input\+\_\+layer}!validate\+\_\+data\+\_\+layout@{validate\+\_\+data\+\_\+layout}}
+\index{validate\+\_\+data\+\_\+layout@{validate\+\_\+data\+\_\+layout}!lbann\+::input\+\_\+layer@{lbann\+::input\+\_\+layer}}
+\subsubsection{\texorpdfstring{validate\+\_\+data\+\_\+layout()}{validate\_data\_layout()}\hspace{0.1cm}{\footnotesize\ttfamily [4/5]}}
+{\footnotesize\ttfamily template$<$$>$ \\
+void \hyperlink{classlbann_1_1input__layer}{lbann\+::input\+\_\+layer}$<$ \hyperlink{classlbann_1_1distributed__io__buffer}{distributed\+\_\+io\+\_\+buffer}, \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08dbac94d7b0e44ab8bdcdad694a673cdeae0}{data\+\_\+layout\+::\+M\+O\+D\+E\+L\+\_\+\+P\+A\+R\+A\+L\+L\+EL} $>$\+::validate\+\_\+data\+\_\+layout (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 84 of file input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+84 \{\}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1input__layer_a26ae8f3e7a583bda6ead168b2be77fa1}\label{classlbann_1_1input__layer_a26ae8f3e7a583bda6ead168b2be77fa1}} 
+\index{lbann\+::input\+\_\+layer@{lbann\+::input\+\_\+layer}!validate\+\_\+data\+\_\+layout@{validate\+\_\+data\+\_\+layout}}
+\index{validate\+\_\+data\+\_\+layout@{validate\+\_\+data\+\_\+layout}!lbann\+::input\+\_\+layer@{lbann\+::input\+\_\+layer}}
+\subsubsection{\texorpdfstring{validate\+\_\+data\+\_\+layout()}{validate\_data\_layout()}\hspace{0.1cm}{\footnotesize\ttfamily [5/5]}}
+{\footnotesize\ttfamily template$<$$>$ \\
+void \hyperlink{classlbann_1_1input__layer}{lbann\+::input\+\_\+layer}$<$ \hyperlink{classlbann_1_1distributed__io__buffer}{distributed\+\_\+io\+\_\+buffer}, \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08dba37d2a3465f7cbf4ab60f4e79944d0638}{data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL} $>$\+::validate\+\_\+data\+\_\+layout (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 87 of file input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+87 \{\}
+\end{DoxyCode}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/layers/io/input/\hyperlink{input__layer_8hpp}{input\+\_\+layer.\+hpp}\end{DoxyCompactItemize}

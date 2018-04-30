@@ -1,0 +1,18 @@
+<map id="/Users/mckinney27/doxy&#45;testbed/lbann/include/lbann/data_readers/cv_process_patches.hpp" name="/Users/mckinney27/doxy&#45;testbed/lbann/include/lbann/data_readers/cv_process_patches.hpp">
+<area shape="rect" id="node2" href="$cv__process_8hpp.html" title="cv_process.hpp" alt="" coords="757,125,871,151"/>
+<area shape="rect" id="node32" href="$patchworks__patch__descriptor_8hpp.html" title="patchworks/patchworks\l_patch_descriptor.hpp" alt="" coords="1309,119,1469,157"/>
+<area shape="rect" id="node3" href="$cv__transform_8hpp.html" title="cv_transform.hpp" alt="" coords="697,279,822,304"/>
+<area shape="rect" id="node7" href="$cv__normalizer_8hpp.html" title="cv_normalizer.hpp" alt="" coords="77,205,207,231"/>
+<area shape="rect" id="node19" href="$cv__subtractor_8hpp.html" title="cv_subtractor.hpp" alt="" coords="231,205,357,231"/>
+<area shape="rect" id="node20" href="$cv__augmenter_8hpp.html" title="cv_augmenter.hpp" alt="" coords="1145,205,1276,231"/>
+<area shape="rect" id="node24" href="$cv__colorizer_8hpp.html" title="cv_colorizer.hpp" alt="" coords="659,205,777,231"/>
+<area shape="rect" id="node25" href="$cv__decolorizer_8hpp.html" title="cv_decolorizer.hpp" alt="" coords="852,205,984,231"/>
+<area shape="rect" id="node26" href="$cv__cropper_8hpp.html" title="cv_cropper.hpp" alt="" coords="1009,205,1121,231"/>
+<area shape="rect" id="node28" href="$cv__mean__extractor_8hpp.html" title="cv_mean_extractor.hpp" alt="" coords="475,205,635,231"/>
+<area shape="rect" id="node4" href="$opencv_8hpp.html" title="opencv.hpp" alt="" coords="608,352,697,377"/>
+<area shape="rect" id="node6" href="$opencv__extensions_8hpp.html" title="opencv_extensions.hpp" alt="" coords="721,352,883,377"/>
+<area shape="rect" id="node9" href="$base_8hpp.html" title="lbann/base.hpp" alt="" coords="171,279,284,304"/>
+<area shape="rect" id="node17" href="$mild__exception_8hpp.html" title="lbann/utils/mild_exception.hpp" alt="" coords="307,279,507,304"/>
+<area shape="rect" id="node11" href="$Elemental__extensions_8hpp.html" title="lbann/Elemental_extensions.hpp" alt="" coords="23,352,237,377"/>
+<area shape="rect" id="node12" href="$cyg__profile_8hpp.html" title="lbann/utils/cyg_profile.hpp" alt="" coords="261,352,437,377"/>
+</map>

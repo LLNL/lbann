@@ -1,0 +1,353 @@
+\hypertarget{classlbann_1_1lbann__callback__checksmall}{}\section{lbann\+:\+:lbann\+\_\+callback\+\_\+checksmall Class Reference}
+\label{classlbann_1_1lbann__callback__checksmall}\index{lbann\+::lbann\+\_\+callback\+\_\+checksmall@{lbann\+::lbann\+\_\+callback\+\_\+checksmall}}
+
+
+{\ttfamily \#include $<$callback\+\_\+checksmall.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+checksmall\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=192pt]{classlbann_1_1lbann__callback__checksmall__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+checksmall\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=207pt]{classlbann_1_1lbann__callback__checksmall__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1lbann__callback__checksmall_a2a5769a9309807f6952212d5ea3a4466}{lbann\+\_\+callback\+\_\+checksmall} ()
+\item 
+\hyperlink{classlbann_1_1lbann__callback__checksmall_a8e08286cc2ded6e47297f76fcdbf8f32}{lbann\+\_\+callback\+\_\+checksmall} (const \hyperlink{classlbann_1_1lbann__callback__checksmall}{lbann\+\_\+callback\+\_\+checksmall} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__checksmall}{lbann\+\_\+callback\+\_\+checksmall} \& \hyperlink{classlbann_1_1lbann__callback__checksmall_a9488b223c8ae4beb87a6bd6d01c6d14d}{operator=} (const \hyperlink{classlbann_1_1lbann__callback__checksmall}{lbann\+\_\+callback\+\_\+checksmall} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__checksmall}{lbann\+\_\+callback\+\_\+checksmall} $\ast$ \hyperlink{classlbann_1_1lbann__callback__checksmall_ae0601cd90b165049063783d4d501ffde}{copy} () const override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__checksmall_a2f50695feb1444145bae251f2e94b721}{on\+\_\+forward\+\_\+prop\+\_\+end} (\hyperlink{classlbann_1_1model}{model} $\ast$m, \hyperlink{classlbann_1_1Layer}{Layer} $\ast$l) override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__checksmall_aade56a328c4b9df28c0cd979eed9e5ff}{on\+\_\+backward\+\_\+prop\+\_\+end} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__checksmall_a00f1e6ad712638a107667a3e6695a6f0}{on\+\_\+batch\+\_\+end} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\item 
+std\+::string \hyperlink{classlbann_1_1lbann__callback__checksmall_acbdd897ecbe5a27b59db15ae7662e0f9}{name} () const override
+\end{DoxyCompactItemize}
+\subsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+bool \hyperlink{classlbann_1_1lbann__callback__checksmall_afe78f539ba3b2ad3e6ae8c468850052c}{is\+\_\+good} (const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&m)
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+const Data\+Type \hyperlink{classlbann_1_1lbann__callback__checksmall_a2c37cd93bca10f6fb42348c2e6b0016e}{m\+\_\+threshold} = std\+::sqrt(std\+::numeric\+\_\+limits$<$Data\+Type$>$\+::min())
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+Check matrices for whether they include any very small values to avoid getting denormalized values. Denormalized values can significantly slow floating point computations. Since we often square values, the check is based on the square root of the smallest floating point value. This will kill the rank if such values are discovered. 
+
+Definition at line 44 of file callback\+\_\+checksmall.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checksmall_a2a5769a9309807f6952212d5ea3a4466}\label{classlbann_1_1lbann__callback__checksmall_a2a5769a9309807f6952212d5ea3a4466}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checksmall@{lbann\+::lbann\+\_\+callback\+\_\+checksmall}!lbann\+\_\+callback\+\_\+checksmall@{lbann\+\_\+callback\+\_\+checksmall}}
+\index{lbann\+\_\+callback\+\_\+checksmall@{lbann\+\_\+callback\+\_\+checksmall}!lbann\+::lbann\+\_\+callback\+\_\+checksmall@{lbann\+::lbann\+\_\+callback\+\_\+checksmall}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+checksmall()}{lbann\_callback\_checksmall()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+checksmall\+::lbann\+\_\+callback\+\_\+checksmall (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 49 of file callback\+\_\+checksmall.\+hpp.
+
+
+\begin{DoxyCode}
+49 : \hyperlink{classlbann_1_1lbann__callback_a679057298a41ddd47f08c157f756c584}{lbann\_callback}() \{\}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checksmall_a2a5769a9309807f6952212d5ea3a4466_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checksmall_a2a5769a9309807f6952212d5ea3a4466_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checksmall_a8e08286cc2ded6e47297f76fcdbf8f32}\label{classlbann_1_1lbann__callback__checksmall_a8e08286cc2ded6e47297f76fcdbf8f32}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checksmall@{lbann\+::lbann\+\_\+callback\+\_\+checksmall}!lbann\+\_\+callback\+\_\+checksmall@{lbann\+\_\+callback\+\_\+checksmall}}
+\index{lbann\+\_\+callback\+\_\+checksmall@{lbann\+\_\+callback\+\_\+checksmall}!lbann\+::lbann\+\_\+callback\+\_\+checksmall@{lbann\+::lbann\+\_\+callback\+\_\+checksmall}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+checksmall()}{lbann\_callback\_checksmall()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+checksmall\+::lbann\+\_\+callback\+\_\+checksmall (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__checksmall}{lbann\+\_\+callback\+\_\+checksmall} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checksmall_ae0601cd90b165049063783d4d501ffde}\label{classlbann_1_1lbann__callback__checksmall_ae0601cd90b165049063783d4d501ffde}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checksmall@{lbann\+::lbann\+\_\+callback\+\_\+checksmall}!copy@{copy}}
+\index{copy@{copy}!lbann\+::lbann\+\_\+callback\+\_\+checksmall@{lbann\+::lbann\+\_\+callback\+\_\+checksmall}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__checksmall}{lbann\+\_\+callback\+\_\+checksmall}$\ast$ lbann\+::lbann\+\_\+callback\+\_\+checksmall\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a9f545d1269a8c7af335625d049691f26}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 53 of file callback\+\_\+checksmall.\+hpp.
+
+
+\begin{DoxyCode}
+53                                                    \{
+54     \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1lbann__callback__checksmall_a2a5769a9309807f6952212d5ea3a4466}{lbann\_callback\_checksmall}(*\textcolor{keyword}{this});
+55   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checksmall_ae0601cd90b165049063783d4d501ffde_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checksmall_afe78f539ba3b2ad3e6ae8c468850052c}\label{classlbann_1_1lbann__callback__checksmall_afe78f539ba3b2ad3e6ae8c468850052c}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checksmall@{lbann\+::lbann\+\_\+callback\+\_\+checksmall}!is\+\_\+good@{is\+\_\+good}}
+\index{is\+\_\+good@{is\+\_\+good}!lbann\+::lbann\+\_\+callback\+\_\+checksmall@{lbann\+::lbann\+\_\+callback\+\_\+checksmall}}
+\subsubsection{\texorpdfstring{is\+\_\+good()}{is\_good()}}
+{\footnotesize\ttfamily bool lbann\+::lbann\+\_\+callback\+\_\+checksmall\+::is\+\_\+good (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+Return true if there are no problems with m. 
+
+Definition at line 77 of file callback\+\_\+checksmall.\+cpp.
+
+
+\begin{DoxyCode}
+77                                                            \{
+78   \textcolor{keyword}{const} \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}& local\_mat = m.LockedMatrix();
+79   \textcolor{keyword}{const} El::Int height = local\_mat.Height();
+80   \textcolor{keyword}{const} El::Int width = local\_mat.Width();
+81   \textcolor{keywordflow}{for} (El::Int col = 0; col < width; ++col) \{
+82     \textcolor{keywordflow}{for} (El::Int row = 0; row < height; ++row) \{
+83       \textcolor{keyword}{const} DataType val = std::abs(local\_mat(row, col));
+84       \textcolor{keywordflow}{if} (val > 0 && val <= \hyperlink{classlbann_1_1lbann__callback__checksmall_a2c37cd93bca10f6fb42348c2e6b0016e}{m\_threshold}) \{
+85         std::cout << \textcolor{stringliteral}{"Found small value "} << val << \textcolor{stringliteral}{" "}
+86                   << \textcolor{stringliteral}{"at ("} << row << \textcolor{stringliteral}{","} << col << \textcolor{stringliteral}{")!"} << std::endl;
+87         \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+88       \}
+89     \}
+90   \}
+91   \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+92 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checksmall_afe78f539ba3b2ad3e6ae8c468850052c_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checksmall_acbdd897ecbe5a27b59db15ae7662e0f9}\label{classlbann_1_1lbann__callback__checksmall_acbdd897ecbe5a27b59db15ae7662e0f9}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checksmall@{lbann\+::lbann\+\_\+callback\+\_\+checksmall}!name@{name}}
+\index{name@{name}!lbann\+::lbann\+\_\+callback\+\_\+checksmall@{lbann\+::lbann\+\_\+callback\+\_\+checksmall}}
+\subsubsection{\texorpdfstring{name()}{name()}}
+{\footnotesize\ttfamily std\+::string lbann\+::lbann\+\_\+callback\+\_\+checksmall\+::name (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Return this callback\textquotesingle{}s name. 
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a7522c7a14f1d6a1ea762cc2d7248eb3a}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 62 of file callback\+\_\+checksmall.\+hpp.
+
+
+\begin{DoxyCode}
+62 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"checksmall"}; \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checksmall_acbdd897ecbe5a27b59db15ae7662e0f9_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checksmall_aade56a328c4b9df28c0cd979eed9e5ff}\label{classlbann_1_1lbann__callback__checksmall_aade56a328c4b9df28c0cd979eed9e5ff}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checksmall@{lbann\+::lbann\+\_\+callback\+\_\+checksmall}!on\+\_\+backward\+\_\+prop\+\_\+end@{on\+\_\+backward\+\_\+prop\+\_\+end}}
+\index{on\+\_\+backward\+\_\+prop\+\_\+end@{on\+\_\+backward\+\_\+prop\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+checksmall@{lbann\+::lbann\+\_\+callback\+\_\+checksmall}}
+\subsubsection{\texorpdfstring{on\+\_\+backward\+\_\+prop\+\_\+end()}{on\_backward\_prop\_end()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+checksmall\+::on\+\_\+backward\+\_\+prop\+\_\+end (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Check that gradients are good. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_af183624e63ba65e0003fa988f53dee0c}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 50 of file callback\+\_\+checksmall.\+cpp.
+
+
+\begin{DoxyCode}
+50                                                              \{
+51   \textcolor{keywordflow}{for} (weights *w : m->get\_weights()) \{
+52     optimizer *opt = w->get\_optimizer();
+53     \textcolor{keywordflow}{if} (opt != \textcolor{keyword}{nullptr} && !\hyperlink{classlbann_1_1lbann__callback__checksmall_afe78f539ba3b2ad3e6ae8c468850052c}{is\_good}(opt->get\_gradient())) \{
+54       std::stringstream ss;
+55       ss << \hyperlink{classlbann_1_1lbann__callback__checksmall_acbdd897ecbe5a27b59db15ae7662e0f9}{name}() << \textcolor{stringliteral}{": "}
+56          << \textcolor{stringliteral}{"["} << std::to\_string(m->get\_comm()->get\_rank\_in\_world()) << \textcolor{stringliteral}{"]: "}
+57          << \textcolor{stringliteral}{"error in weights gradient of "} << w->get\_name() << \textcolor{stringliteral}{" "}
+58          << \textcolor{stringliteral}{"(step="} << std::to\_string(m->get\_cur\_step()) << \textcolor{stringliteral}{")"};
+59       \textcolor{keywordflow}{throw} lbann\_exception(ss.str());
+60     \}
+61   \}
+62 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checksmall_aade56a328c4b9df28c0cd979eed9e5ff_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checksmall_aade56a328c4b9df28c0cd979eed9e5ff_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checksmall_a00f1e6ad712638a107667a3e6695a6f0}\label{classlbann_1_1lbann__callback__checksmall_a00f1e6ad712638a107667a3e6695a6f0}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checksmall@{lbann\+::lbann\+\_\+callback\+\_\+checksmall}!on\+\_\+batch\+\_\+end@{on\+\_\+batch\+\_\+end}}
+\index{on\+\_\+batch\+\_\+end@{on\+\_\+batch\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+checksmall@{lbann\+::lbann\+\_\+callback\+\_\+checksmall}}
+\subsubsection{\texorpdfstring{on\+\_\+batch\+\_\+end()}{on\_batch\_end()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+checksmall\+::on\+\_\+batch\+\_\+end (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Check that weights are good. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_a895ca577e358601fcae5c04749f60535}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 64 of file callback\+\_\+checksmall.\+cpp.
+
+
+\begin{DoxyCode}
+64                                                      \{
+65   \textcolor{keywordflow}{for} (weights *w : m->get\_weights()) \{
+66     \textcolor{keywordflow}{if} (!\hyperlink{classlbann_1_1lbann__callback__checksmall_afe78f539ba3b2ad3e6ae8c468850052c}{is\_good}(w->get\_values())) \{
+67       std::stringstream ss;
+68       ss << \hyperlink{classlbann_1_1lbann__callback__checksmall_acbdd897ecbe5a27b59db15ae7662e0f9}{name}() << \textcolor{stringliteral}{": "}
+69          << \textcolor{stringliteral}{"["} << std::to\_string(m->get\_comm()->get\_rank\_in\_world()) << \textcolor{stringliteral}{"]: "}
+70          << \textcolor{stringliteral}{"error in weights of "} << w->get\_name() << \textcolor{stringliteral}{" "}
+71          << \textcolor{stringliteral}{"(step="} << std::to\_string(m->get\_cur\_step()-1) << \textcolor{stringliteral}{")"};
+72       \textcolor{keywordflow}{throw} lbann\_exception(ss.str());
+73     \}
+74   \}
+75 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checksmall_a00f1e6ad712638a107667a3e6695a6f0_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checksmall_a00f1e6ad712638a107667a3e6695a6f0_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checksmall_a2f50695feb1444145bae251f2e94b721}\label{classlbann_1_1lbann__callback__checksmall_a2f50695feb1444145bae251f2e94b721}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checksmall@{lbann\+::lbann\+\_\+callback\+\_\+checksmall}!on\+\_\+forward\+\_\+prop\+\_\+end@{on\+\_\+forward\+\_\+prop\+\_\+end}}
+\index{on\+\_\+forward\+\_\+prop\+\_\+end@{on\+\_\+forward\+\_\+prop\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+checksmall@{lbann\+::lbann\+\_\+callback\+\_\+checksmall}}
+\subsubsection{\texorpdfstring{on\+\_\+forward\+\_\+prop\+\_\+end()}{on\_forward\_prop\_end()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+checksmall\+::on\+\_\+forward\+\_\+prop\+\_\+end (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m,  }\item[{\hyperlink{classlbann_1_1Layer}{Layer} $\ast$}]{l }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Check that activations are good. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_a5eff0a59fbce98a981d9cdd0547a3ad5}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 35 of file callback\+\_\+checksmall.\+cpp.
+
+
+\begin{DoxyCode}
+35                                                                       \{
+36   \textcolor{keywordflow}{if} (dynamic\_cast<generic\_target\_layer*>(l) != \textcolor{keyword}{nullptr}) \{
+37     \textcolor{keywordflow}{return};
+38   \}
+39   \textcolor{keyword}{const} \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{AbsDistMat}& acts = l->get\_activations();
+40   \textcolor{keywordflow}{if} (!\hyperlink{classlbann_1_1lbann__callback__checksmall_afe78f539ba3b2ad3e6ae8c468850052c}{is\_good}(acts)) \{
+41     std::stringstream ss;
+42     ss << \hyperlink{classlbann_1_1lbann__callback__checksmall_acbdd897ecbe5a27b59db15ae7662e0f9}{name}() << \textcolor{stringliteral}{": "}
+43        << \textcolor{stringliteral}{"["} << std::to\_string(m->get\_comm()->get\_rank\_in\_world()) << \textcolor{stringliteral}{"]: "}
+44        << \textcolor{stringliteral}{"error in activations of "} << l->get\_name() << \textcolor{stringliteral}{" "}
+45        << \textcolor{stringliteral}{"(step="} << std::to\_string(m->get\_cur\_step()) << \textcolor{stringliteral}{")"};
+46     \textcolor{keywordflow}{throw} lbann\_exception(ss.str());
+47   \}
+48 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checksmall_a2f50695feb1444145bae251f2e94b721_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checksmall_a2f50695feb1444145bae251f2e94b721_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checksmall_a9488b223c8ae4beb87a6bd6d01c6d14d}\label{classlbann_1_1lbann__callback__checksmall_a9488b223c8ae4beb87a6bd6d01c6d14d}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checksmall@{lbann\+::lbann\+\_\+callback\+\_\+checksmall}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::lbann\+\_\+callback\+\_\+checksmall@{lbann\+::lbann\+\_\+callback\+\_\+checksmall}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__checksmall}{lbann\+\_\+callback\+\_\+checksmall}\& lbann\+::lbann\+\_\+callback\+\_\+checksmall\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__checksmall}{lbann\+\_\+callback\+\_\+checksmall} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checksmall_a9488b223c8ae4beb87a6bd6d01c6d14d_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checksmall_a2c37cd93bca10f6fb42348c2e6b0016e}\label{classlbann_1_1lbann__callback__checksmall_a2c37cd93bca10f6fb42348c2e6b0016e}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checksmall@{lbann\+::lbann\+\_\+callback\+\_\+checksmall}!m\+\_\+threshold@{m\+\_\+threshold}}
+\index{m\+\_\+threshold@{m\+\_\+threshold}!lbann\+::lbann\+\_\+callback\+\_\+checksmall@{lbann\+::lbann\+\_\+callback\+\_\+checksmall}}
+\subsubsection{\texorpdfstring{m\+\_\+threshold}{m\_threshold}}
+{\footnotesize\ttfamily const Data\+Type lbann\+::lbann\+\_\+callback\+\_\+checksmall\+::m\+\_\+threshold = std\+::sqrt(std\+::numeric\+\_\+limits$<$Data\+Type$>$\+::min())\hspace{0.3cm}{\ttfamily [private]}}
+
+Smallest allowable value. 
+
+Definition at line 65 of file callback\+\_\+checksmall.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/callbacks/\hyperlink{callback__checksmall_8hpp}{callback\+\_\+checksmall.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/callbacks/\hyperlink{callback__checksmall_8cpp}{callback\+\_\+checksmall.\+cpp}\end{DoxyCompactItemize}

@@ -1,0 +1,631 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="callback__checkpoint_8cpp" kind="file" language="C++">
+    <compoundname>callback_checkpoint.cpp</compoundname>
+    <includes refid="callback__checkpoint_8hpp" local="yes">lbann/callbacks/callback_checkpoint.hpp</includes>
+    <incdepgraph>
+      <node id="17530">
+        <label>sys/stat.h</label>
+      </node>
+      <node id="17493">
+        <label>lbann/callbacks/callback_checkpoint.hpp</label>
+        <link refid="callback__checkpoint_8hpp"/>
+        <childnode refid="17494" relation="include">
+        </childnode>
+        <childnode refid="17522" relation="include">
+        </childnode>
+      </node>
+      <node id="17504">
+        <label>lbann/utils/summary.hpp</label>
+        <link refid="summary_8hpp"/>
+        <childnode refid="17505" relation="include">
+        </childnode>
+        <childnode refid="17506" relation="include">
+        </childnode>
+        <childnode refid="17495" relation="include">
+        </childnode>
+        <childnode refid="17507" relation="include">
+        </childnode>
+      </node>
+      <node id="17522">
+        <label>lbann/io/persist.hpp</label>
+        <link refid="persist_8hpp"/>
+        <childnode refid="17495" relation="include">
+        </childnode>
+        <childnode refid="17496" relation="include">
+        </childnode>
+      </node>
+      <node id="17496">
+        <label>El.hpp</label>
+      </node>
+      <node id="17495">
+        <label>lbann/base.hpp</label>
+        <link refid="base_8hpp"/>
+        <childnode refid="17496" relation="include">
+        </childnode>
+        <childnode refid="17497" relation="include">
+        </childnode>
+        <childnode refid="17498" relation="include">
+        </childnode>
+        <childnode refid="17503" relation="include">
+        </childnode>
+      </node>
+      <node id="17532">
+        <label>fcntl.h</label>
+      </node>
+      <node id="17535">
+        <label>lbann/metrics/metric.hpp</label>
+        <link refid="metric_8hpp"/>
+        <childnode refid="17495" relation="include">
+        </childnode>
+        <childnode refid="17507" relation="include">
+        </childnode>
+        <childnode refid="17514" relation="include">
+        </childnode>
+        <childnode refid="17522" relation="include">
+        </childnode>
+      </node>
+      <node id="17492">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_checkpoint.cpp</label>
+        <link refid="callback__checkpoint_8cpp"/>
+        <childnode refid="17493" relation="include">
+        </childnode>
+      </node>
+      <node id="17505">
+        <label>string</label>
+      </node>
+      <node id="17519">
+        <label>lbann/utils/cudnn_wrapper.hpp</label>
+        <link refid="cudnn__wrapper_8hpp"/>
+        <childnode refid="17506" relation="include">
+        </childnode>
+        <childnode refid="17495" relation="include">
+        </childnode>
+        <childnode refid="17507" relation="include">
+        </childnode>
+        <childnode refid="17514" relation="include">
+        </childnode>
+      </node>
+      <node id="17525">
+        <label>lbann/utils/timer.hpp</label>
+        <link refid="timer_8hpp"/>
+        <childnode refid="17526" relation="include">
+        </childnode>
+      </node>
+      <node id="17508">
+        <label>map</label>
+      </node>
+      <node id="17524">
+        <label>unordered_set</label>
+      </node>
+      <node id="17518">
+        <label>exception</label>
+      </node>
+      <node id="17521">
+        <label>lbann/weights/initializer.hpp</label>
+        <link refid="initializer_8hpp"/>
+        <childnode refid="17495" relation="include">
+        </childnode>
+        <childnode refid="17507" relation="include">
+        </childnode>
+        <childnode refid="17514" relation="include">
+        </childnode>
+        <childnode refid="17519" relation="include">
+        </childnode>
+      </node>
+      <node id="17531">
+        <label>sys/types.h</label>
+      </node>
+      <node id="17494">
+        <label>lbann/callbacks/callback.hpp</label>
+        <link refid="callback_8hpp"/>
+        <childnode refid="17495" relation="include">
+        </childnode>
+        <childnode refid="17504" relation="include">
+        </childnode>
+        <childnode refid="17510" relation="include">
+        </childnode>
+        <childnode refid="17511" relation="include">
+        </childnode>
+      </node>
+      <node id="17527">
+        <label>lbann/utils/graph.hpp</label>
+        <link refid="graph_8hpp"/>
+        <childnode refid="17517" relation="include">
+        </childnode>
+        <childnode refid="17506" relation="include">
+        </childnode>
+        <childnode refid="17528" relation="include">
+        </childnode>
+        <childnode refid="17508" relation="include">
+        </childnode>
+      </node>
+      <node id="17500">
+        <label>cstdio</label>
+      </node>
+      <node id="17515">
+        <label>lbann/utils/stack_trace.hpp</label>
+        <link refid="stack__trace_8hpp"/>
+        <childnode refid="17516" relation="include">
+        </childnode>
+        <childnode refid="17505" relation="include">
+        </childnode>
+      </node>
+      <node id="17502">
+        <label>cxxabi.h</label>
+      </node>
+      <node id="17514">
+        <label>lbann/utils/exception.hpp</label>
+        <link refid="exception_8hpp"/>
+        <childnode refid="17495" relation="include">
+        </childnode>
+        <childnode refid="17507" relation="include">
+        </childnode>
+        <childnode refid="17515" relation="include">
+        </childnode>
+        <childnode refid="17517" relation="include">
+        </childnode>
+        <childnode refid="17518" relation="include">
+        </childnode>
+      </node>
+      <node id="17506">
+        <label>vector</label>
+      </node>
+      <node id="17507">
+        <label>lbann/comm.hpp</label>
+        <link refid="comm_8hpp"/>
+        <childnode refid="17506" relation="include">
+        </childnode>
+        <childnode refid="17508" relation="include">
+        </childnode>
+        <childnode refid="17509" relation="include">
+        </childnode>
+        <childnode refid="17495" relation="include">
+        </childnode>
+      </node>
+      <node id="17533">
+        <label>lbann/objective_functions/objective_function.hpp</label>
+        <link refid="objective__function_8hpp"/>
+        <childnode refid="17534" relation="include">
+        </childnode>
+        <childnode refid="17535" relation="include">
+        </childnode>
+      </node>
+      <node id="17529">
+        <label>lbann/io/file_io.hpp</label>
+        <link refid="file__io_8hpp"/>
+        <childnode refid="17530" relation="include">
+        </childnode>
+        <childnode refid="17531" relation="include">
+        </childnode>
+        <childnode refid="17532" relation="include">
+        </childnode>
+      </node>
+      <node id="17523">
+        <label>lbann.pb.h</label>
+      </node>
+      <node id="17499">
+        <label>cstdlib</label>
+      </node>
+      <node id="17517">
+        <label>iostream</label>
+      </node>
+      <node id="17512">
+        <label>lbann/optimizers/optimizer.hpp</label>
+        <link refid="optimizer_8hpp"/>
+        <childnode refid="17513" relation="include">
+        </childnode>
+        <childnode refid="17495" relation="include">
+        </childnode>
+        <childnode refid="17507" relation="include">
+        </childnode>
+        <childnode refid="17514" relation="include">
+        </childnode>
+        <childnode refid="17519" relation="include">
+        </childnode>
+        <childnode refid="17520" relation="include">
+        </childnode>
+        <childnode refid="17505" relation="include">
+        </childnode>
+        <childnode refid="17524" relation="include">
+        </childnode>
+      </node>
+      <node id="17536">
+        <label>unordered_map</label>
+      </node>
+      <node id="17511">
+        <label>lbann/layers/layer.hpp</label>
+        <link refid="layer_8hpp"/>
+        <childnode refid="17495" relation="include">
+        </childnode>
+        <childnode refid="17507" relation="include">
+        </childnode>
+        <childnode refid="17504" relation="include">
+        </childnode>
+        <childnode refid="17512" relation="include">
+        </childnode>
+        <childnode refid="17514" relation="include">
+        </childnode>
+        <childnode refid="17519" relation="include">
+        </childnode>
+        <childnode refid="17525" relation="include">
+        </childnode>
+        <childnode refid="17522" relation="include">
+        </childnode>
+        <childnode refid="17523" relation="include">
+        </childnode>
+        <childnode refid="17505" relation="include">
+        </childnode>
+        <childnode refid="17506" relation="include">
+        </childnode>
+      </node>
+      <node id="17526">
+        <label>chrono</label>
+      </node>
+      <node id="17534">
+        <label>lbann/objective_functions/objective_function_term.hpp</label>
+        <link refid="objective__function__term_8hpp"/>
+        <childnode refid="17495" relation="include">
+        </childnode>
+        <childnode refid="17511" relation="include">
+        </childnode>
+        <childnode refid="17520" relation="include">
+        </childnode>
+      </node>
+      <node id="17516">
+        <label>csignal</label>
+      </node>
+      <node id="17520">
+        <label>lbann/weights/weights.hpp</label>
+        <link refid="weights_8hpp"/>
+        <childnode refid="17505" relation="include">
+        </childnode>
+        <childnode refid="17495" relation="include">
+        </childnode>
+        <childnode refid="17507" relation="include">
+        </childnode>
+        <childnode refid="17514" relation="include">
+        </childnode>
+        <childnode refid="17519" relation="include">
+        </childnode>
+        <childnode refid="17521" relation="include">
+        </childnode>
+        <childnode refid="17522" relation="include">
+        </childnode>
+        <childnode refid="17523" relation="include">
+        </childnode>
+      </node>
+      <node id="17503">
+        <label>lbann_config.hpp</label>
+      </node>
+      <node id="17528">
+        <label>set</label>
+      </node>
+      <node id="17510">
+        <label>lbann/models/model.hpp</label>
+        <link refid="model_8hpp"/>
+        <childnode refid="17495" relation="include">
+        </childnode>
+        <childnode refid="17507" relation="include">
+        </childnode>
+        <childnode refid="17511" relation="include">
+        </childnode>
+        <childnode refid="17504" relation="include">
+        </childnode>
+        <childnode refid="17527" relation="include">
+        </childnode>
+        <childnode refid="17529" relation="include">
+        </childnode>
+        <childnode refid="17522" relation="include">
+        </childnode>
+        <childnode refid="17533" relation="include">
+        </childnode>
+        <childnode refid="17535" relation="include">
+        </childnode>
+        <childnode refid="17520" relation="include">
+        </childnode>
+        <childnode refid="17512" relation="include">
+        </childnode>
+        <childnode refid="17523" relation="include">
+        </childnode>
+        <childnode refid="17506" relation="include">
+        </childnode>
+        <childnode refid="17505" relation="include">
+        </childnode>
+        <childnode refid="17536" relation="include">
+        </childnode>
+      </node>
+      <node id="17513">
+        <label>lbann/utils/compiler_control.hpp</label>
+        <link refid="compiler__control_8hpp"/>
+      </node>
+      <node id="17498">
+        <label>lbann/utils/cyg_profile.hpp</label>
+        <link refid="cyg__profile_8hpp"/>
+        <childnode refid="17499" relation="include">
+        </childnode>
+        <childnode refid="17500" relation="include">
+        </childnode>
+        <childnode refid="17501" relation="include">
+        </childnode>
+        <childnode refid="17502" relation="include">
+        </childnode>
+      </node>
+      <node id="17497">
+        <label>lbann/Elemental_extensions.hpp</label>
+        <link refid="Elemental__extensions_8hpp"/>
+        <childnode refid="17496" relation="include">
+        </childnode>
+      </node>
+      <node id="17509">
+        <label>typeindex</label>
+      </node>
+      <node id="17501">
+        <label>dlfcn.h</label>
+      </node>
+    </incdepgraph>
+    <innernamespace refid="namespacelbann">lbann</innernamespace>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>2014-2016,<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Security,<sp/>LLC.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Produced<sp/>at<sp/>the<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Laboratory.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Written<sp/>by<sp/>the<sp/>LBANN<sp/>Research<sp/>Team<sp/>(B.<sp/>Van<sp/>Essen,<sp/>et<sp/>al.)<sp/>listed<sp/>in</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="comment">//<sp/>the<sp/>CONTRIBUTORS<sp/>file.<sp/>&lt;lbann-dev@llnl.gov&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="comment">//<sp/>LLNL-CODE-697807.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="comment">//<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="comment">//<sp/>This<sp/>file<sp/>is<sp/>part<sp/>of<sp/>LBANN:<sp/>Livermore<sp/>Big<sp/>Artificial<sp/>Neural<sp/>Network</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Toolkit.<sp/>For<sp/>details,<sp/>see<sp/>http://software.llnl.gov/LBANN<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="comment">//<sp/>https://github.com/LLNL/LBANN.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Licensed<sp/>under<sp/>the<sp/>Apache<sp/>License,<sp/>Version<sp/>2.0<sp/>(the<sp/>&quot;Licensee&quot;);<sp/>you</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight><highlight class="comment">//<sp/>may<sp/>not<sp/>use<sp/>this<sp/>file<sp/>except<sp/>in<sp/>compliance<sp/>with<sp/>the<sp/>License.<sp/><sp/>You<sp/>may</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="comment">//<sp/>obtain<sp/>a<sp/>copy<sp/>of<sp/>the<sp/>License<sp/>at:</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight><highlight class="comment">//<sp/>http://www.apache.org/licenses/LICENSE-2.0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Unless<sp/>required<sp/>by<sp/>applicable<sp/>law<sp/>or<sp/>agreed<sp/>to<sp/>in<sp/>writing,<sp/>software</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight><highlight class="comment">//<sp/>distributed<sp/>under<sp/>the<sp/>License<sp/>is<sp/>distributed<sp/>on<sp/>an<sp/>&quot;AS<sp/>IS&quot;<sp/>BASIS,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight><highlight class="comment">//<sp/>WITHOUT<sp/>WARRANTIES<sp/>OR<sp/>CONDITIONS<sp/>OF<sp/>ANY<sp/>KIND,<sp/>either<sp/>express<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="comment">//<sp/>implied.<sp/>See<sp/>the<sp/>License<sp/>for<sp/>the<sp/>specific<sp/>language<sp/>governing</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="comment">//<sp/>permissions<sp/>and<sp/>limitations<sp/>under<sp/>the<sp/>license.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="25"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="26"><highlight class="normal"></highlight><highlight class="comment">//<sp/>lbann_callback_checkpoint<sp/>.hpp<sp/>.cpp<sp/>-<sp/>Callback<sp/>hooks<sp/>to<sp/>checkpoint<sp/>model</highlight></codeline>
+<codeline lineno="28"><highlight class="comment"></highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="29"><highlight class="normal"></highlight></codeline>
+<codeline lineno="30"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="callback__checkpoint_8hpp" kindref="compound">lbann/callbacks/callback_checkpoint.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight></codeline>
+<codeline lineno="32"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacelbann" kindref="compound">lbann</ref><sp/>{</highlight></codeline>
+<codeline lineno="33"><highlight class="normal"></highlight></codeline>
+<codeline lineno="34" refid="classlbann_1_1lbann__callback__checkpoint_1a383654a7bb70672dfc9fef679f4b509f" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1a383654a7bb70672dfc9fef679f4b509f" kindref="member">lbann_callback_checkpoint::setup</ref>(<ref refid="classlbann_1_1model" kindref="compound">model</ref><sp/>*m)<sp/>{</highlight></codeline>
+<codeline lineno="35"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1a9632d5f0078d3ff2015e96dba789e15c" kindref="member">m_epoch_end</ref><sp/>=<sp/></highlight><highlight class="keyword">false</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="36"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1a3827e5bb569f80d790c3ac856a7c39b5" kindref="member">m_val_end</ref><sp/>=<sp/></highlight><highlight class="keyword">false</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="37"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1a40d369278bc5963ba2f3cca1750ba004" kindref="member">restartShared</ref>(m);</highlight></codeline>
+<codeline lineno="38"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="39"><highlight class="normal"></highlight></codeline>
+<codeline lineno="40" refid="classlbann_1_1lbann__callback__checkpoint_1a406bfba673e503e94ae6eb57aff6a78e" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1a406bfba673e503e94ae6eb57aff6a78e" kindref="member">lbann_callback_checkpoint::on_epoch_end</ref>(<ref refid="classlbann_1_1model" kindref="compound">model</ref><sp/>*m)<sp/>{</highlight></codeline>
+<codeline lineno="41"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1a9632d5f0078d3ff2015e96dba789e15c" kindref="member">m_epoch_end</ref><sp/>=<sp/></highlight><highlight class="keyword">true</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="42"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1a3827e5bb569f80d790c3ac856a7c39b5" kindref="member">m_val_end</ref><sp/>=<sp/></highlight><highlight class="keyword">false</highlight><highlight class="normal">;<sp/></highlight></codeline>
+<codeline lineno="43"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal">(<ref refid="classlbann_1_1lbann__callback__checkpoint_1a2e5f396667ccc45f7203263b06c5e216" kindref="member">need_checkpoint</ref>(m)){</highlight></codeline>
+<codeline lineno="44"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1a23b6f5abb924b2c4d0694e98c7d6f4d5" kindref="member">checkpointShared</ref>(m);</highlight></codeline>
+<codeline lineno="45"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="46"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1a9632d5f0078d3ff2015e96dba789e15c" kindref="member">m_epoch_end</ref><sp/>=<sp/></highlight><highlight class="keyword">false</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="47"><highlight class="normal"><sp/><sp/></highlight></codeline>
+<codeline lineno="48"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="49"><highlight class="normal"></highlight></codeline>
+<codeline lineno="50" refid="classlbann_1_1lbann__callback__checkpoint_1a5fb4288c03b1ce14681b72562e9471b2" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1a5fb4288c03b1ce14681b72562e9471b2" kindref="member">lbann_callback_checkpoint::on_validation_end</ref>(<ref refid="classlbann_1_1model" kindref="compound">model</ref><sp/>*m)<sp/>{</highlight></codeline>
+<codeline lineno="51"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1a3827e5bb569f80d790c3ac856a7c39b5" kindref="member">m_val_end</ref><sp/>=<sp/></highlight><highlight class="keyword">true</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="52"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal">(<ref refid="classlbann_1_1lbann__callback__checkpoint_1a2e5f396667ccc45f7203263b06c5e216" kindref="member">need_checkpoint</ref>(m)){</highlight></codeline>
+<codeline lineno="53"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1a23b6f5abb924b2c4d0694e98c7d6f4d5" kindref="member">checkpointShared</ref>(m);</highlight></codeline>
+<codeline lineno="54"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="55"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//m_epoch_end<sp/>=<sp/>false;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="56"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1a3827e5bb569f80d790c3ac856a7c39b5" kindref="member">m_val_end</ref><sp/>=<sp/></highlight><highlight class="keyword">false</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="57"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="58"><highlight class="normal"></highlight></codeline>
+<codeline lineno="59" refid="classlbann_1_1lbann__callback__checkpoint_1a476527e2b7b44dd3623e01f63ddb5f78" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1a476527e2b7b44dd3623e01f63ddb5f78" kindref="member">lbann_callback_checkpoint::on_batch_end</ref>(<ref refid="classlbann_1_1model" kindref="compound">model</ref><sp/>*m)<sp/>{</highlight></codeline>
+<codeline lineno="60"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal">(<ref refid="classlbann_1_1lbann__callback__checkpoint_1a2e5f396667ccc45f7203263b06c5e216" kindref="member">need_checkpoint</ref>(m)){</highlight></codeline>
+<codeline lineno="61"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1a23b6f5abb924b2c4d0694e98c7d6f4d5" kindref="member">checkpointShared</ref>(m);</highlight></codeline>
+<codeline lineno="62"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="63"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="64" refid="classlbann_1_1lbann__callback__checkpoint_1a2e5f396667ccc45f7203263b06c5e216" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1a2e5f396667ccc45f7203263b06c5e216" kindref="member">lbann_callback_checkpoint::need_checkpoint</ref>(<ref refid="classlbann_1_1model" kindref="compound">model</ref><sp/>*m)<sp/>{</highlight></codeline>
+<codeline lineno="65"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">/*<sp/>TODO:<sp/>since<sp/>we&apos;re<sp/>using<sp/>clocks,<sp/>this<sp/>requires<sp/>a<sp/>bcast<sp/>for<sp/>each<sp/>call,</highlight></codeline>
+<codeline lineno="66"><highlight class="comment"><sp/><sp/><sp/>*<sp/>we<sp/>could<sp/>use<sp/>number<sp/>of<sp/>samples<sp/>processed<sp/>to<sp/>make<sp/>a<sp/>local<sp/>decision<sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="67"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>if<sp/>none<sp/>of<sp/>our<sp/>checkpoint<sp/>conditions<sp/>are<sp/>set,<sp/>assume<sp/>we&apos;re<sp/>not<sp/>checkpointing</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="68"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1lbann__callback__checkpoint_1ad6f4399effadedb26e33fc39a3c6915e" kindref="member">m_checkpoint_epochs</ref><sp/>==<sp/>0<sp/>&amp;&amp;</highlight></codeline>
+<codeline lineno="69"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1ad6debea7d9bbebd3ee0323acec11516f" kindref="member">m_checkpoint_steps</ref><sp/><sp/>==<sp/>0<sp/>&amp;&amp;</highlight></codeline>
+<codeline lineno="70"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1a285658a96f8546952c9016ef4cc12161" kindref="member">m_checkpoint_secs</ref><sp/><sp/><sp/>==<sp/>0.0)<sp/>{</highlight></codeline>
+<codeline lineno="71"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">false</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="72"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="73"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>assume<sp/>that<sp/>we<sp/>won&apos;t<sp/>checkpoint</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="74"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/>checkpoint_now<sp/>=<sp/></highlight><highlight class="keyword">false</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="75"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref><sp/>*<ref refid="file__io_8cpp_1ab048c6f9fcbcfaa57ce68b00263dbebe" kindref="member">comm</ref><sp/>=<sp/>m-&gt;<ref refid="classlbann_1_1model_1a9e1cfe449d2f4858a32994f6be0042fb" kindref="member">get_comm</ref>();</highlight></codeline>
+<codeline lineno="76"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>if<sp/>at<sp/>start<sp/>of<sp/>epoch<sp/>and<sp/>evenly<sp/>divide</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="77"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(!checkpoint_now<sp/>&amp;&amp;<sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1ad6f4399effadedb26e33fc39a3c6915e" kindref="member">m_checkpoint_epochs</ref><sp/>&gt;<sp/>0)<sp/>{</highlight></codeline>
+<codeline lineno="78"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1lbann__callback__checkpoint_1a9632d5f0078d3ff2015e96dba789e15c" kindref="member">m_epoch_end</ref><sp/>||<sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1a3827e5bb569f80d790c3ac856a7c39b5" kindref="member">m_val_end</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="79"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>checkpoint_now<sp/>=<sp/>(m-&gt;<ref refid="classlbann_1_1model_1a1cf70e098524cc5013bce56edd96dfe7" kindref="member">get_cur_epoch</ref>()<sp/>&gt;<sp/>0)<sp/>&amp;&amp;<sp/>(m-&gt;<ref refid="classlbann_1_1model_1a1cf70e098524cc5013bce56edd96dfe7" kindref="member">get_cur_epoch</ref>()<sp/>%<sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1ad6f4399effadedb26e33fc39a3c6915e" kindref="member">m_checkpoint_epochs</ref><sp/>==<sp/>0);</highlight></codeline>
+<codeline lineno="80"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="81"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="82"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>if<sp/>our<sp/>current<sp/>step<sp/>is<sp/>evenly<sp/>divisable<sp/>by<sp/>checkpoint<sp/>steps,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="83"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>take<sp/>a<sp/>checkpoint</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="84"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(!checkpoint_now<sp/>&amp;&amp;<sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1ad6debea7d9bbebd3ee0323acec11516f" kindref="member">m_checkpoint_steps</ref><sp/>&gt;<sp/>0)<sp/>{</highlight></codeline>
+<codeline lineno="85"><highlight class="normal"><sp/><sp/><sp/><sp/>checkpoint_now<sp/>=<sp/>(m-&gt;<ref refid="classlbann_1_1model_1ad0cdcba177434b52dc9c4a97be183a92" kindref="member">get_cur_step</ref>()<sp/>&gt;<sp/>0)<sp/>&amp;&amp;<sp/>(m-&gt;<ref refid="classlbann_1_1model_1ad0cdcba177434b52dc9c4a97be183a92" kindref="member">get_cur_step</ref>()<sp/>%<sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1ad6debea7d9bbebd3ee0323acec11516f" kindref="member">m_checkpoint_steps</ref><sp/>==<sp/>0);</highlight></codeline>
+<codeline lineno="86"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="87"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>check<sp/>the<sp/>clock<sp/>if<sp/>time-based<sp/>checkpoint<sp/>is<sp/>enabled</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="88"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(!checkpoint_now<sp/>&amp;&amp;<sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1a285658a96f8546952c9016ef4cc12161" kindref="member">m_checkpoint_secs</ref><sp/>!=<sp/>0.0)<sp/>{</highlight></codeline>
+<codeline lineno="89"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>have<sp/>rank<sp/>0<sp/>determine<sp/>whether<sp/>we<sp/>should<sp/>checkpoint</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="90"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>to<sp/>avoid<sp/>issues<sp/>with<sp/>clock<sp/>skew,<sp/>we<sp/>rely<sp/>on<sp/>rank<sp/>0<sp/>to<sp/>make<sp/>decision</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="91"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(comm-&gt;<ref refid="classlbann_1_1lbann__comm_1a1ef526486183a29feadca9bef096a534" kindref="member">am_world_master</ref>())<sp/>{</highlight></codeline>
+<codeline lineno="92"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>get<sp/>the<sp/>current<sp/>time</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="93"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref><sp/>current<sp/>=<sp/>MPI_Wtime();</highlight></codeline>
+<codeline lineno="94"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>compute<sp/>time<sp/>next<sp/>checkpoint<sp/>is<sp/>due</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="95"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref><sp/>next<sp/>=<sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1a842304929c265ffa9d285e635fbbbbd7" kindref="member">m_checkpoint_last</ref><sp/>+<sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1a285658a96f8546952c9016ef4cc12161" kindref="member">m_checkpoint_secs</ref>;</highlight></codeline>
+<codeline lineno="96"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>determine<sp/>whether<sp/>it&apos;s<sp/>time<sp/>for<sp/>a<sp/>checkpoint</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="97"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>checkpoint_now<sp/>=<sp/>(current<sp/>&gt;=<sp/>next);</highlight></codeline>
+<codeline lineno="98"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="99"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>get<sp/>checkpoint_now<sp/>from<sp/>rank<sp/>0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="100"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>flag<sp/>=<sp/>checkpoint_now<sp/>?<sp/>1<sp/>:<sp/>0;</highlight></codeline>
+<codeline lineno="101"><highlight class="normal"><sp/><sp/><sp/><sp/>MPI_Bcast(&amp;flag,<sp/>1,<sp/>MPI_INT,<sp/>0,<sp/>MPI_COMM_WORLD);</highlight></codeline>
+<codeline lineno="102"><highlight class="normal"><sp/><sp/><sp/><sp/>checkpoint_now<sp/>=<sp/>(bool)<sp/>flag;</highlight></codeline>
+<codeline lineno="103"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="104"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//m_epoch_end<sp/>=<sp/>false;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="105"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>checkpoint_now;</highlight></codeline>
+<codeline lineno="106"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="107"><highlight class="normal"></highlight></codeline>
+<codeline lineno="108" refid="namespacelbann_1a35a39e949cfd1d7f8c15f94e4d44ecff" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">static</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="namespacelbann_1a35a39e949cfd1d7f8c15f94e4d44ecff" kindref="member">write_latest</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>*dir,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>*<ref refid="classlbann_1_1lbann__callback__checkpoint_1aa1afa81c9638bf76fb6ecfe91d07a88e" kindref="member">name</ref>,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>epoch,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64" kindref="member">train</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="109"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>define<sp/>filename</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="110"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>filename[1024];</highlight></codeline>
+<codeline lineno="111"><highlight class="normal"><sp/><sp/>sprintf(filename,<sp/></highlight><highlight class="stringliteral">&quot;%s/%s&quot;</highlight><highlight class="normal">,<sp/>dir,<sp/>name);</highlight></codeline>
+<codeline lineno="112"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>open<sp/>the<sp/>file<sp/>for<sp/>writing</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="113"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>fd<sp/>=<sp/><ref refid="namespacelbann_1af596e6d2be603e9cf808c98f5412490a" kindref="member">openwrite</ref>(filename);</highlight></codeline>
+<codeline lineno="114"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(fd<sp/>!=<sp/>-1)<sp/>{</highlight></codeline>
+<codeline lineno="115"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>field[256];</highlight></codeline>
+<codeline lineno="116"><highlight class="normal"><sp/><sp/><sp/><sp/>sprintf(field,<sp/></highlight><highlight class="stringliteral">&quot;epoch=%d<sp/>step=%d\n&quot;</highlight><highlight class="normal">,<sp/>epoch,<sp/>train);</highlight></codeline>
+<codeline lineno="117"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="namespacelbann_1add2807d7303bd96d2804f0b14e894c68" kindref="member">write_string</ref>(fd,<sp/></highlight><highlight class="stringliteral">&quot;shared.last&quot;</highlight><highlight class="normal">,<sp/>field,<sp/>strlen(field));</highlight></codeline>
+<codeline lineno="118"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>close<sp/>our<sp/>file</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="119"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="namespacelbann_1aceeccedbbafccfa071b21ee99be794a5" kindref="member">closewrite</ref>(fd,<sp/>filename);</highlight></codeline>
+<codeline lineno="120"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="121"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">true</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="122"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="124" refid="namespacelbann_1abebab8298e56db6a455a9ed08ab42bb4" refkind="member"><highlight class="keyword">static</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="namespacelbann_1abebab8298e56db6a455a9ed08ab42bb4" kindref="member">read_latest</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>*dir,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>*<ref refid="classlbann_1_1lbann__callback__checkpoint_1aa1afa81c9638bf76fb6ecfe91d07a88e" kindref="member">name</ref>,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>*epochLast,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>*trainLast)<sp/>{</highlight></codeline>
+<codeline lineno="125"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>assume<sp/>we<sp/>don&apos;t<sp/>have<sp/>a<sp/>file,<sp/>we&apos;ll<sp/>return<sp/>-1<sp/>in<sp/>that<sp/>case</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="126"><highlight class="normal"><sp/><sp/>*epochLast<sp/>=<sp/>-1;</highlight></codeline>
+<codeline lineno="127"><highlight class="normal"><sp/><sp/>*trainLast<sp/>=<sp/>-1;</highlight></codeline>
+<codeline lineno="128"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>define<sp/>filename</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="129"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>filename[1024];</highlight></codeline>
+<codeline lineno="130"><highlight class="normal"><sp/><sp/>sprintf(filename,<sp/></highlight><highlight class="stringliteral">&quot;%s/%s&quot;</highlight><highlight class="normal">,<sp/>dir,<sp/>name);</highlight></codeline>
+<codeline lineno="131"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>open<sp/>the<sp/>file<sp/>for<sp/>reading</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="132"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>fd<sp/>=<sp/><ref refid="namespacelbann_1a6084b9319eea1997f8446fa3e6879532" kindref="member">openread</ref>(filename);</highlight></codeline>
+<codeline lineno="133"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(fd<sp/>!=<sp/>-1)<sp/>{</highlight></codeline>
+<codeline lineno="134"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>read<sp/>epoch<sp/>from<sp/>file</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="135"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>field[256];</highlight></codeline>
+<codeline lineno="136"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="namespacelbann_1a784843ebce0e596dba31c1d981a7f087" kindref="member">read_string</ref>(fd,<sp/></highlight><highlight class="stringliteral">&quot;shared.last&quot;</highlight><highlight class="normal">,<sp/>field,<sp/></highlight><highlight class="keyword">sizeof</highlight><highlight class="normal">(field));</highlight></codeline>
+<codeline lineno="137"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>ret<sp/>=<sp/>sscanf(field,<sp/></highlight><highlight class="stringliteral">&quot;epoch=%d<sp/>step=%d\n&quot;</highlight><highlight class="normal">,<sp/>epochLast,<sp/>trainLast);</highlight></codeline>
+<codeline lineno="138"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>close<sp/>our<sp/>file</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="139"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="namespacelbann_1a38dd30b2ae8214f6595708264369ddb8" kindref="member">closeread</ref>(fd,<sp/>filename);</highlight></codeline>
+<codeline lineno="140"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal">(ret<sp/>!=<sp/>2)<sp/>{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">false</highlight><highlight class="normal">;<sp/>}</highlight></codeline>
+<codeline lineno="141"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="142"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">true</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="143"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="144"><highlight class="normal"></highlight></codeline>
+<codeline lineno="145" refid="classlbann_1_1lbann__callback__checkpoint_1a23b6f5abb924b2c4d0694e98c7d6f4d5" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1a23b6f5abb924b2c4d0694e98c7d6f4d5" kindref="member">lbann_callback_checkpoint::checkpointShared</ref>(<ref refid="classlbann_1_1model" kindref="compound">model</ref><sp/>*m)<sp/>{</highlight></codeline>
+<codeline lineno="146"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>if<sp/>the<sp/>checkpoint<sp/>directory<sp/>is<sp/>not<sp/>defined,<sp/>bail</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="147"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1lbann__callback__checkpoint_1ac89386fda60744e6399f97003fea3711" kindref="member">m_checkpoint_dir</ref>.length()<sp/>==<sp/>0)<sp/>{</highlight></codeline>
+<codeline lineno="148"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">false</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="149"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="150"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>time<sp/>how<sp/>long<sp/>this<sp/>takes</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="151"><highlight class="normal"><sp/><sp/>El::Timer<sp/>timer;</highlight></codeline>
+<codeline lineno="152"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref><sp/>*<ref refid="file__io_8cpp_1ab048c6f9fcbcfaa57ce68b00263dbebe" kindref="member">comm</ref><sp/>=<sp/>m-&gt;<ref refid="classlbann_1_1model_1a9e1cfe449d2f4858a32994f6be0042fb" kindref="member">get_comm</ref>();</highlight></codeline>
+<codeline lineno="153"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>get<sp/>checkpoint<sp/>directory</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="154"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>*dir<sp/>=<sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1ac89386fda60744e6399f97003fea3711" kindref="member">m_checkpoint_dir</ref>.c_str();</highlight></codeline>
+<codeline lineno="155"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>read<sp/>current<sp/>epoch<sp/>and<sp/>step<sp/>counters<sp/>from<sp/>model</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="156"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>epoch<sp/>=<sp/>m-&gt;<ref refid="classlbann_1_1model_1a1cf70e098524cc5013bce56edd96dfe7" kindref="member">get_cur_epoch</ref>();</highlight></codeline>
+<codeline lineno="157"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>step<sp/><sp/>=<sp/>m-&gt;<ref refid="classlbann_1_1model_1ad0cdcba177434b52dc9c4a97be183a92" kindref="member">get_cur_step</ref>();</highlight></codeline>
+<codeline lineno="158"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>let<sp/>user<sp/>know<sp/>we&apos;re<sp/>saving<sp/>a<sp/>checkpoint</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="159"><highlight class="normal"><sp/><sp/>MPI_Barrier(MPI_COMM_WORLD);</highlight></codeline>
+<codeline lineno="160"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(comm-&gt;<ref refid="classlbann_1_1lbann__comm_1a1ef526486183a29feadca9bef096a534" kindref="member">am_world_master</ref>())<sp/>{</highlight></codeline>
+<codeline lineno="161"><highlight class="normal"><sp/><sp/><sp/><sp/>timer.Start();</highlight></codeline>
+<codeline lineno="162"><highlight class="normal"><sp/><sp/><sp/><sp/>printf(</highlight><highlight class="stringliteral">&quot;Checkpoint:<sp/>epoch<sp/>%d<sp/>step<sp/>%d<sp/>...\n&quot;</highlight><highlight class="normal">,<sp/>epoch,<sp/>step);</highlight></codeline>
+<codeline lineno="163"><highlight class="normal"><sp/><sp/><sp/><sp/>fflush(stdout);</highlight></codeline>
+<codeline lineno="164"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="165"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>create<sp/>top<sp/>level<sp/>directory</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="166"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//const<sp/>char*<sp/>dir<sp/>=<sp/>trainParams.ParameterDir.c_str();</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="167"><highlight class="normal"><sp/><sp/><ref refid="namespacelbann_1a8830dea8eef0ab5b93d68e2358ceeb1a" kindref="member">makedir</ref>(dir);</highlight></codeline>
+<codeline lineno="168"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>create<sp/>subdirectory<sp/>for<sp/>this<sp/>epoch</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="169"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>epochdir[1024];</highlight></codeline>
+<codeline lineno="170"><highlight class="normal"><sp/><sp/>snprintf(epochdir,<sp/></highlight><highlight class="keyword">sizeof</highlight><highlight class="normal">(epochdir),<sp/></highlight><highlight class="stringliteral">&quot;%s/shared.epoch.%d.step.%d&quot;</highlight><highlight class="normal">,<sp/>dir,<sp/>epoch,<sp/>step);</highlight></codeline>
+<codeline lineno="171"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>start<sp/>our<sp/>checkpoint</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="172"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1persist" kindref="compound">persist</ref><sp/>p;</highlight></codeline>
+<codeline lineno="173"><highlight class="normal"><sp/><sp/>p.<ref refid="classlbann_1_1persist_1a32a8f71995b674a62b21087ec4be9575" kindref="member">open_checkpoint</ref>(epochdir,<ref refid="classlbann_1_1lbann__callback__checkpoint_1a36af7331ddf213339fe7282cb53ffedc" kindref="member">m_checkpoint_per_rank</ref>,<sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1a3827e5bb569f80d790c3ac856a7c39b5" kindref="member">m_val_end</ref>);</highlight></codeline>
+<codeline lineno="174"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>call<sp/>virtual<sp/>function<sp/>to<sp/>checkpoint<sp/>model<sp/>state</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="175"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//if(m_epoch_end){</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="176"><highlight class="normal"></highlight></codeline>
+<codeline lineno="177"><highlight class="normal"><sp/><sp/>m-&gt;<ref refid="classlbann_1_1model_1a3d589d2e46ad35d0a1221e25bef70fa4" kindref="member">save_to_checkpoint_shared</ref>(p,<ref refid="classlbann_1_1lbann__callback__checkpoint_1a3827e5bb569f80d790c3ac856a7c39b5" kindref="member">m_val_end</ref>);</highlight></codeline>
+<codeline lineno="178"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>close<sp/>our<sp/>checkpoint</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="179"><highlight class="normal"><sp/><sp/>p.<ref refid="classlbann_1_1persist_1ab099939d0d91101fbfaf2b85e78be032" kindref="member">close_checkpoint</ref>();</highlight></codeline>
+<codeline lineno="180"><highlight class="normal"><sp/><sp/>uint64_t<sp/>bytes_count<sp/>=<sp/>p.<ref refid="classlbann_1_1persist_1ad759657d69e88a491729ce8e4bf9510e" kindref="member">get_bytes</ref>();</highlight></codeline>
+<codeline lineno="181"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>write<sp/>epoch<sp/>number<sp/>to<sp/>current<sp/>file,<sp/>we<sp/>do<sp/>this<sp/>at<sp/>the<sp/>end<sp/>so<sp/>as<sp/>to<sp/>only<sp/>update</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="182"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>this<sp/>file<sp/>when<sp/>we<sp/>know<sp/>we<sp/>have<sp/>a<sp/>new<sp/>valid<sp/>checkpoint</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="183"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(comm-&gt;<ref refid="classlbann_1_1lbann__comm_1a1ef526486183a29feadca9bef096a534" kindref="member">am_world_master</ref>())<sp/>{</highlight></codeline>
+<codeline lineno="184"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="namespacelbann_1a35a39e949cfd1d7f8c15f94e4d44ecff" kindref="member">write_latest</ref>(dir,<sp/></highlight><highlight class="stringliteral">&quot;last.shared.checkpoint&quot;</highlight><highlight class="normal">,<sp/>epoch,<sp/>step);</highlight></codeline>
+<codeline lineno="185"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="186"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>stop<sp/>timer<sp/>and<sp/>report<sp/>cost</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="187"><highlight class="normal"><sp/><sp/>MPI_Barrier(MPI_COMM_WORLD);</highlight></codeline>
+<codeline lineno="188"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(comm-&gt;<ref refid="classlbann_1_1lbann__comm_1a1ef526486183a29feadca9bef096a534" kindref="member">am_world_master</ref>())<sp/>{</highlight></codeline>
+<codeline lineno="189"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref><sp/>secs<sp/>=<sp/>timer.Stop();</highlight></codeline>
+<codeline lineno="190"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref><sp/>bw<sp/>=<sp/>0;</highlight></codeline>
+<codeline lineno="191"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(secs<sp/>&gt;<sp/>0.0)<sp/>{</highlight></codeline>
+<codeline lineno="192"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>bw<sp/>=<sp/><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref>(bytes_count)<sp/>/<sp/>(secs<sp/>*<sp/>1024.0<sp/>*<sp/>1024.0);</highlight></codeline>
+<codeline lineno="193"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="194"><highlight class="normal"><sp/><sp/><sp/><sp/>printf(</highlight><highlight class="stringliteral">&quot;Checkpoint<sp/>complete:<sp/>Epoch=%d<sp/>Step=%d<sp/>(%f<sp/>secs,<sp/>%llu<sp/>bytes,<sp/>%f<sp/>MB/sec)\n&quot;</highlight><highlight class="normal">,</highlight></codeline>
+<codeline lineno="195"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>epoch,<sp/>step,<sp/>secs,<sp/>(</highlight><highlight class="keywordtype">unsigned</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">long</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">long</highlight><highlight class="normal">)<sp/>bytes_count,<sp/>bw</highlight></codeline>
+<codeline lineno="196"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>);</highlight></codeline>
+<codeline lineno="197"><highlight class="normal"><sp/><sp/><sp/><sp/>fflush(stdout);</highlight></codeline>
+<codeline lineno="198"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="199"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>saved<sp/>a<sp/>checkpoint,<sp/>update<sp/>our<sp/>last<sp/>checkpoint<sp/>time</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="200"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1a842304929c265ffa9d285e635fbbbbd7" kindref="member">m_checkpoint_last</ref><sp/>=<sp/>MPI_Wtime();</highlight></codeline>
+<codeline lineno="201"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">true</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="202"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="203" refid="classlbann_1_1lbann__callback__checkpoint_1a40d369278bc5963ba2f3cca1750ba004" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1a40d369278bc5963ba2f3cca1750ba004" kindref="member">lbann_callback_checkpoint::restartShared</ref>(<ref refid="classlbann_1_1model" kindref="compound">model</ref><sp/>*m)<sp/>{</highlight></codeline>
+<codeline lineno="204"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>if<sp/>the<sp/>checkpoint<sp/>directory<sp/>is<sp/>not<sp/>defined,<sp/>bail</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="205"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1lbann__callback__checkpoint_1ac89386fda60744e6399f97003fea3711" kindref="member">m_checkpoint_dir</ref>.length()<sp/>==<sp/>0)<sp/>{</highlight></codeline>
+<codeline lineno="206"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">false</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="207"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="208"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>get<sp/>top<sp/>level<sp/>directory</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="209"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>*dir<sp/>=<sp/><ref refid="classlbann_1_1lbann__callback__checkpoint_1ac89386fda60744e6399f97003fea3711" kindref="member">m_checkpoint_dir</ref>.c_str();</highlight></codeline>
+<codeline lineno="210"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>read<sp/>epoch<sp/>number<sp/>from<sp/>current<sp/>file</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="211"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>epoch,<sp/>step;</highlight></codeline>
+<codeline lineno="212"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref><sp/>*<ref refid="file__io_8cpp_1ab048c6f9fcbcfaa57ce68b00263dbebe" kindref="member">comm</ref><sp/>=<sp/>m-&gt;<ref refid="classlbann_1_1model_1a9e1cfe449d2f4858a32994f6be0042fb" kindref="member">get_comm</ref>();</highlight></codeline>
+<codeline lineno="213"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(comm-&gt;<ref refid="classlbann_1_1lbann__comm_1a1ef526486183a29feadca9bef096a534" kindref="member">am_world_master</ref>())<sp/>{</highlight></codeline>
+<codeline lineno="214"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="namespacelbann_1abebab8298e56db6a455a9ed08ab42bb4" kindref="member">read_latest</ref>(dir,<sp/></highlight><highlight class="stringliteral">&quot;last.shared.checkpoint&quot;</highlight><highlight class="normal">,<sp/>&amp;epoch,<sp/>&amp;step);</highlight></codeline>
+<codeline lineno="215"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="216"><highlight class="normal"><sp/><sp/>MPI_Bcast(&amp;epoch,<sp/>1,<sp/>MPI_INT,<sp/>0,<sp/>MPI_COMM_WORLD);</highlight></codeline>
+<codeline lineno="217"><highlight class="normal"><sp/><sp/>MPI_Bcast(&amp;step,<sp/><sp/>1,<sp/>MPI_INT,<sp/>0,<sp/>MPI_COMM_WORLD);</highlight></codeline>
+<codeline lineno="218"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>if<sp/>we<sp/>couldn&apos;t<sp/>find<sp/>the<sp/>latest<sp/>epoch,<sp/>just<sp/>return</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="219"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(epoch<sp/>&lt;<sp/>0)<sp/>{</highlight></codeline>
+<codeline lineno="220"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">false</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="221"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="222"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>time<sp/>how<sp/>long<sp/>this<sp/>takes</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="223"><highlight class="normal"><sp/><sp/>El::Timer<sp/>timer;</highlight></codeline>
+<codeline lineno="224"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>let<sp/>user<sp/>know<sp/>we&apos;re<sp/>restarting<sp/>from<sp/>a<sp/>checkpoint</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="225"><highlight class="normal"><sp/><sp/>MPI_Barrier(MPI_COMM_WORLD);</highlight></codeline>
+<codeline lineno="226"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(comm-&gt;<ref refid="classlbann_1_1lbann__comm_1a1ef526486183a29feadca9bef096a534" kindref="member">am_world_master</ref>())<sp/>{</highlight></codeline>
+<codeline lineno="227"><highlight class="normal"><sp/><sp/><sp/><sp/>timer.Start();</highlight></codeline>
+<codeline lineno="228"><highlight class="normal"><sp/><sp/><sp/><sp/>printf(</highlight><highlight class="stringliteral">&quot;Restart:<sp/>epoch<sp/>%d<sp/>...\n&quot;</highlight><highlight class="normal">,<sp/>epoch);</highlight></codeline>
+<codeline lineno="229"><highlight class="normal"><sp/><sp/><sp/><sp/>fflush(stdout);</highlight></codeline>
+<codeline lineno="230"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="231"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>get<sp/>subdirectory<sp/>for<sp/>this<sp/>epoch</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="232"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>epochdir[1024];</highlight></codeline>
+<codeline lineno="233"><highlight class="normal"><sp/><sp/>sprintf(epochdir,<sp/></highlight><highlight class="stringliteral">&quot;%s/shared.epoch.%d.step.%d&quot;</highlight><highlight class="normal">,<sp/>dir,<sp/>epoch,<sp/>step);</highlight></codeline>
+<codeline lineno="234"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>open<sp/>our<sp/>checkpoint</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="235"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1persist" kindref="compound">persist</ref><sp/>p;</highlight></codeline>
+<codeline lineno="236"><highlight class="normal"><sp/><sp/>p.<ref refid="classlbann_1_1persist_1a123cbc1d2b693640c784a45cbc6d2d97" kindref="member">open_restart</ref>(epochdir,<ref refid="classlbann_1_1lbann__callback__checkpoint_1a36af7331ddf213339fe7282cb53ffedc" kindref="member">m_checkpoint_per_rank</ref>);</highlight></codeline>
+<codeline lineno="237"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>call<sp/>virtual<sp/>function<sp/>to<sp/>restore<sp/>model<sp/>from<sp/>checkpoint</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="238"><highlight class="normal"><sp/><sp/>m-&gt;<ref refid="classlbann_1_1model_1a2e02dda11636e015ea0c892ffa541881" kindref="member">load_from_checkpoint_shared</ref>(p);</highlight></codeline>
+<codeline lineno="239"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>close<sp/>our<sp/>checkpoint</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="240"><highlight class="normal"><sp/><sp/>p.<ref refid="classlbann_1_1persist_1afeef05548e1d17bd09d3805607edd621" kindref="member">close_restart</ref>();</highlight></codeline>
+<codeline lineno="241"><highlight class="normal"><sp/><sp/>uint64_t<sp/>bytes_count<sp/>=<sp/>p.<ref refid="classlbann_1_1persist_1ad759657d69e88a491729ce8e4bf9510e" kindref="member">get_bytes</ref>();</highlight></codeline>
+<codeline lineno="242"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>let<sp/>user<sp/>know<sp/>we&apos;ve<sp/>completed<sp/>reading<sp/>our<sp/>restart</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="243"><highlight class="normal"><sp/><sp/>MPI_Barrier(MPI_COMM_WORLD);</highlight></codeline>
+<codeline lineno="244"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(comm-&gt;<ref refid="classlbann_1_1lbann__comm_1a1ef526486183a29feadca9bef096a534" kindref="member">am_world_master</ref>())<sp/>{</highlight></codeline>
+<codeline lineno="245"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref><sp/>secs<sp/>=<sp/>timer.Stop();</highlight></codeline>
+<codeline lineno="246"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref><sp/>bw<sp/>=<sp/>0.0;</highlight></codeline>
+<codeline lineno="247"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(secs<sp/>&gt;<sp/>0.0)<sp/>{</highlight></codeline>
+<codeline lineno="248"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>bw<sp/>=<sp/><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref>(bytes_count)<sp/>/<sp/>(secs<sp/>*<sp/>1024.0<sp/>*<sp/>1024.0);</highlight></codeline>
+<codeline lineno="249"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="250"><highlight class="normal"><sp/><sp/><sp/><sp/>printf(</highlight><highlight class="stringliteral">&quot;Restart<sp/>complete:<sp/>Epoch=%d<sp/>Step=%d<sp/>(%f<sp/>secs,<sp/>%llu<sp/>bytes,<sp/>%f<sp/>MB/sec)\n&quot;</highlight><highlight class="normal">,</highlight></codeline>
+<codeline lineno="251"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>epoch,<sp/>step,<sp/>secs,<sp/>(</highlight><highlight class="keywordtype">unsigned</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">long</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">long</highlight><highlight class="normal">)<sp/>bytes_count,<sp/>bw</highlight></codeline>
+<codeline lineno="252"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>);</highlight></codeline>
+<codeline lineno="253"><highlight class="normal"><sp/><sp/><sp/><sp/>fflush(stdout);</highlight></codeline>
+<codeline lineno="254"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="255"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">true</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="256"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="257"><highlight class="normal"></highlight></codeline>
+<codeline lineno="258"><highlight class="normal">}</highlight></codeline>
+    </programlisting>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_checkpoint.cpp"/>
+  </compounddef>
+</doxygen>

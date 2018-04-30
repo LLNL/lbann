@@ -1,0 +1,13 @@
+<map id="lbann::optimizer::copy" name="lbann::optimizer::copy">
+<area shape="rect" id="node2" href="$classlbann_1_1model.html#a0d2d5a1eac592e5721a81a9b9ea4b7f2" title="lbann::model::create\l_optimizer" alt="" coords="219,103,361,141"/>
+<area shape="rect" id="node11" href="$classlbann_1_1weights.html#ab7cca67d4459f3ba6a72dae4bb8d5cc6" title="lbann::weights::weights" alt="" coords="210,165,370,191"/>
+<area shape="rect" id="node12" href="$classlbann_1_1weights.html#ac1021a88dc4efe5f91a40fae223edf4b" title="lbann::weights::operator=" alt="" coords="204,215,376,240"/>
+<area shape="rect" id="node3" href="$classlbann_1_1base__convolution__layer.html#a9f850c1bdf4ae3cd986411d3cb3a524c" title="lbann::base_convolution\l_layer::setup_data" alt="" coords="434,40,599,79"/>
+<area shape="rect" id="node6" href="$classlbann_1_1batch__normalization.html#ac046a5ab567cc01f9a36c6b0fc4e3b55" title="lbann::batch_normalization\l::setup_data" alt="" coords="426,103,607,141"/>
+<area shape="rect" id="node7" href="$classlbann_1_1model.html#a38c71a455870e087c4c07acb78e4477c" title="lbann::model::get_callbacks" alt="" coords="424,165,610,191"/>
+<area shape="rect" id="node4" href="$classlbann_1_1convolution__layer.html#ab20636b44d2b17abdb5424df54cb9c6d" title="lbann::convolution\l_layer::setup_data" alt="" coords="667,5,798,44"/>
+<area shape="rect" id="node5" href="$classlbann_1_1deconvolution__layer.html#a6d891396ea1c91030cd647cc111c8c5f" title="lbann::deconvolution\l_layer::setup_data" alt="" coords="661,68,804,107"/>
+<area shape="rect" id="node8" href="$classlbann_1_1generic__input__layer.html#ad0b8ea79bc508bd227e08124359531c8" title="lbann::generic_input\l_layer::fp_setup_data" alt="" coords="658,144,807,183"/>
+<area shape="rect" id="node9" href="$classlbann_1_1lbann__callback__ltfb.html#a7548166d170eda00e4e0cba6626a1a78" title="lbann::lbann_callback\l_ltfb::setup" alt="" coords="658,207,807,245"/>
+<area shape="rect" id="node10" href="$classlbann_1_1lbann__callback__ltfb.html#aaf259b187e956282807d4daa03beb502" title="lbann::lbann_callback\l_ltfb::name" alt="" coords="855,207,1005,245"/>
+</map>

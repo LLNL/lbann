@@ -1,0 +1,19 @@
+<map id="lbann::generic_input_layer::setup_data" name="lbann::generic_input_layer::setup_data">
+<area shape="rect" id="node2" href="$classlbann_1_1Layer.html#a50a89f8a68762c677d48efe384676e81" title="lbann::Layer::setup_data" alt="" coords="209,169,377,195"/>
+<area shape="rect" id="node3" href="$classlbann_1_1model.html#a8c311798ff4acaeafdfbf85162ba5084" title="lbann::model::get_max\l_mini_batch_size" alt="" coords="464,5,620,44"/>
+<area shape="rect" id="node12" href="$classlbann_1_1generic__input__layer.html#af108a5dc05276bc6bc57b306204b12e4" title="lbann::generic_input\l_layer::calculate_num\l_iterations_per_epoch\l_training_spans_models" alt="" coords="210,312,376,377"/>
+<area shape="rect" id="node17" href="$classlbann_1_1generic__input__layer.html#a0f09422a09e76da77ac42b3037173041" title="lbann::generic_input\l_layer::calculate_num\l_iterations_per_epoch\l_training_unique_per_models" alt="" coords="195,401,392,467"/>
+<area shape="rect" id="node18" href="$classlbann_1_1generic__io__buffer.html#a00f3920147f7f19eceb5336bd6ddb421" title="lbann::generic_io_buffer\l::setup_data" alt="" coords="211,491,375,529"/>
+<area shape="rect" id="node4" href="$classlbann_1_1Layer.html#ac9290d4a6453ccda5f6b4d8b57b49ba3" title="lbann::Layer::get_num\l_parents" alt="" coords="465,68,619,107"/>
+<area shape="rect" id="node6" href="$classlbann_1_1Layer.html#a27112eb70bbfbd7f3c3e749960400dec" title="lbann::Layer::get_num\l_prev_neurons" alt="" coords="465,131,619,169"/>
+<area shape="rect" id="node7" href="$classlbann_1_1Layer.html#a1409a117c31a7ea4f2c7a4d22a3e86c3" title="lbann::Layer::get_num\l_children" alt="" coords="465,193,619,232"/>
+<area shape="rect" id="node11" href="$classlbann_1_1Layer.html#aa4de686cc6c2dd38166f42faf874f227" title="lbann::Layer::get_num\l_neurons" alt="" coords="465,256,619,295"/>
+<area shape="rect" id="node5" href="$classlbann_1_1Layer.html#a898e72b93752abf52d35b06459cd360e" title="lbann::Layer::get_parent\l_layers" alt="" coords="723,68,889,107"/>
+<area shape="rect" id="node8" href="$classlbann_1_1Layer.html#aa0058c8ec4913efc3e4de5d6f61eb8db" title="lbann::Layer::get_child\l_layers" alt="" coords="728,163,884,201"/>
+<area shape="rect" id="node9" href="$classlbann_1_1Layer.html#af4a093d91552cf079217eb346bbb847f" title="lbann::Layer::get_layer\l_names" alt="" coords="727,225,884,264"/>
+<area shape="rect" id="node10" href="$classlbann_1_1Layer.html#a80027550202fa7dbb1dd55fa8a66c84b" title="lbann::Layer::get_name" alt="" coords="968,232,1130,257"/>
+<area shape="rect" id="node13" href="$classlbann_1_1generic__io__buffer.html#ac943184cf364f7922648e3acb760b41e" title="lbann::generic_io_buffer\l::calculate_num_iterations\l_per_epoch_spanning_models" alt="" coords="440,319,643,371"/>
+<area shape="rect" id="node14" href="$classlbann_1_1generic__input__layer.html#aba732becdb02627e3ad4493ac19e8fb6" title="lbann::generic_input\l_layer::get_data_reader" alt="" coords="460,395,623,433"/>
+<area shape="rect" id="node16" href="$classlbann_1_1generic__io__buffer.html#a4c71135fada7f0da0b315d538d327e59" title="lbann::generic_io_buffer\l::calculate_num_iterations\l_per_epoch_single_model" alt="" coords="453,457,630,509"/>
+<area shape="rect" id="node15" href="$classlbann_1_1model.html#addb40597cf29aa6d31b6a7d09ef48608" title="lbann::model::get_execution_mode" alt="" coords="691,401,920,427"/>
+</map>

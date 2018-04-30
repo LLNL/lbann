@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="dir_0066033bc768a88b5795cc25dd526102" kind="dir">
+    <compoundname>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers</compoundname>
+    <innerdir refid="dir_dce0972359f9eef1b719d73d0b4d4285">/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/activations</innerdir>
+    <innerdir refid="dir_7e601033cb3d179f57419d571e1ff8d1">/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io</innerdir>
+    <innerdir refid="dir_e9fef02539551ad225b72781d68579ec">/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/learning</innerdir>
+    <innerdir refid="dir_7ce10570d46951702aea04570413ba72">/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers</innerdir>
+    <innerdir refid="dir_6d10a03b4900143443b6ce6426b6ba58">/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/transform</innerdir>
+    <innerfile refid="layer_8hpp">layer.hpp</innerfile>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/"/>
+  </compounddef>
+</doxygen>

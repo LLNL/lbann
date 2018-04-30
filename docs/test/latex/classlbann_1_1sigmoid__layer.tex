@@ -1,0 +1,314 @@
+\hypertarget{classlbann_1_1sigmoid__layer}{}\section{lbann\+:\+:sigmoid\+\_\+layer$<$ T\+\_\+layout $>$ Class Template Reference}
+\label{classlbann_1_1sigmoid__layer}\index{lbann\+::sigmoid\+\_\+layer$<$ T\+\_\+layout $>$@{lbann\+::sigmoid\+\_\+layer$<$ T\+\_\+layout $>$}}
+
+
+{\ttfamily \#include $<$sigmoid.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:sigmoid\+\_\+layer$<$ T\+\_\+layout $>$\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=216pt]{classlbann_1_1sigmoid__layer__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:sigmoid\+\_\+layer$<$ T\+\_\+layout $>$\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sigmoid__layer__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1sigmoid__layer_a7e9b873bf8d5c89ad66b7500d3c3f05f}{sigmoid\+\_\+layer} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, \hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$cudnn=nullptr)
+\item 
+\hyperlink{classlbann_1_1sigmoid__layer}{sigmoid\+\_\+layer} $\ast$ \hyperlink{classlbann_1_1sigmoid__layer_a9ebc522a655f638eae27e51e759ad72f}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1sigmoid__layer_a5082da099cb5e56910da4373952b98dc}{get\+\_\+type} () const override
+\item 
+\hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08db}{data\+\_\+layout} \hyperlink{classlbann_1_1sigmoid__layer_ab44f3cf5e4622578e40d5254ba73109a}{get\+\_\+data\+\_\+layout} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1sigmoid__layer_aa921ef4370e6b4fae38536310d7a3a17}{get\+\_\+description} () const override
+\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+Data\+Type \hyperlink{classlbann_1_1sigmoid__layer_ab6a237e0a10be2599474dcd2cd73e767}{activation} (Data\+Type x) const override
+\item 
+Data\+Type \hyperlink{classlbann_1_1sigmoid__layer_a2736bf99e3304083cd964f6707c2f666}{activation\+\_\+derivative} (Data\+Type x) const override
+\item 
+void \hyperlink{classlbann_1_1sigmoid__layer_a1a2c1a56ca20677d4278a5787fa7fc86}{fp\+\_\+compute\+\_\+gpu} () override
+\item 
+void \hyperlink{classlbann_1_1sigmoid__layer_a30a9ff1cd4ec6d4ef4e60859a10b5936}{bp\+\_\+compute\+\_\+gpu} () override
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+Data\+Type \hyperlink{classlbann_1_1sigmoid__layer_ab4a50a9ae123aef61ff3f0c9c066bdff}{m\+\_\+cutoff}
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+\subsubsection*{template$<$data\+\_\+layout T\+\_\+layout$>$\newline
+class lbann\+::sigmoid\+\_\+layer$<$ T\+\_\+layout $>$}
+
+Sigmoid activation function. See \href{https://en.wikipedia.org/wiki/Sigmoid_function}{\tt https\+://en.\+wikipedia.\+org/wiki/\+Sigmoid\+\_\+function} 
+
+Definition at line 64 of file sigmoid.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1sigmoid__layer_a7e9b873bf8d5c89ad66b7500d3c3f05f}\label{classlbann_1_1sigmoid__layer_a7e9b873bf8d5c89ad66b7500d3c3f05f}} 
+\index{lbann\+::sigmoid\+\_\+layer@{lbann\+::sigmoid\+\_\+layer}!sigmoid\+\_\+layer@{sigmoid\+\_\+layer}}
+\index{sigmoid\+\_\+layer@{sigmoid\+\_\+layer}!lbann\+::sigmoid\+\_\+layer@{lbann\+::sigmoid\+\_\+layer}}
+\subsubsection{\texorpdfstring{sigmoid\+\_\+layer()}{sigmoid\_layer()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{classlbann_1_1sigmoid__layer}{lbann\+::sigmoid\+\_\+layer}$<$ T\+\_\+layout $>$\+::\hyperlink{classlbann_1_1sigmoid__layer}{sigmoid\+\_\+layer} (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{\hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$}]{cudnn = {\ttfamily nullptr} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 75 of file sigmoid.\+hpp.
+
+
+\begin{DoxyCode}
+77     : \hyperlink{classlbann_1_1entrywise__activation__layer_aada1d9200612dcd13259799ef327c557}{entrywise\_activation\_layer}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}) \{
+78 
+79     \textcolor{comment}{// Compute cutoff value to ensure output is in (0,1)}
+80     \textcolor{keyword}{const} DataType eps = std::numeric\_limits<DataType>::epsilon();
+81     \hyperlink{classlbann_1_1sigmoid__layer_ab4a50a9ae123aef61ff3f0c9c066bdff}{m\_cutoff} = std::log(DataType(1) - eps) - std::log(eps);
+82 
+83 \textcolor{preprocessor}{  #ifdef LBANN\_HAS\_CUDNN}
+84     \textcolor{comment}{// Activate GPU if needed}
+85     this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn} = cudnn;
+86     \textcolor{keywordflow}{if} (this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}) \{
+87       this->\hyperlink{classlbann_1_1Layer_af7881cb5eff5207c15fa835d65462e8f}{m\_using\_gpus} = \textcolor{keyword}{true};
+88     \}
+89 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+90 
+91   \}
+\end{DoxyCode}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1sigmoid__layer_ab6a237e0a10be2599474dcd2cd73e767}\label{classlbann_1_1sigmoid__layer_ab6a237e0a10be2599474dcd2cd73e767}} 
+\index{lbann\+::sigmoid\+\_\+layer@{lbann\+::sigmoid\+\_\+layer}!activation@{activation}}
+\index{activation@{activation}!lbann\+::sigmoid\+\_\+layer@{lbann\+::sigmoid\+\_\+layer}}
+\subsubsection{\texorpdfstring{activation()}{activation()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+Data\+Type \hyperlink{classlbann_1_1sigmoid__layer}{lbann\+::sigmoid\+\_\+layer}$<$ T\+\_\+layout $>$\+::activation (\begin{DoxyParamCaption}\item[{Data\+Type}]{x }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Activation function. This function is applied independently to each input entry. 
+
+Implements \hyperlink{classlbann_1_1entrywise__activation__layer_a69269401530a2112b66660383464bab9}{lbann\+::entrywise\+\_\+activation\+\_\+layer}.
+
+
+
+Definition at line 104 of file sigmoid.\+hpp.
+
+
+\begin{DoxyCode}
+104                                                  \{
+105 \textcolor{preprocessor}{  #ifdef LBANN\_ENABLE\_SIGMOID\_CUTOFF}
+106     \textcolor{comment}{// Ensure -m\_cutoff <= x <= m\_cutoff}
+107     x = std::min(std::max(x, -\hyperlink{classlbann_1_1sigmoid__layer_ab4a50a9ae123aef61ff3f0c9c066bdff}{m\_cutoff}), \hyperlink{classlbann_1_1sigmoid__layer_ab4a50a9ae123aef61ff3f0c9c066bdff}{m\_cutoff});
+108 \textcolor{preprocessor}{  #endif // LBANN\_ENABLE\_SIGMOID\_CUTOFF}
+109     \textcolor{keywordflow}{return} 1 / (DataType(1) + std::exp(-x));
+110   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1sigmoid__layer_a2736bf99e3304083cd964f6707c2f666}\label{classlbann_1_1sigmoid__layer_a2736bf99e3304083cd964f6707c2f666}} 
+\index{lbann\+::sigmoid\+\_\+layer@{lbann\+::sigmoid\+\_\+layer}!activation\+\_\+derivative@{activation\+\_\+derivative}}
+\index{activation\+\_\+derivative@{activation\+\_\+derivative}!lbann\+::sigmoid\+\_\+layer@{lbann\+::sigmoid\+\_\+layer}}
+\subsubsection{\texorpdfstring{activation\+\_\+derivative()}{activation\_derivative()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+Data\+Type \hyperlink{classlbann_1_1sigmoid__layer}{lbann\+::sigmoid\+\_\+layer}$<$ T\+\_\+layout $>$\+::activation\+\_\+derivative (\begin{DoxyParamCaption}\item[{Data\+Type}]{x }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Derivative of activation function. 
+
+Implements \hyperlink{classlbann_1_1entrywise__activation__layer_a7676a4c5060452a38264993554e79f8e}{lbann\+::entrywise\+\_\+activation\+\_\+layer}.
+
+
+
+Definition at line 112 of file sigmoid.\+hpp.
+
+
+\begin{DoxyCode}
+112                                                             \{
+113 \textcolor{preprocessor}{  #ifdef LBANN\_ENABLE\_SIGMOID\_CUTOFF}
+114     \textcolor{keywordflow}{if} (x < -m\_cutoff || x > \hyperlink{classlbann_1_1sigmoid__layer_ab4a50a9ae123aef61ff3f0c9c066bdff}{m\_cutoff}) \{ \textcolor{keywordflow}{return} DataType(0); \}
+115 \textcolor{preprocessor}{  #endif // LBANN\_ENABLE\_SIGMOID\_CUTOFF}
+116     \textcolor{keyword}{const} \textcolor{keyword}{auto} sigx = \hyperlink{classlbann_1_1sigmoid__layer_ab6a237e0a10be2599474dcd2cd73e767}{activation}(x);
+117     \textcolor{keywordflow}{return} sigx * (DataType(1) - sigx);
+118   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1sigmoid__layer_a30a9ff1cd4ec6d4ef4e60859a10b5936}\label{classlbann_1_1sigmoid__layer_a30a9ff1cd4ec6d4ef4e60859a10b5936}} 
+\index{lbann\+::sigmoid\+\_\+layer@{lbann\+::sigmoid\+\_\+layer}!bp\+\_\+compute\+\_\+gpu@{bp\+\_\+compute\+\_\+gpu}}
+\index{bp\+\_\+compute\+\_\+gpu@{bp\+\_\+compute\+\_\+gpu}!lbann\+::sigmoid\+\_\+layer@{lbann\+::sigmoid\+\_\+layer}}
+\subsubsection{\texorpdfstring{bp\+\_\+compute\+\_\+gpu()}{bp\_compute\_gpu()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+void \hyperlink{classlbann_1_1sigmoid__layer}{lbann\+::sigmoid\+\_\+layer}$<$ T\+\_\+layout $>$\+::bp\+\_\+compute\+\_\+gpu (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1entrywise__activation__layer_a569674cb4c0f50ea76acc0733fc53ba9}{lbann\+::entrywise\+\_\+activation\+\_\+layer}.
+
+
+
+Definition at line 135 of file sigmoid.\+hpp.
+
+
+\begin{DoxyCode}
+135                                  \{
+136 \textcolor{preprocessor}{  #ifndef LBANN\_HAS\_CUDNN}
+137     \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"sigmoid\_layer: cuDNN not detected"});
+138 \textcolor{preprocessor}{  #else}
+139     sigmoid\_cuda::bp(*\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn},
+140                      \hyperlink{classlbann_1_1Layer_aa4de686cc6c2dd38166f42faf874f227}{get\_num\_neurons}(),
+141                      m\_mini\_batch\_size\_per\_gpu,
+142                      m\_prev\_activations\_d[0].get\_locked\_data(),
+143                      m\_prev\_activations\_d[0].get\_leading\_dim(),
+144                      m\_prev\_error\_signals\_d[0].get\_locked\_data(),
+145                      m\_prev\_error\_signals\_d[0].get\_leading\_dim(),
+146                      m\_error\_signals\_d[0].get\_data(),
+147                      m\_error\_signals\_d[0].get\_leading\_dim(),
+148                      \hyperlink{classlbann_1_1sigmoid__layer_ab4a50a9ae123aef61ff3f0c9c066bdff}{m\_cutoff});
+149 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+150   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1sigmoid__layer_a9ebc522a655f638eae27e51e759ad72f}\label{classlbann_1_1sigmoid__layer_a9ebc522a655f638eae27e51e759ad72f}} 
+\index{lbann\+::sigmoid\+\_\+layer@{lbann\+::sigmoid\+\_\+layer}!copy@{copy}}
+\index{copy@{copy}!lbann\+::sigmoid\+\_\+layer@{lbann\+::sigmoid\+\_\+layer}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{classlbann_1_1sigmoid__layer}{sigmoid\+\_\+layer}$\ast$ \hyperlink{classlbann_1_1sigmoid__layer}{lbann\+::sigmoid\+\_\+layer}$<$ T\+\_\+layout $>$\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Copy function. This function dynamically allocates memory for a layer instance and instantiates a copy. The caller is responsible for deallocating the instance. 
+
+Implements \hyperlink{classlbann_1_1Layer_af420f22bbac801c85483ade84588a23f}{lbann\+::\+Layer}.
+
+
+
+Definition at line 93 of file sigmoid.\+hpp.
+
+
+\begin{DoxyCode}
+93 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1sigmoid__layer_a7e9b873bf8d5c89ad66b7500d3c3f05f}{sigmoid\_layer}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1sigmoid__layer_a1a2c1a56ca20677d4278a5787fa7fc86}\label{classlbann_1_1sigmoid__layer_a1a2c1a56ca20677d4278a5787fa7fc86}} 
+\index{lbann\+::sigmoid\+\_\+layer@{lbann\+::sigmoid\+\_\+layer}!fp\+\_\+compute\+\_\+gpu@{fp\+\_\+compute\+\_\+gpu}}
+\index{fp\+\_\+compute\+\_\+gpu@{fp\+\_\+compute\+\_\+gpu}!lbann\+::sigmoid\+\_\+layer@{lbann\+::sigmoid\+\_\+layer}}
+\subsubsection{\texorpdfstring{fp\+\_\+compute\+\_\+gpu()}{fp\_compute\_gpu()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+void \hyperlink{classlbann_1_1sigmoid__layer}{lbann\+::sigmoid\+\_\+layer}$<$ T\+\_\+layout $>$\+::fp\+\_\+compute\+\_\+gpu (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1entrywise__activation__layer_aeb270dda0c2ec95dd34c35e1e8300f11}{lbann\+::entrywise\+\_\+activation\+\_\+layer}.
+
+
+
+Definition at line 120 of file sigmoid.\+hpp.
+
+
+\begin{DoxyCode}
+120                                  \{
+121 \textcolor{preprocessor}{  #ifndef LBANN\_HAS\_CUDNN}
+122     \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"sigmoid\_layer: cuDNN not detected"});
+123 \textcolor{preprocessor}{  #else}
+124     sigmoid\_cuda::fp(*\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn},
+125                      \hyperlink{classlbann_1_1Layer_aa4de686cc6c2dd38166f42faf874f227}{get\_num\_neurons}(),
+126                      m\_mini\_batch\_size\_per\_gpu,
+127                      m\_prev\_activations\_d[0].get\_locked\_data(),
+128                      m\_prev\_activations\_d[0].get\_leading\_dim(),
+129                      m\_activations\_d[0].get\_data(),
+130                      m\_activations\_d[0].get\_leading\_dim(),
+131                      \hyperlink{classlbann_1_1sigmoid__layer_ab4a50a9ae123aef61ff3f0c9c066bdff}{m\_cutoff});
+132 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+133   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1sigmoid__layer_ab44f3cf5e4622578e40d5254ba73109a}\label{classlbann_1_1sigmoid__layer_ab44f3cf5e4622578e40d5254ba73109a}} 
+\index{lbann\+::sigmoid\+\_\+layer@{lbann\+::sigmoid\+\_\+layer}!get\+\_\+data\+\_\+layout@{get\+\_\+data\+\_\+layout}}
+\index{get\+\_\+data\+\_\+layout@{get\+\_\+data\+\_\+layout}!lbann\+::sigmoid\+\_\+layer@{lbann\+::sigmoid\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+data\+\_\+layout()}{get\_data\_layout()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08db}{data\+\_\+layout} \hyperlink{classlbann_1_1sigmoid__layer}{lbann\+::sigmoid\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+data\+\_\+layout (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get data layout of the data tensors. We assume that the data layouts of the previous activations, activations, previous error signals, and error signals are the same. Each concrete layer that is templated on its data layout should override this function to return its template parameter. 
+
+Implements \hyperlink{classlbann_1_1Layer_a5dfb66e81fc085997402a5e2241316bd}{lbann\+::\+Layer}.
+
+
+
+Definition at line 95 of file sigmoid.\+hpp.
+
+
+\begin{DoxyCode}
+95 \{ \textcolor{keywordflow}{return} T\_layout; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1sigmoid__layer_aa921ef4370e6b4fae38536310d7a3a17}\label{classlbann_1_1sigmoid__layer_aa921ef4370e6b4fae38536310d7a3a17}} 
+\index{lbann\+::sigmoid\+\_\+layer@{lbann\+::sigmoid\+\_\+layer}!get\+\_\+description@{get\+\_\+description}}
+\index{get\+\_\+description@{get\+\_\+description}!lbann\+::sigmoid\+\_\+layer@{lbann\+::sigmoid\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+description()}{get\_description()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+std\+::string \hyperlink{classlbann_1_1sigmoid__layer}{lbann\+::sigmoid\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+description (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get a human-\/readable description of the layer parameters. 
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_acc0803d3428914ca1eb5988c4309174a}{lbann\+::\+Layer}.
+
+
+
+Definition at line 97 of file sigmoid.\+hpp.
+
+
+\begin{DoxyCode}
+97                                              \{
+98     \textcolor{keywordflow}{return} std::string\{\} +
+99      \textcolor{stringliteral}{" sigmoid dataLayout: "} + this->\hyperlink{classlbann_1_1Layer_ae3f4a5602df821f4221614b1e3782dc1}{get\_data\_layout\_string}(
+      \hyperlink{classlbann_1_1sigmoid__layer_ab44f3cf5e4622578e40d5254ba73109a}{get\_data\_layout}());
+100   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1sigmoid__layer_a5082da099cb5e56910da4373952b98dc}\label{classlbann_1_1sigmoid__layer_a5082da099cb5e56910da4373952b98dc}} 
+\index{lbann\+::sigmoid\+\_\+layer@{lbann\+::sigmoid\+\_\+layer}!get\+\_\+type@{get\+\_\+type}}
+\index{get\+\_\+type@{get\+\_\+type}!lbann\+::sigmoid\+\_\+layer@{lbann\+::sigmoid\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+type()}{get\_type()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+std\+::string \hyperlink{classlbann_1_1sigmoid__layer}{lbann\+::sigmoid\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+type (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get the layer type\textquotesingle{}s name. A layer type name should be brief, human-\/readable description of the layer\textquotesingle{}s mathematical operation. 
+
+Implements \hyperlink{classlbann_1_1Layer_a0fa0ea9160b490c151c0a17fde4f7239}{lbann\+::\+Layer}.
+
+
+
+Definition at line 94 of file sigmoid.\+hpp.
+
+
+\begin{DoxyCode}
+94 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"sigmoid"}; \}
+\end{DoxyCode}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1sigmoid__layer_ab4a50a9ae123aef61ff3f0c9c066bdff}\label{classlbann_1_1sigmoid__layer_ab4a50a9ae123aef61ff3f0c9c066bdff}} 
+\index{lbann\+::sigmoid\+\_\+layer@{lbann\+::sigmoid\+\_\+layer}!m\+\_\+cutoff@{m\+\_\+cutoff}}
+\index{m\+\_\+cutoff@{m\+\_\+cutoff}!lbann\+::sigmoid\+\_\+layer@{lbann\+::sigmoid\+\_\+layer}}
+\subsubsection{\texorpdfstring{m\+\_\+cutoff}{m\_cutoff}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+Data\+Type \hyperlink{classlbann_1_1sigmoid__layer}{lbann\+::sigmoid\+\_\+layer}$<$ T\+\_\+layout $>$\+::m\+\_\+cutoff\hspace{0.3cm}{\ttfamily [private]}}
+
+Cutoff value for inputs. If sigmoid cutoff is enabled, this cutoff value ensures that the output is strictly in (0,1). 
+
+Definition at line 72 of file sigmoid.\+hpp.
+
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/layers/activations/\hyperlink{sigmoid_8hpp}{sigmoid.\+hpp}\end{DoxyCompactItemize}

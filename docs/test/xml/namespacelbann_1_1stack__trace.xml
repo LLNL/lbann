@@ -1,0 +1,202 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="namespacelbann_1_1stack__trace" kind="namespace" language="C++">
+    <compoundname>lbann::stack_trace</compoundname>
+      <sectiondef kind="var">
+      <memberdef kind="variable" id="namespacelbann_1_1stack__trace_1a6c838c74fec7cc57e5ccad283a8d282b" prot="public" static="yes" mutable="no">
+        <type>std::ofstream</type>
+        <definition>std::ofstream lbann::stack_trace::to_file</definition>
+        <argsstring></argsstring>
+        <name>to_file</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_trace.cpp" line="43" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_trace.cpp" bodystart="43" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="namespacelbann_1_1stack__trace_1a78efe186260936105751e65f56c381d7" prot="public" static="yes" mutable="no">
+        <type>int</type>
+        <definition>int lbann::stack_trace::my_lbann_tracing_id</definition>
+        <argsstring></argsstring>
+        <name>my_lbann_tracing_id</name>
+        <initializer>= 0</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_trace.cpp" line="45" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_trace.cpp" bodystart="45" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="namespacelbann_1_1stack__trace_1a4a87ea956ec9344d4432f5e7d3dd445e" prot="public" static="no" mutable="no">
+        <type>struct sigaction</type>
+        <definition>struct sigaction lbann::stack_trace::sa</definition>
+        <argsstring></argsstring>
+        <name>sa</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_trace.cpp" line="45" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_trace.cpp" bodystart="47" bodyend="-1"/>
+        <referencedby refid="namespacelbann_1_1stack__trace_1a12c3aa60ec15015b925249fc61352f07" compoundref="stack__trace_8cpp" startline="227" endline="238">register_handler</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="func">
+      <memberdef kind="function" id="namespacelbann_1_1stack__trace_1a1063a9a501d78a7525224461e155a483" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::stack_trace::set_lbann_stack_trace_world_rank</definition>
+        <argsstring>(int rank)</argsstring>
+        <name>set_lbann_stack_trace_world_rank</name>
+        <param>
+          <type>int</type>
+          <declname>rank</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>This module contains functions for printing a stack trace when either a signal is caught or an lbann exception is thrown. Default behavior: processes write to cerr. The cmd line option &quot;--stack_trace_to_file&quot; will additionally cause each processor to attempt to write its stack trace to &quot;stack_trace_&lt;rank_in_world&gt;.txt&quot;</para><para>To use in your driver, you need to call <ref refid="namespacelbann_1_1stack__trace_1a12c3aa60ec15015b925249fc61352f07" kindref="member">register_handler()</ref> after the call to <ref refid="classoptions_1a9ecfe9c365269df68a41b961c31ae3f5" kindref="member">options::get()</ref>-&gt;init(), and also include the option <ndash/>catch_signals on the command lineFor internal use; made public for testing. called by <ref refid="namespacelbann_1a3d91b615e42bf5744deeed770879bc8c" kindref="member">initialize()</ref> </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_trace.cpp" line="49" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_trace.cpp" bodystart="49" bodyend="51"/>
+        <referencedby refid="namespacelbann_1a3d91b615e42bf5744deeed770879bc8c" compoundref="base_8cpp" startline="46" endline="86">lbann::initialize</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="namespacelbann_1_1stack__trace_1aa071d75a81128e2a8100d66529482842" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>bool</type>
+        <definition>static bool lbann::stack_trace::open_output_file</definition>
+        <argsstring>()</argsstring>
+        <name>open_output_file</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_trace.cpp" line="55" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_trace.cpp" bodystart="55" bodyend="74"/>
+        <references refid="classoptions_1a9ecfe9c365269df68a41b961c31ae3f5" compoundref="options_8hpp" startline="20" endline="22">options::get</references>
+        <references refid="classoptions_1aafb1d2a7ccde0b1bf786230ba4080ecd" compoundref="options_8cpp" startline="252" endline="257">options::has_bool</references>
+        <references refid="classoptions_1a99aa190102de33e2aed39723929f9fad" compoundref="options_8cpp" startline="111" endline="126">options::get_bool</references>
+        <referencedby refid="namespacelbann_1_1stack__trace_1ae7396b3b0ee5d087a045f04ce690cae4" compoundref="stack__trace_8cpp" startline="135" endline="151">print_lbann_exception_stack_trace</referencedby>
+        <referencedby refid="namespacelbann_1_1stack__trace_1a4bf58556b9c42ac8930c273a921172de" compoundref="stack__trace_8cpp" startline="241" endline="259">lbann_signal_handler</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="namespacelbann_1_1stack__trace_1a45e4398bd4d0a7b9956107192a342b89" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void lbann::stack_trace::close_output_file</definition>
+        <argsstring>()</argsstring>
+        <name>close_output_file</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_trace.cpp" line="76" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_trace.cpp" bodystart="76" bodyend="80"/>
+        <referencedby refid="namespacelbann_1_1stack__trace_1ae7396b3b0ee5d087a045f04ce690cae4" compoundref="stack__trace_8cpp" startline="135" endline="151">print_lbann_exception_stack_trace</referencedby>
+        <referencedby refid="namespacelbann_1_1stack__trace_1a4bf58556b9c42ac8930c273a921172de" compoundref="stack__trace_8cpp" startline="241" endline="259">lbann_signal_handler</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="namespacelbann_1_1stack__trace_1a52adbb11fce7541e2bc34b712d09e868" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::stack_trace::print_stack_trace</definition>
+        <argsstring>()</argsstring>
+        <name>print_stack_trace</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>For internal use; made public for testing. Attempts to print a stack trace. Calls non-reentrant functions, so behaviour may be undefined if used within a signal handler. Can be used when exceptions are thrown without undefined behavior. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_trace.cpp" line="82" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_trace.cpp" bodystart="82" bodyend="132"/>
+        <references refid="stack__trace_8cpp_1a2ed127ee3fe422f95420f138273e6da7">MAX_STACK_FRAMES</references>
+        <referencedby refid="namespacelbann_1_1stack__trace_1ae7396b3b0ee5d087a045f04ce690cae4" compoundref="stack__trace_8cpp" startline="135" endline="151">print_lbann_exception_stack_trace</referencedby>
+        <referencedby refid="namespacelbann_1_1stack__trace_1a4bf58556b9c42ac8930c273a921172de" compoundref="stack__trace_8cpp" startline="241" endline="259">lbann_signal_handler</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="namespacelbann_1_1stack__trace_1ae7396b3b0ee5d087a045f04ce690cae4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::stack_trace::print_lbann_exception_stack_trace</definition>
+        <argsstring>(std::string m)</argsstring>
+        <name>print_lbann_exception_stack_trace</name>
+        <param>
+          <type>std::string</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>For internal use; made public for testing. Attempts to print a stack trace when an <ref refid="classlbann_1_1lbann__exception" kindref="compound">lbann_exception</ref> is thrown. Called by lbann_exception() ctor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_trace.cpp" line="135" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_trace.cpp" bodystart="135" bodyend="151"/>
+        <references refid="namespacelbann_1_1stack__trace_1aa071d75a81128e2a8100d66529482842" compoundref="stack__trace_8cpp" startline="55" endline="74">open_output_file</references>
+        <references refid="namespacelbann_1_1stack__trace_1a52adbb11fce7541e2bc34b712d09e868" compoundref="stack__trace_8cpp" startline="82" endline="132">print_stack_trace</references>
+        <references refid="namespacelbann_1_1stack__trace_1a45e4398bd4d0a7b9956107192a342b89" compoundref="stack__trace_8cpp" startline="76" endline="80">close_output_file</references>
+        <referencedby refid="classlbann_1_1lbann__exception_1adbbe5260b3e3bd951ed2cb9363040f4a" compoundref="exception_8hpp" startline="42" endline="44">lbann::lbann_exception::lbann_exception</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="namespacelbann_1_1stack__trace_1a22d63f8c305ad282df5af296d61639e6" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>std::string</type>
+        <definition>std::string lbann::stack_trace::sig_name</definition>
+        <argsstring>(int signal)</argsstring>
+        <name>sig_name</name>
+        <param>
+          <type>int</type>
+          <declname>signal</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>For internal use; made public for testing. called by print_lbann_signal_stack_trace(). </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_trace.cpp" line="154" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_trace.cpp" bodystart="154" bodyend="225"/>
+        <referencedby refid="namespacelbann_1_1stack__trace_1a4bf58556b9c42ac8930c273a921172de" compoundref="stack__trace_8cpp" startline="241" endline="259">lbann_signal_handler</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="namespacelbann_1_1stack__trace_1a12c3aa60ec15015b925249fc61352f07" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::stack_trace::register_handler</definition>
+        <argsstring>()</argsstring>
+        <name>register_handler</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Register our signal handler; This is called in <ref refid="namespacelbann_1a3d91b615e42bf5744deeed770879bc8c" kindref="member">initialize()</ref>, but only if the cmd line option &quot;--catch_signals&quot; is present. It is not active by default, because the handler calls non-reentrant, functions, which can result in undefined behavior. See: <ulink url="https://www.ibm.com/developerworks/library/l-reent/">https://www.ibm.com/developerworks/library/l-reent/</ulink> for discussion. That said, it is possible (likely?) that our handler will work correctly. And if there&apos;s a SIGSEV and it doesn&apos;t, nothing much is lost (IMO). </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_trace.cpp" line="227" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_trace.cpp" bodystart="227" bodyend="238"/>
+        <references refid="classoptions_1a9ecfe9c365269df68a41b961c31ae3f5" compoundref="options_8hpp" startline="20" endline="22">options::get</references>
+        <references refid="classoptions_1aafb1d2a7ccde0b1bf786230ba4080ecd" compoundref="options_8cpp" startline="252" endline="257">options::has_bool</references>
+        <references refid="classoptions_1a99aa190102de33e2aed39723929f9fad" compoundref="options_8cpp" startline="111" endline="126">options::get_bool</references>
+        <references refid="namespacelbann_1_1stack__trace_1a4a87ea956ec9344d4432f5e7d3dd445e" compoundref="stack__trace_8cpp" startline="47">sa</references>
+        <references refid="namespacelbann_1_1stack__trace_1a4bf58556b9c42ac8930c273a921172de" compoundref="stack__trace_8cpp" startline="241" endline="259">lbann_signal_handler</references>
+      </memberdef>
+      <memberdef kind="function" id="namespacelbann_1_1stack__trace_1a4bf58556b9c42ac8930c273a921172de" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::stack_trace::lbann_signal_handler</definition>
+        <argsstring>(int signal)</argsstring>
+        <name>lbann_signal_handler</name>
+        <param>
+          <type>int</type>
+          <declname>signal</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>For internal use; made public for testing. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_trace.cpp" line="241" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_trace.cpp" bodystart="241" bodyend="259"/>
+        <references refid="namespacelbann_1_1stack__trace_1aa071d75a81128e2a8100d66529482842" compoundref="stack__trace_8cpp" startline="55" endline="74">open_output_file</references>
+        <references refid="namespacelbann_1_1stack__trace_1a22d63f8c305ad282df5af296d61639e6" compoundref="stack__trace_8cpp" startline="154" endline="225">sig_name</references>
+        <references refid="namespacelbann_1_1stack__trace_1a52adbb11fce7541e2bc34b712d09e868" compoundref="stack__trace_8cpp" startline="82" endline="132">print_stack_trace</references>
+        <references refid="namespacelbann_1_1stack__trace_1a45e4398bd4d0a7b9956107192a342b89" compoundref="stack__trace_8cpp" startline="76" endline="80">close_output_file</references>
+        <referencedby refid="namespacelbann_1_1stack__trace_1a12c3aa60ec15015b925249fc61352f07" compoundref="stack__trace_8cpp" startline="227" endline="238">register_handler</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_trace.cpp" line="41" column="1"/>
+  </compounddef>
+</doxygen>

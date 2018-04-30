@@ -1,0 +1,140 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1he__uniform__initializer" kind="class" language="C++" prot="public">
+    <compoundname>lbann::he_uniform_initializer</compoundname>
+    <basecompoundref refid="classlbann_1_1fan__in__fan__out__initializer" prot="public" virt="non-virtual">lbann::fan_in_fan_out_initializer</basecompoundref>
+    <includes refid="fan__in__fan__out__initializers_8hpp" local="no">fan_in_fan_out_initializers.hpp</includes>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1he__uniform__initializer_1a17bc65cd69fbce240c2050c228a2682c" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>lbann::he_uniform_initializer::he_uniform_initializer</definition>
+        <argsstring>(lbann_comm *comm)</argsstring>
+        <name>he_uniform_initializer</name>
+        <param>
+          <type><ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref> *</type>
+          <declname>comm</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Constructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/weights/fan_in_fan_out_initializers.hpp" line="133" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/weights/fan_in_fan_out_initializers.hpp" bodystart="133" bodyend="134"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1he__uniform__initializer_1a04aa97a63397eec43eba03f377704af3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::he_uniform_initializer::~he_uniform_initializer</definition>
+        <argsstring>() override=default</argsstring>
+        <name>~he_uniform_initializer</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Destructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/weights/fan_in_fan_out_initializers.hpp" line="136" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1he__uniform__initializer_1a9860575b43f3d08831d00219bb07ec73" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type><ref refid="classlbann_1_1he__uniform__initializer" kindref="compound">he_uniform_initializer</ref> *</type>
+        <definition>he_uniform_initializer* lbann::he_uniform_initializer::copy</definition>
+        <argsstring>() const override</argsstring>
+        <name>copy</name>
+        <reimplements refid="classlbann_1_1weights__initializer_1acc84ce49188b74b23987cef3db18525a">copy</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Create a copy. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/weights/fan_in_fan_out_initializers.hpp" line="139" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/weights/fan_in_fan_out_initializers.hpp" bodystart="139" bodyend="141"/>
+        <references refid="classlbann_1_1weights__initializer_1a2ad6acf904c0c7bc7406dbd9851107be">lbann::weights_initializer::initialize_entries</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1he__uniform__initializer_1a8f86401b0b216ba159f57d3475769a24" prot="public" static="no" const="yes" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::he_uniform_initializer::initialize_entries</definition>
+        <argsstring>(AbsDistMat &amp;weights_matrix) const override</argsstring>
+        <name>initialize_entries</name>
+        <reimplements refid="classlbann_1_1weights__initializer_1a2ad6acf904c0c7bc7406dbd9851107be">initialize_entries</reimplements>
+        <param>
+          <type><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+          <declname>weights_matrix</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Initialize weights matrix entries. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/weights/fan_in_fan_out_initializers.hpp" line="144" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/weights/fan_in_fan_out_initializers.cpp" bodystart="82" bodyend="96"/>
+        <references refid="classlbann_1_1fan__in__fan__out__initializer_1aea6639db271d9050f0a2e4f8c8dfa6cd" compoundref="fan__in__fan__out__initializers_8hpp" startline="57">lbann::fan_in_fan_out_initializer::m_fan_in</references>
+        <references refid="classlbann_1_1fan__in__fan__out__initializer_1ac67d275ab8574780525d2af59b738338" compoundref="fan__in__fan__out__initializers_8hpp" startline="59">lbann::fan_in_fan_out_initializer::m_fan_out</references>
+        <references refid="namespacelbann_1abd116f95f55d0e29d9a0cc386139c4b4" compoundref="random_8cpp" startline="166" endline="173">lbann::gaussian_fill</references>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>He uniform initializer. </para>    </detaileddescription>
+    <inheritancegraph>
+      <node id="1008">
+        <label>lbann::fan_in_fan_out_initializer</label>
+        <link refid="classlbann_1_1fan__in__fan__out__initializer"/>
+        <childnode refid="1009" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1007">
+        <label>lbann::he_uniform_initializer</label>
+        <link refid="classlbann_1_1he__uniform__initializer"/>
+        <childnode refid="1008" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1009">
+        <label>lbann::weights_initializer</label>
+        <link refid="classlbann_1_1weights__initializer"/>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="1011">
+        <label>lbann::fan_in_fan_out_initializer</label>
+        <link refid="classlbann_1_1fan__in__fan__out__initializer"/>
+        <childnode refid="1012" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1010">
+        <label>lbann::he_uniform_initializer</label>
+        <link refid="classlbann_1_1he__uniform__initializer"/>
+        <childnode refid="1011" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1012">
+        <label>lbann::weights_initializer</label>
+        <link refid="classlbann_1_1weights__initializer"/>
+        <childnode refid="1013" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+      </node>
+      <node id="1013">
+        <label>lbann::lbann_comm</label>
+        <link refid="classlbann_1_1lbann__comm"/>
+      </node>
+    </collaborationgraph>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/weights/fan_in_fan_out_initializers.hpp" line="129" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/weights/fan_in_fan_out_initializers.hpp" bodystart="129" bodyend="146"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1weights__initializer_1a693fd517e4162029eafdfdee537c7066" prot="public" virt="non-virtual"><scope>lbann::he_uniform_initializer</scope><name>construct_matrix</name></member>
+      <member refid="classlbann_1_1he__uniform__initializer_1a9860575b43f3d08831d00219bb07ec73" prot="public" virt="virtual"><scope>lbann::he_uniform_initializer</scope><name>copy</name></member>
+      <member refid="classlbann_1_1fan__in__fan__out__initializer_1a3a3811af11b1a70a57af846ae2cdf668" prot="public" virt="non-virtual"><scope>lbann::he_uniform_initializer</scope><name>fan_in_fan_out_initializer</name></member>
+      <member refid="classlbann_1_1he__uniform__initializer_1a17bc65cd69fbce240c2050c228a2682c" prot="public" virt="non-virtual"><scope>lbann::he_uniform_initializer</scope><name>he_uniform_initializer</name></member>
+      <member refid="classlbann_1_1he__uniform__initializer_1a8f86401b0b216ba159f57d3475769a24" prot="public" virt="virtual"><scope>lbann::he_uniform_initializer</scope><name>initialize_entries</name></member>
+      <member refid="classlbann_1_1weights__initializer_1a4273257d92237a75ef9f3614f7e5ddde" prot="protected" virt="non-virtual"><scope>lbann::he_uniform_initializer</scope><name>m_comm</name></member>
+      <member refid="classlbann_1_1fan__in__fan__out__initializer_1aea6639db271d9050f0a2e4f8c8dfa6cd" prot="protected" virt="non-virtual"><scope>lbann::he_uniform_initializer</scope><name>m_fan_in</name></member>
+      <member refid="classlbann_1_1fan__in__fan__out__initializer_1ac67d275ab8574780525d2af59b738338" prot="protected" virt="non-virtual"><scope>lbann::he_uniform_initializer</scope><name>m_fan_out</name></member>
+      <member refid="classlbann_1_1fan__in__fan__out__initializer_1a6da7299bd2fb6aa1b549125fc62ffafc" prot="public" virt="non-virtual"><scope>lbann::he_uniform_initializer</scope><name>set_fan_in</name></member>
+      <member refid="classlbann_1_1fan__in__fan__out__initializer_1a4464e05d66e938058a01be04a2495452" prot="public" virt="non-virtual"><scope>lbann::he_uniform_initializer</scope><name>set_fan_out</name></member>
+      <member refid="classlbann_1_1weights__initializer_1a3b65043cb6d76dcfcb07387392429755" prot="public" virt="non-virtual"><scope>lbann::he_uniform_initializer</scope><name>weights_initializer</name></member>
+      <member refid="classlbann_1_1fan__in__fan__out__initializer_1ab351750e3f776aa6748053f29d5d031c" prot="public" virt="non-virtual"><scope>lbann::he_uniform_initializer</scope><name>~fan_in_fan_out_initializer</name></member>
+      <member refid="classlbann_1_1he__uniform__initializer_1a04aa97a63397eec43eba03f377704af3" prot="public" virt="non-virtual"><scope>lbann::he_uniform_initializer</scope><name>~he_uniform_initializer</name></member>
+      <member refid="classlbann_1_1weights__initializer_1a9fba102d897402d3df37776d8aa99549" prot="public" virt="virtual"><scope>lbann::he_uniform_initializer</scope><name>~weights_initializer</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

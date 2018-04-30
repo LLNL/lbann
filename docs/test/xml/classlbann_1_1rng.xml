@@ -1,0 +1,117 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1rng" kind="class" language="C++" prot="public">
+    <compoundname>lbann::rng</compoundname>
+    <includes refid="random_8hpp" local="no">random.hpp</includes>
+    <templateparamlist>
+      <param>
+        <type>typename</type>
+        <declname>DistType</declname>
+        <defname>DistType</defname>
+      </param>
+      <param>
+        <type>typename</type>
+        <declname>DType</declname>
+        <defname>DType</defname>
+        <defval>DataType</defval>
+      </param>
+    </templateparamlist>
+      <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="classlbann_1_1rng_1a07a437f5344e29d6cf557e95ae83a24c" prot="private" static="no" mutable="no">
+        <type>DistType</type>
+        <definition>DistType lbann::rng&lt; DistType, DType &gt;::m_dist</definition>
+        <argsstring></argsstring>
+        <name>m_dist</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/random.hpp" line="166" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/random.hpp" bodystart="166" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1rng_1a1c8a2640dd522c6fc63bf2de09ff3e84" compoundref="random_8hpp" startline="169" endline="171">lbann::rng&lt; DistType, DType &gt;::gen</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1rng_1a1c8a2640dd522c6fc63bf2de09ff3e84" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>DistType::result_type</type>
+        <definition>DistType::result_type lbann::rng&lt; DistType, DType &gt;::gen</definition>
+        <argsstring>()</argsstring>
+        <name>gen</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/random.hpp" line="169" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/random.hpp" bodystart="169" bodyend="171"/>
+        <references refid="classlbann_1_1rng_1a07a437f5344e29d6cf557e95ae83a24c" compoundref="random_8hpp" startline="166">lbann::rng&lt; DistType, DType &gt;::m_dist</references>
+        <references refid="namespacelbann_1a4fea7ba21017b49d1e34394b4c20c764" compoundref="random_8cpp" startline="60" endline="62">lbann::get_generator</references>
+        <referencedby refid="namespacelbann_1a481f0c268c74d3ec8b81861472559870" compoundref="random_8hpp" startline="183" endline="196">lbann::rng_bernoulli</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1rng_1a7f510fb55d7f261efb4ba86ed623509a" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>lbann::rng&lt; DistType, DType &gt;::rng</definition>
+        <argsstring>()</argsstring>
+        <name>rng</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/random.hpp" line="172" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/random.hpp" bodystart="172" bodyend="172"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1rng_1aedb81fe65719eb1864f8f891d48772b1" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>lbann::rng&lt; DistType, DType &gt;::rng</definition>
+        <argsstring>(DType p)</argsstring>
+        <name>rng</name>
+        <param>
+          <type>DType</type>
+          <declname>p</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/random.hpp" line="174" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/random.hpp" bodystart="174" bodyend="174"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1rng_1aede986b92f5d075b4881f8cca86459dd" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>lbann::rng&lt; DistType, DType &gt;::rng</definition>
+        <argsstring>(DType a, DType b)</argsstring>
+        <name>rng</name>
+        <param>
+          <type>DType</type>
+          <declname>a</declname>
+        </param>
+        <param>
+          <type>DType</type>
+          <declname>b</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/random.hpp" line="176" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/random.hpp" bodystart="176" bodyend="176"/>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/random.hpp" line="163" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/random.hpp" bodystart="163" bodyend="177"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1rng_1a1c8a2640dd522c6fc63bf2de09ff3e84" prot="public" virt="non-virtual"><scope>lbann::rng</scope><name>gen</name></member>
+      <member refid="classlbann_1_1rng_1a07a437f5344e29d6cf557e95ae83a24c" prot="private" virt="non-virtual"><scope>lbann::rng</scope><name>m_dist</name></member>
+      <member refid="classlbann_1_1rng_1a7f510fb55d7f261efb4ba86ed623509a" prot="public" virt="non-virtual"><scope>lbann::rng</scope><name>rng</name></member>
+      <member refid="classlbann_1_1rng_1aedb81fe65719eb1864f8f891d48772b1" prot="public" virt="non-virtual"><scope>lbann::rng</scope><name>rng</name></member>
+      <member refid="classlbann_1_1rng_1aede986b92f5d075b4881f8cca86459dd" prot="public" virt="non-virtual"><scope>lbann::rng</scope><name>rng</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

@@ -1,0 +1,339 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1mean__absolute__deviation__metric" kind="class" language="C++" prot="public">
+    <compoundname>lbann::mean_absolute_deviation_metric</compoundname>
+    <basecompoundref refid="classlbann_1_1metric" prot="public" virt="non-virtual">lbann::metric</basecompoundref>
+    <includes refid="metrics_2mean__absolute__deviation_8hpp" local="no">mean_absolute_deviation.hpp</includes>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1mean__absolute__deviation__metric_1afb98a53d7a6f0981d80f5c74fd6ce25a" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>lbann::mean_absolute_deviation_metric::mean_absolute_deviation_metric</definition>
+        <argsstring>(lbann_comm *comm)</argsstring>
+        <name>mean_absolute_deviation_metric</name>
+        <param>
+          <type><ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref> *</type>
+          <declname>comm</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Constructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/mean_absolute_deviation.hpp" line="42" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/mean_absolute_deviation.hpp" bodystart="42" bodyend="42"/>
+        <references refid="classlbann_1_1mean__absolute__deviation__metric_1a7424749c8ab06a2126485c9dba202b8f">operator=</references>
+        <references refid="classlbann_1_1mean__absolute__deviation__metric_1a78ec4ab5b31f87ffd2ceb9589a3a0089">~mean_absolute_deviation_metric</references>
+        <referencedby refid="classlbann_1_1mean__absolute__deviation__metric_1ad49148043214908a671799bcdd0b120b" compoundref="metrics_2mean__absolute__deviation_8hpp" startline="51" endline="53">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1mean__absolute__deviation__metric_1a15c988cd4a265d050eaf6b9c424c3683" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::mean_absolute_deviation_metric::mean_absolute_deviation_metric</definition>
+        <argsstring>(const mean_absolute_deviation_metric &amp;other)=default</argsstring>
+        <name>mean_absolute_deviation_metric</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1mean__absolute__deviation__metric" kindref="compound">mean_absolute_deviation_metric</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Copy constructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/mean_absolute_deviation.hpp" line="45" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1mean__absolute__deviation__metric_1a7424749c8ab06a2126485c9dba202b8f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classlbann_1_1mean__absolute__deviation__metric" kindref="compound">mean_absolute_deviation_metric</ref> &amp;</type>
+        <definition>mean_absolute_deviation_metric&amp; lbann::mean_absolute_deviation_metric::operator=</definition>
+        <argsstring>(const mean_absolute_deviation_metric &amp;other)=default</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1mean__absolute__deviation__metric" kindref="compound">mean_absolute_deviation_metric</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Copy assignment operator. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/mean_absolute_deviation.hpp" line="47" column="1"/>
+        <referencedby refid="classlbann_1_1mean__absolute__deviation__metric_1afb98a53d7a6f0981d80f5c74fd6ce25a" compoundref="metrics_2mean__absolute__deviation_8hpp" startline="42" endline="42">mean_absolute_deviation_metric</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1mean__absolute__deviation__metric_1a78ec4ab5b31f87ffd2ceb9589a3a0089" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type></type>
+        <definition>virtual lbann::mean_absolute_deviation_metric::~mean_absolute_deviation_metric</definition>
+        <argsstring>()=default</argsstring>
+        <name>~mean_absolute_deviation_metric</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Destructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/mean_absolute_deviation.hpp" line="49" column="1"/>
+        <referencedby refid="classlbann_1_1mean__absolute__deviation__metric_1afb98a53d7a6f0981d80f5c74fd6ce25a" compoundref="metrics_2mean__absolute__deviation_8hpp" startline="42" endline="42">mean_absolute_deviation_metric</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1mean__absolute__deviation__metric_1ad49148043214908a671799bcdd0b120b" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type><ref refid="classlbann_1_1mean__absolute__deviation__metric" kindref="compound">mean_absolute_deviation_metric</ref> *</type>
+        <definition>mean_absolute_deviation_metric* lbann::mean_absolute_deviation_metric::copy</definition>
+        <argsstring>() const override</argsstring>
+        <name>copy</name>
+        <reimplements refid="classlbann_1_1metric_1a2a4498d41f77da8585552f485caab167">copy</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Copy function. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/mean_absolute_deviation.hpp" line="51" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/mean_absolute_deviation.hpp" bodystart="51" bodyend="53"/>
+        <references refid="classlbann_1_1mean__absolute__deviation__metric_1afb98a53d7a6f0981d80f5c74fd6ce25a" compoundref="metrics_2mean__absolute__deviation_8hpp" startline="42" endline="42">mean_absolute_deviation_metric</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1mean__absolute__deviation__metric_1a6b2f0542a991b632414dc217586db905" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>std::string</type>
+        <definition>std::string lbann::mean_absolute_deviation_metric::name</definition>
+        <argsstring>() const override</argsstring>
+        <name>name</name>
+        <reimplements refid="classlbann_1_1metric_1af455d7b6874d3491bc04f0f2ebfcab51">name</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Return a string name for this metric. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/mean_absolute_deviation.hpp" line="56" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/mean_absolute_deviation.hpp" bodystart="56" bodyend="56"/>
+        <references refid="classlbann_1_1mean__absolute__deviation__metric_1a4096a6f389b2f18ff6c19428313f2969" compoundref="metrics_2mean__absolute__deviation_8cpp" startline="31" endline="58">evaluate_compute</references>
+        <references refid="base_8hpp_1a2781a159088df64ed7d47cc91c4dc0a8ac41b9ec75e920b610e8907e066074b30">prediction</references>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="protected-func">
+      <memberdef kind="function" id="classlbann_1_1mean__absolute__deviation__metric_1a4096a6f389b2f18ff6c19428313f2969" prot="protected" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref></type>
+        <definition>EvalType lbann::mean_absolute_deviation_metric::evaluate_compute</definition>
+        <argsstring>(const AbsDistMat &amp;prediction, const AbsDistMat &amp;ground_truth) override</argsstring>
+        <name>evaluate_compute</name>
+        <reimplements refid="classlbann_1_1metric_1aab79147ff480675db2e01d7a889a4296">evaluate_compute</reimplements>
+        <param>
+          <type>const <ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+          <declname>prediction</declname>
+        </param>
+        <param>
+          <type>const <ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+          <declname>ground_truth</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Computation to evaluate the metric function. This returns the sum of metric values across the mini-batch, not the mean value. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/mean_absolute_deviation.hpp" line="64" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/metrics/mean_absolute_deviation.cpp" bodystart="31" bodyend="58"/>
+        <references refid="classlbann_1_1metric_1a464120720df6bfdf91bffe353e562964" compoundref="metric_8hpp" startline="171" endline="171">lbann::metric::get_comm</references>
+        <references refid="classlbann_1_1lbann__comm_1af5631e5f0f54e4df4958eba9df2599ef" compoundref="comm_8hpp" startline="419" endline="424">lbann::lbann_comm::allreduce</references>
+        <referencedby refid="classlbann_1_1mean__absolute__deviation__metric_1a6b2f0542a991b632414dc217586db905" compoundref="metrics_2mean__absolute__deviation_8hpp" startline="56" endline="56">name</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>Mean absolute deviation metric. Not to be confused with <ref refid="classlbann_1_1mean__absolute__deviation__loss" kindref="compound">mean_absolute_deviation_loss</ref>. </para>    </detaileddescription>
+    <inheritancegraph>
+      <node id="1628">
+        <label>lbann::metric</label>
+        <link refid="classlbann_1_1metric"/>
+      </node>
+      <node id="1627">
+        <label>lbann::mean_absolute_deviation_metric</label>
+        <link refid="classlbann_1_1mean__absolute__deviation__metric"/>
+        <childnode refid="1628" relation="public-inheritance">
+        </childnode>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="1633">
+        <label>lbann::io_layer</label>
+        <link refid="classlbann_1_1io__layer"/>
+        <childnode refid="1634" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1645">
+        <label>lbann::generic_input_layer</label>
+        <link refid="classlbann_1_1generic__input__layer"/>
+        <childnode refid="1633" relation="public-inheritance">
+        </childnode>
+        <childnode refid="1646" relation="usage">
+          <edgelabel>m_training_dataset</edgelabel>
+          <edgelabel>m_validation_dataset</edgelabel>
+          <edgelabel>m_testing_dataset</edgelabel>
+        </childnode>
+        <childnode refid="1642" relation="usage">
+          <edgelabel>io_buffer</edgelabel>
+        </childnode>
+      </node>
+      <node id="1632">
+        <label>lbann::generic_target_layer</label>
+        <link refid="classlbann_1_1generic__target__layer"/>
+        <childnode refid="1633" relation="public-inheritance">
+        </childnode>
+        <childnode refid="1642" relation="usage">
+          <edgelabel>io_buffer</edgelabel>
+        </childnode>
+        <childnode refid="1645" relation="usage">
+          <edgelabel>m_paired_input_layer</edgelabel>
+        </childnode>
+      </node>
+      <node id="1635">
+        <label>lbann::model</label>
+        <link refid="classlbann_1_1model"/>
+        <childnode refid="1636" relation="usage">
+          <edgelabel>m_default_optimizer</edgelabel>
+        </childnode>
+        <childnode refid="1631" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="1641" relation="usage">
+          <edgelabel>m_objective_function</edgelabel>
+        </childnode>
+      </node>
+      <node id="1643">
+        <label>lbann::fetch_data_functor</label>
+        <link refid="classlbann_1_1fetch__data__functor"/>
+      </node>
+      <node id="1630">
+        <label>lbann::metric</label>
+        <link refid="classlbann_1_1metric"/>
+        <childnode refid="1631" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="1632" relation="usage">
+          <edgelabel>m_target_layer</edgelabel>
+        </childnode>
+      </node>
+      <node id="1636">
+        <label>lbann::optimizer</label>
+        <link refid="classlbann_1_1optimizer"/>
+        <childnode refid="1631" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="1637" relation="usage">
+          <edgelabel>m_cudnn</edgelabel>
+        </childnode>
+        <childnode refid="1638" relation="usage">
+          <edgelabel>m_gradient_allreduce_req</edgelabel>
+        </childnode>
+        <childnode refid="1639" relation="usage">
+          <edgelabel>m_weights</edgelabel>
+        </childnode>
+      </node>
+      <node id="1637">
+        <label>lbann::cudnn::cudnn_manager</label>
+        <link refid="classlbann_1_1cudnn_1_1cudnn__manager"/>
+      </node>
+      <node id="1640">
+        <label>lbann::weights_initializer</label>
+        <link refid="classlbann_1_1weights__initializer"/>
+        <childnode refid="1631" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+      </node>
+      <node id="1646">
+        <label>lbann::dataset</label>
+        <link refid="classlbann_1_1dataset"/>
+      </node>
+      <node id="1642">
+        <label>lbann::generic_io_buffer</label>
+        <link refid="classlbann_1_1generic__io__buffer"/>
+        <childnode refid="1643" relation="usage">
+          <edgelabel>fetch_data_fn</edgelabel>
+        </childnode>
+        <childnode refid="1631" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="1644" relation="usage">
+          <edgelabel>update_data_reader_fn</edgelabel>
+        </childnode>
+      </node>
+      <node id="1634">
+        <label>lbann::Layer</label>
+        <link refid="classlbann_1_1Layer"/>
+        <childnode refid="1631" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="1635" relation="usage">
+          <edgelabel>m_model</edgelabel>
+        </childnode>
+        <childnode refid="1637" relation="usage">
+          <edgelabel>m_cudnn</edgelabel>
+        </childnode>
+      </node>
+      <node id="1639">
+        <label>lbann::weights</label>
+        <link refid="classlbann_1_1weights"/>
+        <childnode refid="1636" relation="usage">
+          <edgelabel>m_optimizer</edgelabel>
+        </childnode>
+        <childnode refid="1631" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="1640" relation="usage">
+          <edgelabel>m_initializer</edgelabel>
+        </childnode>
+        <childnode refid="1637" relation="usage">
+          <edgelabel>m_cudnn</edgelabel>
+        </childnode>
+      </node>
+      <node id="1631">
+        <label>lbann::lbann_comm</label>
+        <link refid="classlbann_1_1lbann__comm"/>
+      </node>
+      <node id="1629">
+        <label>lbann::mean_absolute_deviation_metric</label>
+        <link refid="classlbann_1_1mean__absolute__deviation__metric"/>
+        <childnode refid="1630" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1638">
+        <label>lbann::Al::request</label>
+        <link refid="structlbann_1_1Al_1_1request"/>
+      </node>
+      <node id="1644">
+        <label>lbann::update_data_reader_functor</label>
+        <link refid="classlbann_1_1update__data__reader__functor"/>
+      </node>
+      <node id="1641">
+        <label>lbann::objective_function</label>
+        <link refid="classlbann_1_1objective__function"/>
+      </node>
+    </collaborationgraph>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/mean_absolute_deviation.hpp" line="37" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/mean_absolute_deviation.hpp" bodystart="37" bodyend="67"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1mean__absolute__deviation__metric_1ad49148043214908a671799bcdd0b120b" prot="public" virt="virtual"><scope>lbann::mean_absolute_deviation_metric</scope><name>copy</name></member>
+      <member refid="classlbann_1_1metric_1ab4e14cb4296c7b47719071b210448dec" prot="public" virt="non-virtual"><scope>lbann::mean_absolute_deviation_metric</scope><name>evaluate</name></member>
+      <member refid="classlbann_1_1mean__absolute__deviation__metric_1a4096a6f389b2f18ff6c19428313f2969" prot="protected" virt="virtual"><scope>lbann::mean_absolute_deviation_metric</scope><name>evaluate_compute</name></member>
+      <member refid="classlbann_1_1metric_1a464120720df6bfdf91bffe353e562964" prot="protected" virt="non-virtual"><scope>lbann::mean_absolute_deviation_metric</scope><name>get_comm</name></member>
+      <member refid="classlbann_1_1metric_1a686239cad1f25628c9b298f9233cc9f3" prot="public" virt="non-virtual"><scope>lbann::mean_absolute_deviation_metric</scope><name>get_evaluate_time</name></member>
+      <member refid="classlbann_1_1metric_1a7f97c998fa64475f9ef7f066237b0695" prot="public" virt="non-virtual"><scope>lbann::mean_absolute_deviation_metric</scope><name>get_layer_pointers</name></member>
+      <member refid="classlbann_1_1metric_1a2926c6b391dc8c3e3d13d0199317c570" prot="public" virt="non-virtual"><scope>lbann::mean_absolute_deviation_metric</scope><name>get_mean_value</name></member>
+      <member refid="classlbann_1_1metric_1a489feb28d318bd8405133f9f8c94cc10" prot="public" virt="non-virtual"><scope>lbann::mean_absolute_deviation_metric</scope><name>get_statistics_num_samples</name></member>
+      <member refid="classlbann_1_1metric_1aba7f7a12aeba6619f7b4330e9075f76e" prot="public" virt="non-virtual"><scope>lbann::mean_absolute_deviation_metric</scope><name>get_target_layer</name></member>
+      <member refid="classlbann_1_1metric_1a13fd302dec85190b877f7146529e516c" prot="public" virt="virtual"><scope>lbann::mean_absolute_deviation_metric</scope><name>get_unit</name></member>
+      <member refid="classlbann_1_1metric_1ab3d1ec8247352467790be036a07cfc2b" prot="public" virt="virtual"><scope>lbann::mean_absolute_deviation_metric</scope><name>load_from_checkpoint_shared</name></member>
+      <member refid="classlbann_1_1mean__absolute__deviation__metric_1afb98a53d7a6f0981d80f5c74fd6ce25a" prot="public" virt="non-virtual"><scope>lbann::mean_absolute_deviation_metric</scope><name>mean_absolute_deviation_metric</name></member>
+      <member refid="classlbann_1_1mean__absolute__deviation__metric_1a15c988cd4a265d050eaf6b9c424c3683" prot="public" virt="non-virtual"><scope>lbann::mean_absolute_deviation_metric</scope><name>mean_absolute_deviation_metric</name></member>
+      <member refid="classlbann_1_1metric_1a3cd2d4f7dcbf94f70b3b8560a3171d9d" prot="public" virt="non-virtual"><scope>lbann::mean_absolute_deviation_metric</scope><name>metric</name></member>
+      <member refid="classlbann_1_1metric_1ac2fc993e31fed5298c4e321b315b77a0" prot="public" virt="non-virtual"><scope>lbann::mean_absolute_deviation_metric</scope><name>metric</name></member>
+      <member refid="classlbann_1_1mean__absolute__deviation__metric_1a6b2f0542a991b632414dc217586db905" prot="public" virt="virtual"><scope>lbann::mean_absolute_deviation_metric</scope><name>name</name></member>
+      <member refid="classlbann_1_1mean__absolute__deviation__metric_1a7424749c8ab06a2126485c9dba202b8f" prot="public" virt="non-virtual"><scope>lbann::mean_absolute_deviation_metric</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1metric_1a4324342dab4892199a47df1d78b2cef5" prot="public" virt="non-virtual" ambiguityscope="lbann::metric::"><scope>lbann::mean_absolute_deviation_metric</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1metric_1ab93708cd870277eb7865655e075620c9" prot="public" virt="non-virtual"><scope>lbann::mean_absolute_deviation_metric</scope><name>reset_counters</name></member>
+      <member refid="classlbann_1_1metric_1af7747feb8bc7a5ee039876a70fae1b0c" prot="public" virt="non-virtual"><scope>lbann::mean_absolute_deviation_metric</scope><name>reset_statistics</name></member>
+      <member refid="classlbann_1_1metric_1a27a3d8c073b85297b902ba35137926b4" prot="public" virt="non-virtual"><scope>lbann::mean_absolute_deviation_metric</scope><name>reset_statistics</name></member>
+      <member refid="classlbann_1_1metric_1a9728b02a240dfd9faa61b7dfeb3feede" prot="public" virt="virtual"><scope>lbann::mean_absolute_deviation_metric</scope><name>save_to_checkpoint_shared</name></member>
+      <member refid="classlbann_1_1metric_1a5de0c336b93f2c03f37f38047d401f99" prot="public" virt="non-virtual"><scope>lbann::mean_absolute_deviation_metric</scope><name>set_layer_pointers</name></member>
+      <member refid="classlbann_1_1metric_1a8367719e2c7816a4c718c049ea97b709" prot="public" virt="non-virtual"><scope>lbann::mean_absolute_deviation_metric</scope><name>set_target_layer</name></member>
+      <member refid="classlbann_1_1metric_1a898d23e410297378db2fe9f8d1754fe0" prot="public" virt="virtual"><scope>lbann::mean_absolute_deviation_metric</scope><name>setup</name></member>
+      <member refid="classlbann_1_1mean__absolute__deviation__metric_1a78ec4ab5b31f87ffd2ceb9589a3a0089" prot="public" virt="virtual"><scope>lbann::mean_absolute_deviation_metric</scope><name>~mean_absolute_deviation_metric</name></member>
+      <member refid="classlbann_1_1metric_1ae173eae981ed474f125a5462e734802b" prot="public" virt="virtual"><scope>lbann::mean_absolute_deviation_metric</scope><name>~metric</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

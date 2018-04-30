@@ -1,0 +1,142 @@
+\hypertarget{classlbann_1_1he__uniform__initializer}{}\section{lbann\+:\+:he\+\_\+uniform\+\_\+initializer Class Reference}
+\label{classlbann_1_1he__uniform__initializer}\index{lbann\+::he\+\_\+uniform\+\_\+initializer@{lbann\+::he\+\_\+uniform\+\_\+initializer}}
+
+
+{\ttfamily \#include $<$fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializers.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:he\+\_\+uniform\+\_\+initializer\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=221pt]{classlbann_1_1he__uniform__initializer__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:he\+\_\+uniform\+\_\+initializer\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=221pt]{classlbann_1_1he__uniform__initializer__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1he__uniform__initializer_a17bc65cd69fbce240c2050c228a2682c}{he\+\_\+uniform\+\_\+initializer} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm})
+\item 
+\hyperlink{classlbann_1_1he__uniform__initializer_a04aa97a63397eec43eba03f377704af3}{$\sim$he\+\_\+uniform\+\_\+initializer} () override=default
+\item 
+\hyperlink{classlbann_1_1he__uniform__initializer}{he\+\_\+uniform\+\_\+initializer} $\ast$ \hyperlink{classlbann_1_1he__uniform__initializer_a9860575b43f3d08831d00219bb07ec73}{copy} () const override
+\item 
+void \hyperlink{classlbann_1_1he__uniform__initializer_a8f86401b0b216ba159f57d3475769a24}{initialize\+\_\+entries} (\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&weights\+\_\+matrix) const override
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+He uniform initializer. 
+
+Definition at line 129 of file fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializers.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1he__uniform__initializer_a17bc65cd69fbce240c2050c228a2682c}\label{classlbann_1_1he__uniform__initializer_a17bc65cd69fbce240c2050c228a2682c}} 
+\index{lbann\+::he\+\_\+uniform\+\_\+initializer@{lbann\+::he\+\_\+uniform\+\_\+initializer}!he\+\_\+uniform\+\_\+initializer@{he\+\_\+uniform\+\_\+initializer}}
+\index{he\+\_\+uniform\+\_\+initializer@{he\+\_\+uniform\+\_\+initializer}!lbann\+::he\+\_\+uniform\+\_\+initializer@{lbann\+::he\+\_\+uniform\+\_\+initializer}}
+\subsubsection{\texorpdfstring{he\+\_\+uniform\+\_\+initializer()}{he\_uniform\_initializer()}}
+{\footnotesize\ttfamily lbann\+::he\+\_\+uniform\+\_\+initializer\+::he\+\_\+uniform\+\_\+initializer (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Constructor. 
+
+Definition at line 133 of file fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializers.\+hpp.
+
+
+\begin{DoxyCode}
+134     : \hyperlink{classlbann_1_1fan__in__fan__out__initializer_a3a3811af11b1a70a57af846ae2cdf668}{fan\_in\_fan\_out\_initializer}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}) \{\}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1he__uniform__initializer_a04aa97a63397eec43eba03f377704af3}\label{classlbann_1_1he__uniform__initializer_a04aa97a63397eec43eba03f377704af3}} 
+\index{lbann\+::he\+\_\+uniform\+\_\+initializer@{lbann\+::he\+\_\+uniform\+\_\+initializer}!````~he\+\_\+uniform\+\_\+initializer@{$\sim$he\+\_\+uniform\+\_\+initializer}}
+\index{````~he\+\_\+uniform\+\_\+initializer@{$\sim$he\+\_\+uniform\+\_\+initializer}!lbann\+::he\+\_\+uniform\+\_\+initializer@{lbann\+::he\+\_\+uniform\+\_\+initializer}}
+\subsubsection{\texorpdfstring{$\sim$he\+\_\+uniform\+\_\+initializer()}{~he\_uniform\_initializer()}}
+{\footnotesize\ttfamily lbann\+::he\+\_\+uniform\+\_\+initializer\+::$\sim$he\+\_\+uniform\+\_\+initializer (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [default]}}
+
+Destructor. 
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1he__uniform__initializer_a9860575b43f3d08831d00219bb07ec73}\label{classlbann_1_1he__uniform__initializer_a9860575b43f3d08831d00219bb07ec73}} 
+\index{lbann\+::he\+\_\+uniform\+\_\+initializer@{lbann\+::he\+\_\+uniform\+\_\+initializer}!copy@{copy}}
+\index{copy@{copy}!lbann\+::he\+\_\+uniform\+\_\+initializer@{lbann\+::he\+\_\+uniform\+\_\+initializer}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1he__uniform__initializer}{he\+\_\+uniform\+\_\+initializer}$\ast$ lbann\+::he\+\_\+uniform\+\_\+initializer\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Create a copy. 
+
+Implements \hyperlink{classlbann_1_1weights__initializer_acc84ce49188b74b23987cef3db18525a}{lbann\+::weights\+\_\+initializer}.
+
+
+
+Definition at line 139 of file fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializers.\+hpp.
+
+
+\begin{DoxyCode}
+139                                                 \{
+140     \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1he__uniform__initializer_a17bc65cd69fbce240c2050c228a2682c}{he\_uniform\_initializer}(*\textcolor{keyword}{this});
+141   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1he__uniform__initializer_a9860575b43f3d08831d00219bb07ec73_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1he__uniform__initializer_a8f86401b0b216ba159f57d3475769a24}\label{classlbann_1_1he__uniform__initializer_a8f86401b0b216ba159f57d3475769a24}} 
+\index{lbann\+::he\+\_\+uniform\+\_\+initializer@{lbann\+::he\+\_\+uniform\+\_\+initializer}!initialize\+\_\+entries@{initialize\+\_\+entries}}
+\index{initialize\+\_\+entries@{initialize\+\_\+entries}!lbann\+::he\+\_\+uniform\+\_\+initializer@{lbann\+::he\+\_\+uniform\+\_\+initializer}}
+\subsubsection{\texorpdfstring{initialize\+\_\+entries()}{initialize\_entries()}}
+{\footnotesize\ttfamily void lbann\+::he\+\_\+uniform\+\_\+initializer\+::initialize\+\_\+entries (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{weights\+\_\+matrix }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Initialize weights matrix entries. 
+
+Implements \hyperlink{classlbann_1_1weights__initializer_a2ad6acf904c0c7bc7406dbd9851107be}{lbann\+::weights\+\_\+initializer}.
+
+
+
+Definition at line 82 of file fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializers.\+cpp.
+
+
+\begin{DoxyCode}
+82                                                                                 \{
+83   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1fan__in__fan__out__initializer_aea6639db271d9050f0a2e4f8c8dfa6cd}{m\_fan\_in} <= 0 || \hyperlink{classlbann_1_1fan__in__fan__out__initializer_ac67d275ab8574780525d2af59b738338}{m\_fan\_out} <= 0) \{
+84     std::stringstream err;
+85     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+86         << \textcolor{stringliteral}{"invalid dimensions for He uniform initialization "}
+87         << \textcolor{stringliteral}{"(fan\_in="} << this->\hyperlink{classlbann_1_1fan__in__fan__out__initializer_aea6639db271d9050f0a2e4f8c8dfa6cd}{m\_fan\_in} << \textcolor{stringliteral}{",fan\_out="} << this->
+      \hyperlink{classlbann_1_1fan__in__fan__out__initializer_ac67d275ab8574780525d2af59b738338}{m\_fan\_out} << \textcolor{stringliteral}{")"};
+88     \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+89   \}
+90   \textcolor{keyword}{const} DataType variance = DataType(1) / \hyperlink{classlbann_1_1fan__in__fan__out__initializer_aea6639db271d9050f0a2e4f8c8dfa6cd}{m\_fan\_in};
+91   \hyperlink{namespacelbann_abd116f95f55d0e29d9a0cc386139c4b4}{gaussian\_fill}(weights\_matrix,
+92                 weights\_matrix.Height(),
+93                 weights\_matrix.Width(),
+94                 DataType(0),
+95                 std::sqrt(3*variance));
+96 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1he__uniform__initializer_a8f86401b0b216ba159f57d3475769a24_cgraph}
+\end{center}
+\end{figure}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/weights/\hyperlink{fan__in__fan__out__initializers_8hpp}{fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializers.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/weights/\hyperlink{fan__in__fan__out__initializers_8cpp}{fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializers.\+cpp}\end{DoxyCompactItemize}

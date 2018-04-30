@@ -1,0 +1,9 @@
+//-----------------------------------------------------------
+
+/** \page developer_guide Developer Guide
+
+This section of the guide is intended to help developers design new neural network models for
+training in the LBANN toolkit.  It is assumed that you've read the \ref getting_started sections, 
+and are familiar with basic compiling and running.
+
+*/

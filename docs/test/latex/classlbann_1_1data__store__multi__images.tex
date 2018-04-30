@@ -1,0 +1,514 @@
+\hypertarget{classlbann_1_1data__store__multi__images}{}\section{lbann\+:\+:data\+\_\+store\+\_\+multi\+\_\+images Class Reference}
+\label{classlbann_1_1data__store__multi__images}\index{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images@{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images}}
+
+
+{\ttfamily \#include $<$data\+\_\+store\+\_\+multi\+\_\+images.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:data\+\_\+store\+\_\+multi\+\_\+images\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=220pt]{classlbann_1_1data__store__multi__images__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:data\+\_\+store\+\_\+multi\+\_\+images\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__multi__images__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1data__store__multi__images_a1ad4fbec5c15f98422ebf7027f3a1d8a}{data\+\_\+store\+\_\+multi\+\_\+images} (\hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$reader, \hyperlink{classlbann_1_1model}{model} $\ast$m)
+\begin{DoxyCompactList}\small\item\em ctor \end{DoxyCompactList}\item 
+\hyperlink{classlbann_1_1data__store__multi__images_a2ef6b228164447918fb0ba831e091777}{data\+\_\+store\+\_\+multi\+\_\+images} (const \hyperlink{classlbann_1_1data__store__multi__images}{data\+\_\+store\+\_\+multi\+\_\+images} \&)=default
+\begin{DoxyCompactList}\small\item\em copy ctor \end{DoxyCompactList}\item 
+\hyperlink{classlbann_1_1data__store__multi__images}{data\+\_\+store\+\_\+multi\+\_\+images} \& \hyperlink{classlbann_1_1data__store__multi__images_a68962dc0416b572443953bea392439b1}{operator=} (const \hyperlink{classlbann_1_1data__store__multi__images}{data\+\_\+store\+\_\+multi\+\_\+images} \&)=default
+\begin{DoxyCompactList}\small\item\em operator= \end{DoxyCompactList}\item 
+\hyperlink{classlbann_1_1data__store__multi__images}{data\+\_\+store\+\_\+multi\+\_\+images} $\ast$ \hyperlink{classlbann_1_1data__store__multi__images_a1046efda9448bab9b42e9fcdf71e03f1}{copy} () const override
+\item 
+\hyperlink{classlbann_1_1data__store__multi__images_addafae542acaa1ef218759030719b6d3}{$\sim$data\+\_\+store\+\_\+multi\+\_\+images} () override
+\begin{DoxyCompactList}\small\item\em dtor \end{DoxyCompactList}\item 
+void \hyperlink{classlbann_1_1data__store__multi__images_a7b5e9ec7b7132872299a204d5d24ee62}{setup} () override
+\begin{DoxyCompactList}\small\item\em called by \hyperlink{classlbann_1_1generic__data__reader_a8b2a09d38512fc11f1b9d572c89100a7}{generic\+\_\+data\+\_\+reader\+::setup\+\_\+data\+\_\+store} \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{classlbann_1_1data__store__multi__images_a25963dfa7d6de983e7b250f8ef7e2a0e}{get\+\_\+file\+\_\+sizes} () override
+\begin{DoxyCompactList}\small\item\em fills in m\+\_\+file\+\_\+sizes \end{DoxyCompactList}\item 
+void \hyperlink{classlbann_1_1data__store__multi__images_a8ce8ccf3c7b0d19adfb838108bec075b}{read\+\_\+files} () override
+\begin{DoxyCompactList}\small\item\em reads all files assigned to this processor into memory (m\+\_\+data) \end{DoxyCompactList}\item 
+virtual std\+::vector$<$ std\+::string $>$ \hyperlink{classlbann_1_1data__store__multi__images_a39108690484fe407efafefe6a4b0947b}{get\+\_\+sample} (size\+\_\+t idx) const
+\item 
+void \hyperlink{classlbann_1_1data__store__multi__images_abe17bbf485f6da9d7dfa568e9e74a693}{extended\+\_\+testing} () override
+\begin{DoxyCompactList}\small\item\em for use during development and testing \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+todo 
+
+Definition at line 39 of file data\+\_\+store\+\_\+multi\+\_\+images.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1data__store__multi__images_a1ad4fbec5c15f98422ebf7027f3a1d8a}\label{classlbann_1_1data__store__multi__images_a1ad4fbec5c15f98422ebf7027f3a1d8a}} 
+\index{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images@{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images}!data\+\_\+store\+\_\+multi\+\_\+images@{data\+\_\+store\+\_\+multi\+\_\+images}}
+\index{data\+\_\+store\+\_\+multi\+\_\+images@{data\+\_\+store\+\_\+multi\+\_\+images}!lbann\+::data\+\_\+store\+\_\+multi\+\_\+images@{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images}}
+\subsubsection{\texorpdfstring{data\+\_\+store\+\_\+multi\+\_\+images()}{data\_store\_multi\_images()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::data\+\_\+store\+\_\+multi\+\_\+images\+::data\+\_\+store\+\_\+multi\+\_\+images (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$}]{reader,  }\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+ctor 
+
+
+
+Definition at line 43 of file data\+\_\+store\+\_\+multi\+\_\+images.\+hpp.
+
+
+\begin{DoxyCode}
+43                                                                  :
+44     \hyperlink{classlbann_1_1data__store__imagenet_a3040285850664ccecb4795df3c85fb8d}{data\_store\_imagenet}(reader, m) \{
+45     \hyperlink{classlbann_1_1generic__data__store_a853741295a07b5687921fc56d0d7d5b2}{set\_name}(\textcolor{stringliteral}{"data\_store\_multi\_images"});
+46   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__multi__images_a1ad4fbec5c15f98422ebf7027f3a1d8a_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__multi__images_a1ad4fbec5c15f98422ebf7027f3a1d8a_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__store__multi__images_a2ef6b228164447918fb0ba831e091777}\label{classlbann_1_1data__store__multi__images_a2ef6b228164447918fb0ba831e091777}} 
+\index{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images@{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images}!data\+\_\+store\+\_\+multi\+\_\+images@{data\+\_\+store\+\_\+multi\+\_\+images}}
+\index{data\+\_\+store\+\_\+multi\+\_\+images@{data\+\_\+store\+\_\+multi\+\_\+images}!lbann\+::data\+\_\+store\+\_\+multi\+\_\+images@{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images}}
+\subsubsection{\texorpdfstring{data\+\_\+store\+\_\+multi\+\_\+images()}{data\_store\_multi\_images()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::data\+\_\+store\+\_\+multi\+\_\+images\+::data\+\_\+store\+\_\+multi\+\_\+images (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1data__store__multi__images}{data\+\_\+store\+\_\+multi\+\_\+images} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+copy ctor 
+
+\mbox{\Hypertarget{classlbann_1_1data__store__multi__images_addafae542acaa1ef218759030719b6d3}\label{classlbann_1_1data__store__multi__images_addafae542acaa1ef218759030719b6d3}} 
+\index{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images@{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images}!````~data\+\_\+store\+\_\+multi\+\_\+images@{$\sim$data\+\_\+store\+\_\+multi\+\_\+images}}
+\index{````~data\+\_\+store\+\_\+multi\+\_\+images@{$\sim$data\+\_\+store\+\_\+multi\+\_\+images}!lbann\+::data\+\_\+store\+\_\+multi\+\_\+images@{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images}}
+\subsubsection{\texorpdfstring{$\sim$data\+\_\+store\+\_\+multi\+\_\+images()}{~data\_store\_multi\_images()}}
+{\footnotesize\ttfamily lbann\+::data\+\_\+store\+\_\+multi\+\_\+images\+::$\sim$data\+\_\+store\+\_\+multi\+\_\+images (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}}
+
+
+
+dtor 
+
+
+
+Definition at line 57 of file data\+\_\+store\+\_\+multi\+\_\+images.\+hpp.
+
+
+\begin{DoxyCode}
+57 \{\};
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__multi__images_addafae542acaa1ef218759030719b6d3_cgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1data__store__multi__images_a1046efda9448bab9b42e9fcdf71e03f1}\label{classlbann_1_1data__store__multi__images_a1046efda9448bab9b42e9fcdf71e03f1}} 
+\index{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images@{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images}!copy@{copy}}
+\index{copy@{copy}!lbann\+::data\+\_\+store\+\_\+multi\+\_\+images@{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1data__store__multi__images}{data\+\_\+store\+\_\+multi\+\_\+images}$\ast$ lbann\+::data\+\_\+store\+\_\+multi\+\_\+images\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1data__store__imagenet_ae3b0d31ac020c36f41766999288e2d25}{lbann\+::data\+\_\+store\+\_\+imagenet}.
+
+
+
+Reimplemented in \hyperlink{classlbann_1_1data__store__triplet_a446ee3b1fa3097e51bd0e198de960cd4}{lbann\+::data\+\_\+store\+\_\+triplet}.
+
+
+
+Definition at line 54 of file data\+\_\+store\+\_\+multi\+\_\+images.\+hpp.
+
+
+\begin{DoxyCode}
+54 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1data__store__multi__images_a1ad4fbec5c15f98422ebf7027f3a1d8a}{data\_store\_multi\_images}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__multi__images_a1046efda9448bab9b42e9fcdf71e03f1_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__store__multi__images_abe17bbf485f6da9d7dfa568e9e74a693}\label{classlbann_1_1data__store__multi__images_abe17bbf485f6da9d7dfa568e9e74a693}} 
+\index{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images@{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images}!extended\+\_\+testing@{extended\+\_\+testing}}
+\index{extended\+\_\+testing@{extended\+\_\+testing}!lbann\+::data\+\_\+store\+\_\+multi\+\_\+images@{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images}}
+\subsubsection{\texorpdfstring{extended\+\_\+testing()}{extended\_testing()}}
+{\footnotesize\ttfamily void lbann\+::data\+\_\+store\+\_\+multi\+\_\+images\+::extended\+\_\+testing (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+
+
+for use during development and testing 
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1generic__data__store_ae569426f71f9317e88fe1078d58c98e7}{lbann\+::generic\+\_\+data\+\_\+store}.
+
+
+
+Definition at line 154 of file data\+\_\+store\+\_\+multi\+\_\+images.\+cpp.
+
+
+\begin{DoxyCode}
+154                                                \{
+155   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__store_a143fd33ef3a53180bc62745e369c16f8}{m\_master}) std::cerr << \textcolor{stringliteral}{"STARTING data\_store\_multi\_images::extended\_testing()\(\backslash\)n"};
+156   std::stringstream err;
+157   std::vector<unsigned char> v;
+158   \textcolor{keywordflow}{for} (\textcolor{keyword}{auto} idx : \hyperlink{classlbann_1_1generic__data__store_a41f7fec1f1f3d6568a5765be7a6784eb}{m\_my\_minibatch\_indices\_v}) \{
+159     \textcolor{keywordtype}{int} base\_index = (*m\_shuffled\_indices)[idx];
+160     \textcolor{keyword}{const} std::vector<std::string> sample(\hyperlink{classlbann_1_1data__store__multi__images_a39108690484fe407efafefe6a4b0947b}{get\_sample}(base\_index));
+161     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} k=0; k<sample.size(); k++) \{
+162       \textcolor{keywordtype}{size\_t} index = base\_index*\hyperlink{classlbann_1_1data__store__image_a2f660053e7621a9cc70a7c4eef53c9cc}{m\_num\_img\_srcs} + k; 
+163 
+164       \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1data__store__image_a1903176a4b305fd42617ea1cb6d997ae}{m\_file\_sizes}.find(index) == \hyperlink{classlbann_1_1data__store__image_a1903176a4b305fd42617ea1cb6d997ae}{m\_file\_sizes}.end()) \{
+165         err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "} 
+166             << \textcolor{stringliteral}{" file length not found: "} << index;
+167         \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+168       \}
+169       \textcolor{keywordtype}{size\_t} file\_len = \hyperlink{classlbann_1_1data__store__image_a1903176a4b305fd42617ea1cb6d997ae}{m\_file\_sizes}[index];
+170 
+171       v.resize(file\_len);
+172       \hyperlink{classlbann_1_1data__store__image_a8a53bab58d75554821f90c38d14078aa}{load\_file}(\hyperlink{classlbann_1_1generic__data__store_ab479c127f00ce550c7433b90e40a5a3d}{m\_dir}, sample[k], v.data(), file\_len);
+173 
+174       \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1data__store__image_a627a08479de191dcef74e633c4cded8c}{m\_my\_minibatch\_data}.find(index) == 
+      \hyperlink{classlbann_1_1data__store__image_a627a08479de191dcef74e633c4cded8c}{m\_my\_minibatch\_data}.end()) \{
+175         err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "} 
+176             << \textcolor{stringliteral}{" m\_my\_minibatch\_data.find("} << index << \textcolor{stringliteral}{") failed."};
+177         \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+178       \}
+179       \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1data__store__image_a627a08479de191dcef74e633c4cded8c}{m\_my\_minibatch\_data}[index] != v) \{
+180         err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "} 
+181             << \textcolor{stringliteral}{" data\_store\_multi\_images::extended\_testing: "}
+182             << \textcolor{stringliteral}{" rank: "} << \hyperlink{classlbann_1_1generic__data__store_a87695bfd2d1ed0dbe01d99108e3f68b7}{m\_rank} << \textcolor{stringliteral}{" index: "} << index << \textcolor{stringliteral}{" FAILED!\(\backslash\)n"};
+183         \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+184       \}
+185     \}
+186   \}
+187   std::cerr << \textcolor{stringliteral}{"rank: "} << \hyperlink{classlbann_1_1generic__data__store_a87695bfd2d1ed0dbe01d99108e3f68b7}{m\_rank} << \textcolor{stringliteral}{" data\_store\_multi\_images::extended\_testing, PASSED!\(\backslash\)n"};
+188 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__multi__images_abe17bbf485f6da9d7dfa568e9e74a693_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__multi__images_abe17bbf485f6da9d7dfa568e9e74a693_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__store__multi__images_a25963dfa7d6de983e7b250f8ef7e2a0e}\label{classlbann_1_1data__store__multi__images_a25963dfa7d6de983e7b250f8ef7e2a0e}} 
+\index{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images@{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images}!get\+\_\+file\+\_\+sizes@{get\+\_\+file\+\_\+sizes}}
+\index{get\+\_\+file\+\_\+sizes@{get\+\_\+file\+\_\+sizes}!lbann\+::data\+\_\+store\+\_\+multi\+\_\+images@{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images}}
+\subsubsection{\texorpdfstring{get\+\_\+file\+\_\+sizes()}{get\_file\_sizes()}}
+{\footnotesize\ttfamily void lbann\+::data\+\_\+store\+\_\+multi\+\_\+images\+::get\+\_\+file\+\_\+sizes (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+
+
+fills in m\+\_\+file\+\_\+sizes 
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1data__store__imagenet_ae8f5d8741ddd762ffd3a477504bca619}{lbann\+::data\+\_\+store\+\_\+imagenet}.
+
+
+
+Definition at line 80 of file data\+\_\+store\+\_\+multi\+\_\+images.\+cpp.
+
+
+\begin{DoxyCode}
+80                                              \{
+81   std::vector<Triple> my\_file\_sizes(\hyperlink{classlbann_1_1generic__data__store_abd38f8d8aab0648959e09d011abfe20a}{m\_my\_datastore\_indices}.size()*
+      \hyperlink{classlbann_1_1data__store__image_a2f660053e7621a9cc70a7c4eef53c9cc}{m\_num\_img\_srcs});
+82   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__store_a143fd33ef3a53180bc62745e369c16f8}{m\_master}) std::cerr << \textcolor{stringliteral}{"STARTING "} << \hyperlink{classlbann_1_1generic__data__store_a53140adb8f7c2348986916a1abb85ffa}{get\_name}() << \textcolor{stringliteral}{"::get\_file\_sizes for "} << 
+      my\_file\_sizes.size() << \textcolor{stringliteral}{" files\(\backslash\)n"};
+83 
+84   \textcolor{keywordtype}{size\_t} cur\_offset = 0;
+85   std::unordered\_map<std::string, size\_t> names;
+86   \textcolor{keywordtype}{size\_t} jj = 0;
+87   \textcolor{keywordflow}{for} (\textcolor{keyword}{auto} base\_index : \hyperlink{classlbann_1_1generic__data__store_abd38f8d8aab0648959e09d011abfe20a}{m\_my\_datastore\_indices}) \{
+88     \textcolor{keyword}{const} std::vector<std::string> sample(\hyperlink{classlbann_1_1data__store__multi__images_a39108690484fe407efafefe6a4b0947b}{get\_sample}(base\_index));
+89     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} k=0; k<sample.size(); k++) \{
+90       \textcolor{keywordtype}{size\_t} index = base\_index*\hyperlink{classlbann_1_1data__store__image_a2f660053e7621a9cc70a7c4eef53c9cc}{m\_num\_img\_srcs} + k; 
+91       \textcolor{keywordtype}{size\_t} file\_len = 0;
+92       \textcolor{keywordflow}{if} (names.find(sample[k]) != names.end()) \{
+93         file\_len = names[sample[k]];
+94       \} \textcolor{keywordflow}{else} \{
+95         file\_len = \hyperlink{classlbann_1_1generic__data__store_a7641d15eba63426acf5071acb8026442}{get\_file\_size}(\hyperlink{classlbann_1_1generic__data__store_ab479c127f00ce550c7433b90e40a5a3d}{m\_dir}, sample[k]);
+96         names[sample[k]] = file\_len;
+97       \}
+98 
+99       my\_file\_sizes[jj].global\_index = index;
+100       my\_file\_sizes[jj].num\_bytes = file\_len;
+101       my\_file\_sizes[jj].offset = cur\_offset;
+102       my\_file\_sizes[jj].rank = \hyperlink{classlbann_1_1generic__data__store_a87695bfd2d1ed0dbe01d99108e3f68b7}{m\_rank};
+103       cur\_offset += my\_file\_sizes[jj].num\_bytes;
+104 
+105       \textcolor{keywordflow}{if} (my\_file\_sizes[jj].num\_bytes == 0) \{
+106         std::stringstream err;
+107         err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+108           << \textcolor{stringliteral}{" file size is 0"};
+109         \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+110       \}
+111       ++jj;
+112     \}
+113   \}
+114 
+115   \hyperlink{classlbann_1_1data__store__image_a477529f2ba3f86598bbd409d3c2b6901}{exchange\_file\_sizes}(my\_file\_sizes, \hyperlink{classlbann_1_1generic__data__store_a0dfa2ffa01845b84ca477fb3e14a36c6}{m\_num\_global\_indices}*
+      \hyperlink{classlbann_1_1data__store__image_a2f660053e7621a9cc70a7c4eef53c9cc}{m\_num\_img\_srcs});
+116 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__multi__images_a25963dfa7d6de983e7b250f8ef7e2a0e_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__multi__images_a25963dfa7d6de983e7b250f8ef7e2a0e_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__store__multi__images_a39108690484fe407efafefe6a4b0947b}\label{classlbann_1_1data__store__multi__images_a39108690484fe407efafefe6a4b0947b}} 
+\index{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images@{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images}!get\+\_\+sample@{get\+\_\+sample}}
+\index{get\+\_\+sample@{get\+\_\+sample}!lbann\+::data\+\_\+store\+\_\+multi\+\_\+images@{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images}}
+\subsubsection{\texorpdfstring{get\+\_\+sample()}{get\_sample()}}
+{\footnotesize\ttfamily std\+::vector$<$ std\+::string $>$ lbann\+::data\+\_\+store\+\_\+multi\+\_\+images\+::get\+\_\+sample (\begin{DoxyParamCaption}\item[{size\+\_\+t}]{idx }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented in \hyperlink{classlbann_1_1data__store__triplet_ade5d2290c85e7916e828553f4ab4f379}{lbann\+::data\+\_\+store\+\_\+triplet}.
+
+
+
+Definition at line 37 of file data\+\_\+store\+\_\+multi\+\_\+images.\+cpp.
+
+
+\begin{DoxyCode}
+37                                                                          \{
+38   \textcolor{keyword}{const} data\_reader\_multi\_images *reader = \textcolor{keyword}{dynamic\_cast<}data\_reader\_multi\_images*\textcolor{keyword}{>}(
+      \hyperlink{classlbann_1_1generic__data__store_afa49ced0ab64c632371ea52532a91ec2}{m\_reader});
+39   \hyperlink{classlbann_1_1data__reader__multi__images_a6cbb30001dd633b0d810c417cbbf441e}{data\_reader\_multi\_images::sample\_t} sample = reader->get\_sample(idx);
+40   \textcolor{keywordflow}{return} sample.first;
+41 \}   
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__multi__images_a39108690484fe407efafefe6a4b0947b_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__multi__images_a39108690484fe407efafefe6a4b0947b_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__store__multi__images_a68962dc0416b572443953bea392439b1}\label{classlbann_1_1data__store__multi__images_a68962dc0416b572443953bea392439b1}} 
+\index{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images@{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::data\+\_\+store\+\_\+multi\+\_\+images@{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1data__store__multi__images}{data\+\_\+store\+\_\+multi\+\_\+images}\& lbann\+::data\+\_\+store\+\_\+multi\+\_\+images\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1data__store__multi__images}{data\+\_\+store\+\_\+multi\+\_\+images} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+operator= 
+
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__multi__images_a68962dc0416b572443953bea392439b1_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__store__multi__images_a8ce8ccf3c7b0d19adfb838108bec075b}\label{classlbann_1_1data__store__multi__images_a8ce8ccf3c7b0d19adfb838108bec075b}} 
+\index{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images@{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images}!read\+\_\+files@{read\+\_\+files}}
+\index{read\+\_\+files@{read\+\_\+files}!lbann\+::data\+\_\+store\+\_\+multi\+\_\+images@{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images}}
+\subsubsection{\texorpdfstring{read\+\_\+files()}{read\_files()}}
+{\footnotesize\ttfamily void lbann\+::data\+\_\+store\+\_\+multi\+\_\+images\+::read\+\_\+files (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+
+
+reads all files assigned to this processor into memory (m\+\_\+data) 
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1data__store__imagenet_a70cfd8f529aad8d66993000da7350ec5}{lbann\+::data\+\_\+store\+\_\+imagenet}.
+
+
+
+Definition at line 118 of file data\+\_\+store\+\_\+multi\+\_\+images.\+cpp.
+
+
+\begin{DoxyCode}
+118                                          \{
+119   std::stringstream err;
+120   \textcolor{keywordflow}{for} (\textcolor{keyword}{auto} base\_index : \hyperlink{classlbann_1_1generic__data__store_abd38f8d8aab0648959e09d011abfe20a}{m\_my\_datastore\_indices}) \{
+121     \textcolor{keyword}{const} std::vector<std::string> sample(\hyperlink{classlbann_1_1data__store__multi__images_a39108690484fe407efafefe6a4b0947b}{get\_sample}(base\_index));
+122     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} k=0; k<sample.size(); k++) \{
+123       \textcolor{keywordtype}{size\_t} index = base\_index * \hyperlink{classlbann_1_1data__store__image_a2f660053e7621a9cc70a7c4eef53c9cc}{m\_num\_img\_srcs} + k;
+124 
+125       \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1data__store__image_ae5a9ba5fb1bf4d3147743012b8099038}{m\_offsets}.find(index) == \hyperlink{classlbann_1_1data__store__image_ae5a9ba5fb1bf4d3147743012b8099038}{m\_offsets}.end()) \{
+126         err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "} 
+127             << \textcolor{stringliteral}{" m\_offsets.find(index) failed for index: "} << index;
+128         \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+129       \}
+130       \textcolor{keywordtype}{size\_t} offset = \hyperlink{classlbann_1_1data__store__image_ae5a9ba5fb1bf4d3147743012b8099038}{m\_offsets}[index];
+131 
+132       \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1data__store__image_a1903176a4b305fd42617ea1cb6d997ae}{m\_file\_sizes}.find(index) == \hyperlink{classlbann_1_1data__store__image_a1903176a4b305fd42617ea1cb6d997ae}{m\_file\_sizes}.end()) \{
+133         err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "} 
+134             << \textcolor{stringliteral}{" m\_file\_sizes.find(index) failed for index: "} << index;
+135         \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+136       \}
+137       \textcolor{keywordtype}{size\_t} file\_len = \hyperlink{classlbann_1_1data__store__image_a1903176a4b305fd42617ea1cb6d997ae}{m\_file\_sizes}[index];
+138 
+139       \textcolor{keywordflow}{if} (offset + file\_len > \hyperlink{classlbann_1_1data__store__image_a10e9aa0c240785bc0a961f24e87a1c16}{m\_data}.size()) \{
+140         err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "} 
+141           << \textcolor{stringliteral}{" of "} << m\_my\_datastore\_indices.size() << \textcolor{stringliteral}{" offset: "} << offset
+142           << \textcolor{stringliteral}{" file\_len: "} << file\_len << \textcolor{stringliteral}{" offset+file\_len: "}
+143           << offset+file\_len << \textcolor{stringliteral}{" m\_data.size(): "} << \hyperlink{classlbann_1_1data__store__image_a10e9aa0c240785bc0a961f24e87a1c16}{m\_data}.size()
+144           << \textcolor{stringliteral}{"\(\backslash\)noffset+file\_len must be <= m\_data.size()"};
+145         \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+146       \}  
+147 
+148       \hyperlink{classlbann_1_1data__store__image_a8a53bab58d75554821f90c38d14078aa}{load\_file}(\hyperlink{classlbann_1_1generic__data__store_ab479c127f00ce550c7433b90e40a5a3d}{m\_dir}, sample[k], \hyperlink{classlbann_1_1data__store__image_a10e9aa0c240785bc0a961f24e87a1c16}{m\_data}.data()+offset, file\_len);
+149     \}
+150   \}
+151 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__multi__images_a8ce8ccf3c7b0d19adfb838108bec075b_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__multi__images_a8ce8ccf3c7b0d19adfb838108bec075b_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__store__multi__images_a7b5e9ec7b7132872299a204d5d24ee62}\label{classlbann_1_1data__store__multi__images_a7b5e9ec7b7132872299a204d5d24ee62}} 
+\index{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images@{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images}!setup@{setup}}
+\index{setup@{setup}!lbann\+::data\+\_\+store\+\_\+multi\+\_\+images@{lbann\+::data\+\_\+store\+\_\+multi\+\_\+images}}
+\subsubsection{\texorpdfstring{setup()}{setup()}}
+{\footnotesize\ttfamily void lbann\+::data\+\_\+store\+\_\+multi\+\_\+images\+::setup (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+called by \hyperlink{classlbann_1_1generic__data__reader_a8b2a09d38512fc11f1b9d572c89100a7}{generic\+\_\+data\+\_\+reader\+::setup\+\_\+data\+\_\+store} 
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1data__store__imagenet_a611aa1734a491c443396a077b49fe4fe}{lbann\+::data\+\_\+store\+\_\+imagenet}.
+
+
+
+Reimplemented in \hyperlink{classlbann_1_1data__store__triplet_aca66b9cf71d7ba2b9870e76c5b92b5e8}{lbann\+::data\+\_\+store\+\_\+triplet}.
+
+
+
+Definition at line 44 of file data\+\_\+store\+\_\+multi\+\_\+images.\+cpp.
+
+
+\begin{DoxyCode}
+44                                     \{
+45   \textcolor{keywordtype}{double} tm1 = \hyperlink{namespacelbann_a478d36031ff0659893c4322cd856157f}{get\_time}();
+46   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__store_a87695bfd2d1ed0dbe01d99108e3f68b7}{m\_rank} == 0) \{
+47     std::cerr << \textcolor{stringliteral}{"starting data\_store\_multi\_images::setup() for data reader with role: "} << 
+      \hyperlink{classlbann_1_1generic__data__store_afa49ced0ab64c632371ea52532a91ec2}{m\_reader}->\hyperlink{classlbann_1_1generic__data__reader_a92982e1b399f37e2ead5aa440883cba5}{get\_role}() << std::endl;
+48   \}
+49 
+50   \hyperlink{classlbann_1_1generic__data__store_a853741295a07b5687921fc56d0d7d5b2}{set\_name}(\textcolor{stringliteral}{"data\_store\_multi\_images"});
+51 
+52   \textcolor{comment}{//sanity check}
+53   data\_reader\_multi\_images *reader = \textcolor{keyword}{dynamic\_cast<}data\_reader\_multi\_images*\textcolor{keyword}{>}(
+      \hyperlink{classlbann_1_1generic__data__store_afa49ced0ab64c632371ea52532a91ec2}{m\_reader});
+54   \textcolor{keywordflow}{if} (reader == \textcolor{keyword}{nullptr}) \{
+55     std::stringstream err;
+56     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+57         << \textcolor{stringliteral}{"dynamic\_cast<data\_reader\_multi\_images*>(m\_reader) failed\(\backslash\)n"};
+58     \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+59   \}
+60 
+61   \hyperlink{classlbann_1_1data__store__image_a2f660053e7621a9cc70a7c4eef53c9cc}{m\_num\_img\_srcs} = reader->get\_num\_img\_srcs();
+62 
+63   \textcolor{comment}{//@todo needs to be designed and implemented!}
+64   \textcolor{keywordflow}{if} (! \hyperlink{classlbann_1_1generic__data__store_a1a9cc7b097cd7dd6ae0d12d52bb43ea1}{m\_in\_memory}) \{
+65     std::stringstream err;
+66     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+67         << \textcolor{stringliteral}{"not yet implemented"};
+68     \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+69   \} 
+70   
+71   \textcolor{keywordflow}{else} \{
+72     \hyperlink{classlbann_1_1data__store__imagenet_a611aa1734a491c443396a077b49fe4fe}{data\_store\_imagenet::setup}();
+73 
+74     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__data__store_a87695bfd2d1ed0dbe01d99108e3f68b7}{m\_rank} == 0) \{
+75       std::cerr << \textcolor{stringliteral}{"data\_store\_multi\_images setup time: "} << \hyperlink{namespacelbann_a478d36031ff0659893c4322cd856157f}{get\_time}() - tm1 << std::endl;
+76     \}
+77   \}
+78 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__multi__images_a7b5e9ec7b7132872299a204d5d24ee62_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__store__multi__images_a7b5e9ec7b7132872299a204d5d24ee62_icgraph}
+\end{center}
+\end{figure}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/data\+\_\+store/\hyperlink{data__store__multi__images_8hpp}{data\+\_\+store\+\_\+multi\+\_\+images.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/data\+\_\+store/\hyperlink{data__store__multi__images_8cpp}{data\+\_\+store\+\_\+multi\+\_\+images.\+cpp}\end{DoxyCompactItemize}

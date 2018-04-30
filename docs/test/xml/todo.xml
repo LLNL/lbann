@@ -1,0 +1,63 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="todo" kind="page">
+    <compoundname>todo</compoundname>
+    <title>Todo List</title>
+    <detaileddescription>
+<para><variablelist>
+<varlistentry><term><anchor id="todo_1_todo000015"/>Member <ref refid="base_8hpp_1adeeaddd10bd31df0cae7cb0fcae45d5c" kindref="member">_to_string</ref>  (execution_mode m)</term></varlistentry>
+<listitem><para>this should be an lbann_exception but then the class has to move to resolve dependencies  </para></listitem>
+<varlistentry><term><anchor id="todo_1_todo000016"/>Member <ref refid="namespacelbann_1_1Al_1acac3d42323b313e89a60a27f00554661" kindref="member">lbann::Al::nccl_backend</ref>  </term></varlistentry>
+<listitem><para>MPI-CUDA backend  </para></listitem>
+<varlistentry><term><anchor id="todo_1_todo000008"/>Member <ref refid="namespacelbann_1a085b697db535c10a6fd6689cc4445bd4" kindref="member">lbann::columnwise_mean_and_stdev</ref>  (const AbsDistMat &amp;data, AbsDistMat &amp;means, AbsDistMat &amp;stdevs)</term></varlistentry>
+<listitem><para>Numerically stable implementation  </para></listitem>
+<varlistentry><term><anchor id="todo_1_todo000007"/>Member <ref refid="namespacelbann_1ab043d2f2f9dea0ee861aff3a38216b24" kindref="member">lbann::columnwise_sums_and_sqsums</ref>  (const AbsDistMat &amp;data, AbsDistMat &amp;sums, AbsDistMat &amp;sqsums)</term></varlistentry>
+<listitem><para>Numerically stable implementation  </para></listitem>
+<varlistentry><term><anchor id="todo_1_todo000019"/>Member <ref refid="classlbann_1_1generic__data__reader_1a06fb58d1c0b84b8c76f5b4d160751f34" kindref="member">lbann::generic_data_reader::get_num_iterations_per_epoch</ref>  () const</term></varlistentry>
+<listitem><para>BVE FIXME merge this with alternate approach  </para></listitem>
+<varlistentry><term><anchor id="todo_1_todo000018"/>Member <ref refid="classlbann_1_1generic__data__reader_1a91573d9599b503a6bdf2939e69659e8b" kindref="member">lbann::generic_data_reader::set_num_iterations_per_epoch</ref>  (int num_iterations_per_epoch)</term></varlistentry>
+<listitem><para>BVE FIXME merge this with alternate approach  </para></listitem>
+<varlistentry><term><anchor id="todo_1_todo000020"/>Member <ref refid="classlbann_1_1generic__input__layer_1ad0b8ea79bc508bd227e08124359531c8" kindref="member">lbann::generic_input_layer::fp_setup_data</ref>  (int mini_batch_size) override</term></varlistentry>
+<listitem><para>This functionality should probably be moved elsewhere  </para></listitem>
+<varlistentry><term><anchor id="todo_1_todo000023"/>Member <ref refid="classlbann_1_1generic__target__layer_1a57a60f5a28c9fb78d5151801123d4dba" kindref="member">lbann::generic_target_layer::fp_compute</ref>  () override</term></varlistentry>
+<listitem><para>should this distribute the entire matrix even if there is only a partial mini-batch  </para></listitem>
+<varlistentry><term><anchor id="todo_1_todo000025"/>Member <ref refid="classlbann_1_1generic__target__layer_1a2d9f6ac689171acf0caceed3ed4f7ef9" kindref="member">lbann::generic_target_layer::loadFromCheckpoint</ref>  (int fd, const char *filename, size_t *bytes) override</term></varlistentry>
+<listitem><para>should probably save m_shared_data_reader  </para></listitem>
+<varlistentry><term><anchor id="todo_1_todo000022"/>Member <ref refid="classlbann_1_1generic__target__layer_1a7c15e3fe4f1fd7f0ccdbc4c3ed8c793e" kindref="member">lbann::generic_target_layer::operator=</ref>  (const <ref refid="classlbann_1_1generic__target__layer" kindref="compound">generic_target_layer</ref> &amp;other)</term></varlistentry>
+<listitem><para>Should this be a shallow copy?  </para></listitem>
+<varlistentry><term><anchor id="todo_1_todo000024"/>Member <ref refid="classlbann_1_1generic__target__layer_1aff8b79ff0392bd78c44a5a4f6b6ef549" kindref="member">lbann::generic_target_layer::saveToCheckpoint</ref>  (int fd, const char *filename, size_t *bytes) const override</term></varlistentry>
+<listitem><para>should probably save m_shared_data_reader  </para></listitem>
+<varlistentry><term><anchor id="todo_1_todo000031"/>Member <ref refid="namespacelbann_1a8987701a637ff0e678114aa77e9c4d40" kindref="member">lbann::init_data_seq_random</ref>  (int seed)</term></varlistentry>
+<listitem><para>Support saving/restoring the generator&apos;s state. This is directly supported via the &gt;&gt; and &lt;&lt; operators on the generator (reading/writing from/to a stream).  </para></listitem>
+<varlistentry><term><anchor id="todo_1_todo000030"/>Member <ref refid="namespacelbann_1acef152f20e422b3aea1a3c1691a533ac" kindref="member">lbann::init_random</ref>  (int seed, <ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref> *comm)</term></varlistentry>
+<listitem><para>Support saving/restoring the generator&apos;s state. This is directly supported via the &gt;&gt; and &lt;&lt; operators on the generator (reading/writing from/to a stream).  </para></listitem>
+<varlistentry><term><anchor id="todo_1_todo000021"/>Member <ref refid="classlbann_1_1input__layer_1aad8b042899d86f5b7904d9d2653b5181" kindref="member">lbann::input_layer&lt; T_io_buffer, T_layout &gt;::input_layer</ref>  (<ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref> *comm, int num_parallel_readers, std::map&lt; execution_mode, generic_data_reader *&gt; data_readers, bool data_set_spans_models=true, bool for_regression=false)</term></varlistentry>
+<listitem><para>make the map and vector references  </para></listitem>
+<varlistentry><term><anchor id="todo_1_todo000001"/>Member <ref refid="classlbann_1_1lbann__callback__debug__io_1aa3d2a6fb4d7375c05ece0058224ea792" kindref="member">lbann::lbann_callback_debug_io::on_epoch_begin</ref>  (model *m) override</term></varlistentry>
+<listitem><para>The use of execution_mode invalid needs to be reconsidered  </para></listitem>
+<varlistentry><term><anchor id="todo_1_todo000002"/>Member <ref refid="classlbann_1_1lbann__callback__ltfb_1a7548166d170eda00e4e0cba6626a1a78" kindref="member">lbann::lbann_callback_ltfb::setup</ref>  (model *m) override</term></varlistentry>
+<listitem><para>Support LTFB with different models  </para></listitem>
+<varlistentry><term><anchor id="todo_1_todo000029"/>Member <ref refid="classlbann_1_1lbann__quantizer_1a22b898932caed41ccf24abcb67c00ba1" kindref="member">lbann::lbann_quantizer::get_adaptive_quantization_copy_threads</ref>  (El::Int width)</term></varlistentry>
+<listitem><para>Make this configurable at compile time.  </para></listitem>
+<varlistentry><term><anchor id="todo_1_todo000028"/>Member <ref refid="classlbann_1_1lbann__quantizer_1aaa0c20f755437130172c40ca8e95bc3f" kindref="member">lbann::lbann_quantizer::get_adaptive_quantization_threads</ref>  (El::Int width)</term></varlistentry>
+<listitem><para>Make this configurable at compile time.  </para></listitem>
+<varlistentry><term><anchor id="todo_1_todo000026"/>Member <ref refid="classlbann_1_1model_1ad0cdcba177434b52dc9c4a97be183a92" kindref="member">lbann::model::get_cur_step</ref>  () const</term></varlistentry>
+<listitem><para>This should be renamed to get_cur_training step and replaced with one that returns the current based on execution mode  </para></listitem>
+<varlistentry><term><anchor id="todo_1_todo000004"/>Member <ref refid="namespacelbann_1_1proto_1a00597c8b7450c389847980cf6934a619" kindref="member">lbann::proto::construct_callback</ref>  (<ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref> *comm, const lbann_data::Callback &amp;proto_cb, std::map&lt; execution_mode, generic_data_reader *&gt; &amp;data_readers, std::vector&lt; Layer *&gt; layer_list, std::vector&lt; weights *&gt; weights_list, <ref refid="classlbann_1_1lbann__summary" kindref="compound">lbann_summary</ref> *summarizer)</term></varlistentry>
+<listitem><para></para><para>Initialize weights </para><para>Initialize weights </para><para>Initialize weights  </para></listitem>
+<varlistentry><term><anchor id="todo_1_todo000006"/>Member <ref refid="namespacelbann_1_1proto_1a7e4b0a66836712b1713ae4a121453cde" kindref="member">lbann::proto::construct_layer</ref>  (<ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref> *comm, std::map&lt; execution_mode, generic_data_reader *&gt; &amp;data_readers, int num_parallel_readers, <ref refid="classlbann_1_1cudnn_1_1cudnn__manager" kindref="compound">cudnn::cudnn_manager</ref> *cudnn, const lbann_data::Layer &amp;proto_layer)</term></varlistentry>
+<listitem><para>Support for GPU model-parallel layers  </para></listitem>
+<varlistentry><term><anchor id="todo_1_todo000010"/>Member <ref refid="namespacelbann_1a9b1fd2f864f421aa0bd9f8582ad87c14" kindref="member">lbann::rowwise_mean_and_stdev</ref>  (const AbsDistMat &amp;data, AbsDistMat &amp;means, AbsDistMat &amp;stdevs)</term></varlistentry>
+<listitem><para>Numerically stable implementation  </para></listitem>
+<varlistentry><term><anchor id="todo_1_todo000009"/>Member <ref refid="namespacelbann_1a6b342b3e5b3fbb08b97b6d90aa68d121" kindref="member">lbann::rowwise_sums_and_sqsums</ref>  (const AbsDistMat &amp;data, AbsDistMat &amp;sums, AbsDistMat &amp;sqsums)</term></varlistentry>
+<listitem><para>Numerically stable implementation  </para></listitem>
+<varlistentry><term><anchor id="todo_1_todo000027"/>Member <ref refid="classlbann_1_1sequential__model_1aa405c653dae867e862475e13b9df1db0" kindref="member">lbann::sequential_model::load_from_checkpoint</ref>  (int fd, const char *filename, size_t *bytes)</term></varlistentry>
+<listitem><para>This is old and likely broken  </para></listitem>
+<varlistentry><term><anchor id="todo_1_todo000003"/>Member <ref refid="classlbann_1_1siamese__model_1a7ff41cffb060500605124959f1a2a6cf" kindref="member">lbann::siamese_model::setup_layer_topology</ref>  () override</term></varlistentry>
+<listitem><para>Handle case where heads have already been initialized.  </para></listitem>
+<varlistentry><term><anchor id="todo_1_todo000011"/>Member <ref refid="classlbann_1_1weights_1a1a2631987f38d32a90fbee61053a04cc" kindref="member">lbann::weights::write_proto</ref>  (lbann_data::WeightsData *proto) const</term></varlistentry>
+<listitem><para>What if weights are on GPU? </para><para>What if world master is not process 0? </para><para>OpenMP parallelization </para><para>Our matrices are column-major while Numpy expects row-major matrices. This row-wise iteration is fine for matrices and column vectors, but it can mess up the order of the weights if a high-dimensional tensor is represented as a matrix. This is what we need for quantization on convolution kernel weights. </para></listitem>
+</variablelist>
+</para>    </detaileddescription>
+  </compounddef>
+</doxygen>

@@ -1,0 +1,18 @@
+<map id="lbann::generic_data_reader::save_to_checkpoint_shared" name="lbann::generic_data_reader::save_to_checkpoint_shared">
+<area shape="rect" id="node2" href="$classlbann_1_1generic__data__reader.html#ab5321bd7c6e83845785753366e6d9e64" title="Allow the reader to know where it is in the model hierarchy. " alt="" coords="246,256,384,294"/>
+<area shape="rect" id="node3" href="$classlbann_1_1lbann__callback__debug__io.html#a528f4aea5f657f40b27c58a164d4095a" title="lbann::lbann_callback\l_debug_io::print_phase_start" alt="" coords="432,98,626,137"/>
+<area shape="rect" id="node8" href="$classlbann_1_1generic__data__reader.html#a1d10dec5713fbe60e61b4dc400227ade" title="lbann::generic_data\l_reader::update" alt="" coords="460,256,599,294"/>
+<area shape="rect" id="node16" href="$classlbann_1_1imagenet__reader__single.html#a77c576d6085d4a8674322275dd9bd133" title="lbann::imagenet_reader\l_single::fetch_datum" alt="" coords="448,349,610,388"/>
+<area shape="rect" id="node4" href="$classlbann_1_1lbann__callback__debug__io.html#a91fb292d9dff96dbf72ecc16855c4092" title="lbann::lbann_callback\l_debug_io::copy" alt="" coords="951,68,1100,106"/>
+<area shape="rect" id="node5" href="$classlbann_1_1lbann__callback__debug__io.html#aa3d2a6fb4d7375c05ece0058224ea792" title="BVE FIXME. " alt="" coords="684,36,874,74"/>
+<area shape="rect" id="node6" href="$classlbann_1_1lbann__callback__debug__io.html#ac26d9c113c1345cc1d6390141e1a894b" title="lbann::lbann_callback\l_debug_io::on_validation_begin" alt="" coords="674,98,884,137"/>
+<area shape="rect" id="node7" href="$classlbann_1_1lbann__callback__debug__io.html#a469dfa4eece0a707a2d56f4c67aea9b7" title="lbann::lbann_callback\l_debug_io::on_test_begin" alt="" coords="692,161,867,200"/>
+<area shape="rect" id="node9" href="$classlbann_1_1generic__data__reader.html#a8cf298061c73f55e2fe717acd2a9f178" title="lbann::generic_data\l_reader::save_image" alt="" coords="706,224,853,262"/>
+<area shape="rect" id="node15" href="$classlbann_1_1update__data__reader__functor.html#af7bb363237370dd7b84364fea740bcdf" title="lbann::update_data\l_reader_functor::operator()" alt="" coords="689,286,870,325"/>
+<area shape="rect" id="node10" href="$classlbann_1_1lbann__callback__save__images.html#ab84c4d511a4614ca90644d12dc77edee" title="lbann::lbann_callback\l_save_images::save_image" alt="" coords="932,224,1119,262"/>
+<area shape="rect" id="node11" href="$classlbann_1_1lbann__callback__save__images.html#aa540916eef9b95db68889a8a7426779c" title="lbann::lbann_callback\l_save_images::on_epoch_end" alt="" coords="1167,161,1370,200"/>
+<area shape="rect" id="node13" href="$classlbann_1_1lbann__callback__save__images.html#a4591438de0b52467988e2bd34b55c0dd" title="lbann::lbann_callback\l_save_images::on_phase_end" alt="" coords="1167,224,1370,262"/>
+<area shape="rect" id="node14" href="$classlbann_1_1lbann__callback__save__images.html#a44d0f0113133d6fd8944d8b7702ea786" title="lbann::lbann_callback\l_save_images::on_test_end" alt="" coords="1174,286,1362,325"/>
+<area shape="rect" id="node12" href="$classlbann_1_1lbann__callback__save__images.html#a6abba6b6a94080c09f52f1aac8773461" title="lbann::lbann_callback\l_save_images::copy" alt="" coords="1418,224,1567,262"/>
+<area shape="rect" id="node17" href="$classlbann_1_1imagenet__reader__single.html#aecd9cec6777e4a7485daa5b0396afee0" title="lbann::imagenet_reader\l_single::get_type" alt="" coords="698,349,860,388"/>
+</map>

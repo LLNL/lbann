@@ -1,0 +1,41 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="namespacelbann_1_1Al" kind="namespace" language="C++">
+    <compoundname>lbann::Al</compoundname>
+    <innerclass refid="classlbann_1_1Al_1_1dummy__backend" prot="public">lbann::Al::dummy_backend</innerclass>
+    <innerclass refid="structlbann_1_1Al_1_1request" prot="public">lbann::Al::request</innerclass>
+      <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="namespacelbann_1_1Al_1a8a69c2fac7e1117883fff1903c2232ce" prot="public" static="no">
+        <type><ref refid="classlbann_1_1Al_1_1dummy__backend" kindref="compound">lbann::Al::dummy_backend</ref></type>
+        <definition>using lbann::Al::mpi_backend = typedef lbann::Al::dummy_backend</definition>
+        <argsstring></argsstring>
+        <name>mpi_backend</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/comm.hpp" line="61" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/comm.hpp" bodystart="61" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="namespacelbann_1_1Al_1acac3d42323b313e89a60a27f00554661" prot="public" static="no">
+        <type><ref refid="classlbann_1_1Al_1_1dummy__backend" kindref="compound">lbann::Al::dummy_backend</ref></type>
+        <definition>using lbann::Al::nccl_backend = typedef lbann::Al::dummy_backend</definition>
+        <argsstring></argsstring>
+        <name>nccl_backend</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="todo_1_todo000016"><xreftitle>Todo</xreftitle><xrefdescription><para>MPI-CUDA backend </para></xrefdescription></xrefsect></para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/comm.hpp" line="67" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/comm.hpp" bodystart="67" bodyend="-1"/>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/comm.hpp" line="48" column="1"/>
+  </compounddef>
+</doxygen>

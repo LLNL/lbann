@@ -1,0 +1,50 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1CUtility" kind="class" language="C++" prot="public">
+    <compoundname>lbann::CUtility</compoundname>
+    <includes refid="base_8hpp" local="no">base.hpp</includes>
+      <sectiondef kind="public-static-func">
+      <memberdef kind="function" id="classlbann_1_1CUtility_1a70867a001ddcc7c71ab62a334ff89eca" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void lbann::CUtility::convolveMat</definition>
+        <argsstring>(StarMat *Kernels, BlockMat &amp;InputMat, BlockMat &amp;OutputMat, uint InputWidth, uint InputHeight)</argsstring>
+        <name>convolveMat</name>
+        <param>
+          <type><ref refid="base_8hpp_1aba08580d21767b53d0737e115d738dbe" kindref="member">StarMat</ref> *</type>
+          <declname>Kernels</declname>
+        </param>
+        <param>
+          <type><ref refid="base_8hpp_1a4bb44b4dc43ffb6dc862bca1b4cef243" kindref="member">BlockMat</ref> &amp;</type>
+          <declname>InputMat</declname>
+        </param>
+        <param>
+          <type><ref refid="base_8hpp_1a4bb44b4dc43ffb6dc862bca1b4cef243" kindref="member">BlockMat</ref> &amp;</type>
+          <declname>OutputMat</declname>
+        </param>
+        <param>
+          <type>uint</type>
+          <declname>InputWidth</declname>
+        </param>
+        <param>
+          <type>uint</type>
+          <declname>InputHeight</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/base.hpp" line="132" column="1"/>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/base.hpp" line="130" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/base.hpp" bodystart="130" bodyend="134"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1CUtility_1a70867a001ddcc7c71ab62a334ff89eca" prot="public" virt="non-virtual"><scope>lbann::CUtility</scope><name>convolveMat</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

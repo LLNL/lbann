@@ -1,0 +1,6 @@
+<map id="lbann::data_reader_merge_samples::get_num_samples_psum" name="lbann::data_reader_merge_samples::get_num_samples_psum">
+<area shape="rect" id="node2" href="$classlbann_1_1data__reader__merge__samples.html#a589d6997ad093721e8c2c2cb3197c9e2" title="sets up a data_store. " alt="" coords="225,5,389,57"/>
+<area shape="rect" id="node3" href="$classlbann_1_1data__reader__merge__samples.html#a413a54d7ccac03bfacdf63cf871fd378" title="lbann::data_reader\l_merge_samples::fetch_datum" alt="" coords="205,81,409,120"/>
+<area shape="rect" id="node4" href="$classlbann_1_1data__reader__merge__samples.html#a93ce622e95e7ea0438bc78bdda8df44f" title="lbann::data_reader\l_merge_samples::fetch_label" alt="" coords="210,144,405,183"/>
+<area shape="rect" id="node5" href="$classlbann_1_1data__reader__merge__samples.html#ab39ad6b6e106eb30f58f9eabaf3352ad" title="lbann::data_reader\l_merge_samples::fetch\l_response" alt="" coords="227,207,387,259"/>
+</map>

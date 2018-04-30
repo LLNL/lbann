@@ -1,0 +1,221 @@
+\hypertarget{classlbann_1_1lbann__callback__dump__gradients}{}\section{lbann\+:\+:lbann\+\_\+callback\+\_\+dump\+\_\+gradients Class Reference}
+\label{classlbann_1_1lbann__callback__dump__gradients}\index{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients}}
+
+
+{\ttfamily \#include $<$callback\+\_\+dump\+\_\+gradients.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+dump\+\_\+gradients\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=192pt]{classlbann_1_1lbann__callback__dump__gradients__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+dump\+\_\+gradients\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=207pt]{classlbann_1_1lbann__callback__dump__gradients__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1lbann__callback__dump__gradients_a321a8f673578f3a0535b9f8e27e3517a}{lbann\+\_\+callback\+\_\+dump\+\_\+gradients} (std\+::string basename, int batch\+\_\+interval=1)
+\item 
+\hyperlink{classlbann_1_1lbann__callback__dump__gradients_a71dd307db6a16c35a336ee57a5cab656}{lbann\+\_\+callback\+\_\+dump\+\_\+gradients} (const \hyperlink{classlbann_1_1lbann__callback__dump__gradients}{lbann\+\_\+callback\+\_\+dump\+\_\+gradients} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__dump__gradients}{lbann\+\_\+callback\+\_\+dump\+\_\+gradients} \& \hyperlink{classlbann_1_1lbann__callback__dump__gradients_a31986866a3865159eb1680e5affba1f1}{operator=} (const \hyperlink{classlbann_1_1lbann__callback__dump__gradients}{lbann\+\_\+callback\+\_\+dump\+\_\+gradients} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__dump__gradients}{lbann\+\_\+callback\+\_\+dump\+\_\+gradients} $\ast$ \hyperlink{classlbann_1_1lbann__callback__dump__gradients_a16b659f1d7e313c02a840be5173ebb38}{copy} () const override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__dump__gradients_a2485599f66842eda62c8bc8d4d44ef02}{on\+\_\+backward\+\_\+prop\+\_\+end} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\item 
+std\+::string \hyperlink{classlbann_1_1lbann__callback__dump__gradients_ae66a46b4835233c0a08c1fcc2fc9710d}{name} () const override
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+std\+::string \hyperlink{classlbann_1_1lbann__callback__dump__gradients_a5c8236660ca8b1cb61dddcd1264821ca}{m\+\_\+basename}
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+Dump gradient matrices to files. This will dump each hidden layer\textquotesingle{}s gradient matrix after each minibatch. The matrices are written to files using Elemental\textquotesingle{}s simple A\+S\+C\+II format. This is not meant for checkpointing, but for exporting gradient matrices for analysis that isn\textquotesingle{}t easily done in L\+B\+A\+NN. Note this dumps matrices during each mini-\/batch. This will be slow and produce a lot of output. 
+
+Definition at line 47 of file callback\+\_\+dump\+\_\+gradients.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__dump__gradients_a321a8f673578f3a0535b9f8e27e3517a}\label{classlbann_1_1lbann__callback__dump__gradients_a321a8f673578f3a0535b9f8e27e3517a}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients}!lbann\+\_\+callback\+\_\+dump\+\_\+gradients@{lbann\+\_\+callback\+\_\+dump\+\_\+gradients}}
+\index{lbann\+\_\+callback\+\_\+dump\+\_\+gradients@{lbann\+\_\+callback\+\_\+dump\+\_\+gradients}!lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+dump\+\_\+gradients()}{lbann\_callback\_dump\_gradients()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients (\begin{DoxyParamCaption}\item[{std\+::string}]{basename,  }\item[{int}]{batch\+\_\+interval = {\ttfamily 1} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+\begin{DoxyParams}{Parameters}
+{\em basename} & The basename for writing files. \\
+\hline
+\end{DoxyParams}
+
+
+Definition at line 54 of file callback\+\_\+dump\+\_\+gradients.\+hpp.
+
+
+\begin{DoxyCode}
+54                                                                             :
+55     \hyperlink{classlbann_1_1lbann__callback_a679057298a41ddd47f08c157f756c584}{lbann\_callback}(batch\_interval), \hyperlink{classlbann_1_1lbann__callback__dump__gradients_a5c8236660ca8b1cb61dddcd1264821ca}{m\_basename}(std::move(basename)) \{\}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__dump__gradients_a321a8f673578f3a0535b9f8e27e3517a_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__dump__gradients_a321a8f673578f3a0535b9f8e27e3517a_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__dump__gradients_a71dd307db6a16c35a336ee57a5cab656}\label{classlbann_1_1lbann__callback__dump__gradients_a71dd307db6a16c35a336ee57a5cab656}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients}!lbann\+\_\+callback\+\_\+dump\+\_\+gradients@{lbann\+\_\+callback\+\_\+dump\+\_\+gradients}}
+\index{lbann\+\_\+callback\+\_\+dump\+\_\+gradients@{lbann\+\_\+callback\+\_\+dump\+\_\+gradients}!lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+dump\+\_\+gradients()}{lbann\_callback\_dump\_gradients()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__dump__gradients}{lbann\+\_\+callback\+\_\+dump\+\_\+gradients} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__dump__gradients_a16b659f1d7e313c02a840be5173ebb38}\label{classlbann_1_1lbann__callback__dump__gradients_a16b659f1d7e313c02a840be5173ebb38}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients}!copy@{copy}}
+\index{copy@{copy}!lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__dump__gradients}{lbann\+\_\+callback\+\_\+dump\+\_\+gradients}$\ast$ lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a9f545d1269a8c7af335625d049691f26}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 60 of file callback\+\_\+dump\+\_\+gradients.\+hpp.
+
+
+\begin{DoxyCode}
+60                                                        \{
+61     \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1lbann__callback__dump__gradients_a321a8f673578f3a0535b9f8e27e3517a}{lbann\_callback\_dump\_gradients}(*\textcolor{keyword}{this});
+62   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__dump__gradients_a16b659f1d7e313c02a840be5173ebb38_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__dump__gradients_ae66a46b4835233c0a08c1fcc2fc9710d}\label{classlbann_1_1lbann__callback__dump__gradients_ae66a46b4835233c0a08c1fcc2fc9710d}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients}!name@{name}}
+\index{name@{name}!lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients}}
+\subsubsection{\texorpdfstring{name()}{name()}}
+{\footnotesize\ttfamily std\+::string lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients\+::name (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Return this callback\textquotesingle{}s name. 
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a7522c7a14f1d6a1ea762cc2d7248eb3a}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 64 of file callback\+\_\+dump\+\_\+gradients.\+hpp.
+
+
+\begin{DoxyCode}
+64 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"dump gradients"}; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__dump__gradients_a2485599f66842eda62c8bc8d4d44ef02}\label{classlbann_1_1lbann__callback__dump__gradients_a2485599f66842eda62c8bc8d4d44ef02}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients}!on\+\_\+backward\+\_\+prop\+\_\+end@{on\+\_\+backward\+\_\+prop\+\_\+end}}
+\index{on\+\_\+backward\+\_\+prop\+\_\+end@{on\+\_\+backward\+\_\+prop\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients}}
+\subsubsection{\texorpdfstring{on\+\_\+backward\+\_\+prop\+\_\+end()}{on\_backward\_prop\_end()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients\+::on\+\_\+backward\+\_\+prop\+\_\+end (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Called when a model ends backward propagation. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_af183624e63ba65e0003fa988f53dee0c}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 34 of file callback\+\_\+dump\+\_\+gradients.\+cpp.
+
+
+\begin{DoxyCode}
+34                                                                  \{
+35   \textcolor{keywordflow}{for} (weights *w : m->get\_weights()) \{
+36     optimizer *opt = w->get\_optimizer();
+37     \textcolor{keywordflow}{if} (opt != \textcolor{keyword}{nullptr}) \{
+38       \textcolor{keyword}{const} std::string file
+39         = (\hyperlink{classlbann_1_1lbann__callback__dump__gradients_a5c8236660ca8b1cb61dddcd1264821ca}{m\_basename}
+40            + \textcolor{stringliteral}{"model"} + std::to\_string(m->get\_comm()->get\_model\_rank())
+41            + \textcolor{stringliteral}{"-epoch"} + std::to\_string(m->get\_cur\_epoch())
+42            + \textcolor{stringliteral}{"-step"} + std::to\_string(m->get\_cur\_step())
+43            + \textcolor{stringliteral}{"-"} + w->get\_name()
+44            + \textcolor{stringliteral}{"-Gradient"});
+45       El::Write(opt->get\_gradient(), file, El::ASCII);
+46     \}
+47   \}
+48 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__dump__gradients_a2485599f66842eda62c8bc8d4d44ef02_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__dump__gradients_a2485599f66842eda62c8bc8d4d44ef02_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__dump__gradients_a31986866a3865159eb1680e5affba1f1}\label{classlbann_1_1lbann__callback__dump__gradients_a31986866a3865159eb1680e5affba1f1}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__dump__gradients}{lbann\+\_\+callback\+\_\+dump\+\_\+gradients}\& lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__dump__gradients}{lbann\+\_\+callback\+\_\+dump\+\_\+gradients} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__dump__gradients_a31986866a3865159eb1680e5affba1f1_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__dump__gradients_a5c8236660ca8b1cb61dddcd1264821ca}\label{classlbann_1_1lbann__callback__dump__gradients_a5c8236660ca8b1cb61dddcd1264821ca}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients}!m\+\_\+basename@{m\+\_\+basename}}
+\index{m\+\_\+basename@{m\+\_\+basename}!lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients}}
+\subsubsection{\texorpdfstring{m\+\_\+basename}{m\_basename}}
+{\footnotesize\ttfamily std\+::string lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients\+::m\+\_\+basename\hspace{0.3cm}{\ttfamily [private]}}
+
+Basename for writing files. 
+
+Definition at line 67 of file callback\+\_\+dump\+\_\+gradients.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/callbacks/\hyperlink{callback__dump__gradients_8hpp}{callback\+\_\+dump\+\_\+gradients.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/callbacks/\hyperlink{callback__dump__gradients_8cpp}{callback\+\_\+dump\+\_\+gradients.\+cpp}\end{DoxyCompactItemize}

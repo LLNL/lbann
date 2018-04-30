@@ -1,0 +1,624 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="data__reader__csv_8cpp" kind="file" language="C++">
+    <compoundname>data_reader_csv.cpp</compoundname>
+    <includes local="no">unordered_set</includes>
+    <includes refid="data__reader__csv_8hpp" local="yes">lbann/data_readers/data_reader_csv.hpp</includes>
+    <includes refid="data__store__csv_8hpp" local="yes">lbann/data_store/data_store_csv.hpp</includes>
+    <includes local="no">omp.h</includes>
+    <incdepgraph>
+      <node id="19128">
+        <label>sys/stat.h</label>
+      </node>
+      <node id="19131">
+        <label>lbann/data_readers/image_preprocessor.hpp</label>
+        <link refid="image__preprocessor_8hpp"/>
+        <childnode refid="19113" relation="include">
+        </childnode>
+        <childnode refid="19105" relation="include">
+        </childnode>
+      </node>
+      <node id="19137">
+        <label>lbann/data_store/generic_data_store.hpp</label>
+        <link refid="generic__data__store_8hpp"/>
+        <childnode refid="19105" relation="include">
+        </childnode>
+        <childnode refid="19115" relation="include">
+        </childnode>
+        <childnode refid="19116" relation="include">
+        </childnode>
+        <childnode refid="19102" relation="include">
+        </childnode>
+      </node>
+      <node id="19119">
+        <label>lbann/io/persist.hpp</label>
+        <link refid="persist_8hpp"/>
+        <childnode refid="19105" relation="include">
+        </childnode>
+        <childnode refid="19106" relation="include">
+        </childnode>
+      </node>
+      <node id="19106">
+        <label>El.hpp</label>
+      </node>
+      <node id="19101">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_csv.cpp</label>
+        <link refid="data__reader__csv_8cpp"/>
+        <childnode refid="19102" relation="include">
+        </childnode>
+        <childnode refid="19103" relation="include">
+        </childnode>
+        <childnode refid="19136" relation="include">
+        </childnode>
+        <childnode refid="19138" relation="include">
+        </childnode>
+      </node>
+      <node id="19105">
+        <label>lbann/base.hpp</label>
+        <link refid="base_8hpp"/>
+        <childnode refid="19106" relation="include">
+        </childnode>
+        <childnode refid="19107" relation="include">
+        </childnode>
+        <childnode refid="19108" relation="include">
+        </childnode>
+        <childnode refid="19113" relation="include">
+        </childnode>
+      </node>
+      <node id="19132">
+        <label>cassert</label>
+      </node>
+      <node id="19130">
+        <label>fcntl.h</label>
+      </node>
+      <node id="19124">
+        <label>string</label>
+      </node>
+      <node id="19117">
+        <label>map</label>
+      </node>
+      <node id="19102">
+        <label>unordered_set</label>
+      </node>
+      <node id="19138">
+        <label>omp.h</label>
+      </node>
+      <node id="19126">
+        <label>exception</label>
+      </node>
+      <node id="19120">
+        <label>random</label>
+      </node>
+      <node id="19129">
+        <label>sys/types.h</label>
+      </node>
+      <node id="19110">
+        <label>cstdio</label>
+      </node>
+      <node id="19122">
+        <label>lbann/utils/stack_trace.hpp</label>
+        <link refid="stack__trace_8hpp"/>
+        <childnode refid="19123" relation="include">
+        </childnode>
+        <childnode refid="19124" relation="include">
+        </childnode>
+      </node>
+      <node id="19112">
+        <label>cxxabi.h</label>
+      </node>
+      <node id="19121">
+        <label>lbann/utils/exception.hpp</label>
+        <link refid="exception_8hpp"/>
+        <childnode refid="19105" relation="include">
+        </childnode>
+        <childnode refid="19115" relation="include">
+        </childnode>
+        <childnode refid="19122" relation="include">
+        </childnode>
+        <childnode refid="19125" relation="include">
+        </childnode>
+        <childnode refid="19126" relation="include">
+        </childnode>
+      </node>
+      <node id="19134">
+        <label>unistd.h</label>
+      </node>
+      <node id="19116">
+        <label>vector</label>
+      </node>
+      <node id="19115">
+        <label>lbann/comm.hpp</label>
+        <link refid="comm_8hpp"/>
+        <childnode refid="19116" relation="include">
+        </childnode>
+        <childnode refid="19117" relation="include">
+        </childnode>
+        <childnode refid="19118" relation="include">
+        </childnode>
+        <childnode refid="19105" relation="include">
+        </childnode>
+      </node>
+      <node id="19127">
+        <label>lbann/io/file_io.hpp</label>
+        <link refid="file__io_8hpp"/>
+        <childnode refid="19128" relation="include">
+        </childnode>
+        <childnode refid="19129" relation="include">
+        </childnode>
+        <childnode refid="19130" relation="include">
+        </childnode>
+      </node>
+      <node id="19109">
+        <label>cstdlib</label>
+      </node>
+      <node id="19125">
+        <label>iostream</label>
+      </node>
+      <node id="19103">
+        <label>lbann/data_readers/data_reader_csv.hpp</label>
+        <link refid="data__reader__csv_8hpp"/>
+        <childnode refid="19104" relation="include">
+        </childnode>
+        <childnode refid="19131" relation="include">
+        </childnode>
+        <childnode refid="19135" relation="include">
+        </childnode>
+      </node>
+      <node id="19135">
+        <label>unordered_map</label>
+      </node>
+      <node id="19114">
+        <label>lbann/utils/random.hpp</label>
+        <link refid="random_8hpp"/>
+        <childnode refid="19105" relation="include">
+        </childnode>
+        <childnode refid="19115" relation="include">
+        </childnode>
+        <childnode refid="19119" relation="include">
+        </childnode>
+        <childnode refid="19120" relation="include">
+        </childnode>
+      </node>
+      <node id="19136">
+        <label>lbann/data_store/data_store_csv.hpp</label>
+        <link refid="data__store__csv_8hpp"/>
+        <childnode refid="19137" relation="include">
+        </childnode>
+        <childnode refid="19135" relation="include">
+        </childnode>
+      </node>
+      <node id="19123">
+        <label>csignal</label>
+      </node>
+      <node id="19104">
+        <label>data_reader.hpp</label>
+        <link refid="data__reader_8hpp"/>
+        <childnode refid="19105" relation="include">
+        </childnode>
+        <childnode refid="19114" relation="include">
+        </childnode>
+        <childnode refid="19121" relation="include">
+        </childnode>
+        <childnode refid="19115" relation="include">
+        </childnode>
+        <childnode refid="19127" relation="include">
+        </childnode>
+        <childnode refid="19119" relation="include">
+        </childnode>
+        <childnode refid="19131" relation="include">
+        </childnode>
+        <childnode refid="19132" relation="include">
+        </childnode>
+        <childnode refid="19133" relation="include">
+        </childnode>
+        <childnode refid="19124" relation="include">
+        </childnode>
+        <childnode refid="19116" relation="include">
+        </childnode>
+        <childnode refid="19134" relation="include">
+        </childnode>
+      </node>
+      <node id="19113">
+        <label>lbann_config.hpp</label>
+      </node>
+      <node id="19133">
+        <label>algorithm</label>
+      </node>
+      <node id="19108">
+        <label>lbann/utils/cyg_profile.hpp</label>
+        <link refid="cyg__profile_8hpp"/>
+        <childnode refid="19109" relation="include">
+        </childnode>
+        <childnode refid="19110" relation="include">
+        </childnode>
+        <childnode refid="19111" relation="include">
+        </childnode>
+        <childnode refid="19112" relation="include">
+        </childnode>
+      </node>
+      <node id="19107">
+        <label>lbann/Elemental_extensions.hpp</label>
+        <link refid="Elemental__extensions_8hpp"/>
+        <childnode refid="19106" relation="include">
+        </childnode>
+      </node>
+      <node id="19118">
+        <label>typeindex</label>
+      </node>
+      <node id="19111">
+        <label>dlfcn.h</label>
+      </node>
+    </incdepgraph>
+    <innernamespace refid="namespacelbann">lbann</innernamespace>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>2014-2016,<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Security,<sp/>LLC.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Produced<sp/>at<sp/>the<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Laboratory.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Written<sp/>by<sp/>the<sp/>LBANN<sp/>Research<sp/>Team<sp/>(B.<sp/>Van<sp/>Essen,<sp/>et<sp/>al.)<sp/>listed<sp/>in</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="comment">//<sp/>the<sp/>CONTRIBUTORS<sp/>file.<sp/>&lt;lbann-dev@llnl.gov&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="comment">//<sp/>LLNL-CODE-697807.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="comment">//<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="comment">//<sp/>This<sp/>file<sp/>is<sp/>part<sp/>of<sp/>LBANN:<sp/>Livermore<sp/>Big<sp/>Artificial<sp/>Neural<sp/>Network</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Toolkit.<sp/>For<sp/>details,<sp/>see<sp/>http://software.llnl.gov/LBANN<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="comment">//<sp/>https://github.com/LLNL/LBANN.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Licensed<sp/>under<sp/>the<sp/>Apache<sp/>License,<sp/>Version<sp/>2.0<sp/>(the<sp/>&quot;Licensee&quot;);<sp/>you</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight><highlight class="comment">//<sp/>may<sp/>not<sp/>use<sp/>this<sp/>file<sp/>except<sp/>in<sp/>compliance<sp/>with<sp/>the<sp/>License.<sp/><sp/>You<sp/>may</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="comment">//<sp/>obtain<sp/>a<sp/>copy<sp/>of<sp/>the<sp/>License<sp/>at:</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight><highlight class="comment">//<sp/>http://www.apache.org/licenses/LICENSE-2.0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Unless<sp/>required<sp/>by<sp/>applicable<sp/>law<sp/>or<sp/>agreed<sp/>to<sp/>in<sp/>writing,<sp/>software</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight><highlight class="comment">//<sp/>distributed<sp/>under<sp/>the<sp/>License<sp/>is<sp/>distributed<sp/>on<sp/>an<sp/>&quot;AS<sp/>IS&quot;<sp/>BASIS,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight><highlight class="comment">//<sp/>WITHOUT<sp/>WARRANTIES<sp/>OR<sp/>CONDITIONS<sp/>OF<sp/>ANY<sp/>KIND,<sp/>either<sp/>express<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="comment">//<sp/>implied.<sp/>See<sp/>the<sp/>License<sp/>for<sp/>the<sp/>specific<sp/>language<sp/>governing</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="comment">//<sp/>permissions<sp/>and<sp/>limitations<sp/>under<sp/>the<sp/>license.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="25"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="26"><highlight class="normal"></highlight><highlight class="comment">//<sp/>lbann_data_reader_csv<sp/>.hpp<sp/>.cpp<sp/>-<sp/>generic_data_reader<sp/>class<sp/>for<sp/>CSV<sp/>files</highlight></codeline>
+<codeline lineno="28"><highlight class="comment"></highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="29"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;unordered_set&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="30"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="data__reader__csv_8hpp" kindref="compound">lbann/data_readers/data_reader_csv.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="data__store__csv_8hpp" kindref="compound">lbann/data_store/data_store_csv.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="32"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;omp.h&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="33"><highlight class="normal"></highlight></codeline>
+<codeline lineno="34"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacelbann" kindref="compound">lbann</ref><sp/>{</highlight></codeline>
+<codeline lineno="35"><highlight class="normal"></highlight></codeline>
+<codeline lineno="36" refid="classlbann_1_1csv__reader_1ac301a4c8e2ef029b65e8f6b8cbbc5855" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1csv__reader_1ac301a4c8e2ef029b65e8f6b8cbbc5855" kindref="member">csv_reader::csv_reader</ref>(</highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/>shuffle)</highlight></codeline>
+<codeline lineno="37"><highlight class="normal"><sp/><sp/>:<sp/><ref refid="classlbann_1_1generic__data__reader" kindref="compound">generic_data_reader</ref>(shuffle)<sp/>{}</highlight></codeline>
+<codeline lineno="38"><highlight class="normal"></highlight></codeline>
+<codeline lineno="39" refid="classlbann_1_1csv__reader_1a6482322efe56d495bcea4df65ebf381a" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1csv__reader_1ac301a4c8e2ef029b65e8f6b8cbbc5855" kindref="member">csv_reader::csv_reader</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1csv__reader" kindref="compound">csv_reader</ref>&amp;<sp/>other)<sp/>:</highlight></codeline>
+<codeline lineno="40"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1generic__data__reader" kindref="compound">generic_data_reader</ref>(other),</highlight></codeline>
+<codeline lineno="41"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1abab4a731daa751856f083c117ac8862a" kindref="member">m_separator</ref>(other.<ref refid="classlbann_1_1csv__reader_1abab4a731daa751856f083c117ac8862a" kindref="member">m_separator</ref>),</highlight></codeline>
+<codeline lineno="42"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a3a6cb698fbeb4abd0032e2b018bbb326" kindref="member">m_skip_cols</ref>(other.<ref refid="classlbann_1_1csv__reader_1a3a6cb698fbeb4abd0032e2b018bbb326" kindref="member">m_skip_cols</ref>),</highlight></codeline>
+<codeline lineno="43"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a52b9eebd06309a8d8858ce74ecd8cce0" kindref="member">m_skip_rows</ref>(other.<ref refid="classlbann_1_1csv__reader_1a52b9eebd06309a8d8858ce74ecd8cce0" kindref="member">m_skip_rows</ref>),</highlight></codeline>
+<codeline lineno="44"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a36d5e554882e8a32e1d111701af3bd90" kindref="member">m_has_header</ref>(other.<ref refid="classlbann_1_1csv__reader_1a36d5e554882e8a32e1d111701af3bd90" kindref="member">m_has_header</ref>),</highlight></codeline>
+<codeline lineno="45"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1acc02e56c81421c4507f7178ca8461b04" kindref="member">m_label_col</ref>(other.<ref refid="classlbann_1_1csv__reader_1acc02e56c81421c4507f7178ca8461b04" kindref="member">m_label_col</ref>),</highlight></codeline>
+<codeline lineno="46"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a1cfa3562ecd0a7f6358290f299de5812" kindref="member">m_response_col</ref>(other.<ref refid="classlbann_1_1csv__reader_1a1cfa3562ecd0a7f6358290f299de5812" kindref="member">m_response_col</ref>),</highlight></codeline>
+<codeline lineno="47"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a5f013485fc1466dcf1f78ef020b845d4" kindref="member">m_disable_labels</ref>(other.<ref refid="classlbann_1_1csv__reader_1a5f013485fc1466dcf1f78ef020b845d4" kindref="member">m_disable_labels</ref>),</highlight></codeline>
+<codeline lineno="48"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a1e133c3585df5f131b4772f618e77ad2" kindref="member">m_disable_responses</ref>(other.<ref refid="classlbann_1_1csv__reader_1a1e133c3585df5f131b4772f618e77ad2" kindref="member">m_disable_responses</ref>),</highlight></codeline>
+<codeline lineno="49"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a7607d3f6b356538671147a0b8f7b09c8" kindref="member">m_num_cols</ref>(other.<ref refid="classlbann_1_1csv__reader_1a7607d3f6b356538671147a0b8f7b09c8" kindref="member">m_num_cols</ref>),</highlight></codeline>
+<codeline lineno="50"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a37ee216c31ea3d7919fce58215ec410a" kindref="member">m_num_samples</ref>(other.<ref refid="classlbann_1_1csv__reader_1a37ee216c31ea3d7919fce58215ec410a" kindref="member">m_num_samples</ref>),</highlight></codeline>
+<codeline lineno="51"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a8e377a058039b3d906738143356b93e4" kindref="member">m_num_labels</ref>(other.<ref refid="classlbann_1_1csv__reader_1a8e377a058039b3d906738143356b93e4" kindref="member">m_num_labels</ref>),</highlight></codeline>
+<codeline lineno="52"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a2a959e7839d2d11e2deba98ba1884006" kindref="member">m_index</ref>(other.<ref refid="classlbann_1_1csv__reader_1a2a959e7839d2d11e2deba98ba1884006" kindref="member">m_index</ref>),</highlight></codeline>
+<codeline lineno="53"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a1f11d02df556a4ec638f332ccfc03eb2" kindref="member">m_labels</ref>(other.<ref refid="classlbann_1_1csv__reader_1a1f11d02df556a4ec638f332ccfc03eb2" kindref="member">m_labels</ref>),</highlight></codeline>
+<codeline lineno="54"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a8b7e23827c7cbf7c8eff40cad9cb6afc" kindref="member">m_responses</ref>(other.<ref refid="classlbann_1_1csv__reader_1a8b7e23827c7cbf7c8eff40cad9cb6afc" kindref="member">m_responses</ref>),</highlight></codeline>
+<codeline lineno="55"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1aad98a20225b1f2545de32b4c19c8285b" kindref="member">m_col_transforms</ref>(other.<ref refid="classlbann_1_1csv__reader_1aad98a20225b1f2545de32b4c19c8285b" kindref="member">m_col_transforms</ref>),</highlight></codeline>
+<codeline lineno="56"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1aa9b671a172828980cb9c91180c3d0ad8" kindref="member">m_label_transform</ref>(other.<ref refid="classlbann_1_1csv__reader_1aa9b671a172828980cb9c91180c3d0ad8" kindref="member">m_label_transform</ref>),</highlight></codeline>
+<codeline lineno="57"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a161c3606668efbc8910cad2f7fa01ed3" kindref="member">m_response_transform</ref>(other.<ref refid="classlbann_1_1csv__reader_1a161c3606668efbc8910cad2f7fa01ed3" kindref="member">m_response_transform</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="58"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(!other.<ref refid="classlbann_1_1csv__reader_1a41ede08dd2ed420bf8f6c6670d892caf" kindref="member">m_ifstreams</ref>.empty())<sp/>{</highlight></codeline>
+<codeline lineno="59"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Need<sp/>to<sp/>set<sp/>these<sp/>up<sp/>again<sp/>manually.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="60"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1csv__reader_1afc689f206192339770ee9fbd132492bb" kindref="member">setup_ifstreams</ref>();</highlight></codeline>
+<codeline lineno="61"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="62"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="63"><highlight class="normal"></highlight></codeline>
+<codeline lineno="64" refid="classlbann_1_1csv__reader_1aaede525f7ac80484691822f27ef79cfc" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1csv__reader" kindref="compound">csv_reader</ref>&amp;<sp/><ref refid="classlbann_1_1csv__reader_1aaede525f7ac80484691822f27ef79cfc" kindref="member">csv_reader::operator=</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1csv__reader" kindref="compound">csv_reader</ref>&amp;<sp/>other)<sp/>{</highlight></codeline>
+<codeline lineno="65"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1generic__data__reader_1aec7e626e6efa2a4bf23f931e2ef8f607" kindref="member">generic_data_reader::operator=</ref>(other);</highlight></codeline>
+<codeline lineno="66"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1abab4a731daa751856f083c117ac8862a" kindref="member">m_separator</ref><sp/>=<sp/>other.<ref refid="classlbann_1_1csv__reader_1abab4a731daa751856f083c117ac8862a" kindref="member">m_separator</ref>;</highlight></codeline>
+<codeline lineno="67"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a3a6cb698fbeb4abd0032e2b018bbb326" kindref="member">m_skip_cols</ref><sp/>=<sp/>other.<ref refid="classlbann_1_1csv__reader_1a3a6cb698fbeb4abd0032e2b018bbb326" kindref="member">m_skip_cols</ref>;</highlight></codeline>
+<codeline lineno="68"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a52b9eebd06309a8d8858ce74ecd8cce0" kindref="member">m_skip_rows</ref><sp/>=<sp/>other.<ref refid="classlbann_1_1csv__reader_1a52b9eebd06309a8d8858ce74ecd8cce0" kindref="member">m_skip_rows</ref>;</highlight></codeline>
+<codeline lineno="69"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a36d5e554882e8a32e1d111701af3bd90" kindref="member">m_has_header</ref><sp/>=<sp/>other.<ref refid="classlbann_1_1csv__reader_1a36d5e554882e8a32e1d111701af3bd90" kindref="member">m_has_header</ref>;</highlight></codeline>
+<codeline lineno="70"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1acc02e56c81421c4507f7178ca8461b04" kindref="member">m_label_col</ref><sp/>=<sp/>other.<ref refid="classlbann_1_1csv__reader_1acc02e56c81421c4507f7178ca8461b04" kindref="member">m_label_col</ref>;</highlight></codeline>
+<codeline lineno="71"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a1cfa3562ecd0a7f6358290f299de5812" kindref="member">m_response_col</ref><sp/>=<sp/>other.<ref refid="classlbann_1_1csv__reader_1a1cfa3562ecd0a7f6358290f299de5812" kindref="member">m_response_col</ref>;</highlight></codeline>
+<codeline lineno="72"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a5f013485fc1466dcf1f78ef020b845d4" kindref="member">m_disable_labels</ref><sp/>=<sp/>other.<ref refid="classlbann_1_1csv__reader_1a5f013485fc1466dcf1f78ef020b845d4" kindref="member">m_disable_labels</ref>;</highlight></codeline>
+<codeline lineno="73"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a1e133c3585df5f131b4772f618e77ad2" kindref="member">m_disable_responses</ref><sp/>=<sp/>other.<ref refid="classlbann_1_1csv__reader_1a1e133c3585df5f131b4772f618e77ad2" kindref="member">m_disable_responses</ref>;</highlight></codeline>
+<codeline lineno="74"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a7607d3f6b356538671147a0b8f7b09c8" kindref="member">m_num_cols</ref><sp/>=<sp/>other.<ref refid="classlbann_1_1csv__reader_1a7607d3f6b356538671147a0b8f7b09c8" kindref="member">m_num_cols</ref>;</highlight></codeline>
+<codeline lineno="75"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a37ee216c31ea3d7919fce58215ec410a" kindref="member">m_num_samples</ref><sp/>=<sp/>other.<ref refid="classlbann_1_1csv__reader_1a37ee216c31ea3d7919fce58215ec410a" kindref="member">m_num_samples</ref>;</highlight></codeline>
+<codeline lineno="76"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a8e377a058039b3d906738143356b93e4" kindref="member">m_num_labels</ref><sp/>=<sp/>other.<ref refid="classlbann_1_1csv__reader_1a8e377a058039b3d906738143356b93e4" kindref="member">m_num_labels</ref>;</highlight></codeline>
+<codeline lineno="77"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a2a959e7839d2d11e2deba98ba1884006" kindref="member">m_index</ref><sp/>=<sp/>other.<ref refid="classlbann_1_1csv__reader_1a2a959e7839d2d11e2deba98ba1884006" kindref="member">m_index</ref>;</highlight></codeline>
+<codeline lineno="78"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a1f11d02df556a4ec638f332ccfc03eb2" kindref="member">m_labels</ref><sp/>=<sp/>other.<ref refid="classlbann_1_1csv__reader_1a1f11d02df556a4ec638f332ccfc03eb2" kindref="member">m_labels</ref>;</highlight></codeline>
+<codeline lineno="79"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a8b7e23827c7cbf7c8eff40cad9cb6afc" kindref="member">m_responses</ref><sp/>=<sp/>other.<ref refid="classlbann_1_1csv__reader_1a8b7e23827c7cbf7c8eff40cad9cb6afc" kindref="member">m_responses</ref>;</highlight></codeline>
+<codeline lineno="80"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1aad98a20225b1f2545de32b4c19c8285b" kindref="member">m_col_transforms</ref><sp/>=<sp/>other.<ref refid="classlbann_1_1csv__reader_1aad98a20225b1f2545de32b4c19c8285b" kindref="member">m_col_transforms</ref>;</highlight></codeline>
+<codeline lineno="81"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1aa9b671a172828980cb9c91180c3d0ad8" kindref="member">m_label_transform</ref><sp/>=<sp/>other.<ref refid="classlbann_1_1csv__reader_1aa9b671a172828980cb9c91180c3d0ad8" kindref="member">m_label_transform</ref>;</highlight></codeline>
+<codeline lineno="82"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a161c3606668efbc8910cad2f7fa01ed3" kindref="member">m_response_transform</ref><sp/>=<sp/>other.<ref refid="classlbann_1_1csv__reader_1a161c3606668efbc8910cad2f7fa01ed3" kindref="member">m_response_transform</ref>;</highlight></codeline>
+<codeline lineno="83"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(!other.<ref refid="classlbann_1_1csv__reader_1a41ede08dd2ed420bf8f6c6670d892caf" kindref="member">m_ifstreams</ref>.empty())<sp/>{</highlight></codeline>
+<codeline lineno="84"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Possibly<sp/>free<sp/>our<sp/>current<sp/>ifstreams,<sp/>set<sp/>them<sp/>up<sp/>again.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="85"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(std::ifstream*<sp/>ifs<sp/>:<sp/><ref refid="classlbann_1_1csv__reader_1a41ede08dd2ed420bf8f6c6670d892caf" kindref="member">m_ifstreams</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="86"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">delete</highlight><highlight class="normal"><sp/>ifs;</highlight></codeline>
+<codeline lineno="87"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="88"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1csv__reader_1afc689f206192339770ee9fbd132492bb" kindref="member">setup_ifstreams</ref>();</highlight></codeline>
+<codeline lineno="89"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="90"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>*</highlight><highlight class="keyword">this</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="91"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="92"><highlight class="normal"></highlight></codeline>
+<codeline lineno="93" refid="classlbann_1_1csv__reader_1aa992b822439071b8c38115726680003b" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1csv__reader_1aa992b822439071b8c38115726680003b" kindref="member">csv_reader::~csv_reader</ref>()<sp/>{</highlight></codeline>
+<codeline lineno="94"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(</highlight><highlight class="keyword">auto</highlight><highlight class="normal">&amp;&amp;<sp/>ifs<sp/>:<sp/><ref refid="classlbann_1_1csv__reader_1a41ede08dd2ed420bf8f6c6670d892caf" kindref="member">m_ifstreams</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="95"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">delete</highlight><highlight class="normal"><sp/>ifs;</highlight></codeline>
+<codeline lineno="96"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="97"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="98"><highlight class="normal"></highlight></codeline>
+<codeline lineno="99" refid="classlbann_1_1csv__reader_1a7b76b23422db407e8fb039cc11a08bc6" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1csv__reader_1a7b76b23422db407e8fb039cc11a08bc6" kindref="member">csv_reader::load</ref>()<sp/>{</highlight></codeline>
+<codeline lineno="100"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1afc689f206192339770ee9fbd132492bb" kindref="member">setup_ifstreams</ref>();</highlight></codeline>
+<codeline lineno="101"><highlight class="normal"><sp/><sp/>std::ifstream&amp;<sp/>ifs<sp/>=<sp/>*<ref refid="classlbann_1_1csv__reader_1a41ede08dd2ed420bf8f6c6670d892caf" kindref="member">m_ifstreams</ref>[0];</highlight></codeline>
+<codeline lineno="102"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>TODO:<sp/>Only<sp/>one<sp/>(or<sp/>a<sp/>subset)<sp/>of<sp/>ranks<sp/>should<sp/>read<sp/>this,<sp/>then<sp/>distribute</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="103"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>the<sp/>results<sp/>to<sp/>avoid<sp/>every<sp/>rank<sp/>reading<sp/>the<sp/>same<sp/>file.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="104"><highlight class="normal"><sp/><sp/>std::string<sp/>line;</highlight></codeline>
+<codeline lineno="105"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Parse<sp/>the<sp/>header<sp/>to<sp/>determine<sp/>how<sp/>many<sp/>columns<sp/>there<sp/>are.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="106"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Skip<sp/>rows<sp/>if<sp/>needed.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="107"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1ace1c71ad266e6bd85573051ff45277ab" kindref="member">skip_rows</ref>(ifs,<sp/><ref refid="classlbann_1_1csv__reader_1a52b9eebd06309a8d8858ce74ecd8cce0" kindref="member">m_skip_rows</ref>);</highlight></codeline>
+<codeline lineno="108"><highlight class="normal"><sp/><sp/>std::streampos<sp/>header_start<sp/>=<sp/>ifs.tellg();</highlight></codeline>
+<codeline lineno="109"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>TODO:<sp/>Skip<sp/>comment<sp/>lines.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="110"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(std::getline(ifs,<sp/>line))<sp/>{</highlight></codeline>
+<codeline lineno="111"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a7607d3f6b356538671147a0b8f7b09c8" kindref="member">m_num_cols</ref><sp/>=<sp/>std::count(line.begin(),<sp/>line.end(),<sp/><ref refid="classlbann_1_1csv__reader_1abab4a731daa751856f083c117ac8862a" kindref="member">m_separator</ref>)<sp/>+<sp/>1;</highlight></codeline>
+<codeline lineno="112"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1csv__reader_1a3a6cb698fbeb4abd0032e2b018bbb326" kindref="member">m_skip_cols</ref><sp/>&gt;=<sp/><ref refid="classlbann_1_1csv__reader_1a7607d3f6b356538671147a0b8f7b09c8" kindref="member">m_num_cols</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="113"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">throw</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__exception" kindref="compound">lbann_exception</ref>(</highlight></codeline>
+<codeline lineno="114"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="stringliteral">&quot;csv_reader:<sp/>asked<sp/>to<sp/>skip<sp/>more<sp/>columns<sp/>than<sp/>are<sp/>present&quot;</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="115"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="116"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(!<ref refid="classlbann_1_1csv__reader_1a5f013485fc1466dcf1f78ef020b845d4" kindref="member">m_disable_labels</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="117"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1csv__reader_1acc02e56c81421c4507f7178ca8461b04" kindref="member">m_label_col</ref><sp/>&lt;<sp/>0)<sp/>{</highlight></codeline>
+<codeline lineno="118"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Last<sp/>column<sp/>becomes<sp/>the<sp/>label<sp/>column.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="119"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1csv__reader_1acc02e56c81421c4507f7178ca8461b04" kindref="member">m_label_col</ref><sp/>=<sp/><ref refid="classlbann_1_1csv__reader_1a7607d3f6b356538671147a0b8f7b09c8" kindref="member">m_num_cols</ref><sp/>-<sp/>1;</highlight></codeline>
+<codeline lineno="120"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="121"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1csv__reader_1acc02e56c81421c4507f7178ca8461b04" kindref="member">m_label_col</ref><sp/>&gt;=<sp/><ref refid="classlbann_1_1csv__reader_1a7607d3f6b356538671147a0b8f7b09c8" kindref="member">m_num_cols</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="122"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">throw</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__exception" kindref="compound">lbann_exception</ref>(</highlight></codeline>
+<codeline lineno="123"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="stringliteral">&quot;csv_reader:<sp/>label<sp/>column&quot;</highlight><highlight class="normal"><sp/>+<sp/>std::to_string(<ref refid="classlbann_1_1csv__reader_1acc02e56c81421c4507f7178ca8461b04" kindref="member">m_label_col</ref>)<sp/>+</highlight></codeline>
+<codeline lineno="124"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="stringliteral">&quot;<sp/>is<sp/>not<sp/>present&quot;</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="125"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="126"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="127"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(!<ref refid="classlbann_1_1csv__reader_1a1e133c3585df5f131b4772f618e77ad2" kindref="member">m_disable_responses</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="128"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1csv__reader_1a1cfa3562ecd0a7f6358290f299de5812" kindref="member">m_response_col</ref><sp/>&lt;<sp/>0)<sp/>{</highlight></codeline>
+<codeline lineno="129"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Last<sp/>column<sp/>becomes<sp/>the<sp/>response<sp/>column.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="130"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a1cfa3562ecd0a7f6358290f299de5812" kindref="member">m_response_col</ref><sp/>=<sp/><ref refid="classlbann_1_1csv__reader_1a7607d3f6b356538671147a0b8f7b09c8" kindref="member">m_num_cols</ref><sp/>-<sp/>1;</highlight></codeline>
+<codeline lineno="131"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="132"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1csv__reader_1a1cfa3562ecd0a7f6358290f299de5812" kindref="member">m_response_col</ref><sp/>&gt;=<sp/><ref refid="classlbann_1_1csv__reader_1a7607d3f6b356538671147a0b8f7b09c8" kindref="member">m_num_cols</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="133"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">throw</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__exception" kindref="compound">lbann_exception</ref>(</highlight></codeline>
+<codeline lineno="134"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="stringliteral">&quot;csv_reader:<sp/>response<sp/>column&quot;</highlight><highlight class="normal"><sp/>+<sp/>std::to_string(<ref refid="classlbann_1_1csv__reader_1a1cfa3562ecd0a7f6358290f299de5812" kindref="member">m_response_col</ref>)<sp/>+</highlight></codeline>
+<codeline lineno="135"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="stringliteral">&quot;<sp/>is<sp/>not<sp/>present&quot;</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="136"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="137"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="138"><highlight class="normal"><sp/><sp/>}<sp/></highlight><highlight class="keywordflow">else</highlight><highlight class="normal"><sp/>{</highlight></codeline>
+<codeline lineno="139"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">throw</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__exception" kindref="compound">lbann_exception</ref>(</highlight></codeline>
+<codeline lineno="140"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="stringliteral">&quot;csv_reader:<sp/>failed<sp/>to<sp/>read<sp/>header<sp/>in<sp/>&quot;</highlight><highlight class="normal"><sp/>+<sp/><ref refid="classlbann_1_1generic__data__reader_1a56664e1b43f3fe923cf6d652f14b40a9" kindref="member">get_data_filename</ref>());</highlight></codeline>
+<codeline lineno="141"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="142"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(ifs.eof())<sp/>{</highlight></codeline>
+<codeline lineno="143"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">throw</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__exception" kindref="compound">lbann_exception</ref>(</highlight></codeline>
+<codeline lineno="144"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="stringliteral">&quot;csv_reader:<sp/>reached<sp/>EOF<sp/>after<sp/>reading<sp/>header&quot;</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="145"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="146"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>If<sp/>there<sp/>was<sp/>no<sp/>header,<sp/>skip<sp/>back<sp/>to<sp/>the<sp/>beginning.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="147"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(!<ref refid="classlbann_1_1csv__reader_1a36d5e554882e8a32e1d111701af3bd90" kindref="member">m_has_header</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="148"><highlight class="normal"><sp/><sp/><sp/><sp/>ifs.clear();</highlight></codeline>
+<codeline lineno="149"><highlight class="normal"><sp/><sp/><sp/><sp/>ifs.seekg(header_start,<sp/>std::ios::beg);</highlight></codeline>
+<codeline lineno="150"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="151"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Construct<sp/>an<sp/>index<sp/>mapping<sp/>each<sp/>line<sp/>(sample)<sp/>to<sp/>its<sp/>offset.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="152"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>TODO:<sp/>Skip<sp/>comment<sp/>lines.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="153"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Used<sp/>to<sp/>count<sp/>the<sp/>number<sp/>of<sp/>label<sp/>classes.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="154"><highlight class="normal"><sp/><sp/>std::unordered_set&lt;int&gt;<sp/>label_classes;</highlight></codeline>
+<codeline lineno="155"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a2a959e7839d2d11e2deba98ba1884006" kindref="member">m_index</ref>.push_back(ifs.tellg());</highlight></codeline>
+<codeline lineno="156"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>line_num<sp/>=<sp/>0;</highlight></codeline>
+<codeline lineno="157"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">while</highlight><highlight class="normal"><sp/>(std::getline(ifs,<sp/>line))<sp/>{</highlight></codeline>
+<codeline lineno="158"><highlight class="normal"><sp/><sp/><sp/><sp/>++line_num;</highlight></codeline>
+<codeline lineno="159"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(line_num<sp/>==<sp/>100000)<sp/></highlight><highlight class="keywordflow">break</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="160"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Verify<sp/>the<sp/>line<sp/>has<sp/>the<sp/>right<sp/>number<sp/>of<sp/>columns.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="161"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(std::count(line.begin(),<sp/>line.end(),<sp/><ref refid="classlbann_1_1csv__reader_1abab4a731daa751856f083c117ac8862a" kindref="member">m_separator</ref>)<sp/>+<sp/>1<sp/>!=<sp/><ref refid="classlbann_1_1csv__reader_1a7607d3f6b356538671147a0b8f7b09c8" kindref="member">m_num_cols</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="162"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">throw</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__exception" kindref="compound">lbann_exception</ref>(</highlight></codeline>
+<codeline lineno="163"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="stringliteral">&quot;csv_reader:<sp/>line<sp/>&quot;</highlight><highlight class="normal"><sp/>+<sp/>std::to_string(line_num)<sp/>+</highlight></codeline>
+<codeline lineno="164"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="stringliteral">&quot;<sp/>does<sp/>not<sp/>have<sp/>right<sp/>number<sp/>of<sp/>entries&quot;</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="165"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="166"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a2a959e7839d2d11e2deba98ba1884006" kindref="member">m_index</ref>.push_back(ifs.tellg());</highlight></codeline>
+<codeline lineno="167"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Extract<sp/>the<sp/>label.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="168"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(!<ref refid="classlbann_1_1csv__reader_1a5f013485fc1466dcf1f78ef020b845d4" kindref="member">m_disable_labels</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="169"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>cur_pos<sp/>=<sp/>0;</highlight></codeline>
+<codeline lineno="170"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(</highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>col<sp/>=<sp/>0;<sp/>col<sp/>&lt;<sp/><ref refid="classlbann_1_1csv__reader_1a7607d3f6b356538671147a0b8f7b09c8" kindref="member">m_num_cols</ref>;<sp/>++col)<sp/>{</highlight></codeline>
+<codeline lineno="171"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>end_pos<sp/>=<sp/>line.find_first_of(<ref refid="classlbann_1_1csv__reader_1abab4a731daa751856f083c117ac8862a" kindref="member">m_separator</ref>,<sp/>cur_pos);</highlight></codeline>
+<codeline lineno="172"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(col<sp/>==<sp/><ref refid="classlbann_1_1csv__reader_1acc02e56c81421c4507f7178ca8461b04" kindref="member">m_label_col</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="173"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>label<sp/>=<sp/><ref refid="classlbann_1_1csv__reader_1aa9b671a172828980cb9c91180c3d0ad8" kindref="member">m_label_transform</ref>(line.substr(cur_pos,<sp/>end_pos<sp/>-<sp/>cur_pos));</highlight></codeline>
+<codeline lineno="174"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>label_classes.insert(label);</highlight></codeline>
+<codeline lineno="175"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a1f11d02df556a4ec638f332ccfc03eb2" kindref="member">m_labels</ref>.push_back(label);</highlight></codeline>
+<codeline lineno="176"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">break</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="177"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="178"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>cur_pos<sp/>=<sp/>end_pos<sp/>+<sp/>1;</highlight></codeline>
+<codeline lineno="179"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="180"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="181"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Possibly<sp/>extract<sp/>the<sp/>response.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="182"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(!<ref refid="classlbann_1_1csv__reader_1a1e133c3585df5f131b4772f618e77ad2" kindref="member">m_disable_responses</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="183"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>cur_pos<sp/>=<sp/>0;</highlight></codeline>
+<codeline lineno="184"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(</highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>col<sp/>=<sp/>0;<sp/>col<sp/>&lt;<sp/><ref refid="classlbann_1_1csv__reader_1a7607d3f6b356538671147a0b8f7b09c8" kindref="member">m_num_cols</ref>;<sp/>++col)<sp/>{</highlight></codeline>
+<codeline lineno="185"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>end_pos<sp/>=<sp/>line.find_first_of(<ref refid="classlbann_1_1csv__reader_1abab4a731daa751856f083c117ac8862a" kindref="member">m_separator</ref>,<sp/>cur_pos);</highlight></codeline>
+<codeline lineno="186"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(col<sp/>==<sp/><ref refid="classlbann_1_1csv__reader_1a1cfa3562ecd0a7f6358290f299de5812" kindref="member">m_response_col</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="187"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>DataType<sp/>response<sp/>=<sp/><ref refid="classlbann_1_1csv__reader_1a161c3606668efbc8910cad2f7fa01ed3" kindref="member">m_response_transform</ref>(</highlight></codeline>
+<codeline lineno="188"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>line.substr(cur_pos,<sp/>end_pos<sp/>-<sp/>cur_pos));</highlight></codeline>
+<codeline lineno="189"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a8b7e23827c7cbf7c8eff40cad9cb6afc" kindref="member">m_responses</ref>.push_back(response);</highlight></codeline>
+<codeline lineno="190"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">break</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="191"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="192"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>cur_pos<sp/>=<sp/>end_pos<sp/>+<sp/>1;</highlight></codeline>
+<codeline lineno="193"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="194"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="195"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="196"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(!ifs.eof())<sp/>{</highlight></codeline>
+<codeline lineno="197"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//If<sp/>we<sp/>didn&apos;t<sp/>get<sp/>to<sp/>EOF,<sp/>something<sp/>went<sp/>wrong.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="198"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//throw<sp/>lbann_exception(</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="199"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//&quot;csv_reader:<sp/>did<sp/>not<sp/>reach<sp/>EOF&quot;);</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="200"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="201"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(!<ref refid="classlbann_1_1csv__reader_1a5f013485fc1466dcf1f78ef020b845d4" kindref="member">m_disable_labels</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="202"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Do<sp/>some<sp/>simple<sp/>validation<sp/>checks<sp/>on<sp/>the<sp/>classes.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="203"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Ensure<sp/>the<sp/>elements<sp/>begin<sp/>with<sp/>0,<sp/>and<sp/>there<sp/>are<sp/>no<sp/>gaps.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="204"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">auto</highlight><highlight class="normal"><sp/>minmax<sp/>=<sp/>std::minmax_element(label_classes.begin(),<sp/>label_classes.end());</highlight></codeline>
+<codeline lineno="205"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(*minmax.first<sp/>!=<sp/>0)<sp/>{</highlight></codeline>
+<codeline lineno="206"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">throw</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__exception" kindref="compound">lbann_exception</ref>(</highlight></codeline>
+<codeline lineno="207"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="stringliteral">&quot;csv_reader:<sp/>classes<sp/>are<sp/>not<sp/>indexed<sp/>from<sp/>0&quot;</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="208"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="209"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(*minmax.second<sp/>!=<sp/>(</highlight><highlight class="keywordtype">int</highlight><highlight class="normal">)<sp/>label_classes.size()<sp/>-<sp/>1)<sp/>{</highlight></codeline>
+<codeline lineno="210"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">throw</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__exception" kindref="compound">lbann_exception</ref>(</highlight></codeline>
+<codeline lineno="211"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="stringliteral">&quot;csv_reader:<sp/>label<sp/>classes<sp/>are<sp/>not<sp/>contiguous&quot;</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="212"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="213"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a8e377a058039b3d906738143356b93e4" kindref="member">m_num_labels</ref><sp/>=<sp/>label_classes.size();</highlight></codeline>
+<codeline lineno="214"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="215"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a37ee216c31ea3d7919fce58215ec410a" kindref="member">m_num_samples</ref><sp/>=<sp/><ref refid="classlbann_1_1csv__reader_1a2a959e7839d2d11e2deba98ba1884006" kindref="member">m_index</ref>.size()<sp/>-<sp/>1;</highlight></codeline>
+<codeline lineno="216"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>End<sp/>of<sp/>file<sp/>offset.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="217"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a2a959e7839d2d11e2deba98ba1884006" kindref="member">m_index</ref>.push_back(ifs.tellg());</highlight></codeline>
+<codeline lineno="218"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Seek<sp/>back<sp/>to<sp/>the<sp/>beginning.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="219"><highlight class="normal"><sp/><sp/>ifs.clear();</highlight></codeline>
+<codeline lineno="220"><highlight class="normal"><sp/><sp/>ifs.seekg(0,<sp/>std::ios::beg);</highlight></codeline>
+<codeline lineno="221"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Reset<sp/>indices.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="222"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1generic__data__reader_1aaab6aeff67ffff1c689336851fec2c57" kindref="member">m_shuffled_indices</ref>.resize(<ref refid="classlbann_1_1csv__reader_1a37ee216c31ea3d7919fce58215ec410a" kindref="member">m_num_samples</ref>);</highlight></codeline>
+<codeline lineno="223"><highlight class="normal"><sp/><sp/>std::iota(<ref refid="classlbann_1_1generic__data__reader_1aaab6aeff67ffff1c689336851fec2c57" kindref="member">m_shuffled_indices</ref>.begin(),<sp/><ref refid="classlbann_1_1generic__data__reader_1aaab6aeff67ffff1c689336851fec2c57" kindref="member">m_shuffled_indices</ref>.end(),<sp/>0);</highlight></codeline>
+<codeline lineno="224"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1generic__data__reader_1aa28fdeeb6af492540f507e49adff5d6c" kindref="member">select_subset_of_data</ref>();</highlight></codeline>
+<codeline lineno="225"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="226"><highlight class="normal"></highlight></codeline>
+<codeline lineno="227" refid="classlbann_1_1csv__reader_1a1fbac4ff1c24ec7f41f55fc8a43515c6" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1csv__reader_1a1fbac4ff1c24ec7f41f55fc8a43515c6" kindref="member">csv_reader::fetch_datum</ref>(<ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref>&amp;<sp/>X,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>data_id,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>mb_idx,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>tid)<sp/>{</highlight></codeline>
+<codeline lineno="228"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1generic__data__reader_1aefc076b842933a882214f4f709ca49c9" kindref="member">m_data_store</ref><sp/>!=<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal">)<sp/>{</highlight></codeline>
+<codeline lineno="229"><highlight class="normal"><sp/><sp/><sp/><sp/>std::vector&lt;DataType&gt;<sp/>*buf;</highlight></codeline>
+<codeline lineno="230"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1generic__data__reader_1aefc076b842933a882214f4f709ca49c9" kindref="member">m_data_store</ref>-&gt;<ref refid="classlbann_1_1generic__data__store_1ab3f8b7fe6d6631059d92714d4277a983" kindref="member">get_data_buf_DataType</ref>(data_id,<sp/>buf);</highlight></codeline>
+<codeline lineno="231"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(</highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>i<sp/>=<sp/>0;<sp/>i<sp/>&lt;<sp/>buf-&gt;size();<sp/>++i)<sp/>{</highlight></codeline>
+<codeline lineno="232"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>X(i,<sp/>mb_idx)<sp/>=<sp/>(*buf)[i];</highlight></codeline>
+<codeline lineno="233"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="234"><highlight class="normal"><sp/><sp/>}<sp/></highlight><highlight class="keywordflow">else</highlight><highlight class="normal"><sp/>{</highlight></codeline>
+<codeline lineno="235"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">auto</highlight><highlight class="normal"><sp/>line<sp/>=<sp/><ref refid="classlbann_1_1csv__reader_1ae00ba61c2b9db1595ff62ab61a218cfb" kindref="member">fetch_line_label_response</ref>(data_id);</highlight></codeline>
+<codeline lineno="236"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Todo:<sp/>Avoid<sp/>unneeded<sp/>copies.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="237"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(</highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>i<sp/>=<sp/>0;<sp/>i<sp/>&lt;<sp/>line.size();<sp/>++i)<sp/>{</highlight></codeline>
+<codeline lineno="238"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>X(i,<sp/>mb_idx)<sp/>=<sp/>line[i];</highlight></codeline>
+<codeline lineno="239"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="240"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="241"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">true</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="242"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="243"><highlight class="normal"></highlight></codeline>
+<codeline lineno="244" refid="classlbann_1_1csv__reader_1a0c223375a08ed0b6a3a1fcc03c86c4ac" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1csv__reader_1a0c223375a08ed0b6a3a1fcc03c86c4ac" kindref="member">csv_reader::fetch_label</ref>(<ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref>&amp;<sp/>Y,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>data_id,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>mb_idx,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>tid)<sp/>{</highlight></codeline>
+<codeline lineno="245"><highlight class="normal"><sp/><sp/>Y(<ref refid="classlbann_1_1csv__reader_1a1f11d02df556a4ec638f332ccfc03eb2" kindref="member">m_labels</ref>[data_id],<sp/>mb_idx)<sp/>=<sp/>1;</highlight></codeline>
+<codeline lineno="246"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">true</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="247"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="248"><highlight class="normal"></highlight></codeline>
+<codeline lineno="249" refid="classlbann_1_1csv__reader_1ab4bbc1b0a9982595b89a930cc125b40b" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1csv__reader_1ab4bbc1b0a9982595b89a930cc125b40b" kindref="member">csv_reader::fetch_response</ref>(<ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref>&amp;<sp/>Y,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>data_id,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>mb_idx,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>tid)<sp/>{</highlight></codeline>
+<codeline lineno="250"><highlight class="normal"><sp/><sp/>Y(0,<sp/>mb_idx)<sp/>=<sp/><ref refid="classlbann_1_1csv__reader_1a8b7e23827c7cbf7c8eff40cad9cb6afc" kindref="member">m_responses</ref>[data_id];</highlight></codeline>
+<codeline lineno="251"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">true</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="252"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="253"><highlight class="normal"></highlight></codeline>
+<codeline lineno="254" refid="classlbann_1_1csv__reader_1acd3af11382da3057c3e72c46bf65f5d3" refkind="member"><highlight class="normal">std::vector&lt;DataType&gt;<sp/><ref refid="classlbann_1_1csv__reader_1acd3af11382da3057c3e72c46bf65f5d3" kindref="member">csv_reader::fetch_line</ref>(</highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>data_id)<sp/>{</highlight></codeline>
+<codeline lineno="255"><highlight class="normal"><sp/><sp/>std::string<sp/>line<sp/>=<sp/><ref refid="classlbann_1_1csv__reader_1a8ea8669ec6c85de8d4127da7bb47d135" kindref="member">fetch_raw_line</ref>(data_id);</highlight></codeline>
+<codeline lineno="256"><highlight class="normal"><sp/><sp/>std::vector&lt;DataType&gt;<sp/>parsed_line;</highlight></codeline>
+<codeline lineno="257"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Note:<sp/>load<sp/>already<sp/>verified<sp/>that<sp/>every<sp/>line<sp/>is<sp/>properly<sp/>formatted.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="258"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>cur_pos<sp/>=<sp/>0;<sp/><sp/></highlight><highlight class="comment">//<sp/>Current<sp/>*start*<sp/>of<sp/>a<sp/>column.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="259"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(</highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>col<sp/>=<sp/>0;<sp/>col<sp/>&lt;<sp/><ref refid="classlbann_1_1csv__reader_1a7607d3f6b356538671147a0b8f7b09c8" kindref="member">m_num_cols</ref>;<sp/>++col)<sp/>{</highlight></codeline>
+<codeline lineno="260"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Note<sp/>for<sp/>last<sp/>column,<sp/>this<sp/>returns<sp/>std::npos,<sp/>which<sp/>substr<sp/>handles.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="261"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>end_pos<sp/>=<sp/>line.find_first_of(<ref refid="classlbann_1_1csv__reader_1abab4a731daa751856f083c117ac8862a" kindref="member">m_separator</ref>,<sp/>cur_pos);</highlight></codeline>
+<codeline lineno="262"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Skip<sp/>columns<sp/>if<sp/>needed.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="263"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(col<sp/>&lt;<sp/><ref refid="classlbann_1_1csv__reader_1a3a6cb698fbeb4abd0032e2b018bbb326" kindref="member">m_skip_cols</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="264"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>cur_pos<sp/>=<sp/>end_pos<sp/>+<sp/>1;</highlight></codeline>
+<codeline lineno="265"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">continue</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="266"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="267"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Note:<sp/>This<sp/>results<sp/>in<sp/>a<sp/>copy,<sp/>switch<sp/>to<sp/>string_view<sp/>when<sp/>we<sp/>can.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="268"><highlight class="normal"><sp/><sp/><sp/><sp/>std::string<sp/>str_val<sp/>=<sp/>line.substr(cur_pos,<sp/>end_pos<sp/>-<sp/>cur_pos);</highlight></codeline>
+<codeline lineno="269"><highlight class="normal"><sp/><sp/><sp/><sp/>cur_pos<sp/>=<sp/>end_pos<sp/>+<sp/>1;</highlight></codeline>
+<codeline lineno="270"><highlight class="normal"><sp/><sp/><sp/><sp/>DataType<sp/>val;</highlight></codeline>
+<codeline lineno="271"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1csv__reader_1aad98a20225b1f2545de32b4c19c8285b" kindref="member">m_col_transforms</ref>.count(col))<sp/>{</highlight></codeline>
+<codeline lineno="272"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>val<sp/>=<sp/><ref refid="classlbann_1_1csv__reader_1aad98a20225b1f2545de32b4c19c8285b" kindref="member">m_col_transforms</ref>[col](str_val);</highlight></codeline>
+<codeline lineno="273"><highlight class="normal"><sp/><sp/><sp/><sp/>}<sp/></highlight><highlight class="keywordflow">else</highlight><highlight class="normal"><sp/>{</highlight></codeline>
+<codeline lineno="274"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>No<sp/>easy<sp/>way<sp/>to<sp/>parameterize<sp/>based<sp/>on<sp/>DataType,<sp/>so<sp/>always<sp/>use<sp/>double.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="275"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>val<sp/>=<sp/>std::stod(str_val);</highlight></codeline>
+<codeline lineno="276"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="277"><highlight class="normal"><sp/><sp/><sp/><sp/>parsed_line.push_back(val);</highlight></codeline>
+<codeline lineno="278"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="279"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>parsed_line;</highlight></codeline>
+<codeline lineno="280"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="281"><highlight class="normal"></highlight></codeline>
+<codeline lineno="282" refid="classlbann_1_1csv__reader_1ae00ba61c2b9db1595ff62ab61a218cfb" refkind="member"><highlight class="normal">std::vector&lt;DataType&gt;<sp/><ref refid="classlbann_1_1csv__reader_1ae00ba61c2b9db1595ff62ab61a218cfb" kindref="member">csv_reader::fetch_line_label_response</ref>(</highlight></codeline>
+<codeline lineno="283"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>data_id)<sp/>{</highlight></codeline>
+<codeline lineno="284"><highlight class="normal"><sp/><sp/>std::string<sp/>line<sp/>=<sp/><ref refid="classlbann_1_1csv__reader_1a8ea8669ec6c85de8d4127da7bb47d135" kindref="member">fetch_raw_line</ref>(data_id);</highlight></codeline>
+<codeline lineno="285"><highlight class="normal"><sp/><sp/>std::vector&lt;DataType&gt;<sp/>parsed_line;</highlight></codeline>
+<codeline lineno="286"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Note:<sp/>load<sp/>already<sp/>verified<sp/>that<sp/>every<sp/>line<sp/>is<sp/>properly<sp/>formatted.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="287"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>cur_pos<sp/>=<sp/>0;<sp/><sp/></highlight><highlight class="comment">//<sp/>Current<sp/>*start*<sp/>of<sp/>a<sp/>column.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="288"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(</highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>col<sp/>=<sp/>0;<sp/>col<sp/>&lt;<sp/><ref refid="classlbann_1_1csv__reader_1a7607d3f6b356538671147a0b8f7b09c8" kindref="member">m_num_cols</ref>;<sp/>++col)<sp/>{</highlight></codeline>
+<codeline lineno="289"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Note<sp/>for<sp/>last<sp/>column,<sp/>this<sp/>returns<sp/>std::npos,<sp/>which<sp/>substr<sp/>handles.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="290"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>end_pos<sp/>=<sp/>line.find_first_of(<ref refid="classlbann_1_1csv__reader_1abab4a731daa751856f083c117ac8862a" kindref="member">m_separator</ref>,<sp/>cur_pos);</highlight></codeline>
+<codeline lineno="291"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Skip<sp/>the<sp/>label,<sp/>response,<sp/>and<sp/>any<sp/>columns<sp/>if<sp/>needed.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="292"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>((!<ref refid="classlbann_1_1csv__reader_1a5f013485fc1466dcf1f78ef020b845d4" kindref="member">m_disable_labels</ref><sp/>&amp;&amp;<sp/>col<sp/>==<sp/><ref refid="classlbann_1_1csv__reader_1acc02e56c81421c4507f7178ca8461b04" kindref="member">m_label_col</ref>)<sp/>||</highlight></codeline>
+<codeline lineno="293"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>(!<ref refid="classlbann_1_1csv__reader_1a1e133c3585df5f131b4772f618e77ad2" kindref="member">m_disable_responses</ref><sp/>&amp;&amp;<sp/>col<sp/>==<sp/><ref refid="classlbann_1_1csv__reader_1a1cfa3562ecd0a7f6358290f299de5812" kindref="member">m_response_col</ref>)<sp/>||</highlight></codeline>
+<codeline lineno="294"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>col<sp/>&lt;<sp/><ref refid="classlbann_1_1csv__reader_1a3a6cb698fbeb4abd0032e2b018bbb326" kindref="member">m_skip_cols</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="295"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>cur_pos<sp/>=<sp/>end_pos<sp/>+<sp/>1;</highlight></codeline>
+<codeline lineno="296"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">continue</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="297"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="298"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Note:<sp/>This<sp/>results<sp/>in<sp/>a<sp/>copy,<sp/>switch<sp/>to<sp/>string_view<sp/>when<sp/>we<sp/>can.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="299"><highlight class="normal"><sp/><sp/><sp/><sp/>std::string<sp/>str_val<sp/>=<sp/>line.substr(cur_pos,<sp/>end_pos<sp/>-<sp/>cur_pos);</highlight></codeline>
+<codeline lineno="300"><highlight class="normal"><sp/><sp/><sp/><sp/>cur_pos<sp/>=<sp/>end_pos<sp/>+<sp/>1;</highlight></codeline>
+<codeline lineno="301"><highlight class="normal"><sp/><sp/><sp/><sp/>DataType<sp/>val;</highlight></codeline>
+<codeline lineno="302"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1csv__reader_1aad98a20225b1f2545de32b4c19c8285b" kindref="member">m_col_transforms</ref>.count(col))<sp/>{</highlight></codeline>
+<codeline lineno="303"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>val<sp/>=<sp/><ref refid="classlbann_1_1csv__reader_1aad98a20225b1f2545de32b4c19c8285b" kindref="member">m_col_transforms</ref>[col](str_val);</highlight></codeline>
+<codeline lineno="304"><highlight class="normal"><sp/><sp/><sp/><sp/>}<sp/></highlight><highlight class="keywordflow">else</highlight><highlight class="normal"><sp/>{</highlight></codeline>
+<codeline lineno="305"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>No<sp/>easy<sp/>way<sp/>to<sp/>parameterize<sp/>based<sp/>on<sp/>DataType,<sp/>so<sp/>always<sp/>use<sp/>double.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="306"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">try</highlight><highlight class="normal"><sp/>{</highlight></codeline>
+<codeline lineno="307"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>val<sp/>=<sp/>std::stod(str_val);</highlight></codeline>
+<codeline lineno="308"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>}<sp/></highlight><highlight class="keywordflow">catch</highlight><highlight class="normal"><sp/>(std::invalid_argument&amp;<sp/>e)<sp/>{</highlight></codeline>
+<codeline lineno="309"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">throw</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__exception" kindref="compound">lbann_exception</ref>(</highlight></codeline>
+<codeline lineno="310"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="stringliteral">&quot;csv_reader:<sp/>could<sp/>not<sp/>convert<sp/>&apos;&quot;</highlight><highlight class="normal"><sp/>+<sp/>str_val<sp/>+<sp/></highlight><highlight class="stringliteral">&quot;&apos;&quot;</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="311"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="312"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="313"><highlight class="normal"><sp/><sp/><sp/><sp/>parsed_line.push_back(val);</highlight></codeline>
+<codeline lineno="314"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="315"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>parsed_line;</highlight></codeline>
+<codeline lineno="316"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="317"><highlight class="normal"></highlight></codeline>
+<codeline lineno="318" refid="classlbann_1_1csv__reader_1a8ea8669ec6c85de8d4127da7bb47d135" refkind="member"><highlight class="normal">std::string<sp/><ref refid="classlbann_1_1csv__reader_1a8ea8669ec6c85de8d4127da7bb47d135" kindref="member">csv_reader::fetch_raw_line</ref>(</highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>data_id)<sp/>{</highlight></codeline>
+<codeline lineno="319"><highlight class="normal"><sp/><sp/>std::ifstream&amp;<sp/>ifs<sp/>=<sp/>*<ref refid="classlbann_1_1csv__reader_1a41ede08dd2ed420bf8f6c6670d892caf" kindref="member">m_ifstreams</ref>[omp_get_thread_num()];</highlight></codeline>
+<codeline lineno="320"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Seek<sp/>to<sp/>the<sp/>start<sp/>of<sp/>this<sp/>datum&apos;s<sp/>line.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="321"><highlight class="normal"><sp/><sp/>ifs.seekg(<ref refid="classlbann_1_1csv__reader_1a2a959e7839d2d11e2deba98ba1884006" kindref="member">m_index</ref>[data_id],<sp/>std::ios::beg);</highlight></codeline>
+<codeline lineno="322"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Compute<sp/>the<sp/>length<sp/>of<sp/>the<sp/>line<sp/>to<sp/>read,<sp/>excluding<sp/>newline.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="323"><highlight class="normal"><sp/><sp/>std::streamsize<sp/>cnt<sp/>=<sp/><ref refid="classlbann_1_1csv__reader_1a2a959e7839d2d11e2deba98ba1884006" kindref="member">m_index</ref>[data_id+1]<sp/>-<sp/><ref refid="classlbann_1_1csv__reader_1a2a959e7839d2d11e2deba98ba1884006" kindref="member">m_index</ref>[data_id]<sp/>-<sp/>1;</highlight></codeline>
+<codeline lineno="324"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Read<sp/>directly<sp/>into<sp/>a<sp/>string<sp/>buffer.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="325"><highlight class="normal"><sp/><sp/>std::string<sp/>line;</highlight></codeline>
+<codeline lineno="326"><highlight class="normal"><sp/><sp/>line.resize(cnt);</highlight></codeline>
+<codeline lineno="327"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(!ifs.read(&amp;line[0],<sp/>cnt))<sp/>{</highlight></codeline>
+<codeline lineno="328"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">throw</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__exception" kindref="compound">lbann_exception</ref>(</highlight></codeline>
+<codeline lineno="329"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="stringliteral">&quot;csv_reader:<sp/>error<sp/>on<sp/>reading<sp/>&quot;</highlight><highlight class="normal"><sp/>+<sp/>std::to_string(data_id));</highlight></codeline>
+<codeline lineno="330"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="331"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>line;</highlight></codeline>
+<codeline lineno="332"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="333"><highlight class="normal"></highlight></codeline>
+<codeline lineno="334" refid="classlbann_1_1csv__reader_1ace1c71ad266e6bd85573051ff45277ab" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1csv__reader_1ace1c71ad266e6bd85573051ff45277ab" kindref="member">csv_reader::skip_rows</ref>(std::ifstream&amp;<sp/>s,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>rows)<sp/>{</highlight></codeline>
+<codeline lineno="335"><highlight class="normal"><sp/><sp/>std::string<sp/>unused;<sp/><sp/></highlight><highlight class="comment">//<sp/>Unused<sp/>buffer<sp/>for<sp/>extracting<sp/>lines.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="336"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(</highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>i<sp/>=<sp/>0;<sp/>i<sp/>&lt;<sp/>rows;<sp/>++i)<sp/>{</highlight></codeline>
+<codeline lineno="337"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(!std::getline(s,<sp/>unused))<sp/>{</highlight></codeline>
+<codeline lineno="338"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">throw</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__exception" kindref="compound">lbann_exception</ref>(</highlight><highlight class="stringliteral">&quot;csv_reader:<sp/>error<sp/>on<sp/>skipping<sp/>rows&quot;</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="339"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="340"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="341"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="342"><highlight class="normal"></highlight></codeline>
+<codeline lineno="343" refid="classlbann_1_1csv__reader_1afc689f206192339770ee9fbd132492bb" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1csv__reader_1afc689f206192339770ee9fbd132492bb" kindref="member">csv_reader::setup_ifstreams</ref>()<sp/>{</highlight></codeline>
+<codeline lineno="344"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a41ede08dd2ed420bf8f6c6670d892caf" kindref="member">m_ifstreams</ref>.resize(omp_get_max_threads());</highlight></codeline>
+<codeline lineno="345"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(</highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>i<sp/>=<sp/>0;<sp/>i<sp/>&lt;<sp/>omp_get_max_threads();<sp/>++i)<sp/>{</highlight></codeline>
+<codeline lineno="346"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1csv__reader_1a41ede08dd2ed420bf8f6c6670d892caf" kindref="member">m_ifstreams</ref>[i]<sp/>=<sp/></highlight><highlight class="keyword">new</highlight><highlight class="normal"><sp/>std::ifstream(</highlight></codeline>
+<codeline lineno="347"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1generic__data__reader_1ab4c6c2d4ba40ece809ce896828c8ff03" kindref="member">get_file_dir</ref>()<sp/>+<sp/><ref refid="classlbann_1_1generic__data__reader_1a56664e1b43f3fe923cf6d652f14b40a9" kindref="member">get_data_filename</ref>(),<sp/>std::ios::in<sp/>|<sp/>std::ios::binary);</highlight></codeline>
+<codeline lineno="348"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1csv__reader_1a41ede08dd2ed420bf8f6c6670d892caf" kindref="member">m_ifstreams</ref>[i]-&gt;fail())<sp/>{</highlight></codeline>
+<codeline lineno="349"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">throw</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__exception" kindref="compound">lbann_exception</ref>(</highlight></codeline>
+<codeline lineno="350"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="stringliteral">&quot;csv_reader:<sp/>failed<sp/>to<sp/>open<sp/>&quot;</highlight><highlight class="normal"><sp/>+<sp/><ref refid="classlbann_1_1generic__data__reader_1ab4c6c2d4ba40ece809ce896828c8ff03" kindref="member">get_file_dir</ref>()<sp/>+<sp/><ref refid="classlbann_1_1generic__data__reader_1a56664e1b43f3fe923cf6d652f14b40a9" kindref="member">get_data_filename</ref>());</highlight></codeline>
+<codeline lineno="351"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="352"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="353"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="354"><highlight class="normal"></highlight></codeline>
+<codeline lineno="355" refid="classlbann_1_1csv__reader_1a19175c31963be64ea602d49cfb37bc68" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1csv__reader_1a19175c31963be64ea602d49cfb37bc68" kindref="member">csv_reader::setup_data_store</ref>(<ref refid="classlbann_1_1model" kindref="compound">model</ref><sp/>*m)<sp/>{</highlight></codeline>
+<codeline lineno="356"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1generic__data__reader_1aefc076b842933a882214f4f709ca49c9" kindref="member">m_data_store</ref><sp/>!=<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal">)<sp/>{</highlight></codeline>
+<codeline lineno="357"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">delete</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1generic__data__reader_1aefc076b842933a882214f4f709ca49c9" kindref="member">m_data_store</ref>;</highlight></codeline>
+<codeline lineno="358"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="359"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1generic__data__reader_1aefc076b842933a882214f4f709ca49c9" kindref="member">m_data_store</ref><sp/>=<sp/></highlight><highlight class="keyword">new</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__store__csv" kindref="compound">data_store_csv</ref>(</highlight><highlight class="keyword">this</highlight><highlight class="normal">,<sp/>m);</highlight></codeline>
+<codeline lineno="360"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1generic__data__reader_1aefc076b842933a882214f4f709ca49c9" kindref="member">m_data_store</ref><sp/>!=<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal">)<sp/>{</highlight></codeline>
+<codeline lineno="361"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1generic__data__reader_1aefc076b842933a882214f4f709ca49c9" kindref="member">m_data_store</ref>-&gt;<ref refid="classlbann_1_1generic__data__store_1a1cff17def02ee21b6ca0befeb04bb582" kindref="member">setup</ref>();</highlight></codeline>
+<codeline lineno="362"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="363"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="364"><highlight class="normal"></highlight></codeline>
+<codeline lineno="365"><highlight class="normal">}<sp/><sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>lbann</highlight><highlight class="normal"></highlight></codeline>
+    </programlisting>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_csv.cpp"/>
+  </compounddef>
+</doxygen>

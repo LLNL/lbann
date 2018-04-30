@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="_r_e_a_d_m_e_8md" kind="file" language="Markdown">
+    <compoundname>README.md</compoundname>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline><highlight class="normal">##<sp/>LBANN<sp/>Documentation<sp/>via<sp/>Doxygen</highlight></codeline>
+<codeline><highlight class="normal">###<sp/>Updating<sp/>the<sp/>Github<sp/>Pages</highlight></codeline>
+<codeline><highlight class="normal">This<sp/>documentation<sp/>is<sp/>generated<sp/>and<sp/>deployed<sp/>to<sp/>github<sp/>pages<sp/>automatically<sp/>using<sp/>Bamboo<sp/>CI.<sp/>To<sp/>trigger<sp/>an<sp/>update<sp/>to<sp/>the<sp/>pages<sp/>add<sp/>&quot;gen_doxygen&quot;<sp/>to<sp/>your<sp/>commit<sp/>message.</highlight></codeline>
+<codeline><highlight class="normal">```</highlight></codeline>
+<codeline><highlight class="normal">git<sp/>commit<sp/>-m<sp/>&quot;Added<sp/>example.cpp<sp/>gen_doxygen&quot;</highlight></codeline>
+<codeline><highlight class="normal">```</highlight></codeline>
+<codeline></codeline>
+<codeline><highlight class="normal">###<sp/>Adding<sp/>to<sp/>the<sp/>documentation</highlight></codeline>
+<codeline><highlight class="normal">**Adding<sp/>to<sp/>Doxygen<sp/>(general):**<sp/>For<sp/>general<sp/>doxygen<sp/>formatting/syntax<sp/>see<sp/>[Doxygen<sp/>User<sp/>Manuel](http://www.stack.nl/~dimitri/doxygen/manual/index.html).</highlight></codeline>
+<codeline></codeline>
+<codeline><highlight class="normal">**Adding<sp/>pages:**<sp/>To<sp/>add<sp/>a<sp/>page<sp/>to<sp/>the<sp/>documentation<sp/>index<sp/>create<sp/>a<sp/>.dox<sp/>file<sp/>and<sp/>add<sp/>it<sp/>to<sp/>the<sp/>INPUT<sp/>field<sp/>found<sp/>in<sp/>Doxyfile.in.<sp/>These<sp/>pages<sp/>appear<sp/>in<sp/>the<sp/>index<sp/>in<sp/>the<sp/>order<sp/>listed<sp/>in<sp/>the<sp/>INPUT<sp/>field.<sp/>Examples<sp/>of<sp/>how<sp/>to<sp/>link<sp/>to<sp/>this<sp/>page<sp/>from<sp/>other<sp/>pages<sp/>can<sp/>be<sp/>found<sp/>in<sp/>mainpage.dox<sp/></highlight></codeline>
+<codeline></codeline>
+<codeline><highlight class="normal">**Adding<sp/>to<sp/>pages**:<sp/>Our<sp/>documentation<sp/>uses<sp/>pages<sp/>to<sp/>give<sp/>users<sp/>extended<sp/>details<sp/>on<sp/>a<sp/>variety<sp/>of<sp/>LBANN<sp/>components<sp/>without<sp/>having<sp/>to<sp/>dig<sp/>into<sp/>the<sp/>implementation<sp/>details.<sp/>To<sp/>add<sp/>a<sp/>new<sp/>component<sp/>class<sp/>to<sp/>the<sp/>associated<sp/>page<sp/>create<sp/>a<sp/>subsection<sp/>and<sp/>use<sp/>the<sp/>\copydetails<sp/>doxygen<sp/>command</highlight></codeline>
+<codeline></codeline>
+<codeline><highlight class="normal">```</highlight></codeline>
+<codeline><highlight class="normal">\copydetails<sp/>lbann::example_layer_class</highlight></codeline>
+<codeline><highlight class="normal">```</highlight></codeline>
+<codeline></codeline>
+<codeline><highlight class="normal">To<sp/>link<sp/>the<sp/>extended<sp/>implementation<sp/>details<sp/>just<sp/>need<sp/>to<sp/>link<sp/>the<sp/>full<sp/>class<sp/>name,<sp/>i.e<sp/>`lbann::example_layer_class`.<sp/>This<sp/>will<sp/>link<sp/>to<sp/>the<sp/>class<sp/>page<sp/>doxygen<sp/>automatically<sp/>generates.</highlight></codeline>
+    </programlisting>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/doc/README.md"/>
+  </compounddef>
+</doxygen>

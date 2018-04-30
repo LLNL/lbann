@@ -1,0 +1,8 @@
+<map id="lbann::generic_target_layer::setup_dims" name="lbann::generic_target_layer::setup_dims">
+<area shape="rect" id="node2" href="$classlbann_1_1Layer.html#a90fce1b06c1f2abb480e18cfe08a9746" title="lbann::Layer::setup_dims" alt="" coords="200,5,370,31"/>
+<area shape="rect" id="node3" href="$classlbann_1_1io__layer.html#a61f2e00334c820235795154492876476" title="lbann::io_layer::is\l_for_regression" alt="" coords="614,113,739,152"/>
+<area shape="rect" id="node4" href="$classlbann_1_1generic__target__layer.html#a55c3e1bcb3e4611c379b1082183b3e66" title="lbann::generic_target\l_layer::get_linearized\l_response_size" alt="" coords="211,107,359,159"/>
+<area shape="rect" id="node6" href="$classlbann_1_1generic__target__layer.html#a8a266291fb01fbcec5cac5fefdef56eb" title="lbann::generic_target\l_layer::get_linearized\l_label_size" alt="" coords="211,183,359,235"/>
+<area shape="rect" id="node5" href="$classlbann_1_1generic__input__layer.html#a6e5e587aa5b32bdfd2dd579a2746885d" title="lbann::generic_input\l_layer::get_linearized\l_response_size" alt="" coords="418,107,566,159"/>
+<area shape="rect" id="node7" href="$classlbann_1_1generic__input__layer.html#ab6c24db7e2b8e73e7d7894e51246dc5e" title="lbann::generic_input\l_layer::get_linearized\l_label_size" alt="" coords="418,183,566,235"/>
+</map>

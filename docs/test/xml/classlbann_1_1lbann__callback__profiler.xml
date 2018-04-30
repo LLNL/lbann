@@ -1,0 +1,506 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1lbann__callback__profiler" kind="class" language="C++" prot="public">
+    <compoundname>lbann::lbann_callback_profiler</compoundname>
+    <basecompoundref refid="classlbann_1_1lbann__callback" prot="public" virt="non-virtual">lbann::lbann_callback</basecompoundref>
+    <includes refid="profiler_8hpp" local="no">profiler.hpp</includes>
+      <sectiondef kind="private-static-attrib">
+      <memberdef kind="variable" id="classlbann_1_1lbann__callback__profiler_1a48e38406712543f839dd7e5e840694e2" prot="private" static="yes" mutable="no">
+        <type>const int</type>
+        <definition>const int lbann::lbann_callback_profiler::num_colors</definition>
+        <argsstring></argsstring>
+        <name>num_colors</name>
+        <initializer>= 20</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/profiler.hpp" line="60" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/profiler.hpp" bodystart="60" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__callback__profiler_1af78237a67eaacf2508f31ad72b8ff8a7" compoundref="profiler_8cpp" startline="121" endline="134">get_color</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="classlbann_1_1lbann__callback__profiler_1addf3323ce665956dc4988e3850bceb30" prot="private" static="no" mutable="no">
+        <type>int</type>
+        <definition>int lbann::lbann_callback_profiler::colors[num_colors]</definition>
+        <argsstring>[num_colors]</argsstring>
+        <name>colors</name>
+        <initializer>= {0x3366CC, 0xDC3912, 0xFF9900, 0x109618, 0x990099, 0x3B3EAC,
+                            0x0099C6, 0xDD4477, 0x66AA00, 0xB82E2E, 0x316395, 0x994499,
+                            0x22AA99, 0xAAAA11, 0x6633CC, 0xE67300, 0x8B0707, 0x329262,
+                            0x5574A6, 0x3B3EAC}</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/profiler.hpp" line="62" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/profiler.hpp" bodystart="62" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__callback__profiler_1abd30d11df631eea086cdf213c9f0f4f9" compoundref="profiler_8cpp" startline="89" endline="91">on_epoch_begin</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__profiler_1a4a60f7470bf36c6833862d47d1a7ce01" compoundref="profiler_8cpp" startline="97" endline="99">on_batch_begin</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__profiler_1a027fe89a27c52ae80a1982f96dd62455" compoundref="profiler_8cpp" startline="105" endline="107">on_forward_prop_begin</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__profiler_1a7905ac8f79a71731c8e388cdb4385023" compoundref="profiler_8cpp" startline="113" endline="115">on_backward_prop_begin</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__profiler_1af78237a67eaacf2508f31ad72b8ff8a7" compoundref="profiler_8cpp" startline="121" endline="134">get_color</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__profiler_1aa1df0f5400362d0b4c469df5d4657eed" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>lbann::lbann_callback_profiler::lbann_callback_profiler</definition>
+        <argsstring>()</argsstring>
+        <name>lbann_callback_profiler</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/profiler.hpp" line="40" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/profiler.hpp" bodystart="40" bodyend="40"/>
+        <references refid="classlbann_1_1lbann__callback__profiler_1ad9c93def349b324a9f3a20c73a5f29a0">operator=</references>
+        <referencedby refid="classlbann_1_1lbann__callback__profiler_1a53351de95859a8a9f3a689ed72970663" compoundref="profiler_8hpp" startline="43" endline="45">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__profiler_1ad55c2dd945f3867ae984ff94e761b05a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::lbann_callback_profiler::lbann_callback_profiler</definition>
+        <argsstring>(const lbann_callback_profiler &amp;)=default</argsstring>
+        <name>lbann_callback_profiler</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1lbann__callback__profiler" kindref="compound">lbann_callback_profiler</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/profiler.hpp" line="41" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__profiler_1ad9c93def349b324a9f3a20c73a5f29a0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classlbann_1_1lbann__callback__profiler" kindref="compound">lbann_callback_profiler</ref> &amp;</type>
+        <definition>lbann_callback_profiler&amp; lbann::lbann_callback_profiler::operator=</definition>
+        <argsstring>(const lbann_callback_profiler &amp;)=default</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1lbann__callback__profiler" kindref="compound">lbann_callback_profiler</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/profiler.hpp" line="42" column="1"/>
+        <referencedby refid="classlbann_1_1lbann__callback__profiler_1aa1df0f5400362d0b4c469df5d4657eed" compoundref="profiler_8hpp" startline="40" endline="40">lbann_callback_profiler</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__profiler_1a53351de95859a8a9f3a689ed72970663" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type><ref refid="classlbann_1_1lbann__callback__profiler" kindref="compound">lbann_callback_profiler</ref> *</type>
+        <definition>lbann_callback_profiler* lbann::lbann_callback_profiler::copy</definition>
+        <argsstring>() const override</argsstring>
+        <name>copy</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1a9f545d1269a8c7af335625d049691f26">copy</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/profiler.hpp" line="43" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/profiler.hpp" bodystart="43" bodyend="45"/>
+        <references refid="classlbann_1_1lbann__callback__profiler_1aa1df0f5400362d0b4c469df5d4657eed" compoundref="profiler_8hpp" startline="40" endline="40">lbann_callback_profiler</references>
+        <references refid="classlbann_1_1lbann__callback__profiler_1abd30d11df631eea086cdf213c9f0f4f9" compoundref="profiler_8cpp" startline="89" endline="91">on_epoch_begin</references>
+        <references refid="classlbann_1_1lbann__callback__profiler_1a86e0fbe550ff42660766977604d9d5a6" compoundref="profiler_8cpp" startline="93" endline="95">on_epoch_end</references>
+        <references refid="classlbann_1_1lbann__callback__profiler_1a4a60f7470bf36c6833862d47d1a7ce01" compoundref="profiler_8cpp" startline="97" endline="99">on_batch_begin</references>
+        <references refid="classlbann_1_1lbann__callback__profiler_1ad7db0233f3a0c91c10a15d0951bb1747" compoundref="profiler_8cpp" startline="101" endline="103">on_batch_end</references>
+        <references refid="classlbann_1_1lbann__callback__profiler_1a027fe89a27c52ae80a1982f96dd62455" compoundref="profiler_8cpp" startline="105" endline="107">on_forward_prop_begin</references>
+        <references refid="classlbann_1_1lbann__callback__profiler_1a63e3ad301cf8529acda00ac8f2531c93" compoundref="profiler_8cpp" startline="109" endline="111">on_forward_prop_end</references>
+        <references refid="classlbann_1_1lbann__callback__profiler_1a7905ac8f79a71731c8e388cdb4385023" compoundref="profiler_8cpp" startline="113" endline="115">on_backward_prop_begin</references>
+        <references refid="classlbann_1_1lbann__callback__profiler_1a8a4ba2640d128992a519ab4a2b7c44aa" compoundref="profiler_8cpp" startline="117" endline="119">on_backward_prop_end</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__profiler_1abd30d11df631eea086cdf213c9f0f4f9" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_profiler::on_epoch_begin</definition>
+        <argsstring>(model *m) override</argsstring>
+        <name>on_epoch_begin</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1a4ed9498763412a55953fff71ee3a9456">on_epoch_begin</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Called at the beginning of each epoch. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/profiler.hpp" line="46" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/profiler.cpp" bodystart="89" bodyend="91"/>
+        <references refid="namespaceanonymous__namespace_02profiler_8cpp_03_1ad2ea0278cd1f25dc30ddd76194ace64b" compoundref="profiler_8cpp" startline="78" endline="80">anonymous_namespace{profiler.cpp}::prof_region_begin</references>
+        <references refid="classlbann_1_1lbann__callback__profiler_1addf3323ce665956dc4988e3850bceb30" compoundref="profiler_8hpp" startline="62">colors</references>
+        <referencedby refid="classlbann_1_1lbann__callback__profiler_1a53351de95859a8a9f3a689ed72970663" compoundref="profiler_8hpp" startline="43" endline="45">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__profiler_1a86e0fbe550ff42660766977604d9d5a6" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_profiler::on_epoch_end</definition>
+        <argsstring>(model *m) override</argsstring>
+        <name>on_epoch_end</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1a1fc71110e7f754bf73c9e0f344a448a5">on_epoch_end</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Called immediate after the end of each epoch. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/profiler.hpp" line="47" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/profiler.cpp" bodystart="93" bodyend="95"/>
+        <references refid="namespaceanonymous__namespace_02profiler_8cpp_03_1a7984c26fb186307873a2f83f91715a99" compoundref="profiler_8cpp" startline="81" endline="83">anonymous_namespace{profiler.cpp}::prof_region_end</references>
+        <referencedby refid="classlbann_1_1lbann__callback__profiler_1a53351de95859a8a9f3a689ed72970663" compoundref="profiler_8hpp" startline="43" endline="45">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__profiler_1a4a60f7470bf36c6833862d47d1a7ce01" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_profiler::on_batch_begin</definition>
+        <argsstring>(model *m) override</argsstring>
+        <name>on_batch_begin</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1a9ecf4e44cd4021cdd687de14c850cc83">on_batch_begin</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Called at the beginning of a (mini-)batch. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/profiler.hpp" line="48" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/profiler.cpp" bodystart="97" bodyend="99"/>
+        <references refid="namespaceanonymous__namespace_02profiler_8cpp_03_1ad2ea0278cd1f25dc30ddd76194ace64b" compoundref="profiler_8cpp" startline="78" endline="80">anonymous_namespace{profiler.cpp}::prof_region_begin</references>
+        <references refid="classlbann_1_1lbann__callback__profiler_1addf3323ce665956dc4988e3850bceb30" compoundref="profiler_8hpp" startline="62">colors</references>
+        <referencedby refid="classlbann_1_1lbann__callback__profiler_1a53351de95859a8a9f3a689ed72970663" compoundref="profiler_8hpp" startline="43" endline="45">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__profiler_1ad7db0233f3a0c91c10a15d0951bb1747" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_profiler::on_batch_end</definition>
+        <argsstring>(model *m) override</argsstring>
+        <name>on_batch_end</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1a895ca577e358601fcae5c04749f60535">on_batch_end</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Called immediately after the end of a (mini-)batch. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/profiler.hpp" line="49" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/profiler.cpp" bodystart="101" bodyend="103"/>
+        <references refid="namespaceanonymous__namespace_02profiler_8cpp_03_1a7984c26fb186307873a2f83f91715a99" compoundref="profiler_8cpp" startline="81" endline="83">anonymous_namespace{profiler.cpp}::prof_region_end</references>
+        <referencedby refid="classlbann_1_1lbann__callback__profiler_1a53351de95859a8a9f3a689ed72970663" compoundref="profiler_8hpp" startline="43" endline="45">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__profiler_1a027fe89a27c52ae80a1982f96dd62455" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_profiler::on_forward_prop_begin</definition>
+        <argsstring>(model *m) override</argsstring>
+        <name>on_forward_prop_begin</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1a22ed977371173105b4aad3a20b9c59dc">on_forward_prop_begin</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Called when a model begins forward propagation. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/profiler.hpp" line="50" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/profiler.cpp" bodystart="105" bodyend="107"/>
+        <references refid="namespaceanonymous__namespace_02profiler_8cpp_03_1ad2ea0278cd1f25dc30ddd76194ace64b" compoundref="profiler_8cpp" startline="78" endline="80">anonymous_namespace{profiler.cpp}::prof_region_begin</references>
+        <references refid="classlbann_1_1lbann__callback__profiler_1addf3323ce665956dc4988e3850bceb30" compoundref="profiler_8hpp" startline="62">colors</references>
+        <referencedby refid="classlbann_1_1lbann__callback__profiler_1a53351de95859a8a9f3a689ed72970663" compoundref="profiler_8hpp" startline="43" endline="45">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__profiler_1a63e3ad301cf8529acda00ac8f2531c93" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_profiler::on_forward_prop_end</definition>
+        <argsstring>(model *m) override</argsstring>
+        <name>on_forward_prop_end</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1a79a0bb407852d7b330b74373647ffe46">on_forward_prop_end</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Called when a model ends forward propagation. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/profiler.hpp" line="51" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/profiler.cpp" bodystart="109" bodyend="111"/>
+        <references refid="namespaceanonymous__namespace_02profiler_8cpp_03_1a7984c26fb186307873a2f83f91715a99" compoundref="profiler_8cpp" startline="81" endline="83">anonymous_namespace{profiler.cpp}::prof_region_end</references>
+        <referencedby refid="classlbann_1_1lbann__callback__profiler_1a53351de95859a8a9f3a689ed72970663" compoundref="profiler_8hpp" startline="43" endline="45">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__profiler_1a7905ac8f79a71731c8e388cdb4385023" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_profiler::on_backward_prop_begin</definition>
+        <argsstring>(model *m) override</argsstring>
+        <name>on_backward_prop_begin</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1a2c0709a26179d115ff85b7561786ee27">on_backward_prop_begin</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Called when a model begins backward propagation. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/profiler.hpp" line="52" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/profiler.cpp" bodystart="113" bodyend="115"/>
+        <references refid="namespaceanonymous__namespace_02profiler_8cpp_03_1ad2ea0278cd1f25dc30ddd76194ace64b" compoundref="profiler_8cpp" startline="78" endline="80">anonymous_namespace{profiler.cpp}::prof_region_begin</references>
+        <references refid="classlbann_1_1lbann__callback__profiler_1addf3323ce665956dc4988e3850bceb30" compoundref="profiler_8hpp" startline="62">colors</references>
+        <referencedby refid="classlbann_1_1lbann__callback__profiler_1a53351de95859a8a9f3a689ed72970663" compoundref="profiler_8hpp" startline="43" endline="45">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__profiler_1a8a4ba2640d128992a519ab4a2b7c44aa" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_profiler::on_backward_prop_end</definition>
+        <argsstring>(model *m) override</argsstring>
+        <name>on_backward_prop_end</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1af183624e63ba65e0003fa988f53dee0c">on_backward_prop_end</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Called when a model ends backward propagation. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/profiler.hpp" line="53" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/profiler.cpp" bodystart="117" bodyend="119"/>
+        <references refid="namespaceanonymous__namespace_02profiler_8cpp_03_1a7984c26fb186307873a2f83f91715a99" compoundref="profiler_8cpp" startline="81" endline="83">anonymous_namespace{profiler.cpp}::prof_region_end</references>
+        <referencedby refid="classlbann_1_1lbann__callback__profiler_1a53351de95859a8a9f3a689ed72970663" compoundref="profiler_8hpp" startline="43" endline="45">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__profiler_1adc7cf77381bec8ab1cc5ba5e554ec268" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_profiler::on_forward_prop_begin</definition>
+        <argsstring>(model *m, Layer *l) override</argsstring>
+        <name>on_forward_prop_begin</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1ab96adb1d77180e00fdd668cd381323fd">on_forward_prop_begin</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+          <declname>m</declname>
+        </param>
+        <param>
+          <type><ref refid="classlbann_1_1Layer" kindref="compound">Layer</ref> *</type>
+          <declname>l</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Called when a layer begins forward propagation. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/profiler.hpp" line="54" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/profiler.cpp" bodystart="136" bodyend="138"/>
+        <references refid="namespaceanonymous__namespace_02profiler_8cpp_03_1ad2ea0278cd1f25dc30ddd76194ace64b" compoundref="profiler_8cpp" startline="78" endline="80">anonymous_namespace{profiler.cpp}::prof_region_begin</references>
+        <references refid="classlbann_1_1Layer_1a0fa0ea9160b490c151c0a17fde4f7239">lbann::Layer::get_type</references>
+        <references refid="classlbann_1_1lbann__callback__profiler_1af78237a67eaacf2508f31ad72b8ff8a7" compoundref="profiler_8cpp" startline="121" endline="134">get_color</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__profiler_1a6cfc4cf84fe4229f627d18ad19eaa415" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_profiler::on_forward_prop_end</definition>
+        <argsstring>(model *m, Layer *l) override</argsstring>
+        <name>on_forward_prop_end</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1a5eff0a59fbce98a981d9cdd0547a3ad5">on_forward_prop_end</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+          <declname>m</declname>
+        </param>
+        <param>
+          <type><ref refid="classlbann_1_1Layer" kindref="compound">Layer</ref> *</type>
+          <declname>l</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Called when a layer ends forward propagation. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/profiler.hpp" line="55" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/profiler.cpp" bodystart="140" bodyend="142"/>
+        <references refid="namespaceanonymous__namespace_02profiler_8cpp_03_1a7984c26fb186307873a2f83f91715a99" compoundref="profiler_8cpp" startline="81" endline="83">anonymous_namespace{profiler.cpp}::prof_region_end</references>
+        <references refid="classlbann_1_1Layer_1a0fa0ea9160b490c151c0a17fde4f7239">lbann::Layer::get_type</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__profiler_1a158d8d47bd7a2e38a1f5589030fa523b" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_profiler::on_backward_prop_begin</definition>
+        <argsstring>(model *m, Layer *l) override</argsstring>
+        <name>on_backward_prop_begin</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1abeb1e486e259fd358332abf1e952f630">on_backward_prop_begin</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+          <declname>m</declname>
+        </param>
+        <param>
+          <type><ref refid="classlbann_1_1Layer" kindref="compound">Layer</ref> *</type>
+          <declname>l</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Called when a layer begins backward propagation. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/profiler.hpp" line="56" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/profiler.cpp" bodystart="144" bodyend="146"/>
+        <references refid="namespaceanonymous__namespace_02profiler_8cpp_03_1ad2ea0278cd1f25dc30ddd76194ace64b" compoundref="profiler_8cpp" startline="78" endline="80">anonymous_namespace{profiler.cpp}::prof_region_begin</references>
+        <references refid="classlbann_1_1Layer_1a0fa0ea9160b490c151c0a17fde4f7239">lbann::Layer::get_type</references>
+        <references refid="classlbann_1_1lbann__callback__profiler_1af78237a67eaacf2508f31ad72b8ff8a7" compoundref="profiler_8cpp" startline="121" endline="134">get_color</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__profiler_1a3fe2bc2b07b2e8e5873c9afb94cebe93" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_profiler::on_backward_prop_end</definition>
+        <argsstring>(model *m, Layer *l) override</argsstring>
+        <name>on_backward_prop_end</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1aba03b59c056ace8094095c08e39b9ac4">on_backward_prop_end</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+          <declname>m</declname>
+        </param>
+        <param>
+          <type><ref refid="classlbann_1_1Layer" kindref="compound">Layer</ref> *</type>
+          <declname>l</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Called when a layer ends backward propagation. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/profiler.hpp" line="57" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/profiler.cpp" bodystart="148" bodyend="150"/>
+        <references refid="namespaceanonymous__namespace_02profiler_8cpp_03_1a7984c26fb186307873a2f83f91715a99" compoundref="profiler_8cpp" startline="81" endline="83">anonymous_namespace{profiler.cpp}::prof_region_end</references>
+        <references refid="classlbann_1_1Layer_1a0fa0ea9160b490c151c0a17fde4f7239">lbann::Layer::get_type</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__profiler_1ac58447afa0642c1a466d9b58f0de87c8" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>std::string</type>
+        <definition>std::string lbann::lbann_callback_profiler::name</definition>
+        <argsstring>() const override</argsstring>
+        <name>name</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1a7522c7a14f1d6a1ea762cc2d7248eb3a">name</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Return this callback&apos;s name. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/profiler.hpp" line="58" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/profiler.hpp" bodystart="58" bodyend="58"/>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="private-func">
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__profiler_1af78237a67eaacf2508f31ad72b8ff8a7" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int lbann::lbann_callback_profiler::get_color</definition>
+        <argsstring>(Layer *l)</argsstring>
+        <name>get_color</name>
+        <param>
+          <type><ref refid="classlbann_1_1Layer" kindref="compound">Layer</ref> *</type>
+          <declname>l</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/profiler.hpp" line="66" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/callbacks/profiler.cpp" bodystart="121" bodyend="134"/>
+        <references refid="classlbann_1_1Layer_1a0fa0ea9160b490c151c0a17fde4f7239">lbann::Layer::get_type</references>
+        <references refid="classlbann_1_1lbann__callback__profiler_1addf3323ce665956dc4988e3850bceb30" compoundref="profiler_8hpp" startline="62">colors</references>
+        <references refid="classlbann_1_1lbann__callback__profiler_1a48e38406712543f839dd7e5e840694e2" compoundref="profiler_8hpp" startline="60">num_colors</references>
+        <referencedby refid="classlbann_1_1lbann__callback__profiler_1adc7cf77381bec8ab1cc5ba5e554ec268" compoundref="profiler_8cpp" startline="136" endline="138">on_forward_prop_begin</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__profiler_1a158d8d47bd7a2e38a1f5589030fa523b" compoundref="profiler_8cpp" startline="144" endline="146">on_backward_prop_begin</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <inheritancegraph>
+      <node id="1455">
+        <label>lbann::lbann_callback</label>
+        <link refid="classlbann_1_1lbann__callback"/>
+      </node>
+      <node id="1454">
+        <label>lbann::lbann_callback_profiler</label>
+        <link refid="classlbann_1_1lbann__callback__profiler"/>
+        <childnode refid="1455" relation="public-inheritance">
+        </childnode>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="1457">
+        <label>lbann::lbann_callback</label>
+        <link refid="classlbann_1_1lbann__callback"/>
+        <childnode refid="1458" relation="usage">
+          <edgelabel>m_summarizer</edgelabel>
+        </childnode>
+      </node>
+      <node id="1458">
+        <label>lbann::lbann_summary</label>
+        <link refid="classlbann_1_1lbann__summary"/>
+      </node>
+      <node id="1456">
+        <label>lbann::lbann_callback_profiler</label>
+        <link refid="classlbann_1_1lbann__callback__profiler"/>
+        <childnode refid="1457" relation="public-inheritance">
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/profiler.hpp" line="38" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/profiler.hpp" bodystart="38" bodyend="67"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1lbann__callback__profiler_1addf3323ce665956dc4988e3850bceb30" prot="private" virt="non-virtual"><scope>lbann::lbann_callback_profiler</scope><name>colors</name></member>
+      <member refid="classlbann_1_1lbann__callback__profiler_1a53351de95859a8a9f3a689ed72970663" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>copy</name></member>
+      <member refid="classlbann_1_1lbann__callback_1acec888932129f93ba2a0077192467c9e" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_profiler</scope><name>get_batch_interval</name></member>
+      <member refid="classlbann_1_1lbann__callback__profiler_1af78237a67eaacf2508f31ad72b8ff8a7" prot="private" virt="non-virtual"><scope>lbann::lbann_callback_profiler</scope><name>get_color</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a679057298a41ddd47f08c157f756c584" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_profiler</scope><name>lbann_callback</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a91d994616b8bf98685ac32939228f96a" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_profiler</scope><name>lbann_callback</name></member>
+      <member refid="classlbann_1_1lbann__callback__profiler_1aa1df0f5400362d0b4c469df5d4657eed" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_profiler</scope><name>lbann_callback_profiler</name></member>
+      <member refid="classlbann_1_1lbann__callback__profiler_1ad55c2dd945f3867ae984ff94e761b05a" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_profiler</scope><name>lbann_callback_profiler</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a6126e310e9924398c18ccf76bb91c705" prot="protected" virt="non-virtual"><scope>lbann::lbann_callback_profiler</scope><name>m_batch_interval</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a277d46138184f85f161a8263b8322c76" prot="protected" virt="non-virtual"><scope>lbann::lbann_callback_profiler</scope><name>m_summarizer</name></member>
+      <member refid="classlbann_1_1lbann__callback__profiler_1ac58447afa0642c1a466d9b58f0de87c8" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>name</name></member>
+      <member refid="classlbann_1_1lbann__callback__profiler_1a48e38406712543f839dd7e5e840694e2" prot="private" virt="non-virtual"><scope>lbann::lbann_callback_profiler</scope><name>num_colors</name></member>
+      <member refid="classlbann_1_1lbann__callback__profiler_1a7905ac8f79a71731c8e388cdb4385023" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>on_backward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback__profiler_1a158d8d47bd7a2e38a1f5589030fa523b" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>on_backward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback__profiler_1a8a4ba2640d128992a519ab4a2b7c44aa" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>on_backward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback__profiler_1a3fe2bc2b07b2e8e5873c9afb94cebe93" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>on_backward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback__profiler_1a4a60f7470bf36c6833862d47d1a7ce01" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>on_batch_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback__profiler_1ad7db0233f3a0c91c10a15d0951bb1747" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>on_batch_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a3462e54126adbd0082c22c98d8de5468" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>on_batch_evaluate_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ad10891b8ab3de74ee1a70e6255e7d58a" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>on_batch_evaluate_end</name></member>
+      <member refid="classlbann_1_1lbann__callback__profiler_1abd30d11df631eea086cdf213c9f0f4f9" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>on_epoch_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback__profiler_1a86e0fbe550ff42660766977604d9d5a6" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>on_epoch_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a4a2cff48a688bb56ed14b8b53344f945" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>on_evaluate_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a044174864e4981a1dac093d58e8c4d6c" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>on_evaluate_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a0794f3fb88db6fef53f0e2f235f94424" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>on_evaluate_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ae23c5a61b81dbdfbd79736ac2b6035aa" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>on_evaluate_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback__profiler_1a027fe89a27c52ae80a1982f96dd62455" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>on_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback__profiler_1adc7cf77381bec8ab1cc5ba5e554ec268" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>on_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback__profiler_1a63e3ad301cf8529acda00ac8f2531c93" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>on_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback__profiler_1a6cfc4cf84fe4229f627d18ad19eaa415" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>on_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a1a9248b305f06419889c1b3b0f0893d8" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>on_optimize_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a497e750da160e0071ce8864ccc3a1344" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>on_optimize_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a235195d5fa4461835b861a03a5c0278f" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>on_optimize_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a4653e2903bfd3903709a81eaf7eabc1a" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>on_optimize_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ace7452239c9ad7aa6247e9496adbcffe" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>on_phase_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a716bff45bdc5a88eed09c2231f5bc93a" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>on_test_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1accbad4dd004c1ced33642db6398b2efe" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>on_test_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a7c8f0d211967ccc5219144e92571ab26" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>on_train_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1af28078b0ddaef45124465bef01eefedf" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>on_train_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a2bde303671110519388d9962bc3e5583" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>on_validation_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1adc16e42e5064dc2dc8d84dfbfc1325eb" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>on_validation_end</name></member>
+      <member refid="classlbann_1_1lbann__callback__profiler_1ad9c93def349b324a9f3a20c73a5f29a0" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_profiler</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a66b0a8c00a273669fa782ece59e8898b" prot="public" virt="non-virtual" ambiguityscope="lbann::lbann_callback::"><scope>lbann::lbann_callback_profiler</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a02d924df2f8ca851578dc76d9015e48d" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_profiler</scope><name>set_summarizer</name></member>
+      <member refid="classlbann_1_1lbann__callback_1aab5086e27d9bb0a7c7ee8ffc1bc58671" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>setup</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ac91abaec389f8d2547512c45ae587304" prot="public" virt="virtual"><scope>lbann::lbann_callback_profiler</scope><name>~lbann_callback</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

@@ -1,0 +1,77 @@
+\hypertarget{base_8cpp}{}\section{/\+Users/mckinney27/doxy-\/testbed/lbann/src/base.cpp File Reference}
+\label{base_8cpp}\index{/\+Users/mckinney27/doxy-\/testbed/lbann/src/base.\+cpp@{/\+Users/mckinney27/doxy-\/testbed/lbann/src/base.\+cpp}}
+{\ttfamily \#include \char`\"{}lbann/base.\+hpp\char`\"{}}\newline
+{\ttfamily \#include $<$omp.\+h$>$}\newline
+{\ttfamily \#include \char`\"{}lbann/comm.\+hpp\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}lbann/utils/random.\+hpp\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}lbann/utils/omp\+\_\+diagnostics.\+hpp\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}lbann/utils/stack\+\_\+trace.\+hpp\char`\"{}}\newline
+Include dependency graph for base.\+cpp\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{base_8cpp__incl}
+\end{center}
+\end{figure}
+\subsection*{Namespaces}
+\begin{DoxyCompactItemize}
+\item 
+ \hyperlink{namespacelbann}{lbann}
+\begin{DoxyCompactList}\small\item\em Open\+MP Diagnostic code from Edgar Leon at L\+L\+NL. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+lbann\+\_\+comm $\ast$ \hyperlink{namespacelbann_a3d91b615e42bf5744deeed770879bc8c}{lbann\+::initialize} (int \&argc, char $\ast$$\ast$\&argv, int seed)
+\item 
+void \hyperlink{namespacelbann_a99724ee5a6647a1d8bff6764b9aa5fac}{lbann\+::finalize} (lbann\+\_\+comm $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm})
+\item 
+std\+::string \hyperlink{base_8cpp_af3cdcb8265717e1115135deb3618e5dd}{get\+\_\+pool\+\_\+mode\+\_\+name} (\hyperlink{base_8hpp_ac47a6ee5278a53898222a48639a2bf39}{pool\+\_\+mode} m)
+\end{DoxyCompactItemize}
+\subsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+static std\+::vector$<$ std\+::string $>$ \hyperlink{base_8cpp_a4d929cc5b806bb7fb8b9dfef666e20f6}{pool\+\_\+mode\+\_\+names} = \{ \char`\"{}max\char`\"{}, \char`\"{}average\char`\"{}, \char`\"{}average\+\_\+no\+\_\+pad\char`\"{} \}
+\end{DoxyCompactItemize}
+
+
+\subsection{Function Documentation}
+\mbox{\Hypertarget{base_8cpp_af3cdcb8265717e1115135deb3618e5dd}\label{base_8cpp_af3cdcb8265717e1115135deb3618e5dd}} 
+\index{base.\+cpp@{base.\+cpp}!get\+\_\+pool\+\_\+mode\+\_\+name@{get\+\_\+pool\+\_\+mode\+\_\+name}}
+\index{get\+\_\+pool\+\_\+mode\+\_\+name@{get\+\_\+pool\+\_\+mode\+\_\+name}!base.\+cpp@{base.\+cpp}}
+\subsubsection{\texorpdfstring{get\+\_\+pool\+\_\+mode\+\_\+name()}{get\_pool\_mode\_name()}}
+{\footnotesize\ttfamily std\+::string get\+\_\+pool\+\_\+mode\+\_\+name (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_ac47a6ee5278a53898222a48639a2bf39}{pool\+\_\+mode}}]{m }\end{DoxyParamCaption})}
+
+returns a string representation of the pool\+\_\+mode 
+
+Definition at line 101 of file base.\+cpp.
+
+
+\begin{DoxyCode}
+101                                           \{
+102   \textcolor{keywordflow}{if} ((\textcolor{keywordtype}{int})m < 0 or (\textcolor{keywordtype}{int})m >= (\textcolor{keywordtype}{int})\hyperlink{base_8cpp_a4d929cc5b806bb7fb8b9dfef666e20f6}{pool\_mode\_names}.size()) \{
+103     \textcolor{keywordflow}{throw}(std::string\{\} + \_\_FILE\_\_ + \textcolor{stringliteral}{" "} + std::to\_string(\_\_LINE\_\_) + \textcolor{stringliteral}{" :: "}
+104           + \textcolor{stringliteral}{" Invalid pool\_mode"});
+105   \}
+106   \textcolor{keywordflow}{return} \hyperlink{base_8cpp_a4d929cc5b806bb7fb8b9dfef666e20f6}{pool\_mode\_names}[(int)m];
+107 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=337pt]{base_8cpp_af3cdcb8265717e1115135deb3618e5dd_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Variable Documentation}
+\mbox{\Hypertarget{base_8cpp_a4d929cc5b806bb7fb8b9dfef666e20f6}\label{base_8cpp_a4d929cc5b806bb7fb8b9dfef666e20f6}} 
+\index{base.\+cpp@{base.\+cpp}!pool\+\_\+mode\+\_\+names@{pool\+\_\+mode\+\_\+names}}
+\index{pool\+\_\+mode\+\_\+names@{pool\+\_\+mode\+\_\+names}!base.\+cpp@{base.\+cpp}}
+\subsubsection{\texorpdfstring{pool\+\_\+mode\+\_\+names}{pool\_mode\_names}}
+{\footnotesize\ttfamily std\+::vector$<$std\+::string$>$ pool\+\_\+mode\+\_\+names = \{ \char`\"{}max\char`\"{}, \char`\"{}average\char`\"{}, \char`\"{}average\+\_\+no\+\_\+pad\char`\"{} \}\hspace{0.3cm}{\ttfamily [static]}}
+
+hack to avoid long switch/case statement; users should ignore; of interest to developers 
+
+Definition at line 98 of file base.\+cpp.
+

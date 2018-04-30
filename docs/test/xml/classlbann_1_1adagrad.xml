@@ -1,0 +1,450 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1adagrad" kind="class" language="C++" prot="public">
+    <compoundname>lbann::adagrad</compoundname>
+    <basecompoundref refid="classlbann_1_1optimizer" prot="public" virt="non-virtual">lbann::optimizer</basecompoundref>
+    <includes refid="adagrad_8hpp" local="no">adagrad.hpp</includes>
+      <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="classlbann_1_1adagrad_1aace057f88a46dab327f6409716dbe8de" prot="private" static="no" mutable="no">
+        <type>DataType</type>
+        <definition>DataType lbann::adagrad::m_eps</definition>
+        <argsstring></argsstring>
+        <name>m_eps</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Small factor to avoid division by zero. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adagrad.hpp" line="76" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adagrad.hpp" bodystart="76" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1adagrad_1a9c9b59e0dfdfa32a3a9596a38fd95af6" compoundref="adagrad_8cpp" startline="40" endline="56">operator=</referencedby>
+        <referencedby refid="classlbann_1_1adagrad_1ad8c3000c84809fab63672e9eb35c5370" compoundref="adagrad_8cpp" startline="62" endline="67">get_description</referencedby>
+        <referencedby refid="classlbann_1_1adagrad_1a99dbaed2a331ce8d13a73e7beb7f5aba" compoundref="adagrad_8cpp" startline="76" endline="114">step_compute</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1adagrad_1a5eaf0d220d2be78d91455ba85eef3e9a" prot="private" static="no" mutable="no">
+        <type><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> *</type>
+        <definition>AbsDistMat* lbann::adagrad::m_cache</definition>
+        <argsstring></argsstring>
+        <name>m_cache</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>AdaGrad cache. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adagrad.hpp" line="78" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adagrad.hpp" bodystart="78" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1adagrad_1aee9814a21ad8c44b402c77f244235597" compoundref="adagrad_8cpp" startline="35" endline="38">adagrad</referencedby>
+        <referencedby refid="classlbann_1_1adagrad_1a9c9b59e0dfdfa32a3a9596a38fd95af6" compoundref="adagrad_8cpp" startline="40" endline="56">operator=</referencedby>
+        <referencedby refid="classlbann_1_1adagrad_1aa8dcd50b119871cbe1db9817fc00ea52" compoundref="adagrad_8cpp" startline="58" endline="60">~adagrad</referencedby>
+        <referencedby refid="classlbann_1_1adagrad_1ab027f2979a6df453eb588b1961afd77a" compoundref="adagrad_8cpp" startline="69" endline="74">setup</referencedby>
+        <referencedby refid="classlbann_1_1adagrad_1a99dbaed2a331ce8d13a73e7beb7f5aba" compoundref="adagrad_8cpp" startline="76" endline="114">step_compute</referencedby>
+        <referencedby refid="classlbann_1_1adagrad_1a94282e58af6bb1e9af27255e23bd3d3d" compoundref="adagrad_8cpp" startline="120" endline="128">save_to_checkpoint_shared</referencedby>
+        <referencedby refid="classlbann_1_1adagrad_1ac6b6eb0c4d393679f69281c072dbc4fa" compoundref="adagrad_8cpp" startline="130" endline="138">load_from_checkpoint_shared</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1adagrad_1a26d826ba89053481a26573a592ff2f8a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::adagrad::adagrad</definition>
+        <argsstring>(lbann_comm *comm, DataType learning_rate, DataType eps=DataType(1e-8))</argsstring>
+        <name>adagrad</name>
+        <param>
+          <type><ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref> *</type>
+          <declname>comm</declname>
+        </param>
+        <param>
+          <type>DataType</type>
+          <declname>learning_rate</declname>
+        </param>
+        <param>
+          <type>DataType</type>
+          <declname>eps</declname>
+          <defval>DataType(1e-8)</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Constructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adagrad.hpp" line="39" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/adagrad.cpp" bodystart="32" bodyend="33"/>
+        <referencedby refid="classlbann_1_1adagrad_1a4e8a72adf65df84d15f24fe6be03d1b1" compoundref="adagrad_8hpp" startline="50" endline="50">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1adagrad_1aee9814a21ad8c44b402c77f244235597" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::adagrad::adagrad</definition>
+        <argsstring>(const adagrad &amp;other)</argsstring>
+        <name>adagrad</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1adagrad" kindref="compound">adagrad</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Copy constructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adagrad.hpp" line="44" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/adagrad.cpp" bodystart="35" bodyend="38"/>
+        <references refid="classlbann_1_1adagrad_1a5eaf0d220d2be78d91455ba85eef3e9a" compoundref="adagrad_8hpp" startline="78">m_cache</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1adagrad_1a9c9b59e0dfdfa32a3a9596a38fd95af6" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classlbann_1_1adagrad" kindref="compound">adagrad</ref> &amp;</type>
+        <definition>adagrad &amp; lbann::adagrad::operator=</definition>
+        <argsstring>(const adagrad &amp;other)</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1adagrad" kindref="compound">adagrad</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Copy assignment operator. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adagrad.hpp" line="46" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/adagrad.cpp" bodystart="40" bodyend="56"/>
+        <references refid="classlbann_1_1optimizer_1ab7811e0a4d2d9b594140aed78b6de743" compoundref="optimizer_8cpp" startline="70" endline="100">lbann::optimizer::operator=</references>
+        <references refid="classlbann_1_1adagrad_1aace057f88a46dab327f6409716dbe8de" compoundref="adagrad_8hpp" startline="76">m_eps</references>
+        <references refid="classlbann_1_1adagrad_1a5eaf0d220d2be78d91455ba85eef3e9a" compoundref="adagrad_8hpp" startline="78">m_cache</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1adagrad_1aa8dcd50b119871cbe1db9817fc00ea52" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::adagrad::~adagrad</definition>
+        <argsstring>() override</argsstring>
+        <name>~adagrad</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Destructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adagrad.hpp" line="48" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/adagrad.cpp" bodystart="58" bodyend="60"/>
+        <references refid="classlbann_1_1adagrad_1a5eaf0d220d2be78d91455ba85eef3e9a" compoundref="adagrad_8hpp" startline="78">m_cache</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1adagrad_1a4e8a72adf65df84d15f24fe6be03d1b1" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type><ref refid="classlbann_1_1adagrad" kindref="compound">adagrad</ref> *</type>
+        <definition>adagrad* lbann::adagrad::copy</definition>
+        <argsstring>() const override</argsstring>
+        <name>copy</name>
+        <reimplements refid="classlbann_1_1optimizer_1adf19a1d19d832ebfe70072cc202cdf39">copy</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Create a copy. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adagrad.hpp" line="50" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adagrad.hpp" bodystart="50" bodyend="50"/>
+        <references refid="classlbann_1_1adagrad_1a26d826ba89053481a26573a592ff2f8a" compoundref="adagrad_8cpp" startline="32" endline="33">adagrad</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1adagrad_1a7a287b367af6ef6f7f21141ad78732a7" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>std::string</type>
+        <definition>std::string lbann::adagrad::get_type</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_type</name>
+        <reimplements refid="classlbann_1_1optimizer_1a7b7a6814e14eeee157e1cbb7f15dd4ff">get_type</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Get the optimizer name. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adagrad.hpp" line="53" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adagrad.hpp" bodystart="53" bodyend="53"/>
+        <references refid="classlbann_1_1adagrad_1ad8c3000c84809fab63672e9eb35c5370" compoundref="adagrad_8cpp" startline="62" endline="67">get_description</references>
+        <references refid="classlbann_1_1adagrad_1ab027f2979a6df453eb588b1961afd77a" compoundref="adagrad_8cpp" startline="69" endline="74">setup</references>
+        <references refid="classlbann_1_1adagrad_1a99dbaed2a331ce8d13a73e7beb7f5aba" compoundref="adagrad_8cpp" startline="76" endline="114">step_compute</references>
+        <references refid="classlbann_1_1adagrad_1a2189fad7d43175458d613bd078ff2b78">update</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1adagrad_1ad8c3000c84809fab63672e9eb35c5370" prot="public" static="no" const="yes" explicit="no" inline="no" virt="virtual">
+        <type>std::string</type>
+        <definition>std::string lbann::adagrad::get_description</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_description</name>
+        <reimplements refid="classlbann_1_1optimizer_1a66bb8d28dfb41452ac1a75a3efd47723">get_description</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Get a human-readable description of the optimizer. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adagrad.hpp" line="55" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/adagrad.cpp" bodystart="62" bodyend="67"/>
+        <references refid="classlbann_1_1optimizer_1a66bb8d28dfb41452ac1a75a3efd47723" compoundref="optimizer_8cpp" startline="107" endline="115">lbann::optimizer::get_description</references>
+        <references refid="classlbann_1_1adagrad_1aace057f88a46dab327f6409716dbe8de" compoundref="adagrad_8hpp" startline="76">m_eps</references>
+        <referencedby refid="classlbann_1_1adagrad_1a7a287b367af6ef6f7f21141ad78732a7" compoundref="adagrad_8hpp" startline="53" endline="53">get_type</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1adagrad_1ab027f2979a6df453eb588b1961afd77a" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::adagrad::setup</definition>
+        <argsstring>(weights &amp;w) override</argsstring>
+        <name>setup</name>
+        <reimplements refid="classlbann_1_1optimizer_1a7641a88b3c166df2d974a298622b992b">setup</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1weights" kindref="compound">weights</ref> &amp;</type>
+          <declname>w</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Setup optimizer. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adagrad.hpp" line="59" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/adagrad.cpp" bodystart="69" bodyend="74"/>
+        <references refid="classlbann_1_1optimizer_1a7641a88b3c166df2d974a298622b992b" compoundref="optimizer_8cpp" startline="414" endline="442">lbann::optimizer::setup</references>
+        <references refid="classlbann_1_1adagrad_1a5eaf0d220d2be78d91455ba85eef3e9a" compoundref="adagrad_8hpp" startline="78">m_cache</references>
+        <references refid="classlbann_1_1optimizer_1a3df20cb0ae2b60430ad4fd235d66c12e" compoundref="optimizer_8hpp" startline="175">lbann::optimizer::m_gradient</references>
+        <referencedby refid="classlbann_1_1adagrad_1a7a287b367af6ef6f7f21141ad78732a7" compoundref="adagrad_8hpp" startline="53" endline="53">get_type</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1adagrad_1a99dbaed2a331ce8d13a73e7beb7f5aba" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::adagrad::step_compute</definition>
+        <argsstring>(AbsDistMat &amp;values, const AbsDistMat &amp;gradient) override</argsstring>
+        <name>step_compute</name>
+        <reimplements refid="classlbann_1_1optimizer_1a0db72c298a0bc3405fb0af97d104a036">step_compute</reimplements>
+        <param>
+          <type><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+          <declname>values</declname>
+        </param>
+        <param>
+          <type>const <ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+          <declname>gradient</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Perform the computation in an optimization step. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adagrad.hpp" line="62" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/adagrad.cpp" bodystart="76" bodyend="114"/>
+        <references refid="classlbann_1_1adagrad_1a5eaf0d220d2be78d91455ba85eef3e9a" compoundref="adagrad_8hpp" startline="78">m_cache</references>
+        <references refid="classlbann_1_1optimizer_1ad393dcdcb82b44510c586ed5ec46d4dd" compoundref="optimizer_8hpp" startline="172">lbann::optimizer::m_learning_rate</references>
+        <references refid="classlbann_1_1adagrad_1aace057f88a46dab327f6409716dbe8de" compoundref="adagrad_8hpp" startline="76">m_eps</references>
+        <referencedby refid="classlbann_1_1adagrad_1a7a287b367af6ef6f7f21141ad78732a7" compoundref="adagrad_8hpp" startline="53" endline="53">get_type</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1adagrad_1a90644f13d0a46e0f52122037f363aaa0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::adagrad::setup</definition>
+        <argsstring>(AbsDistMat *parameters)</argsstring>
+        <name>setup</name>
+        <param>
+          <type><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> *</type>
+          <declname>parameters</declname>
+        </param>
+        <briefdescription>
+<para>Set parameters to optimize and initialize optimizer. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adagrad.hpp" line="65" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1adagrad_1a2189fad7d43175458d613bd078ff2b78" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::adagrad::update</definition>
+        <argsstring>(const AbsDistMat *gradient)</argsstring>
+        <name>update</name>
+        <param>
+          <type>const <ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> *</type>
+          <declname>gradient</declname>
+        </param>
+        <briefdescription>
+<para>Update parameters using objective function gradient. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adagrad.hpp" line="67" column="1"/>
+        <referencedby refid="classlbann_1_1adagrad_1a7a287b367af6ef6f7f21141ad78732a7" compoundref="adagrad_8hpp" startline="53" endline="53">get_type</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1adagrad_1af0fe80dbe6525509aae3ef2dea62a018" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>std::string</type>
+        <definition>std::string lbann::adagrad::name</definition>
+        <argsstring>() const</argsstring>
+        <name>name</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adagrad.hpp" line="68" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adagrad.hpp" bodystart="68" bodyend="68"/>
+        <references refid="classlbann_1_1adagrad_1a94282e58af6bb1e9af27255e23bd3d3d" compoundref="adagrad_8cpp" startline="120" endline="128">save_to_checkpoint_shared</references>
+        <references refid="classlbann_1_1adagrad_1ac6b6eb0c4d393679f69281c072dbc4fa" compoundref="adagrad_8cpp" startline="130" endline="138">load_from_checkpoint_shared</references>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="private-func">
+      <memberdef kind="function" id="classlbann_1_1adagrad_1a94282e58af6bb1e9af27255e23bd3d3d" prot="private" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>bool</type>
+        <definition>bool lbann::adagrad::save_to_checkpoint_shared</definition>
+        <argsstring>(persist &amp;p, std::string m_name) override</argsstring>
+        <name>save_to_checkpoint_shared</name>
+        <reimplements refid="classlbann_1_1optimizer_1afed10c6d8c5bd922f95075abeff711ce">save_to_checkpoint_shared</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1persist" kindref="compound">persist</ref> &amp;</type>
+          <declname>p</declname>
+        </param>
+        <param>
+          <type>std::string</type>
+          <declname>m_name</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adagrad.hpp" line="72" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/adagrad.cpp" bodystart="120" bodyend="128"/>
+        <references refid="classlbann_1_1optimizer_1afed10c6d8c5bd922f95075abeff711ce" compoundref="optimizer_8cpp" startline="487" endline="493">lbann::optimizer::save_to_checkpoint_shared</references>
+        <references refid="classlbann_1_1adagrad_1a5eaf0d220d2be78d91455ba85eef3e9a" compoundref="adagrad_8hpp" startline="78">m_cache</references>
+        <references refid="classlbann_1_1persist_1a9170de652405d86d9ba9b3793f8781c6" compoundref="persist_8cpp" startline="342" endline="360">lbann::persist::write_distmat</references>
+        <references refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64">lbann::train</references>
+        <referencedby refid="classlbann_1_1adagrad_1af0fe80dbe6525509aae3ef2dea62a018" compoundref="adagrad_8hpp" startline="68" endline="68">name</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1adagrad_1ac6b6eb0c4d393679f69281c072dbc4fa" prot="private" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>bool</type>
+        <definition>bool lbann::adagrad::load_from_checkpoint_shared</definition>
+        <argsstring>(persist &amp;p, std::string m_name) override</argsstring>
+        <name>load_from_checkpoint_shared</name>
+        <reimplements refid="classlbann_1_1optimizer_1a42a52aab9a682fda57c1e639968a44b9">load_from_checkpoint_shared</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1persist" kindref="compound">persist</ref> &amp;</type>
+          <declname>p</declname>
+        </param>
+        <param>
+          <type>std::string</type>
+          <declname>m_name</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adagrad.hpp" line="73" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/optimizers/adagrad.cpp" bodystart="130" bodyend="138"/>
+        <references refid="classlbann_1_1optimizer_1a42a52aab9a682fda57c1e639968a44b9" compoundref="optimizer_8cpp" startline="495" endline="499">lbann::optimizer::load_from_checkpoint_shared</references>
+        <references refid="classlbann_1_1adagrad_1a5eaf0d220d2be78d91455ba85eef3e9a" compoundref="adagrad_8hpp" startline="78">m_cache</references>
+        <references refid="classlbann_1_1persist_1aa98be93f33b510e5b506b61de6bd79bd" compoundref="persist_8cpp" startline="362" endline="387">lbann::persist::read_distmat</references>
+        <references refid="namespacelbann_1adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64">lbann::train</references>
+        <referencedby refid="classlbann_1_1adagrad_1af0fe80dbe6525509aae3ef2dea62a018" compoundref="adagrad_8hpp" startline="68" endline="68">name</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>AdaGrad optimizer. </para>    </detaileddescription>
+    <inheritancegraph>
+      <node id="36">
+        <label>lbann::optimizer</label>
+        <link refid="classlbann_1_1optimizer"/>
+      </node>
+      <node id="35">
+        <label>lbann::adagrad</label>
+        <link refid="classlbann_1_1adagrad"/>
+        <childnode refid="36" relation="public-inheritance">
+        </childnode>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="38">
+        <label>lbann::optimizer</label>
+        <link refid="classlbann_1_1optimizer"/>
+        <childnode refid="39" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="40" relation="usage">
+          <edgelabel>m_cudnn</edgelabel>
+        </childnode>
+        <childnode refid="41" relation="usage">
+          <edgelabel>m_gradient_allreduce_req</edgelabel>
+        </childnode>
+        <childnode refid="42" relation="usage">
+          <edgelabel>m_weights</edgelabel>
+        </childnode>
+      </node>
+      <node id="40">
+        <label>lbann::cudnn::cudnn_manager</label>
+        <link refid="classlbann_1_1cudnn_1_1cudnn__manager"/>
+      </node>
+      <node id="37">
+        <label>lbann::adagrad</label>
+        <link refid="classlbann_1_1adagrad"/>
+        <childnode refid="38" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="43">
+        <label>lbann::weights_initializer</label>
+        <link refid="classlbann_1_1weights__initializer"/>
+        <childnode refid="39" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+      </node>
+      <node id="42">
+        <label>lbann::weights</label>
+        <link refid="classlbann_1_1weights"/>
+        <childnode refid="38" relation="usage">
+          <edgelabel>m_optimizer</edgelabel>
+        </childnode>
+        <childnode refid="39" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="43" relation="usage">
+          <edgelabel>m_initializer</edgelabel>
+        </childnode>
+        <childnode refid="40" relation="usage">
+          <edgelabel>m_cudnn</edgelabel>
+        </childnode>
+      </node>
+      <node id="39">
+        <label>lbann::lbann_comm</label>
+        <link refid="classlbann_1_1lbann__comm"/>
+      </node>
+      <node id="41">
+        <label>lbann::Al::request</label>
+        <link refid="structlbann_1_1Al_1_1request"/>
+      </node>
+    </collaborationgraph>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adagrad.hpp" line="35" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adagrad.hpp" bodystart="35" bodyend="80"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1adagrad_1a26d826ba89053481a26573a592ff2f8a" prot="public" virt="non-virtual"><scope>lbann::adagrad</scope><name>adagrad</name></member>
+      <member refid="classlbann_1_1adagrad_1aee9814a21ad8c44b402c77f244235597" prot="public" virt="non-virtual"><scope>lbann::adagrad</scope><name>adagrad</name></member>
+      <member refid="classlbann_1_1optimizer_1ade46d28f7df19cab6c6ee90c03e976ea" prot="public" virt="non-virtual"><scope>lbann::adagrad</scope><name>add_gradient_source</name></member>
+      <member refid="classlbann_1_1optimizer_1a435d31e3b7a0302e36439ee36f62dba8" prot="public" virt="non-virtual"><scope>lbann::adagrad</scope><name>add_to_gradient</name></member>
+      <member refid="classlbann_1_1optimizer_1ac23ebde61a225f70c27ab937df5755ed" prot="public" virt="non-virtual"><scope>lbann::adagrad</scope><name>add_to_gradient_staging</name></member>
+      <member refid="classlbann_1_1optimizer_1a3f41360479fbd46c704342bb4ef36d09" prot="public" virt="non-virtual"><scope>lbann::adagrad</scope><name>clear_gradient</name></member>
+      <member refid="classlbann_1_1adagrad_1a4e8a72adf65df84d15f24fe6be03d1b1" prot="public" virt="virtual"><scope>lbann::adagrad</scope><name>copy</name></member>
+      <member refid="classlbann_1_1adagrad_1ad8c3000c84809fab63672e9eb35c5370" prot="public" virt="virtual"><scope>lbann::adagrad</scope><name>get_description</name></member>
+      <member refid="classlbann_1_1optimizer_1a12b7dbc72eb2de78d6ad798b8939f349" prot="public" virt="non-virtual"><scope>lbann::adagrad</scope><name>get_gradient</name></member>
+      <member refid="classlbann_1_1optimizer_1ac52867427b0d28ec6888b6344104791d" prot="public" virt="non-virtual"><scope>lbann::adagrad</scope><name>get_learning_rate</name></member>
+      <member refid="classlbann_1_1optimizer_1a91370e4de6083e7cd464c809cf583eb3" prot="public" virt="non-virtual"><scope>lbann::adagrad</scope><name>get_num_gradient_sources</name></member>
+      <member refid="classlbann_1_1optimizer_1afef81d54e836ba0177f7a411ba3aaf6e" prot="public" virt="non-virtual"><scope>lbann::adagrad</scope><name>get_step_time</name></member>
+      <member refid="classlbann_1_1adagrad_1a7a287b367af6ef6f7f21141ad78732a7" prot="public" virt="virtual"><scope>lbann::adagrad</scope><name>get_type</name></member>
+      <member refid="classlbann_1_1optimizer_1a9c3fc3f1d45da822676d5932a1c7af82" prot="public" virt="non-virtual"><scope>lbann::adagrad</scope><name>get_weights</name></member>
+      <member refid="classlbann_1_1optimizer_1abccf0babf69e3d7c6e9a7fd0731c79b7" prot="public" virt="non-virtual"><scope>lbann::adagrad</scope><name>is_initialized</name></member>
+      <member refid="classlbann_1_1adagrad_1ac6b6eb0c4d393679f69281c072dbc4fa" prot="private" virt="virtual"><scope>lbann::adagrad</scope><name>load_from_checkpoint_shared</name></member>
+      <member refid="classlbann_1_1adagrad_1a5eaf0d220d2be78d91455ba85eef3e9a" prot="private" virt="non-virtual"><scope>lbann::adagrad</scope><name>m_cache</name></member>
+      <member refid="classlbann_1_1optimizer_1a8c2569a8fcf0ee969517067b81896c44" prot="protected" virt="non-virtual"><scope>lbann::adagrad</scope><name>m_comm</name></member>
+      <member refid="classlbann_1_1optimizer_1a2f24dbeaca18b06f4aa7d179bbf96680" prot="protected" virt="non-virtual"><scope>lbann::adagrad</scope><name>m_cudnn</name></member>
+      <member refid="classlbann_1_1adagrad_1aace057f88a46dab327f6409716dbe8de" prot="private" virt="non-virtual"><scope>lbann::adagrad</scope><name>m_eps</name></member>
+      <member refid="classlbann_1_1optimizer_1a3df20cb0ae2b60430ad4fd235d66c12e" prot="protected" virt="non-virtual"><scope>lbann::adagrad</scope><name>m_gradient</name></member>
+      <member refid="classlbann_1_1optimizer_1ad393dcdcb82b44510c586ed5ec46d4dd" prot="protected" virt="non-virtual"><scope>lbann::adagrad</scope><name>m_learning_rate</name></member>
+      <member refid="classlbann_1_1optimizer_1a33b57b578a089d9ffe6715bb3996907c" prot="protected" virt="non-virtual"><scope>lbann::adagrad</scope><name>m_weights</name></member>
+      <member refid="classlbann_1_1adagrad_1af0fe80dbe6525509aae3ef2dea62a018" prot="public" virt="non-virtual"><scope>lbann::adagrad</scope><name>name</name></member>
+      <member refid="classlbann_1_1adagrad_1a9c9b59e0dfdfa32a3a9596a38fd95af6" prot="public" virt="non-virtual"><scope>lbann::adagrad</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1optimizer_1ab7811e0a4d2d9b594140aed78b6de743" prot="public" virt="non-virtual" ambiguityscope="lbann::optimizer::"><scope>lbann::adagrad</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1optimizer_1a136ed79c3f279ecded5be380fb67b05f" prot="public" virt="non-virtual"><scope>lbann::adagrad</scope><name>optimizer</name></member>
+      <member refid="classlbann_1_1optimizer_1a300aa4928e2e4feeb5e99b9eb0a16632" prot="public" virt="non-virtual"><scope>lbann::adagrad</scope><name>optimizer</name></member>
+      <member refid="classlbann_1_1optimizer_1a68ba7515d7eb4af38ff19607c13a111b" prot="public" virt="non-virtual"><scope>lbann::adagrad</scope><name>remove_gradient_source</name></member>
+      <member refid="classlbann_1_1optimizer_1a067709debd4d2e7bfe1a35b5f6ced668" prot="public" virt="virtual"><scope>lbann::adagrad</scope><name>reset_counters</name></member>
+      <member refid="classlbann_1_1adagrad_1a94282e58af6bb1e9af27255e23bd3d3d" prot="private" virt="virtual"><scope>lbann::adagrad</scope><name>save_to_checkpoint_shared</name></member>
+      <member refid="classlbann_1_1optimizer_1a147cac09beaa17df4e0fc1fc1be3abce" prot="public" virt="non-virtual"><scope>lbann::adagrad</scope><name>set_learning_rate</name></member>
+      <member refid="classlbann_1_1optimizer_1afc00daf2acb6af7e29786524126660c2" prot="public" virt="non-virtual"><scope>lbann::adagrad</scope><name>set_weights</name></member>
+      <member refid="classlbann_1_1adagrad_1ab027f2979a6df453eb588b1961afd77a" prot="public" virt="virtual"><scope>lbann::adagrad</scope><name>setup</name></member>
+      <member refid="classlbann_1_1adagrad_1a90644f13d0a46e0f52122037f363aaa0" prot="public" virt="non-virtual"><scope>lbann::adagrad</scope><name>setup</name></member>
+      <member refid="classlbann_1_1optimizer_1a1fe495ccbd62d50735615818abecf454" prot="public" virt="non-virtual"><scope>lbann::adagrad</scope><name>start_gradient_staging_allreduce</name></member>
+      <member refid="classlbann_1_1optimizer_1aa9f43ca3f22edc0a25d0509b6514a411" prot="public" virt="non-virtual"><scope>lbann::adagrad</scope><name>step</name></member>
+      <member refid="classlbann_1_1adagrad_1a99dbaed2a331ce8d13a73e7beb7f5aba" prot="public" virt="virtual"><scope>lbann::adagrad</scope><name>step_compute</name></member>
+      <member refid="classlbann_1_1adagrad_1a2189fad7d43175458d613bd078ff2b78" prot="public" virt="non-virtual"><scope>lbann::adagrad</scope><name>update</name></member>
+      <member refid="classlbann_1_1adagrad_1aa8dcd50b119871cbe1db9817fc00ea52" prot="public" virt="non-virtual"><scope>lbann::adagrad</scope><name>~adagrad</name></member>
+      <member refid="classlbann_1_1optimizer_1abbee0e2cb021f835b669d9ba0da5145a" prot="public" virt="virtual"><scope>lbann::adagrad</scope><name>~optimizer</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

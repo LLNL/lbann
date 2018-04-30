@@ -1,0 +1,15 @@
+<map id="lbann::lbann_callback_check_init::on_train_begin" name="lbann::lbann_callback_check_init::on_train_begin">
+<area shape="rect" id="node2" href="$classlbann_1_1model.html#a1cf70e098524cc5013bce56edd96dfe7" title="lbann::model::get_cur\l_epoch" alt="" coords="250,5,400,44"/>
+<area shape="rect" id="node3" href="$classlbann_1_1model.html#a9e1cfe449d2f4858a32994f6be0042fb" title="lbann::model::get_comm" alt="" coords="241,68,409,93"/>
+<area shape="rect" id="node4" href="$classlbann_1_1lbann__comm.html#a1ef526486183a29feadca9bef096a534" title="lbann::lbann_comm::\lam_world_master" alt="" coords="253,117,398,156"/>
+<area shape="rect" id="node5" href="$classlbann_1_1lbann__comm.html#aeb8ef8f13bbb324e3e1f656998198f3f" title="lbann::lbann_comm::\lget_num_models" alt="" coords="253,180,398,219"/>
+<area shape="rect" id="node6" href="$classlbann_1_1model.html#ac0a89794f1f51e7c502fff2745c973e6" title="lbann::model::get_weights" alt="" coords="237,243,413,268"/>
+<area shape="rect" id="node7" href="$classlbann_1_1lbann__comm.html#ae12af95f4826571efa03fb8520260daa" title="lbann::lbann_comm::\lglobal_barrier" alt="" coords="253,292,398,331"/>
+<area shape="rect" id="node10" href="$classlbann_1_1lbann__comm.html#a6422f70c92bed0b78179facc52b066f7" title="lbann::lbann_comm::\lget_model_rank" alt="" coords="253,355,398,393"/>
+<area shape="rect" id="node11" href="$classlbann_1_1lbann__comm.html#af8842cd4cea390f76d9146e1c4578de4" title="lbann::lbann_comm::recv" alt="" coords="240,417,410,443"/>
+<area shape="rect" id="node12" href="$classlbann_1_1lbann__callback__check__init.html#a9a7a7cffe24967aae2b82d1668c2b87c" title="lbann::lbann_callback\l_check_init::check_equal" alt="" coords="240,467,410,505"/>
+<area shape="rect" id="node13" href="$classlbann_1_1lbann__comm.html#a789453454468a3b70de768537c50ca52" title="lbann::lbann_comm::\lget_rank_in_model" alt="" coords="253,529,398,568"/>
+<area shape="rect" id="node14" href="$classlbann_1_1lbann__comm.html#a086078b881e7250df140ac116adb1939" title="lbann::lbann_comm::send" alt="" coords="238,592,412,617"/>
+<area shape="rect" id="node8" href="$classlbann_1_1lbann__comm.html#a303c02c5a127f3ed21f12c9a71cc90a6" title="lbann::lbann_comm::\lbarrier" alt="" coords="461,261,606,300"/>
+<area shape="rect" id="node9" href="$classlbann_1_1lbann__comm.html#a0493f1f0c42b95674daacf5288fdb073" title="lbann::lbann_comm::\lget_world_comm" alt="" coords="461,324,606,363"/>
+</map>

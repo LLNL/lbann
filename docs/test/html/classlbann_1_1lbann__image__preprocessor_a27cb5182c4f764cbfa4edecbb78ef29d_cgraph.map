@@ -1,0 +1,7 @@
+<map id="lbann::lbann_image_preprocessor::augment" name="lbann::lbann_image_preprocessor::augment">
+<area shape="rect" id="node2" href="$classlbann_1_1lbann__image__preprocessor.html#a7dc609e33febdc7fc29bdc9270594bea" title="lbann::lbann_image\l_preprocessor::cv_pixels" alt="" coords="227,5,395,44"/>
+<area shape="rect" id="node3" href="$namespacelbann.html#a4fea7ba21017b49d1e34394b4c20c764" title="lbann::get_generator" alt="" coords="239,68,383,93"/>
+<area shape="rect" id="node4" href="$classlbann_1_1lbann__image__preprocessor.html#a12d9f7056a5e68185ea0e85e14c17bcf" title="lbann::lbann_image\l_preprocessor::flip" alt="" coords="242,117,380,156"/>
+<area shape="rect" id="node5" href="$classlbann_1_1lbann__image__preprocessor.html#adb9e017aeac52a9b5d392f17188d1057" title="lbann::lbann_image\l_preprocessor::affine_trans" alt="" coords="219,180,403,219"/>
+<area shape="rect" id="node6" href="$classlbann_1_1lbann__image__preprocessor.html#a3e99be32b95a415fd8d616cb85075df1" title="lbann::lbann_image\l_preprocessor::col_pixels" alt="" coords="225,243,397,281"/>
+</map>

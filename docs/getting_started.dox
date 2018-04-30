@@ -1,0 +1,63 @@
+/** \page getting_started Getting Started
+
+\section getting_started_download Download
+
+LBANN can be cloned from the 
+<a href="https://github.com/LLNL/lbann">GitHub repository</a>:
+  
+  \code{.sh}
+  $ git clone https://github.com/LLNL/lbann.git
+  \endcode
+
+
+  \section getting_started_building Building LBANN
+  The build process for LBANN differs on a machine to machine basis. This section describes the build process for \ref lc, \ref spack, and \ref osx. For users attempting to build on systems not listed above, refer to the LBANN \ref dependencies. 
+
+  \subsection lc Livermore Computing Build 
+  Building on LC systems is supported via a build script. To run this script navigate to the LBANN directory and run \code{.sh}$ build_lbann_lc.sh \endcode located in scripts/. This will create a per system build located in the build directory in the main LBANN directory.
+
+  \subsection spack Spack Build
+
+  \subsection osx OSX Build
+
+  \subsection dependencies Dependency List
+  LBANN requires the following to build and operate. 
+  - CMake
+  - MPI
+  - Elemental
+  - OpenCV
+  - CuDA (optional)
+  - cuDNN (optional)
+  - Protocol Buffers (optional)
+  - Doxygen (optional)
+
+  \section getting_started_basicusage Basic Usage
+  LBANN is run via the lbann executable with command line arguments consisting of prototext files. The lbann executable is located within the specific machine build directory's model_zoo directory. The prototext files are located within the main lbann directory's model_zoo directory. Lbann requires three prototext files as input: model, data reader, and optimizer. The model and reader must be paired based on the data required by the model (i.e MNIST model and MNIST reader). Therefore
+  an example execution from the main lbann directory on Catalyst would be:
+  \code{.sh}
+  $ build/catalyst.llnl.gov/model_zoo/lbann \
+  --model=model_zoo/prototext/model_mnist_multi.prototext \
+  --reader=model_zoo/prototext/data_reader_mnist.prototext \
+  --optimizer=model_zoo/prototext/opt_adagrad.prototext
+  \endcode
+
+  \subsection verification Verification
+  To verify functionality of LBANN users can run a test MNIST experiment. Using the command found in the \ref getting_started_basicusage section and 2 MPI ranks (srun -n2) should produce the following results on Catalyst:
+  \code{.sh}
+  --------------------------------------------------------------------------------
+  [20] Epoch : stats formated [tr/v/te] iter/epoch = [2700/600/1000]
+  global MB = [  20/  10/  10] global last MB = [  20/  10/  10]
+  local MB = [  10/  10/  10]  local last MB = [  10/  10/  10]
+  --------------------------------------------------------------------------------
+  Model 0 @54000 steps Training categorical accuracy: 99.9741% @12000 validation steps Validation categorical accuracy: 97.95%
+  Model 1 @54000 steps Training categorical accuracy: 99.9926% @12000 validation steps Validation categorical accuracy: 97.9833%
+  Model 0 average categorical cross entropy: 0.00176223
+  Model 1 average categorical cross entropy: 0.00126326
+  Model 0 Epoch time: 62.8982s; Mean minibatch time: 0.0218984s; Min: 0.0214709s; Max: 0.0306295s; Stdev: 0.000214515s
+  Model 1 Epoch time: 62.9628s; Mean minibatch time: 0.0219376s; Min: 0.0216846s; Max: 0.127405s; Stdev: 0.00204183s
+  Model 0 @20000 testing steps external validation categorical accuracy: 98.32%
+  Model 1 @20000 testing steps external validation categorical accuracy: 98.27%
+  \endcode
+  LBANN performance will vary on a machine to machine basis. Results will also vary, but should not do so significantly. 
+
+  */

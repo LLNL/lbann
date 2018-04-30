@@ -1,0 +1,13 @@
+<map id="lbann::polya_negloglike::name" name="lbann::polya_negloglike::name">
+<area shape="rect" id="node2" href="$classlbann_1_1polya__negloglike.html#a4a7ae8eef1ef216f60b158acb1853355" title="lbann::polya_negloglike\l::setup" alt="" coords="214,72,375,111"/>
+<area shape="rect" id="node3" href="$classlbann_1_1loss__function.html#a17a3629e8519c4215ad776a0c7b522ae" title="lbann::loss_function\l::setup" alt="" coords="423,72,562,111"/>
+<area shape="rect" id="node4" href="$classlbann_1_1objective__function__term.html#a6c8dbdf18aac8676098189fb7b178e91" title="lbann::objective_function\l_term::setup" alt="" coords="610,44,778,83"/>
+<area shape="rect" id="node6" href="$classlbann_1_1model.html#ae14f4b2cc8882b3739d4aeb25d9e73c9" title="lbann::model::get_layers" alt="" coords="611,107,777,132"/>
+<area shape="rect" id="node5" href="$classlbann_1_1model.html#a9e1cfe449d2f4858a32994f6be0042fb" title="lbann::model::get_comm" alt="" coords="826,51,993,76"/>
+<area shape="rect" id="node7" href="$classlbann_1_1model.html#aaed20219476dc1458bbd058be36de1ec" title="lbann::model::replace\l_weights" alt="" coords="835,100,984,139"/>
+<area shape="rect" id="node8" href="$classlbann_1_1model.html#ac6cc0f5d850cfb997bbbc70eefa0d68f" title="lbann::model::remap\l_pointers" alt="" coords="1041,100,1184,139"/>
+<area shape="rect" id="node9" href="$classlbann_1_1objective__function.html#a1055da2236a7faf79c5a2632f8dfc683" title="lbann::objective_function\l::get_layer_pointers" alt="" coords="1232,5,1400,44"/>
+<area shape="rect" id="node10" href="$classlbann_1_1objective__function.html#a0f934e078b55528dd0ec1ec8ad34c73b" title="lbann::objective_function\l::set_layer_pointers" alt="" coords="1232,68,1400,107"/>
+<area shape="rect" id="node11" href="$classlbann_1_1objective__function.html#a8e37f76e42f6f341ea3592001b3794e5" title="lbann::objective_function\l::get_weights_pointers" alt="" coords="1232,131,1400,169"/>
+<area shape="rect" id="node12" href="$classlbann_1_1objective__function.html#a9c3211354ca1cee8a7ba219f4e56e03c" title="lbann::objective_function\l::set_weights_pointers" alt="" coords="1232,193,1400,232"/>
+</map>

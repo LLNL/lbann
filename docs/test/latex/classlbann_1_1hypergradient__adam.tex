@@ -1,0 +1,554 @@
+\hypertarget{classlbann_1_1hypergradient__adam}{}\section{lbann\+:\+:hypergradient\+\_\+adam Class Reference}
+\label{classlbann_1_1hypergradient__adam}\index{lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}}
+
+
+{\ttfamily \#include $<$hypergradient\+\_\+adam.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:hypergradient\+\_\+adam\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=218pt]{classlbann_1_1hypergradient__adam__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:hypergradient\+\_\+adam\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1hypergradient__adam__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1hypergradient__adam_aefb4d2c307d8f7997624b2ebe977ca3b}{hypergradient\+\_\+adam} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, Data\+Type init\+\_\+learning\+\_\+rate, Data\+Type hyper\+\_\+learning\+\_\+rate=Data\+Type(1e-\/7), Data\+Type beta1=\+Data\+Type(0.\+9), Data\+Type beta2=\+Data\+Type(0.\+99), Data\+Type eps=\+Data\+Type(1e-\/8))
+\item 
+\hyperlink{classlbann_1_1hypergradient__adam_aadb9841237fca01bbe2187a39e8f3cc5}{hypergradient\+\_\+adam} (const \hyperlink{classlbann_1_1hypergradient__adam}{hypergradient\+\_\+adam} \&other)
+\item 
+\hyperlink{classlbann_1_1hypergradient__adam}{hypergradient\+\_\+adam} \& \hyperlink{classlbann_1_1hypergradient__adam_aab8df6bbd256c9731dc1e5b8eac286ec}{operator=} (const \hyperlink{classlbann_1_1hypergradient__adam}{hypergradient\+\_\+adam} \&other)
+\item 
+\hyperlink{classlbann_1_1hypergradient__adam_af77f1872a0598de038064759a3d53fa0}{$\sim$hypergradient\+\_\+adam} () override
+\item 
+\hyperlink{classlbann_1_1hypergradient__adam}{hypergradient\+\_\+adam} $\ast$ \hyperlink{classlbann_1_1hypergradient__adam_a09a7e0bbae7d18cc94a2f5ad098f1f38}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1hypergradient__adam_a21ba2e54a7c803c10ab8354d0552ba82}{get\+\_\+type} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1hypergradient__adam_aadcd02daeca55493b0e7210195ddb6ec}{get\+\_\+description} () const override
+\item 
+void \hyperlink{classlbann_1_1hypergradient__adam_acbc4aa4410eb2e7cb2fd9f423c4909dc}{setup} (\hyperlink{classlbann_1_1weights}{weights} \&w) override
+\item 
+void \hyperlink{classlbann_1_1hypergradient__adam_af9168cfd95707f361f0412ff2440761f}{step\+\_\+compute} (\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&values, const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&gradient) override
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+Data\+Type \hyperlink{classlbann_1_1hypergradient__adam_a1066721ebaadb4eed2554b159510ae44}{m\+\_\+hyper\+\_\+learning\+\_\+rate}
+\item 
+Data\+Type \hyperlink{classlbann_1_1hypergradient__adam_a876a8bc1ee9a47479008d204048724e7}{m\+\_\+beta1}
+\item 
+Data\+Type \hyperlink{classlbann_1_1hypergradient__adam_a0effe7359fa37f02a40f059281580760}{m\+\_\+beta2}
+\item 
+Data\+Type \hyperlink{classlbann_1_1hypergradient__adam_a5bae9101fcc235d961ae7713706f4ff7}{m\+\_\+eps}
+\item 
+Data\+Type \hyperlink{classlbann_1_1hypergradient__adam_a671c622860c712ef9716c2c8c6714780}{m\+\_\+current\+\_\+beta1}
+\item 
+Data\+Type \hyperlink{classlbann_1_1hypergradient__adam_a2d8b00faecbf4ce3996f879566ca4064}{m\+\_\+current\+\_\+beta2}
+\item 
+\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} $\ast$ \hyperlink{classlbann_1_1hypergradient__adam_a529f3b53732247ebfb649f55f1fae4d6}{m\+\_\+moment1}
+\item 
+\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} $\ast$ \hyperlink{classlbann_1_1hypergradient__adam_a73b77fb79bd8e9bbfc8f360197899d18}{m\+\_\+moment2}
+\item 
+\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} $\ast$ \hyperlink{classlbann_1_1hypergradient__adam_a2e52355f77edf55bdac8a3eed79f44c4}{m\+\_\+old\+\_\+gradient}
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+Hypergradient Adam optimizer. Reference\+: Baydin et al. \char`\"{}\+Online Learning Rate Adaptation with Hypergradient Descent\char`\"{}, 2017. 
+
+Definition at line 38 of file hypergradient\+\_\+adam.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1hypergradient__adam_aefb4d2c307d8f7997624b2ebe977ca3b}\label{classlbann_1_1hypergradient__adam_aefb4d2c307d8f7997624b2ebe977ca3b}} 
+\index{lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}!hypergradient\+\_\+adam@{hypergradient\+\_\+adam}}
+\index{hypergradient\+\_\+adam@{hypergradient\+\_\+adam}!lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}}
+\subsubsection{\texorpdfstring{hypergradient\+\_\+adam()}{hypergradient\_adam()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::hypergradient\+\_\+adam\+::hypergradient\+\_\+adam (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{Data\+Type}]{init\+\_\+learning\+\_\+rate,  }\item[{Data\+Type}]{hyper\+\_\+learning\+\_\+rate = {\ttfamily DataType(1e-\/7)},  }\item[{Data\+Type}]{beta1 = {\ttfamily DataType(0.9)},  }\item[{Data\+Type}]{beta2 = {\ttfamily DataType(0.99)},  }\item[{Data\+Type}]{eps = {\ttfamily DataType(1e-\/8)} }\end{DoxyParamCaption})}
+
+Constructor 
+\begin{DoxyParams}{Parameters}
+{\em init\+\_\+learning\+\_\+rate} & Initial Adam learning rate (0.\+001 reasonable). \\
+\hline
+{\em hyper\+\_\+learning\+\_\+rate} & Hypergradient learning rate. \\
+\hline
+{\em beta1} & Decay rate for the first moment moving average. \\
+\hline
+{\em beta2} & Decay rate for the second moment moving average. \\
+\hline
+{\em eps} & A small value. \\
+\hline
+\end{DoxyParams}
+
+
+Definition at line 32 of file hypergradient\+\_\+adam.\+cpp.
+
+
+\begin{DoxyCode}
+38   : \hyperlink{classlbann_1_1optimizer_a136ed79c3f279ecded5be380fb67b05f}{optimizer}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, init\_learning\_rate),
+39     \hyperlink{classlbann_1_1hypergradient__adam_a1066721ebaadb4eed2554b159510ae44}{m\_hyper\_learning\_rate}(hyper\_learning\_rate),
+40     \hyperlink{classlbann_1_1hypergradient__adam_a876a8bc1ee9a47479008d204048724e7}{m\_beta1}(beta1),
+41     \hyperlink{classlbann_1_1hypergradient__adam_a0effe7359fa37f02a40f059281580760}{m\_beta2}(beta2),
+42     \hyperlink{classlbann_1_1hypergradient__adam_a5bae9101fcc235d961ae7713706f4ff7}{m\_eps}(eps),
+43     \hyperlink{classlbann_1_1hypergradient__adam_a671c622860c712ef9716c2c8c6714780}{m\_current\_beta1}(1),
+44     \hyperlink{classlbann_1_1hypergradient__adam_a2d8b00faecbf4ce3996f879566ca4064}{m\_current\_beta2}(1),
+45     \hyperlink{classlbann_1_1hypergradient__adam_a529f3b53732247ebfb649f55f1fae4d6}{m\_moment1}(\textcolor{keyword}{nullptr}),
+46     \hyperlink{classlbann_1_1hypergradient__adam_a73b77fb79bd8e9bbfc8f360197899d18}{m\_moment2}(\textcolor{keyword}{nullptr}),
+47     \hyperlink{classlbann_1_1hypergradient__adam_a2e52355f77edf55bdac8a3eed79f44c4}{m\_old\_gradient}(\textcolor{keyword}{nullptr}) \{\}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1hypergradient__adam_aefb4d2c307d8f7997624b2ebe977ca3b_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1hypergradient__adam_aadb9841237fca01bbe2187a39e8f3cc5}\label{classlbann_1_1hypergradient__adam_aadb9841237fca01bbe2187a39e8f3cc5}} 
+\index{lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}!hypergradient\+\_\+adam@{hypergradient\+\_\+adam}}
+\index{hypergradient\+\_\+adam@{hypergradient\+\_\+adam}!lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}}
+\subsubsection{\texorpdfstring{hypergradient\+\_\+adam()}{hypergradient\_adam()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::hypergradient\+\_\+adam\+::hypergradient\+\_\+adam (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1hypergradient__adam}{hypergradient\+\_\+adam} \&}]{other }\end{DoxyParamCaption})}
+
+Copy constructor. 
+
+Definition at line 49 of file hypergradient\+\_\+adam.\+cpp.
+
+
+\begin{DoxyCode}
+50   : \hyperlink{classlbann_1_1optimizer_a136ed79c3f279ecded5be380fb67b05f}{optimizer}(other),
+51     \hyperlink{classlbann_1_1hypergradient__adam_a1066721ebaadb4eed2554b159510ae44}{m\_hyper\_learning\_rate}(other.m\_hyper\_learning\_rate),
+52     \hyperlink{classlbann_1_1hypergradient__adam_a876a8bc1ee9a47479008d204048724e7}{m\_beta1}(other.m\_beta1),
+53     \hyperlink{classlbann_1_1hypergradient__adam_a0effe7359fa37f02a40f059281580760}{m\_beta2}(other.m\_beta2),
+54     \hyperlink{classlbann_1_1hypergradient__adam_a5bae9101fcc235d961ae7713706f4ff7}{m\_eps}(other.m\_eps),
+55     \hyperlink{classlbann_1_1hypergradient__adam_a671c622860c712ef9716c2c8c6714780}{m\_current\_beta1}(other.m\_current\_beta1),
+56     \hyperlink{classlbann_1_1hypergradient__adam_a2d8b00faecbf4ce3996f879566ca4064}{m\_current\_beta2}(other.m\_current\_beta2),
+57     \hyperlink{classlbann_1_1hypergradient__adam_a529f3b53732247ebfb649f55f1fae4d6}{m\_moment1}(other.m\_moment1),
+58     \hyperlink{classlbann_1_1hypergradient__adam_a73b77fb79bd8e9bbfc8f360197899d18}{m\_moment2}(other.m\_moment2),
+59     \hyperlink{classlbann_1_1hypergradient__adam_a2e52355f77edf55bdac8a3eed79f44c4}{m\_old\_gradient}(other.m\_old\_gradient) \{
+60   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1hypergradient__adam_a529f3b53732247ebfb649f55f1fae4d6}{m\_moment1} != \textcolor{keyword}{nullptr})      \{ \hyperlink{classlbann_1_1hypergradient__adam_a529f3b53732247ebfb649f55f1fae4d6}{m\_moment1} = \hyperlink{classlbann_1_1hypergradient__adam_a529f3b53732247ebfb649f55f1fae4d6}{m\_moment1}->Copy(); \}
+61   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1hypergradient__adam_a73b77fb79bd8e9bbfc8f360197899d18}{m\_moment2} != \textcolor{keyword}{nullptr})      \{ \hyperlink{classlbann_1_1hypergradient__adam_a73b77fb79bd8e9bbfc8f360197899d18}{m\_moment2} = \hyperlink{classlbann_1_1hypergradient__adam_a73b77fb79bd8e9bbfc8f360197899d18}{m\_moment2}->Copy(); \}
+62   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1hypergradient__adam_a2e52355f77edf55bdac8a3eed79f44c4}{m\_old\_gradient} != \textcolor{keyword}{nullptr}) \{ \hyperlink{classlbann_1_1hypergradient__adam_a2e52355f77edf55bdac8a3eed79f44c4}{m\_old\_gradient} = 
+      \hyperlink{classlbann_1_1hypergradient__adam_a2e52355f77edf55bdac8a3eed79f44c4}{m\_old\_gradient}->Copy(); \}
+63 \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1hypergradient__adam_af77f1872a0598de038064759a3d53fa0}\label{classlbann_1_1hypergradient__adam_af77f1872a0598de038064759a3d53fa0}} 
+\index{lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}!````~hypergradient\+\_\+adam@{$\sim$hypergradient\+\_\+adam}}
+\index{````~hypergradient\+\_\+adam@{$\sim$hypergradient\+\_\+adam}!lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}}
+\subsubsection{\texorpdfstring{$\sim$hypergradient\+\_\+adam()}{~hypergradient\_adam()}}
+{\footnotesize\ttfamily lbann\+::hypergradient\+\_\+adam\+::$\sim$hypergradient\+\_\+adam (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}}
+
+Destructor. 
+
+Definition at line 106 of file hypergradient\+\_\+adam.\+cpp.
+
+
+\begin{DoxyCode}
+106                                         \{
+107   \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1hypergradient__adam_a529f3b53732247ebfb649f55f1fae4d6}{m\_moment1} != \textcolor{keyword}{nullptr})      \{ \textcolor{keyword}{delete} \hyperlink{classlbann_1_1hypergradient__adam_a529f3b53732247ebfb649f55f1fae4d6}{m\_moment1}; \}
+108   \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1hypergradient__adam_a73b77fb79bd8e9bbfc8f360197899d18}{m\_moment2} != \textcolor{keyword}{nullptr})      \{ \textcolor{keyword}{delete} \hyperlink{classlbann_1_1hypergradient__adam_a73b77fb79bd8e9bbfc8f360197899d18}{m\_moment2}; \}
+109   \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1hypergradient__adam_a2e52355f77edf55bdac8a3eed79f44c4}{m\_old\_gradient} != \textcolor{keyword}{nullptr}) \{ \textcolor{keyword}{delete} \hyperlink{classlbann_1_1hypergradient__adam_a2e52355f77edf55bdac8a3eed79f44c4}{m\_old\_gradient}; \}
+110 \}
+\end{DoxyCode}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1hypergradient__adam_a09a7e0bbae7d18cc94a2f5ad098f1f38}\label{classlbann_1_1hypergradient__adam_a09a7e0bbae7d18cc94a2f5ad098f1f38}} 
+\index{lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}!copy@{copy}}
+\index{copy@{copy}!lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1hypergradient__adam}{hypergradient\+\_\+adam}$\ast$ lbann\+::hypergradient\+\_\+adam\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Create a copy. 
+
+Implements \hyperlink{classlbann_1_1optimizer_adf19a1d19d832ebfe70072cc202cdf39}{lbann\+::optimizer}.
+
+
+
+Definition at line 62 of file hypergradient\+\_\+adam.\+hpp.
+
+
+\begin{DoxyCode}
+62 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1hypergradient__adam_aefb4d2c307d8f7997624b2ebe977ca3b}{hypergradient\_adam}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1hypergradient__adam_a09a7e0bbae7d18cc94a2f5ad098f1f38_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1hypergradient__adam_aadcd02daeca55493b0e7210195ddb6ec}\label{classlbann_1_1hypergradient__adam_aadcd02daeca55493b0e7210195ddb6ec}} 
+\index{lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}!get\+\_\+description@{get\+\_\+description}}
+\index{get\+\_\+description@{get\+\_\+description}!lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}}
+\subsubsection{\texorpdfstring{get\+\_\+description()}{get\_description()}}
+{\footnotesize\ttfamily std\+::string lbann\+::hypergradient\+\_\+adam\+::get\+\_\+description (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get a human-\/readable description of the optimizer. 
+
+Reimplemented from \hyperlink{classlbann_1_1optimizer_a66bb8d28dfb41452ac1a75a3efd47723}{lbann\+::optimizer}.
+
+
+
+Definition at line 112 of file hypergradient\+\_\+adam.\+cpp.
+
+
+\begin{DoxyCode}
+112                                                     \{
+113   std::stringstream ss;
+114   ss << \hyperlink{classlbann_1_1optimizer_a66bb8d28dfb41452ac1a75a3efd47723}{optimizer::get\_description}() << \textcolor{stringliteral}{", "}
+115      << \textcolor{stringliteral}{"hyper\_learning\_rate="} << \hyperlink{classlbann_1_1hypergradient__adam_a1066721ebaadb4eed2554b159510ae44}{m\_hyper\_learning\_rate} << \textcolor{stringliteral}{", "}
+116      << \textcolor{stringliteral}{"beta1="} << \hyperlink{classlbann_1_1hypergradient__adam_a876a8bc1ee9a47479008d204048724e7}{m\_beta1} << \textcolor{stringliteral}{", "}
+117      << \textcolor{stringliteral}{"beta2="} << \hyperlink{classlbann_1_1hypergradient__adam_a0effe7359fa37f02a40f059281580760}{m\_beta2} << \textcolor{stringliteral}{", "}
+118      << \textcolor{stringliteral}{"eps="} << \hyperlink{classlbann_1_1hypergradient__adam_a5bae9101fcc235d961ae7713706f4ff7}{m\_eps};
+119   \textcolor{keywordflow}{return} ss.str();
+120 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1hypergradient__adam_aadcd02daeca55493b0e7210195ddb6ec_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=343pt]{classlbann_1_1hypergradient__adam_aadcd02daeca55493b0e7210195ddb6ec_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1hypergradient__adam_a21ba2e54a7c803c10ab8354d0552ba82}\label{classlbann_1_1hypergradient__adam_a21ba2e54a7c803c10ab8354d0552ba82}} 
+\index{lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}!get\+\_\+type@{get\+\_\+type}}
+\index{get\+\_\+type@{get\+\_\+type}!lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}}
+\subsubsection{\texorpdfstring{get\+\_\+type()}{get\_type()}}
+{\footnotesize\ttfamily std\+::string lbann\+::hypergradient\+\_\+adam\+::get\+\_\+type (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Returns the optimizer name. 
+
+Implements \hyperlink{classlbann_1_1optimizer_a7b7a6814e14eeee157e1cbb7f15dd4ff}{lbann\+::optimizer}.
+
+
+
+Definition at line 65 of file hypergradient\+\_\+adam.\+hpp.
+
+
+\begin{DoxyCode}
+65 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"hypergradient\_adam"}; \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1hypergradient__adam_a21ba2e54a7c803c10ab8354d0552ba82_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1hypergradient__adam_aab8df6bbd256c9731dc1e5b8eac286ec}\label{classlbann_1_1hypergradient__adam_aab8df6bbd256c9731dc1e5b8eac286ec}} 
+\index{lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1hypergradient__adam}{hypergradient\+\_\+adam} \& lbann\+::hypergradient\+\_\+adam\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1hypergradient__adam}{hypergradient\+\_\+adam} \&}]{other }\end{DoxyParamCaption})}
+
+Copy assignment operator. 
+
+Definition at line 65 of file hypergradient\+\_\+adam.\+cpp.
+
+
+\begin{DoxyCode}
+65                                                                                  \{
+66   \hyperlink{classlbann_1_1optimizer_ab7811e0a4d2d9b594140aed78b6de743}{optimizer::operator=}(other);
+67   \hyperlink{classlbann_1_1hypergradient__adam_a1066721ebaadb4eed2554b159510ae44}{m\_hyper\_learning\_rate} = other.m\_hyper\_learning\_rate;
+68   \hyperlink{classlbann_1_1hypergradient__adam_a876a8bc1ee9a47479008d204048724e7}{m\_beta1} = other.m\_beta1;
+69   \hyperlink{classlbann_1_1hypergradient__adam_a0effe7359fa37f02a40f059281580760}{m\_beta2} = other.m\_beta2;
+70   \hyperlink{classlbann_1_1hypergradient__adam_a5bae9101fcc235d961ae7713706f4ff7}{m\_eps} = other.m\_eps;
+71   \hyperlink{classlbann_1_1hypergradient__adam_a671c622860c712ef9716c2c8c6714780}{m\_current\_beta1} = other.m\_current\_beta1;
+72   \hyperlink{classlbann_1_1hypergradient__adam_a2d8b00faecbf4ce3996f879566ca4064}{m\_current\_beta2} = other.m\_current\_beta2;
+73   
+74   \textcolor{comment}{// Copy matrices}
+75   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1hypergradient__adam_a529f3b53732247ebfb649f55f1fae4d6}{m\_moment1} != \textcolor{keyword}{nullptr} && other.m\_moment1 != \textcolor{keyword}{nullptr}
+76       && \hyperlink{classlbann_1_1hypergradient__adam_a529f3b53732247ebfb649f55f1fae4d6}{m\_moment1}->DistData() == other.m\_moment1->DistData()) \{
+77     El::Copy(*other.m\_moment1, *\hyperlink{classlbann_1_1hypergradient__adam_a529f3b53732247ebfb649f55f1fae4d6}{m\_moment1});
+78   \}
+79   \textcolor{keywordflow}{else} \{
+80     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1hypergradient__adam_a529f3b53732247ebfb649f55f1fae4d6}{m\_moment1} != \textcolor{keyword}{nullptr}) \{ \textcolor{keyword}{delete} \hyperlink{classlbann_1_1hypergradient__adam_a529f3b53732247ebfb649f55f1fae4d6}{m\_moment1}; \}
+81     \hyperlink{classlbann_1_1hypergradient__adam_a529f3b53732247ebfb649f55f1fae4d6}{m\_moment1} = other.m\_moment1;
+82     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1hypergradient__adam_a529f3b53732247ebfb649f55f1fae4d6}{m\_moment1} != \textcolor{keyword}{nullptr}) \{ \hyperlink{classlbann_1_1hypergradient__adam_a529f3b53732247ebfb649f55f1fae4d6}{m\_moment1} = \hyperlink{classlbann_1_1hypergradient__adam_a529f3b53732247ebfb649f55f1fae4d6}{m\_moment1}->Copy(); \}
+83   \}
+84   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1hypergradient__adam_a73b77fb79bd8e9bbfc8f360197899d18}{m\_moment2} != \textcolor{keyword}{nullptr} && other.m\_moment2 != \textcolor{keyword}{nullptr}
+85       && \hyperlink{classlbann_1_1hypergradient__adam_a73b77fb79bd8e9bbfc8f360197899d18}{m\_moment2}->DistData() == other.m\_moment2->DistData()) \{
+86     El::Copy(*other.m\_moment2, *\hyperlink{classlbann_1_1hypergradient__adam_a73b77fb79bd8e9bbfc8f360197899d18}{m\_moment2});
+87   \}
+88   \textcolor{keywordflow}{else} \{
+89     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1hypergradient__adam_a73b77fb79bd8e9bbfc8f360197899d18}{m\_moment2} != \textcolor{keyword}{nullptr}) \{ \textcolor{keyword}{delete} \hyperlink{classlbann_1_1hypergradient__adam_a73b77fb79bd8e9bbfc8f360197899d18}{m\_moment2}; \}
+90     \hyperlink{classlbann_1_1hypergradient__adam_a73b77fb79bd8e9bbfc8f360197899d18}{m\_moment2} = other.m\_moment2;
+91     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1hypergradient__adam_a73b77fb79bd8e9bbfc8f360197899d18}{m\_moment2} != \textcolor{keyword}{nullptr}) \{ \hyperlink{classlbann_1_1hypergradient__adam_a73b77fb79bd8e9bbfc8f360197899d18}{m\_moment2} = \hyperlink{classlbann_1_1hypergradient__adam_a73b77fb79bd8e9bbfc8f360197899d18}{m\_moment2}->Copy(); \}
+92   \}
+93   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1hypergradient__adam_a2e52355f77edf55bdac8a3eed79f44c4}{m\_old\_gradient} != \textcolor{keyword}{nullptr} && other.m\_old\_gradient != \textcolor{keyword}{nullptr}
+94       && \hyperlink{classlbann_1_1hypergradient__adam_a2e52355f77edf55bdac8a3eed79f44c4}{m\_old\_gradient}->DistData() == other.m\_old\_gradient->DistData()) \{
+95     El::Copy(*other.m\_old\_gradient, *\hyperlink{classlbann_1_1hypergradient__adam_a2e52355f77edf55bdac8a3eed79f44c4}{m\_old\_gradient});
+96   \}
+97   \textcolor{keywordflow}{else} \{
+98     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1hypergradient__adam_a2e52355f77edf55bdac8a3eed79f44c4}{m\_old\_gradient} != \textcolor{keyword}{nullptr}) \{ \textcolor{keyword}{delete} \hyperlink{classlbann_1_1hypergradient__adam_a2e52355f77edf55bdac8a3eed79f44c4}{m\_old\_gradient}; \}
+99     \hyperlink{classlbann_1_1hypergradient__adam_a2e52355f77edf55bdac8a3eed79f44c4}{m\_old\_gradient} = other.m\_old\_gradient;
+100     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1hypergradient__adam_a2e52355f77edf55bdac8a3eed79f44c4}{m\_old\_gradient} != \textcolor{keyword}{nullptr}) \{ \hyperlink{classlbann_1_1hypergradient__adam_a2e52355f77edf55bdac8a3eed79f44c4}{m\_old\_gradient} = 
+      \hyperlink{classlbann_1_1hypergradient__adam_a2e52355f77edf55bdac8a3eed79f44c4}{m\_old\_gradient}->Copy(); \}
+101   \}
+102 
+103   \textcolor{keywordflow}{return} *\textcolor{keyword}{this};
+104 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1hypergradient__adam_aab8df6bbd256c9731dc1e5b8eac286ec_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1hypergradient__adam_acbc4aa4410eb2e7cb2fd9f423c4909dc}\label{classlbann_1_1hypergradient__adam_acbc4aa4410eb2e7cb2fd9f423c4909dc}} 
+\index{lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}!setup@{setup}}
+\index{setup@{setup}!lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}}
+\subsubsection{\texorpdfstring{setup()}{setup()}}
+{\footnotesize\ttfamily void lbann\+::hypergradient\+\_\+adam\+::setup (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1weights}{weights} \&}]{w }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Setup optimizer. 
+
+Reimplemented from \hyperlink{classlbann_1_1optimizer_a7641a88b3c166df2d974a298622b992b}{lbann\+::optimizer}.
+
+
+
+Definition at line 122 of file hypergradient\+\_\+adam.\+cpp.
+
+
+\begin{DoxyCode}
+122                                          \{
+123   \hyperlink{classlbann_1_1optimizer_a7641a88b3c166df2d974a298622b992b}{optimizer::setup}(w);
+124   \hyperlink{classlbann_1_1hypergradient__adam_a529f3b53732247ebfb649f55f1fae4d6}{m\_moment1} = \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Construct(\hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Grid(),
+125                                     \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Root());
+126   \hyperlink{classlbann_1_1hypergradient__adam_a73b77fb79bd8e9bbfc8f360197899d18}{m\_moment2} = \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Construct(\hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Grid(),
+127                                     \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Root());
+128   \hyperlink{classlbann_1_1hypergradient__adam_a2e52355f77edf55bdac8a3eed79f44c4}{m\_old\_gradient} = \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Construct(\hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Grid(),
+129                                     \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Root());
+130   El::Zeros(*\hyperlink{classlbann_1_1hypergradient__adam_a529f3b53732247ebfb649f55f1fae4d6}{m\_moment1}, \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Height(), \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Width());
+131   El::Zeros(*\hyperlink{classlbann_1_1hypergradient__adam_a73b77fb79bd8e9bbfc8f360197899d18}{m\_moment2}, \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Height(), \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Width());
+132   El::Zeros(*\hyperlink{classlbann_1_1hypergradient__adam_a2e52355f77edf55bdac8a3eed79f44c4}{m\_old\_gradient}, \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Height(), 
+      \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Width());
+133 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1hypergradient__adam_acbc4aa4410eb2e7cb2fd9f423c4909dc_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=330pt]{classlbann_1_1hypergradient__adam_acbc4aa4410eb2e7cb2fd9f423c4909dc_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1hypergradient__adam_af9168cfd95707f361f0412ff2440761f}\label{classlbann_1_1hypergradient__adam_af9168cfd95707f361f0412ff2440761f}} 
+\index{lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}!step\+\_\+compute@{step\+\_\+compute}}
+\index{step\+\_\+compute@{step\+\_\+compute}!lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}}
+\subsubsection{\texorpdfstring{step\+\_\+compute()}{step\_compute()}}
+{\footnotesize\ttfamily void lbann\+::hypergradient\+\_\+adam\+::step\+\_\+compute (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{values,  }\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{gradient }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Perform the computation in an optimization step. 
+
+Implements \hyperlink{classlbann_1_1optimizer_a0db72c298a0bc3405fb0af97d104a036}{lbann\+::optimizer}.
+
+
+
+Definition at line 135 of file hypergradient\+\_\+adam.\+cpp.
+
+
+\begin{DoxyCode}
+136                                                                   \{
+137 
+138   \textcolor{comment}{// Precompute the bias correction.}
+139   \hyperlink{classlbann_1_1hypergradient__adam_a671c622860c712ef9716c2c8c6714780}{m\_current\_beta1} *= \hyperlink{classlbann_1_1hypergradient__adam_a876a8bc1ee9a47479008d204048724e7}{m\_beta1};
+140   \hyperlink{classlbann_1_1hypergradient__adam_a2d8b00faecbf4ce3996f879566ca4064}{m\_current\_beta2} *= \hyperlink{classlbann_1_1hypergradient__adam_a0effe7359fa37f02a40f059281580760}{m\_beta2};
+141   \textcolor{keyword}{const} DataType correction = std::sqrt(DataType(1) - \hyperlink{classlbann_1_1hypergradient__adam_a2d8b00faecbf4ce3996f879566ca4064}{m\_current\_beta2}) /
+142                               (DataType(1) - \hyperlink{classlbann_1_1hypergradient__adam_a671c622860c712ef9716c2c8c6714780}{m\_current\_beta1});
+143 
+144   \textcolor{comment}{// Get local matrix data}
+145   \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_height = values.LocalHeight();
+146   \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_width = values.LocalWidth();
+147   DataType* \_\_restrict\_\_ values\_buffer = values.Buffer();
+148   \textcolor{keyword}{const} \textcolor{keywordtype}{int} values\_ldim = values.LDim();
+149   \textcolor{keyword}{const} DataType* \_\_restrict\_\_ gradient\_buffer = gradient.LockedBuffer();
+150   \textcolor{keyword}{const} \textcolor{keywordtype}{int} gradient\_ldim = gradient.LDim();
+151   DataType* \_\_restrict\_\_ moment1\_buffer = \hyperlink{classlbann_1_1hypergradient__adam_a529f3b53732247ebfb649f55f1fae4d6}{m\_moment1}->Buffer();
+152   \textcolor{keyword}{const} \textcolor{keywordtype}{int} moment1\_ldim = \hyperlink{classlbann_1_1hypergradient__adam_a529f3b53732247ebfb649f55f1fae4d6}{m\_moment1}->LDim();
+153   DataType* \_\_restrict\_\_ moment2\_buffer = \hyperlink{classlbann_1_1hypergradient__adam_a73b77fb79bd8e9bbfc8f360197899d18}{m\_moment2}->Buffer();
+154   \textcolor{keyword}{const} \textcolor{keywordtype}{int} moment2\_ldim = \hyperlink{classlbann_1_1hypergradient__adam_a73b77fb79bd8e9bbfc8f360197899d18}{m\_moment2}->LDim();
+155   DataType* \_\_restrict\_\_ old\_gradient\_buffer = \hyperlink{classlbann_1_1hypergradient__adam_a2e52355f77edf55bdac8a3eed79f44c4}{m\_old\_gradient}->Buffer();
+156   \textcolor{keyword}{const} \textcolor{keywordtype}{int} old\_gradient\_ldim = \hyperlink{classlbann_1_1hypergradient__adam_a2e52355f77edf55bdac8a3eed79f44c4}{m\_old\_gradient}->LDim();
+157 
+158   \textcolor{comment}{// Compute the learning rate update.}
+159   DataType lr\_update = El::Dot(gradient, *\hyperlink{classlbann_1_1hypergradient__adam_a2e52355f77edf55bdac8a3eed79f44c4}{m\_old\_gradient});
+160   \hyperlink{classlbann_1_1optimizer_ad393dcdcb82b44510c586ed5ec46d4dd}{m\_learning\_rate} += \hyperlink{classlbann_1_1hypergradient__adam_a1066721ebaadb4eed2554b159510ae44}{m\_hyper\_learning\_rate} * lr\_update;
+161 
+162   \textcolor{comment}{// Check if matrix data is contiguous.}
+163   \textcolor{keywordflow}{if} (values\_ldim != local\_height
+164       || gradient\_ldim != local\_height
+165       || moment1\_ldim != local\_height
+166       || moment2\_ldim != local\_height
+167       || old\_gradient\_ldim != local\_height) \{
+168     \textcolor{comment}{// Non-contiguous data.}
+169 \textcolor{preprocessor}{    #pragma omp parallel for collapse(2)}
+170     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} j = 0; j < local\_width; ++j) \{
+171       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i = 0; i < local\_height; ++i) \{
+172         DataType& x = values\_buffer[i+j*values\_ldim];
+173         \textcolor{keyword}{const} DataType g = gradient\_buffer[i+j*gradient\_ldim] + \hyperlink{classlbann_1_1hypergradient__adam_a5bae9101fcc235d961ae7713706f4ff7}{m\_eps};
+174         DataType& m1 = moment1\_buffer[i+j*moment1\_ldim];
+175         DataType& m2 = moment2\_buffer[i+j*moment2\_ldim];
+176         DataType& old\_c = old\_gradient\_buffer[i+j*old\_gradient\_ldim];
+177         m1 = \hyperlink{classlbann_1_1hypergradient__adam_a876a8bc1ee9a47479008d204048724e7}{m\_beta1} * m1 + (DataType(1) - \hyperlink{classlbann_1_1hypergradient__adam_a876a8bc1ee9a47479008d204048724e7}{m\_beta1}) * g;
+178         m2 = \hyperlink{classlbann_1_1hypergradient__adam_a0effe7359fa37f02a40f059281580760}{m\_beta2} * m2 + (DataType(1) - \hyperlink{classlbann_1_1hypergradient__adam_a0effe7359fa37f02a40f059281580760}{m\_beta2}) * g * g;
+179         old\_c = correction * m1 / (std::sqrt(m2) + \hyperlink{classlbann_1_1hypergradient__adam_a5bae9101fcc235d961ae7713706f4ff7}{m\_eps});
+180         x -= \hyperlink{classlbann_1_1optimizer_ad393dcdcb82b44510c586ed5ec46d4dd}{m\_learning\_rate} * old\_c;
+181       \}
+182     \}
+183   \} \textcolor{keywordflow}{else} \{
+184     \textcolor{comment}{// Contiguous data.}
+185 \textcolor{preprocessor}{    #pragma omp parallel for}
+186     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i = 0; i < local\_height * local\_width; ++i) \{
+187       DataType& x = values\_buffer[i];
+188       \textcolor{comment}{// Add eps here to avoid denormalized floats.}
+189       \textcolor{keyword}{const} DataType g = gradient\_buffer[i] + \hyperlink{classlbann_1_1hypergradient__adam_a5bae9101fcc235d961ae7713706f4ff7}{m\_eps};
+190       DataType& m1 = moment1\_buffer[i];
+191       DataType& m2 = moment2\_buffer[i];
+192       DataType& old\_c = old\_gradient\_buffer[i];
+193       \textcolor{comment}{// Update the first/second moment estimates.}
+194       m1 = \hyperlink{classlbann_1_1hypergradient__adam_a876a8bc1ee9a47479008d204048724e7}{m\_beta1} * m1 + (DataType(1) - \hyperlink{classlbann_1_1hypergradient__adam_a876a8bc1ee9a47479008d204048724e7}{m\_beta1}) * g;
+195       m2 = \hyperlink{classlbann_1_1hypergradient__adam_a0effe7359fa37f02a40f059281580760}{m\_beta2} * m2 + (DataType(1) - \hyperlink{classlbann_1_1hypergradient__adam_a0effe7359fa37f02a40f059281580760}{m\_beta2}) * g * g;
+196       \textcolor{comment}{// Compute the unbiased gradient estimate.}
+197       old\_c = correction * m1 / (std::sqrt(m2) + \hyperlink{classlbann_1_1hypergradient__adam_a5bae9101fcc235d961ae7713706f4ff7}{m\_eps});
+198       \textcolor{comment}{// Parameter update.}
+199       x -= \hyperlink{classlbann_1_1optimizer_ad393dcdcb82b44510c586ed5ec46d4dd}{m\_learning\_rate} * old\_c;
+200     \}
+201   \}
+202 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=338pt]{classlbann_1_1hypergradient__adam_af9168cfd95707f361f0412ff2440761f_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1hypergradient__adam_a876a8bc1ee9a47479008d204048724e7}\label{classlbann_1_1hypergradient__adam_a876a8bc1ee9a47479008d204048724e7}} 
+\index{lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}!m\+\_\+beta1@{m\+\_\+beta1}}
+\index{m\+\_\+beta1@{m\+\_\+beta1}!lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}}
+\subsubsection{\texorpdfstring{m\+\_\+beta1}{m\_beta1}}
+{\footnotesize\ttfamily Data\+Type lbann\+::hypergradient\+\_\+adam\+::m\+\_\+beta1\hspace{0.3cm}{\ttfamily [private]}}
+
+Update factor for first moment estimate. 
+
+Definition at line 80 of file hypergradient\+\_\+adam.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1hypergradient__adam_a0effe7359fa37f02a40f059281580760}\label{classlbann_1_1hypergradient__adam_a0effe7359fa37f02a40f059281580760}} 
+\index{lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}!m\+\_\+beta2@{m\+\_\+beta2}}
+\index{m\+\_\+beta2@{m\+\_\+beta2}!lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}}
+\subsubsection{\texorpdfstring{m\+\_\+beta2}{m\_beta2}}
+{\footnotesize\ttfamily Data\+Type lbann\+::hypergradient\+\_\+adam\+::m\+\_\+beta2\hspace{0.3cm}{\ttfamily [private]}}
+
+Update factor for second moment estimate. 
+
+Definition at line 82 of file hypergradient\+\_\+adam.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1hypergradient__adam_a671c622860c712ef9716c2c8c6714780}\label{classlbann_1_1hypergradient__adam_a671c622860c712ef9716c2c8c6714780}} 
+\index{lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}!m\+\_\+current\+\_\+beta1@{m\+\_\+current\+\_\+beta1}}
+\index{m\+\_\+current\+\_\+beta1@{m\+\_\+current\+\_\+beta1}!lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}}
+\subsubsection{\texorpdfstring{m\+\_\+current\+\_\+beta1}{m\_current\_beta1}}
+{\footnotesize\ttfamily Data\+Type lbann\+::hypergradient\+\_\+adam\+::m\+\_\+current\+\_\+beta1\hspace{0.3cm}{\ttfamily [private]}}
+
+beta1 $^\wedge$ iteration. 
+
+Definition at line 86 of file hypergradient\+\_\+adam.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1hypergradient__adam_a2d8b00faecbf4ce3996f879566ca4064}\label{classlbann_1_1hypergradient__adam_a2d8b00faecbf4ce3996f879566ca4064}} 
+\index{lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}!m\+\_\+current\+\_\+beta2@{m\+\_\+current\+\_\+beta2}}
+\index{m\+\_\+current\+\_\+beta2@{m\+\_\+current\+\_\+beta2}!lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}}
+\subsubsection{\texorpdfstring{m\+\_\+current\+\_\+beta2}{m\_current\_beta2}}
+{\footnotesize\ttfamily Data\+Type lbann\+::hypergradient\+\_\+adam\+::m\+\_\+current\+\_\+beta2\hspace{0.3cm}{\ttfamily [private]}}
+
+beta2 $^\wedge$ iteration. 
+
+Definition at line 88 of file hypergradient\+\_\+adam.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1hypergradient__adam_a5bae9101fcc235d961ae7713706f4ff7}\label{classlbann_1_1hypergradient__adam_a5bae9101fcc235d961ae7713706f4ff7}} 
+\index{lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}!m\+\_\+eps@{m\+\_\+eps}}
+\index{m\+\_\+eps@{m\+\_\+eps}!lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}}
+\subsubsection{\texorpdfstring{m\+\_\+eps}{m\_eps}}
+{\footnotesize\ttfamily Data\+Type lbann\+::hypergradient\+\_\+adam\+::m\+\_\+eps\hspace{0.3cm}{\ttfamily [private]}}
+
+Small factor to avoid division by zero. 
+
+Definition at line 84 of file hypergradient\+\_\+adam.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1hypergradient__adam_a1066721ebaadb4eed2554b159510ae44}\label{classlbann_1_1hypergradient__adam_a1066721ebaadb4eed2554b159510ae44}} 
+\index{lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}!m\+\_\+hyper\+\_\+learning\+\_\+rate@{m\+\_\+hyper\+\_\+learning\+\_\+rate}}
+\index{m\+\_\+hyper\+\_\+learning\+\_\+rate@{m\+\_\+hyper\+\_\+learning\+\_\+rate}!lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}}
+\subsubsection{\texorpdfstring{m\+\_\+hyper\+\_\+learning\+\_\+rate}{m\_hyper\_learning\_rate}}
+{\footnotesize\ttfamily Data\+Type lbann\+::hypergradient\+\_\+adam\+::m\+\_\+hyper\+\_\+learning\+\_\+rate\hspace{0.3cm}{\ttfamily [private]}}
+
+Hypergradient learning rate. 
+
+Definition at line 78 of file hypergradient\+\_\+adam.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1hypergradient__adam_a529f3b53732247ebfb649f55f1fae4d6}\label{classlbann_1_1hypergradient__adam_a529f3b53732247ebfb649f55f1fae4d6}} 
+\index{lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}!m\+\_\+moment1@{m\+\_\+moment1}}
+\index{m\+\_\+moment1@{m\+\_\+moment1}!lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}}
+\subsubsection{\texorpdfstring{m\+\_\+moment1}{m\_moment1}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat}$\ast$ lbann\+::hypergradient\+\_\+adam\+::m\+\_\+moment1\hspace{0.3cm}{\ttfamily [private]}}
+
+First moment estimates. 
+
+Definition at line 90 of file hypergradient\+\_\+adam.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1hypergradient__adam_a73b77fb79bd8e9bbfc8f360197899d18}\label{classlbann_1_1hypergradient__adam_a73b77fb79bd8e9bbfc8f360197899d18}} 
+\index{lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}!m\+\_\+moment2@{m\+\_\+moment2}}
+\index{m\+\_\+moment2@{m\+\_\+moment2}!lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}}
+\subsubsection{\texorpdfstring{m\+\_\+moment2}{m\_moment2}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat}$\ast$ lbann\+::hypergradient\+\_\+adam\+::m\+\_\+moment2\hspace{0.3cm}{\ttfamily [private]}}
+
+Second moment estimates. 
+
+Definition at line 92 of file hypergradient\+\_\+adam.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1hypergradient__adam_a2e52355f77edf55bdac8a3eed79f44c4}\label{classlbann_1_1hypergradient__adam_a2e52355f77edf55bdac8a3eed79f44c4}} 
+\index{lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}!m\+\_\+old\+\_\+gradient@{m\+\_\+old\+\_\+gradient}}
+\index{m\+\_\+old\+\_\+gradient@{m\+\_\+old\+\_\+gradient}!lbann\+::hypergradient\+\_\+adam@{lbann\+::hypergradient\+\_\+adam}}
+\subsubsection{\texorpdfstring{m\+\_\+old\+\_\+gradient}{m\_old\_gradient}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat}$\ast$ lbann\+::hypergradient\+\_\+adam\+::m\+\_\+old\+\_\+gradient\hspace{0.3cm}{\ttfamily [private]}}
+
+Gradient estimate from the prior step (for hypergradient). 
+
+Definition at line 94 of file hypergradient\+\_\+adam.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/optimizers/\hyperlink{hypergradient__adam_8hpp}{hypergradient\+\_\+adam.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/optimizers/\hyperlink{hypergradient__adam_8cpp}{hypergradient\+\_\+adam.\+cpp}\end{DoxyCompactItemize}

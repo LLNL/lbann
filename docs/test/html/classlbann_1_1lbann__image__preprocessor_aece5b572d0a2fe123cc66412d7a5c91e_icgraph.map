@@ -1,0 +1,8 @@
+<map id="lbann::lbann_image_preprocessor::pixel_noise" name="lbann::lbann_image_preprocessor::pixel_noise">
+<area shape="rect" id="node2" href="$classlbann_1_1cifar10__reader.html#a590c672731bbdcb6e7fd8fd300d004d5" title="lbann::cifar10_reader\l::fetch_datum" alt="" coords="241,5,389,44"/>
+<area shape="rect" id="node4" href="$classlbann_1_1imagenet__reader__org.html#ad4c47413e16c1c53000b7d7be757ff6e" title="lbann::imagenet_reader\l_org::fetch_datum" alt="" coords="234,68,396,107"/>
+<area shape="rect" id="node6" href="$classlbann_1_1mnist__reader.html#af257b58b61ae9f3f623f1cb5d18c4841" title="lbann::mnist_reader\l::fetch_datum" alt="" coords="246,131,385,169"/>
+<area shape="rect" id="node3" href="$classlbann_1_1cifar10__reader.html#a3915005f1278a840869b8519c30c808b" title="lbann::cifar10_reader\l::set_input_params" alt="" coords="452,5,599,44"/>
+<area shape="rect" id="node5" href="$classlbann_1_1imagenet__reader__org.html#ade6e7e9bc1a3f9562c0f274a3d665e0a" title="lbann::imagenet_reader\l_org::get_type" alt="" coords="444,68,606,107"/>
+<area shape="rect" id="node7" href="$classlbann_1_1mnist__reader.html#aa50ae6f2aeb5800de0e15e3ab9046338" title="lbann::mnist_reader\l::set_input_params" alt="" coords="456,131,595,169"/>
+</map>

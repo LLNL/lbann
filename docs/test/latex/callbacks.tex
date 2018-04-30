@@ -1,0 +1,70 @@
+Base class for callbacks during training/testing. The method of each callback is called at a given point during training or testing by the model. Implement whichever ones you care about. Callbacks may be passed a lbann\+\_\+summary instance, which they can use to log whatever relevant information they need to. L\+B\+A\+NN supported callbacks are found below.\hypertarget{callbacks_checkdata}{}\section{Check Dataset}\label{callbacks_checkdata}
+Save the sample indices for each mini-\/batch to ordered set. Check to make sure that all samples were properly processed.
+
+Implementation details\+: \hyperlink{classlbann_1_1lbann__callback__check__dataset}{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+dataset}\hypertarget{callbacks_checkinit}{}\section{Check Initialization}\label{callbacks_checkinit}
+Verify that every model uses the same initialization.
+
+Implementation details\+: \hyperlink{classlbann_1_1lbann__callback__check__init}{lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+init}\hypertarget{callbacks_checkreconstruction}{}\section{Check Reconstruction}\label{callbacks_checkreconstruction}
+Stop training after reconstruction error has reached a given value.
+
+Implementation details\+: lbann\+::lbann\+\_\+callback\+\_\+check\+\_\+reconstruction\+\_\+erro\hypertarget{callbacks_checknan}{}\section{Check N\+AN}\label{callbacks_checknan}
+Check matrices for whether they include any Na\+Ns or infs to help debugging. This will kill the rank if such values are discovered.
+
+Implementation details\+: \hyperlink{classlbann_1_1lbann__callback__checknan}{lbann\+::lbann\+\_\+callback\+\_\+checknan}\hypertarget{callbacks_checksmall}{}\section{Check Small}\label{callbacks_checksmall}
+Check matrices for whether they include any very small values to avoid getting denormalized values. Denormalized values can significantly slow floating point computations. Since we often square values, the check is based on the square root of the smallest floating point value. This will kill the rank if such values are discovered.
+
+Implementation details\+: \hyperlink{classlbann_1_1lbann__callback__checksmall}{lbann\+::lbann\+\_\+callback\+\_\+checksmall}\hypertarget{callbacks_dump_acts}{}\section{Dump Activations}\label{callbacks_dump_acts}
+Dump activations matrices to files. This will dump each or selected hidden layer\textquotesingle{}s activation matrix after each minibatch or at the end of an epoch. The matrices are written to files using Elemental\textquotesingle{}s simple A\+S\+C\+II format. This is not meant for checkpointing, but for exporting acitvation matrices for analysis that isn\textquotesingle{}t easily done in L\+B\+A\+NN. This will be slow and produce a lot of output if matrices are dumped during each minibatch. If list of layers at which to dump activations is provided, activations/inferences will be dumped at the end of testing
+
+Implementation details\+: \hyperlink{classlbann_1_1lbann__callback__dump__activations}{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations}\hypertarget{callbacks_dump_grads}{}\section{Dump Gradients}\label{callbacks_dump_grads}
+Dump gradient matrices to files. This will dump each hidden layer\textquotesingle{}s gradient matrix after each minibatch. The matrices are written to files using Elemental\textquotesingle{}s simple A\+S\+C\+II format. This is not meant for checkpointing, but for exporting gradient matrices for analysis that isn\textquotesingle{}t easily done in L\+B\+A\+NN. Note this dumps matrices during each mini-\/batch. This will be slow and produce a lot of output.
+
+Implementation details\+: \hyperlink{classlbann_1_1lbann__callback__dump__gradients}{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+gradients}\hypertarget{callbacks_dump_mb_sample_indices}{}\section{Dump Minibatch Sample Indices}\label{callbacks_dump_mb_sample_indices}
+Dump sample indices for each minibatch to files. This will dump the list of indices from the training / validation / testing data that was processed Note this dumps vectors during each mini-\/batch. This will be slow and produce a lot of output.
+
+Implementation details\+: \hyperlink{classlbann_1_1lbann__callback__dump__minibatch__sample__indices}{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices}\hypertarget{callbacks_dump_wei}{}\section{Dump Weights}\label{callbacks_dump_wei}
+Implementation details\+: \hyperlink{classlbann_1_1lbann__callback__dump__weights}{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+weights}\hypertarget{callbacks_earlystop}{}\section{Early Stopping}\label{callbacks_earlystop}
+Stop training after validation error stops improving.
+
+Implementation details\+: \hyperlink{classlbann_1_1lbann__callback__early__stopping}{lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping}\hypertarget{callbacks_gradientcheck}{}\section{Gradient Check}\label{callbacks_gradientcheck}
+Callback hooks for gradient check.
+
+Implementation details\+: \hyperlink{classlbann_1_1lbann__callback__gradient__check}{lbann\+::lbann\+\_\+callback\+\_\+gradient\+\_\+check}\hypertarget{callbacks_hang}{}\section{Hang}\label{callbacks_hang}
+Hang L\+B\+A\+NN as training starts so debuggers can attach. This will cause either a specific rank (in C\+O\+M\+M\+\_\+\+W\+O\+R\+LD) or every rank to hang. Attach to the hung ranks and set the hang flag to false with a debugger to proceed.
+
+Implementation details\+: \hyperlink{classlbann_1_1lbann__callback__hang}{lbann\+::lbann\+\_\+callback\+\_\+hang}\hypertarget{callbacks_im_comm}{}\section{Inter-\/model Communication}\label{callbacks_im_comm}
+Support inter-\/model communication after each mini-\/batch to synchronize gradient updates. This optionally supports quantizing the gradient updates before communication in order to reduce bandwidth requirements.
+
+Implementation details\+: \hyperlink{classlbann_1_1lbann__callback__imcomm}{lbann\+::lbann\+\_\+callback\+\_\+imcomm}\hypertarget{callbacks_io}{}\section{Print IO}\label{callbacks_io}
+Print information on the amount of IO that layers do.
+
+Implementation details\+: \hyperlink{classlbann_1_1lbann__callback__io}{lbann\+::lbann\+\_\+callback\+\_\+io}\hypertarget{callbacks_learningrate}{}\section{Learning Rate}\label{callbacks_learningrate}
+Base class for learning rate schedules. Child classes should implement the schedule method to make changes.
+
+Implementation details\+: \hyperlink{classlbann_1_1lbann__callback__learning__rate}{lbann\+::lbann\+\_\+callback\+\_\+learning\+\_\+rate}\hypertarget{callbacks_LTFB}{}\section{Manage L\+T\+FB}\label{callbacks_LTFB}
+Manage L\+T\+FB training. L\+T\+FB works in rounds, which are made up of some number of mini-\/batches (that evenly divide the number of minibatches in an epoch). In each round, the model trains as usual, and at the end it is randomly paired with another model. The pairs exchange their models and evaluate both their local and the received model on their validation data. The model achieving the highest accuracy is retained and training continues. Current limitations\+:
+\begin{DoxyItemize}
+\item Does not transfer optimizer state, so it\textquotesingle{}s best to stick to S\+GD without momentum.
+\item Uses the validation data for the tournament (we may not want this).
+\item Requires a manually-\/created model duplicate.
+
+Implementation details\+: \hyperlink{classlbann_1_1lbann__callback__ltfb}{lbann\+::lbann\+\_\+callback\+\_\+ltfb}
+\end{DoxyItemize}\hypertarget{callbacks_print_acc}{}\section{Print Accuracy}\label{callbacks_print_acc}
+Periodically print computational results. Prints average objective function value and metric scores after each training epoch and evaluation.
+
+Implementation details\+: \hyperlink{classlbann_1_1lbann__callback__print}{lbann\+::lbann\+\_\+callback\+\_\+print}\hypertarget{callbacks_save_images}{}\section{Save Images}\label{callbacks_save_images}
+Save images to file
+
+Implementation details\+: \hyperlink{classlbann_1_1lbann__callback__save__images}{lbann\+::lbann\+\_\+callback\+\_\+save\+\_\+images}\hypertarget{callbacks_summary}{}\section{Summary}\label{callbacks_summary}
+Summarize information to Tensorboard using L\+B\+A\+NN\textquotesingle{}s summary interface.
+
+Implementation details\+: \hyperlink{classlbann_1_1lbann__callback__summary}{lbann\+::lbann\+\_\+callback\+\_\+summary}\hypertarget{callbacks_timer}{}\section{Timer}\label{callbacks_timer}
+Record and report model timing results. Reports the total time and mini-\/batch time statistics for training epochs and for model evaluations. This reports times for the master process in each model.
+
+Implementation details\+: \hyperlink{classlbann_1_1lbann__callback__timer}{lbann\+::lbann\+\_\+callback\+\_\+timer}\hypertarget{callbacks_dbg}{}\section{Debug}\label{callbacks_dbg}
+Print status updates on where training is.
+
+Implementation details\+: \hyperlink{classlbann_1_1lbann__callback__debug}{lbann\+::lbann\+\_\+callback\+\_\+debug}\hypertarget{callbacks_variable_mb}{}\section{Variable Minibatch}\label{callbacks_variable_mb}
+Support changing the mini-\/batch size on different schedules. Implementations should override implement the abstract methods to define concrete schedules.
+
+Implementation details\+: \hyperlink{classlbann_1_1lbann__callback__variable__minibatch}{lbann\+::lbann\+\_\+callback\+\_\+variable\+\_\+minibatch} 

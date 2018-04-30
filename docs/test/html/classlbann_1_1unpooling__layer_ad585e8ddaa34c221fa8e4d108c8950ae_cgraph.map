@@ -1,0 +1,10 @@
+<map id="lbann::unpooling_layer::bp_compute" name="lbann::unpooling_layer::bp_compute">
+<area shape="rect" id="node2" href="$classlbann_1_1unpooling__layer.html#ad4607102ff59de2f233a87f13967cc04" title="Unpooling backward propagation with im2col. " alt="" coords="209,116,364,155"/>
+<area shape="rect" id="node3" href="$classlbann_1_1Layer.html#a82827edc5e869960144f3ccb2172bfcd" title="lbann::Layer::get_local\l_prev_error_signals" alt="" coords="412,41,568,80"/>
+<area shape="rect" id="node5" href="$classlbann_1_1Layer.html#af178d00b9d878aa7d87754bff2a91f3a" title="lbann::Layer::get_local\l_error_signals" alt="" coords="412,116,568,155"/>
+<area shape="rect" id="node7" href="$namespacelbann.html#aa3636a1979e40da2af91f30a12b90db9" title="Rearrange image blocks into matrix columns. " alt="" coords="440,179,540,204"/>
+<area shape="rect" id="node4" href="$classlbann_1_1Layer.html#a7ac4579d3c1671dfaf86e3b618d6938a" title="lbann::Layer::get_prev\l_error_signals" alt="" coords="617,29,771,68"/>
+<area shape="rect" id="node6" href="$classlbann_1_1Layer.html#adb561e140e0bb601f3c5a8ee053a71d2" title="lbann::Layer::get_error\l_signals" alt="" coords="616,116,772,155"/>
+<area shape="rect" id="node8" href="$namespacelbann.html#a3d099edd7d1b09889e0d2133bb83d5bf" title="Rearrange 1x1 image blocks into matrix columns. " alt="" coords="630,179,758,204"/>
+<area shape="rect" id="node9" href="$namespacelbann.html#adc05d10657be77ccd9a74b1621c416c3" title="Rearrange 2D image blocks into matrix columns. " alt="" coords="633,228,755,253"/>
+</map>

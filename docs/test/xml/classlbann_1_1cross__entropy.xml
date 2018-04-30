@@ -1,0 +1,319 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1cross__entropy" kind="class" language="C++" prot="public">
+    <compoundname>lbann::cross_entropy</compoundname>
+    <basecompoundref refid="classlbann_1_1loss__function" prot="public" virt="non-virtual">lbann::loss_function</basecompoundref>
+    <includes refid="cross__entropy_8hpp" local="no">cross_entropy.hpp</includes>
+      <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="classlbann_1_1cross__entropy_1a0eea3d755b963149cb364e722a7352d8" prot="private" static="no" mutable="no">
+        <type><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref></type>
+        <definition>EvalType lbann::cross_entropy::m_sum</definition>
+        <argsstring></argsstring>
+        <name>m_sum</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Sum of the cross-entropy terms. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/cross_entropy.hpp" line="84" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/cross_entropy.hpp" bodystart="84" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1cross__entropy_1a5167b7709499516c6a4dbebfc561f6a7" compoundref="cross__entropy_8cpp" startline="31" endline="56">start_evaluate_compute</referencedby>
+        <referencedby refid="classlbann_1_1cross__entropy_1a85d6937dc70217062f7b45cb678ea1f9" compoundref="cross__entropy_8cpp" startline="58" endline="62">finish_evaluate_compute</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1cross__entropy_1a982d913d892cd9043325e2cc6a77f039" prot="private" static="no" mutable="no">
+        <type><ref refid="structlbann_1_1Al_1_1request" kindref="compound">Al::request</ref></type>
+        <definition>Al::request lbann::cross_entropy::m_allreduce_req</definition>
+        <argsstring></argsstring>
+        <name>m_allreduce_req</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Non-blocking allreduce request. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/cross_entropy.hpp" line="86" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/cross_entropy.hpp" bodystart="86" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1cross__entropy_1a5167b7709499516c6a4dbebfc561f6a7" compoundref="cross__entropy_8cpp" startline="31" endline="56">start_evaluate_compute</referencedby>
+        <referencedby refid="classlbann_1_1cross__entropy_1a85d6937dc70217062f7b45cb678ea1f9" compoundref="cross__entropy_8cpp" startline="58" endline="62">finish_evaluate_compute</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1cross__entropy_1a68520e75b1613caa6e845b26199df0ee" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>lbann::cross_entropy::cross_entropy</definition>
+        <argsstring>(EvalType scale_factor=EvalType(1))</argsstring>
+        <name>cross_entropy</name>
+        <param>
+          <type><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref></type>
+          <declname>scale_factor</declname>
+          <defval><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref>(1)</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Default constructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/cross_entropy.hpp" line="38" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/cross_entropy.hpp" bodystart="38" bodyend="39"/>
+        <references refid="classlbann_1_1cross__entropy_1a818f473e9af3e417dfdf2c79f8f2c2af">operator=</references>
+        <references refid="classlbann_1_1cross__entropy_1a9876fd9cc40a76acb219a875f66dfdb7">~cross_entropy</references>
+        <referencedby refid="classlbann_1_1cross__entropy_1a5d709e7cf0a3a260ba8d5c558aebda88" compoundref="cross__entropy_8hpp" startline="48" endline="48">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1cross__entropy_1adb865fd99d2e8c9b3da748956363ed7f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::cross_entropy::cross_entropy</definition>
+        <argsstring>(const cross_entropy &amp;other)=default</argsstring>
+        <name>cross_entropy</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1cross__entropy" kindref="compound">cross_entropy</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Copy constructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/cross_entropy.hpp" line="42" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1cross__entropy_1a818f473e9af3e417dfdf2c79f8f2c2af" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classlbann_1_1cross__entropy" kindref="compound">cross_entropy</ref> &amp;</type>
+        <definition>cross_entropy&amp; lbann::cross_entropy::operator=</definition>
+        <argsstring>(const cross_entropy &amp;other)=default</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1cross__entropy" kindref="compound">cross_entropy</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Copy assignment operator. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/cross_entropy.hpp" line="44" column="1"/>
+        <referencedby refid="classlbann_1_1cross__entropy_1a68520e75b1613caa6e845b26199df0ee" compoundref="cross__entropy_8hpp" startline="38" endline="39">cross_entropy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1cross__entropy_1a9876fd9cc40a76acb219a875f66dfdb7" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::cross_entropy::~cross_entropy</definition>
+        <argsstring>() override=default</argsstring>
+        <name>~cross_entropy</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Destructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/cross_entropy.hpp" line="46" column="1"/>
+        <referencedby refid="classlbann_1_1cross__entropy_1a68520e75b1613caa6e845b26199df0ee" compoundref="cross__entropy_8hpp" startline="38" endline="39">cross_entropy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1cross__entropy_1a5d709e7cf0a3a260ba8d5c558aebda88" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type><ref refid="classlbann_1_1cross__entropy" kindref="compound">cross_entropy</ref> *</type>
+        <definition>cross_entropy* lbann::cross_entropy::copy</definition>
+        <argsstring>() const override</argsstring>
+        <name>copy</name>
+        <reimplements refid="classlbann_1_1objective__function__term_1ae98a4ec173a602ad55d1df20dadd4cb9">copy</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Copy function. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/cross_entropy.hpp" line="48" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/cross_entropy.hpp" bodystart="48" bodyend="48"/>
+        <references refid="classlbann_1_1cross__entropy_1a68520e75b1613caa6e845b26199df0ee" compoundref="cross__entropy_8hpp" startline="38" endline="39">cross_entropy</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1cross__entropy_1a142c9188b0a251ddaf0325e1f310f205" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>std::string</type>
+        <definition>std::string lbann::cross_entropy::name</definition>
+        <argsstring>() const override</argsstring>
+        <name>name</name>
+        <reimplements refid="classlbann_1_1objective__function__term_1a964fbfad3dd0434aa8f32c5fedf1079a">name</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Get the name of the objective function term. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/cross_entropy.hpp" line="51" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/cross_entropy.hpp" bodystart="51" bodyend="51"/>
+        <references refid="classlbann_1_1cross__entropy_1a5167b7709499516c6a4dbebfc561f6a7" compoundref="cross__entropy_8cpp" startline="31" endline="56">start_evaluate_compute</references>
+        <references refid="base_8hpp_1a2781a159088df64ed7d47cc91c4dc0a8ac41b9ec75e920b610e8907e066074b30">prediction</references>
+        <references refid="classlbann_1_1cross__entropy_1a85d6937dc70217062f7b45cb678ea1f9" compoundref="cross__entropy_8cpp" startline="58" endline="62">finish_evaluate_compute</references>
+        <references refid="classlbann_1_1cross__entropy_1a5a91b6dac7d27980c47f6fd818963d1b" compoundref="cross__entropy_8cpp" startline="64" endline="88">differentiate_compute</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1cross__entropy_1a5167b7709499516c6a4dbebfc561f6a7" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::cross_entropy::start_evaluate_compute</definition>
+        <argsstring>(const AbsDistMat &amp;prediction, const AbsDistMat &amp;ground_truth) override</argsstring>
+        <name>start_evaluate_compute</name>
+        <reimplements refid="classlbann_1_1loss__function_1a0bbe41060d788dc7a29f3737761a6f7d">start_evaluate_compute</reimplements>
+        <param>
+          <type>const <ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+          <declname>prediction</declname>
+        </param>
+        <param>
+          <type>const <ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+          <declname>ground_truth</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Compute the cross entropy objective function. Given a predicted distribution <formula id="1">$y$</formula> and ground truth distribution <formula id="0">$\hat{y}$</formula>, the cross entropy is <formula id="3">\[ CE(y,\hat{y}) = - \sum\limits_{i} \hat{y}_i \log y_i \]</formula> This function updates the objective function value with the mean cross entropy across the mini-batch. Note that each column of the predictions and ground truth matrices should have non-negative entries that add up to one. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/cross_entropy.hpp" line="64" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/loss_functions/cross_entropy.cpp" bodystart="31" bodyend="56"/>
+        <references refid="classlbann_1_1cross__entropy_1a0eea3d755b963149cb364e722a7352d8" compoundref="cross__entropy_8hpp" startline="84">m_sum</references>
+        <references refid="classlbann_1_1objective__function__term_1a5f89b676a26a6b76ddc26563ac87beb9" compoundref="objective__function__term_8hpp" startline="102" endline="102">lbann::objective_function_term::get_comm</references>
+        <references refid="classlbann_1_1lbann__comm_1a2a7bb6cf3707366fc0671d8894ca30ea" compoundref="comm_8cpp" startline="177" endline="213">lbann::lbann_comm::nb_allreduce</references>
+        <references refid="classlbann_1_1cross__entropy_1a982d913d892cd9043325e2cc6a77f039" compoundref="cross__entropy_8hpp" startline="86">m_allreduce_req</references>
+        <referencedby refid="classlbann_1_1cross__entropy_1a142c9188b0a251ddaf0325e1f310f205" compoundref="cross__entropy_8hpp" startline="51" endline="51">name</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1cross__entropy_1a85d6937dc70217062f7b45cb678ea1f9" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref></type>
+        <definition>EvalType lbann::cross_entropy::finish_evaluate_compute</definition>
+        <argsstring>(const AbsDistMat &amp;prediction, const AbsDistMat &amp;ground_truth) override</argsstring>
+        <name>finish_evaluate_compute</name>
+        <reimplements refid="classlbann_1_1loss__function_1a3ea8553a4e9c75477d7d4fc533c4d4fd">finish_evaluate_compute</reimplements>
+        <param>
+          <type>const <ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+          <declname>prediction</declname>
+        </param>
+        <param>
+          <type>const <ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+          <declname>ground_truth</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Finish evaluation of the loss function. This should not include the scale factor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/cross_entropy.hpp" line="67" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/loss_functions/cross_entropy.cpp" bodystart="58" bodyend="62"/>
+        <references refid="classlbann_1_1objective__function__term_1a5f89b676a26a6b76ddc26563ac87beb9" compoundref="objective__function__term_8hpp" startline="102" endline="102">lbann::objective_function_term::get_comm</references>
+        <references refid="classlbann_1_1lbann__comm_1a30439f28cf615e1406090799c5499321" compoundref="comm_8hpp" startline="494" endline="496">lbann::lbann_comm::wait</references>
+        <references refid="classlbann_1_1cross__entropy_1a982d913d892cd9043325e2cc6a77f039" compoundref="cross__entropy_8hpp" startline="86">m_allreduce_req</references>
+        <references refid="classlbann_1_1cross__entropy_1a0eea3d755b963149cb364e722a7352d8" compoundref="cross__entropy_8hpp" startline="84">m_sum</references>
+        <referencedby refid="classlbann_1_1cross__entropy_1a142c9188b0a251ddaf0325e1f310f205" compoundref="cross__entropy_8hpp" startline="51" endline="51">name</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1cross__entropy_1a5a91b6dac7d27980c47f6fd818963d1b" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::cross_entropy::differentiate_compute</definition>
+        <argsstring>(const AbsDistMat &amp;prediction, const AbsDistMat &amp;ground_truth, AbsDistMat &amp;gradient) override</argsstring>
+        <name>differentiate_compute</name>
+        <reimplements refid="classlbann_1_1loss__function_1aefccc2b4f5a02664002d12630cf369e7">differentiate_compute</reimplements>
+        <param>
+          <type>const <ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+          <declname>prediction</declname>
+        </param>
+        <param>
+          <type>const <ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+          <declname>ground_truth</declname>
+        </param>
+        <param>
+          <type><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+          <declname>gradient</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Compute the gradient of the cross entropy objective function. Given a predicted distribution <formula id="1">$y$</formula> and ground truth distribution <formula id="0">$\hat{y}$</formula>, the gradient of the cross entropy is <formula id="4">\[ \nabla_y CE (y,\hat{y}) = - \hat{y} . / y \]</formula> </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/cross_entropy.hpp" line="78" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/loss_functions/cross_entropy.cpp" bodystart="64" bodyend="88"/>
+        <referencedby refid="classlbann_1_1cross__entropy_1a142c9188b0a251ddaf0325e1f310f205" compoundref="cross__entropy_8hpp" startline="51" endline="51">name</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>Cross entropy loss function. </para>    </detaileddescription>
+    <inheritancegraph>
+      <node id="304">
+        <label>lbann::loss_function</label>
+        <link refid="classlbann_1_1loss__function"/>
+        <childnode refid="305" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="305">
+        <label>lbann::objective_function_term</label>
+        <link refid="classlbann_1_1objective__function__term"/>
+      </node>
+      <node id="303">
+        <label>lbann::cross_entropy</label>
+        <link refid="classlbann_1_1cross__entropy"/>
+        <childnode refid="304" relation="public-inheritance">
+        </childnode>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="307">
+        <label>lbann::loss_function</label>
+        <link refid="classlbann_1_1loss__function"/>
+        <childnode refid="308" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="309">
+        <label>lbann::lbann_comm</label>
+        <link refid="classlbann_1_1lbann__comm"/>
+      </node>
+      <node id="308">
+        <label>lbann::objective_function_term</label>
+        <link refid="classlbann_1_1objective__function__term"/>
+        <childnode refid="309" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+      </node>
+      <node id="306">
+        <label>lbann::cross_entropy</label>
+        <link refid="classlbann_1_1cross__entropy"/>
+        <childnode refid="307" relation="public-inheritance">
+        </childnode>
+        <childnode refid="310" relation="usage">
+          <edgelabel>m_allreduce_req</edgelabel>
+        </childnode>
+      </node>
+      <node id="310">
+        <label>lbann::Al::request</label>
+        <link refid="structlbann_1_1Al_1_1request"/>
+      </node>
+    </collaborationgraph>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/cross_entropy.hpp" line="35" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/cross_entropy.hpp" bodystart="35" bodyend="87"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1loss__function_1acd6e3bdcf33235208db03ab7af88e961" prot="public" virt="virtual"><scope>lbann::cross_entropy</scope><name>compute_weight_regularization</name></member>
+      <member refid="classlbann_1_1cross__entropy_1a5d709e7cf0a3a260ba8d5c558aebda88" prot="public" virt="virtual"><scope>lbann::cross_entropy</scope><name>copy</name></member>
+      <member refid="classlbann_1_1cross__entropy_1a68520e75b1613caa6e845b26199df0ee" prot="public" virt="non-virtual"><scope>lbann::cross_entropy</scope><name>cross_entropy</name></member>
+      <member refid="classlbann_1_1cross__entropy_1adb865fd99d2e8c9b3da748956363ed7f" prot="public" virt="non-virtual"><scope>lbann::cross_entropy</scope><name>cross_entropy</name></member>
+      <member refid="classlbann_1_1loss__function_1adbd03ef952ee1055e3dd98f06d33324f" prot="public" virt="virtual"><scope>lbann::cross_entropy</scope><name>differentiate</name></member>
+      <member refid="classlbann_1_1cross__entropy_1a5a91b6dac7d27980c47f6fd818963d1b" prot="public" virt="virtual"><scope>lbann::cross_entropy</scope><name>differentiate_compute</name></member>
+      <member refid="classlbann_1_1cross__entropy_1a85d6937dc70217062f7b45cb678ea1f9" prot="public" virt="virtual"><scope>lbann::cross_entropy</scope><name>finish_evaluate_compute</name></member>
+      <member refid="classlbann_1_1loss__function_1a5264d3e71125b7ce8694f73bf25662f7" prot="public" virt="virtual"><scope>lbann::cross_entropy</scope><name>finish_evaluation</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a5f89b676a26a6b76ddc26563ac87beb9" prot="protected" virt="non-virtual"><scope>lbann::cross_entropy</scope><name>get_comm</name></member>
+      <member refid="classlbann_1_1objective__function__term_1aeeb85314738bec6e15877f68b3d422a0" prot="public" virt="non-virtual"><scope>lbann::cross_entropy</scope><name>get_layer_pointers</name></member>
+      <member refid="classlbann_1_1objective__function__term_1aea73505aed191bfb9336d9d46a69d586" prot="public" virt="non-virtual"><scope>lbann::cross_entropy</scope><name>get_weights_pointers</name></member>
+      <member refid="classlbann_1_1loss__function_1ae948babd62a110e2407271f24dcaec1b" prot="public" virt="virtual"><scope>lbann::cross_entropy</scope><name>load_from_checkpoint_shared</name></member>
+      <member refid="classlbann_1_1loss__function_1a0c5745e661c59e3e5496888d233c07cf" prot="public" virt="non-virtual"><scope>lbann::cross_entropy</scope><name>loss_function</name></member>
+      <member refid="classlbann_1_1loss__function_1aaebcff849004392decc9850c4c75ead5" prot="public" virt="non-virtual"><scope>lbann::cross_entropy</scope><name>loss_function</name></member>
+      <member refid="classlbann_1_1cross__entropy_1a982d913d892cd9043325e2cc6a77f039" prot="private" virt="non-virtual"><scope>lbann::cross_entropy</scope><name>m_allreduce_req</name></member>
+      <member refid="classlbann_1_1loss__function_1ac6ac9f8f2cef7a4daa1b282dba914975" prot="protected" virt="non-virtual"><scope>lbann::cross_entropy</scope><name>m_gradient</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a9269cf0a237eacd1e220ba2739f44334" prot="protected" virt="non-virtual"><scope>lbann::cross_entropy</scope><name>m_layers</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a59a544b8ff0455ed5091de3bf0d81c3c" prot="protected" virt="non-virtual"><scope>lbann::cross_entropy</scope><name>m_scale_factor</name></member>
+      <member refid="classlbann_1_1cross__entropy_1a0eea3d755b963149cb364e722a7352d8" prot="private" virt="non-virtual"><scope>lbann::cross_entropy</scope><name>m_sum</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a1d601c29153ae9cb54c585887608f2bf" prot="protected" virt="non-virtual"><scope>lbann::cross_entropy</scope><name>m_weights</name></member>
+      <member refid="classlbann_1_1cross__entropy_1a142c9188b0a251ddaf0325e1f310f205" prot="public" virt="virtual"><scope>lbann::cross_entropy</scope><name>name</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a8c019e3c880f38dc20275e395acaeca1" prot="public" virt="non-virtual"><scope>lbann::cross_entropy</scope><name>objective_function_term</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a791a33056717d8b3f5ca2288145d86c8" prot="public" virt="non-virtual"><scope>lbann::cross_entropy</scope><name>objective_function_term</name></member>
+      <member refid="classlbann_1_1cross__entropy_1a818f473e9af3e417dfdf2c79f8f2c2af" prot="public" virt="non-virtual"><scope>lbann::cross_entropy</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1loss__function_1ab882c642619ea4285b61e735d84e401c" prot="public" virt="non-virtual" ambiguityscope="lbann::loss_function::"><scope>lbann::cross_entropy</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a8bbac194d96a854d5841817b67b63334" prot="public" virt="non-virtual" ambiguityscope="lbann::objective_function_term::"><scope>lbann::cross_entropy</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1loss__function_1ac44929838f3c3f0a34e1532530422dad" prot="public" virt="virtual"><scope>lbann::cross_entropy</scope><name>save_to_checkpoint_shared</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a82656dfd81bf6b818b38d041d341bc3b" prot="public" virt="non-virtual"><scope>lbann::cross_entropy</scope><name>set_layer_pointers</name></member>
+      <member refid="classlbann_1_1loss__function_1a9ef5356468c892c2c0221f8acd6b5471" prot="public" virt="non-virtual"><scope>lbann::cross_entropy</scope><name>set_target_layer</name></member>
+      <member refid="classlbann_1_1objective__function__term_1aa8adaf01dd8bc535dd86f27fc53c276a" prot="public" virt="non-virtual"><scope>lbann::cross_entropy</scope><name>set_weights_pointers</name></member>
+      <member refid="classlbann_1_1loss__function_1a17a3629e8519c4215ad776a0c7b522ae" prot="public" virt="virtual"><scope>lbann::cross_entropy</scope><name>setup</name></member>
+      <member refid="classlbann_1_1cross__entropy_1a5167b7709499516c6a4dbebfc561f6a7" prot="public" virt="virtual"><scope>lbann::cross_entropy</scope><name>start_evaluate_compute</name></member>
+      <member refid="classlbann_1_1loss__function_1a90f4126b0b4d47838ef3cc154c6d9705" prot="public" virt="virtual"><scope>lbann::cross_entropy</scope><name>start_evaluation</name></member>
+      <member refid="classlbann_1_1cross__entropy_1a9876fd9cc40a76acb219a875f66dfdb7" prot="public" virt="non-virtual"><scope>lbann::cross_entropy</scope><name>~cross_entropy</name></member>
+      <member refid="classlbann_1_1loss__function_1a21c59d9c3db798c330ff8297f6374747" prot="public" virt="non-virtual"><scope>lbann::cross_entropy</scope><name>~loss_function</name></member>
+      <member refid="classlbann_1_1objective__function__term_1ad95920d424b3c248a2124827971451df" prot="public" virt="virtual"><scope>lbann::cross_entropy</scope><name>~objective_function_term</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

@@ -1,0 +1,1105 @@
+\hypertarget{classlbann_1_1persist}{}\section{lbann\+:\+:persist Class Reference}
+\label{classlbann_1_1persist}\index{lbann\+::persist@{lbann\+::persist}}
+
+
+{\ttfamily \#include $<$persist.\+hpp$>$}
+
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1persist_abf1454f4d5b61617ccfa60ba9989f1a3}{persist} ()
+\item 
+\hyperlink{classlbann_1_1persist_ac0d475c0174f7dbd805a0b0603277cfa}{$\sim$persist} ()
+\item 
+int \hyperlink{classlbann_1_1persist_a34eb918a890ab49dcbeedddf27ec1616}{get\+\_\+rank} () const
+\item 
+void \hyperlink{classlbann_1_1persist_a32a8f71995b674a62b21087ec4be9575}{open\+\_\+checkpoint} (const char $\ast$dir, bool per\+\_\+rank, bool val\+\_\+end)
+\item 
+void \hyperlink{classlbann_1_1persist_ab099939d0d91101fbfaf2b85e78be032}{close\+\_\+checkpoint} ()
+\item 
+void \hyperlink{classlbann_1_1persist_a123cbc1d2b693640c784a45cbc6d2d97}{open\+\_\+restart} (const char $\ast$dir, bool per\+\_\+rank)
+\item 
+void \hyperlink{classlbann_1_1persist_afeef05548e1d17bd09d3805607edd621}{close\+\_\+restart} ()
+\item 
+uint64\+\_\+t \hyperlink{classlbann_1_1persist_ad759657d69e88a491729ce8e4bf9510e}{get\+\_\+bytes} () const
+\item 
+bool \hyperlink{classlbann_1_1persist_a9170de652405d86d9ba9b3793f8781c6}{write\+\_\+distmat} (\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type} type, const char $\ast$name, \hyperlink{base_8hpp_a0fab5387556805cfeac3e7e567bf66c5}{Dist\+Mat} $\ast$M)
+\item 
+bool \hyperlink{classlbann_1_1persist_aa98be93f33b510e5b506b61de6bd79bd}{read\+\_\+distmat} (\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type} type, const char $\ast$name, \hyperlink{base_8hpp_a0fab5387556805cfeac3e7e567bf66c5}{Dist\+Mat} $\ast$M)
+\item 
+bool \hyperlink{classlbann_1_1persist_a8729c7c90f4ca3090cd678fce91a0eb0}{write\+\_\+bytes} (\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type} type, const char $\ast$name, const void $\ast$buf, size\+\_\+t size)
+\item 
+bool \hyperlink{classlbann_1_1persist_af24f635f634c8cf30cf53a0e90ec641b}{read\+\_\+bytes} (\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type} type, const char $\ast$name, void $\ast$buf, size\+\_\+t size)
+\item 
+bool \hyperlink{classlbann_1_1persist_a742334568de0aca958dbaf7bbabd3cba}{write\+\_\+uint32} (\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type} type, const char $\ast$name, uint32\+\_\+t val)
+\item 
+bool \hyperlink{classlbann_1_1persist_ace1ebb58e2570693cdce0ebd2817113b}{read\+\_\+uint32} (\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type} type, const char $\ast$name, uint32\+\_\+t $\ast$val)
+\item 
+bool \hyperlink{classlbann_1_1persist_aced95e3bc711276b072af97b65ef9fc1}{write\+\_\+uint64} (\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type} type, const char $\ast$name, uint64\+\_\+t val)
+\item 
+bool \hyperlink{classlbann_1_1persist_aa6d996db3714a7ae055adac0d8e8ac63}{read\+\_\+uint64} (\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type} type, const char $\ast$name, uint64\+\_\+t $\ast$val)
+\item 
+bool \hyperlink{classlbann_1_1persist_a199cd86b1e1f0fd5f2d0458fc6d25828}{write\+\_\+int32\+\_\+contig} (\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type} type, const char $\ast$name, const int32\+\_\+t $\ast$buf, uint64\+\_\+t count)
+\item 
+bool \hyperlink{classlbann_1_1persist_a2944c32f6634223c0902b38a697a0957}{read\+\_\+int32\+\_\+contig} (\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type} type, const char $\ast$name, int32\+\_\+t $\ast$buf, uint64\+\_\+t count)
+\item 
+bool \hyperlink{classlbann_1_1persist_ab5be1e98f9d962c41fc9c3f2ac918c6e}{write\+\_\+float} (\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type} type, const char $\ast$name, float val)
+\item 
+bool \hyperlink{classlbann_1_1persist_ac5e659a6612e5f2911e195fc1b6c045b}{read\+\_\+float} (\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type} type, const char $\ast$name, float $\ast$val)
+\item 
+bool \hyperlink{classlbann_1_1persist_a04afef84e7caa8509e65367225ceeba5}{write\+\_\+string} (\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type} type, const char $\ast$name, const char $\ast$val, int str\+\_\+length)
+\item 
+bool \hyperlink{classlbann_1_1persist_a19c0a5dbee697aff0a5a5588f2d370b9}{read\+\_\+string} (\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type} type, const char $\ast$name, char $\ast$val, int str\+\_\+length)
+\item 
+bool \hyperlink{classlbann_1_1persist_ad29ebcbacdef90a91a9d474d4d6e1bcd}{write\+\_\+double} (\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type} type, const char $\ast$name, double val)
+\item 
+bool \hyperlink{classlbann_1_1persist_ae3a0b96ece72901bb0a05d26a4eb4791}{read\+\_\+double} (\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type} type, const char $\ast$name, double $\ast$val)
+\item 
+bool \hyperlink{classlbann_1_1persist_a5edc3f9cc3540b50d417993da2a6b5ce}{write\+\_\+datatype} (\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type} type, const char $\ast$name, Data\+Type val)
+\item 
+bool \hyperlink{classlbann_1_1persist_a1e84eff891affad6001f3c5fa803cae2}{read\+\_\+datatype} (\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type} type, const char $\ast$name, Data\+Type $\ast$val)
+\end{DoxyCompactItemize}
+\subsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+char \hyperlink{classlbann_1_1persist_a17c2b08ec1815aba6d3eae6502397bb1}{m\+\_\+checkpoint\+\_\+dir} \mbox{[}1024\mbox{]}
+\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{classlbann_1_1persist_aa99b1b0079bb10471472bf6f1d966deb}{m\+\_\+rank}
+\item 
+uint64\+\_\+t \hyperlink{classlbann_1_1persist_a0bd4fd42d9858a5210c8034dfbb666d4}{m\+\_\+bytes}
+\item 
+int \hyperlink{classlbann_1_1persist_a1adc7102c1b4bc91534ca156decbd965}{m\+\_\+model\+\_\+fd}
+\item 
+int \hyperlink{classlbann_1_1persist_a817671390811dde04670c47139402f51}{m\+\_\+train\+\_\+fd}
+\item 
+int \hyperlink{classlbann_1_1persist_a87927d03b0cf684023178f997c038783}{m\+\_\+validate\+\_\+fd}
+\item 
+char \hyperlink{classlbann_1_1persist_ac01cd3c8fe0f97c1312ca1a595f2f690}{m\+\_\+model\+\_\+filename} \mbox{[}1024\mbox{]}
+\item 
+char \hyperlink{classlbann_1_1persist_a417a443c894fd07472504936f5b02b62}{m\+\_\+train\+\_\+filename} \mbox{[}1024\mbox{]}
+\item 
+char \hyperlink{classlbann_1_1persist_a8ccf3728c62f825ec2f8cfe15929fc2a}{m\+\_\+validate\+\_\+filename} \mbox{[}1024\mbox{]}
+\end{DoxyCompactItemize}
+\subsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{classlbann_1_1persist_a0fe7bbf6a5a47417aa904d0cb64af3fd}{get\+\_\+fd} (\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type} type) const
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+
+
+Definition at line 43 of file persist.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1persist_abf1454f4d5b61617ccfa60ba9989f1a3}\label{classlbann_1_1persist_abf1454f4d5b61617ccfa60ba9989f1a3}} 
+\index{lbann\+::persist@{lbann\+::persist}!persist@{persist}}
+\index{persist@{persist}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{persist()}{persist()}}
+{\footnotesize\ttfamily lbann\+::persist\+::persist (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Definition at line 191 of file persist.\+cpp.
+
+
+\begin{DoxyCode}
+191                       \{
+192   \textcolor{comment}{// lookup our MPI rank}
+193   MPI\_Comm\_rank(MPI\_COMM\_WORLD, &\hyperlink{classlbann_1_1persist_aa99b1b0079bb10471472bf6f1d966deb}{m\_rank});
+194 
+195   \textcolor{comment}{// initialize number of bytes written}
+196   \hyperlink{classlbann_1_1persist_a0bd4fd42d9858a5210c8034dfbb666d4}{m\_bytes} = 0;
+197 
+198   \textcolor{comment}{// initialize file descriptors}
+199   \hyperlink{classlbann_1_1persist_a1adc7102c1b4bc91534ca156decbd965}{m\_model\_fd} = -1;
+200   \hyperlink{classlbann_1_1persist_a817671390811dde04670c47139402f51}{m\_train\_fd} = -1;
+201   \hyperlink{classlbann_1_1persist_a87927d03b0cf684023178f997c038783}{m\_validate\_fd} = -1;
+202 \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1persist_ac0d475c0174f7dbd805a0b0603277cfa}\label{classlbann_1_1persist_ac0d475c0174f7dbd805a0b0603277cfa}} 
+\index{lbann\+::persist@{lbann\+::persist}!````~persist@{$\sim$persist}}
+\index{````~persist@{$\sim$persist}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{$\sim$persist()}{~persist()}}
+{\footnotesize\ttfamily lbann\+::persist\+::$\sim$persist (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 58 of file persist.\+hpp.
+
+
+\begin{DoxyCode}
+58 \{\};
+\end{DoxyCode}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1persist_ab099939d0d91101fbfaf2b85e78be032}\label{classlbann_1_1persist_ab099939d0d91101fbfaf2b85e78be032}} 
+\index{lbann\+::persist@{lbann\+::persist}!close\+\_\+checkpoint@{close\+\_\+checkpoint}}
+\index{close\+\_\+checkpoint@{close\+\_\+checkpoint}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{close\+\_\+checkpoint()}{close\_checkpoint()}}
+{\footnotesize\ttfamily void lbann\+::persist\+::close\+\_\+checkpoint (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Definition at line 257 of file persist.\+cpp.
+
+
+\begin{DoxyCode}
+257                                     \{
+258   \textcolor{comment}{// close model file}
+259   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1persist_a1adc7102c1b4bc91534ca156decbd965}{m\_model\_fd} >= 0) \{
+260     \hyperlink{namespacelbann_aceeccedbbafccfa071b21ee99be794a5}{lbann::closewrite}(\hyperlink{classlbann_1_1persist_a1adc7102c1b4bc91534ca156decbd965}{m\_model\_fd}, \hyperlink{classlbann_1_1persist_ac01cd3c8fe0f97c1312ca1a595f2f690}{m\_model\_filename});
+261     \hyperlink{classlbann_1_1persist_a1adc7102c1b4bc91534ca156decbd965}{m\_model\_fd} = -1;
+262   \}
+263 
+264   \textcolor{comment}{// close training file}
+265   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1persist_a817671390811dde04670c47139402f51}{m\_train\_fd} >= 0) \{
+266     \hyperlink{namespacelbann_aceeccedbbafccfa071b21ee99be794a5}{lbann::closewrite}(\hyperlink{classlbann_1_1persist_a817671390811dde04670c47139402f51}{m\_train\_fd}, \hyperlink{classlbann_1_1persist_a417a443c894fd07472504936f5b02b62}{m\_train\_filename});
+267     \hyperlink{classlbann_1_1persist_a817671390811dde04670c47139402f51}{m\_train\_fd} = -1;
+268   \}
+269   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1persist_a87927d03b0cf684023178f997c038783}{m\_validate\_fd} >= 0) \{
+270     \hyperlink{namespacelbann_aceeccedbbafccfa071b21ee99be794a5}{lbann::closewrite}(\hyperlink{classlbann_1_1persist_a87927d03b0cf684023178f997c038783}{m\_validate\_fd}, 
+      \hyperlink{classlbann_1_1persist_a8ccf3728c62f825ec2f8cfe15929fc2a}{m\_validate\_filename});
+271     \hyperlink{classlbann_1_1persist_a87927d03b0cf684023178f997c038783}{m\_validate\_fd} = -1;
+272   \}
+273 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=311pt]{classlbann_1_1persist_ab099939d0d91101fbfaf2b85e78be032_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1persist_ab099939d0d91101fbfaf2b85e78be032_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1persist_afeef05548e1d17bd09d3805607edd621}\label{classlbann_1_1persist_afeef05548e1d17bd09d3805607edd621}} 
+\index{lbann\+::persist@{lbann\+::persist}!close\+\_\+restart@{close\+\_\+restart}}
+\index{close\+\_\+restart@{close\+\_\+restart}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{close\+\_\+restart()}{close\_restart()}}
+{\footnotesize\ttfamily void lbann\+::persist\+::close\+\_\+restart (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Definition at line 328 of file persist.\+cpp.
+
+
+\begin{DoxyCode}
+328                                  \{
+329   \textcolor{comment}{// close model file}
+330   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1persist_a1adc7102c1b4bc91534ca156decbd965}{m\_model\_fd} >= 0) \{
+331     \hyperlink{namespacelbann_a38dd30b2ae8214f6595708264369ddb8}{lbann::closeread}(\hyperlink{classlbann_1_1persist_a1adc7102c1b4bc91534ca156decbd965}{m\_model\_fd}, \hyperlink{classlbann_1_1persist_ac01cd3c8fe0f97c1312ca1a595f2f690}{m\_model\_filename});
+332     \hyperlink{classlbann_1_1persist_a1adc7102c1b4bc91534ca156decbd965}{m\_model\_fd} = -1;
+333   \}
+334 
+335   \textcolor{comment}{// close training file}
+336   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1persist_a817671390811dde04670c47139402f51}{m\_train\_fd} >= 0) \{
+337     \hyperlink{namespacelbann_a38dd30b2ae8214f6595708264369ddb8}{lbann::closeread}(\hyperlink{classlbann_1_1persist_a817671390811dde04670c47139402f51}{m\_train\_fd}, \hyperlink{classlbann_1_1persist_a417a443c894fd07472504936f5b02b62}{m\_train\_filename});
+338     \hyperlink{classlbann_1_1persist_a817671390811dde04670c47139402f51}{m\_train\_fd} = -1;
+339   \}
+340 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=310pt]{classlbann_1_1persist_afeef05548e1d17bd09d3805607edd621_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1persist_afeef05548e1d17bd09d3805607edd621_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1persist_ad759657d69e88a491729ce8e4bf9510e}\label{classlbann_1_1persist_ad759657d69e88a491729ce8e4bf9510e}} 
+\index{lbann\+::persist@{lbann\+::persist}!get\+\_\+bytes@{get\+\_\+bytes}}
+\index{get\+\_\+bytes@{get\+\_\+bytes}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{get\+\_\+bytes()}{get\_bytes()}}
+{\footnotesize\ttfamily uint64\+\_\+t lbann\+::persist\+::get\+\_\+bytes (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 69 of file persist.\+hpp.
+
+
+\begin{DoxyCode}
+69                              \{
+70     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1persist_a0bd4fd42d9858a5210c8034dfbb666d4}{m\_bytes};
+71   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=550pt]{classlbann_1_1persist_ad759657d69e88a491729ce8e4bf9510e_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1persist_ad759657d69e88a491729ce8e4bf9510e_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1persist_a0fe7bbf6a5a47417aa904d0cb64af3fd}\label{classlbann_1_1persist_a0fe7bbf6a5a47417aa904d0cb64af3fd}} 
+\index{lbann\+::persist@{lbann\+::persist}!get\+\_\+fd@{get\+\_\+fd}}
+\index{get\+\_\+fd@{get\+\_\+fd}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{get\+\_\+fd()}{get\_fd()}}
+{\footnotesize\ttfamily int lbann\+::persist\+::get\+\_\+fd (\begin{DoxyParamCaption}\item[{\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type}}]{type }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Definition at line 593 of file persist.\+cpp.
+
+
+\begin{DoxyCode}
+593                                                 \{
+594   \textcolor{keywordtype}{int} fd = -1;
+595   \textcolor{keywordflow}{if} (type == \hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64}{persist\_type::train}) \{
+596     fd = \hyperlink{classlbann_1_1persist_a817671390811dde04670c47139402f51}{m\_train\_fd};
+597   \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (type == \hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56a20f35e630daf44dbfa4c3f68f5399d8c}{persist\_type::model}) \{
+598     fd = \hyperlink{classlbann_1_1persist_a1adc7102c1b4bc91534ca156decbd965}{m\_model\_fd};
+599   \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (type == \hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56af9ab05454998236921a6b0e281fae632}{persist\_type::validate}) \{
+600     fd = \hyperlink{classlbann_1_1persist_a87927d03b0cf684023178f997c038783}{m\_validate\_fd};
+601   \}
+602   \textcolor{keywordflow}{return} fd;
+603 \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1persist_a34eb918a890ab49dcbeedddf27ec1616}\label{classlbann_1_1persist_a34eb918a890ab49dcbeedddf27ec1616}} 
+\index{lbann\+::persist@{lbann\+::persist}!get\+\_\+rank@{get\+\_\+rank}}
+\index{get\+\_\+rank@{get\+\_\+rank}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{get\+\_\+rank()}{get\_rank()}}
+{\footnotesize\ttfamily int lbann\+::persist\+::get\+\_\+rank (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 60 of file persist.\+hpp.
+
+
+\begin{DoxyCode}
+60                        \{
+61     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1persist_aa99b1b0079bb10471472bf6f1d966deb}{m\_rank};
+62   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1persist_a34eb918a890ab49dcbeedddf27ec1616_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1persist_a32a8f71995b674a62b21087ec4be9575}\label{classlbann_1_1persist_a32a8f71995b674a62b21087ec4be9575}} 
+\index{lbann\+::persist@{lbann\+::persist}!open\+\_\+checkpoint@{open\+\_\+checkpoint}}
+\index{open\+\_\+checkpoint@{open\+\_\+checkpoint}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{open\+\_\+checkpoint()}{open\_checkpoint()}}
+{\footnotesize\ttfamily void lbann\+::persist\+::open\+\_\+checkpoint (\begin{DoxyParamCaption}\item[{const char $\ast$}]{dir,  }\item[{bool}]{per\+\_\+rank,  }\item[{bool}]{val\+\_\+end }\end{DoxyParamCaption})}
+
+
+
+Definition at line 204 of file persist.\+cpp.
+
+
+\begin{DoxyCode}
+204                                                                                \{
+205   \textcolor{comment}{// create directory for checkpoint}
+206   \hyperlink{namespacelbann_a8830dea8eef0ab5b93d68e2358ceeb1a}{lbann::makedir}(dir);
+207 
+208   \textcolor{comment}{// copy checkpoint directory}
+209   strcpy(\hyperlink{classlbann_1_1persist_a17c2b08ec1815aba6d3eae6502397bb1}{m\_checkpoint\_dir}, dir);
+210 
+211   \textcolor{comment}{// define filename for model state}
+212   \textcolor{keywordflow}{if}(per\_rank)\{
+213     sprintf(\hyperlink{classlbann_1_1persist_ac01cd3c8fe0f97c1312ca1a595f2f690}{m\_model\_filename}, \textcolor{stringliteral}{"%s/model\_%d"}, dir, \hyperlink{classlbann_1_1persist_aa99b1b0079bb10471472bf6f1d966deb}{m\_rank});
+214 
+215     \textcolor{comment}{// define filename for train state}
+216     sprintf(\hyperlink{classlbann_1_1persist_a417a443c894fd07472504936f5b02b62}{m\_train\_filename}, \textcolor{stringliteral}{"%s/train\_%d"}, dir, \hyperlink{classlbann_1_1persist_aa99b1b0079bb10471472bf6f1d966deb}{m\_rank});
+217     \hyperlink{classlbann_1_1persist_a1adc7102c1b4bc91534ca156decbd965}{m\_model\_fd} = \hyperlink{namespacelbann_af596e6d2be603e9cf808c98f5412490a}{lbann::openwrite}(\hyperlink{classlbann_1_1persist_ac01cd3c8fe0f97c1312ca1a595f2f690}{m\_model\_filename});
+218     \textcolor{keywordtype}{int} all\_success;
+219     MPI\_Allreduce(&\hyperlink{classlbann_1_1persist_a1adc7102c1b4bc91534ca156decbd965}{m\_model\_fd}, &all\_success, 1, MPI\_INT, MPI\_LAND, MPI\_COMM\_WORLD);
+220     \textcolor{keywordflow}{if} (!all\_success) \{
+221         \textcolor{comment}{// failed to open checkpoint file}
+222       \}
+223       
+224       \hyperlink{classlbann_1_1persist_a817671390811dde04670c47139402f51}{m\_train\_fd} = \hyperlink{namespacelbann_af596e6d2be603e9cf808c98f5412490a}{lbann::openwrite}(\hyperlink{classlbann_1_1persist_a417a443c894fd07472504936f5b02b62}{m\_train\_filename});
+225       MPI\_Allreduce(&\hyperlink{classlbann_1_1persist_a817671390811dde04670c47139402f51}{m\_train\_fd}, &all\_success, 1, MPI\_INT, MPI\_LAND, MPI\_COMM\_WORLD);
+226       \textcolor{keywordflow}{if} (!all\_success) \{
+227         \textcolor{comment}{// failed to open checkpoint file}
+228       \}
+229   \}
+230   
+231   \textcolor{comment}{// open the file for writing}
+232   \textcolor{keywordflow}{if} (!per\_rank && \hyperlink{classlbann_1_1persist_aa99b1b0079bb10471472bf6f1d966deb}{m\_rank} == 0) \{
+233      sprintf(\hyperlink{classlbann_1_1persist_ac01cd3c8fe0f97c1312ca1a595f2f690}{m\_model\_filename}, \textcolor{stringliteral}{"%s/model"}, dir);
+234 
+235     \textcolor{comment}{// define filename for train state}
+236     sprintf(\hyperlink{classlbann_1_1persist_a417a443c894fd07472504936f5b02b62}{m\_train\_filename}, \textcolor{stringliteral}{"%s/train"}, dir);
+237     sprintf(\hyperlink{classlbann_1_1persist_a8ccf3728c62f825ec2f8cfe15929fc2a}{m\_validate\_filename}, \textcolor{stringliteral}{"%s/validate"}, dir);
+238     \textcolor{keywordflow}{if}(!val\_end)\{
+239       \hyperlink{classlbann_1_1persist_a1adc7102c1b4bc91534ca156decbd965}{m\_model\_fd} = \hyperlink{namespacelbann_af596e6d2be603e9cf808c98f5412490a}{lbann::openwrite}(\hyperlink{classlbann_1_1persist_ac01cd3c8fe0f97c1312ca1a595f2f690}{m\_model\_filename});
+240       \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1persist_a1adc7102c1b4bc91534ca156decbd965}{m\_model\_fd} < 0) \{
+241         \textcolor{comment}{// failed to open checkpoint file}
+242       \} 
+243 
+244       \hyperlink{classlbann_1_1persist_a817671390811dde04670c47139402f51}{m\_train\_fd} = \hyperlink{namespacelbann_af596e6d2be603e9cf808c98f5412490a}{lbann::openwrite}(\hyperlink{classlbann_1_1persist_a417a443c894fd07472504936f5b02b62}{m\_train\_filename});
+245       \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1persist_a817671390811dde04670c47139402f51}{m\_train\_fd} < 0) \{
+246         \textcolor{comment}{// failed to open checkpoint file}
+247       \}
+248     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (val\_end)\{
+249       \hyperlink{classlbann_1_1persist_a87927d03b0cf684023178f997c038783}{m\_validate\_fd} = \hyperlink{namespacelbann_af596e6d2be603e9cf808c98f5412490a}{lbann::openwrite}(
+      \hyperlink{classlbann_1_1persist_a8ccf3728c62f825ec2f8cfe15929fc2a}{m\_validate\_filename});
+250       \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1persist_a87927d03b0cf684023178f997c038783}{m\_validate\_fd} < 0) \{
+251         \textcolor{comment}{// failed to open checkpoint file    }
+252       \}
+253     \}
+254   \}
+255 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=309pt]{classlbann_1_1persist_a32a8f71995b674a62b21087ec4be9575_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1persist_a32a8f71995b674a62b21087ec4be9575_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1persist_a123cbc1d2b693640c784a45cbc6d2d97}\label{classlbann_1_1persist_a123cbc1d2b693640c784a45cbc6d2d97}} 
+\index{lbann\+::persist@{lbann\+::persist}!open\+\_\+restart@{open\+\_\+restart}}
+\index{open\+\_\+restart@{open\+\_\+restart}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{open\+\_\+restart()}{open\_restart()}}
+{\footnotesize\ttfamily void lbann\+::persist\+::open\+\_\+restart (\begin{DoxyParamCaption}\item[{const char $\ast$}]{dir,  }\item[{bool}]{per\+\_\+rank }\end{DoxyParamCaption})}
+
+
+
+Definition at line 275 of file persist.\+cpp.
+
+
+\begin{DoxyCode}
+275                                                               \{
+276   \textcolor{comment}{// copy checkpoint directory}
+277   strcpy(\hyperlink{classlbann_1_1persist_a17c2b08ec1815aba6d3eae6502397bb1}{m\_checkpoint\_dir}, dir);
+278   \textcolor{keywordflow}{if}(per\_rank)\{
+279     \textcolor{comment}{// define filename for model state}
+280     sprintf(\hyperlink{classlbann_1_1persist_ac01cd3c8fe0f97c1312ca1a595f2f690}{m\_model\_filename}, \textcolor{stringliteral}{"%s/model\_%d"}, dir, \hyperlink{classlbann_1_1persist_aa99b1b0079bb10471472bf6f1d966deb}{m\_rank});
+281 
+282     \textcolor{comment}{// define filename for train state}
+283     sprintf(\hyperlink{classlbann_1_1persist_a417a443c894fd07472504936f5b02b62}{m\_train\_filename}, \textcolor{stringliteral}{"%s/train\_%d"}, dir, \hyperlink{classlbann_1_1persist_aa99b1b0079bb10471472bf6f1d966deb}{m\_rank});
+284 
+285     \hyperlink{classlbann_1_1persist_a1adc7102c1b4bc91534ca156decbd965}{m\_model\_fd} = \hyperlink{namespacelbann_a6084b9319eea1997f8446fa3e6879532}{lbann::openread}(\hyperlink{classlbann_1_1persist_ac01cd3c8fe0f97c1312ca1a595f2f690}{m\_model\_filename});
+286     \textcolor{keywordtype}{int} all\_success;
+287     MPI\_Allreduce(&\hyperlink{classlbann_1_1persist_a1adc7102c1b4bc91534ca156decbd965}{m\_model\_fd}, &all\_success, 1, MPI\_INT, MPI\_LAND, MPI\_COMM\_WORLD);
+288  
+289     \textcolor{keywordflow}{if} (!all\_success) \{
+290         \textcolor{comment}{// restart failed, throw exception}
+291         \textcolor{keywordflow}{throw} lbann\_exception(std::string(\textcolor{stringliteral}{"Failed to read file: "}) + 
+      \hyperlink{classlbann_1_1persist_ac01cd3c8fe0f97c1312ca1a595f2f690}{m\_model\_filename});
+292       \}
+293       
+294       \hyperlink{classlbann_1_1persist_a817671390811dde04670c47139402f51}{m\_train\_fd} = \hyperlink{namespacelbann_a6084b9319eea1997f8446fa3e6879532}{lbann::openread}(\hyperlink{classlbann_1_1persist_a417a443c894fd07472504936f5b02b62}{m\_train\_filename});
+295       MPI\_Allreduce(&\hyperlink{classlbann_1_1persist_a817671390811dde04670c47139402f51}{m\_train\_fd}, &all\_success, 1, MPI\_INT, MPI\_LAND, MPI\_COMM\_WORLD);
+296       \textcolor{keywordflow}{if} (!all\_success) \{
+297       \textcolor{comment}{// restart failed, throw exception}
+298       \textcolor{keywordflow}{throw} lbann\_exception(std::string(\textcolor{stringliteral}{"Failed to read file: "}) + 
+      \hyperlink{classlbann_1_1persist_a417a443c894fd07472504936f5b02b62}{m\_train\_filename});
+299     \}
+300   \}
+301   
+302   \textcolor{comment}{// open the file for writing}
+303   \textcolor{keywordflow}{if} (!per\_rank && \hyperlink{classlbann_1_1persist_aa99b1b0079bb10471472bf6f1d966deb}{m\_rank} == 0) \{
+304     sprintf(\hyperlink{classlbann_1_1persist_ac01cd3c8fe0f97c1312ca1a595f2f690}{m\_model\_filename}, \textcolor{stringliteral}{"%s/model"}, dir);
+305 
+306     \textcolor{comment}{// define filename for train state}
+307     sprintf(\hyperlink{classlbann_1_1persist_a417a443c894fd07472504936f5b02b62}{m\_train\_filename}, \textcolor{stringliteral}{"%s/train"}, dir);
+308     sprintf(\hyperlink{classlbann_1_1persist_a8ccf3728c62f825ec2f8cfe15929fc2a}{m\_validate\_filename}, \textcolor{stringliteral}{"%s/validate"}, dir);  
+309     \hyperlink{classlbann_1_1persist_a1adc7102c1b4bc91534ca156decbd965}{m\_model\_fd} = \hyperlink{namespacelbann_a6084b9319eea1997f8446fa3e6879532}{lbann::openread}(\hyperlink{classlbann_1_1persist_ac01cd3c8fe0f97c1312ca1a595f2f690}{m\_model\_filename});
+310     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1persist_a1adc7102c1b4bc91534ca156decbd965}{m\_model\_fd} < 0) \{
+311       \textcolor{comment}{// restart failed, throw exception}
+312       \textcolor{keywordflow}{throw} lbann\_exception(std::string(\textcolor{stringliteral}{"Failed to read file: "}) + 
+      \hyperlink{classlbann_1_1persist_ac01cd3c8fe0f97c1312ca1a595f2f690}{m\_model\_filename});
+313     \}
+314 
+315     \hyperlink{classlbann_1_1persist_a817671390811dde04670c47139402f51}{m\_train\_fd} = \hyperlink{namespacelbann_a6084b9319eea1997f8446fa3e6879532}{lbann::openread}(\hyperlink{classlbann_1_1persist_a417a443c894fd07472504936f5b02b62}{m\_train\_filename});
+316     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1persist_a817671390811dde04670c47139402f51}{m\_train\_fd} < 0) \{
+317       \textcolor{comment}{// restart failed, throw exception}
+318       \textcolor{keywordflow}{throw} lbann\_exception(std::string(\textcolor{stringliteral}{"Failed to read file: "}) + 
+      \hyperlink{classlbann_1_1persist_a417a443c894fd07472504936f5b02b62}{m\_train\_filename});
+319     \}
+320     \hyperlink{classlbann_1_1persist_a87927d03b0cf684023178f997c038783}{m\_validate\_fd} = \hyperlink{namespacelbann_a6084b9319eea1997f8446fa3e6879532}{lbann::openread}(
+      \hyperlink{classlbann_1_1persist_a8ccf3728c62f825ec2f8cfe15929fc2a}{m\_validate\_filename});
+321     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1persist_a87927d03b0cf684023178f997c038783}{m\_validate\_fd} < 0) \{
+322       \textcolor{comment}{// restart failed, throw exception}
+323       \textcolor{keywordflow}{throw} lbann\_exception(std::string(\textcolor{stringliteral}{"Failed to read file: "}) + 
+      \hyperlink{classlbann_1_1persist_a8ccf3728c62f825ec2f8cfe15929fc2a}{m\_validate\_filename});
+324     \}
+325   \}
+326 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=308pt]{classlbann_1_1persist_a123cbc1d2b693640c784a45cbc6d2d97_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1persist_a123cbc1d2b693640c784a45cbc6d2d97_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1persist_af24f635f634c8cf30cf53a0e90ec641b}\label{classlbann_1_1persist_af24f635f634c8cf30cf53a0e90ec641b}} 
+\index{lbann\+::persist@{lbann\+::persist}!read\+\_\+bytes@{read\+\_\+bytes}}
+\index{read\+\_\+bytes@{read\+\_\+bytes}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{read\+\_\+bytes()}{read\_bytes()}}
+{\footnotesize\ttfamily bool lbann\+::persist\+::read\+\_\+bytes (\begin{DoxyParamCaption}\item[{\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type}}]{type,  }\item[{const char $\ast$}]{name,  }\item[{void $\ast$}]{buf,  }\item[{size\+\_\+t}]{size }\end{DoxyParamCaption})}
+
+
+
+Definition at line 402 of file persist.\+cpp.
+
+
+\begin{DoxyCode}
+402                                                                                          \{
+403   \textcolor{keywordtype}{int} fd = \hyperlink{classlbann_1_1persist_a0fe7bbf6a5a47417aa904d0cb64af3fd}{get\_fd}(type);
+404   \textcolor{keywordflow}{if} (fd >= 0) \{
+405     ssize\_t rc = read(fd, buf, size);
+406     \textcolor{keywordflow}{if} (rc != (ssize\_t) size) \{
+407       \textcolor{keywordflow}{throw} lbann\_exception(std::string(\textcolor{stringliteral}{"Failed to read: "}) + name);
+408       \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+409     \}
+410     \hyperlink{classlbann_1_1persist_a0bd4fd42d9858a5210c8034dfbb666d4}{m\_bytes} += size;
+411   \}
+412   \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+413 \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1persist_a1e84eff891affad6001f3c5fa803cae2}\label{classlbann_1_1persist_a1e84eff891affad6001f3c5fa803cae2}} 
+\index{lbann\+::persist@{lbann\+::persist}!read\+\_\+datatype@{read\+\_\+datatype}}
+\index{read\+\_\+datatype@{read\+\_\+datatype}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{read\+\_\+datatype()}{read\_datatype()}}
+{\footnotesize\ttfamily bool lbann\+::persist\+::read\+\_\+datatype (\begin{DoxyParamCaption}\item[{\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type}}]{type,  }\item[{const char $\ast$}]{name,  }\item[{Data\+Type $\ast$}]{val }\end{DoxyParamCaption})}
+
+
+
+Definition at line 581 of file persist.\+cpp.
+
+
+\begin{DoxyCode}
+581                                                                                    \{
+582   \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1persist_af24f635f634c8cf30cf53a0e90ec641b}{read\_bytes}(type, name, val, \textcolor{keyword}{sizeof}(DataType));
+583 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=313pt]{classlbann_1_1persist_a1e84eff891affad6001f3c5fa803cae2_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1persist_a1e84eff891affad6001f3c5fa803cae2_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1persist_aa98be93f33b510e5b506b61de6bd79bd}\label{classlbann_1_1persist_aa98be93f33b510e5b506b61de6bd79bd}} 
+\index{lbann\+::persist@{lbann\+::persist}!read\+\_\+distmat@{read\+\_\+distmat}}
+\index{read\+\_\+distmat@{read\+\_\+distmat}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{read\+\_\+distmat()}{read\_distmat()}}
+{\footnotesize\ttfamily bool lbann\+::persist\+::read\+\_\+distmat (\begin{DoxyParamCaption}\item[{\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type}}]{type,  }\item[{const char $\ast$}]{name,  }\item[{\hyperlink{base_8hpp_a0fab5387556805cfeac3e7e567bf66c5}{Dist\+Mat} $\ast$}]{M }\end{DoxyParamCaption})}
+
+
+
+Definition at line 362 of file persist.\+cpp.
+
+
+\begin{DoxyCode}
+362                                                                                \{
+363   \textcolor{comment}{// define full path to file to store matrix}
+364   std::string filename = \hyperlink{classlbann_1_1persist_a17c2b08ec1815aba6d3eae6502397bb1}{m\_checkpoint\_dir};
+365   \textcolor{keywordflow}{if} (type == \hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64}{persist\_type::train}) \{
+366     filename += std::string(\textcolor{stringliteral}{"/train\_"}) + name;
+367   \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (type == \hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56a20f35e630daf44dbfa4c3f68f5399d8c}{persist\_type::model}) \{
+368     filename += std::string(\textcolor{stringliteral}{"/model\_"}) + name;
+369   \} \textcolor{keywordflow}{else} \{
+370     \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"persist: invalid persist\_type"});
+371   \}
+372 
+373   \textcolor{comment}{// check whether file exists}
+374   \textcolor{keywordtype}{int} \hyperlink{namespacelbann_aefae2a9fc9d742ece0fa8ca7ed9ee137}{exists} = \hyperlink{namespacelbann_aefae2a9fc9d742ece0fa8ca7ed9ee137}{lbann::exists}(filename.c\_str());
+375   \textcolor{keywordflow}{if} (! exists) \{
+376     \textcolor{keywordflow}{throw} lbann\_exception(std::string(\textcolor{stringliteral}{"Failed to read distmat: "}) + filename);
+377     \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+378   \}
+379 
+380   Read(*M, filename, El::BINARY, \textcolor{keyword}{true});
+381   \textcolor{comment}{//Read\_MPI(M, filename, BINARY, 1);}
+382 
+383   uint64\_t bytes = 2 * \textcolor{keyword}{sizeof}(int) + M->Height() * M->Width() * \textcolor{keyword}{sizeof}(DataType);
+384   \hyperlink{classlbann_1_1persist_a0bd4fd42d9858a5210c8034dfbb666d4}{m\_bytes} += bytes;
+385 
+386   \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+387 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=289pt]{classlbann_1_1persist_aa98be93f33b510e5b506b61de6bd79bd_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1persist_aa98be93f33b510e5b506b61de6bd79bd_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1persist_ae3a0b96ece72901bb0a05d26a4eb4791}\label{classlbann_1_1persist_ae3a0b96ece72901bb0a05d26a4eb4791}} 
+\index{lbann\+::persist@{lbann\+::persist}!read\+\_\+double@{read\+\_\+double}}
+\index{read\+\_\+double@{read\+\_\+double}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{read\+\_\+double()}{read\_double()}}
+{\footnotesize\ttfamily bool lbann\+::persist\+::read\+\_\+double (\begin{DoxyParamCaption}\item[{\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type}}]{type,  }\item[{const char $\ast$}]{name,  }\item[{double $\ast$}]{val }\end{DoxyParamCaption})}
+
+
+
+Definition at line 573 of file persist.\+cpp.
+
+
+\begin{DoxyCode}
+573                                                                                \{
+574   \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1persist_af24f635f634c8cf30cf53a0e90ec641b}{read\_bytes}(type, name, val, \textcolor{keyword}{sizeof}(\textcolor{keywordtype}{double}));
+575 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=313pt]{classlbann_1_1persist_ae3a0b96ece72901bb0a05d26a4eb4791_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=334pt]{classlbann_1_1persist_ae3a0b96ece72901bb0a05d26a4eb4791_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1persist_ac5e659a6612e5f2911e195fc1b6c045b}\label{classlbann_1_1persist_ac5e659a6612e5f2911e195fc1b6c045b}} 
+\index{lbann\+::persist@{lbann\+::persist}!read\+\_\+float@{read\+\_\+float}}
+\index{read\+\_\+float@{read\+\_\+float}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{read\+\_\+float()}{read\_float()}}
+{\footnotesize\ttfamily bool lbann\+::persist\+::read\+\_\+float (\begin{DoxyParamCaption}\item[{\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type}}]{type,  }\item[{const char $\ast$}]{name,  }\item[{float $\ast$}]{val }\end{DoxyParamCaption})}
+
+
+
+Definition at line 565 of file persist.\+cpp.
+
+
+\begin{DoxyCode}
+565                                                                              \{
+566   \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1persist_af24f635f634c8cf30cf53a0e90ec641b}{read\_bytes}(type, name, val, \textcolor{keyword}{sizeof}(\textcolor{keywordtype}{float}));
+567 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=313pt]{classlbann_1_1persist_ac5e659a6612e5f2911e195fc1b6c045b_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1persist_a2944c32f6634223c0902b38a697a0957}\label{classlbann_1_1persist_a2944c32f6634223c0902b38a697a0957}} 
+\index{lbann\+::persist@{lbann\+::persist}!read\+\_\+int32\+\_\+contig@{read\+\_\+int32\+\_\+contig}}
+\index{read\+\_\+int32\+\_\+contig@{read\+\_\+int32\+\_\+contig}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{read\+\_\+int32\+\_\+contig()}{read\_int32\_contig()}}
+{\footnotesize\ttfamily bool lbann\+::persist\+::read\+\_\+int32\+\_\+contig (\begin{DoxyParamCaption}\item[{\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type}}]{type,  }\item[{const char $\ast$}]{name,  }\item[{int32\+\_\+t $\ast$}]{buf,  }\item[{uint64\+\_\+t}]{count }\end{DoxyParamCaption})}
+
+
+
+Definition at line 556 of file persist.\+cpp.
+
+
+\begin{DoxyCode}
+556                                                                                                       \{
+557   \textcolor{keywordtype}{size\_t} bytes = count * \textcolor{keyword}{sizeof}(int32\_t);
+558   \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1persist_af24f635f634c8cf30cf53a0e90ec641b}{read\_bytes}(type, name, buf, bytes);
+559 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=313pt]{classlbann_1_1persist_a2944c32f6634223c0902b38a697a0957_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1persist_a2944c32f6634223c0902b38a697a0957_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1persist_a19c0a5dbee697aff0a5a5588f2d370b9}\label{classlbann_1_1persist_a19c0a5dbee697aff0a5a5588f2d370b9}} 
+\index{lbann\+::persist@{lbann\+::persist}!read\+\_\+string@{read\+\_\+string}}
+\index{read\+\_\+string@{read\+\_\+string}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{read\+\_\+string()}{read\_string()}}
+{\footnotesize\ttfamily bool lbann\+::persist\+::read\+\_\+string (\begin{DoxyParamCaption}\item[{\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type}}]{type,  }\item[{const char $\ast$}]{name,  }\item[{char $\ast$}]{val,  }\item[{int}]{str\+\_\+length }\end{DoxyParamCaption})}
+
+
+
+Definition at line 589 of file persist.\+cpp.
+
+
+\begin{DoxyCode}
+589                                                                                              \{
+590   \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1persist_af24f635f634c8cf30cf53a0e90ec641b}{read\_bytes}(type, name, val, \textcolor{keyword}{sizeof}(\textcolor{keywordtype}{char}) * str\_length);
+591 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=313pt]{classlbann_1_1persist_a19c0a5dbee697aff0a5a5588f2d370b9_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1persist_ace1ebb58e2570693cdce0ebd2817113b}\label{classlbann_1_1persist_ace1ebb58e2570693cdce0ebd2817113b}} 
+\index{lbann\+::persist@{lbann\+::persist}!read\+\_\+uint32@{read\+\_\+uint32}}
+\index{read\+\_\+uint32@{read\+\_\+uint32}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{read\+\_\+uint32()}{read\_uint32()}}
+{\footnotesize\ttfamily bool lbann\+::persist\+::read\+\_\+uint32 (\begin{DoxyParamCaption}\item[{\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type}}]{type,  }\item[{const char $\ast$}]{name,  }\item[{uint32\+\_\+t $\ast$}]{val }\end{DoxyParamCaption})}
+
+
+
+Definition at line 419 of file persist.\+cpp.
+
+
+\begin{DoxyCode}
+419                                                                                  \{
+420   \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1persist_af24f635f634c8cf30cf53a0e90ec641b}{read\_bytes}(type, name, val, \textcolor{keyword}{sizeof}(uint32\_t));
+421 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=313pt]{classlbann_1_1persist_ace1ebb58e2570693cdce0ebd2817113b_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1persist_ace1ebb58e2570693cdce0ebd2817113b_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1persist_aa6d996db3714a7ae055adac0d8e8ac63}\label{classlbann_1_1persist_aa6d996db3714a7ae055adac0d8e8ac63}} 
+\index{lbann\+::persist@{lbann\+::persist}!read\+\_\+uint64@{read\+\_\+uint64}}
+\index{read\+\_\+uint64@{read\+\_\+uint64}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{read\+\_\+uint64()}{read\_uint64()}}
+{\footnotesize\ttfamily bool lbann\+::persist\+::read\+\_\+uint64 (\begin{DoxyParamCaption}\item[{\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type}}]{type,  }\item[{const char $\ast$}]{name,  }\item[{uint64\+\_\+t $\ast$}]{val }\end{DoxyParamCaption})}
+
+
+
+Definition at line 427 of file persist.\+cpp.
+
+
+\begin{DoxyCode}
+427                                                                                  \{
+428   \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1persist_af24f635f634c8cf30cf53a0e90ec641b}{read\_bytes}(type, name, val, \textcolor{keyword}{sizeof}(uint64\_t));
+429 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=313pt]{classlbann_1_1persist_aa6d996db3714a7ae055adac0d8e8ac63_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1persist_aa6d996db3714a7ae055adac0d8e8ac63_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1persist_a8729c7c90f4ca3090cd678fce91a0eb0}\label{classlbann_1_1persist_a8729c7c90f4ca3090cd678fce91a0eb0}} 
+\index{lbann\+::persist@{lbann\+::persist}!write\+\_\+bytes@{write\+\_\+bytes}}
+\index{write\+\_\+bytes@{write\+\_\+bytes}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{write\+\_\+bytes()}{write\_bytes()}}
+{\footnotesize\ttfamily bool lbann\+::persist\+::write\+\_\+bytes (\begin{DoxyParamCaption}\item[{\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type}}]{type,  }\item[{const char $\ast$}]{name,  }\item[{const void $\ast$}]{buf,  }\item[{size\+\_\+t}]{size }\end{DoxyParamCaption})}
+
+
+
+Definition at line 389 of file persist.\+cpp.
+
+
+\begin{DoxyCode}
+389                                                                                                 \{
+390   \textcolor{keywordtype}{int} fd = \hyperlink{classlbann_1_1persist_a0fe7bbf6a5a47417aa904d0cb64af3fd}{get\_fd}(type);
+391   \textcolor{keywordflow}{if} (fd >= 0) \{
+392     ssize\_t rc = write(fd, buf, size);
+393     \textcolor{keywordflow}{if} (rc != (ssize\_t) size) \{
+394       \textcolor{keywordflow}{throw} lbann\_exception(std::string(\textcolor{stringliteral}{"Failed to write: "}) + name);
+395       \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+396     \}
+397     \hyperlink{classlbann_1_1persist_a0bd4fd42d9858a5210c8034dfbb666d4}{m\_bytes} += size;
+398   \}
+399   \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+400 \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1persist_a5edc3f9cc3540b50d417993da2a6b5ce}\label{classlbann_1_1persist_a5edc3f9cc3540b50d417993da2a6b5ce}} 
+\index{lbann\+::persist@{lbann\+::persist}!write\+\_\+datatype@{write\+\_\+datatype}}
+\index{write\+\_\+datatype@{write\+\_\+datatype}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{write\+\_\+datatype()}{write\_datatype()}}
+{\footnotesize\ttfamily bool lbann\+::persist\+::write\+\_\+datatype (\begin{DoxyParamCaption}\item[{\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type}}]{type,  }\item[{const char $\ast$}]{name,  }\item[{Data\+Type}]{val }\end{DoxyParamCaption})}
+
+
+
+Definition at line 577 of file persist.\+cpp.
+
+
+\begin{DoxyCode}
+577                                                                                    \{
+578   \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1persist_a8729c7c90f4ca3090cd678fce91a0eb0}{write\_bytes}(type, name, &val, \textcolor{keyword}{sizeof}(DataType));
+579 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=315pt]{classlbann_1_1persist_a5edc3f9cc3540b50d417993da2a6b5ce_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1persist_a5edc3f9cc3540b50d417993da2a6b5ce_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1persist_a9170de652405d86d9ba9b3793f8781c6}\label{classlbann_1_1persist_a9170de652405d86d9ba9b3793f8781c6}} 
+\index{lbann\+::persist@{lbann\+::persist}!write\+\_\+distmat@{write\+\_\+distmat}}
+\index{write\+\_\+distmat@{write\+\_\+distmat}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{write\+\_\+distmat()}{write\_distmat()}}
+{\footnotesize\ttfamily bool lbann\+::persist\+::write\+\_\+distmat (\begin{DoxyParamCaption}\item[{\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type}}]{type,  }\item[{const char $\ast$}]{name,  }\item[{\hyperlink{base_8hpp_a0fab5387556805cfeac3e7e567bf66c5}{Dist\+Mat} $\ast$}]{M }\end{DoxyParamCaption})}
+
+
+
+Definition at line 342 of file persist.\+cpp.
+
+
+\begin{DoxyCode}
+342                                                                                 \{
+343   \textcolor{comment}{// define full path to file to store matrix}
+344   std::string filename = \hyperlink{classlbann_1_1persist_a17c2b08ec1815aba6d3eae6502397bb1}{m\_checkpoint\_dir};
+345   \textcolor{keywordflow}{if} (type == \hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64}{persist\_type::train}) \{
+346     filename += std::string(\textcolor{stringliteral}{"/train\_"}) + name;
+347   \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (type == \hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56a20f35e630daf44dbfa4c3f68f5399d8c}{persist\_type::model}) \{
+348     filename += std::string(\textcolor{stringliteral}{"/model\_"}) + name;
+349   \} \textcolor{keywordflow}{else} \{
+350     \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"persist: invalid persist\_type"});
+351   \}
+352 
+353   Write(*M, filename, El::BINARY, \textcolor{stringliteral}{""});
+354   \textcolor{comment}{//Write\_MPI(M, filename, BINARY, "");}
+355 
+356   uint64\_t bytes = 2 * \textcolor{keyword}{sizeof}(int) + M->Height() * M->Width() * \textcolor{keyword}{sizeof}(DataType);
+357   \hyperlink{classlbann_1_1persist_a0bd4fd42d9858a5210c8034dfbb666d4}{m\_bytes} += bytes;
+358 
+359   \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+360 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1persist_a9170de652405d86d9ba9b3793f8781c6_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1persist_ad29ebcbacdef90a91a9d474d4d6e1bcd}\label{classlbann_1_1persist_ad29ebcbacdef90a91a9d474d4d6e1bcd}} 
+\index{lbann\+::persist@{lbann\+::persist}!write\+\_\+double@{write\+\_\+double}}
+\index{write\+\_\+double@{write\+\_\+double}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{write\+\_\+double()}{write\_double()}}
+{\footnotesize\ttfamily bool lbann\+::persist\+::write\+\_\+double (\begin{DoxyParamCaption}\item[{\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type}}]{type,  }\item[{const char $\ast$}]{name,  }\item[{double}]{val }\end{DoxyParamCaption})}
+
+
+
+Definition at line 569 of file persist.\+cpp.
+
+
+\begin{DoxyCode}
+569                                                                                \{
+570   \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1persist_a8729c7c90f4ca3090cd678fce91a0eb0}{write\_bytes}(type, name, &val, \textcolor{keyword}{sizeof}(\textcolor{keywordtype}{double}));
+571 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=315pt]{classlbann_1_1persist_ad29ebcbacdef90a91a9d474d4d6e1bcd_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=335pt]{classlbann_1_1persist_ad29ebcbacdef90a91a9d474d4d6e1bcd_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1persist_ab5be1e98f9d962c41fc9c3f2ac918c6e}\label{classlbann_1_1persist_ab5be1e98f9d962c41fc9c3f2ac918c6e}} 
+\index{lbann\+::persist@{lbann\+::persist}!write\+\_\+float@{write\+\_\+float}}
+\index{write\+\_\+float@{write\+\_\+float}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{write\+\_\+float()}{write\_float()}}
+{\footnotesize\ttfamily bool lbann\+::persist\+::write\+\_\+float (\begin{DoxyParamCaption}\item[{\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type}}]{type,  }\item[{const char $\ast$}]{name,  }\item[{float}]{val }\end{DoxyParamCaption})}
+
+
+
+Definition at line 561 of file persist.\+cpp.
+
+
+\begin{DoxyCode}
+561                                                                              \{
+562   \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1persist_a8729c7c90f4ca3090cd678fce91a0eb0}{write\_bytes}(type, name, &val, \textcolor{keyword}{sizeof}(\textcolor{keywordtype}{float}));
+563 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=315pt]{classlbann_1_1persist_ab5be1e98f9d962c41fc9c3f2ac918c6e_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1persist_a199cd86b1e1f0fd5f2d0458fc6d25828}\label{classlbann_1_1persist_a199cd86b1e1f0fd5f2d0458fc6d25828}} 
+\index{lbann\+::persist@{lbann\+::persist}!write\+\_\+int32\+\_\+contig@{write\+\_\+int32\+\_\+contig}}
+\index{write\+\_\+int32\+\_\+contig@{write\+\_\+int32\+\_\+contig}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{write\+\_\+int32\+\_\+contig()}{write\_int32\_contig()}}
+{\footnotesize\ttfamily bool lbann\+::persist\+::write\+\_\+int32\+\_\+contig (\begin{DoxyParamCaption}\item[{\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type}}]{type,  }\item[{const char $\ast$}]{name,  }\item[{const int32\+\_\+t $\ast$}]{buf,  }\item[{uint64\+\_\+t}]{count }\end{DoxyParamCaption})}
+
+
+
+Definition at line 551 of file persist.\+cpp.
+
+
+\begin{DoxyCode}
+551                                                                                                            
+        \{
+552   \textcolor{keywordtype}{size\_t} bytes = count * \textcolor{keyword}{sizeof}(int32\_t);
+553   \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1persist_a8729c7c90f4ca3090cd678fce91a0eb0}{write\_bytes}(type, name, buf, bytes);
+554 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=315pt]{classlbann_1_1persist_a199cd86b1e1f0fd5f2d0458fc6d25828_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1persist_a199cd86b1e1f0fd5f2d0458fc6d25828_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1persist_a04afef84e7caa8509e65367225ceeba5}\label{classlbann_1_1persist_a04afef84e7caa8509e65367225ceeba5}} 
+\index{lbann\+::persist@{lbann\+::persist}!write\+\_\+string@{write\+\_\+string}}
+\index{write\+\_\+string@{write\+\_\+string}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{write\+\_\+string()}{write\_string()}}
+{\footnotesize\ttfamily bool lbann\+::persist\+::write\+\_\+string (\begin{DoxyParamCaption}\item[{\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type}}]{type,  }\item[{const char $\ast$}]{name,  }\item[{const char $\ast$}]{val,  }\item[{int}]{str\+\_\+length }\end{DoxyParamCaption})}
+
+
+
+Definition at line 585 of file persist.\+cpp.
+
+
+\begin{DoxyCode}
+585                                                                                                     \{
+586   \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1persist_a8729c7c90f4ca3090cd678fce91a0eb0}{write\_bytes}(type, name, val, \textcolor{keyword}{sizeof}(\textcolor{keywordtype}{char}) * str\_length);
+587 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=315pt]{classlbann_1_1persist_a04afef84e7caa8509e65367225ceeba5_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1persist_a742334568de0aca958dbaf7bbabd3cba}\label{classlbann_1_1persist_a742334568de0aca958dbaf7bbabd3cba}} 
+\index{lbann\+::persist@{lbann\+::persist}!write\+\_\+uint32@{write\+\_\+uint32}}
+\index{write\+\_\+uint32@{write\+\_\+uint32}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{write\+\_\+uint32()}{write\_uint32()}}
+{\footnotesize\ttfamily bool lbann\+::persist\+::write\+\_\+uint32 (\begin{DoxyParamCaption}\item[{\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type}}]{type,  }\item[{const char $\ast$}]{name,  }\item[{uint32\+\_\+t}]{val }\end{DoxyParamCaption})}
+
+
+
+Definition at line 415 of file persist.\+cpp.
+
+
+\begin{DoxyCode}
+415                                                                                  \{
+416   \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1persist_a8729c7c90f4ca3090cd678fce91a0eb0}{write\_bytes}(type, name, &val, \textcolor{keyword}{sizeof}(uint32\_t));
+417 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=315pt]{classlbann_1_1persist_a742334568de0aca958dbaf7bbabd3cba_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1persist_a742334568de0aca958dbaf7bbabd3cba_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1persist_aced95e3bc711276b072af97b65ef9fc1}\label{classlbann_1_1persist_aced95e3bc711276b072af97b65ef9fc1}} 
+\index{lbann\+::persist@{lbann\+::persist}!write\+\_\+uint64@{write\+\_\+uint64}}
+\index{write\+\_\+uint64@{write\+\_\+uint64}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{write\+\_\+uint64()}{write\_uint64()}}
+{\footnotesize\ttfamily bool lbann\+::persist\+::write\+\_\+uint64 (\begin{DoxyParamCaption}\item[{\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56}{persist\+\_\+type}}]{type,  }\item[{const char $\ast$}]{name,  }\item[{uint64\+\_\+t}]{val }\end{DoxyParamCaption})}
+
+
+
+Definition at line 423 of file persist.\+cpp.
+
+
+\begin{DoxyCode}
+423                                                                                  \{
+424   \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1persist_a8729c7c90f4ca3090cd678fce91a0eb0}{write\_bytes}(type, name, &val, \textcolor{keyword}{sizeof}(uint64\_t));
+425 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=315pt]{classlbann_1_1persist_aced95e3bc711276b072af97b65ef9fc1_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1persist_aced95e3bc711276b072af97b65ef9fc1_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1persist_a0bd4fd42d9858a5210c8034dfbb666d4}\label{classlbann_1_1persist_a0bd4fd42d9858a5210c8034dfbb666d4}} 
+\index{lbann\+::persist@{lbann\+::persist}!m\+\_\+bytes@{m\+\_\+bytes}}
+\index{m\+\_\+bytes@{m\+\_\+bytes}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{m\+\_\+bytes}{m\_bytes}}
+{\footnotesize\ttfamily uint64\+\_\+t lbann\+::persist\+::m\+\_\+bytes\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 46 of file persist.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1persist_a17c2b08ec1815aba6d3eae6502397bb1}\label{classlbann_1_1persist_a17c2b08ec1815aba6d3eae6502397bb1}} 
+\index{lbann\+::persist@{lbann\+::persist}!m\+\_\+checkpoint\+\_\+dir@{m\+\_\+checkpoint\+\_\+dir}}
+\index{m\+\_\+checkpoint\+\_\+dir@{m\+\_\+checkpoint\+\_\+dir}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{m\+\_\+checkpoint\+\_\+dir}{m\_checkpoint\_dir}}
+{\footnotesize\ttfamily char lbann\+::persist\+::m\+\_\+checkpoint\+\_\+dir\mbox{[}1024\mbox{]}}
+
+
+
+Definition at line 54 of file persist.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1persist_a1adc7102c1b4bc91534ca156decbd965}\label{classlbann_1_1persist_a1adc7102c1b4bc91534ca156decbd965}} 
+\index{lbann\+::persist@{lbann\+::persist}!m\+\_\+model\+\_\+fd@{m\+\_\+model\+\_\+fd}}
+\index{m\+\_\+model\+\_\+fd@{m\+\_\+model\+\_\+fd}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{m\+\_\+model\+\_\+fd}{m\_model\_fd}}
+{\footnotesize\ttfamily int lbann\+::persist\+::m\+\_\+model\+\_\+fd\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 47 of file persist.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1persist_ac01cd3c8fe0f97c1312ca1a595f2f690}\label{classlbann_1_1persist_ac01cd3c8fe0f97c1312ca1a595f2f690}} 
+\index{lbann\+::persist@{lbann\+::persist}!m\+\_\+model\+\_\+filename@{m\+\_\+model\+\_\+filename}}
+\index{m\+\_\+model\+\_\+filename@{m\+\_\+model\+\_\+filename}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{m\+\_\+model\+\_\+filename}{m\_model\_filename}}
+{\footnotesize\ttfamily char lbann\+::persist\+::m\+\_\+model\+\_\+filename\mbox{[}1024\mbox{]}\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 50 of file persist.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1persist_aa99b1b0079bb10471472bf6f1d966deb}\label{classlbann_1_1persist_aa99b1b0079bb10471472bf6f1d966deb}} 
+\index{lbann\+::persist@{lbann\+::persist}!m\+\_\+rank@{m\+\_\+rank}}
+\index{m\+\_\+rank@{m\+\_\+rank}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{m\+\_\+rank}{m\_rank}}
+{\footnotesize\ttfamily int lbann\+::persist\+::m\+\_\+rank\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 45 of file persist.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1persist_a817671390811dde04670c47139402f51}\label{classlbann_1_1persist_a817671390811dde04670c47139402f51}} 
+\index{lbann\+::persist@{lbann\+::persist}!m\+\_\+train\+\_\+fd@{m\+\_\+train\+\_\+fd}}
+\index{m\+\_\+train\+\_\+fd@{m\+\_\+train\+\_\+fd}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{m\+\_\+train\+\_\+fd}{m\_train\_fd}}
+{\footnotesize\ttfamily int lbann\+::persist\+::m\+\_\+train\+\_\+fd\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 48 of file persist.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1persist_a417a443c894fd07472504936f5b02b62}\label{classlbann_1_1persist_a417a443c894fd07472504936f5b02b62}} 
+\index{lbann\+::persist@{lbann\+::persist}!m\+\_\+train\+\_\+filename@{m\+\_\+train\+\_\+filename}}
+\index{m\+\_\+train\+\_\+filename@{m\+\_\+train\+\_\+filename}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{m\+\_\+train\+\_\+filename}{m\_train\_filename}}
+{\footnotesize\ttfamily char lbann\+::persist\+::m\+\_\+train\+\_\+filename\mbox{[}1024\mbox{]}\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 51 of file persist.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1persist_a87927d03b0cf684023178f997c038783}\label{classlbann_1_1persist_a87927d03b0cf684023178f997c038783}} 
+\index{lbann\+::persist@{lbann\+::persist}!m\+\_\+validate\+\_\+fd@{m\+\_\+validate\+\_\+fd}}
+\index{m\+\_\+validate\+\_\+fd@{m\+\_\+validate\+\_\+fd}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{m\+\_\+validate\+\_\+fd}{m\_validate\_fd}}
+{\footnotesize\ttfamily int lbann\+::persist\+::m\+\_\+validate\+\_\+fd\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 49 of file persist.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1persist_a8ccf3728c62f825ec2f8cfe15929fc2a}\label{classlbann_1_1persist_a8ccf3728c62f825ec2f8cfe15929fc2a}} 
+\index{lbann\+::persist@{lbann\+::persist}!m\+\_\+validate\+\_\+filename@{m\+\_\+validate\+\_\+filename}}
+\index{m\+\_\+validate\+\_\+filename@{m\+\_\+validate\+\_\+filename}!lbann\+::persist@{lbann\+::persist}}
+\subsubsection{\texorpdfstring{m\+\_\+validate\+\_\+filename}{m\_validate\_filename}}
+{\footnotesize\ttfamily char lbann\+::persist\+::m\+\_\+validate\+\_\+filename\mbox{[}1024\mbox{]}\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 52 of file persist.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/io/\hyperlink{persist_8hpp}{persist.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/io/\hyperlink{persist_8cpp}{persist.\+cpp}\end{DoxyCompactItemize}

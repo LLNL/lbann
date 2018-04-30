@@ -1,0 +1,621 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygenindex xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="index.xsd" version="1.8.13">
+  <compound refid="structlbann_1_1lbann__callback__imcomm_1_1imcomm__params" kind="struct"><name>lbann::lbann_callback_imcomm::imcomm_params</name>
+    <member refid="structlbann_1_1lbann__callback__imcomm_1_1imcomm__params_1a11a805da5083e025171856111310d20d" kind="variable"><name>ct</name></member>
+    <member refid="structlbann_1_1lbann__callback__imcomm_1_1imcomm__params_1ab62ef05ea8c9988e77e3a1943112c6b4" kind="variable"><name>error</name></member>
+    <member refid="structlbann_1_1lbann__callback__imcomm_1_1imcomm__params_1a6e188e3683cb4d8cb562176417463cb5" kind="variable"><name>reshape_height</name></member>
+    <member refid="structlbann_1_1lbann__callback__imcomm_1_1imcomm__params_1a3b2be3a390f473acdf1b9d72c5d240f0" kind="variable"><name>reshape_width</name></member>
+    <member refid="structlbann_1_1lbann__callback__imcomm_1_1imcomm__params_1a72725a9300a0c8e401497a1e2eef094f" kind="variable"><name>proportion</name></member>
+    <member refid="structlbann_1_1lbann__callback__imcomm_1_1imcomm__params_1a5b3b8285509cf1e5db630fd9616d07bc" kind="variable"><name>pos_thresh</name></member>
+    <member refid="structlbann_1_1lbann__callback__imcomm_1_1imcomm__params_1a9c8af36d86f1abe95e5f2c1c40d95e8c" kind="variable"><name>neg_thresh</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback" kind="class"><name>lbann::lbann_callback</name>
+    <member refid="classlbann_1_1lbann__callback_1a6126e310e9924398c18ccf76bb91c705" kind="variable"><name>m_batch_interval</name></member>
+    <member refid="classlbann_1_1lbann__callback_1a277d46138184f85f161a8263b8322c76" kind="variable"><name>m_summarizer</name></member>
+    <member refid="classlbann_1_1lbann__callback_1a679057298a41ddd47f08c157f756c584" kind="function"><name>lbann_callback</name></member>
+    <member refid="classlbann_1_1lbann__callback_1a91d994616b8bf98685ac32939228f96a" kind="function"><name>lbann_callback</name></member>
+    <member refid="classlbann_1_1lbann__callback_1a66b0a8c00a273669fa782ece59e8898b" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback_1ac91abaec389f8d2547512c45ae587304" kind="function"><name>~lbann_callback</name></member>
+    <member refid="classlbann_1_1lbann__callback_1a9f545d1269a8c7af335625d049691f26" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback_1a02d924df2f8ca851578dc76d9015e48d" kind="function"><name>set_summarizer</name></member>
+    <member refid="classlbann_1_1lbann__callback_1aab5086e27d9bb0a7c7ee8ffc1bc58671" kind="function"><name>setup</name></member>
+    <member refid="classlbann_1_1lbann__callback_1a7c8f0d211967ccc5219144e92571ab26" kind="function"><name>on_train_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback_1af28078b0ddaef45124465bef01eefedf" kind="function"><name>on_train_end</name></member>
+    <member refid="classlbann_1_1lbann__callback_1ace7452239c9ad7aa6247e9496adbcffe" kind="function"><name>on_phase_end</name></member>
+    <member refid="classlbann_1_1lbann__callback_1a4ed9498763412a55953fff71ee3a9456" kind="function"><name>on_epoch_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback_1a1fc71110e7f754bf73c9e0f344a448a5" kind="function"><name>on_epoch_end</name></member>
+    <member refid="classlbann_1_1lbann__callback_1a9ecf4e44cd4021cdd687de14c850cc83" kind="function"><name>on_batch_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback_1a895ca577e358601fcae5c04749f60535" kind="function"><name>on_batch_end</name></member>
+    <member refid="classlbann_1_1lbann__callback_1a716bff45bdc5a88eed09c2231f5bc93a" kind="function"><name>on_test_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback_1accbad4dd004c1ced33642db6398b2efe" kind="function"><name>on_test_end</name></member>
+    <member refid="classlbann_1_1lbann__callback_1a2bde303671110519388d9962bc3e5583" kind="function"><name>on_validation_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback_1adc16e42e5064dc2dc8d84dfbfc1325eb" kind="function"><name>on_validation_end</name></member>
+    <member refid="classlbann_1_1lbann__callback_1a22ed977371173105b4aad3a20b9c59dc" kind="function"><name>on_forward_prop_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback_1ab96adb1d77180e00fdd668cd381323fd" kind="function"><name>on_forward_prop_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback_1a79a0bb407852d7b330b74373647ffe46" kind="function"><name>on_forward_prop_end</name></member>
+    <member refid="classlbann_1_1lbann__callback_1a5eff0a59fbce98a981d9cdd0547a3ad5" kind="function"><name>on_forward_prop_end</name></member>
+    <member refid="classlbann_1_1lbann__callback_1a2c0709a26179d115ff85b7561786ee27" kind="function"><name>on_backward_prop_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback_1abeb1e486e259fd358332abf1e952f630" kind="function"><name>on_backward_prop_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback_1af183624e63ba65e0003fa988f53dee0c" kind="function"><name>on_backward_prop_end</name></member>
+    <member refid="classlbann_1_1lbann__callback_1aba03b59c056ace8094095c08e39b9ac4" kind="function"><name>on_backward_prop_end</name></member>
+    <member refid="classlbann_1_1lbann__callback_1a1a9248b305f06419889c1b3b0f0893d8" kind="function"><name>on_optimize_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback_1a497e750da160e0071ce8864ccc3a1344" kind="function"><name>on_optimize_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback_1a235195d5fa4461835b861a03a5c0278f" kind="function"><name>on_optimize_end</name></member>
+    <member refid="classlbann_1_1lbann__callback_1a4653e2903bfd3903709a81eaf7eabc1a" kind="function"><name>on_optimize_end</name></member>
+    <member refid="classlbann_1_1lbann__callback_1a3462e54126adbd0082c22c98d8de5468" kind="function"><name>on_batch_evaluate_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback_1ad10891b8ab3de74ee1a70e6255e7d58a" kind="function"><name>on_batch_evaluate_end</name></member>
+    <member refid="classlbann_1_1lbann__callback_1a4a2cff48a688bb56ed14b8b53344f945" kind="function"><name>on_evaluate_forward_prop_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback_1a044174864e4981a1dac093d58e8c4d6c" kind="function"><name>on_evaluate_forward_prop_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback_1a0794f3fb88db6fef53f0e2f235f94424" kind="function"><name>on_evaluate_forward_prop_end</name></member>
+    <member refid="classlbann_1_1lbann__callback_1ae23c5a61b81dbdfbd79736ac2b6035aa" kind="function"><name>on_evaluate_forward_prop_end</name></member>
+    <member refid="classlbann_1_1lbann__callback_1acec888932129f93ba2a0077192467c9e" kind="function"><name>get_batch_interval</name></member>
+    <member refid="classlbann_1_1lbann__callback_1a7522c7a14f1d6a1ea762cc2d7248eb3a" kind="function"><name>name</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__adaptive__learning__rate" kind="class"><name>lbann::lbann_callback_adaptive_learning_rate</name>
+    <member refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1ac3ac3c4d34d62608c54dfa3a41691217" kind="variable"><name>m_patience</name></member>
+    <member refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1ab9c76371184664ccd8e240e3b16a9736" kind="variable"><name>m_amt</name></member>
+    <member refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1a740b8b3bbb47312b48322f440f703222" kind="variable"><name>m_cur_epoch</name></member>
+    <member refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1a7aa8aeed3df9cca131ace1ea9fbf1cd3" kind="variable"><name>m_last_score</name></member>
+    <member refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1aecfb70e4a366762305a2dbd8248471de" kind="variable"><name>m_wait</name></member>
+    <member refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1aa3de3b7d67b5295058e9c2175d06212d" kind="variable"><name>m_adjust_learning_rate</name></member>
+    <member refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1a2095e4c430b3c4f206e85c963e1ec2aa" kind="function"><name>lbann_callback_adaptive_learning_rate</name></member>
+    <member refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1a49343d73d0be9782b0480c07aeda6046" kind="function"><name>lbann_callback_adaptive_learning_rate</name></member>
+    <member refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1a0b2fd5ecb8eb767184951947ced9b9b7" kind="function"><name>lbann_callback_adaptive_learning_rate</name></member>
+    <member refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1a7959faa8ba665cdf1132a5c7b518b3b9" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1ad5f290b78276fc9c7fd54a67c4a7e6eb" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1ab7292639822b95f3907d1aaf88410b1c" kind="function"><name>name</name></member>
+    <member refid="classlbann_1_1lbann__callback__adaptive__learning__rate_1a6c64fae03736b8acba5c839f59d2ac6f" kind="function"><name>global_schedule</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__check__dataset" kind="class"><name>lbann::lbann_callback_check_dataset</name>
+    <member refid="classlbann_1_1lbann__callback__check__dataset_1afb8f8ae1ddbd07bf816ee9e8fa84ca8f" kind="variable"><name>m_basename</name></member>
+    <member refid="classlbann_1_1lbann__callback__check__dataset_1a22d16efa2ec47759766f2f7478b11059" kind="variable"><name>training_set</name></member>
+    <member refid="classlbann_1_1lbann__callback__check__dataset_1aab6d04a40d20d1b0bf70f9bfdd85f84c" kind="variable"><name>validation_set</name></member>
+    <member refid="classlbann_1_1lbann__callback__check__dataset_1a15445849bae3621a3a4364b3ebbbc7f3" kind="variable"><name>testing_set</name></member>
+    <member refid="classlbann_1_1lbann__callback__check__dataset_1a79beae9767b50f7141bc5209ef5d696f" kind="function"><name>lbann_callback_check_dataset</name></member>
+    <member refid="classlbann_1_1lbann__callback__check__dataset_1a453a843f6506051881b334760817467f" kind="function"><name>lbann_callback_check_dataset</name></member>
+    <member refid="classlbann_1_1lbann__callback__check__dataset_1a2b9ab1194196d9edc76eb89bc81257b8" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__check__dataset_1a8be592f1687aea003986c874dc5f7516" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__check__dataset_1acedc222fc108c156d089f1baa8c040af" kind="function"><name>on_forward_prop_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__check__dataset_1a1223f07081d495d971cdf205f892c50d" kind="function"><name>on_evaluate_forward_prop_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__check__dataset_1a8cbc105d8bd9d3b493ef34de7c387929" kind="function"><name>on_epoch_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__check__dataset_1a9bcb1368152c621c4484136ec8eecff8" kind="function"><name>on_validation_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__check__dataset_1afe1fda5a6bfe632dc680230cc56dff3e" kind="function"><name>on_test_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__check__dataset_1a17aff74d9926e07bfa1f090ad39bb4b6" kind="function"><name>add_to_set</name></member>
+    <member refid="classlbann_1_1lbann__callback__check__dataset_1a150273f878be4d4bf0cdcaf0ba52aef2" kind="function"><name>name</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__check__init" kind="class"><name>lbann::lbann_callback_check_init</name>
+    <member refid="classlbann_1_1lbann__callback__check__init_1a3910da2c4e972567d79e5e414404a3da" kind="function"><name>lbann_callback_check_init</name></member>
+    <member refid="classlbann_1_1lbann__callback__check__init_1a1378d95f56106f6983378aed464c5747" kind="function"><name>lbann_callback_check_init</name></member>
+    <member refid="classlbann_1_1lbann__callback__check__init_1a7f656e9810d478eba4bebdd77aa45407" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__check__init_1aa210192427df3f6aa7e12509e9b57f56" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__check__init_1a037f1371c56c1b528f487517a58ce3fb" kind="function"><name>on_train_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__check__init_1a4f8507c26f8e467697fef29ab8463b0f" kind="function"><name>name</name></member>
+    <member refid="classlbann_1_1lbann__callback__check__init_1a9a7a7cffe24967aae2b82d1668c2b87c" kind="function"><name>check_equal</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__check__reconstruction__error" kind="class"><name>lbann::lbann_callback_check_reconstruction_error</name>
+    <member refid="classlbann_1_1lbann__callback__check__reconstruction__error_1a04e779b9e10a909f63f941ea036b3ef4" kind="variable"><name>m_max_error</name></member>
+    <member refid="classlbann_1_1lbann__callback__check__reconstruction__error_1aaed51def6fe5ba7093e3d2cc41637a2a" kind="function"><name>lbann_callback_check_reconstruction_error</name></member>
+    <member refid="classlbann_1_1lbann__callback__check__reconstruction__error_1ad277f418a2c28db941ab44398ee8be5e" kind="function"><name>lbann_callback_check_reconstruction_error</name></member>
+    <member refid="classlbann_1_1lbann__callback__check__reconstruction__error_1aef722b1c0145d58928389c0ca3464ee6" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__check__reconstruction__error_1a7c2367fdebae1798c6cbf2846c7492a3" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__check__reconstruction__error_1a8a6a72b8016d3ba3ad11b5e7e2f3f5df" kind="function"><name>on_epoch_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__check__reconstruction__error_1a604bb361e11774cb5d047d65a5d6508e" kind="function"><name>name</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__checknan" kind="class"><name>lbann::lbann_callback_checknan</name>
+    <member refid="classlbann_1_1lbann__callback__checknan_1a62c093e4f67a4b387dee11fe41b5ec2f" kind="function"><name>lbann_callback_checknan</name></member>
+    <member refid="classlbann_1_1lbann__callback__checknan_1a72103639c77ba3612ae174d36b279fe5" kind="function"><name>lbann_callback_checknan</name></member>
+    <member refid="classlbann_1_1lbann__callback__checknan_1a93b6c22d9fa21a77b91572b6e1c7c3d1" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__checknan_1ad7156df3cd81c493584ebd4a0c9d96b4" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__checknan_1a09388ae76566a6a93c957ab76cd54dcd" kind="function"><name>on_forward_prop_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__checknan_1a40d9a9fcc5849746570b99321e1c5488" kind="function"><name>on_backward_prop_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__checknan_1a1d1b3b082aa49016e7b80e0f267575da" kind="function"><name>on_batch_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__checknan_1ab42c997a06058c3535792408fdd5fed8" kind="function"><name>name</name></member>
+    <member refid="classlbann_1_1lbann__callback__checknan_1ac74f7f665823d0500875b9740aaccabc" kind="function"><name>is_good</name></member>
+    <member refid="classlbann_1_1lbann__callback__checknan_1a335713a3df9194f657f98cccd2f695f5" kind="function"><name>dump_network</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__checkpoint" kind="class"><name>lbann::lbann_callback_checkpoint</name>
+    <member refid="classlbann_1_1lbann__callback__checkpoint_1ac89386fda60744e6399f97003fea3711" kind="variable"><name>m_checkpoint_dir</name></member>
+    <member refid="classlbann_1_1lbann__callback__checkpoint_1ad6f4399effadedb26e33fc39a3c6915e" kind="variable"><name>m_checkpoint_epochs</name></member>
+    <member refid="classlbann_1_1lbann__callback__checkpoint_1ad6debea7d9bbebd3ee0323acec11516f" kind="variable"><name>m_checkpoint_steps</name></member>
+    <member refid="classlbann_1_1lbann__callback__checkpoint_1a285658a96f8546952c9016ef4cc12161" kind="variable"><name>m_checkpoint_secs</name></member>
+    <member refid="classlbann_1_1lbann__callback__checkpoint_1a36af7331ddf213339fe7282cb53ffedc" kind="variable"><name>m_checkpoint_per_rank</name></member>
+    <member refid="classlbann_1_1lbann__callback__checkpoint_1a842304929c265ffa9d285e635fbbbbd7" kind="variable"><name>m_checkpoint_last</name></member>
+    <member refid="classlbann_1_1lbann__callback__checkpoint_1a9632d5f0078d3ff2015e96dba789e15c" kind="variable"><name>m_epoch_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__checkpoint_1a3827e5bb569f80d790c3ac856a7c39b5" kind="variable"><name>m_val_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__checkpoint_1a865e633d1f041e3f2e5465b1d05f3603" kind="function"><name>lbann_callback_checkpoint</name></member>
+    <member refid="classlbann_1_1lbann__callback__checkpoint_1a954c1b3f33fc293151d5bf37a8053628" kind="function"><name>lbann_callback_checkpoint</name></member>
+    <member refid="classlbann_1_1lbann__callback__checkpoint_1aab65cb67b53e6af00142a9dc665f9ce8" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__checkpoint_1a63dc49f38f063f9b85d9abdf8b2855aa" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__checkpoint_1a383654a7bb70672dfc9fef679f4b509f" kind="function"><name>setup</name></member>
+    <member refid="classlbann_1_1lbann__callback__checkpoint_1a406bfba673e503e94ae6eb57aff6a78e" kind="function"><name>on_epoch_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__checkpoint_1a476527e2b7b44dd3623e01f63ddb5f78" kind="function"><name>on_batch_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__checkpoint_1a5fb4288c03b1ce14681b72562e9471b2" kind="function"><name>on_validation_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__checkpoint_1adc9b6a01e100893c2dd0cfc7090c4079" kind="function"><name>set_checkpoint_dir</name></member>
+    <member refid="classlbann_1_1lbann__callback__checkpoint_1a718cf388085e51253a84c494511d1fb7" kind="function"><name>set_checkpoint_epochs</name></member>
+    <member refid="classlbann_1_1lbann__callback__checkpoint_1aa385a1dda770ddf7a801134b96d3fcfd" kind="function"><name>set_checkpoint_steps</name></member>
+    <member refid="classlbann_1_1lbann__callback__checkpoint_1a91a0e5627986654d719930ba5eeebc9e" kind="function"><name>set_checkpoint_secs</name></member>
+    <member refid="classlbann_1_1lbann__callback__checkpoint_1ac3a0bb250a679b28924910c0dc617809" kind="function"><name>set_checkpoint_per_rank</name></member>
+    <member refid="classlbann_1_1lbann__callback__checkpoint_1a2e5f396667ccc45f7203263b06c5e216" kind="function"><name>need_checkpoint</name></member>
+    <member refid="classlbann_1_1lbann__callback__checkpoint_1a23b6f5abb924b2c4d0694e98c7d6f4d5" kind="function"><name>checkpointShared</name></member>
+    <member refid="classlbann_1_1lbann__callback__checkpoint_1a40d369278bc5963ba2f3cca1750ba004" kind="function"><name>restartShared</name></member>
+    <member refid="classlbann_1_1lbann__callback__checkpoint_1aa1afa81c9638bf76fb6ecfe91d07a88e" kind="function"><name>name</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__checksmall" kind="class"><name>lbann::lbann_callback_checksmall</name>
+    <member refid="classlbann_1_1lbann__callback__checksmall_1a2c37cd93bca10f6fb42348c2e6b0016e" kind="variable"><name>m_threshold</name></member>
+    <member refid="classlbann_1_1lbann__callback__checksmall_1a2a5769a9309807f6952212d5ea3a4466" kind="function"><name>lbann_callback_checksmall</name></member>
+    <member refid="classlbann_1_1lbann__callback__checksmall_1a8e08286cc2ded6e47297f76fcdbf8f32" kind="function"><name>lbann_callback_checksmall</name></member>
+    <member refid="classlbann_1_1lbann__callback__checksmall_1a9488b223c8ae4beb87a6bd6d01c6d14d" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__checksmall_1ae0601cd90b165049063783d4d501ffde" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__checksmall_1a2f50695feb1444145bae251f2e94b721" kind="function"><name>on_forward_prop_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__checksmall_1aade56a328c4b9df28c0cd979eed9e5ff" kind="function"><name>on_backward_prop_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__checksmall_1a00f1e6ad712638a107667a3e6695a6f0" kind="function"><name>on_batch_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__checksmall_1acbdd897ecbe5a27b59db15ae7662e0f9" kind="function"><name>name</name></member>
+    <member refid="classlbann_1_1lbann__callback__checksmall_1afe78f539ba3b2ad3e6ae8c468850052c" kind="function"><name>is_good</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__debug" kind="class"><name>lbann::lbann_callback_debug</name>
+    <member refid="classlbann_1_1lbann__callback__debug_1acc66ab699534e42aa958148f1fb3fd6f" kind="variable"><name>m_debug_phase</name></member>
+    <member refid="classlbann_1_1lbann__callback__debug_1a775f2f407573526795a9b7ffc7bd3ded" kind="function"><name>lbann_callback_debug</name></member>
+    <member refid="classlbann_1_1lbann__callback__debug_1a124703602aab20bcfabfca697e3a9ff1" kind="function"><name>lbann_callback_debug</name></member>
+    <member refid="classlbann_1_1lbann__callback__debug_1ad30a57ba6ec0b7e479345647651a8e83" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__debug_1a76ffcfb7aca5ccce132ceae60e267472" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__debug_1abab8f3b9c1db3d0ef3a715afc7b880db" kind="function"><name>on_batch_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__debug_1ac3e88ef582a7e3949b6e016ca2b17459" kind="function"><name>on_forward_prop_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__debug_1acb3d05be6c600f4d61957ccf10606ddc" kind="function"><name>on_forward_prop_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__debug_1adaf60c995d2638a40d9c87a923c53865" kind="function"><name>on_backward_prop_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__debug_1a19a8ec63f55fc86024c9ab8fe0836500" kind="function"><name>on_backward_prop_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__debug_1ac364fb6e77dc163e146af77bb670d74b" kind="function"><name>on_batch_evaluate_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__debug_1a07a02eb525ebe9c06b361c48fc2977c8" kind="function"><name>on_batch_evaluate_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__debug_1a83fe16882119a54afe59ba616fe1722a" kind="function"><name>on_evaluate_forward_prop_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__debug_1a19639823e288e7599947c0abfaa6d1f4" kind="function"><name>on_evaluate_forward_prop_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__debug_1ae9e892671f4959cfc915e1662afd6d60" kind="function"><name>name</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__debug__io" kind="class"><name>lbann::lbann_callback_debug_io</name>
+    <member refid="classlbann_1_1lbann__callback__debug__io_1add73fbc786ca9284fa3399a7e99d0b1f" kind="variable"><name>m_debug_phase</name></member>
+    <member refid="classlbann_1_1lbann__callback__debug__io_1adfd537a09e80aaa0887e5226dc52c13c" kind="variable"><name>m_debug_lvl</name></member>
+    <member refid="classlbann_1_1lbann__callback__debug__io_1a4103f7a133e2e7a8afe8744fc9345e2c" kind="function"><name>lbann_callback_debug_io</name></member>
+    <member refid="classlbann_1_1lbann__callback__debug__io_1ae3b6fceef4e765ce66527b2a44ae8f3a" kind="function"><name>lbann_callback_debug_io</name></member>
+    <member refid="classlbann_1_1lbann__callback__debug__io_1ae424948cc2809272c1cd755b8e2f0c3d" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__debug__io_1a91fb292d9dff96dbf72ecc16855c4092" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__debug__io_1aa3d2a6fb4d7375c05ece0058224ea792" kind="function"><name>on_epoch_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__debug__io_1aa31ee265d40edff982ebf38054394927" kind="function"><name>on_forward_prop_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__debug__io_1ac26d9c113c1345cc1d6390141e1a894b" kind="function"><name>on_validation_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__debug__io_1ac9b36fc36ab6faa9de44db026addf02a" kind="function"><name>on_evaluate_forward_prop_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__debug__io_1a469dfa4eece0a707a2d56f4c67aea9b7" kind="function"><name>on_test_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__debug__io_1a3c9897a583441381f82a11246aea4424" kind="function"><name>print_fp_start</name></member>
+    <member refid="classlbann_1_1lbann__callback__debug__io_1a528f4aea5f657f40b27c58a164d4095a" kind="function"><name>print_phase_start</name></member>
+    <member refid="classlbann_1_1lbann__callback__debug__io_1ae624010712365242688be8e55a566c62" kind="function"><name>name</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__drop__fixed__learning__rate" kind="class"><name>lbann::lbann_callback_drop_fixed_learning_rate</name>
+    <member refid="classlbann_1_1lbann__callback__drop__fixed__learning__rate_1a3e38dc2b7dc92d29567091395de22546" kind="variable"><name>m_amt</name></member>
+    <member refid="classlbann_1_1lbann__callback__drop__fixed__learning__rate_1afc99419c3d818fe86d5865c8f7beae49" kind="variable"><name>m_drop_epochs</name></member>
+    <member refid="classlbann_1_1lbann__callback__drop__fixed__learning__rate_1a28f58eb50813e638d865179d645908f2" kind="function"><name>lbann_callback_drop_fixed_learning_rate</name></member>
+    <member refid="classlbann_1_1lbann__callback__drop__fixed__learning__rate_1acd69c6b5aa7e4d799dba7dab2cd5daa4" kind="function"><name>lbann_callback_drop_fixed_learning_rate</name></member>
+    <member refid="classlbann_1_1lbann__callback__drop__fixed__learning__rate_1a5bb3a2e1d490d128e27dd1df2503644d" kind="function"><name>lbann_callback_drop_fixed_learning_rate</name></member>
+    <member refid="classlbann_1_1lbann__callback__drop__fixed__learning__rate_1ab1c5f9e9d8019d203bbbc1652e2950bd" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__drop__fixed__learning__rate_1aad86be992434394974b50d1f1c303bbf" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__drop__fixed__learning__rate_1a715d550fb9ec99e32861f91299669c35" kind="function"><name>name</name></member>
+    <member refid="classlbann_1_1lbann__callback__drop__fixed__learning__rate_1a2ee62bfde00d7f1a4e55e4a334160fbe" kind="function"><name>global_schedule</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__dump__activations" kind="class"><name>lbann::lbann_callback_dump_activations</name>
+    <member refid="classlbann_1_1lbann__callback__dump__activations_1a5775d9317de386e07cbd137122db6ee6" kind="variable"><name>m_basename</name></member>
+    <member refid="classlbann_1_1lbann__callback__dump__activations_1aac56e32b6bef7923046c408f3a2dc857" kind="variable"><name>m_layer_names</name></member>
+    <member refid="classlbann_1_1lbann__callback__dump__activations_1a96d1412d4b29cab747bb0c1cfccd8a87" kind="function"><name>lbann_callback_dump_activations</name></member>
+    <member refid="classlbann_1_1lbann__callback__dump__activations_1ad0a0a3ceb5c70c59fb334bd583ed7821" kind="function"><name>lbann_callback_dump_activations</name></member>
+    <member refid="classlbann_1_1lbann__callback__dump__activations_1a27665cb0bc6f0f05a3d8b54a588f98ff" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__dump__activations_1a172d03a30d8c8852d910db220b928557" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__dump__activations_1acf4429a44ead6ffea303528618bc6572" kind="function"><name>on_forward_prop_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__dump__activations_1a5c93f4455b743e3f61600bf092a6d93c" kind="function"><name>on_test_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__dump__activations_1adc6a741a2ef667a5969ddbb8ec159163" kind="function"><name>name</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__dump__gradients" kind="class"><name>lbann::lbann_callback_dump_gradients</name>
+    <member refid="classlbann_1_1lbann__callback__dump__gradients_1a5c8236660ca8b1cb61dddcd1264821ca" kind="variable"><name>m_basename</name></member>
+    <member refid="classlbann_1_1lbann__callback__dump__gradients_1a321a8f673578f3a0535b9f8e27e3517a" kind="function"><name>lbann_callback_dump_gradients</name></member>
+    <member refid="classlbann_1_1lbann__callback__dump__gradients_1a71dd307db6a16c35a336ee57a5cab656" kind="function"><name>lbann_callback_dump_gradients</name></member>
+    <member refid="classlbann_1_1lbann__callback__dump__gradients_1a31986866a3865159eb1680e5affba1f1" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__dump__gradients_1a16b659f1d7e313c02a840be5173ebb38" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__dump__gradients_1a2485599f66842eda62c8bc8d4d44ef02" kind="function"><name>on_backward_prop_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__dump__gradients_1ae66a46b4835233c0a08c1fcc2fc9710d" kind="function"><name>name</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__dump__minibatch__sample__indices" kind="class"><name>lbann::lbann_callback_dump_minibatch_sample_indices</name>
+    <member refid="classlbann_1_1lbann__callback__dump__minibatch__sample__indices_1a75ef9a964cb1e1281e4721beef14c265" kind="variable"><name>m_basename</name></member>
+    <member refid="classlbann_1_1lbann__callback__dump__minibatch__sample__indices_1a32e575722f9ad6f5a48a3fad20282075" kind="function"><name>lbann_callback_dump_minibatch_sample_indices</name></member>
+    <member refid="classlbann_1_1lbann__callback__dump__minibatch__sample__indices_1a11251f7788b1f167143e98647c93d80c" kind="function"><name>lbann_callback_dump_minibatch_sample_indices</name></member>
+    <member refid="classlbann_1_1lbann__callback__dump__minibatch__sample__indices_1aa1db9d6cef232a868110d72e4bc2477a" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__dump__minibatch__sample__indices_1a6847ea742037dbe5f4ee6d2b4b4307a4" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__dump__minibatch__sample__indices_1ac1a1359c0016eb0bcbdb767fc57e9154" kind="function"><name>on_forward_prop_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__dump__minibatch__sample__indices_1acb641b979a37cc703994103a4e8428a5" kind="function"><name>on_evaluate_forward_prop_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__dump__minibatch__sample__indices_1a34d4564309168b3ab0b2e3092e2f9355" kind="function"><name>dump_to_file</name></member>
+    <member refid="classlbann_1_1lbann__callback__dump__minibatch__sample__indices_1a8d2174d894176a7ab5324f5d7e6faad2" kind="function"><name>name</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__dump__weights" kind="class"><name>lbann::lbann_callback_dump_weights</name>
+    <member refid="classlbann_1_1lbann__callback__dump__weights_1a6c73416bd2edd414e7c4094a19ae2d79" kind="variable"><name>m_basename</name></member>
+    <member refid="classlbann_1_1lbann__callback__dump__weights_1a6ad86c6dec233324f013e9d83e574267" kind="function"><name>lbann_callback_dump_weights</name></member>
+    <member refid="classlbann_1_1lbann__callback__dump__weights_1aeae4724a0e8f9129d76d6822205d854f" kind="function"><name>lbann_callback_dump_weights</name></member>
+    <member refid="classlbann_1_1lbann__callback__dump__weights_1a6f4608e843c2d33e1082498ba34dd8e0" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__dump__weights_1a5e3d078ea54f8768e23aac2393b1bc3c" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__dump__weights_1a46db01d535414a0965caae709a08a150" kind="function"><name>on_train_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__dump__weights_1aa73068d94b2408fc0124b2a05b4e2b8a" kind="function"><name>on_epoch_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__dump__weights_1ae6c0fee627651edaff778b1fd4b0e0c4" kind="function"><name>name</name></member>
+    <member refid="classlbann_1_1lbann__callback__dump__weights_1a5902fb87255b410a5d777ea385813416" kind="function"><name>dump_weights</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__early__stopping" kind="class"><name>lbann::lbann_callback_early_stopping</name>
+    <member refid="classlbann_1_1lbann__callback__early__stopping_1ada95898e18dbed5adf1848919affd6ee" kind="variable"><name>m_patience</name></member>
+    <member refid="classlbann_1_1lbann__callback__early__stopping_1a64868be121d63a94344023b466cec494" kind="variable"><name>m_last_score</name></member>
+    <member refid="classlbann_1_1lbann__callback__early__stopping_1acd0363fdc85a9ab0a77687ecfa827a1e" kind="variable"><name>m_wait</name></member>
+    <member refid="classlbann_1_1lbann__callback__early__stopping_1ac0140e05eccd5280d53a8e8d480c0ce3" kind="function"><name>lbann_callback_early_stopping</name></member>
+    <member refid="classlbann_1_1lbann__callback__early__stopping_1a7ff0175e34065c24d2c4090ff90ef614" kind="function"><name>lbann_callback_early_stopping</name></member>
+    <member refid="classlbann_1_1lbann__callback__early__stopping_1a34c805a2d45651efe3adaa012dc53fa5" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__early__stopping_1aa8e7bd4e9dde8e57dbc416dc75e25cc6" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__early__stopping_1a32eb9c5e763c97ab1162cfebea7ad049" kind="function"><name>on_validation_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__early__stopping_1a3fce0ab7696bc24dd9b3330815c5a495" kind="function"><name>name</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__gradient__check" kind="class"><name>lbann::lbann_callback_gradient_check</name>
+    <member refid="classlbann_1_1lbann__callback__gradient__check_1ab324dbfc7d21b69f135d33ee8290c4b2" kind="variable"><name>m_step_size</name></member>
+    <member refid="classlbann_1_1lbann__callback__gradient__check_1a9a8669004ccfc3b76963ba13252600d3" kind="variable"><name>m_verbose</name></member>
+    <member refid="classlbann_1_1lbann__callback__gradient__check_1ac05a23972812866458fff241de0bb324" kind="variable"><name>m_fail_on_error</name></member>
+    <member refid="classlbann_1_1lbann__callback__gradient__check_1ae198159c613bb05e00f49b824a61afbb" kind="function"><name>lbann_callback_gradient_check</name></member>
+    <member refid="classlbann_1_1lbann__callback__gradient__check_1accd5a7f087c5bf782f17b428cfb75bdb" kind="function"><name>lbann_callback_gradient_check</name></member>
+    <member refid="classlbann_1_1lbann__callback__gradient__check_1a937cc9192005451b8e059b935533cecc" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__gradient__check_1a3cf248258a45ee721907864d62a17355" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__gradient__check_1ab62102d5ab30330386514161b9ee6586" kind="function"><name>on_test_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__gradient__check_1ad068bba7a10853f38cc9f58867dc468b" kind="function"><name>name</name></member>
+    <member refid="classlbann_1_1lbann__callback__gradient__check_1a54ba40dd3b381d5c889d77edeffa37f9" kind="function"><name>compute_objective_function</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__hang" kind="class"><name>lbann::lbann_callback_hang</name>
+    <member refid="classlbann_1_1lbann__callback__hang_1a6dbd84f40c31b3b1ec3247c8da08a954" kind="variable"><name>m_rank_to_hang</name></member>
+    <member refid="classlbann_1_1lbann__callback__hang_1af5e29a2d416e3268a495df8370b272b6" kind="function"><name>lbann_callback_hang</name></member>
+    <member refid="classlbann_1_1lbann__callback__hang_1a0633c81998abdfea74a2bdcc38245217" kind="function"><name>lbann_callback_hang</name></member>
+    <member refid="classlbann_1_1lbann__callback__hang_1aef5c147b4f6cf94492564238d049f34d" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__hang_1a047660bd517f5c669c8e2abc4f2e951f" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__hang_1ada39fd10375143a26c99e0a32d4368ce" kind="function"><name>on_train_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__hang_1a3aa4a28d16f21dd6bd86fd6ebaa0e0fa" kind="function"><name>name</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__imcomm" kind="class"><name>lbann::lbann_callback_imcomm</name>
+    <member refid="classlbann_1_1lbann__callback__imcomm_1acf7e894b3381e7f9b71020dc73594d6a" kind="enum"><name>comm_type</name></member>
+    <member refid="classlbann_1_1lbann__callback__imcomm_1acf7e894b3381e7f9b71020dc73594d6aafa59156bc4d5bcbf6bd80918d062da03" kind="enumvalue"><name>NONE</name></member>
+    <member refid="classlbann_1_1lbann__callback__imcomm_1acf7e894b3381e7f9b71020dc73594d6aa5f19efb5bef79cea24be992a2137962e" kind="enumvalue"><name>NORMAL</name></member>
+    <member refid="classlbann_1_1lbann__callback__imcomm_1acf7e894b3381e7f9b71020dc73594d6aa06f19090efbd982638c20bcb8a3c7d33" kind="enumvalue"><name>ONEBIT_QUANTIZATION</name></member>
+    <member refid="classlbann_1_1lbann__callback__imcomm_1acf7e894b3381e7f9b71020dc73594d6aa76420a96a3df1d5b60140bab6bc32dc4" kind="enumvalue"><name>THRESH_QUANTIZATION</name></member>
+    <member refid="classlbann_1_1lbann__callback__imcomm_1acf7e894b3381e7f9b71020dc73594d6aaeb95973ab89fc579b91554cd783031b7" kind="enumvalue"><name>ADAPTIVE_QUANTIZATION</name></member>
+    <member refid="classlbann_1_1lbann__callback__imcomm_1ac3df687b12721a7278877c303357bc09" kind="variable"><name>m_default_ct</name></member>
+    <member refid="classlbann_1_1lbann__callback__imcomm_1a32a0319c91aff324cb3468de4f31dd50" kind="variable"><name>m_weights_params</name></member>
+    <member refid="classlbann_1_1lbann__callback__imcomm_1a4994863d7f69e801c042c5d460bb3f34" kind="variable"><name>m_quantizer</name></member>
+    <member refid="classlbann_1_1lbann__callback__imcomm_1a06dc9efdcd77c9e1cf714ecf709a6e3a" kind="function"><name>lbann_callback_imcomm</name></member>
+    <member refid="classlbann_1_1lbann__callback__imcomm_1a95ae70dd6a90c023ee3bd0638dc24888" kind="function"><name>lbann_callback_imcomm</name></member>
+    <member refid="classlbann_1_1lbann__callback__imcomm_1a01ee7aaa808987e1f7fcca0e85cc1f73" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__imcomm_1a9d59535b4789389a8c3c9e406cd1e2d3" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__imcomm_1aadc785d2f27ad0b03fce8c2785cff4fb" kind="function"><name>lbann_callback_imcomm</name></member>
+    <member refid="classlbann_1_1lbann__callback__imcomm_1a6ad492f30a34de2ac62fe459037e1d12" kind="function"><name>set_weights_comm</name></member>
+    <member refid="classlbann_1_1lbann__callback__imcomm_1a5e0f7d9f85da8d2e579dbe4092bc3100" kind="function"><name>set_weights_adaptive</name></member>
+    <member refid="classlbann_1_1lbann__callback__imcomm_1acf71333f73d26714217ffcd93aa31830" kind="function"><name>set_weights_threshold</name></member>
+    <member refid="classlbann_1_1lbann__callback__imcomm_1a096555a87ce1bb011ceafb44081c4192" kind="function"><name>setup</name></member>
+    <member refid="classlbann_1_1lbann__callback__imcomm_1a332ba4ceca91939c79fae2735fdc8ff3" kind="function"><name>on_train_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__imcomm_1a3160dbf536def4f930e0ea0aabdebc11" kind="function"><name>on_epoch_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__imcomm_1a0a425ba562f7637b25cd6ba094e7885b" kind="function"><name>on_backward_prop_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__imcomm_1af058602425005a1d198df40b7845e16e" kind="function"><name>name</name></member>
+    <member refid="classlbann_1_1lbann__callback__imcomm_1a8b29853e49c58cf737a741c503737705" kind="function"><name>ct_does_quantization</name></member>
+    <member refid="classlbann_1_1lbann__callback__imcomm_1ab7106f5ee53672f5ef5a58371eb39f0b" kind="function"><name>ct_needs_reshape</name></member>
+    <member refid="classlbann_1_1lbann__callback__imcomm_1a13fe710b841f72e28daf8de029f6c2f9" kind="function"><name>reshape_mat</name></member>
+    <member refid="classlbann_1_1lbann__callback__imcomm_1ad45c39a7a85fb8e1d99eca97aa4d9d09" kind="function"><name>do_summary</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__io" kind="class"><name>lbann::lbann_callback_io</name>
+    <member refid="classlbann_1_1lbann__callback__io_1ab2105f5ed94c9c053b2873ea3a87bc21" kind="variable"><name>m_layer_indices</name></member>
+    <member refid="classlbann_1_1lbann__callback__io_1a12c89d246c657ca588d3fb637ef79183" kind="function"><name>lbann_callback_io</name></member>
+    <member refid="classlbann_1_1lbann__callback__io_1adb2d632c4eeb5585d9b8c7535bd35227" kind="function"><name>lbann_callback_io</name></member>
+    <member refid="classlbann_1_1lbann__callback__io_1aaf50b99e51a2ac42a987c7354e52c1e7" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__io_1aec8c75427c424999d01a18a9fb8e0b0d" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__io_1a6d19611c89d1cb1bb83f5e4b7a9d5a45" kind="function"><name>lbann_callback_io</name></member>
+    <member refid="classlbann_1_1lbann__callback__io_1a118c5cb8a9c83661a67569df890676e2" kind="function"><name>on_epoch_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__io_1a8abca84e4b0dc21b28e5d5e409446fdc" kind="function"><name>on_test_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__io_1ac0b1327364b2ae3c7b7e4987aef70e33" kind="function"><name>name</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__learning__rate" kind="class"><name>lbann::lbann_callback_learning_rate</name>
+    <member refid="classlbann_1_1lbann__callback__learning__rate_1a0b02e82190e04a22ab26d858041915d7" kind="variable"><name>m_weights</name></member>
+    <member refid="classlbann_1_1lbann__callback__learning__rate_1a97194f282c29a748c915d9811a8a99fb" kind="variable"><name>m_cur_global_lr</name></member>
+    <member refid="classlbann_1_1lbann__callback__learning__rate_1a69687cd55f4d09c480e08e18488519fe" kind="function"><name>lbann_callback_learning_rate</name></member>
+    <member refid="classlbann_1_1lbann__callback__learning__rate_1af933186f239fdea911e8934fe58e97fa" kind="function"><name>lbann_callback_learning_rate</name></member>
+    <member refid="classlbann_1_1lbann__callback__learning__rate_1a80b82eebf8e38cbe0a484aea43644705" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__learning__rate_1a0c544d120f949cfc5c2dcb07d69b3cde" kind="function"><name>lbann_callback_learning_rate</name></member>
+    <member refid="classlbann_1_1lbann__callback__learning__rate_1a501f31a6b8fde1282a60e4b347e8d9d3" kind="function"><name>setup</name></member>
+    <member refid="classlbann_1_1lbann__callback__learning__rate_1ab8eb509bdbea501882d6b248a814bb28" kind="function"><name>on_epoch_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__learning__rate_1ab6aa0530604e32a1be2b37f3933f6bf6" kind="function"><name>on_backward_prop_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__learning__rate_1a7869b93e5963d6f76da68d8c8137b979" kind="function"><name>global_schedule</name></member>
+    <member refid="classlbann_1_1lbann__callback__learning__rate_1acf7f3921a68e7f1f772106e18c545345" kind="function"><name>optimizer_schedule</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__linear__growth__learning__rate" kind="class"><name>lbann::lbann_callback_linear_growth_learning_rate</name>
+    <member refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1a2fe23a59744da5c0c737eb9d301bc23b" kind="variable"><name>m_base_lr</name></member>
+    <member refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1a56cc1954ef76d494c4b5d5074c326fca" kind="variable"><name>m_target</name></member>
+    <member refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1ad68e1fbbe86eb692cf26d0d4a452c469" kind="variable"><name>m_inc</name></member>
+    <member refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1ac583819b3ee7fad93b9b96b44dfb4307" kind="variable"><name>m_num_epochs</name></member>
+    <member refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1a0a0a9c7f9964e3f8693706800fcdf06a" kind="variable"><name>m_delay</name></member>
+    <member refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1a9eb24d8032af168a0eeec7e385909d55" kind="function"><name>lbann_callback_linear_growth_learning_rate</name></member>
+    <member refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1a288be0ef560e9169a634c2238b50370e" kind="function"><name>lbann_callback_linear_growth_learning_rate</name></member>
+    <member refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1a2382f7efb2bfe8b58fd68450b569a519" kind="function"><name>lbann_callback_linear_growth_learning_rate</name></member>
+    <member refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1ab9b995df89c82e530d90b2fb0b8cbc2f" kind="function"><name>lbann_callback_linear_growth_learning_rate</name></member>
+    <member refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1acfc4f111a6a599f05523cde635cbbf6e" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1aadb1266a360c5442e094113b919f6c13" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1afaa81836e0dc1b6220212dad52df25fc" kind="function"><name>setup</name></member>
+    <member refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1a6080051bd4de75dc1ca3d927414d2455" kind="function"><name>name</name></member>
+    <member refid="classlbann_1_1lbann__callback__linear__growth__learning__rate_1ad292e2e7f4078162ed93b6e05d94e0e4" kind="function"><name>global_schedule</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__ltfb" kind="class"><name>lbann::lbann_callback_ltfb</name>
+    <member refid="classlbann_1_1lbann__callback__ltfb_1a7536bb519c8a89b518a3196f953ac048" kind="variable"><name>m_comm</name></member>
+    <member refid="classlbann_1_1lbann__callback__ltfb_1a78434b8e8b1dfa43a68a9707473cf789" kind="variable"><name>m_round_size</name></member>
+    <member refid="classlbann_1_1lbann__callback__ltfb_1a5e5b9917b9eee67b8e14c6e8f95a85a3" kind="variable"><name>m_local_weights</name></member>
+    <member refid="classlbann_1_1lbann__callback__ltfb_1a44cb8fdfa7aae5d35543e47f3105f8cb" kind="function"><name>lbann_callback_ltfb</name></member>
+    <member refid="classlbann_1_1lbann__callback__ltfb_1af589490a67c5490ac91210c89ab66295" kind="function"><name>lbann_callback_ltfb</name></member>
+    <member refid="classlbann_1_1lbann__callback__ltfb_1ac0ef3a7a5467d3e4081ffe9d051e4818" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__ltfb_1abfb61fe2c92147dff98f861adb2d5c74" kind="function"><name>~lbann_callback_ltfb</name></member>
+    <member refid="classlbann_1_1lbann__callback__ltfb_1a62daf57a8c34fd301e24ba4fa2dd6630" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__ltfb_1aaf259b187e956282807d4daa03beb502" kind="function"><name>name</name></member>
+    <member refid="classlbann_1_1lbann__callback__ltfb_1a7548166d170eda00e4e0cba6626a1a78" kind="function"><name>setup</name></member>
+    <member refid="classlbann_1_1lbann__callback__ltfb_1a7d2d1682c4a6a6b7e8ea1e3f4bf33c84" kind="function"><name>on_batch_begin</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__minibatch__schedule" kind="class"><name>lbann::lbann_callback_minibatch_schedule</name>
+    <member refid="classlbann_1_1lbann__callback__minibatch__schedule_1a05084eeba07e54fa11eed1a414b7aeeb" kind="variable"><name>m_steps</name></member>
+    <member refid="classlbann_1_1lbann__callback__minibatch__schedule_1adceb97a2732247213fd25b3f1e824105" kind="function"><name>lbann_callback_minibatch_schedule</name></member>
+    <member refid="classlbann_1_1lbann__callback__minibatch__schedule_1a2b9849aed5002479815dc6372a544e80" kind="function"><name>lbann_callback_minibatch_schedule</name></member>
+    <member refid="classlbann_1_1lbann__callback__minibatch__schedule_1aed9c1240268ca4f2cd0d77f2f5a4ec3f" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__minibatch__schedule_1ad815c5e84280c71cc57c7cb6c9a8c73b" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__minibatch__schedule_1a2bb62cf45d2f7417cddcf79843ce3e2b" kind="function"><name>name</name></member>
+    <member refid="classlbann_1_1lbann__callback__minibatch__schedule_1af95cbe83a587590219174cb17828ea4b" kind="function"><name>schedule</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__optimizerwise__adaptive__learning__rate" kind="class"><name>lbann::lbann_callback_optimizerwise_adaptive_learning_rate</name>
+    <member refid="classlbann_1_1lbann__callback__optimizerwise__adaptive__learning__rate_1a332beb0eb4464929248f56e1815d4e69" kind="variable"><name>m_scale</name></member>
+    <member refid="classlbann_1_1lbann__callback__optimizerwise__adaptive__learning__rate_1a4ab8768ad85fe17728d62eceb628cc9f" kind="function"><name>lbann_callback_optimizerwise_adaptive_learning_rate</name></member>
+    <member refid="classlbann_1_1lbann__callback__optimizerwise__adaptive__learning__rate_1a0084b1d49e37d5884f5e93455d9aa4b6" kind="function"><name>lbann_callback_optimizerwise_adaptive_learning_rate</name></member>
+    <member refid="classlbann_1_1lbann__callback__optimizerwise__adaptive__learning__rate_1acf561f3ca522caa6f9d8e8333e5138cc" kind="function"><name>lbann_callback_optimizerwise_adaptive_learning_rate</name></member>
+    <member refid="classlbann_1_1lbann__callback__optimizerwise__adaptive__learning__rate_1a246fc2136f4210eb2c03b407a746adb8" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__optimizerwise__adaptive__learning__rate_1aa28bce451c8f1fa3b273218be976b923" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__optimizerwise__adaptive__learning__rate_1a31120725bd22d1ce783a6edba9c5fb5d" kind="function"><name>name</name></member>
+    <member refid="classlbann_1_1lbann__callback__optimizerwise__adaptive__learning__rate_1aa9ce00b0ad1fefb20a1108d1120e82d5" kind="function"><name>optimizer_schedule</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__poly__learning__rate" kind="class"><name>lbann::lbann_callback_poly_learning_rate</name>
+    <member refid="classlbann_1_1lbann__callback__poly__learning__rate_1a03c8c9a738036f9b778f11416112fd80" kind="variable"><name>m_p</name></member>
+    <member refid="classlbann_1_1lbann__callback__poly__learning__rate_1a493de3bbdea4bed802e663af9b81af8e" kind="variable"><name>m_num_epochs</name></member>
+    <member refid="classlbann_1_1lbann__callback__poly__learning__rate_1a43c06187577baff885bda6177fe56c3f" kind="variable"><name>m_max_iter</name></member>
+    <member refid="classlbann_1_1lbann__callback__poly__learning__rate_1a02cb265abba03e10fcba2be3cbbafce4" kind="variable"><name>m_lr</name></member>
+    <member refid="classlbann_1_1lbann__callback__poly__learning__rate_1aad95c34cfb705392bf38ecbb0dc97b32" kind="variable"><name>m_last_epoch_lr</name></member>
+    <member refid="classlbann_1_1lbann__callback__poly__learning__rate_1ac36d25516687e0d0c43b51acae9eb1ff" kind="function"><name>lbann_callback_poly_learning_rate</name></member>
+    <member refid="classlbann_1_1lbann__callback__poly__learning__rate_1a4aba2a61c3b5d08c08909b7a4d78ea74" kind="function"><name>lbann_callback_poly_learning_rate</name></member>
+    <member refid="classlbann_1_1lbann__callback__poly__learning__rate_1a9c55d816c11b6c79d0bbc145e7211995" kind="function"><name>lbann_callback_poly_learning_rate</name></member>
+    <member refid="classlbann_1_1lbann__callback__poly__learning__rate_1a5e93001766ab49b38d0cc387362970e3" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__poly__learning__rate_1aea01c416903c421cf6dce1a7f320c94b" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__poly__learning__rate_1a47d3d2a94157f1992bf4a964620208f3" kind="function"><name>setup</name></member>
+    <member refid="classlbann_1_1lbann__callback__poly__learning__rate_1a755be6dc66e1c403edc69db11592a4ea" kind="function"><name>name</name></member>
+    <member refid="classlbann_1_1lbann__callback__poly__learning__rate_1a6302be36ef16079105b812c7599dac76" kind="function"><name>global_schedule</name></member>
+    <member refid="classlbann_1_1lbann__callback__poly__learning__rate_1a55414af733e519be126572ec92492bf7" kind="function"><name>optimizer_schedule</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__print" kind="class"><name>lbann::lbann_callback_print</name>
+    <member refid="classlbann_1_1lbann__callback__print_1ac31f404ac68a2cb24cd3d544d128f1d9" kind="function"><name>lbann_callback_print</name></member>
+    <member refid="classlbann_1_1lbann__callback__print_1aca5b4f8a44d6194a31c08aabc59c9748" kind="function"><name>lbann_callback_print</name></member>
+    <member refid="classlbann_1_1lbann__callback__print_1a4924cd2aebecdca00dbc0ac9d71df666" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__print_1aa75e076c3d840a2186825be2e8dbac8c" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__print_1a405e20e9fa137bd377faf692cc3c54aa" kind="function"><name>setup</name></member>
+    <member refid="classlbann_1_1lbann__callback__print_1ae3c99d7c56ac33ab7e09880134b43cad" kind="function"><name>on_epoch_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__print_1a28f2b022193c62f3af40364d2c5b14b2" kind="function"><name>on_epoch_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__print_1a7090572e2f89e7994872b5fdb612dd3f" kind="function"><name>on_validation_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__print_1a1f72a486004af859823f75c311dcff42" kind="function"><name>on_test_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__print_1a212640539d73eec3317572150a11b71b" kind="function"><name>name</name></member>
+    <member refid="classlbann_1_1lbann__callback__print_1a50117faa3edb961ddd87c5c5806820b2" kind="function"><name>report_results</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__profiler" kind="class"><name>lbann::lbann_callback_profiler</name>
+    <member refid="classlbann_1_1lbann__callback__profiler_1a48e38406712543f839dd7e5e840694e2" kind="variable"><name>num_colors</name></member>
+    <member refid="classlbann_1_1lbann__callback__profiler_1addf3323ce665956dc4988e3850bceb30" kind="variable"><name>colors</name></member>
+    <member refid="classlbann_1_1lbann__callback__profiler_1aa1df0f5400362d0b4c469df5d4657eed" kind="function"><name>lbann_callback_profiler</name></member>
+    <member refid="classlbann_1_1lbann__callback__profiler_1ad55c2dd945f3867ae984ff94e761b05a" kind="function"><name>lbann_callback_profiler</name></member>
+    <member refid="classlbann_1_1lbann__callback__profiler_1ad9c93def349b324a9f3a20c73a5f29a0" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__profiler_1a53351de95859a8a9f3a689ed72970663" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__profiler_1abd30d11df631eea086cdf213c9f0f4f9" kind="function"><name>on_epoch_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__profiler_1a86e0fbe550ff42660766977604d9d5a6" kind="function"><name>on_epoch_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__profiler_1a4a60f7470bf36c6833862d47d1a7ce01" kind="function"><name>on_batch_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__profiler_1ad7db0233f3a0c91c10a15d0951bb1747" kind="function"><name>on_batch_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__profiler_1a027fe89a27c52ae80a1982f96dd62455" kind="function"><name>on_forward_prop_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__profiler_1a63e3ad301cf8529acda00ac8f2531c93" kind="function"><name>on_forward_prop_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__profiler_1a7905ac8f79a71731c8e388cdb4385023" kind="function"><name>on_backward_prop_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__profiler_1a8a4ba2640d128992a519ab4a2b7c44aa" kind="function"><name>on_backward_prop_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__profiler_1adc7cf77381bec8ab1cc5ba5e554ec268" kind="function"><name>on_forward_prop_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__profiler_1a6cfc4cf84fe4229f627d18ad19eaa415" kind="function"><name>on_forward_prop_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__profiler_1a158d8d47bd7a2e38a1f5589030fa523b" kind="function"><name>on_backward_prop_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__profiler_1a3fe2bc2b07b2e8e5873c9afb94cebe93" kind="function"><name>on_backward_prop_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__profiler_1ac58447afa0642c1a466d9b58f0de87c8" kind="function"><name>name</name></member>
+    <member refid="classlbann_1_1lbann__callback__profiler_1af78237a67eaacf2508f31ad72b8ff8a7" kind="function"><name>get_color</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__save__images" kind="class"><name>lbann::lbann_callback_save_images</name>
+    <member refid="classlbann_1_1lbann__callback__save__images_1aeb69e2814c78d33a93b9ddc276c4cc57" kind="variable"><name>m_image_dir</name></member>
+    <member refid="classlbann_1_1lbann__callback__save__images_1a7b37fa08f49051897ef427b8c810ca3a" kind="variable"><name>m_extension</name></member>
+    <member refid="classlbann_1_1lbann__callback__save__images_1a275e409b2b2f3ebe2baeea636e18c607" kind="variable"><name>m_reader</name></member>
+    <member refid="classlbann_1_1lbann__callback__save__images_1a19825aa8f1bc28114a5269bee6c88758" kind="function"><name>lbann_callback_save_images</name></member>
+    <member refid="classlbann_1_1lbann__callback__save__images_1a3a01aa79c40d7d6f9120211d45141d23" kind="function"><name>lbann_callback_save_images</name></member>
+    <member refid="classlbann_1_1lbann__callback__save__images_1a79fcd1489f0a5239303578d892c7a8b9" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__save__images_1a6abba6b6a94080c09f52f1aac8773461" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__save__images_1aa540916eef9b95db68889a8a7426779c" kind="function"><name>on_epoch_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__save__images_1a4591438de0b52467988e2bd34b55c0dd" kind="function"><name>on_phase_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__save__images_1a44d0f0113133d6fd8944d8b7702ea786" kind="function"><name>on_test_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__save__images_1ae3e0f20308b83a3a1b2fe0ba1acbd072" kind="function"><name>name</name></member>
+    <member refid="classlbann_1_1lbann__callback__save__images_1ab84c4d511a4614ca90644d12dc77edee" kind="function"><name>save_image</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__save__model" kind="class"><name>lbann::lbann_callback_save_model</name>
+    <member refid="classlbann_1_1lbann__callback__save__model_1aca89bd794b4a15b3beb89f3da464fbcd" kind="variable"><name>m_dir</name></member>
+    <member refid="classlbann_1_1lbann__callback__save__model_1a76f51ce7ea7bbb1aff331102c87662bd" kind="variable"><name>m_extension</name></member>
+    <member refid="classlbann_1_1lbann__callback__save__model_1a603d5e3c418ddc29724664eeff401707" kind="function"><name>lbann_callback_save_model</name></member>
+    <member refid="classlbann_1_1lbann__callback__save__model_1ab5c646c34145f0d5d07608e709495f39" kind="function"><name>lbann_callback_save_model</name></member>
+    <member refid="classlbann_1_1lbann__callback__save__model_1a606ca0b8144e6cedc96311d9e74c04b7" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__save__model_1adaebfea30dcc1c32a8ae25a3307abb7f" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__save__model_1ae047ee35b65e9bda4080a83833612699" kind="function"><name>on_epoch_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__save__model_1a85b88992e7cd7073279b8a9b6d8b142f" kind="function"><name>name</name></member>
+    <member refid="classlbann_1_1lbann__callback__save__model_1a3c06fcc91890d4fe51a07672152b91a5" kind="function"><name>write_proto_binary</name></member>
+    <member refid="classlbann_1_1lbann__callback__save__model_1a9dd2617a12810287c4f5cb87746e71ea" kind="function"><name>write_proto_text</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__step__learning__rate" kind="class"><name>lbann::lbann_callback_step_learning_rate</name>
+    <member refid="classlbann_1_1lbann__callback__step__learning__rate_1a804bffdc6bcc1e1f43dc068db852b993" kind="variable"><name>m_step</name></member>
+    <member refid="classlbann_1_1lbann__callback__step__learning__rate_1ab6f5430cf862ec67392dc0f69ced81e6" kind="variable"><name>m_amt</name></member>
+    <member refid="classlbann_1_1lbann__callback__step__learning__rate_1acaf6b1a65c8734b21a62a3c1f16447ca" kind="function"><name>lbann_callback_step_learning_rate</name></member>
+    <member refid="classlbann_1_1lbann__callback__step__learning__rate_1a22ece9107d7aa79c6b849b251db036b0" kind="function"><name>lbann_callback_step_learning_rate</name></member>
+    <member refid="classlbann_1_1lbann__callback__step__learning__rate_1a490e371559547d9527a4dee80dabed03" kind="function"><name>lbann_callback_step_learning_rate</name></member>
+    <member refid="classlbann_1_1lbann__callback__step__learning__rate_1a0e677a5365c5b2119520ea9efcbb0a77" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__step__learning__rate_1aa4848d45df5b6ab58456374ce966b374" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__step__learning__rate_1a0332449e3d03aac46e0562cede85a5ed" kind="function"><name>name</name></member>
+    <member refid="classlbann_1_1lbann__callback__step__learning__rate_1a440671682e8c041a7208af77231059ec" kind="function"><name>global_schedule</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__step__minibatch" kind="class"><name>lbann::lbann_callback_step_minibatch</name>
+    <member refid="classlbann_1_1lbann__callback__step__minibatch_1a1d150c95b193f9a24c8d7d73506b034c" kind="variable"><name>m_step</name></member>
+    <member refid="classlbann_1_1lbann__callback__step__minibatch_1ad367d8969b52755f768085d8db98449c" kind="variable"><name>m_ramp_time</name></member>
+    <member refid="classlbann_1_1lbann__callback__step__minibatch_1a2ce11bed6c3a4d526c2fdd885970f49d" kind="function"><name>lbann_callback_step_minibatch</name></member>
+    <member refid="classlbann_1_1lbann__callback__step__minibatch_1a66b34b96845274563dd72172dafd9079" kind="function"><name>lbann_callback_step_minibatch</name></member>
+    <member refid="classlbann_1_1lbann__callback__step__minibatch_1adea0e27a38a8094db757a57e4f976769" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__step__minibatch_1a3c291a8908f893d0ca372ae7c650bbb2" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__step__minibatch_1a2e07fa5a590d68b1b71059d9275ee12a" kind="function"><name>name</name></member>
+    <member refid="classlbann_1_1lbann__callback__step__minibatch_1a9ed85aa78f6e4fe4cf3427f9257a4610" kind="function"><name>schedule</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__summary" kind="class"><name>lbann::lbann_callback_summary</name>
+    <member refid="classlbann_1_1lbann__callback__summary_1ad123c5383ce6fe1212e25021579d6e3d" kind="variable"><name>m_mat_interval</name></member>
+    <member refid="classlbann_1_1lbann__callback__summary_1aaf405a703a4047cc3c442d0a21a5d208" kind="function"><name>lbann_callback_summary</name></member>
+    <member refid="classlbann_1_1lbann__callback__summary_1afecb595caaee55e32837840ba902eaee" kind="function"><name>~lbann_callback_summary</name></member>
+    <member refid="classlbann_1_1lbann__callback__summary_1aed7ed143ba18927124e76f6442228810" kind="function"><name>lbann_callback_summary</name></member>
+    <member refid="classlbann_1_1lbann__callback__summary_1a4e2c3d2fcb09c5dc00035be86441ad53" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__summary_1ae6f1ba60d92f4599361ce5bd5f70caa7" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__summary_1a1ff0c4368aee47c294b9c11a5176b9e0" kind="function"><name>on_train_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__summary_1a89b18186fdaa7b6a7a0e9ab8ee334d88" kind="function"><name>on_batch_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__summary_1a404e64dcedfcba611510379f99dcace9" kind="function"><name>on_epoch_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__summary_1a8dced0a202df3daaece138a7b958e544" kind="function"><name>on_test_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__summary_1a79814488c1ed0123b335a4cd1a236724" kind="function"><name>name</name></member>
+    <member refid="classlbann_1_1lbann__callback__summary_1a72a46c51527a02516584ce1e49e5cd29" kind="function"><name>save_histograms</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__timeline" kind="class"><name>lbann::lbann_callback_timeline</name>
+    <member refid="classlbann_1_1lbann__callback__timeline_1afb064216a569f0763b2fff4ab5547790" kind="variable"><name>m_outdir</name></member>
+    <member refid="classlbann_1_1lbann__callback__timeline_1a624a9b00735fb7644d544ec6ed83dd27" kind="variable"><name>m_start_time</name></member>
+    <member refid="classlbann_1_1lbann__callback__timeline_1a5c24aa919edfcd34fce577ef17e9153f" kind="variable"><name>m_fp_start_time</name></member>
+    <member refid="classlbann_1_1lbann__callback__timeline_1a7c4383231990d3a5fc8ec22a93784e15" kind="variable"><name>m_bp_start_time</name></member>
+    <member refid="classlbann_1_1lbann__callback__timeline_1a9f16bbedce47953a28e63b52d92792c3" kind="variable"><name>m_opt_start_time</name></member>
+    <member refid="classlbann_1_1lbann__callback__timeline_1ab43061b16cd5d29045be1d9294a80ef1" kind="variable"><name>m_fp_times</name></member>
+    <member refid="classlbann_1_1lbann__callback__timeline_1a59e63a11f33ed0cf3fd40dd2d8f91ede" kind="variable"><name>m_bp_times</name></member>
+    <member refid="classlbann_1_1lbann__callback__timeline_1abc57215e52823fe6f44f040f06f60847" kind="variable"><name>m_opt_times</name></member>
+    <member refid="classlbann_1_1lbann__callback__timeline_1a51afde4e9dbd97ecb1d40071df16fb78" kind="function"><name>lbann_callback_timeline</name></member>
+    <member refid="classlbann_1_1lbann__callback__timeline_1a01188f27525f2f9cc4cbf279368ec827" kind="function"><name>lbann_callback_timeline</name></member>
+    <member refid="classlbann_1_1lbann__callback__timeline_1a8469e5e1a36d8ed022b803a895baa6f8" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__timeline_1aa1359380162f29838be3cdb0bb25b3e3" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__timeline_1aaede0408ae30a3c82f567981e374a224" kind="function"><name>name</name></member>
+    <member refid="classlbann_1_1lbann__callback__timeline_1a35a431c2545b4087d6f970d45f86c054" kind="function"><name>on_train_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__timeline_1a7af247d7f016db358da0a57f8a4b76c6" kind="function"><name>on_train_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__timeline_1a9c093b091fd38b79f8632cf786d29ce2" kind="function"><name>on_forward_prop_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__timeline_1a28f4387fda222bf988d744e0b2ec8b4b" kind="function"><name>on_forward_prop_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__timeline_1a81d50e48462765b5e9913ae357b5a412" kind="function"><name>on_backward_prop_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__timeline_1a0de42325a96128f7e41ecf8004b99b26" kind="function"><name>on_backward_prop_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__timeline_1a2037300798c70d831845c7efaf5de6c2" kind="function"><name>on_optimize_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__timeline_1afdf506e2c2d40c7b0d1f845fb0ed077e" kind="function"><name>on_optimize_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__timeline_1a67da1376356bf2153ab67489014e0ad4" kind="function"><name>get_rel_time</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__timer" kind="class"><name>lbann::lbann_callback_timer</name>
+    <member refid="classlbann_1_1lbann__callback__timer_1a5e65e92eadce733120772d420ffbb7d5" kind="variable"><name>m_start_time</name></member>
+    <member refid="classlbann_1_1lbann__callback__timer_1a56a597dea5c6649442311dc15ee6d06f" kind="variable"><name>m_batch_start_time</name></member>
+    <member refid="classlbann_1_1lbann__callback__timer_1ae20dcc6bf921444e2724478ba751ade1" kind="variable"><name>m_batch_times</name></member>
+    <member refid="classlbann_1_1lbann__callback__timer_1a00fc86ddf14a4a5e9c6b65ff2e81dfb6" kind="function"><name>lbann_callback_timer</name></member>
+    <member refid="classlbann_1_1lbann__callback__timer_1afc366dc61b7d8af5ddce879e46255ee1" kind="function"><name>lbann_callback_timer</name></member>
+    <member refid="classlbann_1_1lbann__callback__timer_1ab7548a88159197f64dfc319f3e777c2a" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__timer_1a9ea5c598723debb7b098a6ce891571c6" kind="function"><name>copy</name></member>
+    <member refid="classlbann_1_1lbann__callback__timer_1aceecdd208aa8d75a49a41a33bf48314b" kind="function"><name>on_epoch_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__timer_1a95ccee037894dbb5e3c663fbdfbc9d7f" kind="function"><name>on_epoch_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__timer_1aa86c0ae1b6fbc878b6ba9a4551b803b8" kind="function"><name>on_validation_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__timer_1a0fea502078111627d340340a63768f9f" kind="function"><name>on_validation_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__timer_1a9fb5327fa629c23e51c9c3b065d6d8c5" kind="function"><name>on_test_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__timer_1ab7db32c743128f8bcfc35c8ea56c226a" kind="function"><name>on_test_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__timer_1aa6b016b9fb470a7614ab4147ae105002" kind="function"><name>on_batch_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__timer_1aff885381753dfc63709531aebc827b0e" kind="function"><name>on_batch_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__timer_1abef3c43404a7453a383fe47728d3283b" kind="function"><name>on_batch_evaluate_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__timer_1a1a041e3b7cc2cfea68200d9467d3eaaf" kind="function"><name>on_batch_evaluate_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__timer_1a32a3b87744ee0fcac931e8e69358ece9" kind="function"><name>name</name></member>
+    <member refid="classlbann_1_1lbann__callback__timer_1a5eb2a9d5c0c2fe4a7d7f45369928e2fd" kind="function"><name>timing_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__timer_1a955e59858c6803e96b21fe494cdf3971" kind="function"><name>timing_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__timer_1a6a8a59707a52b8b570b7605b90fdd159" kind="function"><name>batch_timing_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__timer_1afbf58bd4e1b4c1bcae2e50f78c9507f0" kind="function"><name>batch_timing_end</name></member>
+  </compound>
+  <compound refid="classlbann_1_1lbann__callback__variable__minibatch" kind="class"><name>lbann::lbann_callback_variable_minibatch</name>
+    <member refid="classlbann_1_1lbann__callback__variable__minibatch_1a8e1a314b320f6131d0eecbff69aeb2b8" kind="variable"><name>m_starting_mbsize</name></member>
+    <member refid="classlbann_1_1lbann__callback__variable__minibatch_1a6488bd1f45110a1cb22553e5035003de" kind="variable"><name>m_current_mini_batch_size</name></member>
+    <member refid="classlbann_1_1lbann__callback__variable__minibatch_1a7beea78ef7107c88cb8782d3af618117" kind="variable"><name>m_ramp_count</name></member>
+    <member refid="classlbann_1_1lbann__callback__variable__minibatch_1ac78d3d357e1c16b3303cf358aee8a83d" kind="variable"><name>m_lr_incr</name></member>
+    <member refid="classlbann_1_1lbann__callback__variable__minibatch_1a970a03f0d297f8447020e85d23f5ee73" kind="function"><name>lbann_callback_variable_minibatch</name></member>
+    <member refid="classlbann_1_1lbann__callback__variable__minibatch_1a7ffbb380f1a58b164cfb49ab1b407648" kind="function"><name>lbann_callback_variable_minibatch</name></member>
+    <member refid="classlbann_1_1lbann__callback__variable__minibatch_1a154f749e29203562d41faf81202e5656" kind="function"><name>operator=</name></member>
+    <member refid="classlbann_1_1lbann__callback__variable__minibatch_1a4f5d8ab04ab3e1cc3aa66327d3712f51" kind="function"><name>on_train_begin</name></member>
+    <member refid="classlbann_1_1lbann__callback__variable__minibatch_1a091e7563b5a7a90638e2521fe39cbf8f" kind="function"><name>on_epoch_end</name></member>
+    <member refid="classlbann_1_1lbann__callback__variable__minibatch_1ace13e8941491ddd28ef35c277cecb1ad" kind="function"><name>schedule</name></member>
+    <member refid="classlbann_1_1lbann__callback__variable__minibatch_1af078f30f9c206b89bdd542ce1fc6d2ad" kind="function"><name>change_learning_rate</name></member>
+    <member refid="classlbann_1_1lbann__callback__variable__minibatch_1a9de892c44231eadbbc7d27cfcc340ce2" kind="function"><name>get_current_learning_rate</name></member>
+  </compound>
+  <compound refid="structlbann_1_1lbann__callback__minibatch__schedule_1_1minibatch__step" kind="struct"><name>lbann::lbann_callback_minibatch_schedule::minibatch_step</name>
+    <member refid="structlbann_1_1lbann__callback__minibatch__schedule_1_1minibatch__step_1ac5f8dae80a258168a9650ad55a2965d9" kind="variable"><name>epoch</name></member>
+    <member refid="structlbann_1_1lbann__callback__minibatch__schedule_1_1minibatch__step_1a51af7cf1ea3d8b0c7f92812ab71ee921" kind="variable"><name>mbsize</name></member>
+    <member refid="structlbann_1_1lbann__callback__minibatch__schedule_1_1minibatch__step_1a708c92504c27e6e26b40877f5c756ce1" kind="variable"><name>lr</name></member>
+    <member refid="structlbann_1_1lbann__callback__minibatch__schedule_1_1minibatch__step_1aff33b3fadf607df0d942ffa642e0f927" kind="variable"><name>ramp_time</name></member>
+    <member refid="structlbann_1_1lbann__callback__minibatch__schedule_1_1minibatch__step_1a76efb978eebc607dd1f7be0e464ac447" kind="function"><name>minibatch_step</name></member>
+  </compound>
+  <compound refid="namespacelbann" kind="namespace"><name>lbann</name>
+    <member refid="callback__imcomm_8hpp_1ab5665dc52c53faca0caa55b509e2e654" kind="function"><name>get_comm_type_name</name></member>
+  </compound>
+  <compound refid="callback_8hpp" kind="file"><name>callback.hpp</name>
+  </compound>
+  <compound refid="callback__check__dataset_8hpp" kind="file"><name>callback_check_dataset.hpp</name>
+  </compound>
+  <compound refid="callback__check__init_8hpp" kind="file"><name>callback_check_init.hpp</name>
+  </compound>
+  <compound refid="callback__check__reconstruction__error_8hpp" kind="file"><name>callback_check_reconstruction_error.hpp</name>
+  </compound>
+  <compound refid="callback__checknan_8hpp" kind="file"><name>callback_checknan.hpp</name>
+  </compound>
+  <compound refid="callback__checkpoint_8hpp" kind="file"><name>callback_checkpoint.hpp</name>
+  </compound>
+  <compound refid="callback__checksmall_8hpp" kind="file"><name>callback_checksmall.hpp</name>
+  </compound>
+  <compound refid="callback__debug_8hpp" kind="file"><name>callback_debug.hpp</name>
+  </compound>
+  <compound refid="callback__debug__io_8hpp" kind="file"><name>callback_debug_io.hpp</name>
+  </compound>
+  <compound refid="callback__dump__activations_8hpp" kind="file"><name>callback_dump_activations.hpp</name>
+  </compound>
+  <compound refid="callback__dump__gradients_8hpp" kind="file"><name>callback_dump_gradients.hpp</name>
+  </compound>
+  <compound refid="callback__dump__minibatch__sample__indices_8hpp" kind="file"><name>callback_dump_minibatch_sample_indices.hpp</name>
+  </compound>
+  <compound refid="callback__dump__weights_8hpp" kind="file"><name>callback_dump_weights.hpp</name>
+  </compound>
+  <compound refid="callback__early__stopping_8hpp" kind="file"><name>callback_early_stopping.hpp</name>
+  </compound>
+  <compound refid="callback__gradient__check_8hpp" kind="file"><name>callback_gradient_check.hpp</name>
+  </compound>
+  <compound refid="callback__hang_8hpp" kind="file"><name>callback_hang.hpp</name>
+  </compound>
+  <compound refid="callback__imcomm_8hpp" kind="file"><name>callback_imcomm.hpp</name>
+  </compound>
+  <compound refid="callback__io_8hpp" kind="file"><name>callback_io.hpp</name>
+  </compound>
+  <compound refid="callback__learning__rate_8hpp" kind="file"><name>callback_learning_rate.hpp</name>
+  </compound>
+  <compound refid="callback__ltfb_8hpp" kind="file"><name>callback_ltfb.hpp</name>
+  </compound>
+  <compound refid="callback__print_8hpp" kind="file"><name>callback_print.hpp</name>
+  </compound>
+  <compound refid="callback__save__images_8hpp" kind="file"><name>callback_save_images.hpp</name>
+  </compound>
+  <compound refid="callback__save__model_8hpp" kind="file"><name>callback_save_model.hpp</name>
+  </compound>
+  <compound refid="callback__summary_8hpp" kind="file"><name>callback_summary.hpp</name>
+  </compound>
+  <compound refid="callback__timeline_8hpp" kind="file"><name>callback_timeline.hpp</name>
+  </compound>
+  <compound refid="callback__timer_8hpp" kind="file"><name>callback_timer.hpp</name>
+  </compound>
+  <compound refid="callback__variable__minibatch_8hpp" kind="file"><name>callback_variable_minibatch.hpp</name>
+  </compound>
+  <compound refid="profiler_8hpp" kind="file"><name>profiler.hpp</name>
+  </compound>
+  <compound refid="group__callbacks" kind="group"><name>callbacks</name>
+  </compound>
+  <compound refid="dir_02e0fd999bed5b87c330968a85257507" kind="dir"><name>/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks</name>
+  </compound>
+  <compound refid="dir_d44c64559bbebec7f509842c48db8b23" kind="dir"><name>/Users/mckinney27/doxy-testbed/lbann/include</name>
+  </compound>
+  <compound refid="dir_3df4a43ca73d8751de1358d9734fd210" kind="dir"><name>/Users/mckinney27/doxy-testbed/lbann/include/lbann</name>
+  </compound>
+</doxygenindex>

@@ -1,0 +1,27 @@
+<map id="lbann::Layer::get_local_activations" name="lbann::Layer::get_local_activations">
+<area shape="rect" id="node2" href="$classlbann_1_1entrywise__activation__layer.html#a8d4b0376b9783414c1cb7812351122ce" title="lbann::entrywise_activation\l_layer::fp_compute_cpu" alt="" coords="209,5,390,44"/>
+<area shape="rect" id="node3" href="$classlbann_1_1generic__input__layer.html#ad0b8ea79bc508bd227e08124359531c8" title="lbann::generic_input\l_layer::fp_setup_data" alt="" coords="225,68,374,107"/>
+<area shape="rect" id="node4" href="$classlbann_1_1Layer.html#a524a78dc6a812ae92834a9e1aa83434b" title="lbann::Layer::set_weights" alt="" coords="213,131,386,156"/>
+<area shape="rect" id="node5" href="$classlbann_1_1base__convolution__layer.html#a0710d46aa54d92f94de920ed37f6ef11" title="lbann::base_convolution\l_layer::apply_convolution\l_im2col" alt="" coords="214,180,385,232"/>
+<area shape="rect" id="node8" href="$classlbann_1_1base__convolution__layer.html#a87fb2bf066a98052938e48a82dcd4fd2" title="lbann::base_convolution\l_layer::apply_transposed\l_convolution_im2col" alt="" coords="214,319,385,371"/>
+<area shape="rect" id="node11" href="$classlbann_1_1base__convolution__layer.html#a4f792e1c19d4591f305880b57f63cec3" title="lbann::base_convolution\l_layer::apply_bias_cpu" alt="" coords="217,256,382,295"/>
+<area shape="rect" id="node12" href="$classlbann_1_1batch__normalization.html#ae4cad47f456752e4ea20add0f6f38819" title="lbann::batch_normalization\l::fp_compute_cpu" alt="" coords="209,395,390,433"/>
+<area shape="rect" id="node14" href="$classlbann_1_1local__response__normalization__layer.html#a79c72491b5b74b64d2b10ac2636cddce" title="CPU implementation of forward propagation. " alt="" coords="224,457,375,509"/>
+<area shape="rect" id="node16" href="$classlbann_1_1local__response__normalization__layer.html#a1aac4bf5e2500749bc8bafcd254f5699" title="CPU implementation of backward propagation. " alt="" coords="224,533,375,585"/>
+<area shape="rect" id="node18" href="$classlbann_1_1selu__dropout.html#a50ccce3672873a12ae69cc76c91e767a" title="lbann::selu_dropout\l::fp_compute" alt="" coords="230,609,369,648"/>
+<area shape="rect" id="node19" href="$classlbann_1_1hadamard__layer.html#a8be44f24f2290b06b104294d1fe31d41" title="lbann::hadamard_layer\l::fp_compute" alt="" coords="221,672,378,711"/>
+<area shape="rect" id="node20" href="$classlbann_1_1pooling__layer.html#a76ce07a190fbe85685ea2ab4e53be7f9" title="Pooling forward propagation with im2col. " alt="" coords="227,735,372,773"/>
+<area shape="rect" id="node22" href="$classlbann_1_1safe__inv__layer.html#a070fe64c2a605eb5624d509740de1c32" title="lbann::safe_inv_layer\l::fp_compute" alt="" coords="226,797,373,836"/>
+<area shape="rect" id="node23" href="$classlbann_1_1unpooling__layer.html#ab4a0b7cc4711426434983c41cd7dbc63" title="Unpooling forward propagation with im2col. " alt="" coords="222,860,377,899"/>
+<area shape="rect" id="node25" href="$classlbann_1_1kl__divergence.html#a93aab2ca89cdaab075a940184ae209d5" title="lbann::kl_divergence\l::finish_evaluation" alt="" coords="228,923,371,961"/>
+<area shape="rect" id="node6" href="$classlbann_1_1convolution__layer.html#aaca2c840fe41d8025efce91d6e9211b9" title="lbann::convolution\l_layer::fp_compute" alt="" coords="461,204,596,243"/>
+<area shape="rect" id="node7" href="$classlbann_1_1deconvolution__layer.html#a70649662ff27ddacf0f5584829022b72" title="lbann::deconvolution\l_layer::bp_compute" alt="" coords="457,141,600,180"/>
+<area shape="rect" id="node9" href="$classlbann_1_1convolution__layer.html#a610f24f98b548434cd4d22419f47c7f0" title="lbann::convolution\l_layer::bp_compute" alt="" coords="459,329,598,368"/>
+<area shape="rect" id="node10" href="$classlbann_1_1deconvolution__layer.html#a6ebbb96c605a96b41fdbbc848dcaa877" title="lbann::deconvolution\l_layer::fp_compute" alt="" coords="457,267,600,305"/>
+<area shape="rect" id="node13" href="$classlbann_1_1batch__normalization.html#a92ad52396d7083c84ec20016ad5e994b" title="lbann::batch_normalization\l::fp_compute" alt="" coords="438,395,619,433"/>
+<area shape="rect" id="node15" href="$classlbann_1_1local__response__normalization__layer.html#ac7b2ce4970eb7163685fb0a4a69328fc" title="lbann::local_response\l_normalization_layer\l::fp_compute" alt="" coords="453,457,604,509"/>
+<area shape="rect" id="node17" href="$classlbann_1_1local__response__normalization__layer.html#ae94544765a459a6609f2c2ebbbc3e9d9" title="lbann::local_response\l_normalization_layer\l::bp_compute" alt="" coords="453,533,604,585"/>
+<area shape="rect" id="node21" href="$classlbann_1_1pooling__layer.html#a0af01b6939abe9798fa3a0b1f5292721" title="lbann::pooling_layer\l::fp_compute" alt="" coords="458,735,599,773"/>
+<area shape="rect" id="node24" href="$classlbann_1_1unpooling__layer.html#aad98d442d6f5ad1feb5f1d71bdb1df49" title="lbann::unpooling_layer\l::fp_compute" alt="" coords="451,860,606,899"/>
+<area shape="rect" id="node26" href="$classlbann_1_1kl__divergence.html#a42f016a75f640cb4ec9ceb9320da4a47" title="lbann::kl_divergence\l::name" alt="" coords="457,923,600,961"/>
+</map>

@@ -1,0 +1,306 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="file__io_8cpp" kind="file" language="C++">
+    <compoundname>file_io.cpp</compoundname>
+    <includes local="no">sys/stat.h</includes>
+    <includes local="no">sys/types.h</includes>
+    <includes local="no">cerrno</includes>
+    <includes local="no">cstring</includes>
+    <includes local="no">cstdio</includes>
+    <includes refid="file__io_8hpp" local="yes">lbann/io/file_io.hpp</includes>
+    <includes local="no">fcntl.h</includes>
+    <includes local="no">unistd.h</includes>
+    <includes local="yes">mpi.h</includes>
+    <incdepgraph>
+      <node id="20771">
+        <label>sys/stat.h</label>
+      </node>
+      <node id="20777">
+        <label>fcntl.h</label>
+      </node>
+      <node id="20772">
+        <label>sys/types.h</label>
+      </node>
+      <node id="20775">
+        <label>cstdio</label>
+      </node>
+      <node id="20770">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/io/file_io.cpp</label>
+        <link refid="file__io_8cpp"/>
+        <childnode refid="20771" relation="include">
+        </childnode>
+        <childnode refid="20772" relation="include">
+        </childnode>
+        <childnode refid="20773" relation="include">
+        </childnode>
+        <childnode refid="20774" relation="include">
+        </childnode>
+        <childnode refid="20775" relation="include">
+        </childnode>
+        <childnode refid="20776" relation="include">
+        </childnode>
+        <childnode refid="20777" relation="include">
+        </childnode>
+        <childnode refid="20778" relation="include">
+        </childnode>
+        <childnode refid="20779" relation="include">
+        </childnode>
+      </node>
+      <node id="20778">
+        <label>unistd.h</label>
+      </node>
+      <node id="20776">
+        <label>lbann/io/file_io.hpp</label>
+        <link refid="file__io_8hpp"/>
+        <childnode refid="20771" relation="include">
+        </childnode>
+        <childnode refid="20772" relation="include">
+        </childnode>
+        <childnode refid="20777" relation="include">
+        </childnode>
+      </node>
+      <node id="20773">
+        <label>cerrno</label>
+      </node>
+      <node id="20779">
+        <label>mpi.h</label>
+      </node>
+      <node id="20774">
+        <label>cstring</label>
+      </node>
+    </incdepgraph>
+      <sectiondef kind="var">
+      <memberdef kind="variable" id="file__io_8cpp_1a8a08135bfddb4c7375212d2ace2e24b7" prot="public" static="yes" mutable="no">
+        <type>mode_t</type>
+        <definition>mode_t mode_dir</definition>
+        <argsstring></argsstring>
+        <name>mode_dir</name>
+        <initializer>= S_IRWXU | S_IRWXG</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/src/io/file_io.cpp" line="43" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/io/file_io.cpp" bodystart="43" bodyend="-1"/>
+        <referencedby refid="namespacelbann_1a8830dea8eef0ab5b93d68e2358ceeb1a" compoundref="file__io_8cpp" startline="49" endline="77">lbann::makedir</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="file__io_8cpp_1ab048c6f9fcbcfaa57ce68b00263dbebe" prot="public" static="yes" mutable="no">
+        <type>MPI_Comm</type>
+        <definition>MPI_Comm comm</definition>
+        <argsstring></argsstring>
+        <name>comm</name>
+        <initializer>= MPI_COMM_WORLD</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/src/io/file_io.cpp" line="44" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/io/file_io.cpp" bodystart="44" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__comm_1aaae50e4643ca06671e7cb7872d455708" compoundref="comm_8hpp" startline="798" endline="800">lbann::lbann_comm::set_default_allreduce_algorithm</referencedby>
+        <referencedby refid="classlbann_1_1generic__data__reader_1a39f4d80661a2c8e24d8d167ad5bd6c6b" compoundref="data__reader_8hpp" startline="98" endline="101">lbann::generic_data_reader::set_comm</referencedby>
+        <referencedby refid="classlbann_1_1generic__input__layer_1a76d36777d01144cafe7b33ab5ce739d2" compoundref="generic__input__layer_8hpp" startline="95" endline="102">lbann::generic_input_layer::operator=</referencedby>
+        <referencedby refid="classlbann_1_1input__layer_1a645fce2e882892ac0ad8c9b06ea6ed09" compoundref="input__layer_8hpp" startline="67" endline="69">lbann::input_layer&lt; T_io_buffer, T_layout &gt;::initialize_io_buffer</referencedby>
+        <referencedby refid="classlbann_1_1generic__target__layer_1a899373681fe6ede57383da34fe4156c1" compoundref="generic__target__layer_8hpp" startline="84" endline="87">lbann::generic_target_layer::~generic_target_layer</referencedby>
+        <referencedby refid="classlbann_1_1target__layer_1a566c3d94992d4cbc4f17b4084664cc34" compoundref="target__layer_8hpp" startline="73" endline="75">lbann::target_layer&lt; T_io_buffer, T_layout &gt;::initialize_io_buffer</referencedby>
+        <referencedby refid="namespacelbann_1aedccb3bf2d674ccb5573ab9960720731" compoundref="exception_8hpp" startline="55" endline="65">lbann::lbann_report_exception</referencedby>
+        <referencedby refid="classlbann_1_1lbann__quantizer_1aa1541b9afa60250dbd570acbbe98242f" compoundref="quantizer_8hpp" startline="267" endline="269">lbann::lbann_quantizer::get_onebit_quantized_matrix_height</referencedby>
+        <referencedby refid="namespacelbann_1a2fe8cea17a147566b73260f557b51006" compoundref="random_8hpp" startline="81" endline="90">lbann::fast_rand_int_pow2</referencedby>
+        <referencedby refid="namespacelbann_1a3d91b615e42bf5744deeed770879bc8c" compoundref="base_8cpp" startline="46" endline="86">lbann::initialize</referencedby>
+        <referencedby refid="namespacelbann_1a99724ee5a6647a1d8bff6764b9aa5fac" compoundref="base_8cpp" startline="88" endline="93">lbann::finalize</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__check__dataset_1a8cbc105d8bd9d3b493ef34de7c387929" compoundref="callback__check__dataset_8cpp" startline="77" endline="143">lbann::lbann_callback_check_dataset::on_epoch_end</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__check__init_1a037f1371c56c1b528f487517a58ce3fb" compoundref="callback__check__init_8cpp" startline="34" endline="72">lbann::lbann_callback_check_init::on_train_begin</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__checkpoint_1a2e5f396667ccc45f7203263b06c5e216" compoundref="callback__checkpoint_8cpp" startline="64" endline="106">lbann::lbann_callback_checkpoint::need_checkpoint</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__checkpoint_1a23b6f5abb924b2c4d0694e98c7d6f4d5" compoundref="callback__checkpoint_8cpp" startline="145" endline="202">lbann::lbann_callback_checkpoint::checkpointShared</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__checkpoint_1a40d369278bc5963ba2f3cca1750ba004" compoundref="callback__checkpoint_8cpp" startline="203" endline="256">lbann::lbann_callback_checkpoint::restartShared</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__gradient__check_1ab62102d5ab30330386514161b9ee6586" compoundref="callback__gradient__check_8cpp" startline="40" endline="180">lbann::lbann_callback_gradient_check::on_test_begin</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__imcomm_1a332ba4ceca91939c79fae2735fdc8ff3" compoundref="callback__imcomm_8cpp" startline="111" endline="122">lbann::lbann_callback_imcomm::on_train_begin</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__imcomm_1a3160dbf536def4f930e0ea0aabdebc11" compoundref="callback__imcomm_8cpp" startline="124" endline="154">lbann::lbann_callback_imcomm::on_epoch_end</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__imcomm_1a0a425ba562f7637b25cd6ba094e7885b" compoundref="callback__imcomm_8cpp" startline="156" endline="205">lbann::lbann_callback_imcomm::on_backward_prop_end</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__imcomm_1ad45c39a7a85fb8e1d99eca97aa4d9d09" compoundref="callback__imcomm_8cpp" startline="207" endline="264">lbann::lbann_callback_imcomm::do_summary</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__io_1a118c5cb8a9c83661a67569df890676e2" compoundref="callback__io_8cpp" startline="42" endline="63">lbann::lbann_callback_io::on_epoch_end</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__io_1a8abca84e4b0dc21b28e5d5e409446fdc" compoundref="callback__io_8cpp" startline="65" endline="86">lbann::lbann_callback_io::on_test_end</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__learning__rate_1ab8eb509bdbea501882d6b248a814bb28" compoundref="callback__learning__rate_8cpp" startline="66" endline="83">lbann::lbann_callback_learning_rate::on_epoch_end</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__print_1a405e20e9fa137bd377faf692cc3c54aa" compoundref="callback__print_8cpp" startline="36" endline="44">lbann::lbann_callback_print::setup</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__print_1ae3c99d7c56ac33ab7e09880134b43cad" compoundref="callback__print_8cpp" startline="46" endline="116">lbann::lbann_callback_print::on_epoch_begin</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__print_1a50117faa3edb961ddd87c5c5806820b2" compoundref="callback__print_8cpp" startline="130" endline="222">lbann::lbann_callback_print::report_results</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__summary_1a89b18186fdaa7b6a7a0e9ab8ee334d88" compoundref="callback__summary_8cpp" startline="47" endline="68">lbann::lbann_callback_summary::on_batch_end</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__summary_1a8dced0a202df3daaece138a7b958e544" compoundref="callback__summary_8cpp" startline="84" endline="100">lbann::lbann_callback_summary::on_test_end</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__timer_1a955e59858c6803e96b21fe494cdf3971" compoundref="callback__timer_8cpp" startline="52" endline="166">lbann::lbann_callback_timer::timing_end</referencedby>
+        <referencedby refid="classlbann_1_1lbann__callback__variable__minibatch_1a091e7563b5a7a90638e2521fe39cbf8f" compoundref="callback__variable__minibatch_8cpp" startline="66" endline="125">lbann::lbann_callback_variable_minibatch::on_epoch_end</referencedby>
+        <referencedby refid="classlbann_1_1lbann__comm_1adaff1e6549a3fb902c85f1be2718c1ff" compoundref="comm_8cpp" startline="142" endline="175">lbann::lbann_comm::allreduce</referencedby>
+        <referencedby refid="classlbann_1_1lbann__comm_1a2a7bb6cf3707366fc0671d8894ca30ea" compoundref="comm_8cpp" startline="177" endline="213">lbann::lbann_comm::nb_allreduce</referencedby>
+        <referencedby refid="classlbann_1_1lbann__comm_1ae925ac5eaf2895717c709b252961b3bf" compoundref="comm_8cpp" startline="1064" endline="1084">lbann::lbann_comm::get_collective_buffer</referencedby>
+        <referencedby refid="namespacelbann_1a8830dea8eef0ab5b93d68e2358ceeb1a" compoundref="file__io_8cpp" startline="49" endline="77">lbann::makedir</referencedby>
+        <referencedby refid="namespacelbann_1aefae2a9fc9d742ece0fa8ca7ed9ee137" compoundref="file__io_8cpp" startline="79" endline="96">lbann::exists</referencedby>
+        <referencedby refid="namespacelbann_1_1anonymous__namespace_02recurrent_8cpp_03_1a8c76387c2dd531058700ad9a41cd093a" compoundref="recurrent_8cpp" startline="47" endline="113">lbann::anonymous_namespace{recurrent.cpp}::unroll_input_layer</referencedby>
+        <referencedby refid="namespacelbann_1_1anonymous__namespace_02recurrent_8cpp_03_1af04adecd9a62fdcd16ae78b3e95d4bb5" compoundref="recurrent_8cpp" startline="119" endline="169">lbann::anonymous_namespace{recurrent.cpp}::unroll_target_layer</referencedby>
+        <referencedby refid="namespacelbann_1_1anonymous__namespace_02recurrent_8cpp_03_1a50bca1c07c6f3146947b2a0fb5cc815a" compoundref="recurrent_8cpp" startline="227" endline="317">lbann::anonymous_namespace{recurrent.cpp}::add_placeholder_layers</referencedby>
+        <referencedby refid="namespacelbann_1_1proto_1abf0988db9cd58f9ef013588b440c14bd" compoundref="callback__factory_8cpp" startline="314" endline="340">lbann::proto::construct_summarizer</referencedby>
+        <referencedby refid="namespacelbann_1_1proto_1a7e4b0a66836712b1713ae4a121453cde" compoundref="layer__factory_8cpp" startline="33" endline="374">lbann::proto::construct_layer</referencedby>
+        <referencedby refid="namespacelbann_1_1proto_1a99e65cd4abb769d020ab76ff20c39d0b" compoundref="layer__graph__factory_8cpp" startline="156" endline="260">lbann::proto::construct_layer_graph</referencedby>
+        <referencedby refid="namespacelbann_1_1proto_1a5b2f4094ce02245e778cfd2fa254d7b4" compoundref="metric__factory_8cpp" startline="32" endline="68">lbann::proto::construct_metric</referencedby>
+        <referencedby refid="classlbann_1_1lbann__quantizer_1a87e856d8bf5e8a678a39cdb8f547dfd9" compoundref="quantizer_8cpp" startline="471" endline="492">lbann::lbann_quantizer::intermodel_sum_adaptive_quantized</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>2014-2016,<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Security,<sp/>LLC.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Produced<sp/>at<sp/>the<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Laboratory.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Written<sp/>by<sp/>the<sp/>LBANN<sp/>Research<sp/>Team<sp/>(B.<sp/>Van<sp/>Essen,<sp/>et<sp/>al.)<sp/>listed<sp/>in</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="comment">//<sp/>the<sp/>CONTRIBUTORS<sp/>file.<sp/>&lt;lbann-dev@llnl.gov&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="comment">//<sp/>LLNL-CODE-697807.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="comment">//<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="comment">//<sp/>This<sp/>file<sp/>is<sp/>part<sp/>of<sp/>LBANN:<sp/>Livermore<sp/>Big<sp/>Artificial<sp/>Neural<sp/>Network</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Toolkit.<sp/>For<sp/>details,<sp/>see<sp/>http://software.llnl.gov/LBANN<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="comment">//<sp/>https://github.com/LLNL/LBANN.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Licensed<sp/>under<sp/>the<sp/>Apache<sp/>License,<sp/>Version<sp/>2.0<sp/>(the<sp/>&quot;Licensee&quot;);<sp/>you</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight><highlight class="comment">//<sp/>may<sp/>not<sp/>use<sp/>this<sp/>file<sp/>except<sp/>in<sp/>compliance<sp/>with<sp/>the<sp/>License.<sp/><sp/>You<sp/>may</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="comment">//<sp/>obtain<sp/>a<sp/>copy<sp/>of<sp/>the<sp/>License<sp/>at:</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight><highlight class="comment">//<sp/>http://www.apache.org/licenses/LICENSE-2.0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Unless<sp/>required<sp/>by<sp/>applicable<sp/>law<sp/>or<sp/>agreed<sp/>to<sp/>in<sp/>writing,<sp/>software</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight><highlight class="comment">//<sp/>distributed<sp/>under<sp/>the<sp/>License<sp/>is<sp/>distributed<sp/>on<sp/>an<sp/>&quot;AS<sp/>IS&quot;<sp/>BASIS,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight><highlight class="comment">//<sp/>WITHOUT<sp/>WARRANTIES<sp/>OR<sp/>CONDITIONS<sp/>OF<sp/>ANY<sp/>KIND,<sp/>either<sp/>express<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="comment">//<sp/>implied.<sp/>See<sp/>the<sp/>License<sp/>for<sp/>the<sp/>specific<sp/>language<sp/>governing</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="comment">//<sp/>permissions<sp/>and<sp/>limitations<sp/>under<sp/>the<sp/>license.</highlight></codeline>
+<codeline lineno="26"><highlight class="comment"></highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="27"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;sys/stat.h&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="28"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;sys/types.h&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="29"><highlight class="normal"></highlight></codeline>
+<codeline lineno="30"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;cerrno&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;cstring&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="32"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;cstdio&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="33"><highlight class="normal"></highlight></codeline>
+<codeline lineno="34"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="file__io_8hpp" kindref="compound">lbann/io/file_io.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="35"><highlight class="normal"></highlight></codeline>
+<codeline lineno="36"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;sys/types.h&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="37"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;sys/stat.h&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="38"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;fcntl.h&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="39"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;unistd.h&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="40"><highlight class="normal"></highlight></codeline>
+<codeline lineno="41"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;mpi.h&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="42"><highlight class="normal"></highlight></codeline>
+<codeline lineno="43" refid="file__io_8cpp_1a8a08135bfddb4c7375212d2ace2e24b7" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">static</highlight><highlight class="normal"><sp/>mode_t<sp/><ref refid="file__io_8cpp_1a8a08135bfddb4c7375212d2ace2e24b7" kindref="member">mode_dir</ref><sp/>=<sp/>S_IRWXU<sp/>|<sp/>S_IRWXG;</highlight></codeline>
+<codeline lineno="44" refid="file__io_8cpp_1ab048c6f9fcbcfaa57ce68b00263dbebe" refkind="member"><highlight class="normal"></highlight><highlight class="keyword">static</highlight><highlight class="normal"><sp/>MPI_Comm<sp/><ref refid="file__io_8cpp_1ab048c6f9fcbcfaa57ce68b00263dbebe" kindref="member">comm</ref><sp/>=<sp/>MPI_COMM_WORLD;</highlight></codeline>
+<codeline lineno="45"><highlight class="normal"></highlight></codeline>
+<codeline lineno="46"><highlight class="normal"></highlight><highlight class="comment">/*<sp/>creates<sp/>directory<sp/>given<sp/>in<sp/>dir<sp/>(absolute<sp/>path),</highlight></codeline>
+<codeline lineno="47"><highlight class="comment"><sp/>*<sp/>rank<sp/>0<sp/>creates<sp/>directory,<sp/>all<sp/>other<sp/>procs<sp/>get<sp/>result<sp/>via<sp/>bcast,</highlight></codeline>
+<codeline lineno="48"><highlight class="comment"><sp/>*<sp/>returns<sp/>1<sp/>if<sp/>dir<sp/>was<sp/>created,<sp/>0<sp/>otherwise<sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="49" refid="namespacelbann_1a8830dea8eef0ab5b93d68e2358ceeb1a" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="namespacelbann_1a8830dea8eef0ab5b93d68e2358ceeb1a" kindref="member">lbann::makedir</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>*dir)<sp/>{</highlight></codeline>
+<codeline lineno="50"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>get<sp/>our<sp/>rank</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="51"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>rank;</highlight></codeline>
+<codeline lineno="52"><highlight class="normal"><sp/><sp/>MPI_Comm_rank(<ref refid="file__io_8cpp_1ab048c6f9fcbcfaa57ce68b00263dbebe" kindref="member">comm</ref>,<sp/>&amp;rank);</highlight></codeline>
+<codeline lineno="53"><highlight class="normal"></highlight></codeline>
+<codeline lineno="54"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>have<sp/>rank<sp/>0<sp/>create<sp/>directory</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="55"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>mkdir_rc;</highlight></codeline>
+<codeline lineno="56"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(rank<sp/>==<sp/>0)<sp/>{</highlight></codeline>
+<codeline lineno="57"><highlight class="normal"><sp/><sp/><sp/><sp/>mkdir_rc<sp/>=<sp/>mkdir(dir,<sp/><ref refid="file__io_8cpp_1a8a08135bfddb4c7375212d2ace2e24b7" kindref="member">mode_dir</ref>);</highlight></codeline>
+<codeline lineno="58"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(mkdir_rc<sp/>!=<sp/>0)<sp/>{</highlight></codeline>
+<codeline lineno="59"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(errno<sp/>==<sp/>EEXIST)<sp/>{</highlight></codeline>
+<codeline lineno="60"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>not<sp/>an<sp/>error<sp/>if<sp/>the<sp/>directory<sp/>already<sp/>exists</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="61"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>mkdir_rc<sp/>=<sp/>0;</highlight></codeline>
+<codeline lineno="62"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>}<sp/></highlight><highlight class="keywordflow">else</highlight><highlight class="normal"><sp/>{</highlight></codeline>
+<codeline lineno="63"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>fprintf(stderr,<sp/></highlight><highlight class="stringliteral">&quot;ERROR:<sp/>Failed<sp/>to<sp/>create<sp/>directory<sp/>`%s&apos;<sp/>(%d:<sp/>%s)<sp/>@<sp/>%s:%d\n&quot;</highlight><highlight class="normal">,</highlight></codeline>
+<codeline lineno="64"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>dir,<sp/>errno,<sp/>strerror(errno),<sp/>__FILE__,<sp/>__LINE__</highlight></codeline>
+<codeline lineno="65"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>);</highlight></codeline>
+<codeline lineno="66"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>fflush(stderr);</highlight></codeline>
+<codeline lineno="67"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="68"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="69"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="70"><highlight class="normal"></highlight></codeline>
+<codeline lineno="71"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>bcast<sp/>whether<sp/>directory<sp/>was<sp/>created<sp/>or<sp/>not</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="72"><highlight class="normal"><sp/><sp/>MPI_Bcast(&amp;mkdir_rc,<sp/>1,<sp/>MPI_INT,<sp/>0,<sp/><ref refid="file__io_8cpp_1ab048c6f9fcbcfaa57ce68b00263dbebe" kindref="member">comm</ref>);</highlight></codeline>
+<codeline lineno="73"><highlight class="normal"></highlight></codeline>
+<codeline lineno="74"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>return<sp/>1<sp/>if<sp/>dir<sp/>was<sp/>created<sp/>successfully</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="75"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>ret<sp/>=<sp/>(mkdir_rc<sp/>==<sp/>0);</highlight></codeline>
+<codeline lineno="76"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>ret;</highlight></codeline>
+<codeline lineno="77"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="78"><highlight class="normal"></highlight></codeline>
+<codeline lineno="79" refid="namespacelbann_1aefae2a9fc9d742ece0fa8ca7ed9ee137" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="namespacelbann_1aefae2a9fc9d742ece0fa8ca7ed9ee137" kindref="member">lbann::exists</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>*file)<sp/>{</highlight></codeline>
+<codeline lineno="80"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>get<sp/>our<sp/>rank</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="81"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>rank;</highlight></codeline>
+<codeline lineno="82"><highlight class="normal"><sp/><sp/>MPI_Comm_rank(<ref refid="file__io_8cpp_1ab048c6f9fcbcfaa57ce68b00263dbebe" kindref="member">comm</ref>,<sp/>&amp;rank);</highlight></codeline>
+<codeline lineno="83"><highlight class="normal"></highlight></codeline>
+<codeline lineno="84"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>check<sp/>whether<sp/>file<sp/>exists</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="85"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">struct<sp/></highlight><highlight class="normal">stat<sp/>buffer;</highlight></codeline>
+<codeline lineno="86"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="namespacelbann_1aefae2a9fc9d742ece0fa8ca7ed9ee137" kindref="member">exists</ref><sp/>=<sp/>0;</highlight></codeline>
+<codeline lineno="87"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(rank<sp/>==<sp/>0)<sp/>{</highlight></codeline>
+<codeline lineno="88"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>TODO:<sp/>would<sp/>be<sp/>nice<sp/>to<sp/>use<sp/>something<sp/>lighter<sp/>weight<sp/>than<sp/>stat<sp/>here</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="89"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(stat(file,<sp/>&amp;buffer)<sp/>==<sp/>0)<sp/>{</highlight></codeline>
+<codeline lineno="90"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>exists<sp/>=<sp/>1;</highlight></codeline>
+<codeline lineno="91"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="92"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="93"><highlight class="normal"><sp/><sp/>MPI_Bcast(&amp;exists,<sp/>1,<sp/>MPI_INT,<sp/>0,<sp/>MPI_COMM_WORLD);</highlight></codeline>
+<codeline lineno="94"><highlight class="normal"></highlight></codeline>
+<codeline lineno="95"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="namespacelbann_1aefae2a9fc9d742ece0fa8ca7ed9ee137" kindref="member">exists</ref>;</highlight></codeline>
+<codeline lineno="96"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="97"><highlight class="normal"></highlight></codeline>
+<codeline lineno="98" refid="namespacelbann_1a6084b9319eea1997f8446fa3e6879532" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="namespacelbann_1a6084b9319eea1997f8446fa3e6879532" kindref="member">lbann::openread</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>*file)<sp/>{</highlight></codeline>
+<codeline lineno="99"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>open<sp/>the<sp/>file<sp/>for<sp/>writing</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="100"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>fd<sp/>=<sp/>open(file,<sp/>O_RDONLY);</highlight></codeline>
+<codeline lineno="101"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(fd<sp/>==<sp/>-1)<sp/>{</highlight></codeline>
+<codeline lineno="102"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="103"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>fd;</highlight></codeline>
+<codeline lineno="104"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="105"><highlight class="normal"></highlight></codeline>
+<codeline lineno="106" refid="namespacelbann_1a38dd30b2ae8214f6595708264369ddb8" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="namespacelbann_1a38dd30b2ae8214f6595708264369ddb8" kindref="member">lbann::closeread</ref>(</highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>fd,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>*file)<sp/>{</highlight></codeline>
+<codeline lineno="107"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>close<sp/>file</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="108"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>close_rc<sp/>=<sp/>close(fd);</highlight></codeline>
+<codeline lineno="109"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(close_rc<sp/>==<sp/>-1)<sp/>{</highlight></codeline>
+<codeline lineno="110"><highlight class="normal"><sp/><sp/><sp/><sp/>fprintf(stderr,<sp/></highlight><highlight class="stringliteral">&quot;ERROR:<sp/>Failed<sp/>to<sp/>close<sp/>file<sp/>`%s&apos;<sp/>(%d:<sp/>%s)<sp/>@<sp/>%s:%d\n&quot;</highlight><highlight class="normal">,</highlight></codeline>
+<codeline lineno="111"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>file,<sp/>errno,<sp/>strerror(errno),<sp/>__FILE__,<sp/>__LINE__</highlight></codeline>
+<codeline lineno="112"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>);</highlight></codeline>
+<codeline lineno="113"><highlight class="normal"><sp/><sp/><sp/><sp/>fflush(stderr);</highlight></codeline>
+<codeline lineno="114"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="115"><highlight class="normal"></highlight></codeline>
+<codeline lineno="116"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>close_rc;</highlight></codeline>
+<codeline lineno="117"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="118"><highlight class="normal"></highlight></codeline>
+<codeline lineno="119" refid="namespacelbann_1af596e6d2be603e9cf808c98f5412490a" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="namespacelbann_1af596e6d2be603e9cf808c98f5412490a" kindref="member">lbann::openwrite</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>*file)<sp/>{</highlight></codeline>
+<codeline lineno="120"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>define<sp/>mode<sp/>(permissions)<sp/>for<sp/>new<sp/>file</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="121"><highlight class="normal"><sp/><sp/>mode_t<sp/>mode_file<sp/>=<sp/>S_IWUSR<sp/>|<sp/>S_IRUSR<sp/>|<sp/>S_IWGRP<sp/>|<sp/>S_IRGRP;</highlight></codeline>
+<codeline lineno="122"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>open<sp/>the<sp/>file<sp/>for<sp/>writing</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="123"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>fd<sp/>=<sp/>open(file,<sp/>O_WRONLY<sp/>|<sp/>O_CREAT<sp/>|<sp/>O_TRUNC,<sp/>mode_file);</highlight></codeline>
+<codeline lineno="124"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(fd<sp/>==<sp/>-1)<sp/>{</highlight></codeline>
+<codeline lineno="125"><highlight class="normal"><sp/><sp/><sp/><sp/>fprintf(stderr,<sp/></highlight><highlight class="stringliteral">&quot;ERROR:<sp/>Failed<sp/>to<sp/>create<sp/>file<sp/>`%s&apos;<sp/>(%d:<sp/>%s)<sp/>@<sp/>%s:%d\n&quot;</highlight><highlight class="normal">,</highlight></codeline>
+<codeline lineno="126"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>file,<sp/>errno,<sp/>strerror(errno),<sp/>__FILE__,<sp/>__LINE__</highlight></codeline>
+<codeline lineno="127"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>);</highlight></codeline>
+<codeline lineno="128"><highlight class="normal"><sp/><sp/><sp/><sp/>fflush(stderr);</highlight></codeline>
+<codeline lineno="129"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="130"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>fd;</highlight></codeline>
+<codeline lineno="131"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="132"><highlight class="normal"></highlight></codeline>
+<codeline lineno="133" refid="namespacelbann_1aceeccedbbafccfa071b21ee99be794a5" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="namespacelbann_1aceeccedbbafccfa071b21ee99be794a5" kindref="member">lbann::closewrite</ref>(</highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>fd,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>*file)<sp/>{</highlight></codeline>
+<codeline lineno="134"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>fsync<sp/>file</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="135"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>fsync_rc<sp/>=<sp/>fsync(fd);</highlight></codeline>
+<codeline lineno="136"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(fsync_rc<sp/>==<sp/>-1)<sp/>{</highlight></codeline>
+<codeline lineno="137"><highlight class="normal"><sp/><sp/><sp/><sp/>fprintf(stderr,<sp/></highlight><highlight class="stringliteral">&quot;ERROR:<sp/>Failed<sp/>to<sp/>fsync<sp/>file<sp/>`%s&apos;<sp/>(%d:<sp/>%s)<sp/>@<sp/>%s:%d\n&quot;</highlight><highlight class="normal">,</highlight></codeline>
+<codeline lineno="138"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>file,<sp/>errno,<sp/>strerror(errno),<sp/>__FILE__,<sp/>__LINE__</highlight></codeline>
+<codeline lineno="139"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>);</highlight></codeline>
+<codeline lineno="140"><highlight class="normal"><sp/><sp/><sp/><sp/>fflush(stderr);</highlight></codeline>
+<codeline lineno="141"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="142"><highlight class="normal"></highlight></codeline>
+<codeline lineno="143"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>close<sp/>file</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="144"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>close_rc<sp/>=<sp/>close(fd);</highlight></codeline>
+<codeline lineno="145"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(close_rc<sp/>==<sp/>-1)<sp/>{</highlight></codeline>
+<codeline lineno="146"><highlight class="normal"><sp/><sp/><sp/><sp/>fprintf(stderr,<sp/></highlight><highlight class="stringliteral">&quot;ERROR:<sp/>Failed<sp/>to<sp/>close<sp/>file<sp/>`%s&apos;<sp/>(%d:<sp/>%s)<sp/>@<sp/>%s:%d\n&quot;</highlight><highlight class="normal">,</highlight></codeline>
+<codeline lineno="147"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>file,<sp/>errno,<sp/>strerror(errno),<sp/>__FILE__,<sp/>__LINE__</highlight></codeline>
+<codeline lineno="148"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>);</highlight></codeline>
+<codeline lineno="149"><highlight class="normal"><sp/><sp/><sp/><sp/>fflush(stderr);</highlight></codeline>
+<codeline lineno="150"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="151"><highlight class="normal"></highlight></codeline>
+<codeline lineno="152"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>close_rc;</highlight></codeline>
+<codeline lineno="153"><highlight class="normal">}</highlight></codeline>
+    </programlisting>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/src/io/file_io.cpp"/>
+  </compounddef>
+</doxygen>

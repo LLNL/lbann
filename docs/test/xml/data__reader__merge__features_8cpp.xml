@@ -1,0 +1,368 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="data__reader__merge__features_8cpp" kind="file" language="C++">
+    <compoundname>data_reader_merge_features.cpp</compoundname>
+    <includes refid="data__reader__merge__features_8hpp" local="yes">lbann/data_readers/data_reader_merge_features.hpp</includes>
+    <includes refid="data__store__merge__features_8hpp" local="yes">lbann/data_store/data_store_merge_features.hpp</includes>
+    <incdepgraph>
+      <node id="19506">
+        <label>sys/stat.h</label>
+      </node>
+      <node id="19509">
+        <label>lbann/data_readers/image_preprocessor.hpp</label>
+        <link refid="image__preprocessor_8hpp"/>
+        <childnode refid="19491" relation="include">
+        </childnode>
+        <childnode refid="19483" relation="include">
+        </childnode>
+      </node>
+      <node id="19515">
+        <label>lbann/data_store/generic_data_store.hpp</label>
+        <link refid="generic__data__store_8hpp"/>
+        <childnode refid="19483" relation="include">
+        </childnode>
+        <childnode refid="19493" relation="include">
+        </childnode>
+        <childnode refid="19494" relation="include">
+        </childnode>
+        <childnode refid="19516" relation="include">
+        </childnode>
+      </node>
+      <node id="19497">
+        <label>lbann/io/persist.hpp</label>
+        <link refid="persist_8hpp"/>
+        <childnode refid="19483" relation="include">
+        </childnode>
+        <childnode refid="19484" relation="include">
+        </childnode>
+      </node>
+      <node id="19484">
+        <label>El.hpp</label>
+      </node>
+      <node id="19483">
+        <label>lbann/base.hpp</label>
+        <link refid="base_8hpp"/>
+        <childnode refid="19484" relation="include">
+        </childnode>
+        <childnode refid="19485" relation="include">
+        </childnode>
+        <childnode refid="19486" relation="include">
+        </childnode>
+        <childnode refid="19491" relation="include">
+        </childnode>
+      </node>
+      <node id="19510">
+        <label>cassert</label>
+      </node>
+      <node id="19508">
+        <label>fcntl.h</label>
+      </node>
+      <node id="19502">
+        <label>string</label>
+      </node>
+      <node id="19495">
+        <label>map</label>
+      </node>
+      <node id="19481">
+        <label>compound_data_reader.hpp</label>
+        <link refid="compound__data__reader_8hpp"/>
+        <childnode refid="19482" relation="include">
+        </childnode>
+        <childnode refid="19513" relation="include">
+        </childnode>
+      </node>
+      <node id="19516">
+        <label>unordered_set</label>
+      </node>
+      <node id="19504">
+        <label>exception</label>
+      </node>
+      <node id="19480">
+        <label>lbann/data_readers/data_reader_merge_features.hpp</label>
+        <link refid="data__reader__merge__features_8hpp"/>
+        <childnode refid="19481" relation="include">
+        </childnode>
+      </node>
+      <node id="19498">
+        <label>random</label>
+      </node>
+      <node id="19507">
+        <label>sys/types.h</label>
+      </node>
+      <node id="19488">
+        <label>cstdio</label>
+      </node>
+      <node id="19500">
+        <label>lbann/utils/stack_trace.hpp</label>
+        <link refid="stack__trace_8hpp"/>
+        <childnode refid="19501" relation="include">
+        </childnode>
+        <childnode refid="19502" relation="include">
+        </childnode>
+      </node>
+      <node id="19490">
+        <label>cxxabi.h</label>
+      </node>
+      <node id="19499">
+        <label>lbann/utils/exception.hpp</label>
+        <link refid="exception_8hpp"/>
+        <childnode refid="19483" relation="include">
+        </childnode>
+        <childnode refid="19493" relation="include">
+        </childnode>
+        <childnode refid="19500" relation="include">
+        </childnode>
+        <childnode refid="19503" relation="include">
+        </childnode>
+        <childnode refid="19504" relation="include">
+        </childnode>
+      </node>
+      <node id="19512">
+        <label>unistd.h</label>
+      </node>
+      <node id="19494">
+        <label>vector</label>
+      </node>
+      <node id="19493">
+        <label>lbann/comm.hpp</label>
+        <link refid="comm_8hpp"/>
+        <childnode refid="19494" relation="include">
+        </childnode>
+        <childnode refid="19495" relation="include">
+        </childnode>
+        <childnode refid="19496" relation="include">
+        </childnode>
+        <childnode refid="19483" relation="include">
+        </childnode>
+      </node>
+      <node id="19514">
+        <label>lbann/data_store/data_store_merge_features.hpp</label>
+        <link refid="data__store__merge__features_8hpp"/>
+        <childnode refid="19515" relation="include">
+        </childnode>
+      </node>
+      <node id="19513">
+        <label>utility</label>
+      </node>
+      <node id="19505">
+        <label>lbann/io/file_io.hpp</label>
+        <link refid="file__io_8hpp"/>
+        <childnode refid="19506" relation="include">
+        </childnode>
+        <childnode refid="19507" relation="include">
+        </childnode>
+        <childnode refid="19508" relation="include">
+        </childnode>
+      </node>
+      <node id="19487">
+        <label>cstdlib</label>
+      </node>
+      <node id="19503">
+        <label>iostream</label>
+      </node>
+      <node id="19492">
+        <label>lbann/utils/random.hpp</label>
+        <link refid="random_8hpp"/>
+        <childnode refid="19483" relation="include">
+        </childnode>
+        <childnode refid="19493" relation="include">
+        </childnode>
+        <childnode refid="19497" relation="include">
+        </childnode>
+        <childnode refid="19498" relation="include">
+        </childnode>
+      </node>
+      <node id="19501">
+        <label>csignal</label>
+      </node>
+      <node id="19482">
+        <label>data_reader.hpp</label>
+        <link refid="data__reader_8hpp"/>
+        <childnode refid="19483" relation="include">
+        </childnode>
+        <childnode refid="19492" relation="include">
+        </childnode>
+        <childnode refid="19499" relation="include">
+        </childnode>
+        <childnode refid="19493" relation="include">
+        </childnode>
+        <childnode refid="19505" relation="include">
+        </childnode>
+        <childnode refid="19497" relation="include">
+        </childnode>
+        <childnode refid="19509" relation="include">
+        </childnode>
+        <childnode refid="19510" relation="include">
+        </childnode>
+        <childnode refid="19511" relation="include">
+        </childnode>
+        <childnode refid="19502" relation="include">
+        </childnode>
+        <childnode refid="19494" relation="include">
+        </childnode>
+        <childnode refid="19512" relation="include">
+        </childnode>
+      </node>
+      <node id="19491">
+        <label>lbann_config.hpp</label>
+      </node>
+      <node id="19511">
+        <label>algorithm</label>
+      </node>
+      <node id="19486">
+        <label>lbann/utils/cyg_profile.hpp</label>
+        <link refid="cyg__profile_8hpp"/>
+        <childnode refid="19487" relation="include">
+        </childnode>
+        <childnode refid="19488" relation="include">
+        </childnode>
+        <childnode refid="19489" relation="include">
+        </childnode>
+        <childnode refid="19490" relation="include">
+        </childnode>
+      </node>
+      <node id="19485">
+        <label>lbann/Elemental_extensions.hpp</label>
+        <link refid="Elemental__extensions_8hpp"/>
+        <childnode refid="19484" relation="include">
+        </childnode>
+      </node>
+      <node id="19479">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_merge_features.cpp</label>
+        <link refid="data__reader__merge__features_8cpp"/>
+        <childnode refid="19480" relation="include">
+        </childnode>
+        <childnode refid="19514" relation="include">
+        </childnode>
+      </node>
+      <node id="19496">
+        <label>typeindex</label>
+      </node>
+      <node id="19489">
+        <label>dlfcn.h</label>
+      </node>
+    </incdepgraph>
+    <innernamespace refid="namespacelbann">lbann</innernamespace>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>2014-2016,<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Security,<sp/>LLC.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Produced<sp/>at<sp/>the<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Laboratory.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Written<sp/>by<sp/>the<sp/>LBANN<sp/>Research<sp/>Team<sp/>(B.<sp/>Van<sp/>Essen,<sp/>et<sp/>al.)<sp/>listed<sp/>in</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="comment">//<sp/>the<sp/>CONTRIBUTORS<sp/>file.<sp/>&lt;lbann-dev@llnl.gov&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="comment">//<sp/>LLNL-CODE-697807.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="comment">//<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="comment">//<sp/>This<sp/>file<sp/>is<sp/>part<sp/>of<sp/>LBANN:<sp/>Livermore<sp/>Big<sp/>Artificial<sp/>Neural<sp/>Network</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Toolkit.<sp/>For<sp/>details,<sp/>see<sp/>http://software.llnl.gov/LBANN<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="comment">//<sp/>https://github.com/LLNL/LBANN.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Licensed<sp/>under<sp/>the<sp/>Apache<sp/>License,<sp/>Version<sp/>2.0<sp/>(the<sp/>&quot;Licensee&quot;);<sp/>you</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight><highlight class="comment">//<sp/>may<sp/>not<sp/>use<sp/>this<sp/>file<sp/>except<sp/>in<sp/>compliance<sp/>with<sp/>the<sp/>License.<sp/><sp/>You<sp/>may</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="comment">//<sp/>obtain<sp/>a<sp/>copy<sp/>of<sp/>the<sp/>License<sp/>at:</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight><highlight class="comment">//<sp/>http://www.apache.org/licenses/LICENSE-2.0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Unless<sp/>required<sp/>by<sp/>applicable<sp/>law<sp/>or<sp/>agreed<sp/>to<sp/>in<sp/>writing,<sp/>software</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight><highlight class="comment">//<sp/>distributed<sp/>under<sp/>the<sp/>License<sp/>is<sp/>distributed<sp/>on<sp/>an<sp/>&quot;AS<sp/>IS&quot;<sp/>BASIS,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight><highlight class="comment">//<sp/>WITHOUT<sp/>WARRANTIES<sp/>OR<sp/>CONDITIONS<sp/>OF<sp/>ANY<sp/>KIND,<sp/>either<sp/>express<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="comment">//<sp/>implied.<sp/>See<sp/>the<sp/>License<sp/>for<sp/>the<sp/>specific<sp/>language<sp/>governing</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="comment">//<sp/>permissions<sp/>and<sp/>limitations<sp/>under<sp/>the<sp/>license.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="25"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="26"><highlight class="normal"></highlight><highlight class="comment">//<sp/>data_reader_merge_features<sp/>.hpp<sp/>.cpp<sp/>-<sp/>Merge<sp/>features<sp/>from<sp/>multiple<sp/>data<sp/>readers</highlight></codeline>
+<codeline lineno="28"><highlight class="comment"></highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="29"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="data__reader__merge__features_8hpp" kindref="compound">lbann/data_readers/data_reader_merge_features.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="30"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="data__store__merge__features_8hpp" kindref="compound">lbann/data_store/data_store_merge_features.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight></codeline>
+<codeline lineno="32"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacelbann" kindref="compound">lbann</ref><sp/>{</highlight></codeline>
+<codeline lineno="33"><highlight class="normal"></highlight></codeline>
+<codeline lineno="34" refid="classlbann_1_1data__reader__merge__features_1ac05d7a06c3a5749afc41c3b86bb2475d" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1data__reader__merge__features_1ac05d7a06c3a5749afc41c3b86bb2475d" kindref="member">data_reader_merge_features::data_reader_merge_features</ref>(</highlight></codeline>
+<codeline lineno="35"><highlight class="normal"><sp/><sp/>std::vector&lt;generic_data_reader*&gt;<sp/>data_readers,</highlight></codeline>
+<codeline lineno="36"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1generic__data__reader" kindref="compound">generic_data_reader</ref><sp/>*label_reader,<sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/>shuffle)<sp/>:</highlight></codeline>
+<codeline lineno="37"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1generic__compound__data__reader" kindref="compound">generic_compound_data_reader</ref>(data_readers,<sp/>shuffle),</highlight></codeline>
+<codeline lineno="38"><highlight class="normal"><sp/><sp/>m_label_reader(label_reader)<sp/>{}</highlight></codeline>
+<codeline lineno="39"><highlight class="normal"></highlight></codeline>
+<codeline lineno="40" refid="classlbann_1_1data__reader__merge__features_1a41d55ea605d94ea010126b11ee420778" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1data__reader__merge__features_1ac05d7a06c3a5749afc41c3b86bb2475d" kindref="member">data_reader_merge_features::data_reader_merge_features</ref>(</highlight></codeline>
+<codeline lineno="41"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__reader__merge__features" kindref="compound">data_reader_merge_features</ref>&amp;<sp/>other)<sp/>:</highlight></codeline>
+<codeline lineno="42"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1generic__compound__data__reader" kindref="compound">generic_compound_data_reader</ref>(other),</highlight></codeline>
+<codeline lineno="43"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1data__reader__merge__features_1ac9c56e08a45a5beac97e41e403fbaa12" kindref="member">m_data_size</ref>(other.<ref refid="classlbann_1_1data__reader__merge__features_1ac9c56e08a45a5beac97e41e403fbaa12" kindref="member">m_data_size</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="44"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1data__reader__merge__features_1a1e54a136c63b934f44ff91dc68ea3b27" kindref="member">m_label_reader</ref><sp/>=<sp/>other.<ref refid="classlbann_1_1data__reader__merge__features_1a1e54a136c63b934f44ff91dc68ea3b27" kindref="member">m_label_reader</ref>-&gt;<ref refid="classlbann_1_1generic__data__reader_1a208ba1223e7aaa75e94b728501f12f86" kindref="member">copy</ref>();</highlight></codeline>
+<codeline lineno="45"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="46"><highlight class="normal"></highlight></codeline>
+<codeline lineno="47" refid="classlbann_1_1data__reader__merge__features_1a2df9360e463c2ceaf4ba42e287f673b9" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1data__reader__merge__features" kindref="compound">data_reader_merge_features</ref>&amp;<sp/><ref refid="classlbann_1_1data__reader__merge__features_1a2df9360e463c2ceaf4ba42e287f673b9" kindref="member">data_reader_merge_features::operator=</ref>(</highlight></codeline>
+<codeline lineno="48"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__reader__merge__features" kindref="compound">data_reader_merge_features</ref>&amp;<sp/>other)<sp/>{</highlight></codeline>
+<codeline lineno="49"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1generic__compound__data__reader_1a7ece97b6fd2bc62da4d98f29cfb50155" kindref="member">generic_compound_data_reader::operator=</ref>(other);</highlight></codeline>
+<codeline lineno="50"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1data__reader__merge__features_1ac9c56e08a45a5beac97e41e403fbaa12" kindref="member">m_data_size</ref><sp/>=<sp/>other.<ref refid="classlbann_1_1data__reader__merge__features_1ac9c56e08a45a5beac97e41e403fbaa12" kindref="member">m_data_size</ref>;</highlight></codeline>
+<codeline lineno="51"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1data__reader__merge__features_1a1e54a136c63b934f44ff91dc68ea3b27" kindref="member">m_label_reader</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="52"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">delete</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__reader__merge__features_1a1e54a136c63b934f44ff91dc68ea3b27" kindref="member">m_label_reader</ref>;</highlight></codeline>
+<codeline lineno="53"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="54"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1data__reader__merge__features_1a1e54a136c63b934f44ff91dc68ea3b27" kindref="member">m_label_reader</ref><sp/>=<sp/>other.<ref refid="classlbann_1_1data__reader__merge__features_1a1e54a136c63b934f44ff91dc68ea3b27" kindref="member">m_label_reader</ref>-&gt;<ref refid="classlbann_1_1generic__data__reader_1a208ba1223e7aaa75e94b728501f12f86" kindref="member">copy</ref>();</highlight></codeline>
+<codeline lineno="55"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>*</highlight><highlight class="keyword">this</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="56"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="57"><highlight class="normal"></highlight></codeline>
+<codeline lineno="58" refid="classlbann_1_1data__reader__merge__features_1af194453b7028b116657b95631acca81d" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1data__reader__merge__features_1af194453b7028b116657b95631acca81d" kindref="member">data_reader_merge_features::~data_reader_merge_features</ref>()<sp/>{</highlight></codeline>
+<codeline lineno="59"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">delete</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__reader__merge__features_1a1e54a136c63b934f44ff91dc68ea3b27" kindref="member">m_label_reader</ref>;</highlight></codeline>
+<codeline lineno="60"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="61"><highlight class="normal"></highlight></codeline>
+<codeline lineno="62" refid="classlbann_1_1data__reader__merge__features_1a8a618de9a92cb148746a83b0381ba781" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__reader__merge__features_1a8a618de9a92cb148746a83b0381ba781" kindref="member">data_reader_merge_features::load</ref>()<sp/>{</highlight></codeline>
+<codeline lineno="63"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Load<sp/>each<sp/>data<sp/>reader<sp/>separately.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="64"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(</highlight><highlight class="keyword">auto</highlight><highlight class="normal">&amp;&amp;<sp/>reader<sp/>:<sp/><ref refid="classlbann_1_1generic__compound__data__reader_1a9815e94ade5873415fd766e09d956d5b" kindref="member">m_data_readers</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="65"><highlight class="normal"><sp/><sp/><sp/><sp/>reader-&gt;set_comm(<ref refid="classlbann_1_1generic__data__reader_1ad3976d4b7db2d404dbb87a56c33fd456" kindref="member">m_comm</ref>);</highlight></codeline>
+<codeline lineno="66"><highlight class="normal"><sp/><sp/><sp/><sp/>reader-&gt;load();</highlight></codeline>
+<codeline lineno="67"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1data__reader__merge__features_1ac9c56e08a45a5beac97e41e403fbaa12" kindref="member">m_data_size</ref><sp/>+=<sp/>reader-&gt;get_linearized_data_size();</highlight></codeline>
+<codeline lineno="68"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="69"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Verify<sp/>the<sp/>readers<sp/>have<sp/>the<sp/>same<sp/>number<sp/>of<sp/>samples.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="70"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>num_samples<sp/>=<sp/>m_data_readers[0]-&gt;get_num_data();</highlight></codeline>
+<codeline lineno="71"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(</highlight><highlight class="keyword">auto</highlight><highlight class="normal">&amp;&amp;<sp/>reader<sp/>:<sp/>m_data_readers)<sp/>{</highlight></codeline>
+<codeline lineno="72"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(num_samples<sp/>!=<sp/>reader-&gt;get_num_data())<sp/>{</highlight></codeline>
+<codeline lineno="73"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">throw</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__exception" kindref="compound">lbann_exception</ref>(</highlight></codeline>
+<codeline lineno="74"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="stringliteral">&quot;data_reader_merge_features:<sp/>data<sp/>readers<sp/>do<sp/>not<sp/>have<sp/>the<sp/>same<sp/>amount<sp/>of<sp/>data&quot;</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="75"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="76"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="77"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1data__reader__merge__features_1a1e54a136c63b934f44ff91dc68ea3b27" kindref="member">m_label_reader</ref>-&gt;<ref refid="classlbann_1_1generic__data__reader_1afeb47703d988a230a59859cbfc178215" kindref="member">load</ref>();</highlight></codeline>
+<codeline lineno="78"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>Reset<sp/>indices.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="79"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1generic__data__reader_1aaab6aeff67ffff1c689336851fec2c57" kindref="member">m_shuffled_indices</ref>.resize(num_samples);</highlight></codeline>
+<codeline lineno="80"><highlight class="normal"><sp/><sp/>std::iota(<ref refid="classlbann_1_1generic__data__reader_1aaab6aeff67ffff1c689336851fec2c57" kindref="member">m_shuffled_indices</ref>.begin(),<sp/><ref refid="classlbann_1_1generic__data__reader_1aaab6aeff67ffff1c689336851fec2c57" kindref="member">m_shuffled_indices</ref>.end(),<sp/>0);</highlight></codeline>
+<codeline lineno="81"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1generic__data__reader_1aa28fdeeb6af492540f507e49adff5d6c" kindref="member">select_subset_of_data</ref>();</highlight></codeline>
+<codeline lineno="82"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="83"><highlight class="normal"></highlight></codeline>
+<codeline lineno="84" refid="classlbann_1_1data__reader__merge__features_1a9796a63e099e93114dc72decd187b3b4" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__reader__merge__features_1a9796a63e099e93114dc72decd187b3b4" kindref="member">data_reader_merge_features::fetch_datum</ref>(<ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref>&amp;<sp/>X,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>data_id,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>mb_idx,</highlight></codeline>
+<codeline lineno="85"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>tid)<sp/>{</highlight></codeline>
+<codeline lineno="86"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>start<sp/>=<sp/>0;</highlight></codeline>
+<codeline lineno="87"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(</highlight><highlight class="keyword">auto</highlight><highlight class="normal">&amp;&amp;<sp/>reader<sp/>:<sp/><ref refid="classlbann_1_1generic__compound__data__reader_1a9815e94ade5873415fd766e09d956d5b" kindref="member">m_data_readers</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="88"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">auto</highlight><highlight class="normal"><sp/>X_view<sp/>=<sp/>X(El::IR(start,<sp/>start<sp/>+<sp/>reader-&gt;get_linearized_data_size()),</highlight></codeline>
+<codeline lineno="89"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>El::ALL);</highlight></codeline>
+<codeline lineno="90"><highlight class="normal"><sp/><sp/><sp/><sp/>reader-&gt;fetch_datum(X_view,<sp/>data_id,<sp/>mb_idx,<sp/>tid);</highlight></codeline>
+<codeline lineno="91"><highlight class="normal"><sp/><sp/><sp/><sp/>start<sp/>+=<sp/>reader-&gt;get_linearized_data_size();</highlight></codeline>
+<codeline lineno="92"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="93"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">true</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="94"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="95"><highlight class="normal"></highlight></codeline>
+<codeline lineno="96" refid="classlbann_1_1data__reader__merge__features_1aace9abfab36e0926832ed6773b41e0ea" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__reader__merge__features_1aace9abfab36e0926832ed6773b41e0ea" kindref="member">data_reader_merge_features::fetch_label</ref>(<ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref>&amp;<sp/>Y,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>data_id,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>mb_idx,</highlight></codeline>
+<codeline lineno="97"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>tid)<sp/>{</highlight></codeline>
+<codeline lineno="98"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__reader__merge__features_1a1e54a136c63b934f44ff91dc68ea3b27" kindref="member">m_label_reader</ref>-&gt;<ref refid="classlbann_1_1generic__data__reader_1a03627408c1d1aa28691d31232fe1dce5" kindref="member">fetch_label</ref>(Y,<sp/>data_id,<sp/>mb_idx,<sp/>tid);</highlight></codeline>
+<codeline lineno="99"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="100"><highlight class="normal"></highlight></codeline>
+<codeline lineno="101" refid="classlbann_1_1data__reader__merge__features_1afd9fa7d10c466eca62ac7af3cbc3ddcb" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__reader__merge__features_1afd9fa7d10c466eca62ac7af3cbc3ddcb" kindref="member">data_reader_merge_features::fetch_response</ref>(<ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref>&amp;<sp/>Y,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>data_id,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>mb_idx,</highlight></codeline>
+<codeline lineno="102"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>tid)<sp/>{</highlight></codeline>
+<codeline lineno="103"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__reader__merge__features_1a1e54a136c63b934f44ff91dc68ea3b27" kindref="member">m_label_reader</ref>-&gt;<ref refid="classlbann_1_1generic__data__reader_1abe544ea807eed477f3636010d199b574" kindref="member">fetch_response</ref>(Y,<sp/>data_id,<sp/>mb_idx,<sp/>tid);</highlight></codeline>
+<codeline lineno="104"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="105"><highlight class="normal"></highlight></codeline>
+<codeline lineno="106" refid="classlbann_1_1data__reader__merge__features_1a0ac1ade1b2abddfebe263b6f70a839cc" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__reader__merge__features_1a0ac1ade1b2abddfebe263b6f70a839cc" kindref="member">data_reader_merge_features::setup_data_store</ref>(<ref refid="classlbann_1_1model" kindref="compound">model</ref><sp/>*m)<sp/>{</highlight></codeline>
+<codeline lineno="107"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1generic__data__reader_1aefc076b842933a882214f4f709ca49c9" kindref="member">m_data_store</ref><sp/>!=<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal">)<sp/>{</highlight></codeline>
+<codeline lineno="108"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">delete</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1generic__data__reader_1aefc076b842933a882214f4f709ca49c9" kindref="member">m_data_store</ref>;</highlight></codeline>
+<codeline lineno="109"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="110"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1generic__data__reader_1aefc076b842933a882214f4f709ca49c9" kindref="member">m_data_store</ref><sp/>=<sp/></highlight><highlight class="keyword">new</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__store__merge__features" kindref="compound">data_store_merge_features</ref>(</highlight><highlight class="keyword">this</highlight><highlight class="normal">,<sp/>m);</highlight></codeline>
+<codeline lineno="111"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1generic__data__reader_1aefc076b842933a882214f4f709ca49c9" kindref="member">m_data_store</ref><sp/>!=<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal">)<sp/>{</highlight></codeline>
+<codeline lineno="112"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1generic__data__reader_1aefc076b842933a882214f4f709ca49c9" kindref="member">m_data_store</ref>-&gt;<ref refid="classlbann_1_1generic__data__store_1a1cff17def02ee21b6ca0befeb04bb582" kindref="member">setup</ref>();</highlight></codeline>
+<codeline lineno="113"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="114"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="115"><highlight class="normal"></highlight></codeline>
+<codeline lineno="116"><highlight class="normal">}<sp/><sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>lbann</highlight><highlight class="normal"></highlight></codeline>
+    </programlisting>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_merge_features.cpp"/>
+  </compounddef>
+</doxygen>

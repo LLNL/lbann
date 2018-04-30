@@ -1,0 +1,5 @@
+<map id="lbann::data_store_multi_images::copy" name="lbann::data_store_multi_images::copy">
+<area shape="rect" id="node2" href="$classlbann_1_1data__store__multi__images.html#a1ad4fbec5c15f98422ebf7027f3a1d8a" title="ctor " alt="" coords="213,31,391,83"/>
+<area shape="rect" id="node3" href="$classlbann_1_1generic__data__store.html#a853741295a07b5687921fc56d0d7d5b2" title="lbann::generic_data\l_store::set_name" alt="" coords="450,5,588,44"/>
+<area shape="rect" id="node4" href="$classlbann_1_1data__store__multi__images.html#a68962dc0416b572443953bea392439b1" title="operator= " alt="" coords="439,68,599,107"/>
+</map>

@@ -1,0 +1,1225 @@
+\hypertarget{classlbann_1_1optimizer}{}\section{lbann\+:\+:optimizer Class Reference}
+\label{classlbann_1_1optimizer}\index{lbann\+::optimizer@{lbann\+::optimizer}}
+
+
+{\ttfamily \#include $<$optimizer.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:optimizer\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:optimizer\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1optimizer_a136ed79c3f279ecded5be380fb67b05f}{optimizer} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, Data\+Type learning\+\_\+rate=Data\+Type(0))
+\item 
+\hyperlink{classlbann_1_1optimizer_a300aa4928e2e4feeb5e99b9eb0a16632}{optimizer} (const \hyperlink{classlbann_1_1optimizer}{optimizer} \&other)
+\item 
+\hyperlink{classlbann_1_1optimizer}{optimizer} \& \hyperlink{classlbann_1_1optimizer_ab7811e0a4d2d9b594140aed78b6de743}{operator=} (const \hyperlink{classlbann_1_1optimizer}{optimizer} \&other)
+\item 
+virtual \hyperlink{classlbann_1_1optimizer_abbee0e2cb021f835b669d9ba0da5145a}{$\sim$optimizer} ()
+\item 
+virtual \hyperlink{classlbann_1_1optimizer}{optimizer} $\ast$ \hyperlink{classlbann_1_1optimizer_adf19a1d19d832ebfe70072cc202cdf39}{copy} () const =0
+\item 
+virtual std\+::string \hyperlink{classlbann_1_1optimizer_a7b7a6814e14eeee157e1cbb7f15dd4ff}{get\+\_\+type} () const =0
+\item 
+virtual std\+::string \hyperlink{classlbann_1_1optimizer_a66bb8d28dfb41452ac1a75a3efd47723}{get\+\_\+description} () const
+\item 
+bool \hyperlink{classlbann_1_1optimizer_abccf0babf69e3d7c6e9a7fd0731c79b7}{is\+\_\+initialized} () const
+\item 
+\hyperlink{classlbann_1_1weights}{weights} \& \hyperlink{classlbann_1_1optimizer_a9c3fc3f1d45da822676d5932a1c7af82}{get\+\_\+weights} ()
+\item 
+void \hyperlink{classlbann_1_1optimizer_afc00daf2acb6af7e29786524126660c2}{set\+\_\+weights} (\hyperlink{classlbann_1_1weights}{weights} \&w)
+\item 
+Data\+Type \hyperlink{classlbann_1_1optimizer_ac52867427b0d28ec6888b6344104791d}{get\+\_\+learning\+\_\+rate} () const
+\item 
+void \hyperlink{classlbann_1_1optimizer_a147cac09beaa17df4e0fc1fc1be3abce}{set\+\_\+learning\+\_\+rate} (Data\+Type learning\+\_\+rate)
+\item 
+const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \& \hyperlink{classlbann_1_1optimizer_a12b7dbc72eb2de78d6ad798b8939f349}{get\+\_\+gradient} ()
+\item 
+void \hyperlink{classlbann_1_1optimizer_a3f41360479fbd46c704342bb4ef36d09}{clear\+\_\+gradient} ()
+\item 
+void \hyperlink{classlbann_1_1optimizer_a435d31e3b7a0302e36439ee36f62dba8}{add\+\_\+to\+\_\+gradient} (const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&gradient, Data\+Type scale=Data\+Type(1))
+\item 
+void \hyperlink{classlbann_1_1optimizer_ac23ebde61a225f70c27ab937df5755ed}{add\+\_\+to\+\_\+gradient\+\_\+staging} (const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&gradient, Data\+Type scale=Data\+Type(1))
+\item 
+void \hyperlink{classlbann_1_1optimizer_a1fe495ccbd62d50735615818abecf454}{start\+\_\+gradient\+\_\+staging\+\_\+allreduce} ()
+\item 
+int \hyperlink{classlbann_1_1optimizer_a91370e4de6083e7cd464c809cf583eb3}{get\+\_\+num\+\_\+gradient\+\_\+sources} () const
+\item 
+void \hyperlink{classlbann_1_1optimizer_ade46d28f7df19cab6c6ee90c03e976ea}{add\+\_\+gradient\+\_\+source} (const void $\ast$source)
+\item 
+void \hyperlink{classlbann_1_1optimizer_a68ba7515d7eb4af38ff19607c13a111b}{remove\+\_\+gradient\+\_\+source} (const void $\ast$source)
+\item 
+virtual void \hyperlink{classlbann_1_1optimizer_a7641a88b3c166df2d974a298622b992b}{setup} (\hyperlink{classlbann_1_1weights}{weights} \&w)
+\item 
+void \hyperlink{classlbann_1_1optimizer_aa9f43ca3f22edc0a25d0509b6514a411}{step} ()
+\item 
+virtual void \hyperlink{classlbann_1_1optimizer_a0db72c298a0bc3405fb0af97d104a036}{step\+\_\+compute} (\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&values, const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&gradient)=0
+\item 
+double \hyperlink{classlbann_1_1optimizer_afef81d54e836ba0177f7a411ba3aaf6e}{get\+\_\+step\+\_\+time} () const
+\item 
+virtual void \hyperlink{classlbann_1_1optimizer_a067709debd4d2e7bfe1a35b5f6ced668}{reset\+\_\+counters} ()
+\item 
+virtual bool \hyperlink{classlbann_1_1optimizer_afed10c6d8c5bd922f95075abeff711ce}{save\+\_\+to\+\_\+checkpoint\+\_\+shared} (\hyperlink{classlbann_1_1persist}{persist} \&p, std\+::string m\+\_\+name)
+\item 
+virtual bool \hyperlink{classlbann_1_1optimizer_a42a52aab9a682fda57c1e639968a44b9}{load\+\_\+from\+\_\+checkpoint\+\_\+shared} (\hyperlink{classlbann_1_1persist}{persist} \&p, std\+::string m\+\_\+name)
+\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$ \hyperlink{classlbann_1_1optimizer_a8c2569a8fcf0ee969517067b81896c44}{m\+\_\+comm}
+\item 
+\hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$ \hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\+\_\+cudnn}
+\item 
+\hyperlink{classlbann_1_1weights}{weights} $\ast$ \hyperlink{classlbann_1_1optimizer_a33b57b578a089d9ffe6715bb3996907c}{m\+\_\+weights}
+\item 
+Data\+Type \hyperlink{classlbann_1_1optimizer_ad393dcdcb82b44510c586ed5ec46d4dd}{m\+\_\+learning\+\_\+rate}
+\item 
+\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} $\ast$ \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\+\_\+gradient}
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+std\+::unordered\+\_\+set$<$ const void $\ast$ $>$ \hyperlink{classlbann_1_1optimizer_aadfa322a683c2b826d0fae5f809298df}{m\+\_\+gradient\+\_\+sources}
+\item 
+\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} $\ast$ \hyperlink{classlbann_1_1optimizer_a92cd058d4f9fc8162d36d52461a96df2}{m\+\_\+gradient\+\_\+staging}
+\item 
+bool \hyperlink{classlbann_1_1optimizer_a2dc18dcc3cf9510947304c3c5d059eb0}{m\+\_\+gradient\+\_\+allreduce\+\_\+needed}
+\item 
+bool \hyperlink{classlbann_1_1optimizer_ac77740a916f397600efae0c03bc5a045}{m\+\_\+gradient\+\_\+allreduce\+\_\+started}
+\item 
+bool \hyperlink{classlbann_1_1optimizer_a4d332551d05e245ad3f862653b5af65a}{m\+\_\+gradient\+\_\+allreduce\+\_\+finished}
+\item 
+double \hyperlink{classlbann_1_1optimizer_afc424c715008fb4d900548f7934ea856}{m\+\_\+step\+\_\+time} = 0.\+0
+\item 
+\hyperlink{structlbann_1_1Al_1_1request}{Al\+::request} \hyperlink{classlbann_1_1optimizer_a851681b39c34a3439a9838c07e84b87c}{m\+\_\+gradient\+\_\+allreduce\+\_\+req}
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Abstract optimizer. 
+
+Definition at line 42 of file optimizer.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1optimizer_a136ed79c3f279ecded5be380fb67b05f}\label{classlbann_1_1optimizer_a136ed79c3f279ecded5be380fb67b05f}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!optimizer@{optimizer}}
+\index{optimizer@{optimizer}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{optimizer()}{optimizer()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::optimizer\+::optimizer (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{Data\+Type}]{learning\+\_\+rate = {\ttfamily DataType(0)} }\end{DoxyParamCaption})}
+
+
+
+Definition at line 33 of file optimizer.\+cpp.
+
+
+\begin{DoxyCode}
+34   : \hyperlink{classlbann_1_1optimizer_a8c2569a8fcf0ee969517067b81896c44}{m\_comm}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}),
+35     \hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn}(\textcolor{keyword}{nullptr}),
+36     \hyperlink{classlbann_1_1optimizer_a33b57b578a089d9ffe6715bb3996907c}{m\_weights}(\textcolor{keyword}{nullptr}),
+37     \hyperlink{classlbann_1_1optimizer_ad393dcdcb82b44510c586ed5ec46d4dd}{m\_learning\_rate}(learning\_rate),
+38     \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}(\textcolor{keyword}{nullptr}),
+39     \hyperlink{classlbann_1_1optimizer_a92cd058d4f9fc8162d36d52461a96df2}{m\_gradient\_staging}(\textcolor{keyword}{nullptr}),
+40     \hyperlink{classlbann_1_1optimizer_a2dc18dcc3cf9510947304c3c5d059eb0}{m\_gradient\_allreduce\_needed}(\textcolor{keyword}{false}),
+41     \hyperlink{classlbann_1_1optimizer_ac77740a916f397600efae0c03bc5a045}{m\_gradient\_allreduce\_started}(\textcolor{keyword}{false}),
+42     \hyperlink{classlbann_1_1optimizer_a4d332551d05e245ad3f862653b5af65a}{m\_gradient\_allreduce\_finished}(\textcolor{keyword}{false}) \{\}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1optimizer_a300aa4928e2e4feeb5e99b9eb0a16632}\label{classlbann_1_1optimizer_a300aa4928e2e4feeb5e99b9eb0a16632}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!optimizer@{optimizer}}
+\index{optimizer@{optimizer}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{optimizer()}{optimizer()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::optimizer\+::optimizer (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1optimizer}{optimizer} \&}]{other }\end{DoxyParamCaption})}
+
+
+
+Definition at line 44 of file optimizer.\+cpp.
+
+
+\begin{DoxyCode}
+45   : \hyperlink{classlbann_1_1optimizer_a8c2569a8fcf0ee969517067b81896c44}{m\_comm}(other.m\_comm),
+46     \hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn}(other.m\_cudnn),
+47     \hyperlink{classlbann_1_1optimizer_a33b57b578a089d9ffe6715bb3996907c}{m\_weights}(other.m\_weights),
+48     \hyperlink{classlbann_1_1optimizer_ad393dcdcb82b44510c586ed5ec46d4dd}{m\_learning\_rate}(other.m\_learning\_rate),
+49     \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}(other.m\_gradient),
+50 \textcolor{preprocessor}{    #ifdef LBANN\_HAS\_CUDNN}
+51     m\_gradient\_d(other.m\_gradient\_d),
+52 \textcolor{preprocessor}{    #endif // LBANN\_HAS\_CUDNN}
+53     \hyperlink{classlbann_1_1optimizer_a92cd058d4f9fc8162d36d52461a96df2}{m\_gradient\_staging}(other.m\_gradient\_staging),
+54 \textcolor{preprocessor}{    #ifdef LBANN\_HAS\_CUDNN}
+55     m\_gradient\_staging\_d(other.m\_gradient\_staging\_d),
+56 \textcolor{preprocessor}{    #endif // LBANN\_HAS\_CUDNN}
+57     \hyperlink{classlbann_1_1optimizer_a2dc18dcc3cf9510947304c3c5d059eb0}{m\_gradient\_allreduce\_needed}(other.m\_gradient\_allreduce\_needed),
+58     \hyperlink{classlbann_1_1optimizer_ac77740a916f397600efae0c03bc5a045}{m\_gradient\_allreduce\_started}(other.m\_gradient\_allreduce\_started),
+59     \hyperlink{classlbann_1_1optimizer_a4d332551d05e245ad3f862653b5af65a}{m\_gradient\_allreduce\_finished}(other.m\_gradient\_allreduce\_finished),
+60     \hyperlink{classlbann_1_1optimizer_afc424c715008fb4d900548f7934ea856}{m\_step\_time}(other.m\_step\_time)
+61 \{
+62   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient} != \textcolor{keyword}{nullptr}) \{
+63     \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient} = \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Copy();
+64   \}
+65   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1optimizer_a92cd058d4f9fc8162d36d52461a96df2}{m\_gradient\_staging} != \textcolor{keyword}{nullptr}) \{
+66     \hyperlink{classlbann_1_1optimizer_a92cd058d4f9fc8162d36d52461a96df2}{m\_gradient\_staging} = \hyperlink{classlbann_1_1optimizer_a92cd058d4f9fc8162d36d52461a96df2}{m\_gradient\_staging}->Copy();
+67   \}
+68 \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1optimizer_abbee0e2cb021f835b669d9ba0da5145a}\label{classlbann_1_1optimizer_abbee0e2cb021f835b669d9ba0da5145a}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!````~optimizer@{$\sim$optimizer}}
+\index{````~optimizer@{$\sim$optimizer}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{$\sim$optimizer()}{~optimizer()}}
+{\footnotesize\ttfamily lbann\+::optimizer\+::$\sim$optimizer (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [virtual]}}
+
+
+
+Definition at line 102 of file optimizer.\+cpp.
+
+
+\begin{DoxyCode}
+102                       \{
+103   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient} != \textcolor{keyword}{nullptr}) \{ \textcolor{keyword}{delete} \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}; \}
+104   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1optimizer_a92cd058d4f9fc8162d36d52461a96df2}{m\_gradient\_staging} != \textcolor{keyword}{nullptr})  \{ \textcolor{keyword}{delete} 
+      \hyperlink{classlbann_1_1optimizer_a92cd058d4f9fc8162d36d52461a96df2}{m\_gradient\_staging}; \}
+105 \}
+\end{DoxyCode}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1optimizer_ade46d28f7df19cab6c6ee90c03e976ea}\label{classlbann_1_1optimizer_ade46d28f7df19cab6c6ee90c03e976ea}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!add\+\_\+gradient\+\_\+source@{add\+\_\+gradient\+\_\+source}}
+\index{add\+\_\+gradient\+\_\+source@{add\+\_\+gradient\+\_\+source}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{add\+\_\+gradient\+\_\+source()}{add\_gradient\_source()}}
+{\footnotesize\ttfamily void lbann\+::optimizer\+::add\+\_\+gradient\+\_\+source (\begin{DoxyParamCaption}\item[{const void $\ast$}]{source }\end{DoxyParamCaption})}
+
+Add a gradient source. Objects that depend on the weights being optimized and which contribute to the gradient should add themselves as a gradient source. 
+
+Definition at line 400 of file optimizer.\+cpp.
+
+
+\begin{DoxyCode}
+400                                                       \{
+401   \textcolor{keywordflow}{if} (source != \textcolor{keyword}{nullptr}) \{
+402     \hyperlink{classlbann_1_1optimizer_aadfa322a683c2b826d0fae5f809298df}{m\_gradient\_sources}.insert(source);
+403   \}
+404 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_ade46d28f7df19cab6c6ee90c03e976ea_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1optimizer_a435d31e3b7a0302e36439ee36f62dba8}\label{classlbann_1_1optimizer_a435d31e3b7a0302e36439ee36f62dba8}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!add\+\_\+to\+\_\+gradient@{add\+\_\+to\+\_\+gradient}}
+\index{add\+\_\+to\+\_\+gradient@{add\+\_\+to\+\_\+gradient}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{add\+\_\+to\+\_\+gradient()}{add\_to\_gradient()}}
+{\footnotesize\ttfamily void lbann\+::optimizer\+::add\+\_\+to\+\_\+gradient (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{gradient,  }\item[{Data\+Type}]{scale = {\ttfamily DataType(1)} }\end{DoxyParamCaption})}
+
+Add to the gradient matrix. If the optimizer has a cu\+D\+NN manager, the data is copied to G\+P\+Us and added to the G\+PU gradient matrix. 
+
+Definition at line 279 of file optimizer.\+cpp.
+
+
+\begin{DoxyCode}
+280                                                 \{
+281   \textcolor{keywordflow}{if} (!\hyperlink{classlbann_1_1optimizer_abccf0babf69e3d7c6e9a7fd0731c79b7}{is\_initialized}()) \{
+282     \hyperlink{base_8hpp_a80b1d707117e968a6951b7222e4b2b87}{LBANN\_ERROR}(\textcolor{stringliteral}{"attempted to access gradients before they are set up"});
+283   \}
+284   \textcolor{keywordflow}{if} (scale != DataType(0)) \{
+285     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn} == \textcolor{keyword}{nullptr}) \{
+286       El::Axpy(scale, gradient, *\hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient});
+287     \} \textcolor{keywordflow}{else} \{
+288 \textcolor{preprocessor}{      #ifndef LBANN\_HAS\_CUDNN}
+289       \hyperlink{base_8hpp_a80b1d707117e968a6951b7222e4b2b87}{LBANN\_ERROR}(\textcolor{stringliteral}{"cuDNN not detected"});
+290 \textcolor{preprocessor}{      #else}
+291       cudnn::matrix gradient\_d(\hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn});
+292       gradient\_d.attach\_to\_work\_spaces(gradient.LocalHeight(),
+293                                        gradient.LocalWidth());
+294       \hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn}->broadcast\_to\_gpus(gradient\_d.get\_data(),
+295                                  gradient.LockedMatrix());
+296       \hyperlink{classlbann_1_1optimizer_a435d31e3b7a0302e36439ee36f62dba8}{add\_to\_gradient}(gradient\_d, scale);
+297 \textcolor{preprocessor}{      #endif // LBANN\_HAS\_CUDNN}
+298     \}
+299   \}
+300 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_a435d31e3b7a0302e36439ee36f62dba8_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_a435d31e3b7a0302e36439ee36f62dba8_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1optimizer_ac23ebde61a225f70c27ab937df5755ed}\label{classlbann_1_1optimizer_ac23ebde61a225f70c27ab937df5755ed}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!add\+\_\+to\+\_\+gradient\+\_\+staging@{add\+\_\+to\+\_\+gradient\+\_\+staging}}
+\index{add\+\_\+to\+\_\+gradient\+\_\+staging@{add\+\_\+to\+\_\+gradient\+\_\+staging}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{add\+\_\+to\+\_\+gradient\+\_\+staging()}{add\_to\_gradient\_staging()}}
+{\footnotesize\ttfamily void lbann\+::optimizer\+::add\+\_\+to\+\_\+gradient\+\_\+staging (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{gradient,  }\item[{Data\+Type}]{scale = {\ttfamily DataType(1)} }\end{DoxyParamCaption})}
+
+Add to the gradient staging matrix. When the gradient is needed, an allreduce is applied over the redundant communicator of the staging matrix and the result is added to the gradient. If the optimizer has a cu\+D\+NN manager, the data is copied to G\+P\+Us and added to the G\+PU staging matrix. 
+
+Definition at line 322 of file optimizer.\+cpp.
+
+
+\begin{DoxyCode}
+323                                                         \{
+324   \textcolor{keywordflow}{if} (!\hyperlink{classlbann_1_1optimizer_abccf0babf69e3d7c6e9a7fd0731c79b7}{is\_initialized}()) \{
+325     \hyperlink{base_8hpp_a80b1d707117e968a6951b7222e4b2b87}{LBANN\_ERROR}(\textcolor{stringliteral}{"attempted to access gradients before they are set up"});
+326   \}
+327   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1optimizer_ac77740a916f397600efae0c03bc5a045}{m\_gradient\_allreduce\_started}) \{
+328     \hyperlink{base_8hpp_a80b1d707117e968a6951b7222e4b2b87}{LBANN\_ERROR}(\textcolor{stringliteral}{"attempted to add to staging matrix after gradient accumulation has started"});
+329   \}
+330   \textcolor{keywordflow}{if} (scale != DataType(0)) \{
+331 
+332     \textcolor{comment}{// Clear staging matrix if needed}
+333     \textcolor{keywordflow}{if} (!\hyperlink{classlbann_1_1optimizer_a2dc18dcc3cf9510947304c3c5d059eb0}{m\_gradient\_allreduce\_needed}) \{
+334       \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn} == \textcolor{keyword}{nullptr}) \{
+335         El::Zero(*\hyperlink{classlbann_1_1optimizer_a92cd058d4f9fc8162d36d52461a96df2}{m\_gradient\_staging});
+336       \} \textcolor{keywordflow}{else} \{
+337 \textcolor{preprocessor}{        #ifndef LBANN\_HAS\_CUDNN}
+338         \hyperlink{base_8hpp_a80b1d707117e968a6951b7222e4b2b87}{LBANN\_ERROR}(\textcolor{stringliteral}{"cuDNN not detected"});
+339 \textcolor{preprocessor}{        #else}
+340         m\_gradient\_staging\_d.zero();
+341 \textcolor{preprocessor}{        #endif // LBANN\_HAS\_CUDNN}
+342       \}
+343     \}
+344     \hyperlink{classlbann_1_1optimizer_a2dc18dcc3cf9510947304c3c5d059eb0}{m\_gradient\_allreduce\_needed} = \textcolor{keyword}{true};
+345 
+346     \textcolor{comment}{// Add to staging matrix}
+347     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn} == \textcolor{keyword}{nullptr}) \{
+348       El::Axpy(scale, gradient, *\hyperlink{classlbann_1_1optimizer_a92cd058d4f9fc8162d36d52461a96df2}{m\_gradient\_staging});
+349     \} \textcolor{keywordflow}{else} \{
+350 \textcolor{preprocessor}{      #ifndef LBANN\_HAS\_CUDNN}
+351       \hyperlink{base_8hpp_a80b1d707117e968a6951b7222e4b2b87}{LBANN\_ERROR}(\textcolor{stringliteral}{"cuDNN not detected"});
+352 \textcolor{preprocessor}{      #else}
+353       cudnn::matrix gradient\_d(\hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn},
+354                                gradient.LocalHeight(),
+355                                gradient.LocalWidth());
+356       gradient\_d.zero();
+357       \hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn}->copy\_to\_gpu(0,
+358                            gradient\_d.get\_data(0),
+359                            gradient.LockedMatrix(),
+360                            gradient\_d.get\_leading\_dim());
+361       \hyperlink{classlbann_1_1optimizer_ac23ebde61a225f70c27ab937df5755ed}{add\_to\_gradient\_staging}(gradient\_d, scale);
+362 \textcolor{preprocessor}{      #endif // LBANN\_HAS\_CUDNN}
+363     \}
+364 
+365   \}
+366 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_ac23ebde61a225f70c27ab937df5755ed_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_ac23ebde61a225f70c27ab937df5755ed_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1optimizer_a3f41360479fbd46c704342bb4ef36d09}\label{classlbann_1_1optimizer_a3f41360479fbd46c704342bb4ef36d09}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!clear\+\_\+gradient@{clear\+\_\+gradient}}
+\index{clear\+\_\+gradient@{clear\+\_\+gradient}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{clear\+\_\+gradient()}{clear\_gradient()}}
+{\footnotesize\ttfamily void lbann\+::optimizer\+::clear\+\_\+gradient (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+Clear gradient matrix. 
+
+Definition at line 261 of file optimizer.\+cpp.
+
+
+\begin{DoxyCode}
+261                                \{
+262 
+263   \textcolor{comment}{// Clear matrices}
+264   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn} == \textcolor{keyword}{nullptr}) \{
+265     El::Zero(*\hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient});
+266   \} \textcolor{keywordflow}{else} \{
+267 \textcolor{preprocessor}{    #ifdef LBANN\_HAS\_CUDNN}
+268     m\_gradient\_d.zero();
+269 \textcolor{preprocessor}{    #endif // LBANN\_HAS\_CUDNN}
+270   \}
+271 
+272   \textcolor{comment}{// Reset gradient allreduce flags}
+273   \hyperlink{classlbann_1_1optimizer_a2dc18dcc3cf9510947304c3c5d059eb0}{m\_gradient\_allreduce\_needed} = \textcolor{keyword}{false};
+274   \hyperlink{classlbann_1_1optimizer_ac77740a916f397600efae0c03bc5a045}{m\_gradient\_allreduce\_started} = \textcolor{keyword}{false};
+275   \hyperlink{classlbann_1_1optimizer_a4d332551d05e245ad3f862653b5af65a}{m\_gradient\_allreduce\_finished} = \textcolor{keyword}{false};
+276 
+277 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_a3f41360479fbd46c704342bb4ef36d09_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1optimizer_adf19a1d19d832ebfe70072cc202cdf39}\label{classlbann_1_1optimizer_adf19a1d19d832ebfe70072cc202cdf39}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!copy@{copy}}
+\index{copy@{copy}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily virtual \hyperlink{classlbann_1_1optimizer}{optimizer}$\ast$ lbann\+::optimizer\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [pure virtual]}}
+
+
+
+Implemented in \hyperlink{classlbann_1_1hypergradient__adam_a09a7e0bbae7d18cc94a2f5ad098f1f38}{lbann\+::hypergradient\+\_\+adam}, \hyperlink{classlbann_1_1adam_a95866f94044a4e7bb34bf35551ade4cc}{lbann\+::adam}, \hyperlink{classlbann_1_1sgd_a91572d383ad42584bf917e7d62bebe82}{lbann\+::sgd}, \hyperlink{classlbann_1_1rmsprop_a1493737d356809ad5c94f77051de8814}{lbann\+::rmsprop}, and \hyperlink{classlbann_1_1adagrad_a4e8a72adf65df84d15f24fe6be03d1b1}{lbann\+::adagrad}.
+
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_adf19a1d19d832ebfe70072cc202cdf39_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1optimizer_a66bb8d28dfb41452ac1a75a3efd47723}\label{classlbann_1_1optimizer_a66bb8d28dfb41452ac1a75a3efd47723}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!get\+\_\+description@{get\+\_\+description}}
+\index{get\+\_\+description@{get\+\_\+description}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{get\+\_\+description()}{get\_description()}}
+{\footnotesize\ttfamily std\+::string lbann\+::optimizer\+::get\+\_\+description (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [virtual]}}
+
+Get a human-\/readable description of the optimizer. 
+
+Reimplemented in \hyperlink{classlbann_1_1hypergradient__adam_aadcd02daeca55493b0e7210195ddb6ec}{lbann\+::hypergradient\+\_\+adam}, \hyperlink{classlbann_1_1adam_a14eb9754e2aa38a732d92b6d42311676}{lbann\+::adam}, \hyperlink{classlbann_1_1sgd_a2022661b9ef83e418a0a980207cb231e}{lbann\+::sgd}, \hyperlink{classlbann_1_1rmsprop_a4526482bf60f7f3fc3f60ff70b38cdb7}{lbann\+::rmsprop}, and \hyperlink{classlbann_1_1adagrad_ad8c3000c84809fab63672e9eb35c5370}{lbann\+::adagrad}.
+
+
+
+Definition at line 107 of file optimizer.\+cpp.
+
+
+\begin{DoxyCode}
+107                                            \{
+108   std::stringstream ss;
+109   ss << \hyperlink{classlbann_1_1optimizer_a7b7a6814e14eeee157e1cbb7f15dd4ff}{get\_type}();
+110   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1optimizer_a33b57b578a089d9ffe6715bb3996907c}{m\_weights} != \textcolor{keyword}{nullptr}) \{
+111     ss << \textcolor{stringliteral}{" (optimizing "} << \hyperlink{classlbann_1_1optimizer_a33b57b578a089d9ffe6715bb3996907c}{m\_weights}->\hyperlink{classlbann_1_1weights_a272f80766f31a5add7a970e5e8fcc352}{get\_name}() << \textcolor{stringliteral}{")"};
+112   \}
+113   ss << \textcolor{stringliteral}{"; learning\_rate="} << \hyperlink{classlbann_1_1optimizer_ad393dcdcb82b44510c586ed5ec46d4dd}{m\_learning\_rate};
+114   \textcolor{keywordflow}{return} ss.str();
+115 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_a66bb8d28dfb41452ac1a75a3efd47723_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_a66bb8d28dfb41452ac1a75a3efd47723_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1optimizer_a12b7dbc72eb2de78d6ad798b8939f349}\label{classlbann_1_1optimizer_a12b7dbc72eb2de78d6ad798b8939f349}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!get\+\_\+gradient@{get\+\_\+gradient}}
+\index{get\+\_\+gradient@{get\+\_\+gradient}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{get\+\_\+gradient()}{get\_gradient()}}
+{\footnotesize\ttfamily const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \& lbann\+::optimizer\+::get\+\_\+gradient (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+Get gradient matrix. 
+
+Definition at line 124 of file optimizer.\+cpp.
+
+
+\begin{DoxyCode}
+124                                           \{
+125 
+126   \textcolor{comment}{// Check if gradient is initialized}
+127   \textcolor{keywordflow}{if} (!\hyperlink{classlbann_1_1optimizer_abccf0babf69e3d7c6e9a7fd0731c79b7}{is\_initialized}()) \{
+128     \hyperlink{base_8hpp_a80b1d707117e968a6951b7222e4b2b87}{LBANN\_ERROR}(\textcolor{stringliteral}{"attempted to access gradients before they are set up"});
+129   \}
+130 
+131   \textcolor{comment}{// Perform allreduce on staging matrix if needed}
+132   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1optimizer_a2dc18dcc3cf9510947304c3c5d059eb0}{m\_gradient\_allreduce\_needed} && !
+      \hyperlink{classlbann_1_1optimizer_ac77740a916f397600efae0c03bc5a045}{m\_gradient\_allreduce\_started}) \{
+133     \hyperlink{classlbann_1_1optimizer_a1fe495ccbd62d50735615818abecf454}{start\_gradient\_staging\_allreduce}();
+134   \}
+135   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1optimizer_ac77740a916f397600efae0c03bc5a045}{m\_gradient\_allreduce\_started} && !
+      \hyperlink{classlbann_1_1optimizer_a4d332551d05e245ad3f862653b5af65a}{m\_gradient\_allreduce\_finished}) \{
+136     \hyperlink{classlbann_1_1optimizer_a8c2569a8fcf0ee969517067b81896c44}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_a30439f28cf615e1406090799c5499321}{wait}(\hyperlink{classlbann_1_1optimizer_a851681b39c34a3439a9838c07e84b87c}{m\_gradient\_allreduce\_req});
+137     \hyperlink{classlbann_1_1optimizer_a4d332551d05e245ad3f862653b5af65a}{m\_gradient\_allreduce\_finished} = \textcolor{keyword}{true};
+138   \}
+139   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1optimizer_a2dc18dcc3cf9510947304c3c5d059eb0}{m\_gradient\_allreduce\_needed}) \{
+140     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn} == \textcolor{keyword}{nullptr}) \{
+141       \hyperlink{classlbann_1_1optimizer_a435d31e3b7a0302e36439ee36f62dba8}{add\_to\_gradient}(*\hyperlink{classlbann_1_1optimizer_a92cd058d4f9fc8162d36d52461a96df2}{m\_gradient\_staging});
+142     \} \textcolor{keywordflow}{else} \{
+143 \textcolor{preprocessor}{      #ifdef LBANN\_HAS\_CUDNN}
+144       \hyperlink{classlbann_1_1optimizer_a435d31e3b7a0302e36439ee36f62dba8}{add\_to\_gradient}(m\_gradient\_staging\_d);
+145 \textcolor{preprocessor}{      #endif // LBANN\_HAS\_CUDNN}
+146     \}
+147   \}
+148   \hyperlink{classlbann_1_1optimizer_a2dc18dcc3cf9510947304c3c5d059eb0}{m\_gradient\_allreduce\_needed} = \textcolor{keyword}{false};
+149   \hyperlink{classlbann_1_1optimizer_ac77740a916f397600efae0c03bc5a045}{m\_gradient\_allreduce\_started} = \textcolor{keyword}{false};
+150   \hyperlink{classlbann_1_1optimizer_a4d332551d05e245ad3f862653b5af65a}{m\_gradient\_allreduce\_finished} = \textcolor{keyword}{false};
+151 
+152   \textcolor{comment}{// Return CPU gradient matrix}
+153   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn} != \textcolor{keyword}{nullptr}) \{
+154 \textcolor{preprocessor}{    #ifdef LBANN\_HAS\_CUDNN}
+155     \hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn}->copy\_from\_gpu(0,
+156                            \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Matrix(),
+157                            m\_gradient\_d.get\_locked\_data(0),
+158                            m\_gradient\_d.get\_leading\_dim());
+159     \hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn}->synchronize();
+160 \textcolor{preprocessor}{    #endif // LBANN\_HAS\_CUDNN}
+161   \}
+162   \textcolor{keywordflow}{return} *\hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient};
+163 
+164 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_a12b7dbc72eb2de78d6ad798b8939f349_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_a12b7dbc72eb2de78d6ad798b8939f349_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1optimizer_ac52867427b0d28ec6888b6344104791d}\label{classlbann_1_1optimizer_ac52867427b0d28ec6888b6344104791d}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!get\+\_\+learning\+\_\+rate@{get\+\_\+learning\+\_\+rate}}
+\index{get\+\_\+learning\+\_\+rate@{get\+\_\+learning\+\_\+rate}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{get\+\_\+learning\+\_\+rate()}{get\_learning\_rate()}}
+{\footnotesize\ttfamily Data\+Type lbann\+::optimizer\+::get\+\_\+learning\+\_\+rate (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Get learning rate. 
+
+Definition at line 64 of file optimizer.\+hpp.
+
+
+\begin{DoxyCode}
+64 \{ \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1optimizer_ad393dcdcb82b44510c586ed5ec46d4dd}{m\_learning\_rate}; \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_ac52867427b0d28ec6888b6344104791d_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1optimizer_a91370e4de6083e7cd464c809cf583eb3}\label{classlbann_1_1optimizer_a91370e4de6083e7cd464c809cf583eb3}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!get\+\_\+num\+\_\+gradient\+\_\+sources@{get\+\_\+num\+\_\+gradient\+\_\+sources}}
+\index{get\+\_\+num\+\_\+gradient\+\_\+sources@{get\+\_\+num\+\_\+gradient\+\_\+sources}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{get\+\_\+num\+\_\+gradient\+\_\+sources()}{get\_num\_gradient\_sources()}}
+{\footnotesize\ttfamily int lbann\+::optimizer\+::get\+\_\+num\+\_\+gradient\+\_\+sources (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Get number of gradient sources. This is the number of objects that contribute to the gradient but have not added their contributions yet. 
+
+Definition at line 118 of file optimizer.\+hpp.
+
+
+\begin{DoxyCode}
+118 \{ \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1optimizer_aadfa322a683c2b826d0fae5f809298df}{m\_gradient\_sources}.size(); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_a91370e4de6083e7cd464c809cf583eb3_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1optimizer_afef81d54e836ba0177f7a411ba3aaf6e}\label{classlbann_1_1optimizer_afef81d54e836ba0177f7a411ba3aaf6e}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!get\+\_\+step\+\_\+time@{get\+\_\+step\+\_\+time}}
+\index{get\+\_\+step\+\_\+time@{get\+\_\+step\+\_\+time}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{get\+\_\+step\+\_\+time()}{get\_step\_time()}}
+{\footnotesize\ttfamily double lbann\+::optimizer\+::get\+\_\+step\+\_\+time (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Get the time spent in \hyperlink{classlbann_1_1optimizer_aa9f43ca3f22edc0a25d0509b6514a411}{step()}. 
+
+Definition at line 154 of file optimizer.\+hpp.
+
+
+\begin{DoxyCode}
+154 \{ \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1optimizer_afc424c715008fb4d900548f7934ea856}{m\_step\_time}; \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_afef81d54e836ba0177f7a411ba3aaf6e_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1optimizer_a7b7a6814e14eeee157e1cbb7f15dd4ff}\label{classlbann_1_1optimizer_a7b7a6814e14eeee157e1cbb7f15dd4ff}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!get\+\_\+type@{get\+\_\+type}}
+\index{get\+\_\+type@{get\+\_\+type}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{get\+\_\+type()}{get\_type()}}
+{\footnotesize\ttfamily virtual std\+::string lbann\+::optimizer\+::get\+\_\+type (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [pure virtual]}}
+
+Get the optimizer name. 
+
+Implemented in \hyperlink{classlbann_1_1hypergradient__adam_a21ba2e54a7c803c10ab8354d0552ba82}{lbann\+::hypergradient\+\_\+adam}, \hyperlink{classlbann_1_1adam_a091b61b0125d2da89d4029dd30ca1ce7}{lbann\+::adam}, \hyperlink{classlbann_1_1sgd_ad24efbeadae61890d07fa9e95aa91c61}{lbann\+::sgd}, \hyperlink{classlbann_1_1rmsprop_aa4299a19c0ab81a41ccebb9486f106b6}{lbann\+::rmsprop}, and \hyperlink{classlbann_1_1adagrad_a7a287b367af6ef6f7f21141ad78732a7}{lbann\+::adagrad}.
+
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_a7b7a6814e14eeee157e1cbb7f15dd4ff_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1optimizer_a9c3fc3f1d45da822676d5932a1c7af82}\label{classlbann_1_1optimizer_a9c3fc3f1d45da822676d5932a1c7af82}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!get\+\_\+weights@{get\+\_\+weights}}
+\index{get\+\_\+weights@{get\+\_\+weights}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{get\+\_\+weights()}{get\_weights()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1weights}{weights} \& lbann\+::optimizer\+::get\+\_\+weights (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+Get weights being optimized. 
+
+Definition at line 117 of file optimizer.\+cpp.
+
+
+\begin{DoxyCode}
+117                                 \{
+118   \textcolor{keywordflow}{if} (!\hyperlink{classlbann_1_1optimizer_abccf0babf69e3d7c6e9a7fd0731c79b7}{is\_initialized}()) \{
+119     \hyperlink{base_8hpp_a80b1d707117e968a6951b7222e4b2b87}{LBANN\_ERROR}(\textcolor{stringliteral}{"attempted to access the weights being optimized before they are set"});
+120   \}
+121   \textcolor{keywordflow}{return} *\hyperlink{classlbann_1_1optimizer_a33b57b578a089d9ffe6715bb3996907c}{m\_weights};
+122 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=321pt]{classlbann_1_1optimizer_a9c3fc3f1d45da822676d5932a1c7af82_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_a9c3fc3f1d45da822676d5932a1c7af82_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1optimizer_abccf0babf69e3d7c6e9a7fd0731c79b7}\label{classlbann_1_1optimizer_abccf0babf69e3d7c6e9a7fd0731c79b7}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!is\+\_\+initialized@{is\+\_\+initialized}}
+\index{is\+\_\+initialized@{is\+\_\+initialized}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{is\+\_\+initialized()}{is\_initialized()}}
+{\footnotesize\ttfamily bool lbann\+::optimizer\+::is\+\_\+initialized (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Whether the optimizer has been set up. 
+
+Definition at line 57 of file optimizer.\+hpp.
+
+
+\begin{DoxyCode}
+57 \{ \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1optimizer_a33b57b578a089d9ffe6715bb3996907c}{m\_weights} != \textcolor{keyword}{nullptr}; \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=321pt]{classlbann_1_1optimizer_abccf0babf69e3d7c6e9a7fd0731c79b7_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_abccf0babf69e3d7c6e9a7fd0731c79b7_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1optimizer_a42a52aab9a682fda57c1e639968a44b9}\label{classlbann_1_1optimizer_a42a52aab9a682fda57c1e639968a44b9}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!load\+\_\+from\+\_\+checkpoint\+\_\+shared@{load\+\_\+from\+\_\+checkpoint\+\_\+shared}}
+\index{load\+\_\+from\+\_\+checkpoint\+\_\+shared@{load\+\_\+from\+\_\+checkpoint\+\_\+shared}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{load\+\_\+from\+\_\+checkpoint\+\_\+shared()}{load\_from\_checkpoint\_shared()}}
+{\footnotesize\ttfamily bool lbann\+::optimizer\+::load\+\_\+from\+\_\+checkpoint\+\_\+shared (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1persist}{persist} \&}]{p,  }\item[{std\+::string}]{m\+\_\+name }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [virtual]}}
+
+
+
+Reimplemented in \hyperlink{classlbann_1_1adam_aca07e925a4751fc5c10a62fb9c72c896}{lbann\+::adam}, \hyperlink{classlbann_1_1sgd_aa3e3237a59b0593d7caf7357b7c181cf}{lbann\+::sgd}, \hyperlink{classlbann_1_1rmsprop_a64db08f787ca8904a0ba4ecc37d5d1ed}{lbann\+::rmsprop}, and \hyperlink{classlbann_1_1adagrad_ac6b6eb0c4d393679f69281c072dbc4fa}{lbann\+::adagrad}.
+
+
+
+Definition at line 495 of file optimizer.\+cpp.
+
+
+\begin{DoxyCode}
+495                                                                         \{
+496   p.read\_datatype(\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64}{persist\_type::train}, \textcolor{stringliteral}{"learning\_rate"}, &
+      \hyperlink{classlbann_1_1optimizer_ad393dcdcb82b44510c586ed5ec46d4dd}{m\_learning\_rate});
+497   MPI\_Bcast(&\hyperlink{classlbann_1_1optimizer_ad393dcdcb82b44510c586ed5ec46d4dd}{m\_learning\_rate}, 1, MPI\_FLOAT, 0, MPI\_COMM\_WORLD);
+498   \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+499 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_a42a52aab9a682fda57c1e639968a44b9_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_a42a52aab9a682fda57c1e639968a44b9_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1optimizer_ab7811e0a4d2d9b594140aed78b6de743}\label{classlbann_1_1optimizer_ab7811e0a4d2d9b594140aed78b6de743}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1optimizer}{optimizer} \& lbann\+::optimizer\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1optimizer}{optimizer} \&}]{other }\end{DoxyParamCaption})}
+
+
+
+Definition at line 70 of file optimizer.\+cpp.
+
+
+\begin{DoxyCode}
+70                                                       \{
+71   \hyperlink{classlbann_1_1optimizer_a8c2569a8fcf0ee969517067b81896c44}{m\_comm} = other.m\_comm;
+72   \hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn} = other.m\_cudnn;
+73   \hyperlink{classlbann_1_1optimizer_a33b57b578a089d9ffe6715bb3996907c}{m\_weights} = other.m\_weights;
+74   \hyperlink{classlbann_1_1optimizer_ad393dcdcb82b44510c586ed5ec46d4dd}{m\_learning\_rate} = other.m\_learning\_rate;
+75   \hyperlink{classlbann_1_1optimizer_afc424c715008fb4d900548f7934ea856}{m\_step\_time} = other.m\_step\_time;
+76   \hyperlink{classlbann_1_1optimizer_a2dc18dcc3cf9510947304c3c5d059eb0}{m\_gradient\_allreduce\_needed} = other.m\_gradient\_allreduce\_needed;
+77   \hyperlink{classlbann_1_1optimizer_ac77740a916f397600efae0c03bc5a045}{m\_gradient\_allreduce\_started} = other.m\_gradient\_allreduce\_started;
+78   \hyperlink{classlbann_1_1optimizer_a4d332551d05e245ad3f862653b5af65a}{m\_gradient\_allreduce\_finished} = other.m\_gradient\_allreduce\_finished;
+79   \hyperlink{classlbann_1_1optimizer_ac77740a916f397600efae0c03bc5a045}{m\_gradient\_allreduce\_started} = other.m\_gradient\_allreduce\_started;
+80 
+81   \textcolor{comment}{// Deep copy matrices}
+82   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient} != \textcolor{keyword}{nullptr}) \{ \textcolor{keyword}{delete} \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}; \}
+83   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1optimizer_a92cd058d4f9fc8162d36d52461a96df2}{m\_gradient\_staging} != \textcolor{keyword}{nullptr}) \{ \textcolor{keyword}{delete} 
+      \hyperlink{classlbann_1_1optimizer_a92cd058d4f9fc8162d36d52461a96df2}{m\_gradient\_staging}; \}
+84   \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient} = other.m\_gradient;
+85   \hyperlink{classlbann_1_1optimizer_a92cd058d4f9fc8162d36d52461a96df2}{m\_gradient\_staging} = other.m\_gradient\_staging;
+86   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient} != \textcolor{keyword}{nullptr}) \{
+87     \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient} = \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Copy();
+88   \}
+89   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1optimizer_a92cd058d4f9fc8162d36d52461a96df2}{m\_gradient\_staging} != \textcolor{keyword}{nullptr}) \{
+90     \hyperlink{classlbann_1_1optimizer_a92cd058d4f9fc8162d36d52461a96df2}{m\_gradient\_staging} = \hyperlink{classlbann_1_1optimizer_a92cd058d4f9fc8162d36d52461a96df2}{m\_gradient\_staging}->Copy();
+91   \}
+92 
+93   \textcolor{comment}{// Copy GPU data}
+94 \textcolor{preprocessor}{  #ifdef LBANN\_HAS\_CUDNN}
+95   m\_gradient\_d = other.m\_gradient\_d;
+96   m\_gradient\_staging\_d = other.m\_gradient\_staging\_d;
+97 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+98 
+99   \textcolor{keywordflow}{return} *\textcolor{keyword}{this};
+100 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_ab7811e0a4d2d9b594140aed78b6de743_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1optimizer_a68ba7515d7eb4af38ff19607c13a111b}\label{classlbann_1_1optimizer_a68ba7515d7eb4af38ff19607c13a111b}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!remove\+\_\+gradient\+\_\+source@{remove\+\_\+gradient\+\_\+source}}
+\index{remove\+\_\+gradient\+\_\+source@{remove\+\_\+gradient\+\_\+source}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{remove\+\_\+gradient\+\_\+source()}{remove\_gradient\_source()}}
+{\footnotesize\ttfamily void lbann\+::optimizer\+::remove\+\_\+gradient\+\_\+source (\begin{DoxyParamCaption}\item[{const void $\ast$}]{source }\end{DoxyParamCaption})}
+
+Remove a gradient source. Objects that contribute to the gradient should remove themselves as gradient sources when they add to the gradient. If there are no more gradient sources remaining, an allreduce is started on the gradient staging matrix. 
+
+Definition at line 406 of file optimizer.\+cpp.
+
+
+\begin{DoxyCode}
+406                                                          \{
+407   \hyperlink{classlbann_1_1optimizer_aadfa322a683c2b826d0fae5f809298df}{m\_gradient\_sources}.erase(\textcolor{keyword}{nullptr});
+408   \hyperlink{classlbann_1_1optimizer_aadfa322a683c2b826d0fae5f809298df}{m\_gradient\_sources}.erase(source);
+409   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1optimizer_aadfa322a683c2b826d0fae5f809298df}{m\_gradient\_sources}.empty()) \{
+410     \hyperlink{classlbann_1_1optimizer_a1fe495ccbd62d50735615818abecf454}{start\_gradient\_staging\_allreduce}();
+411   \}
+412 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_a68ba7515d7eb4af38ff19607c13a111b_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_a68ba7515d7eb4af38ff19607c13a111b_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1optimizer_a067709debd4d2e7bfe1a35b5f6ced668}\label{classlbann_1_1optimizer_a067709debd4d2e7bfe1a35b5f6ced668}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!reset\+\_\+counters@{reset\+\_\+counters}}
+\index{reset\+\_\+counters@{reset\+\_\+counters}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{reset\+\_\+counters()}{reset\_counters()}}
+{\footnotesize\ttfamily virtual void lbann\+::optimizer\+::reset\+\_\+counters (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+Reset stats counters. 
+
+Definition at line 156 of file optimizer.\+hpp.
+
+
+\begin{DoxyCode}
+156                                 \{
+157     \hyperlink{classlbann_1_1optimizer_afc424c715008fb4d900548f7934ea856}{m\_step\_time} = 0.0;
+158   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_a067709debd4d2e7bfe1a35b5f6ced668_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1optimizer_afed10c6d8c5bd922f95075abeff711ce}\label{classlbann_1_1optimizer_afed10c6d8c5bd922f95075abeff711ce}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!save\+\_\+to\+\_\+checkpoint\+\_\+shared@{save\+\_\+to\+\_\+checkpoint\+\_\+shared}}
+\index{save\+\_\+to\+\_\+checkpoint\+\_\+shared@{save\+\_\+to\+\_\+checkpoint\+\_\+shared}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{save\+\_\+to\+\_\+checkpoint\+\_\+shared()}{save\_to\_checkpoint\_shared()}}
+{\footnotesize\ttfamily bool lbann\+::optimizer\+::save\+\_\+to\+\_\+checkpoint\+\_\+shared (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1persist}{persist} \&}]{p,  }\item[{std\+::string}]{m\+\_\+name }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [virtual]}}
+
+Running count of the time spent in \hyperlink{classlbann_1_1optimizer_aa9f43ca3f22edc0a25d0509b6514a411}{step()}. 
+
+Reimplemented in \hyperlink{classlbann_1_1adam_a8070db0a451bdbc6e86200eaa14f6ac7}{lbann\+::adam}, \hyperlink{classlbann_1_1sgd_a78ad11ca7424d50a9f2ba29e5f725e21}{lbann\+::sgd}, \hyperlink{classlbann_1_1rmsprop_a8abe698168c2d1cb2c65d180552501ef}{lbann\+::rmsprop}, and \hyperlink{classlbann_1_1adagrad_a94282e58af6bb1e9af27255e23bd3d3d}{lbann\+::adagrad}.
+
+
+
+Definition at line 487 of file optimizer.\+cpp.
+
+
+\begin{DoxyCode}
+487                                                                       \{
+488   \textcolor{comment}{//  m\_learning\_rate;}
+490 \textcolor{comment}{}  \textcolor{comment}{//  double m\_step\_time = 0.0;}
+491   p.write\_datatype(\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64}{persist\_type::train}, \textcolor{stringliteral}{"learning\_rate"}, 
+      \hyperlink{classlbann_1_1optimizer_ad393dcdcb82b44510c586ed5ec46d4dd}{m\_learning\_rate});
+492   \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+493 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_afed10c6d8c5bd922f95075abeff711ce_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_afed10c6d8c5bd922f95075abeff711ce_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1optimizer_a147cac09beaa17df4e0fc1fc1be3abce}\label{classlbann_1_1optimizer_a147cac09beaa17df4e0fc1fc1be3abce}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!set\+\_\+learning\+\_\+rate@{set\+\_\+learning\+\_\+rate}}
+\index{set\+\_\+learning\+\_\+rate@{set\+\_\+learning\+\_\+rate}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{set\+\_\+learning\+\_\+rate()}{set\_learning\_rate()}}
+{\footnotesize\ttfamily void lbann\+::optimizer\+::set\+\_\+learning\+\_\+rate (\begin{DoxyParamCaption}\item[{Data\+Type}]{learning\+\_\+rate }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Set learning rate. 
+
+Definition at line 66 of file optimizer.\+hpp.
+
+
+\begin{DoxyCode}
+66                                                  \{
+67     \hyperlink{classlbann_1_1optimizer_ad393dcdcb82b44510c586ed5ec46d4dd}{m\_learning\_rate} = learning\_rate;
+68   \};
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_a147cac09beaa17df4e0fc1fc1be3abce_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_a147cac09beaa17df4e0fc1fc1be3abce_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1optimizer_afc00daf2acb6af7e29786524126660c2}\label{classlbann_1_1optimizer_afc00daf2acb6af7e29786524126660c2}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!set\+\_\+weights@{set\+\_\+weights}}
+\index{set\+\_\+weights@{set\+\_\+weights}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{set\+\_\+weights()}{set\_weights()}}
+{\footnotesize\ttfamily void lbann\+::optimizer\+::set\+\_\+weights (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1weights}{weights} \&}]{w }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Set weights being optimized. 
+
+Definition at line 62 of file optimizer.\+hpp.
+
+
+\begin{DoxyCode}
+62 \{ \hyperlink{classlbann_1_1optimizer_a33b57b578a089d9ffe6715bb3996907c}{m\_weights} = &w; \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_afc00daf2acb6af7e29786524126660c2_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1optimizer_a7641a88b3c166df2d974a298622b992b}\label{classlbann_1_1optimizer_a7641a88b3c166df2d974a298622b992b}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!setup@{setup}}
+\index{setup@{setup}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{setup()}{setup()}}
+{\footnotesize\ttfamily void lbann\+::optimizer\+::setup (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1weights}{weights} \&}]{w }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [virtual]}}
+
+Setup optimizer. 
+
+Reimplemented in \hyperlink{classlbann_1_1hypergradient__adam_acbc4aa4410eb2e7cb2fd9f423c4909dc}{lbann\+::hypergradient\+\_\+adam}, \hyperlink{classlbann_1_1adam_aea0b1fa44197fe184a6feca5ec5c808e}{lbann\+::adam}, \hyperlink{classlbann_1_1sgd_a616c3cfd457ae1e771710b481b4c1bbb}{lbann\+::sgd}, \hyperlink{classlbann_1_1rmsprop_a8f6111a36f9ad592d14e13b64a0f228f}{lbann\+::rmsprop}, and \hyperlink{classlbann_1_1adagrad_ab027f2979a6df453eb588b1961afd77a}{lbann\+::adagrad}.
+
+
+
+Definition at line 414 of file optimizer.\+cpp.
+
+
+\begin{DoxyCode}
+414                                 \{
+415   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1optimizer_abccf0babf69e3d7c6e9a7fd0731c79b7}{is\_initialized}()) \{
+416     \hyperlink{base_8hpp_a80b1d707117e968a6951b7222e4b2b87}{LBANN\_ERROR}(\textcolor{stringliteral}{"attempted to setup an optimizer that is already set up"});
+417   \}
+418   \hyperlink{classlbann_1_1optimizer_afc00daf2acb6af7e29786524126660c2}{set\_weights}(w);
+419 
+420   \textcolor{comment}{// Initialize matrices}
+421   \textcolor{keyword}{const} \textcolor{keywordtype}{int} height = \hyperlink{classlbann_1_1optimizer_a33b57b578a089d9ffe6715bb3996907c}{m\_weights}->\hyperlink{classlbann_1_1weights_ad36676b9b43bced1cc7e332e3745411f}{get\_matrix\_height}();
+422   \textcolor{keyword}{const} \textcolor{keywordtype}{int} width = \hyperlink{classlbann_1_1optimizer_a33b57b578a089d9ffe6715bb3996907c}{m\_weights}->\hyperlink{classlbann_1_1weights_abc3cf3a5b992302b1eaaea1fdf3b377d}{get\_matrix\_width}();
+423   \textcolor{keyword}{const} \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{AbsDistMat}& values = \hyperlink{classlbann_1_1optimizer_a33b57b578a089d9ffe6715bb3996907c}{m\_weights}->\hyperlink{classlbann_1_1weights_a09fa4082be905c0c124dde3033e2461b}{get\_values}();
+424 
+425   \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient} = values.Construct(values.Grid(), values.Root());
+426   \hyperlink{classlbann_1_1optimizer_a92cd058d4f9fc8162d36d52461a96df2}{m\_gradient\_staging} = values.Construct(values.Grid(), values.Root());
+427   \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->Resize(height, width);
+428   \hyperlink{classlbann_1_1optimizer_a92cd058d4f9fc8162d36d52461a96df2}{m\_gradient\_staging}->Resize(height, width);
+429 
+430   \textcolor{comment}{// Initialize GPU}
+431   \hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn} = \hyperlink{classlbann_1_1optimizer_a33b57b578a089d9ffe6715bb3996907c}{m\_weights}->\hyperlink{classlbann_1_1weights_a873e8c14998915e442d03b8dd7d2fdf7}{m\_cudnn};
+432   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn} != \textcolor{keyword}{nullptr}) \{
+433 \textcolor{preprocessor}{#ifdef LBANN\_HAS\_CUDNN}
+434     m\_gradient\_d = cudnn::matrix(\hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn}, height, width);
+435     m\_gradient\_staging\_d = cudnn::matrix(\hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn}, height, width);
+436 \textcolor{preprocessor}{#endif // LBANN\_HAS\_CUDNN}
+437   \}
+438 
+439   \textcolor{comment}{// Initialize with zero gradient}
+440   \hyperlink{classlbann_1_1optimizer_a3f41360479fbd46c704342bb4ef36d09}{clear\_gradient}();
+441 
+442 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_a7641a88b3c166df2d974a298622b992b_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_a7641a88b3c166df2d974a298622b992b_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1optimizer_a1fe495ccbd62d50735615818abecf454}\label{classlbann_1_1optimizer_a1fe495ccbd62d50735615818abecf454}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!start\+\_\+gradient\+\_\+staging\+\_\+allreduce@{start\+\_\+gradient\+\_\+staging\+\_\+allreduce}}
+\index{start\+\_\+gradient\+\_\+staging\+\_\+allreduce@{start\+\_\+gradient\+\_\+staging\+\_\+allreduce}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{start\+\_\+gradient\+\_\+staging\+\_\+allreduce()}{start\_gradient\_staging\_allreduce()}}
+{\footnotesize\ttfamily void lbann\+::optimizer\+::start\+\_\+gradient\+\_\+staging\+\_\+allreduce (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+Start allreduce on the gradient staging matrix. If an allreduce is not needed or if it has already started, this function does nothing. This may call a non-\/blocking allreduce. 
+
+Definition at line 208 of file optimizer.\+cpp.
+
+
+\begin{DoxyCode}
+208                                                  \{
+209   \textcolor{keywordflow}{if} (!\hyperlink{classlbann_1_1optimizer_a2dc18dcc3cf9510947304c3c5d059eb0}{m\_gradient\_allreduce\_needed} || 
+      \hyperlink{classlbann_1_1optimizer_ac77740a916f397600efae0c03bc5a045}{m\_gradient\_allreduce\_started}) \{
+210     \textcolor{keywordflow}{return};
+211   \}
+212 
+213   \hyperlink{classlbann_1_1optimizer_ac77740a916f397600efae0c03bc5a045}{m\_gradient\_allreduce\_started} = \textcolor{keyword}{true};
+214   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn} == \textcolor{keyword}{nullptr}) \{
+215     \hyperlink{classlbann_1_1optimizer_a8c2569a8fcf0ee969517067b81896c44}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_a2a7bb6cf3707366fc0671d8894ca30ea}{nb\_allreduce}(*\hyperlink{classlbann_1_1optimizer_a92cd058d4f9fc8162d36d52461a96df2}{m\_gradient\_staging},
+216                          \hyperlink{classlbann_1_1optimizer_a92cd058d4f9fc8162d36d52461a96df2}{m\_gradient\_staging}->RedundantComm(),
+217                          \hyperlink{classlbann_1_1optimizer_a851681b39c34a3439a9838c07e84b87c}{m\_gradient\_allreduce\_req},
+218                          El::mpi::SUM,
+219                          std::type\_index(\textcolor{keyword}{typeid}(\hyperlink{namespacelbann_1_1Al_a8a69c2fac7e1117883fff1903c2232ce}{Al::mpi\_backend})));
+220     \hyperlink{classlbann_1_1optimizer_a4d332551d05e245ad3f862653b5af65a}{m\_gradient\_allreduce\_finished} = \textcolor{keyword}{false};
+221   \} \textcolor{keywordflow}{else} \{
+222 \textcolor{preprocessor}{    #ifndef LBANN\_HAS\_CUDNN}
+223     \hyperlink{base_8hpp_a80b1d707117e968a6951b7222e4b2b87}{LBANN\_ERROR}(\textcolor{stringliteral}{"cuDNN not detected"});
+224 \textcolor{preprocessor}{    #else}
+225 \textcolor{preprocessor}{    #if defined(LBANN\_HAS\_ALUMINUM) && defined(LBANN\_HAS\_NCCL2)}
+226     \textcolor{comment}{// Non-blocking GPU allreduce with NCCL}
+227     \textcolor{comment}{// Note: We assume each process has one GPU and that the gradient}
+228     \textcolor{comment}{// is in STAR,STAR distribution.}
+229     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn}->get\_num\_gpus() != 1) \{
+230       \hyperlink{base_8hpp_a80b1d707117e968a6951b7222e4b2b87}{LBANN\_ERROR}(\textcolor{stringliteral}{"non-blocking GPU allreduce with NCCL assumes one GPU per process"});
+231     \}
+232     \hyperlink{base_8hpp_aba08580d21767b53d0737e115d738dbe}{StarMat} gradient\_staging\_d;
+233     gradient\_staging\_d.Attach(m\_gradient\_staging\_d.get\_height(),
+234                               m\_gradient\_staging\_d.get\_width\_per\_gpu(),
+235                               \hyperlink{classlbann_1_1optimizer_a92cd058d4f9fc8162d36d52461a96df2}{m\_gradient\_staging}->Grid(),
+236                               \hyperlink{classlbann_1_1optimizer_a92cd058d4f9fc8162d36d52461a96df2}{m\_gradient\_staging}->ColAlign(),
+237                               \hyperlink{classlbann_1_1optimizer_a92cd058d4f9fc8162d36d52461a96df2}{m\_gradient\_staging}->RowAlign(),
+238                               m\_gradient\_staging\_d.get\_data(0),
+239                               m\_gradient\_staging\_d.get\_leading\_dim(),
+240                               \hyperlink{classlbann_1_1optimizer_a92cd058d4f9fc8162d36d52461a96df2}{m\_gradient\_staging}->Root());
+241     \hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn}->synchronize();
+242     \hyperlink{classlbann_1_1optimizer_a8c2569a8fcf0ee969517067b81896c44}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_a2a7bb6cf3707366fc0671d8894ca30ea}{nb\_allreduce}(gradient\_staging\_d,
+243                          gradient\_staging\_d.RedundantComm(),
+244                          \hyperlink{classlbann_1_1optimizer_a851681b39c34a3439a9838c07e84b87c}{m\_gradient\_allreduce\_req},
+245                          El::mpi::SUM,
+246                          std::type\_index(\textcolor{keyword}{typeid}(\hyperlink{namespacelbann_1_1Al_acac3d42323b313e89a60a27f00554661}{Al::nccl\_backend})));
+247     \hyperlink{classlbann_1_1optimizer_a4d332551d05e245ad3f862653b5af65a}{m\_gradient\_allreduce\_finished} = \textcolor{keyword}{false};
+248 \textcolor{preprocessor}{    #else}
+249     \textcolor{comment}{// Naive GPU allreduce}
+250     \hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn}->global\_allreduce\_on\_gpus(m\_gradient\_staging\_d.get\_data(),
+251                                       m\_gradient\_staging\_d.get\_height(),
+252                                       m\_gradient\_staging\_d.get\_width\_per\_gpu(),
+253                                       \hyperlink{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}{m\_gradient}->RedundantComm());
+254     \hyperlink{classlbann_1_1optimizer_a4d332551d05e245ad3f862653b5af65a}{m\_gradient\_allreduce\_finished} = \textcolor{keyword}{true};
+255 \textcolor{preprocessor}{    #endif // defined(LBANN\_HAS\_ALUMINUM) && defined(LBANN\_HAS\_NCCL2)}
+256 \textcolor{preprocessor}{    #endif // LBANN\_HAS\_CUDNN}
+257   \}
+258 
+259 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_a1fe495ccbd62d50735615818abecf454_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_a1fe495ccbd62d50735615818abecf454_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1optimizer_aa9f43ca3f22edc0a25d0509b6514a411}\label{classlbann_1_1optimizer_aa9f43ca3f22edc0a25d0509b6514a411}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!step@{step}}
+\index{step@{step}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{step()}{step()}}
+{\footnotesize\ttfamily void lbann\+::optimizer\+::step (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+Apply an optimization step. 
+
+Definition at line 444 of file optimizer.\+cpp.
+
+
+\begin{DoxyCode}
+444                      \{
+445   \textcolor{keywordflow}{if} (!\hyperlink{classlbann_1_1optimizer_abccf0babf69e3d7c6e9a7fd0731c79b7}{is\_initialized}()) \{
+446     \hyperlink{base_8hpp_a80b1d707117e968a6951b7222e4b2b87}{LBANN\_ERROR}(\textcolor{stringliteral}{"optimizer must be set up before performing optimization step"});
+447   \}
+448 
+449   \textcolor{keywordtype}{double} step\_start = \hyperlink{namespacelbann_a478d36031ff0659893c4322cd856157f}{get\_time}();
+450   \textcolor{comment}{// Apply optimization step}
+451   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn} != \textcolor{keyword}{nullptr}) \{
+452 \textcolor{preprocessor}{  #ifdef LBANN\_HAS\_CUDNN}
+453     cudnn::matrix values\_d(\hyperlink{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}{m\_cudnn});
+454     values\_d.attach(\hyperlink{classlbann_1_1optimizer_a33b57b578a089d9ffe6715bb3996907c}{m\_weights}->m\_values\_d, \hyperlink{classlbann_1_1optimizer_a33b57b578a089d9ffe6715bb3996907c}{m\_weights}->\hyperlink{classlbann_1_1weights_a3216926df0aaf7aa440b9e5317d05fa2}{get\_size}());
+455     \textcolor{keyword}{const} \textcolor{keyword}{auto}& gradient\_d = get\_gradient\_gpu();
+456     step\_compute\_gpu(values\_d, gradient\_d);
+457 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+458   \} \textcolor{keywordflow}{else} \{
+459     \hyperlink{classlbann_1_1optimizer_a33b57b578a089d9ffe6715bb3996907c}{m\_weights}->\hyperlink{classlbann_1_1weights_a09fa4082be905c0c124dde3033e2461b}{get\_values}(); \textcolor{comment}{// Move data to CPU}
+460     \textcolor{keyword}{auto}& values = *\hyperlink{classlbann_1_1optimizer_a33b57b578a089d9ffe6715bb3996907c}{m\_weights}->\hyperlink{classlbann_1_1weights_a6b2df671b6d4c4dd595477971eea0543}{m\_values};
+461     \textcolor{keyword}{const} \textcolor{keyword}{auto}& gradient = \hyperlink{classlbann_1_1optimizer_a12b7dbc72eb2de78d6ad798b8939f349}{get\_gradient}();
+462     \hyperlink{classlbann_1_1optimizer_a0db72c298a0bc3405fb0af97d104a036}{step\_compute}(values, gradient);
+463   \}
+464 
+465   \textcolor{comment}{// Clear gradients}
+466   \hyperlink{classlbann_1_1optimizer_a3f41360479fbd46c704342bb4ef36d09}{clear\_gradient}();
+467 
+468   \hyperlink{classlbann_1_1optimizer_afc424c715008fb4d900548f7934ea856}{m\_step\_time} += \hyperlink{namespacelbann_a478d36031ff0659893c4322cd856157f}{get\_time}() - step\_start;
+469 
+470 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_aa9f43ca3f22edc0a25d0509b6514a411_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_aa9f43ca3f22edc0a25d0509b6514a411_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1optimizer_a0db72c298a0bc3405fb0af97d104a036}\label{classlbann_1_1optimizer_a0db72c298a0bc3405fb0af97d104a036}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!step\+\_\+compute@{step\+\_\+compute}}
+\index{step\+\_\+compute@{step\+\_\+compute}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{step\+\_\+compute()}{step\_compute()}}
+{\footnotesize\ttfamily virtual void lbann\+::optimizer\+::step\+\_\+compute (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{values,  }\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{gradient }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [pure virtual]}}
+
+Perform the computation in an optimization step. It can be assumed that values and gradient are the same size and have the same matrix distribution. 
+
+Implemented in \hyperlink{classlbann_1_1hypergradient__adam_af9168cfd95707f361f0412ff2440761f}{lbann\+::hypergradient\+\_\+adam}, \hyperlink{classlbann_1_1adam_a3bcd1bcbbed2b99c407eb0cd9fd6d449}{lbann\+::adam}, \hyperlink{classlbann_1_1sgd_a083a44b456939b58f531cea1fde2378b}{lbann\+::sgd}, \hyperlink{classlbann_1_1rmsprop_a600e4b332299a6aaa36d0b7ff458e3f3}{lbann\+::rmsprop}, and \hyperlink{classlbann_1_1adagrad_a99dbaed2a331ce8d13a73e7beb7f5aba}{lbann\+::adagrad}.
+
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1optimizer_a0db72c298a0bc3405fb0af97d104a036_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1optimizer_a8c2569a8fcf0ee969517067b81896c44}\label{classlbann_1_1optimizer_a8c2569a8fcf0ee969517067b81896c44}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!m\+\_\+comm@{m\+\_\+comm}}
+\index{m\+\_\+comm@{m\+\_\+comm}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{m\+\_\+comm}{m\_comm}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm}$\ast$ lbann\+::optimizer\+::m\+\_\+comm\hspace{0.3cm}{\ttfamily [protected]}}
+
+L\+B\+A\+NN communicator. 
+
+Definition at line 163 of file optimizer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}\label{classlbann_1_1optimizer_a2f24dbeaca18b06f4aa7d179bbf96680}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!m\+\_\+cudnn@{m\+\_\+cudnn}}
+\index{m\+\_\+cudnn@{m\+\_\+cudnn}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{m\+\_\+cudnn}{m\_cudnn}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager}$\ast$ lbann\+::optimizer\+::m\+\_\+cudnn\hspace{0.3cm}{\ttfamily [protected]}}
+
+cu\+D\+NN manager. 
+
+Definition at line 166 of file optimizer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}\label{classlbann_1_1optimizer_a3df20cb0ae2b60430ad4fd235d66c12e}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!m\+\_\+gradient@{m\+\_\+gradient}}
+\index{m\+\_\+gradient@{m\+\_\+gradient}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{m\+\_\+gradient}{m\_gradient}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat}$\ast$ lbann\+::optimizer\+::m\+\_\+gradient\hspace{0.3cm}{\ttfamily [protected]}}
+
+Gradient matrix. 
+
+Definition at line 175 of file optimizer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1optimizer_a4d332551d05e245ad3f862653b5af65a}\label{classlbann_1_1optimizer_a4d332551d05e245ad3f862653b5af65a}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!m\+\_\+gradient\+\_\+allreduce\+\_\+finished@{m\+\_\+gradient\+\_\+allreduce\+\_\+finished}}
+\index{m\+\_\+gradient\+\_\+allreduce\+\_\+finished@{m\+\_\+gradient\+\_\+allreduce\+\_\+finished}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{m\+\_\+gradient\+\_\+allreduce\+\_\+finished}{m\_gradient\_allreduce\_finished}}
+{\footnotesize\ttfamily bool lbann\+::optimizer\+::m\+\_\+gradient\+\_\+allreduce\+\_\+finished\hspace{0.3cm}{\ttfamily [private]}}
+
+Whether an allreduce on the gradient staging matrix has been finished. 
+
+Definition at line 214 of file optimizer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1optimizer_a2dc18dcc3cf9510947304c3c5d059eb0}\label{classlbann_1_1optimizer_a2dc18dcc3cf9510947304c3c5d059eb0}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!m\+\_\+gradient\+\_\+allreduce\+\_\+needed@{m\+\_\+gradient\+\_\+allreduce\+\_\+needed}}
+\index{m\+\_\+gradient\+\_\+allreduce\+\_\+needed@{m\+\_\+gradient\+\_\+allreduce\+\_\+needed}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{m\+\_\+gradient\+\_\+allreduce\+\_\+needed}{m\_gradient\_allreduce\_needed}}
+{\footnotesize\ttfamily bool lbann\+::optimizer\+::m\+\_\+gradient\+\_\+allreduce\+\_\+needed\hspace{0.3cm}{\ttfamily [private]}}
+
+Whether the gradient staging matrix requires an allreduce. 
+
+Definition at line 210 of file optimizer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1optimizer_a851681b39c34a3439a9838c07e84b87c}\label{classlbann_1_1optimizer_a851681b39c34a3439a9838c07e84b87c}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!m\+\_\+gradient\+\_\+allreduce\+\_\+req@{m\+\_\+gradient\+\_\+allreduce\+\_\+req}}
+\index{m\+\_\+gradient\+\_\+allreduce\+\_\+req@{m\+\_\+gradient\+\_\+allreduce\+\_\+req}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{m\+\_\+gradient\+\_\+allreduce\+\_\+req}{m\_gradient\_allreduce\_req}}
+{\footnotesize\ttfamily \hyperlink{structlbann_1_1Al_1_1request}{Al\+::request} lbann\+::optimizer\+::m\+\_\+gradient\+\_\+allreduce\+\_\+req\hspace{0.3cm}{\ttfamily [private]}}
+
+The request for non-\/blocking allreduces. 
+
+Definition at line 220 of file optimizer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1optimizer_ac77740a916f397600efae0c03bc5a045}\label{classlbann_1_1optimizer_ac77740a916f397600efae0c03bc5a045}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!m\+\_\+gradient\+\_\+allreduce\+\_\+started@{m\+\_\+gradient\+\_\+allreduce\+\_\+started}}
+\index{m\+\_\+gradient\+\_\+allreduce\+\_\+started@{m\+\_\+gradient\+\_\+allreduce\+\_\+started}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{m\+\_\+gradient\+\_\+allreduce\+\_\+started}{m\_gradient\_allreduce\_started}}
+{\footnotesize\ttfamily bool lbann\+::optimizer\+::m\+\_\+gradient\+\_\+allreduce\+\_\+started\hspace{0.3cm}{\ttfamily [private]}}
+
+Whether an allreduce on the gradient staging matrix has started. 
+
+Definition at line 212 of file optimizer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1optimizer_aadfa322a683c2b826d0fae5f809298df}\label{classlbann_1_1optimizer_aadfa322a683c2b826d0fae5f809298df}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!m\+\_\+gradient\+\_\+sources@{m\+\_\+gradient\+\_\+sources}}
+\index{m\+\_\+gradient\+\_\+sources@{m\+\_\+gradient\+\_\+sources}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{m\+\_\+gradient\+\_\+sources}{m\_gradient\_sources}}
+{\footnotesize\ttfamily std\+::unordered\+\_\+set$<$const void$\ast$$>$ lbann\+::optimizer\+::m\+\_\+gradient\+\_\+sources\hspace{0.3cm}{\ttfamily [private]}}
+
+Sources of gradient contributions. This set contains pointers to objects (i.\+e. layers and objective function terms) which depend on the weights being optimized and which contribute to the gradient. Objects should add themselves to the set as they request the weights and they should remove themselves as they add their gradient contribution. Once this set is empty, it is safe to perform an allreduce on the gradient staging matrix. 
+
+Definition at line 192 of file optimizer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1optimizer_a92cd058d4f9fc8162d36d52461a96df2}\label{classlbann_1_1optimizer_a92cd058d4f9fc8162d36d52461a96df2}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!m\+\_\+gradient\+\_\+staging@{m\+\_\+gradient\+\_\+staging}}
+\index{m\+\_\+gradient\+\_\+staging@{m\+\_\+gradient\+\_\+staging}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{m\+\_\+gradient\+\_\+staging}{m\_gradient\_staging}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat}$\ast$ lbann\+::optimizer\+::m\+\_\+gradient\+\_\+staging\hspace{0.3cm}{\ttfamily [private]}}
+
+Gradient staging matrix. When the gradient is needed, an allreduce is applied over the redundant communicator of the staging matrix and the result is added to the gradient matrix. 
+
+Definition at line 199 of file optimizer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1optimizer_ad393dcdcb82b44510c586ed5ec46d4dd}\label{classlbann_1_1optimizer_ad393dcdcb82b44510c586ed5ec46d4dd}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!m\+\_\+learning\+\_\+rate@{m\+\_\+learning\+\_\+rate}}
+\index{m\+\_\+learning\+\_\+rate@{m\+\_\+learning\+\_\+rate}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{m\+\_\+learning\+\_\+rate}{m\_learning\_rate}}
+{\footnotesize\ttfamily Data\+Type lbann\+::optimizer\+::m\+\_\+learning\+\_\+rate\hspace{0.3cm}{\ttfamily [protected]}}
+
+Learning rate. 
+
+Definition at line 172 of file optimizer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1optimizer_afc424c715008fb4d900548f7934ea856}\label{classlbann_1_1optimizer_afc424c715008fb4d900548f7934ea856}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!m\+\_\+step\+\_\+time@{m\+\_\+step\+\_\+time}}
+\index{m\+\_\+step\+\_\+time@{m\+\_\+step\+\_\+time}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{m\+\_\+step\+\_\+time}{m\_step\_time}}
+{\footnotesize\ttfamily double lbann\+::optimizer\+::m\+\_\+step\+\_\+time = 0.\+0\hspace{0.3cm}{\ttfamily [private]}}
+
+Running count of the time spent in \hyperlink{classlbann_1_1optimizer_aa9f43ca3f22edc0a25d0509b6514a411}{step()}. 
+
+Definition at line 217 of file optimizer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1optimizer_a33b57b578a089d9ffe6715bb3996907c}\label{classlbann_1_1optimizer_a33b57b578a089d9ffe6715bb3996907c}} 
+\index{lbann\+::optimizer@{lbann\+::optimizer}!m\+\_\+weights@{m\+\_\+weights}}
+\index{m\+\_\+weights@{m\+\_\+weights}!lbann\+::optimizer@{lbann\+::optimizer}}
+\subsubsection{\texorpdfstring{m\+\_\+weights}{m\_weights}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1weights}{weights}$\ast$ lbann\+::optimizer\+::m\+\_\+weights\hspace{0.3cm}{\ttfamily [protected]}}
+
+Weights being optimized. 
+
+Definition at line 169 of file optimizer.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/optimizers/\hyperlink{optimizer_8hpp}{optimizer.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/optimizers/\hyperlink{optimizer_8cpp}{optimizer.\+cpp}\end{DoxyCompactItemize}

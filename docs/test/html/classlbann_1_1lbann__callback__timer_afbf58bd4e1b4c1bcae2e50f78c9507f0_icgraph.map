@@ -1,0 +1,4 @@
+<map id="lbann::lbann_callback_timer::batch_timing_end" name="lbann::lbann_callback_timer::batch_timing_end">
+<area shape="rect" id="node2" href="$classlbann_1_1lbann__callback__timer.html#aff885381753dfc63709531aebc827b0e" title="lbann::lbann_callback\l_timer::on_batch_end" alt="" coords="253,5,404,44"/>
+<area shape="rect" id="node3" href="$classlbann_1_1lbann__callback__timer.html#a1a041e3b7cc2cfea68200d9467d3eaaf" title="lbann::lbann_callback\l_timer::on_batch_evaluate_end" alt="" coords="224,68,433,107"/>
+</map>

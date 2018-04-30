@@ -1,0 +1,1178 @@
+\hypertarget{classoptions}{}\section{options Class Reference}
+\label{classoptions}\index{options@{options}}
+
+
+{\ttfamily \#include $<$options.\+hpp$>$}
+
+
+
+Collaboration diagram for options\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=197pt]{classoptions__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{classoptions_a6d909eacd89dee5f0b153430985f9822}{init} (int argc, char $\ast$$\ast$argv)
+\item 
+void \hyperlink{classoptions_a6fd8a97883eaecb722e5c6b120d8f9be}{print} (std\+::ostream \&out=std\+::cout)
+\begin{DoxyCompactList}\small\item\em prints all registered options to \textquotesingle{}out\textquotesingle{} \end{DoxyCompactList}\end{DoxyCompactItemize}
+\textbf{ }\par
+\begin{DoxyCompactItemize}
+\item 
+bool \hyperlink{classoptions_a01020aa5bd82bcff1b1c950b20578883}{has\+\_\+int} (std\+::string option)
+\item 
+bool \hyperlink{classoptions_aafb1d2a7ccde0b1bf786230ba4080ecd}{has\+\_\+bool} (std\+::string option)
+\item 
+bool \hyperlink{classoptions_a5db5b27267c27ffe1b029948f64e54c1}{has\+\_\+string} (std\+::string option)
+\item 
+bool \hyperlink{classoptions_ae6f1f714c9ad1dc01cb5509df0c4c838}{has\+\_\+float} (std\+::string option)
+\item 
+bool \hyperlink{classoptions_ab66aae6c79cdde8dd38d0d3fc8aa3de5}{has\+\_\+double} (std\+::string option)
+\end{DoxyCompactItemize}
+
+\textbf{ }\par
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{classoptions_a3c23831e4218f9a88cddc81337518046}{set\+\_\+option} (std\+::string name, int value)
+\item 
+void \hyperlink{classoptions_ad2b98890aee35b50534117b34617a43f}{set\+\_\+option} (std\+::string name, bool value)
+\item 
+void \hyperlink{classoptions_a6f76ed6506014e816802739221cfbc20}{set\+\_\+option} (std\+::string name, std\+::string value)
+\item 
+void \hyperlink{classoptions_a076c522b99fc0816c695c7405e1ae9b9}{set\+\_\+option} (std\+::string name, float value)
+\item 
+void \hyperlink{classoptions_a42eb183c3fd8156c226559663893bb92}{set\+\_\+option} (std\+::string name, double value)
+\end{DoxyCompactItemize}
+
+\textbf{ }\par
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{classoptions_a797bc1915004bdbc34c5eea3fe488952}{get\+\_\+int} (std\+::string option)
+\item 
+bool \hyperlink{classoptions_a99aa190102de33e2aed39723929f9fad}{get\+\_\+bool} (std\+::string option)
+\item 
+std\+::string \hyperlink{classoptions_aeb84be21a30b0dd41d7d9f3f52c0f3f7}{get\+\_\+string} (std\+::string option)
+\item 
+float \hyperlink{classoptions_a31607533d0c6d2fa331f4e7f52d34bc8}{get\+\_\+float} (std\+::string option)
+\item 
+double \hyperlink{classoptions_a0e8ff0d44b9192754451f9dcd47cd559}{get\+\_\+double} (std\+::string option)
+\end{DoxyCompactItemize}
+
+\textbf{ }\par
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{classoptions_a0a17d018f4b64f85091f3ec21de029f0}{get\+\_\+int} (std\+::string option, int the\+\_\+default)
+\item 
+bool \hyperlink{classoptions_a9ce5a1af62eeb42a88a1b47f5891e247}{get\+\_\+bool} (std\+::string option, bool the\+\_\+default)
+\item 
+std\+::string \hyperlink{classoptions_ae03327a8846e4acb3986b5a6d79b3790}{get\+\_\+string} (std\+::string option, std\+::string the\+\_\+default)
+\item 
+float \hyperlink{classoptions_a113445829763eaa7b86cdc40c2d66e25}{get\+\_\+float} (std\+::string option, float the\+\_\+default)
+\item 
+double \hyperlink{classoptions_aa78e7d95dc59a2d25987546cdbab7872}{get\+\_\+double} (std\+::string option, double the\+\_\+default)
+\end{DoxyCompactItemize}
+
+\subsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static \hyperlink{classoptions}{options} $\ast$ \hyperlink{classoptions_a9ecfe9c365269df68a41b961c31ae3f5}{get} ()
+\begin{DoxyCompactList}\small\item\em returns a pointer to the Options singleton \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classoptions_a41a256b4ba3b2d68a2d72b9245aa0c4d}{options} ()
+\begin{DoxyCompactList}\small\item\em private constructor to ensure this class is a singleton \end{DoxyCompactList}\item 
+\hyperlink{classoptions_a561b67397b31bd4ec2c058ad54ab2daa}{options} (\hyperlink{classoptions}{options} \&)
+\item 
+\hyperlink{classoptions}{options} \& \hyperlink{classoptions_ad3323d598a23707733c16be8a575c270}{operator=} (\hyperlink{classoptions}{options} const \&)
+\item 
+void \hyperlink{classoptions_abeab2c3e2cf5c1809e09601a3835d967}{m\+\_\+parse\+\_\+file} (std\+::string fn)
+\item 
+bool \hyperlink{classoptions_a99183ba43c8d7b35dbfa1bea0f43db48}{m\+\_\+has\+\_\+opt} (std\+::string option)
+\item 
+bool \hyperlink{classoptions_ad9b4461e633b73acc2fde7752ef60d41}{m\+\_\+test\+\_\+int} (std\+::string option, int \&out)
+\item 
+bool \hyperlink{classoptions_a0eebdb8dbce454720ef9251fcd7abf24}{m\+\_\+test\+\_\+double} (std\+::string option, double \&out)
+\item 
+bool \hyperlink{classoptions_a8286a8617eec86a3d4cf678bd17739ba}{m\+\_\+test\+\_\+string} (std\+::string option, std\+::string \&out)
+\item 
+void \hyperlink{classoptions_a441540f2a8990edaa17fe95b013f9168}{m\+\_\+parse\+\_\+cmd\+\_\+line} (int arg, char $\ast$$\ast$argv)
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{classoptions_a3171bb61cdfcc5a6a899ad6fe9b56f9d}{m\+\_\+rank}
+\item 
+std\+::map$<$ std\+::string, std\+::string $>$ \hyperlink{classoptions_ac73507ca925d98ee5ff6f04937dff5c3}{m\+\_\+opts}
+\begin{DoxyCompactList}\small\item\em the \char`\"{}database;\char`\"{} all options are stored as strings, and may be cast to int, etc. \end{DoxyCompactList}\item 
+std\+::vector$<$ std\+::string $>$ \hyperlink{classoptions_a64ad628e508d5d71a117909e44f68350}{m\+\_\+cmd\+\_\+line}
+\item 
+int \hyperlink{classoptions_a5df2188c2d1bb81cbebef4b2e80a926f}{m\+\_\+argc}
+\item 
+char $\ast$$\ast$ \hyperlink{classoptions_a376f7dcfec6a2ff75835c3c3d732bdea}{m\+\_\+argv}
+\end{DoxyCompactItemize}
+\subsection*{Static Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+static \hyperlink{classoptions}{options} $\ast$ \hyperlink{classoptions_ab10ed8295e9333b025619195d156a9ed}{s\+\_\+instance} = new \hyperlink{classoptions}{options}
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+
+
+Definition at line 15 of file options.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classoptions_a41a256b4ba3b2d68a2d72b9245aa0c4d}\label{classoptions_a41a256b4ba3b2d68a2d72b9245aa0c4d}} 
+\index{options@{options}!options@{options}}
+\index{options@{options}!options@{options}}
+\subsubsection{\texorpdfstring{options()}{options()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily options\+::options (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [private]}}
+
+
+
+private constructor to ensure this class is a singleton 
+
+
+
+Definition at line 78 of file options.\+hpp.
+
+
+\begin{DoxyCode}
+78 \{\}
+\end{DoxyCode}
+\mbox{\Hypertarget{classoptions_a561b67397b31bd4ec2c058ad54ab2daa}\label{classoptions_a561b67397b31bd4ec2c058ad54ab2daa}} 
+\index{options@{options}!options@{options}}
+\index{options@{options}!options@{options}}
+\subsubsection{\texorpdfstring{options()}{options()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily options\+::options (\begin{DoxyParamCaption}\item[{\hyperlink{classoptions}{options} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [private]}}
+
+
+
+Definition at line 79 of file options.\+hpp.
+
+
+\begin{DoxyCode}
+79 \{\}
+\end{DoxyCode}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classoptions_a9ecfe9c365269df68a41b961c31ae3f5}\label{classoptions_a9ecfe9c365269df68a41b961c31ae3f5}} 
+\index{options@{options}!get@{get}}
+\index{get@{get}!options@{options}}
+\subsubsection{\texorpdfstring{get()}{get()}}
+{\footnotesize\ttfamily static \hyperlink{classoptions}{options}$\ast$ options\+::get (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+
+
+returns a pointer to the Options singleton 
+
+
+
+Definition at line 20 of file options.\+hpp.
+
+
+\begin{DoxyCode}
+20                          \{
+21     \textcolor{keywordflow}{return} \hyperlink{classoptions_ab10ed8295e9333b025619195d156a9ed}{s\_instance};
+22   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_a9ecfe9c365269df68a41b961c31ae3f5_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_a9ecfe9c365269df68a41b961c31ae3f5_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classoptions_a99aa190102de33e2aed39723929f9fad}\label{classoptions_a99aa190102de33e2aed39723929f9fad}} 
+\index{options@{options}!get\+\_\+bool@{get\+\_\+bool}}
+\index{get\+\_\+bool@{get\+\_\+bool}!options@{options}}
+\subsubsection{\texorpdfstring{get\+\_\+bool()}{get\_bool()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily bool options\+::get\+\_\+bool (\begin{DoxyParamCaption}\item[{std\+::string}]{option }\end{DoxyParamCaption})}
+
+
+
+Definition at line 111 of file options.\+cpp.
+
+
+\begin{DoxyCode}
+112 \{
+113   \textcolor{keywordtype}{int} result;
+114   \textcolor{keywordflow}{if} (!\hyperlink{classoptions_ad9b4461e633b73acc2fde7752ef60d41}{m\_test\_int}(option, result)) \{
+115     \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+116     \textcolor{comment}{/*}
+117 \textcolor{comment}{    std::stringstream err;}
+118 \textcolor{comment}{    err << \_\_FILE\_\_ << " " << \_\_LINE\_\_}
+119 \textcolor{comment}{        << " ::options::get\_int() - failed to find option: " << option}
+120 \textcolor{comment}{        << ", or to convert to int";}
+121 \textcolor{comment}{    throw std::runtime\_error(err.str());}
+122 \textcolor{comment}{    */}
+123   \}
+124   \textcolor{keywordflow}{if} (result == 0) \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+125   \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+126 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_a99aa190102de33e2aed39723929f9fad_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_a99aa190102de33e2aed39723929f9fad_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classoptions_a9ce5a1af62eeb42a88a1b47f5891e247}\label{classoptions_a9ce5a1af62eeb42a88a1b47f5891e247}} 
+\index{options@{options}!get\+\_\+bool@{get\+\_\+bool}}
+\index{get\+\_\+bool@{get\+\_\+bool}!options@{options}}
+\subsubsection{\texorpdfstring{get\+\_\+bool()}{get\_bool()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily bool options\+::get\+\_\+bool (\begin{DoxyParamCaption}\item[{std\+::string}]{option,  }\item[{bool}]{the\+\_\+default }\end{DoxyParamCaption})}
+
+
+
+Definition at line 101 of file options.\+cpp.
+
+
+\begin{DoxyCode}
+102 \{
+103   \textcolor{keywordtype}{int} result;
+104   \textcolor{keywordflow}{if} (!\hyperlink{classoptions_ad9b4461e633b73acc2fde7752ef60d41}{m\_test\_int}(option, result)) \{
+105     \hyperlink{classoptions_a3c23831e4218f9a88cddc81337518046}{set\_option}(option, the\_default);
+106     \textcolor{keywordflow}{return} the\_default;
+107   \}
+108   \textcolor{keywordflow}{return} result;
+109 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_a9ce5a1af62eeb42a88a1b47f5891e247_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classoptions_a0e8ff0d44b9192754451f9dcd47cd559}\label{classoptions_a0e8ff0d44b9192754451f9dcd47cd559}} 
+\index{options@{options}!get\+\_\+double@{get\+\_\+double}}
+\index{get\+\_\+double@{get\+\_\+double}!options@{options}}
+\subsubsection{\texorpdfstring{get\+\_\+double()}{get\_double()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily double options\+::get\+\_\+double (\begin{DoxyParamCaption}\item[{std\+::string}]{option }\end{DoxyParamCaption})}
+
+
+
+Definition at line 160 of file options.\+cpp.
+
+
+\begin{DoxyCode}
+161 \{
+162   \textcolor{keywordtype}{double} result;
+163   \textcolor{keywordflow}{if} (!\hyperlink{classoptions_a0eebdb8dbce454720ef9251fcd7abf24}{m\_test\_double}(option, result)) \{
+164     std::stringstream err;
+165     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_
+166         << \textcolor{stringliteral}{" :: options::get\_double() - failed to find option: "} << option
+167         << \textcolor{stringliteral}{", or to convert the value to double"};
+168     \textcolor{keywordflow}{throw} std::runtime\_error(err.str());
+169   \}
+170   \textcolor{keywordflow}{return} result;
+171 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_a0e8ff0d44b9192754451f9dcd47cd559_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_a0e8ff0d44b9192754451f9dcd47cd559_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classoptions_aa78e7d95dc59a2d25987546cdbab7872}\label{classoptions_aa78e7d95dc59a2d25987546cdbab7872}} 
+\index{options@{options}!get\+\_\+double@{get\+\_\+double}}
+\index{get\+\_\+double@{get\+\_\+double}!options@{options}}
+\subsubsection{\texorpdfstring{get\+\_\+double()}{get\_double()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily double options\+::get\+\_\+double (\begin{DoxyParamCaption}\item[{std\+::string}]{option,  }\item[{double}]{the\+\_\+default }\end{DoxyParamCaption})}
+
+
+
+Definition at line 151 of file options.\+cpp.
+
+
+\begin{DoxyCode}
+151                                                                \{
+152   \textcolor{keywordtype}{double} result;
+153   \textcolor{keywordflow}{if} (!\hyperlink{classoptions_a0eebdb8dbce454720ef9251fcd7abf24}{m\_test\_double}(option, result)) \{
+154     \hyperlink{classoptions_a3c23831e4218f9a88cddc81337518046}{set\_option}(option, the\_default);
+155     \textcolor{keywordflow}{return} the\_default;
+156   \}
+157   \textcolor{keywordflow}{return} result;
+158 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_aa78e7d95dc59a2d25987546cdbab7872_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classoptions_a31607533d0c6d2fa331f4e7f52d34bc8}\label{classoptions_a31607533d0c6d2fa331f4e7f52d34bc8}} 
+\index{options@{options}!get\+\_\+float@{get\+\_\+float}}
+\index{get\+\_\+float@{get\+\_\+float}!options@{options}}
+\subsubsection{\texorpdfstring{get\+\_\+float()}{get\_float()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily float options\+::get\+\_\+float (\begin{DoxyParamCaption}\item[{std\+::string}]{option }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 58 of file options.\+hpp.
+
+
+\begin{DoxyCode}
+58 \{ \textcolor{keywordflow}{return} (\textcolor{keywordtype}{float}) \hyperlink{classoptions_a0e8ff0d44b9192754451f9dcd47cd559}{get\_double}(option); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_a31607533d0c6d2fa331f4e7f52d34bc8_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_a31607533d0c6d2fa331f4e7f52d34bc8_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classoptions_a113445829763eaa7b86cdc40c2d66e25}\label{classoptions_a113445829763eaa7b86cdc40c2d66e25}} 
+\index{options@{options}!get\+\_\+float@{get\+\_\+float}}
+\index{get\+\_\+float@{get\+\_\+float}!options@{options}}
+\subsubsection{\texorpdfstring{get\+\_\+float()}{get\_float()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily float options\+::get\+\_\+float (\begin{DoxyParamCaption}\item[{std\+::string}]{option,  }\item[{float}]{the\+\_\+default }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 70 of file options.\+hpp.
+
+
+\begin{DoxyCode}
+70 \{ \textcolor{keywordflow}{return} (\textcolor{keywordtype}{float}) \hyperlink{classoptions_a0e8ff0d44b9192754451f9dcd47cd559}{get\_double}(option, the\_default); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_a113445829763eaa7b86cdc40c2d66e25_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classoptions_a797bc1915004bdbc34c5eea3fe488952}\label{classoptions_a797bc1915004bdbc34c5eea3fe488952}} 
+\index{options@{options}!get\+\_\+int@{get\+\_\+int}}
+\index{get\+\_\+int@{get\+\_\+int}!options@{options}}
+\subsubsection{\texorpdfstring{get\+\_\+int()}{get\_int()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily int options\+::get\+\_\+int (\begin{DoxyParamCaption}\item[{std\+::string}]{option }\end{DoxyParamCaption})}
+
+returns the value of the option; throws exception if option doesn\textquotesingle{}t exist, or if it\textquotesingle{}s associated value (which is stored internally as a string) cannot be cast to the specified return type 
+
+Definition at line 138 of file options.\+cpp.
+
+
+\begin{DoxyCode}
+139 \{
+140   \textcolor{keywordtype}{int} result;
+141   \textcolor{keywordflow}{if} (!\hyperlink{classoptions_ad9b4461e633b73acc2fde7752ef60d41}{m\_test\_int}(option, result)) \{
+142     std::stringstream err;
+143     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_
+144         << \textcolor{stringliteral}{" :: options::get\_int() - failed to find option: "} << option
+145         << \textcolor{stringliteral}{", or to convert to int"};
+146     \textcolor{keywordflow}{throw} std::runtime\_error(err.str());
+147   \}
+148   \textcolor{keywordflow}{return} result;
+149 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_a797bc1915004bdbc34c5eea3fe488952_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_a797bc1915004bdbc34c5eea3fe488952_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classoptions_a0a17d018f4b64f85091f3ec21de029f0}\label{classoptions_a0a17d018f4b64f85091f3ec21de029f0}} 
+\index{options@{options}!get\+\_\+int@{get\+\_\+int}}
+\index{get\+\_\+int@{get\+\_\+int}!options@{options}}
+\subsubsection{\texorpdfstring{get\+\_\+int()}{get\_int()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily int options\+::get\+\_\+int (\begin{DoxyParamCaption}\item[{std\+::string}]{option,  }\item[{int}]{the\+\_\+default }\end{DoxyParamCaption})}
+
+returns the value of the option; if option isn\textquotesingle{}t found, inserts the option in the internal db, with the specified default value, and returns the the\+\_\+default 
+
+Definition at line 128 of file options.\+cpp.
+
+
+\begin{DoxyCode}
+129 \{
+130   \textcolor{keywordtype}{int} result;
+131   \textcolor{keywordflow}{if} (!\hyperlink{classoptions_ad9b4461e633b73acc2fde7752ef60d41}{m\_test\_int}(option, result)) \{
+132     \hyperlink{classoptions_a3c23831e4218f9a88cddc81337518046}{set\_option}(option, the\_default);
+133     \textcolor{keywordflow}{return} the\_default;
+134   \}
+135   \textcolor{keywordflow}{return} result;
+136 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_a0a17d018f4b64f85091f3ec21de029f0_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classoptions_aeb84be21a30b0dd41d7d9f3f52c0f3f7}\label{classoptions_aeb84be21a30b0dd41d7d9f3f52c0f3f7}} 
+\index{options@{options}!get\+\_\+string@{get\+\_\+string}}
+\index{get\+\_\+string@{get\+\_\+string}!options@{options}}
+\subsubsection{\texorpdfstring{get\+\_\+string()}{get\_string()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily std\+::string options\+::get\+\_\+string (\begin{DoxyParamCaption}\item[{std\+::string}]{option }\end{DoxyParamCaption})}
+
+
+
+Definition at line 182 of file options.\+cpp.
+
+
+\begin{DoxyCode}
+183 \{
+184   std::string result;
+185   \textcolor{keywordflow}{if} (!\hyperlink{classoptions_a8286a8617eec86a3d4cf678bd17739ba}{m\_test\_string}(option, result)) \{
+186     std::stringstream err;
+187     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_
+188         << \textcolor{stringliteral}{" :: options::get\_string() - failed to find option: "} << option;
+189     \textcolor{keywordflow}{throw} std::runtime\_error(err.str());
+190   \}
+191   \textcolor{keywordflow}{return} result;
+192 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_aeb84be21a30b0dd41d7d9f3f52c0f3f7_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_aeb84be21a30b0dd41d7d9f3f52c0f3f7_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classoptions_ae03327a8846e4acb3986b5a6d79b3790}\label{classoptions_ae03327a8846e4acb3986b5a6d79b3790}} 
+\index{options@{options}!get\+\_\+string@{get\+\_\+string}}
+\index{get\+\_\+string@{get\+\_\+string}!options@{options}}
+\subsubsection{\texorpdfstring{get\+\_\+string()}{get\_string()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily std\+::string options\+::get\+\_\+string (\begin{DoxyParamCaption}\item[{std\+::string}]{option,  }\item[{std\+::string}]{the\+\_\+default }\end{DoxyParamCaption})}
+
+
+
+Definition at line 173 of file options.\+cpp.
+
+
+\begin{DoxyCode}
+174 \{
+175   std::string result;
+176   \textcolor{keywordflow}{if} (!\hyperlink{classoptions_a8286a8617eec86a3d4cf678bd17739ba}{m\_test\_string}(option, result)) \{
+177     \textcolor{keywordflow}{return} the\_default;
+178   \}  
+179   \textcolor{keywordflow}{return} the\_default;
+180 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_ae03327a8846e4acb3986b5a6d79b3790_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classoptions_aafb1d2a7ccde0b1bf786230ba4080ecd}\label{classoptions_aafb1d2a7ccde0b1bf786230ba4080ecd}} 
+\index{options@{options}!has\+\_\+bool@{has\+\_\+bool}}
+\index{has\+\_\+bool@{has\+\_\+bool}!options@{options}}
+\subsubsection{\texorpdfstring{has\+\_\+bool()}{has\_bool()}}
+{\footnotesize\ttfamily bool options\+::has\+\_\+bool (\begin{DoxyParamCaption}\item[{std\+::string}]{option }\end{DoxyParamCaption})}
+
+
+
+Definition at line 252 of file options.\+cpp.
+
+
+\begin{DoxyCode}
+253 \{
+254   \textcolor{keywordtype}{int} test;
+255   \textcolor{keywordflow}{if} (\hyperlink{classoptions_ad9b4461e633b73acc2fde7752ef60d41}{m\_test\_int}(option, test)) \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+256   \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+257 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_aafb1d2a7ccde0b1bf786230ba4080ecd_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_aafb1d2a7ccde0b1bf786230ba4080ecd_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classoptions_ab66aae6c79cdde8dd38d0d3fc8aa3de5}\label{classoptions_ab66aae6c79cdde8dd38d0d3fc8aa3de5}} 
+\index{options@{options}!has\+\_\+double@{has\+\_\+double}}
+\index{has\+\_\+double@{has\+\_\+double}!options@{options}}
+\subsubsection{\texorpdfstring{has\+\_\+double()}{has\_double()}}
+{\footnotesize\ttfamily bool options\+::has\+\_\+double (\begin{DoxyParamCaption}\item[{std\+::string}]{option }\end{DoxyParamCaption})}
+
+
+
+Definition at line 265 of file options.\+cpp.
+
+
+\begin{DoxyCode}
+265                                          \{
+266 
+267   \textcolor{keywordtype}{double} test;
+268   \textcolor{keywordflow}{if} (\hyperlink{classoptions_a0eebdb8dbce454720ef9251fcd7abf24}{m\_test\_double}(option, test)) \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+269   \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+270 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_ab66aae6c79cdde8dd38d0d3fc8aa3de5_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_ab66aae6c79cdde8dd38d0d3fc8aa3de5_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classoptions_ae6f1f714c9ad1dc01cb5509df0c4c838}\label{classoptions_ae6f1f714c9ad1dc01cb5509df0c4c838}} 
+\index{options@{options}!has\+\_\+float@{has\+\_\+float}}
+\index{has\+\_\+float@{has\+\_\+float}!options@{options}}
+\subsubsection{\texorpdfstring{has\+\_\+float()}{has\_float()}}
+{\footnotesize\ttfamily bool options\+::has\+\_\+float (\begin{DoxyParamCaption}\item[{std\+::string}]{option }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 37 of file options.\+hpp.
+
+
+\begin{DoxyCode}
+37 \{ \textcolor{keywordflow}{return} \hyperlink{classoptions_ab66aae6c79cdde8dd38d0d3fc8aa3de5}{has\_double}(option); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_ae6f1f714c9ad1dc01cb5509df0c4c838_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=327pt]{classoptions_ae6f1f714c9ad1dc01cb5509df0c4c838_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classoptions_a01020aa5bd82bcff1b1c950b20578883}\label{classoptions_a01020aa5bd82bcff1b1c950b20578883}} 
+\index{options@{options}!has\+\_\+int@{has\+\_\+int}}
+\index{has\+\_\+int@{has\+\_\+int}!options@{options}}
+\subsubsection{\texorpdfstring{has\+\_\+int()}{has\_int()}}
+{\footnotesize\ttfamily bool options\+::has\+\_\+int (\begin{DoxyParamCaption}\item[{std\+::string}]{option }\end{DoxyParamCaption})}
+
+Returns true if the database contains the option 
+
+Definition at line 245 of file options.\+cpp.
+
+
+\begin{DoxyCode}
+246 \{
+247   \textcolor{keywordtype}{int} test;
+248   \textcolor{keywordflow}{if} (\hyperlink{classoptions_ad9b4461e633b73acc2fde7752ef60d41}{m\_test\_int}(option, test)) \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+249   \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+250 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_a01020aa5bd82bcff1b1c950b20578883_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_a01020aa5bd82bcff1b1c950b20578883_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classoptions_a5db5b27267c27ffe1b029948f64e54c1}\label{classoptions_a5db5b27267c27ffe1b029948f64e54c1}} 
+\index{options@{options}!has\+\_\+string@{has\+\_\+string}}
+\index{has\+\_\+string@{has\+\_\+string}!options@{options}}
+\subsubsection{\texorpdfstring{has\+\_\+string()}{has\_string()}}
+{\footnotesize\ttfamily bool options\+::has\+\_\+string (\begin{DoxyParamCaption}\item[{std\+::string}]{option }\end{DoxyParamCaption})}
+
+
+
+Definition at line 259 of file options.\+cpp.
+
+
+\begin{DoxyCode}
+259                                          \{
+260   std::string test;
+261   \textcolor{keywordflow}{if} (\hyperlink{classoptions_a8286a8617eec86a3d4cf678bd17739ba}{m\_test\_string}(option, test)) \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+262   \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+263 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_a5db5b27267c27ffe1b029948f64e54c1_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_a5db5b27267c27ffe1b029948f64e54c1_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classoptions_a6d909eacd89dee5f0b153430985f9822}\label{classoptions_a6d909eacd89dee5f0b153430985f9822}} 
+\index{options@{options}!init@{init}}
+\index{init@{init}!options@{options}}
+\subsubsection{\texorpdfstring{init()}{init()}}
+{\footnotesize\ttfamily void options\+::init (\begin{DoxyParamCaption}\item[{int}]{argc,  }\item[{char $\ast$$\ast$}]{argv }\end{DoxyParamCaption})}
+
+if cmd line contains \char`\"{}-\/-\/loadme=$<$string$>$\char`\"{} then initialize options database from that file. Next, intialize from all other options on cmd line. 
+
+Definition at line 39 of file options.\+cpp.
+
+
+\begin{DoxyCode}
+40 \{
+41   MPI\_Comm\_rank(MPI\_COMM\_WORLD, &\hyperlink{classoptions_a3171bb61cdfcc5a6a899ad6fe9b56f9d}{m\_rank});
+42   \hyperlink{classoptions_a5df2188c2d1bb81cbebef4b2e80a926f}{m\_argc} = argc;
+43   \hyperlink{classoptions_a376f7dcfec6a2ff75835c3c3d732bdea}{m\_argv} = argv;
+44 
+45   \textcolor{comment}{//the\_default fileBaseName for saving}
+46   \hyperlink{classoptions_ac73507ca925d98ee5ff6f04937dff5c3}{m\_opts}[\textcolor{stringliteral}{"saveme"}] = \textcolor{stringliteral}{"data.prototext"};
+47 
+48   \textcolor{comment}{//save cmd line}
+49   std::string key;
+50   std::string value;
+51   std::string loadme;
+52   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} j=0; j<argc; j++) \{
+53     \hyperlink{classoptions_a64ad628e508d5d71a117909e44f68350}{m\_cmd\_line}.emplace\_back(argv[j]);
+54     \hyperlink{options_8cpp_a18f37a1b6f36c00656e52d130c2132d2}{m\_parse\_opt}(argv[j], key, value);
+55     \textcolor{keywordflow}{if} (key == \textcolor{stringliteral}{"loadme"}) \{
+56       loadme = value;
+57     \}
+58   \}
+59 
+60   \textcolor{comment}{//optionally init from file}
+61   \textcolor{keywordflow}{if} (loadme != \textcolor{stringliteral}{""}) \{
+62     \hyperlink{classoptions_abeab2c3e2cf5c1809e09601a3835d967}{m\_parse\_file}(loadme.c\_str());
+63   \}
+64 
+65   \textcolor{comment}{//over-ride from cmd line}
+66   \hyperlink{classoptions_a441540f2a8990edaa17fe95b013f9168}{m\_parse\_cmd\_line}(argc, argv);
+67 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_a6d909eacd89dee5f0b153430985f9822_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_a6d909eacd89dee5f0b153430985f9822_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classoptions_a99183ba43c8d7b35dbfa1bea0f43db48}\label{classoptions_a99183ba43c8d7b35dbfa1bea0f43db48}} 
+\index{options@{options}!m\+\_\+has\+\_\+opt@{m\+\_\+has\+\_\+opt}}
+\index{m\+\_\+has\+\_\+opt@{m\+\_\+has\+\_\+opt}!options@{options}}
+\subsubsection{\texorpdfstring{m\+\_\+has\+\_\+opt()}{m\_has\_opt()}}
+{\footnotesize\ttfamily bool options\+::m\+\_\+has\+\_\+opt (\begin{DoxyParamCaption}\item[{std\+::string}]{option }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Definition at line 93 of file options.\+cpp.
+
+
+\begin{DoxyCode}
+94 \{
+95   \textcolor{keywordflow}{if} (\hyperlink{classoptions_ac73507ca925d98ee5ff6f04937dff5c3}{m\_opts}.find(option) == \hyperlink{classoptions_ac73507ca925d98ee5ff6f04937dff5c3}{m\_opts}.end()) \{
+96     \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+97   \}
+98   \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+99 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_a99183ba43c8d7b35dbfa1bea0f43db48_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classoptions_a441540f2a8990edaa17fe95b013f9168}\label{classoptions_a441540f2a8990edaa17fe95b013f9168}} 
+\index{options@{options}!m\+\_\+parse\+\_\+cmd\+\_\+line@{m\+\_\+parse\+\_\+cmd\+\_\+line}}
+\index{m\+\_\+parse\+\_\+cmd\+\_\+line@{m\+\_\+parse\+\_\+cmd\+\_\+line}!options@{options}}
+\subsubsection{\texorpdfstring{m\+\_\+parse\+\_\+cmd\+\_\+line()}{m\_parse\_cmd\_line()}}
+{\footnotesize\ttfamily void options\+::m\+\_\+parse\+\_\+cmd\+\_\+line (\begin{DoxyParamCaption}\item[{int}]{arg,  }\item[{char $\ast$$\ast$}]{argv }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Definition at line 330 of file options.\+cpp.
+
+
+\begin{DoxyCode}
+331 \{
+332   std::string key, val;
+333   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} j=1; j<argc; j++) \{
+334     \hyperlink{options_8cpp_a18f37a1b6f36c00656e52d130c2132d2}{m\_parse\_opt}(argv[j], key, val);
+335     \textcolor{keywordflow}{if} (key != \textcolor{stringliteral}{""}) \{
+336       \hyperlink{classoptions_ac73507ca925d98ee5ff6f04937dff5c3}{m\_opts}[key] = val;
+337     \}
+338   \}
+339 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=329pt]{classoptions_a441540f2a8990edaa17fe95b013f9168_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_a441540f2a8990edaa17fe95b013f9168_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classoptions_abeab2c3e2cf5c1809e09601a3835d967}\label{classoptions_abeab2c3e2cf5c1809e09601a3835d967}} 
+\index{options@{options}!m\+\_\+parse\+\_\+file@{m\+\_\+parse\+\_\+file}}
+\index{m\+\_\+parse\+\_\+file@{m\+\_\+parse\+\_\+file}!options@{options}}
+\subsubsection{\texorpdfstring{m\+\_\+parse\+\_\+file()}{m\_parse\_file()}}
+{\footnotesize\ttfamily void options\+::m\+\_\+parse\+\_\+file (\begin{DoxyParamCaption}\item[{std\+::string}]{fn }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Definition at line 295 of file options.\+cpp.
+
+
+\begin{DoxyCode}
+296 \{
+297   std::ifstream in(fn.c\_str());
+298   \textcolor{keywordflow}{if} (!in.is\_open()) \{
+299     \textcolor{keywordflow}{if} (!\hyperlink{classoptions_a3171bb61cdfcc5a6a899ad6fe9b56f9d}{m\_rank}) \{
+300       std::stringstream err;
+301       err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_
+302           << \textcolor{stringliteral}{" :: failed to open file for reading: "} << fn;
+303       \textcolor{keywordflow}{throw} std::runtime\_error(err.str());
+304     \}
+305   \}
+306 
+307   std::string key, line, val;
+308   \textcolor{keywordflow}{while} (in.good() and not in.eof()) \{
+309     getline(in, line);
+310 
+311     \textcolor{comment}{//skip of commented out portion of the file}
+312     \textcolor{keywordflow}{if} (line.size() > 0 and line[0] == \textcolor{charliteral}{'>'}) \{
+313       \textcolor{keywordflow}{while} (in.good() and not in.eof()) \{
+314         getline(in, line);
+315         \textcolor{keywordflow}{if} (line.size() > 0 and line[0] == \textcolor{charliteral}{'<'}) \{
+316           \textcolor{keywordflow}{break};
+317         \}
+318       \}
+319     \}
+320 
+321     \hyperlink{options_8cpp_a18f37a1b6f36c00656e52d130c2132d2}{m\_parse\_opt}(line, key, val);
+322     \textcolor{keywordflow}{if} (key != \textcolor{stringliteral}{""}) \{
+323       \hyperlink{classoptions_ac73507ca925d98ee5ff6f04937dff5c3}{m\_opts}[key] = val;
+324     \}
+325   \}
+326   in.close();
+327 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=301pt]{classoptions_abeab2c3e2cf5c1809e09601a3835d967_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_abeab2c3e2cf5c1809e09601a3835d967_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classoptions_a0eebdb8dbce454720ef9251fcd7abf24}\label{classoptions_a0eebdb8dbce454720ef9251fcd7abf24}} 
+\index{options@{options}!m\+\_\+test\+\_\+double@{m\+\_\+test\+\_\+double}}
+\index{m\+\_\+test\+\_\+double@{m\+\_\+test\+\_\+double}!options@{options}}
+\subsubsection{\texorpdfstring{m\+\_\+test\+\_\+double()}{m\_test\_double()}}
+{\footnotesize\ttfamily bool options\+::m\+\_\+test\+\_\+double (\begin{DoxyParamCaption}\item[{std\+::string}]{option,  }\item[{double \&}]{out }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Definition at line 220 of file options.\+cpp.
+
+
+\begin{DoxyCode}
+221 \{
+222   \textcolor{keywordflow}{if} (!\hyperlink{classoptions_a99183ba43c8d7b35dbfa1bea0f43db48}{m\_has\_opt}(option)) \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+223   std::string val(\hyperlink{classoptions_ac73507ca925d98ee5ff6f04937dff5c3}{m\_opts}[option]);
+224   \hyperlink{options_8cpp_a7a1c169fc6503243e8670fd2b30b06f1}{lower}(val);
+225   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{char} j : val) \{
+226     \textcolor{keywordflow}{if} (!(isdigit(j) or j == \textcolor{charliteral}{'-'}
+227              or tolower(j == \textcolor{charliteral}{'e'}) or j == \textcolor{charliteral}{'.'})) \{
+228       \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+229     \}
+230   \}
+231   std::stringstream s(val);
+232   \textcolor{keywordflow}{if} (! (s>>out)) \{
+233     \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+234   \}
+235   \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+236 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=339pt]{classoptions_a0eebdb8dbce454720ef9251fcd7abf24_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_a0eebdb8dbce454720ef9251fcd7abf24_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classoptions_ad9b4461e633b73acc2fde7752ef60d41}\label{classoptions_ad9b4461e633b73acc2fde7752ef60d41}} 
+\index{options@{options}!m\+\_\+test\+\_\+int@{m\+\_\+test\+\_\+int}}
+\index{m\+\_\+test\+\_\+int@{m\+\_\+test\+\_\+int}!options@{options}}
+\subsubsection{\texorpdfstring{m\+\_\+test\+\_\+int()}{m\_test\_int()}}
+{\footnotesize\ttfamily bool options\+::m\+\_\+test\+\_\+int (\begin{DoxyParamCaption}\item[{std\+::string}]{option,  }\item[{int \&}]{out }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Definition at line 196 of file options.\+cpp.
+
+
+\begin{DoxyCode}
+197 \{
+198   \textcolor{keywordflow}{if} (!\hyperlink{classoptions_a99183ba43c8d7b35dbfa1bea0f43db48}{m\_has\_opt}(option)) \{
+199     \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+200   \}
+201   \textcolor{keywordtype}{bool} is\_good = \textcolor{keyword}{true};
+202   std::string val = \hyperlink{classoptions_ac73507ca925d98ee5ff6f04937dff5c3}{m\_opts}[option];
+203   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{char} j : val) \{
+204     \textcolor{keywordflow}{if} (!isdigit(j)) \{
+205       is\_good = \textcolor{keyword}{false};
+206       \textcolor{keywordflow}{break};
+207     \}
+208   \}
+209   \textcolor{keywordflow}{if} (!is\_good) \{
+210     \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+211   \}
+212 
+213   std::stringstream s(val);
+214   \textcolor{keywordflow}{if} (! (s>>out)) \{
+215     \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+216   \}
+217   \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+218 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=319pt]{classoptions_ad9b4461e633b73acc2fde7752ef60d41_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_ad9b4461e633b73acc2fde7752ef60d41_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classoptions_a8286a8617eec86a3d4cf678bd17739ba}\label{classoptions_a8286a8617eec86a3d4cf678bd17739ba}} 
+\index{options@{options}!m\+\_\+test\+\_\+string@{m\+\_\+test\+\_\+string}}
+\index{m\+\_\+test\+\_\+string@{m\+\_\+test\+\_\+string}!options@{options}}
+\subsubsection{\texorpdfstring{m\+\_\+test\+\_\+string()}{m\_test\_string()}}
+{\footnotesize\ttfamily bool options\+::m\+\_\+test\+\_\+string (\begin{DoxyParamCaption}\item[{std\+::string}]{option,  }\item[{std\+::string \&}]{out }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Definition at line 238 of file options.\+cpp.
+
+
+\begin{DoxyCode}
+239 \{
+240   \textcolor{keywordflow}{if} (!\hyperlink{classoptions_a99183ba43c8d7b35dbfa1bea0f43db48}{m\_has\_opt}(option)) \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+241   out = \hyperlink{classoptions_ac73507ca925d98ee5ff6f04937dff5c3}{m\_opts}[option];
+242   \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+243 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=333pt]{classoptions_a8286a8617eec86a3d4cf678bd17739ba_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_a8286a8617eec86a3d4cf678bd17739ba_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classoptions_ad3323d598a23707733c16be8a575c270}\label{classoptions_ad3323d598a23707733c16be8a575c270}} 
+\index{options@{options}!operator=@{operator=}}
+\index{operator=@{operator=}!options@{options}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classoptions}{options}\& options\+::operator= (\begin{DoxyParamCaption}\item[{\hyperlink{classoptions}{options} const \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [private]}}
+
+
+
+Definition at line 80 of file options.\+hpp.
+
+
+\begin{DoxyCode}
+80 \{ \textcolor{keywordflow}{return} *\textcolor{keyword}{this}; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classoptions_a6fd8a97883eaecb722e5c6b120d8f9be}\label{classoptions_a6fd8a97883eaecb722e5c6b120d8f9be}} 
+\index{options@{options}!print@{print}}
+\index{print@{print}!options@{options}}
+\subsubsection{\texorpdfstring{print()}{print()}}
+{\footnotesize\ttfamily void options\+::print (\begin{DoxyParamCaption}\item[{std\+::ostream \&}]{out = {\ttfamily std\+:\+:cout} }\end{DoxyParamCaption})}
+
+
+
+prints all registered options to \textquotesingle{}out\textquotesingle{} 
+
+
+
+Definition at line 341 of file options.\+cpp.
+
+
+\begin{DoxyCode}
+341                                    \{
+342   out << \textcolor{stringliteral}{"# The following Options were used in the code\(\backslash\)n"};
+343   \textcolor{keywordflow}{for} (\textcolor{keyword}{auto} t : \hyperlink{classoptions_ac73507ca925d98ee5ff6f04937dff5c3}{m\_opts}) \{
+344     out << \textcolor{stringliteral}{"--"} << t.first << \textcolor{stringliteral}{"="} << t.second << \textcolor{stringliteral}{" "};
+345   \}
+346   out << std::endl;
+347 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_a6fd8a97883eaecb722e5c6b120d8f9be_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classoptions_a3c23831e4218f9a88cddc81337518046}\label{classoptions_a3c23831e4218f9a88cddc81337518046}} 
+\index{options@{options}!set\+\_\+option@{set\+\_\+option}}
+\index{set\+\_\+option@{set\+\_\+option}!options@{options}}
+\subsubsection{\texorpdfstring{set\+\_\+option()}{set\_option()}\hspace{0.1cm}{\footnotesize\ttfamily [1/5]}}
+{\footnotesize\ttfamily void options\+::set\+\_\+option (\begin{DoxyParamCaption}\item[{std\+::string}]{name,  }\item[{int}]{value }\end{DoxyParamCaption})}
+
+insert option in database; if option already exists it\textquotesingle{}s value will changed 
+
+Definition at line 273 of file options.\+cpp.
+
+
+\begin{DoxyCode}
+273                                                   \{
+274   \hyperlink{classoptions_ac73507ca925d98ee5ff6f04937dff5c3}{m\_opts}[name] = std::to\_string(value);
+275 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classoptions_a3c23831e4218f9a88cddc81337518046_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classoptions_ad2b98890aee35b50534117b34617a43f}\label{classoptions_ad2b98890aee35b50534117b34617a43f}} 
+\index{options@{options}!set\+\_\+option@{set\+\_\+option}}
+\index{set\+\_\+option@{set\+\_\+option}!options@{options}}
+\subsubsection{\texorpdfstring{set\+\_\+option()}{set\_option()}\hspace{0.1cm}{\footnotesize\ttfamily [2/5]}}
+{\footnotesize\ttfamily void options\+::set\+\_\+option (\begin{DoxyParamCaption}\item[{std\+::string}]{name,  }\item[{bool}]{value }\end{DoxyParamCaption})}
+
+
+
+Definition at line 277 of file options.\+cpp.
+
+
+\begin{DoxyCode}
+277                                                    \{
+278   \hyperlink{classoptions_ac73507ca925d98ee5ff6f04937dff5c3}{m\_opts}[name] = std::to\_string(value);
+279 \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classoptions_a6f76ed6506014e816802739221cfbc20}\label{classoptions_a6f76ed6506014e816802739221cfbc20}} 
+\index{options@{options}!set\+\_\+option@{set\+\_\+option}}
+\index{set\+\_\+option@{set\+\_\+option}!options@{options}}
+\subsubsection{\texorpdfstring{set\+\_\+option()}{set\_option()}\hspace{0.1cm}{\footnotesize\ttfamily [3/5]}}
+{\footnotesize\ttfamily void options\+::set\+\_\+option (\begin{DoxyParamCaption}\item[{std\+::string}]{name,  }\item[{std\+::string}]{value }\end{DoxyParamCaption})}
+
+
+
+Definition at line 281 of file options.\+cpp.
+
+
+\begin{DoxyCode}
+281                                                         \{
+282   \hyperlink{classoptions_ac73507ca925d98ee5ff6f04937dff5c3}{m\_opts}[name] = value;
+283 \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classoptions_a076c522b99fc0816c695c7405e1ae9b9}\label{classoptions_a076c522b99fc0816c695c7405e1ae9b9}} 
+\index{options@{options}!set\+\_\+option@{set\+\_\+option}}
+\index{set\+\_\+option@{set\+\_\+option}!options@{options}}
+\subsubsection{\texorpdfstring{set\+\_\+option()}{set\_option()}\hspace{0.1cm}{\footnotesize\ttfamily [4/5]}}
+{\footnotesize\ttfamily void options\+::set\+\_\+option (\begin{DoxyParamCaption}\item[{std\+::string}]{name,  }\item[{float}]{value }\end{DoxyParamCaption})}
+
+
+
+Definition at line 285 of file options.\+cpp.
+
+
+\begin{DoxyCode}
+285                                                     \{
+286   \hyperlink{classoptions_ac73507ca925d98ee5ff6f04937dff5c3}{m\_opts}[name] = std::to\_string(value);
+287 \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classoptions_a42eb183c3fd8156c226559663893bb92}\label{classoptions_a42eb183c3fd8156c226559663893bb92}} 
+\index{options@{options}!set\+\_\+option@{set\+\_\+option}}
+\index{set\+\_\+option@{set\+\_\+option}!options@{options}}
+\subsubsection{\texorpdfstring{set\+\_\+option()}{set\_option()}\hspace{0.1cm}{\footnotesize\ttfamily [5/5]}}
+{\footnotesize\ttfamily void options\+::set\+\_\+option (\begin{DoxyParamCaption}\item[{std\+::string}]{name,  }\item[{double}]{value }\end{DoxyParamCaption})}
+
+
+
+Definition at line 289 of file options.\+cpp.
+
+
+\begin{DoxyCode}
+289                                                      \{
+290   \hyperlink{classoptions_ac73507ca925d98ee5ff6f04937dff5c3}{m\_opts}[name] = std::to\_string(value);
+291 \}
+\end{DoxyCode}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classoptions_a5df2188c2d1bb81cbebef4b2e80a926f}\label{classoptions_a5df2188c2d1bb81cbebef4b2e80a926f}} 
+\index{options@{options}!m\+\_\+argc@{m\+\_\+argc}}
+\index{m\+\_\+argc@{m\+\_\+argc}!options@{options}}
+\subsubsection{\texorpdfstring{m\+\_\+argc}{m\_argc}}
+{\footnotesize\ttfamily int options\+::m\+\_\+argc\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Definition at line 99 of file options.\+hpp.
+
+\mbox{\Hypertarget{classoptions_a376f7dcfec6a2ff75835c3c3d732bdea}\label{classoptions_a376f7dcfec6a2ff75835c3c3d732bdea}} 
+\index{options@{options}!m\+\_\+argv@{m\+\_\+argv}}
+\index{m\+\_\+argv@{m\+\_\+argv}!options@{options}}
+\subsubsection{\texorpdfstring{m\+\_\+argv}{m\_argv}}
+{\footnotesize\ttfamily char$\ast$$\ast$ options\+::m\+\_\+argv\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Definition at line 100 of file options.\+hpp.
+
+\mbox{\Hypertarget{classoptions_a64ad628e508d5d71a117909e44f68350}\label{classoptions_a64ad628e508d5d71a117909e44f68350}} 
+\index{options@{options}!m\+\_\+cmd\+\_\+line@{m\+\_\+cmd\+\_\+line}}
+\index{m\+\_\+cmd\+\_\+line@{m\+\_\+cmd\+\_\+line}!options@{options}}
+\subsubsection{\texorpdfstring{m\+\_\+cmd\+\_\+line}{m\_cmd\_line}}
+{\footnotesize\ttfamily std\+::vector$<$std\+::string$>$ options\+::m\+\_\+cmd\+\_\+line\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Definition at line 97 of file options.\+hpp.
+
+\mbox{\Hypertarget{classoptions_ac73507ca925d98ee5ff6f04937dff5c3}\label{classoptions_ac73507ca925d98ee5ff6f04937dff5c3}} 
+\index{options@{options}!m\+\_\+opts@{m\+\_\+opts}}
+\index{m\+\_\+opts@{m\+\_\+opts}!options@{options}}
+\subsubsection{\texorpdfstring{m\+\_\+opts}{m\_opts}}
+{\footnotesize\ttfamily std\+::map$<$std\+::string, std\+::string$>$ options\+::m\+\_\+opts\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+the \char`\"{}database;\char`\"{} all options are stored as strings, and may be cast to int, etc. 
+
+
+
+Definition at line 86 of file options.\+hpp.
+
+\mbox{\Hypertarget{classoptions_a3171bb61cdfcc5a6a899ad6fe9b56f9d}\label{classoptions_a3171bb61cdfcc5a6a899ad6fe9b56f9d}} 
+\index{options@{options}!m\+\_\+rank@{m\+\_\+rank}}
+\index{m\+\_\+rank@{m\+\_\+rank}!options@{options}}
+\subsubsection{\texorpdfstring{m\+\_\+rank}{m\_rank}}
+{\footnotesize\ttfamily int options\+::m\+\_\+rank\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Definition at line 75 of file options.\+hpp.
+
+\mbox{\Hypertarget{classoptions_ab10ed8295e9333b025619195d156a9ed}\label{classoptions_ab10ed8295e9333b025619195d156a9ed}} 
+\index{options@{options}!s\+\_\+instance@{s\+\_\+instance}}
+\index{s\+\_\+instance@{s\+\_\+instance}!options@{options}}
+\subsubsection{\texorpdfstring{s\+\_\+instance}{s\_instance}}
+{\footnotesize\ttfamily \hyperlink{classoptions}{options} $\ast$ options\+::s\+\_\+instance = new \hyperlink{classoptions}{options}\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}
+
+
+
+Definition at line 83 of file options.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/utils/\hyperlink{options_8hpp}{options.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/utils/\hyperlink{options_8cpp}{options.\+cpp}\end{DoxyCompactItemize}

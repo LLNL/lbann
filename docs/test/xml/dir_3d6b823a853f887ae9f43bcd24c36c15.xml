@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="dir_3d6b823a853f887ae9f43bcd24c36c15" kind="dir">
+    <compoundname>/Users/mckinney27/doxy-testbed/lbann/include/lbann/proto</compoundname>
+    <innerfile refid="factories_8hpp">factories.hpp</innerfile>
+    <innerfile refid="init__image__data__readers_8hpp">init_image_data_readers.hpp</innerfile>
+    <innerfile refid="proto__common_8hpp">proto_common.hpp</innerfile>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/proto/"/>
+  </compounddef>
+</doxygen>

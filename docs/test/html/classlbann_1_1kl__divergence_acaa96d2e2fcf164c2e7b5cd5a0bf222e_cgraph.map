@@ -1,0 +1,11 @@
+<map id="lbann::kl_divergence::setup" name="lbann::kl_divergence::setup">
+<area shape="rect" id="node2" href="$classlbann_1_1objective__function__term.html#a6c8dbdf18aac8676098189fb7b178e91" title="lbann::objective_function\l_term::setup" alt="" coords="197,44,365,83"/>
+<area shape="rect" id="node4" href="$classlbann_1_1model.html#ae14f4b2cc8882b3739d4aeb25d9e73c9" title="lbann::model::get_layers" alt="" coords="198,107,364,132"/>
+<area shape="rect" id="node3" href="$classlbann_1_1model.html#a9e1cfe449d2f4858a32994f6be0042fb" title="lbann::model::get_comm" alt="" coords="413,51,580,76"/>
+<area shape="rect" id="node5" href="$classlbann_1_1model.html#aaed20219476dc1458bbd058be36de1ec" title="lbann::model::replace\l_weights" alt="" coords="422,100,571,139"/>
+<area shape="rect" id="node6" href="$classlbann_1_1model.html#ac6cc0f5d850cfb997bbbc70eefa0d68f" title="lbann::model::remap\l_pointers" alt="" coords="628,100,771,139"/>
+<area shape="rect" id="node7" href="$classlbann_1_1objective__function.html#a1055da2236a7faf79c5a2632f8dfc683" title="lbann::objective_function\l::get_layer_pointers" alt="" coords="819,5,987,44"/>
+<area shape="rect" id="node8" href="$classlbann_1_1objective__function.html#a0f934e078b55528dd0ec1ec8ad34c73b" title="lbann::objective_function\l::set_layer_pointers" alt="" coords="819,68,987,107"/>
+<area shape="rect" id="node9" href="$classlbann_1_1objective__function.html#a8e37f76e42f6f341ea3592001b3794e5" title="lbann::objective_function\l::get_weights_pointers" alt="" coords="819,131,987,169"/>
+<area shape="rect" id="node10" href="$classlbann_1_1objective__function.html#a9c3211354ca1cee8a7ba219f4e56e03c" title="lbann::objective_function\l::set_weights_pointers" alt="" coords="819,193,987,232"/>
+</map>

@@ -1,0 +1,4 @@
+<map id="lbann::base_convolution_layer::apply_transposed_convolution_cudnn" name="lbann::base_convolution_layer::apply_transposed_convolution_cudnn">
+<area shape="rect" id="node2" href="$classlbann_1_1convolution__layer.html#a610f24f98b548434cd4d22419f47c7f0" title="lbann::convolution\l_layer::bp_compute" alt="" coords="226,5,365,44"/>
+<area shape="rect" id="node3" href="$classlbann_1_1deconvolution__layer.html#a6ebbb96c605a96b41fdbbc848dcaa877" title="lbann::deconvolution\l_layer::fp_compute" alt="" coords="224,68,367,107"/>
+</map>

@@ -1,0 +1,38 @@
+\hypertarget{recurrent_8cpp}{}\section{/\+Users/mckinney27/doxy-\/testbed/lbann/src/models/recurrent.cpp File Reference}
+\label{recurrent_8cpp}\index{/\+Users/mckinney27/doxy-\/testbed/lbann/src/models/recurrent.\+cpp@{/\+Users/mckinney27/doxy-\/testbed/lbann/src/models/recurrent.\+cpp}}
+{\ttfamily \#include $<$algorithm$>$}\newline
+{\ttfamily \#include \char`\"{}lbann/models/recurrent.\+hpp\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}lbann/layers/io/input/generic\+\_\+input\+\_\+layer.\+hpp\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}lbann/layers/io/target/generic\+\_\+target\+\_\+layer.\+hpp\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}lbann/layers/transform/slice.\+hpp\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}lbann/layers/transform/split.\+hpp\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}lbann/layers/transform/concatenation.\+hpp\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}lbann/layers/transform/constant.\+hpp\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}lbann/layers/transform/dummy.\+hpp\char`\"{}}\newline
+Include dependency graph for recurrent.\+cpp\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{recurrent_8cpp__incl}
+\end{center}
+\end{figure}
+\subsection*{Namespaces}
+\begin{DoxyCompactItemize}
+\item 
+ \hyperlink{namespacelbann}{lbann}
+\begin{DoxyCompactList}\small\item\em Open\+MP Diagnostic code from Edgar Leon at L\+L\+NL. \end{DoxyCompactList}\item 
+ \hyperlink{namespacelbann_1_1anonymous__namespace_02recurrent_8cpp_03}{lbann\+::anonymous\+\_\+namespace\{recurrent.\+cpp\}}
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{namespacelbann_1_1anonymous__namespace_02recurrent_8cpp_03_a8c76387c2dd531058700ad9a41cd093a}{lbann\+::anonymous\+\_\+namespace\{recurrent.\+cpp\}\+::unroll\+\_\+input\+\_\+layer} (int unroll\+\_\+depth, std\+::vector$<$ Layer $\ast$$>$ \&layers, std\+::unordered\+\_\+map$<$ const Layer $\ast$, Layer $\ast$$>$ \&prev\+\_\+step\+\_\+layer, std\+::unordered\+\_\+map$<$ const Layer $\ast$, Layer $\ast$$>$ \&next\+\_\+step\+\_\+layer)
+\item 
+void \hyperlink{namespacelbann_1_1anonymous__namespace_02recurrent_8cpp_03_af04adecd9a62fdcd16ae78b3e95d4bb5}{lbann\+::anonymous\+\_\+namespace\{recurrent.\+cpp\}\+::unroll\+\_\+target\+\_\+layer} (int unroll\+\_\+depth, std\+::vector$<$ Layer $\ast$$>$ \&layers, std\+::unordered\+\_\+map$<$ const Layer $\ast$, Layer $\ast$$>$ \&prev\+\_\+step\+\_\+layer, std\+::unordered\+\_\+map$<$ const Layer $\ast$, Layer $\ast$$>$ \&next\+\_\+step\+\_\+layer)
+\item 
+void \hyperlink{namespacelbann_1_1anonymous__namespace_02recurrent_8cpp_03_a16733e1fb301c3099a5fe07d703c3782}{lbann\+::anonymous\+\_\+namespace\{recurrent.\+cpp\}\+::add\+\_\+unrolled\+\_\+layers} (int unroll\+\_\+depth, std\+::vector$<$ Layer $\ast$$>$ \&layers, std\+::unordered\+\_\+map$<$ const Layer $\ast$, Layer $\ast$$>$ \&prev\+\_\+step\+\_\+layer, std\+::unordered\+\_\+map$<$ const Layer $\ast$, Layer $\ast$$>$ \&next\+\_\+step\+\_\+layer)
+\item 
+void \hyperlink{namespacelbann_1_1anonymous__namespace_02recurrent_8cpp_03_a50bca1c07c6f3146947b2a0fb5cc815a}{lbann\+::anonymous\+\_\+namespace\{recurrent.\+cpp\}\+::add\+\_\+placeholder\+\_\+layers} (std\+::vector$<$ Layer $\ast$$>$ \&layers, std\+::unordered\+\_\+map$<$ const Layer $\ast$, Layer $\ast$$>$ \&prev\+\_\+step\+\_\+layer, std\+::unordered\+\_\+map$<$ const Layer $\ast$, Layer $\ast$$>$ \&next\+\_\+step\+\_\+layer)
+\item 
+void \hyperlink{namespacelbann_1_1anonymous__namespace_02recurrent_8cpp_03_a12a6f96a1c15c91218169bf7157cd800}{lbann\+::anonymous\+\_\+namespace\{recurrent.\+cpp\}\+::setup\+\_\+unrolled\+\_\+layer\+\_\+pointers} (std\+::vector$<$ Layer $\ast$$>$ \&layers, const std\+::unordered\+\_\+map$<$ const Layer $\ast$, Layer $\ast$$>$ \&prev\+\_\+step\+\_\+layer, const std\+::unordered\+\_\+map$<$ const Layer $\ast$, Layer $\ast$$>$ \&next\+\_\+step\+\_\+layer)
+\end{DoxyCompactItemize}

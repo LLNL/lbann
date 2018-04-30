@@ -1,0 +1,450 @@
+\hypertarget{classlbann_1_1kl__divergence}{}\section{lbann\+:\+:kl\+\_\+divergence Class Reference}
+\label{classlbann_1_1kl__divergence}\index{lbann\+::kl\+\_\+divergence@{lbann\+::kl\+\_\+divergence}}
+
+
+{\ttfamily \#include $<$kl\+\_\+divergence.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:kl\+\_\+divergence\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=232pt]{classlbann_1_1kl__divergence__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:kl\+\_\+divergence\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1kl__divergence__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1kl__divergence_a3084d98e61853086a207a3893421e4d9}{kl\+\_\+divergence} (std\+::string layer1, std\+::string layer2)
+\item 
+\hyperlink{classlbann_1_1kl__divergence_a2262db9ab3c5383033d9e893bb4c7edd}{kl\+\_\+divergence} (const \hyperlink{classlbann_1_1kl__divergence}{kl\+\_\+divergence} \&other)=default
+\item 
+\hyperlink{classlbann_1_1kl__divergence}{kl\+\_\+divergence} \& \hyperlink{classlbann_1_1kl__divergence_ac70fa0c7c0f1d97402a1ca73c0dfb927}{operator=} (const \hyperlink{classlbann_1_1kl__divergence}{kl\+\_\+divergence} \&other)=default
+\item 
+\hyperlink{classlbann_1_1kl__divergence_ad256b4593f170d9dfa5b17ca9a8ac0cc}{$\sim$kl\+\_\+divergence} () override=default
+\item 
+\hyperlink{classlbann_1_1kl__divergence}{kl\+\_\+divergence} $\ast$ \hyperlink{classlbann_1_1kl__divergence_aa0265eb9f1cff77d4101137b09f87353}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1kl__divergence_a42f016a75f640cb4ec9ceb9320da4a47}{name} () const override
+\item 
+void \hyperlink{classlbann_1_1kl__divergence_acaa96d2e2fcf164c2e7b5cd5a0bf222e}{setup} (\hyperlink{classlbann_1_1model}{model} \&m) override
+\item 
+void \hyperlink{classlbann_1_1kl__divergence_a0a77c724ff9b918e2c2eaf3944f50ac5}{start\+\_\+evaluation} () override
+\item 
+\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} \hyperlink{classlbann_1_1kl__divergence_a93aab2ca89cdaab075a940184ae209d5}{finish\+\_\+evaluation} () override
+\item 
+void \hyperlink{classlbann_1_1kl__divergence_aeb39d1ba1e74874cbf396fbe137ff601}{differentiate} () override
+\item 
+void \hyperlink{classlbann_1_1kl__divergence_a6f9e18587348fa8dc6871c404232f121}{compute\+\_\+weight\+\_\+regularization} () override
+\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+std\+::string \hyperlink{classlbann_1_1kl__divergence_ad9faebef778e49a01c094917bc5e72ed}{m\+\_\+z\+\_\+mean\+\_\+layer\+\_\+name}
+\item 
+std\+::string \hyperlink{classlbann_1_1kl__divergence_abb811a5ba98ee742838838a0137728a0}{m\+\_\+z\+\_\+log\+\_\+sigma\+\_\+layer\+\_\+name}
+\item 
+\hyperlink{classlbann_1_1Layer}{Layer} $\ast$ \hyperlink{classlbann_1_1kl__divergence_a7665b4f12f4e842d1850102295c21e3e}{m\+\_\+z\+\_\+mean\+\_\+layer}
+\item 
+\hyperlink{classlbann_1_1Layer}{Layer} $\ast$ \hyperlink{classlbann_1_1kl__divergence_aae1f6deb97728e09771840f447a571b1}{m\+\_\+z\+\_\+log\+\_\+sigma\+\_\+layer}
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+Kullback Leibler (KL) divergence regularizer It compute latent loss between the distribution of latent space induced by an encoder on input data and some prior. It is acts as a kind of regularizer added to reconstruction cost. A good use is in Variational Autoencoder (V\+AE). kl\+\_\+loss = -\/0.\+5 $\ast$ mean(1 + z\+\_\+log\+\_\+sigma -\/ square(z\+\_\+mean) -\/ exp(z\+\_\+log\+\_\+sigma)) See the following reference\+: Kingma and Welling, \char`\"{}\+Auto-\/\+Encoding Variational Bayes\char`\"{} Doersch, \char`\"{}\+Tutorial on Variational Autoencoders\char`\"{} \href{https://blogs.keras.io/building-autoencoder-in-keras.html}{\tt https\+://blogs.\+keras.\+io/building-\/autoencoder-\/in-\/keras.\+html} T\+O\+DO\+: Add checkpoint 
+
+Definition at line 46 of file kl\+\_\+divergence.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1kl__divergence_a3084d98e61853086a207a3893421e4d9}\label{classlbann_1_1kl__divergence_a3084d98e61853086a207a3893421e4d9}} 
+\index{lbann\+::kl\+\_\+divergence@{lbann\+::kl\+\_\+divergence}!kl\+\_\+divergence@{kl\+\_\+divergence}}
+\index{kl\+\_\+divergence@{kl\+\_\+divergence}!lbann\+::kl\+\_\+divergence@{lbann\+::kl\+\_\+divergence}}
+\subsubsection{\texorpdfstring{kl\+\_\+divergence()}{kl\_divergence()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::kl\+\_\+divergence\+::kl\+\_\+divergence (\begin{DoxyParamCaption}\item[{std\+::string}]{layer1,  }\item[{std\+::string}]{layer2 }\end{DoxyParamCaption})}
+
+Default constructor. 
+
+Definition at line 34 of file kl\+\_\+divergence.\+cpp.
+
+
+\begin{DoxyCode}
+35                : \hyperlink{classlbann_1_1objective__function__term_a8c019e3c880f38dc20275e395acaeca1}{objective\_function\_term}(),
+36                  \hyperlink{classlbann_1_1kl__divergence_ad9faebef778e49a01c094917bc5e72ed}{m\_z\_mean\_layer\_name}(layer1), 
+37                  \hyperlink{classlbann_1_1kl__divergence_abb811a5ba98ee742838838a0137728a0}{m\_z\_log\_sigma\_layer\_name}(layer2),
+38                  \hyperlink{classlbann_1_1kl__divergence_a7665b4f12f4e842d1850102295c21e3e}{m\_z\_mean\_layer}(\textcolor{keyword}{nullptr}),
+39                  \hyperlink{classlbann_1_1kl__divergence_aae1f6deb97728e09771840f447a571b1}{m\_z\_log\_sigma\_layer}(\textcolor{keyword}{nullptr}) 
+40                  \{ \} 
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=331pt]{classlbann_1_1kl__divergence_a3084d98e61853086a207a3893421e4d9_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1kl__divergence_a2262db9ab3c5383033d9e893bb4c7edd}\label{classlbann_1_1kl__divergence_a2262db9ab3c5383033d9e893bb4c7edd}} 
+\index{lbann\+::kl\+\_\+divergence@{lbann\+::kl\+\_\+divergence}!kl\+\_\+divergence@{kl\+\_\+divergence}}
+\index{kl\+\_\+divergence@{kl\+\_\+divergence}!lbann\+::kl\+\_\+divergence@{lbann\+::kl\+\_\+divergence}}
+\subsubsection{\texorpdfstring{kl\+\_\+divergence()}{kl\_divergence()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::kl\+\_\+divergence\+::kl\+\_\+divergence (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1kl__divergence}{kl\+\_\+divergence} \&}]{other }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Copy constructor. \mbox{\Hypertarget{classlbann_1_1kl__divergence_ad256b4593f170d9dfa5b17ca9a8ac0cc}\label{classlbann_1_1kl__divergence_ad256b4593f170d9dfa5b17ca9a8ac0cc}} 
+\index{lbann\+::kl\+\_\+divergence@{lbann\+::kl\+\_\+divergence}!````~kl\+\_\+divergence@{$\sim$kl\+\_\+divergence}}
+\index{````~kl\+\_\+divergence@{$\sim$kl\+\_\+divergence}!lbann\+::kl\+\_\+divergence@{lbann\+::kl\+\_\+divergence}}
+\subsubsection{\texorpdfstring{$\sim$kl\+\_\+divergence()}{~kl\_divergence()}}
+{\footnotesize\ttfamily lbann\+::kl\+\_\+divergence\+::$\sim$kl\+\_\+divergence (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [default]}}
+
+Destructor. 
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1kl__divergence_a6f9e18587348fa8dc6871c404232f121}\label{classlbann_1_1kl__divergence_a6f9e18587348fa8dc6871c404232f121}} 
+\index{lbann\+::kl\+\_\+divergence@{lbann\+::kl\+\_\+divergence}!compute\+\_\+weight\+\_\+regularization@{compute\+\_\+weight\+\_\+regularization}}
+\index{compute\+\_\+weight\+\_\+regularization@{compute\+\_\+weight\+\_\+regularization}!lbann\+::kl\+\_\+divergence@{lbann\+::kl\+\_\+divergence}}
+\subsubsection{\texorpdfstring{compute\+\_\+weight\+\_\+regularization()}{compute\_weight\_regularization()}}
+{\footnotesize\ttfamily void lbann\+::kl\+\_\+divergence\+::compute\+\_\+weight\+\_\+regularization (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Compute the gradient of the weight regularization term. The gradient is computed w.\+r.\+t. the weights. 
+
+Implements \hyperlink{classlbann_1_1objective__function__term_a134cf89caed45527bbe9d811a0b93dfc}{lbann\+::objective\+\_\+function\+\_\+term}.
+
+
+
+Definition at line 74 of file kl\+\_\+divergence.\+hpp.
+
+
+\begin{DoxyCode}
+74 \{\};
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1kl__divergence_aa0265eb9f1cff77d4101137b09f87353}\label{classlbann_1_1kl__divergence_aa0265eb9f1cff77d4101137b09f87353}} 
+\index{lbann\+::kl\+\_\+divergence@{lbann\+::kl\+\_\+divergence}!copy@{copy}}
+\index{copy@{copy}!lbann\+::kl\+\_\+divergence@{lbann\+::kl\+\_\+divergence}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1kl__divergence}{kl\+\_\+divergence}$\ast$ lbann\+::kl\+\_\+divergence\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Copy function. 
+
+Implements \hyperlink{classlbann_1_1objective__function__term_ae98a4ec173a602ad55d1df20dadd4cb9}{lbann\+::objective\+\_\+function\+\_\+term}.
+
+
+
+Definition at line 57 of file kl\+\_\+divergence.\+hpp.
+
+
+\begin{DoxyCode}
+57                                        \{
+58     \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1kl__divergence_a3084d98e61853086a207a3893421e4d9}{kl\_divergence}(*\textcolor{keyword}{this});
+59   \} 
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=331pt]{classlbann_1_1kl__divergence_aa0265eb9f1cff77d4101137b09f87353_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1kl__divergence_aeb39d1ba1e74874cbf396fbe137ff601}\label{classlbann_1_1kl__divergence_aeb39d1ba1e74874cbf396fbe137ff601}} 
+\index{lbann\+::kl\+\_\+divergence@{lbann\+::kl\+\_\+divergence}!differentiate@{differentiate}}
+\index{differentiate@{differentiate}!lbann\+::kl\+\_\+divergence@{lbann\+::kl\+\_\+divergence}}
+\subsubsection{\texorpdfstring{differentiate()}{differentiate()}}
+{\footnotesize\ttfamily void lbann\+::kl\+\_\+divergence\+::differentiate (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Regularization terms are applied to the objective function. Add kl\+\_\+loss to gradient/error signal. 
+
+Implements \hyperlink{classlbann_1_1objective__function__term_ad009c3cfbe1cf2fbb6cce015b16fdac5}{lbann\+::objective\+\_\+function\+\_\+term}.
+
+
+
+Definition at line 94 of file kl\+\_\+divergence.\+cpp.
+
+
+\begin{DoxyCode}
+94                                   \{
+95   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1objective__function__term_a59a544b8ff0455ed5091de3bf0d81c3c}{m\_scale\_factor} == \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType}(0)) \{ \textcolor{keywordflow}{return}; \}
+96 
+97   \textcolor{comment}{// Matrices}
+98   \textcolor{keyword}{const} \textcolor{keyword}{auto}& global\_z\_mean = \hyperlink{classlbann_1_1kl__divergence_a7665b4f12f4e842d1850102295c21e3e}{m\_z\_mean\_layer}->\hyperlink{classlbann_1_1Layer_a1134b1a4385af199d7272c5aa827fa99}{get\_activations}();
+99   \textcolor{keyword}{const} \textcolor{keyword}{auto}& global\_z\_log\_sigma = \hyperlink{classlbann_1_1kl__divergence_aae1f6deb97728e09771840f447a571b1}{m\_z\_log\_sigma\_layer}->
+      \hyperlink{classlbann_1_1Layer_a1134b1a4385af199d7272c5aa827fa99}{get\_activations}();
+100   \textcolor{keyword}{auto}&& global\_dz\_mean = global\_z\_mean.Copy();
+101   \textcolor{keyword}{auto}&& global\_dz\_log\_sigma = global\_z\_log\_sigma.Copy();
+102   \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_z\_mean = global\_z\_mean.LockedMatrix();
+103   \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_z\_log\_sigma = global\_z\_log\_sigma.LockedMatrix();
+104   \textcolor{keyword}{auto}& local\_dz\_mean = global\_dz\_mean->Matrix();
+105   \textcolor{keyword}{auto}& local\_dz\_log\_sigma = global\_dz\_log\_sigma->Matrix();
+106 
+107   \textcolor{comment}{// Matrix dimensions}
+108   \textcolor{keyword}{const} \textcolor{keywordtype}{int} height = global\_z\_mean.Height();
+109   \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_height = local\_z\_mean.Height();
+110   \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_width = local\_z\_mean.Width();
+111 
+112   \textcolor{comment}{// Compute gradient of KL divergence}
+113 \textcolor{preprocessor}{  #pragma omp parallel for collapse(2)}
+114   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} col = 0; col < local\_width; ++col) \{
+115     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} row = 0; row < local\_height; ++row) \{
+116       \textcolor{keyword}{const} \textcolor{keyword}{auto} z\_mean = local\_z\_mean(row, col);
+117       \textcolor{keyword}{const} \textcolor{keyword}{auto} z\_log\_sigma = local\_z\_log\_sigma(row, col);
+118       local\_dz\_mean(row, col) = z\_mean / height;
+119       local\_dz\_log\_sigma(row, col) = (std::exp(z\_log\_sigma) - DataType(1)) / (2 * height);
+120     \}
+121   \}
+122   
+123   \textcolor{comment}{// Add to error signal}
+124   \textcolor{keyword}{auto}&& z\_mean\_child\_layer = \textcolor{keyword}{const\_cast<}Layer*\textcolor{keyword}{>}(\hyperlink{classlbann_1_1kl__divergence_a7665b4f12f4e842d1850102295c21e3e}{m\_z\_mean\_layer}->
+      \hyperlink{classlbann_1_1Layer_aa0058c8ec4913efc3e4de5d6f61eb8db}{get\_child\_layers}().front());
+125   \textcolor{keyword}{auto}&& z\_log\_sigma\_child\_layer = \textcolor{keyword}{const\_cast<}Layer*\textcolor{keyword}{>}(\hyperlink{classlbann_1_1kl__divergence_aae1f6deb97728e09771840f447a571b1}{m\_z\_log\_sigma\_layer}->
+      \hyperlink{classlbann_1_1Layer_aa0058c8ec4913efc3e4de5d6f61eb8db}{get\_child\_layers}().front());
+126   z\_mean\_child\_layer->add\_to\_error\_signal(*global\_dz\_mean,
+127                                           DataType(\hyperlink{classlbann_1_1objective__function__term_a59a544b8ff0455ed5091de3bf0d81c3c}{m\_scale\_factor}));
+128   z\_log\_sigma\_child\_layer->add\_to\_error\_signal(*global\_dz\_log\_sigma,
+129                                                DataType(\hyperlink{classlbann_1_1objective__function__term_a59a544b8ff0455ed5091de3bf0d81c3c}{m\_scale\_factor}));
+130 
+131   \textcolor{comment}{// Clean up}
+132   \textcolor{keyword}{delete} global\_dz\_mean;
+133   \textcolor{keyword}{delete} global\_dz\_log\_sigma;
+134 
+135 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1kl__divergence_aeb39d1ba1e74874cbf396fbe137ff601_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=331pt]{classlbann_1_1kl__divergence_aeb39d1ba1e74874cbf396fbe137ff601_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1kl__divergence_a93aab2ca89cdaab075a940184ae209d5}\label{classlbann_1_1kl__divergence_a93aab2ca89cdaab075a940184ae209d5}} 
+\index{lbann\+::kl\+\_\+divergence@{lbann\+::kl\+\_\+divergence}!finish\+\_\+evaluation@{finish\+\_\+evaluation}}
+\index{finish\+\_\+evaluation@{finish\+\_\+evaluation}!lbann\+::kl\+\_\+divergence@{lbann\+::kl\+\_\+divergence}}
+\subsubsection{\texorpdfstring{finish\+\_\+evaluation()}{finish\_evaluation()}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} lbann\+::kl\+\_\+divergence\+::finish\+\_\+evaluation (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get the value of the KL divergence regularization term. 
+
+Implements \hyperlink{classlbann_1_1objective__function__term_a7a82f2cdbc954655ac860896306aed0c}{lbann\+::objective\+\_\+function\+\_\+term}.
+
+
+
+Definition at line 63 of file kl\+\_\+divergence.\+cpp.
+
+
+\begin{DoxyCode}
+63                                           \{
+64   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1objective__function__term_a59a544b8ff0455ed5091de3bf0d81c3c}{m\_scale\_factor} == \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType}(0)) \{ \textcolor{keywordflow}{return} \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType}(0); \}
+65   
+66   \textcolor{comment}{// Matrices}
+67   \textcolor{keyword}{const} \textcolor{keyword}{auto}& global\_z\_mean = \hyperlink{classlbann_1_1kl__divergence_a7665b4f12f4e842d1850102295c21e3e}{m\_z\_mean\_layer}->\hyperlink{classlbann_1_1Layer_a1134b1a4385af199d7272c5aa827fa99}{get\_activations}();
+68   \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_z\_mean = global\_z\_mean.LockedMatrix();
+69   \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_z\_log\_sigma = \hyperlink{classlbann_1_1kl__divergence_aae1f6deb97728e09771840f447a571b1}{m\_z\_log\_sigma\_layer}->
+      \hyperlink{classlbann_1_1Layer_a4248f27acebf72b7b7b3ee39c8bcb62a}{get\_local\_activations}();
+70   
+71   \textcolor{comment}{// Matrix dimensions}
+72   \textcolor{keyword}{const} \textcolor{keywordtype}{int} height = global\_z\_mean.Height();
+73   \textcolor{keyword}{const} \textcolor{keywordtype}{int} width = global\_z\_mean.Width();
+74   \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_height = local\_z\_mean.Height();
+75   \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_width = local\_z\_mean.Width();
+76 
+77   \textcolor{comment}{// Compute KL divergence}
+78   \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType} sum = 0;
+79 \textcolor{preprocessor}{  #pragma omp parallel for reduction(+:sum) collapse(2)}
+80   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} col = 0; col < local\_width; ++col) \{
+81     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} row = 0; row < local\_height; ++row) \{
+82       \textcolor{keyword}{const} \textcolor{keyword}{auto} z\_mean = local\_z\_mean(row, col);
+83       \textcolor{keyword}{const} \textcolor{keyword}{auto} z\_log\_sigma = local\_z\_log\_sigma(row, col);
+84       sum += (std::exp(z\_log\_sigma) + z\_mean * z\_mean
+85               - z\_log\_sigma - DataType(1)) / (2 * height);
+86     \}
+87   \}
+88   \textcolor{keyword}{const} \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType} val = \hyperlink{classlbann_1_1objective__function__term_a5f89b676a26a6b76ddc26563ac87beb9}{get\_comm}().\hyperlink{classlbann_1_1lbann__comm_af5631e5f0f54e4df4958eba9df2599ef}{allreduce}(sum / width,
+89                                             global\_z\_mean.DistComm());
+90   \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1objective__function__term_a59a544b8ff0455ed5091de3bf0d81c3c}{m\_scale\_factor} * val;
+91 
+92 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1kl__divergence_a93aab2ca89cdaab075a940184ae209d5_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=331pt]{classlbann_1_1kl__divergence_a93aab2ca89cdaab075a940184ae209d5_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1kl__divergence_a42f016a75f640cb4ec9ceb9320da4a47}\label{classlbann_1_1kl__divergence_a42f016a75f640cb4ec9ceb9320da4a47}} 
+\index{lbann\+::kl\+\_\+divergence@{lbann\+::kl\+\_\+divergence}!name@{name}}
+\index{name@{name}!lbann\+::kl\+\_\+divergence@{lbann\+::kl\+\_\+divergence}}
+\subsubsection{\texorpdfstring{name()}{name()}}
+{\footnotesize\ttfamily std\+::string lbann\+::kl\+\_\+divergence\+::name (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get the name of the objective function term. 
+
+Implements \hyperlink{classlbann_1_1objective__function__term_a964fbfad3dd0434aa8f32c5fedf1079a}{lbann\+::objective\+\_\+function\+\_\+term}.
+
+
+
+Definition at line 61 of file kl\+\_\+divergence.\+hpp.
+
+
+\begin{DoxyCode}
+61 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"kl\_divergence"}; \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1kl__divergence_a42f016a75f640cb4ec9ceb9320da4a47_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1kl__divergence_ac70fa0c7c0f1d97402a1ca73c0dfb927}\label{classlbann_1_1kl__divergence_ac70fa0c7c0f1d97402a1ca73c0dfb927}} 
+\index{lbann\+::kl\+\_\+divergence@{lbann\+::kl\+\_\+divergence}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::kl\+\_\+divergence@{lbann\+::kl\+\_\+divergence}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1kl__divergence}{kl\+\_\+divergence}\& lbann\+::kl\+\_\+divergence\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1kl__divergence}{kl\+\_\+divergence} \&}]{other }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Copy assignment operator. \mbox{\Hypertarget{classlbann_1_1kl__divergence_acaa96d2e2fcf164c2e7b5cd5a0bf222e}\label{classlbann_1_1kl__divergence_acaa96d2e2fcf164c2e7b5cd5a0bf222e}} 
+\index{lbann\+::kl\+\_\+divergence@{lbann\+::kl\+\_\+divergence}!setup@{setup}}
+\index{setup@{setup}!lbann\+::kl\+\_\+divergence@{lbann\+::kl\+\_\+divergence}}
+\subsubsection{\texorpdfstring{setup()}{setup()}}
+{\footnotesize\ttfamily void lbann\+::kl\+\_\+divergence\+::setup (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} \&}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Setup KL divergence regularization term. 
+
+Reimplemented from \hyperlink{classlbann_1_1objective__function__term_a6c8dbdf18aac8676098189fb7b178e91}{lbann\+::objective\+\_\+function\+\_\+term}.
+
+
+
+Definition at line 42 of file kl\+\_\+divergence.\+cpp.
+
+
+\begin{DoxyCode}
+42                                   \{
+43   \hyperlink{classlbann_1_1objective__function__term_a6c8dbdf18aac8676098189fb7b178e91}{objective\_function\_term::setup}(m);
+44   \textcolor{comment}{//set up layers of interest}
+45   \textcolor{keywordflow}{for}(\textcolor{keyword}{const} \textcolor{keyword}{auto}& l : m.get\_layers()) \{
+46     \textcolor{keywordflow}{if}(l->get\_name() == \hyperlink{classlbann_1_1kl__divergence_ad9faebef778e49a01c094917bc5e72ed}{m\_z\_mean\_layer\_name}) \hyperlink{classlbann_1_1kl__divergence_a7665b4f12f4e842d1850102295c21e3e}{m\_z\_mean\_layer} = l; 
+47     \textcolor{keywordflow}{if}(l->get\_name() == \hyperlink{classlbann_1_1kl__divergence_abb811a5ba98ee742838838a0137728a0}{m\_z\_log\_sigma\_layer\_name}) 
+      \hyperlink{classlbann_1_1kl__divergence_aae1f6deb97728e09771840f447a571b1}{m\_z\_log\_sigma\_layer} = l;
+48   \}
+49   
+50   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1kl__divergence_a7665b4f12f4e842d1850102295c21e3e}{m\_z\_mean\_layer} == \textcolor{keyword}{nullptr} || \hyperlink{classlbann_1_1kl__divergence_aae1f6deb97728e09771840f447a571b1}{m\_z\_log\_sigma\_layer} == \textcolor{keyword}{nullptr})
+51   \{
+52     std::stringstream err;
+53     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+54         << \textcolor{stringliteral}{"Error: Null pointer(s) to layer(s)"};
+55     \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+56   \}
+57 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1kl__divergence_acaa96d2e2fcf164c2e7b5cd5a0bf222e_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=331pt]{classlbann_1_1kl__divergence_acaa96d2e2fcf164c2e7b5cd5a0bf222e_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1kl__divergence_a0a77c724ff9b918e2c2eaf3944f50ac5}\label{classlbann_1_1kl__divergence_a0a77c724ff9b918e2c2eaf3944f50ac5}} 
+\index{lbann\+::kl\+\_\+divergence@{lbann\+::kl\+\_\+divergence}!start\+\_\+evaluation@{start\+\_\+evaluation}}
+\index{start\+\_\+evaluation@{start\+\_\+evaluation}!lbann\+::kl\+\_\+divergence@{lbann\+::kl\+\_\+divergence}}
+\subsubsection{\texorpdfstring{start\+\_\+evaluation()}{start\_evaluation()}}
+{\footnotesize\ttfamily void lbann\+::kl\+\_\+divergence\+::start\+\_\+evaluation (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Start evaluation of the objective function term. This should include the scaling factor. The result is not available until finish\+\_\+evaluation has been called. 
+
+Implements \hyperlink{classlbann_1_1objective__function__term_a0af4dfd71fb30e43d1ae7611172ad9b0}{lbann\+::objective\+\_\+function\+\_\+term}.
+
+
+
+Definition at line 59 of file kl\+\_\+divergence.\+cpp.
+
+
+\begin{DoxyCode}
+59                                      \{
+60 
+61 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=331pt]{classlbann_1_1kl__divergence_a0a77c724ff9b918e2c2eaf3944f50ac5_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1kl__divergence_aae1f6deb97728e09771840f447a571b1}\label{classlbann_1_1kl__divergence_aae1f6deb97728e09771840f447a571b1}} 
+\index{lbann\+::kl\+\_\+divergence@{lbann\+::kl\+\_\+divergence}!m\+\_\+z\+\_\+log\+\_\+sigma\+\_\+layer@{m\+\_\+z\+\_\+log\+\_\+sigma\+\_\+layer}}
+\index{m\+\_\+z\+\_\+log\+\_\+sigma\+\_\+layer@{m\+\_\+z\+\_\+log\+\_\+sigma\+\_\+layer}!lbann\+::kl\+\_\+divergence@{lbann\+::kl\+\_\+divergence}}
+\subsubsection{\texorpdfstring{m\+\_\+z\+\_\+log\+\_\+sigma\+\_\+layer}{m\_z\_log\_sigma\_layer}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1Layer}{Layer}$\ast$ lbann\+::kl\+\_\+divergence\+::m\+\_\+z\+\_\+log\+\_\+sigma\+\_\+layer\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 84 of file kl\+\_\+divergence.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1kl__divergence_abb811a5ba98ee742838838a0137728a0}\label{classlbann_1_1kl__divergence_abb811a5ba98ee742838838a0137728a0}} 
+\index{lbann\+::kl\+\_\+divergence@{lbann\+::kl\+\_\+divergence}!m\+\_\+z\+\_\+log\+\_\+sigma\+\_\+layer\+\_\+name@{m\+\_\+z\+\_\+log\+\_\+sigma\+\_\+layer\+\_\+name}}
+\index{m\+\_\+z\+\_\+log\+\_\+sigma\+\_\+layer\+\_\+name@{m\+\_\+z\+\_\+log\+\_\+sigma\+\_\+layer\+\_\+name}!lbann\+::kl\+\_\+divergence@{lbann\+::kl\+\_\+divergence}}
+\subsubsection{\texorpdfstring{m\+\_\+z\+\_\+log\+\_\+sigma\+\_\+layer\+\_\+name}{m\_z\_log\_sigma\_layer\_name}}
+{\footnotesize\ttfamily std\+::string lbann\+::kl\+\_\+divergence\+::m\+\_\+z\+\_\+log\+\_\+sigma\+\_\+layer\+\_\+name\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 82 of file kl\+\_\+divergence.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1kl__divergence_a7665b4f12f4e842d1850102295c21e3e}\label{classlbann_1_1kl__divergence_a7665b4f12f4e842d1850102295c21e3e}} 
+\index{lbann\+::kl\+\_\+divergence@{lbann\+::kl\+\_\+divergence}!m\+\_\+z\+\_\+mean\+\_\+layer@{m\+\_\+z\+\_\+mean\+\_\+layer}}
+\index{m\+\_\+z\+\_\+mean\+\_\+layer@{m\+\_\+z\+\_\+mean\+\_\+layer}!lbann\+::kl\+\_\+divergence@{lbann\+::kl\+\_\+divergence}}
+\subsubsection{\texorpdfstring{m\+\_\+z\+\_\+mean\+\_\+layer}{m\_z\_mean\_layer}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1Layer}{Layer}$\ast$ lbann\+::kl\+\_\+divergence\+::m\+\_\+z\+\_\+mean\+\_\+layer\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 83 of file kl\+\_\+divergence.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1kl__divergence_ad9faebef778e49a01c094917bc5e72ed}\label{classlbann_1_1kl__divergence_ad9faebef778e49a01c094917bc5e72ed}} 
+\index{lbann\+::kl\+\_\+divergence@{lbann\+::kl\+\_\+divergence}!m\+\_\+z\+\_\+mean\+\_\+layer\+\_\+name@{m\+\_\+z\+\_\+mean\+\_\+layer\+\_\+name}}
+\index{m\+\_\+z\+\_\+mean\+\_\+layer\+\_\+name@{m\+\_\+z\+\_\+mean\+\_\+layer\+\_\+name}!lbann\+::kl\+\_\+divergence@{lbann\+::kl\+\_\+divergence}}
+\subsubsection{\texorpdfstring{m\+\_\+z\+\_\+mean\+\_\+layer\+\_\+name}{m\_z\_mean\_layer\_name}}
+{\footnotesize\ttfamily std\+::string lbann\+::kl\+\_\+divergence\+::m\+\_\+z\+\_\+mean\+\_\+layer\+\_\+name\hspace{0.3cm}{\ttfamily [protected]}}
+
+input layer parameters to the K\+L-\/divergence function. z\+\_\+mean is mean of Gaussian distribution in latent space z\+\_\+log\+\_\+sigma is (log) variance of distribution in latent space string and pointer variables are layer name and layer pointer respectively 
+
+Definition at line 74 of file kl\+\_\+divergence.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/objective\+\_\+functions/\hyperlink{kl__divergence_8hpp}{kl\+\_\+divergence.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/objective\+\_\+functions/\hyperlink{kl__divergence_8cpp}{kl\+\_\+divergence.\+cpp}\end{DoxyCompactItemize}

@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="dir_257f95981ba23d56ef8d88337a10e231" kind="dir">
+    <compoundname>/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/data_buffers</compoundname>
+    <innerfile refid="distributed__io__buffer_8hpp">distributed_io_buffer.hpp</innerfile>
+    <innerfile refid="generic__io__buffer_8hpp">generic_io_buffer.hpp</innerfile>
+    <innerfile refid="partitioned__io__buffer_8hpp">partitioned_io_buffer.hpp</innerfile>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/data_buffers/"/>
+  </compounddef>
+</doxygen>

@@ -1,0 +1,34 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="structlbann_1_1Al_1_1request" kind="struct" language="C++" prot="public">
+    <compoundname>lbann::Al::request</compoundname>
+    <includes refid="comm_8hpp" local="no">comm.hpp</includes>
+      <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structlbann_1_1Al_1_1request_1ac244ce26cf8ea6ebad799efa6ca39ba3" prot="public" static="no" mutable="no">
+        <type><ref refid="classlbann_1_1Al_1_1dummy__backend_1a9386c505d856d41c37d23e4293c11f2f" kindref="member">mpi_backend::req_type</ref></type>
+        <definition>mpi_backend::req_type lbann::Al::request::mpi_req</definition>
+        <argsstring></argsstring>
+        <name>mpi_req</name>
+        <initializer>= <ref refid="classlbann_1_1Al_1_1dummy__backend_1a458ac4eb9f62b06984b4ef1b1eeb5851" kindref="member">mpi_backend::null_req</ref></initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/comm.hpp" line="72" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/comm.hpp" bodystart="72" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__comm_1afb144a99e0cd2241f5fb05cad68b1f08" compoundref="comm_8hpp" startline="479" endline="490">lbann::lbann_comm::nb_allreduce</referencedby>
+        <referencedby refid="classlbann_1_1lbann__comm_1a91d09d595801f6228ee0aecf6dea25c7" compoundref="comm_8cpp" startline="215" endline="227">lbann::lbann_comm::wait</referencedby>
+        <referencedby refid="classlbann_1_1lbann__comm_1a99303a11b939b4aba9d4a67dd0deef56" compoundref="comm_8cpp" startline="229" endline="243">lbann::lbann_comm::test</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/comm.hpp" line="71" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/comm.hpp" bodystart="71" bodyend="77"/>
+    <listofallmembers>
+      <member refid="structlbann_1_1Al_1_1request_1ac244ce26cf8ea6ebad799efa6ca39ba3" prot="public" virt="non-virtual"><scope>lbann::Al::request</scope><name>mpi_req</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

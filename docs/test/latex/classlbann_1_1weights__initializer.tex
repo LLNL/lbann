@@ -1,0 +1,207 @@
+\hypertarget{classlbann_1_1weights__initializer}{}\section{lbann\+:\+:weights\+\_\+initializer Class Reference}
+\label{classlbann_1_1weights__initializer}\index{lbann\+::weights\+\_\+initializer@{lbann\+::weights\+\_\+initializer}}
+
+
+{\ttfamily \#include $<$initializer.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:weights\+\_\+initializer\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1weights__initializer__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:weights\+\_\+initializer\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=204pt]{classlbann_1_1weights__initializer__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1weights__initializer_a3b65043cb6d76dcfcb07387392429755}{weights\+\_\+initializer} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm})
+\item 
+virtual \hyperlink{classlbann_1_1weights__initializer_a9fba102d897402d3df37776d8aa99549}{$\sim$weights\+\_\+initializer} ()=default
+\item 
+virtual \hyperlink{classlbann_1_1weights__initializer}{weights\+\_\+initializer} $\ast$ \hyperlink{classlbann_1_1weights__initializer_acc84ce49188b74b23987cef3db18525a}{copy} () const =0
+\item 
+\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} $\ast$ \hyperlink{classlbann_1_1weights__initializer_a693fd517e4162029eafdfdee537c7066}{construct\+\_\+matrix} (int height=0, int width=0, El\+::\+Distribution col\+\_\+dist=El\+::\+S\+T\+AR, El\+::\+Distribution row\+\_\+dist=El\+::\+S\+T\+AR) const
+\item 
+virtual void \hyperlink{classlbann_1_1weights__initializer_a2ad6acf904c0c7bc7406dbd9851107be}{initialize\+\_\+entries} (\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&weights\+\_\+matrix) const =0
+\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$ \hyperlink{classlbann_1_1weights__initializer_a4273257d92237a75ef9f3614f7e5ddde}{m\+\_\+comm}
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Abstract weights initializer. 
+
+Definition at line 40 of file initializer.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1weights__initializer_a3b65043cb6d76dcfcb07387392429755}\label{classlbann_1_1weights__initializer_a3b65043cb6d76dcfcb07387392429755}} 
+\index{lbann\+::weights\+\_\+initializer@{lbann\+::weights\+\_\+initializer}!weights\+\_\+initializer@{weights\+\_\+initializer}}
+\index{weights\+\_\+initializer@{weights\+\_\+initializer}!lbann\+::weights\+\_\+initializer@{lbann\+::weights\+\_\+initializer}}
+\subsubsection{\texorpdfstring{weights\+\_\+initializer()}{weights\_initializer()}}
+{\footnotesize\ttfamily lbann\+::weights\+\_\+initializer\+::weights\+\_\+initializer (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Constructor. 
+
+Definition at line 44 of file initializer.\+hpp.
+
+
+\begin{DoxyCode}
+45     : \hyperlink{classlbann_1_1weights__initializer_a4273257d92237a75ef9f3614f7e5ddde}{m\_comm}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}) \{\}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1weights__initializer_a3b65043cb6d76dcfcb07387392429755_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1weights__initializer_a9fba102d897402d3df37776d8aa99549}\label{classlbann_1_1weights__initializer_a9fba102d897402d3df37776d8aa99549}} 
+\index{lbann\+::weights\+\_\+initializer@{lbann\+::weights\+\_\+initializer}!````~weights\+\_\+initializer@{$\sim$weights\+\_\+initializer}}
+\index{````~weights\+\_\+initializer@{$\sim$weights\+\_\+initializer}!lbann\+::weights\+\_\+initializer@{lbann\+::weights\+\_\+initializer}}
+\subsubsection{\texorpdfstring{$\sim$weights\+\_\+initializer()}{~weights\_initializer()}}
+{\footnotesize\ttfamily virtual lbann\+::weights\+\_\+initializer\+::$\sim$weights\+\_\+initializer (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [virtual]}, {\ttfamily [default]}}
+
+Destructor. Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1weights__initializer_a9fba102d897402d3df37776d8aa99549_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1weights__initializer_a693fd517e4162029eafdfdee537c7066}\label{classlbann_1_1weights__initializer_a693fd517e4162029eafdfdee537c7066}} 
+\index{lbann\+::weights\+\_\+initializer@{lbann\+::weights\+\_\+initializer}!construct\+\_\+matrix@{construct\+\_\+matrix}}
+\index{construct\+\_\+matrix@{construct\+\_\+matrix}!lbann\+::weights\+\_\+initializer@{lbann\+::weights\+\_\+initializer}}
+\subsubsection{\texorpdfstring{construct\+\_\+matrix()}{construct\_matrix()}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} $\ast$ lbann\+::weights\+\_\+initializer\+::construct\+\_\+matrix (\begin{DoxyParamCaption}\item[{int}]{height = {\ttfamily 0},  }\item[{int}]{width = {\ttfamily 0},  }\item[{El\+::\+Distribution}]{col\+\_\+dist = {\ttfamily El\+:\+:STAR},  }\item[{El\+::\+Distribution}]{row\+\_\+dist = {\ttfamily El\+:\+:STAR} }\end{DoxyParamCaption}) const}
+
+Construct a weights matrix with the initialization scheme. The caller is responsible for deallocating the matrix. 
+
+Definition at line 34 of file initializer.\+cpp.
+
+
+\begin{DoxyCode}
+37                                                                                  \{
+38 
+39   \textcolor{comment}{// Construct distributed matrix with desired matrix distribution}
+40   \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{AbsDistMat}* weights\_matrix = \textcolor{keyword}{nullptr};
+41   \textcolor{keyword}{const} \hyperlink{base_8hpp_a9951bb1719d534e0401b1f06cad19eab}{El::Grid}& grid = \hyperlink{classlbann_1_1weights__initializer_a4273257d92237a75ef9f3614f7e5ddde}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_a483bf8a72d44a0e83da45f3d47bd20d4}{get\_model\_grid}();
+42   \textcolor{keywordflow}{if} (col\_dist == El::MC && row\_dist == El::MR) \{
+43     weights\_matrix = \textcolor{keyword}{new} \hyperlink{base_8hpp_a0fab5387556805cfeac3e7e567bf66c5}{DistMat}(grid);
+44   \}
+45   \textcolor{keywordflow}{if} (col\_dist == El::STAR && row\_dist == El::STAR) \{
+46     weights\_matrix = \textcolor{keyword}{new} \hyperlink{base_8hpp_aba08580d21767b53d0737e115d738dbe}{StarMat}(grid);
+47   \}
+48   \textcolor{keywordflow}{if} (col\_dist == El::CIRC && row\_dist == El::CIRC) \{
+49     weights\_matrix = \textcolor{keyword}{new} \hyperlink{base_8hpp_a48abd140bc807a8ac1381efd1bfeb375}{CircMat}(grid);
+50   \}
+51   \textcolor{keywordflow}{if} (col\_dist == El::MR && row\_dist == El::STAR) \{
+52     weights\_matrix = \textcolor{keyword}{new} \hyperlink{base_8hpp_a0763642f39727a5694418163464f0045}{ColSumMat}(grid);
+53   \}
+54   \textcolor{keywordflow}{if} (col\_dist == El::MC && row\_dist == El::STAR) \{
+55     weights\_matrix = \textcolor{keyword}{new} \hyperlink{base_8hpp_a6fe2af900f785594ffdbf1e90816a4d3}{RowSumMat}(grid);
+56   \}
+57 
+58   \textcolor{comment}{// Check that weights has been constructed}
+59   \textcolor{keywordflow}{if} (weights\_matrix == \textcolor{keyword}{nullptr}) \{
+60     std::stringstream err;
+61     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+62         << \textcolor{stringliteral}{"could not construct weights matrix with specified distribution "}
+63         << \textcolor{stringliteral}{"(col\_dist="} << col\_dist << \textcolor{stringliteral}{",row\_dist="} << row\_dist << \textcolor{stringliteral}{")"};
+64     \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+65   \}
+66 
+67   \textcolor{comment}{// Resize weights matrix}
+68   weights\_matrix->Resize(height, width);
+69 
+70   \textcolor{comment}{// Initialize weights matrix entries and return}
+71   \hyperlink{classlbann_1_1weights__initializer_a2ad6acf904c0c7bc7406dbd9851107be}{initialize\_entries}(*weights\_matrix);
+72   \textcolor{keywordflow}{return} weights\_matrix;
+73 
+74 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1weights__initializer_a693fd517e4162029eafdfdee537c7066_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1weights__initializer_a693fd517e4162029eafdfdee537c7066_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1weights__initializer_acc84ce49188b74b23987cef3db18525a}\label{classlbann_1_1weights__initializer_acc84ce49188b74b23987cef3db18525a}} 
+\index{lbann\+::weights\+\_\+initializer@{lbann\+::weights\+\_\+initializer}!copy@{copy}}
+\index{copy@{copy}!lbann\+::weights\+\_\+initializer@{lbann\+::weights\+\_\+initializer}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily virtual \hyperlink{classlbann_1_1weights__initializer}{weights\+\_\+initializer}$\ast$ lbann\+::weights\+\_\+initializer\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [pure virtual]}}
+
+Create a copy. 
+
+Implemented in \hyperlink{classlbann_1_1normal__initializer_a154369b8513c5cf0edf201f1e8cc0887}{lbann\+::normal\+\_\+initializer}, \hyperlink{classlbann_1_1he__uniform__initializer_a9860575b43f3d08831d00219bb07ec73}{lbann\+::he\+\_\+uniform\+\_\+initializer}, \hyperlink{classlbann_1_1he__normal__initializer_af71916bbf87c6d34fb701c79fa6237bf}{lbann\+::he\+\_\+normal\+\_\+initializer}, \hyperlink{classlbann_1_1uniform__initializer_aeff019b94438eeb847d7236d5d28cdb3}{lbann\+::uniform\+\_\+initializer}, \hyperlink{classlbann_1_1glorot__uniform__initializer_a3c5790bf2e7b0e771d3ed1d93c8f255f}{lbann\+::glorot\+\_\+uniform\+\_\+initializer}, \hyperlink{classlbann_1_1constant__initializer_a1af9be89f528045f47abf13818d814ce}{lbann\+::constant\+\_\+initializer}, and \hyperlink{classlbann_1_1glorot__normal__initializer_a8d05bb2c3d56a5dc3ca4be2a62640470}{lbann\+::glorot\+\_\+normal\+\_\+initializer}.
+
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1weights__initializer_acc84ce49188b74b23987cef3db18525a_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1weights__initializer_a2ad6acf904c0c7bc7406dbd9851107be}\label{classlbann_1_1weights__initializer_a2ad6acf904c0c7bc7406dbd9851107be}} 
+\index{lbann\+::weights\+\_\+initializer@{lbann\+::weights\+\_\+initializer}!initialize\+\_\+entries@{initialize\+\_\+entries}}
+\index{initialize\+\_\+entries@{initialize\+\_\+entries}!lbann\+::weights\+\_\+initializer@{lbann\+::weights\+\_\+initializer}}
+\subsubsection{\texorpdfstring{initialize\+\_\+entries()}{initialize\_entries()}}
+{\footnotesize\ttfamily virtual void lbann\+::weights\+\_\+initializer\+::initialize\+\_\+entries (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{weights\+\_\+matrix }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [pure virtual]}}
+
+Initialize entries in a weights matrix. 
+
+Implemented in \hyperlink{classlbann_1_1normal__initializer_a3958aa3e88af76077cc7559eba0a5a17}{lbann\+::normal\+\_\+initializer}, \hyperlink{classlbann_1_1he__uniform__initializer_a8f86401b0b216ba159f57d3475769a24}{lbann\+::he\+\_\+uniform\+\_\+initializer}, \hyperlink{classlbann_1_1he__normal__initializer_a01d283880fc0c1b743bcc89e732f4e15}{lbann\+::he\+\_\+normal\+\_\+initializer}, \hyperlink{classlbann_1_1uniform__initializer_a23461a8ab897f0aeafc524a61cb0f4eb}{lbann\+::uniform\+\_\+initializer}, \hyperlink{classlbann_1_1glorot__uniform__initializer_a3a44410934f791cee272183a6a36ae0c}{lbann\+::glorot\+\_\+uniform\+\_\+initializer}, \hyperlink{classlbann_1_1constant__initializer_ae3fb3bba90bd6a7e393ecc223aa5d62c}{lbann\+::constant\+\_\+initializer}, and \hyperlink{classlbann_1_1glorot__normal__initializer_a0bd7253159fe5ca9039af44b7fca1709}{lbann\+::glorot\+\_\+normal\+\_\+initializer}.
+
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1weights__initializer_a2ad6acf904c0c7bc7406dbd9851107be_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1weights__initializer_a4273257d92237a75ef9f3614f7e5ddde}\label{classlbann_1_1weights__initializer_a4273257d92237a75ef9f3614f7e5ddde}} 
+\index{lbann\+::weights\+\_\+initializer@{lbann\+::weights\+\_\+initializer}!m\+\_\+comm@{m\+\_\+comm}}
+\index{m\+\_\+comm@{m\+\_\+comm}!lbann\+::weights\+\_\+initializer@{lbann\+::weights\+\_\+initializer}}
+\subsubsection{\texorpdfstring{m\+\_\+comm}{m\_comm}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm}$\ast$ lbann\+::weights\+\_\+initializer\+::m\+\_\+comm\hspace{0.3cm}{\ttfamily [protected]}}
+
+L\+B\+A\+NN communicator. 
+
+Definition at line 66 of file initializer.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/weights/\hyperlink{initializer_8hpp}{initializer.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/weights/\hyperlink{initializer_8cpp}{initializer.\+cpp}\end{DoxyCompactItemize}

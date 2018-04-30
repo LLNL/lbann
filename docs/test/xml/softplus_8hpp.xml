@@ -1,0 +1,443 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="softplus_8hpp" kind="file" language="C++">
+    <compoundname>softplus.hpp</compoundname>
+    <includes refid="activation_8hpp" local="yes">lbann/layers/activations/activation.hpp</includes>
+    <includedby refid="lbann_8hpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/include/lbann/lbann.hpp</includedby>
+    <incdepgraph>
+      <node id="7340">
+        <label>lbann/utils/summary.hpp</label>
+        <link refid="summary_8hpp"/>
+        <childnode refid="7341" relation="include">
+        </childnode>
+        <childnode refid="7337" relation="include">
+        </childnode>
+        <childnode refid="7327" relation="include">
+        </childnode>
+        <childnode refid="7336" relation="include">
+        </childnode>
+      </node>
+      <node id="7352">
+        <label>lbann/io/persist.hpp</label>
+        <link refid="persist_8hpp"/>
+        <childnode refid="7327" relation="include">
+        </childnode>
+        <childnode refid="7328" relation="include">
+        </childnode>
+      </node>
+      <node id="7328">
+        <label>El.hpp</label>
+      </node>
+      <node id="7327">
+        <label>lbann/base.hpp</label>
+        <link refid="base_8hpp"/>
+        <childnode refid="7328" relation="include">
+        </childnode>
+        <childnode refid="7329" relation="include">
+        </childnode>
+        <childnode refid="7330" relation="include">
+        </childnode>
+        <childnode refid="7335" relation="include">
+        </childnode>
+      </node>
+      <node id="7341">
+        <label>string</label>
+      </node>
+      <node id="7349">
+        <label>lbann/utils/cudnn_wrapper.hpp</label>
+        <link refid="cudnn__wrapper_8hpp"/>
+        <childnode refid="7337" relation="include">
+        </childnode>
+        <childnode refid="7327" relation="include">
+        </childnode>
+        <childnode refid="7336" relation="include">
+        </childnode>
+        <childnode refid="7344" relation="include">
+        </childnode>
+      </node>
+      <node id="7355">
+        <label>lbann/utils/timer.hpp</label>
+        <link refid="timer_8hpp"/>
+        <childnode refid="7356" relation="include">
+        </childnode>
+      </node>
+      <node id="7338">
+        <label>map</label>
+      </node>
+      <node id="7354">
+        <label>unordered_set</label>
+      </node>
+      <node id="7324">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/activations/softplus.hpp</label>
+        <link refid="softplus_8hpp"/>
+        <childnode refid="7325" relation="include">
+        </childnode>
+      </node>
+      <node id="7348">
+        <label>exception</label>
+      </node>
+      <node id="7351">
+        <label>lbann/weights/initializer.hpp</label>
+        <link refid="initializer_8hpp"/>
+        <childnode refid="7327" relation="include">
+        </childnode>
+        <childnode refid="7336" relation="include">
+        </childnode>
+        <childnode refid="7344" relation="include">
+        </childnode>
+        <childnode refid="7349" relation="include">
+        </childnode>
+      </node>
+      <node id="7332">
+        <label>cstdio</label>
+      </node>
+      <node id="7345">
+        <label>lbann/utils/stack_trace.hpp</label>
+        <link refid="stack__trace_8hpp"/>
+        <childnode refid="7346" relation="include">
+        </childnode>
+        <childnode refid="7341" relation="include">
+        </childnode>
+      </node>
+      <node id="7334">
+        <label>cxxabi.h</label>
+      </node>
+      <node id="7344">
+        <label>lbann/utils/exception.hpp</label>
+        <link refid="exception_8hpp"/>
+        <childnode refid="7327" relation="include">
+        </childnode>
+        <childnode refid="7336" relation="include">
+        </childnode>
+        <childnode refid="7345" relation="include">
+        </childnode>
+        <childnode refid="7347" relation="include">
+        </childnode>
+        <childnode refid="7348" relation="include">
+        </childnode>
+      </node>
+      <node id="7325">
+        <label>lbann/layers/activations/activation.hpp</label>
+        <link refid="activation_8hpp"/>
+        <childnode refid="7326" relation="include">
+        </childnode>
+        <childnode refid="7344" relation="include">
+        </childnode>
+      </node>
+      <node id="7337">
+        <label>vector</label>
+      </node>
+      <node id="7336">
+        <label>lbann/comm.hpp</label>
+        <link refid="comm_8hpp"/>
+        <childnode refid="7337" relation="include">
+        </childnode>
+        <childnode refid="7338" relation="include">
+        </childnode>
+        <childnode refid="7339" relation="include">
+        </childnode>
+        <childnode refid="7327" relation="include">
+        </childnode>
+      </node>
+      <node id="7353">
+        <label>lbann.pb.h</label>
+      </node>
+      <node id="7331">
+        <label>cstdlib</label>
+      </node>
+      <node id="7347">
+        <label>iostream</label>
+      </node>
+      <node id="7342">
+        <label>lbann/optimizers/optimizer.hpp</label>
+        <link refid="optimizer_8hpp"/>
+        <childnode refid="7343" relation="include">
+        </childnode>
+        <childnode refid="7327" relation="include">
+        </childnode>
+        <childnode refid="7336" relation="include">
+        </childnode>
+        <childnode refid="7344" relation="include">
+        </childnode>
+        <childnode refid="7349" relation="include">
+        </childnode>
+        <childnode refid="7350" relation="include">
+        </childnode>
+        <childnode refid="7341" relation="include">
+        </childnode>
+        <childnode refid="7354" relation="include">
+        </childnode>
+      </node>
+      <node id="7326">
+        <label>lbann/layers/layer.hpp</label>
+        <link refid="layer_8hpp"/>
+        <childnode refid="7327" relation="include">
+        </childnode>
+        <childnode refid="7336" relation="include">
+        </childnode>
+        <childnode refid="7340" relation="include">
+        </childnode>
+        <childnode refid="7342" relation="include">
+        </childnode>
+        <childnode refid="7344" relation="include">
+        </childnode>
+        <childnode refid="7349" relation="include">
+        </childnode>
+        <childnode refid="7355" relation="include">
+        </childnode>
+        <childnode refid="7352" relation="include">
+        </childnode>
+        <childnode refid="7353" relation="include">
+        </childnode>
+        <childnode refid="7341" relation="include">
+        </childnode>
+        <childnode refid="7337" relation="include">
+        </childnode>
+      </node>
+      <node id="7356">
+        <label>chrono</label>
+      </node>
+      <node id="7346">
+        <label>csignal</label>
+      </node>
+      <node id="7350">
+        <label>lbann/weights/weights.hpp</label>
+        <link refid="weights_8hpp"/>
+        <childnode refid="7341" relation="include">
+        </childnode>
+        <childnode refid="7327" relation="include">
+        </childnode>
+        <childnode refid="7336" relation="include">
+        </childnode>
+        <childnode refid="7344" relation="include">
+        </childnode>
+        <childnode refid="7349" relation="include">
+        </childnode>
+        <childnode refid="7351" relation="include">
+        </childnode>
+        <childnode refid="7352" relation="include">
+        </childnode>
+        <childnode refid="7353" relation="include">
+        </childnode>
+      </node>
+      <node id="7335">
+        <label>lbann_config.hpp</label>
+      </node>
+      <node id="7343">
+        <label>lbann/utils/compiler_control.hpp</label>
+        <link refid="compiler__control_8hpp"/>
+      </node>
+      <node id="7330">
+        <label>lbann/utils/cyg_profile.hpp</label>
+        <link refid="cyg__profile_8hpp"/>
+        <childnode refid="7331" relation="include">
+        </childnode>
+        <childnode refid="7332" relation="include">
+        </childnode>
+        <childnode refid="7333" relation="include">
+        </childnode>
+        <childnode refid="7334" relation="include">
+        </childnode>
+      </node>
+      <node id="7329">
+        <label>lbann/Elemental_extensions.hpp</label>
+        <link refid="Elemental__extensions_8hpp"/>
+        <childnode refid="7328" relation="include">
+        </childnode>
+      </node>
+      <node id="7339">
+        <label>typeindex</label>
+      </node>
+      <node id="7333">
+        <label>dlfcn.h</label>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="7364">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/proto/factories.hpp</label>
+        <link refid="factories_8hpp"/>
+        <childnode refid="7365" relation="include">
+        </childnode>
+        <childnode refid="7366" relation="include">
+        </childnode>
+        <childnode refid="7367" relation="include">
+        </childnode>
+        <childnode refid="7368" relation="include">
+        </childnode>
+        <childnode refid="7369" relation="include">
+        </childnode>
+        <childnode refid="7370" relation="include">
+        </childnode>
+        <childnode refid="7371" relation="include">
+        </childnode>
+        <childnode refid="7372" relation="include">
+        </childnode>
+        <childnode refid="7362" relation="include">
+        </childnode>
+      </node>
+      <node id="7369">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/model_factory.cpp</label>
+        <link refid="model__factory_8cpp"/>
+      </node>
+      <node id="7361">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/params.cpp</label>
+        <link refid="params_8cpp"/>
+      </node>
+      <node id="7362">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/proto/proto_common.hpp</label>
+        <link refid="proto__common_8hpp"/>
+        <childnode refid="7359" relation="include">
+        </childnode>
+        <childnode refid="7363" relation="include">
+        </childnode>
+        <childnode refid="7364" relation="include">
+        </childnode>
+        <childnode refid="7373" relation="include">
+        </childnode>
+      </node>
+      <node id="7360">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/params.hpp</label>
+        <link refid="params_8hpp"/>
+        <childnode refid="7361" relation="include">
+        </childnode>
+        <childnode refid="7358" relation="include">
+        </childnode>
+      </node>
+      <node id="7366">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/layer_factory.cpp</label>
+        <link refid="layer__factory_8cpp"/>
+      </node>
+      <node id="7363">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/utils/protobuf_utils.cpp</label>
+        <link refid="protobuf__utils_8cpp"/>
+      </node>
+      <node id="7357">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/activations/softplus.hpp</label>
+        <link refid="softplus_8hpp"/>
+        <childnode refid="7358" relation="include">
+        </childnode>
+      </node>
+      <node id="7374">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/init_image_data_readers.cpp</label>
+        <link refid="init__image__data__readers_8cpp"/>
+      </node>
+      <node id="7370">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/objective_function_factory.cpp</label>
+        <link refid="objective__function__factory_8cpp"/>
+      </node>
+      <node id="7359">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/proto_common.cpp</label>
+        <link refid="proto__common_8cpp"/>
+      </node>
+      <node id="7368">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/metric_factory.cpp</label>
+        <link refid="metric__factory_8cpp"/>
+      </node>
+      <node id="7358">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/lbann.hpp</label>
+        <link refid="lbann_8hpp"/>
+        <childnode refid="7359" relation="include">
+        </childnode>
+        <childnode refid="7360" relation="include">
+        </childnode>
+        <childnode refid="7362" relation="include">
+        </childnode>
+        <childnode refid="7375" relation="include">
+        </childnode>
+      </node>
+      <node id="7373">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/proto/init_image_data_readers.hpp</label>
+        <link refid="init__image__data__readers_8hpp"/>
+        <childnode refid="7374" relation="include">
+        </childnode>
+        <childnode refid="7359" relation="include">
+        </childnode>
+      </node>
+      <node id="7371">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/optimizer_factory.cpp</label>
+        <link refid="optimizer__factory_8cpp"/>
+      </node>
+      <node id="7372">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/weights_factory.cpp</label>
+        <link refid="weights__factory_8cpp"/>
+      </node>
+      <node id="7365">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/callback_factory.cpp</label>
+        <link refid="callback__factory_8cpp"/>
+      </node>
+      <node id="7375">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/protobuf_utils.hpp</label>
+        <link refid="protobuf__utils_8hpp"/>
+        <childnode refid="7363" relation="include">
+        </childnode>
+      </node>
+      <node id="7367">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/layer_graph_factory.cpp</label>
+        <link refid="layer__graph__factory_8cpp"/>
+      </node>
+    </invincdepgraph>
+    <innerclass refid="classlbann_1_1softplus__layer" prot="public">lbann::softplus_layer</innerclass>
+    <innernamespace refid="namespacelbann">lbann</innernamespace>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>2014-2016,<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Security,<sp/>LLC.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Produced<sp/>at<sp/>the<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Laboratory.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Written<sp/>by<sp/>the<sp/>LBANN<sp/>Research<sp/>Team<sp/>(B.<sp/>Van<sp/>Essen,<sp/>et<sp/>al.)<sp/>listed<sp/>in</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="comment">//<sp/>the<sp/>CONTRIBUTORS<sp/>file.<sp/>&lt;lbann-dev@llnl.gov&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="comment">//<sp/>LLNL-CODE-697807.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="comment">//<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="comment">//<sp/>This<sp/>file<sp/>is<sp/>part<sp/>of<sp/>LBANN:<sp/>Livermore<sp/>Big<sp/>Artificial<sp/>Neural<sp/>Network</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Toolkit.<sp/>For<sp/>details,<sp/>see<sp/>http://software.llnl.gov/LBANN<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="comment">//<sp/>https://github.com/LLNL/LBANN.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Licensed<sp/>under<sp/>the<sp/>Apache<sp/>License,<sp/>Version<sp/>2.0<sp/>(the<sp/>&quot;Licensee&quot;);<sp/>you</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight><highlight class="comment">//<sp/>may<sp/>not<sp/>use<sp/>this<sp/>file<sp/>except<sp/>in<sp/>compliance<sp/>with<sp/>the<sp/>License.<sp/><sp/>You<sp/>may</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="comment">//<sp/>obtain<sp/>a<sp/>copy<sp/>of<sp/>the<sp/>License<sp/>at:</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight><highlight class="comment">//<sp/>http://www.apache.org/licenses/LICENSE-2.0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Unless<sp/>required<sp/>by<sp/>applicable<sp/>law<sp/>or<sp/>agreed<sp/>to<sp/>in<sp/>writing,<sp/>software</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight><highlight class="comment">//<sp/>distributed<sp/>under<sp/>the<sp/>License<sp/>is<sp/>distributed<sp/>on<sp/>an<sp/>&quot;AS<sp/>IS&quot;<sp/>BASIS,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight><highlight class="comment">//<sp/>WITHOUT<sp/>WARRANTIES<sp/>OR<sp/>CONDITIONS<sp/>OF<sp/>ANY<sp/>KIND,<sp/>either<sp/>express<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="comment">//<sp/>implied.<sp/>See<sp/>the<sp/>License<sp/>for<sp/>the<sp/>specific<sp/>language<sp/>governing</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="comment">//<sp/>permissions<sp/>and<sp/>limitations<sp/>under<sp/>the<sp/>license.</highlight></codeline>
+<codeline lineno="26"><highlight class="comment"></highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="27"><highlight class="normal"></highlight><highlight class="preprocessor">#ifndef<sp/>SOFTPLUS_HPP_INCLUDED</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="28"><highlight class="normal"></highlight><highlight class="preprocessor">#define<sp/>SOFTPLUS_HPP_INCLUDED</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="29"><highlight class="normal"></highlight></codeline>
+<codeline lineno="30"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="activation_8hpp" kindref="compound">lbann/layers/activations/activation.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight></codeline>
+<codeline lineno="32"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacelbann" kindref="compound">lbann</ref><sp/>{</highlight></codeline>
+<codeline lineno="33"><highlight class="normal"></highlight></codeline>
+<codeline lineno="38"><highlight class="keyword">template</highlight><highlight class="normal"><sp/>&lt;data_layout<sp/>T_layout&gt;</highlight></codeline>
+<codeline lineno="39" refid="classlbann_1_1softplus__layer" refkind="compound"><highlight class="normal"></highlight><highlight class="keyword">class<sp/></highlight><highlight class="normal"><ref refid="classlbann_1_1softplus__layer" kindref="compound">softplus_layer</ref><sp/>:<sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1entrywise__activation__layer" kindref="compound">entrywise_activation_layer</ref><sp/>{</highlight></codeline>
+<codeline lineno="40"><highlight class="normal">public<sp/>:</highlight></codeline>
+<codeline lineno="41" refid="classlbann_1_1softplus__layer_1a5c80b19945ae94541bf5edb53b664c69" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1softplus__layer_1a5c80b19945ae94541bf5edb53b664c69" kindref="member">softplus_layer</ref>(<ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref><sp/>*<ref refid="file__io_8cpp_1ab048c6f9fcbcfaa57ce68b00263dbebe" kindref="member">comm</ref>)<sp/>:<sp/><ref refid="classlbann_1_1entrywise__activation__layer" kindref="compound">entrywise_activation_layer</ref>(comm)<sp/>{}</highlight></codeline>
+<codeline lineno="42" refid="classlbann_1_1softplus__layer_1aef624d9020d403f6a19da8742ec9c1d2" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1softplus__layer" kindref="compound">softplus_layer</ref>*<sp/><ref refid="classlbann_1_1softplus__layer_1aef624d9020d403f6a19da8742ec9c1d2" kindref="member">copy</ref>()</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">new</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1softplus__layer_1a5c80b19945ae94541bf5edb53b664c69" kindref="member">softplus_layer</ref>(*</highlight><highlight class="keyword">this</highlight><highlight class="normal">);<sp/>}</highlight></codeline>
+<codeline lineno="43" refid="classlbann_1_1softplus__layer_1ae95163214d6129880586b11d2de407a1" refkind="member"><highlight class="normal"><sp/><sp/>std::string<sp/><ref refid="classlbann_1_1softplus__layer_1ae95163214d6129880586b11d2de407a1" kindref="member">get_type</ref>()</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="stringliteral">&quot;softplus&quot;</highlight><highlight class="normal">;<sp/>}</highlight></codeline>
+<codeline lineno="44" refid="classlbann_1_1softplus__layer_1a1bc0899e41772148e581b7b8c53763e3" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="base_8hpp_1a786677cbfb3f5677b4d84f3056eb08db" kindref="member">data_layout</ref><sp/><ref refid="classlbann_1_1softplus__layer_1a1bc0899e41772148e581b7b8c53763e3" kindref="member">get_data_layout</ref>()</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>T_layout;<sp/>}</highlight></codeline>
+<codeline lineno="45"><highlight class="normal"></highlight></codeline>
+<codeline lineno="46"><highlight class="normal"><sp/></highlight><highlight class="keyword">protected</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="47" refid="classlbann_1_1softplus__layer_1aff73da03e891b4ea54d5ffc0618425b4" refkind="member"><highlight class="normal"><sp/><sp/>DataType<sp/><ref refid="classlbann_1_1softplus__layer_1aff73da03e891b4ea54d5ffc0618425b4" kindref="member">activation</ref>(DataType<sp/>z)</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="48"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Warning:<sp/>Not<sp/>numerically<sp/>stable.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="49"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>Better<sp/>approach<sp/>is<sp/>to<sp/>determine<sp/>a<sp/>threshold<sp/>so<sp/>that<sp/>for<sp/>large<sp/>z,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="50"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>softplus(z)<sp/>~=<sp/>z<sp/>and<sp/>for<sp/>small<sp/>z,<sp/>softplus(z)<sp/>~=<sp/>exp(z).</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="51"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>std::log1p(std::exp(z));</highlight></codeline>
+<codeline lineno="52"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="53" refid="classlbann_1_1softplus__layer_1a164deff1fd79a8eea743580eba4f6a60" refkind="member"><highlight class="normal"><sp/><sp/>DataType<sp/><ref refid="classlbann_1_1softplus__layer_1a164deff1fd79a8eea743580eba4f6a60" kindref="member">activation_derivative</ref>(DataType<sp/>z)</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="54"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>1<sp/>/<sp/>(DataType(1)<sp/>+<sp/>std::exp(-z));</highlight></codeline>
+<codeline lineno="55"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="56"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="57"><highlight class="normal"></highlight></codeline>
+<codeline lineno="58"><highlight class="normal">}<sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>lbann</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="59"><highlight class="normal"></highlight></codeline>
+<codeline lineno="60"><highlight class="normal"></highlight><highlight class="preprocessor">#endif<sp/>//<sp/>SOFTPLUS_HPP_INCLUDED</highlight></codeline>
+    </programlisting>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/activations/softplus.hpp"/>
+  </compounddef>
+</doxygen>

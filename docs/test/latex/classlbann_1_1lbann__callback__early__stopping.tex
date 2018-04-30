@@ -1,0 +1,237 @@
+\hypertarget{classlbann_1_1lbann__callback__early__stopping}{}\section{lbann\+:\+:lbann\+\_\+callback\+\_\+early\+\_\+stopping Class Reference}
+\label{classlbann_1_1lbann__callback__early__stopping}\index{lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping@{lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping}}
+
+
+{\ttfamily \#include $<$callback\+\_\+early\+\_\+stopping.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+early\+\_\+stopping\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=192pt]{classlbann_1_1lbann__callback__early__stopping__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+early\+\_\+stopping\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=207pt]{classlbann_1_1lbann__callback__early__stopping__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1lbann__callback__early__stopping_ac0140e05eccd5280d53a8e8d480c0ce3}{lbann\+\_\+callback\+\_\+early\+\_\+stopping} (int64\+\_\+t patience)
+\item 
+\hyperlink{classlbann_1_1lbann__callback__early__stopping_a7ff0175e34065c24d2c4090ff90ef614}{lbann\+\_\+callback\+\_\+early\+\_\+stopping} (const \hyperlink{classlbann_1_1lbann__callback__early__stopping}{lbann\+\_\+callback\+\_\+early\+\_\+stopping} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__early__stopping}{lbann\+\_\+callback\+\_\+early\+\_\+stopping} \& \hyperlink{classlbann_1_1lbann__callback__early__stopping_a34c805a2d45651efe3adaa012dc53fa5}{operator=} (const \hyperlink{classlbann_1_1lbann__callback__early__stopping}{lbann\+\_\+callback\+\_\+early\+\_\+stopping} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__early__stopping}{lbann\+\_\+callback\+\_\+early\+\_\+stopping} $\ast$ \hyperlink{classlbann_1_1lbann__callback__early__stopping_aa8e7bd4e9dde8e57dbc416dc75e25cc6}{copy} () const override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__early__stopping_a32eb9c5e763c97ab1162cfebea7ad049}{on\+\_\+validation\+\_\+end} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\item 
+std\+::string \hyperlink{classlbann_1_1lbann__callback__early__stopping_a3fce0ab7696bc24dd9b3330815c5a495}{name} () const override
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+int64\+\_\+t \hyperlink{classlbann_1_1lbann__callback__early__stopping_ada95898e18dbed5adf1848919affd6ee}{m\+\_\+patience}
+\item 
+\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} \hyperlink{classlbann_1_1lbann__callback__early__stopping_a64868be121d63a94344023b466cec494}{m\+\_\+last\+\_\+score} = std\+::numeric\+\_\+limits$<$\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type}$>$\+::max()
+\item 
+int64\+\_\+t \hyperlink{classlbann_1_1lbann__callback__early__stopping_acd0363fdc85a9ab0a77687ecfa827a1e}{m\+\_\+wait} = 0
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+Stop training after validation error stops improving. 
+
+Definition at line 41 of file callback\+\_\+early\+\_\+stopping.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__early__stopping_ac0140e05eccd5280d53a8e8d480c0ce3}\label{classlbann_1_1lbann__callback__early__stopping_ac0140e05eccd5280d53a8e8d480c0ce3}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping@{lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping}!lbann\+\_\+callback\+\_\+early\+\_\+stopping@{lbann\+\_\+callback\+\_\+early\+\_\+stopping}}
+\index{lbann\+\_\+callback\+\_\+early\+\_\+stopping@{lbann\+\_\+callback\+\_\+early\+\_\+stopping}!lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping@{lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+early\+\_\+stopping()}{lbann\_callback\_early\_stopping()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping (\begin{DoxyParamCaption}\item[{int64\+\_\+t}]{patience }\end{DoxyParamCaption})}
+
+Continue training until score has not improved for patience epochs. 
+
+Definition at line 33 of file callback\+\_\+early\+\_\+stopping.\+cpp.
+
+
+\begin{DoxyCode}
+33                                                                              :
+34   \hyperlink{classlbann_1_1lbann__callback_a679057298a41ddd47f08c157f756c584}{lbann\_callback}(), \hyperlink{classlbann_1_1lbann__callback__early__stopping_ada95898e18dbed5adf1848919affd6ee}{m\_patience}(patience) \{\}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__early__stopping_ac0140e05eccd5280d53a8e8d480c0ce3_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__early__stopping_a7ff0175e34065c24d2c4090ff90ef614}\label{classlbann_1_1lbann__callback__early__stopping_a7ff0175e34065c24d2c4090ff90ef614}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping@{lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping}!lbann\+\_\+callback\+\_\+early\+\_\+stopping@{lbann\+\_\+callback\+\_\+early\+\_\+stopping}}
+\index{lbann\+\_\+callback\+\_\+early\+\_\+stopping@{lbann\+\_\+callback\+\_\+early\+\_\+stopping}!lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping@{lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+early\+\_\+stopping()}{lbann\_callback\_early\_stopping()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__early__stopping}{lbann\+\_\+callback\+\_\+early\+\_\+stopping} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__early__stopping_aa8e7bd4e9dde8e57dbc416dc75e25cc6}\label{classlbann_1_1lbann__callback__early__stopping_aa8e7bd4e9dde8e57dbc416dc75e25cc6}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping@{lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping}!copy@{copy}}
+\index{copy@{copy}!lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping@{lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__early__stopping}{lbann\+\_\+callback\+\_\+early\+\_\+stopping}$\ast$ lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a9f545d1269a8c7af335625d049691f26}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 50 of file callback\+\_\+early\+\_\+stopping.\+hpp.
+
+
+\begin{DoxyCode}
+50                                                        \{
+51     \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1lbann__callback__early__stopping_ac0140e05eccd5280d53a8e8d480c0ce3}{lbann\_callback\_early\_stopping}(*\textcolor{keyword}{this});
+52   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__early__stopping_aa8e7bd4e9dde8e57dbc416dc75e25cc6_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__early__stopping_a3fce0ab7696bc24dd9b3330815c5a495}\label{classlbann_1_1lbann__callback__early__stopping_a3fce0ab7696bc24dd9b3330815c5a495}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping@{lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping}!name@{name}}
+\index{name@{name}!lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping@{lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping}}
+\subsubsection{\texorpdfstring{name()}{name()}}
+{\footnotesize\ttfamily std\+::string lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping\+::name (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Return this callback\textquotesingle{}s name. 
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a7522c7a14f1d6a1ea762cc2d7248eb3a}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 55 of file callback\+\_\+early\+\_\+stopping.\+hpp.
+
+
+\begin{DoxyCode}
+55 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"early stopping"}; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__early__stopping_a32eb9c5e763c97ab1162cfebea7ad049}\label{classlbann_1_1lbann__callback__early__stopping_a32eb9c5e763c97ab1162cfebea7ad049}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping@{lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping}!on\+\_\+validation\+\_\+end@{on\+\_\+validation\+\_\+end}}
+\index{on\+\_\+validation\+\_\+end@{on\+\_\+validation\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping@{lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping}}
+\subsubsection{\texorpdfstring{on\+\_\+validation\+\_\+end()}{on\_validation\_end()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping\+::on\+\_\+validation\+\_\+end (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Update validation score and check for early stopping.
+
+Monitor the objective function to see if the validation score continues to improve 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_adc16e42e5064dc2dc8d84dfbfc1325eb}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 38 of file callback\+\_\+early\+\_\+stopping.\+cpp.
+
+
+\begin{DoxyCode}
+38                                                               \{
+39   \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\_mode} mode = m->get\_execution\_mode();
+40   \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType} score = m->get\_objective\_function()->get\_mean\_value(mode);
+41   \textcolor{keywordflow}{if} (score < \hyperlink{classlbann_1_1lbann__callback__early__stopping_a64868be121d63a94344023b466cec494}{m\_last\_score}) \{
+42     \textcolor{keywordflow}{if} (m->get\_comm()->am\_model\_master()) \{
+43       std::cout << \textcolor{stringliteral}{"Model "} << m->get\_comm()->get\_model\_rank() <<
+44         \textcolor{stringliteral}{" early stopping: score is improving "} << \hyperlink{classlbann_1_1lbann__callback__early__stopping_a64868be121d63a94344023b466cec494}{m\_last\_score} << \textcolor{stringliteral}{" >> "} <<
+45         score << std::endl;
+46     \}
+47     \hyperlink{classlbann_1_1lbann__callback__early__stopping_a64868be121d63a94344023b466cec494}{m\_last\_score} = score;
+48     \hyperlink{classlbann_1_1lbann__callback__early__stopping_acd0363fdc85a9ab0a77687ecfa827a1e}{m\_wait} = 0;
+49   \} \textcolor{keywordflow}{else} \{
+50     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1lbann__callback__early__stopping_acd0363fdc85a9ab0a77687ecfa827a1e}{m\_wait} >= \hyperlink{classlbann_1_1lbann__callback__early__stopping_ada95898e18dbed5adf1848919affd6ee}{m\_patience}) \{
+51       m->set\_terminate\_training(\textcolor{keyword}{true});
+52       \textcolor{keywordflow}{if} (m->get\_comm()->am\_model\_master()) \{
+53         std::cout << \textcolor{stringliteral}{"Model "} << m->get\_comm()->get\_model\_rank() <<
+54           \textcolor{stringliteral}{" terminating training due to early stopping: "} << score <<
+55           \textcolor{stringliteral}{" score and "} << \hyperlink{classlbann_1_1lbann__callback__early__stopping_a64868be121d63a94344023b466cec494}{m\_last\_score} << \textcolor{stringliteral}{" last score"} << std::endl;
+56       \}
+57     \} \textcolor{keywordflow}{else} \{
+58       ++\hyperlink{classlbann_1_1lbann__callback__early__stopping_acd0363fdc85a9ab0a77687ecfa827a1e}{m\_wait};
+59     \}
+60   \}
+61 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__early__stopping_a32eb9c5e763c97ab1162cfebea7ad049_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__early__stopping_a32eb9c5e763c97ab1162cfebea7ad049_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__early__stopping_a34c805a2d45651efe3adaa012dc53fa5}\label{classlbann_1_1lbann__callback__early__stopping_a34c805a2d45651efe3adaa012dc53fa5}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping@{lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping@{lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__early__stopping}{lbann\+\_\+callback\+\_\+early\+\_\+stopping}\& lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__early__stopping}{lbann\+\_\+callback\+\_\+early\+\_\+stopping} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__early__stopping_a64868be121d63a94344023b466cec494}\label{classlbann_1_1lbann__callback__early__stopping_a64868be121d63a94344023b466cec494}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping@{lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping}!m\+\_\+last\+\_\+score@{m\+\_\+last\+\_\+score}}
+\index{m\+\_\+last\+\_\+score@{m\+\_\+last\+\_\+score}!lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping@{lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping}}
+\subsubsection{\texorpdfstring{m\+\_\+last\+\_\+score}{m\_last\_score}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping\+::m\+\_\+last\+\_\+score = std\+::numeric\+\_\+limits$<$\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type}$>$\+::max()\hspace{0.3cm}{\ttfamily [private]}}
+
+Last recorded score. 
+
+Definition at line 60 of file callback\+\_\+early\+\_\+stopping.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__early__stopping_ada95898e18dbed5adf1848919affd6ee}\label{classlbann_1_1lbann__callback__early__stopping_ada95898e18dbed5adf1848919affd6ee}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping@{lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping}!m\+\_\+patience@{m\+\_\+patience}}
+\index{m\+\_\+patience@{m\+\_\+patience}!lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping@{lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping}}
+\subsubsection{\texorpdfstring{m\+\_\+patience}{m\_patience}}
+{\footnotesize\ttfamily int64\+\_\+t lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping\+::m\+\_\+patience\hspace{0.3cm}{\ttfamily [private]}}
+
+Number of epochs to wait for improvements. 
+
+Definition at line 58 of file callback\+\_\+early\+\_\+stopping.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__early__stopping_acd0363fdc85a9ab0a77687ecfa827a1e}\label{classlbann_1_1lbann__callback__early__stopping_acd0363fdc85a9ab0a77687ecfa827a1e}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping@{lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping}!m\+\_\+wait@{m\+\_\+wait}}
+\index{m\+\_\+wait@{m\+\_\+wait}!lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping@{lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping}}
+\subsubsection{\texorpdfstring{m\+\_\+wait}{m\_wait}}
+{\footnotesize\ttfamily int64\+\_\+t lbann\+::lbann\+\_\+callback\+\_\+early\+\_\+stopping\+::m\+\_\+wait = 0\hspace{0.3cm}{\ttfamily [private]}}
+
+Current number of epochs without improvement. 
+
+Definition at line 62 of file callback\+\_\+early\+\_\+stopping.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/callbacks/\hyperlink{callback__early__stopping_8hpp}{callback\+\_\+early\+\_\+stopping.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/callbacks/\hyperlink{callback__early__stopping_8cpp}{callback\+\_\+early\+\_\+stopping.\+cpp}\end{DoxyCompactItemize}

@@ -1,0 +1,541 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1data__store__csv" kind="class" language="C++" prot="public">
+    <compoundname>lbann::data_store_csv</compoundname>
+    <basecompoundref refid="classlbann_1_1generic__data__store" prot="public" virt="non-virtual">lbann::generic_data_store</basecompoundref>
+    <includes refid="data__store__csv_8hpp" local="no">data_store_csv.hpp</includes>
+      <sectiondef kind="protected-attrib">
+      <memberdef kind="variable" id="classlbann_1_1data__store__csv_1a8920e09beb3e40e59e2858daf95a6cf9" prot="protected" static="no" mutable="no">
+        <type><ref refid="classlbann_1_1csv__reader" kindref="compound">csv_reader</ref> *</type>
+        <definition>csv_reader* lbann::data_store_csv::m_csv_reader</definition>
+        <argsstring></argsstring>
+        <name>m_csv_reader</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_csv.hpp" line="66" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_csv.hpp" bodystart="66" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1data__store__csv_1a184c7e6f27c5e07255b9c889ace02407" compoundref="data__store__csv_8cpp" startline="46" endline="109">setup</referencedby>
+        <referencedby refid="classlbann_1_1data__store__csv_1a3125cf637d40e8908c68bb74690f06da" compoundref="data__store__csv_8cpp" startline="111" endline="135">get_data_buf_DataType</referencedby>
+        <referencedby refid="classlbann_1_1data__store__csv_1a6184c48ec096372899e127235bb741da" compoundref="data__store__csv_8cpp" startline="223" endline="236">populate_datastore</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1data__store__csv_1acf75e96923877e10c8ed499ec48f9320" prot="protected" static="no" mutable="no">
+        <type>int</type>
+        <definition>int lbann::data_store_csv::m_vector_size</definition>
+        <argsstring></argsstring>
+        <name>m_vector_size</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>size of the vectors that are returned by reader-&gt;fetch_line_label_response(data_id) </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_csv.hpp" line="70" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_csv.hpp" bodystart="70" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1data__store__csv_1a184c7e6f27c5e07255b9c889ace02407" compoundref="data__store__csv_8cpp" startline="46" endline="109">setup</referencedby>
+        <referencedby refid="classlbann_1_1data__store__csv_1acacd039d3ca8caf8958b731a1ce382c6" compoundref="data__store__csv_8cpp" startline="156" endline="221">exchange_data</referencedby>
+        <referencedby refid="classlbann_1_1data__store__csv_1a6184c48ec096372899e127235bb741da" compoundref="data__store__csv_8cpp" startline="223" endline="236">populate_datastore</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1data__store__csv_1a4cb571710d2fd2a088bb55b7ac7ca29b" prot="protected" static="no" mutable="no">
+        <type>std::unordered_map&lt; int, size_t &gt;</type>
+        <definition>std::unordered_map&lt;int, size_t&gt; lbann::data_store_csv::m_offset_mapping</definition>
+        <argsstring></argsstring>
+        <name>m_offset_mapping</name>
+        <briefdescription>
+<para>maps: shuffled index to offset in owner&apos;s data store </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_csv.hpp" line="73" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_csv.hpp" bodystart="73" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1data__store__csv_1a456bbbf6d09c1ec04cd6260cf11007d8" prot="protected" static="no" mutable="no">
+        <type>std::unordered_map&lt; int, std::vector&lt; DataType &gt; &gt;</type>
+        <definition>std::unordered_map&lt;int, std::vector&lt;DataType&gt; &gt; lbann::data_store_csv::m_my_minibatch_data</definition>
+        <argsstring></argsstring>
+        <name>m_my_minibatch_data</name>
+        <briefdescription>
+<para>buffers for data that will be passed to the data reader&apos;s fetch_datum method </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_csv.hpp" line="76" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_csv.hpp" bodystart="76" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1data__store__csv_1a3125cf637d40e8908c68bb74690f06da" compoundref="data__store__csv_8cpp" startline="111" endline="135">get_data_buf_DataType</referencedby>
+        <referencedby refid="classlbann_1_1data__store__csv_1acacd039d3ca8caf8958b731a1ce382c6" compoundref="data__store__csv_8cpp" startline="156" endline="221">exchange_data</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1data__store__csv_1a8f0ac398b2ed53c36594ca1baaf4bde0" prot="protected" static="no" mutable="no">
+        <type>std::map&lt; int, std::vector&lt; DataType &gt; &gt;</type>
+        <definition>std::map&lt;int, std::vector&lt;DataType&gt; &gt; lbann::data_store_csv::m_data</definition>
+        <argsstring></argsstring>
+        <name>m_data</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>will contain the data that this processor owns; Maps a global index to its associated data </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_csv.hpp" line="91" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_csv.hpp" bodystart="91" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1data__store__csv_1ab0ebfe735a732205f7f3c66c876e20b9" compoundref="data__store__csv_8cpp" startline="137" endline="146">get_my_indices</referencedby>
+        <referencedby refid="classlbann_1_1data__store__csv_1acacd039d3ca8caf8958b731a1ce382c6" compoundref="data__store__csv_8cpp" startline="156" endline="221">exchange_data</referencedby>
+        <referencedby refid="classlbann_1_1data__store__csv_1a6184c48ec096372899e127235bb741da" compoundref="data__store__csv_8cpp" startline="223" endline="236">populate_datastore</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1data__store__csv_1add3e9e9c37f1cdf0e3dba00cc6f49507" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::data_store_csv::data_store_csv</definition>
+        <argsstring>(generic_data_reader *reader, model *m)</argsstring>
+        <name>data_store_csv</name>
+        <param>
+          <type><ref refid="classlbann_1_1generic__data__reader" kindref="compound">generic_data_reader</ref> *</type>
+          <declname>reader</declname>
+        </param>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+<para>ctor </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_csv.hpp" line="47" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_csv.cpp" bodystart="37" bodyend="41"/>
+        <references refid="classlbann_1_1generic__data__store_1a853741295a07b5687921fc56d0d7d5b2" compoundref="generic__data__store_8hpp" startline="80" endline="82">lbann::generic_data_store::set_name</references>
+        <referencedby refid="classlbann_1_1data__store__csv_1a2e95f53f539a838e6c6484b9f4de5a45" compoundref="data__store__csv_8hpp" startline="55" endline="55">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1data__store__csv_1af6bdd542f3e87528c3f2ee2b6f9fdff8" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::data_store_csv::data_store_csv</definition>
+        <argsstring>(const data_store_csv &amp;)=default</argsstring>
+        <name>data_store_csv</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1data__store__csv" kindref="compound">data_store_csv</ref> &amp;</type>
+        </param>
+        <briefdescription>
+<para>copy ctor </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_csv.hpp" line="50" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1data__store__csv_1a9a8cadac9ca32ad0da758bfdd2112755" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classlbann_1_1data__store__csv" kindref="compound">data_store_csv</ref> &amp;</type>
+        <definition>data_store_csv&amp; lbann::data_store_csv::operator=</definition>
+        <argsstring>(const data_store_csv &amp;)=default</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1data__store__csv" kindref="compound">data_store_csv</ref> &amp;</type>
+        </param>
+        <briefdescription>
+<para>operator= </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_csv.hpp" line="53" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1data__store__csv_1a2e95f53f539a838e6c6484b9f4de5a45" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type><ref refid="classlbann_1_1data__store__csv" kindref="compound">data_store_csv</ref> *</type>
+        <definition>data_store_csv* lbann::data_store_csv::copy</definition>
+        <argsstring>() const override</argsstring>
+        <name>copy</name>
+        <reimplements refid="classlbann_1_1generic__data__store_1ae06e089790aa023b839be508a3c020c6">copy</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_csv.hpp" line="55" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_csv.hpp" bodystart="55" bodyend="55"/>
+        <references refid="classlbann_1_1data__store__csv_1add3e9e9c37f1cdf0e3dba00cc6f49507" compoundref="data__store__csv_8cpp" startline="37" endline="41">data_store_csv</references>
+        <references refid="classlbann_1_1data__store__csv_1a6e0928f649f9a808c4e73b77f34ffae3" compoundref="data__store__csv_8cpp" startline="43" endline="44">~data_store_csv</references>
+        <references refid="classlbann_1_1data__store__csv_1a3125cf637d40e8908c68bb74690f06da" compoundref="data__store__csv_8cpp" startline="111" endline="135">get_data_buf_DataType</references>
+        <references refid="classlbann_1_1data__store__csv_1a184c7e6f27c5e07255b9c889ace02407" compoundref="data__store__csv_8cpp" startline="46" endline="109">setup</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1data__store__csv_1a6e0928f649f9a808c4e73b77f34ffae3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::data_store_csv::~data_store_csv</definition>
+        <argsstring>() override</argsstring>
+        <name>~data_store_csv</name>
+        <briefdescription>
+<para>dtor </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_csv.hpp" line="58" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_csv.cpp" bodystart="43" bodyend="44"/>
+        <referencedby refid="classlbann_1_1data__store__csv_1a2e95f53f539a838e6c6484b9f4de5a45" compoundref="data__store__csv_8hpp" startline="55" endline="55">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1data__store__csv_1a3125cf637d40e8908c68bb74690f06da" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::data_store_csv::get_data_buf_DataType</definition>
+        <argsstring>(int data_id, std::vector&lt; DataType &gt; *&amp;buf) override</argsstring>
+        <name>get_data_buf_DataType</name>
+        <reimplements refid="classlbann_1_1generic__data__store_1ab3f8b7fe6d6631059d92714d4277a983">get_data_buf_DataType</reimplements>
+        <param>
+          <type>int</type>
+          <declname>data_id</declname>
+        </param>
+        <param>
+          <type>std::vector&lt; DataType &gt; *&amp;</type>
+          <declname>buf</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_csv.hpp" line="60" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_csv.cpp" bodystart="111" bodyend="135"/>
+        <references refid="classlbann_1_1data__store__csv_1a456bbbf6d09c1ec04cd6260cf11007d8" compoundref="data__store__csv_8hpp" startline="76">m_my_minibatch_data</references>
+        <references refid="classlbann_1_1generic__data__store_1a5e64702aa4a38c8533fa52944a8473d5" compoundref="generic__data__store_8hpp" startline="156">lbann::generic_data_store::m_extended_testing</references>
+        <references refid="classlbann_1_1generic__data__store_1a143fd33ef3a53180bc62745e369c16f8" compoundref="generic__data__store_8hpp" startline="146">lbann::generic_data_store::m_master</references>
+        <references refid="classlbann_1_1data__store__csv_1a8920e09beb3e40e59e2858daf95a6cf9" compoundref="data__store__csv_8hpp" startline="66">m_csv_reader</references>
+        <references refid="classlbann_1_1csv__reader_1ae00ba61c2b9db1595ff62ab61a218cfb" compoundref="data__reader__csv_8cpp" startline="282" endline="316">lbann::csv_reader::fetch_line_label_response</references>
+        <references refid="classlbann_1_1generic__data__store_1a87695bfd2d1ed0dbe01d99108e3f68b7" compoundref="generic__data__store_8hpp" startline="137">lbann::generic_data_store::m_rank</references>
+        <referencedby refid="classlbann_1_1data__store__csv_1a2e95f53f539a838e6c6484b9f4de5a45" compoundref="data__store__csv_8hpp" startline="55" endline="55">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1data__store__csv_1a184c7e6f27c5e07255b9c889ace02407" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::data_store_csv::setup</definition>
+        <argsstring>() override</argsstring>
+        <name>setup</name>
+        <reimplements refid="classlbann_1_1generic__data__store_1a1cff17def02ee21b6ca0befeb04bb582">setup</reimplements>
+        <briefdescription>
+<para>called by <ref refid="classlbann_1_1generic__data__reader_1a8b2a09d38512fc11f1b9d572c89100a7" kindref="member">generic_data_reader::setup_data_store</ref> </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_csv.hpp" line="62" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_csv.cpp" bodystart="46" bodyend="109"/>
+        <references refid="namespacelbann_1a478d36031ff0659893c4322cd856157f" compoundref="timer_8hpp" startline="37" endline="41">lbann::get_time</references>
+        <references refid="classlbann_1_1generic__data__store_1a143fd33ef3a53180bc62745e369c16f8" compoundref="generic__data__store_8hpp" startline="146">lbann::generic_data_store::m_master</references>
+        <references refid="classlbann_1_1generic__data__store_1afa49ced0ab64c632371ea52532a91ec2" compoundref="generic__data__store_8hpp" startline="86">lbann::generic_data_store::m_reader</references>
+        <references refid="classlbann_1_1generic__data__reader_1a92982e1b399f37e2ead5aa440883cba5" compoundref="data__reader_8hpp" startline="218" endline="220">lbann::generic_data_reader::get_role</references>
+        <references refid="classlbann_1_1generic__data__store_1a1cff17def02ee21b6ca0befeb04bb582" compoundref="generic__data__store_8cpp" startline="93" endline="124">lbann::generic_data_store::setup</references>
+        <references refid="classlbann_1_1generic__data__store_1a1a9cc7b097cd7dd6ae0d12d52bb43ea1" compoundref="generic__data__store_8hpp" startline="144">lbann::generic_data_store::m_in_memory</references>
+        <references refid="classlbann_1_1data__store__csv_1a8920e09beb3e40e59e2858daf95a6cf9" compoundref="data__store__csv_8hpp" startline="66">m_csv_reader</references>
+        <references refid="classlbann_1_1generic__data__store_1afcd4f99959c265c8c03dcf8ad3779d85" compoundref="generic__data__store_8hpp" startline="140">lbann::generic_data_store::m_np</references>
+        <references refid="classlbann_1_1generic__data__reader_1ad15887cc31657d03925835aab0d4b675" compoundref="data__reader_8hpp" startline="405" endline="407">lbann::generic_data_reader::get_num_parallel_readers</references>
+        <references refid="classlbann_1_1generic__data__store_1ab861db5f81e45a6063b8922a331dd007" compoundref="generic__data__store_8cpp" startline="67" endline="78">lbann::generic_data_store::get_minibatch_index_vector</references>
+        <references refid="classlbann_1_1generic__data__store_1aa0ef8d7528f6775d47641ffe5ac229da" compoundref="generic__data__store_8cpp" startline="173" endline="201">lbann::generic_data_store::exchange_mb_indices</references>
+        <references refid="classlbann_1_1generic__data__store_1a3558f87939755b08ae151623a5799127" compoundref="generic__data__store_8cpp" startline="80" endline="91">lbann::generic_data_store::get_my_datastore_indices</references>
+        <references refid="classlbann_1_1csv__reader_1ae00ba61c2b9db1595ff62ab61a218cfb" compoundref="data__reader__csv_8cpp" startline="282" endline="316">lbann::csv_reader::fetch_line_label_response</references>
+        <references refid="classlbann_1_1data__store__csv_1acf75e96923877e10c8ed499ec48f9320" compoundref="data__store__csv_8hpp" startline="70">m_vector_size</references>
+        <references refid="classlbann_1_1generic__data__store_1ae2d2d61d5d766a7f525eedcb05e0dbf6" compoundref="generic__data__store_8hpp" startline="170">lbann::generic_data_store::m_mpi_comm</references>
+        <references refid="classlbann_1_1data__store__csv_1a6184c48ec096372899e127235bb741da" compoundref="data__store__csv_8cpp" startline="223" endline="236">populate_datastore</references>
+        <references refid="classlbann_1_1data__store__csv_1acacd039d3ca8caf8958b731a1ce382c6" compoundref="data__store__csv_8cpp" startline="156" endline="221">exchange_data</references>
+        <referencedby refid="classlbann_1_1data__store__csv_1a2e95f53f539a838e6c6484b9f4de5a45" compoundref="data__store__csv_8hpp" startline="55" endline="55">copy</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="protected-func">
+      <memberdef kind="function" id="classlbann_1_1data__store__csv_1acacd039d3ca8caf8958b731a1ce382c6" prot="protected" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::data_store_csv::exchange_data</definition>
+        <argsstring>() override</argsstring>
+        <name>exchange_data</name>
+        <reimplements refid="classlbann_1_1generic__data__store_1a5a34663fbbc3714d45743a6ca7195f51">exchange_data</reimplements>
+        <briefdescription>
+<para>retrive data needed for passing to the data reader for the next epoch </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_csv.hpp" line="79" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_csv.cpp" bodystart="156" bodyend="221"/>
+        <references refid="namespacelbann_1a478d36031ff0659893c4322cd856157f" compoundref="timer_8hpp" startline="37" endline="41">lbann::get_time</references>
+        <references refid="classlbann_1_1data__store__csv_1ae0deaa88a2f5164569f796f7d35510d8" compoundref="data__store__csv_8cpp" startline="148" endline="154">get_indices</references>
+        <references refid="classlbann_1_1generic__data__store_1a87695bfd2d1ed0dbe01d99108e3f68b7" compoundref="generic__data__store_8hpp" startline="137">lbann::generic_data_store::m_rank</references>
+        <references refid="classlbann_1_1data__store__csv_1a456bbbf6d09c1ec04cd6260cf11007d8" compoundref="data__store__csv_8hpp" startline="76">m_my_minibatch_data</references>
+        <references refid="classlbann_1_1data__store__csv_1acf75e96923877e10c8ed499ec48f9320" compoundref="data__store__csv_8hpp" startline="70">m_vector_size</references>
+        <references refid="classlbann_1_1generic__data__store_1ad0de5ac2cdcf3f692acb252a019a2aed" compoundref="generic__data__store_8hpp" startline="164" endline="166">lbann::generic_data_store::get_index_owner</references>
+        <references refid="classlbann_1_1generic__data__store_1afcd4f99959c265c8c03dcf8ad3779d85" compoundref="generic__data__store_8hpp" startline="140">lbann::generic_data_store::m_np</references>
+        <references refid="namespacelbann_1_1cnpy__utils_1a9ac86d96ccb1f8b4b2ea16441738781f" compoundref="cnpy__utils_8hpp" startline="52" endline="59">lbann::cnpy_utils::data</references>
+        <references refid="classlbann_1_1generic__data__store_1ae2d2d61d5d766a7f525eedcb05e0dbf6" compoundref="generic__data__store_8hpp" startline="170">lbann::generic_data_store::m_mpi_comm</references>
+        <references refid="classlbann_1_1data__store__csv_1ab0ebfe735a732205f7f3c66c876e20b9" compoundref="data__store__csv_8cpp" startline="137" endline="146">get_my_indices</references>
+        <references refid="classlbann_1_1data__store__csv_1a8f0ac398b2ed53c36594ca1baaf4bde0" compoundref="data__store__csv_8hpp" startline="91">m_data</references>
+        <references refid="classlbann_1_1generic__data__store_1afa49ced0ab64c632371ea52532a91ec2" compoundref="generic__data__store_8hpp" startline="86">lbann::generic_data_store::m_reader</references>
+        <references refid="classlbann_1_1generic__data__reader_1a92982e1b399f37e2ead5aa440883cba5" compoundref="data__reader_8hpp" startline="218" endline="220">lbann::generic_data_reader::get_role</references>
+        <references refid="classlbann_1_1generic__data__store_1a143fd33ef3a53180bc62745e369c16f8" compoundref="generic__data__store_8hpp" startline="146">lbann::generic_data_store::m_master</references>
+        <referencedby refid="classlbann_1_1data__store__csv_1a184c7e6f27c5e07255b9c889ace02407" compoundref="data__store__csv_8cpp" startline="46" endline="109">setup</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1data__store__csv_1ae0deaa88a2f5164569f796f7d35510d8" prot="protected" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::data_store_csv::get_indices</definition>
+        <argsstring>(std::unordered_set&lt; int &gt; &amp;indices, int p)</argsstring>
+        <name>get_indices</name>
+        <param>
+          <type>std::unordered_set&lt; int &gt; &amp;</type>
+          <declname>indices</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>p</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>returns, in &quot;indices,&quot; the set of indices that processor &quot;p&quot; needs for the next epoch. Called by exchange_data </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_csv.hpp" line="82" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_csv.cpp" bodystart="148" bodyend="154"/>
+        <references refid="classlbann_1_1generic__data__store_1afd21d4f029e450328f8703dd72702e73" compoundref="generic__data__store_8hpp" startline="121">lbann::generic_data_store::m_all_minibatch_indices</references>
+        <references refid="classlbann_1_1generic__data__store_1ad456f747ee07f63df15c60833dfb82ad" compoundref="generic__data__store_8hpp" startline="148">lbann::generic_data_store::m_shuffled_indices</references>
+        <referencedby refid="classlbann_1_1data__store__csv_1acacd039d3ca8caf8958b731a1ce382c6" compoundref="data__store__csv_8cpp" startline="156" endline="221">exchange_data</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1data__store__csv_1ab0ebfe735a732205f7f3c66c876e20b9" prot="protected" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::data_store_csv::get_my_indices</definition>
+        <argsstring>(std::unordered_set&lt; int &gt; &amp;indices, int p)</argsstring>
+        <name>get_my_indices</name>
+        <param>
+          <type>std::unordered_set&lt; int &gt; &amp;</type>
+          <declname>indices</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>p</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>returns, in &quot;indices,&quot; the subset of indices that processor &quot;p&quot; needs for the next epoch and that this processor owns. Called by exchange_data </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_csv.hpp" line="87" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_csv.cpp" bodystart="137" bodyend="146"/>
+        <references refid="classlbann_1_1generic__data__store_1afd21d4f029e450328f8703dd72702e73" compoundref="generic__data__store_8hpp" startline="121">lbann::generic_data_store::m_all_minibatch_indices</references>
+        <references refid="classlbann_1_1data__store__csv_1a8f0ac398b2ed53c36594ca1baaf4bde0" compoundref="data__store__csv_8hpp" startline="91">m_data</references>
+        <referencedby refid="classlbann_1_1data__store__csv_1acacd039d3ca8caf8958b731a1ce382c6" compoundref="data__store__csv_8cpp" startline="156" endline="221">exchange_data</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1data__store__csv_1a6184c48ec096372899e127235bb741da" prot="protected" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::data_store_csv::populate_datastore</definition>
+        <argsstring>()</argsstring>
+        <name>populate_datastore</name>
+        <briefdescription>
+<para>fills in m_data (the data store) </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_csv.hpp" line="95" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_csv.cpp" bodystart="223" bodyend="236"/>
+        <references refid="classlbann_1_1generic__data__store_1abd38f8d8aab0648959e09d011abfe20a" compoundref="generic__data__store_8hpp" startline="130">lbann::generic_data_store::m_my_datastore_indices</references>
+        <references refid="classlbann_1_1data__store__csv_1a8f0ac398b2ed53c36594ca1baaf4bde0" compoundref="data__store__csv_8hpp" startline="91">m_data</references>
+        <references refid="classlbann_1_1data__store__csv_1a8920e09beb3e40e59e2858daf95a6cf9" compoundref="data__store__csv_8hpp" startline="66">m_csv_reader</references>
+        <references refid="classlbann_1_1csv__reader_1ae00ba61c2b9db1595ff62ab61a218cfb" compoundref="data__reader__csv_8cpp" startline="282" endline="316">lbann::csv_reader::fetch_line_label_response</references>
+        <references refid="classlbann_1_1data__store__csv_1acf75e96923877e10c8ed499ec48f9320" compoundref="data__store__csv_8hpp" startline="70">m_vector_size</references>
+        <references refid="classlbann_1_1generic__data__store_1a87695bfd2d1ed0dbe01d99108e3f68b7" compoundref="generic__data__store_8hpp" startline="137">lbann::generic_data_store::m_rank</references>
+        <referencedby refid="classlbann_1_1data__store__csv_1a184c7e6f27c5e07255b9c889ace02407" compoundref="data__store__csv_8cpp" startline="46" endline="109">setup</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1data__store__csv_1afe48c08075e3327a2b9bb14c73a9c952" prot="protected" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::data_store_csv::printme</definition>
+        <argsstring>(const char *fn)</argsstring>
+        <name>printme</name>
+        <param>
+          <type>const char *</type>
+          <declname>fn</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_csv.hpp" line="97" column="1"/>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>todo </para>    </detaileddescription>
+    <inheritancegraph>
+      <node id="487">
+        <label>lbann::data_store_csv</label>
+        <link refid="classlbann_1_1data__store__csv"/>
+        <childnode refid="488" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="488">
+        <label>lbann::generic_data_store</label>
+        <link refid="classlbann_1_1generic__data__store"/>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="494">
+        <label>lbann::model</label>
+        <link refid="classlbann_1_1model"/>
+        <childnode refid="495" relation="usage">
+          <edgelabel>m_default_optimizer</edgelabel>
+        </childnode>
+        <childnode refid="491" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="500" relation="usage">
+          <edgelabel>m_objective_function</edgelabel>
+        </childnode>
+      </node>
+      <node id="493">
+        <label>lbann::lbann_image_preprocessor</label>
+        <link refid="classlbann_1_1lbann__image__preprocessor"/>
+      </node>
+      <node id="495">
+        <label>lbann::optimizer</label>
+        <link refid="classlbann_1_1optimizer"/>
+        <childnode refid="491" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="496" relation="usage">
+          <edgelabel>m_cudnn</edgelabel>
+        </childnode>
+        <childnode refid="497" relation="usage">
+          <edgelabel>m_gradient_allreduce_req</edgelabel>
+        </childnode>
+        <childnode refid="498" relation="usage">
+          <edgelabel>m_weights</edgelabel>
+        </childnode>
+      </node>
+      <node id="492">
+        <label>lbann::generic_data_reader</label>
+        <link refid="classlbann_1_1generic__data__reader"/>
+        <childnode refid="493" relation="public-inheritance">
+        </childnode>
+        <childnode refid="491" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="490" relation="usage">
+          <edgelabel>m_data_store</edgelabel>
+        </childnode>
+      </node>
+      <node id="496">
+        <label>lbann::cudnn::cudnn_manager</label>
+        <link refid="classlbann_1_1cudnn_1_1cudnn__manager"/>
+      </node>
+      <node id="501">
+        <label>lbann::csv_reader</label>
+        <link refid="classlbann_1_1csv__reader"/>
+        <childnode refid="492" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="499">
+        <label>lbann::weights_initializer</label>
+        <link refid="classlbann_1_1weights__initializer"/>
+        <childnode refid="491" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+      </node>
+      <node id="489">
+        <label>lbann::data_store_csv</label>
+        <link refid="classlbann_1_1data__store__csv"/>
+        <childnode refid="490" relation="public-inheritance">
+        </childnode>
+        <childnode refid="501" relation="usage">
+          <edgelabel>m_csv_reader</edgelabel>
+        </childnode>
+      </node>
+      <node id="498">
+        <label>lbann::weights</label>
+        <link refid="classlbann_1_1weights"/>
+        <childnode refid="495" relation="usage">
+          <edgelabel>m_optimizer</edgelabel>
+        </childnode>
+        <childnode refid="491" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="499" relation="usage">
+          <edgelabel>m_initializer</edgelabel>
+        </childnode>
+        <childnode refid="496" relation="usage">
+          <edgelabel>m_cudnn</edgelabel>
+        </childnode>
+      </node>
+      <node id="491">
+        <label>lbann::lbann_comm</label>
+        <link refid="classlbann_1_1lbann__comm"/>
+      </node>
+      <node id="497">
+        <label>lbann::Al::request</label>
+        <link refid="structlbann_1_1Al_1_1request"/>
+      </node>
+      <node id="500">
+        <label>lbann::objective_function</label>
+        <link refid="classlbann_1_1objective__function"/>
+      </node>
+      <node id="490">
+        <label>lbann::generic_data_store</label>
+        <link refid="classlbann_1_1generic__data__store"/>
+        <childnode refid="491" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="492" relation="usage">
+          <edgelabel>m_reader</edgelabel>
+        </childnode>
+        <childnode refid="494" relation="usage">
+          <edgelabel>m_model</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_csv.hpp" line="43" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_csv.hpp" bodystart="43" bodyend="99"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1data__store__csv_1a2e95f53f539a838e6c6484b9f4de5a45" prot="public" virt="virtual"><scope>lbann::data_store_csv</scope><name>copy</name></member>
+      <member refid="classlbann_1_1data__store__csv_1add3e9e9c37f1cdf0e3dba00cc6f49507" prot="public" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>data_store_csv</name></member>
+      <member refid="classlbann_1_1data__store__csv_1af6bdd542f3e87528c3f2ee2b6f9fdff8" prot="public" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>data_store_csv</name></member>
+      <member refid="classlbann_1_1data__store__csv_1acacd039d3ca8caf8958b731a1ce382c6" prot="protected" virt="virtual"><scope>lbann::data_store_csv</scope><name>exchange_data</name></member>
+      <member refid="classlbann_1_1generic__data__store_1abd5bf0321c063996369e1e2659bd99aa" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>exchange_mb_counts</name></member>
+      <member refid="classlbann_1_1generic__data__store_1aa0ef8d7528f6775d47641ffe5ac229da" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>exchange_mb_indices</name></member>
+      <member refid="classlbann_1_1generic__data__store_1ae569426f71f9317e88fe1078d58c98e7" prot="protected" virt="virtual"><scope>lbann::data_store_csv</scope><name>extended_testing</name></member>
+      <member refid="classlbann_1_1generic__data__store_1acbcd88161c06f4bb9a70bbae857d4ee0" prot="public" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>generic_data_store</name></member>
+      <member refid="classlbann_1_1generic__data__store_1a0198154e411a4952c2536af390551d13" prot="public" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>generic_data_store</name></member>
+      <member refid="classlbann_1_1generic__data__store_1a2abb3d0327b528d36e23fcef9b937798" prot="public" virt="virtual"><scope>lbann::data_store_csv</scope><name>get_data_buf</name></member>
+      <member refid="classlbann_1_1generic__data__store_1abc3fecd958650a74e76070ea4f394bea" prot="public" virt="virtual"><scope>lbann::data_store_csv</scope><name>get_data_buf</name></member>
+      <member refid="classlbann_1_1data__store__csv_1a3125cf637d40e8908c68bb74690f06da" prot="public" virt="virtual"><scope>lbann::data_store_csv</scope><name>get_data_buf_DataType</name></member>
+      <member refid="classlbann_1_1generic__data__store_1a7641d15eba63426acf5071acb8026442" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>get_file_size</name></member>
+      <member refid="classlbann_1_1generic__data__store_1ad0de5ac2cdcf3f692acb252a019a2aed" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>get_index_owner</name></member>
+      <member refid="classlbann_1_1data__store__csv_1ae0deaa88a2f5164569f796f7d35510d8" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>get_indices</name></member>
+      <member refid="classlbann_1_1generic__data__store_1ab861db5f81e45a6063b8922a331dd007" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>get_minibatch_index_vector</name></member>
+      <member refid="classlbann_1_1generic__data__store_1a3558f87939755b08ae151623a5799127" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>get_my_datastore_indices</name></member>
+      <member refid="classlbann_1_1data__store__csv_1ab0ebfe735a732205f7f3c66c876e20b9" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>get_my_indices</name></member>
+      <member refid="classlbann_1_1generic__data__store_1a53140adb8f7c2348986916a1abb85ffa" prot="public" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>get_name</name></member>
+      <member refid="classlbann_1_1generic__data__store_1afd21d4f029e450328f8703dd72702e73" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>m_all_minibatch_indices</name></member>
+      <member refid="classlbann_1_1generic__data__store_1aa8ce7dae1eeb256820ac4f99893a6d32" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>m_collect_minibatch_indices</name></member>
+      <member refid="classlbann_1_1generic__data__store_1a719b6b99c20f97a6cf25f6029582bf36" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>m_comm</name></member>
+      <member refid="classlbann_1_1data__store__csv_1a8920e09beb3e40e59e2858daf95a6cf9" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>m_csv_reader</name></member>
+      <member refid="classlbann_1_1data__store__csv_1a8f0ac398b2ed53c36594ca1baaf4bde0" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>m_data</name></member>
+      <member refid="classlbann_1_1generic__data__store_1ab479c127f00ce550c7433b90e40a5a3d" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>m_dir</name></member>
+      <member refid="classlbann_1_1generic__data__store_1a1b373d13815ed7f9a7c1dae20b236e91" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>m_epoch</name></member>
+      <member refid="classlbann_1_1generic__data__store_1a5e64702aa4a38c8533fa52944a8473d5" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>m_extended_testing</name></member>
+      <member refid="classlbann_1_1generic__data__store_1a1a9cc7b097cd7dd6ae0d12d52bb43ea1" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>m_in_memory</name></member>
+      <member refid="classlbann_1_1generic__data__store_1a143fd33ef3a53180bc62745e369c16f8" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>m_master</name></member>
+      <member refid="classlbann_1_1generic__data__store_1a8ba0cf1a3d83d835060f45a53d77fbfd" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>m_mb_counts</name></member>
+      <member refid="classlbann_1_1generic__data__store_1acf2fb76306c75f52de0d6ea92b0f38fc" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>m_model</name></member>
+      <member refid="classlbann_1_1generic__data__store_1ae2d2d61d5d766a7f525eedcb05e0dbf6" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>m_mpi_comm</name></member>
+      <member refid="classlbann_1_1generic__data__store_1abd38f8d8aab0648959e09d011abfe20a" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>m_my_datastore_indices</name></member>
+      <member refid="classlbann_1_1data__store__csv_1a456bbbf6d09c1ec04cd6260cf11007d8" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>m_my_minibatch_data</name></member>
+      <member refid="classlbann_1_1generic__data__store_1a54c0a85cd536ef566604c4e9916910c8" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>m_my_minibatch_indices</name></member>
+      <member refid="classlbann_1_1generic__data__store_1a41f7fec1f1f3d6568a5765be7a6784eb" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>m_my_minibatch_indices_v</name></member>
+      <member refid="classlbann_1_1generic__data__store_1ad2c2e241eefc6ff972169d757f8d2499" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>m_name</name></member>
+      <member refid="classlbann_1_1generic__data__store_1afcd4f99959c265c8c03dcf8ad3779d85" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>m_np</name></member>
+      <member refid="classlbann_1_1generic__data__store_1a0dfa2ffa01845b84ca477fb3e14a36c6" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>m_num_global_indices</name></member>
+      <member refid="classlbann_1_1generic__data__store_1a4381c1192e029d24c5b02cbd68988f77" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>m_num_readers</name></member>
+      <member refid="classlbann_1_1generic__data__store_1a17d6f931e1a2f4ae9e2452b7d47ead43" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>m_num_samples</name></member>
+      <member refid="classlbann_1_1data__store__csv_1a4cb571710d2fd2a088bb55b7ac7ca29b" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>m_offset_mapping</name></member>
+      <member refid="classlbann_1_1generic__data__store_1a87695bfd2d1ed0dbe01d99108e3f68b7" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>m_rank</name></member>
+      <member refid="classlbann_1_1generic__data__store_1afa49ced0ab64c632371ea52532a91ec2" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>m_reader</name></member>
+      <member refid="classlbann_1_1generic__data__store_1ad456f747ee07f63df15c60833dfb82ad" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>m_shuffled_indices</name></member>
+      <member refid="classlbann_1_1data__store__csv_1acf75e96923877e10c8ed499ec48f9320" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>m_vector_size</name></member>
+      <member refid="classlbann_1_1data__store__csv_1a9a8cadac9ca32ad0da758bfdd2112755" prot="public" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1generic__data__store_1a680cf1fc618f6505a04255920ee7d7f2" prot="public" virt="non-virtual" ambiguityscope="lbann::generic_data_store::"><scope>lbann::data_store_csv</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1data__store__csv_1a6184c48ec096372899e127235bb741da" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>populate_datastore</name></member>
+      <member refid="classlbann_1_1data__store__csv_1afe48c08075e3327a2b9bb14c73a9c952" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>printme</name></member>
+      <member refid="classlbann_1_1generic__data__store_1a853741295a07b5687921fc56d0d7d5b2" prot="public" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>set_name</name></member>
+      <member refid="classlbann_1_1generic__data__store_1a694438e0c70be757cc020ffc918fb165" prot="protected" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>set_num_global_indices</name></member>
+      <member refid="classlbann_1_1generic__data__store_1abdf41bf60ba37fa3de49c65c178dc7b0" prot="public" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>set_shuffled_indices</name></member>
+      <member refid="classlbann_1_1data__store__csv_1a184c7e6f27c5e07255b9c889ace02407" prot="public" virt="virtual"><scope>lbann::data_store_csv</scope><name>setup</name></member>
+      <member refid="classlbann_1_1data__store__csv_1a6e0928f649f9a808c4e73b77f34ffae3" prot="public" virt="non-virtual"><scope>lbann::data_store_csv</scope><name>~data_store_csv</name></member>
+      <member refid="classlbann_1_1generic__data__store_1ac8f202a6aa5a3c5007a9d7d53c687851" prot="public" virt="virtual"><scope>lbann::data_store_csv</scope><name>~generic_data_store</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

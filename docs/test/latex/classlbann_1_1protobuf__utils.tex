@@ -1,0 +1,263 @@
+\hypertarget{classlbann_1_1protobuf__utils}{}\section{lbann\+:\+:protobuf\+\_\+utils Class Reference}
+\label{classlbann_1_1protobuf__utils}\index{lbann\+::protobuf\+\_\+utils@{lbann\+::protobuf\+\_\+utils}}
+
+
+{\ttfamily \#include $<$protobuf\+\_\+utils.\+hpp$>$}
+
+\subsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static void \hyperlink{classlbann_1_1protobuf__utils_ad85c0f279c98fad3f9e9e6c54786acf1}{load\+\_\+prototext} (const bool master, const int argc, char $\ast$$\ast$argv, std\+::vector$<$ lbann\+\_\+data\+::\+Lbann\+PB $\ast$$>$ \&models\+\_\+out)
+\item 
+static void \hyperlink{classlbann_1_1protobuf__utils_a690c56a9ac8bcbc883751355b53e0006}{parse\+\_\+prototext\+\_\+filenames\+\_\+from\+\_\+command\+\_\+line} (bool master, int argc, char $\ast$$\ast$argv, std\+::vector$<$ \hyperlink{structlbann_1_1prototext__fn__triple}{prototext\+\_\+fn\+\_\+triple} $>$ \&names)
+\item 
+static void \hyperlink{classlbann_1_1protobuf__utils_ab8470c35e353af71b04e1e853b99f8ae}{read\+\_\+in\+\_\+prototext\+\_\+files} (bool master, std\+::vector$<$ \hyperlink{structlbann_1_1prototext__fn__triple}{prototext\+\_\+fn\+\_\+triple} $>$ \&names, std\+::vector$<$ lbann\+\_\+data\+::\+Lbann\+PB $\ast$$>$ \&models\+\_\+out)
+\item 
+static void \hyperlink{classlbann_1_1protobuf__utils_a058d524e15fb811e0d193ffb308c5faf}{verify\+\_\+prototext} (bool master, const std\+::vector$<$ lbann\+\_\+data\+::\+Lbann\+PB $\ast$$>$ \&models)
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+
+
+Definition at line 22 of file protobuf\+\_\+utils.\+hpp.
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1protobuf__utils_ad85c0f279c98fad3f9e9e6c54786acf1}\label{classlbann_1_1protobuf__utils_ad85c0f279c98fad3f9e9e6c54786acf1}} 
+\index{lbann\+::protobuf\+\_\+utils@{lbann\+::protobuf\+\_\+utils}!load\+\_\+prototext@{load\+\_\+prototext}}
+\index{load\+\_\+prototext@{load\+\_\+prototext}!lbann\+::protobuf\+\_\+utils@{lbann\+::protobuf\+\_\+utils}}
+\subsubsection{\texorpdfstring{load\+\_\+prototext()}{load\_prototext()}}
+{\footnotesize\ttfamily void lbann\+::protobuf\+\_\+utils\+::load\+\_\+prototext (\begin{DoxyParamCaption}\item[{const bool}]{master,  }\item[{const int}]{argc,  }\item[{char $\ast$$\ast$}]{argv,  }\item[{std\+::vector$<$ lbann\+\_\+data\+::\+Lbann\+PB $\ast$$>$ \&}]{models\+\_\+out }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+convience wrapper\+: calls \hyperlink{classlbann_1_1protobuf__utils_a690c56a9ac8bcbc883751355b53e0006}{parse\+\_\+prototext\+\_\+filenames\+\_\+from\+\_\+command\+\_\+line()}, then \hyperlink{classlbann_1_1protobuf__utils_ad85c0f279c98fad3f9e9e6c54786acf1}{load\+\_\+prototext()}, then \hyperlink{classlbann_1_1protobuf__utils_a058d524e15fb811e0d193ffb308c5faf}{verify\+\_\+prototext()}. This is the only function that needs to be called from, e.\+g, model\+\_\+zoo/lbann.\+cpp; the three called functions are made public for testing. 
+
+Definition at line 139 of file protobuf\+\_\+utils.\+cpp.
+
+
+\begin{DoxyCode}
+143                                                             \{
+144     std::vector<prototext\_fn\_triple> names;
+145     \hyperlink{classlbann_1_1protobuf__utils_a690c56a9ac8bcbc883751355b53e0006}{parse\_prototext\_filenames\_from\_command\_line}(master, argc, 
+      argv, names);
+146     \hyperlink{classlbann_1_1protobuf__utils_ab8470c35e353af71b04e1e853b99f8ae}{read\_in\_prototext\_files}(master, names, models\_out);
+147     \textcolor{keywordflow}{if} (models\_out.size() == 0) \{
+148       \textcolor{keywordflow}{if} (master) \{
+149         std::stringstream err;
+150         err << \_\_FILE\_\_ << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+151             << \textcolor{stringliteral}{" failed to load any prototext files"};
+152         \textcolor{keywordflow}{throw} lbann\_exception(err.str());    
+153       \}
+154     \}
+155     \hyperlink{classlbann_1_1protobuf__utils_a058d524e15fb811e0d193ffb308c5faf}{verify\_prototext}(master, models\_out);
+156 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1protobuf__utils_ad85c0f279c98fad3f9e9e6c54786acf1_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1protobuf__utils_a690c56a9ac8bcbc883751355b53e0006}\label{classlbann_1_1protobuf__utils_a690c56a9ac8bcbc883751355b53e0006}} 
+\index{lbann\+::protobuf\+\_\+utils@{lbann\+::protobuf\+\_\+utils}!parse\+\_\+prototext\+\_\+filenames\+\_\+from\+\_\+command\+\_\+line@{parse\+\_\+prototext\+\_\+filenames\+\_\+from\+\_\+command\+\_\+line}}
+\index{parse\+\_\+prototext\+\_\+filenames\+\_\+from\+\_\+command\+\_\+line@{parse\+\_\+prototext\+\_\+filenames\+\_\+from\+\_\+command\+\_\+line}!lbann\+::protobuf\+\_\+utils@{lbann\+::protobuf\+\_\+utils}}
+\subsubsection{\texorpdfstring{parse\+\_\+prototext\+\_\+filenames\+\_\+from\+\_\+command\+\_\+line()}{parse\_prototext\_filenames\_from\_command\_line()}}
+{\footnotesize\ttfamily void lbann\+::protobuf\+\_\+utils\+::parse\+\_\+prototext\+\_\+filenames\+\_\+from\+\_\+command\+\_\+line (\begin{DoxyParamCaption}\item[{bool}]{master,  }\item[{int}]{argc,  }\item[{char $\ast$$\ast$}]{argv,  }\item[{std\+::vector$<$ \hyperlink{structlbann_1_1prototext__fn__triple}{prototext\+\_\+fn\+\_\+triple} $>$ \&}]{names }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+parses the command line for --model=$<$string$>$ --reader=$<$string$>$ optimizer=$<$string$>$ and their multi counterparts\+: --model=\{$<$string\+\_\+1$>$,$<$string\+\_\+2$>$,...\} --reader=\{$<$string\+\_\+1$>$,$<$string\+\_\+2$>$,...\} --optimizer=\{$<$string\+\_\+1$>$,$<$string\+\_\+2$>$,...\} If the multi-\/model option is given, the reader and optimzier can either be single, or contain the same number of filenames as does the --model=\{...\} specification 
+
+Definition at line 38 of file protobuf\+\_\+utils.\+cpp.
+
+
+\begin{DoxyCode}
+42                                                       \{
+43   std::vector<std::string> models;
+44   std::vector<std::string> optimizers;
+45   std::vector<std::string> readers;
+46   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} k=1; k<argc; k++) \{
+47     std::string s(argv[k]);
+48     \textcolor{keywordflow}{if} (s[0] != \textcolor{charliteral}{'-'} or s[1] != \textcolor{charliteral}{'-'}) \{
+49       std::cerr << \textcolor{stringliteral}{"badly formed cmd line param; must begin with '--': "} << s << std::endl;
+50       exit(1);
+51     \}
+52     \textcolor{keywordflow}{if} (s.find(\textcolor{charliteral}{','}) != std::string::npos) \{
+53       std::stringstream err;
+54       err << \_\_FILE\_\_ << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+55           << \textcolor{stringliteral}{" badly formed param; contains ','; "} << s << \textcolor{stringliteral}{"\(\backslash\)n"}
+56           << \textcolor{stringliteral}{"possibly you left out '\{' or '\}' or both ??\(\backslash\)n"};
+57       \textcolor{keywordflow}{throw} lbann\_exception(err.str());    
+58     \}
+59 
+60     \textcolor{keywordtype}{size\_t} equal\_sign = s.find(\textcolor{stringliteral}{"="});
+61     \textcolor{keywordflow}{if} (equal\_sign != std::string::npos) \{
+62       std::string which = s.substr(2, equal\_sign-2);
+63       std::string fn = s.substr(equal\_sign+1);
+64       \textcolor{keywordflow}{if} (which == \textcolor{stringliteral}{"loadme"}) \{
+65         models.push\_back(fn);
+66       \}
+67       \textcolor{keywordflow}{if} (which == \textcolor{stringliteral}{"model"}) \{
+68         models.push\_back(fn);
+69       \}
+70       \textcolor{keywordflow}{if} (which == \textcolor{stringliteral}{"reader"}) \{
+71         readers.push\_back(fn);
+72       \}
+73       \textcolor{keywordflow}{if} (which == \textcolor{stringliteral}{"optimizer"}) \{
+74         optimizers.push\_back(fn);
+75       \}
+76     \}
+77   \}
+78 
+79   \textcolor{keywordtype}{size\_t} n = models.size();
+80   \textcolor{keywordflow}{if} (! (optimizers.size() == 1 || optimizers.size() == n)) \{
+81     std::stringstream err;   
+82     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+83         << \textcolor{stringliteral}{" you specified "} << n << \textcolor{stringliteral}{" model filenames, and "} << optimizers.size()
+84         << \textcolor{stringliteral}{" optimizer filenames; you must specify either one or "}<< n
+85         << \textcolor{stringliteral}{" optimizer filenames"};
+86     \textcolor{keywordflow}{throw} lbann\_exception(err.str());    
+87   \}
+88   \textcolor{keywordflow}{if} (! (readers.size() == 1 || readers.size() == n)) \{
+89     std::stringstream err;   
+90     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+91         << \textcolor{stringliteral}{" you specified "} << n << \textcolor{stringliteral}{" model filenames, and "} << readers.size()
+92         << \textcolor{stringliteral}{" reader filenames; you must specify either one or "}<< n
+93         << \textcolor{stringliteral}{" reader filenames"};
+94     \textcolor{keywordflow}{throw} lbann\_exception(err.str());    
+95   \}
+96 
+97   names.clear();
+98   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} i=0; i<models.size(); i++) \{
+99     prototext\_fn\_triple t;
+100     t.model = models[i];
+101     \textcolor{keywordflow}{if} (readers.size() == 1) \{
+102       t.reader = readers[0];  
+103     \} \textcolor{keywordflow}{else} \{
+104       t.reader = readers[i];  
+105     \}
+106     \textcolor{keywordflow}{if} (optimizers.size() == 1) \{
+107       t.optimizer = optimizers[0];  
+108     \} \textcolor{keywordflow}{else} \{
+109       t.optimizer = optimizers[i];  
+110     \}
+111     names.push\_back(t);
+112   \}
+113 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1protobuf__utils_a690c56a9ac8bcbc883751355b53e0006_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1protobuf__utils_ab8470c35e353af71b04e1e853b99f8ae}\label{classlbann_1_1protobuf__utils_ab8470c35e353af71b04e1e853b99f8ae}} 
+\index{lbann\+::protobuf\+\_\+utils@{lbann\+::protobuf\+\_\+utils}!read\+\_\+in\+\_\+prototext\+\_\+files@{read\+\_\+in\+\_\+prototext\+\_\+files}}
+\index{read\+\_\+in\+\_\+prototext\+\_\+files@{read\+\_\+in\+\_\+prototext\+\_\+files}!lbann\+::protobuf\+\_\+utils@{lbann\+::protobuf\+\_\+utils}}
+\subsubsection{\texorpdfstring{read\+\_\+in\+\_\+prototext\+\_\+files()}{read\_in\_prototext\_files()}}
+{\footnotesize\ttfamily void lbann\+::protobuf\+\_\+utils\+::read\+\_\+in\+\_\+prototext\+\_\+files (\begin{DoxyParamCaption}\item[{bool}]{master,  }\item[{std\+::vector$<$ \hyperlink{structlbann_1_1prototext__fn__triple}{prototext\+\_\+fn\+\_\+triple} $>$ \&}]{names,  }\item[{std\+::vector$<$ lbann\+\_\+data\+::\+Lbann\+PB $\ast$$>$ \&}]{models\+\_\+out }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+Definition at line 116 of file protobuf\+\_\+utils.\+cpp.
+
+
+\begin{DoxyCode}
+119                                                            \{
+120   models\_out.clear();
+121   \textcolor{keywordflow}{for} (\textcolor{keyword}{auto} t : names) \{
+122     lbann\_data::LbannPB *pb = \textcolor{keyword}{new} lbann\_data::LbannPB;
+123     \textcolor{keywordflow}{if} (t.model != \textcolor{stringliteral}{"none"})
+124       \hyperlink{proto__common_8cpp_addbf693bd6d4a399daa599ba03509569}{read\_prototext\_file}(t.model.c\_str(), *pb, master);
+125     \textcolor{keywordflow}{if} (t.reader != \textcolor{stringliteral}{"none"}) \{
+126       lbann\_data::LbannPB p;
+127       \hyperlink{proto__common_8cpp_addbf693bd6d4a399daa599ba03509569}{read\_prototext\_file}(t.reader.c\_str(), p, master);
+128       pb->MergeFrom(p);
+129     \}
+130     \textcolor{keywordflow}{if} (t.optimizer != \textcolor{stringliteral}{"none"}) \{
+131       lbann\_data::LbannPB p;
+132       \hyperlink{proto__common_8cpp_addbf693bd6d4a399daa599ba03509569}{read\_prototext\_file}(t.optimizer.c\_str(), p, master);
+133       pb->MergeFrom(p);
+134     \}
+135     models\_out.push\_back(pb);
+136   \}
+137 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=338pt]{classlbann_1_1protobuf__utils_ab8470c35e353af71b04e1e853b99f8ae_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=345pt]{classlbann_1_1protobuf__utils_ab8470c35e353af71b04e1e853b99f8ae_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1protobuf__utils_a058d524e15fb811e0d193ffb308c5faf}\label{classlbann_1_1protobuf__utils_a058d524e15fb811e0d193ffb308c5faf}} 
+\index{lbann\+::protobuf\+\_\+utils@{lbann\+::protobuf\+\_\+utils}!verify\+\_\+prototext@{verify\+\_\+prototext}}
+\index{verify\+\_\+prototext@{verify\+\_\+prototext}!lbann\+::protobuf\+\_\+utils@{lbann\+::protobuf\+\_\+utils}}
+\subsubsection{\texorpdfstring{verify\+\_\+prototext()}{verify\_prototext()}}
+{\footnotesize\ttfamily void lbann\+::protobuf\+\_\+utils\+::verify\+\_\+prototext (\begin{DoxyParamCaption}\item[{bool}]{master,  }\item[{const std\+::vector$<$ lbann\+\_\+data\+::\+Lbann\+PB $\ast$$>$ \&}]{models }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+attempts to verify the all models are valid, and contain an optimizer and reader 
+
+Definition at line 158 of file protobuf\+\_\+utils.\+cpp.
+
+
+\begin{DoxyCode}
+158                                                                                                \{
+159   \textcolor{keywordflow}{if} (master) \{
+160     std::cout << \textcolor{stringliteral}{"protobuf\_utils::verify\_prototext; starting verify for "} << models.size() << \textcolor{stringliteral}{" models\(\backslash\)n"};
+161   \}
+162   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} j=0; j<models.size(); j++) \{
+163     \textcolor{keywordtype}{bool} is\_good = \textcolor{keyword}{true};
+164     lbann\_data::LbannPB *t = models[j];
+165     \textcolor{keywordflow}{if} (! t->has\_data\_reader()) \{
+166       is\_good = \textcolor{keyword}{false};
+167       \textcolor{keywordflow}{if} (master) \{
+168         std::cerr << \textcolor{stringliteral}{"model #"} << j << \textcolor{stringliteral}{" is missing data\_reader\(\backslash\)n"};
+169       \}
+170     \}
+171     \textcolor{keywordflow}{if} (! t->has\_model()) \{
+172       is\_good = \textcolor{keyword}{false};
+173       \textcolor{keywordflow}{if} (master) \{
+174         std::cerr << \textcolor{stringliteral}{"model #"} << j << \textcolor{stringliteral}{" is missing model\(\backslash\)n"};
+175       \}
+176     \}
+177     \textcolor{keywordflow}{if} (! t->has\_optimizer()) \{
+178       is\_good = \textcolor{keyword}{false};
+179       \textcolor{keywordflow}{if} (master) \{
+180         std::cerr << \textcolor{stringliteral}{"model #"} << j << \textcolor{stringliteral}{" is missing optimizer\(\backslash\)n"};
+181       \}
+182     \}
+183 
+184     \textcolor{keywordflow}{if} (! is\_good) \{
+185       \textcolor{keywordflow}{if} (master) \{
+186         std::stringstream err;
+187         err << \_\_FILE\_\_ << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+188             << \textcolor{stringliteral}{" prototext is missing reader, optimizer, and/or model;\(\backslash\)n"}
+189             << \textcolor{stringliteral}{" please check your command line\(\backslash\)n"};
+190         \textcolor{keywordflow}{throw} lbann\_exception(err.str());    
+191       \}
+192     \}
+193   \}
+194 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=328pt]{classlbann_1_1protobuf__utils_a058d524e15fb811e0d193ffb308c5faf_icgraph}
+\end{center}
+\end{figure}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/utils/\hyperlink{protobuf__utils_8hpp}{protobuf\+\_\+utils.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/utils/\hyperlink{protobuf__utils_8cpp}{protobuf\+\_\+utils.\+cpp}\end{DoxyCompactItemize}

@@ -1,0 +1,147 @@
+\hypertarget{namespacelbann_1_1anonymous__namespace_02callback__ltfb_8cpp_03}{}\section{lbann\+:\+:anonymous\+\_\+namespace\{callback\+\_\+ltfb.\+cpp\} Namespace Reference}
+\label{namespacelbann_1_1anonymous__namespace_02callback__ltfb_8cpp_03}\index{lbann\+::anonymous\+\_\+namespace\lcurly{}callback\+\_\+ltfb.\+cpp\rcurly{}@{lbann\+::anonymous\+\_\+namespace\lcurly{}callback\+\_\+ltfb.\+cpp\rcurly{}}}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{namespacelbann_1_1anonymous__namespace_02callback__ltfb_8cpp_03_a1865e25ff1f3b6ad417d1853ea0bc6f4}{assign\+\_\+partners} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm})
+\item 
+void \hyperlink{namespacelbann_1_1anonymous__namespace_02callback__ltfb_8cpp_03_a2b155d39e6dba02a34a7c58d804d865e}{exchange\+\_\+weights} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, std\+::vector$<$ \hyperlink{classlbann_1_1weights}{weights} $\ast$$>$ \&model\+\_\+weights, std\+::vector$<$ \hyperlink{classlbann_1_1weights}{weights} $\ast$$>$ \&local\+\_\+weights, int partner)
+\item 
+\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} \hyperlink{namespacelbann_1_1anonymous__namespace_02callback__ltfb_8cpp_03_a2525bf058156612d7847d0754277e4fc}{evaluate} (\hyperlink{classlbann_1_1model}{model} $\ast$m)
+\end{DoxyCompactItemize}
+
+
+\subsection{Function Documentation}
+\mbox{\Hypertarget{namespacelbann_1_1anonymous__namespace_02callback__ltfb_8cpp_03_a1865e25ff1f3b6ad417d1853ea0bc6f4}\label{namespacelbann_1_1anonymous__namespace_02callback__ltfb_8cpp_03_a1865e25ff1f3b6ad417d1853ea0bc6f4}} 
+\index{lbann\+::anonymous\+\_\+namespace\lcurly{}callback\+\_\+ltfb.\+cpp\rcurly{}@{lbann\+::anonymous\+\_\+namespace\lcurly{}callback\+\_\+ltfb.\+cpp\rcurly{}}!assign\+\_\+partners@{assign\+\_\+partners}}
+\index{assign\+\_\+partners@{assign\+\_\+partners}!lbann\+::anonymous\+\_\+namespace\lcurly{}callback\+\_\+ltfb.\+cpp\rcurly{}@{lbann\+::anonymous\+\_\+namespace\lcurly{}callback\+\_\+ltfb.\+cpp\rcurly{}}}
+\subsubsection{\texorpdfstring{assign\+\_\+partners()}{assign\_partners()}}
+{\footnotesize\ttfamily int lbann\+::anonymous\+\_\+namespace\{callback\+\_\+ltfb.\+cpp\}\+::assign\+\_\+partners (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm }\end{DoxyParamCaption})}
+
+Assign partners for current tournament. This function pairs models up and returns the partner model corresponding to the current process. If there is an odd number of models, one of them is partnered with itself. 
+
+Definition at line 43 of file callback\+\_\+ltfb.\+cpp.
+
+
+\begin{DoxyCode}
+43                                       \{
+44   \textcolor{keywordflow}{if} (\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}->am\_world\_master()) \{
+45     \textcolor{comment}{// Generate partner assignments on master process}
+46     std::cout << \textcolor{stringliteral}{"LTFB tournament partners:"};
+47     \textcolor{keyword}{const} \textcolor{keyword}{auto}& num\_models = \hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}->get\_num\_models();
+48     \textcolor{keyword}{const} \textcolor{keyword}{auto}& procs\_per\_model = \hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}->get\_procs\_per\_model();
+49     std::vector<int> models(num\_models);
+50     std::iota(models.begin(), models.end(), 0);
+51     std::shuffle(models.begin(), models.end(), \hyperlink{namespacelbann_ae6ce9c2fdec6f81803f6b1a6555c31c5}{get\_fast\_generator}());
+52     std::vector<int> partners(num\_models * procs\_per\_model);
+53     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i = 0; i < num\_models; i += 2) \{
+54       \textcolor{keyword}{const} \textcolor{keyword}{auto}& model1 = models[i];
+55       \textcolor{keyword}{const} \textcolor{keyword}{auto}& model2 = (i+1 < num\_models) ? models[i+1] : model1;
+56       std::cout << (i > 0 ? \textcolor{stringliteral}{","} : \textcolor{stringliteral}{""}) << \textcolor{stringliteral}{" \{"} << model1;
+57       \textcolor{keywordflow}{if} (model1 != model2) \{ std::cout << \textcolor{stringliteral}{","} << model2; \}
+58       std::cout << \textcolor{stringliteral}{"\}"};
+59       std::fill\_n(partners.begin() + model1 * procs\_per\_model,
+60                   procs\_per\_model, model2);
+61       std::fill\_n(partners.begin() + model2 * procs\_per\_model,
+62                   procs\_per\_model, model1);
+63     \}
+64     std::cout << std::endl;
+65     \textcolor{keywordflow}{return} \hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}->scatter(partners.data(), \hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}->get\_world\_comm());
+66   \} \textcolor{keywordflow}{else} \{
+67     \textcolor{keywordflow}{return} \hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}->scatter<\textcolor{keywordtype}{int}>(0, \hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}->get\_world\_comm());
+68   \}
+69 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{namespacelbann_1_1anonymous__namespace_02callback__ltfb_8cpp_03_a1865e25ff1f3b6ad417d1853ea0bc6f4_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{namespacelbann_1_1anonymous__namespace_02callback__ltfb_8cpp_03_a1865e25ff1f3b6ad417d1853ea0bc6f4_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{namespacelbann_1_1anonymous__namespace_02callback__ltfb_8cpp_03_a2525bf058156612d7847d0754277e4fc}\label{namespacelbann_1_1anonymous__namespace_02callback__ltfb_8cpp_03_a2525bf058156612d7847d0754277e4fc}} 
+\index{lbann\+::anonymous\+\_\+namespace\lcurly{}callback\+\_\+ltfb.\+cpp\rcurly{}@{lbann\+::anonymous\+\_\+namespace\lcurly{}callback\+\_\+ltfb.\+cpp\rcurly{}}!evaluate@{evaluate}}
+\index{evaluate@{evaluate}!lbann\+::anonymous\+\_\+namespace\lcurly{}callback\+\_\+ltfb.\+cpp\rcurly{}@{lbann\+::anonymous\+\_\+namespace\lcurly{}callback\+\_\+ltfb.\+cpp\rcurly{}}}
+\subsubsection{\texorpdfstring{evaluate()}{evaluate()}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} lbann\+::anonymous\+\_\+namespace\{callback\+\_\+ltfb.\+cpp\}\+::evaluate (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})}
+
+Evaluate a model on tournament data and return its accuracy. 
+
+Definition at line 94 of file callback\+\_\+ltfb.\+cpp.
+
+
+\begin{DoxyCode}
+94                             \{
+95   \textcolor{keyword}{const} \textcolor{keyword}{auto}& mode = m->get\_execution\_mode();
+96   m->evaluate(\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation});
+97   m->set\_execution\_mode(mode);
+98   \textcolor{keywordflow}{for} (\textcolor{keyword}{const} \textcolor{keyword}{auto}& met : m->get\_metrics()) \{
+99     \textcolor{keywordflow}{if} (dynamic\_cast<categorical\_accuracy\_metric*>(met) != \textcolor{keyword}{nullptr}) \{
+100       \textcolor{keywordflow}{return} met->get\_mean\_value(\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation});
+101     \}
+102   \}
+103   \textcolor{keywordflow}{return} \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType}(0);
+104 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{namespacelbann_1_1anonymous__namespace_02callback__ltfb_8cpp_03_a2525bf058156612d7847d0754277e4fc_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{namespacelbann_1_1anonymous__namespace_02callback__ltfb_8cpp_03_a2525bf058156612d7847d0754277e4fc_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{namespacelbann_1_1anonymous__namespace_02callback__ltfb_8cpp_03_a2b155d39e6dba02a34a7c58d804d865e}\label{namespacelbann_1_1anonymous__namespace_02callback__ltfb_8cpp_03_a2b155d39e6dba02a34a7c58d804d865e}} 
+\index{lbann\+::anonymous\+\_\+namespace\lcurly{}callback\+\_\+ltfb.\+cpp\rcurly{}@{lbann\+::anonymous\+\_\+namespace\lcurly{}callback\+\_\+ltfb.\+cpp\rcurly{}}!exchange\+\_\+weights@{exchange\+\_\+weights}}
+\index{exchange\+\_\+weights@{exchange\+\_\+weights}!lbann\+::anonymous\+\_\+namespace\lcurly{}callback\+\_\+ltfb.\+cpp\rcurly{}@{lbann\+::anonymous\+\_\+namespace\lcurly{}callback\+\_\+ltfb.\+cpp\rcurly{}}}
+\subsubsection{\texorpdfstring{exchange\+\_\+weights()}{exchange\_weights()}}
+{\footnotesize\ttfamily void lbann\+::anonymous\+\_\+namespace\{callback\+\_\+ltfb.\+cpp\}\+::exchange\+\_\+weights (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{std\+::vector$<$ \hyperlink{classlbann_1_1weights}{weights} $\ast$$>$ \&}]{model\+\_\+weights,  }\item[{std\+::vector$<$ \hyperlink{classlbann_1_1weights}{weights} $\ast$$>$ \&}]{local\+\_\+weights,  }\item[{int}]{partner }\end{DoxyParamCaption})}
+
+Exchange weights with remote model. Weights from the local model are copied into local\+\_\+weights and weights from the remote model are copied into model\+\_\+weights. 
+
+Definition at line 75 of file callback\+\_\+ltfb.\+cpp.
+
+
+\begin{DoxyCode}
+78                                    \{
+79   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} i = 0; i < model\_weights.size(); ++i) \{
+80     *local\_weights[i] = *model\_weights[i];
+81     \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_matrix = local\_weights[i]->get\_values();
+82     \textcolor{keyword}{auto}&& remote\_matrix = local\_matrix.Copy();
+83     \textcolor{keyword}{const} \textcolor{keyword}{auto}& size = local\_matrix.LocalHeight() * local\_matrix.LocalWidth();
+84     \textcolor{keywordflow}{if} (size > 0) \{
+85       \hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}->sendrecv(local\_matrix.LockedBuffer(), size, partner,
+86                      remote\_matrix->Buffer(), size, partner);
+87       model\_weights[i]->set\_values(*remote\_matrix);
+88     \}
+89     \textcolor{keyword}{delete} remote\_matrix;
+90   \}
+91 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{namespacelbann_1_1anonymous__namespace_02callback__ltfb_8cpp_03_a2b155d39e6dba02a34a7c58d804d865e_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{namespacelbann_1_1anonymous__namespace_02callback__ltfb_8cpp_03_a2b155d39e6dba02a34a7c58d804d865e_icgraph}
+\end{center}
+\end{figure}

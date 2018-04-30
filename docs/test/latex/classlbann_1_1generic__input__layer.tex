@@ -1,0 +1,2305 @@
+\hypertarget{classlbann_1_1generic__input__layer}{}\section{lbann\+:\+:generic\+\_\+input\+\_\+layer Class Reference}
+\label{classlbann_1_1generic__input__layer}\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+
+
+{\ttfamily \#include $<$generic\+\_\+input\+\_\+layer.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:generic\+\_\+input\+\_\+layer\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=207pt]{classlbann_1_1generic__input__layer__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:generic\+\_\+input\+\_\+layer\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \hyperlink{structlbann_1_1generic__input__layer_1_1dataset__header}{dataset\+\_\+header}
+\end{DoxyCompactItemize}
+\subsection*{Public Types}
+\begin{DoxyCompactItemize}
+\item 
+using \hyperlink{classlbann_1_1generic__input__layer_a6c3b901ea25ff3bba052cb3e14df4f83}{data\+\_\+reader\+\_\+map\+\_\+t} = std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$ $>$
+\end{DoxyCompactItemize}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1generic__input__layer_a0c7ce1625cd2be2368822c2662346538}{generic\+\_\+input\+\_\+layer} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, int num\+\_\+parallel\+\_\+readers, std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$$>$ data\+\_\+readers, bool data\+\_\+set\+\_\+spans\+\_\+models=true, bool for\+\_\+regression=false)
+\item 
+\hyperlink{classlbann_1_1generic__input__layer_a09575a4120064a6882883b3a0ee11b7e}{$\sim$generic\+\_\+input\+\_\+layer} () override
+\item 
+\hyperlink{classlbann_1_1generic__input__layer_a5447106074487e60d69add9cab511319}{generic\+\_\+input\+\_\+layer} (const \hyperlink{classlbann_1_1generic__input__layer}{generic\+\_\+input\+\_\+layer} \&other)
+\item 
+\hyperlink{classlbann_1_1generic__input__layer}{generic\+\_\+input\+\_\+layer} \& \hyperlink{classlbann_1_1generic__input__layer_a76d36777d01144cafe7b33ab5ce739d2}{operator=} (const \hyperlink{classlbann_1_1generic__input__layer}{generic\+\_\+input\+\_\+layer} \&other)
+\item 
+{\footnotesize template$<$typename T\+\_\+io\+\_\+buffer $>$ }\\void \hyperlink{classlbann_1_1generic__input__layer_ab4fa07865c28a35d39ff736075085aba}{initialize\+\_\+io\+\_\+buffer} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, int num\+\_\+parallel\+\_\+readers, std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$$>$ data\+\_\+readers)
+\item 
+std\+::string \hyperlink{classlbann_1_1generic__input__layer_a5392ea11b5eb98a8040bf5b5deed836a}{get\+\_\+type} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1generic__input__layer_a8ffe91a3d5b6f37d2dc17e657898dcc8}{get\+\_\+description} () const override
+\item 
+void \hyperlink{classlbann_1_1generic__input__layer_ad117da4e6155159439826bba6657cf05}{setup\+\_\+dims} () override
+\item 
+void \hyperlink{classlbann_1_1generic__input__layer_a8ca316b0369689949f3f4106920ec28f}{setup\+\_\+data} () override
+\item 
+void \hyperlink{classlbann_1_1generic__input__layer_ad0b8ea79bc508bd227e08124359531c8}{fp\+\_\+setup\+\_\+data} (int mini\+\_\+batch\+\_\+size) override
+\item 
+void \hyperlink{classlbann_1_1generic__input__layer_ae74c8c5a7e14b4fdd4902554bbc7bcef}{fp\+\_\+compute} () override
+\item 
+void \hyperlink{classlbann_1_1generic__input__layer_a36787a3caf2ef236747c6150edad82ea}{bp\+\_\+compute} () override
+\item 
+bool \hyperlink{classlbann_1_1generic__input__layer_aaf9ac19f7dd725230bde87d859ec0f35}{update\+\_\+compute} () override
+\item 
+\hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$ \hyperlink{classlbann_1_1generic__input__layer_a5715a966647e8cc92489f9e1950b2d28}{get\+\_\+data\+\_\+reader} (const \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode} mode) const
+\item 
+\hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$ \hyperlink{classlbann_1_1generic__input__layer_aba732becdb02627e3ad4493ac19e8fb6}{get\+\_\+data\+\_\+reader} () const
+\item 
+virtual int \hyperlink{classlbann_1_1generic__input__layer_a8a85d3e1bdd31082ca22535939596acb}{get\+\_\+num\+\_\+parallel\+\_\+readers} (\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode} mode) const
+\item 
+virtual int \hyperlink{classlbann_1_1generic__input__layer_a5ed2e13553574ba9ff54565ebc049982}{get\+\_\+num\+\_\+parallel\+\_\+readers} () const
+\item 
+virtual int \hyperlink{classlbann_1_1generic__input__layer_aa0fa6597ffce537f7cfba29dcc754ee1}{get\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch} (\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode} mode) const
+\item 
+virtual int \hyperlink{classlbann_1_1generic__input__layer_a82bd22c834c5ef526e0c740c80451e1b}{get\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch} () const
+\item 
+virtual int \hyperlink{classlbann_1_1generic__input__layer_abad654f945f62d4610f8afa597777713}{get\+\_\+current\+\_\+step\+\_\+in\+\_\+epoch} (\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode} mode) const
+\item 
+virtual int \hyperlink{classlbann_1_1generic__input__layer_a660d82888a5c1eb72c2906d6367cbc35}{get\+\_\+current\+\_\+step\+\_\+in\+\_\+epoch} () const
+\item 
+virtual int \hyperlink{classlbann_1_1generic__input__layer_a8af40ec1991900bf23b78e6429256b9c}{get\+\_\+mini\+\_\+batch\+\_\+size} (\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode} mode) const
+\item 
+virtual int \hyperlink{classlbann_1_1generic__input__layer_a5e3c66c5726ab4a00d75bdcd2c07b640}{get\+\_\+last\+\_\+mini\+\_\+batch\+\_\+size} (\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode} mode) const
+\item 
+virtual int \hyperlink{classlbann_1_1generic__input__layer_aebca4bd6660ee5b7f99129bd84ed4f8d}{get\+\_\+last\+\_\+mini\+\_\+batch\+\_\+size} () const
+\item 
+virtual int \hyperlink{classlbann_1_1generic__input__layer_aad7e5f1c51037a175c6bc9abaccdc7d6}{get\+\_\+current\+\_\+mini\+\_\+batch\+\_\+size} (\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode} mode) const
+\item 
+virtual int \hyperlink{classlbann_1_1generic__input__layer_a41d278999fbd10d2cd95b9af04925cf7}{get\+\_\+current\+\_\+mini\+\_\+batch\+\_\+size} () const
+\item 
+virtual int \hyperlink{classlbann_1_1generic__input__layer_ac07b58c08183995852889dacfc69e459}{get\+\_\+global\+\_\+mini\+\_\+batch\+\_\+size} (\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode} mode) const
+\item 
+virtual int \hyperlink{classlbann_1_1generic__input__layer_a7ccb2e0dd8a9d9ab60e1e9d04bb80f2d}{get\+\_\+global\+\_\+last\+\_\+mini\+\_\+batch\+\_\+size} (\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode} mode) const
+\item 
+virtual int \hyperlink{classlbann_1_1generic__input__layer_ae8252d343e2f287dd7cece935ea5a075}{get\+\_\+current\+\_\+global\+\_\+mini\+\_\+batch\+\_\+size} (\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode} mode) const
+\item 
+virtual int \hyperlink{classlbann_1_1generic__input__layer_aaaa60fb7b94353fccaff25e6a862d833}{get\+\_\+current\+\_\+global\+\_\+mini\+\_\+batch\+\_\+size} () const
+\item 
+virtual int \hyperlink{classlbann_1_1generic__input__layer_a1c2a503d4009b6360d96db128796983c}{get\+\_\+world\+\_\+master\+\_\+mini\+\_\+batch\+\_\+adjustment} (\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode} mode) const
+\item 
+virtual int \hyperlink{classlbann_1_1generic__input__layer_a111abcde5f53746dfd6c5fe18187ee57}{get\+\_\+world\+\_\+master\+\_\+mini\+\_\+batch\+\_\+adjustment} () const
+\item 
+virtual int \hyperlink{classlbann_1_1generic__input__layer_a8c3bf45beb91622d56f0dec89cba8e9a}{get\+\_\+current\+\_\+world\+\_\+master\+\_\+mini\+\_\+batch\+\_\+adjustment} (\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode} mode, int model\+\_\+rank) const
+\item 
+virtual int \hyperlink{classlbann_1_1generic__input__layer_a6c14ea2a50c7e7989e8e394671e4531a}{get\+\_\+current\+\_\+world\+\_\+master\+\_\+mini\+\_\+batch\+\_\+adjustment} (int model\+\_\+rank) const
+\item 
+void \hyperlink{classlbann_1_1generic__input__layer_af108a5dc05276bc6bc57b306204b12e4}{calculate\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch\+\_\+training\+\_\+spans\+\_\+models} (int mini\+\_\+batch\+\_\+size)
+\item 
+void \hyperlink{classlbann_1_1generic__input__layer_a0f09422a09e76da77ac42b3037173041}{calculate\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch\+\_\+training\+\_\+unique\+\_\+per\+\_\+models} (int mini\+\_\+batch\+\_\+size)
+\item 
+\hyperlink{classlbann_1_1dataset}{dataset} \& \hyperlink{classlbann_1_1generic__input__layer_af5699540797c22d8846028e578a6fc59}{get\+\_\+dataset} (\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode} m) override
+\item 
+const \hyperlink{classlbann_1_1dataset}{dataset} \& \hyperlink{classlbann_1_1generic__input__layer_a909cf972d13a305a16daba9664180262}{get\+\_\+dataset} (\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode} m) const override
+\item 
+\hyperlink{classlbann_1_1dataset}{dataset} \& \hyperlink{classlbann_1_1generic__input__layer_a654365ee97a64c75a547cfb7ef329304}{select\+\_\+dataset} () override
+\item 
+const \hyperlink{classlbann_1_1dataset}{dataset} \& \hyperlink{classlbann_1_1generic__input__layer_ab8468d077867b03098bbc71a38edaa15}{select\+\_\+dataset} () const override
+\item 
+\hyperlink{classlbann_1_1dataset}{dataset} $\ast$ \hyperlink{classlbann_1_1generic__input__layer_a777aa11816a518098212408b569b6fb8}{select\+\_\+first\+\_\+valid\+\_\+dataset} () override
+\item 
+\hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$ \hyperlink{classlbann_1_1generic__input__layer_a9783805369ec7cfe5ce61c81baa5d2e2}{select\+\_\+data\+\_\+reader} () const override
+\item 
+long \hyperlink{classlbann_1_1generic__input__layer_a0c2f123432ec6af168012cc8699a1d3f}{update\+\_\+num\+\_\+samples\+\_\+processed} (long num\+\_\+samples) override
+\item 
+El\+::\+Matrix$<$ El\+::\+Int $>$ $\ast$ \hyperlink{classlbann_1_1generic__input__layer_a749741781204b17c8ca172a9a405a90e}{get\+\_\+sample\+\_\+indices\+\_\+per\+\_\+mb} () override
+\item 
+const std\+::vector$<$ int $>$ \hyperlink{classlbann_1_1generic__input__layer_a6008b13521d27d6139201fa374b088eb}{get\+\_\+data\+\_\+dims} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1generic__input__layer_a36d9962105ca89889e3f38f1c1801560}{get\+\_\+topo\+\_\+description} () const override
+\item 
+long \hyperlink{classlbann_1_1generic__input__layer_aca46cbf29ad2762e9329b46ab2ad1ae7}{get\+\_\+linearized\+\_\+data\+\_\+size} () const override
+\item 
+long \hyperlink{classlbann_1_1generic__input__layer_ab6c24db7e2b8e73e7d7894e51246dc5e}{get\+\_\+linearized\+\_\+label\+\_\+size} () const override
+\item 
+long \hyperlink{classlbann_1_1generic__input__layer_a6e5e587aa5b32bdfd2dd579a2746885d}{get\+\_\+linearized\+\_\+response\+\_\+size} () const override
+\item 
+long \hyperlink{classlbann_1_1generic__input__layer_a95a7a5ad2a6089ffb9197632015e6062}{get\+\_\+num\+\_\+samples\+\_\+trained} () const override
+\item 
+long \hyperlink{classlbann_1_1generic__input__layer_a68b162bcc5fdfe2bb7279eb5d83cf884}{get\+\_\+num\+\_\+samples\+\_\+tested} () const override
+\item 
+long \hyperlink{classlbann_1_1generic__input__layer_a5fc757d16e26739cd10e5eabafa6a32b}{get\+\_\+total\+\_\+num\+\_\+training\+\_\+samples} () const override
+\item 
+long \hyperlink{classlbann_1_1generic__input__layer_ab5b5318cf000fbdaf35a3545335b60b2}{get\+\_\+total\+\_\+num\+\_\+testing\+\_\+samples} () const override
+\item 
+bool \hyperlink{classlbann_1_1generic__input__layer_a8b375ab97f38166872e4aa9baeca0715}{at\+\_\+new\+\_\+epoch} () const override
+\item 
+bool \hyperlink{classlbann_1_1generic__input__layer_a31082076a8aad937eef3cadc0b5e1b27}{is\+\_\+execution\+\_\+mode\+\_\+valid} (\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode} mode) const override
+\item 
+bool \hyperlink{classlbann_1_1generic__input__layer_abae61e13f47205491a43e4842808945d}{save\+\_\+to\+\_\+checkpoint\+\_\+shared} (\hyperlink{classlbann_1_1persist}{persist} \&p, bool val\+\_\+end) const override
+\item 
+bool \hyperlink{classlbann_1_1generic__input__layer_ae5a542333eaf447a05fc586848e7c94c}{load\+\_\+from\+\_\+checkpoint\+\_\+shared} (\hyperlink{classlbann_1_1persist}{persist} \&p) override
+\item 
+{\footnotesize template$<$$>$ }\\void \hyperlink{classlbann_1_1generic__input__layer_ab0afac3b3a3ee9e7af81c0885d233756}{initialize\+\_\+io\+\_\+buffer} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, int num\+\_\+parallel\+\_\+readers, std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$$>$ data\+\_\+readers)
+\item 
+{\footnotesize template$<$$>$ }\\void \hyperlink{classlbann_1_1generic__input__layer_ab0afac3b3a3ee9e7af81c0885d233756}{initialize\+\_\+io\+\_\+buffer} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, int num\+\_\+parallel\+\_\+readers, std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$$>$ data\+\_\+readers)
+\end{DoxyCompactItemize}
+\subsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1generic__io__buffer}{generic\+\_\+io\+\_\+buffer} $\ast$ \hyperlink{classlbann_1_1generic__input__layer_a9dfe8b9afaebc7a5bcb0177ee2ab428f}{io\+\_\+buffer}
+\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1dataset}{dataset} \hyperlink{classlbann_1_1generic__input__layer_a23716635b1062bfe57f7fcf75140a63a}{m\+\_\+training\+\_\+dataset}
+\item 
+\hyperlink{classlbann_1_1dataset}{dataset} \hyperlink{classlbann_1_1generic__input__layer_a66b9ec6b393695232bd98edc62fc1348}{m\+\_\+testing\+\_\+dataset}
+\item 
+\hyperlink{classlbann_1_1dataset}{dataset} \hyperlink{classlbann_1_1generic__input__layer_abd70adf607d1cef87fb6641af77e816d}{m\+\_\+validation\+\_\+dataset}
+\item 
+\hyperlink{classlbann_1_1generic__input__layer_a6c3b901ea25ff3bba052cb3e14df4f83}{data\+\_\+reader\+\_\+map\+\_\+t} \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\+\_\+data\+\_\+readers}
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+
+
+Definition at line 39 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+
+\subsection{Member Typedef Documentation}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a6c3b901ea25ff3bba052cb3e14df4f83}\label{classlbann_1_1generic__input__layer_a6c3b901ea25ff3bba052cb3e14df4f83}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!data\+\_\+reader\+\_\+map\+\_\+t@{data\+\_\+reader\+\_\+map\+\_\+t}}
+\index{data\+\_\+reader\+\_\+map\+\_\+t@{data\+\_\+reader\+\_\+map\+\_\+t}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{data\+\_\+reader\+\_\+map\+\_\+t}{data\_reader\_map\_t}}
+{\footnotesize\ttfamily using \hyperlink{classlbann_1_1generic__input__layer_a6c3b901ea25ff3bba052cb3e14df4f83}{lbann\+::generic\+\_\+input\+\_\+layer\+::data\+\_\+reader\+\_\+map\+\_\+t} =  std\+::map$<$\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$$>$}
+
+
+
+Definition at line 41 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a0c7ce1625cd2be2368822c2662346538}\label{classlbann_1_1generic__input__layer_a0c7ce1625cd2be2368822c2662346538}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!generic\+\_\+input\+\_\+layer@{generic\+\_\+input\+\_\+layer}}
+\index{generic\+\_\+input\+\_\+layer@{generic\+\_\+input\+\_\+layer}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{generic\+\_\+input\+\_\+layer()}{generic\_input\_layer()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::generic\+\_\+input\+\_\+layer\+::generic\+\_\+input\+\_\+layer (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{int}]{num\+\_\+parallel\+\_\+readers,  }\item[{std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$$>$}]{data\+\_\+readers,  }\item[{bool}]{data\+\_\+set\+\_\+spans\+\_\+models = {\ttfamily true},  }\item[{bool}]{for\+\_\+regression = {\ttfamily false} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 45 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+49     : \hyperlink{classlbann_1_1io__layer_ab2b5002dfeb0806062ecf3d9fefb9948}{io\_layer}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, data\_set\_spans\_models, for\_regression),
+50       \hyperlink{classlbann_1_1generic__input__layer_a9dfe8b9afaebc7a5bcb0177ee2ab428f}{io\_buffer}(\textcolor{keyword}{nullptr}),
+51       \hyperlink{classlbann_1_1generic__input__layer_a23716635b1062bfe57f7fcf75140a63a}{m\_training\_dataset}(),
+52       \hyperlink{classlbann_1_1generic__input__layer_a66b9ec6b393695232bd98edc62fc1348}{m\_testing\_dataset}(),
+53       \hyperlink{classlbann_1_1generic__input__layer_abd70adf607d1cef87fb6641af77e816d}{m\_validation\_dataset}(),
+54       \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}(data\_readers) \{
+55       \textcolor{comment}{//m\_data\_sets\_span\_models(data\_sets\_span\_models) \{}
+56     \textcolor{comment}{// Input layers have no parents}
+57     \hyperlink{classlbann_1_1Layer_a841b96b25555247f52921c7f13ae1dfa}{m\_expected\_num\_parent\_layers} = 0;
+58 
+59     \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training}] != \textcolor{keyword}{nullptr}) \{
+60       \hyperlink{classlbann_1_1generic__input__layer_a23716635b1062bfe57f7fcf75140a63a}{m\_training\_dataset}.\hyperlink{classlbann_1_1dataset_ab951c879f151990613567e985fe1e278}{total\_samples}() = 
+      \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training}]->get\_num\_data();
+61     \}
+62 
+63     \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation}] != \textcolor{keyword}{nullptr}) \{
+64       \hyperlink{classlbann_1_1generic__input__layer_abd70adf607d1cef87fb6641af77e816d}{m\_validation\_dataset}.\hyperlink{classlbann_1_1dataset_ab951c879f151990613567e985fe1e278}{total\_samples}() = 
+      \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation}]->get\_num\_data();
+65     \}
+66 
+67     \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing}] != \textcolor{keyword}{nullptr}) \{
+68       \hyperlink{classlbann_1_1generic__input__layer_a66b9ec6b393695232bd98edc62fc1348}{m\_testing\_dataset}.\hyperlink{classlbann_1_1dataset_ab951c879f151990613567e985fe1e278}{total\_samples}() = 
+      \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing}]->get\_num\_data();
+69     \}
+70   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a0c7ce1625cd2be2368822c2662346538_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a09575a4120064a6882883b3a0ee11b7e}\label{classlbann_1_1generic__input__layer_a09575a4120064a6882883b3a0ee11b7e}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!````~generic\+\_\+input\+\_\+layer@{$\sim$generic\+\_\+input\+\_\+layer}}
+\index{````~generic\+\_\+input\+\_\+layer@{$\sim$generic\+\_\+input\+\_\+layer}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{$\sim$generic\+\_\+input\+\_\+layer()}{~generic\_input\_layer()}}
+{\footnotesize\ttfamily lbann\+::generic\+\_\+input\+\_\+layer\+::$\sim$generic\+\_\+input\+\_\+layer (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}}
+
+
+
+Definition at line 72 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+72                                   \{
+73     \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1generic__input__layer_a9dfe8b9afaebc7a5bcb0177ee2ab428f}{io\_buffer} != \textcolor{keyword}{nullptr}) \{
+74       \textcolor{keyword}{delete} \hyperlink{classlbann_1_1generic__input__layer_a9dfe8b9afaebc7a5bcb0177ee2ab428f}{io\_buffer};
+75     \}
+76     \textcolor{comment}{// Input layer always frees data readers.}
+77     \textcolor{keywordflow}{for} (\textcolor{keyword}{auto}& dr : \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}) \{
+78       \textcolor{keyword}{delete} dr.second;
+79     \}
+80   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a5447106074487e60d69add9cab511319}\label{classlbann_1_1generic__input__layer_a5447106074487e60d69add9cab511319}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!generic\+\_\+input\+\_\+layer@{generic\+\_\+input\+\_\+layer}}
+\index{generic\+\_\+input\+\_\+layer@{generic\+\_\+input\+\_\+layer}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{generic\+\_\+input\+\_\+layer()}{generic\_input\_layer()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::generic\+\_\+input\+\_\+layer\+::generic\+\_\+input\+\_\+layer (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1generic__input__layer}{generic\+\_\+input\+\_\+layer} \&}]{other }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 83 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+84     : \hyperlink{classlbann_1_1io__layer_ab2b5002dfeb0806062ecf3d9fefb9948}{io\_layer}(other),
+85       \hyperlink{classlbann_1_1generic__input__layer_a9dfe8b9afaebc7a5bcb0177ee2ab428f}{io\_buffer}(other.io\_buffer),
+86       \hyperlink{classlbann_1_1generic__input__layer_a23716635b1062bfe57f7fcf75140a63a}{m\_training\_dataset}(other.m\_training\_dataset),
+87       \hyperlink{classlbann_1_1generic__input__layer_a66b9ec6b393695232bd98edc62fc1348}{m\_testing\_dataset}(other.m\_testing\_dataset),
+88       \hyperlink{classlbann_1_1generic__input__layer_abd70adf607d1cef87fb6641af77e816d}{m\_validation\_dataset}(other.m\_validation\_dataset),
+89       \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}(other.m\_data\_readers) \{
+90     \textcolor{keywordflow}{for} (\textcolor{keyword}{auto}& dr : \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}) \{
+91       dr.second = dr.second->copy();
+92     \}
+93   \}
+\end{DoxyCode}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a8b375ab97f38166872e4aa9baeca0715}\label{classlbann_1_1generic__input__layer_a8b375ab97f38166872e4aa9baeca0715}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!at\+\_\+new\+\_\+epoch@{at\+\_\+new\+\_\+epoch}}
+\index{at\+\_\+new\+\_\+epoch@{at\+\_\+new\+\_\+epoch}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{at\+\_\+new\+\_\+epoch()}{at\_new\_epoch()}}
+{\footnotesize\ttfamily bool lbann\+::generic\+\_\+input\+\_\+layer\+::at\+\_\+new\+\_\+epoch (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1io__layer_a0cedc21bf38c1e3d60a93b41981a1626}{lbann\+::io\+\_\+layer}.
+
+
+
+Definition at line 613 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+613                                      \{
+614     \textcolor{keyword}{const} data\_reader\_map\_t::const\_iterator it = \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.find(
+      \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training});
+615     \textcolor{keywordflow}{return} ((it != \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.end()) && it->second && (it->second)->at\_new\_epoch());
+616   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=344pt]{classlbann_1_1generic__input__layer_a8b375ab97f38166872e4aa9baeca0715_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a36787a3caf2ef236747c6150edad82ea}\label{classlbann_1_1generic__input__layer_a36787a3caf2ef236747c6150edad82ea}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!bp\+\_\+compute@{bp\+\_\+compute}}
+\index{bp\+\_\+compute@{bp\+\_\+compute}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{bp\+\_\+compute()}{bp\_compute()}}
+{\footnotesize\ttfamily void lbann\+::generic\+\_\+input\+\_\+layer\+::bp\+\_\+compute (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Perform the computation for the backward propagation step. 
+
+Implements \hyperlink{classlbann_1_1Layer_a7442e01f9ee1294df2de811efcf5171e}{lbann\+::\+Layer}.
+
+
+
+Definition at line 243 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+243 \{\}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_af108a5dc05276bc6bc57b306204b12e4}\label{classlbann_1_1generic__input__layer_af108a5dc05276bc6bc57b306204b12e4}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!calculate\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch\+\_\+training\+\_\+spans\+\_\+models@{calculate\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch\+\_\+training\+\_\+spans\+\_\+models}}
+\index{calculate\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch\+\_\+training\+\_\+spans\+\_\+models@{calculate\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch\+\_\+training\+\_\+spans\+\_\+models}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{calculate\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch\+\_\+training\+\_\+spans\+\_\+models()}{calculate\_num\_iterations\_per\_epoch\_training\_spans\_models()}}
+{\footnotesize\ttfamily void lbann\+::generic\+\_\+input\+\_\+layer\+::calculate\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch\+\_\+training\+\_\+spans\+\_\+models (\begin{DoxyParamCaption}\item[{int}]{mini\+\_\+batch\+\_\+size }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Calculate how many iterations are required for training, testing, and validation given a specified mini-\/batch size and that the training data set is spanning all of the models. Setup the training data set so that it spans all models
+
+Each model uses the entire validation and testing data sets 
+
+Definition at line 372 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+372                                                                                      \{
+373 
+375     \hyperlink{classlbann_1_1generic__input__layer_a9dfe8b9afaebc7a5bcb0177ee2ab428f}{io\_buffer}->\hyperlink{classlbann_1_1generic__io__buffer_ac943184cf364f7922648e3acb760b41e}{calculate\_num\_iterations\_per\_epoch\_spanning\_models}
+      (mini\_batch\_size,
+376                                                                   
+      \hyperlink{classlbann_1_1generic__input__layer_aba732becdb02627e3ad4493ac19e8fb6}{get\_data\_reader}(\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training}));
+377 
+379     \hyperlink{classlbann_1_1generic__input__layer_a9dfe8b9afaebc7a5bcb0177ee2ab428f}{io\_buffer}->\hyperlink{classlbann_1_1generic__io__buffer_a4c71135fada7f0da0b315d538d327e59}{calculate\_num\_iterations\_per\_epoch\_single\_model}
+      (mini\_batch\_size,
+380                                                                \hyperlink{classlbann_1_1generic__input__layer_aba732becdb02627e3ad4493ac19e8fb6}{get\_data\_reader}(
+      \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation}));
+381     \hyperlink{classlbann_1_1generic__input__layer_a9dfe8b9afaebc7a5bcb0177ee2ab428f}{io\_buffer}->\hyperlink{classlbann_1_1generic__io__buffer_a4c71135fada7f0da0b315d538d327e59}{calculate\_num\_iterations\_per\_epoch\_single\_model}
+      (mini\_batch\_size,
+382                                                                \hyperlink{classlbann_1_1generic__input__layer_aba732becdb02627e3ad4493ac19e8fb6}{get\_data\_reader}(
+      \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing}));
+383 
+384   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_af108a5dc05276bc6bc57b306204b12e4_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_af108a5dc05276bc6bc57b306204b12e4_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a0f09422a09e76da77ac42b3037173041}\label{classlbann_1_1generic__input__layer_a0f09422a09e76da77ac42b3037173041}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!calculate\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch\+\_\+training\+\_\+unique\+\_\+per\+\_\+models@{calculate\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch\+\_\+training\+\_\+unique\+\_\+per\+\_\+models}}
+\index{calculate\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch\+\_\+training\+\_\+unique\+\_\+per\+\_\+models@{calculate\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch\+\_\+training\+\_\+unique\+\_\+per\+\_\+models}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{calculate\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch\+\_\+training\+\_\+unique\+\_\+per\+\_\+models()}{calculate\_num\_iterations\_per\_epoch\_training\_unique\_per\_models()}}
+{\footnotesize\ttfamily void lbann\+::generic\+\_\+input\+\_\+layer\+::calculate\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch\+\_\+training\+\_\+unique\+\_\+per\+\_\+models (\begin{DoxyParamCaption}\item[{int}]{mini\+\_\+batch\+\_\+size }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Setup the training data set so that it spans all models
+
+Each model uses the entire validation and testing data sets 
+
+Definition at line 386 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+386                                                                                           \{
+387 
+389     \hyperlink{classlbann_1_1generic__input__layer_a9dfe8b9afaebc7a5bcb0177ee2ab428f}{io\_buffer}->\hyperlink{classlbann_1_1generic__io__buffer_a4c71135fada7f0da0b315d538d327e59}{calculate\_num\_iterations\_per\_epoch\_single\_model}
+      (mini\_batch\_size,
+390                                                                \hyperlink{classlbann_1_1generic__input__layer_aba732becdb02627e3ad4493ac19e8fb6}{get\_data\_reader}(
+      \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training}));
+391 
+393     \hyperlink{classlbann_1_1generic__input__layer_a9dfe8b9afaebc7a5bcb0177ee2ab428f}{io\_buffer}->\hyperlink{classlbann_1_1generic__io__buffer_a4c71135fada7f0da0b315d538d327e59}{calculate\_num\_iterations\_per\_epoch\_single\_model}
+      (mini\_batch\_size,
+394                                                                \hyperlink{classlbann_1_1generic__input__layer_aba732becdb02627e3ad4493ac19e8fb6}{get\_data\_reader}(
+      \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation}));
+395     \hyperlink{classlbann_1_1generic__input__layer_a9dfe8b9afaebc7a5bcb0177ee2ab428f}{io\_buffer}->\hyperlink{classlbann_1_1generic__io__buffer_a4c71135fada7f0da0b315d538d327e59}{calculate\_num\_iterations\_per\_epoch\_single\_model}
+      (mini\_batch\_size,
+396                                                                \hyperlink{classlbann_1_1generic__input__layer_aba732becdb02627e3ad4493ac19e8fb6}{get\_data\_reader}(
+      \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing}));
+397 
+398   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a0f09422a09e76da77ac42b3037173041_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a0f09422a09e76da77ac42b3037173041_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_ae74c8c5a7e14b4fdd4902554bbc7bcef}\label{classlbann_1_1generic__input__layer_ae74c8c5a7e14b4fdd4902554bbc7bcef}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!fp\+\_\+compute@{fp\+\_\+compute}}
+\index{fp\+\_\+compute@{fp\+\_\+compute}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{fp\+\_\+compute()}{fp\_compute()}}
+{\footnotesize\ttfamily void lbann\+::generic\+\_\+input\+\_\+layer\+::fp\+\_\+compute (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Perform the computation for the forward propagation step. Only update the number of samples processed by this parallel reader, when it is the current root
+
+Let each rank know this size of the current mini-\/batch Note that this field has to be updated before distributing the data 
+
+Implements \hyperlink{classlbann_1_1Layer_a523319dd1bd87a0612afa1912bb5aad7}{lbann\+::\+Layer}.
+
+
+
+Definition at line 198 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+198                              \{
+199     \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\_mode} mode = this->\hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->\hyperlink{classlbann_1_1model_addb40597cf29aa6d31b6a7d09ef48608}{get\_execution\_mode}();
+200     \textcolor{keywordtype}{int} num\_samples\_in\_batch = \hyperlink{classlbann_1_1generic__input__layer_a9dfe8b9afaebc7a5bcb0177ee2ab428f}{io\_buffer}->\hyperlink{classlbann_1_1generic__io__buffer_af9fc2100d41328fe399acf7bced950d7}{fetch\_to\_local\_matrix}(
+      \hyperlink{classlbann_1_1generic__input__layer_aba732becdb02627e3ad4493ac19e8fb6}{get\_data\_reader}(), mode);
+201 
+202     \textcolor{keywordflow}{if}(dynamic\_cast<partitioned\_io\_buffer*>(\hyperlink{classlbann_1_1generic__input__layer_a9dfe8b9afaebc7a5bcb0177ee2ab428f}{io\_buffer}) != \textcolor{keyword}{nullptr}) \{
+203       \textcolor{comment}{// Use the predetermined size of the mini-batch to set the current}
+204       \textcolor{comment}{// batch size for the neural network}
+205       num\_samples\_in\_batch = \hyperlink{classlbann_1_1generic__input__layer_a41d278999fbd10d2cd95b9af04925cf7}{get\_current\_mini\_batch\_size}();
+206 
+207       \hyperlink{classlbann_1_1generic__input__layer_a0c2f123432ec6af168012cc8699a1d3f}{update\_num\_samples\_processed}(num\_samples\_in\_batch);
+208     \}\textcolor{keywordflow}{else} \textcolor{keywordflow}{if}(dynamic\_cast<distributed\_io\_buffer*>(\hyperlink{classlbann_1_1generic__input__layer_a9dfe8b9afaebc7a5bcb0177ee2ab428f}{io\_buffer}) != \textcolor{keyword}{nullptr}) \{
+209       \textcolor{keywordflow}{if}(((distributed\_io\_buffer*) \hyperlink{classlbann_1_1generic__input__layer_a9dfe8b9afaebc7a5bcb0177ee2ab428f}{io\_buffer})->is\_current\_root(mode)) \{
+211         \hyperlink{classlbann_1_1generic__input__layer_a0c2f123432ec6af168012cc8699a1d3f}{update\_num\_samples\_processed}(num\_samples\_in\_batch);
+212       \}
+213 
+214       \textcolor{keywordtype}{int} expected\_num\_samples\_in\_batch = this->\hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->
+      \hyperlink{classlbann_1_1model_a3eaad8fd538b99ecab9afca6dc3327fd}{get\_current\_mini\_batch\_size}();
+215 
+218       num\_samples\_in\_batch = \hyperlink{classlbann_1_1Layer_a5de05c52f22e0bbd7c703bec3ad4dbf2}{Layer::m\_comm}->\hyperlink{classlbann_1_1lbann__comm_a929f44a9a9563ae9e4ffe7d44235a195}{model\_broadcast}(((
+      distributed\_io\_buffer*) io\_buffer)->current\_root\_rank(mode), num\_samples\_in\_batch);
+219       this->\hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->\hyperlink{classlbann_1_1model_a4f3cc91f8495870723389be15f77184a}{set\_current\_mini\_batch\_size}(num\_samples\_in\_batch
+220                                                  + 
+      \hyperlink{classlbann_1_1generic__input__layer_a8c3bf45beb91622d56f0dec89cba8e9a}{get\_current\_world\_master\_mini\_batch\_adjustment}(
+      \hyperlink{classlbann_1_1Layer_a5de05c52f22e0bbd7c703bec3ad4dbf2}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_a6422f70c92bed0b78179facc52b066f7}{get\_model\_rank}()));
+221 
+222       io\_buffer->distribute\_from\_local\_matrix(\hyperlink{classlbann_1_1Layer_a1134b1a4385af199d7272c5aa827fa99}{get\_activations}(), 
+      \hyperlink{classlbann_1_1generic__input__layer_aba732becdb02627e3ad4493ac19e8fb6}{get\_data\_reader}(), mode);
+223 
+224       \textcolor{keywordflow}{if}(num\_samples\_in\_batch !=
+225          (expected\_num\_samples\_in\_batch - 
+      \hyperlink{classlbann_1_1generic__input__layer_a8c3bf45beb91622d56f0dec89cba8e9a}{get\_current\_world\_master\_mini\_batch\_adjustment}(
+      \hyperlink{classlbann_1_1Layer_a5de05c52f22e0bbd7c703bec3ad4dbf2}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_a6422f70c92bed0b78179facc52b066f7}{get\_model\_rank}()))) \{
+226         std::stringstream err;
+227         err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+228             << \textcolor{stringliteral}{"I/O layers number of samples processed ("}<< num\_samples\_in\_batch
+229             <<\textcolor{stringliteral}{") does not match the mini-batch size ("}
+230             << (expected\_num\_samples\_in\_batch -
+231                 \hyperlink{classlbann_1_1generic__input__layer_a8c3bf45beb91622d56f0dec89cba8e9a}{get\_current\_world\_master\_mini\_batch\_adjustment}
+      (\hyperlink{classlbann_1_1Layer_a5de05c52f22e0bbd7c703bec3ad4dbf2}{m\_comm}->\hyperlink{classlbann_1_1lbann__comm_a6422f70c92bed0b78179facc52b066f7}{get\_model\_rank}()))
+232             << \textcolor{stringliteral}{")"};
+233         \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+234       \}
+235     \}\textcolor{keywordflow}{else} \{
+236       std::stringstream err;
+237       err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+238           << \textcolor{stringliteral}{"could not fp\_compute for I/O layers : encoutered generic\_io\_buffer type"};
+239       \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+240     \}
+241   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_ae74c8c5a7e14b4fdd4902554bbc7bcef_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_ad0b8ea79bc508bd227e08124359531c8}\label{classlbann_1_1generic__input__layer_ad0b8ea79bc508bd227e08124359531c8}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!fp\+\_\+setup\+\_\+data@{fp\+\_\+setup\+\_\+data}}
+\index{fp\+\_\+setup\+\_\+data@{fp\+\_\+setup\+\_\+data}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{fp\+\_\+setup\+\_\+data()}{fp\_setup\_data()}}
+{\footnotesize\ttfamily void lbann\+::generic\+\_\+input\+\_\+layer\+::fp\+\_\+setup\+\_\+data (\begin{DoxyParamCaption}\item[{int}]{mini\+\_\+batch\+\_\+size }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Define the standard view of the matrix -- and set it for the model Setup the effective (global) mini-\/batch size so that gradients are properly averaged across models. \begin{DoxyRefDesc}{Todo}
+\item[\hyperlink{todo__todo000020}{Todo}]This functionality should probably be moved elsewhere \end{DoxyRefDesc}
+
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_af311d901a5f71e4c749454647e9fd9c7}{lbann\+::\+Layer}.
+
+
+
+Definition at line 170 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+170                                                    \{
+171 
+172     \textcolor{comment}{// Determine model mini-batch size and effective mini-batch size}
+173     \textcolor{comment}{// Note: If inter-model communication is activated, the effective}
+174     \textcolor{comment}{// mini-batch is equal to the global mini-batch size.}
+176 \textcolor{comment}{}    mini\_batch\_size = \hyperlink{classlbann_1_1generic__input__layer_a41d278999fbd10d2cd95b9af04925cf7}{get\_current\_mini\_batch\_size}();
+177     \textcolor{keywordtype}{int} effective\_mini\_batch\_size = mini\_batch\_size;
+178     \textcolor{keywordflow}{for} (\textcolor{keyword}{auto}&& cb : this->\hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->\hyperlink{classlbann_1_1model_a38c71a455870e087c4c07acb78e4477c}{get\_callbacks}()) \{
+179       \textcolor{keywordflow}{if} (dynamic\_cast<lbann\_callback\_imcomm*>(cb) != \textcolor{keyword}{nullptr}) \{
+180         effective\_mini\_batch\_size = \hyperlink{classlbann_1_1generic__input__layer_aaaa60fb7b94353fccaff25e6a862d833}{get\_current\_global\_mini\_batch\_size}();
+181         \textcolor{keywordflow}{break};
+182       \}
+183     \}
+184 
+185     \textcolor{comment}{// Set mini-batch size in model}
+186     this->\hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->\hyperlink{classlbann_1_1model_a4f3cc91f8495870723389be15f77184a}{set\_current\_mini\_batch\_size}(mini\_batch\_size);
+187     this->\hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->\hyperlink{classlbann_1_1model_aa64829cba8a84928a396893172a1d116}{set\_effective\_mini\_batch\_size}(
+      effective\_mini\_batch\_size);
+188 
+189     \textcolor{comment}{// Initialize matrices}
+190     \hyperlink{classlbann_1_1Layer_af311d901a5f71e4c749454647e9fd9c7}{io\_layer::fp\_setup\_data}(mini\_batch\_size);
+191 
+192     \textcolor{comment}{// Once the current mini-batch size is defined, set the standard view for activations only}
+193     \hyperlink{classlbann_1_1generic__input__layer_a9dfe8b9afaebc7a5bcb0177ee2ab428f}{io\_buffer}->\hyperlink{classlbann_1_1generic__io__buffer_af84c26ab5ee77d1d9ed9ea5d62823815}{set\_local\_matrix\_bypass}(&
+      \hyperlink{classlbann_1_1Layer_a4248f27acebf72b7b7b3ee39c8bcb62a}{get\_local\_activations}());
+194     \hyperlink{classlbann_1_1generic__input__layer_a9dfe8b9afaebc7a5bcb0177ee2ab428f}{io\_buffer}->\hyperlink{classlbann_1_1generic__io__buffer_a458d9bf722effce4177a0ac0aee9124f}{set\_std\_matrix\_view}(mini\_batch\_size);
+195 
+196   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_ad0b8ea79bc508bd227e08124359531c8_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_ae8252d343e2f287dd7cece935ea5a075}\label{classlbann_1_1generic__input__layer_ae8252d343e2f287dd7cece935ea5a075}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+current\+\_\+global\+\_\+mini\+\_\+batch\+\_\+size@{get\+\_\+current\+\_\+global\+\_\+mini\+\_\+batch\+\_\+size}}
+\index{get\+\_\+current\+\_\+global\+\_\+mini\+\_\+batch\+\_\+size@{get\+\_\+current\+\_\+global\+\_\+mini\+\_\+batch\+\_\+size}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+current\+\_\+global\+\_\+mini\+\_\+batch\+\_\+size()}{get\_current\_global\_mini\_batch\_size()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily virtual int lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+current\+\_\+global\+\_\+mini\+\_\+batch\+\_\+size (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}}]{mode }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Definition at line 341 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+341                                                                             \{
+342     \textcolor{keyword}{const} generic\_data\_reader *data\_reader = \hyperlink{classlbann_1_1generic__input__layer_aba732becdb02627e3ad4493ac19e8fb6}{get\_data\_reader}(mode);
+343     \textcolor{keywordflow}{return} (data\_reader != \textcolor{keyword}{nullptr}) ? data\_reader->get\_current\_global\_mini\_batch\_size() : 0;
+344   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_ae8252d343e2f287dd7cece935ea5a075_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_ae8252d343e2f287dd7cece935ea5a075_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_aaaa60fb7b94353fccaff25e6a862d833}\label{classlbann_1_1generic__input__layer_aaaa60fb7b94353fccaff25e6a862d833}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+current\+\_\+global\+\_\+mini\+\_\+batch\+\_\+size@{get\+\_\+current\+\_\+global\+\_\+mini\+\_\+batch\+\_\+size}}
+\index{get\+\_\+current\+\_\+global\+\_\+mini\+\_\+batch\+\_\+size@{get\+\_\+current\+\_\+global\+\_\+mini\+\_\+batch\+\_\+size}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+current\+\_\+global\+\_\+mini\+\_\+batch\+\_\+size()}{get\_current\_global\_mini\_batch\_size()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily virtual int lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+current\+\_\+global\+\_\+mini\+\_\+batch\+\_\+size (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Definition at line 346 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+346                                                          \{
+347     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1generic__input__layer_aaaa60fb7b94353fccaff25e6a862d833}{get\_current\_global\_mini\_batch\_size}(this->
+      \hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->\hyperlink{classlbann_1_1model_addb40597cf29aa6d31b6a7d09ef48608}{get\_execution\_mode}());
+348   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_aaaa60fb7b94353fccaff25e6a862d833_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_aaaa60fb7b94353fccaff25e6a862d833_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_aad7e5f1c51037a175c6bc9abaccdc7d6}\label{classlbann_1_1generic__input__layer_aad7e5f1c51037a175c6bc9abaccdc7d6}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+current\+\_\+mini\+\_\+batch\+\_\+size@{get\+\_\+current\+\_\+mini\+\_\+batch\+\_\+size}}
+\index{get\+\_\+current\+\_\+mini\+\_\+batch\+\_\+size@{get\+\_\+current\+\_\+mini\+\_\+batch\+\_\+size}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+current\+\_\+mini\+\_\+batch\+\_\+size()}{get\_current\_mini\_batch\_size()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily virtual int lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+current\+\_\+mini\+\_\+batch\+\_\+size (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}}]{mode }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Definition at line 322 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+322                                                                      \{
+323     \textcolor{keyword}{const} generic\_data\_reader *data\_reader = \hyperlink{classlbann_1_1generic__input__layer_aba732becdb02627e3ad4493ac19e8fb6}{get\_data\_reader}(mode);
+324     \textcolor{keywordflow}{return} (data\_reader != \textcolor{keyword}{nullptr}) ? data\_reader->get\_current\_mini\_batch\_size() : 0;
+325   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_aad7e5f1c51037a175c6bc9abaccdc7d6_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_aad7e5f1c51037a175c6bc9abaccdc7d6_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a41d278999fbd10d2cd95b9af04925cf7}\label{classlbann_1_1generic__input__layer_a41d278999fbd10d2cd95b9af04925cf7}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+current\+\_\+mini\+\_\+batch\+\_\+size@{get\+\_\+current\+\_\+mini\+\_\+batch\+\_\+size}}
+\index{get\+\_\+current\+\_\+mini\+\_\+batch\+\_\+size@{get\+\_\+current\+\_\+mini\+\_\+batch\+\_\+size}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+current\+\_\+mini\+\_\+batch\+\_\+size()}{get\_current\_mini\_batch\_size()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily virtual int lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+current\+\_\+mini\+\_\+batch\+\_\+size (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Definition at line 327 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+327                                                   \{
+328     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1generic__input__layer_a41d278999fbd10d2cd95b9af04925cf7}{get\_current\_mini\_batch\_size}(this->\hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->
+      \hyperlink{classlbann_1_1model_addb40597cf29aa6d31b6a7d09ef48608}{get\_execution\_mode}());
+329   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a41d278999fbd10d2cd95b9af04925cf7_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a41d278999fbd10d2cd95b9af04925cf7_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_abad654f945f62d4610f8afa597777713}\label{classlbann_1_1generic__input__layer_abad654f945f62d4610f8afa597777713}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+current\+\_\+step\+\_\+in\+\_\+epoch@{get\+\_\+current\+\_\+step\+\_\+in\+\_\+epoch}}
+\index{get\+\_\+current\+\_\+step\+\_\+in\+\_\+epoch@{get\+\_\+current\+\_\+step\+\_\+in\+\_\+epoch}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+current\+\_\+step\+\_\+in\+\_\+epoch()}{get\_current\_step\_in\_epoch()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily virtual int lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+current\+\_\+step\+\_\+in\+\_\+epoch (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}}]{mode }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Definition at line 299 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+299                                                                    \{
+300     \textcolor{keyword}{const} generic\_data\_reader *data\_reader = \hyperlink{classlbann_1_1generic__input__layer_aba732becdb02627e3ad4493ac19e8fb6}{get\_data\_reader}(mode);
+301     \textcolor{keywordflow}{return} (data\_reader != \textcolor{keyword}{nullptr}) ? data\_reader->get\_current\_step\_in\_epoch() : 0;
+302   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_abad654f945f62d4610f8afa597777713_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a660d82888a5c1eb72c2906d6367cbc35}\label{classlbann_1_1generic__input__layer_a660d82888a5c1eb72c2906d6367cbc35}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+current\+\_\+step\+\_\+in\+\_\+epoch@{get\+\_\+current\+\_\+step\+\_\+in\+\_\+epoch}}
+\index{get\+\_\+current\+\_\+step\+\_\+in\+\_\+epoch@{get\+\_\+current\+\_\+step\+\_\+in\+\_\+epoch}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+current\+\_\+step\+\_\+in\+\_\+epoch()}{get\_current\_step\_in\_epoch()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily virtual int lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+current\+\_\+step\+\_\+in\+\_\+epoch (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Definition at line 304 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+304                                                 \{
+305     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1generic__input__layer_a660d82888a5c1eb72c2906d6367cbc35}{get\_current\_step\_in\_epoch}(this->\hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->
+      \hyperlink{classlbann_1_1model_addb40597cf29aa6d31b6a7d09ef48608}{get\_execution\_mode}());
+306   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a660d82888a5c1eb72c2906d6367cbc35_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a8c3bf45beb91622d56f0dec89cba8e9a}\label{classlbann_1_1generic__input__layer_a8c3bf45beb91622d56f0dec89cba8e9a}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+current\+\_\+world\+\_\+master\+\_\+mini\+\_\+batch\+\_\+adjustment@{get\+\_\+current\+\_\+world\+\_\+master\+\_\+mini\+\_\+batch\+\_\+adjustment}}
+\index{get\+\_\+current\+\_\+world\+\_\+master\+\_\+mini\+\_\+batch\+\_\+adjustment@{get\+\_\+current\+\_\+world\+\_\+master\+\_\+mini\+\_\+batch\+\_\+adjustment}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+current\+\_\+world\+\_\+master\+\_\+mini\+\_\+batch\+\_\+adjustment()}{get\_current\_world\_master\_mini\_batch\_adjustment()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily virtual int lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+current\+\_\+world\+\_\+master\+\_\+mini\+\_\+batch\+\_\+adjustment (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}}]{mode,  }\item[{int}]{model\+\_\+rank }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Definition at line 359 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+359                                                                                                         \{
+360     \textcolor{keyword}{const} generic\_data\_reader *data\_reader = \hyperlink{classlbann_1_1generic__input__layer_aba732becdb02627e3ad4493ac19e8fb6}{get\_data\_reader}(mode);
+361     \textcolor{keywordflow}{return} (data\_reader != \textcolor{keyword}{nullptr}) ? data\_reader->get\_current\_world\_master\_mini\_batch\_adjustment(
+      model\_rank) : 0;
+362   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a8c3bf45beb91622d56f0dec89cba8e9a_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a8c3bf45beb91622d56f0dec89cba8e9a_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a6c14ea2a50c7e7989e8e394671e4531a}\label{classlbann_1_1generic__input__layer_a6c14ea2a50c7e7989e8e394671e4531a}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+current\+\_\+world\+\_\+master\+\_\+mini\+\_\+batch\+\_\+adjustment@{get\+\_\+current\+\_\+world\+\_\+master\+\_\+mini\+\_\+batch\+\_\+adjustment}}
+\index{get\+\_\+current\+\_\+world\+\_\+master\+\_\+mini\+\_\+batch\+\_\+adjustment@{get\+\_\+current\+\_\+world\+\_\+master\+\_\+mini\+\_\+batch\+\_\+adjustment}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+current\+\_\+world\+\_\+master\+\_\+mini\+\_\+batch\+\_\+adjustment()}{get\_current\_world\_master\_mini\_batch\_adjustment()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily virtual int lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+current\+\_\+world\+\_\+master\+\_\+mini\+\_\+batch\+\_\+adjustment (\begin{DoxyParamCaption}\item[{int}]{model\+\_\+rank }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Definition at line 364 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+364                                                                                    \{
+365     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1generic__input__layer_a8c3bf45beb91622d56f0dec89cba8e9a}{get\_current\_world\_master\_mini\_batch\_adjustment}(
+      this->\hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->\hyperlink{classlbann_1_1model_addb40597cf29aa6d31b6a7d09ef48608}{get\_execution\_mode}(), model\_rank);
+366   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a6c14ea2a50c7e7989e8e394671e4531a_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a6008b13521d27d6139201fa374b088eb}\label{classlbann_1_1generic__input__layer_a6008b13521d27d6139201fa374b088eb}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+data\+\_\+dims@{get\+\_\+data\+\_\+dims}}
+\index{get\+\_\+data\+\_\+dims@{get\+\_\+data\+\_\+dims}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+data\+\_\+dims()}{get\_data\_dims()}}
+{\footnotesize\ttfamily const std\+::vector$<$int$>$ lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+data\+\_\+dims (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get the dimensions of the underlying data. 
+
+Implements \hyperlink{classlbann_1_1io__layer_a67feb9fd903ef4d2ca782bbe7860a413}{lbann\+::io\+\_\+layer}.
+
+
+
+Definition at line 484 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+484                                                       \{
+485     \textcolor{keyword}{const} generic\_data\_reader *dr = \hyperlink{classlbann_1_1generic__input__layer_aba732becdb02627e3ad4493ac19e8fb6}{get\_data\_reader}();
+486     \textcolor{comment}{//    dataset* ds = select\_first\_valid\_dataset();}
+487     \textcolor{keywordflow}{if} (dr) \{
+488       \textcolor{keywordflow}{return} dr->get\_data\_dims();
+489     \}
+490     \textcolor{keywordflow}{return} std::vector<int>(1, 0);
+491   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a6008b13521d27d6139201fa374b088eb_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=345pt]{classlbann_1_1generic__input__layer_a6008b13521d27d6139201fa374b088eb_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a5715a966647e8cc92489f9e1950b2d28}\label{classlbann_1_1generic__input__layer_a5715a966647e8cc92489f9e1950b2d28}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+data\+\_\+reader@{get\+\_\+data\+\_\+reader}}
+\index{get\+\_\+data\+\_\+reader@{get\+\_\+data\+\_\+reader}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+data\+\_\+reader()}{get\_data\_reader()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader}$\ast$ lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+data\+\_\+reader (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}}]{mode }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 256 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+256                                                                         \{
+257     generic\_data\_reader *data\_reader = \textcolor{keyword}{nullptr};
+258 
+259     \textcolor{keyword}{auto} it = \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.find(mode);
+260     \textcolor{keywordflow}{if} (it != \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.end()) data\_reader = it->second;
+261 
+262     \textcolor{keywordflow}{switch}(mode) \{
+263     \textcolor{keywordflow}{case} \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training}:
+264       \textcolor{keywordflow}{break};
+265     \textcolor{keywordflow}{case} \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation}:
+266       \textcolor{keywordflow}{break};
+267     \textcolor{keywordflow}{case} \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing}:
+268       \textcolor{keywordflow}{break};
+269     \textcolor{keywordflow}{default}:
+270       \textcolor{keywordflow}{throw} lbann\_exception(
+271                             std::string\{\} + \_\_FILE\_\_ + \textcolor{stringliteral}{" "} + std::to\_string(\_\_LINE\_\_) +
+272                             \textcolor{stringliteral}{" :: generic data distribution: invalid execution phase"});
+273     \}
+274     \textcolor{keywordflow}{return} data\_reader;
+275   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a5715a966647e8cc92489f9e1950b2d28_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_aba732becdb02627e3ad4493ac19e8fb6}\label{classlbann_1_1generic__input__layer_aba732becdb02627e3ad4493ac19e8fb6}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+data\+\_\+reader@{get\+\_\+data\+\_\+reader}}
+\index{get\+\_\+data\+\_\+reader@{get\+\_\+data\+\_\+reader}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+data\+\_\+reader()}{get\_data\_reader()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader}$\ast$ lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+data\+\_\+reader (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 277 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+277                                                \{
+278     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1generic__input__layer_aba732becdb02627e3ad4493ac19e8fb6}{get\_data\_reader}(this->\hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->
+      \hyperlink{classlbann_1_1model_addb40597cf29aa6d31b6a7d09ef48608}{get\_execution\_mode}());
+279   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_aba732becdb02627e3ad4493ac19e8fb6_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_aba732becdb02627e3ad4493ac19e8fb6_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_af5699540797c22d8846028e578a6fc59}\label{classlbann_1_1generic__input__layer_af5699540797c22d8846028e578a6fc59}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+dataset@{get\+\_\+dataset}}
+\index{get\+\_\+dataset@{get\+\_\+dataset}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+dataset()}{get\_dataset()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1dataset}{dataset}\& lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+dataset (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Return the dataset for the given execution mode. 
+
+Implements \hyperlink{classlbann_1_1io__layer_a027122c10603ede2ab9be779bad135f8}{lbann\+::io\+\_\+layer}.
+
+
+
+Definition at line 403 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+403                                                   \{
+404     \textcolor{keywordflow}{switch}(m) \{
+405     \textcolor{keywordflow}{case} \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training}:
+406       \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1generic__input__layer_a23716635b1062bfe57f7fcf75140a63a}{m\_training\_dataset};
+407       \textcolor{keywordflow}{break};
+408     \textcolor{keywordflow}{case} \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation}:
+409       \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1generic__input__layer_abd70adf607d1cef87fb6641af77e816d}{m\_validation\_dataset};
+410       \textcolor{keywordflow}{break};
+411     \textcolor{keywordflow}{case} \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing}:
+412       \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1generic__input__layer_a66b9ec6b393695232bd98edc62fc1348}{m\_testing\_dataset};
+413       \textcolor{keywordflow}{break};
+414     \textcolor{keywordflow}{default}:
+415       \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"get\_dataset: invalid execution mode"});
+416     \}
+417   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_af5699540797c22d8846028e578a6fc59_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a909cf972d13a305a16daba9664180262}\label{classlbann_1_1generic__input__layer_a909cf972d13a305a16daba9664180262}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+dataset@{get\+\_\+dataset}}
+\index{get\+\_\+dataset@{get\+\_\+dataset}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+dataset()}{get\_dataset()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily const \hyperlink{classlbann_1_1dataset}{dataset}\& lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+dataset (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}}]{m }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1io__layer_ac46dfddf41dc6915db433fe269b53770}{lbann\+::io\+\_\+layer}.
+
+
+
+Definition at line 419 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+419                                                               \{
+420     \textcolor{keywordflow}{switch}(m) \{
+421     \textcolor{keywordflow}{case} \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training}:
+422       \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1generic__input__layer_a23716635b1062bfe57f7fcf75140a63a}{m\_training\_dataset};
+423       \textcolor{keywordflow}{break};
+424     \textcolor{keywordflow}{case} \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation}:
+425       \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1generic__input__layer_abd70adf607d1cef87fb6641af77e816d}{m\_validation\_dataset};
+426       \textcolor{keywordflow}{break};
+427     \textcolor{keywordflow}{case} \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing}:
+428       \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1generic__input__layer_a66b9ec6b393695232bd98edc62fc1348}{m\_testing\_dataset};
+429       \textcolor{keywordflow}{break};
+430     \textcolor{keywordflow}{default}:
+431       \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"get\_dataset: invalid execution mode"});
+432     \}
+433   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a8ffe91a3d5b6f37d2dc17e657898dcc8}\label{classlbann_1_1generic__input__layer_a8ffe91a3d5b6f37d2dc17e657898dcc8}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+description@{get\+\_\+description}}
+\index{get\+\_\+description@{get\+\_\+description}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+description()}{get\_description()}}
+{\footnotesize\ttfamily std\+::string lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+description (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Returns description of ctor params 
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_acc0803d3428914ca1eb5988c4309174a}{lbann\+::\+Layer}.
+
+
+
+Definition at line 110 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+110                                              \{
+111     std::string s = \hyperlink{classlbann_1_1generic__input__layer_a36d9962105ca89889e3f38f1c1801560}{get\_topo\_description}();
+112     \textcolor{keywordflow}{return} std::string \{\} + \textcolor{stringliteral}{" input\_layer "} + \hyperlink{classlbann_1_1generic__input__layer_a9dfe8b9afaebc7a5bcb0177ee2ab428f}{io\_buffer}->\hyperlink{classlbann_1_1generic__io__buffer_adc77c0a280f8a200a8d8495c3a371ebb}{get\_type}()
+113            + \textcolor{stringliteral}{" dataLayout: "} + this->\hyperlink{classlbann_1_1Layer_ae3f4a5602df821f4221614b1e3782dc1}{get\_data\_layout\_string}(
+      \hyperlink{classlbann_1_1Layer_a5dfb66e81fc085997402a5e2241316bd}{get\_data\_layout}())
+114            + \textcolor{stringliteral}{" ("} + s + \textcolor{stringliteral}{")"};
+115   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a8ffe91a3d5b6f37d2dc17e657898dcc8_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a7ccb2e0dd8a9d9ab60e1e9d04bb80f2d}\label{classlbann_1_1generic__input__layer_a7ccb2e0dd8a9d9ab60e1e9d04bb80f2d}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+global\+\_\+last\+\_\+mini\+\_\+batch\+\_\+size@{get\+\_\+global\+\_\+last\+\_\+mini\+\_\+batch\+\_\+size}}
+\index{get\+\_\+global\+\_\+last\+\_\+mini\+\_\+batch\+\_\+size@{get\+\_\+global\+\_\+last\+\_\+mini\+\_\+batch\+\_\+size}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+global\+\_\+last\+\_\+mini\+\_\+batch\+\_\+size()}{get\_global\_last\_mini\_batch\_size()}}
+{\footnotesize\ttfamily virtual int lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+global\+\_\+last\+\_\+mini\+\_\+batch\+\_\+size (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}}]{mode }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Definition at line 336 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+336                                                                          \{
+337     \textcolor{keyword}{const} generic\_data\_reader *data\_reader = \hyperlink{classlbann_1_1generic__input__layer_aba732becdb02627e3ad4493ac19e8fb6}{get\_data\_reader}(mode);
+338     \textcolor{keywordflow}{return} (data\_reader != \textcolor{keyword}{nullptr}) ? data\_reader->get\_global\_last\_mini\_batch\_size() : 0;
+339   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a7ccb2e0dd8a9d9ab60e1e9d04bb80f2d_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a7ccb2e0dd8a9d9ab60e1e9d04bb80f2d_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_ac07b58c08183995852889dacfc69e459}\label{classlbann_1_1generic__input__layer_ac07b58c08183995852889dacfc69e459}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+global\+\_\+mini\+\_\+batch\+\_\+size@{get\+\_\+global\+\_\+mini\+\_\+batch\+\_\+size}}
+\index{get\+\_\+global\+\_\+mini\+\_\+batch\+\_\+size@{get\+\_\+global\+\_\+mini\+\_\+batch\+\_\+size}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+global\+\_\+mini\+\_\+batch\+\_\+size()}{get\_global\_mini\_batch\_size()}}
+{\footnotesize\ttfamily virtual int lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+global\+\_\+mini\+\_\+batch\+\_\+size (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}}]{mode }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Definition at line 331 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+331                                                                     \{
+332     \textcolor{keyword}{const} generic\_data\_reader *data\_reader = \hyperlink{classlbann_1_1generic__input__layer_aba732becdb02627e3ad4493ac19e8fb6}{get\_data\_reader}(mode);
+333     \textcolor{keywordflow}{return} (data\_reader != \textcolor{keyword}{nullptr}) ? data\_reader->get\_global\_mini\_batch\_size() : 0;
+334   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_ac07b58c08183995852889dacfc69e459_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_ac07b58c08183995852889dacfc69e459_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a5e3c66c5726ab4a00d75bdcd2c07b640}\label{classlbann_1_1generic__input__layer_a5e3c66c5726ab4a00d75bdcd2c07b640}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+last\+\_\+mini\+\_\+batch\+\_\+size@{get\+\_\+last\+\_\+mini\+\_\+batch\+\_\+size}}
+\index{get\+\_\+last\+\_\+mini\+\_\+batch\+\_\+size@{get\+\_\+last\+\_\+mini\+\_\+batch\+\_\+size}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+last\+\_\+mini\+\_\+batch\+\_\+size()}{get\_last\_mini\_batch\_size()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily virtual int lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+last\+\_\+mini\+\_\+batch\+\_\+size (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}}]{mode }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Definition at line 313 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+313                                                                   \{
+314     \textcolor{keyword}{const} generic\_data\_reader *data\_reader = \hyperlink{classlbann_1_1generic__input__layer_aba732becdb02627e3ad4493ac19e8fb6}{get\_data\_reader}(mode);
+315     \textcolor{keywordflow}{return} (data\_reader != \textcolor{keyword}{nullptr}) ? data\_reader->get\_last\_mini\_batch\_size() : 0;
+316   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a5e3c66c5726ab4a00d75bdcd2c07b640_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a5e3c66c5726ab4a00d75bdcd2c07b640_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_aebca4bd6660ee5b7f99129bd84ed4f8d}\label{classlbann_1_1generic__input__layer_aebca4bd6660ee5b7f99129bd84ed4f8d}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+last\+\_\+mini\+\_\+batch\+\_\+size@{get\+\_\+last\+\_\+mini\+\_\+batch\+\_\+size}}
+\index{get\+\_\+last\+\_\+mini\+\_\+batch\+\_\+size@{get\+\_\+last\+\_\+mini\+\_\+batch\+\_\+size}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+last\+\_\+mini\+\_\+batch\+\_\+size()}{get\_last\_mini\_batch\_size()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily virtual int lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+last\+\_\+mini\+\_\+batch\+\_\+size (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Definition at line 318 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+318                                                \{
+319     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1generic__input__layer_aebca4bd6660ee5b7f99129bd84ed4f8d}{get\_last\_mini\_batch\_size}(this->\hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->
+      \hyperlink{classlbann_1_1model_addb40597cf29aa6d31b6a7d09ef48608}{get\_execution\_mode}());
+320   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_aebca4bd6660ee5b7f99129bd84ed4f8d_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_aca46cbf29ad2762e9329b46ab2ad1ae7}\label{classlbann_1_1generic__input__layer_aca46cbf29ad2762e9329b46ab2ad1ae7}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+linearized\+\_\+data\+\_\+size@{get\+\_\+linearized\+\_\+data\+\_\+size}}
+\index{get\+\_\+linearized\+\_\+data\+\_\+size@{get\+\_\+linearized\+\_\+data\+\_\+size}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+linearized\+\_\+data\+\_\+size()}{get\_linearized\_data\_size()}}
+{\footnotesize\ttfamily long lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+linearized\+\_\+data\+\_\+size (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get the linearized size of the underlying data. 
+
+Implements \hyperlink{classlbann_1_1io__layer_ab061ec74d131699c7fd59b992bbe7036}{lbann\+::io\+\_\+layer}.
+
+
+
+Definition at line 507 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+507                                                  \{
+508     \textcolor{keywordtype}{long} linearized\_data\_size = -1;
+509 
+510     data\_reader\_map\_t::const\_iterator it;
+511 
+512     it = \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.find(\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training});
+513     \textcolor{keywordflow}{if} ((it != \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.end()) && it->second) \{
+514       linearized\_data\_size = (it->second)->\hyperlink{classlbann_1_1generic__input__layer_aca46cbf29ad2762e9329b46ab2ad1ae7}{get\_linearized\_data\_size}();
+515     \}
+516 
+517     it = \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.find(\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation});
+518     \textcolor{keywordflow}{if} ((it != \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.end()) && it->second) \{
+519       \textcolor{keywordtype}{long} tmp\_data\_size = (it->second)->\hyperlink{classlbann_1_1generic__input__layer_aca46cbf29ad2762e9329b46ab2ad1ae7}{get\_linearized\_data\_size}();
+520       \textcolor{keywordflow}{if} (linearized\_data\_size != -1 && linearized\_data\_size != tmp\_data\_size) \{
+521         \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"lbann\_io\_layer: validation data set size does not "}
+522                               \textcolor{stringliteral}{"match the currently established data set size"});
+523       \}
+524     \}
+525 
+526     it = \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.find(\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing});
+527     \textcolor{keywordflow}{if} ((it != \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.end()) && it->second) \{
+528       \textcolor{keywordtype}{long} tmp\_data\_size = (it->second)->\hyperlink{classlbann_1_1generic__input__layer_aca46cbf29ad2762e9329b46ab2ad1ae7}{get\_linearized\_data\_size}();
+529       \textcolor{keywordflow}{if} (linearized\_data\_size != -1 && linearized\_data\_size != tmp\_data\_size) \{
+530         \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"lbann\_io\_layer: testing data set size does not "}
+531                               \textcolor{stringliteral}{"match the currently established data set size"});
+532       \}
+533     \}
+534     \textcolor{keywordflow}{return} linearized\_data\_size;
+535   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_aca46cbf29ad2762e9329b46ab2ad1ae7_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_ab6c24db7e2b8e73e7d7894e51246dc5e}\label{classlbann_1_1generic__input__layer_ab6c24db7e2b8e73e7d7894e51246dc5e}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+linearized\+\_\+label\+\_\+size@{get\+\_\+linearized\+\_\+label\+\_\+size}}
+\index{get\+\_\+linearized\+\_\+label\+\_\+size@{get\+\_\+linearized\+\_\+label\+\_\+size}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+linearized\+\_\+label\+\_\+size()}{get\_linearized\_label\_size()}}
+{\footnotesize\ttfamily long lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+linearized\+\_\+label\+\_\+size (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get the linearized size of the labels for the underlying data. 
+
+Implements \hyperlink{classlbann_1_1io__layer_a72a9a1411892b6f03de8b8f9923d77a6}{lbann\+::io\+\_\+layer}.
+
+
+
+Definition at line 540 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+540                                                   \{
+541     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1io__layer_a61f2e00334c820235795154492876476}{is\_for\_regression}()) \{
+542       \textcolor{keywordflow}{return} \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{long}\textcolor{keyword}{>}(1);
+543     \}
+544     \textcolor{keywordtype}{long} linearized\_label\_size = -1;
+545     data\_reader\_map\_t::const\_iterator it;
+546 
+547     it = \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.find(\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training});
+548     \textcolor{keywordflow}{if} ((it != \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.end()) && it->second) \{
+549       linearized\_label\_size = (it->second)->\hyperlink{classlbann_1_1generic__input__layer_ab6c24db7e2b8e73e7d7894e51246dc5e}{get\_linearized\_label\_size}();
+550     \}
+551     it = \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.find(\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation});
+552     \textcolor{keywordflow}{if} ((it != \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.end()) && it->second) \{
+553       \textcolor{keywordtype}{long} tmp\_label\_size = (it->second)->\hyperlink{classlbann_1_1generic__input__layer_ab6c24db7e2b8e73e7d7894e51246dc5e}{get\_linearized\_label\_size}();
+554       \textcolor{keywordflow}{if} (linearized\_label\_size != -1 && linearized\_label\_size != tmp\_label\_size) \{
+555         \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"lbann\_io\_layer: validation label set size does not "}
+556                               \textcolor{stringliteral}{"match the currently established data set size"});
+557       \}
+558     \}
+559     it = \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.find(\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing});
+560     \textcolor{keywordflow}{if} ((it != \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.end()) && it->second) \{
+561       \textcolor{keywordtype}{long} tmp\_label\_size = (it->second)->\hyperlink{classlbann_1_1generic__input__layer_ab6c24db7e2b8e73e7d7894e51246dc5e}{get\_linearized\_label\_size}();
+562       \textcolor{keywordflow}{if} (linearized\_label\_size != -1 && linearized\_label\_size != tmp\_label\_size) \{
+563         \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"lbann\_io\_layer: testing label set size does not "}
+564                               \textcolor{stringliteral}{"match the currently established data set size"});
+565       \}
+566     \}
+567     \textcolor{keywordflow}{return} linearized\_label\_size;
+568   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=321pt]{classlbann_1_1generic__input__layer_ab6c24db7e2b8e73e7d7894e51246dc5e_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_ab6c24db7e2b8e73e7d7894e51246dc5e_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a6e5e587aa5b32bdfd2dd579a2746885d}\label{classlbann_1_1generic__input__layer_a6e5e587aa5b32bdfd2dd579a2746885d}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+linearized\+\_\+response\+\_\+size@{get\+\_\+linearized\+\_\+response\+\_\+size}}
+\index{get\+\_\+linearized\+\_\+response\+\_\+size@{get\+\_\+linearized\+\_\+response\+\_\+size}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+linearized\+\_\+response\+\_\+size()}{get\_linearized\_response\_size()}}
+{\footnotesize\ttfamily long lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+linearized\+\_\+response\+\_\+size (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1io__layer_acbc2723e37e911eef6a38caa02c9e708}{lbann\+::io\+\_\+layer}.
+
+
+
+Definition at line 570 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+570                                                      \{
+571     \textcolor{keywordflow}{if} (!\hyperlink{classlbann_1_1io__layer_a61f2e00334c820235795154492876476}{is\_for\_regression}()) \{
+572       \textcolor{keywordflow}{return} \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{long}\textcolor{keyword}{>}(1);
+573     \}
+574     \textcolor{keywordtype}{long} linearized\_response\_size = -1;
+575     data\_reader\_map\_t::const\_iterator it;
+576 
+577     it = \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.find(\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training});
+578     \textcolor{keywordflow}{if} ((it != \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.end()) && it->second) \{
+579       linearized\_response\_size = (it->second)->\hyperlink{classlbann_1_1generic__input__layer_a6e5e587aa5b32bdfd2dd579a2746885d}{get\_linearized\_response\_size}();
+580     \}
+581     it = \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.find(\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation});
+582     \textcolor{keywordflow}{if} ((it != \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.end()) && it->second) \{
+583       \textcolor{keywordtype}{long} tmp\_response\_size = (it->second)->\hyperlink{classlbann_1_1generic__input__layer_a6e5e587aa5b32bdfd2dd579a2746885d}{get\_linearized\_response\_size}();
+584       \textcolor{keywordflow}{if} (linearized\_response\_size != -1 && linearized\_response\_size != tmp\_response\_size) \{
+585         \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"lbann\_io\_layer: validation response set size does not "}
+586                               \textcolor{stringliteral}{"match the currently established data set size"});
+587       \}
+588     \}
+589     it = \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.find(\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing});
+590     \textcolor{keywordflow}{if} ((it != \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.end()) && it->second) \{
+591       \textcolor{keywordtype}{long} tmp\_response\_size = (it->second)->\hyperlink{classlbann_1_1generic__input__layer_a6e5e587aa5b32bdfd2dd579a2746885d}{get\_linearized\_response\_size}();
+592       \textcolor{keywordflow}{if} (linearized\_response\_size != -1 && linearized\_response\_size != tmp\_response\_size) \{
+593         \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"lbann\_io\_layer: testing response set size does not "}
+594                               \textcolor{stringliteral}{"match the currently established data set size"});
+595       \}
+596     \}
+597     \textcolor{keywordflow}{return} linearized\_response\_size;
+598   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=321pt]{classlbann_1_1generic__input__layer_a6e5e587aa5b32bdfd2dd579a2746885d_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a6e5e587aa5b32bdfd2dd579a2746885d_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a8af40ec1991900bf23b78e6429256b9c}\label{classlbann_1_1generic__input__layer_a8af40ec1991900bf23b78e6429256b9c}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+mini\+\_\+batch\+\_\+size@{get\+\_\+mini\+\_\+batch\+\_\+size}}
+\index{get\+\_\+mini\+\_\+batch\+\_\+size@{get\+\_\+mini\+\_\+batch\+\_\+size}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+mini\+\_\+batch\+\_\+size()}{get\_mini\_batch\_size()}}
+{\footnotesize\ttfamily virtual int lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+mini\+\_\+batch\+\_\+size (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}}]{mode }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Definition at line 308 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+308                                                              \{
+309     \textcolor{keyword}{const} generic\_data\_reader *data\_reader = \hyperlink{classlbann_1_1generic__input__layer_aba732becdb02627e3ad4493ac19e8fb6}{get\_data\_reader}(mode);
+310     \textcolor{keywordflow}{return} (data\_reader != \textcolor{keyword}{nullptr}) ? data\_reader->get\_mini\_batch\_size() : 0;
+311   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a8af40ec1991900bf23b78e6429256b9c_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a8af40ec1991900bf23b78e6429256b9c_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_aa0fa6597ffce537f7cfba29dcc754ee1}\label{classlbann_1_1generic__input__layer_aa0fa6597ffce537f7cfba29dcc754ee1}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch@{get\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch}}
+\index{get\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch@{get\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch()}{get\_num\_iterations\_per\_epoch()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily virtual int lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}}]{mode }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Definition at line 290 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+290                                                                       \{
+291     \textcolor{keyword}{const} generic\_data\_reader *data\_reader = \hyperlink{classlbann_1_1generic__input__layer_aba732becdb02627e3ad4493ac19e8fb6}{get\_data\_reader}(mode);
+292     \textcolor{keywordflow}{return} (data\_reader != \textcolor{keyword}{nullptr}) ? data\_reader->get\_num\_iterations\_per\_epoch() : 0;
+293   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_aa0fa6597ffce537f7cfba29dcc754ee1_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_aa0fa6597ffce537f7cfba29dcc754ee1_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a82bd22c834c5ef526e0c740c80451e1b}\label{classlbann_1_1generic__input__layer_a82bd22c834c5ef526e0c740c80451e1b}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch@{get\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch}}
+\index{get\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch@{get\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch()}{get\_num\_iterations\_per\_epoch()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily virtual int lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+num\+\_\+iterations\+\_\+per\+\_\+epoch (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Definition at line 295 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+295                                                    \{
+296     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1generic__input__layer_a82bd22c834c5ef526e0c740c80451e1b}{get\_num\_iterations\_per\_epoch}(this->
+      \hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->\hyperlink{classlbann_1_1model_addb40597cf29aa6d31b6a7d09ef48608}{get\_execution\_mode}());
+297   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a82bd22c834c5ef526e0c740c80451e1b_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a8a85d3e1bdd31082ca22535939596acb}\label{classlbann_1_1generic__input__layer_a8a85d3e1bdd31082ca22535939596acb}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+num\+\_\+parallel\+\_\+readers@{get\+\_\+num\+\_\+parallel\+\_\+readers}}
+\index{get\+\_\+num\+\_\+parallel\+\_\+readers@{get\+\_\+num\+\_\+parallel\+\_\+readers}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+num\+\_\+parallel\+\_\+readers()}{get\_num\_parallel\_readers()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily virtual int lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+num\+\_\+parallel\+\_\+readers (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}}]{mode }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Definition at line 281 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+281                                                                   \{
+282     \textcolor{keyword}{const} generic\_data\_reader *data\_reader = \hyperlink{classlbann_1_1generic__input__layer_aba732becdb02627e3ad4493ac19e8fb6}{get\_data\_reader}(mode);
+283     \textcolor{keywordflow}{return} (data\_reader != \textcolor{keyword}{nullptr}) ? data\_reader->get\_num\_parallel\_readers() : 0;
+284   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a8a85d3e1bdd31082ca22535939596acb_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a5ed2e13553574ba9ff54565ebc049982}\label{classlbann_1_1generic__input__layer_a5ed2e13553574ba9ff54565ebc049982}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+num\+\_\+parallel\+\_\+readers@{get\+\_\+num\+\_\+parallel\+\_\+readers}}
+\index{get\+\_\+num\+\_\+parallel\+\_\+readers@{get\+\_\+num\+\_\+parallel\+\_\+readers}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+num\+\_\+parallel\+\_\+readers()}{get\_num\_parallel\_readers()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily virtual int lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+num\+\_\+parallel\+\_\+readers (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Definition at line 286 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+286                                                \{
+287     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1generic__input__layer_a5ed2e13553574ba9ff54565ebc049982}{get\_num\_parallel\_readers}(this->\hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->
+      \hyperlink{classlbann_1_1model_addb40597cf29aa6d31b6a7d09ef48608}{get\_execution\_mode}());
+288   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a5ed2e13553574ba9ff54565ebc049982_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a68b162bcc5fdfe2bb7279eb5d83cf884}\label{classlbann_1_1generic__input__layer_a68b162bcc5fdfe2bb7279eb5d83cf884}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+num\+\_\+samples\+\_\+tested@{get\+\_\+num\+\_\+samples\+\_\+tested}}
+\index{get\+\_\+num\+\_\+samples\+\_\+tested@{get\+\_\+num\+\_\+samples\+\_\+tested}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+num\+\_\+samples\+\_\+tested()}{get\_num\_samples\_tested()}}
+{\footnotesize\ttfamily long lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+num\+\_\+samples\+\_\+tested (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1io__layer_a2b2c9d3c1efce23840ef0c88ec566616}{lbann\+::io\+\_\+layer}.
+
+
+
+Definition at line 603 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+603                                                \{
+604     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1generic__input__layer_a66b9ec6b393695232bd98edc62fc1348}{m\_testing\_dataset}.\hyperlink{classlbann_1_1dataset_a73496347a477a5ebb0dbf30140295026}{get\_num\_samples\_processed}();
+605   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a68b162bcc5fdfe2bb7279eb5d83cf884_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a68b162bcc5fdfe2bb7279eb5d83cf884_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a95a7a5ad2a6089ffb9197632015e6062}\label{classlbann_1_1generic__input__layer_a95a7a5ad2a6089ffb9197632015e6062}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+num\+\_\+samples\+\_\+trained@{get\+\_\+num\+\_\+samples\+\_\+trained}}
+\index{get\+\_\+num\+\_\+samples\+\_\+trained@{get\+\_\+num\+\_\+samples\+\_\+trained}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+num\+\_\+samples\+\_\+trained()}{get\_num\_samples\_trained()}}
+{\footnotesize\ttfamily long lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+num\+\_\+samples\+\_\+trained (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1io__layer_ad25bf7559a27065c39d0c1d2f849347f}{lbann\+::io\+\_\+layer}.
+
+
+
+Definition at line 600 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+600                                                 \{
+601     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1generic__input__layer_a23716635b1062bfe57f7fcf75140a63a}{m\_training\_dataset}.\hyperlink{classlbann_1_1dataset_a73496347a477a5ebb0dbf30140295026}{get\_num\_samples\_processed}();
+602   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a95a7a5ad2a6089ffb9197632015e6062_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a95a7a5ad2a6089ffb9197632015e6062_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a749741781204b17c8ca172a9a405a90e}\label{classlbann_1_1generic__input__layer_a749741781204b17c8ca172a9a405a90e}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+sample\+\_\+indices\+\_\+per\+\_\+mb@{get\+\_\+sample\+\_\+indices\+\_\+per\+\_\+mb}}
+\index{get\+\_\+sample\+\_\+indices\+\_\+per\+\_\+mb@{get\+\_\+sample\+\_\+indices\+\_\+per\+\_\+mb}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+sample\+\_\+indices\+\_\+per\+\_\+mb()}{get\_sample\_indices\_per\_mb()}}
+{\footnotesize\ttfamily El\+::\+Matrix$<$El\+::\+Int$>$$\ast$ lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+sample\+\_\+indices\+\_\+per\+\_\+mb (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Return the sample indices fetched in the current mini-\/batch. 
+
+Implements \hyperlink{classlbann_1_1io__layer_ab319ad5697e002072ee03e8c64523fb5}{lbann\+::io\+\_\+layer}.
+
+
+
+Definition at line 476 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+476                                                         \{
+477     generic\_data\_reader *dr = \hyperlink{classlbann_1_1generic__input__layer_aba732becdb02627e3ad4493ac19e8fb6}{get\_data\_reader}();
+478     \textcolor{keywordflow}{return} dr->get\_indices\_fetched\_per\_mb();
+479   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a749741781204b17c8ca172a9a405a90e_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a749741781204b17c8ca172a9a405a90e_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a36d9962105ca89889e3f38f1c1801560}\label{classlbann_1_1generic__input__layer_a36d9962105ca89889e3f38f1c1801560}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+topo\+\_\+description@{get\+\_\+topo\+\_\+description}}
+\index{get\+\_\+topo\+\_\+description@{get\+\_\+topo\+\_\+description}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+topo\+\_\+description()}{get\_topo\_description()}}
+{\footnotesize\ttfamily std\+::string lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+topo\+\_\+description (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get a human-\/readable description of the activation tensors. Activation tensors are stored in distributed matrices where each column corresponds to a mini-\/batch sample. Within each column, the data is packed w.\+r.\+t. the last tensor dimension, then w.\+r.\+t. the penultimate dimension, and so on. 3D tensors are assumed to be 2D images in N\+C\+HW format. 
+
+Implements \hyperlink{classlbann_1_1io__layer_a955ab7100591d07d0758e8f95c6e50be}{lbann\+::io\+\_\+layer}.
+
+
+
+Definition at line 493 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+493                                                   \{
+494     std::stringstream s;
+495     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} i = 0; i < this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}.size(); i++) \{
+496       s << this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}[i];
+497       \textcolor{keywordflow}{if} ( i != this->m\_neuron\_dims.size()-1) \{
+498         s << \textcolor{stringliteral}{" x "};
+499       \}
+500     \}
+501     \textcolor{keywordflow}{return} s.str();;
+502   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a36d9962105ca89889e3f38f1c1801560_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_ab5b5318cf000fbdaf35a3545335b60b2}\label{classlbann_1_1generic__input__layer_ab5b5318cf000fbdaf35a3545335b60b2}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+total\+\_\+num\+\_\+testing\+\_\+samples@{get\+\_\+total\+\_\+num\+\_\+testing\+\_\+samples}}
+\index{get\+\_\+total\+\_\+num\+\_\+testing\+\_\+samples@{get\+\_\+total\+\_\+num\+\_\+testing\+\_\+samples}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+total\+\_\+num\+\_\+testing\+\_\+samples()}{get\_total\_num\_testing\_samples()}}
+{\footnotesize\ttfamily long lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+total\+\_\+num\+\_\+testing\+\_\+samples (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1io__layer_a8c1575ad108ffbdf2a553a44509211e6}{lbann\+::io\+\_\+layer}.
+
+
+
+Definition at line 609 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+609                                                       \{
+610     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1generic__input__layer_a66b9ec6b393695232bd98edc62fc1348}{m\_testing\_dataset}.\hyperlink{classlbann_1_1dataset_ad314847b347d413162a9d9eab759641f}{get\_total\_samples}();
+611   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=326pt]{classlbann_1_1generic__input__layer_ab5b5318cf000fbdaf35a3545335b60b2_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=340pt]{classlbann_1_1generic__input__layer_ab5b5318cf000fbdaf35a3545335b60b2_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a5fc757d16e26739cd10e5eabafa6a32b}\label{classlbann_1_1generic__input__layer_a5fc757d16e26739cd10e5eabafa6a32b}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+total\+\_\+num\+\_\+training\+\_\+samples@{get\+\_\+total\+\_\+num\+\_\+training\+\_\+samples}}
+\index{get\+\_\+total\+\_\+num\+\_\+training\+\_\+samples@{get\+\_\+total\+\_\+num\+\_\+training\+\_\+samples}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+total\+\_\+num\+\_\+training\+\_\+samples()}{get\_total\_num\_training\_samples()}}
+{\footnotesize\ttfamily long lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+total\+\_\+num\+\_\+training\+\_\+samples (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1io__layer_a744fe02208657194120714387b49cb28}{lbann\+::io\+\_\+layer}.
+
+
+
+Definition at line 606 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+606                                                        \{
+607     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1generic__input__layer_a23716635b1062bfe57f7fcf75140a63a}{m\_training\_dataset}.\hyperlink{classlbann_1_1dataset_ad314847b347d413162a9d9eab759641f}{get\_total\_samples}();
+608   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=326pt]{classlbann_1_1generic__input__layer_a5fc757d16e26739cd10e5eabafa6a32b_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=340pt]{classlbann_1_1generic__input__layer_a5fc757d16e26739cd10e5eabafa6a32b_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a5392ea11b5eb98a8040bf5b5deed836a}\label{classlbann_1_1generic__input__layer_a5392ea11b5eb98a8040bf5b5deed836a}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+type@{get\+\_\+type}}
+\index{get\+\_\+type@{get\+\_\+type}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+type()}{get\_type()}}
+{\footnotesize\ttfamily std\+::string lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+type (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get the layer type\textquotesingle{}s name. A layer type name should be brief, human-\/readable description of the layer\textquotesingle{}s mathematical operation. 
+
+Implements \hyperlink{classlbann_1_1Layer_a0fa0ea9160b490c151c0a17fde4f7239}{lbann\+::\+Layer}.
+
+
+
+Reimplemented in \hyperlink{classlbann_1_1input__layer_af596126d1b2d1604743906d04d32419b}{lbann\+::input\+\_\+layer$<$ T\+\_\+io\+\_\+buffer, T\+\_\+layout $>$}.
+
+
+
+Definition at line 107 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+107 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"generic\_input"}; \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a5392ea11b5eb98a8040bf5b5deed836a_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a1c2a503d4009b6360d96db128796983c}\label{classlbann_1_1generic__input__layer_a1c2a503d4009b6360d96db128796983c}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+world\+\_\+master\+\_\+mini\+\_\+batch\+\_\+adjustment@{get\+\_\+world\+\_\+master\+\_\+mini\+\_\+batch\+\_\+adjustment}}
+\index{get\+\_\+world\+\_\+master\+\_\+mini\+\_\+batch\+\_\+adjustment@{get\+\_\+world\+\_\+master\+\_\+mini\+\_\+batch\+\_\+adjustment}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+world\+\_\+master\+\_\+mini\+\_\+batch\+\_\+adjustment()}{get\_world\_master\_mini\_batch\_adjustment()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily virtual int lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+world\+\_\+master\+\_\+mini\+\_\+batch\+\_\+adjustment (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}}]{mode }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Definition at line 350 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+350                                                                                 \{
+351     \textcolor{keyword}{const} generic\_data\_reader *data\_reader = \hyperlink{classlbann_1_1generic__input__layer_aba732becdb02627e3ad4493ac19e8fb6}{get\_data\_reader}(mode);
+352     \textcolor{keywordflow}{return} (data\_reader != \textcolor{keyword}{nullptr}) ? data\_reader->get\_world\_master\_mini\_batch\_adjustment() : 0;
+353   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a1c2a503d4009b6360d96db128796983c_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a1c2a503d4009b6360d96db128796983c_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a111abcde5f53746dfd6c5fe18187ee57}\label{classlbann_1_1generic__input__layer_a111abcde5f53746dfd6c5fe18187ee57}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!get\+\_\+world\+\_\+master\+\_\+mini\+\_\+batch\+\_\+adjustment@{get\+\_\+world\+\_\+master\+\_\+mini\+\_\+batch\+\_\+adjustment}}
+\index{get\+\_\+world\+\_\+master\+\_\+mini\+\_\+batch\+\_\+adjustment@{get\+\_\+world\+\_\+master\+\_\+mini\+\_\+batch\+\_\+adjustment}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+world\+\_\+master\+\_\+mini\+\_\+batch\+\_\+adjustment()}{get\_world\_master\_mini\_batch\_adjustment()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily virtual int lbann\+::generic\+\_\+input\+\_\+layer\+::get\+\_\+world\+\_\+master\+\_\+mini\+\_\+batch\+\_\+adjustment (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Definition at line 355 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+355                                                              \{
+356     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1generic__input__layer_a111abcde5f53746dfd6c5fe18187ee57}{get\_world\_master\_mini\_batch\_adjustment}(this->
+      \hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->\hyperlink{classlbann_1_1model_addb40597cf29aa6d31b6a7d09ef48608}{get\_execution\_mode}());
+357   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a111abcde5f53746dfd6c5fe18187ee57_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_ab4fa07865c28a35d39ff736075085aba}\label{classlbann_1_1generic__input__layer_ab4fa07865c28a35d39ff736075085aba}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!initialize\+\_\+io\+\_\+buffer@{initialize\+\_\+io\+\_\+buffer}}
+\index{initialize\+\_\+io\+\_\+buffer@{initialize\+\_\+io\+\_\+buffer}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{initialize\+\_\+io\+\_\+buffer()}{initialize\_io\_buffer()}\hspace{0.1cm}{\footnotesize\ttfamily [1/3]}}
+{\footnotesize\ttfamily template$<$typename T\+\_\+io\+\_\+buffer $>$ \\
+void lbann\+::generic\+\_\+input\+\_\+layer\+::initialize\+\_\+io\+\_\+buffer (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{int}]{num\+\_\+parallel\+\_\+readers,  }\item[{std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$$>$}]{data\+\_\+readers }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=328pt]{classlbann_1_1generic__input__layer_ab4fa07865c28a35d39ff736075085aba_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_ab0afac3b3a3ee9e7af81c0885d233756}\label{classlbann_1_1generic__input__layer_ab0afac3b3a3ee9e7af81c0885d233756}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!initialize\+\_\+io\+\_\+buffer@{initialize\+\_\+io\+\_\+buffer}}
+\index{initialize\+\_\+io\+\_\+buffer@{initialize\+\_\+io\+\_\+buffer}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{initialize\+\_\+io\+\_\+buffer()}{initialize\_io\_buffer()}\hspace{0.1cm}{\footnotesize\ttfamily [2/3]}}
+{\footnotesize\ttfamily template$<$$>$ \\
+void lbann\+::generic\+\_\+input\+\_\+layer\+::initialize\+\_\+io\+\_\+buffer (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{int}]{num\+\_\+parallel\+\_\+readers,  }\item[{std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$$>$}]{data\+\_\+readers }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 730 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+730                                                                                                            
+                                                                                         \{
+731   \hyperlink{classlbann_1_1generic__input__layer_a9dfe8b9afaebc7a5bcb0177ee2ab428f}{io\_buffer} = \textcolor{keyword}{new} partitioned\_io\_buffer(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, num\_parallel\_readers, data\_readers);
+732 \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_ab0afac3b3a3ee9e7af81c0885d233756}\label{classlbann_1_1generic__input__layer_ab0afac3b3a3ee9e7af81c0885d233756}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!initialize\+\_\+io\+\_\+buffer@{initialize\+\_\+io\+\_\+buffer}}
+\index{initialize\+\_\+io\+\_\+buffer@{initialize\+\_\+io\+\_\+buffer}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{initialize\+\_\+io\+\_\+buffer()}{initialize\_io\_buffer()}\hspace{0.1cm}{\footnotesize\ttfamily [3/3]}}
+{\footnotesize\ttfamily template$<$$>$ \\
+void lbann\+::generic\+\_\+input\+\_\+layer\+::initialize\+\_\+io\+\_\+buffer (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{int}]{num\+\_\+parallel\+\_\+readers,  }\item[{std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader} $\ast$$>$}]{data\+\_\+readers }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 734 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+734                                                                                                            
+                                                                                         \{
+735   \hyperlink{classlbann_1_1generic__input__layer_a9dfe8b9afaebc7a5bcb0177ee2ab428f}{io\_buffer} = \textcolor{keyword}{new} distributed\_io\_buffer(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, num\_parallel\_readers, data\_readers);
+736 \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a31082076a8aad937eef3cadc0b5e1b27}\label{classlbann_1_1generic__input__layer_a31082076a8aad937eef3cadc0b5e1b27}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!is\+\_\+execution\+\_\+mode\+\_\+valid@{is\+\_\+execution\+\_\+mode\+\_\+valid}}
+\index{is\+\_\+execution\+\_\+mode\+\_\+valid@{is\+\_\+execution\+\_\+mode\+\_\+valid}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{is\+\_\+execution\+\_\+mode\+\_\+valid()}{is\_execution\_mode\_valid()}}
+{\footnotesize\ttfamily bool lbann\+::generic\+\_\+input\+\_\+layer\+::is\+\_\+execution\+\_\+mode\+\_\+valid (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}}]{mode }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1io__layer_a37e2f77a99ee44106ac7d9fd3a275dcc}{lbann\+::io\+\_\+layer}.
+
+
+
+Definition at line 618 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+618                                                                    \{
+619     \textcolor{keyword}{const} dataset& ds = \hyperlink{classlbann_1_1generic__input__layer_af5699540797c22d8846028e578a6fc59}{get\_dataset}(mode);
+620     \textcolor{keywordflow}{return} (ds.get\_total\_samples() != \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{long}\textcolor{keyword}{>}(0));
+621   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=328pt]{classlbann_1_1generic__input__layer_a31082076a8aad937eef3cadc0b5e1b27_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=332pt]{classlbann_1_1generic__input__layer_a31082076a8aad937eef3cadc0b5e1b27_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_ae5a542333eaf447a05fc586848e7c94c}\label{classlbann_1_1generic__input__layer_ae5a542333eaf447a05fc586848e7c94c}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!load\+\_\+from\+\_\+checkpoint\+\_\+shared@{load\+\_\+from\+\_\+checkpoint\+\_\+shared}}
+\index{load\+\_\+from\+\_\+checkpoint\+\_\+shared@{load\+\_\+from\+\_\+checkpoint\+\_\+shared}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{load\+\_\+from\+\_\+checkpoint\+\_\+shared()}{load\_from\_checkpoint\_shared()}}
+{\footnotesize\ttfamily bool lbann\+::generic\+\_\+input\+\_\+layer\+::load\+\_\+from\+\_\+checkpoint\+\_\+shared (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1persist}{persist} \&}]{p }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_a9e262970ecc64166e8b6610e2502ad30}{lbann\+::\+Layer}.
+
+
+
+Definition at line 676 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+676                                                         \{
+677     \textcolor{comment}{// save state of data readers from input layer}
+678     data\_reader\_map\_t::const\_iterator it;
+679 
+680     it = this->\hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.find(\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training});
+681     \textcolor{keywordflow}{if} ((it != this->\hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.end()) && it->second) \{
+682       (it->second)->\hyperlink{classlbann_1_1generic__input__layer_ae5a542333eaf447a05fc586848e7c94c}{load\_from\_checkpoint\_shared}(p, \textcolor{stringliteral}{"data\_reader\_training"});
+683     \}
+684     it = this->\hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.find(\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing});
+685     \textcolor{keywordflow}{if} ((it != this->\hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.end()) && it->second) \{
+686       (it->second)->\hyperlink{classlbann_1_1generic__input__layer_ae5a542333eaf447a05fc586848e7c94c}{load\_from\_checkpoint\_shared}(p, \textcolor{stringliteral}{"data\_reader\_testing"});
+687     \}
+688 
+689     \textcolor{comment}{// save our own state}
+690     \textcolor{comment}{// rank 0 reads the file}
+691     dataset\_header header;
+692     \textcolor{keywordflow}{if} (p.get\_rank() == 0) \{
+693       p.read\_uint64(\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64}{persist\_type::train}, \textcolor{stringliteral}{"reader\_train\_processed"},    &header.train\_proc
+      );
+694       p.read\_uint64(\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64}{persist\_type::train}, \textcolor{stringliteral}{"reader\_train\_total"},        &header.
+      train\_total);
+695       p.read\_uint64(\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64}{persist\_type::train}, \textcolor{stringliteral}{"reader\_test\_processed"},     &header.test\_proc)
+      ;
+696       p.read\_uint64(\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64}{persist\_type::train}, \textcolor{stringliteral}{"reader\_test\_total"},         &header.test\_total
+      );
+697       p.read\_uint64(\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56af9ab05454998236921a6b0e281fae632}{persist\_type::validate}, \textcolor{stringliteral}{"reader\_validate\_processed"}, &header.
+      validate\_proc);
+698       p.read\_uint64(\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56af9ab05454998236921a6b0e281fae632}{persist\_type::validate}, \textcolor{stringliteral}{"reader\_validate\_total"},     &header.
+      validate\_total);
+699     \}
+700 
+701     it = this->\hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.find(\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation});
+702     \textcolor{keywordflow}{if} ((it != this->\hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.end()) && it->second) \{
+703       (it->second)->\hyperlink{classlbann_1_1generic__input__layer_ae5a542333eaf447a05fc586848e7c94c}{load\_from\_checkpoint\_shared}(p, \textcolor{stringliteral}{"data\_reader\_validation"});
+704     \}
+705 
+706     \textcolor{comment}{// TODO: assumes homogeneous hardware}
+707     \textcolor{comment}{// broadcast data from rank 0}
+708     MPI\_Bcast(&header, \textcolor{keyword}{sizeof}(header), MPI\_BYTE, 0, MPI\_COMM\_WORLD);
+709 
+710     \textcolor{comment}{// set our fields}
+711     \hyperlink{classlbann_1_1generic__input__layer_a23716635b1062bfe57f7fcf75140a63a}{m\_training\_dataset}.\hyperlink{classlbann_1_1dataset_a412b29a50638f7d8feea4ad368c6a4dc}{num\_samples\_processed}()   = (long) header.
+      train\_proc;
+712     \hyperlink{classlbann_1_1generic__input__layer_a23716635b1062bfe57f7fcf75140a63a}{m\_training\_dataset}.\hyperlink{classlbann_1_1dataset_ab951c879f151990613567e985fe1e278}{total\_samples}()           = (long) header.train\_total
+      ;
+713     \hyperlink{classlbann_1_1generic__input__layer_a66b9ec6b393695232bd98edc62fc1348}{m\_testing\_dataset}.\hyperlink{classlbann_1_1dataset_a412b29a50638f7d8feea4ad368c6a4dc}{num\_samples\_processed}()    = (long) header.
+      test\_proc;
+714     \hyperlink{classlbann_1_1generic__input__layer_a66b9ec6b393695232bd98edc62fc1348}{m\_testing\_dataset}.\hyperlink{classlbann_1_1dataset_ab951c879f151990613567e985fe1e278}{total\_samples}()            = (long) header.test\_total;
+715     \hyperlink{classlbann_1_1generic__input__layer_abd70adf607d1cef87fb6641af77e816d}{m\_validation\_dataset}.\hyperlink{classlbann_1_1dataset_a412b29a50638f7d8feea4ad368c6a4dc}{num\_samples\_processed}() = (long) header.
+      validate\_proc;
+716     \hyperlink{classlbann_1_1generic__input__layer_abd70adf607d1cef87fb6641af77e816d}{m\_validation\_dataset}.\hyperlink{classlbann_1_1dataset_ab951c879f151990613567e985fe1e278}{total\_samples}()         = (long) header.
+      validate\_total;
+717     \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+718   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_ae5a542333eaf447a05fc586848e7c94c_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a76d36777d01144cafe7b33ab5ce739d2}\label{classlbann_1_1generic__input__layer_a76d36777d01144cafe7b33ab5ce739d2}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1generic__input__layer}{generic\+\_\+input\+\_\+layer}\& lbann\+::generic\+\_\+input\+\_\+layer\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1generic__input__layer}{generic\+\_\+input\+\_\+layer} \&}]{other }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 95 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+95                                                                    \{
+96     \hyperlink{classlbann_1_1Layer_a00d8acde68fda2f38c4a39ef8c89234a}{io\_layer::operator=}(other);
+97     \hyperlink{classlbann_1_1generic__input__layer_a9dfe8b9afaebc7a5bcb0177ee2ab428f}{io\_buffer} = other.io\_buffer->\hyperlink{classlbann_1_1generic__io__buffer_a9d8020b82cf467c9148b0b37e7229262}{copy}();
+98     \textcolor{keywordflow}{for} (\textcolor{keyword}{auto}& dr : \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}) \{
+99       dr.second = dr.second->\hyperlink{classlbann_1_1generic__io__buffer_a9d8020b82cf467c9148b0b37e7229262}{copy}();
+100     \}
+101     \textcolor{keywordflow}{return} *\textcolor{keyword}{this};
+102   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a76d36777d01144cafe7b33ab5ce739d2_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_abae61e13f47205491a43e4842808945d}\label{classlbann_1_1generic__input__layer_abae61e13f47205491a43e4842808945d}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!save\+\_\+to\+\_\+checkpoint\+\_\+shared@{save\+\_\+to\+\_\+checkpoint\+\_\+shared}}
+\index{save\+\_\+to\+\_\+checkpoint\+\_\+shared@{save\+\_\+to\+\_\+checkpoint\+\_\+shared}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{save\+\_\+to\+\_\+checkpoint\+\_\+shared()}{save\_to\_checkpoint\_shared()}}
+{\footnotesize\ttfamily bool lbann\+::generic\+\_\+input\+\_\+layer\+::save\+\_\+to\+\_\+checkpoint\+\_\+shared (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1persist}{persist} \&}]{p,  }\item[{bool}]{val\+\_\+end }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_afce0efa0f1c8f3b1c61069536b2fa8cc}{lbann\+::\+Layer}.
+
+
+
+Definition at line 627 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+627                                                                           \{
+628     \textcolor{comment}{// save state of data readers from input layer}
+629     data\_reader\_map\_t::const\_iterator it;
+630     \textcolor{keywordflow}{if}(!val\_end)\{
+631       it = this->\hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.find(\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training});
+632       \textcolor{keywordflow}{if} ((it != this->\hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.end()) && it->second) \{
+633         (it->second)->\hyperlink{classlbann_1_1generic__input__layer_abae61e13f47205491a43e4842808945d}{save\_to\_checkpoint\_shared}(p, \textcolor{stringliteral}{"data\_reader\_training"});
+634       \}
+635       it = this->\hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.find(\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing});
+636       \textcolor{keywordflow}{if} ((it != this->\hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.end()) && it->second) \{
+637         (it->second)->\hyperlink{classlbann_1_1generic__input__layer_abae61e13f47205491a43e4842808945d}{save\_to\_checkpoint\_shared}(p, \textcolor{stringliteral}{"data\_reader\_testing"});
+638       \}
+639       \textcolor{keywordflow}{if} (p.get\_rank() == 0) \{
+640         p.write\_uint64(\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64}{persist\_type::train}, \textcolor{stringliteral}{"reader\_train\_processed"},
+641                        (uint64\_t) \hyperlink{classlbann_1_1generic__input__layer_a23716635b1062bfe57f7fcf75140a63a}{m\_training\_dataset}.
+      \hyperlink{classlbann_1_1dataset_a73496347a477a5ebb0dbf30140295026}{get\_num\_samples\_processed}());
+642         p.write\_uint64(\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64}{persist\_type::train}, \textcolor{stringliteral}{"reader\_train\_total"},
+643                        (uint64\_t) \hyperlink{classlbann_1_1generic__input__layer_a23716635b1062bfe57f7fcf75140a63a}{m\_training\_dataset}.
+      \hyperlink{classlbann_1_1dataset_ad314847b347d413162a9d9eab759641f}{get\_total\_samples}());
+644 
+645         p.write\_uint64(\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64}{persist\_type::train}, \textcolor{stringliteral}{"reader\_test\_processed"},
+646                        (uint64\_t) \hyperlink{classlbann_1_1generic__input__layer_a66b9ec6b393695232bd98edc62fc1348}{m\_testing\_dataset}.
+      \hyperlink{classlbann_1_1dataset_a73496347a477a5ebb0dbf30140295026}{get\_num\_samples\_processed}());
+647         p.write\_uint64(\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56a61b3a8faa9c1091806675c230a9abe64}{persist\_type::train}, \textcolor{stringliteral}{"reader\_test\_total"},
+648                      (uint64\_t) \hyperlink{classlbann_1_1generic__input__layer_a66b9ec6b393695232bd98edc62fc1348}{m\_testing\_dataset}.
+      \hyperlink{classlbann_1_1dataset_ad314847b347d413162a9d9eab759641f}{get\_total\_samples}());
+649 
+650       \}
+651     \}
+652     \textcolor{keywordflow}{else} \textcolor{keywordflow}{if}(val\_end)\{
+653       p.write\_uint64(\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56af9ab05454998236921a6b0e281fae632}{persist\_type::validate}, \textcolor{stringliteral}{"reader\_validate\_processed"},
+654                      (uint64\_t) \hyperlink{classlbann_1_1generic__input__layer_abd70adf607d1cef87fb6641af77e816d}{m\_validation\_dataset}.
+      \hyperlink{classlbann_1_1dataset_a73496347a477a5ebb0dbf30140295026}{get\_num\_samples\_processed}());
+655       p.write\_uint64(\hyperlink{namespacelbann_adee41f31f15f3906cbdcce4a1417eb56af9ab05454998236921a6b0e281fae632}{persist\_type::validate}, \textcolor{stringliteral}{"reader\_validate\_total"},
+656                      (uint64\_t) \hyperlink{classlbann_1_1generic__input__layer_abd70adf607d1cef87fb6641af77e816d}{m\_validation\_dataset}.
+      \hyperlink{classlbann_1_1dataset_ad314847b347d413162a9d9eab759641f}{get\_total\_samples}());
+657       
+658       it = this->\hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.find(\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation});
+659       \textcolor{keywordflow}{if} ((it != this->\hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}.end()) && it->second) \{
+660         (it->second)->\hyperlink{classlbann_1_1generic__input__layer_abae61e13f47205491a43e4842808945d}{save\_to\_checkpoint\_shared}(p, \textcolor{stringliteral}{"data\_reader\_validation"});
+661       \}    
+662     \}
+663     \textcolor{keywordflow}{return} \textcolor{keyword}{true};  
+664   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_abae61e13f47205491a43e4842808945d_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a9783805369ec7cfe5ce61c81baa5d2e2}\label{classlbann_1_1generic__input__layer_a9783805369ec7cfe5ce61c81baa5d2e2}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!select\+\_\+data\+\_\+reader@{select\+\_\+data\+\_\+reader}}
+\index{select\+\_\+data\+\_\+reader@{select\+\_\+data\+\_\+reader}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{select\+\_\+data\+\_\+reader()}{select\_data\_reader()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1generic__data__reader}{generic\+\_\+data\+\_\+reader}$\ast$ lbann\+::generic\+\_\+input\+\_\+layer\+::select\+\_\+data\+\_\+reader (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Return the data reader associated with the current execution mode. 
+
+Implements \hyperlink{classlbann_1_1io__layer_aed46cd991ff11bad08933dc61492e26f}{lbann\+::io\+\_\+layer}.
+
+
+
+Definition at line 460 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+460                                                            \{
+461     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1generic__input__layer_aba732becdb02627e3ad4493ac19e8fb6}{get\_data\_reader}();
+462   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a9783805369ec7cfe5ce61c81baa5d2e2_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a9783805369ec7cfe5ce61c81baa5d2e2_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a654365ee97a64c75a547cfb7ef329304}\label{classlbann_1_1generic__input__layer_a654365ee97a64c75a547cfb7ef329304}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!select\+\_\+dataset@{select\+\_\+dataset}}
+\index{select\+\_\+dataset@{select\+\_\+dataset}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{select\+\_\+dataset()}{select\_dataset()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1dataset}{dataset}\& lbann\+::generic\+\_\+input\+\_\+layer\+::select\+\_\+dataset (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Return the dataset associated with the current execution mode. 
+
+Implements \hyperlink{classlbann_1_1io__layer_a66acbfb9c03a2e89a751b420416ae3bf}{lbann\+::io\+\_\+layer}.
+
+
+
+Definition at line 438 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+438 \{ \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1generic__input__layer_af5699540797c22d8846028e578a6fc59}{get\_dataset}(\hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->\hyperlink{classlbann_1_1model_addb40597cf29aa6d31b6a7d09ef48608}{get\_execution\_mode}()); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a654365ee97a64c75a547cfb7ef329304_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a654365ee97a64c75a547cfb7ef329304_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_ab8468d077867b03098bbc71a38edaa15}\label{classlbann_1_1generic__input__layer_ab8468d077867b03098bbc71a38edaa15}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!select\+\_\+dataset@{select\+\_\+dataset}}
+\index{select\+\_\+dataset@{select\+\_\+dataset}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{select\+\_\+dataset()}{select\_dataset()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily const \hyperlink{classlbann_1_1dataset}{dataset}\& lbann\+::generic\+\_\+input\+\_\+layer\+::select\+\_\+dataset (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1io__layer_abbbeb6ca3e1d95b5c35dd9bb499bdd2d}{lbann\+::io\+\_\+layer}.
+
+
+
+Definition at line 439 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+439 \{ \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1generic__input__layer_af5699540797c22d8846028e578a6fc59}{get\_dataset}(\hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->\hyperlink{classlbann_1_1model_addb40597cf29aa6d31b6a7d09ef48608}{get\_execution\_mode}()); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_ab8468d077867b03098bbc71a38edaa15_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a777aa11816a518098212408b569b6fb8}\label{classlbann_1_1generic__input__layer_a777aa11816a518098212408b569b6fb8}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!select\+\_\+first\+\_\+valid\+\_\+dataset@{select\+\_\+first\+\_\+valid\+\_\+dataset}}
+\index{select\+\_\+first\+\_\+valid\+\_\+dataset@{select\+\_\+first\+\_\+valid\+\_\+dataset}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{select\+\_\+first\+\_\+valid\+\_\+dataset()}{select\_first\_valid\_dataset()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1dataset}{dataset}$\ast$ lbann\+::generic\+\_\+input\+\_\+layer\+::select\+\_\+first\+\_\+valid\+\_\+dataset (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Return the first dataset with a valid (non-\/null) datareader. Returns null if none are valid. 
+
+Implements \hyperlink{classlbann_1_1io__layer_a7dbc671fd5a81094854a4d865f7631ce}{lbann\+::io\+\_\+layer}.
+
+
+
+Definition at line 445 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+445                                                  \{
+446     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training}]) \{
+447       \textcolor{keywordflow}{return} &\hyperlink{classlbann_1_1generic__input__layer_a23716635b1062bfe57f7fcf75140a63a}{m\_training\_dataset};
+448     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation}]) \{
+449       \textcolor{keywordflow}{return} &\hyperlink{classlbann_1_1generic__input__layer_abd70adf607d1cef87fb6641af77e816d}{m\_validation\_dataset};
+450     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing}]) \{
+451       \textcolor{keywordflow}{return} &\hyperlink{classlbann_1_1generic__input__layer_a66b9ec6b393695232bd98edc62fc1348}{m\_testing\_dataset};
+452     \} \textcolor{keywordflow}{else} \{
+453       \textcolor{keywordflow}{return} \textcolor{keyword}{nullptr};
+454     \}
+455   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=332pt]{classlbann_1_1generic__input__layer_a777aa11816a518098212408b569b6fb8_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a8ca316b0369689949f3f4106920ec28f}\label{classlbann_1_1generic__input__layer_a8ca316b0369689949f3f4106920ec28f}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!setup\+\_\+data@{setup\+\_\+data}}
+\index{setup\+\_\+data@{setup\+\_\+data}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{setup\+\_\+data()}{setup\_data()}}
+{\footnotesize\ttfamily void lbann\+::generic\+\_\+input\+\_\+layer\+::setup\+\_\+data (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Setup layer data. Called by the setup function. The base method sets the previous activation, activation, previous error signal, and error signal matrices to zero matrices with the proper dimensions. Matrix buffers are pinned if needed for G\+PU transfers. B\+VE F\+I\+X\+ME foreach data reader 
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_a50a89f8a68762c677d48efe384676e81}{lbann\+::\+Layer}.
+
+
+
+Definition at line 139 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+139                              \{
+140     \hyperlink{classlbann_1_1Layer_a50a89f8a68762c677d48efe384676e81}{io\_layer::setup\_data}();
+141 
+143     \textcolor{comment}{// in case that target\_layer gets initialized beforehand}
+144     \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training}] != \textcolor{keyword}{nullptr}) \{
+145       \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training}]->setup();
+146       \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training}]->set\_rank(
+      \hyperlink{classlbann_1_1Layer_a5de05c52f22e0bbd7c703bec3ad4dbf2}{Layer::m\_comm}->get\_rank\_in\_model());
+147     \}
+148     \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation}] != \textcolor{keyword}{nullptr}) \{
+149       \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation}]->setup();
+150       \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation}]->set\_rank(
+      \hyperlink{classlbann_1_1Layer_a5de05c52f22e0bbd7c703bec3ad4dbf2}{Layer::m\_comm}->get\_rank\_in\_model());
+151     \}
+152     \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing}] != \textcolor{keyword}{nullptr}) \{
+153       \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing}]->setup();
+154       \hyperlink{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}{m\_data\_readers}[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing}]->set\_rank(
+      \hyperlink{classlbann_1_1Layer_a5de05c52f22e0bbd7c703bec3ad4dbf2}{Layer::m\_comm}->get\_rank\_in\_model());
+155     \}
+156 
+157     \textcolor{keywordtype}{int} max\_mb\_size = this->\hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->\hyperlink{classlbann_1_1model_a8c311798ff4acaeafdfbf85162ba5084}{get\_max\_mini\_batch\_size}();
+158     \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1io__layer_a05c9d6e6cb12e8eb345ac6f5cb95644b}{io\_layer::m\_data\_set\_spans\_models}) \{
+159       \hyperlink{classlbann_1_1generic__input__layer_af108a5dc05276bc6bc57b306204b12e4}{calculate\_num\_iterations\_per\_epoch\_training\_spans\_models}
+      (max\_mb\_size);
+160     \} \textcolor{keywordflow}{else} \{
+161       \hyperlink{classlbann_1_1generic__input__layer_a0f09422a09e76da77ac42b3037173041}{calculate\_num\_iterations\_per\_epoch\_training\_unique\_per\_models}
+      (max\_mb\_size);
+162     \}
+163 
+164     \hyperlink{classlbann_1_1generic__input__layer_a9dfe8b9afaebc7a5bcb0177ee2ab428f}{io\_buffer}->\hyperlink{classlbann_1_1generic__io__buffer_a00f3920147f7f19eceb5336bd6ddb421}{setup\_data}(this->\hyperlink{classlbann_1_1Layer_a6b5ebc8a7d9329d8a773ed787e7b41d8}{m\_num\_neurons}, max\_mb\_size);
+165   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a8ca316b0369689949f3f4106920ec28f_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_ad117da4e6155159439826bba6657cf05}\label{classlbann_1_1generic__input__layer_ad117da4e6155159439826bba6657cf05}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!setup\+\_\+dims@{setup\+\_\+dims}}
+\index{setup\+\_\+dims@{setup\+\_\+dims}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{setup\+\_\+dims()}{setup\_dims()}}
+{\footnotesize\ttfamily void lbann\+::generic\+\_\+input\+\_\+layer\+::setup\+\_\+dims (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Setup tensor dimensions Called by the setup function. The base method sets the dimensions of the activation tensors equal to the dimensions of the first previous activation tensor. 
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_a90fce1b06c1f2abb480e18cfe08a9746}{lbann\+::\+Layer}.
+
+
+
+Definition at line 129 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+129                              \{
+130     \hyperlink{classlbann_1_1Layer_a90fce1b06c1f2abb480e18cfe08a9746}{io\_layer::setup\_dims}();
+131     this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims} = \hyperlink{classlbann_1_1generic__input__layer_a6008b13521d27d6139201fa374b088eb}{get\_data\_dims}();
+132     this->\hyperlink{classlbann_1_1Layer_adfd6178d21498c9095cd947ae1eb2d6a}{m\_num\_neuron\_dims} = this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}.size();
+133     this->\hyperlink{classlbann_1_1Layer_a6b5ebc8a7d9329d8a773ed787e7b41d8}{m\_num\_neurons} = std::accumulate(this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}.begin(),
+134                                           this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}.end(),
+135                                           1,
+136                                           std::multiplies<int>());
+137   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_ad117da4e6155159439826bba6657cf05_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_aaf9ac19f7dd725230bde87d859ec0f35}\label{classlbann_1_1generic__input__layer_aaf9ac19f7dd725230bde87d859ec0f35}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!update\+\_\+compute@{update\+\_\+compute}}
+\index{update\+\_\+compute@{update\+\_\+compute}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{update\+\_\+compute()}{update\_compute()}}
+{\footnotesize\ttfamily bool lbann\+::generic\+\_\+input\+\_\+layer\+::update\+\_\+compute (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Once a mini-\/batch is processed, resuffle the data for the next batch if necessary 
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_a70e08fc96a612f67ade6ba3809536d85}{lbann\+::\+Layer}.
+
+
+
+Definition at line 248 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+248                                  \{
+249     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1generic__input__layer_a9dfe8b9afaebc7a5bcb0177ee2ab428f}{io\_buffer}->\hyperlink{classlbann_1_1generic__io__buffer_a9a038d40aec50dbc24c0abe21ad0c0a9}{is\_data\_set\_processed}(
+      \hyperlink{classlbann_1_1generic__input__layer_aba732becdb02627e3ad4493ac19e8fb6}{get\_data\_reader}(), this->\hyperlink{classlbann_1_1Layer_a3d9315e99574166f2f33e37b572021d2}{m\_model}->\hyperlink{classlbann_1_1model_addb40597cf29aa6d31b6a7d09ef48608}{get\_execution\_mode}());
+250   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_aaf9ac19f7dd725230bde87d859ec0f35_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a0c2f123432ec6af168012cc8699a1d3f}\label{classlbann_1_1generic__input__layer_a0c2f123432ec6af168012cc8699a1d3f}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!update\+\_\+num\+\_\+samples\+\_\+processed@{update\+\_\+num\+\_\+samples\+\_\+processed}}
+\index{update\+\_\+num\+\_\+samples\+\_\+processed@{update\+\_\+num\+\_\+samples\+\_\+processed}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{update\+\_\+num\+\_\+samples\+\_\+processed()}{update\_num\_samples\_processed()}}
+{\footnotesize\ttfamily long lbann\+::generic\+\_\+input\+\_\+layer\+::update\+\_\+num\+\_\+samples\+\_\+processed (\begin{DoxyParamCaption}\item[{long}]{num\+\_\+samples }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Update the number of samples processed for the current execution mode. 
+
+Implements \hyperlink{classlbann_1_1io__layer_a4ed831842ad78aaebfc9519c51268b95}{lbann\+::io\+\_\+layer}.
+
+
+
+Definition at line 467 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+\begin{DoxyCode}
+467                                                                \{
+468     dataset& ds = \hyperlink{classlbann_1_1generic__input__layer_a654365ee97a64c75a547cfb7ef329304}{select\_dataset}();
+469     ds.num\_samples\_processed() += num\_samples;
+470     \textcolor{keywordflow}{return} ds.get\_num\_samples\_processed();
+471   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a0c2f123432ec6af168012cc8699a1d3f_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1generic__input__layer_a0c2f123432ec6af168012cc8699a1d3f_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a9dfe8b9afaebc7a5bcb0177ee2ab428f}\label{classlbann_1_1generic__input__layer_a9dfe8b9afaebc7a5bcb0177ee2ab428f}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!io\+\_\+buffer@{io\+\_\+buffer}}
+\index{io\+\_\+buffer@{io\+\_\+buffer}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{io\+\_\+buffer}{io\_buffer}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1generic__io__buffer}{generic\+\_\+io\+\_\+buffer}$\ast$ lbann\+::generic\+\_\+input\+\_\+layer\+::io\+\_\+buffer}
+
+
+
+Definition at line 42 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}\label{classlbann_1_1generic__input__layer_a6bc18860c02beed0252ea3cc87bc48d2}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!m\+\_\+data\+\_\+readers@{m\+\_\+data\+\_\+readers}}
+\index{m\+\_\+data\+\_\+readers@{m\+\_\+data\+\_\+readers}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{m\+\_\+data\+\_\+readers}{m\_data\_readers}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1generic__input__layer_a6c3b901ea25ff3bba052cb3e14df4f83}{data\+\_\+reader\+\_\+map\+\_\+t} lbann\+::generic\+\_\+input\+\_\+layer\+::m\+\_\+data\+\_\+readers\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 726 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a66b9ec6b393695232bd98edc62fc1348}\label{classlbann_1_1generic__input__layer_a66b9ec6b393695232bd98edc62fc1348}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!m\+\_\+testing\+\_\+dataset@{m\+\_\+testing\+\_\+dataset}}
+\index{m\+\_\+testing\+\_\+dataset@{m\+\_\+testing\+\_\+dataset}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{m\+\_\+testing\+\_\+dataset}{m\_testing\_dataset}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1dataset}{dataset} lbann\+::generic\+\_\+input\+\_\+layer\+::m\+\_\+testing\+\_\+dataset\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 722 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_a23716635b1062bfe57f7fcf75140a63a}\label{classlbann_1_1generic__input__layer_a23716635b1062bfe57f7fcf75140a63a}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!m\+\_\+training\+\_\+dataset@{m\+\_\+training\+\_\+dataset}}
+\index{m\+\_\+training\+\_\+dataset@{m\+\_\+training\+\_\+dataset}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{m\+\_\+training\+\_\+dataset}{m\_training\_dataset}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1dataset}{dataset} lbann\+::generic\+\_\+input\+\_\+layer\+::m\+\_\+training\+\_\+dataset\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 721 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1generic__input__layer_abd70adf607d1cef87fb6641af77e816d}\label{classlbann_1_1generic__input__layer_abd70adf607d1cef87fb6641af77e816d}} 
+\index{lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}!m\+\_\+validation\+\_\+dataset@{m\+\_\+validation\+\_\+dataset}}
+\index{m\+\_\+validation\+\_\+dataset@{m\+\_\+validation\+\_\+dataset}!lbann\+::generic\+\_\+input\+\_\+layer@{lbann\+::generic\+\_\+input\+\_\+layer}}
+\subsubsection{\texorpdfstring{m\+\_\+validation\+\_\+dataset}{m\_validation\_dataset}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1dataset}{dataset} lbann\+::generic\+\_\+input\+\_\+layer\+::m\+\_\+validation\+\_\+dataset\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 723 of file generic\+\_\+input\+\_\+layer.\+hpp.
+
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/layers/io/input/\hyperlink{generic__input__layer_8hpp}{generic\+\_\+input\+\_\+layer.\+hpp}\end{DoxyCompactItemize}

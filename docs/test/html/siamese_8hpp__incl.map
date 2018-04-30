@@ -1,0 +1,24 @@
+<map id="/Users/mckinney27/doxy&#45;testbed/lbann/include/lbann/models/siamese.hpp" name="/Users/mckinney27/doxy&#45;testbed/lbann/include/lbann/models/siamese.hpp">
+<area shape="rect" id="node2" href="$directed__acyclic__graph_8hpp.html" title="lbann/models/directed\l_acyclic_graph.hpp" alt="" coords="353,105,505,144"/>
+<area shape="rect" id="node3" href="$model_8hpp.html" title="lbann/models/model.hpp" alt="" coords="969,192,1135,217"/>
+<area shape="rect" id="node17" href="$layer_8hpp.html" title="lbann/layers/layer.hpp" alt="" coords="870,439,1021,464"/>
+<area shape="rect" id="node4" href="$base_8hpp.html" title="lbann/base.hpp" alt="" coords="1484,965,1596,991"/>
+<area shape="rect" id="node13" href="$comm_8hpp.html" title="lbann/comm.hpp" alt="" coords="589,892,709,917"/>
+<area shape="rect" id="node18" href="$summary_8hpp.html" title="lbann/utils/summary.hpp" alt="" coords="346,819,510,844"/>
+<area shape="rect" id="node20" href="$optimizer_8hpp.html" title="lbann/optimizers/optimizer.hpp" alt="" coords="614,512,815,537"/>
+<area shape="rect" id="node28" href="$weights_8hpp.html" title="lbann/weights/weights.hpp" alt="" coords="1043,592,1221,617"/>
+<area shape="rect" id="node30" href="$persist_8hpp.html" title="lbann/io/persist.hpp" alt="" coords="1766,672,1903,697"/>
+<area shape="rect" id="node35" href="$graph_8hpp.html" title="lbann/utils/graph.hpp" alt="" coords="1282,819,1427,844"/>
+<area shape="rect" id="node37" href="$file__io_8hpp.html" title="lbann/io/file_io.hpp" alt="" coords="1140,272,1273,297"/>
+<area shape="rect" id="node41" href="$objective__function_8hpp.html" title="lbann/objective_functions\l/objective_function.hpp" alt="" coords="1417,265,1588,304"/>
+<area shape="rect" id="node43" href="$metric_8hpp.html" title="lbann/metrics/metric.hpp" alt="" coords="1641,592,1807,617"/>
+<area shape="rect" id="node6" href="$Elemental__extensions_8hpp.html" title="lbann/Elemental_extensions.hpp" alt="" coords="1593,1039,1807,1064"/>
+<area shape="rect" id="node7" href="$cyg__profile_8hpp.html" title="lbann/utils/cyg_profile.hpp" alt="" coords="1247,1039,1422,1064"/>
+<area shape="rect" id="node22" href="$exception_8hpp.html" title="lbann/utils/exception.hpp" alt="" coords="1040,819,1208,844"/>
+<area shape="rect" id="node27" href="$cudnn__wrapper_8hpp.html" title="lbann/utils/cudnn_wrapper.hpp" alt="" coords="788,745,990,771"/>
+<area shape="rect" id="node33" href="$timer_8hpp.html" title="lbann/utils/timer.hpp" alt="" coords="1226,512,1366,537"/>
+<area shape="rect" id="node21" href="$compiler__control_8hpp.html" title="lbann/utils/compiler\l_control.hpp" alt="" coords="579,585,714,624"/>
+<area shape="rect" id="node23" href="$stack__trace_8hpp.html" title="lbann/utils/stack_trace.hpp" alt="" coords="733,892,912,917"/>
+<area shape="rect" id="node29" href="$initializer_8hpp.html" title="lbann/weights/initializer.hpp" alt="" coords="1040,672,1224,697"/>
+<area shape="rect" id="node42" href="$objective__function__term_8hpp.html" title="lbann/objective_functions\l/objective_function_term.hpp" alt="" coords="1407,352,1599,391"/>
+</map>

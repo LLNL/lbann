@@ -1,0 +1,306 @@
+\hypertarget{classlbann_1_1lbann__callback__dump__minibatch__sample__indices}{}\section{lbann\+:\+:lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices Class Reference}
+\label{classlbann_1_1lbann__callback__dump__minibatch__sample__indices}\index{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices}}
+
+
+{\ttfamily \#include $<$callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=213pt]{classlbann_1_1lbann__callback__dump__minibatch__sample__indices__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=215pt]{classlbann_1_1lbann__callback__dump__minibatch__sample__indices__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_a32e575722f9ad6f5a48a3fad20282075}{lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices} (std\+::string basename, int batch\+\_\+interval=1)
+\item 
+\hyperlink{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_a11251f7788b1f167143e98647c93d80c}{lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices} (const \hyperlink{classlbann_1_1lbann__callback__dump__minibatch__sample__indices}{lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__dump__minibatch__sample__indices}{lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices} \& \hyperlink{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_aa1db9d6cef232a868110d72e4bc2477a}{operator=} (const \hyperlink{classlbann_1_1lbann__callback__dump__minibatch__sample__indices}{lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__dump__minibatch__sample__indices}{lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices} $\ast$ \hyperlink{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_a6847ea742037dbe5f4ee6d2b4b4307a4}{copy} () const override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_ac1a1359c0016eb0bcbdb767fc57e9154}{on\+\_\+forward\+\_\+prop\+\_\+end} (\hyperlink{classlbann_1_1model}{model} $\ast$m, \hyperlink{classlbann_1_1Layer}{Layer} $\ast$l) override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_acb641b979a37cc703994103a4e8428a5}{on\+\_\+evaluate\+\_\+forward\+\_\+prop\+\_\+end} (\hyperlink{classlbann_1_1model}{model} $\ast$m, \hyperlink{classlbann_1_1Layer}{Layer} $\ast$l) override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_a34d4564309168b3ab0b2e3092e2f9355}{dump\+\_\+to\+\_\+file} (\hyperlink{classlbann_1_1model}{model} $\ast$m, \hyperlink{classlbann_1_1Layer}{Layer} $\ast$l, int64\+\_\+t step)
+\item 
+std\+::string \hyperlink{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_a8d2174d894176a7ab5324f5d7e6faad2}{name} () const override
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+std\+::string \hyperlink{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_a75ef9a964cb1e1281e4721beef14c265}{m\+\_\+basename}
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+Dump sample indices for each minibatch to files. This will dump the list of indices from the training / validation / testing data that was processed Note this dumps vectors during each mini-\/batch. This will be slow and produce a lot of output. 
+
+Definition at line 46 of file callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_a32e575722f9ad6f5a48a3fad20282075}\label{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_a32e575722f9ad6f5a48a3fad20282075}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices}!lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices@{lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices}}
+\index{lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices@{lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices}!lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices()}{lbann\_callback\_dump\_minibatch\_sample\_indices()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices (\begin{DoxyParamCaption}\item[{std\+::string}]{basename,  }\item[{int}]{batch\+\_\+interval = {\ttfamily 1} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+\begin{DoxyParams}{Parameters}
+{\em basename} & The basename for writing files. \\
+\hline
+\end{DoxyParams}
+
+
+Definition at line 54 of file callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices.\+hpp.
+
+
+\begin{DoxyCode}
+54                                                                                            :
+55     \hyperlink{classlbann_1_1lbann__callback_a679057298a41ddd47f08c157f756c584}{lbann\_callback}(batch\_interval), \hyperlink{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_a75ef9a964cb1e1281e4721beef14c265}{m\_basename}(std::move(basename)) \{\}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_a32e575722f9ad6f5a48a3fad20282075_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_a32e575722f9ad6f5a48a3fad20282075_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_a11251f7788b1f167143e98647c93d80c}\label{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_a11251f7788b1f167143e98647c93d80c}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices}!lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices@{lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices}}
+\index{lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices@{lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices}!lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices()}{lbann\_callback\_dump\_minibatch\_sample\_indices()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__dump__minibatch__sample__indices}{lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_a6847ea742037dbe5f4ee6d2b4b4307a4}\label{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_a6847ea742037dbe5f4ee6d2b4b4307a4}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices}!copy@{copy}}
+\index{copy@{copy}!lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__dump__minibatch__sample__indices}{lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices}$\ast$ lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a9f545d1269a8c7af335625d049691f26}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 60 of file callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices.\+hpp.
+
+
+\begin{DoxyCode}
+60                                                                       \{
+61     \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_a32e575722f9ad6f5a48a3fad20282075}{lbann\_callback\_dump\_minibatch\_sample\_indices}(*\textcolor{keyword}{
+      this});
+62   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_a6847ea742037dbe5f4ee6d2b4b4307a4_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_a34d4564309168b3ab0b2e3092e2f9355}\label{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_a34d4564309168b3ab0b2e3092e2f9355}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices}!dump\+\_\+to\+\_\+file@{dump\+\_\+to\+\_\+file}}
+\index{dump\+\_\+to\+\_\+file@{dump\+\_\+to\+\_\+file}!lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices}}
+\subsubsection{\texorpdfstring{dump\+\_\+to\+\_\+file()}{dump\_to\_file()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices\+::dump\+\_\+to\+\_\+file (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m,  }\item[{\hyperlink{classlbann_1_1Layer}{Layer} $\ast$}]{l,  }\item[{int64\+\_\+t}]{step }\end{DoxyParamCaption})}
+
+
+
+Definition at line 37 of file callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices.\+cpp.
+
+
+\begin{DoxyCode}
+37                                                                                                 \{
+38   \textcolor{comment}{// Print minibatch sample indices of input layers}
+39   \textcolor{keyword}{auto} *input = \textcolor{keyword}{dynamic\_cast<}generic\_input\_layer*\textcolor{keyword}{>}(l);
+40   \textcolor{keywordflow}{if} (input != \textcolor{keyword}{nullptr}) \{
+41     El::Matrix<El::Int>* indices = l->get\_sample\_indices\_per\_mb();
+42     \textcolor{keywordflow}{if} (indices == \textcolor{keyword}{nullptr}
+43         || indices->Height() == 0
+44         || indices->Width() == 0) \{
+45       \textcolor{keywordflow}{return};
+46     \}
+47     \textcolor{keyword}{const} std::string file
+48       = (\hyperlink{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_a75ef9a964cb1e1281e4721beef14c265}{m\_basename}
+49          + \hyperlink{base_8hpp_adeeaddd10bd31df0cae7cb0fcae45d5c}{\_to\_string}(m->get\_execution\_mode())
+50          + \textcolor{stringliteral}{"-model"} + std::to\_string(m->get\_comm()->get\_model\_rank())
+51          + \textcolor{stringliteral}{"-rank"} + std::to\_string(m->get\_comm()->get\_rank\_in\_model())
+52          + \textcolor{stringliteral}{"-epoch"} + std::to\_string(m->get\_cur\_epoch())
+53          + \textcolor{stringliteral}{"-step"} + std::to\_string(m->get\_cur\_step())
+54          + \textcolor{stringliteral}{"-"} + l->get\_name()
+55          + \textcolor{stringliteral}{"-MB\_Sample\_Indices"});
+56     El::Write(*indices, file, El::ASCII);
+57   \}
+58 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_a34d4564309168b3ab0b2e3092e2f9355_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_a34d4564309168b3ab0b2e3092e2f9355_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_a8d2174d894176a7ab5324f5d7e6faad2}\label{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_a8d2174d894176a7ab5324f5d7e6faad2}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices}!name@{name}}
+\index{name@{name}!lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices}}
+\subsubsection{\texorpdfstring{name()}{name()}}
+{\footnotesize\ttfamily std\+::string lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices\+::name (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Return this callback\textquotesingle{}s name. 
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a7522c7a14f1d6a1ea762cc2d7248eb3a}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 68 of file callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices.\+hpp.
+
+
+\begin{DoxyCode}
+68 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"dump minibatch sample indices"}; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_acb641b979a37cc703994103a4e8428a5}\label{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_acb641b979a37cc703994103a4e8428a5}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices}!on\+\_\+evaluate\+\_\+forward\+\_\+prop\+\_\+end@{on\+\_\+evaluate\+\_\+forward\+\_\+prop\+\_\+end}}
+\index{on\+\_\+evaluate\+\_\+forward\+\_\+prop\+\_\+end@{on\+\_\+evaluate\+\_\+forward\+\_\+prop\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices}}
+\subsubsection{\texorpdfstring{on\+\_\+evaluate\+\_\+forward\+\_\+prop\+\_\+end()}{on\_evaluate\_forward\_prop\_end()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices\+::on\+\_\+evaluate\+\_\+forward\+\_\+prop\+\_\+end (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m,  }\item[{\hyperlink{classlbann_1_1Layer}{Layer} $\ast$}]{l }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Called when a layer ends forward propagation for evaluation (validation / testing). 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_ae23c5a61b81dbdfbd79736ac2b6035aa}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 64 of file callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices.\+cpp.
+
+
+\begin{DoxyCode}
+64                                                                                                   \{
+65   \textcolor{keywordflow}{switch}(m->get\_execution\_mode()) \{
+66   \textcolor{keywordflow}{case} \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation}:
+67     \hyperlink{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_a34d4564309168b3ab0b2e3092e2f9355}{dump\_to\_file}(m, l, m->get\_cur\_validation\_step());
+68     \textcolor{keywordflow}{break};
+69   \textcolor{keywordflow}{case} \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing}:
+70     \hyperlink{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_a34d4564309168b3ab0b2e3092e2f9355}{dump\_to\_file}(m, l, m->get\_cur\_testing\_step());
+71     \textcolor{keywordflow}{break};
+72   \textcolor{keywordflow}{default}:
+73     \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"lbann\_callback\_dump\_minibatch\_sample\_indices: invalid execution phase"});
+74   \}
+75 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_acb641b979a37cc703994103a4e8428a5_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_acb641b979a37cc703994103a4e8428a5_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_ac1a1359c0016eb0bcbdb767fc57e9154}\label{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_ac1a1359c0016eb0bcbdb767fc57e9154}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices}!on\+\_\+forward\+\_\+prop\+\_\+end@{on\+\_\+forward\+\_\+prop\+\_\+end}}
+\index{on\+\_\+forward\+\_\+prop\+\_\+end@{on\+\_\+forward\+\_\+prop\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices}}
+\subsubsection{\texorpdfstring{on\+\_\+forward\+\_\+prop\+\_\+end()}{on\_forward\_prop\_end()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices\+::on\+\_\+forward\+\_\+prop\+\_\+end (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m,  }\item[{\hyperlink{classlbann_1_1Layer}{Layer} $\ast$}]{l }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Called when a layer ends forward propagation. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_a5eff0a59fbce98a981d9cdd0547a3ad5}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 60 of file callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices.\+cpp.
+
+
+\begin{DoxyCode}
+60                                                                                          \{
+61   \hyperlink{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_a34d4564309168b3ab0b2e3092e2f9355}{dump\_to\_file}(m, l, m->get\_cur\_step());
+62 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_ac1a1359c0016eb0bcbdb767fc57e9154_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_ac1a1359c0016eb0bcbdb767fc57e9154_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_aa1db9d6cef232a868110d72e4bc2477a}\label{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_aa1db9d6cef232a868110d72e4bc2477a}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__dump__minibatch__sample__indices}{lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices}\& lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__dump__minibatch__sample__indices}{lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_aa1db9d6cef232a868110d72e4bc2477a_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_a75ef9a964cb1e1281e4721beef14c265}\label{classlbann_1_1lbann__callback__dump__minibatch__sample__indices_a75ef9a964cb1e1281e4721beef14c265}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices}!m\+\_\+basename@{m\+\_\+basename}}
+\index{m\+\_\+basename@{m\+\_\+basename}!lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices}}
+\subsubsection{\texorpdfstring{m\+\_\+basename}{m\_basename}}
+{\footnotesize\ttfamily std\+::string lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices\+::m\+\_\+basename\hspace{0.3cm}{\ttfamily [private]}}
+
+Basename for writing files. 
+
+Definition at line 71 of file callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/callbacks/\hyperlink{callback__dump__minibatch__sample__indices_8hpp}{callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/callbacks/\hyperlink{callback__dump__minibatch__sample__indices_8cpp}{callback\+\_\+dump\+\_\+minibatch\+\_\+sample\+\_\+indices.\+cpp}\end{DoxyCompactItemize}

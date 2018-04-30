@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="namespaceanonymous__namespace_02image__preprocessor_8cpp_03" kind="namespace" language="C++">
+    <compoundname>anonymous_namespace{image_preprocessor.cpp}</compoundname>
+      <sectiondef kind="var">
+      <memberdef kind="variable" id="namespaceanonymous__namespace_02image__preprocessor_8cpp_03_1a9624405339d16214b745f28f39979c6d" prot="public" static="no" mutable="no">
+        <type>const float</type>
+        <definition>const float anonymous_namespace{image_preprocessor.cpp}::pi</definition>
+        <argsstring></argsstring>
+        <name>pi</name>
+        <initializer>= std::acos(-1)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/image_preprocessor.cpp" line="36" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/image_preprocessor.cpp" bodystart="36" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1lbann__image__preprocessor_1a27cb5182c4f764cbfa4edecbb78ef29d" compoundref="image__preprocessor_8cpp" startline="55" endline="131">lbann::lbann_image_preprocessor::augment</referencedby>
+        <referencedby refid="init__image__data__readers_8cpp_1a12164f699122209432c4f8ae7505683d" compoundref="init__image__data__readers_8cpp" startline="37" endline="260">init_image_preprocessor</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/image_preprocessor.cpp" line="35" column="1"/>
+  </compounddef>
+</doxygen>

@@ -1,0 +1,44 @@
+<map id="lbann::pilot2_molecular_reader::load" name="lbann::pilot2_molecular_reader::load">
+<area shape="rect" id="node2" href="$classlbann_1_1lbann__comm.html#a789453454468a3b70de768537c50ca52" title="lbann::lbann_comm::\lget_rank_in_model" alt="" coords="237,117,382,156"/>
+<area shape="rect" id="node3" href="$classoptions.html#a9ecfe9c365269df68a41b961c31ae3f5" title="returns a pointer to the Options singleton " alt="" coords="265,180,355,205"/>
+<area shape="rect" id="node12" href="$classoptions.html#aafb1d2a7ccde0b1bf786230ba4080ecd" title="options::has_bool" alt="" coords="480,229,606,255"/>
+<area shape="rect" id="node15" href="$classoptions.html#a99aa190102de33e2aed39723929f9fad" title="options::get_bool" alt="" coords="248,421,371,447"/>
+<area shape="rect" id="node16" href="$classlbann_1_1generic__data__reader.html#a92982e1b399f37e2ead5aa440883cba5" title="lbann::generic_data\l_reader::get_role" alt="" coords="241,519,379,557"/>
+<area shape="rect" id="node35" href="$classlbann_1_1generic__data__reader.html#ac4fc0729e7f1240e167fe897df99f950" title="support of data store functionality " alt="" coords="212,784,408,823"/>
+<area shape="rect" id="node36" href="$classlbann_1_1generic__data__reader.html#ab4c6c2d4ba40ece809ce896828c8ff03" title="lbann::generic_data\l_reader::get_file_dir" alt="" coords="240,847,380,885"/>
+<area shape="rect" id="node37" href="$classlbann_1_1generic__data__reader.html#a56664e1b43f3fe923cf6d652f14b40a9" title="lbann::generic_data\l_reader::get_data_filename" alt="" coords="218,909,402,948"/>
+<area shape="rect" id="node38" href="$classlbann_1_1lbann__comm.html#acc06dd4de92e45030d6fbe5984ae58d1" title="lbann::lbann_comm::\lget_model_comm" alt="" coords="237,972,382,1011"/>
+<area shape="rect" id="node39" href="$classlbann_1_1generic__data__reader.html#aa28fdeeb6af492540f507e49adff5d6c" title="lbann::generic_data\l_reader::select_subset\l_of_data" alt="" coords="232,708,388,760"/>
+<area shape="rect" id="node4" href="$classoptions.html#a6d909eacd89dee5f0b153430985f9822" title="options::init" alt="" coords="499,81,587,107"/>
+<area shape="rect" id="node8" href="$classoptions.html#a6fd8a97883eaecb722e5c6b120d8f9be" title="prints all registered options to &#39;out&#39; " alt="" coords="494,32,592,57"/>
+<area shape="rect" id="node9" href="$classoptions.html#a01020aa5bd82bcff1b1c950b20578883" title="options::has_int" alt="" coords="486,180,600,205"/>
+<area shape="rect" id="node13" href="$classoptions.html#a5db5b27267c27ffe1b029948f64e54c1" title="options::has_string" alt="" coords="476,131,610,156"/>
+<area shape="rect" id="node5" href="$options_8cpp.html#a18f37a1b6f36c00656e52d130c2132d2" title="m_parse_opt" alt="" coords="942,55,1042,80"/>
+<area shape="rect" id="node6" href="$classoptions.html#abeab2c3e2cf5c1809e09601a3835d967" title="options::m_parse_file" alt="" coords="696,5,844,31"/>
+<area shape="rect" id="node7" href="$classoptions.html#a441540f2a8990edaa17fe95b013f9168" title="options::m_parse_cmd_line" alt="" coords="678,55,862,80"/>
+<area shape="rect" id="node10" href="$classoptions.html#ad9b4461e633b73acc2fde7752ef60d41" title="options::m_test_int" alt="" coords="704,205,837,231"/>
+<area shape="rect" id="node11" href="$classoptions.html#a99183ba43c8d7b35dbfa1bea0f43db48" title="options::m_has_opt" alt="" coords="923,181,1061,207"/>
+<area shape="rect" id="node14" href="$classoptions.html#a8286a8617eec86a3d4cf678bd17739ba" title="options::m_test_string" alt="" coords="694,156,846,181"/>
+<area shape="rect" id="node17" href="$classlbann_1_1generic__data__reader.html#afeb47703d988a230a59859cbfc178215" title="lbann::generic_data\l_reader::load" alt="" coords="474,456,612,495"/>
+<area shape="rect" id="node18" href="$classlbann_1_1generic__data__reader.html#a879bb7dcb57a0aa1ef9c5039f5b0efda" title="lbann::generic_data\l_reader::setup" alt="" coords="474,723,612,761"/>
+<area shape="rect" id="node22" href="$classlbann_1_1generic__data__reader.html#abeb849fb8e10b4fa317c90bc33f61758" title="lbann::generic_data\l_reader::get_type" alt="" coords="474,393,612,432"/>
+<area shape="rect" id="node23" href="$classlbann_1_1generic__data__reader.html#a46b658ba4f6b746632b683568ab76f77" title="Fetch this mini&#45;batch&#39;s samples into X. " alt="" coords="474,581,612,620"/>
+<area shape="rect" id="node31" href="$classlbann_1_1generic__data__reader.html#a7e624f92e38b0ee4224a6afaaf2acbdb" title="Fetch this mini&#45;batch&#39;s labels into Y. " alt="" coords="470,331,616,369"/>
+<area shape="rect" id="node33" href="$classlbann_1_1generic__data__reader.html#aeaa97d3683add33d1c6d69a769dd6a20" title="Fetch this mini&#45;batch&#39;s responses into Y. " alt="" coords="457,519,629,557"/>
+<area shape="rect" id="node19" href="$classlbann_1_1generic__data__reader.html#ac6d4a5ba1d4e1134620cddcac343bf59" title="Set the current position based on the base and model offsets. " alt="" coords="701,796,840,848"/>
+<area shape="rect" id="node20" href="$classlbann_1_1generic__data__reader.html#af1aaa4d1a693974c1b1f1318b6ed60b8" title="Shuffle indices. " alt="" coords="910,867,1073,905"/>
+<area shape="rect" id="node21" href="$namespacelbann.html#aba9d11cb3a739cd84e7234ceeb32d098" title="lbann::get_data_seq\l_generator" alt="" coords="1121,867,1264,905"/>
+<area shape="rect" id="node24" href="$classlbann_1_1generic__data__reader.html#a2b10538440d784f0f12582a5407acef2" title="True if the data reader&#39;s current position is valid. " alt="" coords="693,456,848,495"/>
+<area shape="rect" id="node25" href="$classlbann_1_1generic__data__reader.html#ad613f95666b973d8da77773fb34c9b66" title="lbann::generic_data\l_reader::preprocess\l_data_source" alt="" coords="700,644,841,696"/>
+<area shape="rect" id="node26" href="$classlbann_1_1generic__data__reader.html#a850e99110dd1e9df2985f09ea196fea8" title="Get the loaded mini&#45;batch size. " alt="" coords="700,317,841,369"/>
+<area shape="rect" id="node27" href="$classlbann_1_1generic__data__reader.html#a0a3cd87ed4a7057df185e0087f2d21c1" title="lbann::generic_data\l_reader::fetch_datum" alt="" coords="696,581,844,620"/>
+<area shape="rect" id="node28" href="$namespacelbann.html#aedccb3bf2d674ccb5573ab9960720731" title="lbann::lbann_report\l_exception" alt="" coords="702,519,838,557"/>
+<area shape="rect" id="node30" href="$classlbann_1_1generic__data__reader.html#a7bbf74725a96235dc1cd20ff440a69bd" title="lbann::generic_data\l_reader::postprocess\l_data_source" alt="" coords="697,720,844,772"/>
+<area shape="rect" id="node29" href="$classlbann_1_1lbann__exception.html#ad36592ddd0ff6a24f31ec6a31b83e920" title="lbann::lbann_exception\l::what" alt="" coords="913,519,1071,557"/>
+<area shape="rect" id="node32" href="$classlbann_1_1generic__data__reader.html#a03627408c1d1aa28691d31232fe1dce5" title="lbann::generic_data\l_reader::fetch_label" alt="" coords="701,255,840,293"/>
+<area shape="rect" id="node34" href="$classlbann_1_1generic__data__reader.html#abe544ea807eed477f3636010d199b574" title="lbann::generic_data\l_reader::fetch_response" alt="" coords="687,393,853,432"/>
+<area shape="rect" id="node40" href="$classlbann_1_1generic__data__reader.html#a1e8655cd1883d850566694bcf2ad60ab" title="lbann::generic_data\l_reader::get_absolute\l_sample_count" alt="" coords="468,1039,619,1091"/>
+<area shape="rect" id="node41" href="$classlbann_1_1generic__data__reader.html#a5853fa5e619b886699954aca6440dd8a" title="lbann::generic_data\l_reader::get_use_percent" alt="" coords="456,837,630,876"/>
+<area shape="rect" id="node42" href="$classlbann_1_1generic__data__reader.html#adcdb833aff7ce85b0879334b252f357a" title="Get the number of samples in this dataset. " alt="" coords="463,900,623,939"/>
+<area shape="rect" id="node43" href="$classlbann_1_1generic__data__reader.html#ab06058b5fa1d74239998358b02f73132" title="lbann::generic_data\l_reader::get_validation\l_percent" alt="" coords="465,963,622,1015"/>
+</map>

@@ -1,0 +1,9 @@
+<map id="lbann::model::get_effective_mini_batch_size" name="lbann::model::get_effective_mini_batch_size">
+<area shape="rect" id="node2" href="$classlbann_1_1base__convolution__layer.html#ae46e6a975c443792c606817878dc4446" title="lbann::base_convolution\l_layer::compute_gradients_cudnn" alt="" coords="234,5,456,44"/>
+<area shape="rect" id="node5" href="$classlbann_1_1base__convolution__layer.html#a8cb0b4fb33f058ce6c211ebaf6a17f63" title="lbann::base_convolution\l_layer::compute_gradients\l_im2col" alt="" coords="256,68,434,120"/>
+<area shape="rect" id="node6" href="$classlbann_1_1batch__normalization.html#a7d48ad1531825fc9745c77f9ae5f68d6" title="lbann::batch_normalization\l::bp_compute_gpu" alt="" coords="255,144,435,183"/>
+<area shape="rect" id="node8" href="$classlbann_1_1batch__normalization.html#a83e40edd001a0b71c31fbc9a3acb2231" title="lbann::batch_normalization\l::bp_compute_cpu" alt="" coords="255,207,435,245"/>
+<area shape="rect" id="node3" href="$classlbann_1_1convolution__layer.html#a610f24f98b548434cd4d22419f47c7f0" title="lbann::convolution\l_layer::bp_compute" alt="" coords="525,72,664,111"/>
+<area shape="rect" id="node4" href="$classlbann_1_1deconvolution__layer.html#a70649662ff27ddacf0f5584829022b72" title="lbann::deconvolution\l_layer::bp_compute" alt="" coords="523,8,666,47"/>
+<area shape="rect" id="node7" href="$classlbann_1_1batch__normalization.html#ad9aedd689cd8923d8c8e9c4e57a4e8b7" title="lbann::batch_normalization\l::bp_compute" alt="" coords="504,175,685,213"/>
+</map>

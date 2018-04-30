@@ -1,0 +1,2931 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="Elemental__extensions_8hpp" kind="file" language="C++">
+    <compoundname>Elemental_extensions.hpp</compoundname>
+    <includes local="yes">El.hpp</includes>
+    <includedby refid="Elemental__extensions_8cpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/src/Elemental_extensions.cpp</includedby>
+    <includedby refid="base_8hpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/include/lbann/base.hpp</includedby>
+    <incdepgraph>
+      <node id="5515">
+        <label>El.hpp</label>
+      </node>
+      <node id="5514">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/Elemental_extensions.hpp</label>
+        <link refid="Elemental__extensions_8hpp"/>
+        <childnode refid="5515" relation="include">
+        </childnode>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="5598">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/loss_functions/mean_absolute_deviation.cpp</label>
+        <link refid="objective__functions_2loss__functions_2mean__absolute__deviation_8cpp"/>
+      </node>
+      <node id="5530">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/proto/factories.hpp</label>
+        <link refid="factories_8hpp"/>
+        <childnode refid="5531" relation="include">
+        </childnode>
+        <childnode refid="5532" relation="include">
+        </childnode>
+        <childnode refid="5533" relation="include">
+        </childnode>
+        <childnode refid="5534" relation="include">
+        </childnode>
+        <childnode refid="5535" relation="include">
+        </childnode>
+        <childnode refid="5536" relation="include">
+        </childnode>
+        <childnode refid="5537" relation="include">
+        </childnode>
+        <childnode refid="5538" relation="include">
+        </childnode>
+        <childnode refid="5528" relation="include">
+        </childnode>
+      </node>
+      <node id="5661">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_imagenet_patches.cpp</label>
+        <link refid="data__store__imagenet__patches_8cpp"/>
+      </node>
+      <node id="5837">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_utils.hpp</label>
+        <link refid="image__utils_8hpp"/>
+        <childnode refid="5613" relation="include">
+        </childnode>
+        <childnode refid="5645" relation="include">
+        </childnode>
+        <childnode refid="5658" relation="include">
+        </childnode>
+        <childnode refid="5660" relation="include">
+        </childnode>
+        <childnode refid="5648" relation="include">
+        </childnode>
+        <childnode refid="5653" relation="include">
+        </childnode>
+        <childnode refid="5650" relation="include">
+        </childnode>
+        <childnode refid="5655" relation="include">
+        </childnode>
+        <childnode refid="5811" relation="include">
+        </childnode>
+        <childnode refid="5812" relation="include">
+        </childnode>
+      </node>
+      <node id="5831">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/cv_process.hpp</label>
+        <link refid="cv__process_8hpp"/>
+        <childnode refid="5808" relation="include">
+        </childnode>
+        <childnode refid="5832" relation="include">
+        </childnode>
+        <childnode refid="5834" relation="include">
+        </childnode>
+        <childnode refid="5640" relation="include">
+        </childnode>
+        <childnode refid="5644" relation="include">
+        </childnode>
+        <childnode refid="5649" relation="include">
+        </childnode>
+        <childnode refid="5652" relation="include">
+        </childnode>
+        <childnode refid="5654" relation="include">
+        </childnode>
+      </node>
+      <node id="5573">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_io.cpp</label>
+        <link refid="callback__io_8cpp"/>
+      </node>
+      <node id="5744">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/transform/pooling.hpp</label>
+        <link refid="pooling_8hpp"/>
+        <childnode refid="5745" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5702">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_merge_samples.hpp</label>
+        <link refid="data__store__merge__samples_8hpp"/>
+        <childnode refid="5636" relation="include">
+        </childnode>
+        <childnode refid="5637" relation="include">
+        </childnode>
+      </node>
+      <node id="5548">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_checkpoint.hpp</label>
+        <link refid="callback__checkpoint_8hpp"/>
+        <childnode refid="5549" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5802">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/weights/fan_in_fan_out_initializers.hpp</label>
+        <link refid="fan__in__fan__out__initializers_8hpp"/>
+        <childnode refid="5803" relation="include">
+        </childnode>
+        <childnode refid="5725" relation="include">
+        </childnode>
+        <childnode refid="5723" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5820">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/utils/cnpy_utils.cpp</label>
+        <link refid="cnpy__utils_8cpp"/>
+      </node>
+      <node id="5656">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_triplet.cpp</label>
+        <link refid="data__store__triplet_8cpp"/>
+      </node>
+      <node id="5655">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_triplet.cpp</label>
+        <link refid="data__reader__triplet_8cpp"/>
+      </node>
+      <node id="5715">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/activations/selu.hpp</label>
+        <link refid="selu_8hpp"/>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5827">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/summary.hpp</label>
+        <link refid="summary_8hpp"/>
+        <childnode refid="5828" relation="include">
+        </childnode>
+        <childnode refid="5521" relation="include">
+        </childnode>
+        <childnode refid="5616" relation="include">
+        </childnode>
+        <childnode refid="5704" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+        <childnode refid="5757" relation="include">
+        </childnode>
+      </node>
+      <node id="5577">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_variable_minibatch.cpp</label>
+        <link refid="callback__variable__minibatch_8cpp"/>
+      </node>
+      <node id="5607">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_io.hpp</label>
+        <link refid="callback__io_8hpp"/>
+        <childnode refid="5573" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5818">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/cnpy_utils.hpp</label>
+        <link refid="cnpy__utils_8hpp"/>
+        <childnode refid="5670" relation="include">
+        </childnode>
+        <childnode refid="5819" relation="include">
+        </childnode>
+        <childnode refid="5820" relation="include">
+        </childnode>
+      </node>
+      <node id="5822">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/quantizer.hpp</label>
+        <link refid="quantizer_8hpp"/>
+        <childnode refid="5823" relation="include">
+        </childnode>
+        <childnode refid="5569" relation="include">
+        </childnode>
+      </node>
+      <node id="5788">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adagrad.hpp</label>
+        <link refid="adagrad_8hpp"/>
+        <childnode refid="5789" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5714">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/activations/relu.hpp</label>
+        <link refid="relu_8hpp"/>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5710">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/activations/exponential.hpp</label>
+        <link refid="exponential_8hpp"/>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5596">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/loss_functions/geom_negloglike.cpp</label>
+        <link refid="geom__negloglike_8cpp"/>
+      </node>
+      <node id="5618">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_timeline.hpp</label>
+        <link refid="callback__timeline_8hpp"/>
+        <childnode refid="5619" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5597">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/mean_absolute_deviation.hpp</label>
+        <link refid="objective__functions_2loss__functions_2mean__absolute__deviation_8hpp"/>
+        <childnode refid="5598" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5561">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_dump_minibatch_sample_indices.cpp</label>
+        <link refid="callback__dump__minibatch__sample__indices_8cpp"/>
+      </node>
+      <node id="5606">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/loss_functions/polya_negloglike.cpp</label>
+        <link refid="polya__negloglike_8cpp"/>
+      </node>
+      <node id="5760">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/weight_regularization/l1.cpp</label>
+        <link refid="l1_8cpp"/>
+      </node>
+      <node id="5550">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_checksmall.hpp</label>
+        <link refid="callback__checksmall_8hpp"/>
+        <childnode refid="5551" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5654">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_triplet.hpp</label>
+        <link refid="data__reader__triplet_8hpp"/>
+        <childnode refid="5655" relation="include">
+        </childnode>
+        <childnode refid="5656" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5836">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/image_preprocessor.hpp</label>
+        <link refid="image__preprocessor_8hpp"/>
+        <childnode refid="5811" relation="include">
+        </childnode>
+        <childnode refid="5627" relation="include">
+        </childnode>
+        <childnode refid="5640" relation="include">
+        </childnode>
+        <childnode refid="5664" relation="include">
+        </childnode>
+        <childnode refid="5657" relation="include">
+        </childnode>
+        <childnode refid="5662" relation="include">
+        </childnode>
+        <childnode refid="5680" relation="include">
+        </childnode>
+      </node>
+      <node id="5766">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/weight_regularization/l1.hpp</label>
+        <link refid="l1_8hpp"/>
+        <childnode refid="5760" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5821">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/glob.hpp</label>
+        <link refid="glob_8hpp"/>
+        <childnode refid="5672" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5799">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/utils/cudnn_wrapper.cpp</label>
+        <link refid="cudnn__wrapper_8cpp"/>
+      </node>
+      <node id="5803">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/weights/fan_in_fan_out_initializers.cpp</label>
+        <link refid="fan__in__fan__out__initializers_8cpp"/>
+      </node>
+      <node id="5736">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/transform/concatenation.hpp</label>
+        <link refid="concatenation_8hpp"/>
+        <childnode refid="5574" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5694">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/generic_data_store.hpp</label>
+        <link refid="generic__data__store_8hpp"/>
+        <childnode refid="5628" relation="include">
+        </childnode>
+        <childnode refid="5630" relation="include">
+        </childnode>
+        <childnode refid="5695" relation="include">
+        </childnode>
+        <childnode refid="5696" relation="include">
+        </childnode>
+        <childnode refid="5701" relation="include">
+        </childnode>
+        <childnode refid="5702" relation="include">
+        </childnode>
+        <childnode refid="5703" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5587">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/loss_function.hpp</label>
+        <link refid="loss__function_8hpp"/>
+        <childnode refid="5583" relation="include">
+        </childnode>
+        <childnode refid="5588" relation="include">
+        </childnode>
+        <childnode refid="5589" relation="include">
+        </childnode>
+        <childnode refid="5591" relation="include">
+        </childnode>
+        <childnode refid="5593" relation="include">
+        </childnode>
+        <childnode refid="5595" relation="include">
+        </childnode>
+        <childnode refid="5597" relation="include">
+        </childnode>
+        <childnode refid="5599" relation="include">
+        </childnode>
+        <childnode refid="5601" relation="include">
+        </childnode>
+        <childnode refid="5603" relation="include">
+        </childnode>
+        <childnode refid="5605" relation="include">
+        </childnode>
+      </node>
+      <node id="5747">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/transform/reshape.hpp</label>
+        <link refid="reshape_8hpp"/>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5535">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/model_factory.cpp</label>
+        <link refid="model__factory_8cpp"/>
+      </node>
+      <node id="5838">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/persist.hpp</label>
+        <link refid="persist_8hpp"/>
+        <childnode refid="5813" relation="include">
+        </childnode>
+        <childnode refid="5705" relation="include">
+        </childnode>
+        <childnode refid="5522" relation="include">
+        </childnode>
+        <childnode refid="5548" relation="include">
+        </childnode>
+        <childnode refid="5627" relation="include">
+        </childnode>
+        <childnode refid="5688" relation="include">
+        </childnode>
+        <childnode refid="5704" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+        <childnode refid="5768" relation="include">
+        </childnode>
+        <childnode refid="5757" relation="include">
+        </childnode>
+        <childnode refid="5690" relation="include">
+        </childnode>
+        <childnode refid="5824" relation="include">
+        </childnode>
+        <childnode refid="5804" relation="include">
+        </childnode>
+      </node>
+      <node id="5705">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/layers/layer.cpp</label>
+        <link refid="layer_8cpp"/>
+      </node>
+      <node id="5697">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_imagenet.hpp</label>
+        <link refid="data__store__imagenet_8hpp"/>
+        <childnode refid="5645" relation="include">
+        </childnode>
+        <childnode refid="5646" relation="include">
+        </childnode>
+        <childnode refid="5698" relation="include">
+        </childnode>
+        <childnode refid="5699" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5592">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/loss_functions/cross_entropy.cpp</label>
+        <link refid="cross__entropy_8cpp"/>
+      </node>
+      <node id="5784">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/metrics/top_k_categorical_accuracy.cpp</label>
+        <link refid="top__k__categorical__accuracy_8cpp"/>
+      </node>
+      <node id="5624">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/callbacks/profiler.cpp</label>
+        <link refid="profiler_8cpp"/>
+      </node>
+      <node id="5767">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/weight_regularization/l2.hpp</label>
+        <link refid="l2_8hpp"/>
+        <childnode refid="5761" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5665">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_csv.cpp</label>
+        <link refid="data__reader__csv_8cpp"/>
+      </node>
+      <node id="5581">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/metrics/pearson_correlation.cpp</label>
+        <link refid="pearson__correlation_8cpp"/>
+      </node>
+      <node id="5711">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/activations/identity.hpp</label>
+        <link refid="identity_8hpp"/>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5699">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_multi_images.hpp</label>
+        <link refid="data__store__multi__images_8hpp"/>
+        <childnode refid="5653" relation="include">
+        </childnode>
+        <childnode refid="5650" relation="include">
+        </childnode>
+        <childnode refid="5651" relation="include">
+        </childnode>
+        <childnode refid="5700" relation="include">
+        </childnode>
+      </node>
+      <node id="5779">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/metrics/mean_squared_error.cpp</label>
+        <link refid="metrics_2mean__squared__error_8cpp"/>
+      </node>
+      <node id="5611">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_print.hpp</label>
+        <link refid="callback__print_8hpp"/>
+        <childnode refid="5576" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5546">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_checknan.hpp</label>
+        <link refid="callback__checknan_8hpp"/>
+        <childnode refid="5547" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5527">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/params.cpp</label>
+        <link refid="params_8cpp"/>
+      </node>
+      <node id="5681">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/lbann_data_generator.cpp</label>
+        <link refid="lbann__data__generator_8cpp"/>
+      </node>
+      <node id="5545">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_check_reconstruction_error.cpp</label>
+        <link refid="callback__check__reconstruction__error_8cpp"/>
+      </node>
+      <node id="5518">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/base.hpp</label>
+        <link refid="base_8hpp"/>
+        <childnode refid="5519" relation="include">
+        </childnode>
+        <childnode refid="5520" relation="include">
+        </childnode>
+        <childnode refid="5521" relation="include">
+        </childnode>
+        <childnode refid="5625" relation="include">
+        </childnode>
+        <childnode refid="5627" relation="include">
+        </childnode>
+        <childnode refid="5829" relation="include">
+        </childnode>
+        <childnode refid="5835" relation="include">
+        </childnode>
+        <childnode refid="5836" relation="include">
+        </childnode>
+        <childnode refid="5669" relation="include">
+        </childnode>
+        <childnode refid="5837" relation="include">
+        </childnode>
+        <childnode refid="5694" relation="include">
+        </childnode>
+        <childnode refid="5682" relation="include">
+        </childnode>
+        <childnode refid="5838" relation="include">
+        </childnode>
+        <childnode refid="5704" relation="include">
+        </childnode>
+        <childnode refid="5839" relation="include">
+        </childnode>
+        <childnode refid="5748" relation="include">
+        </childnode>
+        <childnode refid="5768" relation="include">
+        </childnode>
+        <childnode refid="5757" relation="include">
+        </childnode>
+        <childnode refid="5762" relation="include">
+        </childnode>
+        <childnode refid="5785" relation="include">
+        </childnode>
+        <childnode refid="5526" relation="include">
+        </childnode>
+        <childnode refid="5840" relation="include">
+        </childnode>
+        <childnode refid="5798" relation="include">
+        </childnode>
+        <childnode refid="5805" relation="include">
+        </childnode>
+        <childnode refid="5841" relation="include">
+        </childnode>
+        <childnode refid="5822" relation="include">
+        </childnode>
+        <childnode refid="5824" relation="include">
+        </childnode>
+        <childnode refid="5842" relation="include">
+        </childnode>
+        <childnode refid="5827" relation="include">
+        </childnode>
+        <childnode refid="5800" relation="include">
+        </childnode>
+        <childnode refid="5804" relation="include">
+        </childnode>
+      </node>
+      <node id="5528">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/proto/proto_common.hpp</label>
+        <link refid="proto__common_8hpp"/>
+        <childnode refid="5520" relation="include">
+        </childnode>
+        <childnode refid="5529" relation="include">
+        </childnode>
+        <childnode refid="5530" relation="include">
+        </childnode>
+        <childnode refid="5539" relation="include">
+        </childnode>
+      </node>
+      <node id="5636">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_merge_samples.cpp</label>
+        <link refid="data__reader__merge__samples_8cpp"/>
+      </node>
+      <node id="5748">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/transform/safe_inv.hpp</label>
+        <link refid="safe__inv_8hpp"/>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5731">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/dropout.hpp</label>
+        <link refid="dropout_8hpp"/>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5557">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_dump_activations.cpp</label>
+        <link refid="callback__dump__activations_8cpp"/>
+      </node>
+      <node id="5668">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_nci.cpp</label>
+        <link refid="data__reader__nci_8cpp"/>
+      </node>
+      <node id="5825">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/cv_augmenter.cpp</label>
+        <link refid="cv__augmenter_8cpp"/>
+      </node>
+      <node id="5684">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/data_buffers/distributed_io_buffer.hpp</label>
+        <link refid="distributed__io__buffer_8hpp"/>
+        <childnode refid="5685" relation="include">
+        </childnode>
+        <childnode refid="5572" relation="include">
+        </childnode>
+        <childnode refid="5578" relation="include">
+        </childnode>
+      </node>
+      <node id="5543">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_check_init.cpp</label>
+        <link refid="callback__check__init_8cpp"/>
+      </node>
+      <node id="5746">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/transform/reduction.hpp</label>
+        <link refid="reduction_8hpp"/>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5575">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/input/input_layer.hpp</label>
+        <link refid="input__layer_8hpp"/>
+        <childnode refid="5524" relation="include">
+        </childnode>
+        <childnode refid="5561" relation="include">
+        </childnode>
+        <childnode refid="5576" relation="include">
+        </childnode>
+        <childnode refid="5577" relation="include">
+        </childnode>
+        <childnode refid="5554" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5569">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_imcomm.hpp</label>
+        <link refid="callback__imcomm_8hpp"/>
+        <childnode refid="5570" relation="include">
+        </childnode>
+        <childnode refid="5571" relation="include">
+        </childnode>
+        <childnode refid="5572" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5830">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/cv_normalizer.cpp</label>
+        <link refid="cv__normalizer_8cpp"/>
+      </node>
+      <node id="5640">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp</label>
+        <link refid="data__reader__image_8hpp"/>
+        <childnode refid="5641" relation="include">
+        </childnode>
+        <childnode refid="5642" relation="include">
+        </childnode>
+        <childnode refid="5644" relation="include">
+        </childnode>
+        <childnode refid="5657" relation="include">
+        </childnode>
+        <childnode refid="5659" relation="include">
+        </childnode>
+        <childnode refid="5662" relation="include">
+        </childnode>
+      </node>
+      <node id="5689">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/models/siamese.cpp</label>
+        <link refid="siamese_8cpp"/>
+      </node>
+      <node id="5620">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_timer.hpp</label>
+        <link refid="callback__timer_8hpp"/>
+        <childnode refid="5621" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5666">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_csv.cpp</label>
+        <link refid="data__store__csv_8cpp"/>
+      </node>
+      <node id="5608">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_learning_rate.hpp</label>
+        <link refid="callback__learning__rate_8hpp"/>
+        <childnode refid="5609" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5634">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_merge_features.cpp</label>
+        <link refid="data__store__merge__features_8cpp"/>
+      </node>
+      <node id="5761">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/weight_regularization/l2.cpp</label>
+        <link refid="l2_8cpp"/>
+      </node>
+      <node id="5589">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/binary_cross_entropy.hpp</label>
+        <link refid="binary__cross__entropy_8hpp"/>
+        <childnode refid="5590" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5768">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/metric.hpp</label>
+        <link refid="metric_8hpp"/>
+        <childnode refid="5580" relation="include">
+        </childnode>
+        <childnode refid="5769" relation="include">
+        </childnode>
+        <childnode refid="5771" relation="include">
+        </childnode>
+        <childnode refid="5773" relation="include">
+        </childnode>
+        <childnode refid="5775" relation="include">
+        </childnode>
+        <childnode refid="5776" relation="include">
+        </childnode>
+        <childnode refid="5778" relation="include">
+        </childnode>
+        <childnode refid="5780" relation="include">
+        </childnode>
+        <childnode refid="5781" relation="include">
+        </childnode>
+        <childnode refid="5783" relation="include">
+        </childnode>
+        <childnode refid="5757" relation="include">
+        </childnode>
+        <childnode refid="5763" relation="include">
+        </childnode>
+      </node>
+      <node id="5674">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_numpy.cpp</label>
+        <link refid="data__reader__numpy_8cpp"/>
+      </node>
+      <node id="5703">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_pilot2_molecular.hpp</label>
+        <link refid="data__store__pilot2__molecular_8hpp"/>
+        <childnode refid="5676" relation="include">
+        </childnode>
+        <childnode refid="5637" relation="include">
+        </childnode>
+        <childnode refid="5677" relation="include">
+        </childnode>
+      </node>
+      <node id="5688">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/io_layer.hpp</label>
+        <link refid="io__layer_8hpp"/>
+        <childnode refid="5524" relation="include">
+        </childnode>
+        <childnode refid="5689" relation="include">
+        </childnode>
+        <childnode refid="5572" relation="include">
+        </childnode>
+        <childnode refid="5578" relation="include">
+        </childnode>
+      </node>
+      <node id="5815">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/utils/graph.cpp</label>
+        <link refid="graph_8cpp"/>
+      </node>
+      <node id="5614">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_save_model.hpp</label>
+        <link refid="callback__save__model_8hpp"/>
+        <childnode refid="5615" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5549">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_checkpoint.cpp</label>
+        <link refid="callback__checkpoint_8cpp"/>
+      </node>
+      <node id="5526">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/params.hpp</label>
+        <link refid="params_8hpp"/>
+        <childnode refid="5527" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5682">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/data_buffers/generic_io_buffer.hpp</label>
+        <link refid="generic__io__buffer_8hpp"/>
+        <childnode refid="5683" relation="include">
+        </childnode>
+        <childnode refid="5684" relation="include">
+        </childnode>
+        <childnode refid="5686" relation="include">
+        </childnode>
+        <childnode refid="5572" relation="include">
+        </childnode>
+      </node>
+      <node id="5729">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/regularizer.hpp</label>
+        <link refid="regularizer_8hpp"/>
+        <childnode refid="5730" relation="include">
+        </childnode>
+        <childnode refid="5731" relation="include">
+        </childnode>
+        <childnode refid="5732" relation="include">
+        </childnode>
+        <childnode refid="5733" relation="include">
+        </childnode>
+      </node>
+      <node id="5717">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/activations/smooth_relu.hpp</label>
+        <link refid="smooth__relu_8hpp"/>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5605">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/polya_negloglike.hpp</label>
+        <link refid="polya__negloglike_8hpp"/>
+        <childnode refid="5606" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5698">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_imagenet_patches.hpp</label>
+        <link refid="data__store__imagenet__patches_8hpp"/>
+        <childnode refid="5660" relation="include">
+        </childnode>
+        <childnode refid="5661" relation="include">
+        </childnode>
+      </node>
+      <node id="5574">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/models/recurrent.cpp</label>
+        <link refid="recurrent_8cpp"/>
+      </node>
+      <node id="5628">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader.cpp</label>
+        <link refid="data__reader_8cpp"/>
+      </node>
+      <node id="5798">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/cudnn_wrapper.hpp</label>
+        <link refid="cudnn__wrapper_8hpp"/>
+        <childnode refid="5799" relation="include">
+        </childnode>
+        <childnode refid="5714" relation="include">
+        </childnode>
+        <childnode refid="5716" relation="include">
+        </childnode>
+        <childnode refid="5704" relation="include">
+        </childnode>
+        <childnode refid="5725" relation="include">
+        </childnode>
+        <childnode refid="5726" relation="include">
+        </childnode>
+        <childnode refid="5727" relation="include">
+        </childnode>
+        <childnode refid="5723" relation="include">
+        </childnode>
+        <childnode refid="5732" relation="include">
+        </childnode>
+        <childnode refid="5744" relation="include">
+        </childnode>
+        <childnode refid="5745" relation="include">
+        </childnode>
+        <childnode refid="5785" relation="include">
+        </childnode>
+        <childnode refid="5528" relation="include">
+        </childnode>
+        <childnode refid="5800" relation="include">
+        </childnode>
+        <childnode refid="5804" relation="include">
+        </childnode>
+      </node>
+      <node id="5754">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/models/directed_acyclic_graph.cpp</label>
+        <link refid="directed__acyclic__graph_8cpp"/>
+      </node>
+      <node id="5532">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/layer_factory.cpp</label>
+        <link refid="layer__factory_8cpp"/>
+      </node>
+      <node id="5560">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_dump_minibatch_sample_indices.hpp</label>
+        <link refid="callback__dump__minibatch__sample__indices_8hpp"/>
+        <childnode refid="5561" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5740">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/layer_term.hpp</label>
+        <link refid="layer__term_8hpp"/>
+        <childnode refid="5741" relation="include">
+        </childnode>
+        <childnode refid="5535" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5547">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_checknan.cpp</label>
+        <link refid="callback__checknan_8cpp"/>
+      </node>
+      <node id="5631">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/compound_data_reader.hpp</label>
+        <link refid="compound__data__reader_8hpp"/>
+        <childnode refid="5632" relation="include">
+        </childnode>
+        <childnode refid="5635" relation="include">
+        </childnode>
+      </node>
+      <node id="5651">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_multi_images.cpp</label>
+        <link refid="data__store__multi__images_8cpp"/>
+      </node>
+      <node id="5840">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/cublas_wrapper.hpp</label>
+        <link refid="cublas__wrapper_8hpp"/>
+        <childnode refid="5786" relation="include">
+        </childnode>
+        <childnode refid="5814" relation="include">
+        </childnode>
+        <childnode refid="5799" relation="include">
+        </childnode>
+        <childnode refid="5723" relation="include">
+        </childnode>
+        <childnode refid="5736" relation="include">
+        </childnode>
+        <childnode refid="5749" relation="include">
+        </childnode>
+        <childnode refid="5750" relation="include">
+        </childnode>
+      </node>
+      <node id="5753">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/models/directed_acyclic_graph.hpp</label>
+        <link refid="directed__acyclic__graph_8hpp"/>
+        <childnode refid="5754" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+        <childnode refid="5755" relation="include">
+        </childnode>
+        <childnode refid="5756" relation="include">
+        </childnode>
+      </node>
+      <node id="5529">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/utils/protobuf_utils.cpp</label>
+        <link refid="protobuf__utils_8cpp"/>
+      </node>
+      <node id="5733">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/selu_dropout.hpp</label>
+        <link refid="selu__dropout_8hpp"/>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5609">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_learning_rate.cpp</label>
+        <link refid="callback__learning__rate_8cpp"/>
+      </node>
+      <node id="5593">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/cross_entropy_with_uncertainty.hpp</label>
+        <link refid="cross__entropy__with__uncertainty_8hpp"/>
+        <childnode refid="5594" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5517">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/Elemental_extensions.cpp</label>
+        <link refid="Elemental__extensions_8cpp"/>
+      </node>
+      <node id="5769">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/boolean_accuracy.hpp</label>
+        <link refid="boolean__accuracy_8hpp"/>
+        <childnode refid="5770" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5673">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_numpy.hpp</label>
+        <link refid="data__reader__numpy_8hpp"/>
+        <childnode refid="5674" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5584">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/target_layer.hpp</label>
+        <link refid="target__layer_8hpp"/>
+        <childnode refid="5547" relation="include">
+        </childnode>
+        <childnode refid="5551" relation="include">
+        </childnode>
+        <childnode refid="5557" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+        <childnode refid="5585" relation="include">
+        </childnode>
+      </node>
+      <node id="5725">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/learning/base_convolution.hpp</label>
+        <link refid="base__convolution_8hpp"/>
+        <childnode refid="5726" relation="include">
+        </childnode>
+        <childnode refid="5727" relation="include">
+        </childnode>
+      </node>
+      <node id="5726">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/learning/convolution.hpp</label>
+        <link refid="convolution_8hpp"/>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5720">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/activations/softplus.hpp</label>
+        <link refid="softplus_8hpp"/>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5814">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/utils/cublas_wrapper.cpp</label>
+        <link refid="cublas__wrapper_8cpp"/>
+      </node>
+      <node id="5795">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/optimizers/rmsprop.cpp</label>
+        <link refid="rmsprop_8cpp"/>
+      </node>
+      <node id="5791">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/optimizers/adam.cpp</label>
+        <link refid="adam_8cpp"/>
+      </node>
+      <node id="5835">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/cv_subtractor.hpp</label>
+        <link refid="cv__subtractor_8hpp"/>
+        <childnode refid="5809" relation="include">
+        </childnode>
+        <childnode refid="5831" relation="include">
+        </childnode>
+      </node>
+      <node id="5540">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/init_image_data_readers.cpp</label>
+        <link refid="init__image__data__readers_8cpp"/>
+      </node>
+      <node id="5653">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_mnist_siamese.cpp</label>
+        <link refid="data__reader__mnist__siamese_8cpp"/>
+      </node>
+      <node id="5641">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_image.cpp</label>
+        <link refid="data__reader__image_8cpp"/>
+      </node>
+      <node id="5586">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/kl_divergence.cpp</label>
+        <link refid="kl__divergence_8cpp"/>
+      </node>
+      <node id="5810">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/cv_utils.cpp</label>
+        <link refid="cv__utils_8cpp"/>
+      </node>
+      <node id="5718">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/activations/softmax.hpp</label>
+        <link refid="softmax_8hpp"/>
+        <childnode refid="5719" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5782">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/metrics/r2.cpp</label>
+        <link refid="r2_8cpp"/>
+      </node>
+      <node id="5544">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_check_reconstruction_error.hpp</label>
+        <link refid="callback__check__reconstruction__error_8hpp"/>
+        <childnode refid="5545" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5783">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/top_k_categorical_accuracy.hpp</label>
+        <link refid="top__k__categorical__accuracy_8hpp"/>
+        <childnode refid="5784" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5652">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_mnist_siamese.hpp</label>
+        <link refid="data__reader__mnist__siamese_8hpp"/>
+        <childnode refid="5653" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5679">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_synthetic.cpp</label>
+        <link refid="data__reader__synthetic_8cpp"/>
+      </node>
+      <node id="5812">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/image_utils.cpp</label>
+        <link refid="image__utils_8cpp"/>
+      </node>
+      <node id="5841">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/im2col.hpp</label>
+        <link refid="im2col_8hpp"/>
+        <childnode refid="5816" relation="include">
+        </childnode>
+        <childnode refid="5725" relation="include">
+        </childnode>
+        <childnode refid="5744" relation="include">
+        </childnode>
+        <childnode refid="5745" relation="include">
+        </childnode>
+      </node>
+      <node id="5580">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/metrics/metric.cpp</label>
+        <link refid="metric_8cpp"/>
+      </node>
+      <node id="5793">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/optimizers/hypergradient_adam.cpp</label>
+        <link refid="hypergradient__adam_8cpp"/>
+      </node>
+      <node id="5770">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/metrics/boolean_accuracy.cpp</label>
+        <link refid="boolean__accuracy_8cpp"/>
+      </node>
+      <node id="5553">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_debug.cpp</label>
+        <link refid="callback__debug_8cpp"/>
+      </node>
+      <node id="5734">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/transform/transform.hpp</label>
+        <link refid="transform_8hpp"/>
+        <childnode refid="5735" relation="include">
+        </childnode>
+        <childnode refid="5736" relation="include">
+        </childnode>
+        <childnode refid="5737" relation="include">
+        </childnode>
+        <childnode refid="5738" relation="include">
+        </childnode>
+        <childnode refid="5739" relation="include">
+        </childnode>
+        <childnode refid="5742" relation="include">
+        </childnode>
+        <childnode refid="5743" relation="include">
+        </childnode>
+        <childnode refid="5744" relation="include">
+        </childnode>
+        <childnode refid="5746" relation="include">
+        </childnode>
+        <childnode refid="5747" relation="include">
+        </childnode>
+        <childnode refid="5748" relation="include">
+        </childnode>
+        <childnode refid="5749" relation="include">
+        </childnode>
+        <childnode refid="5750" relation="include">
+        </childnode>
+        <childnode refid="5751" relation="include">
+        </childnode>
+        <childnode refid="5752" relation="include">
+        </childnode>
+      </node>
+      <node id="5582">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/reconstruction.hpp</label>
+        <link refid="reconstruction_8hpp"/>
+        <childnode refid="5583" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5642">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_cifar10.hpp</label>
+        <link refid="data__reader__cifar10_8hpp"/>
+        <childnode refid="5643" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5781">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/r2.hpp</label>
+        <link refid="r2_8hpp"/>
+        <childnode refid="5782" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5755">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/models/recurrent.hpp</label>
+        <link refid="recurrent_8hpp"/>
+        <childnode refid="5574" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5739">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/transform/evaluation.hpp</label>
+        <link refid="evaluation_8hpp"/>
+        <childnode refid="5525" relation="include">
+        </childnode>
+        <childnode refid="5740" relation="include">
+        </childnode>
+      </node>
+      <node id="5639">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_ascii.cpp</label>
+        <link refid="data__reader__ascii_8cpp"/>
+      </node>
+      <node id="5741">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/layer_term.cpp</label>
+        <link refid="layer__term_8cpp"/>
+      </node>
+      <node id="5773">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/boolean_false_positives.hpp</label>
+        <link refid="boolean__false__positives_8hpp"/>
+        <childnode refid="5774" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5536">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/objective_function_factory.cpp</label>
+        <link refid="objective__function__factory_8cpp"/>
+      </node>
+      <node id="5622">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_variable_minibatch.hpp</label>
+        <link refid="callback__variable__minibatch_8hpp"/>
+        <childnode refid="5577" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5590">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/loss_functions/binary_cross_entropy.cpp</label>
+        <link refid="binary__cross__entropy_8cpp"/>
+      </node>
+      <node id="5613">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_save_images.cpp</label>
+        <link refid="callback__save__images_8cpp"/>
+      </node>
+      <node id="5658">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_imagenet_org.cpp</label>
+        <link refid="data__reader__imagenet__org_8cpp"/>
+      </node>
+      <node id="5794">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/rmsprop.hpp</label>
+        <link refid="rmsprop_8hpp"/>
+        <childnode refid="5795" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5570">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_imcomm.cpp</label>
+        <link refid="callback__imcomm_8cpp"/>
+      </node>
+      <node id="5691">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/models/sequential.cpp</label>
+        <link refid="sequential_8cpp"/>
+      </node>
+      <node id="5700">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_triplet.hpp</label>
+        <link refid="data__store__triplet_8hpp"/>
+        <childnode refid="5655" relation="include">
+        </childnode>
+        <childnode refid="5656" relation="include">
+        </childnode>
+      </node>
+      <node id="5619">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_timeline.cpp</label>
+        <link refid="callback__timeline_8cpp"/>
+      </node>
+      <node id="5816">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/utils/im2col.cpp</label>
+        <link refid="im2col_8cpp"/>
+      </node>
+      <node id="5632">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_merge_features.hpp</label>
+        <link refid="data__reader__merge__features_8hpp"/>
+        <childnode refid="5633" relation="include">
+        </childnode>
+        <childnode refid="5634" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5583">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/models/greedy_layerwise_autoencoder.cpp</label>
+        <link refid="greedy__layerwise__autoencoder_8cpp"/>
+      </node>
+      <node id="5721">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/activations/swish.hpp</label>
+        <link refid="swish_8hpp"/>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5643">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_cifar10.cpp</label>
+        <link refid="data__reader__cifar10_8cpp"/>
+      </node>
+      <node id="5604">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/loss_functions/poisson_negloglike.cpp</label>
+        <link refid="poisson__negloglike_8cpp"/>
+      </node>
+      <node id="5727">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/learning/deconvolution.hpp</label>
+        <link refid="deconvolution_8hpp"/>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5556">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_dump_activations.hpp</label>
+        <link refid="callback__dump__activations_8hpp"/>
+        <childnode refid="5557" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5559">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_dump_gradients.cpp</label>
+        <link refid="callback__dump__gradients_8cpp"/>
+      </node>
+      <node id="5670">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_jag.cpp</label>
+        <link refid="data__reader__jag_8cpp"/>
+      </node>
+      <node id="5800">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/weights/initializer.hpp</label>
+        <link refid="initializer_8hpp"/>
+        <childnode refid="5801" relation="include">
+        </childnode>
+        <childnode refid="5725" relation="include">
+        </childnode>
+        <childnode refid="5723" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+        <childnode refid="5802" relation="include">
+        </childnode>
+        <childnode refid="5804" relation="include">
+        </childnode>
+      </node>
+      <node id="5778">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/mean_squared_error.hpp</label>
+        <link refid="metrics_2mean__squared__error_8hpp"/>
+        <childnode refid="5779" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5833">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/cv_process_patches.cpp</label>
+        <link refid="cv__process__patches_8cpp"/>
+      </node>
+      <node id="5775">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/categorical_accuracy.hpp</label>
+        <link refid="categorical__accuracy_8hpp"/>
+        <childnode refid="5571" relation="include">
+        </childnode>
+        <childnode refid="5579" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5659">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_imagenet_patches.hpp</label>
+        <link refid="data__reader__imagenet__patches_8hpp"/>
+        <childnode refid="5660" relation="include">
+        </childnode>
+        <childnode refid="5661" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5809">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/cv_subtractor.cpp</label>
+        <link refid="cv__subtractor_8cpp"/>
+      </node>
+      <node id="5644">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_imagenet.hpp</label>
+        <link refid="data__reader__imagenet_8hpp"/>
+        <childnode refid="5645" relation="include">
+        </childnode>
+        <childnode refid="5646" relation="include">
+        </childnode>
+        <childnode refid="5647" relation="include">
+        </childnode>
+        <childnode refid="5649" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5521">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback.hpp</label>
+        <link refid="callback_8hpp"/>
+        <childnode refid="5522" relation="include">
+        </childnode>
+        <childnode refid="5523" relation="include">
+        </childnode>
+        <childnode refid="5542" relation="include">
+        </childnode>
+        <childnode refid="5544" relation="include">
+        </childnode>
+        <childnode refid="5546" relation="include">
+        </childnode>
+        <childnode refid="5548" relation="include">
+        </childnode>
+        <childnode refid="5550" relation="include">
+        </childnode>
+        <childnode refid="5552" relation="include">
+        </childnode>
+        <childnode refid="5554" relation="include">
+        </childnode>
+        <childnode refid="5556" relation="include">
+        </childnode>
+        <childnode refid="5558" relation="include">
+        </childnode>
+        <childnode refid="5560" relation="include">
+        </childnode>
+        <childnode refid="5562" relation="include">
+        </childnode>
+        <childnode refid="5564" relation="include">
+        </childnode>
+        <childnode refid="5566" relation="include">
+        </childnode>
+        <childnode refid="5568" relation="include">
+        </childnode>
+        <childnode refid="5569" relation="include">
+        </childnode>
+        <childnode refid="5607" relation="include">
+        </childnode>
+        <childnode refid="5608" relation="include">
+        </childnode>
+        <childnode refid="5610" relation="include">
+        </childnode>
+        <childnode refid="5611" relation="include">
+        </childnode>
+        <childnode refid="5612" relation="include">
+        </childnode>
+        <childnode refid="5614" relation="include">
+        </childnode>
+        <childnode refid="5616" relation="include">
+        </childnode>
+        <childnode refid="5618" relation="include">
+        </childnode>
+        <childnode refid="5620" relation="include">
+        </childnode>
+        <childnode refid="5622" relation="include">
+        </childnode>
+        <childnode refid="5623" relation="include">
+        </childnode>
+      </node>
+      <node id="5646">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_imagenet.cpp</label>
+        <link refid="data__store__imagenet_8cpp"/>
+      </node>
+      <node id="5758">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/objective_function_term.cpp</label>
+        <link refid="objective__function__term_8cpp"/>
+      </node>
+      <node id="5616">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_summary.hpp</label>
+        <link refid="callback__summary_8hpp"/>
+        <childnode refid="5617" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5645">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_imagenet.cpp</label>
+        <link refid="data__reader__imagenet_8cpp"/>
+      </node>
+      <node id="5520">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/proto_common.cpp</label>
+        <link refid="proto__common_8cpp"/>
+      </node>
+      <node id="5732">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/local_response_normalization.hpp</label>
+        <link refid="local__response__normalization_8hpp"/>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5534">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/metric_factory.cpp</label>
+        <link refid="metric__factory_8cpp"/>
+      </node>
+      <node id="5677">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_pilot2_molecular.cpp</label>
+        <link refid="data__store__pilot2__molecular_8cpp"/>
+      </node>
+      <node id="5686">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/io/data_buffers/partitioned_io_buffer.hpp</label>
+        <link refid="partitioned__io__buffer_8hpp"/>
+        <childnode refid="5687" relation="include">
+        </childnode>
+        <childnode refid="5572" relation="include">
+        </childnode>
+        <childnode refid="5578" relation="include">
+        </childnode>
+      </node>
+      <node id="5772">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/metrics/boolean_false_negatives.cpp</label>
+        <link refid="boolean__false__negatives_8cpp"/>
+      </node>
+      <node id="5765">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/weight_regularization/group_lasso.hpp</label>
+        <link refid="group__lasso_8hpp"/>
+        <childnode refid="5759" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5842">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/statistics.hpp</label>
+        <link refid="statistics_8hpp"/>
+        <childnode refid="5811" relation="include">
+        </childnode>
+        <childnode refid="5581" relation="include">
+        </childnode>
+        <childnode refid="5782" relation="include">
+        </childnode>
+        <childnode refid="5586" relation="include">
+        </childnode>
+        <childnode refid="5817" relation="include">
+        </childnode>
+      </node>
+      <node id="5751">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/transform/sum.hpp</label>
+        <link refid="sum_8hpp"/>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5621">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_timer.cpp</label>
+        <link refid="callback__timer_8cpp"/>
+      </node>
+      <node id="5805">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/exception.hpp</label>
+        <link refid="exception_8hpp"/>
+        <childnode refid="5543" relation="include">
+        </childnode>
+        <childnode refid="5547" relation="include">
+        </childnode>
+        <childnode refid="5551" relation="include">
+        </childnode>
+        <childnode refid="5570" relation="include">
+        </childnode>
+        <childnode refid="5626" relation="include">
+        </childnode>
+        <childnode refid="5806" relation="include">
+        </childnode>
+        <childnode refid="5807" relation="include">
+        </childnode>
+        <childnode refid="5808" relation="include">
+        </childnode>
+        <childnode refid="5809" relation="include">
+        </childnode>
+        <childnode refid="5810" relation="include">
+        </childnode>
+        <childnode refid="5811" relation="include">
+        </childnode>
+        <childnode refid="5812" relation="include">
+        </childnode>
+        <childnode refid="5666" relation="include">
+        </childnode>
+        <childnode refid="5629" relation="include">
+        </childnode>
+        <childnode refid="5646" relation="include">
+        </childnode>
+        <childnode refid="5661" relation="include">
+        </childnode>
+        <childnode refid="5634" relation="include">
+        </childnode>
+        <childnode refid="5637" relation="include">
+        </childnode>
+        <childnode refid="5651" relation="include">
+        </childnode>
+        <childnode refid="5677" relation="include">
+        </childnode>
+        <childnode refid="5656" relation="include">
+        </childnode>
+        <childnode refid="5685" relation="include">
+        </childnode>
+        <childnode refid="5683" relation="include">
+        </childnode>
+        <childnode refid="5687" relation="include">
+        </childnode>
+        <childnode refid="5813" relation="include">
+        </childnode>
+        <childnode refid="5789" relation="include">
+        </childnode>
+        <childnode refid="5791" relation="include">
+        </childnode>
+        <childnode refid="5793" relation="include">
+        </childnode>
+        <childnode refid="5795" relation="include">
+        </childnode>
+        <childnode refid="5797" relation="include">
+        </childnode>
+        <childnode refid="5814" relation="include">
+        </childnode>
+        <childnode refid="5799" relation="include">
+        </childnode>
+        <childnode refid="5815" relation="include">
+        </childnode>
+        <childnode refid="5816" relation="include">
+        </childnode>
+        <childnode refid="5817" relation="include">
+        </childnode>
+        <childnode refid="5627" relation="include">
+        </childnode>
+        <childnode refid="5706" relation="include">
+        </childnode>
+        <childnode refid="5575" relation="include">
+        </childnode>
+        <childnode refid="5688" relation="include">
+        </childnode>
+        <childnode refid="5578" relation="include">
+        </childnode>
+        <childnode refid="5584" relation="include">
+        </childnode>
+        <childnode refid="5704" relation="include">
+        </childnode>
+        <childnode refid="5725" relation="include">
+        </childnode>
+        <childnode refid="5726" relation="include">
+        </childnode>
+        <childnode refid="5727" relation="include">
+        </childnode>
+        <childnode refid="5732" relation="include">
+        </childnode>
+        <childnode refid="5736" relation="include">
+        </childnode>
+        <childnode refid="5743" relation="include">
+        </childnode>
+        <childnode refid="5744" relation="include">
+        </childnode>
+        <childnode refid="5748" relation="include">
+        </childnode>
+        <childnode refid="5749" relation="include">
+        </childnode>
+        <childnode refid="5750" relation="include">
+        </childnode>
+        <childnode refid="5751" relation="include">
+        </childnode>
+        <childnode refid="5745" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+        <childnode refid="5768" relation="include">
+        </childnode>
+        <childnode refid="5785" relation="include">
+        </childnode>
+        <childnode refid="5818" relation="include">
+        </childnode>
+        <childnode refid="5798" relation="include">
+        </childnode>
+        <childnode refid="5821" relation="include">
+        </childnode>
+        <childnode refid="5822" relation="include">
+        </childnode>
+        <childnode refid="5800" relation="include">
+        </childnode>
+        <childnode refid="5804" relation="include">
+        </childnode>
+      </node>
+      <node id="5630">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/generic_data_store.cpp</label>
+        <link refid="generic__data__store_8cpp"/>
+      </node>
+      <node id="5777">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/metrics/mean_absolute_deviation.cpp</label>
+        <link refid="metrics_2mean__absolute__deviation_8cpp"/>
+      </node>
+      <node id="5709">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/activations/elu.hpp</label>
+        <link refid="elu_8hpp"/>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5811">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/image_preprocessor.cpp</label>
+        <link refid="image__preprocessor_8cpp"/>
+      </node>
+      <node id="5678">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_synthetic.hpp</label>
+        <link refid="data__reader__synthetic_8hpp"/>
+        <childnode refid="5679" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5657">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_imagenet_org.hpp</label>
+        <link refid="data__reader__imagenet__org_8hpp"/>
+        <childnode refid="5658" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5669">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_jag.hpp</label>
+        <link refid="data__reader__jag_8hpp"/>
+        <childnode refid="5670" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5649">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_multi_images.hpp</label>
+        <link refid="data__reader__multi__images_8hpp"/>
+        <childnode refid="5650" relation="include">
+        </childnode>
+        <childnode refid="5651" relation="include">
+        </childnode>
+        <childnode refid="5652" relation="include">
+        </childnode>
+        <childnode refid="5654" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5706">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/activations/activation.hpp</label>
+        <link refid="activation_8hpp"/>
+        <childnode refid="5707" relation="include">
+        </childnode>
+        <childnode refid="5708" relation="include">
+        </childnode>
+        <childnode refid="5709" relation="include">
+        </childnode>
+        <childnode refid="5710" relation="include">
+        </childnode>
+        <childnode refid="5711" relation="include">
+        </childnode>
+        <childnode refid="5712" relation="include">
+        </childnode>
+        <childnode refid="5713" relation="include">
+        </childnode>
+        <childnode refid="5714" relation="include">
+        </childnode>
+        <childnode refid="5715" relation="include">
+        </childnode>
+        <childnode refid="5716" relation="include">
+        </childnode>
+        <childnode refid="5717" relation="include">
+        </childnode>
+        <childnode refid="5718" relation="include">
+        </childnode>
+        <childnode refid="5720" relation="include">
+        </childnode>
+        <childnode refid="5721" relation="include">
+        </childnode>
+        <childnode refid="5722" relation="include">
+        </childnode>
+        <childnode refid="5723" relation="include">
+        </childnode>
+      </node>
+      <node id="5797">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/optimizers/sgd.cpp</label>
+        <link refid="sgd_8cpp"/>
+      </node>
+      <node id="5683">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/io/data_buffers/generic_io_buffer.cpp</label>
+        <link refid="generic__io__buffer_8cpp"/>
+      </node>
+      <node id="5750">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/transform/split.hpp</label>
+        <link refid="split_8hpp"/>
+        <childnode refid="5522" relation="include">
+        </childnode>
+        <childnode refid="5574" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5743">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/transform/hadamard.hpp</label>
+        <link refid="hadamard_8hpp"/>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5839">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/batch_normalization_cuda.hpp</label>
+        <link refid="batch__normalization__cuda_8hpp"/>
+      </node>
+      <node id="5625">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/comm.hpp</label>
+        <link refid="comm_8hpp"/>
+        <childnode refid="5519" relation="include">
+        </childnode>
+        <childnode refid="5626" relation="include">
+        </childnode>
+        <childnode refid="5520" relation="include">
+        </childnode>
+        <childnode refid="5627" relation="include">
+        </childnode>
+        <childnode refid="5694" relation="include">
+        </childnode>
+        <childnode refid="5682" relation="include">
+        </childnode>
+        <childnode refid="5704" relation="include">
+        </childnode>
+        <childnode refid="5768" relation="include">
+        </childnode>
+        <childnode refid="5757" relation="include">
+        </childnode>
+        <childnode refid="5785" relation="include">
+        </childnode>
+        <childnode refid="5539" relation="include">
+        </childnode>
+        <childnode refid="5798" relation="include">
+        </childnode>
+        <childnode refid="5805" relation="include">
+        </childnode>
+        <childnode refid="5822" relation="include">
+        </childnode>
+        <childnode refid="5824" relation="include">
+        </childnode>
+        <childnode refid="5827" relation="include">
+        </childnode>
+        <childnode refid="5800" relation="include">
+        </childnode>
+        <childnode refid="5804" relation="include">
+        </childnode>
+      </node>
+      <node id="5525">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/lbann.hpp</label>
+        <link refid="lbann_8hpp"/>
+        <childnode refid="5520" relation="include">
+        </childnode>
+        <childnode refid="5526" relation="include">
+        </childnode>
+        <childnode refid="5528" relation="include">
+        </childnode>
+        <childnode refid="5541" relation="include">
+        </childnode>
+      </node>
+      <node id="5730">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/batch_normalization.hpp</label>
+        <link refid="batch__normalization_8hpp"/>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5701">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_merge_features.hpp</label>
+        <link refid="data__store__merge__features_8hpp"/>
+        <childnode refid="5633" relation="include">
+        </childnode>
+        <childnode refid="5634" relation="include">
+        </childnode>
+      </node>
+      <node id="5601">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/mean_squared_error.hpp</label>
+        <link refid="objective__functions_2loss__functions_2mean__squared__error_8hpp"/>
+        <childnode refid="5602" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5722">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/activations/tanh.hpp</label>
+        <link refid="tanh_8hpp"/>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5524">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_check_dataset.cpp</label>
+        <link refid="callback__check__dataset_8cpp"/>
+      </node>
+      <node id="5565">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_early_stopping.cpp</label>
+        <link refid="callback__early__stopping_8cpp"/>
+      </node>
+      <node id="5723">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/learning/fully_connected.hpp</label>
+        <link refid="fully__connected_8hpp"/>
+        <childnode refid="5724" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5663">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_mnist.cpp</label>
+        <link refid="data__reader__mnist_8cpp"/>
+      </node>
+      <node id="5637">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_merge_samples.cpp</label>
+        <link refid="data__store__merge__samples_8cpp"/>
+      </node>
+      <node id="5660">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_imagenet_patches.cpp</label>
+        <link refid="data__reader__imagenet__patches_8cpp"/>
+      </node>
+      <node id="5763">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function.hpp</label>
+        <link refid="objective__function_8hpp"/>
+        <childnode refid="5764" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+        <childnode refid="5757" relation="include">
+        </childnode>
+      </node>
+      <node id="5742">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/transform/gaussian.hpp</label>
+        <link refid="gaussian_8hpp"/>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5774">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/metrics/boolean_false_positives.cpp</label>
+        <link refid="boolean__false__positives_8cpp"/>
+      </node>
+      <node id="5687">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/io/data_buffers/partitioned_io_buffer.cpp</label>
+        <link refid="partitioned__io__buffer_8cpp"/>
+      </node>
+      <node id="5563">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_dump_weights.cpp</label>
+        <link refid="callback__dump__weights_8cpp"/>
+      </node>
+      <node id="5603">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/poisson_negloglike.hpp</label>
+        <link refid="poisson__negloglike_8hpp"/>
+        <childnode refid="5604" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5539">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/proto/init_image_data_readers.hpp</label>
+        <link refid="init__image__data__readers_8hpp"/>
+        <childnode refid="5540" relation="include">
+        </childnode>
+        <childnode refid="5520" relation="include">
+        </childnode>
+      </node>
+      <node id="5713">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/activations/power.hpp</label>
+        <link refid="power_8hpp"/>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5635">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_merge_samples.hpp</label>
+        <link refid="data__reader__merge__samples_8hpp"/>
+        <childnode refid="5636" relation="include">
+        </childnode>
+        <childnode refid="5637" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5787">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/weights/weights.cpp</label>
+        <link refid="weights_8cpp"/>
+      </node>
+      <node id="5735">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/transform/bernoulli.hpp</label>
+        <link refid="bernoulli_8hpp"/>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5588">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/loss_functions/loss_function.cpp</label>
+        <link refid="loss__function_8cpp"/>
+      </node>
+      <node id="5615">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_save_model.cpp</label>
+        <link refid="callback__save__model_8cpp"/>
+      </node>
+      <node id="5551">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_checksmall.cpp</label>
+        <link refid="callback__checksmall_8cpp"/>
+      </node>
+      <node id="5792">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/hypergradient_adam.hpp</label>
+        <link refid="hypergradient__adam_8hpp"/>
+        <childnode refid="5793" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5749">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/transform/slice.hpp</label>
+        <link refid="slice_8hpp"/>
+        <childnode refid="5574" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5817">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/utils/statistics.cpp</label>
+        <link refid="statistics_8cpp"/>
+      </node>
+      <node id="5542">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_check_init.hpp</label>
+        <link refid="callback__check__init_8hpp"/>
+        <childnode refid="5543" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5594">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/loss_functions/cross_entropy_with_uncertainty.cpp</label>
+        <link refid="cross__entropy__with__uncertainty_8cpp"/>
+      </node>
+      <node id="5552">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_debug.hpp</label>
+        <link refid="callback__debug_8hpp"/>
+        <childnode refid="5553" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5650">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_multi_images.cpp</label>
+        <link refid="data__reader__multi__images_8cpp"/>
+      </node>
+      <node id="5667">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_nci.hpp</label>
+        <link refid="data__reader__nci_8hpp"/>
+        <childnode refid="5668" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5786">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/optimizers/optimizer.cpp</label>
+        <link refid="optimizer_8cpp"/>
+      </node>
+      <node id="5675">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_pilot2_molecular.hpp</label>
+        <link refid="data__reader__pilot2__molecular_8hpp"/>
+        <childnode refid="5676" relation="include">
+        </childnode>
+        <childnode refid="5637" relation="include">
+        </childnode>
+        <childnode refid="5677" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5676">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_pilot2_molecular.cpp</label>
+        <link refid="data__reader__pilot2__molecular_8cpp"/>
+      </node>
+      <node id="5623">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/profiler.hpp</label>
+        <link refid="profiler_8hpp"/>
+        <childnode refid="5624" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5523">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_check_dataset.hpp</label>
+        <link refid="callback__check__dataset_8hpp"/>
+        <childnode refid="5524" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5572">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/input/generic_input_layer.hpp</label>
+        <link refid="generic__input__layer_8hpp"/>
+        <childnode refid="5573" relation="include">
+        </childnode>
+        <childnode refid="5522" relation="include">
+        </childnode>
+        <childnode refid="5574" relation="include">
+        </childnode>
+        <childnode refid="5575" relation="include">
+        </childnode>
+        <childnode refid="5578" relation="include">
+        </childnode>
+      </node>
+      <node id="5648">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_imagenet_single.cpp</label>
+        <link refid="data__reader__imagenet__single_8cpp"/>
+      </node>
+      <node id="5564">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_early_stopping.hpp</label>
+        <link refid="callback__early__stopping_8hpp"/>
+        <childnode refid="5565" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5680">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/lbann_data_generator.hpp</label>
+        <link refid="lbann__data__generator_8hpp"/>
+        <childnode refid="5681" relation="include">
+        </childnode>
+      </node>
+      <node id="5600">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/loss_functions/mean_absolute_error.cpp</label>
+        <link refid="mean__absolute__error_8cpp"/>
+      </node>
+      <node id="5716">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/activations/sigmoid.hpp</label>
+        <link refid="sigmoid_8hpp"/>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5756">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/models/siamese.hpp</label>
+        <link refid="siamese_8hpp"/>
+        <childnode refid="5689" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5571">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_ltfb.cpp</label>
+        <link refid="callback__ltfb_8cpp"/>
+      </node>
+      <node id="5579">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/metrics/categorical_accuracy.cpp</label>
+        <link refid="categorical__accuracy_8cpp"/>
+      </node>
+      <node id="5664">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_csv.hpp</label>
+        <link refid="data__reader__csv_8hpp"/>
+        <childnode refid="5665" relation="include">
+        </childnode>
+        <childnode refid="5666" relation="include">
+        </childnode>
+        <childnode refid="5667" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5832">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/cv_process_patches.hpp</label>
+        <link refid="cv__process__patches_8hpp"/>
+        <childnode refid="5833" relation="include">
+        </childnode>
+        <childnode refid="5659" relation="include">
+        </childnode>
+      </node>
+      <node id="5785">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/optimizer.hpp</label>
+        <link refid="optimizer_8hpp"/>
+        <childnode refid="5786" relation="include">
+        </childnode>
+        <childnode refid="5787" relation="include">
+        </childnode>
+        <childnode refid="5704" relation="include">
+        </childnode>
+        <childnode refid="5757" relation="include">
+        </childnode>
+        <childnode refid="5788" relation="include">
+        </childnode>
+        <childnode refid="5790" relation="include">
+        </childnode>
+        <childnode refid="5792" relation="include">
+        </childnode>
+        <childnode refid="5794" relation="include">
+        </childnode>
+        <childnode refid="5796" relation="include">
+        </childnode>
+      </node>
+      <node id="5829">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/cv_normalizer.hpp</label>
+        <link refid="cv__normalizer_8hpp"/>
+        <childnode refid="5830" relation="include">
+        </childnode>
+        <childnode refid="5831" relation="include">
+        </childnode>
+      </node>
+      <node id="5824">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/random.hpp</label>
+        <link refid="random_8hpp"/>
+        <childnode refid="5519" relation="include">
+        </childnode>
+        <childnode refid="5571" relation="include">
+        </childnode>
+        <childnode refid="5825" relation="include">
+        </childnode>
+        <childnode refid="5806" relation="include">
+        </childnode>
+        <childnode refid="5811" relation="include">
+        </childnode>
+        <childnode refid="5681" relation="include">
+        </childnode>
+        <childnode refid="5522" relation="include">
+        </childnode>
+        <childnode refid="5823" relation="include">
+        </childnode>
+        <childnode refid="5826" relation="include">
+        </childnode>
+        <childnode refid="5803" relation="include">
+        </childnode>
+        <childnode refid="5801" relation="include">
+        </childnode>
+        <childnode refid="5627" relation="include">
+        </childnode>
+        <childnode refid="5718" relation="include">
+        </childnode>
+        <childnode refid="5582" relation="include">
+        </childnode>
+        <childnode refid="5725" relation="include">
+        </childnode>
+        <childnode refid="5726" relation="include">
+        </childnode>
+        <childnode refid="5727" relation="include">
+        </childnode>
+        <childnode refid="5723" relation="include">
+        </childnode>
+        <childnode refid="5735" relation="include">
+        </childnode>
+        <childnode refid="5742" relation="include">
+        </childnode>
+        <childnode refid="5752" relation="include">
+        </childnode>
+      </node>
+      <node id="5745">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/transform/unpooling.hpp</label>
+        <link refid="unpooling_8hpp"/>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5566">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_gradient_check.hpp</label>
+        <link refid="callback__gradient__check_8hpp"/>
+        <childnode refid="5567" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5537">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/optimizer_factory.cpp</label>
+        <link refid="optimizer__factory_8cpp"/>
+      </node>
+      <node id="5685">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/io/data_buffers/distributed_io_buffer.cpp</label>
+        <link refid="distributed__io__buffer_8cpp"/>
+      </node>
+      <node id="5790">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp</label>
+        <link refid="adam_8hpp"/>
+        <childnode refid="5791" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5771">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/boolean_false_negatives.hpp</label>
+        <link refid="boolean__false__negatives_8hpp"/>
+        <childnode refid="5772" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5555">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_debug_io.cpp</label>
+        <link refid="callback__debug__io_8cpp"/>
+      </node>
+      <node id="5704">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/layer.hpp</label>
+        <link refid="layer_8hpp"/>
+        <childnode refid="5705" relation="include">
+        </childnode>
+        <childnode refid="5521" relation="include">
+        </childnode>
+        <childnode refid="5706" relation="include">
+        </childnode>
+        <childnode refid="5718" relation="include">
+        </childnode>
+        <childnode refid="5688" relation="include">
+        </childnode>
+        <childnode refid="5582" relation="include">
+        </childnode>
+        <childnode refid="5725" relation="include">
+        </childnode>
+        <childnode refid="5726" relation="include">
+        </childnode>
+        <childnode refid="5727" relation="include">
+        </childnode>
+        <childnode refid="5728" relation="include">
+        </childnode>
+        <childnode refid="5729" relation="include">
+        </childnode>
+        <childnode refid="5734" relation="include">
+        </childnode>
+        <childnode refid="5753" relation="include">
+        </childnode>
+        <childnode refid="5757" relation="include">
+        </childnode>
+        <childnode refid="5690" relation="include">
+        </childnode>
+        <childnode refid="5762" relation="include">
+        </childnode>
+      </node>
+      <node id="5591">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/cross_entropy.hpp</label>
+        <link refid="cross__entropy_8hpp"/>
+        <childnode refid="5592" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5737">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/transform/constant.hpp</label>
+        <link refid="constant_8hpp"/>
+        <childnode refid="5574" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5617">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_summary.cpp</label>
+        <link refid="callback__summary_8cpp"/>
+      </node>
+      <node id="5695">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_csv.hpp</label>
+        <link refid="data__store__csv_8hpp"/>
+        <childnode refid="5665" relation="include">
+        </childnode>
+        <childnode refid="5666" relation="include">
+        </childnode>
+        <childnode refid="5634" relation="include">
+        </childnode>
+      </node>
+      <node id="5692">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/models/greedy_layerwise_autoencoder.hpp</label>
+        <link refid="greedy__layerwise__autoencoder_8hpp"/>
+        <childnode refid="5583" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5538">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/weights_factory.cpp</label>
+        <link refid="weights__factory_8cpp"/>
+      </node>
+      <node id="5813">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/io/persist.cpp</label>
+        <link refid="persist_8cpp"/>
+      </node>
+      <node id="5738">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/transform/dummy.hpp</label>
+        <link refid="dummy_8hpp"/>
+        <childnode refid="5522" relation="include">
+        </childnode>
+        <childnode refid="5574" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5696">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_image.hpp</label>
+        <link refid="data__store__image_8hpp"/>
+        <childnode refid="5629" relation="include">
+        </childnode>
+        <childnode refid="5697" relation="include">
+        </childnode>
+      </node>
+      <node id="5568">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_hang.hpp</label>
+        <link refid="callback__hang_8hpp"/>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5762">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/objective_function_term.hpp</label>
+        <link refid="objective__function__term_8hpp"/>
+        <childnode refid="5758" relation="include">
+        </childnode>
+        <childnode refid="5585" relation="include">
+        </childnode>
+        <childnode refid="5740" relation="include">
+        </childnode>
+        <childnode refid="5587" relation="include">
+        </childnode>
+        <childnode refid="5763" relation="include">
+        </childnode>
+        <childnode refid="5765" relation="include">
+        </childnode>
+        <childnode refid="5766" relation="include">
+        </childnode>
+        <childnode refid="5767" relation="include">
+        </childnode>
+      </node>
+      <node id="5823">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/utils/quantizer.cpp</label>
+        <link refid="quantizer_8cpp"/>
+      </node>
+      <node id="5808">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/cv_process.cpp</label>
+        <link refid="cv__process_8cpp"/>
+      </node>
+      <node id="5693">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/dataset.hpp</label>
+        <link refid="dataset_8hpp"/>
+        <childnode refid="5688" relation="include">
+        </childnode>
+      </node>
+      <node id="5626">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/comm.cpp</label>
+        <link refid="comm_8cpp"/>
+      </node>
+      <node id="5629">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_image.cpp</label>
+        <link refid="data__store__image_8cpp"/>
+      </node>
+      <node id="5719">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/layers/activations/softmax.cpp</label>
+        <link refid="softmax_8cpp"/>
+      </node>
+      <node id="5804">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/weights/weights.hpp</label>
+        <link refid="weights_8hpp"/>
+        <childnode refid="5787" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+        <childnode refid="5757" relation="include">
+        </childnode>
+        <childnode refid="5762" relation="include">
+        </childnode>
+        <childnode refid="5785" relation="include">
+        </childnode>
+      </node>
+      <node id="5764">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/objective_function.cpp</label>
+        <link refid="objective__function_8cpp"/>
+      </node>
+      <node id="5780">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/pearson_correlation.hpp</label>
+        <link refid="pearson__correlation_8hpp"/>
+        <childnode refid="5581" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5522">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/models/model.cpp</label>
+        <link refid="model_8cpp"/>
+      </node>
+      <node id="5828">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/utils/summary.cpp</label>
+        <link refid="summary_8cpp"/>
+      </node>
+      <node id="5826">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/utils/random.cpp</label>
+        <link refid="random_8cpp"/>
+      </node>
+      <node id="5627">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader.hpp</label>
+        <link refid="data__reader_8hpp"/>
+        <childnode refid="5628" relation="include">
+        </childnode>
+        <childnode refid="5629" relation="include">
+        </childnode>
+        <childnode refid="5630" relation="include">
+        </childnode>
+        <childnode refid="5612" relation="include">
+        </childnode>
+        <childnode refid="5631" relation="include">
+        </childnode>
+        <childnode refid="5638" relation="include">
+        </childnode>
+        <childnode refid="5640" relation="include">
+        </childnode>
+        <childnode refid="5664" relation="include">
+        </childnode>
+        <childnode refid="5669" relation="include">
+        </childnode>
+        <childnode refid="5671" relation="include">
+        </childnode>
+        <childnode refid="5673" relation="include">
+        </childnode>
+        <childnode refid="5675" relation="include">
+        </childnode>
+        <childnode refid="5678" relation="include">
+        </childnode>
+        <childnode refid="5680" relation="include">
+        </childnode>
+        <childnode refid="5682" relation="include">
+        </childnode>
+        <childnode refid="5688" relation="include">
+        </childnode>
+        <childnode refid="5690" relation="include">
+        </childnode>
+        <childnode refid="5693" relation="include">
+        </childnode>
+      </node>
+      <node id="5807">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/cv_mean_extractor.cpp</label>
+        <link refid="cv__mean__extractor_8cpp"/>
+      </node>
+      <node id="5662">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_mnist.hpp</label>
+        <link refid="data__reader__mnist_8hpp"/>
+        <childnode refid="5663" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5789">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/optimizers/adagrad.cpp</label>
+        <link refid="adagrad_8cpp"/>
+      </node>
+      <node id="5647">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_imagenet_single.hpp</label>
+        <link refid="data__reader__imagenet__single_8hpp"/>
+        <childnode refid="5648" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5599">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/mean_absolute_error.hpp</label>
+        <link refid="mean__absolute__error_8hpp"/>
+        <childnode refid="5600" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5757">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/models/model.hpp</label>
+        <link refid="model_8hpp"/>
+        <childnode refid="5630" relation="include">
+        </childnode>
+        <childnode refid="5705" relation="include">
+        </childnode>
+        <childnode refid="5580" relation="include">
+        </childnode>
+        <childnode refid="5522" relation="include">
+        </childnode>
+        <childnode refid="5586" relation="include">
+        </childnode>
+        <childnode refid="5588" relation="include">
+        </childnode>
+        <childnode refid="5758" relation="include">
+        </childnode>
+        <childnode refid="5759" relation="include">
+        </childnode>
+        <childnode refid="5760" relation="include">
+        </childnode>
+        <childnode refid="5761" relation="include">
+        </childnode>
+        <childnode refid="5521" relation="include">
+        </childnode>
+        <childnode refid="5718" relation="include">
+        </childnode>
+        <childnode refid="5572" relation="include">
+        </childnode>
+        <childnode refid="5575" relation="include">
+        </childnode>
+        <childnode refid="5578" relation="include">
+        </childnode>
+        <childnode refid="5582" relation="include">
+        </childnode>
+        <childnode refid="5584" relation="include">
+        </childnode>
+        <childnode refid="5723" relation="include">
+        </childnode>
+        <childnode refid="5753" relation="include">
+        </childnode>
+        <childnode refid="5690" relation="include">
+        </childnode>
+      </node>
+      <node id="5610">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_ltfb.hpp</label>
+        <link refid="callback__ltfb_8hpp"/>
+        <childnode refid="5571" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5612">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_save_images.hpp</label>
+        <link refid="callback__save__images_8hpp"/>
+        <childnode refid="5613" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5834">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/cv_utils.hpp</label>
+        <link refid="cv__utils_8hpp"/>
+        <childnode refid="5810" relation="include">
+        </childnode>
+      </node>
+      <node id="5728">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/learning/learning.hpp</label>
+        <link refid="learning_8hpp"/>
+        <childnode refid="5583" relation="include">
+        </childnode>
+        <childnode refid="5725" relation="include">
+        </childnode>
+        <childnode refid="5723" relation="include">
+        </childnode>
+      </node>
+      <node id="5531">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/callback_factory.cpp</label>
+        <link refid="callback__factory_8cpp"/>
+      </node>
+      <node id="5724">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/layers/learning/fully_connected.cpp</label>
+        <link refid="fully__connected_8cpp"/>
+      </node>
+      <node id="5752">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/transform/uniform.hpp</label>
+        <link refid="uniform_8hpp"/>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5690">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/models/sequential.hpp</label>
+        <link refid="sequential_8hpp"/>
+        <childnode refid="5691" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+        <childnode refid="5692" relation="include">
+        </childnode>
+      </node>
+      <node id="5541">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/protobuf_utils.hpp</label>
+        <link refid="protobuf__utils_8hpp"/>
+        <childnode refid="5529" relation="include">
+        </childnode>
+      </node>
+      <node id="5554">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_debug_io.hpp</label>
+        <link refid="callback__debug__io_8hpp"/>
+        <childnode refid="5555" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5806">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/cv_cropper.cpp</label>
+        <link refid="cv__cropper_8cpp"/>
+      </node>
+      <node id="5707">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/activations/atan.hpp</label>
+        <link refid="atan_8hpp"/>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5533">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/layer_graph_factory.cpp</label>
+        <link refid="layer__graph__factory_8cpp"/>
+      </node>
+      <node id="5516">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/Elemental_extensions.hpp</label>
+        <link refid="Elemental__extensions_8hpp"/>
+        <childnode refid="5517" relation="include">
+        </childnode>
+        <childnode refid="5518" relation="include">
+        </childnode>
+      </node>
+      <node id="5633">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_merge_features.cpp</label>
+        <link refid="data__reader__merge__features_8cpp"/>
+      </node>
+      <node id="5578">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp</label>
+        <link refid="generic__target__layer_8hpp"/>
+        <childnode refid="5573" relation="include">
+        </childnode>
+        <childnode refid="5579" relation="include">
+        </childnode>
+        <childnode refid="5580" relation="include">
+        </childnode>
+        <childnode refid="5581" relation="include">
+        </childnode>
+        <childnode refid="5574" relation="include">
+        </childnode>
+        <childnode refid="5582" relation="include">
+        </childnode>
+        <childnode refid="5584" relation="include">
+        </childnode>
+        <childnode refid="5587" relation="include">
+        </childnode>
+      </node>
+      <node id="5585">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/kl_divergence.hpp</label>
+        <link refid="kl__divergence_8hpp"/>
+        <childnode refid="5586" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5567">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_gradient_check.cpp</label>
+        <link refid="callback__gradient__check_8cpp"/>
+      </node>
+      <node id="5776">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/metrics/mean_absolute_deviation.hpp</label>
+        <link refid="metrics_2mean__absolute__deviation_8hpp"/>
+        <childnode refid="5777" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5819">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/offline_patches_npz.cpp</label>
+        <link refid="offline__patches__npz_8cpp"/>
+      </node>
+      <node id="5712">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/activations/leaky_relu.hpp</label>
+        <link refid="leaky__relu_8hpp"/>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5576">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/callbacks/callback_print.cpp</label>
+        <link refid="callback__print_8cpp"/>
+      </node>
+      <node id="5638">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_ascii.hpp</label>
+        <link refid="data__reader__ascii_8hpp"/>
+        <childnode refid="5639" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5519">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/base.cpp</label>
+        <link refid="base_8cpp"/>
+      </node>
+      <node id="5595">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/loss_functions/geom_negloglike.hpp</label>
+        <link refid="geom__negloglike_8hpp"/>
+        <childnode refid="5596" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5671">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_mesh.hpp</label>
+        <link refid="data__reader__mesh_8hpp"/>
+        <childnode refid="5672" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5602">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/loss_functions/mean_squared_error.cpp</label>
+        <link refid="objective__functions_2loss__functions_2mean__squared__error_8cpp"/>
+      </node>
+      <node id="5708">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/activations/bent_identity.hpp</label>
+        <link refid="bent__identity_8hpp"/>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5562">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_dump_weights.hpp</label>
+        <link refid="callback__dump__weights_8hpp"/>
+        <childnode refid="5563" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5801">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/weights/initializer.cpp</label>
+        <link refid="initializer_8cpp"/>
+      </node>
+      <node id="5796">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/sgd.hpp</label>
+        <link refid="sgd_8hpp"/>
+        <childnode refid="5797" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5759">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/weight_regularization/group_lasso.cpp</label>
+        <link refid="group__lasso_8cpp"/>
+      </node>
+      <node id="5558">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_dump_gradients.hpp</label>
+        <link refid="callback__dump__gradients_8hpp"/>
+        <childnode refid="5559" relation="include">
+        </childnode>
+        <childnode refid="5525" relation="include">
+        </childnode>
+      </node>
+      <node id="5672">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_mesh.cpp</label>
+        <link refid="data__reader__mesh_8cpp"/>
+      </node>
+    </invincdepgraph>
+    <innernamespace refid="namespaceEl">El</innernamespace>
+      <sectiondef kind="define">
+      <memberdef kind="define" id="Elemental__extensions_8hpp_1a8696328e0a726a0b8bc4e71c720ae87f" prot="public" static="no">
+        <name>LBANN_PROTO</name>
+        <param><defname>F</defname></param>
+        <initializer>template void ColumnSum                                        \
+  ( const Matrix&lt;F&gt;&amp; X, Matrix&lt;F&gt;&amp; norms );                      \
+  template void RowSum                                           \
+  ( const Matrix&lt;F&gt;&amp; X, Matrix&lt;F&gt;&amp; norms );                      \
+  template void ColumnSum                                        \
+  (const AbstractDistMatrix&lt;F&gt;&amp; X, AbstractDistMatrix&lt;F&gt;&amp; sums); \
+  template void RowSum                                           \
+  (const AbstractDistMatrix&lt;F&gt;&amp; X, AbstractDistMatrix&lt;F&gt;&amp; sums); \</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/Elemental_extensions.hpp" line="43" column="9" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/Elemental_extensions.hpp" bodystart="43" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="Elemental__extensions_8hpp_1a6b884a59cd5b8dc91622f79343fad313" prot="public" static="no">
+        <name>LBANN_PROTO_REAL</name>
+        <param><defname>T</defname></param>
+        <initializer><ref refid="Elemental__extensions_8hpp_1a8696328e0a726a0b8bc4e71c720ae87f" kindref="member">LBANN_PROTO</ref>(T)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/Elemental_extensions.hpp" line="58" column="10" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/Elemental_extensions.hpp" bodystart="58" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="Elemental__extensions_8hpp_1aabb751b985c8fbc1083ba9f0bf2b5c38" prot="public" static="no">
+        <name>LBANN_PROTO_FLOAT</name>
+        <initializer><ref refid="Elemental__extensions_8hpp_1a6b884a59cd5b8dc91622f79343fad313" kindref="member">LBANN_PROTO_REAL</ref>(float)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/Elemental_extensions.hpp" line="62" column="10" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/Elemental_extensions.hpp" bodystart="62" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="Elemental__extensions_8hpp_1a1c4169a84c56c6233350847efb61e539" prot="public" static="no">
+        <name>LBANN_PROTO_DOUBLE</name>
+        <initializer><ref refid="Elemental__extensions_8hpp_1a6b884a59cd5b8dc91622f79343fad313" kindref="member">LBANN_PROTO_REAL</ref>(double)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/Elemental_extensions.hpp" line="65" column="10" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/Elemental_extensions.hpp" bodystart="65" bodyend="-1"/>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>2014-2016,<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Security,<sp/>LLC.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Produced<sp/>at<sp/>the<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Laboratory.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Written<sp/>by<sp/>the<sp/>LBANN<sp/>Research<sp/>Team<sp/>(B.<sp/>Van<sp/>Essen,<sp/>et<sp/>al.)<sp/>listed<sp/>in</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="comment">//<sp/>the<sp/>CONTRIBUTORS<sp/>file.<sp/>&lt;lbann-dev@llnl.gov&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="comment">//<sp/>LLNL-CODE-697807.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="comment">//<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="comment">//<sp/>This<sp/>file<sp/>is<sp/>part<sp/>of<sp/>LBANN:<sp/>Livermore<sp/>Big<sp/>Artificial<sp/>Neural<sp/>Network</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Toolkit.<sp/>For<sp/>details,<sp/>see<sp/>http://software.llnl.gov/LBANN<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="comment">//<sp/>http://github.com/LBANN.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Licensed<sp/>under<sp/>the<sp/>Apache<sp/>License,<sp/>Version<sp/>2.0<sp/>(the<sp/>&quot;Licensee&quot;);<sp/>you</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight><highlight class="comment">//<sp/>may<sp/>not<sp/>use<sp/>this<sp/>file<sp/>except<sp/>in<sp/>compliance<sp/>with<sp/>the<sp/>License.<sp/><sp/>You<sp/>may</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="comment">//<sp/>obtain<sp/>a<sp/>copy<sp/>of<sp/>the<sp/>License<sp/>at:</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight><highlight class="comment">//<sp/>http://www.apache.org/licenses/LICENSE-2.0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Unless<sp/>required<sp/>by<sp/>applicable<sp/>law<sp/>or<sp/>agreed<sp/>to<sp/>in<sp/>writing,<sp/>software</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight><highlight class="comment">//<sp/>distributed<sp/>under<sp/>the<sp/>License<sp/>is<sp/>distributed<sp/>on<sp/>an<sp/>&quot;AS<sp/>IS&quot;<sp/>BASIS,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight><highlight class="comment">//<sp/>WITHOUT<sp/>WARRANTIES<sp/>OR<sp/>CONDITIONS<sp/>OF<sp/>ANY<sp/>KIND,<sp/>either<sp/>express<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="comment">//<sp/>implied.<sp/>See<sp/>the<sp/>License<sp/>for<sp/>the<sp/>specific<sp/>language<sp/>governing</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="comment">//<sp/>permissions<sp/>and<sp/>limitations<sp/>under<sp/>the<sp/>license.</highlight></codeline>
+<codeline lineno="26"><highlight class="comment"></highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="27"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;El.hpp&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="28"><highlight class="normal"></highlight></codeline>
+<codeline lineno="29"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespaceEl" kindref="compound">El</ref><sp/>{</highlight></codeline>
+<codeline lineno="30"><highlight class="normal"></highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight><highlight class="keyword">template</highlight><highlight class="normal">&lt;</highlight><highlight class="keyword">typename</highlight><highlight class="normal"><sp/>F&gt;</highlight></codeline>
+<codeline lineno="32"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="namespaceEl_1a09d5c471681b2b48fbe4c5e6bfd0b3d3" kindref="member">ColumnSum</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>Matrix&lt;F&gt;&amp;<sp/>X,<sp/>Matrix&lt;F&gt;&amp;<sp/>sums);</highlight></codeline>
+<codeline lineno="33"><highlight class="normal"></highlight></codeline>
+<codeline lineno="34"><highlight class="normal"></highlight><highlight class="keyword">template</highlight><highlight class="normal">&lt;</highlight><highlight class="keyword">typename</highlight><highlight class="normal"><sp/>F&gt;</highlight></codeline>
+<codeline lineno="35"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="namespaceEl_1a09d5c471681b2b48fbe4c5e6bfd0b3d3" kindref="member">ColumnSum</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>AbstractDistMatrix&lt;F&gt;&amp;<sp/>A,<sp/>AbstractDistMatrix&lt;F&gt;&amp;<sp/>sums);</highlight></codeline>
+<codeline lineno="36"><highlight class="normal"></highlight></codeline>
+<codeline lineno="37"><highlight class="normal"></highlight><highlight class="keyword">template</highlight><highlight class="normal">&lt;</highlight><highlight class="keyword">typename</highlight><highlight class="normal"><sp/>F&gt;</highlight></codeline>
+<codeline lineno="38"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="namespaceEl_1a584f088a3325a8222d4d6ac37be04b04" kindref="member">RowSum</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>Matrix&lt;F&gt;&amp;<sp/>X,<sp/>Matrix&lt;F&gt;&amp;<sp/>sums);</highlight></codeline>
+<codeline lineno="39"><highlight class="normal"></highlight></codeline>
+<codeline lineno="40"><highlight class="normal"></highlight><highlight class="keyword">template</highlight><highlight class="normal"><sp/>&lt;</highlight><highlight class="keyword">typename</highlight><highlight class="normal"><sp/>F&gt;</highlight></codeline>
+<codeline lineno="41"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="namespaceEl_1a584f088a3325a8222d4d6ac37be04b04" kindref="member">RowSum</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>AbstractDistMatrix&lt;F&gt;&amp;<sp/>A,<sp/>AbstractDistMatrix&lt;F&gt;&amp;<sp/>sums);</highlight></codeline>
+<codeline lineno="42"><highlight class="normal"></highlight></codeline>
+<codeline lineno="43" refid="Elemental__extensions_8hpp_1a8696328e0a726a0b8bc4e71c720ae87f" refkind="member"><highlight class="normal"></highlight><highlight class="preprocessor">#define<sp/>LBANN_PROTO(F)<sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>\</highlight></codeline>
+<codeline lineno="44"><highlight class="preprocessor"><sp/><sp/>template<sp/>void<sp/>ColumnSum<sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>\</highlight></codeline>
+<codeline lineno="45"><highlight class="preprocessor"><sp/><sp/>(<sp/>const<sp/>Matrix&lt;F&gt;&amp;<sp/>X,<sp/>Matrix&lt;F&gt;&amp;<sp/>norms<sp/>);<sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>\</highlight></codeline>
+<codeline lineno="46"><highlight class="preprocessor"><sp/><sp/>template<sp/>void<sp/>RowSum<sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>\</highlight></codeline>
+<codeline lineno="47"><highlight class="preprocessor"><sp/><sp/>(<sp/>const<sp/>Matrix&lt;F&gt;&amp;<sp/>X,<sp/>Matrix&lt;F&gt;&amp;<sp/>norms<sp/>);<sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>\</highlight></codeline>
+<codeline lineno="48"><highlight class="preprocessor"><sp/><sp/>template<sp/>void<sp/>ColumnSum<sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>\</highlight></codeline>
+<codeline lineno="49"><highlight class="preprocessor"><sp/><sp/>(const<sp/>AbstractDistMatrix&lt;F&gt;&amp;<sp/>X,<sp/>AbstractDistMatrix&lt;F&gt;&amp;<sp/>sums);<sp/>\</highlight></codeline>
+<codeline lineno="50"><highlight class="preprocessor"><sp/><sp/>template<sp/>void<sp/>RowSum<sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>\</highlight></codeline>
+<codeline lineno="51"><highlight class="preprocessor"><sp/><sp/>(const<sp/>AbstractDistMatrix&lt;F&gt;&amp;<sp/>X,<sp/>AbstractDistMatrix&lt;F&gt;&amp;<sp/>sums);<sp/>\</highlight></codeline>
+<codeline lineno="52"><highlight class="preprocessor"></highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="53"><highlight class="normal"></highlight><highlight class="comment">/*<sp/>#define<sp/>EL_NO_INT_PROTO<sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="54"><highlight class="normal"></highlight><highlight class="comment">/*<sp/>#define<sp/>EL_ENABLE_QUAD<sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="55"><highlight class="normal"></highlight><highlight class="comment">/*<sp/>#include<sp/>&quot;El/macros/Instantiate.h&quot;<sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="56"><highlight class="normal"></highlight></codeline>
+<codeline lineno="57"><highlight class="normal"></highlight><highlight class="preprocessor">#ifndef<sp/>LBANN_PROTO_REAL</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="58" refid="Elemental__extensions_8hpp_1a6b884a59cd5b8dc91622f79343fad313" refkind="member"><highlight class="normal"></highlight><highlight class="preprocessor">#<sp/>define<sp/>LBANN_PROTO_REAL(T)<sp/>LBANN_PROTO(T)</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="59"><highlight class="normal"></highlight><highlight class="preprocessor">#endif</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="60"><highlight class="normal"></highlight></codeline>
+<codeline lineno="61"><highlight class="normal"></highlight><highlight class="preprocessor">#ifndef<sp/>LBANN_PROTO_FLOAT</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="62" refid="Elemental__extensions_8hpp_1aabb751b985c8fbc1083ba9f0bf2b5c38" refkind="member"><highlight class="normal"></highlight><highlight class="preprocessor">#<sp/>define<sp/>LBANN_PROTO_FLOAT<sp/>LBANN_PROTO_REAL(float)</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="63"><highlight class="normal"></highlight><highlight class="preprocessor">#endif</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="64"><highlight class="normal"></highlight><highlight class="preprocessor">#ifndef<sp/>LBANN_PROTO_DOUBLE</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="65" refid="Elemental__extensions_8hpp_1a1c4169a84c56c6233350847efb61e539" refkind="member"><highlight class="normal"></highlight><highlight class="preprocessor">#<sp/>define<sp/>LBANN_PROTO_DOUBLE<sp/>LBANN_PROTO_REAL(double)</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="66"><highlight class="normal"></highlight><highlight class="preprocessor">#endif</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="67"><highlight class="normal"></highlight></codeline>
+<codeline lineno="68"><highlight class="normal">}<sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>El</highlight><highlight class="normal"></highlight></codeline>
+    </programlisting>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/Elemental_extensions.hpp"/>
+  </compounddef>
+</doxygen>

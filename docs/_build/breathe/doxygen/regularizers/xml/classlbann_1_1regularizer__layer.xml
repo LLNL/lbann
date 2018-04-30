@@ -1,0 +1,85 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1regularizer__layer" kind="class" language="C++" prot="public">
+    <compoundname>lbann::regularizer_layer</compoundname>
+    <basecompoundref prot="public" virt="non-virtual">Layer</basecompoundref>
+    <derivedcompoundref refid="classlbann_1_1batch__normalization" prot="public" virt="non-virtual">lbann::batch_normalization&lt; T_layout &gt;</derivedcompoundref>
+    <derivedcompoundref refid="classlbann_1_1dropout" prot="public" virt="non-virtual">lbann::dropout&lt; T_layout &gt;</derivedcompoundref>
+    <derivedcompoundref refid="classlbann_1_1local__response__normalization__layer" prot="public" virt="non-virtual">lbann::local_response_normalization_layer&lt; T_layout &gt;</derivedcompoundref>
+    <derivedcompoundref refid="classlbann_1_1selu__dropout" prot="public" virt="non-virtual">lbann::selu_dropout&lt; T_layout &gt;</derivedcompoundref>
+    <includes refid="regularizer_8hpp" local="no">regularizer.hpp</includes>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1regularizer__layer_1a2ebf3877b905b479a0250b74cf8f68b3" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>lbann::regularizer_layer::regularizer_layer</definition>
+        <argsstring>(lbann_comm *comm)</argsstring>
+        <name>regularizer_layer</name>
+        <param>
+          <type>lbann_comm *</type>
+          <declname>comm</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/regularizer.hpp" line="38" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/regularizer.hpp" bodystart="38" bodyend="38"/>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>Abstract base class for regularizer layers. Regularizer layers are designed to reduce generalization error. </para>    </detaileddescription>
+    <inheritancegraph>
+      <node id="18">
+        <label>lbann::regularizer_layer</label>
+        <link refid="classlbann_1_1regularizer__layer"/>
+        <childnode refid="19" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="19">
+        <label>Layer</label>
+      </node>
+      <node id="23">
+        <label>lbann::selu_dropout&lt; T_layout &gt;</label>
+        <link refid="classlbann_1_1selu__dropout"/>
+        <childnode refid="18" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="22">
+        <label>lbann::local_response_normalization_layer&lt; T_layout &gt;</label>
+        <link refid="classlbann_1_1local__response__normalization__layer"/>
+        <childnode refid="18" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="21">
+        <label>lbann::dropout&lt; T_layout &gt;</label>
+        <link refid="classlbann_1_1dropout"/>
+        <childnode refid="18" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="20">
+        <label>lbann::batch_normalization&lt; T_layout &gt;</label>
+        <link refid="classlbann_1_1batch__normalization"/>
+        <childnode refid="18" relation="public-inheritance">
+        </childnode>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="24">
+        <label>lbann::regularizer_layer</label>
+        <link refid="classlbann_1_1regularizer__layer"/>
+        <childnode refid="25" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="25">
+        <label>Layer</label>
+      </node>
+    </collaborationgraph>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/regularizer.hpp" line="36" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers/regularizer.hpp" bodystart="36" bodyend="39"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1regularizer__layer_1a2ebf3877b905b479a0250b74cf8f68b3" prot="public" virt="non-virtual"><scope>lbann::regularizer_layer</scope><name>regularizer_layer</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

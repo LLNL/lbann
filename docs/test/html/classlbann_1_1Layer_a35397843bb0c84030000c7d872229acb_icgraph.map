@@ -1,0 +1,22 @@
+<map id="lbann::Layer::get_local_prev_activations" name="lbann::Layer::get_local_prev_activations">
+<area shape="rect" id="node2" href="$classlbann_1_1entrywise__activation__layer.html#a8d4b0376b9783414c1cb7812351122ce" title="lbann::entrywise_activation\l_layer::fp_compute_cpu" alt="" coords="209,5,390,44"/>
+<area shape="rect" id="node3" href="$classlbann_1_1entrywise__activation__layer.html#a38c2c090f26fb8ca269bef45989564a5" title="lbann::entrywise_activation\l_layer::bp_compute_cpu" alt="" coords="209,68,390,107"/>
+<area shape="rect" id="node4" href="$classlbann_1_1Layer.html#a524a78dc6a812ae92834a9e1aa83434b" title="lbann::Layer::set_weights" alt="" coords="213,131,386,156"/>
+<area shape="rect" id="node5" href="$classlbann_1_1base__convolution__layer.html#a0710d46aa54d92f94de920ed37f6ef11" title="lbann::base_convolution\l_layer::apply_convolution\l_im2col" alt="" coords="214,180,385,232"/>
+<area shape="rect" id="node8" href="$classlbann_1_1base__convolution__layer.html#a87fb2bf066a98052938e48a82dcd4fd2" title="lbann::base_convolution\l_layer::apply_transposed\l_convolution_im2col" alt="" coords="214,332,385,384"/>
+<area shape="rect" id="node11" href="$classlbann_1_1base__convolution__layer.html#a8cb0b4fb33f058ce6c211ebaf6a17f63" title="lbann::base_convolution\l_layer::compute_gradients\l_im2col" alt="" coords="210,256,389,308"/>
+<area shape="rect" id="node12" href="$classlbann_1_1local__response__normalization__layer.html#a79c72491b5b74b64d2b10ac2636cddce" title="CPU implementation of forward propagation. " alt="" coords="224,408,375,460"/>
+<area shape="rect" id="node14" href="$classlbann_1_1local__response__normalization__layer.html#a1aac4bf5e2500749bc8bafcd254f5699" title="CPU implementation of backward propagation. " alt="" coords="224,484,375,536"/>
+<area shape="rect" id="node16" href="$classlbann_1_1pooling__layer.html#a76ce07a190fbe85685ea2ab4e53be7f9" title="Pooling forward propagation with im2col. " alt="" coords="227,560,372,599"/>
+<area shape="rect" id="node18" href="$classlbann_1_1safe__inv__layer.html#a070fe64c2a605eb5624d509740de1c32" title="lbann::safe_inv_layer\l::fp_compute" alt="" coords="226,623,373,661"/>
+<area shape="rect" id="node19" href="$classlbann_1_1safe__inv__layer.html#a6c9d917f226b718733ee60da9da0291b" title="lbann::safe_inv_layer\l::bp_compute" alt="" coords="226,685,373,724"/>
+<area shape="rect" id="node20" href="$classlbann_1_1unpooling__layer.html#ab4a0b7cc4711426434983c41cd7dbc63" title="Unpooling forward propagation with im2col. " alt="" coords="222,748,377,787"/>
+<area shape="rect" id="node6" href="$classlbann_1_1convolution__layer.html#aaca2c840fe41d8025efce91d6e9211b9" title="lbann::convolution\l_layer::fp_compute" alt="" coords="449,155,583,193"/>
+<area shape="rect" id="node7" href="$classlbann_1_1deconvolution__layer.html#a70649662ff27ddacf0f5584829022b72" title="lbann::deconvolution\l_layer::bp_compute" alt="" coords="444,217,588,256"/>
+<area shape="rect" id="node9" href="$classlbann_1_1convolution__layer.html#a610f24f98b548434cd4d22419f47c7f0" title="lbann::convolution\l_layer::bp_compute" alt="" coords="447,280,585,319"/>
+<area shape="rect" id="node10" href="$classlbann_1_1deconvolution__layer.html#a6ebbb96c605a96b41fdbbc848dcaa877" title="lbann::deconvolution\l_layer::fp_compute" alt="" coords="444,343,588,381"/>
+<area shape="rect" id="node13" href="$classlbann_1_1local__response__normalization__layer.html#ac7b2ce4970eb7163685fb0a4a69328fc" title="lbann::local_response\l_normalization_layer\l::fp_compute" alt="" coords="440,408,592,460"/>
+<area shape="rect" id="node15" href="$classlbann_1_1local__response__normalization__layer.html#ae94544765a459a6609f2c2ebbbc3e9d9" title="lbann::local_response\l_normalization_layer\l::bp_compute" alt="" coords="440,484,592,536"/>
+<area shape="rect" id="node17" href="$classlbann_1_1pooling__layer.html#a0af01b6939abe9798fa3a0b1f5292721" title="lbann::pooling_layer\l::fp_compute" alt="" coords="446,560,586,599"/>
+<area shape="rect" id="node21" href="$classlbann_1_1unpooling__layer.html#aad98d442d6f5ad1feb5f1d71bdb1df49" title="lbann::unpooling_layer\l::fp_compute" alt="" coords="438,748,594,787"/>
+</map>

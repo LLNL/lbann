@@ -1,0 +1,193 @@
+\hypertarget{classlbann_1_1smooth__relu__layer}{}\section{lbann\+:\+:smooth\+\_\+relu\+\_\+layer$<$ T\+\_\+layout $>$ Class Template Reference}
+\label{classlbann_1_1smooth__relu__layer}\index{lbann\+::smooth\+\_\+relu\+\_\+layer$<$ T\+\_\+layout $>$@{lbann\+::smooth\+\_\+relu\+\_\+layer$<$ T\+\_\+layout $>$}}
+
+
+{\ttfamily \#include $<$smooth\+\_\+relu.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:smooth\+\_\+relu\+\_\+layer$<$ T\+\_\+layout $>$\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=216pt]{classlbann_1_1smooth__relu__layer__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:smooth\+\_\+relu\+\_\+layer$<$ T\+\_\+layout $>$\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1smooth__relu__layer__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1smooth__relu__layer_aa045764ef0113d8516ddf95a3b810ce0}{smooth\+\_\+relu\+\_\+layer} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm})
+\item 
+\hyperlink{classlbann_1_1smooth__relu__layer}{smooth\+\_\+relu\+\_\+layer} $\ast$ \hyperlink{classlbann_1_1smooth__relu__layer_af6fb922556c2debf7bec8d6f376dbe94}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1smooth__relu__layer_a33833fe4b2693b8d25b286d9af7444e5}{get\+\_\+type} () const override
+\item 
+\hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08db}{data\+\_\+layout} \hyperlink{classlbann_1_1smooth__relu__layer_a2514d7b711e0a6cbf494c5bd9a959d03}{get\+\_\+data\+\_\+layout} () const override
+\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+Data\+Type \hyperlink{classlbann_1_1smooth__relu__layer_a7fa882bb89a244a5a4ccb6614815f1c6}{activation} (Data\+Type z) const override
+\item 
+Data\+Type \hyperlink{classlbann_1_1smooth__relu__layer_a44b4b163830213b9fb270e9ef2cc70ae}{activation\+\_\+derivative} (Data\+Type z) const override
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+\subsubsection*{template$<$data\+\_\+layout T\+\_\+layout$>$\newline
+class lbann\+::smooth\+\_\+relu\+\_\+layer$<$ T\+\_\+layout $>$}
+
+Smooth Rectified linear unit activation function. This is an approximation to the softplus. 
+
+Definition at line 39 of file smooth\+\_\+relu.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1smooth__relu__layer_aa045764ef0113d8516ddf95a3b810ce0}\label{classlbann_1_1smooth__relu__layer_aa045764ef0113d8516ddf95a3b810ce0}} 
+\index{lbann\+::smooth\+\_\+relu\+\_\+layer@{lbann\+::smooth\+\_\+relu\+\_\+layer}!smooth\+\_\+relu\+\_\+layer@{smooth\+\_\+relu\+\_\+layer}}
+\index{smooth\+\_\+relu\+\_\+layer@{smooth\+\_\+relu\+\_\+layer}!lbann\+::smooth\+\_\+relu\+\_\+layer@{lbann\+::smooth\+\_\+relu\+\_\+layer}}
+\subsubsection{\texorpdfstring{smooth\+\_\+relu\+\_\+layer()}{smooth\_relu\_layer()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{classlbann_1_1smooth__relu__layer}{lbann\+::smooth\+\_\+relu\+\_\+layer}$<$ T\+\_\+layout $>$\+::\hyperlink{classlbann_1_1smooth__relu__layer}{smooth\+\_\+relu\+\_\+layer} (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 41 of file smooth\+\_\+relu.\+hpp.
+
+
+\begin{DoxyCode}
+42     : \hyperlink{classlbann_1_1entrywise__activation__layer_aada1d9200612dcd13259799ef327c557}{entrywise\_activation\_layer}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}) \{\}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=348pt]{classlbann_1_1smooth__relu__layer_aa045764ef0113d8516ddf95a3b810ce0_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1smooth__relu__layer_a7fa882bb89a244a5a4ccb6614815f1c6}\label{classlbann_1_1smooth__relu__layer_a7fa882bb89a244a5a4ccb6614815f1c6}} 
+\index{lbann\+::smooth\+\_\+relu\+\_\+layer@{lbann\+::smooth\+\_\+relu\+\_\+layer}!activation@{activation}}
+\index{activation@{activation}!lbann\+::smooth\+\_\+relu\+\_\+layer@{lbann\+::smooth\+\_\+relu\+\_\+layer}}
+\subsubsection{\texorpdfstring{activation()}{activation()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+Data\+Type \hyperlink{classlbann_1_1smooth__relu__layer}{lbann\+::smooth\+\_\+relu\+\_\+layer}$<$ T\+\_\+layout $>$\+::activation (\begin{DoxyParamCaption}\item[{Data\+Type}]{x }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Activation function. This function is applied independently to each input entry. 
+
+Implements \hyperlink{classlbann_1_1entrywise__activation__layer_a69269401530a2112b66660383464bab9}{lbann\+::entrywise\+\_\+activation\+\_\+layer}.
+
+
+
+Definition at line 48 of file smooth\+\_\+relu.\+hpp.
+
+
+\begin{DoxyCode}
+48                                                  \{
+49     \textcolor{keywordflow}{return} z / (DataType(1) + std::exp(-z));
+50   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1smooth__relu__layer_a44b4b163830213b9fb270e9ef2cc70ae}\label{classlbann_1_1smooth__relu__layer_a44b4b163830213b9fb270e9ef2cc70ae}} 
+\index{lbann\+::smooth\+\_\+relu\+\_\+layer@{lbann\+::smooth\+\_\+relu\+\_\+layer}!activation\+\_\+derivative@{activation\+\_\+derivative}}
+\index{activation\+\_\+derivative@{activation\+\_\+derivative}!lbann\+::smooth\+\_\+relu\+\_\+layer@{lbann\+::smooth\+\_\+relu\+\_\+layer}}
+\subsubsection{\texorpdfstring{activation\+\_\+derivative()}{activation\_derivative()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+Data\+Type \hyperlink{classlbann_1_1smooth__relu__layer}{lbann\+::smooth\+\_\+relu\+\_\+layer}$<$ T\+\_\+layout $>$\+::activation\+\_\+derivative (\begin{DoxyParamCaption}\item[{Data\+Type}]{x }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Derivative of activation function. 
+
+Implements \hyperlink{classlbann_1_1entrywise__activation__layer_a7676a4c5060452a38264993554e79f8e}{lbann\+::entrywise\+\_\+activation\+\_\+layer}.
+
+
+
+Definition at line 51 of file smooth\+\_\+relu.\+hpp.
+
+
+\begin{DoxyCode}
+51                                                             \{
+52     \textcolor{keyword}{const} DataType sigz = 1 / (DataType(1) + std::exp(-z));
+53     \textcolor{keywordflow}{return} sigz + z * sigz - z * sigz * sigz;
+54   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1smooth__relu__layer_af6fb922556c2debf7bec8d6f376dbe94}\label{classlbann_1_1smooth__relu__layer_af6fb922556c2debf7bec8d6f376dbe94}} 
+\index{lbann\+::smooth\+\_\+relu\+\_\+layer@{lbann\+::smooth\+\_\+relu\+\_\+layer}!copy@{copy}}
+\index{copy@{copy}!lbann\+::smooth\+\_\+relu\+\_\+layer@{lbann\+::smooth\+\_\+relu\+\_\+layer}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{classlbann_1_1smooth__relu__layer}{smooth\+\_\+relu\+\_\+layer}$\ast$ \hyperlink{classlbann_1_1smooth__relu__layer}{lbann\+::smooth\+\_\+relu\+\_\+layer}$<$ T\+\_\+layout $>$\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Copy function. This function dynamically allocates memory for a layer instance and instantiates a copy. The caller is responsible for deallocating the instance. 
+
+Implements \hyperlink{classlbann_1_1Layer_af420f22bbac801c85483ade84588a23f}{lbann\+::\+Layer}.
+
+
+
+Definition at line 43 of file smooth\+\_\+relu.\+hpp.
+
+
+\begin{DoxyCode}
+43 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1smooth__relu__layer_aa045764ef0113d8516ddf95a3b810ce0}{smooth\_relu\_layer}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=348pt]{classlbann_1_1smooth__relu__layer_af6fb922556c2debf7bec8d6f376dbe94_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1smooth__relu__layer_a2514d7b711e0a6cbf494c5bd9a959d03}\label{classlbann_1_1smooth__relu__layer_a2514d7b711e0a6cbf494c5bd9a959d03}} 
+\index{lbann\+::smooth\+\_\+relu\+\_\+layer@{lbann\+::smooth\+\_\+relu\+\_\+layer}!get\+\_\+data\+\_\+layout@{get\+\_\+data\+\_\+layout}}
+\index{get\+\_\+data\+\_\+layout@{get\+\_\+data\+\_\+layout}!lbann\+::smooth\+\_\+relu\+\_\+layer@{lbann\+::smooth\+\_\+relu\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+data\+\_\+layout()}{get\_data\_layout()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+\hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08db}{data\+\_\+layout} \hyperlink{classlbann_1_1smooth__relu__layer}{lbann\+::smooth\+\_\+relu\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+data\+\_\+layout (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get data layout of the data tensors. We assume that the data layouts of the previous activations, activations, previous error signals, and error signals are the same. Each concrete layer that is templated on its data layout should override this function to return its template parameter. 
+
+Implements \hyperlink{classlbann_1_1Layer_a5dfb66e81fc085997402a5e2241316bd}{lbann\+::\+Layer}.
+
+
+
+Definition at line 45 of file smooth\+\_\+relu.\+hpp.
+
+
+\begin{DoxyCode}
+45 \{ \textcolor{keywordflow}{return} T\_layout; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1smooth__relu__layer_a33833fe4b2693b8d25b286d9af7444e5}\label{classlbann_1_1smooth__relu__layer_a33833fe4b2693b8d25b286d9af7444e5}} 
+\index{lbann\+::smooth\+\_\+relu\+\_\+layer@{lbann\+::smooth\+\_\+relu\+\_\+layer}!get\+\_\+type@{get\+\_\+type}}
+\index{get\+\_\+type@{get\+\_\+type}!lbann\+::smooth\+\_\+relu\+\_\+layer@{lbann\+::smooth\+\_\+relu\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+type()}{get\_type()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout$>$ \\
+std\+::string \hyperlink{classlbann_1_1smooth__relu__layer}{lbann\+::smooth\+\_\+relu\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+type (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get the layer type\textquotesingle{}s name. A layer type name should be brief, human-\/readable description of the layer\textquotesingle{}s mathematical operation. 
+
+Implements \hyperlink{classlbann_1_1Layer_a0fa0ea9160b490c151c0a17fde4f7239}{lbann\+::\+Layer}.
+
+
+
+Definition at line 44 of file smooth\+\_\+relu.\+hpp.
+
+
+\begin{DoxyCode}
+44 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"smooth ReLU"}; \}
+\end{DoxyCode}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/layers/activations/\hyperlink{smooth__relu_8hpp}{smooth\+\_\+relu.\+hpp}\end{DoxyCompactItemize}

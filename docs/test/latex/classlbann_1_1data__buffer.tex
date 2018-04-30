@@ -1,0 +1,210 @@
+\hypertarget{classlbann_1_1data__buffer}{}\section{lbann\+:\+:data\+\_\+buffer Class Reference}
+\label{classlbann_1_1data__buffer}\index{lbann\+::data\+\_\+buffer@{lbann\+::data\+\_\+buffer}}
+
+
+{\ttfamily \#include $<$distributed\+\_\+io\+\_\+buffer.\+hpp$>$}
+
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1data__buffer_ad03198df8b35ac6349180d5b2bc036d5}{data\+\_\+buffer} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm})
+\item 
+\hyperlink{classlbann_1_1data__buffer_afdb150ed440864137d491685155a1d75}{data\+\_\+buffer} (const \hyperlink{classlbann_1_1data__buffer}{data\+\_\+buffer} \&)=default
+\item 
+\hyperlink{classlbann_1_1data__buffer}{data\+\_\+buffer} \& \hyperlink{classlbann_1_1data__buffer_a364283f9ce3d811ec73fc3c2513f11a6}{operator=} (const \hyperlink{classlbann_1_1data__buffer}{data\+\_\+buffer} \&)=default
+\item 
+\hyperlink{classlbann_1_1data__buffer}{data\+\_\+buffer} $\ast$ \hyperlink{classlbann_1_1data__buffer_acd96a02a4709efe967f34cd004d742b5}{copy} () const
+\end{DoxyCompactItemize}
+\subsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{classlbann_1_1data__buffer_a5d2333dc0a74333b9d8ebfcc8084c783}{m\+\_\+root}
+\item 
+bool \hyperlink{classlbann_1_1data__buffer_af83d8197ff61c85ab32a612480932a5b}{m\+\_\+local\+\_\+reader\+\_\+done}
+\item 
+int \hyperlink{classlbann_1_1data__buffer_a5f07c95c2fa99046df6d5437d1ef6375}{m\+\_\+num\+\_\+samples\+\_\+in\+\_\+batch}
+\item 
+bool \hyperlink{classlbann_1_1data__buffer_ad0c2ff22428f74cf7c8eb4a2be534338}{m\+\_\+local\+\_\+data\+\_\+valid}
+\item 
+int \hyperlink{classlbann_1_1data__buffer_a14de875712b1362110e41fdd5a3e58a5}{m\+\_\+num\+\_\+data\+\_\+per\+\_\+epoch}
+\item 
+\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \hyperlink{classlbann_1_1data__buffer_a3d839e04fd26b5810027144662af0e54}{M\+\_\+local}
+\item 
+\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \hyperlink{classlbann_1_1data__buffer_a850fb59346357e429214d8b384286202}{M\+\_\+local\+\_\+v}
+\item 
+\hyperlink{base_8hpp_a48abd140bc807a8ac1381efd1bfeb375}{Circ\+Mat} \hyperlink{classlbann_1_1data__buffer_a9c9f68cda527896bc45762ddac7c2e2a}{Ms}
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+
+
+Definition at line 34 of file distributed\+\_\+io\+\_\+buffer.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1data__buffer_ad03198df8b35ac6349180d5b2bc036d5}\label{classlbann_1_1data__buffer_ad03198df8b35ac6349180d5b2bc036d5}} 
+\index{lbann\+::data\+\_\+buffer@{lbann\+::data\+\_\+buffer}!data\+\_\+buffer@{data\+\_\+buffer}}
+\index{data\+\_\+buffer@{data\+\_\+buffer}!lbann\+::data\+\_\+buffer@{lbann\+::data\+\_\+buffer}}
+\subsubsection{\texorpdfstring{data\+\_\+buffer()}{data\_buffer()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::data\+\_\+buffer\+::data\+\_\+buffer (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Distributed matrix used to stage local data to layer output 
+
+Definition at line 50 of file distributed\+\_\+io\+\_\+buffer.\+hpp.
+
+
+\begin{DoxyCode}
+50                                 :
+51     \hyperlink{classlbann_1_1data__buffer_a5d2333dc0a74333b9d8ebfcc8084c783}{m\_root}(0),
+52     \hyperlink{classlbann_1_1data__buffer_af83d8197ff61c85ab32a612480932a5b}{m\_local\_reader\_done}(\textcolor{keyword}{false}),
+53     \hyperlink{classlbann_1_1data__buffer_a5f07c95c2fa99046df6d5437d1ef6375}{m\_num\_samples\_in\_batch}(0),
+54     \hyperlink{classlbann_1_1data__buffer_ad0c2ff22428f74cf7c8eb4a2be534338}{m\_local\_data\_valid}(\textcolor{keyword}{false}),
+55     \hyperlink{classlbann_1_1data__buffer_a9c9f68cda527896bc45762ddac7c2e2a}{Ms}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}->get\_model\_grid()) \{\}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=309pt]{classlbann_1_1data__buffer_ad03198df8b35ac6349180d5b2bc036d5_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__buffer_ad03198df8b35ac6349180d5b2bc036d5_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__buffer_afdb150ed440864137d491685155a1d75}\label{classlbann_1_1data__buffer_afdb150ed440864137d491685155a1d75}} 
+\index{lbann\+::data\+\_\+buffer@{lbann\+::data\+\_\+buffer}!data\+\_\+buffer@{data\+\_\+buffer}}
+\index{data\+\_\+buffer@{data\+\_\+buffer}!lbann\+::data\+\_\+buffer@{lbann\+::data\+\_\+buffer}}
+\subsubsection{\texorpdfstring{data\+\_\+buffer()}{data\_buffer()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::data\+\_\+buffer\+::data\+\_\+buffer (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1data__buffer}{data\+\_\+buffer} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1data__buffer_acd96a02a4709efe967f34cd004d742b5}\label{classlbann_1_1data__buffer_acd96a02a4709efe967f34cd004d742b5}} 
+\index{lbann\+::data\+\_\+buffer@{lbann\+::data\+\_\+buffer}!copy@{copy}}
+\index{copy@{copy}!lbann\+::data\+\_\+buffer@{lbann\+::data\+\_\+buffer}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1data__buffer}{data\+\_\+buffer}$\ast$ lbann\+::data\+\_\+buffer\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 61 of file distributed\+\_\+io\+\_\+buffer.\+hpp.
+
+
+\begin{DoxyCode}
+61 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1data__buffer_ad03198df8b35ac6349180d5b2bc036d5}{data\_buffer}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__buffer_acd96a02a4709efe967f34cd004d742b5_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1data__buffer_a364283f9ce3d811ec73fc3c2513f11a6}\label{classlbann_1_1data__buffer_a364283f9ce3d811ec73fc3c2513f11a6}} 
+\index{lbann\+::data\+\_\+buffer@{lbann\+::data\+\_\+buffer}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::data\+\_\+buffer@{lbann\+::data\+\_\+buffer}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1data__buffer}{data\+\_\+buffer}\& lbann\+::data\+\_\+buffer\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1data__buffer}{data\+\_\+buffer} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1data__buffer_a364283f9ce3d811ec73fc3c2513f11a6_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1data__buffer_a3d839e04fd26b5810027144662af0e54}\label{classlbann_1_1data__buffer_a3d839e04fd26b5810027144662af0e54}} 
+\index{lbann\+::data\+\_\+buffer@{lbann\+::data\+\_\+buffer}!M\+\_\+local@{M\+\_\+local}}
+\index{M\+\_\+local@{M\+\_\+local}!lbann\+::data\+\_\+buffer@{lbann\+::data\+\_\+buffer}}
+\subsubsection{\texorpdfstring{M\+\_\+local}{M\_local}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} lbann\+::data\+\_\+buffer\+::\+M\+\_\+local}
+
+
+
+Definition at line 46 of file distributed\+\_\+io\+\_\+buffer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1data__buffer_ad0c2ff22428f74cf7c8eb4a2be534338}\label{classlbann_1_1data__buffer_ad0c2ff22428f74cf7c8eb4a2be534338}} 
+\index{lbann\+::data\+\_\+buffer@{lbann\+::data\+\_\+buffer}!m\+\_\+local\+\_\+data\+\_\+valid@{m\+\_\+local\+\_\+data\+\_\+valid}}
+\index{m\+\_\+local\+\_\+data\+\_\+valid@{m\+\_\+local\+\_\+data\+\_\+valid}!lbann\+::data\+\_\+buffer@{lbann\+::data\+\_\+buffer}}
+\subsubsection{\texorpdfstring{m\+\_\+local\+\_\+data\+\_\+valid}{m\_local\_data\_valid}}
+{\footnotesize\ttfamily bool lbann\+::data\+\_\+buffer\+::m\+\_\+local\+\_\+data\+\_\+valid}
+
+Has the layer copied valid data into the local matrix 
+
+Definition at line 42 of file distributed\+\_\+io\+\_\+buffer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1data__buffer_af83d8197ff61c85ab32a612480932a5b}\label{classlbann_1_1data__buffer_af83d8197ff61c85ab32a612480932a5b}} 
+\index{lbann\+::data\+\_\+buffer@{lbann\+::data\+\_\+buffer}!m\+\_\+local\+\_\+reader\+\_\+done@{m\+\_\+local\+\_\+reader\+\_\+done}}
+\index{m\+\_\+local\+\_\+reader\+\_\+done@{m\+\_\+local\+\_\+reader\+\_\+done}!lbann\+::data\+\_\+buffer@{lbann\+::data\+\_\+buffer}}
+\subsubsection{\texorpdfstring{m\+\_\+local\+\_\+reader\+\_\+done}{m\_local\_reader\_done}}
+{\footnotesize\ttfamily bool lbann\+::data\+\_\+buffer\+::m\+\_\+local\+\_\+reader\+\_\+done}
+
+
+
+Definition at line 38 of file distributed\+\_\+io\+\_\+buffer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1data__buffer_a850fb59346357e429214d8b384286202}\label{classlbann_1_1data__buffer_a850fb59346357e429214d8b384286202}} 
+\index{lbann\+::data\+\_\+buffer@{lbann\+::data\+\_\+buffer}!M\+\_\+local\+\_\+v@{M\+\_\+local\+\_\+v}}
+\index{M\+\_\+local\+\_\+v@{M\+\_\+local\+\_\+v}!lbann\+::data\+\_\+buffer@{lbann\+::data\+\_\+buffer}}
+\subsubsection{\texorpdfstring{M\+\_\+local\+\_\+v}{M\_local\_v}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} lbann\+::data\+\_\+buffer\+::\+M\+\_\+local\+\_\+v}
+
+Local matrix that holds data from data reader 
+
+Definition at line 47 of file distributed\+\_\+io\+\_\+buffer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1data__buffer_a14de875712b1362110e41fdd5a3e58a5}\label{classlbann_1_1data__buffer_a14de875712b1362110e41fdd5a3e58a5}} 
+\index{lbann\+::data\+\_\+buffer@{lbann\+::data\+\_\+buffer}!m\+\_\+num\+\_\+data\+\_\+per\+\_\+epoch@{m\+\_\+num\+\_\+data\+\_\+per\+\_\+epoch}}
+\index{m\+\_\+num\+\_\+data\+\_\+per\+\_\+epoch@{m\+\_\+num\+\_\+data\+\_\+per\+\_\+epoch}!lbann\+::data\+\_\+buffer@{lbann\+::data\+\_\+buffer}}
+\subsubsection{\texorpdfstring{m\+\_\+num\+\_\+data\+\_\+per\+\_\+epoch}{m\_num\_data\_per\_epoch}}
+{\footnotesize\ttfamily int lbann\+::data\+\_\+buffer\+::m\+\_\+num\+\_\+data\+\_\+per\+\_\+epoch}
+
+Number of samples in the current mini-\/batch 
+
+Definition at line 44 of file distributed\+\_\+io\+\_\+buffer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1data__buffer_a5f07c95c2fa99046df6d5437d1ef6375}\label{classlbann_1_1data__buffer_a5f07c95c2fa99046df6d5437d1ef6375}} 
+\index{lbann\+::data\+\_\+buffer@{lbann\+::data\+\_\+buffer}!m\+\_\+num\+\_\+samples\+\_\+in\+\_\+batch@{m\+\_\+num\+\_\+samples\+\_\+in\+\_\+batch}}
+\index{m\+\_\+num\+\_\+samples\+\_\+in\+\_\+batch@{m\+\_\+num\+\_\+samples\+\_\+in\+\_\+batch}!lbann\+::data\+\_\+buffer@{lbann\+::data\+\_\+buffer}}
+\subsubsection{\texorpdfstring{m\+\_\+num\+\_\+samples\+\_\+in\+\_\+batch}{m\_num\_samples\_in\_batch}}
+{\footnotesize\ttfamily int lbann\+::data\+\_\+buffer\+::m\+\_\+num\+\_\+samples\+\_\+in\+\_\+batch}
+
+Number of samples in the current mini-\/batch 
+
+Definition at line 40 of file distributed\+\_\+io\+\_\+buffer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1data__buffer_a5d2333dc0a74333b9d8ebfcc8084c783}\label{classlbann_1_1data__buffer_a5d2333dc0a74333b9d8ebfcc8084c783}} 
+\index{lbann\+::data\+\_\+buffer@{lbann\+::data\+\_\+buffer}!m\+\_\+root@{m\+\_\+root}}
+\index{m\+\_\+root@{m\+\_\+root}!lbann\+::data\+\_\+buffer@{lbann\+::data\+\_\+buffer}}
+\subsubsection{\texorpdfstring{m\+\_\+root}{m\_root}}
+{\footnotesize\ttfamily int lbann\+::data\+\_\+buffer\+::m\+\_\+root}
+
+Which rank is the root of the Circ\+Mat 
+
+Definition at line 37 of file distributed\+\_\+io\+\_\+buffer.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1data__buffer_a9c9f68cda527896bc45762ddac7c2e2a}\label{classlbann_1_1data__buffer_a9c9f68cda527896bc45762ddac7c2e2a}} 
+\index{lbann\+::data\+\_\+buffer@{lbann\+::data\+\_\+buffer}!Ms@{Ms}}
+\index{Ms@{Ms}!lbann\+::data\+\_\+buffer@{lbann\+::data\+\_\+buffer}}
+\subsubsection{\texorpdfstring{Ms}{Ms}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a48abd140bc807a8ac1381efd1bfeb375}{Circ\+Mat} lbann\+::data\+\_\+buffer\+::\+Ms}
+
+View of local matrix that holds data from data reader 
+
+Definition at line 48 of file distributed\+\_\+io\+\_\+buffer.\+hpp.
+
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/io/data\+\_\+buffers/\hyperlink{distributed__io__buffer_8hpp}{distributed\+\_\+io\+\_\+buffer.\+hpp}\end{DoxyCompactItemize}

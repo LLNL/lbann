@@ -1,0 +1,12 @@
+<map id="lbann::local_response_normalization_layer::bp_compute" name="lbann::local_response_normalization_layer::bp_compute">
+<area shape="rect" id="node2" href="$classlbann_1_1local__response__normalization__layer.html#a78b0d081956abf4f09874d59b4bf4fc8" title="GPU implementation of backward propagation. " alt="" coords="204,68,355,120"/>
+<area shape="rect" id="node3" href="$classlbann_1_1local__response__normalization__layer.html#a1aac4bf5e2500749bc8bafcd254f5699" title="CPU implementation of backward propagation. " alt="" coords="204,144,355,196"/>
+<area shape="rect" id="node4" href="$classlbann_1_1Layer.html#a35397843bb0c84030000c7d872229acb" title="lbann::Layer::get_local\l_prev_activations" alt="" coords="403,41,559,80"/>
+<area shape="rect" id="node6" href="$classlbann_1_1Layer.html#a4248f27acebf72b7b7b3ee39c8bcb62a" title="lbann::Layer::get_local\l_activations" alt="" coords="403,115,559,153"/>
+<area shape="rect" id="node8" href="$classlbann_1_1Layer.html#a82827edc5e869960144f3ccb2172bfcd" title="lbann::Layer::get_local\l_prev_error_signals" alt="" coords="403,181,559,220"/>
+<area shape="rect" id="node10" href="$classlbann_1_1Layer.html#af178d00b9d878aa7d87754bff2a91f3a" title="lbann::Layer::get_local\l_error_signals" alt="" coords="403,256,559,295"/>
+<area shape="rect" id="node5" href="$classlbann_1_1Layer.html#a45853df73a2e72bfaa774665a0f37ed7" title="lbann::Layer::get_prev\l_activations" alt="" coords="625,29,779,68"/>
+<area shape="rect" id="node7" href="$classlbann_1_1Layer.html#a1134b1a4385af199d7272c5aa827fa99" title="lbann::Layer::get_activations" alt="" coords="607,116,798,141"/>
+<area shape="rect" id="node9" href="$classlbann_1_1Layer.html#a7ac4579d3c1671dfaf86e3b618d6938a" title="lbann::Layer::get_prev\l_error_signals" alt="" coords="625,189,779,228"/>
+<area shape="rect" id="node11" href="$classlbann_1_1Layer.html#adb561e140e0bb601f3c5a8ee053a71d2" title="lbann::Layer::get_error\l_signals" alt="" coords="624,276,781,315"/>
+</map>

@@ -1,0 +1,743 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="data__reader__image_8hpp" kind="file" language="C++">
+    <compoundname>data_reader_image.hpp</compoundname>
+    <includes refid="data__reader_8hpp" local="yes">data_reader.hpp</includes>
+    <includes refid="image__preprocessor_8hpp" local="yes">image_preprocessor.hpp</includes>
+    <includes refid="cv__process_8hpp" local="yes">cv_process.hpp</includes>
+    <includedby refid="data__reader__image_8cpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_image.cpp</includedby>
+    <includedby refid="data__reader__cifar10_8hpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_cifar10.hpp</includedby>
+    <includedby refid="data__reader__imagenet_8hpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_imagenet.hpp</includedby>
+    <includedby refid="data__reader__imagenet__org_8hpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_imagenet_org.hpp</includedby>
+    <includedby refid="data__reader__imagenet__patches_8hpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_imagenet_patches.hpp</includedby>
+    <includedby refid="data__reader__mnist_8hpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_mnist.hpp</includedby>
+    <incdepgraph>
+      <node id="3694">
+        <label>sys/stat.h</label>
+      </node>
+      <node id="3701">
+        <label>cv_process.hpp</label>
+        <link refid="cv__process_8hpp"/>
+        <childnode refid="3702" relation="include">
+        </childnode>
+        <childnode refid="3705" relation="include">
+        </childnode>
+        <childnode refid="3708" relation="include">
+        </childnode>
+        <childnode refid="3709" relation="include">
+        </childnode>
+        <childnode refid="3712" relation="include">
+        </childnode>
+        <childnode refid="3713" relation="include">
+        </childnode>
+        <childnode refid="3714" relation="include">
+        </childnode>
+        <childnode refid="3716" relation="include">
+        </childnode>
+        <childnode refid="3718" relation="include">
+        </childnode>
+        <childnode refid="3719" relation="include">
+        </childnode>
+      </node>
+      <node id="3716">
+        <label>cv_mean_extractor.hpp</label>
+        <link refid="cv__mean__extractor_8hpp"/>
+        <childnode refid="3702" relation="include">
+        </childnode>
+        <childnode refid="3717" relation="include">
+        </childnode>
+      </node>
+      <node id="3719">
+        <label>limits</label>
+      </node>
+      <node id="3697">
+        <label>lbann/data_readers/image_preprocessor.hpp</label>
+        <link refid="image__preprocessor_8hpp"/>
+        <childnode refid="3679" relation="include">
+        </childnode>
+        <childnode refid="3671" relation="include">
+        </childnode>
+      </node>
+      <node id="3685">
+        <label>lbann/io/persist.hpp</label>
+        <link refid="persist_8hpp"/>
+        <childnode refid="3671" relation="include">
+        </childnode>
+        <childnode refid="3672" relation="include">
+        </childnode>
+      </node>
+      <node id="3672">
+        <label>El.hpp</label>
+      </node>
+      <node id="3707">
+        <label>lbann/utils/mild_exception.hpp</label>
+        <link refid="mild__exception_8hpp"/>
+        <childnode refid="3691" relation="include">
+        </childnode>
+      </node>
+      <node id="3671">
+        <label>lbann/base.hpp</label>
+        <link refid="base_8hpp"/>
+        <childnode refid="3672" relation="include">
+        </childnode>
+        <childnode refid="3673" relation="include">
+        </childnode>
+        <childnode refid="3674" relation="include">
+        </childnode>
+        <childnode refid="3679" relation="include">
+        </childnode>
+      </node>
+      <node id="3669">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp</label>
+        <link refid="data__reader__image_8hpp"/>
+        <childnode refid="3670" relation="include">
+        </childnode>
+        <childnode refid="3697" relation="include">
+        </childnode>
+        <childnode refid="3701" relation="include">
+        </childnode>
+      </node>
+      <node id="3698">
+        <label>cassert</label>
+      </node>
+      <node id="3696">
+        <label>fcntl.h</label>
+      </node>
+      <node id="3704">
+        <label>opencv_extensions.hpp</label>
+        <link refid="opencv__extensions_8hpp"/>
+      </node>
+      <node id="3712">
+        <label>cv_colorizer.hpp</label>
+        <link refid="cv__colorizer_8hpp"/>
+        <childnode refid="3702" relation="include">
+        </childnode>
+      </node>
+      <node id="3690">
+        <label>string</label>
+      </node>
+      <node id="3683">
+        <label>map</label>
+      </node>
+      <node id="3708">
+        <label>cv_subtractor.hpp</label>
+        <link refid="cv__subtractor_8hpp"/>
+        <childnode refid="3702" relation="include">
+        </childnode>
+        <childnode refid="3671" relation="include">
+        </childnode>
+      </node>
+      <node id="3692">
+        <label>exception</label>
+      </node>
+      <node id="3710">
+        <label>ostream</label>
+      </node>
+      <node id="3686">
+        <label>random</label>
+      </node>
+      <node id="3695">
+        <label>sys/types.h</label>
+      </node>
+      <node id="3706">
+        <label>typeinfo</label>
+      </node>
+      <node id="3676">
+        <label>cstdio</label>
+      </node>
+      <node id="3713">
+        <label>cv_decolorizer.hpp</label>
+        <link refid="cv__decolorizer_8hpp"/>
+        <childnode refid="3679" relation="include">
+        </childnode>
+        <childnode refid="3702" relation="include">
+        </childnode>
+      </node>
+      <node id="3688">
+        <label>lbann/utils/stack_trace.hpp</label>
+        <link refid="stack__trace_8hpp"/>
+        <childnode refid="3689" relation="include">
+        </childnode>
+        <childnode refid="3690" relation="include">
+        </childnode>
+      </node>
+      <node id="3678">
+        <label>cxxabi.h</label>
+      </node>
+      <node id="3687">
+        <label>lbann/utils/exception.hpp</label>
+        <link refid="exception_8hpp"/>
+        <childnode refid="3671" relation="include">
+        </childnode>
+        <childnode refid="3681" relation="include">
+        </childnode>
+        <childnode refid="3688" relation="include">
+        </childnode>
+        <childnode refid="3691" relation="include">
+        </childnode>
+        <childnode refid="3692" relation="include">
+        </childnode>
+      </node>
+      <node id="3700">
+        <label>unistd.h</label>
+      </node>
+      <node id="3682">
+        <label>vector</label>
+      </node>
+      <node id="3681">
+        <label>lbann/comm.hpp</label>
+        <link refid="comm_8hpp"/>
+        <childnode refid="3682" relation="include">
+        </childnode>
+        <childnode refid="3683" relation="include">
+        </childnode>
+        <childnode refid="3684" relation="include">
+        </childnode>
+        <childnode refid="3671" relation="include">
+        </childnode>
+      </node>
+      <node id="3715">
+        <label>utility</label>
+      </node>
+      <node id="3693">
+        <label>lbann/io/file_io.hpp</label>
+        <link refid="file__io_8hpp"/>
+        <childnode refid="3694" relation="include">
+        </childnode>
+        <childnode refid="3695" relation="include">
+        </childnode>
+        <childnode refid="3696" relation="include">
+        </childnode>
+      </node>
+      <node id="3675">
+        <label>cstdlib</label>
+      </node>
+      <node id="3703">
+        <label>opencv.hpp</label>
+        <link refid="opencv_8hpp"/>
+        <childnode refid="3679" relation="include">
+        </childnode>
+      </node>
+      <node id="3691">
+        <label>iostream</label>
+      </node>
+      <node id="3705">
+        <label>cv_normalizer.hpp</label>
+        <link refid="cv__normalizer_8hpp"/>
+        <childnode refid="3706" relation="include">
+        </childnode>
+        <childnode refid="3702" relation="include">
+        </childnode>
+        <childnode refid="3671" relation="include">
+        </childnode>
+        <childnode refid="3707" relation="include">
+        </childnode>
+      </node>
+      <node id="3680">
+        <label>lbann/utils/random.hpp</label>
+        <link refid="random_8hpp"/>
+        <childnode refid="3671" relation="include">
+        </childnode>
+        <childnode refid="3681" relation="include">
+        </childnode>
+        <childnode refid="3685" relation="include">
+        </childnode>
+        <childnode refid="3686" relation="include">
+        </childnode>
+      </node>
+      <node id="3702">
+        <label>cv_transform.hpp</label>
+        <link refid="cv__transform_8hpp"/>
+        <childnode refid="3703" relation="include">
+        </childnode>
+        <childnode refid="3704" relation="include">
+        </childnode>
+      </node>
+      <node id="3709">
+        <label>cv_augmenter.hpp</label>
+        <link refid="cv__augmenter_8hpp"/>
+        <childnode refid="3702" relation="include">
+        </childnode>
+        <childnode refid="3691" relation="include">
+        </childnode>
+        <childnode refid="3710" relation="include">
+        </childnode>
+        <childnode refid="3711" relation="include">
+        </childnode>
+        <childnode refid="3690" relation="include">
+        </childnode>
+      </node>
+      <node id="3689">
+        <label>csignal</label>
+      </node>
+      <node id="3714">
+        <label>cv_cropper.hpp</label>
+        <link refid="cv__cropper_8hpp"/>
+        <childnode refid="3702" relation="include">
+        </childnode>
+        <childnode refid="3715" relation="include">
+        </childnode>
+        <childnode refid="3710" relation="include">
+        </childnode>
+      </node>
+      <node id="3670">
+        <label>data_reader.hpp</label>
+        <link refid="data__reader_8hpp"/>
+        <childnode refid="3671" relation="include">
+        </childnode>
+        <childnode refid="3680" relation="include">
+        </childnode>
+        <childnode refid="3687" relation="include">
+        </childnode>
+        <childnode refid="3681" relation="include">
+        </childnode>
+        <childnode refid="3693" relation="include">
+        </childnode>
+        <childnode refid="3685" relation="include">
+        </childnode>
+        <childnode refid="3697" relation="include">
+        </childnode>
+        <childnode refid="3698" relation="include">
+        </childnode>
+        <childnode refid="3699" relation="include">
+        </childnode>
+        <childnode refid="3690" relation="include">
+        </childnode>
+        <childnode refid="3682" relation="include">
+        </childnode>
+        <childnode refid="3700" relation="include">
+        </childnode>
+      </node>
+      <node id="3679">
+        <label>lbann_config.hpp</label>
+      </node>
+      <node id="3717">
+        <label>type_traits</label>
+      </node>
+      <node id="3699">
+        <label>algorithm</label>
+      </node>
+      <node id="3674">
+        <label>lbann/utils/cyg_profile.hpp</label>
+        <link refid="cyg__profile_8hpp"/>
+        <childnode refid="3675" relation="include">
+        </childnode>
+        <childnode refid="3676" relation="include">
+        </childnode>
+        <childnode refid="3677" relation="include">
+        </childnode>
+        <childnode refid="3678" relation="include">
+        </childnode>
+      </node>
+      <node id="3711">
+        <label>cstring</label>
+      </node>
+      <node id="3673">
+        <label>lbann/Elemental_extensions.hpp</label>
+        <link refid="Elemental__extensions_8hpp"/>
+        <childnode refid="3672" relation="include">
+        </childnode>
+      </node>
+      <node id="3718">
+        <label>memory</label>
+      </node>
+      <node id="3684">
+        <label>typeindex</label>
+      </node>
+      <node id="3677">
+        <label>dlfcn.h</label>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="3730">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/proto/factories.hpp</label>
+        <link refid="factories_8hpp"/>
+        <childnode refid="3731" relation="include">
+        </childnode>
+        <childnode refid="3732" relation="include">
+        </childnode>
+        <childnode refid="3733" relation="include">
+        </childnode>
+        <childnode refid="3734" relation="include">
+        </childnode>
+        <childnode refid="3735" relation="include">
+        </childnode>
+        <childnode refid="3736" relation="include">
+        </childnode>
+        <childnode refid="3737" relation="include">
+        </childnode>
+        <childnode refid="3738" relation="include">
+        </childnode>
+        <childnode refid="3728" relation="include">
+        </childnode>
+      </node>
+      <node id="3759">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_imagenet_patches.cpp</label>
+        <link refid="data__store__imagenet__patches_8cpp"/>
+      </node>
+      <node id="3754">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_triplet.cpp</label>
+        <link refid="data__store__triplet_8cpp"/>
+      </node>
+      <node id="3753">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_triplet.cpp</label>
+        <link refid="data__reader__triplet_8cpp"/>
+      </node>
+      <node id="3752">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_triplet.hpp</label>
+        <link refid="data__reader__triplet_8hpp"/>
+        <childnode refid="3753" relation="include">
+        </childnode>
+        <childnode refid="3754" relation="include">
+        </childnode>
+        <childnode refid="3724" relation="include">
+        </childnode>
+      </node>
+      <node id="3735">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/model_factory.cpp</label>
+        <link refid="model__factory_8cpp"/>
+      </node>
+      <node id="3727">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/params.cpp</label>
+        <link refid="params_8cpp"/>
+      </node>
+      <node id="3728">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/proto/proto_common.hpp</label>
+        <link refid="proto__common_8hpp"/>
+        <childnode refid="3725" relation="include">
+        </childnode>
+        <childnode refid="3729" relation="include">
+        </childnode>
+        <childnode refid="3730" relation="include">
+        </childnode>
+        <childnode refid="3739" relation="include">
+        </childnode>
+      </node>
+      <node id="3720">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp</label>
+        <link refid="data__reader__image_8hpp"/>
+        <childnode refid="3721" relation="include">
+        </childnode>
+        <childnode refid="3722" relation="include">
+        </childnode>
+        <childnode refid="3742" relation="include">
+        </childnode>
+        <childnode refid="3755" relation="include">
+        </childnode>
+        <childnode refid="3757" relation="include">
+        </childnode>
+        <childnode refid="3760" relation="include">
+        </childnode>
+      </node>
+      <node id="3726">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/params.hpp</label>
+        <link refid="params_8hpp"/>
+        <childnode refid="3727" relation="include">
+        </childnode>
+        <childnode refid="3724" relation="include">
+        </childnode>
+      </node>
+      <node id="3732">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/layer_factory.cpp</label>
+        <link refid="layer__factory_8cpp"/>
+      </node>
+      <node id="3749">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_multi_images.cpp</label>
+        <link refid="data__store__multi__images_8cpp"/>
+      </node>
+      <node id="3729">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/utils/protobuf_utils.cpp</label>
+        <link refid="protobuf__utils_8cpp"/>
+      </node>
+      <node id="3740">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/init_image_data_readers.cpp</label>
+        <link refid="init__image__data__readers_8cpp"/>
+      </node>
+      <node id="3751">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_mnist_siamese.cpp</label>
+        <link refid="data__reader__mnist__siamese_8cpp"/>
+      </node>
+      <node id="3721">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_image.cpp</label>
+        <link refid="data__reader__image_8cpp"/>
+      </node>
+      <node id="3750">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_mnist_siamese.hpp</label>
+        <link refid="data__reader__mnist__siamese_8hpp"/>
+        <childnode refid="3751" relation="include">
+        </childnode>
+        <childnode refid="3724" relation="include">
+        </childnode>
+      </node>
+      <node id="3722">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_cifar10.hpp</label>
+        <link refid="data__reader__cifar10_8hpp"/>
+        <childnode refid="3723" relation="include">
+        </childnode>
+        <childnode refid="3724" relation="include">
+        </childnode>
+      </node>
+      <node id="3736">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/objective_function_factory.cpp</label>
+        <link refid="objective__function__factory_8cpp"/>
+      </node>
+      <node id="3756">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_imagenet_org.cpp</label>
+        <link refid="data__reader__imagenet__org_8cpp"/>
+      </node>
+      <node id="3723">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_cifar10.cpp</label>
+        <link refid="data__reader__cifar10_8cpp"/>
+      </node>
+      <node id="3757">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_imagenet_patches.hpp</label>
+        <link refid="data__reader__imagenet__patches_8hpp"/>
+        <childnode refid="3758" relation="include">
+        </childnode>
+        <childnode refid="3759" relation="include">
+        </childnode>
+        <childnode refid="3724" relation="include">
+        </childnode>
+      </node>
+      <node id="3742">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_imagenet.hpp</label>
+        <link refid="data__reader__imagenet_8hpp"/>
+        <childnode refid="3743" relation="include">
+        </childnode>
+        <childnode refid="3744" relation="include">
+        </childnode>
+        <childnode refid="3745" relation="include">
+        </childnode>
+        <childnode refid="3747" relation="include">
+        </childnode>
+        <childnode refid="3724" relation="include">
+        </childnode>
+      </node>
+      <node id="3744">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_imagenet.cpp</label>
+        <link refid="data__store__imagenet_8cpp"/>
+      </node>
+      <node id="3743">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_imagenet.cpp</label>
+        <link refid="data__reader__imagenet_8cpp"/>
+      </node>
+      <node id="3725">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/proto_common.cpp</label>
+        <link refid="proto__common_8cpp"/>
+      </node>
+      <node id="3734">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/metric_factory.cpp</label>
+        <link refid="metric__factory_8cpp"/>
+      </node>
+      <node id="3755">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_imagenet_org.hpp</label>
+        <link refid="data__reader__imagenet__org_8hpp"/>
+        <childnode refid="3756" relation="include">
+        </childnode>
+        <childnode refid="3724" relation="include">
+        </childnode>
+      </node>
+      <node id="3747">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_multi_images.hpp</label>
+        <link refid="data__reader__multi__images_8hpp"/>
+        <childnode refid="3748" relation="include">
+        </childnode>
+        <childnode refid="3749" relation="include">
+        </childnode>
+        <childnode refid="3750" relation="include">
+        </childnode>
+        <childnode refid="3752" relation="include">
+        </childnode>
+        <childnode refid="3724" relation="include">
+        </childnode>
+      </node>
+      <node id="3724">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/lbann.hpp</label>
+        <link refid="lbann_8hpp"/>
+        <childnode refid="3725" relation="include">
+        </childnode>
+        <childnode refid="3726" relation="include">
+        </childnode>
+        <childnode refid="3728" relation="include">
+        </childnode>
+        <childnode refid="3741" relation="include">
+        </childnode>
+      </node>
+      <node id="3761">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_mnist.cpp</label>
+        <link refid="data__reader__mnist_8cpp"/>
+      </node>
+      <node id="3758">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_imagenet_patches.cpp</label>
+        <link refid="data__reader__imagenet__patches_8cpp"/>
+      </node>
+      <node id="3739">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/proto/init_image_data_readers.hpp</label>
+        <link refid="init__image__data__readers_8hpp"/>
+        <childnode refid="3740" relation="include">
+        </childnode>
+        <childnode refid="3725" relation="include">
+        </childnode>
+      </node>
+      <node id="3748">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_multi_images.cpp</label>
+        <link refid="data__reader__multi__images_8cpp"/>
+      </node>
+      <node id="3746">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_imagenet_single.cpp</label>
+        <link refid="data__reader__imagenet__single_8cpp"/>
+      </node>
+      <node id="3737">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/optimizer_factory.cpp</label>
+        <link refid="optimizer__factory_8cpp"/>
+      </node>
+      <node id="3738">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/weights_factory.cpp</label>
+        <link refid="weights__factory_8cpp"/>
+      </node>
+      <node id="3760">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_mnist.hpp</label>
+        <link refid="data__reader__mnist_8hpp"/>
+        <childnode refid="3761" relation="include">
+        </childnode>
+        <childnode refid="3724" relation="include">
+        </childnode>
+      </node>
+      <node id="3745">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_imagenet_single.hpp</label>
+        <link refid="data__reader__imagenet__single_8hpp"/>
+        <childnode refid="3746" relation="include">
+        </childnode>
+        <childnode refid="3724" relation="include">
+        </childnode>
+      </node>
+      <node id="3731">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/callback_factory.cpp</label>
+        <link refid="callback__factory_8cpp"/>
+      </node>
+      <node id="3741">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/protobuf_utils.hpp</label>
+        <link refid="protobuf__utils_8hpp"/>
+        <childnode refid="3729" relation="include">
+        </childnode>
+      </node>
+      <node id="3733">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/layer_graph_factory.cpp</label>
+        <link refid="layer__graph__factory_8cpp"/>
+      </node>
+    </invincdepgraph>
+    <innerclass refid="classlbann_1_1image__data__reader" prot="public">lbann::image_data_reader</innerclass>
+    <innernamespace refid="namespacelbann">lbann</innernamespace>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>2014-2016,<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Security,<sp/>LLC.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Produced<sp/>at<sp/>the<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Laboratory.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Written<sp/>by<sp/>the<sp/>LBANN<sp/>Research<sp/>Team<sp/>(B.<sp/>Van<sp/>Essen,<sp/>et<sp/>al.)<sp/>listed<sp/>in</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="comment">//<sp/>the<sp/>CONTRIBUTORS<sp/>file.<sp/>&lt;lbann-dev@llnl.gov&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="comment">//<sp/>LLNL-CODE-697807.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="comment">//<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="comment">//<sp/>This<sp/>file<sp/>is<sp/>part<sp/>of<sp/>LBANN:<sp/>Livermore<sp/>Big<sp/>Artificial<sp/>Neural<sp/>Network</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Toolkit.<sp/>For<sp/>details,<sp/>see<sp/>http://software.llnl.gov/LBANN<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="comment">//<sp/>https://github.com/LLNL/LBANN.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Licensed<sp/>under<sp/>the<sp/>Apache<sp/>License,<sp/>Version<sp/>2.0<sp/>(the<sp/>&quot;Licensee&quot;);<sp/>you</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight><highlight class="comment">//<sp/>may<sp/>not<sp/>use<sp/>this<sp/>file<sp/>except<sp/>in<sp/>compliance<sp/>with<sp/>the<sp/>License.<sp/><sp/>You<sp/>may</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="comment">//<sp/>obtain<sp/>a<sp/>copy<sp/>of<sp/>the<sp/>License<sp/>at:</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight><highlight class="comment">//<sp/>http://www.apache.org/licenses/LICENSE-2.0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Unless<sp/>required<sp/>by<sp/>applicable<sp/>law<sp/>or<sp/>agreed<sp/>to<sp/>in<sp/>writing,<sp/>software</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight><highlight class="comment">//<sp/>distributed<sp/>under<sp/>the<sp/>License<sp/>is<sp/>distributed<sp/>on<sp/>an<sp/>&quot;AS<sp/>IS&quot;<sp/>BASIS,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight><highlight class="comment">//<sp/>WITHOUT<sp/>WARRANTIES<sp/>OR<sp/>CONDITIONS<sp/>OF<sp/>ANY<sp/>KIND,<sp/>either<sp/>express<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="comment">//<sp/>implied.<sp/>See<sp/>the<sp/>License<sp/>for<sp/>the<sp/>specific<sp/>language<sp/>governing</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="comment">//<sp/>permissions<sp/>and<sp/>limitations<sp/>under<sp/>the<sp/>license.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="25"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="26"><highlight class="normal"></highlight><highlight class="comment">//<sp/>data_reader_image<sp/>.hpp<sp/>.cpp<sp/>-<sp/>generic<sp/>data<sp/>reader<sp/>class<sp/>for<sp/>image<sp/>dataset</highlight></codeline>
+<codeline lineno="28"><highlight class="comment"></highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="29"><highlight class="normal"></highlight><highlight class="preprocessor">#ifndef<sp/>IMAGE_DATA_READER_HPP</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="30"><highlight class="normal"></highlight><highlight class="preprocessor">#define<sp/>IMAGE_DATA_READER_HPP</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight></codeline>
+<codeline lineno="32"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="data__reader_8hpp" kindref="compound">data_reader.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="33"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="image__preprocessor_8hpp" kindref="compound">image_preprocessor.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="34"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="cv__process_8hpp" kindref="compound">cv_process.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="35"><highlight class="normal"></highlight></codeline>
+<codeline lineno="36"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacelbann" kindref="compound">lbann</ref><sp/>{</highlight></codeline>
+<codeline lineno="37" refid="classlbann_1_1image__data__reader" refkind="compound"><highlight class="normal"></highlight><highlight class="keyword">class<sp/></highlight><highlight class="normal"><ref refid="classlbann_1_1image__data__reader" kindref="compound">image_data_reader</ref><sp/>:<sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1generic__data__reader" kindref="compound">generic_data_reader</ref><sp/>{</highlight></codeline>
+<codeline lineno="38"><highlight class="normal"><sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="39" refid="classlbann_1_1image__data__reader_1acd2b41459e901a3aed39fd3be7270fa2" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">using</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader_1acd2b41459e901a3aed39fd3be7270fa2" kindref="member">img_src_t</ref><sp/>=<sp/>std::string;</highlight></codeline>
+<codeline lineno="40" refid="classlbann_1_1image__data__reader_1a7645f17852c990e80b1530509ff5e87c" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">using</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader_1a7645f17852c990e80b1530509ff5e87c" kindref="member">label_t</ref><sp/>=<sp/>int;</highlight></codeline>
+<codeline lineno="41" refid="classlbann_1_1image__data__reader_1a7580011ef6ef9da32e1a3bc49ad0706c" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">using</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader_1a7580011ef6ef9da32e1a3bc49ad0706c" kindref="member">sample_t</ref><sp/>=<sp/>std::pair&lt;img_src_t,<sp/>label_t&gt;;</highlight></codeline>
+<codeline lineno="42"><highlight class="normal"></highlight></codeline>
+<codeline lineno="43"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1image__data__reader_1a582185ab03c4643117fd93e0ba843882" kindref="member">image_data_reader</ref>(</highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/>shuffle<sp/>=<sp/></highlight><highlight class="keyword">true</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="44"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1image__data__reader_1a582185ab03c4643117fd93e0ba843882" kindref="member">image_data_reader</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader" kindref="compound">image_data_reader</ref>&amp;);</highlight></codeline>
+<codeline lineno="45"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1image__data__reader" kindref="compound">image_data_reader</ref>&amp;<sp/><ref refid="classlbann_1_1image__data__reader_1a76a0b52eafb9ad133fb45fec7cf44700" kindref="member">operator=</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader" kindref="compound">image_data_reader</ref>&amp;);</highlight></codeline>
+<codeline lineno="46"><highlight class="normal"></highlight></codeline>
+<codeline lineno="52"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">virtual</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader_1a6ed9b8b12ad3ffa93ad458d872f8c044" kindref="member">set_input_params</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>width=0,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>height=0,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>num_ch=0,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>num_labels=0);</highlight></codeline>
+<codeline lineno="53"><highlight class="normal"></highlight></codeline>
+<codeline lineno="54"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>dataset<sp/>specific<sp/>functions</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="55"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader_1a99cb80242d7d20bc1e8baeaff25ff790" kindref="member">load</ref>()<sp/></highlight><highlight class="keyword">override</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="56"><highlight class="normal"></highlight></codeline>
+<codeline lineno="57" refid="classlbann_1_1image__data__reader_1af821795e5104f1a8c34027de96af7b90" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader_1af821795e5104f1a8c34027de96af7b90" kindref="member">get_num_labels</ref>()</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="58"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader_1af280e8758a6ec3acee7c62e6351d17e0" kindref="member">m_num_labels</ref>;</highlight></codeline>
+<codeline lineno="59"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="60" refid="classlbann_1_1image__data__reader_1a2e75d4ec8f222f4f855e6c0162648dc7" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">virtual</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader_1a2e75d4ec8f222f4f855e6c0162648dc7" kindref="member">get_image_width</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="61"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader_1af001f3d1c0f1c580b66988233b3a64f0" kindref="member">m_image_width</ref>;</highlight></codeline>
+<codeline lineno="62"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="63" refid="classlbann_1_1image__data__reader_1a641364038b54fe8291f23f9d879293e3" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">virtual</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader_1a641364038b54fe8291f23f9d879293e3" kindref="member">get_image_height</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="64"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader_1a0632efa3deaa9d61e671f741909eb3fe" kindref="member">m_image_height</ref>;</highlight></codeline>
+<codeline lineno="65"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="66" refid="classlbann_1_1image__data__reader_1a3699aa92d3ef2ccc0c30ecf27809acbe" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">virtual</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader_1a3699aa92d3ef2ccc0c30ecf27809acbe" kindref="member">get_image_num_channels</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="67"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader_1aab1a440f361521dc7bd583cefe1061f8" kindref="member">m_image_num_channels</ref>;</highlight></codeline>
+<codeline lineno="68"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="70" refid="classlbann_1_1image__data__reader_1a26b8566e76ba99c017a84c49a9dec37c" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader_1a26b8566e76ba99c017a84c49a9dec37c" kindref="member">get_linearized_data_size</ref>()</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="71"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader_1af512f1f866c0f654309b7f28886dca9a" kindref="member">m_image_linearized_size</ref>;</highlight></codeline>
+<codeline lineno="72"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="73" refid="classlbann_1_1image__data__reader_1adb62b193a10b2b12c1bf183ea9c2095e" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader_1adb62b193a10b2b12c1bf183ea9c2095e" kindref="member">get_linearized_label_size</ref>()</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="74"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader_1af280e8758a6ec3acee7c62e6351d17e0" kindref="member">m_num_labels</ref>;</highlight></codeline>
+<codeline lineno="75"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="76" refid="classlbann_1_1image__data__reader_1a1bb05018e059afae76d46a2a908dd75c" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::vector&lt;int&gt;<sp/><ref refid="classlbann_1_1image__data__reader_1a1bb05018e059afae76d46a2a908dd75c" kindref="member">get_data_dims</ref>()</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="77"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>{<ref refid="classlbann_1_1image__data__reader_1aab1a440f361521dc7bd583cefe1061f8" kindref="member">m_image_num_channels</ref>,<sp/><ref refid="classlbann_1_1image__data__reader_1a0632efa3deaa9d61e671f741909eb3fe" kindref="member">m_image_height</ref>,<sp/><ref refid="classlbann_1_1image__data__reader_1af001f3d1c0f1c580b66988233b3a64f0" kindref="member">m_image_width</ref>};</highlight></codeline>
+<codeline lineno="78"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="79"><highlight class="normal"></highlight></codeline>
+<codeline lineno="80" refid="classlbann_1_1image__data__reader_1a71e4fa1eb8212cce88a2ed408ceeac51" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader_1a71e4fa1eb8212cce88a2ed408ceeac51" kindref="member">save_image</ref>(<ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref>&amp;<sp/>pixels,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::string<sp/>filename,<sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/>do_scale<sp/>=<sp/></highlight><highlight class="keyword">true</highlight><highlight class="normal">)</highlight><highlight class="keyword"><sp/>override<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="81"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1lbann__image__preprocessor_1a3c4f4cc5c90233696566a35a62a1708c" kindref="member">internal_save_image</ref>(pixels,<sp/>filename,<sp/><ref refid="classlbann_1_1image__data__reader_1a0632efa3deaa9d61e671f741909eb3fe" kindref="member">m_image_height</ref>,<sp/><ref refid="classlbann_1_1image__data__reader_1af001f3d1c0f1c580b66988233b3a64f0" kindref="member">m_image_width</ref>,</highlight></codeline>
+<codeline lineno="82"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1image__data__reader_1aab1a440f361521dc7bd583cefe1061f8" kindref="member">m_image_num_channels</ref>,<sp/>do_scale);</highlight></codeline>
+<codeline lineno="83"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="84"><highlight class="normal"></highlight></codeline>
+<codeline lineno="86"><highlight class="normal"><sp/><sp/>std::vector&lt;sample_t&gt;<sp/><ref refid="classlbann_1_1image__data__reader_1a9624d37e076cf71154b65910dd7e1195" kindref="member">get_image_list_of_current_mb</ref>()<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="87"><highlight class="normal"></highlight></codeline>
+<codeline lineno="89" refid="classlbann_1_1image__data__reader_1aa03599a5f66d498d4bb90c50ae70c82a" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::vector&lt;sample_t&gt;&amp;<sp/><ref refid="classlbann_1_1image__data__reader_1aa03599a5f66d498d4bb90c50ae70c82a" kindref="member">get_image_list</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="90"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader_1ae3fc949bd08c45ceafb1a03503261008" kindref="member">m_image_list</ref>;</highlight></codeline>
+<codeline lineno="91"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="92"><highlight class="normal"></highlight></codeline>
+<codeline lineno="97" refid="classlbann_1_1image__data__reader_1ae3f4a0b018e8212a42cbbfbd2b514bf4" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1image__data__reader_1a7580011ef6ef9da32e1a3bc49ad0706c" kindref="member">sample_t</ref><sp/><ref refid="classlbann_1_1image__data__reader_1ae3f4a0b018e8212a42cbbfbd2b514bf4" kindref="member">get_sample</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>idx)</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="98"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader_1ae3fc949bd08c45ceafb1a03503261008" kindref="member">m_image_list</ref>.at(idx);</highlight></codeline>
+<codeline lineno="99"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="100"><highlight class="normal"></highlight></codeline>
+<codeline lineno="101"><highlight class="normal"><sp/></highlight><highlight class="keyword">protected</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="103"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">virtual</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader_1a8e9dbeaa0239d56597455cc23787a21d" kindref="member">set_defaults</ref>();</highlight></codeline>
+<codeline lineno="104"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader_1a1f0dbd67390a65fef106515ea7060e29" kindref="member">fetch_label</ref>(<ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref>&amp;<sp/>Y,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>data_id,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>mb_idx,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>tid)<sp/></highlight><highlight class="keyword">override</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="105"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader_1a0164b0e3abbe92daef73b36fb925403e" kindref="member">set_linearized_image_size</ref>();</highlight></codeline>
+<codeline lineno="106"><highlight class="normal"></highlight></codeline>
+<codeline lineno="107"><highlight class="normal"><sp/></highlight><highlight class="keyword">protected</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="108" refid="classlbann_1_1image__data__reader_1ab1289f0207f3a9989c7b28e09a23c9a3" refkind="member"><highlight class="normal"><sp/><sp/>std::string<sp/><ref refid="classlbann_1_1image__data__reader_1ab1289f0207f3a9989c7b28e09a23c9a3" kindref="member">m_image_dir</ref>;<sp/></highlight></codeline>
+<codeline lineno="109" refid="classlbann_1_1image__data__reader_1ae3fc949bd08c45ceafb1a03503261008" refkind="member"><highlight class="normal"><sp/><sp/>std::vector&lt;sample_t&gt;<sp/><ref refid="classlbann_1_1image__data__reader_1ae3fc949bd08c45ceafb1a03503261008" kindref="member">m_image_list</ref>;<sp/></highlight></codeline>
+<codeline lineno="110" refid="classlbann_1_1image__data__reader_1af001f3d1c0f1c580b66988233b3a64f0" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader_1af001f3d1c0f1c580b66988233b3a64f0" kindref="member">m_image_width</ref>;<sp/></highlight></codeline>
+<codeline lineno="111" refid="classlbann_1_1image__data__reader_1a0632efa3deaa9d61e671f741909eb3fe" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader_1a0632efa3deaa9d61e671f741909eb3fe" kindref="member">m_image_height</ref>;<sp/></highlight></codeline>
+<codeline lineno="112" refid="classlbann_1_1image__data__reader_1aab1a440f361521dc7bd583cefe1061f8" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader_1aab1a440f361521dc7bd583cefe1061f8" kindref="member">m_image_num_channels</ref>;<sp/></highlight></codeline>
+<codeline lineno="113" refid="classlbann_1_1image__data__reader_1af512f1f866c0f654309b7f28886dca9a" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader_1af512f1f866c0f654309b7f28886dca9a" kindref="member">m_image_linearized_size</ref>;<sp/></highlight></codeline>
+<codeline lineno="114" refid="classlbann_1_1image__data__reader_1af280e8758a6ec3acee7c62e6351d17e0" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader_1af280e8758a6ec3acee7c62e6351d17e0" kindref="member">m_num_labels</ref>;<sp/></highlight></codeline>
+<codeline lineno="115"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="116"><highlight class="normal"></highlight></codeline>
+<codeline lineno="117"><highlight class="normal">}<sp/><sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>lbann</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="118"><highlight class="normal"></highlight></codeline>
+<codeline lineno="119"><highlight class="normal"></highlight><highlight class="preprocessor">#endif<sp/><sp/>//<sp/>IMAGE_DATA_READER_HPP</highlight></codeline>
+    </programlisting>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp"/>
+  </compounddef>
+</doxygen>

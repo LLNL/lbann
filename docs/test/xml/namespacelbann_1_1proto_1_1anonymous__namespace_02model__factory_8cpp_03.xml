@@ -1,0 +1,101 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="namespacelbann_1_1proto_1_1anonymous__namespace_02model__factory_8cpp_03" kind="namespace" language="C++">
+    <compoundname>lbann::proto::anonymous_namespace{model_factory.cpp}</compoundname>
+      <sectiondef kind="func">
+      <memberdef kind="function" id="namespacelbann_1_1proto_1_1anonymous__namespace_02model__factory_8cpp_03_1a6a08f0b26d015824ef28ddbb66b6d4c0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+        <definition>model* lbann::proto::anonymous_namespace{model_factory.cpp}::instantiate_model</definition>
+        <argsstring>(lbann_comm *comm, objective_function *obj, const lbann_data::Optimizer &amp;proto_opt, const lbann_data::Model &amp;proto_model)</argsstring>
+        <name>instantiate_model</name>
+        <param>
+          <type><ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref> *</type>
+          <declname>comm</declname>
+        </param>
+        <param>
+          <type><ref refid="classlbann_1_1objective__function" kindref="compound">objective_function</ref> *</type>
+          <declname>obj</declname>
+        </param>
+        <param>
+          <type>const lbann_data::Optimizer &amp;</type>
+          <declname>proto_opt</declname>
+        </param>
+        <param>
+          <type>const lbann_data::Model &amp;</type>
+          <declname>proto_model</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Instantiate a model based on prototext. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/model_factory.cpp" line="36" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/model_factory.cpp" bodystart="36" bodyend="76"/>
+        <references refid="namespacelbann_1_1proto_1af85d2b9f1e986bbab4feccfaa19c9960" compoundref="optimizer__factory_8cpp" startline="32" endline="83">lbann::proto::construct_optimizer</references>
+        <references refid="base_8hpp_1a80b1d707117e968a6951b7222e4b2b87" compoundref="base_8hpp" startline="154">LBANN_ERROR</references>
+        <referencedby refid="namespacelbann_1_1proto_1a6c051439c9c5cbbfb1a2387d5a3fc902" compoundref="model__factory_8cpp" startline="154" endline="203">lbann::proto::construct_model</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="namespacelbann_1_1proto_1_1anonymous__namespace_02model__factory_8cpp_03_1a3406a809935f319486cf8fd017b58417" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::proto::anonymous_namespace{model_factory.cpp}::assign_layers_to_objective_function</definition>
+        <argsstring>(std::vector&lt; Layer *&gt; &amp;layer_list, objective_function *obj, const lbann_data::ObjectiveFunction &amp;proto_obj)</argsstring>
+        <name>assign_layers_to_objective_function</name>
+        <param>
+          <type>std::vector&lt; <ref refid="classlbann_1_1Layer" kindref="compound">Layer</ref> *&gt; &amp;</type>
+          <declname>layer_list</declname>
+        </param>
+        <param>
+          <type><ref refid="classlbann_1_1objective__function" kindref="compound">objective_function</ref> *</type>
+          <declname>obj</declname>
+        </param>
+        <param>
+          <type>const lbann_data::ObjectiveFunction &amp;</type>
+          <declname>proto_obj</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/model_factory.cpp" line="78" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/model_factory.cpp" bodystart="78" bodyend="116"/>
+        <references refid="base_8hpp_1a80b1d707117e968a6951b7222e4b2b87" compoundref="base_8hpp" startline="154">LBANN_ERROR</references>
+        <references refid="classlbann_1_1objective__function_1a510544e9e511be54a50efd39226de345" compoundref="objective__function_8hpp" startline="57" endline="57">lbann::objective_function::get_terms</references>
+        <references refid="classlbann_1_1layer__term_1a5c9eec2b5212adc5dc947ba2e9c88802" compoundref="layer__term_8cpp" startline="31" endline="32">lbann::layer_term::layer_term</references>
+        <referencedby refid="namespacelbann_1_1proto_1a6c051439c9c5cbbfb1a2387d5a3fc902" compoundref="model__factory_8cpp" startline="154" endline="203">lbann::proto::construct_model</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="namespacelbann_1_1proto_1_1anonymous__namespace_02model__factory_8cpp_03_1a19d0eaf0259647155039ed45eb980b05" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::proto::anonymous_namespace{model_factory.cpp}::assign_weights_to_layers</definition>
+        <argsstring>(std::vector&lt; Layer *&gt; &amp;layer_list, std::vector&lt; weights *&gt; &amp;weights_list, const lbann_data::Model &amp;proto_model)</argsstring>
+        <name>assign_weights_to_layers</name>
+        <param>
+          <type>std::vector&lt; <ref refid="classlbann_1_1Layer" kindref="compound">Layer</ref> *&gt; &amp;</type>
+          <declname>layer_list</declname>
+        </param>
+        <param>
+          <type>std::vector&lt; <ref refid="classlbann_1_1weights" kindref="compound">weights</ref> *&gt; &amp;</type>
+          <declname>weights_list</declname>
+        </param>
+        <param>
+          <type>const lbann_data::Model &amp;</type>
+          <declname>proto_model</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Setup pointers from layers to weights. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/model_factory.cpp" line="119" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/model_factory.cpp" bodystart="119" bodyend="150"/>
+        <references refid="base_8hpp_1a80b1d707117e968a6951b7222e4b2b87" compoundref="base_8hpp" startline="154">LBANN_ERROR</references>
+        <referencedby refid="namespacelbann_1_1proto_1a6c051439c9c5cbbfb1a2387d5a3fc902" compoundref="model__factory_8cpp" startline="154" endline="203">lbann::proto::construct_model</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/model_factory.cpp" line="33" column="1"/>
+  </compounddef>
+</doxygen>

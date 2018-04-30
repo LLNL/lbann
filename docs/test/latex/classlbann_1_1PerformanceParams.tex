@@ -1,0 +1,116 @@
+\hypertarget{classlbann_1_1PerformanceParams}{}\section{lbann\+:\+:Performance\+Params Class Reference}
+\label{classlbann_1_1PerformanceParams}\index{lbann\+::\+Performance\+Params@{lbann\+::\+Performance\+Params}}
+
+
+Performance parameters.  
+
+
+
+
+{\ttfamily \#include $<$params.\+hpp$>$}
+
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1PerformanceParams_a1c8f2276e83effdf28e6be3ac0da91c0}{Performance\+Params} ()
+\begin{DoxyCompactList}\small\item\em Constructor. \end{DoxyCompactList}\item 
+void \hyperlink{classlbann_1_1PerformanceParams_abde9f8ab7421f863f11542721c93768f}{parse\+\_\+params} ()
+\begin{DoxyCompactList}\small\item\em Parse command-\/line arguments. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{classlbann_1_1PerformanceParams_af982cb94a2e7f01f45ff9ca80e9f8685}{Block\+Size}
+\begin{DoxyCompactList}\small\item\em lib\+Elemental block size \end{DoxyCompactList}\item 
+int \hyperlink{classlbann_1_1PerformanceParams_a6869434b1b4ff69d91f2998f9d194a8f}{Max\+Par\+I\+O\+Size}
+\begin{DoxyCompactList}\small\item\em Maximum parallel I/O size (0 -\/ unlimited) \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Performance parameters. 
+
+Definition at line 133 of file params.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1PerformanceParams_a1c8f2276e83effdf28e6be3ac0da91c0}\label{classlbann_1_1PerformanceParams_a1c8f2276e83effdf28e6be3ac0da91c0}} 
+\index{lbann\+::\+Performance\+Params@{lbann\+::\+Performance\+Params}!Performance\+Params@{Performance\+Params}}
+\index{Performance\+Params@{Performance\+Params}!lbann\+::\+Performance\+Params@{lbann\+::\+Performance\+Params}}
+\subsubsection{\texorpdfstring{Performance\+Params()}{PerformanceParams()}}
+{\footnotesize\ttfamily lbann\+::\+Performance\+Params\+::\+Performance\+Params (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Constructor. 
+
+
+
+Definition at line 98 of file params.\+cpp.
+
+
+\begin{DoxyCode}
+98 : \hyperlink{classlbann_1_1PerformanceParams_af982cb94a2e7f01f45ff9ca80e9f8685}{BlockSize}(256), \hyperlink{classlbann_1_1PerformanceParams_a6869434b1b4ff69d91f2998f9d194a8f}{MaxParIOSize}(0) \{\}
+\end{DoxyCode}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1PerformanceParams_abde9f8ab7421f863f11542721c93768f}\label{classlbann_1_1PerformanceParams_abde9f8ab7421f863f11542721c93768f}} 
+\index{lbann\+::\+Performance\+Params@{lbann\+::\+Performance\+Params}!parse\+\_\+params@{parse\+\_\+params}}
+\index{parse\+\_\+params@{parse\+\_\+params}!lbann\+::\+Performance\+Params@{lbann\+::\+Performance\+Params}}
+\subsubsection{\texorpdfstring{parse\+\_\+params()}{parse\_params()}}
+{\footnotesize\ttfamily void lbann\+::\+Performance\+Params\+::parse\+\_\+params (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Parse command-\/line arguments. 
+
+
+
+Definition at line 100 of file params.\+cpp.
+
+
+\begin{DoxyCode}
+100                                           \{
+101   \hyperlink{classlbann_1_1PerformanceParams_af982cb94a2e7f01f45ff9ca80e9f8685}{BlockSize} = El::Input(\textcolor{stringliteral}{"--block-size"}, \textcolor{stringliteral}{"libElemental Block Size"}, 
+      \hyperlink{classlbann_1_1PerformanceParams_af982cb94a2e7f01f45ff9ca80e9f8685}{BlockSize});
+102   \hyperlink{classlbann_1_1PerformanceParams_a6869434b1b4ff69d91f2998f9d194a8f}{MaxParIOSize} = El::Input(\textcolor{stringliteral}{"--par-IO"}, \textcolor{stringliteral}{"Maximum parallel I/O size (0 - unlimited)"}, 
+      \hyperlink{classlbann_1_1PerformanceParams_a6869434b1b4ff69d91f2998f9d194a8f}{MaxParIOSize});
+103 \}
+\end{DoxyCode}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1PerformanceParams_af982cb94a2e7f01f45ff9ca80e9f8685}\label{classlbann_1_1PerformanceParams_af982cb94a2e7f01f45ff9ca80e9f8685}} 
+\index{lbann\+::\+Performance\+Params@{lbann\+::\+Performance\+Params}!Block\+Size@{Block\+Size}}
+\index{Block\+Size@{Block\+Size}!lbann\+::\+Performance\+Params@{lbann\+::\+Performance\+Params}}
+\subsubsection{\texorpdfstring{Block\+Size}{BlockSize}}
+{\footnotesize\ttfamily int lbann\+::\+Performance\+Params\+::\+Block\+Size}
+
+
+
+lib\+Elemental block size 
+
+
+
+Definition at line 143 of file params.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1PerformanceParams_a6869434b1b4ff69d91f2998f9d194a8f}\label{classlbann_1_1PerformanceParams_a6869434b1b4ff69d91f2998f9d194a8f}} 
+\index{lbann\+::\+Performance\+Params@{lbann\+::\+Performance\+Params}!Max\+Par\+I\+O\+Size@{Max\+Par\+I\+O\+Size}}
+\index{Max\+Par\+I\+O\+Size@{Max\+Par\+I\+O\+Size}!lbann\+::\+Performance\+Params@{lbann\+::\+Performance\+Params}}
+\subsubsection{\texorpdfstring{Max\+Par\+I\+O\+Size}{MaxParIOSize}}
+{\footnotesize\ttfamily int lbann\+::\+Performance\+Params\+::\+Max\+Par\+I\+O\+Size}
+
+
+
+Maximum parallel I/O size (0 -\/ unlimited) 
+
+
+
+Definition at line 145 of file params.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/\hyperlink{params_8hpp}{params.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/\hyperlink{params_8cpp}{params.\+cpp}\end{DoxyCompactItemize}

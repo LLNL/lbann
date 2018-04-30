@@ -1,0 +1,153 @@
+\hypertarget{classlbann_1_1fan__in__fan__out__initializer}{}\section{lbann\+:\+:fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer Class Reference}
+\label{classlbann_1_1fan__in__fan__out__initializer}\index{lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer@{lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer}}
+
+
+{\ttfamily \#include $<$fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializers.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1fan__in__fan__out__initializer__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=204pt]{classlbann_1_1fan__in__fan__out__initializer__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1fan__in__fan__out__initializer_a3a3811af11b1a70a57af846ae2cdf668}{fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm})
+\item 
+\hyperlink{classlbann_1_1fan__in__fan__out__initializer_ab351750e3f776aa6748053f29d5d031c}{$\sim$fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer} () override=default
+\item 
+void \hyperlink{classlbann_1_1fan__in__fan__out__initializer_a6da7299bd2fb6aa1b549125fc62ffafc}{set\+\_\+fan\+\_\+in} (int fan\+\_\+in)
+\item 
+void \hyperlink{classlbann_1_1fan__in__fan__out__initializer_a4464e05d66e938058a01be04a2495452}{set\+\_\+fan\+\_\+out} (int fan\+\_\+out)
+\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{classlbann_1_1fan__in__fan__out__initializer_aea6639db271d9050f0a2e4f8c8dfa6cd}{m\+\_\+fan\+\_\+in}
+\item 
+int \hyperlink{classlbann_1_1fan__in__fan__out__initializer_ac67d275ab8574780525d2af59b738338}{m\+\_\+fan\+\_\+out}
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Abstract fan-\/in-\/fan-\/out weights initializer. The initialization scheme only depends on the values of fan-\/in and fan-\/out parameters. 
+
+Definition at line 40 of file fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializers.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1fan__in__fan__out__initializer_a3a3811af11b1a70a57af846ae2cdf668}\label{classlbann_1_1fan__in__fan__out__initializer_a3a3811af11b1a70a57af846ae2cdf668}} 
+\index{lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer@{lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer}!fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer@{fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer}}
+\index{fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer@{fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer}!lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer@{lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer}}
+\subsubsection{\texorpdfstring{fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer()}{fan\_in\_fan\_out\_initializer()}}
+{\footnotesize\ttfamily lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Constructor. 
+
+Definition at line 44 of file fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializers.\+hpp.
+
+
+\begin{DoxyCode}
+45     : \hyperlink{classlbann_1_1weights__initializer_a3b65043cb6d76dcfcb07387392429755}{weights\_initializer}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}), \hyperlink{classlbann_1_1fan__in__fan__out__initializer_aea6639db271d9050f0a2e4f8c8dfa6cd}{m\_fan\_in}(0), 
+      \hyperlink{classlbann_1_1fan__in__fan__out__initializer_ac67d275ab8574780525d2af59b738338}{m\_fan\_out}(0) \{\}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=340pt]{classlbann_1_1fan__in__fan__out__initializer_a3a3811af11b1a70a57af846ae2cdf668_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1fan__in__fan__out__initializer_ab351750e3f776aa6748053f29d5d031c}\label{classlbann_1_1fan__in__fan__out__initializer_ab351750e3f776aa6748053f29d5d031c}} 
+\index{lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer@{lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer}!````~fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer@{$\sim$fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer}}
+\index{````~fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer@{$\sim$fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer}!lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer@{lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer}}
+\subsubsection{\texorpdfstring{$\sim$fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer()}{~fan\_in\_fan\_out\_initializer()}}
+{\footnotesize\ttfamily lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer\+::$\sim$fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [default]}}
+
+Destructor. Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=340pt]{classlbann_1_1fan__in__fan__out__initializer_ab351750e3f776aa6748053f29d5d031c_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1fan__in__fan__out__initializer_a6da7299bd2fb6aa1b549125fc62ffafc}\label{classlbann_1_1fan__in__fan__out__initializer_a6da7299bd2fb6aa1b549125fc62ffafc}} 
+\index{lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer@{lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer}!set\+\_\+fan\+\_\+in@{set\+\_\+fan\+\_\+in}}
+\index{set\+\_\+fan\+\_\+in@{set\+\_\+fan\+\_\+in}!lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer@{lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer}}
+\subsubsection{\texorpdfstring{set\+\_\+fan\+\_\+in()}{set\_fan\_in()}}
+{\footnotesize\ttfamily void lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer\+::set\+\_\+fan\+\_\+in (\begin{DoxyParamCaption}\item[{int}]{fan\+\_\+in }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Set fan-\/in dimension. 
+
+Definition at line 50 of file fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializers.\+hpp.
+
+
+\begin{DoxyCode}
+50 \{ \hyperlink{classlbann_1_1fan__in__fan__out__initializer_aea6639db271d9050f0a2e4f8c8dfa6cd}{m\_fan\_in} = fan\_in; \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1fan__in__fan__out__initializer_a6da7299bd2fb6aa1b549125fc62ffafc_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1fan__in__fan__out__initializer_a4464e05d66e938058a01be04a2495452}\label{classlbann_1_1fan__in__fan__out__initializer_a4464e05d66e938058a01be04a2495452}} 
+\index{lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer@{lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer}!set\+\_\+fan\+\_\+out@{set\+\_\+fan\+\_\+out}}
+\index{set\+\_\+fan\+\_\+out@{set\+\_\+fan\+\_\+out}!lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer@{lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer}}
+\subsubsection{\texorpdfstring{set\+\_\+fan\+\_\+out()}{set\_fan\_out()}}
+{\footnotesize\ttfamily void lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer\+::set\+\_\+fan\+\_\+out (\begin{DoxyParamCaption}\item[{int}]{fan\+\_\+out }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Set fan-\/out dimension. 
+
+Definition at line 52 of file fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializers.\+hpp.
+
+
+\begin{DoxyCode}
+52 \{ \hyperlink{classlbann_1_1fan__in__fan__out__initializer_ac67d275ab8574780525d2af59b738338}{m\_fan\_out} = fan\_out; \}
+\end{DoxyCode}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1fan__in__fan__out__initializer_aea6639db271d9050f0a2e4f8c8dfa6cd}\label{classlbann_1_1fan__in__fan__out__initializer_aea6639db271d9050f0a2e4f8c8dfa6cd}} 
+\index{lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer@{lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer}!m\+\_\+fan\+\_\+in@{m\+\_\+fan\+\_\+in}}
+\index{m\+\_\+fan\+\_\+in@{m\+\_\+fan\+\_\+in}!lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer@{lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer}}
+\subsubsection{\texorpdfstring{m\+\_\+fan\+\_\+in}{m\_fan\_in}}
+{\footnotesize\ttfamily int lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer\+::m\+\_\+fan\+\_\+in\hspace{0.3cm}{\ttfamily [protected]}}
+
+Fan-\/in dimension. 
+
+Definition at line 57 of file fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializers.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1fan__in__fan__out__initializer_ac67d275ab8574780525d2af59b738338}\label{classlbann_1_1fan__in__fan__out__initializer_ac67d275ab8574780525d2af59b738338}} 
+\index{lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer@{lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer}!m\+\_\+fan\+\_\+out@{m\+\_\+fan\+\_\+out}}
+\index{m\+\_\+fan\+\_\+out@{m\+\_\+fan\+\_\+out}!lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer@{lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer}}
+\subsubsection{\texorpdfstring{m\+\_\+fan\+\_\+out}{m\_fan\_out}}
+{\footnotesize\ttfamily int lbann\+::fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializer\+::m\+\_\+fan\+\_\+out\hspace{0.3cm}{\ttfamily [protected]}}
+
+Fan-\/out dimension. 
+
+Definition at line 59 of file fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializers.\+hpp.
+
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/weights/\hyperlink{fan__in__fan__out__initializers_8hpp}{fan\+\_\+in\+\_\+fan\+\_\+out\+\_\+initializers.\+hpp}\end{DoxyCompactItemize}

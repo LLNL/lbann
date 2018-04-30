@@ -1,0 +1,5 @@
+<map id="lbann::lbann_quantizer::proportion_threshold" name="lbann::lbann_quantizer::proportion_threshold">
+<area shape="rect" id="node2" href="$namespacelbann.html#a478d36031ff0659893c4322cd856157f" title="lbann::get_time" alt="" coords="240,5,352,31"/>
+<area shape="rect" id="node3" href="$namespacelbann.html#ae6ce9c2fdec6f81803f6b1a6555c31c5" title="lbann::get_fast_generator" alt="" coords="210,55,383,80"/>
+<area shape="rect" id="node4" href="$namespacelbann.html#a557aaed6267e7aaf583a75149e9c670c" title="lbann::fast_rand_int" alt="" coords="227,104,365,129"/>
+</map>

@@ -1,0 +1,18 @@
+<map id="lbann::entrywise_mean_and_stdev" name="lbann::entrywise_mean_and_stdev">
+<area shape="rect" id="node2" href="$classlbann_1_1lbann__image__preprocessor.html#ab499dd9f11d98998b5902d639f70fa8e" title="lbann::lbann_image\l_preprocessor::mean\l_subtraction" alt="" coords="225,121,373,173"/>
+<area shape="rect" id="node14" href="$classlbann_1_1lbann__image__preprocessor.html#af9fcb483843230008a53d60c12975f61" title="lbann::lbann_image\l_preprocessor::unit\l_variance" alt="" coords="230,197,368,249"/>
+<area shape="rect" id="node15" href="$classlbann_1_1lbann__image__preprocessor.html#aec67fb0dc7a1f5d718d5bb2e226f9b7a" title="lbann::lbann_image\l_preprocessor::z_score" alt="" coords="219,273,379,312"/>
+<area shape="rect" id="node16" href="$classlbann_1_1r2__metric.html#a06c84d7944d1d5be896de6b98950e05e" title="lbann::r2_metric::evaluate\l_compute" alt="" coords="212,336,387,375"/>
+<area shape="rect" id="node3" href="$classlbann_1_1lbann__image__preprocessor.html#ae370cdc9f776ce8cce94a45cacf47425" title="lbann::lbann_image\l_preprocessor::normalize" alt="" coords="435,128,606,167"/>
+<area shape="rect" id="node4" href="$classlbann_1_1lbann__image__preprocessor.html#a1726baf71e931108dc9192539e90c583" title="lbann::lbann_image\l_preprocessor::add_noise" alt="" coords="654,33,830,72"/>
+<area shape="rect" id="node8" href="$classlbann_1_1cifar10__reader.html#a590c672731bbdcb6e7fd8fd300d004d5" title="lbann::cifar10_reader\l::fetch_datum" alt="" coords="668,96,816,135"/>
+<area shape="rect" id="node10" href="$classlbann_1_1imagenet__reader__org.html#ad4c47413e16c1c53000b7d7be757ff6e" title="lbann::imagenet_reader\l_org::fetch_datum" alt="" coords="661,159,823,197"/>
+<area shape="rect" id="node12" href="$classlbann_1_1mnist__reader.html#af257b58b61ae9f3f623f1cb5d18c4841" title="lbann::mnist_reader\l::fetch_datum" alt="" coords="672,221,812,260"/>
+<area shape="rect" id="node5" href="$init__image__data__readers_8hpp.html#ac021d06bfe6825ec586927661254a546" title="init_generic_preprocessor" alt="" coords="878,40,1053,65"/>
+<area shape="rect" id="node6" href="$init__image__data__readers_8hpp.html#a7cbc558e3233f04f7bbd6e96d199e387" title="init_org_image_data\l_reader" alt="" coords="1101,5,1243,44"/>
+<area shape="rect" id="node7" href="$proto__common_8hpp.html#a32d4c032abc19c091fa65ace580fc057" title="instantiates one or more generic_data_readers and inserts them in &amp;data_readers " alt="" coords="1291,41,1415,67"/>
+<area shape="rect" id="node9" href="$classlbann_1_1cifar10__reader.html#a3915005f1278a840869b8519c30c808b" title="lbann::cifar10_reader\l::set_input_params" alt="" coords="892,96,1039,135"/>
+<area shape="rect" id="node11" href="$classlbann_1_1imagenet__reader__org.html#ade6e7e9bc1a3f9562c0f274a3d665e0a" title="lbann::imagenet_reader\l_org::get_type" alt="" coords="884,159,1046,197"/>
+<area shape="rect" id="node13" href="$classlbann_1_1mnist__reader.html#aa50ae6f2aeb5800de0e15e3ab9046338" title="lbann::mnist_reader\l::set_input_params" alt="" coords="896,221,1035,260"/>
+<area shape="rect" id="node17" href="$classlbann_1_1r2__metric.html#a66f9280c69b9b079d40b70b9c9c43ad9" title="lbann::r2_metric::name" alt="" coords="442,343,599,368"/>
+</map>

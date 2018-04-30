@@ -1,0 +1,4 @@
+<map id="lbann::partitioned_io_buffer::compute_max_num_parallel_readers" name="lbann::partitioned_io_buffer::compute_max_num_parallel_readers">
+<area shape="rect" id="node2" href="$classlbann_1_1lbann__comm.html#a5755dfdfc6377b4cae5ef8f7819e17de" title="lbann::lbann_comm::\lget_procs_per_model" alt="" coords="244,5,394,44"/>
+<area shape="rect" id="node3" href="$classlbann_1_1lbann__comm.html#ad8a5790dfa9191d4b4f889e8707e57f1" title="lbann::lbann_comm::\lam_model_master" alt="" coords="246,68,391,107"/>
+</map>

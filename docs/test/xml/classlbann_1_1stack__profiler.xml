@@ -1,0 +1,220 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1stack__profiler" kind="class" language="C++" prot="public">
+    <compoundname>lbann::stack_profiler</compoundname>
+    <includes refid="stack__profiler_8hpp" local="no">stack_profiler.hpp</includes>
+      <sectiondef kind="private-static-attrib">
+      <memberdef kind="variable" id="classlbann_1_1stack__profiler_1a7a1803ee126dfb5a215c5966458451fd" prot="private" static="yes" mutable="no">
+        <type><ref refid="classlbann_1_1stack__profiler" kindref="compound">stack_profiler</ref> *</type>
+        <definition>stack_profiler * lbann::stack_profiler::s_instance</definition>
+        <argsstring></argsstring>
+        <name>s_instance</name>
+        <initializer>= new <ref refid="classlbann_1_1stack__profiler" kindref="compound">stack_profiler</ref></initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/stack_profiler.hpp" line="63" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/stack_profiler.hpp" bodystart="63" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1stack__profiler_1ab1a7c0531a78ad7e2181a10daee44def" compoundref="stack__profiler_8hpp" startline="46" endline="48">get</referencedby>
+        <referencedby refid="cyg__profile_8hpp_1ad1c2d92ab2c29021521d36cf4c97e488" compoundref="stack__profiler_8cpp" startline="37" endline="60">c_hash_create</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="classlbann_1_1stack__profiler_1a7dd8bf137ea417ecf54537d64c6d296a" prot="private" static="no" mutable="no">
+        <type>bool</type>
+        <definition>bool lbann::stack_profiler::m_full_stack_trace</definition>
+        <argsstring></argsstring>
+        <name>m_full_stack_trace</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/stack_profiler.hpp" line="65" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/stack_profiler.hpp" bodystart="65" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1stack__profiler_1a5c8e2ec1f36d36ff8211ec8910063777" compoundref="stack__profiler_8cpp" startline="82" endline="101">activate</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1stack__profiler_1a1bd742927294507fe67184cb4f47b86c" prot="private" static="no" mutable="no">
+        <type>int</type>
+        <definition>int lbann::stack_profiler::m_thread_id</definition>
+        <argsstring></argsstring>
+        <name>m_thread_id</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/stack_profiler.hpp" line="67" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/stack_profiler.hpp" bodystart="67" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1stack__profiler_1a5c8e2ec1f36d36ff8211ec8910063777" compoundref="stack__profiler_8cpp" startline="82" endline="101">activate</referencedby>
+        <referencedby refid="classlbann_1_1stack__profiler_1a27d55f6551cf445d3d0e9836858f6872" compoundref="stack__profiler_8cpp" startline="107" endline="132">print</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-static-func">
+      <memberdef kind="function" id="classlbann_1_1stack__profiler_1ab1a7c0531a78ad7e2181a10daee44def" prot="public" static="yes" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type><ref refid="classlbann_1_1stack__profiler" kindref="compound">stack_profiler</ref> *</type>
+        <definition>static stack_profiler* lbann::stack_profiler::get</definition>
+        <argsstring>()</argsstring>
+        <name>get</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/stack_profiler.hpp" line="46" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/stack_profiler.hpp" bodystart="46" bodyend="48"/>
+        <references refid="classlbann_1_1stack__profiler_1a7a1803ee126dfb5a215c5966458451fd" compoundref="stack__profiler_8hpp" startline="63">s_instance</references>
+        <references refid="classlbann_1_1stack__profiler_1a5c8e2ec1f36d36ff8211ec8910063777" compoundref="stack__profiler_8cpp" startline="82" endline="101">activate</references>
+        <references refid="classlbann_1_1stack__profiler_1a27d55f6551cf445d3d0e9836858f6872" compoundref="stack__profiler_8cpp" startline="107" endline="132">print</references>
+        <references refid="classlbann_1_1stack__profiler_1aee22d226f565eb88cc877570ca818033" compoundref="stack__profiler_8cpp" startline="78" endline="80">stack_profiler</references>
+        <references refid="classlbann_1_1stack__profiler_1a57329b6f2822f91e6dad13b19bcc81d9" compoundref="stack__profiler_8cpp" startline="68" endline="76">~stack_profiler</references>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1stack__profiler_1a5c8e2ec1f36d36ff8211ec8910063777" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::stack_profiler::activate</definition>
+        <argsstring>(int thread_id)</argsstring>
+        <name>activate</name>
+        <param>
+          <type>int</type>
+          <declname>thread_id</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Turns on stack profiling <emphasis>if</emphasis> you have passed the cmd line option: <ndash/>st_on or <ndash/>st_on=1 </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/stack_profiler.hpp" line="53" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_profiler.cpp" bodystart="82" bodyend="101"/>
+        <references refid="classlbann_1_1stack__profiler_1a1bd742927294507fe67184cb4f47b86c" compoundref="stack__profiler_8hpp" startline="67">m_thread_id</references>
+        <references refid="stack__profiler_8cpp_1a92d77137d4b87923f488746604d72f94" compoundref="stack__profiler_8cpp" startline="24">c_hash_thread_id</references>
+        <references refid="classoptions_1a9ecfe9c365269df68a41b961c31ae3f5" compoundref="options_8hpp" startline="20" endline="22">options::get</references>
+        <references refid="classoptions_1aafb1d2a7ccde0b1bf786230ba4080ecd" compoundref="options_8cpp" startline="252" endline="257">options::has_bool</references>
+        <references refid="classoptions_1a99aa190102de33e2aed39723929f9fad" compoundref="options_8cpp" startline="111" endline="126">options::get_bool</references>
+        <references refid="stack__profiler_8cpp_1ad1c2d92ab2c29021521d36cf4c97e488" compoundref="stack__profiler_8cpp" startline="37" endline="60">c_hash_create</references>
+        <references refid="stack__profiler_8cpp_1a193e8df9f6b1bc5794e9aa25f82e6a5f" compoundref="stack__profiler_8cpp" startline="23">c_hash_profiling_is_turned_on</references>
+        <references refid="classlbann_1_1stack__profiler_1a7dd8bf137ea417ecf54537d64c6d296a" compoundref="stack__profiler_8hpp" startline="65">m_full_stack_trace</references>
+        <references refid="stack__profiler_8cpp_1a6cc00bff1b0fcee1e92c726aea92c818" compoundref="stack__profiler_8cpp" startline="21">c_hash_fp_full_stack_trace</references>
+        <references refid="stack__profiler_8cpp_1a434aed2bad9781985a12de882aa0ec84" compoundref="stack__profiler_8cpp" startline="22">c_hash_fp_full_stack_trace_metadata</references>
+        <referencedby refid="classlbann_1_1stack__profiler_1ab1a7c0531a78ad7e2181a10daee44def" compoundref="stack__profiler_8hpp" startline="46" endline="48">get</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1stack__profiler_1a27d55f6551cf445d3d0e9836858f6872" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::stack_profiler::print</definition>
+        <argsstring>()</argsstring>
+        <name>print</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/stack_profiler.hpp" line="55" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_profiler.cpp" bodystart="107" bodyend="132"/>
+        <references refid="classlbann_1_1stack__profiler_1a1bd742927294507fe67184cb4f47b86c" compoundref="stack__profiler_8hpp" startline="67">m_thread_id</references>
+        <references refid="stack__profiler_8cpp_1acaf4dd8f3a0755b44949a87760cd1102" compoundref="stack__profiler_8cpp" startline="20">c_hash_the_hash_table</references>
+        <references refid="structc__hash__table_1ae4c33f323d44301e5990ba3355a2d708" compoundref="cyg__profile_8hpp" startline="80">c_hash_table::count</references>
+        <references refid="namespacelbann_1_1cnpy__utils_1a9ac86d96ccb1f8b4b2ea16441738781f" compoundref="cnpy__utils_8hpp" startline="52" endline="59">lbann::cnpy_utils::data</references>
+        <references refid="structc__hash__table_1abfdd282e54441552086f78d30b959d60" compoundref="cyg__profile_8hpp" startline="82">c_hash_table::data</references>
+        <references refid="structc__hash__table_1afd5bfd9640fc5b72f75457fb7dd89663" compoundref="cyg__profile_8hpp" startline="79">c_hash_table::size</references>
+        <references refid="structc__hash__table_1a87debaad1679b5fd28537908174a7487" compoundref="cyg__profile_8hpp" startline="81">c_hash_table::cur_mark</references>
+        <references refid="namespacelbann_1aedcfce41af2eae595ce58b1180f66bd1" compoundref="stack__profiler_8cpp" startline="103" endline="105">lbann::count_sorter</references>
+        <references refid="stack__profiler_8cpp_1a60ca1ac997785ebd8547c022d07fe4b5" compoundref="stack__profiler_8cpp" startline="30">c_hash_lookups</references>
+        <references refid="stack__profiler_8cpp_1a9e4c390c04f233e99f7577a1c63be028" compoundref="stack__profiler_8cpp" startline="31">c_hash_collisions</references>
+        <referencedby refid="classlbann_1_1stack__profiler_1ab1a7c0531a78ad7e2181a10daee44def" compoundref="stack__profiler_8hpp" startline="46" endline="48">get</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="private-func">
+      <memberdef kind="function" id="classlbann_1_1stack__profiler_1aee22d226f565eb88cc877570ca818033" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::stack_profiler::stack_profiler</definition>
+        <argsstring>()</argsstring>
+        <name>stack_profiler</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/stack_profiler.hpp" line="58" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_profiler.cpp" bodystart="78" bodyend="80"/>
+        <referencedby refid="classlbann_1_1stack__profiler_1ab1a7c0531a78ad7e2181a10daee44def" compoundref="stack__profiler_8hpp" startline="46" endline="48">get</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1stack__profiler_1a57329b6f2822f91e6dad13b19bcc81d9" prot="private" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::stack_profiler::~stack_profiler</definition>
+        <argsstring>()</argsstring>
+        <name>~stack_profiler</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/stack_profiler.hpp" line="59" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_profiler.cpp" bodystart="68" bodyend="76"/>
+        <references refid="stack__profiler_8cpp_1a6cc00bff1b0fcee1e92c726aea92c818" compoundref="stack__profiler_8cpp" startline="21">c_hash_fp_full_stack_trace</references>
+        <references refid="stack__profiler_8cpp_1a434aed2bad9781985a12de882aa0ec84" compoundref="stack__profiler_8cpp" startline="22">c_hash_fp_full_stack_trace_metadata</references>
+        <referencedby refid="classlbann_1_1stack__profiler_1ab1a7c0531a78ad7e2181a10daee44def" compoundref="stack__profiler_8hpp" startline="46" endline="48">get</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1stack__profiler_1af52b4bc426a0728860b00a4fb7fd500f" prot="private" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>lbann::stack_profiler::stack_profiler</definition>
+        <argsstring>(const stack_profiler &amp;)</argsstring>
+        <name>stack_profiler</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1stack__profiler" kindref="compound">stack_profiler</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/stack_profiler.hpp" line="60" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/stack_profiler.hpp" bodystart="60" bodyend="60"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1stack__profiler_1adac8efbe72cf9186a726798dc4efe91a" prot="private" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type><ref refid="classlbann_1_1stack__profiler" kindref="compound">stack_profiler</ref> &amp;</type>
+        <definition>stack_profiler&amp; lbann::stack_profiler::operator=</definition>
+        <argsstring>(const stack_profiler &amp;)</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1stack__profiler" kindref="compound">stack_profiler</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/stack_profiler.hpp" line="61" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/stack_profiler.hpp" bodystart="61" bodyend="61"/>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>This is a singleton, globally accessible class, for recording stack traces and timing </para>    </detaileddescription>
+    <collaborationgraph>
+      <node id="2209">
+        <label>lbann::stack_profiler</label>
+        <link refid="classlbann_1_1stack__profiler"/>
+        <childnode refid="2209" relation="usage">
+          <edgelabel>s_instance</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/stack_profiler.hpp" line="44" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/stack_profiler.hpp" bodystart="44" bodyend="72"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1stack__profiler_1a5c8e2ec1f36d36ff8211ec8910063777" prot="public" virt="non-virtual"><scope>lbann::stack_profiler</scope><name>activate</name></member>
+      <member refid="classlbann_1_1stack__profiler_1ab1a7c0531a78ad7e2181a10daee44def" prot="public" virt="non-virtual"><scope>lbann::stack_profiler</scope><name>get</name></member>
+      <member refid="classlbann_1_1stack__profiler_1a7dd8bf137ea417ecf54537d64c6d296a" prot="private" virt="non-virtual"><scope>lbann::stack_profiler</scope><name>m_full_stack_trace</name></member>
+      <member refid="classlbann_1_1stack__profiler_1a1bd742927294507fe67184cb4f47b86c" prot="private" virt="non-virtual"><scope>lbann::stack_profiler</scope><name>m_thread_id</name></member>
+      <member refid="classlbann_1_1stack__profiler_1adac8efbe72cf9186a726798dc4efe91a" prot="private" virt="non-virtual"><scope>lbann::stack_profiler</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1stack__profiler_1a27d55f6551cf445d3d0e9836858f6872" prot="public" virt="non-virtual"><scope>lbann::stack_profiler</scope><name>print</name></member>
+      <member refid="classlbann_1_1stack__profiler_1a7a1803ee126dfb5a215c5966458451fd" prot="private" virt="non-virtual"><scope>lbann::stack_profiler</scope><name>s_instance</name></member>
+      <member refid="classlbann_1_1stack__profiler_1aee22d226f565eb88cc877570ca818033" prot="private" virt="non-virtual"><scope>lbann::stack_profiler</scope><name>stack_profiler</name></member>
+      <member refid="classlbann_1_1stack__profiler_1af52b4bc426a0728860b00a4fb7fd500f" prot="private" virt="non-virtual"><scope>lbann::stack_profiler</scope><name>stack_profiler</name></member>
+      <member refid="classlbann_1_1stack__profiler_1a57329b6f2822f91e6dad13b19bcc81d9" prot="private" virt="non-virtual"><scope>lbann::stack_profiler</scope><name>~stack_profiler</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

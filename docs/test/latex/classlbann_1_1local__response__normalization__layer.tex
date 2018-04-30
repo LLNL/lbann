@@ -1,0 +1,849 @@
+\hypertarget{classlbann_1_1local__response__normalization__layer}{}\section{lbann\+:\+:local\+\_\+response\+\_\+normalization\+\_\+layer$<$ T\+\_\+layout $>$ Class Template Reference}
+\label{classlbann_1_1local__response__normalization__layer}\index{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer$<$ T\+\_\+layout $>$@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer$<$ T\+\_\+layout $>$}}
+
+
+{\ttfamily \#include $<$local\+\_\+response\+\_\+normalization.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:local\+\_\+response\+\_\+normalization\+\_\+layer$<$ T\+\_\+layout $>$\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=193pt]{classlbann_1_1local__response__normalization__layer__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:local\+\_\+response\+\_\+normalization\+\_\+layer$<$ T\+\_\+layout $>$\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1local__response__normalization__layer__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1local__response__normalization__layer_a5fa2f3175590cc85aa984c42cc9acd95}{local\+\_\+response\+\_\+normalization\+\_\+layer} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, int window\+\_\+width, Data\+Type lrn\+\_\+alpha, Data\+Type lrn\+\_\+beta, Data\+Type lrn\+\_\+k, \hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$cudnn=nullptr)
+\item 
+\hyperlink{classlbann_1_1local__response__normalization__layer_a95f89c53da64c319def098a7153c57f6}{local\+\_\+response\+\_\+normalization\+\_\+layer} (const \hyperlink{classlbann_1_1local__response__normalization__layer}{local\+\_\+response\+\_\+normalization\+\_\+layer} \&other)
+\item 
+\hyperlink{classlbann_1_1local__response__normalization__layer}{local\+\_\+response\+\_\+normalization\+\_\+layer} \& \hyperlink{classlbann_1_1local__response__normalization__layer_a7a1e5eb532bbf72c6334ac865d0694a3}{operator=} (const \hyperlink{classlbann_1_1local__response__normalization__layer}{local\+\_\+response\+\_\+normalization\+\_\+layer} \&other)
+\item 
+\hyperlink{classlbann_1_1local__response__normalization__layer_a7896161e3667a69f0fd66cda3b4af421}{$\sim$local\+\_\+response\+\_\+normalization\+\_\+layer} () override
+\item 
+\hyperlink{classlbann_1_1local__response__normalization__layer}{local\+\_\+response\+\_\+normalization\+\_\+layer} $\ast$ \hyperlink{classlbann_1_1local__response__normalization__layer_a2bccec49f9b3840a2d9170cb202c1397}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1local__response__normalization__layer_ad566e7894d7eb1eb0fd1560686bf2388}{get\+\_\+type} () const override
+\begin{DoxyCompactList}\small\item\em Use L\+RN rather than local response normalization for better formatting. \end{DoxyCompactList}\item 
+std\+::string \hyperlink{classlbann_1_1local__response__normalization__layer_a31f4ab1700e2e1c69a0ccb44c6f0fd69}{get\+\_\+description} () const override
+\item 
+\hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08db}{data\+\_\+layout} \hyperlink{classlbann_1_1local__response__normalization__layer_a7a161dde860f17264077a0cc4797fe36}{get\+\_\+data\+\_\+layout} () const override
+\item 
+void \hyperlink{classlbann_1_1local__response__normalization__layer_aff5210d74db5f8302989cca12d04263d}{setup\+\_\+gpu} () override
+\begin{DoxyCompactList}\small\item\em Initialize G\+PU objects. \end{DoxyCompactList}\item 
+void \hyperlink{classlbann_1_1local__response__normalization__layer_ac7b2ce4970eb7163685fb0a4a69328fc}{fp\+\_\+compute} () override
+\item 
+void \hyperlink{classlbann_1_1local__response__normalization__layer_ae94544765a459a6609f2c2ebbbc3e9d9}{bp\+\_\+compute} () override
+\end{DoxyCompactItemize}
+\subsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{classlbann_1_1local__response__normalization__layer_a715b08cfc4bfed730a066f6d9cedef86}{fp\+\_\+compute\+\_\+cudnn} ()
+\begin{DoxyCompactList}\small\item\em G\+PU implementation of forward propagation. \end{DoxyCompactList}\item 
+void \hyperlink{classlbann_1_1local__response__normalization__layer_a78b0d081956abf4f09874d59b4bf4fc8}{bp\+\_\+compute\+\_\+cudnn} ()
+\begin{DoxyCompactList}\small\item\em G\+PU implementation of backward propagation. \end{DoxyCompactList}\item 
+void \hyperlink{classlbann_1_1local__response__normalization__layer_a79c72491b5b74b64d2b10ac2636cddce}{fp\+\_\+compute\+\_\+cpu} ()
+\begin{DoxyCompactList}\small\item\em C\+PU implementation of forward propagation. \end{DoxyCompactList}\item 
+void \hyperlink{classlbann_1_1local__response__normalization__layer_a1aac4bf5e2500749bc8bafcd254f5699}{bp\+\_\+compute\+\_\+cpu} ()
+\begin{DoxyCompactList}\small\item\em C\+PU implementation of backward propagation. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{classlbann_1_1local__response__normalization__layer_a4914619a19eb43efcf8240b8a1e0c090}{m\+\_\+window\+\_\+width}
+\begin{DoxyCompactList}\small\item\em Normalization window width. \end{DoxyCompactList}\item 
+Data\+Type \hyperlink{classlbann_1_1local__response__normalization__layer_a85c25a68888e2e9d163a820326fc09ff}{m\+\_\+lrn\+\_\+alpha}
+\begin{DoxyCompactList}\small\item\em L\+RN alpha scaling parameter. \end{DoxyCompactList}\item 
+Data\+Type \hyperlink{classlbann_1_1local__response__normalization__layer_ad06848e9d59664be86aecbc1e2ba556f}{m\+\_\+lrn\+\_\+beta}
+\begin{DoxyCompactList}\small\item\em L\+RN beta power parameter. \end{DoxyCompactList}\item 
+Data\+Type \hyperlink{classlbann_1_1local__response__normalization__layer_a896f875d6f6a763c1cb0dbd43679164e}{m\+\_\+lrn\+\_\+k}
+\begin{DoxyCompactList}\small\item\em L\+RN k parameter. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+\subsubsection*{template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$\newline
+class lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer$<$ T\+\_\+layout $>$}
+
+Local Response Normalization layer. 
+
+Definition at line 39 of file local\+\_\+response\+\_\+normalization.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1local__response__normalization__layer_a5fa2f3175590cc85aa984c42cc9acd95}\label{classlbann_1_1local__response__normalization__layer_a5fa2f3175590cc85aa984c42cc9acd95}} 
+\index{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}!local\+\_\+response\+\_\+normalization\+\_\+layer@{local\+\_\+response\+\_\+normalization\+\_\+layer}}
+\index{local\+\_\+response\+\_\+normalization\+\_\+layer@{local\+\_\+response\+\_\+normalization\+\_\+layer}!lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}}
+\subsubsection{\texorpdfstring{local\+\_\+response\+\_\+normalization\+\_\+layer()}{local\_response\_normalization\_layer()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{classlbann_1_1local__response__normalization__layer}{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}$<$ T\+\_\+layout $>$\+::\hyperlink{classlbann_1_1local__response__normalization__layer}{local\+\_\+response\+\_\+normalization\+\_\+layer} (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{int}]{window\+\_\+width,  }\item[{Data\+Type}]{lrn\+\_\+alpha,  }\item[{Data\+Type}]{lrn\+\_\+beta,  }\item[{Data\+Type}]{lrn\+\_\+k,  }\item[{\hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$}]{cudnn = {\ttfamily nullptr} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 58 of file local\+\_\+response\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+64     : \hyperlink{classlbann_1_1regularizer__layer_a2ebf3877b905b479a0250b74cf8f68b3}{regularizer\_layer}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}),
+65       \hyperlink{classlbann_1_1local__response__normalization__layer_a4914619a19eb43efcf8240b8a1e0c090}{m\_window\_width}(window\_width), \hyperlink{classlbann_1_1local__response__normalization__layer_a85c25a68888e2e9d163a820326fc09ff}{m\_lrn\_alpha}(lrn\_alpha), 
+      \hyperlink{classlbann_1_1local__response__normalization__layer_ad06848e9d59664be86aecbc1e2ba556f}{m\_lrn\_beta}(lrn\_beta),
+66       \hyperlink{classlbann_1_1local__response__normalization__layer_a896f875d6f6a763c1cb0dbd43679164e}{m\_lrn\_k}(lrn\_k) \{
+67     static\_assert(T\_layout == \hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08dba37d2a3465f7cbf4ab60f4e79944d0638}{data\_layout::DATA\_PARALLEL},
+68                   \textcolor{stringliteral}{"local\_response\_normalization only supports DATA\_PARALLEL"});
+69 \textcolor{preprocessor}{  #ifdef LBANN\_HAS\_CUDNN}
+70     \textcolor{comment}{// Initialize cuDNN objects}
+71     m\_lrn\_cudnn\_desc = \textcolor{keyword}{nullptr};
+72     \textcolor{keywordflow}{if} (cudnn) \{
+73       this->\hyperlink{classlbann_1_1Layer_af7881cb5eff5207c15fa835d65462e8f}{m\_using\_gpus} = \textcolor{keyword}{true};
+74       this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn} = cudnn;
+75     \}
+76 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+77   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1local__response__normalization__layer_a5fa2f3175590cc85aa984c42cc9acd95_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1local__response__normalization__layer_a95f89c53da64c319def098a7153c57f6}\label{classlbann_1_1local__response__normalization__layer_a95f89c53da64c319def098a7153c57f6}} 
+\index{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}!local\+\_\+response\+\_\+normalization\+\_\+layer@{local\+\_\+response\+\_\+normalization\+\_\+layer}}
+\index{local\+\_\+response\+\_\+normalization\+\_\+layer@{local\+\_\+response\+\_\+normalization\+\_\+layer}!lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}}
+\subsubsection{\texorpdfstring{local\+\_\+response\+\_\+normalization\+\_\+layer()}{local\_response\_normalization\_layer()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{classlbann_1_1local__response__normalization__layer}{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}$<$ T\+\_\+layout $>$\+::\hyperlink{classlbann_1_1local__response__normalization__layer}{local\+\_\+response\+\_\+normalization\+\_\+layer} (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1local__response__normalization__layer}{local\+\_\+response\+\_\+normalization\+\_\+layer}$<$ T\+\_\+layout $>$ \&}]{other }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 79 of file local\+\_\+response\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+79                                                                                       :
+80     \hyperlink{classlbann_1_1regularizer__layer_a2ebf3877b905b479a0250b74cf8f68b3}{regularizer\_layer}(other),
+81     \hyperlink{classlbann_1_1local__response__normalization__layer_a4914619a19eb43efcf8240b8a1e0c090}{m\_window\_width}(other.m\_window\_width),
+82     \hyperlink{classlbann_1_1local__response__normalization__layer_a85c25a68888e2e9d163a820326fc09ff}{m\_lrn\_alpha}(other.m\_lrn\_alpha),
+83     \hyperlink{classlbann_1_1local__response__normalization__layer_ad06848e9d59664be86aecbc1e2ba556f}{m\_lrn\_beta}(other.m\_lrn\_beta),
+84     \hyperlink{classlbann_1_1local__response__normalization__layer_a896f875d6f6a763c1cb0dbd43679164e}{m\_lrn\_k}(other.m\_lrn\_k) \{
+85 \textcolor{preprocessor}{  #ifdef LBANN\_HAS\_CUDNN}
+86     m\_lrn\_cudnn\_desc = \textcolor{keyword}{nullptr};
+87     cudnn::copy\_lrn\_cudnn\_desc(other.m\_lrn\_cudnn\_desc, m\_lrn\_cudnn\_desc);
+88 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+89   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1local__response__normalization__layer_a7896161e3667a69f0fd66cda3b4af421}\label{classlbann_1_1local__response__normalization__layer_a7896161e3667a69f0fd66cda3b4af421}} 
+\index{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}!````~local\+\_\+response\+\_\+normalization\+\_\+layer@{$\sim$local\+\_\+response\+\_\+normalization\+\_\+layer}}
+\index{````~local\+\_\+response\+\_\+normalization\+\_\+layer@{$\sim$local\+\_\+response\+\_\+normalization\+\_\+layer}!lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}}
+\subsubsection{\texorpdfstring{$\sim$local\+\_\+response\+\_\+normalization\+\_\+layer()}{~local\_response\_normalization\_layer()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{classlbann_1_1local__response__normalization__layer}{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}$<$ T\+\_\+layout $>$\+::$\sim$\hyperlink{classlbann_1_1local__response__normalization__layer}{local\+\_\+response\+\_\+normalization\+\_\+layer} (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}}
+
+
+
+Definition at line 102 of file local\+\_\+response\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+102                                                  \{
+103 \textcolor{preprocessor}{  #ifdef LBANN\_HAS\_CUDNN}
+104     \textcolor{comment}{// Destroy cuDNN objects}
+105     \textcolor{keywordflow}{if} (m\_lrn\_cudnn\_desc != \textcolor{keyword}{nullptr}) \{
+106       CHECK\_CUDNN(cudnnDestroyLRNDescriptor(m\_lrn\_cudnn\_desc));
+107     \}
+108 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+109   \}
+\end{DoxyCode}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1local__response__normalization__layer_ae94544765a459a6609f2c2ebbbc3e9d9}\label{classlbann_1_1local__response__normalization__layer_ae94544765a459a6609f2c2ebbbc3e9d9}} 
+\index{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}!bp\+\_\+compute@{bp\+\_\+compute}}
+\index{bp\+\_\+compute@{bp\+\_\+compute}!lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}}
+\subsubsection{\texorpdfstring{bp\+\_\+compute()}{bp\_compute()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1local__response__normalization__layer}{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}$<$ T\+\_\+layout $>$\+::bp\+\_\+compute (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Perform the computation for the backward propagation step. 
+
+Implements \hyperlink{classlbann_1_1Layer_a7442e01f9ee1294df2de811efcf5171e}{lbann\+::\+Layer}.
+
+
+
+Definition at line 150 of file local\+\_\+response\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+150                              \{
+151     \textcolor{keywordflow}{if} (this->\hyperlink{classlbann_1_1Layer_af7881cb5eff5207c15fa835d65462e8f}{m\_using\_gpus}) \{
+152       \hyperlink{classlbann_1_1local__response__normalization__layer_a78b0d081956abf4f09874d59b4bf4fc8}{bp\_compute\_cudnn}();
+153     \} \textcolor{keywordflow}{else} \{
+154       \hyperlink{classlbann_1_1local__response__normalization__layer_a1aac4bf5e2500749bc8bafcd254f5699}{bp\_compute\_cpu}();
+155     \}
+156   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1local__response__normalization__layer_ae94544765a459a6609f2c2ebbbc3e9d9_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1local__response__normalization__layer_a1aac4bf5e2500749bc8bafcd254f5699}\label{classlbann_1_1local__response__normalization__layer_a1aac4bf5e2500749bc8bafcd254f5699}} 
+\index{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}!bp\+\_\+compute\+\_\+cpu@{bp\+\_\+compute\+\_\+cpu}}
+\index{bp\+\_\+compute\+\_\+cpu@{bp\+\_\+compute\+\_\+cpu}!lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}}
+\subsubsection{\texorpdfstring{bp\+\_\+compute\+\_\+cpu()}{bp\_compute\_cpu()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1local__response__normalization__layer}{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}$<$ T\+\_\+layout $>$\+::bp\+\_\+compute\+\_\+cpu (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [private]}}
+
+
+
+C\+PU implementation of backward propagation. 
+
+
+
+Definition at line 305 of file local\+\_\+response\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+305                         \{
+306 
+307     \textcolor{comment}{// Get local matrices}
+308     \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_input = \hyperlink{classlbann_1_1Layer_a35397843bb0c84030000c7d872229acb}{get\_local\_prev\_activations}();
+309     \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_output = \hyperlink{classlbann_1_1Layer_a4248f27acebf72b7b7b3ee39c8bcb62a}{get\_local\_activations}();
+310     \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_gradient\_wrt\_output = \hyperlink{classlbann_1_1Layer_a82827edc5e869960144f3ccb2172bfcd}{get\_local\_prev\_error\_signals}();
+311     \textcolor{keyword}{auto}& local\_gradient\_wrt\_input = \hyperlink{classlbann_1_1Layer_af178d00b9d878aa7d87754bff2a91f3a}{get\_local\_error\_signals}();
+312 
+313     \textcolor{comment}{// Get matrix buffers}
+314     \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_width = local\_input.Width();
+315     \textcolor{keyword}{const} DataType* input\_buffer = local\_input.LockedBuffer();
+316     \textcolor{keyword}{const} \textcolor{keywordtype}{int} input\_ldim = local\_input.LDim();
+317     \textcolor{keyword}{const} DataType* output\_buffer = local\_output.LockedBuffer();
+318     \textcolor{keyword}{const} \textcolor{keywordtype}{int} output\_ldim = local\_output.LDim();
+319     \textcolor{keyword}{const} DataType* gradient\_wrt\_output\_buffer = local\_gradient\_wrt\_output.LockedBuffer();
+320     \textcolor{keyword}{const} \textcolor{keywordtype}{int} gradient\_wrt\_output\_ldim = local\_gradient\_wrt\_output.LDim();
+321     DataType* gradient\_wrt\_input\_buffer = local\_gradient\_wrt\_input.Buffer();
+322     \textcolor{keyword}{const} \textcolor{keywordtype}{int} gradient\_wrt\_input\_ldim = local\_gradient\_wrt\_input.LDim();
+323 
+324     \textcolor{comment}{// Get LRN parameters}
+325     \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_channels = this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}[0];
+326     \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_per\_channel = this->\hyperlink{classlbann_1_1Layer_a6b5ebc8a7d9329d8a773ed787e7b41d8}{m\_num\_neurons} / num\_channels;
+327 
+328     \textcolor{comment}{// Check if LRN is using default beta parameter}
+329     \textcolor{keyword}{const} \textcolor{keywordtype}{bool} default\_beta = (std::fabs((\hyperlink{classlbann_1_1local__response__normalization__layer_ad06848e9d59664be86aecbc1e2ba556f}{m\_lrn\_beta} - 0.75) / 0.75)
+330                                < 2 * std::numeric\_limits<DataType>::epsilon());
+331 
+333     \textcolor{comment}{// error\_signal(i)}
+334     \textcolor{comment}{//   = prev\_error\_signal(i) / scale\_factor(i) ^ beta}
+335     \textcolor{comment}{//     - 2 * alpha * beta / window\_width * prev\_activations(i)}
+336     \textcolor{comment}{//       * sum( prev\_error\_signal(j) * activations(j)}
+337     \textcolor{comment}{//              / scale\_factor(j) )}
+338     \textcolor{comment}{// Note: See comments in fp\_linearity\_cpu for a definition of}
+339     \textcolor{comment}{//   scale\_factor. The sum is over entries in the normalization}
+340     \textcolor{comment}{//   window.}
+342 \textcolor{comment}{}
+343     \textcolor{comment}{// Iterate through blocks in channels of each data sample}
+344     \textcolor{keyword}{const} \textcolor{keywordtype}{int} max\_block\_size = 16;
+345 \textcolor{preprocessor}{    #pragma omp parallel for collapse(2)}
+346     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} sample = 0; sample < local\_width; ++sample) \{
+347       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} block\_start = 0;
+348           block\_start < num\_per\_channel;
+349           block\_start += max\_block\_size) \{
+350         \textcolor{keyword}{const} \textcolor{keywordtype}{int} block\_size = std::min(max\_block\_size,
+351                                         num\_per\_channel - block\_start);
+352         DataType workspace[max\_block\_size];
+353 
+354         \textcolor{comment}{// Iterate through channels}
+355         \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} channel = 0; channel < num\_channels; ++channel) \{
+356           \textcolor{keyword}{const} \textcolor{keywordtype}{int} window\_start = std::max(channel - \hyperlink{classlbann_1_1local__response__normalization__layer_a4914619a19eb43efcf8240b8a1e0c090}{m\_window\_width} / 2, 0);
+357           \textcolor{keyword}{const} \textcolor{keywordtype}{int} window\_end = std::min(channel + \hyperlink{classlbann_1_1local__response__normalization__layer_a4914619a19eb43efcf8240b8a1e0c090}{m\_window\_width} / 2, num\_channels - 1);
+358 
+359           \textcolor{comment}{// Compute sum of squares in workspace}
+360           std::fill(workspace, workspace + block\_size, DataType(0));
+361           \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} window\_pos = window\_start; window\_pos <= window\_end; ++window\_pos) \{
+362             \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} block\_pos = 0; block\_pos < block\_size; ++block\_pos) \{
+363               \textcolor{keyword}{const} \textcolor{keywordtype}{int} index = block\_start + block\_pos + window\_pos * num\_per\_channel;
+364               \textcolor{keyword}{const} DataType input\_entry = input\_buffer[index + sample * input\_ldim];
+365               workspace[block\_pos] += input\_entry * input\_entry;
+366             \}
+367           \}
+368 
+369           \textcolor{comment}{// Compute 1 / (k + alpha * sum(x^2) ) in workspace}
+370           \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} block\_pos = 0; block\_pos < block\_size; ++block\_pos) \{
+371             workspace[block\_pos] = 1 / (\hyperlink{classlbann_1_1local__response__normalization__layer_a896f875d6f6a763c1cb0dbd43679164e}{m\_lrn\_k} + \hyperlink{classlbann_1_1local__response__normalization__layer_a85c25a68888e2e9d163a820326fc09ff}{m\_lrn\_alpha} * workspace[block\_pos]);
+372           \}
+373 
+374           \textcolor{comment}{// Compute error signal contribution for current entry}
+375           \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} block\_pos = 0; block\_pos < block\_size; ++block\_pos) \{
+376             \textcolor{keyword}{const} \textcolor{keywordtype}{int} index = block\_start + block\_pos + channel * num\_per\_channel;
+377             \textcolor{keyword}{const} DataType scale\_factor = workspace[block\_pos];
+378             \textcolor{keyword}{const} DataType gradient\_wrt\_output\_entry
+379               = gradient\_wrt\_output\_buffer[index + sample * gradient\_wrt\_output\_ldim];
+380             DataType& gradient\_wrt\_input\_entry
+381               = gradient\_wrt\_input\_buffer[index + sample * gradient\_wrt\_input\_ldim];
+382             \textcolor{keywordflow}{if} (default\_beta) \{ \textcolor{comment}{// Special case when beta = 0.75}
+383               gradient\_wrt\_input\_entry
+384                 += gradient\_wrt\_output\_entry * std::sqrt(scale\_factor * std::sqrt(scale\_factor));
+385             \}
+386             \textcolor{keywordflow}{else} \{
+387               gradient\_wrt\_input\_entry
+388                 += gradient\_wrt\_output\_entry * std::pow(scale\_factor, \hyperlink{classlbann_1_1local__response__normalization__layer_ad06848e9d59664be86aecbc1e2ba556f}{m\_lrn\_beta});
+389             \}
+390           \}
+391 
+392           \textcolor{comment}{// Compute y * dy / (k + alpha * sum(x^2) ) in workspace}
+393           \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} block\_pos = 0; block\_pos < block\_size; ++block\_pos) \{
+394             \textcolor{keyword}{const} \textcolor{keywordtype}{int} index = block\_start + block\_pos + channel * num\_per\_channel;
+395             \textcolor{keyword}{const} DataType output\_entry = output\_buffer[index + sample * output\_ldim];
+396             \textcolor{keyword}{const} DataType gradient\_wrt\_output\_entry
+397               = gradient\_wrt\_output\_buffer[index + sample * gradient\_wrt\_output\_ldim];
+398             workspace[block\_pos] = (-2 * \hyperlink{classlbann_1_1local__response__normalization__layer_a85c25a68888e2e9d163a820326fc09ff}{m\_lrn\_alpha} * \hyperlink{classlbann_1_1local__response__normalization__layer_ad06848e9d59664be86aecbc1e2ba556f}{m\_lrn\_beta} * workspace[
+      block\_pos]
+399                                     * output\_entry * gradient\_wrt\_output\_entry);
+400           \}
+401 
+402           \textcolor{comment}{// Compute error signal contribution for entries in window}
+403           \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} window\_pos = window\_start; window\_pos <= window\_end; ++window\_pos) \{
+404             \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} block\_pos = 0; block\_pos < block\_size; ++block\_pos) \{
+405               \textcolor{keyword}{const} \textcolor{keywordtype}{int} index = block\_start + block\_pos + window\_pos * num\_per\_channel;
+406               \textcolor{keyword}{const} DataType input\_entry = input\_buffer[index + sample * input\_ldim];
+407               gradient\_wrt\_input\_buffer[index + sample * gradient\_wrt\_input\_ldim]
+408                 += workspace[block\_pos] * input\_entry;
+409             \}
+410           \}
+411 
+412         \}
+413 
+414       \}
+415     \}
+416 
+417   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1local__response__normalization__layer_a1aac4bf5e2500749bc8bafcd254f5699_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=343pt]{classlbann_1_1local__response__normalization__layer_a1aac4bf5e2500749bc8bafcd254f5699_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1local__response__normalization__layer_a78b0d081956abf4f09874d59b4bf4fc8}\label{classlbann_1_1local__response__normalization__layer_a78b0d081956abf4f09874d59b4bf4fc8}} 
+\index{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}!bp\+\_\+compute\+\_\+cudnn@{bp\+\_\+compute\+\_\+cudnn}}
+\index{bp\+\_\+compute\+\_\+cudnn@{bp\+\_\+compute\+\_\+cudnn}!lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}}
+\subsubsection{\texorpdfstring{bp\+\_\+compute\+\_\+cudnn()}{bp\_compute\_cudnn()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1local__response__normalization__layer}{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}$<$ T\+\_\+layout $>$\+::bp\+\_\+compute\+\_\+cudnn (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [private]}}
+
+
+
+G\+PU implementation of backward propagation. 
+
+
+
+Definition at line 190 of file local\+\_\+response\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+190                           \{
+191 \textcolor{preprocessor}{  #ifndef LBANN\_HAS\_CUDNN}
+192     \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"lbann\_layer\_local\_response\_normalization: cuDNN not detected"});
+193 \textcolor{preprocessor}{  #else}
+194 
+195     \textcolor{comment}{// Useful constants}
+196     \textcolor{keyword}{const} DataType one = 1;
+197 
+198     \textcolor{comment}{// Perform back propagation on each GPU}
+199     \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_gpus = this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_num\_gpus();
+200     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<num\_gpus; ++i) \{
+201       CHECK\_CUDA(cudaSetDevice(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_gpu(i)));
+202       CHECK\_CUDNN(cudnnSetStream(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_handle(i),
+203                                  this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_stream(i)));
+204       CHECK\_CUDNN(cudnnLRNCrossChannelBackward(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_handle(i),
+205                                                m\_lrn\_cudnn\_desc,
+206                                                CUDNN\_LRN\_CROSS\_CHANNEL\_DIM1,
+207                                                &one,
+208                                                this->m\_activations\_cudnn\_desc,
+209                                                this->m\_activations\_d[0].get\_locked\_data(i),
+210                                                this->m\_prev\_error\_signals\_cudnn\_desc,
+211                                                this->m\_prev\_error\_signals\_d[0].get\_locked\_data(i),
+212                                                this->m\_prev\_activations\_cudnn\_desc,
+213                                                this->m\_prev\_activations\_d[0].get\_locked\_data(i),
+214                                                &one,
+215                                                this->m\_error\_signals\_cudnn\_desc,
+216                                                this->m\_error\_signals\_d[0].get\_data(i)));
+217     \}
+218 
+219 \textcolor{preprocessor}{  #endif // #ifndef LBANN\_HAS\_CUDNN}
+220   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=343pt]{classlbann_1_1local__response__normalization__layer_a78b0d081956abf4f09874d59b4bf4fc8_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1local__response__normalization__layer_a2bccec49f9b3840a2d9170cb202c1397}\label{classlbann_1_1local__response__normalization__layer_a2bccec49f9b3840a2d9170cb202c1397}} 
+\index{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}!copy@{copy}}
+\index{copy@{copy}!lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{classlbann_1_1local__response__normalization__layer}{local\+\_\+response\+\_\+normalization\+\_\+layer}$\ast$ \hyperlink{classlbann_1_1local__response__normalization__layer}{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}$<$ T\+\_\+layout $>$\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Copy function. This function dynamically allocates memory for a layer instance and instantiates a copy. The caller is responsible for deallocating the instance. 
+
+Implements \hyperlink{classlbann_1_1Layer_af420f22bbac801c85483ade84588a23f}{lbann\+::\+Layer}.
+
+
+
+Definition at line 111 of file local\+\_\+response\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+111                                                             \{
+112     \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1local__response__normalization__layer_a5fa2f3175590cc85aa984c42cc9acd95}{local\_response\_normalization\_layer}(*\textcolor{keyword}{this});
+113   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1local__response__normalization__layer_a2bccec49f9b3840a2d9170cb202c1397_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1local__response__normalization__layer_ac7b2ce4970eb7163685fb0a4a69328fc}\label{classlbann_1_1local__response__normalization__layer_ac7b2ce4970eb7163685fb0a4a69328fc}} 
+\index{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}!fp\+\_\+compute@{fp\+\_\+compute}}
+\index{fp\+\_\+compute@{fp\+\_\+compute}!lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}}
+\subsubsection{\texorpdfstring{fp\+\_\+compute()}{fp\_compute()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1local__response__normalization__layer}{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}$<$ T\+\_\+layout $>$\+::fp\+\_\+compute (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Perform the computation for the forward propagation step. 
+
+Implements \hyperlink{classlbann_1_1Layer_a523319dd1bd87a0612afa1912bb5aad7}{lbann\+::\+Layer}.
+
+
+
+Definition at line 142 of file local\+\_\+response\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+142                              \{
+143     \textcolor{keywordflow}{if} (this->\hyperlink{classlbann_1_1Layer_af7881cb5eff5207c15fa835d65462e8f}{m\_using\_gpus}) \{
+144       \hyperlink{classlbann_1_1local__response__normalization__layer_a715b08cfc4bfed730a066f6d9cedef86}{fp\_compute\_cudnn}();
+145     \} \textcolor{keywordflow}{else} \{
+146       \hyperlink{classlbann_1_1local__response__normalization__layer_a79c72491b5b74b64d2b10ac2636cddce}{fp\_compute\_cpu}();
+147     \}
+148   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1local__response__normalization__layer_ac7b2ce4970eb7163685fb0a4a69328fc_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1local__response__normalization__layer_a79c72491b5b74b64d2b10ac2636cddce}\label{classlbann_1_1local__response__normalization__layer_a79c72491b5b74b64d2b10ac2636cddce}} 
+\index{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}!fp\+\_\+compute\+\_\+cpu@{fp\+\_\+compute\+\_\+cpu}}
+\index{fp\+\_\+compute\+\_\+cpu@{fp\+\_\+compute\+\_\+cpu}!lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}}
+\subsubsection{\texorpdfstring{fp\+\_\+compute\+\_\+cpu()}{fp\_compute\_cpu()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1local__response__normalization__layer}{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}$<$ T\+\_\+layout $>$\+::fp\+\_\+compute\+\_\+cpu (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [private]}}
+
+
+
+C\+PU implementation of forward propagation. 
+
+
+
+Definition at line 223 of file local\+\_\+response\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+223                         \{
+224 
+225     \textcolor{comment}{// Local matrices}
+226     \textcolor{keyword}{const} \textcolor{keyword}{auto}& local\_input = \hyperlink{classlbann_1_1Layer_a35397843bb0c84030000c7d872229acb}{get\_local\_prev\_activations}();
+227     \textcolor{keyword}{auto}& local\_output = \hyperlink{classlbann_1_1Layer_a4248f27acebf72b7b7b3ee39c8bcb62a}{get\_local\_activations}();
+228 
+229     \textcolor{comment}{// Matrix parameters}
+230     \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_width = local\_input.Width();
+231     \textcolor{keyword}{const} DataType* input\_buffer = local\_input.LockedBuffer();
+232     \textcolor{keyword}{const} \textcolor{keywordtype}{int} input\_ldim = local\_input.LDim();
+233     DataType* output\_buffer = local\_output.Buffer();
+234     \textcolor{keyword}{const} \textcolor{keywordtype}{int} output\_ldim = local\_output.LDim();
+235 
+236     \textcolor{comment}{// Get LRN parameters}
+237     \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_channels = this->\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}[0];
+238     \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_per\_channel = this->\hyperlink{classlbann_1_1Layer_a6b5ebc8a7d9329d8a773ed787e7b41d8}{m\_num\_neurons} / num\_channels;
+239 
+240     \textcolor{comment}{// Check if LRN is using default beta parameter}
+241     \textcolor{keyword}{const} \textcolor{keywordtype}{bool} default\_beta = (std::fabs((\hyperlink{classlbann_1_1local__response__normalization__layer_ad06848e9d59664be86aecbc1e2ba556f}{m\_lrn\_beta} - 0.75) / 0.75)
+242                                < 2 * std::numeric\_limits<DataType>::epsilon());
+243 
+245     \textcolor{comment}{// activations(i) = prev\_activations(i) / scale\_factor(i) ^ beta}
+246     \textcolor{comment}{// scale\_factor(i)}
+247     \textcolor{comment}{//   = k + alpha * sum( prev\_activations(j) ^ 2 )}
+248     \textcolor{comment}{// Note: The sum is over entries in the normalization window.}
+250 \textcolor{comment}{}
+251     \textcolor{comment}{// Iterate through blocks in channels of each data sample}
+252     \textcolor{keyword}{const} \textcolor{keywordtype}{int} max\_block\_size = 16;
+253 \textcolor{preprocessor}{    #pragma omp parallel for collapse(2)}
+254     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} sample = 0; sample < local\_width; ++sample) \{
+255       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} block\_start = 0;
+256           block\_start < num\_per\_channel;
+257           block\_start += max\_block\_size) \{
+258         \textcolor{keyword}{const} \textcolor{keywordtype}{int} block\_size = std::min(max\_block\_size,
+259                                         num\_per\_channel - block\_start);
+260         DataType workspace[max\_block\_size];
+261 
+262         \textcolor{comment}{// Iterate through channels}
+263         \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} channel = 0; channel < num\_channels; ++channel) \{
+264           \textcolor{keyword}{const} \textcolor{keywordtype}{int} window\_start = std::max(channel - \hyperlink{classlbann_1_1local__response__normalization__layer_a4914619a19eb43efcf8240b8a1e0c090}{m\_window\_width} / 2, 0);
+265           \textcolor{keyword}{const} \textcolor{keywordtype}{int} window\_end = std::min(channel + \hyperlink{classlbann_1_1local__response__normalization__layer_a4914619a19eb43efcf8240b8a1e0c090}{m\_window\_width} / 2, num\_channels - 1);
+266 
+267           \textcolor{comment}{// Compute sum of squares in workspace}
+268           std::fill(workspace, workspace + block\_size, DataType(0));
+269           \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} window\_pos = window\_start; window\_pos <= window\_end; ++window\_pos) \{
+270             \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} block\_pos = 0; block\_pos < block\_size; ++block\_pos) \{
+271               \textcolor{keyword}{const} \textcolor{keywordtype}{int} index = block\_start + block\_pos + window\_pos * num\_per\_channel;
+272               \textcolor{keyword}{const} DataType input\_entry = input\_buffer[index + sample * input\_ldim];
+273               workspace[block\_pos] += input\_entry * input\_entry;
+274             \}
+275           \}
+276 
+277           \textcolor{comment}{// Compute 1 / (k + alpha * sum(x^2) ) in workspace}
+278           \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} block\_pos = 0; block\_pos < block\_size; ++block\_pos) \{
+279             workspace[block\_pos] = 1 / (\hyperlink{classlbann_1_1local__response__normalization__layer_a896f875d6f6a763c1cb0dbd43679164e}{m\_lrn\_k} + \hyperlink{classlbann_1_1local__response__normalization__layer_a85c25a68888e2e9d163a820326fc09ff}{m\_lrn\_alpha} * workspace[block\_pos]);
+280           \}
+281 
+282           \textcolor{comment}{// Compute output}
+283           \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} block\_pos = 0; block\_pos < block\_size; ++block\_pos) \{
+284             \textcolor{keyword}{const} \textcolor{keywordtype}{int} index = block\_start + block\_pos + channel * num\_per\_channel;
+285             \textcolor{keyword}{const} DataType scale\_factor = workspace[block\_pos];
+286             \textcolor{keyword}{const} DataType input\_entry = input\_buffer[index + sample * input\_ldim];
+287             DataType& output\_entry = output\_buffer[index + sample * output\_ldim];
+288             \textcolor{keywordflow}{if} (default\_beta) \{ \textcolor{comment}{// Special case when beta = 0.75}
+289               output\_entry = (input\_entry
+290                               * std::sqrt(scale\_factor * std::sqrt(scale\_factor)));
+291             \}
+292             \textcolor{keywordflow}{else} \{
+293               output\_entry = input\_entry * std::pow(scale\_factor, \hyperlink{classlbann_1_1local__response__normalization__layer_ad06848e9d59664be86aecbc1e2ba556f}{m\_lrn\_beta});
+294             \}
+295           \}
+296 
+297         \}
+298 
+299       \}
+300     \}
+301 
+302   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1local__response__normalization__layer_a79c72491b5b74b64d2b10ac2636cddce_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=343pt]{classlbann_1_1local__response__normalization__layer_a79c72491b5b74b64d2b10ac2636cddce_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1local__response__normalization__layer_a715b08cfc4bfed730a066f6d9cedef86}\label{classlbann_1_1local__response__normalization__layer_a715b08cfc4bfed730a066f6d9cedef86}} 
+\index{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}!fp\+\_\+compute\+\_\+cudnn@{fp\+\_\+compute\+\_\+cudnn}}
+\index{fp\+\_\+compute\+\_\+cudnn@{fp\+\_\+compute\+\_\+cudnn}!lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}}
+\subsubsection{\texorpdfstring{fp\+\_\+compute\+\_\+cudnn()}{fp\_compute\_cudnn()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1local__response__normalization__layer}{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}$<$ T\+\_\+layout $>$\+::fp\+\_\+compute\+\_\+cudnn (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [private]}}
+
+
+
+G\+PU implementation of forward propagation. 
+
+
+
+Definition at line 160 of file local\+\_\+response\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+160                           \{
+161 \textcolor{preprocessor}{  #ifndef LBANN\_HAS\_CUDNN}
+162     \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"lbann\_layer\_local\_response\_normalization: cuDNN not detected"});
+163 \textcolor{preprocessor}{  #else}
+164 
+165     \textcolor{comment}{// Useful constants}
+166     \textcolor{keyword}{const} DataType one = 1;
+167     \textcolor{keyword}{const} DataType zero = 0;
+168 
+169     \textcolor{comment}{// Perform local response normalization with each GPU}
+170     \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_gpus = this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_num\_gpus();
+171     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i=0; i<num\_gpus; ++i) \{
+172       CHECK\_CUDA(cudaSetDevice(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_gpu(i)));
+173       CHECK\_CUDNN(cudnnSetStream(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_handle(i),
+174                                  this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_stream(i)));
+175       CHECK\_CUDNN(cudnnLRNCrossChannelForward(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_handle(i),
+176                                               m\_lrn\_cudnn\_desc,
+177                                               CUDNN\_LRN\_CROSS\_CHANNEL\_DIM1,
+178                                               &one,
+179                                               this->m\_prev\_activations\_cudnn\_desc,
+180                                               this->m\_prev\_activations\_d[0].get\_locked\_data(i),
+181                                               &zero,
+182                                               this->m\_activations\_cudnn\_desc,
+183                                               this->m\_activations\_d[0].get\_data(i)));
+184     \}
+185 
+186 \textcolor{preprocessor}{  #endif // #ifndef LBANN\_HAS\_CUDNN}
+187   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=343pt]{classlbann_1_1local__response__normalization__layer_a715b08cfc4bfed730a066f6d9cedef86_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1local__response__normalization__layer_a7a161dde860f17264077a0cc4797fe36}\label{classlbann_1_1local__response__normalization__layer_a7a161dde860f17264077a0cc4797fe36}} 
+\index{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}!get\+\_\+data\+\_\+layout@{get\+\_\+data\+\_\+layout}}
+\index{get\+\_\+data\+\_\+layout@{get\+\_\+data\+\_\+layout}!lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+data\+\_\+layout()}{get\_data\_layout()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08db}{data\+\_\+layout} \hyperlink{classlbann_1_1local__response__normalization__layer}{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+data\+\_\+layout (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get data layout of the data tensors. We assume that the data layouts of the previous activations, activations, previous error signals, and error signals are the same. Each concrete layer that is templated on its data layout should override this function to return its template parameter. 
+
+Implements \hyperlink{classlbann_1_1Layer_a5dfb66e81fc085997402a5e2241316bd}{lbann\+::\+Layer}.
+
+
+
+Definition at line 125 of file local\+\_\+response\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+125 \{ \textcolor{keywordflow}{return} T\_layout; \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=343pt]{classlbann_1_1local__response__normalization__layer_a7a161dde860f17264077a0cc4797fe36_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1local__response__normalization__layer_a31f4ab1700e2e1c69a0ccb44c6f0fd69}\label{classlbann_1_1local__response__normalization__layer_a31f4ab1700e2e1c69a0ccb44c6f0fd69}} 
+\index{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}!get\+\_\+description@{get\+\_\+description}}
+\index{get\+\_\+description@{get\+\_\+description}!lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+description()}{get\_description()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+std\+::string \hyperlink{classlbann_1_1local__response__normalization__layer}{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+description (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get a human-\/readable description of the layer parameters. 
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_acc0803d3428914ca1eb5988c4309174a}{lbann\+::\+Layer}.
+
+
+
+Definition at line 118 of file local\+\_\+response\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+118                                              \{
+119     \textcolor{keywordflow}{return} \textcolor{stringliteral}{" LRN window width: "} + std::to\_string(\hyperlink{classlbann_1_1local__response__normalization__layer_a4914619a19eb43efcf8240b8a1e0c090}{m\_window\_width}) + \textcolor{stringliteral}{" alpha: "} +
+120       std::to\_string(\hyperlink{classlbann_1_1local__response__normalization__layer_a85c25a68888e2e9d163a820326fc09ff}{m\_lrn\_alpha}) + \textcolor{stringliteral}{" beta: "} + std::to\_string(
+      \hyperlink{classlbann_1_1local__response__normalization__layer_ad06848e9d59664be86aecbc1e2ba556f}{m\_lrn\_beta})
+121       + \textcolor{stringliteral}{" k: "} + std::to\_string(\hyperlink{classlbann_1_1local__response__normalization__layer_a896f875d6f6a763c1cb0dbd43679164e}{m\_lrn\_k})
+122       + \textcolor{stringliteral}{" dataLayout: "} + \hyperlink{classlbann_1_1Layer_ae3f4a5602df821f4221614b1e3782dc1}{get\_data\_layout\_string}(
+      \hyperlink{classlbann_1_1local__response__normalization__layer_a7a161dde860f17264077a0cc4797fe36}{get\_data\_layout}());
+123   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=345pt]{classlbann_1_1local__response__normalization__layer_a31f4ab1700e2e1c69a0ccb44c6f0fd69_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1local__response__normalization__layer_ad566e7894d7eb1eb0fd1560686bf2388}\label{classlbann_1_1local__response__normalization__layer_ad566e7894d7eb1eb0fd1560686bf2388}} 
+\index{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}!get\+\_\+type@{get\+\_\+type}}
+\index{get\+\_\+type@{get\+\_\+type}!lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+type()}{get\_type()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+std\+::string \hyperlink{classlbann_1_1local__response__normalization__layer}{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+type (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Use L\+RN rather than local response normalization for better formatting. 
+
+
+
+Implements \hyperlink{classlbann_1_1Layer_a0fa0ea9160b490c151c0a17fde4f7239}{lbann\+::\+Layer}.
+
+
+
+Definition at line 116 of file local\+\_\+response\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+116 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"LRN"}; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1local__response__normalization__layer_a7a1e5eb532bbf72c6334ac865d0694a3}\label{classlbann_1_1local__response__normalization__layer_a7a1e5eb532bbf72c6334ac865d0694a3}} 
+\index{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{classlbann_1_1local__response__normalization__layer}{local\+\_\+response\+\_\+normalization\+\_\+layer}\& \hyperlink{classlbann_1_1local__response__normalization__layer}{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}$<$ T\+\_\+layout $>$\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1local__response__normalization__layer}{local\+\_\+response\+\_\+normalization\+\_\+layer}$<$ T\+\_\+layout $>$ \&}]{other }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 91 of file local\+\_\+response\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+91                                                                                                  \{
+92     \hyperlink{classlbann_1_1Layer_a00d8acde68fda2f38c4a39ef8c89234a}{regularizer\_layer::operator=}(other);
+93     \hyperlink{classlbann_1_1local__response__normalization__layer_a4914619a19eb43efcf8240b8a1e0c090}{m\_window\_width} = other.m\_window\_width;
+94     \hyperlink{classlbann_1_1local__response__normalization__layer_a85c25a68888e2e9d163a820326fc09ff}{m\_lrn\_alpha} = other.m\_lrn\_alpha;
+95     \hyperlink{classlbann_1_1local__response__normalization__layer_ad06848e9d59664be86aecbc1e2ba556f}{m\_lrn\_beta} = other.m\_lrn\_beta;
+96     \hyperlink{classlbann_1_1local__response__normalization__layer_a896f875d6f6a763c1cb0dbd43679164e}{m\_lrn\_k} = other.m\_lrn\_k;
+97 \textcolor{preprocessor}{  #ifdef LBANN\_HAS\_CUDNN}
+98     cudnn::copy\_lrn\_cudnn\_desc(other.m\_lrn\_cudnn\_desc, m\_lrn\_cudnn\_desc);
+99 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+100   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1local__response__normalization__layer_a7a1e5eb532bbf72c6334ac865d0694a3_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1local__response__normalization__layer_aff5210d74db5f8302989cca12d04263d}\label{classlbann_1_1local__response__normalization__layer_aff5210d74db5f8302989cca12d04263d}} 
+\index{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}!setup\+\_\+gpu@{setup\+\_\+gpu}}
+\index{setup\+\_\+gpu@{setup\+\_\+gpu}!lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}}
+\subsubsection{\texorpdfstring{setup\+\_\+gpu()}{setup\_gpu()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1local__response__normalization__layer}{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}$<$ T\+\_\+layout $>$\+::setup\+\_\+gpu (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Initialize G\+PU objects. 
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_a36aa22ef90ce4de65abe729d38490863}{lbann\+::\+Layer}.
+
+
+
+Definition at line 128 of file local\+\_\+response\+\_\+normalization.\+hpp.
+
+
+\begin{DoxyCode}
+128                             \{
+129     \hyperlink{classlbann_1_1Layer_a36aa22ef90ce4de65abe729d38490863}{regularizer\_layer::setup\_gpu}();
+130 \textcolor{preprocessor}{  #ifndef LBANN\_HAS\_CUDNN}
+131     \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"lbann\_layer\_local\_response\_normalization: cuDNN not detected"});
+132 \textcolor{preprocessor}{  #else}
+133     CHECK\_CUDNN(cudnnCreateLRNDescriptor(&m\_lrn\_cudnn\_desc));
+134     CHECK\_CUDNN(cudnnSetLRNDescriptor(m\_lrn\_cudnn\_desc,
+135                                       (\textcolor{keywordtype}{unsigned} \textcolor{keywordtype}{int}) \hyperlink{classlbann_1_1local__response__normalization__layer_a4914619a19eb43efcf8240b8a1e0c090}{m\_window\_width},
+136                                       (\textcolor{keywordtype}{double}) \hyperlink{classlbann_1_1local__response__normalization__layer_a85c25a68888e2e9d163a820326fc09ff}{m\_lrn\_alpha},
+137                                       (\textcolor{keywordtype}{double}) \hyperlink{classlbann_1_1local__response__normalization__layer_ad06848e9d59664be86aecbc1e2ba556f}{m\_lrn\_beta},
+138                                       (\textcolor{keywordtype}{double}) \hyperlink{classlbann_1_1local__response__normalization__layer_a896f875d6f6a763c1cb0dbd43679164e}{m\_lrn\_k}));
+139 \textcolor{preprocessor}{  #endif // #ifndef LBANN\_HAS\_CUDNN}
+140   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1local__response__normalization__layer_aff5210d74db5f8302989cca12d04263d_cgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1local__response__normalization__layer_a85c25a68888e2e9d163a820326fc09ff}\label{classlbann_1_1local__response__normalization__layer_a85c25a68888e2e9d163a820326fc09ff}} 
+\index{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}!m\+\_\+lrn\+\_\+alpha@{m\+\_\+lrn\+\_\+alpha}}
+\index{m\+\_\+lrn\+\_\+alpha@{m\+\_\+lrn\+\_\+alpha}!lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}}
+\subsubsection{\texorpdfstring{m\+\_\+lrn\+\_\+alpha}{m\_lrn\_alpha}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+Data\+Type \hyperlink{classlbann_1_1local__response__normalization__layer}{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}$<$ T\+\_\+layout $>$\+::m\+\_\+lrn\+\_\+alpha\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+L\+RN alpha scaling parameter. 
+
+
+
+Definition at line 45 of file local\+\_\+response\+\_\+normalization.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1local__response__normalization__layer_ad06848e9d59664be86aecbc1e2ba556f}\label{classlbann_1_1local__response__normalization__layer_ad06848e9d59664be86aecbc1e2ba556f}} 
+\index{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}!m\+\_\+lrn\+\_\+beta@{m\+\_\+lrn\+\_\+beta}}
+\index{m\+\_\+lrn\+\_\+beta@{m\+\_\+lrn\+\_\+beta}!lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}}
+\subsubsection{\texorpdfstring{m\+\_\+lrn\+\_\+beta}{m\_lrn\_beta}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+Data\+Type \hyperlink{classlbann_1_1local__response__normalization__layer}{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}$<$ T\+\_\+layout $>$\+::m\+\_\+lrn\+\_\+beta\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+L\+RN beta power parameter. 
+
+
+
+Definition at line 47 of file local\+\_\+response\+\_\+normalization.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1local__response__normalization__layer_a896f875d6f6a763c1cb0dbd43679164e}\label{classlbann_1_1local__response__normalization__layer_a896f875d6f6a763c1cb0dbd43679164e}} 
+\index{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}!m\+\_\+lrn\+\_\+k@{m\+\_\+lrn\+\_\+k}}
+\index{m\+\_\+lrn\+\_\+k@{m\+\_\+lrn\+\_\+k}!lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}}
+\subsubsection{\texorpdfstring{m\+\_\+lrn\+\_\+k}{m\_lrn\_k}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+Data\+Type \hyperlink{classlbann_1_1local__response__normalization__layer}{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}$<$ T\+\_\+layout $>$\+::m\+\_\+lrn\+\_\+k\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+L\+RN k parameter. 
+
+
+
+Definition at line 49 of file local\+\_\+response\+\_\+normalization.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1local__response__normalization__layer_a4914619a19eb43efcf8240b8a1e0c090}\label{classlbann_1_1local__response__normalization__layer_a4914619a19eb43efcf8240b8a1e0c090}} 
+\index{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}!m\+\_\+window\+\_\+width@{m\+\_\+window\+\_\+width}}
+\index{m\+\_\+window\+\_\+width@{m\+\_\+window\+\_\+width}!lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer@{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}}
+\subsubsection{\texorpdfstring{m\+\_\+window\+\_\+width}{m\_window\_width}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+int \hyperlink{classlbann_1_1local__response__normalization__layer}{lbann\+::local\+\_\+response\+\_\+normalization\+\_\+layer}$<$ T\+\_\+layout $>$\+::m\+\_\+window\+\_\+width\hspace{0.3cm}{\ttfamily [private]}}
+
+
+
+Normalization window width. 
+
+
+
+Definition at line 43 of file local\+\_\+response\+\_\+normalization.\+hpp.
+
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/layers/regularizers/\hyperlink{local__response__normalization_8hpp}{local\+\_\+response\+\_\+normalization.\+hpp}\end{DoxyCompactItemize}

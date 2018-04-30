@@ -1,0 +1,625 @@
+\hypertarget{classlbann_1_1offline__patches__npz}{}\section{lbann\+:\+:offline\+\_\+patches\+\_\+npz Class Reference}
+\label{classlbann_1_1offline__patches__npz}\index{lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}}
+
+
+{\ttfamily \#include $<$offline\+\_\+patches\+\_\+npz.\+hpp$>$}
+
+\subsection*{Public Types}
+\begin{DoxyCompactItemize}
+\item 
+using \hyperlink{classlbann_1_1offline__patches__npz_ae0ed6bf62b2be1814964206522ed4e05}{label\+\_\+t} = uint8\+\_\+t
+\item 
+using \hyperlink{classlbann_1_1offline__patches__npz_a61405205f907a697515786d0a9e7858a}{sample\+\_\+t} = std\+::pair$<$ std\+::vector$<$ std\+::string $>$, \hyperlink{classlbann_1_1offline__patches__npz_ae0ed6bf62b2be1814964206522ed4e05}{label\+\_\+t} $>$
+\end{DoxyCompactItemize}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1offline__patches__npz_a6beaea209f8e0e7a70587bbe31d793a0}{offline\+\_\+patches\+\_\+npz} ()
+\item 
+bool \hyperlink{classlbann_1_1offline__patches__npz_a29f1d64e32c857018d5ef21dd99fe7c4}{load} (const std\+::string filename, size\+\_\+t first\+\_\+n=0u)
+\item 
+std\+::string \hyperlink{classlbann_1_1offline__patches__npz_a9ffc5cc4b431a4ad18cd58651ca05ef8}{get\+\_\+description} () const
+\begin{DoxyCompactList}\small\item\em Show the description. \end{DoxyCompactList}\item 
+size\+\_\+t \hyperlink{classlbann_1_1offline__patches__npz_aa6fa05575f54a29b67d0bba8a2a9d363}{get\+\_\+num\+\_\+samples} () const
+\begin{DoxyCompactList}\small\item\em Return the number of samples. \end{DoxyCompactList}\item 
+size\+\_\+t \hyperlink{classlbann_1_1offline__patches__npz_a153f67de70844a6820aa472f91a6245e}{get\+\_\+num\+\_\+patches} () const
+\begin{DoxyCompactList}\small\item\em Return the number of patches per sample (the number of image data sources) \end{DoxyCompactList}\item 
+\hyperlink{classlbann_1_1offline__patches__npz_a61405205f907a697515786d0a9e7858a}{sample\+\_\+t} \hyperlink{classlbann_1_1offline__patches__npz_a9c8ad05ffdf0d44ee1c9b61740dd42e3}{get\+\_\+sample} (const size\+\_\+t idx) const
+\begin{DoxyCompactList}\small\item\em Reconsturct and return the meta-\/data (patch file names and the label) of idx-\/th sample. \end{DoxyCompactList}\item 
+\hyperlink{classlbann_1_1offline__patches__npz_ae0ed6bf62b2be1814964206522ed4e05}{label\+\_\+t} \hyperlink{classlbann_1_1offline__patches__npz_a7548019f8e7f768027b50d497c4e6e73}{get\+\_\+label} (const size\+\_\+t idx) const
+\begin{DoxyCompactList}\small\item\em Return the label of idx-\/th sample. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+bool \hyperlink{classlbann_1_1offline__patches__npz_a44d8cad35ff9ad245856c5408965e53b}{check\+\_\+data} () const
+\begin{DoxyCompactList}\small\item\em Check the dimensions of loaded data. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+bool \hyperlink{classlbann_1_1offline__patches__npz_ab434320c2084790a2c99257d6c39fc85}{m\+\_\+checked\+\_\+ok}
+\begin{DoxyCompactList}\small\item\em Whether loaded data have passed the format check. \end{DoxyCompactList}\item 
+size\+\_\+t \hyperlink{classlbann_1_1offline__patches__npz_a5c13583d344641295301f82a32ebee41}{m\+\_\+num\+\_\+patches}
+\begin{DoxyCompactList}\small\item\em The number of image patches per sample (i.\+e. the num of patch files to read) \end{DoxyCompactList}\item 
+cnpy\+::\+Npy\+Array \hyperlink{classlbann_1_1offline__patches__npz_a5d61c89e80f8e67b4850fb72792ce862}{m\+\_\+item\+\_\+root\+\_\+list}
+\item 
+cnpy\+::\+Npy\+Array \hyperlink{classlbann_1_1offline__patches__npz_a5aec35e7b2f9956b8e7e8ce5cbb3ff22}{m\+\_\+item\+\_\+variant\+\_\+list}
+\item 
+std\+::vector$<$ \hyperlink{classlbann_1_1offline__patches__npz_ae0ed6bf62b2be1814964206522ed4e05}{label\+\_\+t} $>$ \hyperlink{classlbann_1_1offline__patches__npz_a5f90dc1b898f8ad9d7ea16c188738419}{m\+\_\+item\+\_\+class\+\_\+list}
+\begin{DoxyCompactList}\small\item\em list of labels (dimension\+: num\+\_\+samples) \end{DoxyCompactList}\item 
+std\+::vector$<$ std\+::string $>$ \hyperlink{classlbann_1_1offline__patches__npz_a515ef05ef0679f3b6f1197d1ab47bfb3}{m\+\_\+file\+\_\+root\+\_\+list}
+\begin{DoxyCompactList}\small\item\em The list of common substrings that a file path starts with (dimension is, for example 1000 in case of imagenet data) \end{DoxyCompactList}\item 
+std\+::vector$<$ std\+::string $>$ \hyperlink{classlbann_1_1offline__patches__npz_a164d2bd134dc8c3946dc28d6ec5da0ec}{m\+\_\+file\+\_\+variant\+\_\+list}
+\item 
+std\+::string \hyperlink{classlbann_1_1offline__patches__npz_ab8c28a104b2c09f22831cb647f77d127}{m\+\_\+file\+\_\+root\+\_\+list\+\_\+name}
+\begin{DoxyCompactList}\small\item\em The text file name of file\+\_\+root\+\_\+list. \end{DoxyCompactList}\item 
+std\+::string \hyperlink{classlbann_1_1offline__patches__npz_acf3a819a993f1dafd040e992fcbd205a}{m\+\_\+file\+\_\+variant\+\_\+list\+\_\+name}
+\begin{DoxyCompactList}\small\item\em The text file name of file\+\_\+variant\+\_\+list. \end{DoxyCompactList}\item 
+std\+::string \hyperlink{classlbann_1_1offline__patches__npz_aaab0b9040ce248875b6cdb430e054b3a}{m\+\_\+variant\+\_\+divider}
+\begin{DoxyCompactList}\small\item\em A substring after which the file name of variants begins to differ (e.\+g., \char`\"{}.\+J\+P\+E\+G.\char`\"{}) \end{DoxyCompactList}\item 
+bool \hyperlink{classlbann_1_1offline__patches__npz_a887aa89aa2d8d8c9e23af33f2bb949d9}{m\+\_\+fetch\+\_\+text\+\_\+dict\+\_\+at\+\_\+once}
+\begin{DoxyCompactList}\small\item\em control how the text dictionary files are loaded\+: whether to load all at once and parse or to stream in \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Loads the list of patche files, generated off-\/line, and the label per sample. As the list is quite large itself in the A\+S\+C\+II text format, it is packed and loaded as a compressed Num\+Py file ($\ast$.npz). Each image file name is compressed further by representing it as a sequence of indices to common substring dictionaries. There are two types of substring dictionaries, root and variant. There is an array of index sequences and an array of dictionary substrings per type, and a label array. For example, a file path train/n000111/abc.\+tag1.\+tag2.\+jpg would be represented as \textquotesingle{}r\mbox{[}i\mbox{]}\mbox{[}j\mbox{]}\mbox{[}k\mbox{]}\textquotesingle{}, \textquotesingle{}v\mbox{[}i\mbox{]}\mbox{[}j\mbox{]}\mbox{[}x\mbox{]}\textquotesingle{}, \textquotesingle{}v\mbox{[}i\mbox{]}\mbox{[}j\mbox{]}\mbox{[}y\mbox{]}\textquotesingle{}, \textquotesingle{}v\mbox{[}i\mbox{]}\mbox{[}j\mbox{]}\mbox{[}z\mbox{]}\textquotesingle{} for the j-\/th patch of the i-\/th sample where \textquotesingle{}r\mbox{[}i\mbox{]}\mbox{[}j\mbox{]}\mbox{[}k\mbox{]}\textquotesingle{} is \char`\"{}train/n000111\char`\"{}, and \textquotesingle{}v\mbox{[}i\mbox{]}\mbox{[}j\mbox{]}\mbox{[}x\mbox{]}\textquotesingle{}, \textquotesingle{}v\mbox{[}i\mbox{]}\mbox{[}j\mbox{]}\mbox{[}y\mbox{]}\textquotesingle{} and \textquotesingle{}v\mbox{[}i\mbox{]}\mbox{[}j\mbox{]}\mbox{[}z\mbox{]}\textquotesingle{} is \char`\"{}abc\char`\"{}, \char`\"{}tag1\char`\"{}, and \char`\"{}tag2\char`\"{} respectively. \textquotesingle{}r\textquotesingle{} is the root dictionary and \textquotesingle{}v\textquotesingle{} is the variant dictionary. The list is kept in a compressed form, and uncompressed on-\/demand during execution. Each index sequence array is kept as a C\+N\+PY data structure, and each dictionary array is loaded into a vector of strings. The label array is loaded into a vector of uint8\+\_\+t. 
+
+Definition at line 54 of file offline\+\_\+patches\+\_\+npz.\+hpp.
+
+
+
+\subsection{Member Typedef Documentation}
+\mbox{\Hypertarget{classlbann_1_1offline__patches__npz_ae0ed6bf62b2be1814964206522ed4e05}\label{classlbann_1_1offline__patches__npz_ae0ed6bf62b2be1814964206522ed4e05}} 
+\index{lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}!label\+\_\+t@{label\+\_\+t}}
+\index{label\+\_\+t@{label\+\_\+t}!lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}}
+\subsubsection{\texorpdfstring{label\+\_\+t}{label\_t}}
+{\footnotesize\ttfamily using \hyperlink{classlbann_1_1offline__patches__npz_ae0ed6bf62b2be1814964206522ed4e05}{lbann\+::offline\+\_\+patches\+\_\+npz\+::label\+\_\+t} =  uint8\+\_\+t}
+
+
+
+Definition at line 56 of file offline\+\_\+patches\+\_\+npz.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1offline__patches__npz_a61405205f907a697515786d0a9e7858a}\label{classlbann_1_1offline__patches__npz_a61405205f907a697515786d0a9e7858a}} 
+\index{lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}!sample\+\_\+t@{sample\+\_\+t}}
+\index{sample\+\_\+t@{sample\+\_\+t}!lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}}
+\subsubsection{\texorpdfstring{sample\+\_\+t}{sample\_t}}
+{\footnotesize\ttfamily using \hyperlink{classlbann_1_1offline__patches__npz_a61405205f907a697515786d0a9e7858a}{lbann\+::offline\+\_\+patches\+\_\+npz\+::sample\+\_\+t} =  std\+::pair$<$std\+::vector$<$std\+::string$>$, \hyperlink{classlbann_1_1offline__patches__npz_ae0ed6bf62b2be1814964206522ed4e05}{label\+\_\+t}$>$}
+
+
+
+Definition at line 57 of file offline\+\_\+patches\+\_\+npz.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1offline__patches__npz_a6beaea209f8e0e7a70587bbe31d793a0}\label{classlbann_1_1offline__patches__npz_a6beaea209f8e0e7a70587bbe31d793a0}} 
+\index{lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}!offline\+\_\+patches\+\_\+npz@{offline\+\_\+patches\+\_\+npz}}
+\index{offline\+\_\+patches\+\_\+npz@{offline\+\_\+patches\+\_\+npz}!lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}}
+\subsubsection{\texorpdfstring{offline\+\_\+patches\+\_\+npz()}{offline\_patches\_npz()}}
+{\footnotesize\ttfamily lbann\+::offline\+\_\+patches\+\_\+npz\+::offline\+\_\+patches\+\_\+npz (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Definition at line 35 of file offline\+\_\+patches\+\_\+npz.\+cpp.
+
+
+\begin{DoxyCode}
+36   : \hyperlink{classlbann_1_1offline__patches__npz_ab434320c2084790a2c99257d6c39fc85}{m\_checked\_ok}(\textcolor{keyword}{false}), \hyperlink{classlbann_1_1offline__patches__npz_a5c13583d344641295301f82a32ebee41}{m\_num\_patches}(3u), 
+      \hyperlink{classlbann_1_1offline__patches__npz_aaab0b9040ce248875b6cdb430e054b3a}{m\_variant\_divider}(\textcolor{stringliteral}{".JPEG."})
+37 \{\}
+\end{DoxyCode}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1offline__patches__npz_a44d8cad35ff9ad245856c5408965e53b}\label{classlbann_1_1offline__patches__npz_a44d8cad35ff9ad245856c5408965e53b}} 
+\index{lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}!check\+\_\+data@{check\+\_\+data}}
+\index{check\+\_\+data@{check\+\_\+data}!lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}}
+\subsubsection{\texorpdfstring{check\+\_\+data()}{check\_data()}}
+{\footnotesize\ttfamily bool lbann\+::offline\+\_\+patches\+\_\+npz\+::check\+\_\+data (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Check the dimensions of loaded data. 
+
+
+
+Definition at line 142 of file offline\+\_\+patches\+\_\+npz.\+cpp.
+
+
+\begin{DoxyCode}
+142                                            \{
+143   \textcolor{keywordtype}{bool} ok = (\hyperlink{classlbann_1_1offline__patches__npz_a5d61c89e80f8e67b4850fb72792ce862}{m\_item\_root\_list}.shape.size() == 2u) &&
+144             (\hyperlink{classlbann_1_1offline__patches__npz_a5aec35e7b2f9956b8e7e8ce5cbb3ff22}{m\_item\_variant\_list}.shape.size() == 3u) &&
+145             (\hyperlink{classlbann_1_1offline__patches__npz_a515ef05ef0679f3b6f1197d1ab47bfb3}{m\_file\_root\_list}.size() > 0u) &&
+146             (\hyperlink{classlbann_1_1offline__patches__npz_a164d2bd134dc8c3946dc28d6ec5da0ec}{m\_file\_variant\_list}.size() > 0u) &&
+147             (\hyperlink{classlbann_1_1offline__patches__npz_a5d61c89e80f8e67b4850fb72792ce862}{m\_item\_root\_list}.shape[0] == \hyperlink{classlbann_1_1offline__patches__npz_a5f90dc1b898f8ad9d7ea16c188738419}{m\_item\_class\_list}.size()) &&
+148             (\hyperlink{classlbann_1_1offline__patches__npz_a5aec35e7b2f9956b8e7e8ce5cbb3ff22}{m\_item\_variant\_list}.shape[0] == 
+      \hyperlink{classlbann_1_1offline__patches__npz_a5f90dc1b898f8ad9d7ea16c188738419}{m\_item\_class\_list}.size()) &&
+149             (\hyperlink{classlbann_1_1offline__patches__npz_a5d61c89e80f8e67b4850fb72792ce862}{m\_item\_root\_list}.shape[1] == \hyperlink{classlbann_1_1offline__patches__npz_a5c13583d344641295301f82a32ebee41}{m\_num\_patches}) &&
+150             (\hyperlink{classlbann_1_1offline__patches__npz_a5aec35e7b2f9956b8e7e8ce5cbb3ff22}{m\_item\_variant\_list}.shape[1] == \hyperlink{classlbann_1_1offline__patches__npz_a5c13583d344641295301f82a32ebee41}{m\_num\_patches}) &&
+151             (\hyperlink{classlbann_1_1offline__patches__npz_a5aec35e7b2f9956b8e7e8ce5cbb3ff22}{m\_item\_variant\_list}.shape[2] > 0u) &&
+152             (\hyperlink{classlbann_1_1offline__patches__npz_a5d61c89e80f8e67b4850fb72792ce862}{m\_item\_root\_list}.word\_size == \textcolor{keyword}{sizeof}(size\_t)) &&
+153             (\hyperlink{classlbann_1_1offline__patches__npz_a5aec35e7b2f9956b8e7e8ce5cbb3ff22}{m\_item\_variant\_list}.word\_size == \textcolor{keyword}{sizeof}(size\_t));
+154   \textcolor{keywordflow}{return} ok;
+155 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1offline__patches__npz_a44d8cad35ff9ad245856c5408965e53b_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1offline__patches__npz_a9ffc5cc4b431a4ad18cd58651ca05ef8}\label{classlbann_1_1offline__patches__npz_a9ffc5cc4b431a4ad18cd58651ca05ef8}} 
+\index{lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}!get\+\_\+description@{get\+\_\+description}}
+\index{get\+\_\+description@{get\+\_\+description}!lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}}
+\subsubsection{\texorpdfstring{get\+\_\+description()}{get\_description()}}
+{\footnotesize\ttfamily std\+::string lbann\+::offline\+\_\+patches\+\_\+npz\+::get\+\_\+description (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const}
+
+
+
+Show the description. 
+
+
+
+Definition at line 158 of file offline\+\_\+patches\+\_\+npz.\+cpp.
+
+
+\begin{DoxyCode}
+158                                                      \{
+159   \textcolor{keyword}{using} std::string;
+160   \textcolor{keyword}{using} std::to\_string;
+161   \textcolor{keywordtype}{string} ret = string(\textcolor{stringliteral}{"offline\_patches\_npz:\(\backslash\)n"})
+162     + \textcolor{stringliteral}{" - item\_root\_list: "}    + \hyperlink{namespacelbann_1_1cnpy__utils_a120e5719167d6d20b2a98c4282fd7a50}{cnpy\_utils::show\_shape}(
+      \hyperlink{classlbann_1_1offline__patches__npz_a5d61c89e80f8e67b4850fb72792ce862}{m\_item\_root\_list}) + \textcolor{stringliteral}{"\(\backslash\)n"}
+163     + \textcolor{stringliteral}{" - item\_variant\_list: "} + \hyperlink{namespacelbann_1_1cnpy__utils_a120e5719167d6d20b2a98c4282fd7a50}{cnpy\_utils::show\_shape}(
+      \hyperlink{classlbann_1_1offline__patches__npz_a5aec35e7b2f9956b8e7e8ce5cbb3ff22}{m\_item\_variant\_list}) + \textcolor{stringliteral}{"\(\backslash\)n"}
+164     + \textcolor{stringliteral}{" - item\_class\_list: "}   + to\_string(\hyperlink{classlbann_1_1offline__patches__npz_a5f90dc1b898f8ad9d7ea16c188738419}{m\_item\_class\_list}.size()) + \textcolor{stringliteral}{"\(\backslash\)n"}
+165     + \textcolor{stringliteral}{" - file\_root\_list: "}    + to\_string(\hyperlink{classlbann_1_1offline__patches__npz_a515ef05ef0679f3b6f1197d1ab47bfb3}{m\_file\_root\_list}.size()) + \textcolor{stringliteral}{"\(\backslash\)n"}
+166     + \textcolor{stringliteral}{" - file\_variant\_list: "} + to\_string(\hyperlink{classlbann_1_1offline__patches__npz_a164d2bd134dc8c3946dc28d6ec5da0ec}{m\_file\_variant\_list}.size()) + \textcolor{stringliteral}{"\(\backslash\)n"}
+167     + \textcolor{stringliteral}{" - variant\_divider: "}   + \hyperlink{classlbann_1_1offline__patches__npz_aaab0b9040ce248875b6cdb430e054b3a}{m\_variant\_divider} + \textcolor{stringliteral}{"\(\backslash\)n"}
+168     + \textcolor{stringliteral}{" - num of samples: "}    + to\_string(\hyperlink{classlbann_1_1offline__patches__npz_aa6fa05575f54a29b67d0bba8a2a9d363}{get\_num\_samples}()) + \textcolor{stringliteral}{"\(\backslash\)n"}
+169     + \textcolor{stringliteral}{" - num of patches: "}    + to\_string(\hyperlink{classlbann_1_1offline__patches__npz_a5c13583d344641295301f82a32ebee41}{m\_num\_patches}) + \textcolor{stringliteral}{"\(\backslash\)n"};
+170   \textcolor{keywordflow}{return} ret;
+171 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1offline__patches__npz_a9ffc5cc4b431a4ad18cd58651ca05ef8_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1offline__patches__npz_a7548019f8e7f768027b50d497c4e6e73}\label{classlbann_1_1offline__patches__npz_a7548019f8e7f768027b50d497c4e6e73}} 
+\index{lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}!get\+\_\+label@{get\+\_\+label}}
+\index{get\+\_\+label@{get\+\_\+label}!lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}}
+\subsubsection{\texorpdfstring{get\+\_\+label()}{get\_label()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1offline__patches__npz_ae0ed6bf62b2be1814964206522ed4e05}{offline\+\_\+patches\+\_\+npz\+::label\+\_\+t} lbann\+::offline\+\_\+patches\+\_\+npz\+::get\+\_\+label (\begin{DoxyParamCaption}\item[{const size\+\_\+t}]{idx }\end{DoxyParamCaption}) const}
+
+
+
+Return the label of idx-\/th sample. 
+
+
+
+Definition at line 203 of file offline\+\_\+patches\+\_\+npz.\+cpp.
+
+
+\begin{DoxyCode}
+203                                                                                 \{
+204   \textcolor{keywordflow}{if} (!\hyperlink{classlbann_1_1offline__patches__npz_ab434320c2084790a2c99257d6c39fc85}{m\_checked\_ok} || idx >= \hyperlink{classlbann_1_1offline__patches__npz_aa6fa05575f54a29b67d0bba8a2a9d363}{get\_num\_samples}()) \{
+205     \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"offline\_patches\_npz: invalid sample index"});
+206   \}
+207 
+208   \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1offline__patches__npz_a5f90dc1b898f8ad9d7ea16c188738419}{m\_item\_class\_list}[idx];
+209 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1offline__patches__npz_a7548019f8e7f768027b50d497c4e6e73_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1offline__patches__npz_a7548019f8e7f768027b50d497c4e6e73_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1offline__patches__npz_a153f67de70844a6820aa472f91a6245e}\label{classlbann_1_1offline__patches__npz_a153f67de70844a6820aa472f91a6245e}} 
+\index{lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}!get\+\_\+num\+\_\+patches@{get\+\_\+num\+\_\+patches}}
+\index{get\+\_\+num\+\_\+patches@{get\+\_\+num\+\_\+patches}!lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}}
+\subsubsection{\texorpdfstring{get\+\_\+num\+\_\+patches()}{get\_num\_patches()}}
+{\footnotesize\ttfamily size\+\_\+t lbann\+::offline\+\_\+patches\+\_\+npz\+::get\+\_\+num\+\_\+patches (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Return the number of patches per sample (the number of image data sources) 
+
+
+
+Definition at line 76 of file offline\+\_\+patches\+\_\+npz.\+hpp.
+
+
+\begin{DoxyCode}
+76                                  \{
+77     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1offline__patches__npz_a5c13583d344641295301f82a32ebee41}{m\_num\_patches};
+78   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1offline__patches__npz_a153f67de70844a6820aa472f91a6245e_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1offline__patches__npz_aa6fa05575f54a29b67d0bba8a2a9d363}\label{classlbann_1_1offline__patches__npz_aa6fa05575f54a29b67d0bba8a2a9d363}} 
+\index{lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}!get\+\_\+num\+\_\+samples@{get\+\_\+num\+\_\+samples}}
+\index{get\+\_\+num\+\_\+samples@{get\+\_\+num\+\_\+samples}!lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}}
+\subsubsection{\texorpdfstring{get\+\_\+num\+\_\+samples()}{get\_num\_samples()}}
+{\footnotesize\ttfamily size\+\_\+t lbann\+::offline\+\_\+patches\+\_\+npz\+::get\+\_\+num\+\_\+samples (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Return the number of samples. 
+
+
+
+Definition at line 72 of file offline\+\_\+patches\+\_\+npz.\+hpp.
+
+
+\begin{DoxyCode}
+72                                  \{
+73     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1offline__patches__npz_a5f90dc1b898f8ad9d7ea16c188738419}{m\_item\_class\_list}.size();
+74   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1offline__patches__npz_aa6fa05575f54a29b67d0bba8a2a9d363_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1offline__patches__npz_a9c8ad05ffdf0d44ee1c9b61740dd42e3}\label{classlbann_1_1offline__patches__npz_a9c8ad05ffdf0d44ee1c9b61740dd42e3}} 
+\index{lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}!get\+\_\+sample@{get\+\_\+sample}}
+\index{get\+\_\+sample@{get\+\_\+sample}!lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}}
+\subsubsection{\texorpdfstring{get\+\_\+sample()}{get\_sample()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1offline__patches__npz_a61405205f907a697515786d0a9e7858a}{offline\+\_\+patches\+\_\+npz\+::sample\+\_\+t} lbann\+::offline\+\_\+patches\+\_\+npz\+::get\+\_\+sample (\begin{DoxyParamCaption}\item[{const size\+\_\+t}]{idx }\end{DoxyParamCaption}) const}
+
+
+
+Reconsturct and return the meta-\/data (patch file names and the label) of idx-\/th sample. 
+
+
+
+Definition at line 174 of file offline\+\_\+patches\+\_\+npz.\+cpp.
+
+
+\begin{DoxyCode}
+174                                                                                   \{
+175   \textcolor{keywordflow}{if} (!\hyperlink{classlbann_1_1offline__patches__npz_ab434320c2084790a2c99257d6c39fc85}{m\_checked\_ok} || idx >= \hyperlink{classlbann_1_1offline__patches__npz_aa6fa05575f54a29b67d0bba8a2a9d363}{get\_num\_samples}()) \{
+176     \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"offline\_patches\_npz: invalid sample index"});
+177   \}
+178 
+179   std::vector<std::string> file\_names;
+180 
+181   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} p = 0u; p < \hyperlink{classlbann_1_1offline__patches__npz_a5c13583d344641295301f82a32ebee41}{m\_num\_patches}; ++p) \{
+182     \textcolor{keyword}{const} \textcolor{keywordtype}{size\_t} root = cnpy\_utils::data<size\_t>(\hyperlink{classlbann_1_1offline__patches__npz_a5d61c89e80f8e67b4850fb72792ce862}{m\_item\_root\_list}, \{idx, p\});
+183     \textcolor{keywordflow}{if} (root >= \hyperlink{classlbann_1_1offline__patches__npz_a515ef05ef0679f3b6f1197d1ab47bfb3}{m\_file\_root\_list}.size()) \{
+184       \textcolor{keyword}{using} std::to\_string;
+185       \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"offline\_patches\_npz: invalid file\_root\_list index: "}
+186                           + to\_string(root) + \textcolor{stringliteral}{" >= "} + to\_string(
+      \hyperlink{classlbann_1_1offline__patches__npz_a515ef05ef0679f3b6f1197d1ab47bfb3}{m\_file\_root\_list}.size()));
+187     \}
+188     std::string file\_name = \hyperlink{classlbann_1_1offline__patches__npz_a515ef05ef0679f3b6f1197d1ab47bfb3}{m\_file\_root\_list}.at(root);
+189 
+190     \textcolor{keyword}{const} \textcolor{keywordtype}{size\_t}* variant = &(cnpy\_utils::data<size\_t>(\hyperlink{classlbann_1_1offline__patches__npz_a5aec35e7b2f9956b8e7e8ce5cbb3ff22}{m\_item\_variant\_list}, \{idx, p, 0u\}
+      ));
+191     \textcolor{keyword}{const} \textcolor{keywordtype}{int} ve = m\_item\_variant\_list.shape.back()-1;
+192     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} i = 0; i < ve; ++i) \{
+193       file\_name += \hyperlink{classlbann_1_1offline__patches__npz_a164d2bd134dc8c3946dc28d6ec5da0ec}{m\_file\_variant\_list}.at(variant[i]) + 
+      \hyperlink{classlbann_1_1offline__patches__npz_aaab0b9040ce248875b6cdb430e054b3a}{m\_variant\_divider};
+194     \}
+195 
+196     file\_name += \hyperlink{classlbann_1_1offline__patches__npz_a164d2bd134dc8c3946dc28d6ec5da0ec}{m\_file\_variant\_list}.at(variant[ve]);
+197     file\_names.push\_back(file\_name);
+198   \}
+199   \textcolor{keywordflow}{return} std::make\_pair(file\_names, \hyperlink{classlbann_1_1offline__patches__npz_a5f90dc1b898f8ad9d7ea16c188738419}{m\_item\_class\_list}[idx]);
+200 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1offline__patches__npz_a9c8ad05ffdf0d44ee1c9b61740dd42e3_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1offline__patches__npz_a9c8ad05ffdf0d44ee1c9b61740dd42e3_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1offline__patches__npz_a29f1d64e32c857018d5ef21dd99fe7c4}\label{classlbann_1_1offline__patches__npz_a29f1d64e32c857018d5ef21dd99fe7c4}} 
+\index{lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}!load@{load}}
+\index{load@{load}!lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}}
+\subsubsection{\texorpdfstring{load()}{load()}}
+{\footnotesize\ttfamily bool lbann\+::offline\+\_\+patches\+\_\+npz\+::load (\begin{DoxyParamCaption}\item[{const std\+::string}]{filename,  }\item[{size\+\_\+t}]{first\+\_\+n = {\ttfamily 0u} }\end{DoxyParamCaption})}
+
+Load the data in the compressed numpy format file. Use only first\+\_\+n available samples if specified. 
+
+Definition at line 40 of file offline\+\_\+patches\+\_\+npz.\+cpp.
+
+
+\begin{DoxyCode}
+40                                                                        \{
+41   \hyperlink{classlbann_1_1offline__patches__npz_a5f90dc1b898f8ad9d7ea16c188738419}{m\_item\_class\_list}.clear();
+42   \hyperlink{classlbann_1_1offline__patches__npz_a515ef05ef0679f3b6f1197d1ab47bfb3}{m\_file\_root\_list}.clear();
+43   \hyperlink{classlbann_1_1offline__patches__npz_a164d2bd134dc8c3946dc28d6ec5da0ec}{m\_file\_variant\_list}.clear();
+44 
+45   \textcolor{comment}{// The list of arrays expected to be packed in the file.}
+46   \textcolor{comment}{// 'max\_class' and 'variant\_divider' are scalar values, and known in advance.}
+47   \textcolor{keyword}{const} std::set<std::string> dict =
+48     \{\textcolor{stringliteral}{"item\_root\_list"},
+49      \textcolor{stringliteral}{"item\_variant\_list"},
+50      \textcolor{stringliteral}{"item\_class\_list"},
+51      \textcolor{stringliteral}{"file\_root\_list"},
+52      \textcolor{stringliteral}{"file\_variant\_list"},
+53      \textcolor{stringliteral}{"max\_class"},
+54      \textcolor{stringliteral}{"variant\_divider"}\};
+55 
+56   \textcolor{keywordflow}{if} (!\hyperlink{namespacelbann_a4fac6c6483965395fa79d31061485f9f}{check\_if\_file\_exists}(filename)) \{
+57     \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+58   \}
+59   cnpy::npz\_t dataset = cnpy::npz\_load(filename);
+60 
+61   \textcolor{comment}{// check if all the arrays are included}
+62   \textcolor{keywordflow}{for} (\textcolor{keyword}{const} \textcolor{keyword}{auto}& np : dataset) \{
+63     \textcolor{keywordflow}{if} (dict.find(np.first) == dict.end()) \{
+64       \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+65     \}
+66   \}
+67 
+68   \textcolor{keywordflow}{if} (first\_n > 0u) \{ \textcolor{comment}{// to use only first\_n samples}
+69     \hyperlink{namespacelbann_1_1cnpy__utils_ab19ad0a361570b7e78e203c02d6ba13a}{cnpy\_utils::shrink\_to\_fit}(dataset[\textcolor{stringliteral}{"item\_root\_list"}], first\_n);
+70     \hyperlink{namespacelbann_1_1cnpy__utils_ab19ad0a361570b7e78e203c02d6ba13a}{cnpy\_utils::shrink\_to\_fit}(dataset[\textcolor{stringliteral}{"item\_variant\_list"}], first\_n);
+71   \}
+72   \textcolor{comment}{// Set the array of index sequences for root type}
+73   \hyperlink{classlbann_1_1offline__patches__npz_a5d61c89e80f8e67b4850fb72792ce862}{m\_item\_root\_list} = dataset[\textcolor{stringliteral}{"item\_root\_list"}];
+74 
+75   \textcolor{keywordflow}{if} (first\_n > 0u) \{ \textcolor{comment}{// to use only first\_n samples}
+76   \}
+77   \textcolor{comment}{// Set the array of index sequences for variant type}
+78   \hyperlink{classlbann_1_1offline__patches__npz_a5aec35e7b2f9956b8e7e8ce5cbb3ff22}{m\_item\_variant\_list} = dataset[\textcolor{stringliteral}{"item\_variant\_list"}];
+79 
+80   \{ \textcolor{comment}{// load the label array into a vector of label\_t (uint8\_t)}
+81     cnpy::NpyArray d\_item\_class\_list = dataset[\textcolor{stringliteral}{"item\_class\_list"}];
+82     \hyperlink{classlbann_1_1offline__patches__npz_ab434320c2084790a2c99257d6c39fc85}{m\_checked\_ok} = (d\_item\_class\_list.shape.size() == 1u);
+83     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1offline__patches__npz_ab434320c2084790a2c99257d6c39fc85}{m\_checked\_ok}) \{
+84       \textcolor{comment}{// In case of shrinking to first\_n, make sure the size is consistent}
+85       \textcolor{keyword}{const} \textcolor{keywordtype}{size\_t} num\_samples = \hyperlink{classlbann_1_1offline__patches__npz_a5d61c89e80f8e67b4850fb72792ce862}{m\_item\_root\_list}.shape[0];
+86       \hyperlink{classlbann_1_1offline__patches__npz_a5f90dc1b898f8ad9d7ea16c188738419}{m\_item\_class\_list}.resize(num\_samples);
+87       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} i=0u; i < num\_samples; ++i) \{
+88         std::string digits(cnpy\_utils::data\_ptr<char>(d\_item\_class\_list, \{i\}), d\_item\_class\_list.word\_size)
+      ;
+89         \hyperlink{classlbann_1_1offline__patches__npz_a5f90dc1b898f8ad9d7ea16c188738419}{m\_item\_class\_list}[i] = \textcolor{keyword}{static\_cast<}\hyperlink{classlbann_1_1offline__patches__npz_ae0ed6bf62b2be1814964206522ed4e05}{label\_t}\textcolor{keyword}{>}(atoi(digits.c\_str()));
+90       \}
+91     \}
+92     cnpy::npz\_t::iterator it = dataset.find(\textcolor{stringliteral}{"item\_class\_list"});
+93     dataset.erase(it); \textcolor{comment}{// to keep memory footprint as low as possible}
+94   \}
+95 
+96   \{ \textcolor{comment}{// load the array of dictionary substrings of root type}
+97     cnpy::NpyArray d\_file\_root\_list = dataset[\textcolor{stringliteral}{"file\_root\_list"}];
+98     \hyperlink{classlbann_1_1offline__patches__npz_ab434320c2084790a2c99257d6c39fc85}{m\_checked\_ok} = \hyperlink{classlbann_1_1offline__patches__npz_ab434320c2084790a2c99257d6c39fc85}{m\_checked\_ok} && (d\_file\_root\_list.shape.size() == 1u);
+99     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1offline__patches__npz_ab434320c2084790a2c99257d6c39fc85}{m\_checked\_ok}) \{
+100       \textcolor{keyword}{const} \textcolor{keywordtype}{size\_t} num\_roots = d\_file\_root\_list.shape[0];
+101       \hyperlink{classlbann_1_1offline__patches__npz_a515ef05ef0679f3b6f1197d1ab47bfb3}{m\_file\_root\_list}.resize(num\_roots);
+102       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} i=0u; i < num\_roots; ++i) \{
+103         std::string file\_root(cnpy\_utils::data\_ptr<char>(d\_file\_root\_list, \{i\}), d\_file\_root\_list.word\_size
+      );
+104         \hyperlink{classlbann_1_1offline__patches__npz_a515ef05ef0679f3b6f1197d1ab47bfb3}{m\_file\_root\_list}[i] = std::string(file\_root.c\_str());
+105       \}
+106     \}
+107     cnpy::npz\_t::iterator it = dataset.find(\textcolor{stringliteral}{"file\_root\_list"});
+108     dataset.erase(it); \textcolor{comment}{// to keep memory footprint as low as possible}
+109   \}
+110   \textcolor{comment}{//for (const auto& fl: m\_file\_root\_list) std::cout << fl << std::endl;}
+111 
+112   \{ \textcolor{comment}{// load the array of dictionary substrings of variant type}
+113     cnpy::NpyArray d\_file\_variant\_list = dataset[\textcolor{stringliteral}{"file\_variant\_list"}];
+114     \hyperlink{classlbann_1_1offline__patches__npz_ab434320c2084790a2c99257d6c39fc85}{m\_checked\_ok} = \hyperlink{classlbann_1_1offline__patches__npz_ab434320c2084790a2c99257d6c39fc85}{m\_checked\_ok} && (d\_file\_variant\_list.shape.size() == 1u);
+115     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1offline__patches__npz_ab434320c2084790a2c99257d6c39fc85}{m\_checked\_ok}) \{
+116       \textcolor{keyword}{const} \textcolor{keywordtype}{size\_t} num\_variants = d\_file\_variant\_list.shape[0];
+117       \hyperlink{classlbann_1_1offline__patches__npz_a164d2bd134dc8c3946dc28d6ec5da0ec}{m\_file\_variant\_list}.resize(num\_variants);
+118       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} i=0u; i < num\_variants; ++i) \{
+119         std::string file\_variant(cnpy\_utils::data\_ptr<char>(d\_file\_variant\_list, \{i\}), d\_file\_variant\_list.
+      word\_size);
+120         \hyperlink{classlbann_1_1offline__patches__npz_a164d2bd134dc8c3946dc28d6ec5da0ec}{m\_file\_variant\_list}[i] = std::string(file\_variant.c\_str());
+121       \}
+122     \}
+123     cnpy::npz\_t::iterator it = dataset.find(\textcolor{stringliteral}{"file\_variant\_list"});
+124     dataset.erase(it); \textcolor{comment}{// to keep memory footprint as low as possible}
+125   \}
+126   \textcolor{comment}{//for (const auto& fl: m\_file\_variant\_list) std::cout << fl << std::endl;}
+127 
+128   \hyperlink{classlbann_1_1offline__patches__npz_ab434320c2084790a2c99257d6c39fc85}{m\_checked\_ok} = \hyperlink{classlbann_1_1offline__patches__npz_ab434320c2084790a2c99257d6c39fc85}{m\_checked\_ok} && \hyperlink{classlbann_1_1offline__patches__npz_a44d8cad35ff9ad245856c5408965e53b}{check\_data}();
+129 
+130   \textcolor{keywordflow}{if} (!\hyperlink{classlbann_1_1offline__patches__npz_ab434320c2084790a2c99257d6c39fc85}{m\_checked\_ok}) \{
+131     \textcolor{comment}{//std::cout << get\_description();}
+132     \hyperlink{classlbann_1_1offline__patches__npz_a5f90dc1b898f8ad9d7ea16c188738419}{m\_item\_class\_list}.clear();
+133     \hyperlink{classlbann_1_1offline__patches__npz_a515ef05ef0679f3b6f1197d1ab47bfb3}{m\_file\_root\_list}.clear();
+134     \hyperlink{classlbann_1_1offline__patches__npz_a164d2bd134dc8c3946dc28d6ec5da0ec}{m\_file\_variant\_list}.clear();
+135     \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"offline\_patches\_npz: loaded data not consistent"});
+136   \}
+137 
+138   \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1offline__patches__npz_ab434320c2084790a2c99257d6c39fc85}{m\_checked\_ok};
+139 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1offline__patches__npz_a29f1d64e32c857018d5ef21dd99fe7c4_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1offline__patches__npz_a29f1d64e32c857018d5ef21dd99fe7c4_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1offline__patches__npz_ab434320c2084790a2c99257d6c39fc85}\label{classlbann_1_1offline__patches__npz_ab434320c2084790a2c99257d6c39fc85}} 
+\index{lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}!m\+\_\+checked\+\_\+ok@{m\+\_\+checked\+\_\+ok}}
+\index{m\+\_\+checked\+\_\+ok@{m\+\_\+checked\+\_\+ok}!lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}}
+\subsubsection{\texorpdfstring{m\+\_\+checked\+\_\+ok}{m\_checked\_ok}}
+{\footnotesize\ttfamily bool lbann\+::offline\+\_\+patches\+\_\+npz\+::m\+\_\+checked\+\_\+ok\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Whether loaded data have passed the format check. 
+
+
+
+Definition at line 90 of file offline\+\_\+patches\+\_\+npz.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1offline__patches__npz_a887aa89aa2d8d8c9e23af33f2bb949d9}\label{classlbann_1_1offline__patches__npz_a887aa89aa2d8d8c9e23af33f2bb949d9}} 
+\index{lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}!m\+\_\+fetch\+\_\+text\+\_\+dict\+\_\+at\+\_\+once@{m\+\_\+fetch\+\_\+text\+\_\+dict\+\_\+at\+\_\+once}}
+\index{m\+\_\+fetch\+\_\+text\+\_\+dict\+\_\+at\+\_\+once@{m\+\_\+fetch\+\_\+text\+\_\+dict\+\_\+at\+\_\+once}!lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}}
+\subsubsection{\texorpdfstring{m\+\_\+fetch\+\_\+text\+\_\+dict\+\_\+at\+\_\+once}{m\_fetch\_text\_dict\_at\_once}}
+{\footnotesize\ttfamily bool lbann\+::offline\+\_\+patches\+\_\+npz\+::m\+\_\+fetch\+\_\+text\+\_\+dict\+\_\+at\+\_\+once\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+control how the text dictionary files are loaded\+: whether to load all at once and parse or to stream in 
+
+
+
+Definition at line 116 of file offline\+\_\+patches\+\_\+npz.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1offline__patches__npz_a515ef05ef0679f3b6f1197d1ab47bfb3}\label{classlbann_1_1offline__patches__npz_a515ef05ef0679f3b6f1197d1ab47bfb3}} 
+\index{lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}!m\+\_\+file\+\_\+root\+\_\+list@{m\+\_\+file\+\_\+root\+\_\+list}}
+\index{m\+\_\+file\+\_\+root\+\_\+list@{m\+\_\+file\+\_\+root\+\_\+list}!lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}}
+\subsubsection{\texorpdfstring{m\+\_\+file\+\_\+root\+\_\+list}{m\_file\_root\_list}}
+{\footnotesize\ttfamily std\+::vector$<$std\+::string$>$ lbann\+::offline\+\_\+patches\+\_\+npz\+::m\+\_\+file\+\_\+root\+\_\+list\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+The list of common substrings that a file path starts with (dimension is, for example 1000 in case of imagenet data) 
+
+
+
+Definition at line 106 of file offline\+\_\+patches\+\_\+npz.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1offline__patches__npz_ab8c28a104b2c09f22831cb647f77d127}\label{classlbann_1_1offline__patches__npz_ab8c28a104b2c09f22831cb647f77d127}} 
+\index{lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}!m\+\_\+file\+\_\+root\+\_\+list\+\_\+name@{m\+\_\+file\+\_\+root\+\_\+list\+\_\+name}}
+\index{m\+\_\+file\+\_\+root\+\_\+list\+\_\+name@{m\+\_\+file\+\_\+root\+\_\+list\+\_\+name}!lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}}
+\subsubsection{\texorpdfstring{m\+\_\+file\+\_\+root\+\_\+list\+\_\+name}{m\_file\_root\_list\_name}}
+{\footnotesize\ttfamily std\+::string lbann\+::offline\+\_\+patches\+\_\+npz\+::m\+\_\+file\+\_\+root\+\_\+list\+\_\+name\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+The text file name of file\+\_\+root\+\_\+list. 
+
+
+
+Definition at line 110 of file offline\+\_\+patches\+\_\+npz.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1offline__patches__npz_a164d2bd134dc8c3946dc28d6ec5da0ec}\label{classlbann_1_1offline__patches__npz_a164d2bd134dc8c3946dc28d6ec5da0ec}} 
+\index{lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}!m\+\_\+file\+\_\+variant\+\_\+list@{m\+\_\+file\+\_\+variant\+\_\+list}}
+\index{m\+\_\+file\+\_\+variant\+\_\+list@{m\+\_\+file\+\_\+variant\+\_\+list}!lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}}
+\subsubsection{\texorpdfstring{m\+\_\+file\+\_\+variant\+\_\+list}{m\_file\_variant\_list}}
+{\footnotesize\ttfamily std\+::vector$<$std\+::string$>$ lbann\+::offline\+\_\+patches\+\_\+npz\+::m\+\_\+file\+\_\+variant\+\_\+list\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 108 of file offline\+\_\+patches\+\_\+npz.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1offline__patches__npz_acf3a819a993f1dafd040e992fcbd205a}\label{classlbann_1_1offline__patches__npz_acf3a819a993f1dafd040e992fcbd205a}} 
+\index{lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}!m\+\_\+file\+\_\+variant\+\_\+list\+\_\+name@{m\+\_\+file\+\_\+variant\+\_\+list\+\_\+name}}
+\index{m\+\_\+file\+\_\+variant\+\_\+list\+\_\+name@{m\+\_\+file\+\_\+variant\+\_\+list\+\_\+name}!lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}}
+\subsubsection{\texorpdfstring{m\+\_\+file\+\_\+variant\+\_\+list\+\_\+name}{m\_file\_variant\_list\_name}}
+{\footnotesize\ttfamily std\+::string lbann\+::offline\+\_\+patches\+\_\+npz\+::m\+\_\+file\+\_\+variant\+\_\+list\+\_\+name\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+The text file name of file\+\_\+variant\+\_\+list. 
+
+
+
+Definition at line 112 of file offline\+\_\+patches\+\_\+npz.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1offline__patches__npz_a5f90dc1b898f8ad9d7ea16c188738419}\label{classlbann_1_1offline__patches__npz_a5f90dc1b898f8ad9d7ea16c188738419}} 
+\index{lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}!m\+\_\+item\+\_\+class\+\_\+list@{m\+\_\+item\+\_\+class\+\_\+list}}
+\index{m\+\_\+item\+\_\+class\+\_\+list@{m\+\_\+item\+\_\+class\+\_\+list}!lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}}
+\subsubsection{\texorpdfstring{m\+\_\+item\+\_\+class\+\_\+list}{m\_item\_class\_list}}
+{\footnotesize\ttfamily std\+::vector$<$\hyperlink{classlbann_1_1offline__patches__npz_ae0ed6bf62b2be1814964206522ed4e05}{label\+\_\+t}$>$ lbann\+::offline\+\_\+patches\+\_\+npz\+::m\+\_\+item\+\_\+class\+\_\+list\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+list of labels (dimension\+: num\+\_\+samples) 
+
+
+
+Definition at line 104 of file offline\+\_\+patches\+\_\+npz.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1offline__patches__npz_a5d61c89e80f8e67b4850fb72792ce862}\label{classlbann_1_1offline__patches__npz_a5d61c89e80f8e67b4850fb72792ce862}} 
+\index{lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}!m\+\_\+item\+\_\+root\+\_\+list@{m\+\_\+item\+\_\+root\+\_\+list}}
+\index{m\+\_\+item\+\_\+root\+\_\+list@{m\+\_\+item\+\_\+root\+\_\+list}!lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}}
+\subsubsection{\texorpdfstring{m\+\_\+item\+\_\+root\+\_\+list}{m\_item\_root\_list}}
+{\footnotesize\ttfamily cnpy\+::\+Npy\+Array lbann\+::offline\+\_\+patches\+\_\+npz\+::m\+\_\+item\+\_\+root\+\_\+list\hspace{0.3cm}{\ttfamily [protected]}}
+
+List of index sequences to the dictionary of common file path substrings (m\+\_\+file\+\_\+root\+\_\+list) per patch file (dimension\+: num\+\_\+samples $\ast$ num\+\_\+patches) 
+
+Definition at line 97 of file offline\+\_\+patches\+\_\+npz.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1offline__patches__npz_a5aec35e7b2f9956b8e7e8ce5cbb3ff22}\label{classlbann_1_1offline__patches__npz_a5aec35e7b2f9956b8e7e8ce5cbb3ff22}} 
+\index{lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}!m\+\_\+item\+\_\+variant\+\_\+list@{m\+\_\+item\+\_\+variant\+\_\+list}}
+\index{m\+\_\+item\+\_\+variant\+\_\+list@{m\+\_\+item\+\_\+variant\+\_\+list}!lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}}
+\subsubsection{\texorpdfstring{m\+\_\+item\+\_\+variant\+\_\+list}{m\_item\_variant\_list}}
+{\footnotesize\ttfamily cnpy\+::\+Npy\+Array lbann\+::offline\+\_\+patches\+\_\+npz\+::m\+\_\+item\+\_\+variant\+\_\+list\hspace{0.3cm}{\ttfamily [protected]}}
+
+List of index sequences to the dictionary of common file path substrings (m\+\_\+file\+\_\+variant\+\_\+list) per patch file (dimension\+: num\+\_\+samples $\ast$ num\+\_\+patches) 
+
+Definition at line 102 of file offline\+\_\+patches\+\_\+npz.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1offline__patches__npz_a5c13583d344641295301f82a32ebee41}\label{classlbann_1_1offline__patches__npz_a5c13583d344641295301f82a32ebee41}} 
+\index{lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}!m\+\_\+num\+\_\+patches@{m\+\_\+num\+\_\+patches}}
+\index{m\+\_\+num\+\_\+patches@{m\+\_\+num\+\_\+patches}!lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}}
+\subsubsection{\texorpdfstring{m\+\_\+num\+\_\+patches}{m\_num\_patches}}
+{\footnotesize\ttfamily size\+\_\+t lbann\+::offline\+\_\+patches\+\_\+npz\+::m\+\_\+num\+\_\+patches\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+The number of image patches per sample (i.\+e. the num of patch files to read) 
+
+
+
+Definition at line 92 of file offline\+\_\+patches\+\_\+npz.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1offline__patches__npz_aaab0b9040ce248875b6cdb430e054b3a}\label{classlbann_1_1offline__patches__npz_aaab0b9040ce248875b6cdb430e054b3a}} 
+\index{lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}!m\+\_\+variant\+\_\+divider@{m\+\_\+variant\+\_\+divider}}
+\index{m\+\_\+variant\+\_\+divider@{m\+\_\+variant\+\_\+divider}!lbann\+::offline\+\_\+patches\+\_\+npz@{lbann\+::offline\+\_\+patches\+\_\+npz}}
+\subsubsection{\texorpdfstring{m\+\_\+variant\+\_\+divider}{m\_variant\_divider}}
+{\footnotesize\ttfamily std\+::string lbann\+::offline\+\_\+patches\+\_\+npz\+::m\+\_\+variant\+\_\+divider\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+A substring after which the file name of variants begins to differ (e.\+g., \char`\"{}.\+J\+P\+E\+G.\char`\"{}) 
+
+
+
+Definition at line 114 of file offline\+\_\+patches\+\_\+npz.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/data\+\_\+readers/\hyperlink{offline__patches__npz_8hpp}{offline\+\_\+patches\+\_\+npz.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/data\+\_\+readers/\hyperlink{offline__patches__npz_8cpp}{offline\+\_\+patches\+\_\+npz.\+cpp}\end{DoxyCompactItemize}

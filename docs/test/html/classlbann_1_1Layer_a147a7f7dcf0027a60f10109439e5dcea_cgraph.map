@@ -1,0 +1,8 @@
+<map id="lbann::Layer::get_topo_description" name="lbann::Layer::get_topo_description">
+<area shape="rect" id="node2" href="$classlbann_1_1Layer.html#a1409a117c31a7ea4f2c7a4d22a3e86c3" title="lbann::Layer::get_num\l_children" alt="" coords="233,36,387,75"/>
+<area shape="rect" id="node6" href="$classlbann_1_1Layer.html#a54f53393fadbfdc73b4e72489c868433" title="lbann::Layer::get_neuron_dims" alt="" coords="207,99,413,124"/>
+<area shape="rect" id="node7" href="$classlbann_1_1Layer.html#a1134b1a4385af199d7272c5aa827fa99" title="lbann::Layer::get_activations" alt="" coords="214,172,405,197"/>
+<area shape="rect" id="node3" href="$classlbann_1_1Layer.html#aa0058c8ec4913efc3e4de5d6f61eb8db" title="lbann::Layer::get_child\l_layers" alt="" coords="461,5,617,44"/>
+<area shape="rect" id="node4" href="$classlbann_1_1Layer.html#af4a093d91552cf079217eb346bbb847f" title="lbann::Layer::get_layer\l_names" alt="" coords="461,68,618,107"/>
+<area shape="rect" id="node5" href="$classlbann_1_1Layer.html#a80027550202fa7dbb1dd55fa8a66c84b" title="lbann::Layer::get_name" alt="" coords="666,75,827,100"/>
+</map>

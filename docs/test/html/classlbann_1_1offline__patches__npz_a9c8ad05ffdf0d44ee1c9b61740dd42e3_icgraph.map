@@ -1,0 +1,11 @@
+<map id="lbann::offline_patches_npz::get_sample" name="lbann::offline_patches_npz::get_sample">
+<area shape="rect" id="node2" href="$classlbann_1_1data__reader__triplet.html#a6ed35c191d890569db4865424b8b0e82" title="lbann::data_reader\l_triplet::get_sample" alt="" coords="787,51,925,90"/>
+<area shape="rect" id="node5" href="$classlbann_1_1offline__patches__npz.html#a153f67de70844a6820aa472f91a6245e" title="Return the number of patches per sample (the number of image data sources) " alt="" coords="204,51,368,90"/>
+<area shape="rect" id="node6" href="$classlbann_1_1data__reader__triplet.html#af3f41e46bef2fbd3e19d545fa27f11ce" title="lbann::data_reader\l_triplet::fetch_datum" alt="" coords="597,108,739,147"/>
+<area shape="rect" id="node7" href="$classlbann_1_1data__reader__triplet.html#a2fa95d7757541b63f5191c1ffa7b7112" title="Return the sample list of current minibatch. " alt="" coords="217,166,355,218"/>
+<area shape="rect" id="node10" href="$classlbann_1_1data__reader__triplet.html#a41a1506e4a77e610fd8db5a618e3e576" title="Allow read&#45;only access to the entire sample list. " alt="" coords="209,242,364,280"/>
+<area shape="rect" id="node3" href="$classlbann_1_1data__store__triplet.html#ade5d2290c85e7916e828553f4ab4f379" title="lbann::data_store_triplet\l::get_sample" alt="" coords="973,51,1138,90"/>
+<area shape="rect" id="node4" href="$classlbann_1_1data__store__triplet.html#a4051f8b3236f06554c2f35e71d3fdf70" title="dtor " alt="" coords="1186,51,1350,90"/>
+<area shape="rect" id="node8" href="$classlbann_1_1data__reader__triplet.html#a7ff627eed9a4671129cbf7fb9ca11871" title="lbann::data_reader\l_triplet::get_type" alt="" coords="416,172,549,211"/>
+<area shape="rect" id="node9" href="$classlbann_1_1data__reader__triplet.html#a2601234d6d501df6170c6fb60dfb873e" title="lbann::data_reader\l_triplet::load" alt="" coords="602,172,735,211"/>
+</map>

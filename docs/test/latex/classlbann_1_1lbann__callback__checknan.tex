@@ -1,0 +1,410 @@
+\hypertarget{classlbann_1_1lbann__callback__checknan}{}\section{lbann\+:\+:lbann\+\_\+callback\+\_\+checknan Class Reference}
+\label{classlbann_1_1lbann__callback__checknan}\index{lbann\+::lbann\+\_\+callback\+\_\+checknan@{lbann\+::lbann\+\_\+callback\+\_\+checknan}}
+
+
+{\ttfamily \#include $<$callback\+\_\+checknan.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+checknan\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=192pt]{classlbann_1_1lbann__callback__checknan__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+checknan\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=207pt]{classlbann_1_1lbann__callback__checknan__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1lbann__callback__checknan_a62c093e4f67a4b387dee11fe41b5ec2f}{lbann\+\_\+callback\+\_\+checknan} ()
+\item 
+\hyperlink{classlbann_1_1lbann__callback__checknan_a72103639c77ba3612ae174d36b279fe5}{lbann\+\_\+callback\+\_\+checknan} (const \hyperlink{classlbann_1_1lbann__callback__checknan}{lbann\+\_\+callback\+\_\+checknan} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__checknan}{lbann\+\_\+callback\+\_\+checknan} \& \hyperlink{classlbann_1_1lbann__callback__checknan_a93b6c22d9fa21a77b91572b6e1c7c3d1}{operator=} (const \hyperlink{classlbann_1_1lbann__callback__checknan}{lbann\+\_\+callback\+\_\+checknan} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__checknan}{lbann\+\_\+callback\+\_\+checknan} $\ast$ \hyperlink{classlbann_1_1lbann__callback__checknan_ad7156df3cd81c493584ebd4a0c9d96b4}{copy} () const override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__checknan_a09388ae76566a6a93c957ab76cd54dcd}{on\+\_\+forward\+\_\+prop\+\_\+end} (\hyperlink{classlbann_1_1model}{model} $\ast$m, \hyperlink{classlbann_1_1Layer}{Layer} $\ast$l) override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__checknan_a40d9a9fcc5849746570b99321e1c5488}{on\+\_\+backward\+\_\+prop\+\_\+end} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__checknan_a1d1b3b082aa49016e7b80e0f267575da}{on\+\_\+batch\+\_\+end} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\item 
+std\+::string \hyperlink{classlbann_1_1lbann__callback__checknan_ab42c997a06058c3535792408fdd5fed8}{name} () const override
+\end{DoxyCompactItemize}
+\subsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+bool \hyperlink{classlbann_1_1lbann__callback__checknan_ac74f7f665823d0500875b9740aaccabc}{is\+\_\+good} (const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&m)
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__checknan_a335713a3df9194f657f98cccd2f695f5}{dump\+\_\+network} (\hyperlink{classlbann_1_1model}{model} $\ast$m)
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+Check matrices for whether they include any Na\+Ns or infs to help debugging. This will kill the rank if such values are discovered. 
+
+Definition at line 40 of file callback\+\_\+checknan.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checknan_a62c093e4f67a4b387dee11fe41b5ec2f}\label{classlbann_1_1lbann__callback__checknan_a62c093e4f67a4b387dee11fe41b5ec2f}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checknan@{lbann\+::lbann\+\_\+callback\+\_\+checknan}!lbann\+\_\+callback\+\_\+checknan@{lbann\+\_\+callback\+\_\+checknan}}
+\index{lbann\+\_\+callback\+\_\+checknan@{lbann\+\_\+callback\+\_\+checknan}!lbann\+::lbann\+\_\+callback\+\_\+checknan@{lbann\+::lbann\+\_\+callback\+\_\+checknan}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+checknan()}{lbann\_callback\_checknan()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+checknan\+::lbann\+\_\+callback\+\_\+checknan (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 45 of file callback\+\_\+checknan.\+hpp.
+
+
+\begin{DoxyCode}
+45 : \hyperlink{classlbann_1_1lbann__callback_a679057298a41ddd47f08c157f756c584}{lbann\_callback}() \{\}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checknan_a62c093e4f67a4b387dee11fe41b5ec2f_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checknan_a62c093e4f67a4b387dee11fe41b5ec2f_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checknan_a72103639c77ba3612ae174d36b279fe5}\label{classlbann_1_1lbann__callback__checknan_a72103639c77ba3612ae174d36b279fe5}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checknan@{lbann\+::lbann\+\_\+callback\+\_\+checknan}!lbann\+\_\+callback\+\_\+checknan@{lbann\+\_\+callback\+\_\+checknan}}
+\index{lbann\+\_\+callback\+\_\+checknan@{lbann\+\_\+callback\+\_\+checknan}!lbann\+::lbann\+\_\+callback\+\_\+checknan@{lbann\+::lbann\+\_\+callback\+\_\+checknan}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+checknan()}{lbann\_callback\_checknan()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+checknan\+::lbann\+\_\+callback\+\_\+checknan (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__checknan}{lbann\+\_\+callback\+\_\+checknan} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checknan_ad7156df3cd81c493584ebd4a0c9d96b4}\label{classlbann_1_1lbann__callback__checknan_ad7156df3cd81c493584ebd4a0c9d96b4}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checknan@{lbann\+::lbann\+\_\+callback\+\_\+checknan}!copy@{copy}}
+\index{copy@{copy}!lbann\+::lbann\+\_\+callback\+\_\+checknan@{lbann\+::lbann\+\_\+callback\+\_\+checknan}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__checknan}{lbann\+\_\+callback\+\_\+checknan}$\ast$ lbann\+::lbann\+\_\+callback\+\_\+checknan\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a9f545d1269a8c7af335625d049691f26}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 49 of file callback\+\_\+checknan.\+hpp.
+
+
+\begin{DoxyCode}
+49                                                  \{
+50     \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1lbann__callback__checknan_a62c093e4f67a4b387dee11fe41b5ec2f}{lbann\_callback\_checknan}(*\textcolor{keyword}{this});
+51   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checknan_ad7156df3cd81c493584ebd4a0c9d96b4_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checknan_a335713a3df9194f657f98cccd2f695f5}\label{classlbann_1_1lbann__callback__checknan_a335713a3df9194f657f98cccd2f695f5}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checknan@{lbann\+::lbann\+\_\+callback\+\_\+checknan}!dump\+\_\+network@{dump\+\_\+network}}
+\index{dump\+\_\+network@{dump\+\_\+network}!lbann\+::lbann\+\_\+callback\+\_\+checknan@{lbann\+::lbann\+\_\+callback\+\_\+checknan}}
+\subsubsection{\texorpdfstring{dump\+\_\+network()}{dump\_network()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+checknan\+::dump\+\_\+network (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+Dump the (local) network matrices for debugging. 
+
+Definition at line 99 of file callback\+\_\+checknan.\+cpp.
+
+
+\begin{DoxyCode}
+99                                                    \{
+100   \textcolor{comment}{// Dump only the local matrices because not every rank will necessarily}
+101   \textcolor{comment}{// have bad data, and the check is purely local.}
+102   \textcolor{keywordflow}{for} (\textcolor{keyword}{const} Layer *layer : m->get\_layers()) \{
+103     \textcolor{keyword}{const} std::string prefix
+104       = (\textcolor{stringliteral}{"model"} + std::to\_string(m->get\_comm()->get\_model\_rank())
+105          + \textcolor{stringliteral}{"-rank"} + std::to\_string(m->get\_comm()->get\_rank\_in\_model()) +
+106          + \textcolor{stringliteral}{"-epoch"} + std::to\_string(m->get\_cur\_epoch())
+107          + \textcolor{stringliteral}{"-step"} + std::to\_string(m->get\_cur\_step())
+108          + \textcolor{stringliteral}{"-"} + layer->get\_name()
+109          + \textcolor{stringliteral}{"-"});
+110     El::Write(layer->get\_activations().LockedMatrix(),
+111               prefix + \textcolor{stringliteral}{"Activations"},
+112               El::ASCII);
+113   \}
+114   \textcolor{keywordflow}{for} (weights *w : m->get\_weights()) \{
+115     \textcolor{keyword}{const} std::string prefix
+116       = (\textcolor{stringliteral}{"model"} + std::to\_string(m->get\_comm()->get\_model\_rank())
+117          + \textcolor{stringliteral}{"-rank"} + std::to\_string(m->get\_comm()->get\_rank\_in\_model()) +
+118          + \textcolor{stringliteral}{"-epoch"} + std::to\_string(m->get\_cur\_epoch())
+119          + \textcolor{stringliteral}{"-step"} + std::to\_string(m->get\_cur\_step())
+120          + \textcolor{stringliteral}{"-"} + w->get\_name()
+121          + \textcolor{stringliteral}{"-"});
+122     El::Write(w->get\_values().LockedMatrix(),
+123               prefix + \textcolor{stringliteral}{"Weights"},
+124               El::ASCII);
+125     optimizer *opt = w->get\_optimizer();
+126     \textcolor{keywordflow}{if} (opt != \textcolor{keyword}{nullptr}) \{
+127       El::Write(opt->get\_gradient().LockedMatrix(),
+128                 prefix + \textcolor{stringliteral}{"Gradient"},
+129                 El::ASCII);
+130     \}
+131   \}
+132 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checknan_a335713a3df9194f657f98cccd2f695f5_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checknan_a335713a3df9194f657f98cccd2f695f5_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checknan_ac74f7f665823d0500875b9740aaccabc}\label{classlbann_1_1lbann__callback__checknan_ac74f7f665823d0500875b9740aaccabc}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checknan@{lbann\+::lbann\+\_\+callback\+\_\+checknan}!is\+\_\+good@{is\+\_\+good}}
+\index{is\+\_\+good@{is\+\_\+good}!lbann\+::lbann\+\_\+callback\+\_\+checknan@{lbann\+::lbann\+\_\+callback\+\_\+checknan}}
+\subsubsection{\texorpdfstring{is\+\_\+good()}{is\_good()}}
+{\footnotesize\ttfamily bool lbann\+::lbann\+\_\+callback\+\_\+checknan\+::is\+\_\+good (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [private]}}
+
+Return true if there are no problems with m. 
+
+Definition at line 80 of file callback\+\_\+checknan.\+cpp.
+
+
+\begin{DoxyCode}
+80                                                          \{
+81   \textcolor{keyword}{const} \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}& lm = m.LockedMatrix();
+82   \textcolor{keyword}{const} El::Int height = lm.Height();
+83   \textcolor{keyword}{const} El::Int width = lm.Width();
+84   \textcolor{keywordflow}{for} (El::Int col = 0; col < width; ++col) \{
+85     \textcolor{keywordflow}{for} (El::Int row = 0; row < height; ++row) \{
+86       \textcolor{keyword}{const} DataType val = lm(row, col);
+87       \textcolor{keywordflow}{if} (std::isnan(val)) \{
+88         std::cout << \textcolor{stringliteral}{"Found NaN at ("} << row << \textcolor{stringliteral}{", "} << col << \textcolor{stringliteral}{")!"} << std::endl;
+89         \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+90       \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (std::isinf(val)) \{
+91         std::cout << \textcolor{stringliteral}{"Found inf ("} << row << \textcolor{stringliteral}{", "} << col << \textcolor{stringliteral}{")!"} << std::endl;
+92         \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+93       \}
+94     \}
+95   \}
+96   \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+97 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checknan_ac74f7f665823d0500875b9740aaccabc_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checknan_ab42c997a06058c3535792408fdd5fed8}\label{classlbann_1_1lbann__callback__checknan_ab42c997a06058c3535792408fdd5fed8}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checknan@{lbann\+::lbann\+\_\+callback\+\_\+checknan}!name@{name}}
+\index{name@{name}!lbann\+::lbann\+\_\+callback\+\_\+checknan@{lbann\+::lbann\+\_\+callback\+\_\+checknan}}
+\subsubsection{\texorpdfstring{name()}{name()}}
+{\footnotesize\ttfamily std\+::string lbann\+::lbann\+\_\+callback\+\_\+checknan\+::name (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Return this callback\textquotesingle{}s name. 
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a7522c7a14f1d6a1ea762cc2d7248eb3a}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 58 of file callback\+\_\+checknan.\+hpp.
+
+
+\begin{DoxyCode}
+58 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"checknan"}; \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checknan_ab42c997a06058c3535792408fdd5fed8_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checknan_ab42c997a06058c3535792408fdd5fed8_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checknan_a40d9a9fcc5849746570b99321e1c5488}\label{classlbann_1_1lbann__callback__checknan_a40d9a9fcc5849746570b99321e1c5488}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checknan@{lbann\+::lbann\+\_\+callback\+\_\+checknan}!on\+\_\+backward\+\_\+prop\+\_\+end@{on\+\_\+backward\+\_\+prop\+\_\+end}}
+\index{on\+\_\+backward\+\_\+prop\+\_\+end@{on\+\_\+backward\+\_\+prop\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+checknan@{lbann\+::lbann\+\_\+callback\+\_\+checknan}}
+\subsubsection{\texorpdfstring{on\+\_\+backward\+\_\+prop\+\_\+end()}{on\_backward\_prop\_end()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+checknan\+::on\+\_\+backward\+\_\+prop\+\_\+end (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Check that gradients are good. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_af183624e63ba65e0003fa988f53dee0c}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 51 of file callback\+\_\+checknan.\+cpp.
+
+
+\begin{DoxyCode}
+51                                                            \{
+52   \textcolor{keywordflow}{for} (weights *w : m->get\_weights()) \{
+53     optimizer *opt = w->get\_optimizer();
+54     \textcolor{keywordflow}{if} (opt != \textcolor{keyword}{nullptr} && !\hyperlink{classlbann_1_1lbann__callback__checknan_ac74f7f665823d0500875b9740aaccabc}{is\_good}(opt->get\_gradient())) \{
+55       \hyperlink{classlbann_1_1lbann__callback__checknan_a335713a3df9194f657f98cccd2f695f5}{dump\_network}(m);
+56       std::stringstream ss;
+57       ss << \hyperlink{classlbann_1_1lbann__callback__checknan_ab42c997a06058c3535792408fdd5fed8}{name}() << \textcolor{stringliteral}{": "}
+58          << \textcolor{stringliteral}{"["} << std::to\_string(m->get\_comm()->get\_rank\_in\_world()) << \textcolor{stringliteral}{"]: "}
+59          << \textcolor{stringliteral}{"error in weights gradient of "} << w->get\_name() << \textcolor{stringliteral}{" "}
+60          << \textcolor{stringliteral}{"(step="} << std::to\_string(m->get\_cur\_step()) << \textcolor{stringliteral}{")"};
+61       \textcolor{keywordflow}{throw} lbann\_exception(ss.str());
+62     \}
+63   \}
+64 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checknan_a40d9a9fcc5849746570b99321e1c5488_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checknan_a40d9a9fcc5849746570b99321e1c5488_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checknan_a1d1b3b082aa49016e7b80e0f267575da}\label{classlbann_1_1lbann__callback__checknan_a1d1b3b082aa49016e7b80e0f267575da}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checknan@{lbann\+::lbann\+\_\+callback\+\_\+checknan}!on\+\_\+batch\+\_\+end@{on\+\_\+batch\+\_\+end}}
+\index{on\+\_\+batch\+\_\+end@{on\+\_\+batch\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+checknan@{lbann\+::lbann\+\_\+callback\+\_\+checknan}}
+\subsubsection{\texorpdfstring{on\+\_\+batch\+\_\+end()}{on\_batch\_end()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+checknan\+::on\+\_\+batch\+\_\+end (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Check that weights are good. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_a895ca577e358601fcae5c04749f60535}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 66 of file callback\+\_\+checknan.\+cpp.
+
+
+\begin{DoxyCode}
+66                                                    \{
+67   \textcolor{keywordflow}{for} (weights *w : m->get\_weights()) \{
+68     \textcolor{keywordflow}{if} (!\hyperlink{classlbann_1_1lbann__callback__checknan_ac74f7f665823d0500875b9740aaccabc}{is\_good}(w->get\_values())) \{
+69       \hyperlink{classlbann_1_1lbann__callback__checknan_a335713a3df9194f657f98cccd2f695f5}{dump\_network}(m);
+70       std::stringstream ss;
+71       ss << \hyperlink{classlbann_1_1lbann__callback__checknan_ab42c997a06058c3535792408fdd5fed8}{name}() << \textcolor{stringliteral}{": "}
+72          << \textcolor{stringliteral}{"["} << std::to\_string(m->get\_comm()->get\_rank\_in\_world()) << \textcolor{stringliteral}{"]: "}
+73          << \textcolor{stringliteral}{"error in weights of "} << w->get\_name() << \textcolor{stringliteral}{" "}
+74          << \textcolor{stringliteral}{"(step="} << std::to\_string(m->get\_cur\_step()-1) << \textcolor{stringliteral}{")"};
+75       \textcolor{keywordflow}{throw} lbann\_exception(ss.str());
+76     \}
+77   \}
+78 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checknan_a1d1b3b082aa49016e7b80e0f267575da_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checknan_a1d1b3b082aa49016e7b80e0f267575da_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checknan_a09388ae76566a6a93c957ab76cd54dcd}\label{classlbann_1_1lbann__callback__checknan_a09388ae76566a6a93c957ab76cd54dcd}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checknan@{lbann\+::lbann\+\_\+callback\+\_\+checknan}!on\+\_\+forward\+\_\+prop\+\_\+end@{on\+\_\+forward\+\_\+prop\+\_\+end}}
+\index{on\+\_\+forward\+\_\+prop\+\_\+end@{on\+\_\+forward\+\_\+prop\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+checknan@{lbann\+::lbann\+\_\+callback\+\_\+checknan}}
+\subsubsection{\texorpdfstring{on\+\_\+forward\+\_\+prop\+\_\+end()}{on\_forward\_prop\_end()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+checknan\+::on\+\_\+forward\+\_\+prop\+\_\+end (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m,  }\item[{\hyperlink{classlbann_1_1Layer}{Layer} $\ast$}]{l }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Check that activations are good. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_a5eff0a59fbce98a981d9cdd0547a3ad5}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 35 of file callback\+\_\+checknan.\+cpp.
+
+
+\begin{DoxyCode}
+35                                                                     \{
+36   \textcolor{keywordflow}{if} (dynamic\_cast<generic\_target\_layer*>(l) != \textcolor{keyword}{nullptr}) \{
+37     \textcolor{keywordflow}{return};
+38   \}
+39   \textcolor{keyword}{const} \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{AbsDistMat}& acts = l->get\_activations();
+40   \textcolor{keywordflow}{if} (!\hyperlink{classlbann_1_1lbann__callback__checknan_ac74f7f665823d0500875b9740aaccabc}{is\_good}(acts)) \{
+41     \hyperlink{classlbann_1_1lbann__callback__checknan_a335713a3df9194f657f98cccd2f695f5}{dump\_network}(m);
+42     std::stringstream ss;
+43     ss << \hyperlink{classlbann_1_1lbann__callback__checknan_ab42c997a06058c3535792408fdd5fed8}{name}() << \textcolor{stringliteral}{": "}
+44        << \textcolor{stringliteral}{"["} << std::to\_string(m->get\_comm()->get\_rank\_in\_world()) << \textcolor{stringliteral}{"]: "}
+45        << \textcolor{stringliteral}{"error in activations of "} << l->get\_name() << \textcolor{stringliteral}{" "}
+46        << \textcolor{stringliteral}{"(step="} << std::to\_string(m->get\_cur\_step()) << \textcolor{stringliteral}{")"};
+47     \textcolor{keywordflow}{throw} lbann\_exception(ss.str());
+48   \}
+49 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checknan_a09388ae76566a6a93c957ab76cd54dcd_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=348pt]{classlbann_1_1lbann__callback__checknan_a09388ae76566a6a93c957ab76cd54dcd_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checknan_a93b6c22d9fa21a77b91572b6e1c7c3d1}\label{classlbann_1_1lbann__callback__checknan_a93b6c22d9fa21a77b91572b6e1c7c3d1}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checknan@{lbann\+::lbann\+\_\+callback\+\_\+checknan}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::lbann\+\_\+callback\+\_\+checknan@{lbann\+::lbann\+\_\+callback\+\_\+checknan}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__checknan}{lbann\+\_\+callback\+\_\+checknan}\& lbann\+::lbann\+\_\+callback\+\_\+checknan\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__checknan}{lbann\+\_\+callback\+\_\+checknan} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checknan_a93b6c22d9fa21a77b91572b6e1c7c3d1_icgraph}
+\end{center}
+\end{figure}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/callbacks/\hyperlink{callback__checknan_8hpp}{callback\+\_\+checknan.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/callbacks/\hyperlink{callback__checknan_8cpp}{callback\+\_\+checknan.\+cpp}\end{DoxyCompactItemize}

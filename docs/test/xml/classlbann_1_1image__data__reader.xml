@@ -1,0 +1,1090 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1image__data__reader" kind="class" language="C++" prot="public">
+    <compoundname>lbann::image_data_reader</compoundname>
+    <basecompoundref refid="classlbann_1_1generic__data__reader" prot="public" virt="non-virtual">lbann::generic_data_reader</basecompoundref>
+    <derivedcompoundref refid="classlbann_1_1cifar10__reader" prot="public" virt="non-virtual">lbann::cifar10_reader</derivedcompoundref>
+    <derivedcompoundref refid="classlbann_1_1imagenet__reader" prot="public" virt="non-virtual">lbann::imagenet_reader</derivedcompoundref>
+    <derivedcompoundref refid="classlbann_1_1imagenet__reader__org" prot="public" virt="non-virtual">lbann::imagenet_reader_org</derivedcompoundref>
+    <derivedcompoundref refid="classlbann_1_1imagenet__reader__patches" prot="public" virt="non-virtual">lbann::imagenet_reader_patches</derivedcompoundref>
+    <derivedcompoundref refid="classlbann_1_1mnist__reader" prot="public" virt="non-virtual">lbann::mnist_reader</derivedcompoundref>
+    <includes refid="data__reader__image_8hpp" local="no">data_reader_image.hpp</includes>
+      <sectiondef kind="public-type">
+      <memberdef kind="typedef" id="classlbann_1_1image__data__reader_1acd2b41459e901a3aed39fd3be7270fa2" prot="public" static="no">
+        <type>std::string</type>
+        <definition>using lbann::image_data_reader::img_src_t =  std::string</definition>
+        <argsstring></argsstring>
+        <name>img_src_t</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" line="39" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" bodystart="39" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="classlbann_1_1image__data__reader_1a7645f17852c990e80b1530509ff5e87c" prot="public" static="no">
+        <type>int</type>
+        <definition>using lbann::image_data_reader::label_t =  int</definition>
+        <argsstring></argsstring>
+        <name>label_t</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" line="40" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" bodystart="40" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="classlbann_1_1image__data__reader_1a7580011ef6ef9da32e1a3bc49ad0706c" prot="public" static="no">
+        <type>std::pair&lt; <ref refid="classlbann_1_1image__data__reader_1acd2b41459e901a3aed39fd3be7270fa2" kindref="member">img_src_t</ref>, <ref refid="classlbann_1_1image__data__reader_1a7645f17852c990e80b1530509ff5e87c" kindref="member">label_t</ref> &gt;</type>
+        <definition>using lbann::image_data_reader::sample_t =  std::pair&lt;img_src_t, label_t&gt;</definition>
+        <argsstring></argsstring>
+        <name>sample_t</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" line="41" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" bodystart="41" bodyend="-1"/>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="protected-attrib">
+      <memberdef kind="variable" id="classlbann_1_1image__data__reader_1ab1289f0207f3a9989c7b28e09a23c9a3" prot="protected" static="no" mutable="no">
+        <type>std::string</type>
+        <definition>std::string lbann::image_data_reader::m_image_dir</definition>
+        <argsstring></argsstring>
+        <name>m_image_dir</name>
+        <briefdescription>
+<para>where images are stored </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" line="108" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" bodystart="108" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1image__data__reader_1a76a0b52eafb9ad133fb45fec7cf44700" compoundref="data__reader__image_8cpp" startline="50" endline="61">operator=</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1image__data__reader_1ae3fc949bd08c45ceafb1a03503261008" prot="protected" static="no" mutable="no">
+        <type>std::vector&lt; <ref refid="classlbann_1_1image__data__reader_1a7580011ef6ef9da32e1a3bc49ad0706c" kindref="member">sample_t</ref> &gt;</type>
+        <definition>std::vector&lt;sample_t&gt; lbann::image_data_reader::m_image_list</definition>
+        <argsstring></argsstring>
+        <name>m_image_list</name>
+        <briefdescription>
+<para>list of image files and labels </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" line="109" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" bodystart="109" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1image__data__reader_1aa03599a5f66d498d4bb90c50ae70c82a" compoundref="data__reader__image_8hpp" startline="89" endline="91">get_image_list</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1ae3f4a0b018e8212a42cbbfbd2b514bf4" compoundref="data__reader__image_8hpp" startline="97" endline="99">get_sample</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1a76a0b52eafb9ad133fb45fec7cf44700" compoundref="data__reader__image_8cpp" startline="50" endline="61">operator=</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1a1f0dbd67390a65fef106515ea7060e29" compoundref="data__reader__image_8cpp" startline="101" endline="105">fetch_label</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1a99cb80242d7d20bc1e8baeaff25ff790" compoundref="data__reader__image_8cpp" startline="107" endline="137">load</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1a9624d37e076cf71154b65910dd7e1195" compoundref="data__reader__image_8cpp" startline="139" endline="148">get_image_list_of_current_mb</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader_1a6659e90c0243da40f214a877f65eb8ac" compoundref="data__reader__imagenet_8cpp" startline="126" endline="155">lbann::imagenet_reader::fetch_datum</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__org_1ad4c47413e16c1c53000b7d7be757ff6e" compoundref="data__reader__imagenet__org_8cpp" startline="63" endline="90">lbann::imagenet_reader_org::fetch_datum</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__patches_1a8a9e4a1339f2e9676a0e653853ebff3c" compoundref="data__reader__imagenet__patches_8cpp" startline="148" endline="179">lbann::imagenet_reader_patches::fetch_datum</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1image__data__reader_1af001f3d1c0f1c580b66988233b3a64f0" prot="protected" static="no" mutable="no">
+        <type>int</type>
+        <definition>int lbann::image_data_reader::m_image_width</definition>
+        <argsstring></argsstring>
+        <name>m_image_width</name>
+        <briefdescription>
+<para>image width </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" line="110" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" bodystart="110" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1image__data__reader_1a2e75d4ec8f222f4f855e6c0162648dc7" compoundref="data__reader__image_8hpp" startline="60" endline="62">get_image_width</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1a1bb05018e059afae76d46a2a908dd75c" compoundref="data__reader__image_8hpp" startline="76" endline="78">get_data_dims</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1a71e4fa1eb8212cce88a2ed408ceeac51" compoundref="data__reader__image_8hpp" startline="80" endline="83">save_image</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__patches_1a4d5c6b9780908d9beb5c6d3f017c38b5" compoundref="data__reader__imagenet__patches_8hpp" startline="53" endline="55">lbann::imagenet_reader_patches::get_data_dims</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__multi__images_1aca93e0ab0edf13397de414d41aff1cd1" compoundref="data__reader__multi__images_8hpp" startline="77" endline="79">lbann::data_reader_multi_images::get_data_dims</referencedby>
+        <referencedby refid="classlbann_1_1cifar10__reader_1a4c5389d0a6641716c96aa07e58fa4e88" compoundref="data__reader__cifar10_8cpp" startline="40" endline="46">lbann::cifar10_reader::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1cifar10__reader_1a590c672731bbdcb6e7fd8fd300d004d5" compoundref="data__reader__cifar10_8cpp" startline="94" endline="104">lbann::cifar10_reader::fetch_datum</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1a76a0b52eafb9ad133fb45fec7cf44700" compoundref="data__reader__image_8cpp" startline="50" endline="61">operator=</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1a0164b0e3abbe92daef73b36fb925403e" compoundref="data__reader__image_8cpp" startline="63" endline="65">set_linearized_image_size</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1a8e9dbeaa0239d56597455cc23787a21d" compoundref="data__reader__image_8cpp" startline="67" endline="73">set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1a6ed9b8b12ad3ffa93ad458d872f8c044" compoundref="data__reader__image_8cpp" startline="75" endline="99">set_input_params</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader_1ad1e108315d659509a3e166c2f8a4941f" compoundref="data__reader__imagenet_8cpp" startline="79" endline="85">lbann::imagenet_reader::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader_1a1b642b5eb01b209e72bdd8dfa139cafd" compoundref="data__reader__imagenet_8cpp" startline="88" endline="120">lbann::imagenet_reader::replicate_processor</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__org_1af0d9fc9081013ef0ddd3222dfd9abb8b" compoundref="data__reader__imagenet__org_8cpp" startline="42" endline="48">lbann::imagenet_reader_org::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__org_1ad4c47413e16c1c53000b7d7be757ff6e" compoundref="data__reader__imagenet__org_8cpp" startline="63" endline="90">lbann::imagenet_reader_org::fetch_datum</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__patches_1a3458e4274b9ed894973a069cf884f04a" compoundref="data__reader__imagenet__patches_8cpp" startline="83" endline="90">lbann::imagenet_reader_patches::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__patches_1a714247cc547161688a66a64737527de0" compoundref="data__reader__imagenet__patches_8cpp" startline="93" endline="128">lbann::imagenet_reader_patches::replicate_processor</referencedby>
+        <referencedby refid="classlbann_1_1mnist__reader_1a5b9a3d56e2d1e1c6820b3c7cc8cde17d" compoundref="data__reader__mnist_8cpp" startline="43" endline="49">lbann::mnist_reader::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1mnist__reader_1af257b58b61ae9f3f623f1cb5d18c4841" compoundref="data__reader__mnist_8cpp" startline="51" endline="64">lbann::mnist_reader::fetch_datum</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__mnist__siamese_1a7e1c9530b5d56a0835db8a30af980164" compoundref="data__reader__mnist__siamese_8cpp" startline="70" endline="77">lbann::data_reader_mnist_siamese::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__multi__images_1a5abe6981d750bc145e50f6141772805c" compoundref="data__reader__multi__images_8cpp" startline="67" endline="74">lbann::data_reader_multi_images::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__triplet_1a88bc385a2d42e9f78a768ff496036843" compoundref="data__reader__triplet_8cpp" startline="65" endline="72">lbann::data_reader_triplet::set_defaults</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1image__data__reader_1a0632efa3deaa9d61e671f741909eb3fe" prot="protected" static="no" mutable="no">
+        <type>int</type>
+        <definition>int lbann::image_data_reader::m_image_height</definition>
+        <argsstring></argsstring>
+        <name>m_image_height</name>
+        <briefdescription>
+<para>image height </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" line="111" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" bodystart="111" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1image__data__reader_1a641364038b54fe8291f23f9d879293e3" compoundref="data__reader__image_8hpp" startline="63" endline="65">get_image_height</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1a1bb05018e059afae76d46a2a908dd75c" compoundref="data__reader__image_8hpp" startline="76" endline="78">get_data_dims</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1a71e4fa1eb8212cce88a2ed408ceeac51" compoundref="data__reader__image_8hpp" startline="80" endline="83">save_image</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__patches_1a4d5c6b9780908d9beb5c6d3f017c38b5" compoundref="data__reader__imagenet__patches_8hpp" startline="53" endline="55">lbann::imagenet_reader_patches::get_data_dims</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__multi__images_1aca93e0ab0edf13397de414d41aff1cd1" compoundref="data__reader__multi__images_8hpp" startline="77" endline="79">lbann::data_reader_multi_images::get_data_dims</referencedby>
+        <referencedby refid="classlbann_1_1cifar10__reader_1a4c5389d0a6641716c96aa07e58fa4e88" compoundref="data__reader__cifar10_8cpp" startline="40" endline="46">lbann::cifar10_reader::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1cifar10__reader_1a590c672731bbdcb6e7fd8fd300d004d5" compoundref="data__reader__cifar10_8cpp" startline="94" endline="104">lbann::cifar10_reader::fetch_datum</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1a76a0b52eafb9ad133fb45fec7cf44700" compoundref="data__reader__image_8cpp" startline="50" endline="61">operator=</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1a0164b0e3abbe92daef73b36fb925403e" compoundref="data__reader__image_8cpp" startline="63" endline="65">set_linearized_image_size</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1a8e9dbeaa0239d56597455cc23787a21d" compoundref="data__reader__image_8cpp" startline="67" endline="73">set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1a6ed9b8b12ad3ffa93ad458d872f8c044" compoundref="data__reader__image_8cpp" startline="75" endline="99">set_input_params</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader_1ad1e108315d659509a3e166c2f8a4941f" compoundref="data__reader__imagenet_8cpp" startline="79" endline="85">lbann::imagenet_reader::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader_1a1b642b5eb01b209e72bdd8dfa139cafd" compoundref="data__reader__imagenet_8cpp" startline="88" endline="120">lbann::imagenet_reader::replicate_processor</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__org_1af0d9fc9081013ef0ddd3222dfd9abb8b" compoundref="data__reader__imagenet__org_8cpp" startline="42" endline="48">lbann::imagenet_reader_org::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__org_1ad4c47413e16c1c53000b7d7be757ff6e" compoundref="data__reader__imagenet__org_8cpp" startline="63" endline="90">lbann::imagenet_reader_org::fetch_datum</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__patches_1a3458e4274b9ed894973a069cf884f04a" compoundref="data__reader__imagenet__patches_8cpp" startline="83" endline="90">lbann::imagenet_reader_patches::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__patches_1a714247cc547161688a66a64737527de0" compoundref="data__reader__imagenet__patches_8cpp" startline="93" endline="128">lbann::imagenet_reader_patches::replicate_processor</referencedby>
+        <referencedby refid="classlbann_1_1mnist__reader_1a5b9a3d56e2d1e1c6820b3c7cc8cde17d" compoundref="data__reader__mnist_8cpp" startline="43" endline="49">lbann::mnist_reader::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1mnist__reader_1af257b58b61ae9f3f623f1cb5d18c4841" compoundref="data__reader__mnist_8cpp" startline="51" endline="64">lbann::mnist_reader::fetch_datum</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__mnist__siamese_1a7e1c9530b5d56a0835db8a30af980164" compoundref="data__reader__mnist__siamese_8cpp" startline="70" endline="77">lbann::data_reader_mnist_siamese::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__multi__images_1a5abe6981d750bc145e50f6141772805c" compoundref="data__reader__multi__images_8cpp" startline="67" endline="74">lbann::data_reader_multi_images::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__triplet_1a88bc385a2d42e9f78a768ff496036843" compoundref="data__reader__triplet_8cpp" startline="65" endline="72">lbann::data_reader_triplet::set_defaults</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1image__data__reader_1aab1a440f361521dc7bd583cefe1061f8" prot="protected" static="no" mutable="no">
+        <type>int</type>
+        <definition>int lbann::image_data_reader::m_image_num_channels</definition>
+        <argsstring></argsstring>
+        <name>m_image_num_channels</name>
+        <briefdescription>
+<para>number of image channels </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" line="112" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" bodystart="112" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1image__data__reader_1a3699aa92d3ef2ccc0c30ecf27809acbe" compoundref="data__reader__image_8hpp" startline="66" endline="68">get_image_num_channels</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1a1bb05018e059afae76d46a2a908dd75c" compoundref="data__reader__image_8hpp" startline="76" endline="78">get_data_dims</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1a71e4fa1eb8212cce88a2ed408ceeac51" compoundref="data__reader__image_8hpp" startline="80" endline="83">save_image</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__patches_1a4d5c6b9780908d9beb5c6d3f017c38b5" compoundref="data__reader__imagenet__patches_8hpp" startline="53" endline="55">lbann::imagenet_reader_patches::get_data_dims</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__multi__images_1aca93e0ab0edf13397de414d41aff1cd1" compoundref="data__reader__multi__images_8hpp" startline="77" endline="79">lbann::data_reader_multi_images::get_data_dims</referencedby>
+        <referencedby refid="classlbann_1_1cifar10__reader_1a4c5389d0a6641716c96aa07e58fa4e88" compoundref="data__reader__cifar10_8cpp" startline="40" endline="46">lbann::cifar10_reader::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1cifar10__reader_1a590c672731bbdcb6e7fd8fd300d004d5" compoundref="data__reader__cifar10_8cpp" startline="94" endline="104">lbann::cifar10_reader::fetch_datum</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1a76a0b52eafb9ad133fb45fec7cf44700" compoundref="data__reader__image_8cpp" startline="50" endline="61">operator=</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1a0164b0e3abbe92daef73b36fb925403e" compoundref="data__reader__image_8cpp" startline="63" endline="65">set_linearized_image_size</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1a8e9dbeaa0239d56597455cc23787a21d" compoundref="data__reader__image_8cpp" startline="67" endline="73">set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1a6ed9b8b12ad3ffa93ad458d872f8c044" compoundref="data__reader__image_8cpp" startline="75" endline="99">set_input_params</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader_1ad1e108315d659509a3e166c2f8a4941f" compoundref="data__reader__imagenet_8cpp" startline="79" endline="85">lbann::imagenet_reader::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__org_1af0d9fc9081013ef0ddd3222dfd9abb8b" compoundref="data__reader__imagenet__org_8cpp" startline="42" endline="48">lbann::imagenet_reader_org::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__org_1ad4c47413e16c1c53000b7d7be757ff6e" compoundref="data__reader__imagenet__org_8cpp" startline="63" endline="90">lbann::imagenet_reader_org::fetch_datum</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__patches_1a3458e4274b9ed894973a069cf884f04a" compoundref="data__reader__imagenet__patches_8cpp" startline="83" endline="90">lbann::imagenet_reader_patches::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1mnist__reader_1a5b9a3d56e2d1e1c6820b3c7cc8cde17d" compoundref="data__reader__mnist_8cpp" startline="43" endline="49">lbann::mnist_reader::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__mnist__siamese_1a7e1c9530b5d56a0835db8a30af980164" compoundref="data__reader__mnist__siamese_8cpp" startline="70" endline="77">lbann::data_reader_mnist_siamese::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__multi__images_1a5abe6981d750bc145e50f6141772805c" compoundref="data__reader__multi__images_8cpp" startline="67" endline="74">lbann::data_reader_multi_images::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__triplet_1a88bc385a2d42e9f78a768ff496036843" compoundref="data__reader__triplet_8cpp" startline="65" endline="72">lbann::data_reader_triplet::set_defaults</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1image__data__reader_1af512f1f866c0f654309b7f28886dca9a" prot="protected" static="no" mutable="no">
+        <type>int</type>
+        <definition>int lbann::image_data_reader::m_image_linearized_size</definition>
+        <argsstring></argsstring>
+        <name>m_image_linearized_size</name>
+        <briefdescription>
+<para>linearized image size </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" line="113" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" bodystart="113" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1image__data__reader_1a26b8566e76ba99c017a84c49a9dec37c" compoundref="data__reader__image_8hpp" startline="70" endline="72">get_linearized_data_size</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__patches_1a09ce692ca31d52424dea5395ad6c8b2b" compoundref="data__reader__imagenet__patches_8hpp" startline="50" endline="52">lbann::imagenet_reader_patches::get_linearized_data_size</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__multi__images_1a63d7c8f0b674f19840134ee99680f3fc" compoundref="data__reader__multi__images_8hpp" startline="74" endline="76">lbann::data_reader_multi_images::get_linearized_data_size</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1a76a0b52eafb9ad133fb45fec7cf44700" compoundref="data__reader__image_8cpp" startline="50" endline="61">operator=</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1a0164b0e3abbe92daef73b36fb925403e" compoundref="data__reader__image_8cpp" startline="63" endline="65">set_linearized_image_size</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader_1a6659e90c0243da40f214a877f65eb8ac" compoundref="data__reader__imagenet_8cpp" startline="126" endline="155">lbann::imagenet_reader::fetch_datum</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__org_1acbe8ed442b64a7391ffa63b0658641c0" compoundref="data__reader__imagenet__org_8cpp" startline="55" endline="61">lbann::imagenet_reader_org::allocate_pixel_bufs</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__org_1ad4c47413e16c1c53000b7d7be757ff6e" compoundref="data__reader__imagenet__org_8cpp" startline="63" endline="90">lbann::imagenet_reader_org::fetch_datum</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__patches_1a920f235bde95d5c3e8ae97c389c9d953" compoundref="data__reader__imagenet__patches_8cpp" startline="131" endline="145">lbann::imagenet_reader_patches::create_datum_views</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__patches_1a8a9e4a1339f2e9676a0e653853ebff3c" compoundref="data__reader__imagenet__patches_8cpp" startline="148" endline="179">lbann::imagenet_reader_patches::fetch_datum</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__single_1a77c576d6085d4a8674322275dd9bd133" compoundref="data__reader__imagenet__single_8cpp" startline="125" endline="166">lbann::imagenet_reader_single::fetch_datum</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__mnist__siamese_1a1709140fcdcea9baaaf1bab7a48f3bce" compoundref="data__reader__mnist__siamese_8cpp" startline="152" endline="195">lbann::data_reader_mnist_siamese::fetch_labels</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__multi__images_1a713e4cc80a2d3a2b721d0912e3773baa" compoundref="data__reader__multi__images_8cpp" startline="91" endline="99">lbann::data_reader_multi_images::create_datum_views</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__multi__images_1a37ef2f4e641c074d0f3bd51f11682fc7" compoundref="data__reader__multi__images_8cpp" startline="101" endline="131">lbann::data_reader_multi_images::fetch_datum</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__triplet_1af3f41e46bef2fbd3e19d545fa27f11ce" compoundref="data__reader__triplet_8cpp" startline="83" endline="114">lbann::data_reader_triplet::fetch_datum</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1image__data__reader_1af280e8758a6ec3acee7c62e6351d17e0" prot="protected" static="no" mutable="no">
+        <type>int</type>
+        <definition>int lbann::image_data_reader::m_num_labels</definition>
+        <argsstring></argsstring>
+        <name>m_num_labels</name>
+        <briefdescription>
+<para>number of labels </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" line="114" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" bodystart="114" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1image__data__reader_1af821795e5104f1a8c34027de96af7b90" compoundref="data__reader__image_8hpp" startline="57" endline="59">get_num_labels</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1adb62b193a10b2b12c1bf183ea9c2095e" compoundref="data__reader__image_8hpp" startline="73" endline="75">get_linearized_label_size</referencedby>
+        <referencedby refid="classlbann_1_1cifar10__reader_1a4c5389d0a6641716c96aa07e58fa4e88" compoundref="data__reader__cifar10_8cpp" startline="40" endline="46">lbann::cifar10_reader::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1a76a0b52eafb9ad133fb45fec7cf44700" compoundref="data__reader__image_8cpp" startline="50" endline="61">operator=</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1a8e9dbeaa0239d56597455cc23787a21d" compoundref="data__reader__image_8cpp" startline="67" endline="73">set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1a6ed9b8b12ad3ffa93ad458d872f8c044" compoundref="data__reader__image_8cpp" startline="75" endline="99">set_input_params</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader_1ad1e108315d659509a3e166c2f8a4941f" compoundref="data__reader__imagenet_8cpp" startline="79" endline="85">lbann::imagenet_reader::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__org_1af0d9fc9081013ef0ddd3222dfd9abb8b" compoundref="data__reader__imagenet__org_8cpp" startline="42" endline="48">lbann::imagenet_reader_org::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__patches_1a3458e4274b9ed894973a069cf884f04a" compoundref="data__reader__imagenet__patches_8cpp" startline="83" endline="90">lbann::imagenet_reader_patches::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__patches_1a714247cc547161688a66a64737527de0" compoundref="data__reader__imagenet__patches_8cpp" startline="93" endline="128">lbann::imagenet_reader_patches::replicate_processor</referencedby>
+        <referencedby refid="classlbann_1_1mnist__reader_1a5b9a3d56e2d1e1c6820b3c7cc8cde17d" compoundref="data__reader__mnist_8cpp" startline="43" endline="49">lbann::mnist_reader::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__mnist__siamese_1a7e1c9530b5d56a0835db8a30af980164" compoundref="data__reader__mnist__siamese_8cpp" startline="70" endline="77">lbann::data_reader_mnist_siamese::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__multi__images_1a5abe6981d750bc145e50f6141772805c" compoundref="data__reader__multi__images_8cpp" startline="67" endline="74">lbann::data_reader_multi_images::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__triplet_1a88bc385a2d42e9f78a768ff496036843" compoundref="data__reader__triplet_8cpp" startline="65" endline="72">lbann::data_reader_triplet::set_defaults</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1image__data__reader_1a582185ab03c4643117fd93e0ba843882" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::image_data_reader::image_data_reader</definition>
+        <argsstring>(bool shuffle=true)</argsstring>
+        <name>image_data_reader</name>
+        <param>
+          <type>bool</type>
+          <declname>shuffle</declname>
+          <defval>true</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" line="43" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_image.cpp" bodystart="34" bodyend="37"/>
+        <references refid="classlbann_1_1image__data__reader_1a8e9dbeaa0239d56597455cc23787a21d" compoundref="data__reader__image_8cpp" startline="67" endline="73">set_defaults</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1image__data__reader_1a7a5dd69d535f2966e4f8da53f505ca7c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::image_data_reader::image_data_reader</definition>
+        <argsstring>(const image_data_reader &amp;)</argsstring>
+        <name>image_data_reader</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1image__data__reader" kindref="compound">image_data_reader</ref> &amp;</type>
+          <defname>rhs</defname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" line="44" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_image.cpp" bodystart="39" bodyend="48"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1image__data__reader_1a76a0b52eafb9ad133fb45fec7cf44700" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classlbann_1_1image__data__reader" kindref="compound">image_data_reader</ref> &amp;</type>
+        <definition>image_data_reader &amp; lbann::image_data_reader::operator=</definition>
+        <argsstring>(const image_data_reader &amp;)</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1image__data__reader" kindref="compound">image_data_reader</ref> &amp;</type>
+          <defname>rhs</defname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" line="45" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_image.cpp" bodystart="50" bodyend="61"/>
+        <references refid="classlbann_1_1generic__data__reader_1aec7e626e6efa2a4bf23f931e2ef8f607">lbann::generic_data_reader::operator=</references>
+        <references refid="classlbann_1_1image__data__reader_1ab1289f0207f3a9989c7b28e09a23c9a3" compoundref="data__reader__image_8hpp" startline="108">m_image_dir</references>
+        <references refid="classlbann_1_1image__data__reader_1ae3fc949bd08c45ceafb1a03503261008" compoundref="data__reader__image_8hpp" startline="109">m_image_list</references>
+        <references refid="classlbann_1_1image__data__reader_1af001f3d1c0f1c580b66988233b3a64f0" compoundref="data__reader__image_8hpp" startline="110">m_image_width</references>
+        <references refid="classlbann_1_1image__data__reader_1a0632efa3deaa9d61e671f741909eb3fe" compoundref="data__reader__image_8hpp" startline="111">m_image_height</references>
+        <references refid="classlbann_1_1image__data__reader_1aab1a440f361521dc7bd583cefe1061f8" compoundref="data__reader__image_8hpp" startline="112">m_image_num_channels</references>
+        <references refid="classlbann_1_1image__data__reader_1af512f1f866c0f654309b7f28886dca9a" compoundref="data__reader__image_8hpp" startline="113">m_image_linearized_size</references>
+        <references refid="classlbann_1_1image__data__reader_1af280e8758a6ec3acee7c62e6351d17e0" compoundref="data__reader__image_8hpp" startline="114">m_num_labels</references>
+        <referencedby refid="classlbann_1_1imagenet__reader_1a5ea15cc16aa679a2cb549b44eb77f323" compoundref="data__reader__imagenet_8cpp" startline="59" endline="74">lbann::imagenet_reader::operator=</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__patches_1a02e20aa26fb3b024486b8d5c71d37aa7" compoundref="data__reader__imagenet__patches_8cpp" startline="62" endline="78">lbann::imagenet_reader_patches::operator=</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1image__data__reader_1a6ed9b8b12ad3ffa93ad458d872f8c044" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::image_data_reader::set_input_params</definition>
+        <argsstring>(const int width=0, const int height=0, const int num_ch=0, const int num_labels=0)</argsstring>
+        <name>set_input_params</name>
+        <reimplementedby refid="classlbann_1_1mnist__reader_1aa50ae6f2aeb5800de0e15e3ab9046338">set_input_params</reimplementedby>
+        <reimplementedby refid="classlbann_1_1imagenet__reader__org_1afb843084789c6a12e01a5d4a687003cf">set_input_params</reimplementedby>
+        <reimplementedby refid="classlbann_1_1cifar10__reader_1a3915005f1278a840869b8519c30c808b">set_input_params</reimplementedby>
+        <reimplementedby refid="classlbann_1_1data__reader__triplet_1a8172b4ac97d18b51814578a19a7f75c7">set_input_params</reimplementedby>
+        <reimplementedby refid="classlbann_1_1data__reader__multi__images_1afdb403556ed04a9142932e89ac60435e">set_input_params</reimplementedby>
+        <reimplementedby refid="classlbann_1_1data__reader__mnist__siamese_1abe572754f0b1415407c1b698b0f83656">set_input_params</reimplementedby>
+        <param>
+          <type>const int</type>
+          <declname>width</declname>
+          <defval>0</defval>
+        </param>
+        <param>
+          <type>const int</type>
+          <declname>height</declname>
+          <defval>0</defval>
+        </param>
+        <param>
+          <type>const int</type>
+          <declname>num_ch</declname>
+          <defval>0</defval>
+        </param>
+        <param>
+          <type>const int</type>
+          <declname>num_labels</declname>
+          <defval>0</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Set up imagenet specific input parameters If argument is set to 0, then this method does not change the value of the corresponding parameter. However, width and height can only be both zero or both non-zero. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" line="52" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_image.cpp" bodystart="75" bodyend="99"/>
+        <references refid="classlbann_1_1image__data__reader_1af001f3d1c0f1c580b66988233b3a64f0" compoundref="data__reader__image_8hpp" startline="110">m_image_width</references>
+        <references refid="classlbann_1_1image__data__reader_1a0632efa3deaa9d61e671f741909eb3fe" compoundref="data__reader__image_8hpp" startline="111">m_image_height</references>
+        <references refid="classlbann_1_1image__data__reader_1aab1a440f361521dc7bd583cefe1061f8" compoundref="data__reader__image_8hpp" startline="112">m_image_num_channels</references>
+        <references refid="classlbann_1_1image__data__reader_1a0164b0e3abbe92daef73b36fb925403e" compoundref="data__reader__image_8cpp" startline="63" endline="65">set_linearized_image_size</references>
+        <references refid="classlbann_1_1image__data__reader_1af280e8758a6ec3acee7c62e6351d17e0" compoundref="data__reader__image_8hpp" startline="114">m_num_labels</references>
+        <referencedby refid="classlbann_1_1imagenet__reader__org_1afb843084789c6a12e01a5d4a687003cf" compoundref="data__reader__imagenet__org_8cpp" startline="50" endline="53">lbann::imagenet_reader_org::set_input_params</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__multi__images_1a57824ec9de5c1131b2f15a0cb3d4ab75" compoundref="data__reader__multi__images_8cpp" startline="76" endline="85">lbann::data_reader_multi_images::set_input_params</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1image__data__reader_1a99cb80242d7d20bc1e8baeaff25ff790" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::image_data_reader::load</definition>
+        <argsstring>() override</argsstring>
+        <name>load</name>
+        <reimplements refid="classlbann_1_1generic__data__reader_1afeb47703d988a230a59859cbfc178215">load</reimplements>
+        <reimplementedby refid="classlbann_1_1imagenet__reader__single_1a7ea768d9784b7a9532551d7402ee4f8e">load</reimplementedby>
+        <reimplementedby refid="classlbann_1_1mnist__reader_1aacbd6c4dec95b9849083d96e0005b392">load</reimplementedby>
+        <reimplementedby refid="classlbann_1_1data__reader__triplet_1a2601234d6d501df6170c6fb60dfb873e">load</reimplementedby>
+        <reimplementedby refid="classlbann_1_1data__reader__multi__images_1afb8adef1f9ac6723d71ae5afc29b01ec">load</reimplementedby>
+        <reimplementedby refid="classlbann_1_1data__reader__mnist__siamese_1a2c60a89c5815fa24b34d4febfecfc3db">load</reimplementedby>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Load the dataset. Each data reader implementation should implement this to initialize its internal data structures, determine the number of samples and their dimensionality (if needed), and set up and shuffle samples. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" line="55" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_image.cpp" bodystart="107" bodyend="137"/>
+        <references refid="classlbann_1_1generic__data__reader_1a56664e1b43f3fe923cf6d652f14b40a9" compoundref="data__reader_8cpp" startline="427" endline="434">lbann::generic_data_reader::get_data_filename</references>
+        <references refid="classlbann_1_1image__data__reader_1ae3fc949bd08c45ceafb1a03503261008" compoundref="data__reader__image_8hpp" startline="109">m_image_list</references>
+        <references refid="classlbann_1_1generic__data__reader_1aaab6aeff67ffff1c689336851fec2c57" compoundref="data__reader_8hpp" startline="895">lbann::generic_data_reader::m_shuffled_indices</references>
+        <references refid="classlbann_1_1generic__data__reader_1aa28fdeeb6af492540f507e49adff5d6c" compoundref="data__reader_8cpp" startline="328" endline="376">lbann::generic_data_reader::select_subset_of_data</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1image__data__reader_1af821795e5104f1a8c34027de96af7b90" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>int</type>
+        <definition>int lbann::image_data_reader::get_num_labels</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_num_labels</name>
+        <reimplements refid="classlbann_1_1generic__data__reader_1a935ce6262d75f1834e550c3bc16a6547">get_num_labels</reimplements>
+        <briefdescription>
+<para>Return the number of labels (classes) in this dataset. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" line="57" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" bodystart="57" bodyend="59"/>
+        <references refid="classlbann_1_1image__data__reader_1af280e8758a6ec3acee7c62e6351d17e0" compoundref="data__reader__image_8hpp" startline="114">m_num_labels</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1image__data__reader_1a2e75d4ec8f222f4f855e6c0162648dc7" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>int</type>
+        <definition>virtual int lbann::image_data_reader::get_image_width</definition>
+        <argsstring>() const</argsstring>
+        <name>get_image_width</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" line="60" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" bodystart="60" bodyend="62"/>
+        <references refid="classlbann_1_1image__data__reader_1af001f3d1c0f1c580b66988233b3a64f0" compoundref="data__reader__image_8hpp" startline="110">m_image_width</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1image__data__reader_1a641364038b54fe8291f23f9d879293e3" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>int</type>
+        <definition>virtual int lbann::image_data_reader::get_image_height</definition>
+        <argsstring>() const</argsstring>
+        <name>get_image_height</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" line="63" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" bodystart="63" bodyend="65"/>
+        <references refid="classlbann_1_1image__data__reader_1a0632efa3deaa9d61e671f741909eb3fe" compoundref="data__reader__image_8hpp" startline="111">m_image_height</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1image__data__reader_1a3699aa92d3ef2ccc0c30ecf27809acbe" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>int</type>
+        <definition>virtual int lbann::image_data_reader::get_image_num_channels</definition>
+        <argsstring>() const</argsstring>
+        <name>get_image_num_channels</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" line="66" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" bodystart="66" bodyend="68"/>
+        <references refid="classlbann_1_1image__data__reader_1aab1a440f361521dc7bd583cefe1061f8" compoundref="data__reader__image_8hpp" startline="112">m_image_num_channels</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1image__data__reader_1a26b8566e76ba99c017a84c49a9dec37c" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>int</type>
+        <definition>int lbann::image_data_reader::get_linearized_data_size</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_linearized_data_size</name>
+        <reimplements refid="classlbann_1_1generic__data__reader_1a246a719477c8c7b6122d41b6f5618d41">get_linearized_data_size</reimplements>
+        <reimplementedby refid="classlbann_1_1imagenet__reader__patches_1a09ce692ca31d52424dea5395ad6c8b2b">get_linearized_data_size</reimplementedby>
+        <reimplementedby refid="classlbann_1_1data__reader__multi__images_1a63d7c8f0b674f19840134ee99680f3fc">get_linearized_data_size</reimplementedby>
+        <briefdescription>
+<para>Get the total number of channel values in a sample of image(s). </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" line="70" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" bodystart="70" bodyend="72"/>
+        <references refid="classlbann_1_1image__data__reader_1af512f1f866c0f654309b7f28886dca9a" compoundref="data__reader__image_8hpp" startline="113">m_image_linearized_size</references>
+        <referencedby refid="classlbann_1_1cifar10__reader_1aee797d547e651e1b0fd5dedc95edd0e0" compoundref="data__reader__cifar10_8cpp" startline="48" endline="92">lbann::cifar10_reader::load</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1image__data__reader_1adb62b193a10b2b12c1bf183ea9c2095e" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>int</type>
+        <definition>int lbann::image_data_reader::get_linearized_label_size</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_linearized_label_size</name>
+        <reimplements refid="classlbann_1_1generic__data__reader_1a99e8ba4f09fdc86d238ad7c8d2e2bce0">get_linearized_label_size</reimplements>
+        <briefdescription>
+<para>Get the linearized size (i.e. number of elements) in a label. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" line="73" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" bodystart="73" bodyend="75"/>
+        <references refid="classlbann_1_1image__data__reader_1af280e8758a6ec3acee7c62e6351d17e0" compoundref="data__reader__image_8hpp" startline="114">m_num_labels</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1image__data__reader_1a1bb05018e059afae76d46a2a908dd75c" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>const std::vector&lt; int &gt;</type>
+        <definition>const std::vector&lt;int&gt; lbann::image_data_reader::get_data_dims</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_data_dims</name>
+        <reimplements refid="classlbann_1_1generic__data__reader_1ae06ff27459ac4a5d8ac14655d4b31318">get_data_dims</reimplements>
+        <reimplementedby refid="classlbann_1_1imagenet__reader__patches_1a4d5c6b9780908d9beb5c6d3f017c38b5">get_data_dims</reimplementedby>
+        <reimplementedby refid="classlbann_1_1data__reader__multi__images_1aca93e0ab0edf13397de414d41aff1cd1">get_data_dims</reimplementedby>
+        <briefdescription>
+<para>Get the dimensions of the data. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" line="76" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" bodystart="76" bodyend="78"/>
+        <references refid="classlbann_1_1image__data__reader_1aab1a440f361521dc7bd583cefe1061f8" compoundref="data__reader__image_8hpp" startline="112">m_image_num_channels</references>
+        <references refid="classlbann_1_1image__data__reader_1a0632efa3deaa9d61e671f741909eb3fe" compoundref="data__reader__image_8hpp" startline="111">m_image_height</references>
+        <references refid="classlbann_1_1image__data__reader_1af001f3d1c0f1c580b66988233b3a64f0" compoundref="data__reader__image_8hpp" startline="110">m_image_width</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1image__data__reader_1a71e4fa1eb8212cce88a2ed408ceeac51" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::image_data_reader::save_image</definition>
+        <argsstring>(Mat &amp;pixels, const std::string filename, bool do_scale=true) override</argsstring>
+        <name>save_image</name>
+        <reimplements refid="classlbann_1_1generic__data__reader_1a8cf298061c73f55e2fe717acd2a9f178">save_image</reimplements>
+        <param>
+          <type><ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref> &amp;</type>
+          <declname>pixels</declname>
+        </param>
+        <param>
+          <type>const std::string</type>
+          <declname>filename</declname>
+        </param>
+        <param>
+          <type>bool</type>
+          <declname>do_scale</declname>
+          <defval>true</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Save pixels to an image. The implementing data reader is responsible for handling format detection, conversion, etc. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" line="80" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" bodystart="80" bodyend="83"/>
+        <references refid="classlbann_1_1lbann__image__preprocessor_1a3c4f4cc5c90233696566a35a62a1708c" compoundref="image__preprocessor_8cpp" startline="320" endline="333">lbann::lbann_image_preprocessor::internal_save_image</references>
+        <references refid="classlbann_1_1image__data__reader_1a0632efa3deaa9d61e671f741909eb3fe" compoundref="data__reader__image_8hpp" startline="111">m_image_height</references>
+        <references refid="classlbann_1_1image__data__reader_1af001f3d1c0f1c580b66988233b3a64f0" compoundref="data__reader__image_8hpp" startline="110">m_image_width</references>
+        <references refid="classlbann_1_1image__data__reader_1aab1a440f361521dc7bd583cefe1061f8" compoundref="data__reader__image_8hpp" startline="112">m_image_num_channels</references>
+        <references refid="classlbann_1_1image__data__reader_1a9624d37e076cf71154b65910dd7e1195" compoundref="data__reader__image_8cpp" startline="139" endline="148">get_image_list_of_current_mb</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1image__data__reader_1a9624d37e076cf71154b65910dd7e1195" prot="public" static="no" const="yes" explicit="no" inline="no" virt="non-virtual">
+        <type>std::vector&lt; <ref refid="classlbann_1_1image__data__reader_1a7580011ef6ef9da32e1a3bc49ad0706c" kindref="member">sample_t</ref> &gt;</type>
+        <definition>std::vector&lt; image_data_reader::sample_t &gt; lbann::image_data_reader::get_image_list_of_current_mb</definition>
+        <argsstring>() const</argsstring>
+        <name>get_image_list_of_current_mb</name>
+        <briefdescription>
+<para>Return the sample list of current minibatch. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" line="86" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_image.cpp" bodystart="139" bodyend="148"/>
+        <references refid="classlbann_1_1generic__data__reader_1a96f87a7d09711ab3eee3940ff2aa36ec" compoundref="data__reader_8hpp" startline="878">lbann::generic_data_reader::m_mini_batch_size</references>
+        <references refid="classlbann_1_1generic__data__reader_1a4ee1a159c74561c15a5e0c267ad3cc6a" compoundref="data__reader_8hpp" startline="929">lbann::generic_data_reader::m_indices_fetched_per_mb</references>
+        <references refid="classlbann_1_1image__data__reader_1ae3fc949bd08c45ceafb1a03503261008" compoundref="data__reader__image_8hpp" startline="109">m_image_list</references>
+        <referencedby refid="classlbann_1_1image__data__reader_1a71e4fa1eb8212cce88a2ed408ceeac51" compoundref="data__reader__image_8hpp" startline="80" endline="83">save_image</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1image__data__reader_1aa03599a5f66d498d4bb90c50ae70c82a" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type>const std::vector&lt; <ref refid="classlbann_1_1image__data__reader_1a7580011ef6ef9da32e1a3bc49ad0706c" kindref="member">sample_t</ref> &gt; &amp;</type>
+        <definition>const std::vector&lt;sample_t&gt;&amp; lbann::image_data_reader::get_image_list</definition>
+        <argsstring>() const</argsstring>
+        <name>get_image_list</name>
+        <briefdescription>
+<para>Allow read-only access to the entire sample list. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" line="89" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" bodystart="89" bodyend="91"/>
+        <references refid="classlbann_1_1image__data__reader_1ae3fc949bd08c45ceafb1a03503261008" compoundref="data__reader__image_8hpp" startline="109">m_image_list</references>
+        <referencedby refid="classlbann_1_1data__store__imagenet_1a1ed5548a409afec61489102f7f080467" compoundref="data__store__imagenet_8cpp" startline="85" endline="122">lbann::data_store_imagenet::test_data</referencedby>
+        <referencedby refid="classlbann_1_1data__store__imagenet_1a1c928ccfb4e75ffe4cefd62f37c072f8" compoundref="data__store__imagenet_8cpp" startline="124" endline="141">lbann::data_store_imagenet::test_file_sizes</referencedby>
+        <referencedby refid="classlbann_1_1data__store__imagenet_1a70cfd8f529aad8d66993000da7350ec5" compoundref="data__store__imagenet_8cpp" startline="144" endline="175">lbann::data_store_imagenet::read_files</referencedby>
+        <referencedby refid="classlbann_1_1data__store__imagenet_1ae8f5d8741ddd762ffd3a477504bca619" compoundref="data__store__imagenet_8cpp" startline="177" endline="201">lbann::data_store_imagenet::get_file_sizes</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1image__data__reader_1ae3f4a0b018e8212a42cbbfbd2b514bf4" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type><ref refid="classlbann_1_1image__data__reader_1a7580011ef6ef9da32e1a3bc49ad0706c" kindref="member">sample_t</ref></type>
+        <definition>sample_t lbann::image_data_reader::get_sample</definition>
+        <argsstring>(const size_t idx) const</argsstring>
+        <name>get_sample</name>
+        <param>
+          <type>const size_t</type>
+          <declname>idx</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Returns idx-th sample in the initial loading order. The second argument is only to facilitate overloading, and not to be used by users. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" line="97" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" bodystart="97" bodyend="99"/>
+        <references refid="classlbann_1_1image__data__reader_1ae3fc949bd08c45ceafb1a03503261008" compoundref="data__reader__image_8hpp" startline="109">m_image_list</references>
+        <references refid="classlbann_1_1image__data__reader_1a8e9dbeaa0239d56597455cc23787a21d" compoundref="data__reader__image_8cpp" startline="67" endline="73">set_defaults</references>
+        <references refid="classlbann_1_1image__data__reader_1a1f0dbd67390a65fef106515ea7060e29" compoundref="data__reader__image_8cpp" startline="101" endline="105">fetch_label</references>
+        <references refid="classlbann_1_1image__data__reader_1a0164b0e3abbe92daef73b36fb925403e" compoundref="data__reader__image_8cpp" startline="63" endline="65">set_linearized_image_size</references>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="protected-func">
+      <memberdef kind="function" id="classlbann_1_1image__data__reader_1a8e9dbeaa0239d56597455cc23787a21d" prot="protected" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::image_data_reader::set_defaults</definition>
+        <argsstring>()</argsstring>
+        <name>set_defaults</name>
+        <reimplementedby refid="classlbann_1_1imagenet__reader_1ad1e108315d659509a3e166c2f8a4941f">set_defaults</reimplementedby>
+        <reimplementedby refid="classlbann_1_1imagenet__reader__org_1af0d9fc9081013ef0ddd3222dfd9abb8b">set_defaults</reimplementedby>
+        <reimplementedby refid="classlbann_1_1mnist__reader_1a5b9a3d56e2d1e1c6820b3c7cc8cde17d">set_defaults</reimplementedby>
+        <reimplementedby refid="classlbann_1_1cifar10__reader_1a4c5389d0a6641716c96aa07e58fa4e88">set_defaults</reimplementedby>
+        <reimplementedby refid="classlbann_1_1imagenet__reader__patches_1a3458e4274b9ed894973a069cf884f04a">set_defaults</reimplementedby>
+        <reimplementedby refid="classlbann_1_1data__reader__triplet_1a88bc385a2d42e9f78a768ff496036843">set_defaults</reimplementedby>
+        <reimplementedby refid="classlbann_1_1data__reader__mnist__siamese_1a7e1c9530b5d56a0835db8a30af980164">set_defaults</reimplementedby>
+        <reimplementedby refid="classlbann_1_1data__reader__multi__images_1a5abe6981d750bc145e50f6141772805c">set_defaults</reimplementedby>
+        <briefdescription>
+<para>Set the default values for the width, the height, the number of channels, and the number of labels of an image. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" line="103" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_image.cpp" bodystart="67" bodyend="73"/>
+        <references refid="classlbann_1_1image__data__reader_1af001f3d1c0f1c580b66988233b3a64f0" compoundref="data__reader__image_8hpp" startline="110">m_image_width</references>
+        <references refid="classlbann_1_1image__data__reader_1a0632efa3deaa9d61e671f741909eb3fe" compoundref="data__reader__image_8hpp" startline="111">m_image_height</references>
+        <references refid="classlbann_1_1image__data__reader_1aab1a440f361521dc7bd583cefe1061f8" compoundref="data__reader__image_8hpp" startline="112">m_image_num_channels</references>
+        <references refid="classlbann_1_1image__data__reader_1a0164b0e3abbe92daef73b36fb925403e" compoundref="data__reader__image_8cpp" startline="63" endline="65">set_linearized_image_size</references>
+        <references refid="classlbann_1_1image__data__reader_1af280e8758a6ec3acee7c62e6351d17e0" compoundref="data__reader__image_8hpp" startline="114">m_num_labels</references>
+        <referencedby refid="classlbann_1_1image__data__reader_1ae3f4a0b018e8212a42cbbfbd2b514bf4" compoundref="data__reader__image_8hpp" startline="97" endline="99">get_sample</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1a582185ab03c4643117fd93e0ba843882" compoundref="data__reader__image_8cpp" startline="34" endline="37">image_data_reader</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1image__data__reader_1a1f0dbd67390a65fef106515ea7060e29" prot="protected" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>bool</type>
+        <definition>bool lbann::image_data_reader::fetch_label</definition>
+        <argsstring>(Mat &amp;Y, int data_id, int mb_idx, int tid) override</argsstring>
+        <name>fetch_label</name>
+        <reimplements refid="classlbann_1_1generic__data__reader_1a03627408c1d1aa28691d31232fe1dce5">fetch_label</reimplements>
+        <reimplementedby refid="classlbann_1_1imagenet__reader__single_1a17b2e9f767fe36097acbc4600ce4e480">fetch_label</reimplementedby>
+        <reimplementedby refid="classlbann_1_1mnist__reader_1a62404e18f0d114b99c11f3800c0d7451">fetch_label</reimplementedby>
+        <param>
+          <type><ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref> &amp;</type>
+          <declname>Y</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>data_id</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>mb_idx</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>tid</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Fetch a single label into a matrix. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>Y</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The matrix to load data into. </para></parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>data_id</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The index of the datum to fetch. </para></parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>mb_idx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The index within the mini-batch. </para></parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" line="104" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_image.cpp" bodystart="101" bodyend="105"/>
+        <references refid="classlbann_1_1image__data__reader_1ae3fc949bd08c45ceafb1a03503261008" compoundref="data__reader__image_8hpp" startline="109">m_image_list</references>
+        <referencedby refid="classlbann_1_1image__data__reader_1ae3f4a0b018e8212a42cbbfbd2b514bf4" compoundref="data__reader__image_8hpp" startline="97" endline="99">get_sample</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1image__data__reader_1a0164b0e3abbe92daef73b36fb925403e" prot="protected" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::image_data_reader::set_linearized_image_size</definition>
+        <argsstring>()</argsstring>
+        <name>set_linearized_image_size</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" line="105" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_image.cpp" bodystart="63" bodyend="65"/>
+        <references refid="classlbann_1_1image__data__reader_1af512f1f866c0f654309b7f28886dca9a" compoundref="data__reader__image_8hpp" startline="113">m_image_linearized_size</references>
+        <references refid="classlbann_1_1image__data__reader_1af001f3d1c0f1c580b66988233b3a64f0" compoundref="data__reader__image_8hpp" startline="110">m_image_width</references>
+        <references refid="classlbann_1_1image__data__reader_1a0632efa3deaa9d61e671f741909eb3fe" compoundref="data__reader__image_8hpp" startline="111">m_image_height</references>
+        <references refid="classlbann_1_1image__data__reader_1aab1a440f361521dc7bd583cefe1061f8" compoundref="data__reader__image_8hpp" startline="112">m_image_num_channels</references>
+        <referencedby refid="classlbann_1_1image__data__reader_1ae3f4a0b018e8212a42cbbfbd2b514bf4" compoundref="data__reader__image_8hpp" startline="97" endline="99">get_sample</referencedby>
+        <referencedby refid="classlbann_1_1cifar10__reader_1a4c5389d0a6641716c96aa07e58fa4e88" compoundref="data__reader__cifar10_8cpp" startline="40" endline="46">lbann::cifar10_reader::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1a8e9dbeaa0239d56597455cc23787a21d" compoundref="data__reader__image_8cpp" startline="67" endline="73">set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1image__data__reader_1a6ed9b8b12ad3ffa93ad458d872f8c044" compoundref="data__reader__image_8cpp" startline="75" endline="99">set_input_params</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader_1ad1e108315d659509a3e166c2f8a4941f" compoundref="data__reader__imagenet_8cpp" startline="79" endline="85">lbann::imagenet_reader::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader_1a1b642b5eb01b209e72bdd8dfa139cafd" compoundref="data__reader__imagenet_8cpp" startline="88" endline="120">lbann::imagenet_reader::replicate_processor</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__org_1af0d9fc9081013ef0ddd3222dfd9abb8b" compoundref="data__reader__imagenet__org_8cpp" startline="42" endline="48">lbann::imagenet_reader_org::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__patches_1a3458e4274b9ed894973a069cf884f04a" compoundref="data__reader__imagenet__patches_8cpp" startline="83" endline="90">lbann::imagenet_reader_patches::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1imagenet__reader__patches_1a714247cc547161688a66a64737527de0" compoundref="data__reader__imagenet__patches_8cpp" startline="93" endline="128">lbann::imagenet_reader_patches::replicate_processor</referencedby>
+        <referencedby refid="classlbann_1_1mnist__reader_1a5b9a3d56e2d1e1c6820b3c7cc8cde17d" compoundref="data__reader__mnist_8cpp" startline="43" endline="49">lbann::mnist_reader::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__mnist__siamese_1a7e1c9530b5d56a0835db8a30af980164" compoundref="data__reader__mnist__siamese_8cpp" startline="70" endline="77">lbann::data_reader_mnist_siamese::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__multi__images_1a5abe6981d750bc145e50f6141772805c" compoundref="data__reader__multi__images_8cpp" startline="67" endline="74">lbann::data_reader_multi_images::set_defaults</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__triplet_1a88bc385a2d42e9f78a768ff496036843" compoundref="data__reader__triplet_8cpp" startline="65" endline="72">lbann::data_reader_triplet::set_defaults</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <inheritancegraph>
+      <node id="1037">
+        <label>lbann::image_data_reader</label>
+        <link refid="classlbann_1_1image__data__reader"/>
+        <childnode refid="1038" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1048">
+        <label>lbann::mnist_reader</label>
+        <link refid="classlbann_1_1mnist__reader"/>
+        <childnode refid="1037" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1039">
+        <label>lbann::lbann_image_preprocessor</label>
+        <link refid="classlbann_1_1lbann__image__preprocessor"/>
+      </node>
+      <node id="1046">
+        <label>lbann::imagenet_reader_org</label>
+        <link refid="classlbann_1_1imagenet__reader__org"/>
+        <childnode refid="1037" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1040">
+        <label>lbann::cifar10_reader</label>
+        <link refid="classlbann_1_1cifar10__reader"/>
+        <childnode refid="1037" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1038">
+        <label>lbann::generic_data_reader</label>
+        <link refid="classlbann_1_1generic__data__reader"/>
+        <childnode refid="1039" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1041">
+        <label>lbann::imagenet_reader</label>
+        <link refid="classlbann_1_1imagenet__reader"/>
+        <childnode refid="1037" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1045">
+        <label>lbann::imagenet_reader_single</label>
+        <link refid="classlbann_1_1imagenet__reader__single"/>
+        <childnode refid="1041" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1047">
+        <label>lbann::imagenet_reader_patches</label>
+        <link refid="classlbann_1_1imagenet__reader__patches"/>
+        <childnode refid="1037" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1042">
+        <label>lbann::data_reader_multi_images</label>
+        <link refid="classlbann_1_1data__reader__multi__images"/>
+        <childnode refid="1041" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1044">
+        <label>lbann::data_reader_triplet</label>
+        <link refid="classlbann_1_1data__reader__triplet"/>
+        <childnode refid="1042" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1043">
+        <label>lbann::data_reader_mnist_siamese</label>
+        <link refid="classlbann_1_1data__reader__mnist__siamese"/>
+        <childnode refid="1042" relation="public-inheritance">
+        </childnode>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="1049">
+        <label>lbann::image_data_reader</label>
+        <link refid="classlbann_1_1image__data__reader"/>
+        <childnode refid="1050" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1054">
+        <label>lbann::model</label>
+        <link refid="classlbann_1_1model"/>
+        <childnode refid="1055" relation="usage">
+          <edgelabel>m_default_optimizer</edgelabel>
+        </childnode>
+        <childnode refid="1052" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="1060" relation="usage">
+          <edgelabel>m_objective_function</edgelabel>
+        </childnode>
+      </node>
+      <node id="1051">
+        <label>lbann::lbann_image_preprocessor</label>
+        <link refid="classlbann_1_1lbann__image__preprocessor"/>
+      </node>
+      <node id="1055">
+        <label>lbann::optimizer</label>
+        <link refid="classlbann_1_1optimizer"/>
+        <childnode refid="1052" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="1056" relation="usage">
+          <edgelabel>m_cudnn</edgelabel>
+        </childnode>
+        <childnode refid="1057" relation="usage">
+          <edgelabel>m_gradient_allreduce_req</edgelabel>
+        </childnode>
+        <childnode refid="1058" relation="usage">
+          <edgelabel>m_weights</edgelabel>
+        </childnode>
+      </node>
+      <node id="1050">
+        <label>lbann::generic_data_reader</label>
+        <link refid="classlbann_1_1generic__data__reader"/>
+        <childnode refid="1051" relation="public-inheritance">
+        </childnode>
+        <childnode refid="1052" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="1053" relation="usage">
+          <edgelabel>m_data_store</edgelabel>
+        </childnode>
+      </node>
+      <node id="1056">
+        <label>lbann::cudnn::cudnn_manager</label>
+        <link refid="classlbann_1_1cudnn_1_1cudnn__manager"/>
+      </node>
+      <node id="1059">
+        <label>lbann::weights_initializer</label>
+        <link refid="classlbann_1_1weights__initializer"/>
+        <childnode refid="1052" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+      </node>
+      <node id="1058">
+        <label>lbann::weights</label>
+        <link refid="classlbann_1_1weights"/>
+        <childnode refid="1055" relation="usage">
+          <edgelabel>m_optimizer</edgelabel>
+        </childnode>
+        <childnode refid="1052" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="1059" relation="usage">
+          <edgelabel>m_initializer</edgelabel>
+        </childnode>
+        <childnode refid="1056" relation="usage">
+          <edgelabel>m_cudnn</edgelabel>
+        </childnode>
+      </node>
+      <node id="1052">
+        <label>lbann::lbann_comm</label>
+        <link refid="classlbann_1_1lbann__comm"/>
+      </node>
+      <node id="1057">
+        <label>lbann::Al::request</label>
+        <link refid="structlbann_1_1Al_1_1request"/>
+      </node>
+      <node id="1060">
+        <label>lbann::objective_function</label>
+        <link refid="classlbann_1_1objective__function"/>
+      </node>
+      <node id="1053">
+        <label>lbann::generic_data_store</label>
+        <link refid="classlbann_1_1generic__data__store"/>
+        <childnode refid="1052" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="1050" relation="usage">
+          <edgelabel>m_reader</edgelabel>
+        </childnode>
+        <childnode refid="1054" relation="usage">
+          <edgelabel>m_model</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" line="37" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_image.hpp" bodystart="37" bodyend="115"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a1726baf71e931108dc9192539e90c583" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>add_noise</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1adb9e017aeac52a9b5d392f17188d1057" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>affine_trans</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a5ef5acf32117e5b2ea1a366e071e21d4" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>at_new_epoch</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a27cb5182c4f764cbfa4edecbb78ef29d" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>augment</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a3e99be32b95a415fd8d616cb85075df1" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>col_pixels</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a208ba1223e7aaa75e94b728501f12f86" prot="public" virt="pure-virtual"><scope>lbann::image_data_reader</scope><name>copy</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a7dc609e33febdc7fc29bdc9270594bea" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>cv_pixels</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a871cb543ee6c132a76e16045a1a2a9f3" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>disable_augmentation</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a46b658ba4f6b746632b683568ab76f77" prot="public" virt="virtual"><scope>lbann::image_data_reader</scope><name>fetch_data</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a0a3cd87ed4a7057df185e0087f2d21c1" prot="protected" virt="virtual"><scope>lbann::image_data_reader</scope><name>fetch_datum</name></member>
+      <member refid="classlbann_1_1image__data__reader_1a1f0dbd67390a65fef106515ea7060e29" prot="protected" virt="virtual"><scope>lbann::image_data_reader</scope><name>fetch_label</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a7e624f92e38b0ee4224a6afaaf2acbdb" prot="public" virt="virtual"><scope>lbann::image_data_reader</scope><name>fetch_labels</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1abe544ea807eed477f3636010d199b574" prot="protected" virt="virtual"><scope>lbann::image_data_reader</scope><name>fetch_response</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1aeaa97d3683add33d1c6d69a769dd6a20" prot="public" virt="virtual"><scope>lbann::image_data_reader</scope><name>fetch_responses</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a12d9f7056a5e68185ea0e85e14c17bcf" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>flip</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1aaba933b8f7c1227801f6e80d39986af4" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>generic_data_reader</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a95d0ca539a613182898ff7693206fb40" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>generic_data_reader</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a1e8655cd1883d850566694bcf2ad60ab" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_absolute_sample_count</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a65b9d39e7585ec325eb40a123cd70891" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_base_offset</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1aedca18323a7777180fc12d73d809fb84" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_comm</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ac4fc0729e7f1240e167fe897df99f950" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_compound_rank</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a3f7114448c6b43a5aac30c002e4bade3" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_current_global_mini_batch_size</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a35521b27677081ee9ed30f25aeb3b508" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_current_mini_batch_index</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1aec4624f295e1e3c6c5053838624441a5" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_current_mini_batch_size</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a7c884d3646396a05d9e01e3b7a260419" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_current_step_in_epoch</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1af80711baa226f8bc370e8e276c49f3c1" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_current_world_master_mini_batch_adjustment</name></member>
+      <member refid="classlbann_1_1image__data__reader_1a1bb05018e059afae76d46a2a908dd75c" prot="public" virt="virtual"><scope>lbann::image_data_reader</scope><name>get_data_dims</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a56664e1b43f3fe923cf6d652f14b40a9" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_data_filename</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a2f1f018beecb1295c00a1ffdfa03f638" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_data_store</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ab4c6c2d4ba40ece809ce896828c8ff03" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_file_dir</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a96bb5c116c1a23822f6662b866df4a17" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_global_last_mini_batch_size</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1aaa4110d53f59a127326e63ca4110b56b" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_global_mini_batch_size</name></member>
+      <member refid="classlbann_1_1image__data__reader_1a641364038b54fe8291f23f9d879293e3" prot="public" virt="virtual"><scope>lbann::image_data_reader</scope><name>get_image_height</name></member>
+      <member refid="classlbann_1_1image__data__reader_1aa03599a5f66d498d4bb90c50ae70c82a" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_image_list</name></member>
+      <member refid="classlbann_1_1image__data__reader_1a9624d37e076cf71154b65910dd7e1195" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_image_list_of_current_mb</name></member>
+      <member refid="classlbann_1_1image__data__reader_1a3699aa92d3ef2ccc0c30ecf27809acbe" prot="public" virt="virtual"><scope>lbann::image_data_reader</scope><name>get_image_num_channels</name></member>
+      <member refid="classlbann_1_1image__data__reader_1a2e75d4ec8f222f4f855e6c0162648dc7" prot="public" virt="virtual"><scope>lbann::image_data_reader</scope><name>get_image_width</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ab5c6c70ea1ecf8f7e2ebe2c486e50134" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_indices</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a8d8b44ed55e2af49c70d29277ff57a91" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_indices_fetched_per_mb</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ac84ecef4f72f209420279526e3e6c77b" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_iteration_stride</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1af0f82d719fcd6e0668414836f2673d5c" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_label_filename</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a79cb3bee4e0d19006ef9213763dc8af2" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_last_mini_batch_size</name></member>
+      <member refid="classlbann_1_1image__data__reader_1a26b8566e76ba99c017a84c49a9dec37c" prot="public" virt="virtual"><scope>lbann::image_data_reader</scope><name>get_linearized_data_size</name></member>
+      <member refid="classlbann_1_1image__data__reader_1adb62b193a10b2b12c1bf183ea9c2095e" prot="public" virt="virtual"><scope>lbann::image_data_reader</scope><name>get_linearized_label_size</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1aacd8704cd11ed6f521cebeaac06c6cb7" prot="public" virt="virtual"><scope>lbann::image_data_reader</scope><name>get_linearized_response_size</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a56dca946c200cc25f6eae6e507939bba" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_loaded_mini_batch_index</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a850e99110dd1e9df2985f09ea196fea8" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_loaded_mini_batch_size</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a92574413c82813cc50fbdfbb70b4065d" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_mini_batch_max</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1af85a5ea421ba6ef7558cdf4bba36fdf0" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_mini_batch_size</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a192632a8037f6a1eef202747f5916bf3" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_minibatch_indices</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a9e78b6062be9746c81eabf0f9d28264e" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_model_offset</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ab11a9eca77ac9018bdab45ead7ef5e13" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_next_position</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1adcdb833aff7ce85b0879334b252f357a" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_num_data</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ab35b0f96c84c20b9bab5dda1aa852953" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_num_global_indices</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a06fb58d1c0b84b8c76f5b4d160751f34" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_num_iterations_per_epoch</name></member>
+      <member refid="classlbann_1_1image__data__reader_1af821795e5104f1a8c34027de96af7b90" prot="public" virt="virtual"><scope>lbann::image_data_reader</scope><name>get_num_labels</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ad15887cc31657d03925835aab0d4b675" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_num_parallel_readers</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a054be9375a6e8338c893230f83c1497f" prot="public" virt="virtual"><scope>lbann::image_data_reader</scope><name>get_num_responses</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a49d5244c292de9ca489761b940958afd" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_num_unused_data</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1aa6e4e7a49d30502a0c60c39720ac2499" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_position</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ab5321bd7c6e83845785753366e6d9e64" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_rank</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a4df1c749c3b20e786a5f1452daa7b540" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_reset_mini_batch_index</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a92982e1b399f37e2ead5aa440883cba5" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_role</name></member>
+      <member refid="classlbann_1_1image__data__reader_1ae3f4a0b018e8212a42cbbfbd2b514bf4" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_sample</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a48990d714a247463b135784f235f8a50" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_sample_stride</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a38eedaa9c8680e885a3ec05009f5f492" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_shuffled_indices</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a722a28971b6799566dc21ba552a4cde6" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_stride_to_last_mini_batch</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a2d1d5657e8b9bf8b8a9d51b33aedf017" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_stride_to_next_mini_batch</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1abeb849fb8e10b4fa317c90bc33f61758" prot="public" virt="pure-virtual"><scope>lbann::image_data_reader</scope><name>get_type</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a94e981ee5b34ce56d1a532fed2ba9e39" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_unused_data</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a5853fa5e619b886699954aca6440dd8a" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_use_percent</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ab06058b5fa1d74239998358b02f73132" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_validation_percent</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a0d0f7d684970b5cc59c63050555df302" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>get_world_master_mini_batch_adjustment</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a4ba2de0a781dfa0a2652ad4d777a241f" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>horizontal_flip</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1ae62596b4af5d1940aa0499cde2bdd005" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>horizontal_shift</name></member>
+      <member refid="classlbann_1_1image__data__reader_1a582185ab03c4643117fd93e0ba843882" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>image_data_reader</name></member>
+      <member refid="classlbann_1_1image__data__reader_1a7a5dd69d535f2966e4f8da53f505ca7c" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>image_data_reader</name></member>
+      <member refid="classlbann_1_1image__data__reader_1acd2b41459e901a3aed39fd3be7270fa2" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>img_src_t</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a3c4f4cc5c90233696566a35a62a1708c" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>internal_save_image</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a8640edf9c71e3b7bee8a8e947c4690fa" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>is_data_reader_done</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ae82c40eebc05e2f0c1198afcc7a7f009" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>is_master</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a7d67ce4d10e5cdcdff47f5ecdcee6eb0" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>is_shuffled</name></member>
+      <member refid="classlbann_1_1image__data__reader_1a7645f17852c990e80b1530509ff5e87c" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>label_t</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a6a0f92194d42e87d73b57ba0929e2b2d" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>lbann_image_preprocessor</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1aeeca5696dbfde9ccb1112cbd8524940b" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>lbann_image_preprocessor</name></member>
+      <member refid="classlbann_1_1image__data__reader_1a99cb80242d7d20bc1e8baeaff25ff790" prot="public" virt="virtual"><scope>lbann::image_data_reader</scope><name>load</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a85119fae17feb8fda32f8a2f40869436" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>load_from_checkpoint_shared</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a462437ed899bc26ebec9ab2091980d0c" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_absolute_sample_count</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a77946c4dca753c23f39e9a490eba1229" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_base_offset</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ad3976d4b7db2d404dbb87a56c33fd456" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_comm</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a7df02a1534b100df6f718dc7a7b32b25" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_compound_rank</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1aefd4bc0bf95de1e2500827581acf3536" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_current_mini_batch_idx</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a2facf4e410099ac8c1fa586e797ec2e0" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_current_pos</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a2595e254ab2442e8cfc80aa6bdac0c0f" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_data_fn</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1aefc076b842933a882214f4f709ca49c9" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_data_store</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a252002ec211d67606b80bc481a27e820" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_file_dir</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a51af253029b7daea29bc46cbbef686b3" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_first_n</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a1d6f2d378a3f152e20b3def16f52c003" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_global_last_mini_batch_size</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a7cd8fa7b1db9ea3d154a411f36992476" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_global_mini_batch_size</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a032397d6c642dccd43f4c38393f5d2c1" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_horizontal_flip</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a636f59ffe470f996677601df6179bc41" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_horizontal_shift</name></member>
+      <member refid="classlbann_1_1image__data__reader_1ab1289f0207f3a9989c7b28e09a23c9a3" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_image_dir</name></member>
+      <member refid="classlbann_1_1image__data__reader_1a0632efa3deaa9d61e671f741909eb3fe" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_image_height</name></member>
+      <member refid="classlbann_1_1image__data__reader_1af512f1f866c0f654309b7f28886dca9a" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_image_linearized_size</name></member>
+      <member refid="classlbann_1_1image__data__reader_1ae3fc949bd08c45ceafb1a03503261008" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_image_list</name></member>
+      <member refid="classlbann_1_1image__data__reader_1aab1a440f361521dc7bd583cefe1061f8" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_image_num_channels</name></member>
+      <member refid="classlbann_1_1image__data__reader_1af001f3d1c0f1c580b66988233b3a64f0" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_image_width</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a4ee1a159c74561c15a5e0c267ad3cc6a" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_indices_fetched_per_mb</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a73b23a2e7768db4e9e8ba4d9a362163a" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_iteration_stride</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a492d45c107df31b3e241e54d51950746" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_label_fn</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a241f77b6209de4ae656bc34ad51bb612" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_last_mini_batch_size</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a2cfc5a3e6de8a8a24d3525ec3ed586fb" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_loaded_mini_batch_idx</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a52610681839ba81c3050c0881ffc005b" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_master</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a734002307d0ef95a31d75a295fa5c3d1" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_mean_subtraction</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a96f87a7d09711ab3eee3940ff2aa36ec" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_mini_batch_size</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a5d9a0efd1ebe43a74911c35ffe84edc9" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_model_offset</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a5e89d5e6797f7e7b69d1a64f7d8b5d6b" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_model_rank</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a5048d99a58ccddf4fb170c6face8cf4e" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_my_minibatch_indices</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1af860c1d78af06e4ae94ad68e3032fe92" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_noise_factor</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ac6ea8dad1e9f0a8c939fd27d2de37e1b" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_num_global_indices</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ab570063483a1f604ca2fc536c3d83de7" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_num_iterations_per_epoch</name></member>
+      <member refid="classlbann_1_1image__data__reader_1af280e8758a6ec3acee7c62e6351d17e0" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_num_labels</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a6eb9b8c7c704374a1e49dce87110455e" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_num_parallel_readers</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a1a7fec32155bf863d7f75bd1401532bb" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_rank</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1af29f62579a408d1548a124442bcf181d" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_reset_mini_batch_index</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a2f311e8c91be2a7ac93f6f141bb714a1" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_role</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a7518ae40fe38862c831832fdaf948d45" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_rotation_range</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a58461c39de7e17eafc5b98aec99cbb9b" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_sample_stride</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ab1d7cac44072bd1f67291c6169414112" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_save_minibatch_indices</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1ae00af83d438ab27d6a7b996775fba3b3" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_scale</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a237ead6488b2c04e982fd10510ae03b4" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_shear_range</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a8039ed9c12a5847f0dcf7dd54b8d2f5b" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_shuffle</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1aaab6aeff67ffff1c689336851fec2c57" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_shuffled_indices</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ac46922f2ef4f392bcc7c59c21685a3ff" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_stride_to_last_mini_batch</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a02c4632cc7cad5c3e4062934c41717a0" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_stride_to_next_mini_batch</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1ae365a9e20f060b44de7835aceceb491c" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_unit_variance</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a0bc0ee42e95d23687ddcc30d6c338b19" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_unused_indices</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a8b475834bd80e7103c3631d2b061aabc" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_use_percent</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a3e4afbe28634a913f6de9daabf05dc0d" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_validation_percent</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a7cfc687cce450403c7b46460f4d08d69" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_vertical_flip</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a06158637d634a4d123ee5501ddd0c7cb" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_vertical_shift</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1acd33b2dbdfd4043ecc62cc13789532a2" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_world_master_mini_batch_adjustment</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a6abe54ada0cacf23e8ac8b6d113bd26b" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>m_z_score</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1ab499dd9f11d98998b5902d639f70fa8e" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>mean_subtraction</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1ae370cdc9f776ce8cce94a45cacf47425" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>normalize</name></member>
+      <member refid="classlbann_1_1image__data__reader_1a76a0b52eafb9ad133fb45fec7cf44700" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1aec7e626e6efa2a4bf23f931e2ef8f607" prot="public" virt="non-virtual" ambiguityscope="lbann::generic_data_reader::"><scope>lbann::image_data_reader</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1af652494123a62e653cd7dc2d7c340219" prot="public" virt="non-virtual" ambiguityscope="lbann::lbann_image_preprocessor::"><scope>lbann::image_data_reader</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a93dddd2276ddc34cc97922ee27c44582" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>pack_scalars</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1aece5b572d0a2fe123cc66412d7a5c91e" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>pixel_noise</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a2b10538440d784f0f12582a5407acef2" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>position_valid</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a7bbf74725a96235dc1cd20ff440a69bd" prot="protected" virt="virtual"><scope>lbann::image_data_reader</scope><name>postprocess_data_source</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ad613f95666b973d8da77773fb34c9b66" prot="protected" virt="virtual"><scope>lbann::image_data_reader</scope><name>preprocess_data_source</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a1a293733368dd9eceba3e99cf9e5ae24" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>rotation</name></member>
+      <member refid="classlbann_1_1image__data__reader_1a7580011ef6ef9da32e1a3bc49ad0706c" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>sample_t</name></member>
+      <member refid="classlbann_1_1image__data__reader_1a71e4fa1eb8212cce88a2ed408ceeac51" prot="public" virt="virtual"><scope>lbann::image_data_reader</scope><name>save_image</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a6f49d945610f35335fce4a422a432cc1" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>save_to_checkpoint_shared</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a977b2fdd417acb1eb37dbea0cfdd4b60" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>scale</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1aa28fdeeb6af492540f507e49adff5d6c" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>select_subset_of_data</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1aa2d83c4ffc58534e0c193b6b9f9fb925" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>set_absolute_sample_count</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1adcf4c6012f44c78589bb75ea530cf518" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>set_base_offset</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a39f4d80661a2c8e24d8d167ad5bd6c6b" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>set_comm</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a960362f819312d39dfcba5eeecf76257" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>set_compound_rank</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a74b7ef4fe0dc7d3a96868ca3b5fbf897" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>set_data_filename</name></member>
+      <member refid="classlbann_1_1image__data__reader_1a8e9dbeaa0239d56597455cc23787a21d" prot="protected" virt="virtual"><scope>lbann::image_data_reader</scope><name>set_defaults</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a94a6db0b62d4c98202ef309eb76b220c" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>set_file_dir</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1aca4e6c31df0a1579079274bc48fbbf26" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>set_first_n</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a4455d137b469287bf964436f9fcc6d94" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>set_global_last_mini_batch_size</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a03388338e75d37e1b28389d22bd5b604" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>set_global_mini_batch_size</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ac6d4a5ba1d4e1134620cddcac343bf59" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>set_initial_position</name></member>
+      <member refid="classlbann_1_1image__data__reader_1a6ed9b8b12ad3ffa93ad458d872f8c044" prot="public" virt="virtual"><scope>lbann::image_data_reader</scope><name>set_input_params</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ac1f3f81ca0e2920658cba026fe09a95b" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>set_iteration_stride</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1af45f301cc9adc2f8184b81d8d2600b8f" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>set_label_filename</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a357389ee93428b68f9400de708f6915d" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>set_last_mini_batch_size</name></member>
+      <member refid="classlbann_1_1image__data__reader_1a0164b0e3abbe92daef73b36fb925403e" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>set_linearized_image_size</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a343f7d791a04aa1ef30ff829a899e2ae" prot="public" virt="virtual"><scope>lbann::image_data_reader</scope><name>set_master</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1adf161cca4b80eb95f9748050e7fe1809" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>set_mini_batch_size</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ab20e835e0e0565717e0fd74da09d4890" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>set_model_offset</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a91573d9599b503a6bdf2939e69659e8b" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>set_num_iterations_per_epoch</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a9b348d52852062dbc66b0accde5c6e8a" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>set_num_parallel_readers</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a8515fb4ffbeaa89fd8459b66b9ba358f" prot="public" virt="virtual"><scope>lbann::image_data_reader</scope><name>set_rank</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a8ac14fee514ad30efe8571ce68c2a95d" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>set_reset_mini_batch_index</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1adeb9413be971a0c1454fdeb46fea0716" prot="public" virt="virtual"><scope>lbann::image_data_reader</scope><name>set_role</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1adb90391e3e9c8e3c2aba4d4a0911ca82" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>set_sample_stride</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a19fd7c4dc234fa09ac7619e47fe18454" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>set_save_minibatch_entries</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a7b0fc770678e22c44a824e88444da765" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>set_shuffle</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ad07a5edb92c3927ef809fca0d95665bc" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>set_shuffled_indices</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1af2fc6b35ad8139d15729b19db2895827" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>set_stride_to_last_mini_batch</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1add5bd1d488967ebab5852b636e07db15" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>set_stride_to_next_mini_batch</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ae6929a8bd2e59da72a8c2e537f0b2b37" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>set_use_percent</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a18b67bfa426eb4d2c8195d115c4df49f" prot="public" virt="virtual"><scope>lbann::image_data_reader</scope><name>set_validation_percent</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a208cebb68cf3c1ae1bd9cb5f28e8bf5b" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>set_world_master_mini_batch_adjustment</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a879bb7dcb57a0aa1ef9c5039f5b0efda" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>setup</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a8b2a09d38512fc11f1b9d572c89100a7" prot="public" virt="virtual"><scope>lbann::image_data_reader</scope><name>setup_data_store</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1aef1e2375fd518e69df800b0dcbcb37d0" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>shear_range</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1af1aaa4d1a693974c1b1f1318b6ed60b8" prot="protected" virt="virtual"><scope>lbann::image_data_reader</scope><name>shuffle_indices</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1afa470b696ba435c20050187a0232717d" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>subtract_mean</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1aa7a8926d0544100f7d3caa9289d94826" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>unit_scale</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a05c4cb5cb842df5d46eebe15c6ea9de3" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>unit_variance</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1af9fcb483843230008a53d60c12975f61" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>unit_variance</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a3e1c13778c04ca9fa5136ee7ee3893fb" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>unpack_header</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a8de5c2e24d4cc2211145ed5dc37cf228" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>unpack_scalars</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a1d10dec5713fbe60e61b4dc400227ade" prot="public" virt="virtual"><scope>lbann::image_data_reader</scope><name>update</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1afa621af16f1a582b5a22405b79dbe052" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>use_unused_index_set</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1aeb7d75e4d3361ae2836afabc14510d74" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>vertical_flip</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a50ac63e1f6b1b9806cbf6c06f53f4aca" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>vertical_shift</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a02cfd4d8c26a317540b587eb52cef0d5" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>z_score</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1aec67fb0dc7a1f5d718d5bb2e226f9b7a" prot="protected" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>z_score</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a7ed8e91233268c11b907c5d6667e8a09" prot="public" virt="non-virtual"><scope>lbann::image_data_reader</scope><name>~generic_data_reader</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1aaabfad8d6923680cf4943f6f5290c682" prot="public" virt="virtual"><scope>lbann::image_data_reader</scope><name>~lbann_image_preprocessor</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

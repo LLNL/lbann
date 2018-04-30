@@ -1,0 +1,7 @@
+<map id="lbann::data_store_image::load_file" name="lbann::data_store_image::load_file">
+<area shape="rect" id="node2" href="$classlbann_1_1data__store__imagenet.html#a70cfd8f529aad8d66993000da7350ec5" title="reads all files assigned to this processor into memory (m_data) " alt="" coords="221,5,408,44"/>
+<area shape="rect" id="node4" href="$classlbann_1_1data__store__multi__images.html#a8ce8ccf3c7b0d19adfb838108bec075b" title="reads all files assigned to this processor into memory (m_data) " alt="" coords="235,68,395,107"/>
+<area shape="rect" id="node6" href="$classlbann_1_1data__store__multi__images.html#abe17bbf485f6da9d7dfa568e9e74a693" title="for use during development and testing " alt="" coords="224,131,405,169"/>
+<area shape="rect" id="node3" href="$classlbann_1_1data__store__imagenet.html#aa6f4479472b06cd7a8da399dd23b7487" title="dtor " alt="" coords="456,5,643,44"/>
+<area shape="rect" id="node5" href="$classlbann_1_1data__store__multi__images.html#addafae542acaa1ef218759030719b6d3" title="dtor " alt="" coords="457,96,642,148"/>
+</map>

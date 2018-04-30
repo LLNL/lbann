@@ -1,0 +1,292 @@
+\hypertarget{classlbann_1_1lbann__callback__dump__activations}{}\section{lbann\+:\+:lbann\+\_\+callback\+\_\+dump\+\_\+activations Class Reference}
+\label{classlbann_1_1lbann__callback__dump__activations}\index{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations}}
+
+
+{\ttfamily \#include $<$callback\+\_\+dump\+\_\+activations.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+dump\+\_\+activations\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=192pt]{classlbann_1_1lbann__callback__dump__activations__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+dump\+\_\+activations\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=207pt]{classlbann_1_1lbann__callback__dump__activations__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1lbann__callback__dump__activations_a96d1412d4b29cab747bb0c1cfccd8a87}{lbann\+\_\+callback\+\_\+dump\+\_\+activations} (std\+::string basename, int batch\+\_\+interval=1, std\+::vector$<$ std\+::string $>$ layer\+\_\+names=std\+::vector$<$ std\+::string $>$())
+\item 
+\hyperlink{classlbann_1_1lbann__callback__dump__activations_ad0a0a3ceb5c70c59fb334bd583ed7821}{lbann\+\_\+callback\+\_\+dump\+\_\+activations} (const \hyperlink{classlbann_1_1lbann__callback__dump__activations}{lbann\+\_\+callback\+\_\+dump\+\_\+activations} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__dump__activations}{lbann\+\_\+callback\+\_\+dump\+\_\+activations} \& \hyperlink{classlbann_1_1lbann__callback__dump__activations_a27665cb0bc6f0f05a3d8b54a588f98ff}{operator=} (const \hyperlink{classlbann_1_1lbann__callback__dump__activations}{lbann\+\_\+callback\+\_\+dump\+\_\+activations} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__dump__activations}{lbann\+\_\+callback\+\_\+dump\+\_\+activations} $\ast$ \hyperlink{classlbann_1_1lbann__callback__dump__activations_a172d03a30d8c8852d910db220b928557}{copy} () const override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__dump__activations_acf4429a44ead6ffea303528618bc6572}{on\+\_\+forward\+\_\+prop\+\_\+end} (\hyperlink{classlbann_1_1model}{model} $\ast$m, \hyperlink{classlbann_1_1Layer}{Layer} $\ast$l) override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__dump__activations_a5c93f4455b743e3f61600bf092a6d93c}{on\+\_\+test\+\_\+end} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\item 
+std\+::string \hyperlink{classlbann_1_1lbann__callback__dump__activations_adc6a741a2ef667a5969ddbb8ec159163}{name} () const override
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+std\+::string \hyperlink{classlbann_1_1lbann__callback__dump__activations_a5775d9317de386e07cbd137122db6ee6}{m\+\_\+basename}
+\item 
+std\+::vector$<$ std\+::string $>$ \hyperlink{classlbann_1_1lbann__callback__dump__activations_aac56e32b6bef7923046c408f3a2dc857}{m\+\_\+layer\+\_\+names}
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+Dump activations matrices to files. This will dump each or selected hidden layer\textquotesingle{}s activation matrix after each minibatch or at the end of an epoch. The matrices are written to files using Elemental\textquotesingle{}s simple A\+S\+C\+II format. This is not meant for checkpointing, but for exporting acitvation matrices for analysis that isn\textquotesingle{}t easily done in L\+B\+A\+NN. This will be slow and produce a lot of output if matrices are dumped during each minibatch. If list of layers at which to dump activations is provided, activations/inferences will be dumped at the end of testing 
+
+Definition at line 49 of file callback\+\_\+dump\+\_\+activations.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__dump__activations_a96d1412d4b29cab747bb0c1cfccd8a87}\label{classlbann_1_1lbann__callback__dump__activations_a96d1412d4b29cab747bb0c1cfccd8a87}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations}!lbann\+\_\+callback\+\_\+dump\+\_\+activations@{lbann\+\_\+callback\+\_\+dump\+\_\+activations}}
+\index{lbann\+\_\+callback\+\_\+dump\+\_\+activations@{lbann\+\_\+callback\+\_\+dump\+\_\+activations}!lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+dump\+\_\+activations()}{lbann\_callback\_dump\_activations()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations (\begin{DoxyParamCaption}\item[{std\+::string}]{basename,  }\item[{int}]{batch\+\_\+interval = {\ttfamily 1},  }\item[{std\+::vector$<$ std\+::string $>$}]{layer\+\_\+names = {\ttfamily std\+:\+:vector$<$std\+:\+:string$>$()} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+\begin{DoxyParams}{Parameters}
+{\em basename} & The basename for writing files. \\
+\hline
+\end{DoxyParams}
+
+
+Definition at line 56 of file callback\+\_\+dump\+\_\+activations.\+hpp.
+
+
+\begin{DoxyCode}
+57                                                              :
+58     \hyperlink{classlbann_1_1lbann__callback_a679057298a41ddd47f08c157f756c584}{lbann\_callback}(batch\_interval), \hyperlink{classlbann_1_1lbann__callback__dump__activations_a5775d9317de386e07cbd137122db6ee6}{m\_basename}(std::move(basename)), 
+      \hyperlink{classlbann_1_1lbann__callback__dump__activations_aac56e32b6bef7923046c408f3a2dc857}{m\_layer\_names}(layer\_names) \{\}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__dump__activations_a96d1412d4b29cab747bb0c1cfccd8a87_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__dump__activations_a96d1412d4b29cab747bb0c1cfccd8a87_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__dump__activations_ad0a0a3ceb5c70c59fb334bd583ed7821}\label{classlbann_1_1lbann__callback__dump__activations_ad0a0a3ceb5c70c59fb334bd583ed7821}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations}!lbann\+\_\+callback\+\_\+dump\+\_\+activations@{lbann\+\_\+callback\+\_\+dump\+\_\+activations}}
+\index{lbann\+\_\+callback\+\_\+dump\+\_\+activations@{lbann\+\_\+callback\+\_\+dump\+\_\+activations}!lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+dump\+\_\+activations()}{lbann\_callback\_dump\_activations()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__dump__activations}{lbann\+\_\+callback\+\_\+dump\+\_\+activations} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__dump__activations_a172d03a30d8c8852d910db220b928557}\label{classlbann_1_1lbann__callback__dump__activations_a172d03a30d8c8852d910db220b928557}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations}!copy@{copy}}
+\index{copy@{copy}!lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__dump__activations}{lbann\+\_\+callback\+\_\+dump\+\_\+activations}$\ast$ lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a9f545d1269a8c7af335625d049691f26}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 63 of file callback\+\_\+dump\+\_\+activations.\+hpp.
+
+
+\begin{DoxyCode}
+63                                                          \{
+64     \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1lbann__callback__dump__activations_a96d1412d4b29cab747bb0c1cfccd8a87}{lbann\_callback\_dump\_activations}(*\textcolor{keyword}{this});
+65   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__dump__activations_a172d03a30d8c8852d910db220b928557_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__dump__activations_adc6a741a2ef667a5969ddbb8ec159163}\label{classlbann_1_1lbann__callback__dump__activations_adc6a741a2ef667a5969ddbb8ec159163}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations}!name@{name}}
+\index{name@{name}!lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations}}
+\subsubsection{\texorpdfstring{name()}{name()}}
+{\footnotesize\ttfamily std\+::string lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations\+::name (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Return this callback\textquotesingle{}s name. 
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a7522c7a14f1d6a1ea762cc2d7248eb3a}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 69 of file callback\+\_\+dump\+\_\+activations.\+hpp.
+
+
+\begin{DoxyCode}
+69 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"dump activations"}; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__dump__activations_acf4429a44ead6ffea303528618bc6572}\label{classlbann_1_1lbann__callback__dump__activations_acf4429a44ead6ffea303528618bc6572}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations}!on\+\_\+forward\+\_\+prop\+\_\+end@{on\+\_\+forward\+\_\+prop\+\_\+end}}
+\index{on\+\_\+forward\+\_\+prop\+\_\+end@{on\+\_\+forward\+\_\+prop\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations}}
+\subsubsection{\texorpdfstring{on\+\_\+forward\+\_\+prop\+\_\+end()}{on\_forward\_prop\_end()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations\+::on\+\_\+forward\+\_\+prop\+\_\+end (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m,  }\item[{\hyperlink{classlbann_1_1Layer}{Layer} $\ast$}]{l }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Called when a layer ends forward propagation. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_a5eff0a59fbce98a981d9cdd0547a3ad5}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 35 of file callback\+\_\+dump\+\_\+activations.\+cpp.
+
+
+\begin{DoxyCode}
+35                                                                             \{
+36 
+37   \textcolor{comment}{//Skip if we are interested in saving inferences at (a) given layer(s)}
+38   \textcolor{keywordflow}{if}(!\hyperlink{classlbann_1_1lbann__callback__dump__activations_aac56e32b6bef7923046c408f3a2dc857}{m\_layer\_names}.empty()) \textcolor{keywordflow}{return};
+39 
+40   \textcolor{comment}{// Skip target layers}
+41   \textcolor{keywordflow}{if} (dynamic\_cast<generic\_target\_layer*>(l) != \textcolor{keyword}{nullptr}) \{
+42     \textcolor{keywordflow}{return};
+43   \}
+44 
+45   \textcolor{comment}{// Print activations}
+46   \textcolor{keyword}{const} std::string file
+47     = (\hyperlink{classlbann_1_1lbann__callback__dump__activations_a5775d9317de386e07cbd137122db6ee6}{m\_basename}
+48        + \textcolor{stringliteral}{"model"} + std::to\_string(m->get\_comm()->get\_model\_rank())
+49        + \textcolor{stringliteral}{"-epoch"} + std::to\_string(m->get\_cur\_epoch())
+50        + \textcolor{stringliteral}{"-step"} + std::to\_string(m->get\_cur\_step())
+51        + \textcolor{stringliteral}{"-"} + l->get\_name()
+52        + \textcolor{stringliteral}{"-Activations"});
+53   El::Write(l->get\_activations(), file, El::ASCII);
+54 
+55 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__dump__activations_acf4429a44ead6ffea303528618bc6572_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__dump__activations_acf4429a44ead6ffea303528618bc6572_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__dump__activations_a5c93f4455b743e3f61600bf092a6d93c}\label{classlbann_1_1lbann__callback__dump__activations_a5c93f4455b743e3f61600bf092a6d93c}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations}!on\+\_\+test\+\_\+end@{on\+\_\+test\+\_\+end}}
+\index{on\+\_\+test\+\_\+end@{on\+\_\+test\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations}}
+\subsubsection{\texorpdfstring{on\+\_\+test\+\_\+end()}{on\_test\_end()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations\+::on\+\_\+test\+\_\+end (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Write activations/inferences to file on test end. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_accbad4dd004c1ced33642db6398b2efe}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 57 of file callback\+\_\+dump\+\_\+activations.\+cpp.
+
+
+\begin{DoxyCode}
+57                                                           \{
+58   \textcolor{comment}{//Skip if layer list is empty, user may interested in the saving all activations}
+59   \textcolor{comment}{//Use method above }
+60   \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1lbann__callback__dump__activations_aac56e32b6bef7923046c408f3a2dc857}{m\_layer\_names}.empty()) \textcolor{keywordflow}{return};
+61 
+62   \textcolor{keyword}{const} \textcolor{keyword}{auto} layers = m->get\_layers();
+63   \textcolor{keywordflow}{for}(\textcolor{keyword}{auto}& l: layers) \{
+64     \textcolor{keywordflow}{if}(std::find(std::begin(\hyperlink{classlbann_1_1lbann__callback__dump__activations_aac56e32b6bef7923046c408f3a2dc857}{m\_layer\_names}), std::end(\hyperlink{classlbann_1_1lbann__callback__dump__activations_aac56e32b6bef7923046c408f3a2dc857}{m\_layer\_names}),
+65                   l->get\_name()) != std::end(\hyperlink{classlbann_1_1lbann__callback__dump__activations_aac56e32b6bef7923046c408f3a2dc857}{m\_layer\_names})) \{
+66       \textcolor{comment}{//@todo: generalize to support different format}
+67       \textcolor{keyword}{const} std::string file
+68         = (\hyperlink{classlbann_1_1lbann__callback__dump__activations_a5775d9317de386e07cbd137122db6ee6}{m\_basename}
+69            + \textcolor{stringliteral}{"model"} + std::to\_string(m->get\_comm()->get\_model\_rank())
+70            + \textcolor{stringliteral}{"-"} + l->get\_name()
+71            + \textcolor{stringliteral}{"-Activations"});
+72        El::Write(l->get\_activations(), file, El::ASCII);
+73       \}
+74     \}
+75 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__dump__activations_a5c93f4455b743e3f61600bf092a6d93c_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__dump__activations_a5c93f4455b743e3f61600bf092a6d93c_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__dump__activations_a27665cb0bc6f0f05a3d8b54a588f98ff}\label{classlbann_1_1lbann__callback__dump__activations_a27665cb0bc6f0f05a3d8b54a588f98ff}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__dump__activations}{lbann\+\_\+callback\+\_\+dump\+\_\+activations}\& lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__dump__activations}{lbann\+\_\+callback\+\_\+dump\+\_\+activations} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__dump__activations_a27665cb0bc6f0f05a3d8b54a588f98ff_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__dump__activations_a5775d9317de386e07cbd137122db6ee6}\label{classlbann_1_1lbann__callback__dump__activations_a5775d9317de386e07cbd137122db6ee6}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations}!m\+\_\+basename@{m\+\_\+basename}}
+\index{m\+\_\+basename@{m\+\_\+basename}!lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations}}
+\subsubsection{\texorpdfstring{m\+\_\+basename}{m\_basename}}
+{\footnotesize\ttfamily std\+::string lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations\+::m\+\_\+basename\hspace{0.3cm}{\ttfamily [private]}}
+
+Basename for writing files. 
+
+Definition at line 72 of file callback\+\_\+dump\+\_\+activations.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__dump__activations_aac56e32b6bef7923046c408f3a2dc857}\label{classlbann_1_1lbann__callback__dump__activations_aac56e32b6bef7923046c408f3a2dc857}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations}!m\+\_\+layer\+\_\+names@{m\+\_\+layer\+\_\+names}}
+\index{m\+\_\+layer\+\_\+names@{m\+\_\+layer\+\_\+names}!lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations@{lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations}}
+\subsubsection{\texorpdfstring{m\+\_\+layer\+\_\+names}{m\_layer\_names}}
+{\footnotesize\ttfamily std\+::vector$<$std\+::string$>$ lbann\+::lbann\+\_\+callback\+\_\+dump\+\_\+activations\+::m\+\_\+layer\+\_\+names\hspace{0.3cm}{\ttfamily [private]}}
+
+List of layers at which to save activations/inferences 
+
+Definition at line 74 of file callback\+\_\+dump\+\_\+activations.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/callbacks/\hyperlink{callback__dump__activations_8hpp}{callback\+\_\+dump\+\_\+activations.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/callbacks/\hyperlink{callback__dump__activations_8cpp}{callback\+\_\+dump\+\_\+activations.\+cpp}\end{DoxyCompactItemize}

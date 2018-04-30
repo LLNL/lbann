@@ -1,0 +1,699 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="data__reader__multi__images_8cpp" kind="file" language="C++">
+    <compoundname>data_reader_multi_images.cpp</compoundname>
+    <includes refid="data__reader__multi__images_8hpp" local="yes">lbann/data_readers/data_reader_multi_images.hpp</includes>
+    <includes refid="image__utils_8hpp" local="yes">lbann/data_readers/image_utils.hpp</includes>
+    <includes refid="data__store__multi__images_8hpp" local="yes">lbann/data_store/data_store_multi_images.hpp</includes>
+    <includes refid="file__utils_8hpp" local="yes">lbann/utils/file_utils.hpp</includes>
+    <includes local="no">fstream</includes>
+    <includes local="no">sstream</includes>
+    <includes local="no">omp.h</includes>
+    <incdepgraph>
+      <node id="19748">
+        <label>sys/stat.h</label>
+      </node>
+      <node id="19774">
+        <label>lbann/data_readers/image_utils.hpp</label>
+        <link refid="image__utils_8hpp"/>
+        <childnode refid="19725" relation="include">
+        </childnode>
+        <childnode refid="19771" relation="include">
+        </childnode>
+        <childnode refid="19760" relation="include">
+        </childnode>
+      </node>
+      <node id="19755">
+        <label>cv_process.hpp</label>
+        <link refid="cv__process_8hpp"/>
+        <childnode refid="19756" relation="include">
+        </childnode>
+        <childnode refid="19759" relation="include">
+        </childnode>
+        <childnode refid="19762" relation="include">
+        </childnode>
+        <childnode refid="19763" relation="include">
+        </childnode>
+        <childnode refid="19766" relation="include">
+        </childnode>
+        <childnode refid="19767" relation="include">
+        </childnode>
+        <childnode refid="19768" relation="include">
+        </childnode>
+        <childnode refid="19770" relation="include">
+        </childnode>
+        <childnode refid="19772" relation="include">
+        </childnode>
+        <childnode refid="19773" relation="include">
+        </childnode>
+      </node>
+      <node id="19781">
+        <label>lbann/utils/file_utils.hpp</label>
+        <link refid="file__utils_8hpp"/>
+        <childnode refid="19744" relation="include">
+        </childnode>
+        <childnode refid="19736" relation="include">
+        </childnode>
+        <childnode refid="19745" relation="include">
+        </childnode>
+        <childnode refid="19782" relation="include">
+        </childnode>
+        <childnode refid="19783" relation="include">
+        </childnode>
+      </node>
+      <node id="19770">
+        <label>cv_mean_extractor.hpp</label>
+        <link refid="cv__mean__extractor_8hpp"/>
+        <childnode refid="19756" relation="include">
+        </childnode>
+        <childnode refid="19771" relation="include">
+        </childnode>
+      </node>
+      <node id="19773">
+        <label>limits</label>
+      </node>
+      <node id="19783">
+        <label>iterator</label>
+      </node>
+      <node id="19751">
+        <label>lbann/data_readers/image_preprocessor.hpp</label>
+        <link refid="image__preprocessor_8hpp"/>
+        <childnode refid="19733" relation="include">
+        </childnode>
+        <childnode refid="19725" relation="include">
+        </childnode>
+      </node>
+      <node id="19778">
+        <label>lbann/data_store/generic_data_store.hpp</label>
+        <link refid="generic__data__store_8hpp"/>
+        <childnode refid="19725" relation="include">
+        </childnode>
+        <childnode refid="19735" relation="include">
+        </childnode>
+        <childnode refid="19736" relation="include">
+        </childnode>
+        <childnode refid="19779" relation="include">
+        </childnode>
+      </node>
+      <node id="19739">
+        <label>lbann/io/persist.hpp</label>
+        <link refid="persist_8hpp"/>
+        <childnode refid="19725" relation="include">
+        </childnode>
+        <childnode refid="19726" relation="include">
+        </childnode>
+      </node>
+      <node id="19776">
+        <label>lbann/data_store/data_store_imagenet.hpp</label>
+        <link refid="data__store__imagenet_8hpp"/>
+        <childnode refid="19777" relation="include">
+        </childnode>
+      </node>
+      <node id="19726">
+        <label>El.hpp</label>
+      </node>
+      <node id="19761">
+        <label>lbann/utils/mild_exception.hpp</label>
+        <link refid="mild__exception_8hpp"/>
+        <childnode refid="19745" relation="include">
+        </childnode>
+      </node>
+      <node id="19775">
+        <label>lbann/data_store/data_store_multi_images.hpp</label>
+        <link refid="data__store__multi__images_8hpp"/>
+        <childnode refid="19776" relation="include">
+        </childnode>
+      </node>
+      <node id="19725">
+        <label>lbann/base.hpp</label>
+        <link refid="base_8hpp"/>
+        <childnode refid="19726" relation="include">
+        </childnode>
+        <childnode refid="19727" relation="include">
+        </childnode>
+        <childnode refid="19728" relation="include">
+        </childnode>
+        <childnode refid="19733" relation="include">
+        </childnode>
+      </node>
+      <node id="19723">
+        <label>data_reader_image.hpp</label>
+        <link refid="data__reader__image_8hpp"/>
+        <childnode refid="19724" relation="include">
+        </childnode>
+        <childnode refid="19751" relation="include">
+        </childnode>
+        <childnode refid="19755" relation="include">
+        </childnode>
+      </node>
+      <node id="19752">
+        <label>cassert</label>
+      </node>
+      <node id="19750">
+        <label>fcntl.h</label>
+      </node>
+      <node id="19758">
+        <label>opencv_extensions.hpp</label>
+        <link refid="opencv__extensions_8hpp"/>
+      </node>
+      <node id="19766">
+        <label>cv_colorizer.hpp</label>
+        <link refid="cv__colorizer_8hpp"/>
+        <childnode refid="19756" relation="include">
+        </childnode>
+      </node>
+      <node id="19744">
+        <label>string</label>
+      </node>
+      <node id="19737">
+        <label>map</label>
+      </node>
+      <node id="19779">
+        <label>unordered_set</label>
+      </node>
+      <node id="19785">
+        <label>omp.h</label>
+      </node>
+      <node id="19762">
+        <label>cv_subtractor.hpp</label>
+        <link refid="cv__subtractor_8hpp"/>
+        <childnode refid="19756" relation="include">
+        </childnode>
+        <childnode refid="19725" relation="include">
+        </childnode>
+      </node>
+      <node id="19746">
+        <label>exception</label>
+      </node>
+      <node id="19782">
+        <label>fstream</label>
+      </node>
+      <node id="19764">
+        <label>ostream</label>
+      </node>
+      <node id="19740">
+        <label>random</label>
+      </node>
+      <node id="19722">
+        <label>data_reader_imagenet.hpp</label>
+        <link refid="data__reader__imagenet_8hpp"/>
+        <childnode refid="19723" relation="include">
+        </childnode>
+        <childnode refid="19755" relation="include">
+        </childnode>
+      </node>
+      <node id="19749">
+        <label>sys/types.h</label>
+      </node>
+      <node id="19760">
+        <label>typeinfo</label>
+      </node>
+      <node id="19730">
+        <label>cstdio</label>
+      </node>
+      <node id="19767">
+        <label>cv_decolorizer.hpp</label>
+        <link refid="cv__decolorizer_8hpp"/>
+        <childnode refid="19733" relation="include">
+        </childnode>
+        <childnode refid="19756" relation="include">
+        </childnode>
+      </node>
+      <node id="19742">
+        <label>lbann/utils/stack_trace.hpp</label>
+        <link refid="stack__trace_8hpp"/>
+        <childnode refid="19743" relation="include">
+        </childnode>
+        <childnode refid="19744" relation="include">
+        </childnode>
+      </node>
+      <node id="19732">
+        <label>cxxabi.h</label>
+      </node>
+      <node id="19741">
+        <label>lbann/utils/exception.hpp</label>
+        <link refid="exception_8hpp"/>
+        <childnode refid="19725" relation="include">
+        </childnode>
+        <childnode refid="19735" relation="include">
+        </childnode>
+        <childnode refid="19742" relation="include">
+        </childnode>
+        <childnode refid="19745" relation="include">
+        </childnode>
+        <childnode refid="19746" relation="include">
+        </childnode>
+      </node>
+      <node id="19721">
+        <label>lbann/data_readers/data_reader_multi_images.hpp</label>
+        <link refid="data__reader__multi__images_8hpp"/>
+        <childnode refid="19722" relation="include">
+        </childnode>
+        <childnode refid="19755" relation="include">
+        </childnode>
+        <childnode refid="19736" relation="include">
+        </childnode>
+        <childnode refid="19744" relation="include">
+        </childnode>
+        <childnode refid="19769" relation="include">
+        </childnode>
+        <childnode refid="19745" relation="include">
+        </childnode>
+      </node>
+      <node id="19754">
+        <label>unistd.h</label>
+      </node>
+      <node id="19736">
+        <label>vector</label>
+      </node>
+      <node id="19735">
+        <label>lbann/comm.hpp</label>
+        <link refid="comm_8hpp"/>
+        <childnode refid="19736" relation="include">
+        </childnode>
+        <childnode refid="19737" relation="include">
+        </childnode>
+        <childnode refid="19738" relation="include">
+        </childnode>
+        <childnode refid="19725" relation="include">
+        </childnode>
+      </node>
+      <node id="19769">
+        <label>utility</label>
+      </node>
+      <node id="19747">
+        <label>lbann/io/file_io.hpp</label>
+        <link refid="file__io_8hpp"/>
+        <childnode refid="19748" relation="include">
+        </childnode>
+        <childnode refid="19749" relation="include">
+        </childnode>
+        <childnode refid="19750" relation="include">
+        </childnode>
+      </node>
+      <node id="19784">
+        <label>sstream</label>
+      </node>
+      <node id="19720">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_multi_images.cpp</label>
+        <link refid="data__reader__multi__images_8cpp"/>
+        <childnode refid="19721" relation="include">
+        </childnode>
+        <childnode refid="19774" relation="include">
+        </childnode>
+        <childnode refid="19775" relation="include">
+        </childnode>
+        <childnode refid="19781" relation="include">
+        </childnode>
+        <childnode refid="19782" relation="include">
+        </childnode>
+        <childnode refid="19784" relation="include">
+        </childnode>
+        <childnode refid="19785" relation="include">
+        </childnode>
+      </node>
+      <node id="19729">
+        <label>cstdlib</label>
+      </node>
+      <node id="19757">
+        <label>opencv.hpp</label>
+        <link refid="opencv_8hpp"/>
+        <childnode refid="19733" relation="include">
+        </childnode>
+      </node>
+      <node id="19745">
+        <label>iostream</label>
+      </node>
+      <node id="19780">
+        <label>unordered_map</label>
+      </node>
+      <node id="19759">
+        <label>cv_normalizer.hpp</label>
+        <link refid="cv__normalizer_8hpp"/>
+        <childnode refid="19760" relation="include">
+        </childnode>
+        <childnode refid="19756" relation="include">
+        </childnode>
+        <childnode refid="19725" relation="include">
+        </childnode>
+        <childnode refid="19761" relation="include">
+        </childnode>
+      </node>
+      <node id="19734">
+        <label>lbann/utils/random.hpp</label>
+        <link refid="random_8hpp"/>
+        <childnode refid="19725" relation="include">
+        </childnode>
+        <childnode refid="19735" relation="include">
+        </childnode>
+        <childnode refid="19739" relation="include">
+        </childnode>
+        <childnode refid="19740" relation="include">
+        </childnode>
+      </node>
+      <node id="19756">
+        <label>cv_transform.hpp</label>
+        <link refid="cv__transform_8hpp"/>
+        <childnode refid="19757" relation="include">
+        </childnode>
+        <childnode refid="19758" relation="include">
+        </childnode>
+      </node>
+      <node id="19763">
+        <label>cv_augmenter.hpp</label>
+        <link refid="cv__augmenter_8hpp"/>
+        <childnode refid="19756" relation="include">
+        </childnode>
+        <childnode refid="19745" relation="include">
+        </childnode>
+        <childnode refid="19764" relation="include">
+        </childnode>
+        <childnode refid="19765" relation="include">
+        </childnode>
+        <childnode refid="19744" relation="include">
+        </childnode>
+      </node>
+      <node id="19777">
+        <label>lbann/data_store/data_store_image.hpp</label>
+        <link refid="data__store__image_8hpp"/>
+        <childnode refid="19778" relation="include">
+        </childnode>
+        <childnode refid="19780" relation="include">
+        </childnode>
+      </node>
+      <node id="19743">
+        <label>csignal</label>
+      </node>
+      <node id="19768">
+        <label>cv_cropper.hpp</label>
+        <link refid="cv__cropper_8hpp"/>
+        <childnode refid="19756" relation="include">
+        </childnode>
+        <childnode refid="19769" relation="include">
+        </childnode>
+        <childnode refid="19764" relation="include">
+        </childnode>
+      </node>
+      <node id="19724">
+        <label>data_reader.hpp</label>
+        <link refid="data__reader_8hpp"/>
+        <childnode refid="19725" relation="include">
+        </childnode>
+        <childnode refid="19734" relation="include">
+        </childnode>
+        <childnode refid="19741" relation="include">
+        </childnode>
+        <childnode refid="19735" relation="include">
+        </childnode>
+        <childnode refid="19747" relation="include">
+        </childnode>
+        <childnode refid="19739" relation="include">
+        </childnode>
+        <childnode refid="19751" relation="include">
+        </childnode>
+        <childnode refid="19752" relation="include">
+        </childnode>
+        <childnode refid="19753" relation="include">
+        </childnode>
+        <childnode refid="19744" relation="include">
+        </childnode>
+        <childnode refid="19736" relation="include">
+        </childnode>
+        <childnode refid="19754" relation="include">
+        </childnode>
+      </node>
+      <node id="19733">
+        <label>lbann_config.hpp</label>
+      </node>
+      <node id="19771">
+        <label>type_traits</label>
+      </node>
+      <node id="19753">
+        <label>algorithm</label>
+      </node>
+      <node id="19728">
+        <label>lbann/utils/cyg_profile.hpp</label>
+        <link refid="cyg__profile_8hpp"/>
+        <childnode refid="19729" relation="include">
+        </childnode>
+        <childnode refid="19730" relation="include">
+        </childnode>
+        <childnode refid="19731" relation="include">
+        </childnode>
+        <childnode refid="19732" relation="include">
+        </childnode>
+      </node>
+      <node id="19765">
+        <label>cstring</label>
+      </node>
+      <node id="19727">
+        <label>lbann/Elemental_extensions.hpp</label>
+        <link refid="Elemental__extensions_8hpp"/>
+        <childnode refid="19726" relation="include">
+        </childnode>
+      </node>
+      <node id="19772">
+        <label>memory</label>
+      </node>
+      <node id="19738">
+        <label>typeindex</label>
+      </node>
+      <node id="19731">
+        <label>dlfcn.h</label>
+      </node>
+    </incdepgraph>
+    <innernamespace refid="namespacelbann">lbann</innernamespace>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>2014-2016,<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Security,<sp/>LLC.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Produced<sp/>at<sp/>the<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Laboratory.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Written<sp/>by<sp/>the<sp/>LBANN<sp/>Research<sp/>Team<sp/>(B.<sp/>Van<sp/>Essen,<sp/>et<sp/>al.)<sp/>listed<sp/>in</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="comment">//<sp/>the<sp/>CONTRIBUTORS<sp/>file.<sp/>&lt;lbann-dev@llnl.gov&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="comment">//<sp/>LLNL-CODE-697807.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="comment">//<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="comment">//<sp/>This<sp/>file<sp/>is<sp/>part<sp/>of<sp/>LBANN:<sp/>Livermore<sp/>Big<sp/>Artificial<sp/>Neural<sp/>Network</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Toolkit.<sp/>For<sp/>details,<sp/>see<sp/>http://software.llnl.gov/LBANN<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="comment">//<sp/>https://github.com/LLNL/LBANN.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Licensed<sp/>under<sp/>the<sp/>Apache<sp/>License,<sp/>Version<sp/>2.0<sp/>(the<sp/>&quot;Licensee&quot;);<sp/>you</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight><highlight class="comment">//<sp/>may<sp/>not<sp/>use<sp/>this<sp/>file<sp/>except<sp/>in<sp/>compliance<sp/>with<sp/>the<sp/>License.<sp/><sp/>You<sp/>may</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="comment">//<sp/>obtain<sp/>a<sp/>copy<sp/>of<sp/>the<sp/>License<sp/>at:</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight><highlight class="comment">//<sp/>http://www.apache.org/licenses/LICENSE-2.0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Unless<sp/>required<sp/>by<sp/>applicable<sp/>law<sp/>or<sp/>agreed<sp/>to<sp/>in<sp/>writing,<sp/>software</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight><highlight class="comment">//<sp/>distributed<sp/>under<sp/>the<sp/>License<sp/>is<sp/>distributed<sp/>on<sp/>an<sp/>&quot;AS<sp/>IS&quot;<sp/>BASIS,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight><highlight class="comment">//<sp/>WITHOUT<sp/>WARRANTIES<sp/>OR<sp/>CONDITIONS<sp/>OF<sp/>ANY<sp/>KIND,<sp/>either<sp/>express<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="comment">//<sp/>implied.<sp/>See<sp/>the<sp/>License<sp/>for<sp/>the<sp/>specific<sp/>language<sp/>governing</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="comment">//<sp/>permissions<sp/>and<sp/>limitations<sp/>under<sp/>the<sp/>license.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="25"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="26"><highlight class="normal"></highlight><highlight class="comment">//<sp/>data_reader_multi_images<sp/>.hpp<sp/>.cpp<sp/>-<sp/>generic<sp/>data<sp/>reader<sp/>class<sp/>for<sp/>datasets</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="27"><highlight class="normal"></highlight><highlight class="comment">//<sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>employing<sp/>multiple<sp/>images<sp/>per<sp/>sample</highlight></codeline>
+<codeline lineno="29"><highlight class="comment"></highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="30"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="data__reader__multi__images_8hpp" kindref="compound">lbann/data_readers/data_reader_multi_images.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="image__utils_8hpp" kindref="compound">lbann/data_readers/image_utils.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="32"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="data__store__multi__images_8hpp" kindref="compound">lbann/data_store/data_store_multi_images.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="33"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="file__utils_8hpp" kindref="compound">lbann/utils/file_utils.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="34"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;fstream&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="35"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;sstream&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="36"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;omp.h&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="37"><highlight class="normal"></highlight></codeline>
+<codeline lineno="38"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacelbann" kindref="compound">lbann</ref><sp/>{</highlight></codeline>
+<codeline lineno="39"><highlight class="normal"></highlight></codeline>
+<codeline lineno="40" refid="classlbann_1_1data__reader__multi__images_1a2aa9155e574084985bf3b1bd3663d1c5" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1data__reader__multi__images_1a91725ae909007b26410837257aa921dc" kindref="member">data_reader_multi_images::data_reader_multi_images</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::shared_ptr&lt;cv_process&gt;&amp;<sp/>pp,<sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/>shuffle)</highlight></codeline>
+<codeline lineno="41"><highlight class="normal"><sp/><sp/>:<sp/><ref refid="classlbann_1_1imagenet__reader" kindref="compound">imagenet_reader</ref>(pp,<sp/>shuffle)<sp/>{</highlight></codeline>
+<codeline lineno="42"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1data__reader__multi__images_1a5abe6981d750bc145e50f6141772805c" kindref="member">set_defaults</ref>();</highlight></codeline>
+<codeline lineno="43"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="44"><highlight class="normal"></highlight></codeline>
+<codeline lineno="45" refid="classlbann_1_1data__reader__multi__images_1abc055112884c444886fe8f7eabe58f05" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1data__reader__multi__images_1a91725ae909007b26410837257aa921dc" kindref="member">data_reader_multi_images::data_reader_multi_images</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__reader__multi__images" kindref="compound">data_reader_multi_images</ref>&amp;<sp/>rhs)</highlight></codeline>
+<codeline lineno="46"><highlight class="normal"><sp/><sp/>:<sp/><ref refid="classlbann_1_1imagenet__reader" kindref="compound">imagenet_reader</ref>(rhs),</highlight></codeline>
+<codeline lineno="47"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1data__reader__multi__images_1a6d8e2d161c9efff1ac70f847b4a7e9d0" kindref="member">m_image_list</ref>(rhs.<ref refid="classlbann_1_1data__reader__multi__images_1a6d8e2d161c9efff1ac70f847b4a7e9d0" kindref="member">m_image_list</ref>),</highlight></codeline>
+<codeline lineno="48"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1data__reader__multi__images_1a70752a5442e99333fec52def9eadc58f" kindref="member">m_num_img_srcs</ref>(rhs.<ref refid="classlbann_1_1data__reader__multi__images_1a70752a5442e99333fec52def9eadc58f" kindref="member">m_num_img_srcs</ref>)</highlight></codeline>
+<codeline lineno="49"><highlight class="normal">{}</highlight></codeline>
+<codeline lineno="50"><highlight class="normal"></highlight></codeline>
+<codeline lineno="51" refid="classlbann_1_1data__reader__multi__images_1a8d9eae4dde10654c1f1bf7c1fe685e99" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1data__reader__multi__images" kindref="compound">data_reader_multi_images</ref>&amp;<sp/><ref refid="classlbann_1_1data__reader__multi__images_1a8d9eae4dde10654c1f1bf7c1fe685e99" kindref="member">data_reader_multi_images::operator=</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__reader__multi__images" kindref="compound">data_reader_multi_images</ref>&amp;<sp/>rhs)<sp/>{</highlight></codeline>
+<codeline lineno="52"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>check<sp/>for<sp/>self-assignment</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="53"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(</highlight><highlight class="keyword">this</highlight><highlight class="normal"><sp/>==<sp/>&amp;rhs)<sp/>{</highlight></codeline>
+<codeline lineno="54"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>(*</highlight><highlight class="keyword">this</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="55"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="56"><highlight class="normal"></highlight></codeline>
+<codeline lineno="57"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1imagenet__reader_1a5ea15cc16aa679a2cb549b44eb77f323" kindref="member">imagenet_reader::operator=</ref>(rhs);</highlight></codeline>
+<codeline lineno="58"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1data__reader__multi__images_1a6d8e2d161c9efff1ac70f847b4a7e9d0" kindref="member">m_image_list</ref><sp/>=<sp/>rhs.<ref refid="classlbann_1_1data__reader__multi__images_1a6d8e2d161c9efff1ac70f847b4a7e9d0" kindref="member">m_image_list</ref>;</highlight></codeline>
+<codeline lineno="59"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1data__reader__multi__images_1a70752a5442e99333fec52def9eadc58f" kindref="member">m_num_img_srcs</ref><sp/>=<sp/>rhs.<ref refid="classlbann_1_1data__reader__multi__images_1a70752a5442e99333fec52def9eadc58f" kindref="member">m_num_img_srcs</ref>;</highlight></codeline>
+<codeline lineno="60"><highlight class="normal"></highlight></codeline>
+<codeline lineno="61"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>(*</highlight><highlight class="keyword">this</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="62"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="63"><highlight class="normal"></highlight></codeline>
+<codeline lineno="64" refid="classlbann_1_1data__reader__multi__images_1a172a9a9cfe4406d876172679c1c6238a" refkind="member"><highlight class="normal"><ref refid="classlbann_1_1data__reader__multi__images_1a172a9a9cfe4406d876172679c1c6238a" kindref="member">data_reader_multi_images::~data_reader_multi_images</ref>()<sp/>{</highlight></codeline>
+<codeline lineno="65"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="66"><highlight class="normal"></highlight></codeline>
+<codeline lineno="67" refid="classlbann_1_1data__reader__multi__images_1a5abe6981d750bc145e50f6141772805c" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__reader__multi__images_1a5abe6981d750bc145e50f6141772805c" kindref="member">data_reader_multi_images::set_defaults</ref>()<sp/>{</highlight></codeline>
+<codeline lineno="68"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1image__data__reader_1af001f3d1c0f1c580b66988233b3a64f0" kindref="member">m_image_width</ref><sp/>=<sp/>28;</highlight></codeline>
+<codeline lineno="69"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1image__data__reader_1a0632efa3deaa9d61e671f741909eb3fe" kindref="member">m_image_height</ref><sp/>=<sp/>28;</highlight></codeline>
+<codeline lineno="70"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1image__data__reader_1aab1a440f361521dc7bd583cefe1061f8" kindref="member">m_image_num_channels</ref><sp/>=<sp/>1;</highlight></codeline>
+<codeline lineno="71"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1image__data__reader_1a0164b0e3abbe92daef73b36fb925403e" kindref="member">set_linearized_image_size</ref>();</highlight></codeline>
+<codeline lineno="72"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1image__data__reader_1af280e8758a6ec3acee7c62e6351d17e0" kindref="member">m_num_labels</ref><sp/>=<sp/>2;</highlight></codeline>
+<codeline lineno="73"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1data__reader__multi__images_1a70752a5442e99333fec52def9eadc58f" kindref="member">m_num_img_srcs</ref><sp/>=<sp/>1;</highlight></codeline>
+<codeline lineno="74"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="75"><highlight class="normal"></highlight></codeline>
+<codeline lineno="76" refid="classlbann_1_1data__reader__multi__images_1a57824ec9de5c1131b2f15a0cb3d4ab75" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__reader__multi__images_1a57824ec9de5c1131b2f15a0cb3d4ab75" kindref="member">data_reader_multi_images::set_input_params</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>width,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>height,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>num_ch,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>num_labels,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>num_img_srcs)<sp/>{</highlight></codeline>
+<codeline lineno="77"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1image__data__reader_1a6ed9b8b12ad3ffa93ad458d872f8c044" kindref="member">imagenet_reader::set_input_params</ref>(width,<sp/>height,<sp/>num_ch,<sp/>num_labels);</highlight></codeline>
+<codeline lineno="78"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(num_img_srcs<sp/>&gt;<sp/>0)<sp/>{</highlight></codeline>
+<codeline lineno="79"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1data__reader__multi__images_1a70752a5442e99333fec52def9eadc58f" kindref="member">m_num_img_srcs</ref><sp/>=<sp/>num_img_srcs;</highlight></codeline>
+<codeline lineno="80"><highlight class="normal"><sp/><sp/>}<sp/></highlight><highlight class="keywordflow">else</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(num_img_srcs<sp/>&lt;<sp/>0)<sp/>{</highlight></codeline>
+<codeline lineno="81"><highlight class="normal"><sp/><sp/><sp/><sp/>std::stringstream<sp/>err;</highlight></codeline>
+<codeline lineno="82"><highlight class="normal"><sp/><sp/><sp/><sp/>err<sp/>&lt;&lt;<sp/>__FILE__&lt;&lt;</highlight><highlight class="stringliteral">&quot;<sp/>&quot;</highlight><highlight class="normal">&lt;&lt;__LINE__&lt;&lt;<sp/></highlight><highlight class="stringliteral">&quot;<sp/>::<sp/>&quot;</highlight><highlight class="normal"><sp/>&lt;&lt;<sp/><ref refid="classlbann_1_1data__reader__multi__images_1a9939a88a40caf7b2a27de08deca54ac1" kindref="member">get_type</ref>()<sp/>&lt;&lt;<sp/></highlight><highlight class="stringliteral">&quot;<sp/>setup<sp/>error:<sp/>invalid<sp/>number<sp/>of<sp/>image<sp/>sources&quot;</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="83"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">throw</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__exception" kindref="compound">lbann_exception</ref>(err.str());</highlight></codeline>
+<codeline lineno="84"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="85"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="86"><highlight class="normal"></highlight></codeline>
+<codeline lineno="87" refid="classlbann_1_1data__reader__multi__images_1afdb403556ed04a9142932e89ac60435e" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__reader__multi__images_1a57824ec9de5c1131b2f15a0cb3d4ab75" kindref="member">data_reader_multi_images::set_input_params</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>width,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>height,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>num_ch,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>num_labels)<sp/>{</highlight></codeline>
+<codeline lineno="88"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1data__reader__multi__images_1a57824ec9de5c1131b2f15a0cb3d4ab75" kindref="member">set_input_params</ref>(width,<sp/>height,<sp/>num_ch,<sp/>num_labels,<sp/>1);</highlight></codeline>
+<codeline lineno="89"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="90"><highlight class="normal"></highlight></codeline>
+<codeline lineno="91" refid="classlbann_1_1data__reader__multi__images_1a713e4cc80a2d3a2b721d0912e3773baa" refkind="member"><highlight class="normal">std::vector&lt;::Mat&gt;<sp/><ref refid="classlbann_1_1data__reader__multi__images_1a713e4cc80a2d3a2b721d0912e3773baa" kindref="member">data_reader_multi_images::create_datum_views</ref>(::<ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref>&amp;<sp/>X,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>mb_idx)</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="92"><highlight class="normal"><sp/><sp/>std::vector&lt;::Mat&gt;<sp/>X_v(<ref refid="classlbann_1_1data__reader__multi__images_1a70752a5442e99333fec52def9eadc58f" kindref="member">m_num_img_srcs</ref>);</highlight></codeline>
+<codeline lineno="93"><highlight class="normal"><sp/><sp/>El::Int<sp/>h<sp/>=<sp/>0;</highlight></codeline>
+<codeline lineno="94"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal">(</highlight><highlight class="keywordtype">unsigned</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>i=0u;<sp/>i<sp/>&lt;<sp/><ref refid="classlbann_1_1data__reader__multi__images_1a70752a5442e99333fec52def9eadc58f" kindref="member">m_num_img_srcs</ref>;<sp/>++i)<sp/>{</highlight></codeline>
+<codeline lineno="95"><highlight class="normal"><sp/><sp/><sp/><sp/>El::View(X_v[i],<sp/>X,<sp/>El::IR(h,<sp/>h<sp/>+<sp/><ref refid="classlbann_1_1image__data__reader_1af512f1f866c0f654309b7f28886dca9a" kindref="member">m_image_linearized_size</ref>),<sp/>El::IR(mb_idx,<sp/>mb_idx<sp/>+<sp/>1));</highlight></codeline>
+<codeline lineno="96"><highlight class="normal"><sp/><sp/><sp/><sp/>h<sp/>=<sp/>h<sp/>+<sp/><ref refid="classlbann_1_1image__data__reader_1af512f1f866c0f654309b7f28886dca9a" kindref="member">m_image_linearized_size</ref>;</highlight></codeline>
+<codeline lineno="97"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="98"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>X_v;</highlight></codeline>
+<codeline lineno="99"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="100"><highlight class="normal"></highlight></codeline>
+<codeline lineno="101" refid="classlbann_1_1data__reader__multi__images_1a37ef2f4e641c074d0f3bd51f11682fc7" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__reader__multi__images_1a37ef2f4e641c074d0f3bd51f11682fc7" kindref="member">data_reader_multi_images::fetch_datum</ref>(<ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref>&amp;<sp/>X,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>data_id,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>mb_idx,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>tid)<sp/>{</highlight></codeline>
+<codeline lineno="102"><highlight class="normal"></highlight></codeline>
+<codeline lineno="103"><highlight class="normal"><sp/><sp/>std::vector&lt;::Mat&gt;<sp/>X_v<sp/>=<sp/><ref refid="classlbann_1_1data__reader__multi__images_1a713e4cc80a2d3a2b721d0912e3773baa" kindref="member">create_datum_views</ref>(X,<sp/>mb_idx);</highlight></codeline>
+<codeline lineno="104"><highlight class="normal"></highlight></codeline>
+<codeline lineno="105"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader_1acd2b41459e901a3aed39fd3be7270fa2" kindref="member">img_src_t</ref>&amp;<sp/>img_src<sp/>=<sp/><ref refid="classlbann_1_1data__reader__multi__images_1a6d8e2d161c9efff1ac70f847b4a7e9d0" kindref="member">m_image_list</ref>[data_id].first;</highlight></codeline>
+<codeline lineno="106"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal">(</highlight><highlight class="keywordtype">size_t</highlight><highlight class="normal"><sp/>i=0u;<sp/>i<sp/>&lt;<sp/><ref refid="classlbann_1_1data__reader__multi__images_1a70752a5442e99333fec52def9eadc58f" kindref="member">m_num_img_srcs</ref>;<sp/>++i)<sp/>{</highlight></codeline>
+<codeline lineno="107"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>width=0,<sp/>height=0,<sp/>img_type=0;</highlight></codeline>
+<codeline lineno="108"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::string<sp/>imagepath<sp/>=<sp/><ref refid="classlbann_1_1generic__data__reader_1ab4c6c2d4ba40ece809ce896828c8ff03" kindref="member">get_file_dir</ref>()<sp/>+<sp/>img_src[i];</highlight></codeline>
+<codeline lineno="109"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/>ret<sp/>=<sp/></highlight><highlight class="keyword">true</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="110"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1generic__data__reader_1aefc076b842933a882214f4f709ca49c9" kindref="member">m_data_store</ref><sp/>!=<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal">)<sp/>{</highlight></codeline>
+<codeline lineno="111"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>std::vector&lt;unsigned<sp/>char&gt;<sp/>*image_buf;</highlight></codeline>
+<codeline lineno="112"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1generic__data__reader_1aefc076b842933a882214f4f709ca49c9" kindref="member">m_data_store</ref>-&gt;<ref refid="classlbann_1_1generic__data__store_1a2abb3d0327b528d36e23fcef9b937798" kindref="member">get_data_buf</ref>(data_id,<sp/>image_buf,<sp/>i);</highlight></codeline>
+<codeline lineno="113"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>ret<sp/>=<sp/><ref refid="classlbann_1_1image__utils_1ac324a04f877601387cfb10750f1f6b8d" kindref="member">lbann::image_utils::load_image</ref>(*image_buf,<sp/>width,<sp/>height,<sp/>img_type,<sp/>*(<ref refid="classlbann_1_1imagenet__reader_1a1e0d0ed4ac529de3e9f735512f5e3dd8" kindref="member">m_pps</ref>[tid]),<sp/>X_v[i]);</highlight></codeline>
+<codeline lineno="114"><highlight class="normal"><sp/><sp/><sp/><sp/>}<sp/></highlight><highlight class="keywordflow">else</highlight><highlight class="normal"><sp/>{</highlight></codeline>
+<codeline lineno="115"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>ret<sp/>=<sp/><ref refid="classlbann_1_1image__utils_1ac324a04f877601387cfb10750f1f6b8d" kindref="member">lbann::image_utils::load_image</ref>(imagepath,<sp/>width,<sp/>height,<sp/>img_type,<sp/>*(<ref refid="classlbann_1_1imagenet__reader_1a1e0d0ed4ac529de3e9f735512f5e3dd8" kindref="member">m_pps</ref>[tid]),<sp/>X_v[i]);</highlight></codeline>
+<codeline lineno="116"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="117"><highlight class="normal"><sp/><sp/></highlight></codeline>
+<codeline lineno="118"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal">(!ret)<sp/>{</highlight></codeline>
+<codeline lineno="119"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">throw</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__exception" kindref="compound">lbann_exception</ref>(std::string{}<sp/>+<sp/>__FILE__<sp/>+<sp/></highlight><highlight class="stringliteral">&quot;<sp/>&quot;</highlight><highlight class="normal"><sp/>+<sp/>std::to_string(__LINE__)<sp/>+<sp/></highlight><highlight class="stringliteral">&quot;<sp/>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="120"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>+<sp/><ref refid="classlbann_1_1data__reader__multi__images_1a9939a88a40caf7b2a27de08deca54ac1" kindref="member">get_type</ref>()<sp/>+<sp/></highlight><highlight class="stringliteral">&quot;:<sp/>image_utils::load_image<sp/>failed<sp/>to<sp/>load<sp/>-<sp/>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="121"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>+<sp/>imagepath);</highlight></codeline>
+<codeline lineno="122"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="123"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal">((width<sp/>*<sp/>height<sp/>*<sp/>CV_MAT_CN(img_type))<sp/>!=<sp/><ref refid="classlbann_1_1image__data__reader_1af512f1f866c0f654309b7f28886dca9a" kindref="member">m_image_linearized_size</ref>)<sp/>{</highlight></codeline>
+<codeline lineno="124"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">throw</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__exception" kindref="compound">lbann_exception</ref>(std::string{}<sp/>+<sp/>__FILE__<sp/>+<sp/></highlight><highlight class="stringliteral">&quot;<sp/>&quot;</highlight><highlight class="normal"><sp/>+<sp/>std::to_string(__LINE__)<sp/>+<sp/></highlight><highlight class="stringliteral">&quot;<sp/>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="125"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>+<sp/><ref refid="classlbann_1_1data__reader__multi__images_1a9939a88a40caf7b2a27de08deca54ac1" kindref="member">get_type</ref>()<sp/>+<sp/></highlight><highlight class="stringliteral">&quot;:<sp/>mismatch<sp/>data<sp/>size<sp/>--<sp/>either<sp/>width,<sp/>height<sp/>or<sp/>channel<sp/>-<sp/>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="126"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>+<sp/>imagepath<sp/>+<sp/></highlight><highlight class="stringliteral">&quot;<sp/>[w,h,c]=[&quot;</highlight><highlight class="normal"><sp/>+<sp/>std::to_string(width)<sp/>+<sp/></highlight><highlight class="stringliteral">&quot;x&quot;</highlight><highlight class="normal"><sp/>+<sp/>std::to_string(height)</highlight></codeline>
+<codeline lineno="127"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>+<sp/></highlight><highlight class="stringliteral">&quot;x&quot;</highlight><highlight class="normal"><sp/>+<sp/>std::to_string(CV_MAT_CN(img_type))<sp/>+<sp/></highlight><highlight class="stringliteral">&quot;]<sp/>!=<sp/>&quot;</highlight><highlight class="normal"><sp/>+<sp/>std::to_string(<ref refid="classlbann_1_1image__data__reader_1af512f1f866c0f654309b7f28886dca9a" kindref="member">m_image_linearized_size</ref>));</highlight></codeline>
+<codeline lineno="128"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="129"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="130"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">true</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="131"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="132"><highlight class="normal"></highlight></codeline>
+<codeline lineno="133" refid="classlbann_1_1data__reader__multi__images_1a96baf61a6207a76060afeaa31b55b671" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__reader__multi__images_1a96baf61a6207a76060afeaa31b55b671" kindref="member">data_reader_multi_images::fetch_label</ref>(<ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref>&amp;<sp/>Y,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>data_id,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>mb_idx,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>tid)<sp/>{</highlight></codeline>
+<codeline lineno="134"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1image__data__reader_1a7645f17852c990e80b1530509ff5e87c" kindref="member">label_t</ref><sp/>label<sp/>=<sp/><ref refid="classlbann_1_1data__reader__multi__images_1a6d8e2d161c9efff1ac70f847b4a7e9d0" kindref="member">m_image_list</ref>[data_id].second;</highlight></codeline>
+<codeline lineno="135"><highlight class="normal"><sp/><sp/>Y.Set(label,<sp/>mb_idx,<sp/>1);</highlight></codeline>
+<codeline lineno="136"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">true</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="137"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="138"><highlight class="normal"></highlight></codeline>
+<codeline lineno="139" refid="classlbann_1_1data__reader__multi__images_1a6328561103138b60f22dbd927186f7d2" refkind="member"><highlight class="normal">std::vector&lt;data_reader_multi_images::sample_t&gt;<sp/><ref refid="classlbann_1_1data__reader__multi__images_1a6328561103138b60f22dbd927186f7d2" kindref="member">data_reader_multi_images::get_image_list_of_current_mb</ref>()</highlight><highlight class="keyword"><sp/>const<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="140"><highlight class="normal"><sp/><sp/>std::vector&lt;sample_t&gt;<sp/>ret;</highlight></codeline>
+<codeline lineno="141"><highlight class="normal"><sp/><sp/>ret.reserve(<ref refid="classlbann_1_1generic__data__reader_1a96f87a7d09711ab3eee3940ff2aa36ec" kindref="member">m_mini_batch_size</ref>);</highlight></codeline>
+<codeline lineno="142"><highlight class="normal"></highlight></codeline>
+<codeline lineno="143"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(El::Int<sp/>i<sp/>=<sp/>0;<sp/>i<sp/>&lt;<sp/><ref refid="classlbann_1_1generic__data__reader_1a4ee1a159c74561c15a5e0c267ad3cc6a" kindref="member">m_indices_fetched_per_mb</ref>.Height();<sp/>++i)<sp/>{</highlight></codeline>
+<codeline lineno="144"><highlight class="normal"><sp/><sp/><sp/><sp/>El::Int<sp/>index<sp/>=<sp/><ref refid="classlbann_1_1generic__data__reader_1a4ee1a159c74561c15a5e0c267ad3cc6a" kindref="member">m_indices_fetched_per_mb</ref>.Get(i,<sp/>0);</highlight></codeline>
+<codeline lineno="145"><highlight class="normal"><sp/><sp/><sp/><sp/>ret.push_back(<ref refid="classlbann_1_1data__reader__multi__images_1a6d8e2d161c9efff1ac70f847b4a7e9d0" kindref="member">m_image_list</ref>[index]);</highlight></codeline>
+<codeline lineno="146"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="147"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>ret;</highlight></codeline>
+<codeline lineno="148"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="149"><highlight class="normal"></highlight></codeline>
+<codeline lineno="150" refid="classlbann_1_1data__reader__multi__images_1a3160c8ee0e30304a1f5fc07d08e6cb40" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__reader__multi__images_1a3160c8ee0e30304a1f5fc07d08e6cb40" kindref="member">data_reader_multi_images::read_text_stream</ref>(std::istream&amp;<sp/>text_stream,</highlight></codeline>
+<codeline lineno="151"><highlight class="normal"><sp/><sp/>std::vector&lt;data_reader_multi_images::sample_t&gt;&amp;<sp/>list)</highlight></codeline>
+<codeline lineno="152"><highlight class="normal">{</highlight></codeline>
+<codeline lineno="153"><highlight class="normal"><sp/><sp/>std::string<sp/>line;</highlight></codeline>
+<codeline lineno="154"><highlight class="normal"></highlight></codeline>
+<codeline lineno="155"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(!std::getline(text_stream,<sp/>line))<sp/>{</highlight></codeline>
+<codeline lineno="156"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">false</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="157"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="158"><highlight class="normal"></highlight></codeline>
+<codeline lineno="159"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">while</highlight><highlight class="normal"><sp/>(text_stream)<sp/>{</highlight></codeline>
+<codeline lineno="160"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1image__data__reader_1acd2b41459e901a3aed39fd3be7270fa2" kindref="member">img_src_t</ref><sp/>img_srcs;</highlight></codeline>
+<codeline lineno="161"><highlight class="normal"><sp/><sp/><sp/><sp/>{</highlight></codeline>
+<codeline lineno="162"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>std::stringstream<sp/>sstr(line.c_str());</highlight></codeline>
+<codeline lineno="163"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">for</highlight><highlight class="normal"><sp/>(</highlight><highlight class="keywordtype">unsigned</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>i=0u;<sp/>i<sp/>&lt;<sp/><ref refid="classlbann_1_1data__reader__multi__images_1a70752a5442e99333fec52def9eadc58f" kindref="member">m_num_img_srcs</ref>;<sp/>++i)<sp/>{</highlight></codeline>
+<codeline lineno="164"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>std::string<sp/>path;</highlight></codeline>
+<codeline lineno="165"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>sstr<sp/>&gt;&gt;<sp/>path;</highlight></codeline>
+<codeline lineno="166"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>img_srcs.push_back(path);</highlight></codeline>
+<codeline lineno="167"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="168"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1image__data__reader_1a7645f17852c990e80b1530509ff5e87c" kindref="member">label_t</ref><sp/>label;</highlight></codeline>
+<codeline lineno="169"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>sstr<sp/>&gt;&gt;<sp/>label;</highlight></codeline>
+<codeline lineno="170"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(sstr.bad())<sp/>{</highlight></codeline>
+<codeline lineno="171"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">false</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="172"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="173"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>list.emplace_back(img_srcs,<sp/>label);</highlight></codeline>
+<codeline lineno="174"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="175"><highlight class="normal"><sp/><sp/><sp/><sp/>std::getline(text_stream,<sp/>line);</highlight></codeline>
+<codeline lineno="176"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="177"><highlight class="normal"><sp/><sp/>list.shrink_to_fit();</highlight></codeline>
+<codeline lineno="178"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">true</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="179"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="180"><highlight class="normal"></highlight></codeline>
+<codeline lineno="181" refid="classlbann_1_1data__reader__multi__images_1a31763c860d3e3cc57a6af0158b9977f7" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__reader__multi__images_1a31763c860d3e3cc57a6af0158b9977f7" kindref="member">data_reader_multi_images::load_list</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::string<sp/>file_name,</highlight></codeline>
+<codeline lineno="182"><highlight class="normal"><sp/><sp/>std::vector&lt;data_reader_multi_images::sample_t&gt;&amp;<sp/>list,<sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/>fetch_list_at_once)</highlight></codeline>
+<codeline lineno="183"><highlight class="normal">{</highlight></codeline>
+<codeline lineno="184"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/>ok<sp/>=<sp/></highlight><highlight class="keyword">true</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="185"><highlight class="normal"></highlight></codeline>
+<codeline lineno="186"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(fetch_list_at_once)<sp/>{</highlight></codeline>
+<codeline lineno="187"><highlight class="normal"><sp/><sp/><sp/><sp/>std::string<sp/>textbuf;</highlight></codeline>
+<codeline lineno="188"><highlight class="normal"><sp/><sp/><sp/><sp/>ok<sp/>=<sp/>load_file&lt;std::string&gt;(file_name,<sp/>textbuf);</highlight></codeline>
+<codeline lineno="189"><highlight class="normal"><sp/><sp/><sp/><sp/>std::istringstream<sp/>text_stream(textbuf);</highlight></codeline>
+<codeline lineno="190"><highlight class="normal"><sp/><sp/><sp/><sp/>ok<sp/>=<sp/>ok<sp/>&amp;&amp;<sp/><ref refid="classlbann_1_1data__reader__multi__images_1a3160c8ee0e30304a1f5fc07d08e6cb40" kindref="member">read_text_stream</ref>(text_stream,<sp/>list);</highlight></codeline>
+<codeline lineno="191"><highlight class="normal"><sp/><sp/>}<sp/></highlight><highlight class="keywordflow">else</highlight><highlight class="normal"><sp/>{</highlight></codeline>
+<codeline lineno="192"><highlight class="normal"><sp/><sp/><sp/><sp/>std::ifstream<sp/>text_stream(file_name.c_str(),<sp/>std::ios_base::in);</highlight></codeline>
+<codeline lineno="193"><highlight class="normal"><sp/><sp/><sp/><sp/>ok<sp/>=<sp/><ref refid="classlbann_1_1data__reader__multi__images_1a3160c8ee0e30304a1f5fc07d08e6cb40" kindref="member">read_text_stream</ref>(text_stream,<sp/>list);</highlight></codeline>
+<codeline lineno="194"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="195"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>ok;</highlight></codeline>
+<codeline lineno="196"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="197"><highlight class="normal"></highlight></codeline>
+<codeline lineno="198" refid="classlbann_1_1data__reader__multi__images_1afb8adef1f9ac6723d71ae5afc29b01ec" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__reader__multi__images_1afb8adef1f9ac6723d71ae5afc29b01ec" kindref="member">data_reader_multi_images::load</ref>()<sp/>{</highlight></codeline>
+<codeline lineno="199"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1data__reader__multi__images_1a6d8e2d161c9efff1ac70f847b4a7e9d0" kindref="member">m_image_list</ref>.clear();</highlight></codeline>
+<codeline lineno="200"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/>std::string<sp/>image_list_file<sp/>=<sp/><ref refid="classlbann_1_1generic__data__reader_1a56664e1b43f3fe923cf6d652f14b40a9" kindref="member">get_data_filename</ref>();</highlight></codeline>
+<codeline lineno="201"><highlight class="normal"></highlight></codeline>
+<codeline lineno="202"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/>ok<sp/>=<sp/><ref refid="classlbann_1_1data__reader__multi__images_1a31763c860d3e3cc57a6af0158b9977f7" kindref="member">load_list</ref>(image_list_file,<sp/><ref refid="classlbann_1_1data__reader__multi__images_1a6d8e2d161c9efff1ac70f847b4a7e9d0" kindref="member">m_image_list</ref>);</highlight></codeline>
+<codeline lineno="203"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(!ok)<sp/>{</highlight></codeline>
+<codeline lineno="204"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">throw</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__exception" kindref="compound">lbann_exception</ref>(</highlight></codeline>
+<codeline lineno="205"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/>std::string{}<sp/>+<sp/>__FILE__<sp/>+<sp/></highlight><highlight class="stringliteral">&quot;<sp/>&quot;</highlight><highlight class="normal"><sp/>+<sp/>std::to_string(__LINE__)<sp/>+</highlight></codeline>
+<codeline lineno="206"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="stringliteral">&quot;<sp/>::<sp/>failed<sp/>to<sp/>load:<sp/>&quot;</highlight><highlight class="normal"><sp/>+<sp/>image_list_file);</highlight></codeline>
+<codeline lineno="207"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="208"><highlight class="normal"></highlight></codeline>
+<codeline lineno="209"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>reset<sp/>indices</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="210"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1generic__data__reader_1aaab6aeff67ffff1c689336851fec2c57" kindref="member">m_shuffled_indices</ref>.clear();</highlight></codeline>
+<codeline lineno="211"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1generic__data__reader_1aaab6aeff67ffff1c689336851fec2c57" kindref="member">m_shuffled_indices</ref>.resize(<ref refid="classlbann_1_1data__reader__multi__images_1a6d8e2d161c9efff1ac70f847b4a7e9d0" kindref="member">m_image_list</ref>.size());</highlight></codeline>
+<codeline lineno="212"><highlight class="normal"><sp/><sp/>std::iota(<ref refid="classlbann_1_1generic__data__reader_1aaab6aeff67ffff1c689336851fec2c57" kindref="member">m_shuffled_indices</ref>.begin(),<sp/><ref refid="classlbann_1_1generic__data__reader_1aaab6aeff67ffff1c689336851fec2c57" kindref="member">m_shuffled_indices</ref>.end(),<sp/>0);</highlight></codeline>
+<codeline lineno="213"><highlight class="normal"></highlight></codeline>
+<codeline lineno="214"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1generic__data__reader_1aa28fdeeb6af492540f507e49adff5d6c" kindref="member">select_subset_of_data</ref>();</highlight></codeline>
+<codeline lineno="215"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="216"><highlight class="normal"></highlight></codeline>
+<codeline lineno="217" refid="classlbann_1_1data__reader__multi__images_1ac4c70724fe5f1378a81394cc2e686297" refkind="member"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__reader__multi__images_1ac4c70724fe5f1378a81394cc2e686297" kindref="member">data_reader_multi_images::setup_data_store</ref>(<ref refid="classlbann_1_1model" kindref="compound">model</ref><sp/>*m)<sp/>{</highlight></codeline>
+<codeline lineno="218"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1generic__data__reader_1aefc076b842933a882214f4f709ca49c9" kindref="member">m_data_store</ref><sp/>!=<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal">)<sp/>{</highlight></codeline>
+<codeline lineno="219"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">delete</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1generic__data__reader_1aefc076b842933a882214f4f709ca49c9" kindref="member">m_data_store</ref>;</highlight></codeline>
+<codeline lineno="220"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="221"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1generic__data__reader_1aefc076b842933a882214f4f709ca49c9" kindref="member">m_data_store</ref><sp/>=<sp/></highlight><highlight class="keyword">new</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__store__multi__images" kindref="compound">data_store_multi_images</ref>(</highlight><highlight class="keyword">this</highlight><highlight class="normal">,<sp/>m);</highlight></codeline>
+<codeline lineno="222"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordflow">if</highlight><highlight class="normal"><sp/>(<ref refid="classlbann_1_1generic__data__reader_1aefc076b842933a882214f4f709ca49c9" kindref="member">m_data_store</ref><sp/>!=<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal">)<sp/>{</highlight></codeline>
+<codeline lineno="223"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1generic__data__reader_1aefc076b842933a882214f4f709ca49c9" kindref="member">m_data_store</ref>-&gt;<ref refid="classlbann_1_1generic__data__store_1a1cff17def02ee21b6ca0befeb04bb582" kindref="member">setup</ref>();</highlight></codeline>
+<codeline lineno="224"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="225"><highlight class="normal">}</highlight></codeline>
+<codeline lineno="226"><highlight class="normal"></highlight></codeline>
+<codeline lineno="227"><highlight class="normal">}<sp/><sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>lbann</highlight><highlight class="normal"></highlight></codeline>
+    </programlisting>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_multi_images.cpp"/>
+  </compounddef>
+</doxygen>

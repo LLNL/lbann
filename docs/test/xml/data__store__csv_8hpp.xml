@@ -1,0 +1,221 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="data__store__csv_8hpp" kind="file" language="C++">
+    <compoundname>data_store_csv.hpp</compoundname>
+    <includes refid="generic__data__store_8hpp" local="yes">lbann/data_store/generic_data_store.hpp</includes>
+    <includes local="no">unordered_map</includes>
+    <includedby refid="data__reader__csv_8cpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_csv.cpp</includedby>
+    <includedby refid="data__store__csv_8cpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_csv.cpp</includedby>
+    <includedby refid="data__store__merge__features_8cpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_merge_features.cpp</includedby>
+    <incdepgraph>
+      <node id="5202">
+        <label>lbann/data_store/generic_data_store.hpp</label>
+        <link refid="generic__data__store_8hpp"/>
+        <childnode refid="5203" relation="include">
+        </childnode>
+        <childnode refid="5212" relation="include">
+        </childnode>
+        <childnode refid="5213" relation="include">
+        </childnode>
+        <childnode refid="5216" relation="include">
+        </childnode>
+      </node>
+      <node id="5204">
+        <label>El.hpp</label>
+      </node>
+      <node id="5203">
+        <label>lbann/base.hpp</label>
+        <link refid="base_8hpp"/>
+        <childnode refid="5204" relation="include">
+        </childnode>
+        <childnode refid="5205" relation="include">
+        </childnode>
+        <childnode refid="5206" relation="include">
+        </childnode>
+        <childnode refid="5211" relation="include">
+        </childnode>
+      </node>
+      <node id="5214">
+        <label>map</label>
+      </node>
+      <node id="5216">
+        <label>unordered_set</label>
+      </node>
+      <node id="5208">
+        <label>cstdio</label>
+      </node>
+      <node id="5210">
+        <label>cxxabi.h</label>
+      </node>
+      <node id="5213">
+        <label>vector</label>
+      </node>
+      <node id="5212">
+        <label>lbann/comm.hpp</label>
+        <link refid="comm_8hpp"/>
+        <childnode refid="5213" relation="include">
+        </childnode>
+        <childnode refid="5214" relation="include">
+        </childnode>
+        <childnode refid="5215" relation="include">
+        </childnode>
+        <childnode refid="5203" relation="include">
+        </childnode>
+      </node>
+      <node id="5207">
+        <label>cstdlib</label>
+      </node>
+      <node id="5217">
+        <label>unordered_map</label>
+      </node>
+      <node id="5201">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_csv.hpp</label>
+        <link refid="data__store__csv_8hpp"/>
+        <childnode refid="5202" relation="include">
+        </childnode>
+        <childnode refid="5217" relation="include">
+        </childnode>
+      </node>
+      <node id="5211">
+        <label>lbann_config.hpp</label>
+      </node>
+      <node id="5206">
+        <label>lbann/utils/cyg_profile.hpp</label>
+        <link refid="cyg__profile_8hpp"/>
+        <childnode refid="5207" relation="include">
+        </childnode>
+        <childnode refid="5208" relation="include">
+        </childnode>
+        <childnode refid="5209" relation="include">
+        </childnode>
+        <childnode refid="5210" relation="include">
+        </childnode>
+      </node>
+      <node id="5205">
+        <label>lbann/Elemental_extensions.hpp</label>
+        <link refid="Elemental__extensions_8hpp"/>
+        <childnode refid="5204" relation="include">
+        </childnode>
+      </node>
+      <node id="5215">
+        <label>typeindex</label>
+      </node>
+      <node id="5209">
+        <label>dlfcn.h</label>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="5219">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_csv.cpp</label>
+        <link refid="data__reader__csv_8cpp"/>
+      </node>
+      <node id="5220">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_csv.cpp</label>
+        <link refid="data__store__csv_8cpp"/>
+      </node>
+      <node id="5221">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_merge_features.cpp</label>
+        <link refid="data__store__merge__features_8cpp"/>
+      </node>
+      <node id="5218">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_csv.hpp</label>
+        <link refid="data__store__csv_8hpp"/>
+        <childnode refid="5219" relation="include">
+        </childnode>
+        <childnode refid="5220" relation="include">
+        </childnode>
+        <childnode refid="5221" relation="include">
+        </childnode>
+      </node>
+    </invincdepgraph>
+    <innerclass refid="classlbann_1_1data__store__csv" prot="public">lbann::data_store_csv</innerclass>
+    <innernamespace refid="namespacelbann">lbann</innernamespace>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>2014-2016,<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Security,<sp/>LLC.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Produced<sp/>at<sp/>the<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Laboratory.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Written<sp/>by<sp/>the<sp/>LBANN<sp/>Research<sp/>Team<sp/>(B.<sp/>Van<sp/>Essen,<sp/>et<sp/>al.)<sp/>listed<sp/>in</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="comment">//<sp/>the<sp/>CONTRIBUTORS<sp/>file.<sp/>&lt;lbann-dev@llnl.gov&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="comment">//<sp/>LLNL-CODE-697807.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="comment">//<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="comment">//<sp/>This<sp/>file<sp/>is<sp/>part<sp/>of<sp/>LBANN:<sp/>Livermore<sp/>Big<sp/>Artificial<sp/>Neural<sp/>Network</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Toolkit.<sp/>For<sp/>details,<sp/>see<sp/>http://software.llnl.gov/LBANN<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="comment">//<sp/>https://github.com/LLNL/LBANN.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Licensed<sp/>under<sp/>the<sp/>Apache<sp/>License,<sp/>Version<sp/>2.0<sp/>(the<sp/>&quot;Licensee&quot;);<sp/>you</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight><highlight class="comment">//<sp/>may<sp/>not<sp/>use<sp/>this<sp/>file<sp/>except<sp/>in<sp/>compliance<sp/>with<sp/>the<sp/>License.<sp/><sp/>You<sp/>may</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="comment">//<sp/>obtain<sp/>a<sp/>copy<sp/>of<sp/>the<sp/>License<sp/>at:</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight><highlight class="comment">//<sp/>http://www.apache.org/licenses/LICENSE-2.0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Unless<sp/>required<sp/>by<sp/>applicable<sp/>law<sp/>or<sp/>agreed<sp/>to<sp/>in<sp/>writing,<sp/>software</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight><highlight class="comment">//<sp/>distributed<sp/>under<sp/>the<sp/>License<sp/>is<sp/>distributed<sp/>on<sp/>an<sp/>&quot;AS<sp/>IS&quot;<sp/>BASIS,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight><highlight class="comment">//<sp/>WITHOUT<sp/>WARRANTIES<sp/>OR<sp/>CONDITIONS<sp/>OF<sp/>ANY<sp/>KIND,<sp/>either<sp/>express<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="comment">//<sp/>implied.<sp/>See<sp/>the<sp/>License<sp/>for<sp/>the<sp/>specific<sp/>language<sp/>governing</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="comment">//<sp/>permissions<sp/>and<sp/>limitations<sp/>under<sp/>the<sp/>license.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="25"><highlight class="normal"></highlight><highlight class="comment">//</highlight></codeline>
+<codeline lineno="27"><highlight class="comment"></highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="28"><highlight class="normal"></highlight><highlight class="preprocessor">#ifndef<sp/>__DATA_STORE_CSV_HPP__</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="29"><highlight class="normal"></highlight><highlight class="preprocessor">#define<sp/>__DATA_STORE_CSV_HPP__</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="30"><highlight class="normal"></highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;<ref refid="generic__data__store_8hpp" kindref="compound">lbann/data_store/generic_data_store.hpp</ref>&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="32"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;unordered_map&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="33"><highlight class="normal"></highlight></codeline>
+<codeline lineno="34"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacelbann" kindref="compound">lbann</ref><sp/>{</highlight></codeline>
+<codeline lineno="35"><highlight class="normal"></highlight></codeline>
+<codeline lineno="36"><highlight class="normal"></highlight><highlight class="keyword">class<sp/></highlight><highlight class="normal">csv_reader;</highlight></codeline>
+<codeline lineno="37"><highlight class="normal"></highlight><highlight class="keyword">class<sp/></highlight><highlight class="normal">data_store_merge_features;</highlight></codeline>
+<codeline lineno="38"><highlight class="normal"></highlight></codeline>
+<codeline lineno="43" refid="classlbann_1_1data__store__csv" refkind="compound"><highlight class="keyword">class<sp/></highlight><highlight class="normal"><ref refid="classlbann_1_1data__store__csv" kindref="compound">data_store_csv</ref><sp/>:<sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1generic__data__store" kindref="compound">generic_data_store</ref><sp/>{</highlight></codeline>
+<codeline lineno="44"><highlight class="normal"><sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="45"><highlight class="normal"></highlight></codeline>
+<codeline lineno="47"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1data__store__csv_1add3e9e9c37f1cdf0e3dba00cc6f49507" kindref="member">data_store_csv</ref>(<ref refid="classlbann_1_1generic__data__reader" kindref="compound">generic_data_reader</ref><sp/>*reader,<sp/><ref refid="classlbann_1_1model" kindref="compound">model</ref><sp/>*m);</highlight></codeline>
+<codeline lineno="48"><highlight class="normal"></highlight></codeline>
+<codeline lineno="50"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1data__store__csv_1add3e9e9c37f1cdf0e3dba00cc6f49507" kindref="member">data_store_csv</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__store__csv" kindref="compound">data_store_csv</ref>&amp;)<sp/>=<sp/></highlight><highlight class="keywordflow">default</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="51"><highlight class="normal"></highlight></codeline>
+<codeline lineno="53"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1data__store__csv" kindref="compound">data_store_csv</ref>&amp;<sp/><ref refid="classlbann_1_1data__store__csv_1a9a8cadac9ca32ad0da758bfdd2112755" kindref="member">operator=</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__store__csv" kindref="compound">data_store_csv</ref>&amp;)<sp/>=<sp/></highlight><highlight class="keywordflow">default</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="54"><highlight class="normal"></highlight></codeline>
+<codeline lineno="55" refid="classlbann_1_1data__store__csv_1a2e95f53f539a838e6c6484b9f4de5a45" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1data__store__csv" kindref="compound">data_store_csv</ref><sp/>*<sp/><ref refid="classlbann_1_1data__store__csv_1a2e95f53f539a838e6c6484b9f4de5a45" kindref="member">copy</ref>()</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">new</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__store__csv_1add3e9e9c37f1cdf0e3dba00cc6f49507" kindref="member">data_store_csv</ref>(*</highlight><highlight class="keyword">this</highlight><highlight class="normal">);<sp/>}</highlight></codeline>
+<codeline lineno="56"><highlight class="normal"></highlight></codeline>
+<codeline lineno="58"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1data__store__csv_1a6e0928f649f9a808c4e73b77f34ffae3" kindref="member">~data_store_csv</ref>()<sp/></highlight><highlight class="keyword">override</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="59"><highlight class="normal"></highlight></codeline>
+<codeline lineno="60"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__store__csv_1a3125cf637d40e8908c68bb74690f06da" kindref="member">get_data_buf_DataType</ref>(</highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>data_id,<sp/>std::vector&lt;DataType&gt;<sp/>*&amp;buf)<sp/></highlight><highlight class="keyword">override</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="61"><highlight class="normal"></highlight></codeline>
+<codeline lineno="62"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__store__csv_1a184c7e6f27c5e07255b9c889ace02407" kindref="member">setup</ref>()<sp/></highlight><highlight class="keyword">override</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="63"><highlight class="normal"></highlight></codeline>
+<codeline lineno="64"><highlight class="normal">protected<sp/>:</highlight></codeline>
+<codeline lineno="65"><highlight class="normal"></highlight></codeline>
+<codeline lineno="66" refid="classlbann_1_1data__store__csv_1a8920e09beb3e40e59e2858daf95a6cf9" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1csv__reader" kindref="compound">csv_reader</ref><sp/>*<ref refid="classlbann_1_1data__store__csv_1a8920e09beb3e40e59e2858daf95a6cf9" kindref="member">m_csv_reader</ref>;</highlight></codeline>
+<codeline lineno="67"><highlight class="normal"></highlight></codeline>
+<codeline lineno="70" refid="classlbann_1_1data__store__csv_1acf75e96923877e10c8ed499ec48f9320" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__store__csv_1acf75e96923877e10c8ed499ec48f9320" kindref="member">m_vector_size</ref>;</highlight></codeline>
+<codeline lineno="71"><highlight class="normal"></highlight></codeline>
+<codeline lineno="73" refid="classlbann_1_1data__store__csv_1a4cb571710d2fd2a088bb55b7ac7ca29b" refkind="member"><highlight class="normal"><sp/><sp/>std::unordered_map&lt;int,<sp/>size_t&gt;<sp/><ref refid="classlbann_1_1data__store__csv_1a4cb571710d2fd2a088bb55b7ac7ca29b" kindref="member">m_offset_mapping</ref>;</highlight></codeline>
+<codeline lineno="74"><highlight class="normal"></highlight></codeline>
+<codeline lineno="76" refid="classlbann_1_1data__store__csv_1a456bbbf6d09c1ec04cd6260cf11007d8" refkind="member"><highlight class="normal"><sp/><sp/>std::unordered_map&lt;int,<sp/>std::vector&lt;DataType&gt;&gt;<sp/><ref refid="classlbann_1_1data__store__csv_1a456bbbf6d09c1ec04cd6260cf11007d8" kindref="member">m_my_minibatch_data</ref>;</highlight></codeline>
+<codeline lineno="77"><highlight class="normal"></highlight></codeline>
+<codeline lineno="79"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__store__csv_1acacd039d3ca8caf8958b731a1ce382c6" kindref="member">exchange_data</ref>()<sp/></highlight><highlight class="keyword">override</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="82"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__store__csv_1ae0deaa88a2f5164569f796f7d35510d8" kindref="member">get_indices</ref>(std::unordered_set&lt;int&gt;<sp/>&amp;indices,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>p);</highlight></codeline>
+<codeline lineno="83"><highlight class="normal"></highlight></codeline>
+<codeline lineno="87"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__store__csv_1ab0ebfe735a732205f7f3c66c876e20b9" kindref="member">get_my_indices</ref>(std::unordered_set&lt;int&gt;<sp/>&amp;indices,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>p);</highlight></codeline>
+<codeline lineno="88"><highlight class="normal"></highlight></codeline>
+<codeline lineno="91" refid="classlbann_1_1data__store__csv_1a8f0ac398b2ed53c36594ca1baaf4bde0" refkind="member"><highlight class="normal"><sp/><sp/>std::map&lt;int,<sp/>std::vector&lt;DataType&gt;&gt;<sp/><ref refid="classlbann_1_1data__store__csv_1a8f0ac398b2ed53c36594ca1baaf4bde0" kindref="member">m_data</ref>;</highlight></codeline>
+<codeline lineno="92"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//std::unordered_map&lt;int,<sp/>std::vector&lt;DataType&gt;&gt;<sp/>m_data;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="93"><highlight class="normal"></highlight></codeline>
+<codeline lineno="95"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__store__csv_1a6184c48ec096372899e127235bb741da" kindref="member">populate_datastore</ref>();</highlight></codeline>
+<codeline lineno="96"><highlight class="normal"></highlight></codeline>
+<codeline lineno="97"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1data__store__csv_1afe48c08075e3327a2b9bb14c73a9c952" kindref="member">printme</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>*fn);</highlight></codeline>
+<codeline lineno="98"><highlight class="normal"></highlight></codeline>
+<codeline lineno="99"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="100"><highlight class="normal"></highlight></codeline>
+<codeline lineno="101"><highlight class="normal">}<sp/><sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>lbann</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="102"><highlight class="normal"></highlight></codeline>
+<codeline lineno="103"><highlight class="normal"></highlight><highlight class="preprocessor">#endif<sp/><sp/>//<sp/>__DATA_STORE_CSV_HPP__</highlight></codeline>
+    </programlisting>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_store/data_store_csv.hpp"/>
+  </compounddef>
+</doxygen>

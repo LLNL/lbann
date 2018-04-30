@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="dir_445e0a10e5d20483755fa6ed3d05a6ba" kind="dir">
+    <compoundname>/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers</compoundname>
+    <innerdir refid="dir_bf74b808aa226cce84c5796fd148e8e1">/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/regularizers</innerdir>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/"/>
+  </compounddef>
+</doxygen>

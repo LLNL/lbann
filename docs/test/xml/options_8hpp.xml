@@ -1,0 +1,350 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="options_8hpp" kind="file" language="C++">
+    <compoundname>options.hpp</compoundname>
+    <includes local="no">iostream</includes>
+    <includes local="no">map</includes>
+    <includes local="no">vector</includes>
+    <includes local="no">string</includes>
+    <includedby refid="data__reader__merge__samples_8cpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_merge_samples.cpp</includedby>
+    <includedby refid="data__reader__pilot2__molecular_8cpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_pilot2_molecular.cpp</includedby>
+    <includedby refid="data__store__csv_8cpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_csv.cpp</includedby>
+    <includedby refid="data__store__imagenet_8cpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_imagenet.cpp</includedby>
+    <includedby refid="data__store__imagenet__patches_8cpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_imagenet_patches.cpp</includedby>
+    <includedby refid="data__store__merge__features_8cpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_merge_features.cpp</includedby>
+    <includedby refid="data__store__merge__samples_8cpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_merge_samples.cpp</includedby>
+    <includedby refid="data__store__multi__images_8cpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_multi_images.cpp</includedby>
+    <includedby refid="data__store__pilot2__molecular_8cpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_pilot2_molecular.cpp</includedby>
+    <includedby refid="data__store__triplet_8cpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_triplet.cpp</includedby>
+    <includedby refid="generic__data__store_8cpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/src/data_store/generic_data_store.cpp</includedby>
+    <includedby refid="options_8cpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/src/utils/options.cpp</includedby>
+    <includedby refid="stack__profiler_8cpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_profiler.cpp</includedby>
+    <includedby refid="stack__trace_8cpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_trace.cpp</includedby>
+    <includedby refid="lbann_8hpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/include/lbann/lbann.hpp</includedby>
+    <incdepgraph>
+      <node id="15476">
+        <label>string</label>
+      </node>
+      <node id="15474">
+        <label>map</label>
+      </node>
+      <node id="15475">
+        <label>vector</label>
+      </node>
+      <node id="15473">
+        <label>iostream</label>
+      </node>
+      <node id="15472">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/options.hpp</label>
+        <link refid="options_8hpp"/>
+        <childnode refid="15473" relation="include">
+        </childnode>
+        <childnode refid="15474" relation="include">
+        </childnode>
+        <childnode refid="15475" relation="include">
+        </childnode>
+        <childnode refid="15476" relation="include">
+        </childnode>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="15498">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/proto/factories.hpp</label>
+        <link refid="factories_8hpp"/>
+        <childnode refid="15499" relation="include">
+        </childnode>
+        <childnode refid="15500" relation="include">
+        </childnode>
+        <childnode refid="15501" relation="include">
+        </childnode>
+        <childnode refid="15502" relation="include">
+        </childnode>
+        <childnode refid="15503" relation="include">
+        </childnode>
+        <childnode refid="15504" relation="include">
+        </childnode>
+        <childnode refid="15505" relation="include">
+        </childnode>
+        <childnode refid="15506" relation="include">
+        </childnode>
+        <childnode refid="15496" relation="include">
+        </childnode>
+      </node>
+      <node id="15482">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_imagenet_patches.cpp</label>
+        <link refid="data__store__imagenet__patches_8cpp"/>
+      </node>
+      <node id="15487">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_triplet.cpp</label>
+        <link refid="data__store__triplet_8cpp"/>
+      </node>
+      <node id="15503">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/model_factory.cpp</label>
+        <link refid="model__factory_8cpp"/>
+      </node>
+      <node id="15495">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/params.cpp</label>
+        <link refid="params_8cpp"/>
+      </node>
+      <node id="15496">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/proto/proto_common.hpp</label>
+        <link refid="proto__common_8hpp"/>
+        <childnode refid="15493" relation="include">
+        </childnode>
+        <childnode refid="15497" relation="include">
+        </childnode>
+        <childnode refid="15498" relation="include">
+        </childnode>
+        <childnode refid="15507" relation="include">
+        </childnode>
+      </node>
+      <node id="15478">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_merge_samples.cpp</label>
+        <link refid="data__reader__merge__samples_8cpp"/>
+      </node>
+      <node id="15480">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_csv.cpp</label>
+        <link refid="data__store__csv_8cpp"/>
+      </node>
+      <node id="15483">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_merge_features.cpp</label>
+        <link refid="data__store__merge__features_8cpp"/>
+      </node>
+      <node id="15494">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/params.hpp</label>
+        <link refid="params_8hpp"/>
+        <childnode refid="15495" relation="include">
+        </childnode>
+        <childnode refid="15492" relation="include">
+        </childnode>
+      </node>
+      <node id="15500">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/layer_factory.cpp</label>
+        <link refid="layer__factory_8cpp"/>
+      </node>
+      <node id="15485">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_multi_images.cpp</label>
+        <link refid="data__store__multi__images_8cpp"/>
+      </node>
+      <node id="15497">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/utils/protobuf_utils.cpp</label>
+        <link refid="protobuf__utils_8cpp"/>
+      </node>
+      <node id="15508">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/init_image_data_readers.cpp</label>
+        <link refid="init__image__data__readers_8cpp"/>
+      </node>
+      <node id="15504">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/objective_function_factory.cpp</label>
+        <link refid="objective__function__factory_8cpp"/>
+      </node>
+      <node id="15481">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_imagenet.cpp</label>
+        <link refid="data__store__imagenet_8cpp"/>
+      </node>
+      <node id="15493">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/proto_common.cpp</label>
+        <link refid="proto__common_8cpp"/>
+      </node>
+      <node id="15502">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/metric_factory.cpp</label>
+        <link refid="metric__factory_8cpp"/>
+      </node>
+      <node id="15486">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_pilot2_molecular.cpp</label>
+        <link refid="data__store__pilot2__molecular_8cpp"/>
+      </node>
+      <node id="15488">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/generic_data_store.cpp</label>
+        <link refid="generic__data__store_8cpp"/>
+      </node>
+      <node id="15490">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_profiler.cpp</label>
+        <link refid="stack__profiler_8cpp"/>
+      </node>
+      <node id="15492">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/lbann.hpp</label>
+        <link refid="lbann_8hpp"/>
+        <childnode refid="15493" relation="include">
+        </childnode>
+        <childnode refid="15494" relation="include">
+        </childnode>
+        <childnode refid="15496" relation="include">
+        </childnode>
+        <childnode refid="15509" relation="include">
+        </childnode>
+      </node>
+      <node id="15484">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_store/data_store_merge_samples.cpp</label>
+        <link refid="data__store__merge__samples_8cpp"/>
+      </node>
+      <node id="15507">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/proto/init_image_data_readers.hpp</label>
+        <link refid="init__image__data__readers_8hpp"/>
+        <childnode refid="15508" relation="include">
+        </childnode>
+        <childnode refid="15493" relation="include">
+        </childnode>
+      </node>
+      <node id="15489">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/utils/options.cpp</label>
+        <link refid="options_8cpp"/>
+      </node>
+      <node id="15479">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_pilot2_molecular.cpp</label>
+        <link refid="data__reader__pilot2__molecular_8cpp"/>
+      </node>
+      <node id="15491">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_trace.cpp</label>
+        <link refid="stack__trace_8cpp"/>
+      </node>
+      <node id="15505">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/optimizer_factory.cpp</label>
+        <link refid="optimizer__factory_8cpp"/>
+      </node>
+      <node id="15506">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/weights_factory.cpp</label>
+        <link refid="weights__factory_8cpp"/>
+      </node>
+      <node id="15477">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/options.hpp</label>
+        <link refid="options_8hpp"/>
+        <childnode refid="15478" relation="include">
+        </childnode>
+        <childnode refid="15479" relation="include">
+        </childnode>
+        <childnode refid="15480" relation="include">
+        </childnode>
+        <childnode refid="15481" relation="include">
+        </childnode>
+        <childnode refid="15482" relation="include">
+        </childnode>
+        <childnode refid="15483" relation="include">
+        </childnode>
+        <childnode refid="15484" relation="include">
+        </childnode>
+        <childnode refid="15485" relation="include">
+        </childnode>
+        <childnode refid="15486" relation="include">
+        </childnode>
+        <childnode refid="15487" relation="include">
+        </childnode>
+        <childnode refid="15488" relation="include">
+        </childnode>
+        <childnode refid="15489" relation="include">
+        </childnode>
+        <childnode refid="15490" relation="include">
+        </childnode>
+        <childnode refid="15491" relation="include">
+        </childnode>
+        <childnode refid="15492" relation="include">
+        </childnode>
+      </node>
+      <node id="15499">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/callback_factory.cpp</label>
+        <link refid="callback__factory_8cpp"/>
+      </node>
+      <node id="15509">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/protobuf_utils.hpp</label>
+        <link refid="protobuf__utils_8hpp"/>
+        <childnode refid="15497" relation="include">
+        </childnode>
+      </node>
+      <node id="15501">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/proto/factories/layer_graph_factory.cpp</label>
+        <link refid="layer__graph__factory_8cpp"/>
+      </node>
+    </invincdepgraph>
+    <innerclass refid="classoptions" prot="public">options</innerclass>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="preprocessor">#ifndef<sp/>__OPTIONS_HPP__</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="2"><highlight class="normal"></highlight><highlight class="preprocessor">#define<sp/>__OPTIONS_HPP__</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;iostream&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;map&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;vector&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;string&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="comment">/*</highlight></codeline>
+<codeline lineno="11"><highlight class="comment"><sp/>*<sp/>This<sp/>is<sp/>a<sp/>singleton,<sp/>globally<sp/>accessible<sp/>class,<sp/>for<sp/>setting</highlight></codeline>
+<codeline lineno="12"><highlight class="comment"><sp/>*<sp/>and<sp/>retrieving<sp/>options<sp/>(key/value<sp/>pairs)</highlight></codeline>
+<codeline lineno="13"><highlight class="comment"><sp/>*/</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight></codeline>
+<codeline lineno="15" refid="classoptions" refkind="compound"><highlight class="normal"></highlight><highlight class="keyword">class<sp/></highlight><highlight class="normal"><ref refid="classoptions" kindref="compound">options</ref></highlight></codeline>
+<codeline lineno="16"><highlight class="normal">{</highlight></codeline>
+<codeline lineno="17"><highlight class="normal">public<sp/>:</highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight></codeline>
+<codeline lineno="20" refid="classoptions_1a9ecfe9c365269df68a41b961c31ae3f5" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">static</highlight><highlight class="normal"><sp/><ref refid="classoptions" kindref="compound">options</ref><sp/>*<sp/></highlight><highlight class="keyword">get</highlight><highlight class="normal">()<sp/>{</highlight></codeline>
+<codeline lineno="21"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classoptions_1ab10ed8295e9333b025619195d156a9ed" kindref="member">s_instance</ref>;</highlight></codeline>
+<codeline lineno="22"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="23"><highlight class="normal"><sp/><sp/></highlight></codeline>
+<codeline lineno="27"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classoptions_1a6d909eacd89dee5f0b153430985f9822" kindref="member">init</ref>(</highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>argc,<sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>**argv);</highlight></codeline>
+<codeline lineno="28"><highlight class="normal"></highlight></codeline>
+<codeline lineno="30"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classoptions_1a6fd8a97883eaecb722e5c6b120d8f9be" kindref="member">print</ref>(std::ostream<sp/>&amp;out<sp/>=<sp/>std::cout);</highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight></codeline>
+<codeline lineno="33"></codeline>
+<codeline lineno="34"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classoptions_1a01020aa5bd82bcff1b1c950b20578883" kindref="member">has_int</ref>(std::string<sp/>option);</highlight></codeline>
+<codeline lineno="35"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classoptions_1aafb1d2a7ccde0b1bf786230ba4080ecd" kindref="member">has_bool</ref>(std::string<sp/>option);</highlight></codeline>
+<codeline lineno="36"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classoptions_1a5db5b27267c27ffe1b029948f64e54c1" kindref="member">has_string</ref>(std::string<sp/>option);</highlight></codeline>
+<codeline lineno="37" refid="classoptions_1ae6f1f714c9ad1dc01cb5509df0c4c838" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classoptions_1ae6f1f714c9ad1dc01cb5509df0c4c838" kindref="member">has_float</ref>(std::string<sp/>option)<sp/>{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classoptions_1ab66aae6c79cdde8dd38d0d3fc8aa3de5" kindref="member">has_double</ref>(option);<sp/>}</highlight></codeline>
+<codeline lineno="38"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classoptions_1ab66aae6c79cdde8dd38d0d3fc8aa3de5" kindref="member">has_double</ref>(std::string<sp/>option);</highlight></codeline>
+<codeline lineno="40"></codeline>
+<codeline lineno="42"></codeline>
+<codeline lineno="43"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classoptions_1a3c23831e4218f9a88cddc81337518046" kindref="member">set_option</ref>(std::string<sp/>name,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>value);</highlight></codeline>
+<codeline lineno="44"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classoptions_1a3c23831e4218f9a88cddc81337518046" kindref="member">set_option</ref>(std::string<sp/>name,<sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/>value);</highlight></codeline>
+<codeline lineno="45"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classoptions_1a3c23831e4218f9a88cddc81337518046" kindref="member">set_option</ref>(std::string<sp/>name,<sp/>std::string<sp/>value);</highlight></codeline>
+<codeline lineno="46"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classoptions_1a3c23831e4218f9a88cddc81337518046" kindref="member">set_option</ref>(std::string<sp/>name,<sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>value);</highlight></codeline>
+<codeline lineno="47"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classoptions_1a3c23831e4218f9a88cddc81337518046" kindref="member">set_option</ref>(std::string<sp/>name,<sp/></highlight><highlight class="keywordtype">double</highlight><highlight class="normal"><sp/>value);</highlight></codeline>
+<codeline lineno="49"></codeline>
+<codeline lineno="51"></codeline>
+<codeline lineno="55"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classoptions_1a797bc1915004bdbc34c5eea3fe488952" kindref="member">get_int</ref>(std::string<sp/>option);</highlight></codeline>
+<codeline lineno="56"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classoptions_1a99aa190102de33e2aed39723929f9fad" kindref="member">get_bool</ref>(std::string<sp/>option);</highlight></codeline>
+<codeline lineno="57"><highlight class="normal"><sp/><sp/>std::string<sp/><ref refid="classoptions_1aeb84be21a30b0dd41d7d9f3f52c0f3f7" kindref="member">get_string</ref>(std::string<sp/>option);</highlight></codeline>
+<codeline lineno="58" refid="classoptions_1a31607533d0c6d2fa331f4e7f52d34bc8" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/><ref refid="classoptions_1a31607533d0c6d2fa331f4e7f52d34bc8" kindref="member">get_float</ref>(std::string<sp/>option)<sp/>{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>(</highlight><highlight class="keywordtype">float</highlight><highlight class="normal">)<sp/><ref refid="classoptions_1a0e8ff0d44b9192754451f9dcd47cd559" kindref="member">get_double</ref>(option);<sp/>}</highlight></codeline>
+<codeline lineno="59"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">double</highlight><highlight class="normal"><sp/><ref refid="classoptions_1a0e8ff0d44b9192754451f9dcd47cd559" kindref="member">get_double</ref>(std::string<sp/>option);</highlight></codeline>
+<codeline lineno="61"></codeline>
+<codeline lineno="63"></codeline>
+<codeline lineno="67"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classoptions_1a797bc1915004bdbc34c5eea3fe488952" kindref="member">get_int</ref>(std::string<sp/>option,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>the_default);</highlight></codeline>
+<codeline lineno="68"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classoptions_1a99aa190102de33e2aed39723929f9fad" kindref="member">get_bool</ref>(std::string<sp/>option,<sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/>the_default);</highlight></codeline>
+<codeline lineno="69"><highlight class="normal"><sp/><sp/>std::string<sp/><ref refid="classoptions_1aeb84be21a30b0dd41d7d9f3f52c0f3f7" kindref="member">get_string</ref>(std::string<sp/>option,<sp/>std::string<sp/>the_default);</highlight></codeline>
+<codeline lineno="70" refid="classoptions_1a113445829763eaa7b86cdc40c2d66e25" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/><ref refid="classoptions_1a113445829763eaa7b86cdc40c2d66e25" kindref="member">get_float</ref>(std::string<sp/>option,<sp/></highlight><highlight class="keywordtype">float</highlight><highlight class="normal"><sp/>the_default)<sp/>{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>(</highlight><highlight class="keywordtype">float</highlight><highlight class="normal">)<sp/><ref refid="classoptions_1a0e8ff0d44b9192754451f9dcd47cd559" kindref="member">get_double</ref>(option,<sp/>the_default);<sp/>}</highlight></codeline>
+<codeline lineno="71"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">double</highlight><highlight class="normal"><sp/><ref refid="classoptions_1a0e8ff0d44b9192754451f9dcd47cd559" kindref="member">get_double</ref>(std::string<sp/>option,<sp/></highlight><highlight class="keywordtype">double</highlight><highlight class="normal"><sp/>the_default);</highlight></codeline>
+<codeline lineno="73"><highlight class="normal"></highlight></codeline>
+<codeline lineno="74"><highlight class="normal"></highlight><highlight class="keyword">private</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="75" refid="classoptions_1a3171bb61cdfcc5a6a899ad6fe9b56f9d" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classoptions_1a3171bb61cdfcc5a6a899ad6fe9b56f9d" kindref="member">m_rank</ref>;</highlight></codeline>
+<codeline lineno="76"><highlight class="normal"></highlight></codeline>
+<codeline lineno="78" refid="classoptions_1a41a256b4ba3b2d68a2d72b9245aa0c4d" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="classoptions_1a41a256b4ba3b2d68a2d72b9245aa0c4d" kindref="member">options</ref>()<sp/>{}</highlight></codeline>
+<codeline lineno="79" refid="classoptions_1a561b67397b31bd4ec2c058ad54ab2daa" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="classoptions_1a561b67397b31bd4ec2c058ad54ab2daa" kindref="member">options</ref>(<ref refid="classoptions" kindref="compound">options</ref><sp/>&amp;)<sp/>{}</highlight></codeline>
+<codeline lineno="80" refid="classoptions_1ad3323d598a23707733c16be8a575c270" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="classoptions" kindref="compound">options</ref>&amp;<sp/><ref refid="classoptions_1ad3323d598a23707733c16be8a575c270" kindref="member">operator=</ref>(<ref refid="classoptions" kindref="compound">options</ref><sp/></highlight><highlight class="keyword">const</highlight><highlight class="normal">&amp;)<sp/>{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>*</highlight><highlight class="keyword">this</highlight><highlight class="normal">;<sp/>}</highlight></codeline>
+<codeline lineno="81"><highlight class="normal"></highlight></codeline>
+<codeline lineno="82"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//the<sp/>singleton<sp/>instance</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="83" refid="classoptions_1ab10ed8295e9333b025619195d156a9ed" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">static</highlight><highlight class="normal"><sp/><ref refid="classoptions" kindref="compound">options</ref><sp/>*<ref refid="classoptions_1ab10ed8295e9333b025619195d156a9ed" kindref="member">s_instance</ref>;</highlight></codeline>
+<codeline lineno="84"><highlight class="normal"></highlight></codeline>
+<codeline lineno="86" refid="classoptions_1ac73507ca925d98ee5ff6f04937dff5c3" refkind="member"><highlight class="normal"><sp/><sp/>std::map&lt;std::string,<sp/>std::string&gt;<sp/><ref refid="classoptions_1ac73507ca925d98ee5ff6f04937dff5c3" kindref="member">m_opts</ref>;</highlight></codeline>
+<codeline lineno="87"><highlight class="normal"></highlight></codeline>
+<codeline lineno="88"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classoptions_1abeab2c3e2cf5c1809e09601a3835d967" kindref="member">m_parse_file</ref>(std::string<sp/>fn);</highlight></codeline>
+<codeline lineno="89"><highlight class="normal"></highlight></codeline>
+<codeline lineno="90"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classoptions_1a99183ba43c8d7b35dbfa1bea0f43db48" kindref="member">m_has_opt</ref>(std::string<sp/>option);</highlight></codeline>
+<codeline lineno="91"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classoptions_1ad9b4461e633b73acc2fde7752ef60d41" kindref="member">m_test_int</ref>(std::string<sp/>option,<sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>&amp;out);</highlight></codeline>
+<codeline lineno="92"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classoptions_1a0eebdb8dbce454720ef9251fcd7abf24" kindref="member">m_test_double</ref>(std::string<sp/>option,<sp/></highlight><highlight class="keywordtype">double</highlight><highlight class="normal"><sp/>&amp;out);</highlight></codeline>
+<codeline lineno="93"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classoptions_1a8286a8617eec86a3d4cf678bd17739ba" kindref="member">m_test_string</ref>(std::string<sp/>option,<sp/>std::string<sp/>&amp;out);</highlight></codeline>
+<codeline lineno="94"><highlight class="normal"></highlight></codeline>
+<codeline lineno="95"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classoptions_1a441540f2a8990edaa17fe95b013f9168" kindref="member">m_parse_cmd_line</ref>(</highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>arg,<sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>**argv);</highlight></codeline>
+<codeline lineno="96"><highlight class="normal"></highlight></codeline>
+<codeline lineno="97" refid="classoptions_1a64ad628e508d5d71a117909e44f68350" refkind="member"><highlight class="normal"><sp/><sp/>std::vector&lt;std::string&gt;<sp/><ref refid="classoptions_1a64ad628e508d5d71a117909e44f68350" kindref="member">m_cmd_line</ref>;</highlight></codeline>
+<codeline lineno="98"><highlight class="normal"></highlight></codeline>
+<codeline lineno="99" refid="classoptions_1a5df2188c2d1bb81cbebef4b2e80a926f" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classoptions_1a5df2188c2d1bb81cbebef4b2e80a926f" kindref="member">m_argc</ref>;</highlight></codeline>
+<codeline lineno="100" refid="classoptions_1a376f7dcfec6a2ff75835c3c3d732bdea" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>**<ref refid="classoptions_1a376f7dcfec6a2ff75835c3c3d732bdea" kindref="member">m_argv</ref>;</highlight></codeline>
+<codeline lineno="101"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="102"><highlight class="normal"></highlight></codeline>
+<codeline lineno="103"><highlight class="normal"></highlight><highlight class="preprocessor">#endif</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="104"><highlight class="normal"></highlight></codeline>
+    </programlisting>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/options.hpp"/>
+  </compounddef>
+</doxygen>

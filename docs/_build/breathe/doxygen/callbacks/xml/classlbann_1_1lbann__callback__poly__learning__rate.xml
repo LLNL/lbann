@@ -1,0 +1,351 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1lbann__callback__poly__learning__rate" kind="class" language="C++" prot="public">
+    <compoundname>lbann::lbann_callback_poly_learning_rate</compoundname>
+    <basecompoundref refid="classlbann_1_1lbann__callback__learning__rate" prot="public" virt="non-virtual">lbann::lbann_callback_learning_rate</basecompoundref>
+    <includes refid="callback__learning__rate_8hpp" local="no">callback_learning_rate.hpp</includes>
+      <sectiondef kind="private-attrib">
+      <memberdef kind="variable" id="classlbann_1_1lbann__callback__poly__learning__rate_1a03c8c9a738036f9b778f11416112fd80" prot="private" static="no" mutable="no">
+        <type>double</type>
+        <definition>double lbann::lbann_callback_poly_learning_rate::m_p</definition>
+        <argsstring></argsstring>
+        <name>m_p</name>
+        <briefdescription>
+<para>The exponent to compute new learning rate in poly policy. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_learning_rate.hpp" line="257" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_learning_rate.hpp" bodystart="257" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1lbann__callback__poly__learning__rate_1a493de3bbdea4bed802e663af9b81af8e" prot="private" static="no" mutable="no">
+        <type>uint64_t</type>
+        <definition>uint64_t lbann::lbann_callback_poly_learning_rate::m_num_epochs</definition>
+        <argsstring></argsstring>
+        <name>m_num_epochs</name>
+        <briefdescription>
+<para>The number of epochs for training. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_learning_rate.hpp" line="259" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_learning_rate.hpp" bodystart="259" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1lbann__callback__poly__learning__rate_1a43c06187577baff885bda6177fe56c3f" prot="private" static="no" mutable="no">
+        <type>uint64_t</type>
+        <definition>uint64_t lbann::lbann_callback_poly_learning_rate::m_max_iter</definition>
+        <argsstring></argsstring>
+        <name>m_max_iter</name>
+        <briefdescription>
+<para>The maximum number of iterations until which the learning rate changes. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_learning_rate.hpp" line="261" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_learning_rate.hpp" bodystart="261" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1lbann__callback__poly__learning__rate_1a02cb265abba03e10fcba2be3cbbafce4" prot="private" static="no" mutable="no">
+        <type>float</type>
+        <definition>float lbann::lbann_callback_poly_learning_rate::m_lr</definition>
+        <argsstring></argsstring>
+        <name>m_lr</name>
+        <briefdescription>
+<para>The current rate to scale the base learning rate. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_learning_rate.hpp" line="263" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_learning_rate.hpp" bodystart="263" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1lbann__callback__poly__learning__rate_1aad95c34cfb705392bf38ecbb0dc97b32" prot="private" static="no" mutable="no">
+        <type>float</type>
+        <definition>float lbann::lbann_callback_poly_learning_rate::m_last_epoch_lr</definition>
+        <argsstring></argsstring>
+        <name>m_last_epoch_lr</name>
+        <briefdescription>
+<para>The learning rate scale used at the end of the last epoch. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_learning_rate.hpp" line="265" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_learning_rate.hpp" bodystart="265" bodyend="-1"/>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__poly__learning__rate_1ac36d25516687e0d0c43b51acae9eb1ff" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::lbann_callback_poly_learning_rate::lbann_callback_poly_learning_rate</definition>
+        <argsstring>(double p, uint64_t n_epochs, uint64_t max_iter)</argsstring>
+        <name>lbann_callback_poly_learning_rate</name>
+        <param>
+          <type>double</type>
+          <declname>p</declname>
+        </param>
+        <param>
+          <type>uint64_t</type>
+          <declname>n_epochs</declname>
+        </param>
+        <param>
+          <type>uint64_t</type>
+          <declname>max_iter</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_learning_rate.hpp" line="240" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__poly__learning__rate_1a4aba2a61c3b5d08c08909b7a4d78ea74" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::lbann_callback_poly_learning_rate::lbann_callback_poly_learning_rate</definition>
+        <argsstring>(double p, uint64_t n_epochs, uint64_t max_iter, std::unordered_set&lt; weights *&gt; weights_list)</argsstring>
+        <name>lbann_callback_poly_learning_rate</name>
+        <param>
+          <type>double</type>
+          <declname>p</declname>
+        </param>
+        <param>
+          <type>uint64_t</type>
+          <declname>n_epochs</declname>
+        </param>
+        <param>
+          <type>uint64_t</type>
+          <declname>max_iter</declname>
+        </param>
+        <param>
+          <type>std::unordered_set&lt; weights *&gt;</type>
+          <declname>weights_list</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_learning_rate.hpp" line="241" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__poly__learning__rate_1a9c55d816c11b6c79d0bbc145e7211995" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::lbann_callback_poly_learning_rate::lbann_callback_poly_learning_rate</definition>
+        <argsstring>(const lbann_callback_poly_learning_rate &amp;)=default</argsstring>
+        <name>lbann_callback_poly_learning_rate</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1lbann__callback__poly__learning__rate" kindref="compound">lbann_callback_poly_learning_rate</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_learning_rate.hpp" line="243" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__poly__learning__rate_1a5e93001766ab49b38d0cc387362970e3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classlbann_1_1lbann__callback__poly__learning__rate" kindref="compound">lbann_callback_poly_learning_rate</ref> &amp;</type>
+        <definition>lbann_callback_poly_learning_rate&amp; lbann::lbann_callback_poly_learning_rate::operator=</definition>
+        <argsstring>(const lbann_callback_poly_learning_rate &amp;)=default</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1lbann__callback__poly__learning__rate" kindref="compound">lbann_callback_poly_learning_rate</ref> &amp;</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_learning_rate.hpp" line="245" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__poly__learning__rate_1aea01c416903c421cf6dce1a7f320c94b" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type><ref refid="classlbann_1_1lbann__callback__poly__learning__rate" kindref="compound">lbann_callback_poly_learning_rate</ref> *</type>
+        <definition>lbann_callback_poly_learning_rate* lbann::lbann_callback_poly_learning_rate::copy</definition>
+        <argsstring>() const override</argsstring>
+        <name>copy</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1a9f545d1269a8c7af335625d049691f26">copy</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_learning_rate.hpp" line="247" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_learning_rate.hpp" bodystart="247" bodyend="249"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__poly__learning__rate_1a47d3d2a94157f1992bf4a964620208f3" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::lbann_callback_poly_learning_rate::setup</definition>
+        <argsstring>(model *m) override</argsstring>
+        <name>setup</name>
+        <reimplements refid="classlbann_1_1lbann__callback__learning__rate_1a501f31a6b8fde1282a60e4b347e8d9d3">setup</reimplements>
+        <param>
+          <type>model *</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Do some initialization. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_learning_rate.hpp" line="250" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__poly__learning__rate_1a755be6dc66e1c403edc69db11592a4ea" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>std::string</type>
+        <definition>std::string lbann::lbann_callback_poly_learning_rate::name</definition>
+        <argsstring>() const override</argsstring>
+        <name>name</name>
+        <reimplements refid="classlbann_1_1lbann__callback_1a7522c7a14f1d6a1ea762cc2d7248eb3a">name</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Return this callback&apos;s name. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_learning_rate.hpp" line="251" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_learning_rate.hpp" bodystart="251" bodyend="251"/>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="protected-func">
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__poly__learning__rate_1a6302be36ef16079105b812c7599dac76" prot="protected" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>float</type>
+        <definition>float lbann::lbann_callback_poly_learning_rate::global_schedule</definition>
+        <argsstring>(model *m) override</argsstring>
+        <name>global_schedule</name>
+        <reimplements refid="classlbann_1_1lbann__callback__learning__rate_1a7869b93e5963d6f76da68d8c8137b979">global_schedule</reimplements>
+        <param>
+          <type>model *</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>This is called at the end of every epoch to update the learning rate for every optimizer. Adjustments should be made based on the current global learning rate. The returned learning rate will be used to automatically update the current global learning rate. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_learning_rate.hpp" line="253" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1lbann__callback__poly__learning__rate_1a55414af733e519be126572ec92492bf7" prot="protected" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>float</type>
+        <definition>float lbann::lbann_callback_poly_learning_rate::optimizer_schedule</definition>
+        <argsstring>(model *m, optimizer &amp;opt) override</argsstring>
+        <name>optimizer_schedule</name>
+        <reimplements refid="classlbann_1_1lbann__callback__learning__rate_1acf7f3921a68e7f1f772106e18c545345">optimizer_schedule</reimplements>
+        <param>
+          <type>model *</type>
+          <declname>m</declname>
+        </param>
+        <param>
+          <type>optimizer &amp;</type>
+          <declname>opt</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>This is called at the end of every training mini-batch to update the learning rate for optimizer opt. The current global learning rate is <emphasis>not</emphasis> updated automatically based on this method. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_learning_rate.hpp" line="254" column="1"/>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>Decrease the learning rate by polynomial policy base_lr*(1 - i_cur/i_max)^p, where base_lr is the initial learning rate, i_cur is the current iteration, i_max is the maximum iteration, and p is a parameter. </para>    </detaileddescription>
+    <inheritancegraph>
+      <node id="153">
+        <label>lbann::lbann_callback</label>
+        <link refid="classlbann_1_1lbann__callback"/>
+      </node>
+      <node id="151">
+        <label>lbann::lbann_callback_poly_learning_rate</label>
+        <link refid="classlbann_1_1lbann__callback__poly__learning__rate"/>
+        <childnode refid="152" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="152">
+        <label>lbann::lbann_callback_learning_rate</label>
+        <link refid="classlbann_1_1lbann__callback__learning__rate"/>
+        <childnode refid="153" relation="public-inheritance">
+        </childnode>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="156">
+        <label>lbann::lbann_callback</label>
+        <link refid="classlbann_1_1lbann__callback"/>
+      </node>
+      <node id="154">
+        <label>lbann::lbann_callback_poly_learning_rate</label>
+        <link refid="classlbann_1_1lbann__callback__poly__learning__rate"/>
+        <childnode refid="155" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="155">
+        <label>lbann::lbann_callback_learning_rate</label>
+        <link refid="classlbann_1_1lbann__callback__learning__rate"/>
+        <childnode refid="156" relation="public-inheritance">
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_learning_rate.hpp" line="238" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_learning_rate.hpp" bodystart="238" bodyend="266"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1lbann__callback__poly__learning__rate_1aea01c416903c421cf6dce1a7f320c94b" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>copy</name></member>
+      <member refid="classlbann_1_1lbann__callback_1acec888932129f93ba2a0077192467c9e" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>get_batch_interval</name></member>
+      <member refid="classlbann_1_1lbann__callback__poly__learning__rate_1a6302be36ef16079105b812c7599dac76" prot="protected" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>global_schedule</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a679057298a41ddd47f08c157f756c584" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>lbann_callback</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a91d994616b8bf98685ac32939228f96a" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>lbann_callback</name></member>
+      <member refid="classlbann_1_1lbann__callback__learning__rate_1a69687cd55f4d09c480e08e18488519fe" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>lbann_callback_learning_rate</name></member>
+      <member refid="classlbann_1_1lbann__callback__learning__rate_1af933186f239fdea911e8934fe58e97fa" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>lbann_callback_learning_rate</name></member>
+      <member refid="classlbann_1_1lbann__callback__learning__rate_1a0c544d120f949cfc5c2dcb07d69b3cde" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>lbann_callback_learning_rate</name></member>
+      <member refid="classlbann_1_1lbann__callback__poly__learning__rate_1ac36d25516687e0d0c43b51acae9eb1ff" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>lbann_callback_poly_learning_rate</name></member>
+      <member refid="classlbann_1_1lbann__callback__poly__learning__rate_1a4aba2a61c3b5d08c08909b7a4d78ea74" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>lbann_callback_poly_learning_rate</name></member>
+      <member refid="classlbann_1_1lbann__callback__poly__learning__rate_1a9c55d816c11b6c79d0bbc145e7211995" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>lbann_callback_poly_learning_rate</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a6126e310e9924398c18ccf76bb91c705" prot="protected" virt="non-virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>m_batch_interval</name></member>
+      <member refid="classlbann_1_1lbann__callback__learning__rate_1a97194f282c29a748c915d9811a8a99fb" prot="protected" virt="non-virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>m_cur_global_lr</name></member>
+      <member refid="classlbann_1_1lbann__callback__poly__learning__rate_1aad95c34cfb705392bf38ecbb0dc97b32" prot="private" virt="non-virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>m_last_epoch_lr</name></member>
+      <member refid="classlbann_1_1lbann__callback__poly__learning__rate_1a02cb265abba03e10fcba2be3cbbafce4" prot="private" virt="non-virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>m_lr</name></member>
+      <member refid="classlbann_1_1lbann__callback__poly__learning__rate_1a43c06187577baff885bda6177fe56c3f" prot="private" virt="non-virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>m_max_iter</name></member>
+      <member refid="classlbann_1_1lbann__callback__poly__learning__rate_1a493de3bbdea4bed802e663af9b81af8e" prot="private" virt="non-virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>m_num_epochs</name></member>
+      <member refid="classlbann_1_1lbann__callback__poly__learning__rate_1a03c8c9a738036f9b778f11416112fd80" prot="private" virt="non-virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>m_p</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a277d46138184f85f161a8263b8322c76" prot="protected" virt="non-virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>m_summarizer</name></member>
+      <member refid="classlbann_1_1lbann__callback__learning__rate_1a0b02e82190e04a22ab26d858041915d7" prot="protected" virt="non-virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>m_weights</name></member>
+      <member refid="classlbann_1_1lbann__callback__poly__learning__rate_1a755be6dc66e1c403edc69db11592a4ea" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>name</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a2c0709a26179d115ff85b7561786ee27" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>on_backward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1abeb1e486e259fd358332abf1e952f630" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>on_backward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback__learning__rate_1ab6aa0530604e32a1be2b37f3933f6bf6" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>on_backward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1aba03b59c056ace8094095c08e39b9ac4" prot="public" virt="virtual" ambiguityscope="lbann::lbann_callback::"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>on_backward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a9ecf4e44cd4021cdd687de14c850cc83" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>on_batch_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a895ca577e358601fcae5c04749f60535" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>on_batch_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a3462e54126adbd0082c22c98d8de5468" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>on_batch_evaluate_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ad10891b8ab3de74ee1a70e6255e7d58a" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>on_batch_evaluate_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a4ed9498763412a55953fff71ee3a9456" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>on_epoch_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback__learning__rate_1ab8eb509bdbea501882d6b248a814bb28" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>on_epoch_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a4a2cff48a688bb56ed14b8b53344f945" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>on_evaluate_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a044174864e4981a1dac093d58e8c4d6c" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>on_evaluate_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a0794f3fb88db6fef53f0e2f235f94424" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>on_evaluate_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ae23c5a61b81dbdfbd79736ac2b6035aa" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>on_evaluate_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a22ed977371173105b4aad3a20b9c59dc" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>on_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ab96adb1d77180e00fdd668cd381323fd" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>on_forward_prop_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a79a0bb407852d7b330b74373647ffe46" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>on_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a5eff0a59fbce98a981d9cdd0547a3ad5" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>on_forward_prop_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a1a9248b305f06419889c1b3b0f0893d8" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>on_optimize_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a497e750da160e0071ce8864ccc3a1344" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>on_optimize_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a235195d5fa4461835b861a03a5c0278f" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>on_optimize_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a4653e2903bfd3903709a81eaf7eabc1a" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>on_optimize_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ace7452239c9ad7aa6247e9496adbcffe" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>on_phase_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a716bff45bdc5a88eed09c2231f5bc93a" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>on_test_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1accbad4dd004c1ced33642db6398b2efe" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>on_test_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a7c8f0d211967ccc5219144e92571ab26" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>on_train_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1af28078b0ddaef45124465bef01eefedf" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>on_train_end</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a2bde303671110519388d9962bc3e5583" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>on_validation_begin</name></member>
+      <member refid="classlbann_1_1lbann__callback_1adc16e42e5064dc2dc8d84dfbfc1325eb" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>on_validation_end</name></member>
+      <member refid="classlbann_1_1lbann__callback__poly__learning__rate_1a5e93001766ab49b38d0cc387362970e3" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1lbann__callback__learning__rate_1a80b82eebf8e38cbe0a484aea43644705" prot="public" virt="non-virtual" ambiguityscope="lbann::lbann_callback_learning_rate::"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a66b0a8c00a273669fa782ece59e8898b" prot="public" virt="non-virtual" ambiguityscope="lbann::lbann_callback::"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1lbann__callback__poly__learning__rate_1a55414af733e519be126572ec92492bf7" prot="protected" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>optimizer_schedule</name></member>
+      <member refid="classlbann_1_1lbann__callback_1a02d924df2f8ca851578dc76d9015e48d" prot="public" virt="non-virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>set_summarizer</name></member>
+      <member refid="classlbann_1_1lbann__callback__poly__learning__rate_1a47d3d2a94157f1992bf4a964620208f3" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>setup</name></member>
+      <member refid="classlbann_1_1lbann__callback_1ac91abaec389f8d2547512c45ae587304" prot="public" virt="virtual"><scope>lbann::lbann_callback_poly_learning_rate</scope><name>~lbann_callback</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

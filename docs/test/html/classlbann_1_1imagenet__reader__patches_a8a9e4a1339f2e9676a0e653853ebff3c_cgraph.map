@@ -1,0 +1,7 @@
+<map id="lbann::imagenet_reader_patches::fetch_datum" name="lbann::imagenet_reader_patches::fetch_datum">
+<area shape="rect" id="node2" href="$classlbann_1_1generic__data__reader.html#ab4c6c2d4ba40ece809ce896828c8ff03" title="lbann::generic_data\l_reader::get_file_dir" alt="" coords="248,5,388,44"/>
+<area shape="rect" id="node3" href="$classlbann_1_1imagenet__reader__patches.html#a920f235bde95d5c3e8ae97c389c9d953" title="lbann::imagenet_reader\l_patches::create_datum_views" alt="" coords="216,68,421,107"/>
+<area shape="rect" id="node4" href="$classlbann_1_1generic__data__store.html#a2abb3d0327b528d36e23fcef9b937798" title="called by various image data readers " alt="" coords="246,131,390,169"/>
+<area shape="rect" id="node5" href="$classlbann_1_1image__utils.html#ac324a04f877601387cfb10750f1f6b8d" title="Load an image from a file and put it into a serialized buffer. " alt="" coords="254,193,382,232"/>
+<area shape="rect" id="node6" href="$classlbann_1_1imagenet__reader__patches.html#adc6363b20f058260c674d92af2a6ef80" title="lbann::imagenet_reader\l_patches::get_type" alt="" coords="237,256,399,295"/>
+</map>

@@ -1,0 +1,207 @@
+\hypertarget{classlbann_1_1lbann__callback__step__minibatch}{}\section{lbann\+:\+:lbann\+\_\+callback\+\_\+step\+\_\+minibatch Class Reference}
+\label{classlbann_1_1lbann__callback__step__minibatch}\index{lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch@{lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch}}
+
+
+{\ttfamily \#include $<$callback\+\_\+variable\+\_\+minibatch.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+step\+\_\+minibatch\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=192pt]{classlbann_1_1lbann__callback__step__minibatch__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+step\+\_\+minibatch\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=207pt]{classlbann_1_1lbann__callback__step__minibatch__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1lbann__callback__step__minibatch_a2ce11bed6c3a4d526c2fdd885970f49d}{lbann\+\_\+callback\+\_\+step\+\_\+minibatch} (int starting\+\_\+mbsize, int step, int ramp\+\_\+time=0)
+\item 
+\hyperlink{classlbann_1_1lbann__callback__step__minibatch_a66b34b96845274563dd72172dafd9079}{lbann\+\_\+callback\+\_\+step\+\_\+minibatch} (const \hyperlink{classlbann_1_1lbann__callback__step__minibatch}{lbann\+\_\+callback\+\_\+step\+\_\+minibatch} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__step__minibatch}{lbann\+\_\+callback\+\_\+step\+\_\+minibatch} \& \hyperlink{classlbann_1_1lbann__callback__step__minibatch_adea0e27a38a8094db757a57e4f976769}{operator=} (const \hyperlink{classlbann_1_1lbann__callback__step__minibatch}{lbann\+\_\+callback\+\_\+step\+\_\+minibatch} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__step__minibatch}{lbann\+\_\+callback\+\_\+step\+\_\+minibatch} $\ast$ \hyperlink{classlbann_1_1lbann__callback__step__minibatch_a3c291a8908f893d0ca372ae7c650bbb2}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1lbann__callback__step__minibatch_a2e07fa5a590d68b1b71059d9275ee12a}{name} () const override
+\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+bool \hyperlink{classlbann_1_1lbann__callback__step__minibatch_a9ed85aa78f6e4fe4cf3427f9257a4610}{schedule} (\hyperlink{classlbann_1_1model}{model} $\ast$m, int \&new\+\_\+mbsize, float \&new\+\_\+lr, int \&ramp\+\_\+time) override
+\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{classlbann_1_1lbann__callback__step__minibatch_a1d150c95b193f9a24c8d7d73506b034c}{m\+\_\+step}
+\begin{DoxyCompactList}\small\item\em Number of epochs between mini-\/batch size increases. \end{DoxyCompactList}\item 
+int \hyperlink{classlbann_1_1lbann__callback__step__minibatch_ad367d8969b52755f768085d8db98449c}{m\+\_\+ramp\+\_\+time}
+\begin{DoxyCompactList}\small\item\em Number of steps to ramp the learning rate over. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Double the mini-\/batch size every set number of epochs. Also doubles the learning rate. 
+
+Definition at line 91 of file callback\+\_\+variable\+\_\+minibatch.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__step__minibatch_a2ce11bed6c3a4d526c2fdd885970f49d}\label{classlbann_1_1lbann__callback__step__minibatch_a2ce11bed6c3a4d526c2fdd885970f49d}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch@{lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch}!lbann\+\_\+callback\+\_\+step\+\_\+minibatch@{lbann\+\_\+callback\+\_\+step\+\_\+minibatch}}
+\index{lbann\+\_\+callback\+\_\+step\+\_\+minibatch@{lbann\+\_\+callback\+\_\+step\+\_\+minibatch}!lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch@{lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+step\+\_\+minibatch()}{lbann\_callback\_step\_minibatch()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch (\begin{DoxyParamCaption}\item[{int}]{starting\+\_\+mbsize,  }\item[{int}]{step,  }\item[{int}]{ramp\+\_\+time = {\ttfamily 0} }\end{DoxyParamCaption})}
+
+
+
+Definition at line 148 of file callback\+\_\+variable\+\_\+minibatch.\+cpp.
+
+
+\begin{DoxyCode}
+149                                                 :
+150   \hyperlink{classlbann_1_1lbann__callback__variable__minibatch_a970a03f0d297f8447020e85d23f5ee73}{lbann\_callback\_variable\_minibatch}(starting\_mbsize), 
+      \hyperlink{classlbann_1_1lbann__callback__step__minibatch_a1d150c95b193f9a24c8d7d73506b034c}{m\_step}(step),
+151   \hyperlink{classlbann_1_1lbann__callback__step__minibatch_ad367d8969b52755f768085d8db98449c}{m\_ramp\_time}(ramp\_time) \{\}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__step__minibatch_a66b34b96845274563dd72172dafd9079}\label{classlbann_1_1lbann__callback__step__minibatch_a66b34b96845274563dd72172dafd9079}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch@{lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch}!lbann\+\_\+callback\+\_\+step\+\_\+minibatch@{lbann\+\_\+callback\+\_\+step\+\_\+minibatch}}
+\index{lbann\+\_\+callback\+\_\+step\+\_\+minibatch@{lbann\+\_\+callback\+\_\+step\+\_\+minibatch}!lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch@{lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+step\+\_\+minibatch()}{lbann\_callback\_step\_minibatch()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__step__minibatch}{lbann\+\_\+callback\+\_\+step\+\_\+minibatch} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__step__minibatch_a3c291a8908f893d0ca372ae7c650bbb2}\label{classlbann_1_1lbann__callback__step__minibatch_a3c291a8908f893d0ca372ae7c650bbb2}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch@{lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch}!copy@{copy}}
+\index{copy@{copy}!lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch@{lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__step__minibatch}{lbann\+\_\+callback\+\_\+step\+\_\+minibatch}$\ast$ lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a9f545d1269a8c7af335625d049691f26}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 98 of file callback\+\_\+variable\+\_\+minibatch.\+hpp.
+
+
+\begin{DoxyCode}
+98                                                        \{
+99     \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1lbann__callback__step__minibatch_a2ce11bed6c3a4d526c2fdd885970f49d}{lbann\_callback\_step\_minibatch}(*\textcolor{keyword}{this});
+100   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__step__minibatch_a2e07fa5a590d68b1b71059d9275ee12a}\label{classlbann_1_1lbann__callback__step__minibatch_a2e07fa5a590d68b1b71059d9275ee12a}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch@{lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch}!name@{name}}
+\index{name@{name}!lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch@{lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch}}
+\subsubsection{\texorpdfstring{name()}{name()}}
+{\footnotesize\ttfamily std\+::string lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch\+::name (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Return this callback\textquotesingle{}s name. 
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a7522c7a14f1d6a1ea762cc2d7248eb3a}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 101 of file callback\+\_\+variable\+\_\+minibatch.\+hpp.
+
+
+\begin{DoxyCode}
+101 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"step minibatch"}; \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=348pt]{classlbann_1_1lbann__callback__step__minibatch_a2e07fa5a590d68b1b71059d9275ee12a_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__step__minibatch_adea0e27a38a8094db757a57e4f976769}\label{classlbann_1_1lbann__callback__step__minibatch_adea0e27a38a8094db757a57e4f976769}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch@{lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch@{lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__step__minibatch}{lbann\+\_\+callback\+\_\+step\+\_\+minibatch}\& lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__step__minibatch}{lbann\+\_\+callback\+\_\+step\+\_\+minibatch} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__step__minibatch_a9ed85aa78f6e4fe4cf3427f9257a4610}\label{classlbann_1_1lbann__callback__step__minibatch_a9ed85aa78f6e4fe4cf3427f9257a4610}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch@{lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch}!schedule@{schedule}}
+\index{schedule@{schedule}!lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch@{lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch}}
+\subsubsection{\texorpdfstring{schedule()}{schedule()}}
+{\footnotesize\ttfamily bool lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch\+::schedule (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m,  }\item[{int \&}]{new\+\_\+mbsize,  }\item[{float \&}]{new\+\_\+lr,  }\item[{int \&}]{ramp\+\_\+time }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Implemented by child classes to provide the mini-\/batch/learning schedule. This is called at the end of every training epoch. If it returns false, no changes are made from the currently established schedule. If this returns true, the mini-\/batch size will be changed accordingly. If the mini-\/batch size is larger than the model\textquotesingle{}s maximum mini-\/batch size, a warning is printed and the maximum mini-\/batch size is used. If new\+\_\+lr also non-\/zero, the learning rate will be changed to new\+\_\+lr, with a linear ramp time. (If ramp\+\_\+time is 0, it is changed immediately.) Note changing the learning rate while in a ramp may lead to unexpected behavior; also be aware of interactions with other learning rate schedules. 
+
+Implements \hyperlink{classlbann_1_1lbann__callback__variable__minibatch_ace13e8941491ddd28ef35c277cecb1ad}{lbann\+::lbann\+\_\+callback\+\_\+variable\+\_\+minibatch}.
+
+
+
+Definition at line 153 of file callback\+\_\+variable\+\_\+minibatch.\+cpp.
+
+
+\begin{DoxyCode}
+154                                                             \{
+155   \textcolor{keywordflow}{if} (m->get\_cur\_epoch() % \hyperlink{classlbann_1_1lbann__callback__step__minibatch_a1d150c95b193f9a24c8d7d73506b034c}{m\_step} == 0) \{
+156     new\_mbsize = \hyperlink{classlbann_1_1lbann__callback__variable__minibatch_a6488bd1f45110a1cb22553e5035003de}{m\_current\_mini\_batch\_size} * 2;
+157     new\_lr = \hyperlink{classlbann_1_1lbann__callback__variable__minibatch_a9de892c44231eadbbc7d27cfcc340ce2}{get\_current\_learning\_rate}(m) * 2;
+158     ramp\_time = \hyperlink{classlbann_1_1lbann__callback__step__minibatch_ad367d8969b52755f768085d8db98449c}{m\_ramp\_time};
+159     \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+160   \} \textcolor{keywordflow}{else} \{
+161     \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+162   \}
+163 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__step__minibatch_a9ed85aa78f6e4fe4cf3427f9257a4610_cgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__step__minibatch_ad367d8969b52755f768085d8db98449c}\label{classlbann_1_1lbann__callback__step__minibatch_ad367d8969b52755f768085d8db98449c}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch@{lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch}!m\+\_\+ramp\+\_\+time@{m\+\_\+ramp\+\_\+time}}
+\index{m\+\_\+ramp\+\_\+time@{m\+\_\+ramp\+\_\+time}!lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch@{lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch}}
+\subsubsection{\texorpdfstring{m\+\_\+ramp\+\_\+time}{m\_ramp\_time}}
+{\footnotesize\ttfamily int lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch\+::m\+\_\+ramp\+\_\+time\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Number of steps to ramp the learning rate over. 
+
+
+
+Definition at line 107 of file callback\+\_\+variable\+\_\+minibatch.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__step__minibatch_a1d150c95b193f9a24c8d7d73506b034c}\label{classlbann_1_1lbann__callback__step__minibatch_a1d150c95b193f9a24c8d7d73506b034c}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch@{lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch}!m\+\_\+step@{m\+\_\+step}}
+\index{m\+\_\+step@{m\+\_\+step}!lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch@{lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch}}
+\subsubsection{\texorpdfstring{m\+\_\+step}{m\_step}}
+{\footnotesize\ttfamily int lbann\+::lbann\+\_\+callback\+\_\+step\+\_\+minibatch\+::m\+\_\+step\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Number of epochs between mini-\/batch size increases. 
+
+
+
+Definition at line 105 of file callback\+\_\+variable\+\_\+minibatch.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/callbacks/\hyperlink{callback__variable__minibatch_8hpp}{callback\+\_\+variable\+\_\+minibatch.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/callbacks/\hyperlink{callback__variable__minibatch_8cpp}{callback\+\_\+variable\+\_\+minibatch.\+cpp}\end{DoxyCompactItemize}

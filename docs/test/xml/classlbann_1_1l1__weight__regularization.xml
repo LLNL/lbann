@@ -1,0 +1,264 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1l1__weight__regularization" kind="class" language="C++" prot="public">
+    <compoundname>lbann::l1_weight_regularization</compoundname>
+    <basecompoundref refid="classlbann_1_1objective__function__term" prot="public" virt="non-virtual">lbann::objective_function_term</basecompoundref>
+    <includes refid="l1_8hpp" local="no">l1.hpp</includes>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1l1__weight__regularization_1a8416f2197baad2b9850163ecba72a4c4" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>lbann::l1_weight_regularization::l1_weight_regularization</definition>
+        <argsstring>(EvalType scale_factor=EvalType(1))</argsstring>
+        <name>l1_weight_regularization</name>
+        <param>
+          <type><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref></type>
+          <declname>scale_factor</declname>
+          <defval><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref>(1)</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Default constructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/weight_regularization/l1.hpp" line="38" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/weight_regularization/l1.hpp" bodystart="38" bodyend="39"/>
+        <references refid="classlbann_1_1l1__weight__regularization_1ae6f3b7de9357ffd852372bb7e25a0c6a">operator=</references>
+        <references refid="classlbann_1_1l1__weight__regularization_1ad7fc177a270eb8a1ddf08b9dd67b23ee">~l1_weight_regularization</references>
+        <referencedby refid="classlbann_1_1l1__weight__regularization_1aa5cbb7a878224e152e8e425bb99ea09a" compoundref="l1_8hpp" startline="48" endline="48">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1l1__weight__regularization_1a6d0bdc74e61eed4601667db4d64b45d3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::l1_weight_regularization::l1_weight_regularization</definition>
+        <argsstring>(const l1_weight_regularization &amp;other)=default</argsstring>
+        <name>l1_weight_regularization</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1l1__weight__regularization" kindref="compound">l1_weight_regularization</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Copy constructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/weight_regularization/l1.hpp" line="42" column="1"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1l1__weight__regularization_1ae6f3b7de9357ffd852372bb7e25a0c6a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classlbann_1_1l1__weight__regularization" kindref="compound">l1_weight_regularization</ref> &amp;</type>
+        <definition>l1_weight_regularization&amp; lbann::l1_weight_regularization::operator=</definition>
+        <argsstring>(const l1_weight_regularization &amp;other)=default</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1l1__weight__regularization" kindref="compound">l1_weight_regularization</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Copy assignment operator. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/weight_regularization/l1.hpp" line="44" column="1"/>
+        <referencedby refid="classlbann_1_1l1__weight__regularization_1a8416f2197baad2b9850163ecba72a4c4" compoundref="l1_8hpp" startline="38" endline="39">l1_weight_regularization</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1l1__weight__regularization_1ad7fc177a270eb8a1ddf08b9dd67b23ee" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::l1_weight_regularization::~l1_weight_regularization</definition>
+        <argsstring>() override=default</argsstring>
+        <name>~l1_weight_regularization</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Destructor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/weight_regularization/l1.hpp" line="46" column="1"/>
+        <referencedby refid="classlbann_1_1l1__weight__regularization_1a8416f2197baad2b9850163ecba72a4c4" compoundref="l1_8hpp" startline="38" endline="39">l1_weight_regularization</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1l1__weight__regularization_1aa5cbb7a878224e152e8e425bb99ea09a" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type><ref refid="classlbann_1_1l1__weight__regularization" kindref="compound">l1_weight_regularization</ref> *</type>
+        <definition>l1_weight_regularization* lbann::l1_weight_regularization::copy</definition>
+        <argsstring>() const override</argsstring>
+        <name>copy</name>
+        <reimplements refid="classlbann_1_1objective__function__term_1ae98a4ec173a602ad55d1df20dadd4cb9">copy</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Copy function. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/weight_regularization/l1.hpp" line="48" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/weight_regularization/l1.hpp" bodystart="48" bodyend="48"/>
+        <references refid="classlbann_1_1l1__weight__regularization_1a8416f2197baad2b9850163ecba72a4c4" compoundref="l1_8hpp" startline="38" endline="39">l1_weight_regularization</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1l1__weight__regularization_1a4a41b6a07c36fc4f82364295a404ba1b" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>std::string</type>
+        <definition>std::string lbann::l1_weight_regularization::name</definition>
+        <argsstring>() const override</argsstring>
+        <name>name</name>
+        <reimplements refid="classlbann_1_1objective__function__term_1a964fbfad3dd0434aa8f32c5fedf1079a">name</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Get the name of the objective function term. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/weight_regularization/l1.hpp" line="51" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/weight_regularization/l1.hpp" bodystart="51" bodyend="51"/>
+        <references refid="classlbann_1_1l1__weight__regularization_1afcd238514ad132d66609efbb30de25ec" compoundref="l1_8cpp" startline="32" endline="52">setup</references>
+        <references refid="classlbann_1_1l1__weight__regularization_1ace2c0fe490dd1e630460063b6df23597" compoundref="l1_8cpp" startline="54" endline="56">start_evaluation</references>
+        <references refid="classlbann_1_1l1__weight__regularization_1a5416b0c884e45854a03e0d2e2b3e63f3" compoundref="l1_8cpp" startline="58" endline="82">finish_evaluation</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1l1__weight__regularization_1afcd238514ad132d66609efbb30de25ec" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::l1_weight_regularization::setup</definition>
+        <argsstring>(model &amp;m) override</argsstring>
+        <name>setup</name>
+        <reimplements refid="classlbann_1_1objective__function__term_1a6c8dbdf18aac8676098189fb7b178e91">setup</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> &amp;</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Setup L2 regularization term. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/weight_regularization/l1.hpp" line="54" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/weight_regularization/l1.cpp" bodystart="32" bodyend="52"/>
+        <references refid="classlbann_1_1objective__function__term_1a6c8dbdf18aac8676098189fb7b178e91" compoundref="objective__function__term_8cpp" startline="39" endline="41">lbann::objective_function_term::setup</references>
+        <references refid="classlbann_1_1objective__function__term_1a9269cf0a237eacd1e220ba2739f44334" compoundref="objective__function__term_8hpp" startline="97">lbann::objective_function_term::m_layers</references>
+        <references refid="classlbann_1_1objective__function__term_1a1d601c29153ae9cb54c585887608f2bf" compoundref="objective__function__term_8hpp" startline="99">lbann::objective_function_term::m_weights</references>
+        <references refid="classlbann_1_1model_1ac0a89794f1f51e7c502fff2745c973e6" compoundref="model_8hpp" startline="120" endline="120">lbann::model::get_weights</references>
+        <referencedby refid="classlbann_1_1l1__weight__regularization_1a4a41b6a07c36fc4f82364295a404ba1b" compoundref="l1_8hpp" startline="51" endline="51">name</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1l1__weight__regularization_1ace2c0fe490dd1e630460063b6df23597" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::l1_weight_regularization::start_evaluation</definition>
+        <argsstring>() override</argsstring>
+        <name>start_evaluation</name>
+        <reimplements refid="classlbann_1_1objective__function__term_1a0af4dfd71fb30e43d1ae7611172ad9b0">start_evaluation</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Start evaluation of the objective function term. This should include the scaling factor. The result is not available until finish_evaluation has been called. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/weight_regularization/l1.hpp" line="56" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/weight_regularization/l1.cpp" bodystart="54" bodyend="56"/>
+        <referencedby refid="classlbann_1_1l1__weight__regularization_1a4a41b6a07c36fc4f82364295a404ba1b" compoundref="l1_8hpp" startline="51" endline="51">name</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1l1__weight__regularization_1a5416b0c884e45854a03e0d2e2b3e63f3" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type><ref refid="base_8hpp_1a3266f5ac18504bbadea983c109566867" kindref="member">EvalType</ref></type>
+        <definition>EvalType lbann::l1_weight_regularization::finish_evaluation</definition>
+        <argsstring>() override</argsstring>
+        <name>finish_evaluation</name>
+        <reimplements refid="classlbann_1_1objective__function__term_1a7a82f2cdbc954655ac860896306aed0c">finish_evaluation</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Get the value of the L1 regularization term. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/weight_regularization/l1.hpp" line="58" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/weight_regularization/l1.cpp" bodystart="58" bodyend="82"/>
+        <references refid="classlbann_1_1objective__function__term_1a59a544b8ff0455ed5091de3bf0d81c3c" compoundref="objective__function__term_8hpp" startline="94">lbann::objective_function_term::m_scale_factor</references>
+        <references refid="classlbann_1_1objective__function__term_1a1d601c29153ae9cb54c585887608f2bf" compoundref="objective__function__term_8hpp" startline="99">lbann::objective_function_term::m_weights</references>
+        <references refid="classlbann_1_1objective__function__term_1a5f89b676a26a6b76ddc26563ac87beb9" compoundref="objective__function__term_8hpp" startline="102" endline="102">lbann::objective_function_term::get_comm</references>
+        <references refid="classlbann_1_1lbann__comm_1af5631e5f0f54e4df4958eba9df2599ef" compoundref="comm_8hpp" startline="419" endline="424">lbann::lbann_comm::allreduce</references>
+        <referencedby refid="classlbann_1_1l1__weight__regularization_1a4a41b6a07c36fc4f82364295a404ba1b" compoundref="l1_8hpp" startline="51" endline="51">name</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1l1__weight__regularization_1a329af165a876f4c1668aee84339e9ad2" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::l1_weight_regularization::differentiate</definition>
+        <argsstring>() override</argsstring>
+        <name>differentiate</name>
+        <reimplements refid="classlbann_1_1objective__function__term_1ad009c3cfbe1cf2fbb6cce015b16fdac5">differentiate</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Weight regularization terms are not applied to the objective functions w.r.t. the activations </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/weight_regularization/l1.hpp" line="63" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/weight_regularization/l1.hpp" bodystart="63" bodyend="63"/>
+        <references refid="classlbann_1_1l1__weight__regularization_1a9f2c29799fc60449f65bc1127b7514fb" compoundref="l1_8cpp" startline="84" endline="116">compute_weight_regularization</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1l1__weight__regularization_1a9f2c29799fc60449f65bc1127b7514fb" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::l1_weight_regularization::compute_weight_regularization</definition>
+        <argsstring>() override</argsstring>
+        <name>compute_weight_regularization</name>
+        <reimplements refid="classlbann_1_1objective__function__term_1a134cf89caed45527bbe9d811a0b93dfc">compute_weight_regularization</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Compute the gradient of the L1 regularization term. The gradient is computed w.r.t. the weights. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/weight_regularization/l1.hpp" line="68" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/weight_regularization/l1.cpp" bodystart="84" bodyend="116"/>
+        <references refid="classlbann_1_1objective__function__term_1a59a544b8ff0455ed5091de3bf0d81c3c" compoundref="objective__function__term_8hpp" startline="94">lbann::objective_function_term::m_scale_factor</references>
+        <references refid="classlbann_1_1objective__function__term_1a1d601c29153ae9cb54c585887608f2bf" compoundref="objective__function__term_8hpp" startline="99">lbann::objective_function_term::m_weights</references>
+        <referencedby refid="classlbann_1_1l1__weight__regularization_1a329af165a876f4c1668aee84339e9ad2" compoundref="l1_8hpp" startline="63" endline="63">differentiate</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>Objective function term for L1 weight regularization. </para>    </detaileddescription>
+    <inheritancegraph>
+      <node id="1187">
+        <label>lbann::l1_weight_regularization</label>
+        <link refid="classlbann_1_1l1__weight__regularization"/>
+        <childnode refid="1188" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1188">
+        <label>lbann::objective_function_term</label>
+        <link refid="classlbann_1_1objective__function__term"/>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="1189">
+        <label>lbann::l1_weight_regularization</label>
+        <link refid="classlbann_1_1l1__weight__regularization"/>
+        <childnode refid="1190" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="1191">
+        <label>lbann::lbann_comm</label>
+        <link refid="classlbann_1_1lbann__comm"/>
+      </node>
+      <node id="1190">
+        <label>lbann::objective_function_term</label>
+        <link refid="classlbann_1_1objective__function__term"/>
+        <childnode refid="1191" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/weight_regularization/l1.hpp" line="35" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/objective_functions/weight_regularization/l1.hpp" bodystart="35" bodyend="70"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1l1__weight__regularization_1a9f2c29799fc60449f65bc1127b7514fb" prot="public" virt="virtual"><scope>lbann::l1_weight_regularization</scope><name>compute_weight_regularization</name></member>
+      <member refid="classlbann_1_1l1__weight__regularization_1aa5cbb7a878224e152e8e425bb99ea09a" prot="public" virt="virtual"><scope>lbann::l1_weight_regularization</scope><name>copy</name></member>
+      <member refid="classlbann_1_1l1__weight__regularization_1a329af165a876f4c1668aee84339e9ad2" prot="public" virt="virtual"><scope>lbann::l1_weight_regularization</scope><name>differentiate</name></member>
+      <member refid="classlbann_1_1l1__weight__regularization_1a5416b0c884e45854a03e0d2e2b3e63f3" prot="public" virt="virtual"><scope>lbann::l1_weight_regularization</scope><name>finish_evaluation</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a5f89b676a26a6b76ddc26563ac87beb9" prot="protected" virt="non-virtual"><scope>lbann::l1_weight_regularization</scope><name>get_comm</name></member>
+      <member refid="classlbann_1_1objective__function__term_1aeeb85314738bec6e15877f68b3d422a0" prot="public" virt="non-virtual"><scope>lbann::l1_weight_regularization</scope><name>get_layer_pointers</name></member>
+      <member refid="classlbann_1_1objective__function__term_1aea73505aed191bfb9336d9d46a69d586" prot="public" virt="non-virtual"><scope>lbann::l1_weight_regularization</scope><name>get_weights_pointers</name></member>
+      <member refid="classlbann_1_1l1__weight__regularization_1a8416f2197baad2b9850163ecba72a4c4" prot="public" virt="non-virtual"><scope>lbann::l1_weight_regularization</scope><name>l1_weight_regularization</name></member>
+      <member refid="classlbann_1_1l1__weight__regularization_1a6d0bdc74e61eed4601667db4d64b45d3" prot="public" virt="non-virtual"><scope>lbann::l1_weight_regularization</scope><name>l1_weight_regularization</name></member>
+      <member refid="classlbann_1_1objective__function__term_1aac2240c9925c2b7bf436072a24f3eb30" prot="public" virt="virtual"><scope>lbann::l1_weight_regularization</scope><name>load_from_checkpoint_shared</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a9269cf0a237eacd1e220ba2739f44334" prot="protected" virt="non-virtual"><scope>lbann::l1_weight_regularization</scope><name>m_layers</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a59a544b8ff0455ed5091de3bf0d81c3c" prot="protected" virt="non-virtual"><scope>lbann::l1_weight_regularization</scope><name>m_scale_factor</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a1d601c29153ae9cb54c585887608f2bf" prot="protected" virt="non-virtual"><scope>lbann::l1_weight_regularization</scope><name>m_weights</name></member>
+      <member refid="classlbann_1_1l1__weight__regularization_1a4a41b6a07c36fc4f82364295a404ba1b" prot="public" virt="virtual"><scope>lbann::l1_weight_regularization</scope><name>name</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a8c019e3c880f38dc20275e395acaeca1" prot="public" virt="non-virtual"><scope>lbann::l1_weight_regularization</scope><name>objective_function_term</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a791a33056717d8b3f5ca2288145d86c8" prot="public" virt="non-virtual"><scope>lbann::l1_weight_regularization</scope><name>objective_function_term</name></member>
+      <member refid="classlbann_1_1l1__weight__regularization_1ae6f3b7de9357ffd852372bb7e25a0c6a" prot="public" virt="non-virtual"><scope>lbann::l1_weight_regularization</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a8bbac194d96a854d5841817b67b63334" prot="public" virt="non-virtual" ambiguityscope="lbann::objective_function_term::"><scope>lbann::l1_weight_regularization</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a4451a6a6fb4d70ac2aed2827f075cd71" prot="public" virt="virtual"><scope>lbann::l1_weight_regularization</scope><name>save_to_checkpoint_shared</name></member>
+      <member refid="classlbann_1_1objective__function__term_1a82656dfd81bf6b818b38d041d341bc3b" prot="public" virt="non-virtual"><scope>lbann::l1_weight_regularization</scope><name>set_layer_pointers</name></member>
+      <member refid="classlbann_1_1objective__function__term_1aa8adaf01dd8bc535dd86f27fc53c276a" prot="public" virt="non-virtual"><scope>lbann::l1_weight_regularization</scope><name>set_weights_pointers</name></member>
+      <member refid="classlbann_1_1l1__weight__regularization_1afcd238514ad132d66609efbb30de25ec" prot="public" virt="virtual"><scope>lbann::l1_weight_regularization</scope><name>setup</name></member>
+      <member refid="classlbann_1_1l1__weight__regularization_1ace2c0fe490dd1e630460063b6df23597" prot="public" virt="virtual"><scope>lbann::l1_weight_regularization</scope><name>start_evaluation</name></member>
+      <member refid="classlbann_1_1l1__weight__regularization_1ad7fc177a270eb8a1ddf08b9dd67b23ee" prot="public" virt="non-virtual"><scope>lbann::l1_weight_regularization</scope><name>~l1_weight_regularization</name></member>
+      <member refid="classlbann_1_1objective__function__term_1ad95920d424b3c248a2124827971451df" prot="public" virt="virtual"><scope>lbann::l1_weight_regularization</scope><name>~objective_function_term</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

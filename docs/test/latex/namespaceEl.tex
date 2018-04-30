@@ -1,0 +1,190 @@
+\hypertarget{namespaceEl}{}\section{El Namespace Reference}
+\label{namespaceEl}\index{El@{El}}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+{\footnotesize template$<$typename F $>$ }\\void \hyperlink{namespaceEl_a09d5c471681b2b48fbe4c5e6bfd0b3d3}{Column\+Sum} (const Matrix$<$ F $>$ \&X, Matrix$<$ F $>$ \&sums)
+\item 
+{\footnotesize template$<$typename F $>$ }\\void \hyperlink{namespaceEl_ad446b5d330cc5ae121cc2eef632c4118}{Column\+Sum} (const Abstract\+Dist\+Matrix$<$ F $>$ \&A, Abstract\+Dist\+Matrix$<$ F $>$ \&sums)
+\item 
+{\footnotesize template$<$typename F $>$ }\\void \hyperlink{namespaceEl_a584f088a3325a8222d4d6ac37be04b04}{Row\+Sum} (const Matrix$<$ F $>$ \&X, Matrix$<$ F $>$ \&sums)
+\item 
+{\footnotesize template$<$typename F $>$ }\\void \hyperlink{namespaceEl_a3982e90cd0f7cbfdc0f19741ce254c1a}{Row\+Sum} (const Abstract\+Dist\+Matrix$<$ F $>$ \&A, Abstract\+Dist\+Matrix$<$ F $>$ \&sums)
+\end{DoxyCompactItemize}
+
+
+\subsection{Function Documentation}
+\mbox{\Hypertarget{namespaceEl_a09d5c471681b2b48fbe4c5e6bfd0b3d3}\label{namespaceEl_a09d5c471681b2b48fbe4c5e6bfd0b3d3}} 
+\index{El@{El}!Column\+Sum@{Column\+Sum}}
+\index{Column\+Sum@{Column\+Sum}!El@{El}}
+\subsubsection{\texorpdfstring{Column\+Sum()}{ColumnSum()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily template$<$typename F $>$ \\
+void El\+::\+Column\+Sum (\begin{DoxyParamCaption}\item[{const Matrix$<$ F $>$ \&}]{X,  }\item[{Matrix$<$ F $>$ \&}]{sums }\end{DoxyParamCaption})}
+
+
+
+Definition at line 36 of file Elemental\+\_\+extensions.\+cpp.
+
+
+\begin{DoxyCode}
+36                                                       \{
+37 \textcolor{comment}{//    DEBUG\_ONLY(CSE cse("ColumnSum"))}
+38 
+39     \textcolor{comment}{// Input matrix parameters}
+40     \textcolor{keyword}{const} Int m = X.Height();
+41     \textcolor{keyword}{const} Int n = X.Width();
+42     \textcolor{keyword}{const} F *XBuf = X.LockedBuffer();
+43     \textcolor{keyword}{const} Int XLDim = X.LDim();
+44 
+45     \textcolor{comment}{// Initialize output}
+46     Zeros( sums, 1, n );
+47     F *sumsBuf = sums.Buffer();
+48     \textcolor{keyword}{const} Int sumsLDim = sums.LDim();
+49 
+50     \textcolor{comment}{// Compute sum over each column}
+51     EL\_PARALLEL\_FOR
+52     \textcolor{keywordflow}{for}( Int j=0; j<n; ++j )
+53     \{
+54         \textcolor{keywordflow}{for}( Int i=0; i<m; ++i )
+55         \{
+56             sumsBuf[j*sumsLDim] += XBuf[i+j*XLDim];
+57         \}
+58     \}
+59 
+60 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=316pt]{namespaceEl_a09d5c471681b2b48fbe4c5e6bfd0b3d3_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{namespaceEl_ad446b5d330cc5ae121cc2eef632c4118}\label{namespaceEl_ad446b5d330cc5ae121cc2eef632c4118}} 
+\index{El@{El}!Column\+Sum@{Column\+Sum}}
+\index{Column\+Sum@{Column\+Sum}!El@{El}}
+\subsubsection{\texorpdfstring{Column\+Sum()}{ColumnSum()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily template$<$typename F $>$ \\
+void El\+::\+Column\+Sum (\begin{DoxyParamCaption}\item[{const Abstract\+Dist\+Matrix$<$ F $>$ \&}]{A,  }\item[{Abstract\+Dist\+Matrix$<$ F $>$ \&}]{sums }\end{DoxyParamCaption})}
+
+
+
+Definition at line 64 of file Elemental\+\_\+extensions.\+cpp.
+
+
+\begin{DoxyCode}
+64                                                                 \{
+65 \textcolor{comment}{//    DEBUG\_ONLY(CSE cse("ColumnSum"))}
+66 
+67     \textcolor{comment}{// Check that distributed matrix formats are valid}
+68     \textcolor{keywordflow}{if}( A.DistData().rowDist != sums.DistData().rowDist
+69         || sums.DistData().colDist != STAR 
+70         || A.DistData().blockHeight != sums.DistData().blockHeight
+71         || A.DistData().blockWidth != sums.DistData().blockWidth)
+72     \{
+73         LogicError(\textcolor{stringliteral}{"Matrices do not have compatible data distributions"});
+74     \}
+75 
+76     \textcolor{comment}{// Compute column-wise sums}
+77     sums.AlignWith( A );
+78     sums.Resize( 1, A.Width() );
+79     \hyperlink{namespaceEl_ad446b5d330cc5ae121cc2eef632c4118}{ColumnSum}( A.LockedMatrix(), sums.Matrix() );
+80     AllReduce( sums.Matrix(), sums.RedundantComm(), mpi::SUM );
+81 
+82 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=287pt]{namespaceEl_ad446b5d330cc5ae121cc2eef632c4118_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{namespaceEl_a584f088a3325a8222d4d6ac37be04b04}\label{namespaceEl_a584f088a3325a8222d4d6ac37be04b04}} 
+\index{El@{El}!Row\+Sum@{Row\+Sum}}
+\index{Row\+Sum@{Row\+Sum}!El@{El}}
+\subsubsection{\texorpdfstring{Row\+Sum()}{RowSum()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily template$<$typename F $>$ \\
+void El\+::\+Row\+Sum (\begin{DoxyParamCaption}\item[{const Matrix$<$ F $>$ \&}]{X,  }\item[{Matrix$<$ F $>$ \&}]{sums }\end{DoxyParamCaption})}
+
+
+
+Definition at line 85 of file Elemental\+\_\+extensions.\+cpp.
+
+
+\begin{DoxyCode}
+85                                                  \{
+86 
+87     \textcolor{comment}{// Input matrix parameters}
+88     \textcolor{keyword}{const} Int m = X.Height();
+89     \textcolor{keyword}{const} Int n = X.Width();
+90     \textcolor{keyword}{const} F *XBuf = X.LockedBuffer();
+91     \textcolor{keyword}{const} Int XLDim = X.LDim();
+92 
+93     \textcolor{comment}{// Initialize output}
+94     Zeros( sums, m, 1 );
+95     F *sumsBuf = sums.Buffer();
+96 
+97     \textcolor{comment}{// Iterate through row blocks}
+98     \textcolor{keyword}{const} Int bsize = Max( 64 / \textcolor{keyword}{sizeof}(F), 1 );
+99     EL\_PARALLEL\_FOR
+100     \textcolor{keywordflow}{for}( Int i=0; i<m; i+=bsize )
+101     \{
+102         \textcolor{keyword}{const} Int mb = Min( bsize, m - i );
+103         \textcolor{keywordflow}{for}( Int j=0; j<n; ++j )
+104         \{
+105             \textcolor{keywordflow}{for}( Int ib=0; ib<mb; ++ib )
+106             \{
+107                 sumsBuf[i+ib] += XBuf[(i+ib)+j*XLDim];
+108             \}
+109         \}
+110     \}
+111 
+112 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=313pt]{namespaceEl_a584f088a3325a8222d4d6ac37be04b04_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{namespaceEl_a3982e90cd0f7cbfdc0f19741ce254c1a}\label{namespaceEl_a3982e90cd0f7cbfdc0f19741ce254c1a}} 
+\index{El@{El}!Row\+Sum@{Row\+Sum}}
+\index{Row\+Sum@{Row\+Sum}!El@{El}}
+\subsubsection{\texorpdfstring{Row\+Sum()}{RowSum()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily template$<$typename F $>$ \\
+void El\+::\+Row\+Sum (\begin{DoxyParamCaption}\item[{const Abstract\+Dist\+Matrix$<$ F $>$ \&}]{A,  }\item[{Abstract\+Dist\+Matrix$<$ F $>$ \&}]{sums }\end{DoxyParamCaption})}
+
+
+
+Definition at line 115 of file Elemental\+\_\+extensions.\+cpp.
+
+
+\begin{DoxyCode}
+115                                                                          \{
+116   
+117   \textcolor{comment}{// Check that distributed matrix formats are valid}
+118   \textcolor{keywordflow}{if}( A.DistData().colDist != sums.DistData().colDist
+119       || sums.DistData().rowDist != STAR 
+120       || A.DistData().blockHeight != sums.DistData().blockHeight
+121       || A.DistData().blockWidth != sums.DistData().blockWidth)
+122   \{
+123       LogicError(\textcolor{stringliteral}{"Matrices do not have compatible data distributions"});
+124   \}
+125 
+126   \textcolor{comment}{// Compute row-wise sums}
+127   sums.AlignWith( A );
+128   sums.Resize( A.Height(), 1 );
+129   \hyperlink{namespaceEl_a3982e90cd0f7cbfdc0f19741ce254c1a}{RowSum}( A.LockedMatrix(), sums.Matrix() );
+130   AllReduce( sums.Matrix(), sums.RedundantComm(), mpi::SUM );
+131 
+132 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=258pt]{namespaceEl_a3982e90cd0f7cbfdc0f19741ce254c1a_cgraph}
+\end{center}
+\end{figure}

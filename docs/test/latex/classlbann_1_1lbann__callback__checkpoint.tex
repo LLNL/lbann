@@ -1,0 +1,771 @@
+\hypertarget{classlbann_1_1lbann__callback__checkpoint}{}\section{lbann\+:\+:lbann\+\_\+callback\+\_\+checkpoint Class Reference}
+\label{classlbann_1_1lbann__callback__checkpoint}\index{lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}}
+
+
+{\ttfamily \#include $<$callback\+\_\+checkpoint.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+checkpoint\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=192pt]{classlbann_1_1lbann__callback__checkpoint__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:lbann\+\_\+callback\+\_\+checkpoint\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=207pt]{classlbann_1_1lbann__callback__checkpoint__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1lbann__callback__checkpoint_a865e633d1f041e3f2e5465b1d05f3603}{lbann\+\_\+callback\+\_\+checkpoint} (std\+::string checkpoint\+\_\+dir, int checkpoint\+\_\+epochs, int checkpoint\+\_\+steps, int checkpoint\+\_\+secs, bool checkpoint\+\_\+per\+\_\+rank)
+\item 
+\hyperlink{classlbann_1_1lbann__callback__checkpoint_a954c1b3f33fc293151d5bf37a8053628}{lbann\+\_\+callback\+\_\+checkpoint} (const \hyperlink{classlbann_1_1lbann__callback__checkpoint}{lbann\+\_\+callback\+\_\+checkpoint} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__checkpoint}{lbann\+\_\+callback\+\_\+checkpoint} \& \hyperlink{classlbann_1_1lbann__callback__checkpoint_aab65cb67b53e6af00142a9dc665f9ce8}{operator=} (const \hyperlink{classlbann_1_1lbann__callback__checkpoint}{lbann\+\_\+callback\+\_\+checkpoint} \&)=default
+\item 
+\hyperlink{classlbann_1_1lbann__callback__checkpoint}{lbann\+\_\+callback\+\_\+checkpoint} $\ast$ \hyperlink{classlbann_1_1lbann__callback__checkpoint_a63dc49f38f063f9b85d9abdf8b2855aa}{copy} () const override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__checkpoint_a383654a7bb70672dfc9fef679f4b509f}{setup} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__checkpoint_a406bfba673e503e94ae6eb57aff6a78e}{on\+\_\+epoch\+\_\+end} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__checkpoint_a476527e2b7b44dd3623e01f63ddb5f78}{on\+\_\+batch\+\_\+end} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__checkpoint_a5fb4288c03b1ce14681b72562e9471b2}{on\+\_\+validation\+\_\+end} (\hyperlink{classlbann_1_1model}{model} $\ast$m) override
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__checkpoint_adc9b6a01e100893c2dd0cfc7090c4079}{set\+\_\+checkpoint\+\_\+dir} (std\+::string dir)
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__checkpoint_a718cf388085e51253a84c494511d1fb7}{set\+\_\+checkpoint\+\_\+epochs} (int epochs)
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__checkpoint_aa385a1dda770ddf7a801134b96d3fcfd}{set\+\_\+checkpoint\+\_\+steps} (int steps)
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__checkpoint_a91a0e5627986654d719930ba5eeebc9e}{set\+\_\+checkpoint\+\_\+secs} (\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} secs)
+\item 
+void \hyperlink{classlbann_1_1lbann__callback__checkpoint_ac3a0bb250a679b28924910c0dc617809}{set\+\_\+checkpoint\+\_\+per\+\_\+rank} (bool per\+\_\+rank)
+\item 
+bool \hyperlink{classlbann_1_1lbann__callback__checkpoint_a2e5f396667ccc45f7203263b06c5e216}{need\+\_\+checkpoint} (\hyperlink{classlbann_1_1model}{model} $\ast$m)
+\item 
+bool \hyperlink{classlbann_1_1lbann__callback__checkpoint_a23b6f5abb924b2c4d0694e98c7d6f4d5}{checkpoint\+Shared} (\hyperlink{classlbann_1_1model}{model} $\ast$m)
+\item 
+bool \hyperlink{classlbann_1_1lbann__callback__checkpoint_a40d369278bc5963ba2f3cca1750ba004}{restart\+Shared} (\hyperlink{classlbann_1_1model}{model} $\ast$m)
+\item 
+std\+::string \hyperlink{classlbann_1_1lbann__callback__checkpoint_aa1afa81c9638bf76fb6ecfe91d07a88e}{name} () const override
+\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+std\+::string \hyperlink{classlbann_1_1lbann__callback__checkpoint_ac89386fda60744e6399f97003fea3711}{m\+\_\+checkpoint\+\_\+dir}
+\item 
+int \hyperlink{classlbann_1_1lbann__callback__checkpoint_ad6f4399effadedb26e33fc39a3c6915e}{m\+\_\+checkpoint\+\_\+epochs}
+\item 
+int \hyperlink{classlbann_1_1lbann__callback__checkpoint_ad6debea7d9bbebd3ee0323acec11516f}{m\+\_\+checkpoint\+\_\+steps}
+\item 
+\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} \hyperlink{classlbann_1_1lbann__callback__checkpoint_a285658a96f8546952c9016ef4cc12161}{m\+\_\+checkpoint\+\_\+secs}
+\item 
+bool \hyperlink{classlbann_1_1lbann__callback__checkpoint_a36af7331ddf213339fe7282cb53ffedc}{m\+\_\+checkpoint\+\_\+per\+\_\+rank}
+\item 
+\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} \hyperlink{classlbann_1_1lbann__callback__checkpoint_a842304929c265ffa9d285e635fbbbbd7}{m\+\_\+checkpoint\+\_\+last}
+\item 
+bool \hyperlink{classlbann_1_1lbann__callback__checkpoint_a9632d5f0078d3ff2015e96dba789e15c}{m\+\_\+epoch\+\_\+end}
+\item 
+bool \hyperlink{classlbann_1_1lbann__callback__checkpoint_a3827e5bb569f80d790c3ac856a7c39b5}{m\+\_\+val\+\_\+end}
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+
+\begin{DoxyItemize}
+\item Checkpoint at given interval in given directory 
+\end{DoxyItemize}
+
+Definition at line 39 of file callback\+\_\+checkpoint.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checkpoint_a865e633d1f041e3f2e5465b1d05f3603}\label{classlbann_1_1lbann__callback__checkpoint_a865e633d1f041e3f2e5465b1d05f3603}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}!lbann\+\_\+callback\+\_\+checkpoint@{lbann\+\_\+callback\+\_\+checkpoint}}
+\index{lbann\+\_\+callback\+\_\+checkpoint@{lbann\+\_\+callback\+\_\+checkpoint}!lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+checkpoint()}{lbann\_callback\_checkpoint()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+checkpoint\+::lbann\+\_\+callback\+\_\+checkpoint (\begin{DoxyParamCaption}\item[{std\+::string}]{checkpoint\+\_\+dir,  }\item[{int}]{checkpoint\+\_\+epochs,  }\item[{int}]{checkpoint\+\_\+steps,  }\item[{int}]{checkpoint\+\_\+secs,  }\item[{bool}]{checkpoint\+\_\+per\+\_\+rank }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+\begin{DoxyParams}{Parameters}
+{\em checkpoint\+\_\+dir} & directory to save checkpoint files \\
+\hline
+{\em checkpoint\+\_\+epochs} & interval to checkpoint \\
+\hline
+{\em checkpoint\+\_\+steps} & interval to checkpoint \\
+\hline
+{\em checkpoint\+\_\+secs} & interval to checkpoint \\
+\hline
+{\em checkpoint\+\_\+per\+\_\+rank} & true to save/load a file per mpi rank \\
+\hline
+\end{DoxyParams}
+
+
+Definition at line 49 of file callback\+\_\+checkpoint.\+hpp.
+
+
+\begin{DoxyCode}
+49                                                                                                            
+                                             : 
+50     \hyperlink{classlbann_1_1lbann__callback_a679057298a41ddd47f08c157f756c584}{lbann\_callback}(), \hyperlink{classlbann_1_1lbann__callback__checkpoint_ac89386fda60744e6399f97003fea3711}{m\_checkpoint\_dir}(checkpoint\_dir), 
+      \hyperlink{classlbann_1_1lbann__callback__checkpoint_ad6f4399effadedb26e33fc39a3c6915e}{m\_checkpoint\_epochs}(checkpoint\_epochs), \hyperlink{classlbann_1_1lbann__callback__checkpoint_ad6debea7d9bbebd3ee0323acec11516f}{m\_checkpoint\_steps}(
+      checkpoint\_steps), \hyperlink{classlbann_1_1lbann__callback__checkpoint_a285658a96f8546952c9016ef4cc12161}{m\_checkpoint\_secs}(checkpoint\_secs), 
+      \hyperlink{classlbann_1_1lbann__callback__checkpoint_a36af7331ddf213339fe7282cb53ffedc}{m\_checkpoint\_per\_rank}(checkpoint\_per\_rank) \{\}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checkpoint_a865e633d1f041e3f2e5465b1d05f3603_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checkpoint_a865e633d1f041e3f2e5465b1d05f3603_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checkpoint_a954c1b3f33fc293151d5bf37a8053628}\label{classlbann_1_1lbann__callback__checkpoint_a954c1b3f33fc293151d5bf37a8053628}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}!lbann\+\_\+callback\+\_\+checkpoint@{lbann\+\_\+callback\+\_\+checkpoint}}
+\index{lbann\+\_\+callback\+\_\+checkpoint@{lbann\+\_\+callback\+\_\+checkpoint}!lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}}
+\subsubsection{\texorpdfstring{lbann\+\_\+callback\+\_\+checkpoint()}{lbann\_callback\_checkpoint()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::lbann\+\_\+callback\+\_\+checkpoint\+::lbann\+\_\+callback\+\_\+checkpoint (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__checkpoint}{lbann\+\_\+callback\+\_\+checkpoint} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checkpoint_a23b6f5abb924b2c4d0694e98c7d6f4d5}\label{classlbann_1_1lbann__callback__checkpoint_a23b6f5abb924b2c4d0694e98c7d6f4d5}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}!checkpoint\+Shared@{checkpoint\+Shared}}
+\index{checkpoint\+Shared@{checkpoint\+Shared}!lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}}
+\subsubsection{\texorpdfstring{checkpoint\+Shared()}{checkpointShared()}}
+{\footnotesize\ttfamily bool lbann\+::lbann\+\_\+callback\+\_\+checkpoint\+::checkpoint\+Shared (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})}
+
+
+
+Definition at line 145 of file callback\+\_\+checkpoint.\+cpp.
+
+
+\begin{DoxyCode}
+145                                                          \{
+146   \textcolor{comment}{// if the checkpoint directory is not defined, bail}
+147   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1lbann__callback__checkpoint_ac89386fda60744e6399f97003fea3711}{m\_checkpoint\_dir}.length() == 0) \{
+148     \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+149   \}
+150   \textcolor{comment}{// time how long this takes}
+151   El::Timer timer;
+152   lbann\_comm *\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm} = m->get\_comm();
+153   \textcolor{comment}{// get checkpoint directory}
+154   \textcolor{keyword}{const} \textcolor{keywordtype}{char} *dir = \hyperlink{classlbann_1_1lbann__callback__checkpoint_ac89386fda60744e6399f97003fea3711}{m\_checkpoint\_dir}.c\_str();
+155   \textcolor{comment}{// read current epoch and step counters from model}
+156   \textcolor{keywordtype}{int} epoch = m->get\_cur\_epoch();
+157   \textcolor{keywordtype}{int} step  = m->get\_cur\_step();
+158   \textcolor{comment}{// let user know we're saving a checkpoint}
+159   MPI\_Barrier(MPI\_COMM\_WORLD);
+160   \textcolor{keywordflow}{if} (comm->am\_world\_master()) \{
+161     timer.Start();
+162     printf(\textcolor{stringliteral}{"Checkpoint: epoch %d step %d ...\(\backslash\)n"}, epoch, step);
+163     fflush(stdout);
+164   \}
+165   \textcolor{comment}{// create top level directory}
+166   \textcolor{comment}{//const char* dir = trainParams.ParameterDir.c\_str();}
+167   \hyperlink{namespacelbann_a8830dea8eef0ab5b93d68e2358ceeb1a}{makedir}(dir);
+168   \textcolor{comment}{// create subdirectory for this epoch}
+169   \textcolor{keywordtype}{char} epochdir[1024];
+170   snprintf(epochdir, \textcolor{keyword}{sizeof}(epochdir), \textcolor{stringliteral}{"%s/shared.epoch.%d.step.%d"}, dir, epoch, step);
+171   \textcolor{comment}{// start our checkpoint}
+172   persist p;
+173   p.open\_checkpoint(epochdir,\hyperlink{classlbann_1_1lbann__callback__checkpoint_a36af7331ddf213339fe7282cb53ffedc}{m\_checkpoint\_per\_rank}, 
+      \hyperlink{classlbann_1_1lbann__callback__checkpoint_a3827e5bb569f80d790c3ac856a7c39b5}{m\_val\_end});
+174   \textcolor{comment}{// call virtual function to checkpoint model state}
+175   \textcolor{comment}{//if(m\_epoch\_end)\{}
+176 
+177   m->save\_to\_checkpoint\_shared(p,\hyperlink{classlbann_1_1lbann__callback__checkpoint_a3827e5bb569f80d790c3ac856a7c39b5}{m\_val\_end});
+178   \textcolor{comment}{// close our checkpoint}
+179   p.close\_checkpoint();
+180   uint64\_t bytes\_count = p.get\_bytes();
+181   \textcolor{comment}{// write epoch number to current file, we do this at the end so as to only update}
+182   \textcolor{comment}{// this file when we know we have a new valid checkpoint}
+183   \textcolor{keywordflow}{if} (comm->am\_world\_master()) \{
+184     \hyperlink{namespacelbann_a35a39e949cfd1d7f8c15f94e4d44ecff}{write\_latest}(dir, \textcolor{stringliteral}{"last.shared.checkpoint"}, epoch, step);
+185   \}
+186   \textcolor{comment}{// stop timer and report cost}
+187   MPI\_Barrier(MPI\_COMM\_WORLD);
+188   \textcolor{keywordflow}{if} (comm->am\_world\_master()) \{
+189     \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType} secs = timer.Stop();
+190     \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType} bw = 0;
+191     \textcolor{keywordflow}{if} (secs > 0.0) \{
+192       bw = \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType}(bytes\_count) / (secs * 1024.0 * 1024.0);
+193     \}
+194     printf(\textcolor{stringliteral}{"Checkpoint complete: Epoch=%d Step=%d (%f secs, %llu bytes, %f MB/sec)\(\backslash\)n"},
+195            epoch, step, secs, (\textcolor{keywordtype}{unsigned} \textcolor{keywordtype}{long} \textcolor{keywordtype}{long}) bytes\_count, bw
+196           );
+197     fflush(stdout);
+198   \}
+199   \textcolor{comment}{// saved a checkpoint, update our last checkpoint time}
+200   \hyperlink{classlbann_1_1lbann__callback__checkpoint_a842304929c265ffa9d285e635fbbbbd7}{m\_checkpoint\_last} = MPI\_Wtime();
+201   \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+202 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=550pt]{classlbann_1_1lbann__callback__checkpoint_a23b6f5abb924b2c4d0694e98c7d6f4d5_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checkpoint_a23b6f5abb924b2c4d0694e98c7d6f4d5_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checkpoint_a63dc49f38f063f9b85d9abdf8b2855aa}\label{classlbann_1_1lbann__callback__checkpoint_a63dc49f38f063f9b85d9abdf8b2855aa}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}!copy@{copy}}
+\index{copy@{copy}!lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__checkpoint}{lbann\+\_\+callback\+\_\+checkpoint}$\ast$ lbann\+::lbann\+\_\+callback\+\_\+checkpoint\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a9f545d1269a8c7af335625d049691f26}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 53 of file callback\+\_\+checkpoint.\+hpp.
+
+
+\begin{DoxyCode}
+53 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1lbann__callback__checkpoint_a865e633d1f041e3f2e5465b1d05f3603}{lbann\_callback\_checkpoint}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checkpoint_a63dc49f38f063f9b85d9abdf8b2855aa_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checkpoint_aa1afa81c9638bf76fb6ecfe91d07a88e}\label{classlbann_1_1lbann__callback__checkpoint_aa1afa81c9638bf76fb6ecfe91d07a88e}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}!name@{name}}
+\index{name@{name}!lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}}
+\subsubsection{\texorpdfstring{name()}{name()}}
+{\footnotesize\ttfamily std\+::string lbann\+::lbann\+\_\+callback\+\_\+checkpoint\+::name (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Return this callback\textquotesingle{}s name. 
+
+Implements \hyperlink{classlbann_1_1lbann__callback_a7522c7a14f1d6a1ea762cc2d7248eb3a}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 82 of file callback\+\_\+checkpoint.\+hpp.
+
+
+\begin{DoxyCode}
+82 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"checkpoint"}; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checkpoint_a2e5f396667ccc45f7203263b06c5e216}\label{classlbann_1_1lbann__callback__checkpoint_a2e5f396667ccc45f7203263b06c5e216}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}!need\+\_\+checkpoint@{need\+\_\+checkpoint}}
+\index{need\+\_\+checkpoint@{need\+\_\+checkpoint}!lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}}
+\subsubsection{\texorpdfstring{need\+\_\+checkpoint()}{need\_checkpoint()}}
+{\footnotesize\ttfamily bool lbann\+::lbann\+\_\+callback\+\_\+checkpoint\+::need\+\_\+checkpoint (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})}
+
+
+
+Definition at line 64 of file callback\+\_\+checkpoint.\+cpp.
+
+
+\begin{DoxyCode}
+64                                                         \{
+65   \textcolor{comment}{/* TODO: since we're using clocks, this requires a bcast for each call,}
+66 \textcolor{comment}{   * we could use number of samples processed to make a local decision */}
+67   \textcolor{comment}{// if none of our checkpoint conditions are set, assume we're not checkpointing}
+68   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1lbann__callback__checkpoint_ad6f4399effadedb26e33fc39a3c6915e}{m\_checkpoint\_epochs} == 0 &&
+69       \hyperlink{classlbann_1_1lbann__callback__checkpoint_ad6debea7d9bbebd3ee0323acec11516f}{m\_checkpoint\_steps}  == 0 &&
+70       \hyperlink{classlbann_1_1lbann__callback__checkpoint_a285658a96f8546952c9016ef4cc12161}{m\_checkpoint\_secs}   == 0.0) \{
+71     \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+72   \}
+73   \textcolor{comment}{// assume that we won't checkpoint}
+74   \textcolor{keywordtype}{bool} checkpoint\_now = \textcolor{keyword}{false};
+75   lbann\_comm *\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm} = m->get\_comm();
+76   \textcolor{comment}{// if at start of epoch and evenly divide}
+77   \textcolor{keywordflow}{if} (!checkpoint\_now && \hyperlink{classlbann_1_1lbann__callback__checkpoint_ad6f4399effadedb26e33fc39a3c6915e}{m\_checkpoint\_epochs} > 0) \{
+78     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1lbann__callback__checkpoint_a9632d5f0078d3ff2015e96dba789e15c}{m\_epoch\_end} || \hyperlink{classlbann_1_1lbann__callback__checkpoint_a3827e5bb569f80d790c3ac856a7c39b5}{m\_val\_end}) \{
+79       checkpoint\_now = (m->get\_cur\_epoch() > 0) && (m->get\_cur\_epoch() % 
+      \hyperlink{classlbann_1_1lbann__callback__checkpoint_ad6f4399effadedb26e33fc39a3c6915e}{m\_checkpoint\_epochs} == 0);
+80     \}
+81   \}
+82   \textcolor{comment}{// if our current step is evenly divisable by checkpoint steps,}
+83   \textcolor{comment}{// take a checkpoint}
+84   \textcolor{keywordflow}{if} (!checkpoint\_now && \hyperlink{classlbann_1_1lbann__callback__checkpoint_ad6debea7d9bbebd3ee0323acec11516f}{m\_checkpoint\_steps} > 0) \{
+85     checkpoint\_now = (m->get\_cur\_step() > 0) && (m->get\_cur\_step() % 
+      \hyperlink{classlbann_1_1lbann__callback__checkpoint_ad6debea7d9bbebd3ee0323acec11516f}{m\_checkpoint\_steps} == 0);
+86   \}
+87   \textcolor{comment}{// check the clock if time-based checkpoint is enabled}
+88   \textcolor{keywordflow}{if} (!checkpoint\_now && \hyperlink{classlbann_1_1lbann__callback__checkpoint_a285658a96f8546952c9016ef4cc12161}{m\_checkpoint\_secs} != 0.0) \{
+89     \textcolor{comment}{// have rank 0 determine whether we should checkpoint}
+90     \textcolor{comment}{// to avoid issues with clock skew, we rely on rank 0 to make decision}
+91     \textcolor{keywordflow}{if} (comm->am\_world\_master()) \{
+92       \textcolor{comment}{// get the current time}
+93       \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType} current = MPI\_Wtime();
+94       \textcolor{comment}{// compute time next checkpoint is due}
+95       \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType} next = \hyperlink{classlbann_1_1lbann__callback__checkpoint_a842304929c265ffa9d285e635fbbbbd7}{m\_checkpoint\_last} + 
+      \hyperlink{classlbann_1_1lbann__callback__checkpoint_a285658a96f8546952c9016ef4cc12161}{m\_checkpoint\_secs};
+96       \textcolor{comment}{// determine whether it's time for a checkpoint}
+97       checkpoint\_now = (current >= next);
+98     \}
+99     \textcolor{comment}{// get checkpoint\_now from rank 0}
+100     \textcolor{keywordtype}{int} flag = checkpoint\_now ? 1 : 0;
+101     MPI\_Bcast(&flag, 1, MPI\_INT, 0, MPI\_COMM\_WORLD);
+102     checkpoint\_now = (bool) flag;
+103   \}
+104   \textcolor{comment}{//m\_epoch\_end = false;}
+105   \textcolor{keywordflow}{return} checkpoint\_now;
+106 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checkpoint_a2e5f396667ccc45f7203263b06c5e216_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checkpoint_a2e5f396667ccc45f7203263b06c5e216_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checkpoint_a476527e2b7b44dd3623e01f63ddb5f78}\label{classlbann_1_1lbann__callback__checkpoint_a476527e2b7b44dd3623e01f63ddb5f78}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}!on\+\_\+batch\+\_\+end@{on\+\_\+batch\+\_\+end}}
+\index{on\+\_\+batch\+\_\+end@{on\+\_\+batch\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}}
+\subsubsection{\texorpdfstring{on\+\_\+batch\+\_\+end()}{on\_batch\_end()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+checkpoint\+::on\+\_\+batch\+\_\+end (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Called immediately after the end of a (mini-\/)batch. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_a895ca577e358601fcae5c04749f60535}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 59 of file callback\+\_\+checkpoint.\+cpp.
+
+
+\begin{DoxyCode}
+59                                                      \{
+60   \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1lbann__callback__checkpoint_a2e5f396667ccc45f7203263b06c5e216}{need\_checkpoint}(m))\{
+61     \hyperlink{classlbann_1_1lbann__callback__checkpoint_a23b6f5abb924b2c4d0694e98c7d6f4d5}{checkpointShared}(m);
+62   \}
+63 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checkpoint_a476527e2b7b44dd3623e01f63ddb5f78_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checkpoint_a476527e2b7b44dd3623e01f63ddb5f78_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checkpoint_a406bfba673e503e94ae6eb57aff6a78e}\label{classlbann_1_1lbann__callback__checkpoint_a406bfba673e503e94ae6eb57aff6a78e}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}!on\+\_\+epoch\+\_\+end@{on\+\_\+epoch\+\_\+end}}
+\index{on\+\_\+epoch\+\_\+end@{on\+\_\+epoch\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}}
+\subsubsection{\texorpdfstring{on\+\_\+epoch\+\_\+end()}{on\_epoch\_end()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+checkpoint\+::on\+\_\+epoch\+\_\+end (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Called immediate after the end of each epoch. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_a1fc71110e7f754bf73c9e0f344a448a5}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 40 of file callback\+\_\+checkpoint.\+cpp.
+
+
+\begin{DoxyCode}
+40                                                      \{
+41   \hyperlink{classlbann_1_1lbann__callback__checkpoint_a9632d5f0078d3ff2015e96dba789e15c}{m\_epoch\_end} = \textcolor{keyword}{true};
+42   \hyperlink{classlbann_1_1lbann__callback__checkpoint_a3827e5bb569f80d790c3ac856a7c39b5}{m\_val\_end} = \textcolor{keyword}{false}; 
+43   \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1lbann__callback__checkpoint_a2e5f396667ccc45f7203263b06c5e216}{need\_checkpoint}(m))\{
+44     \hyperlink{classlbann_1_1lbann__callback__checkpoint_a23b6f5abb924b2c4d0694e98c7d6f4d5}{checkpointShared}(m);
+45   \}
+46   \hyperlink{classlbann_1_1lbann__callback__checkpoint_a9632d5f0078d3ff2015e96dba789e15c}{m\_epoch\_end} = \textcolor{keyword}{false};
+47   
+48 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checkpoint_a406bfba673e503e94ae6eb57aff6a78e_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checkpoint_a406bfba673e503e94ae6eb57aff6a78e_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checkpoint_a5fb4288c03b1ce14681b72562e9471b2}\label{classlbann_1_1lbann__callback__checkpoint_a5fb4288c03b1ce14681b72562e9471b2}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}!on\+\_\+validation\+\_\+end@{on\+\_\+validation\+\_\+end}}
+\index{on\+\_\+validation\+\_\+end@{on\+\_\+validation\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}}
+\subsubsection{\texorpdfstring{on\+\_\+validation\+\_\+end()}{on\_validation\_end()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+checkpoint\+::on\+\_\+validation\+\_\+end (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Called immediately after the end of validation. 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_adc16e42e5064dc2dc8d84dfbfc1325eb}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 50 of file callback\+\_\+checkpoint.\+cpp.
+
+
+\begin{DoxyCode}
+50                                                           \{
+51   \hyperlink{classlbann_1_1lbann__callback__checkpoint_a3827e5bb569f80d790c3ac856a7c39b5}{m\_val\_end} = \textcolor{keyword}{true};
+52   \textcolor{keywordflow}{if}(\hyperlink{classlbann_1_1lbann__callback__checkpoint_a2e5f396667ccc45f7203263b06c5e216}{need\_checkpoint}(m))\{
+53     \hyperlink{classlbann_1_1lbann__callback__checkpoint_a23b6f5abb924b2c4d0694e98c7d6f4d5}{checkpointShared}(m);
+54   \}
+55   \textcolor{comment}{//m\_epoch\_end = false;}
+56   \hyperlink{classlbann_1_1lbann__callback__checkpoint_a3827e5bb569f80d790c3ac856a7c39b5}{m\_val\_end} = \textcolor{keyword}{false};
+57 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checkpoint_a5fb4288c03b1ce14681b72562e9471b2_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checkpoint_a5fb4288c03b1ce14681b72562e9471b2_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checkpoint_aab65cb67b53e6af00142a9dc665f9ce8}\label{classlbann_1_1lbann__callback__checkpoint_aab65cb67b53e6af00142a9dc665f9ce8}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1lbann__callback__checkpoint}{lbann\+\_\+callback\+\_\+checkpoint}\& lbann\+::lbann\+\_\+callback\+\_\+checkpoint\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1lbann__callback__checkpoint}{lbann\+\_\+callback\+\_\+checkpoint} \&}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checkpoint_aab65cb67b53e6af00142a9dc665f9ce8_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checkpoint_a40d369278bc5963ba2f3cca1750ba004}\label{classlbann_1_1lbann__callback__checkpoint_a40d369278bc5963ba2f3cca1750ba004}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}!restart\+Shared@{restart\+Shared}}
+\index{restart\+Shared@{restart\+Shared}!lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}}
+\subsubsection{\texorpdfstring{restart\+Shared()}{restartShared()}}
+{\footnotesize\ttfamily bool lbann\+::lbann\+\_\+callback\+\_\+checkpoint\+::restart\+Shared (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})}
+
+
+
+Definition at line 203 of file callback\+\_\+checkpoint.\+cpp.
+
+
+\begin{DoxyCode}
+203                                                       \{
+204   \textcolor{comment}{// if the checkpoint directory is not defined, bail}
+205   \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1lbann__callback__checkpoint_ac89386fda60744e6399f97003fea3711}{m\_checkpoint\_dir}.length() == 0) \{
+206     \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+207   \}
+208   \textcolor{comment}{// get top level directory}
+209   \textcolor{keyword}{const} \textcolor{keywordtype}{char} *dir = \hyperlink{classlbann_1_1lbann__callback__checkpoint_ac89386fda60744e6399f97003fea3711}{m\_checkpoint\_dir}.c\_str();
+210   \textcolor{comment}{// read epoch number from current file}
+211   \textcolor{keywordtype}{int} epoch, step;
+212   lbann\_comm *\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm} = m->get\_comm();
+213   \textcolor{keywordflow}{if} (comm->am\_world\_master()) \{
+214     \hyperlink{namespacelbann_abebab8298e56db6a455a9ed08ab42bb4}{read\_latest}(dir, \textcolor{stringliteral}{"last.shared.checkpoint"}, &epoch, &step);
+215   \}
+216   MPI\_Bcast(&epoch, 1, MPI\_INT, 0, MPI\_COMM\_WORLD);
+217   MPI\_Bcast(&step,  1, MPI\_INT, 0, MPI\_COMM\_WORLD);
+218   \textcolor{comment}{// if we couldn't find the latest epoch, just return}
+219   \textcolor{keywordflow}{if} (epoch < 0) \{
+220     \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+221   \}
+222   \textcolor{comment}{// time how long this takes}
+223   El::Timer timer;
+224   \textcolor{comment}{// let user know we're restarting from a checkpoint}
+225   MPI\_Barrier(MPI\_COMM\_WORLD);
+226   \textcolor{keywordflow}{if} (comm->am\_world\_master()) \{
+227     timer.Start();
+228     printf(\textcolor{stringliteral}{"Restart: epoch %d ...\(\backslash\)n"}, epoch);
+229     fflush(stdout);
+230   \}
+231   \textcolor{comment}{// get subdirectory for this epoch}
+232   \textcolor{keywordtype}{char} epochdir[1024];
+233   sprintf(epochdir, \textcolor{stringliteral}{"%s/shared.epoch.%d.step.%d"}, dir, epoch, step);
+234   \textcolor{comment}{// open our checkpoint}
+235   persist p;
+236   p.open\_restart(epochdir,\hyperlink{classlbann_1_1lbann__callback__checkpoint_a36af7331ddf213339fe7282cb53ffedc}{m\_checkpoint\_per\_rank});
+237   \textcolor{comment}{// call virtual function to restore model from checkpoint}
+238   m->load\_from\_checkpoint\_shared(p);
+239   \textcolor{comment}{// close our checkpoint}
+240   p.close\_restart();
+241   uint64\_t bytes\_count = p.get\_bytes();
+242   \textcolor{comment}{// let user know we've completed reading our restart}
+243   MPI\_Barrier(MPI\_COMM\_WORLD);
+244   \textcolor{keywordflow}{if} (comm->am\_world\_master()) \{
+245     \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType} secs = timer.Stop();
+246     \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType} bw = 0.0;
+247     \textcolor{keywordflow}{if} (secs > 0.0) \{
+248       bw = \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType}(bytes\_count) / (secs * 1024.0 * 1024.0);
+249     \}
+250     printf(\textcolor{stringliteral}{"Restart complete: Epoch=%d Step=%d (%f secs, %llu bytes, %f MB/sec)\(\backslash\)n"},
+251            epoch, step, secs, (\textcolor{keywordtype}{unsigned} \textcolor{keywordtype}{long} \textcolor{keywordtype}{long}) bytes\_count, bw
+252           );
+253     fflush(stdout);
+254   \}
+255   \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+256 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checkpoint_a40d369278bc5963ba2f3cca1750ba004_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checkpoint_a40d369278bc5963ba2f3cca1750ba004_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checkpoint_adc9b6a01e100893c2dd0cfc7090c4079}\label{classlbann_1_1lbann__callback__checkpoint_adc9b6a01e100893c2dd0cfc7090c4079}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}!set\+\_\+checkpoint\+\_\+dir@{set\+\_\+checkpoint\+\_\+dir}}
+\index{set\+\_\+checkpoint\+\_\+dir@{set\+\_\+checkpoint\+\_\+dir}!lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}}
+\subsubsection{\texorpdfstring{set\+\_\+checkpoint\+\_\+dir()}{set\_checkpoint\_dir()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+checkpoint\+::set\+\_\+checkpoint\+\_\+dir (\begin{DoxyParamCaption}\item[{std\+::string}]{dir }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 59 of file callback\+\_\+checkpoint.\+hpp.
+
+
+\begin{DoxyCode}
+59                                                \{
+60     \hyperlink{classlbann_1_1lbann__callback__checkpoint_ac89386fda60744e6399f97003fea3711}{m\_checkpoint\_dir}= dir;
+61   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checkpoint_a718cf388085e51253a84c494511d1fb7}\label{classlbann_1_1lbann__callback__checkpoint_a718cf388085e51253a84c494511d1fb7}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}!set\+\_\+checkpoint\+\_\+epochs@{set\+\_\+checkpoint\+\_\+epochs}}
+\index{set\+\_\+checkpoint\+\_\+epochs@{set\+\_\+checkpoint\+\_\+epochs}!lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}}
+\subsubsection{\texorpdfstring{set\+\_\+checkpoint\+\_\+epochs()}{set\_checkpoint\_epochs()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+checkpoint\+::set\+\_\+checkpoint\+\_\+epochs (\begin{DoxyParamCaption}\item[{int}]{epochs }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 63 of file callback\+\_\+checkpoint.\+hpp.
+
+
+\begin{DoxyCode}
+63                                                \{
+64     \hyperlink{classlbann_1_1lbann__callback__checkpoint_ad6f4399effadedb26e33fc39a3c6915e}{m\_checkpoint\_epochs}= epochs;
+65   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checkpoint_ac3a0bb250a679b28924910c0dc617809}\label{classlbann_1_1lbann__callback__checkpoint_ac3a0bb250a679b28924910c0dc617809}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}!set\+\_\+checkpoint\+\_\+per\+\_\+rank@{set\+\_\+checkpoint\+\_\+per\+\_\+rank}}
+\index{set\+\_\+checkpoint\+\_\+per\+\_\+rank@{set\+\_\+checkpoint\+\_\+per\+\_\+rank}!lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}}
+\subsubsection{\texorpdfstring{set\+\_\+checkpoint\+\_\+per\+\_\+rank()}{set\_checkpoint\_per\_rank()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+checkpoint\+::set\+\_\+checkpoint\+\_\+per\+\_\+rank (\begin{DoxyParamCaption}\item[{bool}]{per\+\_\+rank }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 75 of file callback\+\_\+checkpoint.\+hpp.
+
+
+\begin{DoxyCode}
+75                                                     \{
+76     \hyperlink{classlbann_1_1lbann__callback__checkpoint_a36af7331ddf213339fe7282cb53ffedc}{m\_checkpoint\_per\_rank}= per\_rank;
+77   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checkpoint_ac3a0bb250a679b28924910c0dc617809_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checkpoint_a91a0e5627986654d719930ba5eeebc9e}\label{classlbann_1_1lbann__callback__checkpoint_a91a0e5627986654d719930ba5eeebc9e}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}!set\+\_\+checkpoint\+\_\+secs@{set\+\_\+checkpoint\+\_\+secs}}
+\index{set\+\_\+checkpoint\+\_\+secs@{set\+\_\+checkpoint\+\_\+secs}!lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}}
+\subsubsection{\texorpdfstring{set\+\_\+checkpoint\+\_\+secs()}{set\_checkpoint\_secs()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+checkpoint\+::set\+\_\+checkpoint\+\_\+secs (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type}}]{secs }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 71 of file callback\+\_\+checkpoint.\+hpp.
+
+
+\begin{DoxyCode}
+71                                                 \{
+72     \hyperlink{classlbann_1_1lbann__callback__checkpoint_a285658a96f8546952c9016ef4cc12161}{m\_checkpoint\_secs}= secs;
+73   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checkpoint_aa385a1dda770ddf7a801134b96d3fcfd}\label{classlbann_1_1lbann__callback__checkpoint_aa385a1dda770ddf7a801134b96d3fcfd}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}!set\+\_\+checkpoint\+\_\+steps@{set\+\_\+checkpoint\+\_\+steps}}
+\index{set\+\_\+checkpoint\+\_\+steps@{set\+\_\+checkpoint\+\_\+steps}!lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}}
+\subsubsection{\texorpdfstring{set\+\_\+checkpoint\+\_\+steps()}{set\_checkpoint\_steps()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+checkpoint\+::set\+\_\+checkpoint\+\_\+steps (\begin{DoxyParamCaption}\item[{int}]{steps }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 67 of file callback\+\_\+checkpoint.\+hpp.
+
+
+\begin{DoxyCode}
+67                                              \{
+68     \hyperlink{classlbann_1_1lbann__callback__checkpoint_ad6debea7d9bbebd3ee0323acec11516f}{m\_checkpoint\_steps}= steps;
+69   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checkpoint_a383654a7bb70672dfc9fef679f4b509f}\label{classlbann_1_1lbann__callback__checkpoint_a383654a7bb70672dfc9fef679f4b509f}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}!setup@{setup}}
+\index{setup@{setup}!lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}}
+\subsubsection{\texorpdfstring{setup()}{setup()}}
+{\footnotesize\ttfamily void lbann\+::lbann\+\_\+callback\+\_\+checkpoint\+::setup (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1model}{model} $\ast$}]{m }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Called once to set up the callback (after all layers are set up). 
+
+Reimplemented from \hyperlink{classlbann_1_1lbann__callback_aab5086e27d9bb0a7c7ee8ffc1bc58671}{lbann\+::lbann\+\_\+callback}.
+
+
+
+Definition at line 34 of file callback\+\_\+checkpoint.\+cpp.
+
+
+\begin{DoxyCode}
+34                                               \{
+35   \hyperlink{classlbann_1_1lbann__callback__checkpoint_a9632d5f0078d3ff2015e96dba789e15c}{m\_epoch\_end} = \textcolor{keyword}{false};
+36   \hyperlink{classlbann_1_1lbann__callback__checkpoint_a3827e5bb569f80d790c3ac856a7c39b5}{m\_val\_end} = \textcolor{keyword}{false};
+37   \hyperlink{classlbann_1_1lbann__callback__checkpoint_a40d369278bc5963ba2f3cca1750ba004}{restartShared}(m);
+38 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1lbann__callback__checkpoint_a383654a7bb70672dfc9fef679f4b509f_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=340pt]{classlbann_1_1lbann__callback__checkpoint_a383654a7bb70672dfc9fef679f4b509f_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checkpoint_ac89386fda60744e6399f97003fea3711}\label{classlbann_1_1lbann__callback__checkpoint_ac89386fda60744e6399f97003fea3711}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}!m\+\_\+checkpoint\+\_\+dir@{m\+\_\+checkpoint\+\_\+dir}}
+\index{m\+\_\+checkpoint\+\_\+dir@{m\+\_\+checkpoint\+\_\+dir}!lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}}
+\subsubsection{\texorpdfstring{m\+\_\+checkpoint\+\_\+dir}{m\_checkpoint\_dir}}
+{\footnotesize\ttfamily std\+::string lbann\+::lbann\+\_\+callback\+\_\+checkpoint\+::m\+\_\+checkpoint\+\_\+dir\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 84 of file callback\+\_\+checkpoint.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checkpoint_ad6f4399effadedb26e33fc39a3c6915e}\label{classlbann_1_1lbann__callback__checkpoint_ad6f4399effadedb26e33fc39a3c6915e}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}!m\+\_\+checkpoint\+\_\+epochs@{m\+\_\+checkpoint\+\_\+epochs}}
+\index{m\+\_\+checkpoint\+\_\+epochs@{m\+\_\+checkpoint\+\_\+epochs}!lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}}
+\subsubsection{\texorpdfstring{m\+\_\+checkpoint\+\_\+epochs}{m\_checkpoint\_epochs}}
+{\footnotesize\ttfamily int lbann\+::lbann\+\_\+callback\+\_\+checkpoint\+::m\+\_\+checkpoint\+\_\+epochs\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 85 of file callback\+\_\+checkpoint.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checkpoint_a842304929c265ffa9d285e635fbbbbd7}\label{classlbann_1_1lbann__callback__checkpoint_a842304929c265ffa9d285e635fbbbbd7}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}!m\+\_\+checkpoint\+\_\+last@{m\+\_\+checkpoint\+\_\+last}}
+\index{m\+\_\+checkpoint\+\_\+last@{m\+\_\+checkpoint\+\_\+last}!lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}}
+\subsubsection{\texorpdfstring{m\+\_\+checkpoint\+\_\+last}{m\_checkpoint\_last}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} lbann\+::lbann\+\_\+callback\+\_\+checkpoint\+::m\+\_\+checkpoint\+\_\+last\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 89 of file callback\+\_\+checkpoint.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checkpoint_a36af7331ddf213339fe7282cb53ffedc}\label{classlbann_1_1lbann__callback__checkpoint_a36af7331ddf213339fe7282cb53ffedc}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}!m\+\_\+checkpoint\+\_\+per\+\_\+rank@{m\+\_\+checkpoint\+\_\+per\+\_\+rank}}
+\index{m\+\_\+checkpoint\+\_\+per\+\_\+rank@{m\+\_\+checkpoint\+\_\+per\+\_\+rank}!lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}}
+\subsubsection{\texorpdfstring{m\+\_\+checkpoint\+\_\+per\+\_\+rank}{m\_checkpoint\_per\_rank}}
+{\footnotesize\ttfamily bool lbann\+::lbann\+\_\+callback\+\_\+checkpoint\+::m\+\_\+checkpoint\+\_\+per\+\_\+rank\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 88 of file callback\+\_\+checkpoint.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checkpoint_a285658a96f8546952c9016ef4cc12161}\label{classlbann_1_1lbann__callback__checkpoint_a285658a96f8546952c9016ef4cc12161}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}!m\+\_\+checkpoint\+\_\+secs@{m\+\_\+checkpoint\+\_\+secs}}
+\index{m\+\_\+checkpoint\+\_\+secs@{m\+\_\+checkpoint\+\_\+secs}!lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}}
+\subsubsection{\texorpdfstring{m\+\_\+checkpoint\+\_\+secs}{m\_checkpoint\_secs}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} lbann\+::lbann\+\_\+callback\+\_\+checkpoint\+::m\+\_\+checkpoint\+\_\+secs\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 87 of file callback\+\_\+checkpoint.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checkpoint_ad6debea7d9bbebd3ee0323acec11516f}\label{classlbann_1_1lbann__callback__checkpoint_ad6debea7d9bbebd3ee0323acec11516f}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}!m\+\_\+checkpoint\+\_\+steps@{m\+\_\+checkpoint\+\_\+steps}}
+\index{m\+\_\+checkpoint\+\_\+steps@{m\+\_\+checkpoint\+\_\+steps}!lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}}
+\subsubsection{\texorpdfstring{m\+\_\+checkpoint\+\_\+steps}{m\_checkpoint\_steps}}
+{\footnotesize\ttfamily int lbann\+::lbann\+\_\+callback\+\_\+checkpoint\+::m\+\_\+checkpoint\+\_\+steps\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 86 of file callback\+\_\+checkpoint.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checkpoint_a9632d5f0078d3ff2015e96dba789e15c}\label{classlbann_1_1lbann__callback__checkpoint_a9632d5f0078d3ff2015e96dba789e15c}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}!m\+\_\+epoch\+\_\+end@{m\+\_\+epoch\+\_\+end}}
+\index{m\+\_\+epoch\+\_\+end@{m\+\_\+epoch\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}}
+\subsubsection{\texorpdfstring{m\+\_\+epoch\+\_\+end}{m\_epoch\_end}}
+{\footnotesize\ttfamily bool lbann\+::lbann\+\_\+callback\+\_\+checkpoint\+::m\+\_\+epoch\+\_\+end\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 90 of file callback\+\_\+checkpoint.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1lbann__callback__checkpoint_a3827e5bb569f80d790c3ac856a7c39b5}\label{classlbann_1_1lbann__callback__checkpoint_a3827e5bb569f80d790c3ac856a7c39b5}} 
+\index{lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}!m\+\_\+val\+\_\+end@{m\+\_\+val\+\_\+end}}
+\index{m\+\_\+val\+\_\+end@{m\+\_\+val\+\_\+end}!lbann\+::lbann\+\_\+callback\+\_\+checkpoint@{lbann\+::lbann\+\_\+callback\+\_\+checkpoint}}
+\subsubsection{\texorpdfstring{m\+\_\+val\+\_\+end}{m\_val\_end}}
+{\footnotesize\ttfamily bool lbann\+::lbann\+\_\+callback\+\_\+checkpoint\+::m\+\_\+val\+\_\+end\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 91 of file callback\+\_\+checkpoint.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/callbacks/\hyperlink{callback__checkpoint_8hpp}{callback\+\_\+checkpoint.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/callbacks/\hyperlink{callback__checkpoint_8cpp}{callback\+\_\+checkpoint.\+cpp}\end{DoxyCompactItemize}

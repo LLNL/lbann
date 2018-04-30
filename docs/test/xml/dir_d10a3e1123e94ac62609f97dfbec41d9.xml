@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="dir_d10a3e1123e94ac62609f97dfbec41d9" kind="dir">
+    <compoundname>/Users/mckinney27/doxy-testbed/lbann/src/io</compoundname>
+    <innerdir refid="dir_165ca8a5737c568fa66c431fe2819b03">/Users/mckinney27/doxy-testbed/lbann/src/io/data_buffers</innerdir>
+    <innerfile refid="file__io_8cpp">file_io.cpp</innerfile>
+    <innerfile refid="persist_8cpp">persist.cpp</innerfile>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/src/io/"/>
+  </compounddef>
+</doxygen>

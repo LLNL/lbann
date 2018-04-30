@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="dir_a0287548e0901a49679b9f14ab33972b" kind="dir">
+    <compoundname>/Users/mckinney27/doxy-testbed</compoundname>
+    <innerdir refid="dir_cd932a3bdfc03d1bb9e39e5b9ebbfb11">/Users/mckinney27/doxy-testbed/lbann</innerdir>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/"/>
+  </compounddef>
+</doxygen>

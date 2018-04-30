@@ -1,0 +1,135 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="callback__timer_8hpp" kind="file" language="C++">
+    <compoundname>callback_timer.hpp</compoundname>
+    <includes local="no">chrono</includes>
+    <includes local="no">vector</includes>
+    <includes refid="callback_8hpp" local="yes">lbann/callbacks/callback.hpp</includes>
+    <incdepgraph>
+      <node id="236">
+        <label>lbann/models/model.hpp</label>
+      </node>
+      <node id="230">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_timer.hpp</label>
+        <link refid="callback__timer_8hpp"/>
+        <childnode refid="231" relation="include">
+        </childnode>
+        <childnode refid="232" relation="include">
+        </childnode>
+        <childnode refid="233" relation="include">
+        </childnode>
+      </node>
+      <node id="235">
+        <label>lbann/utils/summary.hpp</label>
+      </node>
+      <node id="233">
+        <label>lbann/callbacks/callback.hpp</label>
+        <link refid="callback_8hpp_source"/>
+        <childnode refid="234" relation="include">
+        </childnode>
+        <childnode refid="235" relation="include">
+        </childnode>
+        <childnode refid="236" relation="include">
+        </childnode>
+        <childnode refid="237" relation="include">
+        </childnode>
+      </node>
+      <node id="232">
+        <label>vector</label>
+      </node>
+      <node id="237">
+        <label>lbann/layers/layer.hpp</label>
+      </node>
+      <node id="231">
+        <label>chrono</label>
+      </node>
+      <node id="234">
+        <label>lbann/base.hpp</label>
+      </node>
+    </incdepgraph>
+    <innerclass refid="classlbann_1_1lbann__callback__timer" prot="public">lbann::lbann_callback_timer</innerclass>
+    <innernamespace refid="namespacelbann">lbann</innernamespace>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>2014-2016,<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Security,<sp/>LLC.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Produced<sp/>at<sp/>the<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Laboratory.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Written<sp/>by<sp/>the<sp/>LBANN<sp/>Research<sp/>Team<sp/>(B.<sp/>Van<sp/>Essen,<sp/>et<sp/>al.)<sp/>listed<sp/>in</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="comment">//<sp/>the<sp/>CONTRIBUTORS<sp/>file.<sp/>&lt;lbann-dev@llnl.gov&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="comment">//<sp/>LLNL-CODE-697807.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="comment">//<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="comment">//<sp/>This<sp/>file<sp/>is<sp/>part<sp/>of<sp/>LBANN:<sp/>Livermore<sp/>Big<sp/>Artificial<sp/>Neural<sp/>Network</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Toolkit.<sp/>For<sp/>details,<sp/>see<sp/>http://software.llnl.gov/LBANN<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="comment">//<sp/>https://github.com/LLNL/LBANN.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Licensed<sp/>under<sp/>the<sp/>Apache<sp/>License,<sp/>Version<sp/>2.0<sp/>(the<sp/>&quot;Licensee&quot;);<sp/>you</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight><highlight class="comment">//<sp/>may<sp/>not<sp/>use<sp/>this<sp/>file<sp/>except<sp/>in<sp/>compliance<sp/>with<sp/>the<sp/>License.<sp/><sp/>You<sp/>may</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="comment">//<sp/>obtain<sp/>a<sp/>copy<sp/>of<sp/>the<sp/>License<sp/>at:</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight><highlight class="comment">//<sp/>http://www.apache.org/licenses/LICENSE-2.0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Unless<sp/>required<sp/>by<sp/>applicable<sp/>law<sp/>or<sp/>agreed<sp/>to<sp/>in<sp/>writing,<sp/>software</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight><highlight class="comment">//<sp/>distributed<sp/>under<sp/>the<sp/>License<sp/>is<sp/>distributed<sp/>on<sp/>an<sp/>&quot;AS<sp/>IS&quot;<sp/>BASIS,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight><highlight class="comment">//<sp/>WITHOUT<sp/>WARRANTIES<sp/>OR<sp/>CONDITIONS<sp/>OF<sp/>ANY<sp/>KIND,<sp/>either<sp/>express<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="comment">//<sp/>implied.<sp/>See<sp/>the<sp/>License<sp/>for<sp/>the<sp/>specific<sp/>language<sp/>governing</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="comment">//<sp/>permissions<sp/>and<sp/>limitations<sp/>under<sp/>the<sp/>license.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="25"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="26"><highlight class="normal"></highlight><highlight class="comment">//<sp/>lbann_callback_timer<sp/>.hpp<sp/>.cpp<sp/>-<sp/>Callback<sp/>hooks<sp/>to<sp/>time<sp/>training</highlight></codeline>
+<codeline lineno="28"><highlight class="comment"></highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="29"><highlight class="normal"></highlight><highlight class="preprocessor">#ifndef<sp/>LBANN_CALLBACKS_CALLBACK_TIMER_HPP_INCLUDED</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="30"><highlight class="normal"></highlight><highlight class="preprocessor">#define<sp/>LBANN_CALLBACKS_CALLBACK_TIMER_HPP_INCLUDED</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight></codeline>
+<codeline lineno="32"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;chrono&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="33"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;vector&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="34"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&quot;lbann/callbacks/callback.hpp&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="35"><highlight class="normal"></highlight></codeline>
+<codeline lineno="36"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacelbann" kindref="compound">lbann</ref><sp/>{</highlight></codeline>
+<codeline lineno="37"><highlight class="normal"></highlight></codeline>
+<codeline lineno="43" refid="classlbann_1_1lbann__callback__timer" refkind="compound"><highlight class="keyword">class<sp/></highlight><highlight class="normal"><ref refid="classlbann_1_1lbann__callback__timer" kindref="compound">lbann_callback_timer</ref><sp/>:<sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback" kindref="compound">lbann_callback</ref><sp/>{</highlight></codeline>
+<codeline lineno="44"><highlight class="normal"><sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="45"><highlight class="normal"></highlight></codeline>
+<codeline lineno="47" refid="classlbann_1_1lbann__callback__timer_1a00fc86ddf14a4a5e9c6b65ff2e81dfb6" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__timer_1a00fc86ddf14a4a5e9c6b65ff2e81dfb6" kindref="member">lbann_callback_timer</ref>(lbann_summary<sp/>*summarizer<sp/>=<sp/></highlight><highlight class="keyword">nullptr</highlight><highlight class="normal">)<sp/>:</highlight></codeline>
+<codeline lineno="48"><highlight class="normal"><sp/><sp/><sp/><sp/><ref refid="classlbann_1_1lbann__callback" kindref="compound">lbann_callback</ref>(1,<sp/>summarizer)<sp/>{}</highlight></codeline>
+<codeline lineno="50"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__timer_1a00fc86ddf14a4a5e9c6b65ff2e81dfb6" kindref="member">lbann_callback_timer</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__timer" kindref="compound">lbann_callback_timer</ref>&amp;)<sp/>=<sp/></highlight><highlight class="keywordflow">default</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="52"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__timer" kindref="compound">lbann_callback_timer</ref>&amp;<sp/><ref refid="classlbann_1_1lbann__callback__timer_1ab7548a88159197f64dfc319f3e777c2a" kindref="member">operator=</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__timer" kindref="compound">lbann_callback_timer</ref>&amp;)<sp/>=<sp/></highlight><highlight class="keywordflow">default</highlight><highlight class="normal">;</highlight></codeline>
+<codeline lineno="54" refid="classlbann_1_1lbann__callback__timer_1a9ea5c598723debb7b098a6ce891571c6" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1lbann__callback__timer" kindref="compound">lbann_callback_timer</ref>*<sp/><ref refid="classlbann_1_1lbann__callback__timer_1a9ea5c598723debb7b098a6ce891571c6" kindref="member">copy</ref>()</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{</highlight></codeline>
+<codeline lineno="55"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">new</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__timer_1a00fc86ddf14a4a5e9c6b65ff2e81dfb6" kindref="member">lbann_callback_timer</ref>(*</highlight><highlight class="keyword">this</highlight><highlight class="normal">);</highlight></codeline>
+<codeline lineno="56"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="57"><highlight class="normal"></highlight></codeline>
+<codeline lineno="59" refid="classlbann_1_1lbann__callback__timer_1aceecdd208aa8d75a49a41a33bf48314b" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__timer_1aceecdd208aa8d75a49a41a33bf48314b" kindref="member">on_epoch_begin</ref>(model<sp/>*m)</highlight><highlight class="keyword"><sp/>override<sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="normal">{<sp/>timing_begin(m);<sp/>}</highlight></codeline>
+<codeline lineno="61" refid="classlbann_1_1lbann__callback__timer_1a95ccee037894dbb5e3c663fbdfbc9d7f" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__timer_1a95ccee037894dbb5e3c663fbdfbc9d7f" kindref="member">on_epoch_end</ref>(model<sp/>*m)</highlight><highlight class="keyword"><sp/>override<sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="normal">{<sp/>timing_end(m);<sp/>}</highlight></codeline>
+<codeline lineno="63" refid="classlbann_1_1lbann__callback__timer_1aa86c0ae1b6fbc878b6ba9a4551b803b8" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__timer_1aa86c0ae1b6fbc878b6ba9a4551b803b8" kindref="member">on_validation_begin</ref>(model<sp/>*m)</highlight><highlight class="keyword"><sp/>override<sp/></highlight><highlight class="normal">{<sp/>timing_begin(m);<sp/>}</highlight></codeline>
+<codeline lineno="65" refid="classlbann_1_1lbann__callback__timer_1a0fea502078111627d340340a63768f9f" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__timer_1a0fea502078111627d340340a63768f9f" kindref="member">on_validation_end</ref>(model<sp/>*m)</highlight><highlight class="keyword"><sp/>override<sp/><sp/><sp/></highlight><highlight class="normal">{<sp/>timing_end(m);<sp/>}</highlight></codeline>
+<codeline lineno="67" refid="classlbann_1_1lbann__callback__timer_1a9fb5327fa629c23e51c9c3b065d6d8c5" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__timer_1a9fb5327fa629c23e51c9c3b065d6d8c5" kindref="member">on_test_begin</ref>(model<sp/>*m)</highlight><highlight class="keyword"><sp/>override<sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="normal">{<sp/>timing_begin(m);<sp/>}</highlight></codeline>
+<codeline lineno="69" refid="classlbann_1_1lbann__callback__timer_1ab7db32c743128f8bcfc35c8ea56c226a" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__timer_1ab7db32c743128f8bcfc35c8ea56c226a" kindref="member">on_test_end</ref>(model<sp/>*m)</highlight><highlight class="keyword"><sp/>override<sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="normal">{<sp/>timing_end(m);<sp/>}</highlight></codeline>
+<codeline lineno="71" refid="classlbann_1_1lbann__callback__timer_1aa6b016b9fb470a7614ab4147ae105002" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__timer_1aa6b016b9fb470a7614ab4147ae105002" kindref="member">on_batch_begin</ref>(model<sp/>*m)</highlight><highlight class="keyword"><sp/>override<sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="normal">{<sp/>batch_timing_begin(m);<sp/>}</highlight></codeline>
+<codeline lineno="73" refid="classlbann_1_1lbann__callback__timer_1aff885381753dfc63709531aebc827b0e" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__timer_1aff885381753dfc63709531aebc827b0e" kindref="member">on_batch_end</ref>(model<sp/>*m)</highlight><highlight class="keyword"><sp/>override<sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="normal">{<sp/>batch_timing_end(m);<sp/>}</highlight></codeline>
+<codeline lineno="75" refid="classlbann_1_1lbann__callback__timer_1abef3c43404a7453a383fe47728d3283b" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__timer_1abef3c43404a7453a383fe47728d3283b" kindref="member">on_batch_evaluate_begin</ref>(model<sp/>*m)</highlight><highlight class="keyword"><sp/>override<sp/></highlight><highlight class="normal">{<sp/>batch_timing_begin(m);<sp/>}</highlight></codeline>
+<codeline lineno="77" refid="classlbann_1_1lbann__callback__timer_1a1a041e3b7cc2cfea68200d9467d3eaaf" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1lbann__callback__timer_1a1a041e3b7cc2cfea68200d9467d3eaaf" kindref="member">on_batch_evaluate_end</ref>(model<sp/>*m)</highlight><highlight class="keyword"><sp/>override<sp/><sp/><sp/></highlight><highlight class="normal">{<sp/>batch_timing_end(m);<sp/>}</highlight></codeline>
+<codeline lineno="78"><highlight class="normal"></highlight></codeline>
+<codeline lineno="80" refid="classlbann_1_1lbann__callback__timer_1a32a3b87744ee0fcac931e8e69358ece9" refkind="member"><highlight class="normal"><sp/><sp/>std::string<sp/><ref refid="classlbann_1_1lbann__callback__timer_1a32a3b87744ee0fcac931e8e69358ece9" kindref="member">name</ref>()</highlight><highlight class="keyword"><sp/>const<sp/>override<sp/></highlight><highlight class="normal">{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/></highlight><highlight class="stringliteral">&quot;timer&quot;</highlight><highlight class="normal">;<sp/>}</highlight></codeline>
+<codeline lineno="81"><highlight class="normal"></highlight></codeline>
+<codeline lineno="82"><highlight class="normal"><sp/></highlight><highlight class="keyword">private</highlight><highlight class="normal">:</highlight></codeline>
+<codeline lineno="83"><highlight class="normal"></highlight></codeline>
+<codeline lineno="85"><highlight class="normal"><sp/><sp/>EvalType<sp/>m_start_time;</highlight></codeline>
+<codeline lineno="87"><highlight class="normal"><sp/><sp/>EvalType<sp/>m_batch_start_time;</highlight></codeline>
+<codeline lineno="89"><highlight class="normal"><sp/><sp/>std::vector&lt;EvalType&gt;<sp/>m_batch_times;</highlight></codeline>
+<codeline lineno="90"><highlight class="normal"></highlight></codeline>
+<codeline lineno="92"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/>timing_begin(model<sp/>*m);</highlight></codeline>
+<codeline lineno="94"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/>timing_end(model<sp/>*m);</highlight></codeline>
+<codeline lineno="96"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/>batch_timing_begin(model<sp/>*m);</highlight></codeline>
+<codeline lineno="98"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/>batch_timing_end(model<sp/>*m);</highlight></codeline>
+<codeline lineno="99"><highlight class="normal"></highlight></codeline>
+<codeline lineno="100"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="101"><highlight class="normal"></highlight></codeline>
+<codeline lineno="102"><highlight class="normal">}<sp/><sp/></highlight><highlight class="comment">//<sp/>namespace<sp/>lbann</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="103"><highlight class="normal"></highlight></codeline>
+<codeline lineno="104"><highlight class="normal"></highlight><highlight class="preprocessor">#endif<sp/><sp/>//<sp/>LBANN_CALLBACKS_CALLBACK_TIMER_HPP_INCLUDED</highlight></codeline>
+    </programlisting>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/callbacks/callback_timer.hpp"/>
+  </compounddef>
+</doxygen>

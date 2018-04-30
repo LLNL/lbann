@@ -1,0 +1,7 @@
+<map id="lbann::model::set_effective_mini_batch_size" name="lbann::model::set_effective_mini_batch_size">
+<area shape="rect" id="node2" href="$classlbann_1_1model.html#a32a189033b8ff92d233781b1039c70f1" title="lbann::model::get_num\l_iterations_per_epoch" alt="" coords="233,40,390,79"/>
+<area shape="rect" id="node3" href="$classlbann_1_1generic__input__layer.html#aa0fa6597ffce537f7cfba29dcc754ee1" title="lbann::generic_input\l_layer::get_num_iterations\l_per_epoch" alt="" coords="438,33,616,85"/>
+<area shape="rect" id="node4" href="$classlbann_1_1generic__input__layer.html#aba732becdb02627e3ad4493ac19e8fb6" title="lbann::generic_input\l_layer::get_data_reader" alt="" coords="677,5,840,44"/>
+<area shape="rect" id="node6" href="$classlbann_1_1generic__data__reader.html#a06fb58d1c0b84b8c76f5b4d160751f34" title="Get the number of iterations in each epoch. " alt="" coords="664,68,853,120"/>
+<area shape="rect" id="node5" href="$classlbann_1_1model.html#addb40597cf29aa6d31b6a7d09ef48608" title="lbann::model::get_execution_mode" alt="" coords="901,12,1129,37"/>
+</map>

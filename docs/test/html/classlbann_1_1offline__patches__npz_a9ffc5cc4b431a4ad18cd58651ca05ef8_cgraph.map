@@ -1,0 +1,4 @@
+<map id="lbann::offline_patches_npz::get_description" name="lbann::offline_patches_npz::get_description">
+<area shape="rect" id="node2" href="$namespacelbann_1_1cnpy__utils.html#a120e5719167d6d20b2a98c4282fd7a50" title="Show the dimensions of loaded data. " alt="" coords="224,5,352,44"/>
+<area shape="rect" id="node3" href="$classlbann_1_1offline__patches__npz.html#aa6fa05575f54a29b67d0bba8a2a9d363" title="Return the number of samples. " alt="" coords="204,68,371,107"/>
+</map>

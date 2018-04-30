@@ -1,0 +1,6 @@
+<map id="lbann::poisson_negloglike::start_evaluate_compute" name="lbann::poisson_negloglike::start_evaluate_compute">
+<area shape="rect" id="node2" href="$classlbann_1_1poisson__negloglike.html#a67c3cb239905fa9ee57369dddbbe76ed" title="lbann::poisson_negloglike\l::finish_evaluate_compute" alt="" coords="228,36,404,75"/>
+<area shape="rect" id="node5" href="$classlbann_1_1poisson__negloglike.html#a9b6e6632bb6424551b38b8748ff64edd" title="lbann::poisson_negloglike\l::differentiate_compute" alt="" coords="229,99,404,137"/>
+<area shape="rect" id="node3" href="$classlbann_1_1objective__function__term.html#a5f89b676a26a6b76ddc26563ac87beb9" title="lbann::objective_function\l_term::get_comm" alt="" coords="452,5,620,44"/>
+<area shape="rect" id="node4" href="$classlbann_1_1lbann__comm.html#af5631e5f0f54e4df4958eba9df2599ef" title="lbann::lbann_comm::\lallreduce" alt="" coords="464,68,609,107"/>
+</map>

@@ -1,0 +1,442 @@
+\hypertarget{classlbann_1_1sum__layer}{}\section{lbann\+:\+:sum\+\_\+layer$<$ T\+\_\+layout $>$ Class Template Reference}
+\label{classlbann_1_1sum__layer}\index{lbann\+::sum\+\_\+layer$<$ T\+\_\+layout $>$@{lbann\+::sum\+\_\+layer$<$ T\+\_\+layout $>$}}
+
+
+{\ttfamily \#include $<$sum.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:sum\+\_\+layer$<$ T\+\_\+layout $>$\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=195pt]{classlbann_1_1sum__layer__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:sum\+\_\+layer$<$ T\+\_\+layout $>$\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sum__layer__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1sum__layer_a00dfb715bda89ac6aaa10f045c9a49a5}{sum\+\_\+layer} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, std\+::vector$<$ Data\+Type $>$ scaling\+\_\+factors=std\+::vector$<$ Data\+Type $>$(), \hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$cudnn=nullptr)
+\item 
+\hyperlink{classlbann_1_1sum__layer}{sum\+\_\+layer} $\ast$ \hyperlink{classlbann_1_1sum__layer_a8b6581df51a10b1511c1df6322f445a4}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1sum__layer_a852552a520dec8e906b0d76524d73cc4}{get\+\_\+type} () const override
+\item 
+\hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08db}{data\+\_\+layout} \hyperlink{classlbann_1_1sum__layer_a6c71a7d29f6e36b2a1f588a2545c769e}{get\+\_\+data\+\_\+layout} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1sum__layer_a73e45687c97990d88a2e31dc177ef56e}{get\+\_\+description} () const override
+\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{classlbann_1_1sum__layer_af7e011a8e1cd89cc9f9c0224182bfb7a}{setup\+\_\+dims} () override
+\item 
+void \hyperlink{classlbann_1_1sum__layer_a9f8659993a180f1bb1a8bd875814d33b}{setup\+\_\+data} () override
+\item 
+void \hyperlink{classlbann_1_1sum__layer_a8d235d61507e76f42ee83a74d1098977}{fp\+\_\+compute} () override
+\item 
+void \hyperlink{classlbann_1_1sum__layer_a0dcddd056cf81c1fbea22a5e1c01c6d9}{bp\+\_\+compute} () override
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+std\+::vector$<$ Data\+Type $>$ \hyperlink{classlbann_1_1sum__layer_a371ae9038d8654fbca134e0f61e1e29a}{m\+\_\+scaling\+\_\+factors}
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+\subsubsection*{template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$\newline
+class lbann\+::sum\+\_\+layer$<$ T\+\_\+layout $>$}
+
+Sum layer. This layer performs a weighted sum of input tensors, possibly with a different scaling factor for each input. If the scaling factors are not provided, they are all set to one so that this layer performs a simple sum. 
+
+Definition at line 43 of file sum.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1sum__layer_a00dfb715bda89ac6aaa10f045c9a49a5}\label{classlbann_1_1sum__layer_a00dfb715bda89ac6aaa10f045c9a49a5}} 
+\index{lbann\+::sum\+\_\+layer@{lbann\+::sum\+\_\+layer}!sum\+\_\+layer@{sum\+\_\+layer}}
+\index{sum\+\_\+layer@{sum\+\_\+layer}!lbann\+::sum\+\_\+layer@{lbann\+::sum\+\_\+layer}}
+\subsubsection{\texorpdfstring{sum\+\_\+layer()}{sum\_layer()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{classlbann_1_1sum__layer}{lbann\+::sum\+\_\+layer}$<$ T\+\_\+layout $>$\+::\hyperlink{classlbann_1_1sum__layer}{sum\+\_\+layer} (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+\_\+comm} $\ast$}]{comm,  }\item[{std\+::vector$<$ Data\+Type $>$}]{scaling\+\_\+factors = {\ttfamily std\+:\+:vector$<$DataType$>$()},  }\item[{\hyperlink{classlbann_1_1cudnn_1_1cudnn__manager}{cudnn\+::cudnn\+\_\+manager} $\ast$}]{cudnn = {\ttfamily nullptr} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Definition at line 52 of file sum.\+hpp.
+
+
+\begin{DoxyCode}
+55     : \hyperlink{classlbann_1_1transform__layer_a4b72501e0f4d0745c8b13c5331055e65}{transform\_layer}(\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}),
+56       \hyperlink{classlbann_1_1sum__layer_a371ae9038d8654fbca134e0f61e1e29a}{m\_scaling\_factors}(scaling\_factors) \{
+57 
+58     \textcolor{comment}{// Sum layer has no limit on parents}
+59     \hyperlink{classlbann_1_1Layer_a841b96b25555247f52921c7f13ae1dfa}{m\_expected\_num\_parent\_layers} = -1;
+60 
+61 \textcolor{preprocessor}{  #ifdef LBANN\_HAS\_CUDNN}
+62     \textcolor{comment}{// Initialize GPU if available}
+63     \textcolor{keywordflow}{if}(cudnn) \{
+64       this->\hyperlink{classlbann_1_1Layer_af7881cb5eff5207c15fa835d65462e8f}{m\_using\_gpus} = \textcolor{keyword}{true};
+65       this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn} = cudnn;
+66     \}
+67 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+68 
+69   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sum__layer_a00dfb715bda89ac6aaa10f045c9a49a5_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1sum__layer_a0dcddd056cf81c1fbea22a5e1c01c6d9}\label{classlbann_1_1sum__layer_a0dcddd056cf81c1fbea22a5e1c01c6d9}} 
+\index{lbann\+::sum\+\_\+layer@{lbann\+::sum\+\_\+layer}!bp\+\_\+compute@{bp\+\_\+compute}}
+\index{bp\+\_\+compute@{bp\+\_\+compute}!lbann\+::sum\+\_\+layer@{lbann\+::sum\+\_\+layer}}
+\subsubsection{\texorpdfstring{bp\+\_\+compute()}{bp\_compute()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1sum__layer}{lbann\+::sum\+\_\+layer}$<$ T\+\_\+layout $>$\+::bp\+\_\+compute (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Perform the computation for the backward propagation step. 
+
+Implements \hyperlink{classlbann_1_1Layer_a7442e01f9ee1294df2de811efcf5171e}{lbann\+::\+Layer}.
+
+
+
+Definition at line 167 of file sum.\+hpp.
+
+
+\begin{DoxyCode}
+167                              \{
+168     \textcolor{keywordflow}{if}(this->\hyperlink{classlbann_1_1Layer_af7881cb5eff5207c15fa835d65462e8f}{m\_using\_gpus}) \{
+169 \textcolor{preprocessor}{  #ifndef LBANN\_HAS\_CUDNN}
+170       \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"sum\_layer: cuDNN not detected"});
+171 \textcolor{preprocessor}{  #else}
+172       \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_gpus = \hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_num\_gpus();
+173       \textcolor{keyword}{const} \textcolor{keyword}{auto}& gradient\_wrt\_output\_d = m\_prev\_error\_signals\_d[0];
+174       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} parent = 0; parent < \hyperlink{classlbann_1_1Layer_ac9290d4a6453ccda5f6b4d8b57b49ba3}{get\_num\_parents}(); ++parent) \{
+175         \textcolor{keyword}{auto}& gradient\_wrt\_input\_d = this->m\_error\_signals\_d[parent];
+176         \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} gpu = 0; gpu < num\_gpus; ++gpu) \{
+177           CHECK\_CUDA(cudaSetDevice(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_gpu(gpu)));
+178           cublas::geam(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_cublas\_handle(gpu),
+179                        CUBLAS\_OP\_N, CUBLAS\_OP\_N,
+180                        gradient\_wrt\_input\_d.get\_height(),
+181                        this->m\_mini\_batch\_size\_per\_gpu,
+182                        \hyperlink{classlbann_1_1sum__layer_a371ae9038d8654fbca134e0f61e1e29a}{m\_scaling\_factors}[parent],
+183                        gradient\_wrt\_output\_d.get\_locked\_data(gpu),
+184                        gradient\_wrt\_output\_d.get\_leading\_dim(),
+185                        DataType(1),
+186                        gradient\_wrt\_input\_d.get\_locked\_data(gpu),
+187                        gradient\_wrt\_input\_d.get\_leading\_dim(),
+188                        gradient\_wrt\_input\_d.get\_data(gpu),
+189                        gradient\_wrt\_input\_d.get\_leading\_dim());
+190         \}
+191       \}
+192 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+193     \} \textcolor{keywordflow}{else} \{
+194       \textcolor{keyword}{const} \textcolor{keyword}{auto}& gradient\_wrt\_output = \hyperlink{classlbann_1_1Layer_a7ac4579d3c1671dfaf86e3b618d6938a}{get\_prev\_error\_signals}();
+195       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} parent = 0; parent < \hyperlink{classlbann_1_1Layer_ac9290d4a6453ccda5f6b4d8b57b49ba3}{get\_num\_parents}(); ++parent) \{
+196         \textcolor{keyword}{auto}& gradient\_wrt\_input = \hyperlink{classlbann_1_1Layer_adb561e140e0bb601f3c5a8ee053a71d2}{get\_error\_signals}(parent);
+197         El::Axpy(m\_scaling\_factors[parent], gradient\_wrt\_output, gradient\_wrt\_input);
+198       \}
+199     \}
+200   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sum__layer_a0dcddd056cf81c1fbea22a5e1c01c6d9_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1sum__layer_a8b6581df51a10b1511c1df6322f445a4}\label{classlbann_1_1sum__layer_a8b6581df51a10b1511c1df6322f445a4}} 
+\index{lbann\+::sum\+\_\+layer@{lbann\+::sum\+\_\+layer}!copy@{copy}}
+\index{copy@{copy}!lbann\+::sum\+\_\+layer@{lbann\+::sum\+\_\+layer}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{classlbann_1_1sum__layer}{sum\+\_\+layer}$\ast$ \hyperlink{classlbann_1_1sum__layer}{lbann\+::sum\+\_\+layer}$<$ T\+\_\+layout $>$\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Copy function. This function dynamically allocates memory for a layer instance and instantiates a copy. The caller is responsible for deallocating the instance. 
+
+Implements \hyperlink{classlbann_1_1Layer_af420f22bbac801c85483ade84588a23f}{lbann\+::\+Layer}.
+
+
+
+Definition at line 71 of file sum.\+hpp.
+
+
+\begin{DoxyCode}
+71 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1sum__layer_a00dfb715bda89ac6aaa10f045c9a49a5}{sum\_layer}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sum__layer_a8b6581df51a10b1511c1df6322f445a4_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1sum__layer_a8d235d61507e76f42ee83a74d1098977}\label{classlbann_1_1sum__layer_a8d235d61507e76f42ee83a74d1098977}} 
+\index{lbann\+::sum\+\_\+layer@{lbann\+::sum\+\_\+layer}!fp\+\_\+compute@{fp\+\_\+compute}}
+\index{fp\+\_\+compute@{fp\+\_\+compute}!lbann\+::sum\+\_\+layer@{lbann\+::sum\+\_\+layer}}
+\subsubsection{\texorpdfstring{fp\+\_\+compute()}{fp\_compute()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1sum__layer}{lbann\+::sum\+\_\+layer}$<$ T\+\_\+layout $>$\+::fp\+\_\+compute (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Perform the computation for the forward propagation step. 
+
+Implements \hyperlink{classlbann_1_1Layer_a523319dd1bd87a0612afa1912bb5aad7}{lbann\+::\+Layer}.
+
+
+
+Definition at line 126 of file sum.\+hpp.
+
+
+\begin{DoxyCode}
+126                              \{
+127     \textcolor{keywordflow}{if}(this->\hyperlink{classlbann_1_1Layer_af7881cb5eff5207c15fa835d65462e8f}{m\_using\_gpus}) \{
+128 \textcolor{preprocessor}{  #ifndef LBANN\_HAS\_CUDNN}
+129       \textcolor{keywordflow}{throw} lbann\_exception(\textcolor{stringliteral}{"sum\_layer: cuDNN not detected"});
+130 \textcolor{preprocessor}{  #else}
+131       \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_gpus = \hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_num\_gpus();
+132       \textcolor{keyword}{auto}& output\_d = this->m\_activations\_d[0];
+133       this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->clear\_on\_gpus(output\_d.get\_data(),
+134                                    output\_d.get\_height(),
+135                                    this->m\_mini\_batch\_size\_per\_gpu,
+136                                    output\_d.get\_leading\_dim());
+137       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} parent = 0; parent < \hyperlink{classlbann_1_1Layer_ac9290d4a6453ccda5f6b4d8b57b49ba3}{get\_num\_parents}(); ++parent) \{
+138         \textcolor{keyword}{const} \textcolor{keyword}{auto}& input\_d = this->m\_prev\_activations\_d[parent];
+139         \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} gpu = 0; gpu < num\_gpus; ++gpu) \{
+140           CHECK\_CUDA(cudaSetDevice(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_gpu(gpu)));
+141           cublas::geam(this->\hyperlink{classlbann_1_1Layer_a08dbb94239e3b8c96329786c57c72e21}{m\_cudnn}->get\_cublas\_handle(gpu),
+142                        CUBLAS\_OP\_N,
+143                        CUBLAS\_OP\_N,
+144                        input\_d.get\_height(),
+145                        this->m\_mini\_batch\_size\_per\_gpu,
+146                        \hyperlink{classlbann_1_1sum__layer_a371ae9038d8654fbca134e0f61e1e29a}{m\_scaling\_factors}[parent],
+147                        input\_d.get\_locked\_data(gpu),
+148                        input\_d.get\_leading\_dim(),
+149                        DataType(1),
+150                        output\_d.get\_locked\_data(gpu),
+151                        output\_d.get\_leading\_dim(),
+152                        output\_d.get\_data(gpu),
+153                        output\_d.get\_leading\_dim());
+154         \}
+155       \}
+156 \textcolor{preprocessor}{  #endif // LBANN\_HAS\_CUDNN}
+157     \} \textcolor{keywordflow}{else} \{
+158       \textcolor{keyword}{auto}& output = \hyperlink{classlbann_1_1Layer_a1134b1a4385af199d7272c5aa827fa99}{get\_activations}();
+159       El::Zero(output);
+160       \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} parent = 0; parent < \hyperlink{classlbann_1_1Layer_ac9290d4a6453ccda5f6b4d8b57b49ba3}{get\_num\_parents}(); ++parent) \{
+161         \textcolor{keyword}{const} \textcolor{keyword}{auto}& input = \hyperlink{classlbann_1_1Layer_a45853df73a2e72bfaa774665a0f37ed7}{get\_prev\_activations}(parent);
+162         El::Axpy(m\_scaling\_factors[parent], input, output);
+163       \}
+164     \}
+165   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sum__layer_a8d235d61507e76f42ee83a74d1098977_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1sum__layer_a6c71a7d29f6e36b2a1f588a2545c769e}\label{classlbann_1_1sum__layer_a6c71a7d29f6e36b2a1f588a2545c769e}} 
+\index{lbann\+::sum\+\_\+layer@{lbann\+::sum\+\_\+layer}!get\+\_\+data\+\_\+layout@{get\+\_\+data\+\_\+layout}}
+\index{get\+\_\+data\+\_\+layout@{get\+\_\+data\+\_\+layout}!lbann\+::sum\+\_\+layer@{lbann\+::sum\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+data\+\_\+layout()}{get\_data\_layout()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+\hyperlink{base_8hpp_a786677cbfb3f5677b4d84f3056eb08db}{data\+\_\+layout} \hyperlink{classlbann_1_1sum__layer}{lbann\+::sum\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+data\+\_\+layout (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get data layout of the data tensors. We assume that the data layouts of the previous activations, activations, previous error signals, and error signals are the same. Each concrete layer that is templated on its data layout should override this function to return its template parameter. 
+
+Implements \hyperlink{classlbann_1_1Layer_a5dfb66e81fc085997402a5e2241316bd}{lbann\+::\+Layer}.
+
+
+
+Definition at line 73 of file sum.\+hpp.
+
+
+\begin{DoxyCode}
+73 \{ \textcolor{keywordflow}{return} T\_layout; \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=339pt]{classlbann_1_1sum__layer_a6c71a7d29f6e36b2a1f588a2545c769e_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1sum__layer_a73e45687c97990d88a2e31dc177ef56e}\label{classlbann_1_1sum__layer_a73e45687c97990d88a2e31dc177ef56e}} 
+\index{lbann\+::sum\+\_\+layer@{lbann\+::sum\+\_\+layer}!get\+\_\+description@{get\+\_\+description}}
+\index{get\+\_\+description@{get\+\_\+description}!lbann\+::sum\+\_\+layer@{lbann\+::sum\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+description()}{get\_description()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+std\+::string \hyperlink{classlbann_1_1sum__layer}{lbann\+::sum\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+description (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Returns description of ctor params 
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_acc0803d3428914ca1eb5988c4309174a}{lbann\+::\+Layer}.
+
+
+
+Definition at line 76 of file sum.\+hpp.
+
+
+\begin{DoxyCode}
+76                                              \{
+77     std::stringstream s;
+78      s << \textcolor{stringliteral}{" sum; parents: "};
+79      \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} i=0; i<this->\hyperlink{classlbann_1_1Layer_a3fa7c6cf1a22bb14ab0e85e3dc6027c5}{m\_parent\_layers}.size(); i++) \{
+80        s << this->\hyperlink{classlbann_1_1Layer_a3fa7c6cf1a22bb14ab0e85e3dc6027c5}{m\_parent\_layers}[i]->get\_name() << \textcolor{stringliteral}{" "} << this->
+      \hyperlink{classlbann_1_1Layer_a3fa7c6cf1a22bb14ab0e85e3dc6027c5}{m\_parent\_layers}[i]->get\_type() << \textcolor{stringliteral}{" "};
+81      \}
+82      s << \textcolor{stringliteral}{" dataLayout: "} << this->\hyperlink{classlbann_1_1Layer_ae3f4a5602df821f4221614b1e3782dc1}{get\_data\_layout\_string}(
+      \hyperlink{classlbann_1_1sum__layer_a6c71a7d29f6e36b2a1f588a2545c769e}{get\_data\_layout}());
+83      \textcolor{keywordflow}{return} s.str();
+84   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=343pt]{classlbann_1_1sum__layer_a73e45687c97990d88a2e31dc177ef56e_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1sum__layer_a852552a520dec8e906b0d76524d73cc4}\label{classlbann_1_1sum__layer_a852552a520dec8e906b0d76524d73cc4}} 
+\index{lbann\+::sum\+\_\+layer@{lbann\+::sum\+\_\+layer}!get\+\_\+type@{get\+\_\+type}}
+\index{get\+\_\+type@{get\+\_\+type}!lbann\+::sum\+\_\+layer@{lbann\+::sum\+\_\+layer}}
+\subsubsection{\texorpdfstring{get\+\_\+type()}{get\_type()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+std\+::string \hyperlink{classlbann_1_1sum__layer}{lbann\+::sum\+\_\+layer}$<$ T\+\_\+layout $>$\+::get\+\_\+type (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get the layer type\textquotesingle{}s name. A layer type name should be brief, human-\/readable description of the layer\textquotesingle{}s mathematical operation. 
+
+Implements \hyperlink{classlbann_1_1Layer_a0fa0ea9160b490c151c0a17fde4f7239}{lbann\+::\+Layer}.
+
+
+
+Definition at line 72 of file sum.\+hpp.
+
+
+\begin{DoxyCode}
+72 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"sum"}; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1sum__layer_a9f8659993a180f1bb1a8bd875814d33b}\label{classlbann_1_1sum__layer_a9f8659993a180f1bb1a8bd875814d33b}} 
+\index{lbann\+::sum\+\_\+layer@{lbann\+::sum\+\_\+layer}!setup\+\_\+data@{setup\+\_\+data}}
+\index{setup\+\_\+data@{setup\+\_\+data}!lbann\+::sum\+\_\+layer@{lbann\+::sum\+\_\+layer}}
+\subsubsection{\texorpdfstring{setup\+\_\+data()}{setup\_data()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1sum__layer}{lbann\+::sum\+\_\+layer}$<$ T\+\_\+layout $>$\+::setup\+\_\+data (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Setup layer data. Called by the setup function. The base method sets the previous activation, activation, previous error signal, and error signal matrices to zero matrices with the proper dimensions. Matrix buffers are pinned if needed for G\+PU transfers. 
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_a50a89f8a68762c677d48efe384676e81}{lbann\+::\+Layer}.
+
+
+
+Definition at line 110 of file sum.\+hpp.
+
+
+\begin{DoxyCode}
+110                              \{
+111     \hyperlink{classlbann_1_1Layer_a50a89f8a68762c677d48efe384676e81}{transform\_layer::setup\_data}();
+112     \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1sum__layer_a371ae9038d8654fbca134e0f61e1e29a}{m\_scaling\_factors}.empty()) \{
+113       \hyperlink{classlbann_1_1sum__layer_a371ae9038d8654fbca134e0f61e1e29a}{m\_scaling\_factors}.assign(\hyperlink{classlbann_1_1Layer_ac9290d4a6453ccda5f6b4d8b57b49ba3}{get\_num\_parents}(), DataType(1));
+114     \}
+115     \textcolor{keywordflow}{if} ((\textcolor{keywordtype}{int}) \hyperlink{classlbann_1_1sum__layer_a371ae9038d8654fbca134e0f61e1e29a}{m\_scaling\_factors}.size() != \hyperlink{classlbann_1_1Layer_ac9290d4a6453ccda5f6b4d8b57b49ba3}{get\_num\_parents}()) \{
+116       std::stringstream err;
+117       err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+118           << \textcolor{stringliteral}{"layer "} << \hyperlink{classlbann_1_1Layer_a80027550202fa7dbb1dd55fa8a66c84b}{get\_name}() << \textcolor{stringliteral}{" has an invalid number of "}
+119           << \textcolor{stringliteral}{"scaling factors "}
+120           << \textcolor{stringliteral}{"(found "} << \hyperlink{classlbann_1_1sum__layer_a371ae9038d8654fbca134e0f61e1e29a}{m\_scaling\_factors}.size() << \textcolor{stringliteral}{", "}
+121           << \textcolor{stringliteral}{"but there are "} << \hyperlink{classlbann_1_1Layer_ac9290d4a6453ccda5f6b4d8b57b49ba3}{get\_num\_parents}() << \textcolor{stringliteral}{" parent layers)"};
+122       \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+123     \}
+124   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sum__layer_a9f8659993a180f1bb1a8bd875814d33b_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1sum__layer_af7e011a8e1cd89cc9f9c0224182bfb7a}\label{classlbann_1_1sum__layer_af7e011a8e1cd89cc9f9c0224182bfb7a}} 
+\index{lbann\+::sum\+\_\+layer@{lbann\+::sum\+\_\+layer}!setup\+\_\+dims@{setup\+\_\+dims}}
+\index{setup\+\_\+dims@{setup\+\_\+dims}!lbann\+::sum\+\_\+layer@{lbann\+::sum\+\_\+layer}}
+\subsubsection{\texorpdfstring{setup\+\_\+dims()}{setup\_dims()}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+void \hyperlink{classlbann_1_1sum__layer}{lbann\+::sum\+\_\+layer}$<$ T\+\_\+layout $>$\+::setup\+\_\+dims (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Setup tensor dimensions Called by the setup function. The base method sets the dimensions of the activation tensors equal to the dimensions of the first previous activation tensor. 
+
+Reimplemented from \hyperlink{classlbann_1_1Layer_a90fce1b06c1f2abb480e18cfe08a9746}{lbann\+::\+Layer}.
+
+
+
+Definition at line 88 of file sum.\+hpp.
+
+
+\begin{DoxyCode}
+88                              \{
+89     \hyperlink{classlbann_1_1Layer_a90fce1b06c1f2abb480e18cfe08a9746}{transform\_layer::setup\_dims}();
+90     \textcolor{keywordflow}{for} (\textcolor{keyword}{const} \textcolor{keyword}{auto}& parent : this->\hyperlink{classlbann_1_1Layer_a3fa7c6cf1a22bb14ab0e85e3dc6027c5}{m\_parent\_layers}) \{
+91       \textcolor{keyword}{const} \textcolor{keyword}{auto}& parent\_dims = parent->fp\_output\_dims(\textcolor{keyword}{this});
+92       \textcolor{keywordflow}{if} (\hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims} != parent\_dims) \{
+93         std::stringstream err;
+94         err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+95             << \textcolor{stringliteral}{"layer "} << \hyperlink{classlbann_1_1Layer_a80027550202fa7dbb1dd55fa8a66c84b}{get\_name}() << \textcolor{stringliteral}{" expects inputs with "}
+96             << \textcolor{stringliteral}{"dimensions "};
+97         \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} i = 0; i < \hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}.size(); ++i) \{
+98           err << (i > 0 ? \textcolor{stringliteral}{"x"} : \textcolor{stringliteral}{""}) << \hyperlink{classlbann_1_1Layer_abb34bb8031f57a483e2e327a5f229f48}{m\_neuron\_dims}[i];
+99         \}
+100         err << \textcolor{stringliteral}{", but layer "} << parent->get\_name() << \textcolor{stringliteral}{" outputs with "}
+101             << \textcolor{stringliteral}{"dimensions "};
+102         \textcolor{keywordflow}{for} (\textcolor{keywordtype}{size\_t} i = 0; i < parent\_dims.size(); ++i) \{
+103           err << (i > 0 ? \textcolor{stringliteral}{"x"} : \textcolor{stringliteral}{""}) << parent\_dims[i];
+104         \}
+105         \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+106       \}
+107     \}
+108   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1sum__layer_af7e011a8e1cd89cc9f9c0224182bfb7a_cgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1sum__layer_a371ae9038d8654fbca134e0f61e1e29a}\label{classlbann_1_1sum__layer_a371ae9038d8654fbca134e0f61e1e29a}} 
+\index{lbann\+::sum\+\_\+layer@{lbann\+::sum\+\_\+layer}!m\+\_\+scaling\+\_\+factors@{m\+\_\+scaling\+\_\+factors}}
+\index{m\+\_\+scaling\+\_\+factors@{m\+\_\+scaling\+\_\+factors}!lbann\+::sum\+\_\+layer@{lbann\+::sum\+\_\+layer}}
+\subsubsection{\texorpdfstring{m\+\_\+scaling\+\_\+factors}{m\_scaling\_factors}}
+{\footnotesize\ttfamily template$<$data\+\_\+layout T\+\_\+layout = data\+\_\+layout\+::\+D\+A\+T\+A\+\_\+\+P\+A\+R\+A\+L\+L\+EL$>$ \\
+std\+::vector$<$Data\+Type$>$ \hyperlink{classlbann_1_1sum__layer}{lbann\+::sum\+\_\+layer}$<$ T\+\_\+layout $>$\+::m\+\_\+scaling\+\_\+factors\hspace{0.3cm}{\ttfamily [private]}}
+
+Scaling term applied to each input tensor. If these are not provided, the scaling factors are set to one. 
+
+Definition at line 49 of file sum.\+hpp.
+
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/layers/transform/\hyperlink{sum_8hpp}{sum.\+hpp}\end{DoxyCompactItemize}

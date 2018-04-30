@@ -1,0 +1,8 @@
+<map id="lbann::model::print_layer_description" name="lbann::model::print_layer_description">
+<area shape="rect" id="node2" href="$classlbann_1_1model.html#a989ab581e359f65c9238d627cce5b589" title="lbann::model::setup\l_layers" alt="" coords="195,5,332,44"/>
+<area shape="rect" id="node4" href="$classlbann_1_1recurrent__model.html#a712dabb1c1e90f6e268b42f6abaedd93" title="lbann::recurrent_model\l::setup_layers" alt="" coords="184,68,343,107"/>
+<area shape="rect" id="node6" href="$classlbann_1_1siamese__model.html#afefdbaf473d40e571b2b58539001c9c0" title="lbann::siamese_model\l::setup_layers" alt="" coords="186,133,341,172"/>
+<area shape="rect" id="node3" href="$classlbann_1_1model.html#afd9dbca79503a40b7aa5c78da4d6f391" title="lbann::model::setup" alt="" coords="401,12,539,37"/>
+<area shape="rect" id="node5" href="$classlbann_1_1recurrent__model.html#aa4e43de8bf0d11a0f51dedbcf22a73cc" title="lbann::recurrent_model\l::freeze_layers_under\l_frozen_surface" alt="" coords="391,61,549,113"/>
+<area shape="rect" id="node7" href="$classlbann_1_1siamese__model.html#ad745961977aa395e11543d263103126e" title="lbann::siamese_model\l::name" alt="" coords="393,137,547,176"/>
+</map>

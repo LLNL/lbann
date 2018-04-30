@@ -1,0 +1,782 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1data__reader__merge__features" kind="class" language="C++" prot="public">
+    <compoundname>lbann::data_reader_merge_features</compoundname>
+    <basecompoundref refid="classlbann_1_1generic__compound__data__reader" prot="public" virt="non-virtual">lbann::generic_compound_data_reader</basecompoundref>
+    <includes refid="data__reader__merge__features_8hpp" local="no">data_reader_merge_features.hpp</includes>
+      <sectiondef kind="protected-attrib">
+      <memberdef kind="variable" id="classlbann_1_1data__reader__merge__features_1a1e54a136c63b934f44ff91dc68ea3b27" prot="protected" static="no" mutable="no">
+        <type><ref refid="classlbann_1_1generic__data__reader" kindref="compound">generic_data_reader</ref> *</type>
+        <definition>generic_data_reader* lbann::data_reader_merge_features::m_label_reader</definition>
+        <argsstring></argsstring>
+        <name>m_label_reader</name>
+        <briefdescription>
+<para>Reader providing label data. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_merge_features.hpp" line="81" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_merge_features.hpp" bodystart="81" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1data__reader__merge__features_1a63be746ea35e664b5cc8f8b973e86209" compoundref="data__reader__merge__features_8hpp" startline="62" endline="62">get_num_labels</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__merge__features_1aa50959f29f761916a3cef60f33740516" compoundref="data__reader__merge__features_8hpp" startline="64" endline="66">get_linearized_label_size</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__merge__features_1a41d55ea605d94ea010126b11ee420778" compoundref="data__reader__merge__features_8cpp" startline="40" endline="45">data_reader_merge_features</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__merge__features_1a2df9360e463c2ceaf4ba42e287f673b9" compoundref="data__reader__merge__features_8cpp" startline="47" endline="56">operator=</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__merge__features_1af194453b7028b116657b95631acca81d" compoundref="data__reader__merge__features_8cpp" startline="58" endline="60">~data_reader_merge_features</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__merge__features_1a8a618de9a92cb148746a83b0381ba781" compoundref="data__reader__merge__features_8cpp" startline="62" endline="82">load</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__merge__features_1aace9abfab36e0926832ed6773b41e0ea" compoundref="data__reader__merge__features_8cpp" startline="96" endline="99">fetch_label</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__merge__features_1afd9fa7d10c466eca62ac7af3cbc3ddcb" compoundref="data__reader__merge__features_8cpp" startline="101" endline="104">fetch_response</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1data__reader__merge__features_1ac9c56e08a45a5beac97e41e403fbaa12" prot="protected" static="no" mutable="no">
+        <type>int</type>
+        <definition>int lbann::data_reader_merge_features::m_data_size</definition>
+        <argsstring></argsstring>
+        <name>m_data_size</name>
+        <initializer>= 0</initializer>
+        <briefdescription>
+<para>Sum of the size of data from all the data readers. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_merge_features.hpp" line="83" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_merge_features.hpp" bodystart="83" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1data__reader__merge__features_1a9cf5a37a562c5bdd3861da9ec2e54638" compoundref="data__reader__merge__features_8hpp" startline="63" endline="63">get_linearized_data_size</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__merge__features_1a2df9360e463c2ceaf4ba42e287f673b9" compoundref="data__reader__merge__features_8cpp" startline="47" endline="56">operator=</referencedby>
+        <referencedby refid="classlbann_1_1data__reader__merge__features_1a8a618de9a92cb148746a83b0381ba781" compoundref="data__reader__merge__features_8cpp" startline="62" endline="82">load</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1data__reader__merge__features_1ac05d7a06c3a5749afc41c3b86bb2475d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::data_reader_merge_features::data_reader_merge_features</definition>
+        <argsstring>(std::vector&lt; generic_data_reader *&gt; data_readers, generic_data_reader *label_reader, bool shuffle=true)</argsstring>
+        <name>data_reader_merge_features</name>
+        <param>
+          <type>std::vector&lt; <ref refid="classlbann_1_1generic__data__reader" kindref="compound">generic_data_reader</ref> *&gt;</type>
+          <declname>data_readers</declname>
+        </param>
+        <param>
+          <type><ref refid="classlbann_1_1generic__data__reader" kindref="compound">generic_data_reader</ref> *</type>
+          <declname>label_reader</declname>
+        </param>
+        <param>
+          <type>bool</type>
+          <declname>shuffle</declname>
+          <defval>true</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_merge_features.hpp" line="45" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_merge_features.cpp" bodystart="34" bodyend="38"/>
+        <referencedby refid="classlbann_1_1data__reader__merge__features_1aa079ec1e03557e2c469f9da6e8aa45a8" compoundref="data__reader__merge__features_8hpp" startline="51" endline="53">copy</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1data__reader__merge__features_1a41d55ea605d94ea010126b11ee420778" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::data_reader_merge_features::data_reader_merge_features</definition>
+        <argsstring>(const data_reader_merge_features &amp;)</argsstring>
+        <name>data_reader_merge_features</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1data__reader__merge__features" kindref="compound">data_reader_merge_features</ref> &amp;</type>
+          <defname>other</defname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_merge_features.hpp" line="48" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_merge_features.cpp" bodystart="40" bodyend="45"/>
+        <references refid="classlbann_1_1data__reader__merge__features_1a1e54a136c63b934f44ff91dc68ea3b27" compoundref="data__reader__merge__features_8hpp" startline="81">m_label_reader</references>
+        <references refid="classlbann_1_1generic__data__reader_1a208ba1223e7aaa75e94b728501f12f86">lbann::generic_data_reader::copy</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1data__reader__merge__features_1a2df9360e463c2ceaf4ba42e287f673b9" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="classlbann_1_1data__reader__merge__features" kindref="compound">data_reader_merge_features</ref> &amp;</type>
+        <definition>data_reader_merge_features &amp; lbann::data_reader_merge_features::operator=</definition>
+        <argsstring>(const data_reader_merge_features &amp;)</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1data__reader__merge__features" kindref="compound">data_reader_merge_features</ref> &amp;</type>
+          <defname>other</defname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_merge_features.hpp" line="49" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_merge_features.cpp" bodystart="47" bodyend="56"/>
+        <references refid="classlbann_1_1generic__compound__data__reader_1a7ece97b6fd2bc62da4d98f29cfb50155" compoundref="compound__data__reader_8hpp" startline="58" endline="68">lbann::generic_compound_data_reader::operator=</references>
+        <references refid="classlbann_1_1data__reader__merge__features_1ac9c56e08a45a5beac97e41e403fbaa12" compoundref="data__reader__merge__features_8hpp" startline="83">m_data_size</references>
+        <references refid="classlbann_1_1data__reader__merge__features_1a1e54a136c63b934f44ff91dc68ea3b27" compoundref="data__reader__merge__features_8hpp" startline="81">m_label_reader</references>
+        <references refid="classlbann_1_1generic__data__reader_1a208ba1223e7aaa75e94b728501f12f86">lbann::generic_data_reader::copy</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1data__reader__merge__features_1af194453b7028b116657b95631acca81d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type></type>
+        <definition>lbann::data_reader_merge_features::~data_reader_merge_features</definition>
+        <argsstring>() override</argsstring>
+        <name>~data_reader_merge_features</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_merge_features.hpp" line="50" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_merge_features.cpp" bodystart="58" bodyend="60"/>
+        <references refid="classlbann_1_1data__reader__merge__features_1a1e54a136c63b934f44ff91dc68ea3b27" compoundref="data__reader__merge__features_8hpp" startline="81">m_label_reader</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1data__reader__merge__features_1aa079ec1e03557e2c469f9da6e8aa45a8" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type><ref refid="classlbann_1_1data__reader__merge__features" kindref="compound">data_reader_merge_features</ref> *</type>
+        <definition>data_reader_merge_features* lbann::data_reader_merge_features::copy</definition>
+        <argsstring>() const override</argsstring>
+        <name>copy</name>
+        <reimplements refid="classlbann_1_1generic__compound__data__reader_1a197f5fd06679f777a709453830fcc4f9">copy</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_merge_features.hpp" line="51" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_merge_features.hpp" bodystart="51" bodyend="53"/>
+        <references refid="classlbann_1_1data__reader__merge__features_1ac05d7a06c3a5749afc41c3b86bb2475d" compoundref="data__reader__merge__features_8cpp" startline="34" endline="38">data_reader_merge_features</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1data__reader__merge__features_1affcf91a640f964ba18de9cb650fb07ad" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>std::string</type>
+        <definition>std::string lbann::data_reader_merge_features::get_type</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_type</name>
+        <reimplements refid="classlbann_1_1generic__data__reader_1abeb849fb8e10b4fa317c90bc33f61758">get_type</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Return this data_reader&apos;s type </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_merge_features.hpp" line="55" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_merge_features.hpp" bodystart="55" bodyend="57"/>
+        <references refid="classlbann_1_1data__reader__merge__features_1a8a618de9a92cb148746a83b0381ba781" compoundref="data__reader__merge__features_8cpp" startline="62" endline="82">load</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1data__reader__merge__features_1a8a618de9a92cb148746a83b0381ba781" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::data_reader_merge_features::load</definition>
+        <argsstring>() override</argsstring>
+        <name>load</name>
+        <reimplements refid="classlbann_1_1generic__data__reader_1afeb47703d988a230a59859cbfc178215">load</reimplements>
+        <briefdescription>
+<para>Call load on the subsidiary data readers. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_merge_features.hpp" line="60" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_merge_features.cpp" bodystart="62" bodyend="82"/>
+        <references refid="classlbann_1_1generic__compound__data__reader_1a9815e94ade5873415fd766e09d956d5b" compoundref="compound__data__reader_8hpp" startline="118">lbann::generic_compound_data_reader::m_data_readers</references>
+        <references refid="classlbann_1_1generic__data__reader_1ad3976d4b7db2d404dbb87a56c33fd456" compoundref="data__reader_8hpp" startline="831">lbann::generic_data_reader::m_comm</references>
+        <references refid="classlbann_1_1data__reader__merge__features_1ac9c56e08a45a5beac97e41e403fbaa12" compoundref="data__reader__merge__features_8hpp" startline="83">m_data_size</references>
+        <references refid="classlbann_1_1data__reader__merge__features_1a1e54a136c63b934f44ff91dc68ea3b27" compoundref="data__reader__merge__features_8hpp" startline="81">m_label_reader</references>
+        <references refid="classlbann_1_1generic__data__reader_1afeb47703d988a230a59859cbfc178215">lbann::generic_data_reader::load</references>
+        <references refid="classlbann_1_1generic__data__reader_1aaab6aeff67ffff1c689336851fec2c57" compoundref="data__reader_8hpp" startline="895">lbann::generic_data_reader::m_shuffled_indices</references>
+        <references refid="classlbann_1_1generic__data__reader_1aa28fdeeb6af492540f507e49adff5d6c" compoundref="data__reader_8cpp" startline="328" endline="376">lbann::generic_data_reader::select_subset_of_data</references>
+        <referencedby refid="classlbann_1_1data__reader__merge__features_1affcf91a640f964ba18de9cb650fb07ad" compoundref="data__reader__merge__features_8hpp" startline="55" endline="57">get_type</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1data__reader__merge__features_1a63be746ea35e664b5cc8f8b973e86209" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>int</type>
+        <definition>int lbann::data_reader_merge_features::get_num_labels</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_num_labels</name>
+        <reimplements refid="classlbann_1_1generic__data__reader_1a935ce6262d75f1834e550c3bc16a6547">get_num_labels</reimplements>
+        <briefdescription>
+<para>Return the number of labels (classes) in this dataset. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_merge_features.hpp" line="62" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_merge_features.hpp" bodystart="62" bodyend="62"/>
+        <references refid="classlbann_1_1data__reader__merge__features_1a1e54a136c63b934f44ff91dc68ea3b27" compoundref="data__reader__merge__features_8hpp" startline="81">m_label_reader</references>
+        <references refid="classlbann_1_1generic__data__reader_1a935ce6262d75f1834e550c3bc16a6547" compoundref="data__reader_8hpp" startline="266" endline="268">lbann::generic_data_reader::get_num_labels</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1data__reader__merge__features_1a9cf5a37a562c5bdd3861da9ec2e54638" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>int</type>
+        <definition>int lbann::data_reader_merge_features::get_linearized_data_size</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_linearized_data_size</name>
+        <reimplements refid="classlbann_1_1generic__data__reader_1a246a719477c8c7b6122d41b6f5618d41">get_linearized_data_size</reimplements>
+        <briefdescription>
+<para>Get the linearized size (i.e. number of elements) in a sample. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_merge_features.hpp" line="63" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_merge_features.hpp" bodystart="63" bodyend="63"/>
+        <references refid="classlbann_1_1data__reader__merge__features_1ac9c56e08a45a5beac97e41e403fbaa12" compoundref="data__reader__merge__features_8hpp" startline="83">m_data_size</references>
+        <referencedby refid="classlbann_1_1data__reader__merge__features_1aa0cd0caf93ad18f496bf80d7cafa5527" compoundref="data__reader__merge__features_8hpp" startline="67" endline="70">get_data_dims</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1data__reader__merge__features_1aa50959f29f761916a3cef60f33740516" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>int</type>
+        <definition>int lbann::data_reader_merge_features::get_linearized_label_size</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_linearized_label_size</name>
+        <reimplements refid="classlbann_1_1generic__data__reader_1a99e8ba4f09fdc86d238ad7c8d2e2bce0">get_linearized_label_size</reimplements>
+        <briefdescription>
+<para>Get the linearized size (i.e. number of elements) in a label. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_merge_features.hpp" line="64" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_merge_features.hpp" bodystart="64" bodyend="66"/>
+        <references refid="classlbann_1_1data__reader__merge__features_1a1e54a136c63b934f44ff91dc68ea3b27" compoundref="data__reader__merge__features_8hpp" startline="81">m_label_reader</references>
+        <references refid="classlbann_1_1generic__data__reader_1a99e8ba4f09fdc86d238ad7c8d2e2bce0" compoundref="data__reader_8hpp" startline="278" endline="280">lbann::generic_data_reader::get_linearized_label_size</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1data__reader__merge__features_1aa0cd0caf93ad18f496bf80d7cafa5527" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>const std::vector&lt; int &gt;</type>
+        <definition>const std::vector&lt;int&gt; lbann::data_reader_merge_features::get_data_dims</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_data_dims</name>
+        <reimplements refid="classlbann_1_1generic__data__reader_1ae06ff27459ac4a5d8ac14655d4b31318">get_data_dims</reimplements>
+        <briefdescription>
+<para>Get the dimensions of the data. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_merge_features.hpp" line="67" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_merge_features.hpp" bodystart="67" bodyend="70"/>
+        <references refid="classlbann_1_1data__reader__merge__features_1a9cf5a37a562c5bdd3861da9ec2e54638" compoundref="data__reader__merge__features_8hpp" startline="63" endline="63">get_linearized_data_size</references>
+        <references refid="classlbann_1_1data__reader__merge__features_1a0ac1ade1b2abddfebe263b6f70a839cc" compoundref="data__reader__merge__features_8cpp" startline="106" endline="114">setup_data_store</references>
+        <references refid="classlbann_1_1data__reader__merge__features_1a9796a63e099e93114dc72decd187b3b4" compoundref="data__reader__merge__features_8cpp" startline="84" endline="94">fetch_datum</references>
+        <references refid="classlbann_1_1data__reader__merge__features_1aace9abfab36e0926832ed6773b41e0ea" compoundref="data__reader__merge__features_8cpp" startline="96" endline="99">fetch_label</references>
+        <references refid="classlbann_1_1data__reader__merge__features_1afd9fa7d10c466eca62ac7af3cbc3ddcb" compoundref="data__reader__merge__features_8cpp" startline="101" endline="104">fetch_response</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1data__reader__merge__features_1a0ac1ade1b2abddfebe263b6f70a839cc" prot="public" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::data_reader_merge_features::setup_data_store</definition>
+        <argsstring>(model *m) override</argsstring>
+        <name>setup_data_store</name>
+        <reimplements refid="classlbann_1_1generic__data__reader_1a8b2a09d38512fc11f1b9d572c89100a7">setup_data_store</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1model" kindref="compound">model</ref> *</type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+<para>sets up a data_store. </para>        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_merge_features.hpp" line="73" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_merge_features.cpp" bodystart="106" bodyend="114"/>
+        <references refid="classlbann_1_1generic__data__reader_1aefc076b842933a882214f4f709ca49c9" compoundref="data__reader_8hpp" startline="829">lbann::generic_data_reader::m_data_store</references>
+        <references refid="classlbann_1_1generic__data__store_1a1cff17def02ee21b6ca0befeb04bb582" compoundref="generic__data__store_8cpp" startline="93" endline="124">lbann::generic_data_store::setup</references>
+        <referencedby refid="classlbann_1_1data__reader__merge__features_1aa0cd0caf93ad18f496bf80d7cafa5527" compoundref="data__reader__merge__features_8hpp" startline="67" endline="70">get_data_dims</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="protected-func">
+      <memberdef kind="function" id="classlbann_1_1data__reader__merge__features_1a9796a63e099e93114dc72decd187b3b4" prot="protected" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>bool</type>
+        <definition>bool lbann::data_reader_merge_features::fetch_datum</definition>
+        <argsstring>(Mat &amp;X, int data_id, int mb_idx, int tid) override</argsstring>
+        <name>fetch_datum</name>
+        <reimplements refid="classlbann_1_1generic__data__reader_1a0a3cd87ed4a7057df185e0087f2d21c1">fetch_datum</reimplements>
+        <param>
+          <type><ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref> &amp;</type>
+          <declname>X</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>data_id</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>mb_idx</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>tid</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Fetch a single sample into a matrix. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>X</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The matrix to load data into. </para></parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>data_id</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The index of the datum to fetch. </para></parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>mb_idx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The index within the mini-batch. </para></parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_merge_features.hpp" line="76" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_merge_features.cpp" bodystart="84" bodyend="94"/>
+        <references refid="classlbann_1_1generic__compound__data__reader_1a9815e94ade5873415fd766e09d956d5b" compoundref="compound__data__reader_8hpp" startline="118">lbann::generic_compound_data_reader::m_data_readers</references>
+        <referencedby refid="classlbann_1_1data__reader__merge__features_1aa0cd0caf93ad18f496bf80d7cafa5527" compoundref="data__reader__merge__features_8hpp" startline="67" endline="70">get_data_dims</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1data__reader__merge__features_1aace9abfab36e0926832ed6773b41e0ea" prot="protected" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>bool</type>
+        <definition>bool lbann::data_reader_merge_features::fetch_label</definition>
+        <argsstring>(Mat &amp;Y, int data_id, int mb_idx, int tid) override</argsstring>
+        <name>fetch_label</name>
+        <reimplements refid="classlbann_1_1generic__data__reader_1a03627408c1d1aa28691d31232fe1dce5">fetch_label</reimplements>
+        <param>
+          <type><ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref> &amp;</type>
+          <declname>Y</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>data_id</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>mb_idx</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>tid</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Fetch a single label into a matrix. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>Y</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The matrix to load data into. </para></parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>data_id</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The index of the datum to fetch. </para></parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>mb_idx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The index within the mini-batch. </para></parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_merge_features.hpp" line="77" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_merge_features.cpp" bodystart="96" bodyend="99"/>
+        <references refid="classlbann_1_1data__reader__merge__features_1a1e54a136c63b934f44ff91dc68ea3b27" compoundref="data__reader__merge__features_8hpp" startline="81">m_label_reader</references>
+        <references refid="classlbann_1_1generic__data__reader_1a03627408c1d1aa28691d31232fe1dce5" compoundref="data__reader_8hpp" startline="850" endline="853">lbann::generic_data_reader::fetch_label</references>
+        <referencedby refid="classlbann_1_1data__reader__merge__features_1aa0cd0caf93ad18f496bf80d7cafa5527" compoundref="data__reader__merge__features_8hpp" startline="67" endline="70">get_data_dims</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1data__reader__merge__features_1afd9fa7d10c466eca62ac7af3cbc3ddcb" prot="protected" static="no" const="no" explicit="no" inline="no" virt="virtual">
+        <type>bool</type>
+        <definition>bool lbann::data_reader_merge_features::fetch_response</definition>
+        <argsstring>(Mat &amp;Y, int data_id, int mb_idx, int tid) override</argsstring>
+        <name>fetch_response</name>
+        <reimplements refid="classlbann_1_1generic__data__reader_1abe544ea807eed477f3636010d199b574">fetch_response</reimplements>
+        <param>
+          <type><ref refid="base_8hpp_1a68f11fdc31b62516cb310831bbe54d73" kindref="member">Mat</ref> &amp;</type>
+          <declname>Y</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>data_id</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>mb_idx</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>tid</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Fetch a single response into a matrix. <parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>Y</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The matrix to load data into. </para></parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>data_id</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The index of the datum to fetch. </para></parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>mb_idx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The index within the mini-batch. </para></parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_merge_features.hpp" line="78" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/src/data_readers/data_reader_merge_features.cpp" bodystart="101" bodyend="104"/>
+        <references refid="classlbann_1_1data__reader__merge__features_1a1e54a136c63b934f44ff91dc68ea3b27" compoundref="data__reader__merge__features_8hpp" startline="81">m_label_reader</references>
+        <references refid="classlbann_1_1generic__data__reader_1abe544ea807eed477f3636010d199b574" compoundref="data__reader_8hpp" startline="861" endline="864">lbann::generic_data_reader::fetch_response</references>
+        <referencedby refid="classlbann_1_1data__reader__merge__features_1aa0cd0caf93ad18f496bf80d7cafa5527" compoundref="data__reader__merge__features_8hpp" startline="67" endline="70">get_data_dims</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para>Data reader for merging multiple data readers. This can take any positive number of data readers, which will be concatenated in the order provided to provide the data, and a single data reader to provide the label. This data reader uses the fetch_datum method of its subsidiary data readers to fetch all data, including the labels. </para>    </detaileddescription>
+    <inheritancegraph>
+      <node id="360">
+        <label>lbann::lbann_image_preprocessor</label>
+        <link refid="classlbann_1_1lbann__image__preprocessor"/>
+      </node>
+      <node id="357">
+        <label>lbann::data_reader_merge_features</label>
+        <link refid="classlbann_1_1data__reader__merge__features"/>
+        <childnode refid="358" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="359">
+        <label>lbann::generic_data_reader</label>
+        <link refid="classlbann_1_1generic__data__reader"/>
+        <childnode refid="360" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="358">
+        <label>lbann::generic_compound_data_reader</label>
+        <link refid="classlbann_1_1generic__compound__data__reader"/>
+        <childnode refid="359" relation="public-inheritance">
+        </childnode>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="367">
+        <label>lbann::model</label>
+        <link refid="classlbann_1_1model"/>
+        <childnode refid="368" relation="usage">
+          <edgelabel>m_default_optimizer</edgelabel>
+        </childnode>
+        <childnode refid="365" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="373" relation="usage">
+          <edgelabel>m_objective_function</edgelabel>
+        </childnode>
+      </node>
+      <node id="364">
+        <label>lbann::lbann_image_preprocessor</label>
+        <link refid="classlbann_1_1lbann__image__preprocessor"/>
+      </node>
+      <node id="361">
+        <label>lbann::data_reader_merge_features</label>
+        <link refid="classlbann_1_1data__reader__merge__features"/>
+        <childnode refid="362" relation="public-inheritance">
+        </childnode>
+        <childnode refid="363" relation="usage">
+          <edgelabel>m_label_reader</edgelabel>
+        </childnode>
+      </node>
+      <node id="368">
+        <label>lbann::optimizer</label>
+        <link refid="classlbann_1_1optimizer"/>
+        <childnode refid="365" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="369" relation="usage">
+          <edgelabel>m_cudnn</edgelabel>
+        </childnode>
+        <childnode refid="370" relation="usage">
+          <edgelabel>m_gradient_allreduce_req</edgelabel>
+        </childnode>
+        <childnode refid="371" relation="usage">
+          <edgelabel>m_weights</edgelabel>
+        </childnode>
+      </node>
+      <node id="363">
+        <label>lbann::generic_data_reader</label>
+        <link refid="classlbann_1_1generic__data__reader"/>
+        <childnode refid="364" relation="public-inheritance">
+        </childnode>
+        <childnode refid="365" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="366" relation="usage">
+          <edgelabel>m_data_store</edgelabel>
+        </childnode>
+      </node>
+      <node id="369">
+        <label>lbann::cudnn::cudnn_manager</label>
+        <link refid="classlbann_1_1cudnn_1_1cudnn__manager"/>
+      </node>
+      <node id="372">
+        <label>lbann::weights_initializer</label>
+        <link refid="classlbann_1_1weights__initializer"/>
+        <childnode refid="365" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+      </node>
+      <node id="362">
+        <label>lbann::generic_compound_data_reader</label>
+        <link refid="classlbann_1_1generic__compound__data__reader"/>
+        <childnode refid="363" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="371">
+        <label>lbann::weights</label>
+        <link refid="classlbann_1_1weights"/>
+        <childnode refid="368" relation="usage">
+          <edgelabel>m_optimizer</edgelabel>
+        </childnode>
+        <childnode refid="365" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="372" relation="usage">
+          <edgelabel>m_initializer</edgelabel>
+        </childnode>
+        <childnode refid="369" relation="usage">
+          <edgelabel>m_cudnn</edgelabel>
+        </childnode>
+      </node>
+      <node id="365">
+        <label>lbann::lbann_comm</label>
+        <link refid="classlbann_1_1lbann__comm"/>
+      </node>
+      <node id="370">
+        <label>lbann::Al::request</label>
+        <link refid="structlbann_1_1Al_1_1request"/>
+      </node>
+      <node id="373">
+        <label>lbann::objective_function</label>
+        <link refid="classlbann_1_1objective__function"/>
+      </node>
+      <node id="366">
+        <label>lbann::generic_data_store</label>
+        <link refid="classlbann_1_1generic__data__store"/>
+        <childnode refid="365" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="363" relation="usage">
+          <edgelabel>m_reader</edgelabel>
+        </childnode>
+        <childnode refid="367" relation="usage">
+          <edgelabel>m_model</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_merge_features.hpp" line="43" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/data_readers/data_reader_merge_features.hpp" bodystart="43" bodyend="84"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a1726baf71e931108dc9192539e90c583" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>add_noise</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1adb9e017aeac52a9b5d392f17188d1057" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>affine_trans</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a5ef5acf32117e5b2ea1a366e071e21d4" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>at_new_epoch</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a27cb5182c4f764cbfa4edecbb78ef29d" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>augment</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a3e99be32b95a415fd8d616cb85075df1" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>col_pixels</name></member>
+      <member refid="classlbann_1_1data__reader__merge__features_1aa079ec1e03557e2c469f9da6e8aa45a8" prot="public" virt="virtual"><scope>lbann::data_reader_merge_features</scope><name>copy</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a7dc609e33febdc7fc29bdc9270594bea" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>cv_pixels</name></member>
+      <member refid="classlbann_1_1data__reader__merge__features_1ac05d7a06c3a5749afc41c3b86bb2475d" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>data_reader_merge_features</name></member>
+      <member refid="classlbann_1_1data__reader__merge__features_1a41d55ea605d94ea010126b11ee420778" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>data_reader_merge_features</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a871cb543ee6c132a76e16045a1a2a9f3" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>disable_augmentation</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a46b658ba4f6b746632b683568ab76f77" prot="public" virt="virtual"><scope>lbann::data_reader_merge_features</scope><name>fetch_data</name></member>
+      <member refid="classlbann_1_1data__reader__merge__features_1a9796a63e099e93114dc72decd187b3b4" prot="protected" virt="virtual"><scope>lbann::data_reader_merge_features</scope><name>fetch_datum</name></member>
+      <member refid="classlbann_1_1data__reader__merge__features_1aace9abfab36e0926832ed6773b41e0ea" prot="protected" virt="virtual"><scope>lbann::data_reader_merge_features</scope><name>fetch_label</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a7e624f92e38b0ee4224a6afaaf2acbdb" prot="public" virt="virtual"><scope>lbann::data_reader_merge_features</scope><name>fetch_labels</name></member>
+      <member refid="classlbann_1_1data__reader__merge__features_1afd9fa7d10c466eca62ac7af3cbc3ddcb" prot="protected" virt="virtual"><scope>lbann::data_reader_merge_features</scope><name>fetch_response</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1aeaa97d3683add33d1c6d69a769dd6a20" prot="public" virt="virtual"><scope>lbann::data_reader_merge_features</scope><name>fetch_responses</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a12d9f7056a5e68185ea0e85e14c17bcf" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>flip</name></member>
+      <member refid="classlbann_1_1generic__compound__data__reader_1ab2ed3059169e556e4310a55fa99c1f07" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>generic_compound_data_reader</name></member>
+      <member refid="classlbann_1_1generic__compound__data__reader_1ae047b146f674bc806418f8db64c47bee" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>generic_compound_data_reader</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1aaba933b8f7c1227801f6e80d39986af4" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>generic_data_reader</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a95d0ca539a613182898ff7693206fb40" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>generic_data_reader</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a1e8655cd1883d850566694bcf2ad60ab" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_absolute_sample_count</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a65b9d39e7585ec325eb40a123cd70891" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_base_offset</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1aedca18323a7777180fc12d73d809fb84" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_comm</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ac4fc0729e7f1240e167fe897df99f950" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_compound_rank</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a3f7114448c6b43a5aac30c002e4bade3" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_current_global_mini_batch_size</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a35521b27677081ee9ed30f25aeb3b508" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_current_mini_batch_index</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1aec4624f295e1e3c6c5053838624441a5" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_current_mini_batch_size</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a7c884d3646396a05d9e01e3b7a260419" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_current_step_in_epoch</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1af80711baa226f8bc370e8e276c49f3c1" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_current_world_master_mini_batch_adjustment</name></member>
+      <member refid="classlbann_1_1data__reader__merge__features_1aa0cd0caf93ad18f496bf80d7cafa5527" prot="public" virt="virtual"><scope>lbann::data_reader_merge_features</scope><name>get_data_dims</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a56664e1b43f3fe923cf6d652f14b40a9" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_data_filename</name></member>
+      <member refid="classlbann_1_1generic__compound__data__reader_1a3ba33e29527963baf182b2c034b8ba2d" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_data_readers</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a2f1f018beecb1295c00a1ffdfa03f638" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_data_store</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ab4c6c2d4ba40ece809ce896828c8ff03" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_file_dir</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a96bb5c116c1a23822f6662b866df4a17" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_global_last_mini_batch_size</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1aaa4110d53f59a127326e63ca4110b56b" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_global_mini_batch_size</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ab5c6c70ea1ecf8f7e2ebe2c486e50134" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_indices</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a8d8b44ed55e2af49c70d29277ff57a91" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_indices_fetched_per_mb</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ac84ecef4f72f209420279526e3e6c77b" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_iteration_stride</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1af0f82d719fcd6e0668414836f2673d5c" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_label_filename</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a79cb3bee4e0d19006ef9213763dc8af2" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_last_mini_batch_size</name></member>
+      <member refid="classlbann_1_1data__reader__merge__features_1a9cf5a37a562c5bdd3861da9ec2e54638" prot="public" virt="virtual"><scope>lbann::data_reader_merge_features</scope><name>get_linearized_data_size</name></member>
+      <member refid="classlbann_1_1data__reader__merge__features_1aa50959f29f761916a3cef60f33740516" prot="public" virt="virtual"><scope>lbann::data_reader_merge_features</scope><name>get_linearized_label_size</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1aacd8704cd11ed6f521cebeaac06c6cb7" prot="public" virt="virtual"><scope>lbann::data_reader_merge_features</scope><name>get_linearized_response_size</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a56dca946c200cc25f6eae6e507939bba" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_loaded_mini_batch_index</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a850e99110dd1e9df2985f09ea196fea8" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_loaded_mini_batch_size</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a92574413c82813cc50fbdfbb70b4065d" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_mini_batch_max</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1af85a5ea421ba6ef7558cdf4bba36fdf0" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_mini_batch_size</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a192632a8037f6a1eef202747f5916bf3" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_minibatch_indices</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a9e78b6062be9746c81eabf0f9d28264e" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_model_offset</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ab11a9eca77ac9018bdab45ead7ef5e13" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_next_position</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1adcdb833aff7ce85b0879334b252f357a" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_num_data</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ab35b0f96c84c20b9bab5dda1aa852953" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_num_global_indices</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a06fb58d1c0b84b8c76f5b4d160751f34" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_num_iterations_per_epoch</name></member>
+      <member refid="classlbann_1_1data__reader__merge__features_1a63be746ea35e664b5cc8f8b973e86209" prot="public" virt="virtual"><scope>lbann::data_reader_merge_features</scope><name>get_num_labels</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ad15887cc31657d03925835aab0d4b675" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_num_parallel_readers</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a054be9375a6e8338c893230f83c1497f" prot="public" virt="virtual"><scope>lbann::data_reader_merge_features</scope><name>get_num_responses</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a49d5244c292de9ca489761b940958afd" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_num_unused_data</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1aa6e4e7a49d30502a0c60c39720ac2499" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_position</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ab5321bd7c6e83845785753366e6d9e64" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_rank</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a4df1c749c3b20e786a5f1452daa7b540" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_reset_mini_batch_index</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a92982e1b399f37e2ead5aa440883cba5" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_role</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a48990d714a247463b135784f235f8a50" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_sample_stride</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a38eedaa9c8680e885a3ec05009f5f492" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_shuffled_indices</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a722a28971b6799566dc21ba552a4cde6" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_stride_to_last_mini_batch</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a2d1d5657e8b9bf8b8a9d51b33aedf017" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_stride_to_next_mini_batch</name></member>
+      <member refid="classlbann_1_1data__reader__merge__features_1affcf91a640f964ba18de9cb650fb07ad" prot="public" virt="virtual"><scope>lbann::data_reader_merge_features</scope><name>get_type</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a94e981ee5b34ce56d1a532fed2ba9e39" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_unused_data</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a5853fa5e619b886699954aca6440dd8a" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_use_percent</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ab06058b5fa1d74239998358b02f73132" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_validation_percent</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a0d0f7d684970b5cc59c63050555df302" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>get_world_master_mini_batch_adjustment</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a4ba2de0a781dfa0a2652ad4d777a241f" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>horizontal_flip</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1ae62596b4af5d1940aa0499cde2bdd005" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>horizontal_shift</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a3c4f4cc5c90233696566a35a62a1708c" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>internal_save_image</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a8640edf9c71e3b7bee8a8e947c4690fa" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>is_data_reader_done</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ae82c40eebc05e2f0c1198afcc7a7f009" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>is_master</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a7d67ce4d10e5cdcdff47f5ecdcee6eb0" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>is_shuffled</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a6a0f92194d42e87d73b57ba0929e2b2d" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>lbann_image_preprocessor</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1aeeca5696dbfde9ccb1112cbd8524940b" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>lbann_image_preprocessor</name></member>
+      <member refid="classlbann_1_1data__reader__merge__features_1a8a618de9a92cb148746a83b0381ba781" prot="public" virt="virtual"><scope>lbann::data_reader_merge_features</scope><name>load</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a85119fae17feb8fda32f8a2f40869436" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>load_from_checkpoint_shared</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a462437ed899bc26ebec9ab2091980d0c" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_absolute_sample_count</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a77946c4dca753c23f39e9a490eba1229" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_base_offset</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ad3976d4b7db2d404dbb87a56c33fd456" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_comm</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a7df02a1534b100df6f718dc7a7b32b25" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_compound_rank</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1aefd4bc0bf95de1e2500827581acf3536" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_current_mini_batch_idx</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a2facf4e410099ac8c1fa586e797ec2e0" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_current_pos</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a2595e254ab2442e8cfc80aa6bdac0c0f" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_data_fn</name></member>
+      <member refid="classlbann_1_1generic__compound__data__reader_1a9815e94ade5873415fd766e09d956d5b" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_data_readers</name></member>
+      <member refid="classlbann_1_1data__reader__merge__features_1ac9c56e08a45a5beac97e41e403fbaa12" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_data_size</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1aefc076b842933a882214f4f709ca49c9" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_data_store</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a252002ec211d67606b80bc481a27e820" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_file_dir</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a51af253029b7daea29bc46cbbef686b3" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_first_n</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a1d6f2d378a3f152e20b3def16f52c003" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_global_last_mini_batch_size</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a7cd8fa7b1db9ea3d154a411f36992476" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_global_mini_batch_size</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a032397d6c642dccd43f4c38393f5d2c1" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_horizontal_flip</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a636f59ffe470f996677601df6179bc41" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_horizontal_shift</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a4ee1a159c74561c15a5e0c267ad3cc6a" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_indices_fetched_per_mb</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a73b23a2e7768db4e9e8ba4d9a362163a" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_iteration_stride</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a492d45c107df31b3e241e54d51950746" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_label_fn</name></member>
+      <member refid="classlbann_1_1data__reader__merge__features_1a1e54a136c63b934f44ff91dc68ea3b27" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_label_reader</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a241f77b6209de4ae656bc34ad51bb612" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_last_mini_batch_size</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a2cfc5a3e6de8a8a24d3525ec3ed586fb" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_loaded_mini_batch_idx</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a52610681839ba81c3050c0881ffc005b" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_master</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a734002307d0ef95a31d75a295fa5c3d1" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_mean_subtraction</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a96f87a7d09711ab3eee3940ff2aa36ec" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_mini_batch_size</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a5d9a0efd1ebe43a74911c35ffe84edc9" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_model_offset</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a5e89d5e6797f7e7b69d1a64f7d8b5d6b" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_model_rank</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a5048d99a58ccddf4fb170c6face8cf4e" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_my_minibatch_indices</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1af860c1d78af06e4ae94ad68e3032fe92" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_noise_factor</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ac6ea8dad1e9f0a8c939fd27d2de37e1b" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_num_global_indices</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ab570063483a1f604ca2fc536c3d83de7" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_num_iterations_per_epoch</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a6eb9b8c7c704374a1e49dce87110455e" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_num_parallel_readers</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a1a7fec32155bf863d7f75bd1401532bb" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_rank</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1af29f62579a408d1548a124442bcf181d" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_reset_mini_batch_index</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a2f311e8c91be2a7ac93f6f141bb714a1" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_role</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a7518ae40fe38862c831832fdaf948d45" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_rotation_range</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a58461c39de7e17eafc5b98aec99cbb9b" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_sample_stride</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ab1d7cac44072bd1f67291c6169414112" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_save_minibatch_indices</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1ae00af83d438ab27d6a7b996775fba3b3" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_scale</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a237ead6488b2c04e982fd10510ae03b4" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_shear_range</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a8039ed9c12a5847f0dcf7dd54b8d2f5b" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_shuffle</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1aaab6aeff67ffff1c689336851fec2c57" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_shuffled_indices</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ac46922f2ef4f392bcc7c59c21685a3ff" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_stride_to_last_mini_batch</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a02c4632cc7cad5c3e4062934c41717a0" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_stride_to_next_mini_batch</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1ae365a9e20f060b44de7835aceceb491c" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_unit_variance</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a0bc0ee42e95d23687ddcc30d6c338b19" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_unused_indices</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a8b475834bd80e7103c3631d2b061aabc" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_use_percent</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a3e4afbe28634a913f6de9daabf05dc0d" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_validation_percent</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a7cfc687cce450403c7b46460f4d08d69" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_vertical_flip</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a06158637d634a4d123ee5501ddd0c7cb" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_vertical_shift</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1acd33b2dbdfd4043ecc62cc13789532a2" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_world_master_mini_batch_adjustment</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a6abe54ada0cacf23e8ac8b6d113bd26b" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>m_z_score</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1ab499dd9f11d98998b5902d639f70fa8e" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>mean_subtraction</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1ae370cdc9f776ce8cce94a45cacf47425" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>normalize</name></member>
+      <member refid="classlbann_1_1data__reader__merge__features_1a2df9360e463c2ceaf4ba42e287f673b9" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1generic__compound__data__reader_1a7ece97b6fd2bc62da4d98f29cfb50155" prot="public" virt="non-virtual" ambiguityscope="lbann::generic_compound_data_reader::"><scope>lbann::data_reader_merge_features</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1aec7e626e6efa2a4bf23f931e2ef8f607" prot="public" virt="non-virtual" ambiguityscope="lbann::generic_data_reader::"><scope>lbann::data_reader_merge_features</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1af652494123a62e653cd7dc2d7c340219" prot="public" virt="non-virtual" ambiguityscope="lbann::lbann_image_preprocessor::"><scope>lbann::data_reader_merge_features</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a93dddd2276ddc34cc97922ee27c44582" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>pack_scalars</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1aece5b572d0a2fe123cc66412d7a5c91e" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>pixel_noise</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a2b10538440d784f0f12582a5407acef2" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>position_valid</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a7bbf74725a96235dc1cd20ff440a69bd" prot="protected" virt="virtual"><scope>lbann::data_reader_merge_features</scope><name>postprocess_data_source</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ad613f95666b973d8da77773fb34c9b66" prot="protected" virt="virtual"><scope>lbann::data_reader_merge_features</scope><name>preprocess_data_source</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a1a293733368dd9eceba3e99cf9e5ae24" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>rotation</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a8cf298061c73f55e2fe717acd2a9f178" prot="public" virt="virtual"><scope>lbann::data_reader_merge_features</scope><name>save_image</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a6f49d945610f35335fce4a422a432cc1" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>save_to_checkpoint_shared</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a977b2fdd417acb1eb37dbea0cfdd4b60" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>scale</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1aa28fdeeb6af492540f507e49adff5d6c" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>select_subset_of_data</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1aa2d83c4ffc58534e0c193b6b9f9fb925" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>set_absolute_sample_count</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1adcf4c6012f44c78589bb75ea530cf518" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>set_base_offset</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a39f4d80661a2c8e24d8d167ad5bd6c6b" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>set_comm</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a960362f819312d39dfcba5eeecf76257" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>set_compound_rank</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a74b7ef4fe0dc7d3a96868ca3b5fbf897" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>set_data_filename</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a94a6db0b62d4c98202ef309eb76b220c" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>set_file_dir</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1aca4e6c31df0a1579079274bc48fbbf26" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>set_first_n</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a4455d137b469287bf964436f9fcc6d94" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>set_global_last_mini_batch_size</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a03388338e75d37e1b28389d22bd5b604" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>set_global_mini_batch_size</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ac6d4a5ba1d4e1134620cddcac343bf59" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>set_initial_position</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ac1f3f81ca0e2920658cba026fe09a95b" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>set_iteration_stride</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1af45f301cc9adc2f8184b81d8d2600b8f" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>set_label_filename</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a357389ee93428b68f9400de708f6915d" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>set_last_mini_batch_size</name></member>
+      <member refid="classlbann_1_1generic__compound__data__reader_1ae703ef84ca1c77221f4724a799f9ad0d" prot="public" virt="virtual"><scope>lbann::data_reader_merge_features</scope><name>set_master</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1adf161cca4b80eb95f9748050e7fe1809" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>set_mini_batch_size</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ab20e835e0e0565717e0fd74da09d4890" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>set_model_offset</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a91573d9599b503a6bdf2939e69659e8b" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>set_num_iterations_per_epoch</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a9b348d52852062dbc66b0accde5c6e8a" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>set_num_parallel_readers</name></member>
+      <member refid="classlbann_1_1generic__compound__data__reader_1a85860f9ae7e38ae98421219e41b5f829" prot="public" virt="virtual"><scope>lbann::data_reader_merge_features</scope><name>set_rank</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a8ac14fee514ad30efe8571ce68c2a95d" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>set_reset_mini_batch_index</name></member>
+      <member refid="classlbann_1_1generic__compound__data__reader_1a19302078a484337e86b1549b48ef13ad" prot="public" virt="virtual"><scope>lbann::data_reader_merge_features</scope><name>set_role</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1adb90391e3e9c8e3c2aba4d4a0911ca82" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>set_sample_stride</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a19fd7c4dc234fa09ac7619e47fe18454" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>set_save_minibatch_entries</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a7b0fc770678e22c44a824e88444da765" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>set_shuffle</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ad07a5edb92c3927ef809fca0d95665bc" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>set_shuffled_indices</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1af2fc6b35ad8139d15729b19db2895827" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>set_stride_to_last_mini_batch</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1add5bd1d488967ebab5852b636e07db15" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>set_stride_to_next_mini_batch</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1ae6929a8bd2e59da72a8c2e537f0b2b37" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>set_use_percent</name></member>
+      <member refid="classlbann_1_1generic__compound__data__reader_1a6b8288801972561d9758337c61eb39b8" prot="public" virt="virtual"><scope>lbann::data_reader_merge_features</scope><name>set_validation_percent</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a208cebb68cf3c1ae1bd9cb5f28e8bf5b" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>set_world_master_mini_batch_adjustment</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a879bb7dcb57a0aa1ef9c5039f5b0efda" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>setup</name></member>
+      <member refid="classlbann_1_1data__reader__merge__features_1a0ac1ade1b2abddfebe263b6f70a839cc" prot="public" virt="virtual"><scope>lbann::data_reader_merge_features</scope><name>setup_data_store</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1aef1e2375fd518e69df800b0dcbcb37d0" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>shear_range</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1af1aaa4d1a693974c1b1f1318b6ed60b8" prot="protected" virt="virtual"><scope>lbann::data_reader_merge_features</scope><name>shuffle_indices</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1afa470b696ba435c20050187a0232717d" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>subtract_mean</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1aa7a8926d0544100f7d3caa9289d94826" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>unit_scale</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a05c4cb5cb842df5d46eebe15c6ea9de3" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>unit_variance</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1af9fcb483843230008a53d60c12975f61" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>unit_variance</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a3e1c13778c04ca9fa5136ee7ee3893fb" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>unpack_header</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a8de5c2e24d4cc2211145ed5dc37cf228" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>unpack_scalars</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a1d10dec5713fbe60e61b4dc400227ade" prot="public" virt="virtual"><scope>lbann::data_reader_merge_features</scope><name>update</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1afa621af16f1a582b5a22405b79dbe052" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>use_unused_index_set</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1aeb7d75e4d3361ae2836afabc14510d74" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>vertical_flip</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a50ac63e1f6b1b9806cbf6c06f53f4aca" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>vertical_shift</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1a02cfd4d8c26a317540b587eb52cef0d5" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>z_score</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1aec67fb0dc7a1f5d718d5bb2e226f9b7a" prot="protected" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>z_score</name></member>
+      <member refid="classlbann_1_1data__reader__merge__features_1af194453b7028b116657b95631acca81d" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>~data_reader_merge_features</name></member>
+      <member refid="classlbann_1_1generic__compound__data__reader_1a9fbabf1628a892500e1cd8f75738ce7d" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>~generic_compound_data_reader</name></member>
+      <member refid="classlbann_1_1generic__data__reader_1a7ed8e91233268c11b907c5d6667e8a09" prot="public" virt="non-virtual"><scope>lbann::data_reader_merge_features</scope><name>~generic_data_reader</name></member>
+      <member refid="classlbann_1_1lbann__image__preprocessor_1aaabfad8d6923680cf4943f6f5290c682" prot="public" virt="virtual"><scope>lbann::data_reader_merge_features</scope><name>~lbann_image_preprocessor</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

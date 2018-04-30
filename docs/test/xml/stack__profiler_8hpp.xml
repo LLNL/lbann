@@ -1,0 +1,186 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="stack__profiler_8hpp" kind="file" language="C++">
+    <compoundname>stack_profiler.hpp</compoundname>
+    <includes local="no">string.h</includes>
+    <includes local="no">dlfcn.h</includes>
+    <includes local="no">iostream</includes>
+    <includes local="no">cstdlib</includes>
+    <includes local="no">cstdio</includes>
+    <includes local="no">cxxabi.h</includes>
+    <includedby refid="stack__profiler_8cpp" local="yes">/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_profiler.cpp</includedby>
+    <incdepgraph>
+      <node id="16065">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/stack_profiler.hpp</label>
+        <link refid="stack__profiler_8hpp"/>
+        <childnode refid="16066" relation="include">
+        </childnode>
+        <childnode refid="16067" relation="include">
+        </childnode>
+        <childnode refid="16068" relation="include">
+        </childnode>
+        <childnode refid="16069" relation="include">
+        </childnode>
+        <childnode refid="16070" relation="include">
+        </childnode>
+        <childnode refid="16071" relation="include">
+        </childnode>
+      </node>
+      <node id="16066">
+        <label>string.h</label>
+      </node>
+      <node id="16070">
+        <label>cstdio</label>
+      </node>
+      <node id="16071">
+        <label>cxxabi.h</label>
+      </node>
+      <node id="16069">
+        <label>cstdlib</label>
+      </node>
+      <node id="16068">
+        <label>iostream</label>
+      </node>
+      <node id="16067">
+        <label>dlfcn.h</label>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="16072">
+        <label>/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/stack_profiler.hpp</label>
+        <link refid="stack__profiler_8hpp"/>
+        <childnode refid="16073" relation="include">
+        </childnode>
+      </node>
+      <node id="16073">
+        <label>/Users/mckinney27/doxy-testbed/lbann/src/utils/stack_profiler.cpp</label>
+        <link refid="stack__profiler_8cpp"/>
+      </node>
+    </invincdepgraph>
+    <innerclass refid="classlbann_1_1stack__profiler" prot="public">lbann::stack_profiler</innerclass>
+    <innernamespace refid="namespacelbann">lbann</innernamespace>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="comment">//<sp/>Copyright<sp/>(c)<sp/>2014-2016,<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Security,<sp/>LLC.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Produced<sp/>at<sp/>the<sp/>Lawrence<sp/>Livermore<sp/>National<sp/>Laboratory.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Written<sp/>by<sp/>the<sp/>LBANN<sp/>Research<sp/>Team<sp/>(B.<sp/>Van<sp/>Essen,<sp/>et<sp/>al.)<sp/>listed<sp/>in</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="comment">//<sp/>the<sp/>CONTRIBUTORS<sp/>file.<sp/>&lt;lbann-dev@llnl.gov&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="comment">//<sp/>LLNL-CODE-697807.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8"><highlight class="normal"></highlight><highlight class="comment">//<sp/>All<sp/>rights<sp/>reserved.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10"><highlight class="normal"></highlight><highlight class="comment">//<sp/>This<sp/>file<sp/>is<sp/>part<sp/>of<sp/>LBANN:<sp/>Livermore<sp/>Big<sp/>Artificial<sp/>Neural<sp/>Network</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="11"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Toolkit.<sp/>For<sp/>details,<sp/>see<sp/>http://software.llnl.gov/LBANN<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"></highlight><highlight class="comment">//<sp/>https://github.com/LLNL/LBANN.</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="14"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Licensed<sp/>under<sp/>the<sp/>Apache<sp/>License,<sp/>Version<sp/>2.0<sp/>(the<sp/>&quot;Licensee&quot;);<sp/>you</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"></highlight><highlight class="comment">//<sp/>may<sp/>not<sp/>use<sp/>this<sp/>file<sp/>except<sp/>in<sp/>compliance<sp/>with<sp/>the<sp/>License.<sp/><sp/>You<sp/>may</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="16"><highlight class="normal"></highlight><highlight class="comment">//<sp/>obtain<sp/>a<sp/>copy<sp/>of<sp/>the<sp/>License<sp/>at:</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"></highlight><highlight class="comment">//<sp/>http://www.apache.org/licenses/LICENSE-2.0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight><highlight class="comment">//</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="20"><highlight class="normal"></highlight><highlight class="comment">//<sp/>Unless<sp/>required<sp/>by<sp/>applicable<sp/>law<sp/>or<sp/>agreed<sp/>to<sp/>in<sp/>writing,<sp/>software</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"></highlight><highlight class="comment">//<sp/>distributed<sp/>under<sp/>the<sp/>License<sp/>is<sp/>distributed<sp/>on<sp/>an<sp/>&quot;AS<sp/>IS&quot;<sp/>BASIS,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"></highlight><highlight class="comment">//<sp/>WITHOUT<sp/>WARRANTIES<sp/>OR<sp/>CONDITIONS<sp/>OF<sp/>ANY<sp/>KIND,<sp/>either<sp/>express<sp/>or</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="23"><highlight class="normal"></highlight><highlight class="comment">//<sp/>implied.<sp/>See<sp/>the<sp/>License<sp/>for<sp/>the<sp/>specific<sp/>language<sp/>governing</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight><highlight class="comment">//<sp/>permissions<sp/>and<sp/>limitations<sp/>under<sp/>the<sp/>license.</highlight></codeline>
+<codeline lineno="26"><highlight class="comment"></highlight><highlight class="preprocessor">#ifndef<sp/>__STACK_PROFILER_HPP__</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="27"><highlight class="normal"></highlight><highlight class="preprocessor">#define<sp/>__STACK_PROFILER_HPP__</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="28"><highlight class="normal"></highlight></codeline>
+<codeline lineno="29"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;string.h&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="30"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;dlfcn.h&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="31"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;iostream&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="32"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;cstdlib&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="33"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;cstdio&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="34"><highlight class="normal"></highlight><highlight class="preprocessor">#include<sp/>&lt;cxxabi.h&gt;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="35"><highlight class="normal"></highlight></codeline>
+<codeline lineno="36"><highlight class="normal"></highlight></codeline>
+<codeline lineno="37"><highlight class="normal"></highlight><highlight class="keyword">namespace<sp/></highlight><highlight class="normal"><ref refid="namespacelbann" kindref="compound">lbann</ref><sp/>{</highlight></codeline>
+<codeline lineno="38"><highlight class="normal"></highlight></codeline>
+<codeline lineno="44" refid="classlbann_1_1stack__profiler" refkind="compound"><highlight class="keyword">class<sp/></highlight><highlight class="normal"><ref refid="classlbann_1_1stack__profiler" kindref="compound">stack_profiler</ref><sp/>{</highlight></codeline>
+<codeline lineno="45"><highlight class="normal">public<sp/>:</highlight></codeline>
+<codeline lineno="46" refid="classlbann_1_1stack__profiler_1ab1a7c0531a78ad7e2181a10daee44def" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">static</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1stack__profiler" kindref="compound">stack_profiler</ref><sp/>*<sp/></highlight><highlight class="keyword">get</highlight><highlight class="normal">()<sp/>__attribute__((no_instrument_function))<sp/>{</highlight></codeline>
+<codeline lineno="47"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1stack__profiler_1a7a1803ee126dfb5a215c5966458451fd" kindref="member">s_instance</ref>;</highlight></codeline>
+<codeline lineno="48"><highlight class="normal"><sp/><sp/>}</highlight></codeline>
+<codeline lineno="49"><highlight class="normal"></highlight></codeline>
+<codeline lineno="53"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1stack__profiler_1a5c8e2ec1f36d36ff8211ec8910063777" kindref="member">activate</ref>(</highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>thread_id)<sp/>__attribute__((no_instrument_function));</highlight></codeline>
+<codeline lineno="54"><highlight class="normal"></highlight></codeline>
+<codeline lineno="55"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1stack__profiler_1a27d55f6551cf445d3d0e9836858f6872" kindref="member">print</ref>()<sp/>__attribute__((no_instrument_function));</highlight></codeline>
+<codeline lineno="56"><highlight class="normal"></highlight></codeline>
+<codeline lineno="57"><highlight class="normal">private<sp/>:</highlight></codeline>
+<codeline lineno="58"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1stack__profiler_1aee22d226f565eb88cc877570ca818033" kindref="member">stack_profiler</ref>()<sp/>__attribute__((no_instrument_function));</highlight></codeline>
+<codeline lineno="59"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1stack__profiler_1a57329b6f2822f91e6dad13b19bcc81d9" kindref="member">~stack_profiler</ref>()<sp/>__attribute__((no_instrument_function));</highlight></codeline>
+<codeline lineno="60" refid="classlbann_1_1stack__profiler_1af52b4bc426a0728860b00a4fb7fd500f" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1stack__profiler_1af52b4bc426a0728860b00a4fb7fd500f" kindref="member">stack_profiler</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1stack__profiler" kindref="compound">stack_profiler</ref><sp/>&amp;)<sp/>{}</highlight></codeline>
+<codeline lineno="61" refid="classlbann_1_1stack__profiler_1adac8efbe72cf9186a726798dc4efe91a" refkind="member"><highlight class="normal"><sp/><sp/><ref refid="classlbann_1_1stack__profiler" kindref="compound">stack_profiler</ref>&amp;<sp/><ref refid="classlbann_1_1stack__profiler_1adac8efbe72cf9186a726798dc4efe91a" kindref="member">operator=</ref>(</highlight><highlight class="keyword">const</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1stack__profiler" kindref="compound">stack_profiler</ref>&amp;)<sp/>{<sp/></highlight><highlight class="keywordflow">return</highlight><highlight class="normal"><sp/>*</highlight><highlight class="keyword">this</highlight><highlight class="normal">;<sp/>}</highlight></codeline>
+<codeline lineno="62"><highlight class="normal"></highlight></codeline>
+<codeline lineno="63" refid="classlbann_1_1stack__profiler_1a7a1803ee126dfb5a215c5966458451fd" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keyword">static</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1stack__profiler" kindref="compound">stack_profiler</ref><sp/>*<ref refid="classlbann_1_1stack__profiler_1a7a1803ee126dfb5a215c5966458451fd" kindref="member">s_instance</ref>;</highlight></codeline>
+<codeline lineno="64"><highlight class="normal"></highlight></codeline>
+<codeline lineno="65" refid="classlbann_1_1stack__profiler_1a7dd8bf137ea417ecf54537d64c6d296a" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">bool</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1stack__profiler_1a7dd8bf137ea417ecf54537d64c6d296a" kindref="member">m_full_stack_trace</ref>;</highlight></codeline>
+<codeline lineno="66"><highlight class="normal"></highlight></codeline>
+<codeline lineno="67" refid="classlbann_1_1stack__profiler_1a1bd742927294507fe67184cb4f47b86c" refkind="member"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="classlbann_1_1stack__profiler_1a1bd742927294507fe67184cb4f47b86c" kindref="member">m_thread_id</ref><sp/>;</highlight></codeline>
+<codeline lineno="68"><highlight class="normal"></highlight></codeline>
+<codeline lineno="69"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//<sp/>This<sp/>variable<sp/>is<sp/>unused,<sp/>causing<sp/>a<sp/>certain<sp/>clangy<sp/>compiler<sp/>to<sp/>complain</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="70"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//Dl_info<sp/>m_info;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="71"><highlight class="normal"></highlight></codeline>
+<codeline lineno="72"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="73"><highlight class="normal"></highlight></codeline>
+<codeline lineno="74"><highlight class="normal">}<sp/></highlight><highlight class="comment">//namespace<sp/>lbann</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="75"><highlight class="normal"></highlight></codeline>
+<codeline lineno="76"><highlight class="normal"></highlight></codeline>
+<codeline lineno="77"><highlight class="normal"></highlight><highlight class="preprocessor">#if<sp/>0</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="78"><highlight class="normal"></highlight></codeline>
+<codeline lineno="83"><highlight class="preprocessor">#define<sp/>IGNORE_BIN_CT<sp/>2000000</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="84"><highlight class="normal"></highlight></codeline>
+<codeline lineno="85"><highlight class="normal"></highlight><highlight class="keyword">extern</highlight><highlight class="normal"><sp/></highlight><highlight class="stringliteral">&quot;C&quot;</highlight><highlight class="normal"><sp/>{</highlight></codeline>
+<codeline lineno="86"><highlight class="normal"></highlight></codeline>
+<codeline lineno="87"><highlight class="normal"></highlight><highlight class="keyword">extern</highlight><highlight class="normal"><sp/>FILE<sp/>*<ref refid="stack__profiler_8cpp_1a6cc00bff1b0fcee1e92c726aea92c818" kindref="member">c_hash_fp_full_stack_trace</ref>;</highlight></codeline>
+<codeline lineno="88"><highlight class="normal"></highlight><highlight class="keyword">extern</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="stack__profiler_8cpp_1a92d77137d4b87923f488746604d72f94" kindref="member">c_hash_thread_id</ref>;</highlight></codeline>
+<codeline lineno="89"><highlight class="normal"></highlight><highlight class="keyword">extern</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="stack__profiler_8cpp_1a193e8df9f6b1bc5794e9aa25f82e6a5f" kindref="member">c_hash_profiling_is_turned_on</ref>;</highlight></codeline>
+<codeline lineno="90"><highlight class="normal"></highlight><highlight class="keyword">extern</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>**<ref refid="cyg__profile_8hpp_1ad244007073ad03909ae1fdffa2474e1d" kindref="member">c_hash_default_discard_strings</ref>;</highlight></codeline>
+<codeline lineno="91"><highlight class="normal"></highlight><highlight class="keyword">extern</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="cyg__profile_8hpp_1af5e2b6cc79b08484b326d41d43ac82a2" kindref="member">c_hash_num_default_discard_items</ref>;</highlight></codeline>
+<codeline lineno="92"><highlight class="normal"></highlight></codeline>
+<codeline lineno="93"><highlight class="normal"></highlight><highlight class="keyword">extern</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="stack__profiler_8cpp_1a6e154cbf670e1744cf46337adddfb782" kindref="member">c_hash_depth</ref>;</highlight></codeline>
+<codeline lineno="94"><highlight class="normal"></highlight><highlight class="keyword">extern</highlight><highlight class="normal"><sp/>Dl_info<sp/><ref refid="stack__profiler_8cpp_1a5c0c7f1634059c3321a07d97508e59e3" kindref="member">c_hash_info</ref>;</highlight></codeline>
+<codeline lineno="95"><highlight class="normal"></highlight></codeline>
+<codeline lineno="96"><highlight class="normal"></highlight><highlight class="keyword">extern</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/>**<ref refid="cyg__profile_8hpp_1a923501532631477496972bce4582c48c" kindref="member">c_hash_discard_void_ptrs</ref>;</highlight></codeline>
+<codeline lineno="97"><highlight class="normal"></highlight><highlight class="keyword">extern</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>**<ref refid="cyg__profile_8hpp_1a4c37c1b2fce5e8732b8d7f4d69b1f549" kindref="member">c_hash_discard_strings</ref>;</highlight></codeline>
+<codeline lineno="98"><highlight class="normal"></highlight><highlight class="keyword">extern</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/>*<ref refid="cyg__profile_8hpp_1a1451493a08ea7dc074c7fa118d3e9ef8" kindref="member">c_hash_discard_counts</ref>;</highlight></codeline>
+<codeline lineno="99"><highlight class="normal"></highlight><highlight class="keyword">extern</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/><ref refid="cyg__profile_8hpp_1a5ed0204f8c741c6d9cbbf8e1c9e409d5" kindref="member">c_hash_discard_void_ptrs_num_active</ref>;</highlight></codeline>
+<codeline lineno="100"><highlight class="normal"></highlight></codeline>
+<codeline lineno="101"><highlight class="normal"></highlight><highlight class="keyword">extern</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">long</highlight><highlight class="normal"><sp/><ref refid="stack__profiler_8cpp_1a60ca1ac997785ebd8547c022d07fe4b5" kindref="member">c_hash_lookups</ref>;</highlight></codeline>
+<codeline lineno="102"><highlight class="normal"></highlight><highlight class="keyword">extern</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">long</highlight><highlight class="normal"><sp/><ref refid="stack__profiler_8cpp_1a9e4c390c04f233e99f7577a1c63be028" kindref="member">c_hash_collisions</ref>;</highlight></codeline>
+<codeline lineno="103"><highlight class="normal"></highlight></codeline>
+<codeline lineno="105"><highlight class="keyword">struct<sp/></highlight><highlight class="normal"><ref refid="structc__hash__node" kindref="compound">c_hash_node</ref><sp/>{</highlight></codeline>
+<codeline lineno="106"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">unsigned</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">long</highlight><highlight class="normal"><sp/>key;</highlight></codeline>
+<codeline lineno="107"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">long</highlight><highlight class="normal"><sp/><sp/>mark;</highlight></codeline>
+<codeline lineno="108"><highlight class="normal"></highlight></codeline>
+<codeline lineno="109"><highlight class="normal"><sp/><sp/></highlight><highlight class="comment">//following<sp/>are<sp/>the<sp/>data<sp/>fields</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="110"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">char</highlight><highlight class="normal"><sp/>*name;</highlight></codeline>
+<codeline lineno="111"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">long</highlight><highlight class="normal"><sp/>count;</highlight></codeline>
+<codeline lineno="112"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/>*<sp/>func;</highlight></codeline>
+<codeline lineno="113"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="114"><highlight class="normal"></highlight></codeline>
+<codeline lineno="116"><highlight class="keyword">struct<sp/></highlight><highlight class="normal"><ref refid="structc__hash__table" kindref="compound">c_hash_table</ref><sp/>{</highlight></codeline>
+<codeline lineno="117"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">long</highlight><highlight class="normal"><sp/>size;<sp/><sp/><sp/></highlight><highlight class="comment">//total<sp/>slots<sp/>in<sp/>table</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="118"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">long</highlight><highlight class="normal"><sp/>count;<sp/><sp/></highlight><highlight class="comment">//number<sp/>of<sp/>insertions<sp/>in<sp/>table</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="119"><highlight class="normal"><sp/><sp/></highlight><highlight class="keywordtype">long</highlight><highlight class="normal"><sp/>cur_mark;</highlight></codeline>
+<codeline lineno="120"><highlight class="normal"><sp/><sp/><ref refid="structc__hash__node" kindref="compound">c_hash_node</ref><sp/>*<ref refid="namespacelbann_1_1cnpy__utils_1a9ac86d96ccb1f8b4b2ea16441738781f" kindref="member">data</ref>;<sp/><sp/></highlight><highlight class="comment">//typedef<sp/>struct<sp/>_hash_node_private<sp/>HashRecord</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="121"><highlight class="normal">};</highlight></codeline>
+<codeline lineno="122"><highlight class="normal"></highlight></codeline>
+<codeline lineno="123"><highlight class="normal"></highlight><highlight class="keyword">extern</highlight><highlight class="normal"><sp/><ref refid="structc__hash__table" kindref="compound">c_hash_table</ref><sp/>*<sp/><ref refid="stack__profiler_8cpp_1acaf4dd8f3a0755b44949a87760cd1102" kindref="member">c_hash_the_hash_table</ref>;</highlight></codeline>
+<codeline lineno="124"><highlight class="normal"></highlight></codeline>
+<codeline lineno="128"><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="stack__profiler_8cpp_1ad1c2d92ab2c29021521d36cf4c97e488" kindref="member">c_hash_create</ref>(</highlight><highlight class="keywordtype">long</highlight><highlight class="normal"><sp/>size)<sp/>__attribute__((no_instrument_function));</highlight></codeline>
+<codeline lineno="129"><highlight class="normal"></highlight></codeline>
+<codeline lineno="130"><highlight class="normal"></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="stack__profiler_8cpp_1ab5ce10a091e20ffd33bfd0bc9982f6c4" kindref="member">c_hash_set_thread_id</ref>(</highlight><highlight class="keywordtype">int</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">id</highlight><highlight class="normal">)<sp/>__attribute__((no_instrument_function));</highlight></codeline>
+<codeline lineno="131"><highlight class="normal"></highlight></codeline>
+<codeline lineno="132"><highlight class="normal">}<sp/></highlight><highlight class="comment">//<sp/>extern<sp/>&quot;C&quot;</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="133"><highlight class="normal"></highlight></codeline>
+<codeline lineno="134"><highlight class="normal"></highlight><highlight class="preprocessor">#endif</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="135"><highlight class="normal"></highlight><highlight class="preprocessor">#endif</highlight></codeline>
+    </programlisting>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/utils/stack_profiler.hpp"/>
+  </compounddef>
+</doxygen>

@@ -1,0 +1,18 @@
+<map id="/Users/mckinney27/doxy&#45;testbed/lbann/include/lbann/layers/transform/reduction.hpp" name="/Users/mckinney27/doxy&#45;testbed/lbann/include/lbann/layers/transform/reduction.hpp">
+<area shape="rect" id="node3" href="$transform_8hpp.html" title="lbann/layers/transform\l/transform.hpp" alt="" coords="183,119,336,157"/>
+<area shape="rect" id="node4" href="$layer_8hpp.html" title="lbann/layers/layer.hpp" alt="" coords="474,205,625,231"/>
+<area shape="rect" id="node5" href="$base_8hpp.html" title="lbann/base.hpp" alt="" coords="1115,732,1228,757"/>
+<area shape="rect" id="node14" href="$comm_8hpp.html" title="lbann/comm.hpp" alt="" coords="461,659,581,684"/>
+<area shape="rect" id="node17" href="$summary_8hpp.html" title="lbann/utils/summary.hpp" alt="" coords="222,585,387,611"/>
+<area shape="rect" id="node19" href="$optimizer_8hpp.html" title="lbann/optimizers/optimizer.hpp" alt="" coords="625,279,827,304"/>
+<area shape="rect" id="node21" href="$exception_8hpp.html" title="lbann/utils/exception.hpp" alt="" coords="922,585,1090,611"/>
+<area shape="rect" id="node26" href="$cudnn__wrapper_8hpp.html" title="lbann/utils/cudnn_wrapper.hpp" alt="" coords="614,512,816,537"/>
+<area shape="rect" id="node29" href="$persist_8hpp.html" title="lbann/io/persist.hpp" alt="" coords="1309,512,1446,537"/>
+<area shape="rect" id="node32" href="$timer_8hpp.html" title="lbann/utils/timer.hpp" alt="" coords="1467,279,1607,304"/>
+<area shape="rect" id="node7" href="$Elemental__extensions_8hpp.html" title="lbann/Elemental_extensions.hpp" alt="" coords="1076,805,1290,831"/>
+<area shape="rect" id="node8" href="$cyg__profile_8hpp.html" title="lbann/utils/cyg_profile.hpp" alt="" coords="730,805,906,831"/>
+<area shape="rect" id="node20" href="$compiler__control_8hpp.html" title="lbann/utils/compiler\l_control.hpp" alt="" coords="513,352,648,391"/>
+<area shape="rect" id="node27" href="$weights_8hpp.html" title="lbann/weights/weights.hpp" alt="" coords="854,359,1032,384"/>
+<area shape="rect" id="node22" href="$stack__trace_8hpp.html" title="lbann/utils/stack_trace.hpp" alt="" coords="604,659,784,684"/>
+<area shape="rect" id="node28" href="$initializer_8hpp.html" title="lbann/weights/initializer.hpp" alt="" coords="798,439,982,464"/>
+</map>

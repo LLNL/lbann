@@ -1,0 +1,95 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="structlbann_1_1adam_1_1packing__header" kind="struct" language="C++" prot="private">
+    <compoundname>lbann::adam::packing_header</compoundname>
+      <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structlbann_1_1adam_1_1packing__header_1a7078ddcfad050544473744a3a7b87899" prot="public" static="no" mutable="no">
+        <type>DataType</type>
+        <definition>DataType lbann::adam::packing_header::beta1</definition>
+        <argsstring></argsstring>
+        <name>beta1</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" line="105" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" bodystart="105" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1adam_1a21a3d2bce0bac5e6c022c5d95ec6348b" compoundref="adam_8hpp" startline="121" endline="136">lbann::adam::unpack_scalars</referencedby>
+        <referencedby refid="classlbann_1_1adam_1ae5b6108946e6a09b4e13e4285350aa05" compoundref="adam_8hpp" startline="138" endline="144">lbann::adam::unpack_header</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="structlbann_1_1adam_1_1packing__header_1a91d43f487f4c5da1694671fa5966964c" prot="public" static="no" mutable="no">
+        <type>DataType</type>
+        <definition>DataType lbann::adam::packing_header::beta2</definition>
+        <argsstring></argsstring>
+        <name>beta2</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" line="106" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" bodystart="106" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1adam_1a21a3d2bce0bac5e6c022c5d95ec6348b" compoundref="adam_8hpp" startline="121" endline="136">lbann::adam::unpack_scalars</referencedby>
+        <referencedby refid="classlbann_1_1adam_1ae5b6108946e6a09b4e13e4285350aa05" compoundref="adam_8hpp" startline="138" endline="144">lbann::adam::unpack_header</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="structlbann_1_1adam_1_1packing__header_1a31051ef5ef2bac2c34eb0fc959dc7494" prot="public" static="no" mutable="no">
+        <type>DataType</type>
+        <definition>DataType lbann::adam::packing_header::eps</definition>
+        <argsstring></argsstring>
+        <name>eps</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" line="107" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" bodystart="107" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1adam_1a21a3d2bce0bac5e6c022c5d95ec6348b" compoundref="adam_8hpp" startline="121" endline="136">lbann::adam::unpack_scalars</referencedby>
+        <referencedby refid="classlbann_1_1adam_1ae5b6108946e6a09b4e13e4285350aa05" compoundref="adam_8hpp" startline="138" endline="144">lbann::adam::unpack_header</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="structlbann_1_1adam_1_1packing__header_1a641d0ce43601873c94d5c9e649125e4e" prot="public" static="no" mutable="no">
+        <type>DataType</type>
+        <definition>DataType lbann::adam::packing_header::current_beta1</definition>
+        <argsstring></argsstring>
+        <name>current_beta1</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" line="108" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" bodystart="108" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1adam_1a21a3d2bce0bac5e6c022c5d95ec6348b" compoundref="adam_8hpp" startline="121" endline="136">lbann::adam::unpack_scalars</referencedby>
+        <referencedby refid="classlbann_1_1adam_1ae5b6108946e6a09b4e13e4285350aa05" compoundref="adam_8hpp" startline="138" endline="144">lbann::adam::unpack_header</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="structlbann_1_1adam_1_1packing__header_1a813bafcd1aeb3443c4349f29a5231561" prot="public" static="no" mutable="no">
+        <type>DataType</type>
+        <definition>DataType lbann::adam::packing_header::current_beta2</definition>
+        <argsstring></argsstring>
+        <name>current_beta2</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" line="109" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" bodystart="109" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1adam_1a21a3d2bce0bac5e6c022c5d95ec6348b" compoundref="adam_8hpp" startline="121" endline="136">lbann::adam::unpack_scalars</referencedby>
+        <referencedby refid="classlbann_1_1adam_1ae5b6108946e6a09b4e13e4285350aa05" compoundref="adam_8hpp" startline="138" endline="144">lbann::adam::unpack_header</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" line="104" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/optimizers/adam.hpp" bodystart="104" bodyend="110"/>
+    <listofallmembers>
+      <member refid="structlbann_1_1adam_1_1packing__header_1a7078ddcfad050544473744a3a7b87899" prot="public" virt="non-virtual"><scope>lbann::adam::packing_header</scope><name>beta1</name></member>
+      <member refid="structlbann_1_1adam_1_1packing__header_1a91d43f487f4c5da1694671fa5966964c" prot="public" virt="non-virtual"><scope>lbann::adam::packing_header</scope><name>beta2</name></member>
+      <member refid="structlbann_1_1adam_1_1packing__header_1a641d0ce43601873c94d5c9e649125e4e" prot="public" virt="non-virtual"><scope>lbann::adam::packing_header</scope><name>current_beta1</name></member>
+      <member refid="structlbann_1_1adam_1_1packing__header_1a813bafcd1aeb3443c4349f29a5231561" prot="public" virt="non-virtual"><scope>lbann::adam::packing_header</scope><name>current_beta2</name></member>
+      <member refid="structlbann_1_1adam_1_1packing__header_1a31051ef5ef2bac2c34eb0fc959dc7494" prot="public" virt="non-virtual"><scope>lbann::adam::packing_header</scope><name>eps</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

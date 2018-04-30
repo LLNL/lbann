@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="md___users_mckinney27_doxy-testbed_lbann_doc__r_e_a_d_m_e" kind="page">
+    <compoundname>md__Users_mckinney27_doxy-testbed_lbann_doc_README</compoundname>
+    <title>LBANN Documentation via Doxygen</title>
+    <detaileddescription>
+<para><heading level="3">Updating the Github Pages</heading>
+</para><para>This documentation is generated and deployed to github pages automatically using Bamboo CI. To trigger an update to the pages add &quot;gen_doxygen&quot; to your commit message. <programlisting><codeline><highlight class="normal">git<sp/>commit<sp/>-m<sp/>&quot;Added<sp/>example.cpp<sp/>gen_doxygen&quot;</highlight></codeline>
+</programlisting></para><para><heading level="3">Adding to the documentation</heading>
+</para><para><bold>Adding to Doxygen (general):</bold> For general doxygen formatting/syntax see <ulink url="http://www.stack.nl/~dimitri/doxygen/manual/index.html">Doxygen User Manuel</ulink>.</para><para><bold>Adding pages:</bold> To add a page to the documentation index create a .dox file and add it to the INPUT field found in Doxyfile.in. These pages appear in the index in the order listed in the INPUT field. Examples of how to link to this page from other pages can be found in mainpage.dox</para><para><bold>Adding to pages</bold>: Our documentation uses pages to give users extended details on a variety of LBANN components without having to dig into the implementation details. To add a new component class to the associated page create a subsection and use the command</para><para><programlisting><codeline><highlight class="normal">\copydetails<sp/>lbann::example_layer_class</highlight></codeline>
+</programlisting></para><para>To link the extended implementation details just need to link the full class name, i.e <computeroutput>lbann::example_layer_class</computeroutput>. This will link to the class page doxygen automatically generates. </para>    </detaileddescription>
+  </compounddef>
+</doxygen>

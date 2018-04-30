@@ -1,0 +1,298 @@
+\hypertarget{classlbann_1_1poisson__negloglike}{}\section{lbann\+:\+:poisson\+\_\+negloglike Class Reference}
+\label{classlbann_1_1poisson__negloglike}\index{lbann\+::poisson\+\_\+negloglike@{lbann\+::poisson\+\_\+negloglike}}
+
+
+{\ttfamily \#include $<$poisson\+\_\+negloglike.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:poisson\+\_\+negloglike\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=232pt]{classlbann_1_1poisson__negloglike__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:poisson\+\_\+negloglike\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=232pt]{classlbann_1_1poisson__negloglike__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1poisson__negloglike_af2eabe95046d8995263a2df9e8e34f7d}{poisson\+\_\+negloglike} (\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} scale\+\_\+factor=\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type}(1))
+\item 
+\hyperlink{classlbann_1_1poisson__negloglike_a0d85fa77a2dc622524726584619e718a}{poisson\+\_\+negloglike} (const \hyperlink{classlbann_1_1poisson__negloglike}{poisson\+\_\+negloglike} \&other)=default
+\item 
+\hyperlink{classlbann_1_1poisson__negloglike}{poisson\+\_\+negloglike} \& \hyperlink{classlbann_1_1poisson__negloglike_a1a4e084da868ff7e353f842662dd5e9a}{operator=} (const \hyperlink{classlbann_1_1poisson__negloglike}{poisson\+\_\+negloglike} \&other)=default
+\item 
+\hyperlink{classlbann_1_1poisson__negloglike_abf677df47c894d197b2ac55d08ff109c}{$\sim$poisson\+\_\+negloglike} () override=default
+\item 
+\hyperlink{classlbann_1_1poisson__negloglike}{poisson\+\_\+negloglike} $\ast$ \hyperlink{classlbann_1_1poisson__negloglike_a0c24847ce45940d823e27b274fb8b5c4}{copy} () const override
+\item 
+std\+::string \hyperlink{classlbann_1_1poisson__negloglike_ae5a73d52075578a3d0ed0b150a980741}{name} () const override
+\item 
+void \hyperlink{classlbann_1_1poisson__negloglike_ad69c0a20f5015ee02eb0c20e87129ffa}{start\+\_\+evaluate\+\_\+compute} (const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&prediction, const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&ground\+\_\+truth) override
+\item 
+\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} \hyperlink{classlbann_1_1poisson__negloglike_a67c3cb239905fa9ee57369dddbbe76ed}{finish\+\_\+evaluate\+\_\+compute} (const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&prediction, const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&ground\+\_\+truth) override
+\item 
+void \hyperlink{classlbann_1_1poisson__negloglike_a9b6e6632bb6424551b38b8748ff64edd}{differentiate\+\_\+compute} (const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&prediction, const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&ground\+\_\+truth, \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&gradient) override
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Detailed Description}
+Poisson negative log-\/likelihood objective function. 
+
+Definition at line 35 of file poisson\+\_\+negloglike.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1poisson__negloglike_af2eabe95046d8995263a2df9e8e34f7d}\label{classlbann_1_1poisson__negloglike_af2eabe95046d8995263a2df9e8e34f7d}} 
+\index{lbann\+::poisson\+\_\+negloglike@{lbann\+::poisson\+\_\+negloglike}!poisson\+\_\+negloglike@{poisson\+\_\+negloglike}}
+\index{poisson\+\_\+negloglike@{poisson\+\_\+negloglike}!lbann\+::poisson\+\_\+negloglike@{lbann\+::poisson\+\_\+negloglike}}
+\subsubsection{\texorpdfstring{poisson\+\_\+negloglike()}{poisson\_negloglike()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::poisson\+\_\+negloglike\+::poisson\+\_\+negloglike (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type}}]{scale\+\_\+factor = {\ttfamily \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type}(1)} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Default constructor. 
+
+Definition at line 38 of file poisson\+\_\+negloglike.\+hpp.
+
+
+\begin{DoxyCode}
+39     : \hyperlink{classlbann_1_1loss__function_a0c5745e661c59e3e5496888d233c07cf}{loss\_function}(scale\_factor) \{\}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1poisson__negloglike_af2eabe95046d8995263a2df9e8e34f7d_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1poisson__negloglike_af2eabe95046d8995263a2df9e8e34f7d_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1poisson__negloglike_a0d85fa77a2dc622524726584619e718a}\label{classlbann_1_1poisson__negloglike_a0d85fa77a2dc622524726584619e718a}} 
+\index{lbann\+::poisson\+\_\+negloglike@{lbann\+::poisson\+\_\+negloglike}!poisson\+\_\+negloglike@{poisson\+\_\+negloglike}}
+\index{poisson\+\_\+negloglike@{poisson\+\_\+negloglike}!lbann\+::poisson\+\_\+negloglike@{lbann\+::poisson\+\_\+negloglike}}
+\subsubsection{\texorpdfstring{poisson\+\_\+negloglike()}{poisson\_negloglike()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::poisson\+\_\+negloglike\+::poisson\+\_\+negloglike (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1poisson__negloglike}{poisson\+\_\+negloglike} \&}]{other }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Copy constructor. \mbox{\Hypertarget{classlbann_1_1poisson__negloglike_abf677df47c894d197b2ac55d08ff109c}\label{classlbann_1_1poisson__negloglike_abf677df47c894d197b2ac55d08ff109c}} 
+\index{lbann\+::poisson\+\_\+negloglike@{lbann\+::poisson\+\_\+negloglike}!````~poisson\+\_\+negloglike@{$\sim$poisson\+\_\+negloglike}}
+\index{````~poisson\+\_\+negloglike@{$\sim$poisson\+\_\+negloglike}!lbann\+::poisson\+\_\+negloglike@{lbann\+::poisson\+\_\+negloglike}}
+\subsubsection{\texorpdfstring{$\sim$poisson\+\_\+negloglike()}{~poisson\_negloglike()}}
+{\footnotesize\ttfamily lbann\+::poisson\+\_\+negloglike\+::$\sim$poisson\+\_\+negloglike (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [default]}}
+
+Destructor. Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1poisson__negloglike_abf677df47c894d197b2ac55d08ff109c_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1poisson__negloglike_a0c24847ce45940d823e27b274fb8b5c4}\label{classlbann_1_1poisson__negloglike_a0c24847ce45940d823e27b274fb8b5c4}} 
+\index{lbann\+::poisson\+\_\+negloglike@{lbann\+::poisson\+\_\+negloglike}!copy@{copy}}
+\index{copy@{copy}!lbann\+::poisson\+\_\+negloglike@{lbann\+::poisson\+\_\+negloglike}}
+\subsubsection{\texorpdfstring{copy()}{copy()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1poisson__negloglike}{poisson\+\_\+negloglike}$\ast$ lbann\+::poisson\+\_\+negloglike\+::copy (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Copy function. 
+
+Implements \hyperlink{classlbann_1_1objective__function__term_ae98a4ec173a602ad55d1df20dadd4cb9}{lbann\+::objective\+\_\+function\+\_\+term}.
+
+
+
+Definition at line 48 of file poisson\+\_\+negloglike.\+hpp.
+
+
+\begin{DoxyCode}
+48 \{ \textcolor{keywordflow}{return} \textcolor{keyword}{new} \hyperlink{classlbann_1_1poisson__negloglike_af2eabe95046d8995263a2df9e8e34f7d}{poisson\_negloglike}(*\textcolor{keyword}{this}); \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1poisson__negloglike_a0c24847ce45940d823e27b274fb8b5c4_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1poisson__negloglike_a9b6e6632bb6424551b38b8748ff64edd}\label{classlbann_1_1poisson__negloglike_a9b6e6632bb6424551b38b8748ff64edd}} 
+\index{lbann\+::poisson\+\_\+negloglike@{lbann\+::poisson\+\_\+negloglike}!differentiate\+\_\+compute@{differentiate\+\_\+compute}}
+\index{differentiate\+\_\+compute@{differentiate\+\_\+compute}!lbann\+::poisson\+\_\+negloglike@{lbann\+::poisson\+\_\+negloglike}}
+\subsubsection{\texorpdfstring{differentiate\+\_\+compute()}{differentiate\_compute()}}
+{\footnotesize\ttfamily void lbann\+::poisson\+\_\+negloglike\+::differentiate\+\_\+compute (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{prediction,  }\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{ground\+\_\+truth,  }\item[{\hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{gradient }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Compute the gradient of the Poisson negative log-\/likelihood objective function. Given a prediction $\hat{y}$ and ground truth $y$, the gradient of the Poisson negative log-\/likelihood is \[ \nabla_y Pois_nll(\hat{y},y) = 1 - y/\hat{y} \] 
+
+Implements \hyperlink{classlbann_1_1loss__function_aefccc2b4f5a02664002d12630cf369e7}{lbann\+::loss\+\_\+function}.
+
+
+
+Definition at line 61 of file poisson\+\_\+negloglike.\+cpp.
+
+
+\begin{DoxyCode}
+63                                                                      \{
+64 
+65   \textcolor{comment}{// Local matrices}
+66   \textcolor{keyword}{const} \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}& predictions\_local = predictions.LockedMatrix();
+67   \textcolor{keyword}{const} \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}& ground\_truth\_local = ground\_truth.LockedMatrix();
+68   \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}& gradient\_local = gradient.Matrix();
+69 
+70   \textcolor{comment}{// Matrix parameters}
+71   \textcolor{keyword}{const} El::Int local\_height = gradient\_local.Height();
+72   \textcolor{keyword}{const} El::Int local\_width = gradient\_local.Width();
+73 
+74   \textcolor{comment}{// Compute gradient}
+75 \textcolor{preprocessor}{  #pragma omp parallel for collapse(2)}
+76   \textcolor{keywordflow}{for} (El::Int col = 0; col < local\_width; ++col) \{
+77     \textcolor{keywordflow}{for} (El::Int row = 0; row < local\_height; ++row) \{
+78       \textcolor{keyword}{const} DataType true\_val = ground\_truth\_local(row, col);
+79       \textcolor{keyword}{const} DataType pred\_val = predictions\_local(row, col);
+80       gradient\_local(row, col) = DataType(1) - true\_val / pred\_val; \textcolor{comment}{// \(\backslash\)f[1 - k/\(\backslash\)lambda\(\backslash\)f]}
+81     \}
+82   \}
+83 
+84 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1poisson__negloglike_a9b6e6632bb6424551b38b8748ff64edd_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1poisson__negloglike_a67c3cb239905fa9ee57369dddbbe76ed}\label{classlbann_1_1poisson__negloglike_a67c3cb239905fa9ee57369dddbbe76ed}} 
+\index{lbann\+::poisson\+\_\+negloglike@{lbann\+::poisson\+\_\+negloglike}!finish\+\_\+evaluate\+\_\+compute@{finish\+\_\+evaluate\+\_\+compute}}
+\index{finish\+\_\+evaluate\+\_\+compute@{finish\+\_\+evaluate\+\_\+compute}!lbann\+::poisson\+\_\+negloglike@{lbann\+::poisson\+\_\+negloglike}}
+\subsubsection{\texorpdfstring{finish\+\_\+evaluate\+\_\+compute()}{finish\_evaluate\_compute()}}
+{\footnotesize\ttfamily \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{Eval\+Type} lbann\+::poisson\+\_\+negloglike\+::finish\+\_\+evaluate\+\_\+compute (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{prediction,  }\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{ground\+\_\+truth }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Finish evaluation of the loss function. This should not include the scale factor. 
+
+Implements \hyperlink{classlbann_1_1loss__function_a3ea8553a4e9c75477d7d4fc533c4d4fd}{lbann\+::loss\+\_\+function}.
+
+
+
+Definition at line 31 of file poisson\+\_\+negloglike.\+cpp.
+
+
+\begin{DoxyCode}
+32                                                                  \{
+33 
+34   \textcolor{comment}{// Local matrices}
+35   \textcolor{keyword}{const} \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}& predictions\_local = predictions.LockedMatrix();
+36   \textcolor{keyword}{const} \hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat}& ground\_truth\_local = ground\_truth.LockedMatrix();
+37   
+38   \textcolor{comment}{// Matrix parameters}
+39   \textcolor{keyword}{const} \textcolor{keywordtype}{int} width = predictions.Width();
+40   \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_height = predictions\_local.Height();
+41   \textcolor{keyword}{const} \textcolor{keywordtype}{int} local\_width = predictions\_local.Width();
+42 
+43   \textcolor{comment}{// Compute sum of cross entropy terms}
+44   \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType} sum = 0;
+45 \textcolor{preprocessor}{  #pragma omp parallel for reduction(+:sum) collapse(2)}
+46   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} col = 0; col < local\_width; ++col) \{
+47     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} row = 0; row < local\_height; ++row) \{
+48       \textcolor{keyword}{const} \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType} true\_val = ground\_truth\_local(row, col);
+49       \textcolor{keyword}{const} \hyperlink{base_8hpp_a3266f5ac18504bbadea983c109566867}{EvalType} pred\_val = predictions\_local(row, col);
+50       sum += (pred\_val
+51               - true\_val * std::log(pred\_val)
+52               + std::lgamma(true\_val + 1)); \textcolor{comment}{// \(\backslash\)f[\(\backslash\)lambda - k\(\backslash\)log(\(\backslash\)lambda) + \(\backslash\)log(k!)\(\backslash\)f]}
+53     \}
+54   \}
+55 
+56   \textcolor{comment}{// Compute mean objective function value across mini-batch}
+57   \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1objective__function__term_a5f89b676a26a6b76ddc26563ac87beb9}{get\_comm}().\hyperlink{classlbann_1_1lbann__comm_af5631e5f0f54e4df4958eba9df2599ef}{allreduce}(sum / width, predictions.DistComm());
+58 
+59 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1poisson__negloglike_a67c3cb239905fa9ee57369dddbbe76ed_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1poisson__negloglike_a67c3cb239905fa9ee57369dddbbe76ed_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1poisson__negloglike_ae5a73d52075578a3d0ed0b150a980741}\label{classlbann_1_1poisson__negloglike_ae5a73d52075578a3d0ed0b150a980741}} 
+\index{lbann\+::poisson\+\_\+negloglike@{lbann\+::poisson\+\_\+negloglike}!name@{name}}
+\index{name@{name}!lbann\+::poisson\+\_\+negloglike@{lbann\+::poisson\+\_\+negloglike}}
+\subsubsection{\texorpdfstring{name()}{name()}}
+{\footnotesize\ttfamily std\+::string lbann\+::poisson\+\_\+negloglike\+::name (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Get the name of the objective function term. 
+
+Implements \hyperlink{classlbann_1_1objective__function__term_a964fbfad3dd0434aa8f32c5fedf1079a}{lbann\+::objective\+\_\+function\+\_\+term}.
+
+
+
+Definition at line 51 of file poisson\+\_\+negloglike.\+hpp.
+
+
+\begin{DoxyCode}
+51 \{ \textcolor{keywordflow}{return} \textcolor{stringliteral}{"Poisson negative log-likelihood"}; \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1poisson__negloglike_a1a4e084da868ff7e353f842662dd5e9a}\label{classlbann_1_1poisson__negloglike_a1a4e084da868ff7e353f842662dd5e9a}} 
+\index{lbann\+::poisson\+\_\+negloglike@{lbann\+::poisson\+\_\+negloglike}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::poisson\+\_\+negloglike@{lbann\+::poisson\+\_\+negloglike}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1poisson__negloglike}{poisson\+\_\+negloglike}\& lbann\+::poisson\+\_\+negloglike\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1poisson__negloglike}{poisson\+\_\+negloglike} \&}]{other }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [default]}}
+
+Copy assignment operator. Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1poisson__negloglike_a1a4e084da868ff7e353f842662dd5e9a_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1poisson__negloglike_ad69c0a20f5015ee02eb0c20e87129ffa}\label{classlbann_1_1poisson__negloglike_ad69c0a20f5015ee02eb0c20e87129ffa}} 
+\index{lbann\+::poisson\+\_\+negloglike@{lbann\+::poisson\+\_\+negloglike}!start\+\_\+evaluate\+\_\+compute@{start\+\_\+evaluate\+\_\+compute}}
+\index{start\+\_\+evaluate\+\_\+compute@{start\+\_\+evaluate\+\_\+compute}!lbann\+::poisson\+\_\+negloglike@{lbann\+::poisson\+\_\+negloglike}}
+\subsubsection{\texorpdfstring{start\+\_\+evaluate\+\_\+compute()}{start\_evaluate\_compute()}}
+{\footnotesize\ttfamily void lbann\+::poisson\+\_\+negloglike\+::start\+\_\+evaluate\+\_\+compute (\begin{DoxyParamCaption}\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{prediction,  }\item[{const \hyperlink{base_8hpp_a9a697a504ae84010e7439ffec862b470}{Abs\+Dist\+Mat} \&}]{ground\+\_\+truth }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Compute the Poisson negative log-\/likelihood objective function. Given a prediction $\hat{y}$ and ground truth $y$, the Poisson negative log-\/likelihood is \[ Pois_nll(\hat{y}, y) = \hat{y} - y\log(\hat{y}) + \log(\Gamma(y + 1)) \] This function updates the objective function value with the mean value of the Poisson negative log-\/likelihood across the mini-\/batch. 
+
+Implements \hyperlink{classlbann_1_1loss__function_a0bbe41060d788dc7a29f3737761a6f7d}{lbann\+::loss\+\_\+function}.
+
+
+
+Definition at line 62 of file poisson\+\_\+negloglike.\+hpp.
+
+
+\begin{DoxyCode}
+63                                                                        \{\}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1poisson__negloglike_ad69c0a20f5015ee02eb0c20e87129ffa_cgraph}
+\end{center}
+\end{figure}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/objective\+\_\+functions/loss\+\_\+functions/\hyperlink{poisson__negloglike_8hpp}{poisson\+\_\+negloglike.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/objective\+\_\+functions/loss\+\_\+functions/\hyperlink{poisson__negloglike_8cpp}{poisson\+\_\+negloglike.\+cpp}\end{DoxyCompactItemize}

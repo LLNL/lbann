@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="dir_82dac842242035dbe117b838876790d0" kind="dir">
+    <compoundname>/Users/mckinney27/doxy-testbed/lbann/src/weights</compoundname>
+    <innerfile refid="fan__in__fan__out__initializers_8cpp">fan_in_fan_out_initializers.cpp</innerfile>
+    <innerfile refid="initializer_8cpp">initializer.cpp</innerfile>
+    <innerfile refid="weights_8cpp">weights.cpp</innerfile>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/src/weights/"/>
+  </compounddef>
+</doxygen>

@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="dir_81b61ce92d83266633918ebc51ce6d40" kind="dir">
+    <compoundname>/Users/mckinney27/doxy-testbed/lbann/src/objective_functions</compoundname>
+    <innerdir refid="dir_fe328c2ab0faedf86857700faa53036d">/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/loss_functions</innerdir>
+    <innerdir refid="dir_bd3099de2f2be98ba6b686c973d31e32">/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/weight_regularization</innerdir>
+    <innerfile refid="kl__divergence_8cpp">kl_divergence.cpp</innerfile>
+    <innerfile refid="layer__term_8cpp">layer_term.cpp</innerfile>
+    <innerfile refid="objective__function_8cpp">objective_function.cpp</innerfile>
+    <innerfile refid="objective__function__term_8cpp">objective_function_term.cpp</innerfile>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/src/objective_functions/"/>
+  </compounddef>
+</doxygen>

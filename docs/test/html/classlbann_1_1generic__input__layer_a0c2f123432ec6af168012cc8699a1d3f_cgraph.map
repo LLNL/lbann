@@ -1,0 +1,7 @@
+<map id="lbann::generic_input_layer::update_num_samples_processed" name="lbann::generic_input_layer::update_num_samples_processed">
+<area shape="rect" id="node2" href="$classlbann_1_1generic__input__layer.html#a654365ee97a64c75a547cfb7ef329304" title="lbann::generic_input\l_layer::select_dataset" alt="" coords="264,33,415,72"/>
+<area shape="rect" id="node5" href="$classlbann_1_1dataset.html#a412b29a50638f7d8feea4ad368c6a4dc" title="lbann::dataset::num\l_samples_processed" alt="" coords="266,96,414,135"/>
+<area shape="rect" id="node6" href="$classlbann_1_1dataset.html#a73496347a477a5ebb0dbf30140295026" title="lbann::dataset::get\l_num_samples_processed" alt="" coords="250,159,430,197"/>
+<area shape="rect" id="node3" href="$classlbann_1_1generic__input__layer.html#af5699540797c22d8846028e578a6fc59" title="lbann::generic_input\l_layer::get_dataset" alt="" coords="522,5,663,44"/>
+<area shape="rect" id="node4" href="$classlbann_1_1model.html#addb40597cf29aa6d31b6a7d09ef48608" title="lbann::model::get_execution_mode" alt="" coords="478,68,707,93"/>
+</map>

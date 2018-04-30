@@ -1,0 +1,5 @@
+<map id="lbann::generic_data_reader::copy" name="lbann::generic_data_reader::copy">
+<area shape="rect" id="node2" href="$classlbann_1_1generic__data__reader.html#a7ed8e91233268c11b907c5d6667e8a09" title="lbann::generic_data\l_reader::~generic_data\l_reader" alt="" coords="206,5,365,57"/>
+<area shape="rect" id="node3" href="$classlbann_1_1data__reader__merge__features.html#a41d55ea605d94ea010126b11ee420778" title="lbann::data_reader\l_merge_features::data\l_reader_merge_features" alt="" coords="201,81,369,133"/>
+<area shape="rect" id="node4" href="$classlbann_1_1data__reader__merge__features.html#a2df9360e463c2ceaf4ba42e287f673b9" title="lbann::data_reader\l_merge_features::operator=" alt="" coords="192,157,379,196"/>
+</map>

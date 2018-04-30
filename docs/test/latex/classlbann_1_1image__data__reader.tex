@@ -1,0 +1,829 @@
+\hypertarget{classlbann_1_1image__data__reader}{}\section{lbann\+:\+:image\+\_\+data\+\_\+reader Class Reference}
+\label{classlbann_1_1image__data__reader}\index{lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}}
+
+
+{\ttfamily \#include $<$data\+\_\+reader\+\_\+image.\+hpp$>$}
+
+
+
+Inheritance diagram for lbann\+:\+:image\+\_\+data\+\_\+reader\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1image__data__reader__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for lbann\+:\+:image\+\_\+data\+\_\+reader\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1image__data__reader__coll__graph}
+\end{center}
+\end{figure}
+\subsection*{Public Types}
+\begin{DoxyCompactItemize}
+\item 
+using \hyperlink{classlbann_1_1image__data__reader_acd2b41459e901a3aed39fd3be7270fa2}{img\+\_\+src\+\_\+t} = std\+::string
+\item 
+using \hyperlink{classlbann_1_1image__data__reader_a7645f17852c990e80b1530509ff5e87c}{label\+\_\+t} = int
+\item 
+using \hyperlink{classlbann_1_1image__data__reader_a7580011ef6ef9da32e1a3bc49ad0706c}{sample\+\_\+t} = std\+::pair$<$ \hyperlink{classlbann_1_1image__data__reader_acd2b41459e901a3aed39fd3be7270fa2}{img\+\_\+src\+\_\+t}, \hyperlink{classlbann_1_1image__data__reader_a7645f17852c990e80b1530509ff5e87c}{label\+\_\+t} $>$
+\end{DoxyCompactItemize}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classlbann_1_1image__data__reader_a582185ab03c4643117fd93e0ba843882}{image\+\_\+data\+\_\+reader} (bool shuffle=true)
+\item 
+\hyperlink{classlbann_1_1image__data__reader_a7a5dd69d535f2966e4f8da53f505ca7c}{image\+\_\+data\+\_\+reader} (const \hyperlink{classlbann_1_1image__data__reader}{image\+\_\+data\+\_\+reader} \&)
+\item 
+\hyperlink{classlbann_1_1image__data__reader}{image\+\_\+data\+\_\+reader} \& \hyperlink{classlbann_1_1image__data__reader_a76a0b52eafb9ad133fb45fec7cf44700}{operator=} (const \hyperlink{classlbann_1_1image__data__reader}{image\+\_\+data\+\_\+reader} \&)
+\item 
+virtual void \hyperlink{classlbann_1_1image__data__reader_a6ed9b8b12ad3ffa93ad458d872f8c044}{set\+\_\+input\+\_\+params} (const int width=0, const int height=0, const int num\+\_\+ch=0, const int num\+\_\+labels=0)
+\item 
+void \hyperlink{classlbann_1_1image__data__reader_a99cb80242d7d20bc1e8baeaff25ff790}{load} () override
+\item 
+int \hyperlink{classlbann_1_1image__data__reader_af821795e5104f1a8c34027de96af7b90}{get\+\_\+num\+\_\+labels} () const override
+\begin{DoxyCompactList}\small\item\em Return the number of labels (classes) in this dataset. \end{DoxyCompactList}\item 
+virtual int \hyperlink{classlbann_1_1image__data__reader_a2e75d4ec8f222f4f855e6c0162648dc7}{get\+\_\+image\+\_\+width} () const
+\item 
+virtual int \hyperlink{classlbann_1_1image__data__reader_a641364038b54fe8291f23f9d879293e3}{get\+\_\+image\+\_\+height} () const
+\item 
+virtual int \hyperlink{classlbann_1_1image__data__reader_a3699aa92d3ef2ccc0c30ecf27809acbe}{get\+\_\+image\+\_\+num\+\_\+channels} () const
+\item 
+int \hyperlink{classlbann_1_1image__data__reader_a26b8566e76ba99c017a84c49a9dec37c}{get\+\_\+linearized\+\_\+data\+\_\+size} () const override
+\begin{DoxyCompactList}\small\item\em Get the total number of channel values in a sample of image(s). \end{DoxyCompactList}\item 
+int \hyperlink{classlbann_1_1image__data__reader_adb62b193a10b2b12c1bf183ea9c2095e}{get\+\_\+linearized\+\_\+label\+\_\+size} () const override
+\begin{DoxyCompactList}\small\item\em Get the linearized size (i.\+e. number of elements) in a label. \end{DoxyCompactList}\item 
+const std\+::vector$<$ int $>$ \hyperlink{classlbann_1_1image__data__reader_a1bb05018e059afae76d46a2a908dd75c}{get\+\_\+data\+\_\+dims} () const override
+\begin{DoxyCompactList}\small\item\em Get the dimensions of the data. \end{DoxyCompactList}\item 
+void \hyperlink{classlbann_1_1image__data__reader_a71e4fa1eb8212cce88a2ed408ceeac51}{save\+\_\+image} (\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&pixels, const std\+::string filename, bool do\+\_\+scale=true) override
+\item 
+std\+::vector$<$ \hyperlink{classlbann_1_1image__data__reader_a7580011ef6ef9da32e1a3bc49ad0706c}{sample\+\_\+t} $>$ \hyperlink{classlbann_1_1image__data__reader_a9624d37e076cf71154b65910dd7e1195}{get\+\_\+image\+\_\+list\+\_\+of\+\_\+current\+\_\+mb} () const
+\begin{DoxyCompactList}\small\item\em Return the sample list of current minibatch. \end{DoxyCompactList}\item 
+const std\+::vector$<$ \hyperlink{classlbann_1_1image__data__reader_a7580011ef6ef9da32e1a3bc49ad0706c}{sample\+\_\+t} $>$ \& \hyperlink{classlbann_1_1image__data__reader_aa03599a5f66d498d4bb90c50ae70c82a}{get\+\_\+image\+\_\+list} () const
+\begin{DoxyCompactList}\small\item\em Allow read-\/only access to the entire sample list. \end{DoxyCompactList}\item 
+\hyperlink{classlbann_1_1image__data__reader_a7580011ef6ef9da32e1a3bc49ad0706c}{sample\+\_\+t} \hyperlink{classlbann_1_1image__data__reader_ae3f4a0b018e8212a42cbbfbd2b514bf4}{get\+\_\+sample} (const size\+\_\+t idx) const
+\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+virtual void \hyperlink{classlbann_1_1image__data__reader_a8e9dbeaa0239d56597455cc23787a21d}{set\+\_\+defaults} ()
+\begin{DoxyCompactList}\small\item\em Set the default values for the width, the height, the number of channels, and the number of labels of an image. \end{DoxyCompactList}\item 
+bool \hyperlink{classlbann_1_1image__data__reader_a1f0dbd67390a65fef106515ea7060e29}{fetch\+\_\+label} (\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&Y, int data\+\_\+id, int mb\+\_\+idx, int tid) override
+\item 
+void \hyperlink{classlbann_1_1image__data__reader_a0164b0e3abbe92daef73b36fb925403e}{set\+\_\+linearized\+\_\+image\+\_\+size} ()
+\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+std\+::string \hyperlink{classlbann_1_1image__data__reader_ab1289f0207f3a9989c7b28e09a23c9a3}{m\+\_\+image\+\_\+dir}
+\begin{DoxyCompactList}\small\item\em where images are stored \end{DoxyCompactList}\item 
+std\+::vector$<$ \hyperlink{classlbann_1_1image__data__reader_a7580011ef6ef9da32e1a3bc49ad0706c}{sample\+\_\+t} $>$ \hyperlink{classlbann_1_1image__data__reader_ae3fc949bd08c45ceafb1a03503261008}{m\+\_\+image\+\_\+list}
+\begin{DoxyCompactList}\small\item\em list of image files and labels \end{DoxyCompactList}\item 
+int \hyperlink{classlbann_1_1image__data__reader_af001f3d1c0f1c580b66988233b3a64f0}{m\+\_\+image\+\_\+width}
+\begin{DoxyCompactList}\small\item\em image width \end{DoxyCompactList}\item 
+int \hyperlink{classlbann_1_1image__data__reader_a0632efa3deaa9d61e671f741909eb3fe}{m\+\_\+image\+\_\+height}
+\begin{DoxyCompactList}\small\item\em image height \end{DoxyCompactList}\item 
+int \hyperlink{classlbann_1_1image__data__reader_aab1a440f361521dc7bd583cefe1061f8}{m\+\_\+image\+\_\+num\+\_\+channels}
+\begin{DoxyCompactList}\small\item\em number of image channels \end{DoxyCompactList}\item 
+int \hyperlink{classlbann_1_1image__data__reader_af512f1f866c0f654309b7f28886dca9a}{m\+\_\+image\+\_\+linearized\+\_\+size}
+\begin{DoxyCompactList}\small\item\em linearized image size \end{DoxyCompactList}\item 
+int \hyperlink{classlbann_1_1image__data__reader_af280e8758a6ec3acee7c62e6351d17e0}{m\+\_\+num\+\_\+labels}
+\begin{DoxyCompactList}\small\item\em number of labels \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+
+
+Definition at line 37 of file data\+\_\+reader\+\_\+image.\+hpp.
+
+
+
+\subsection{Member Typedef Documentation}
+\mbox{\Hypertarget{classlbann_1_1image__data__reader_acd2b41459e901a3aed39fd3be7270fa2}\label{classlbann_1_1image__data__reader_acd2b41459e901a3aed39fd3be7270fa2}} 
+\index{lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}!img\+\_\+src\+\_\+t@{img\+\_\+src\+\_\+t}}
+\index{img\+\_\+src\+\_\+t@{img\+\_\+src\+\_\+t}!lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}}
+\subsubsection{\texorpdfstring{img\+\_\+src\+\_\+t}{img\_src\_t}}
+{\footnotesize\ttfamily using \hyperlink{classlbann_1_1image__data__reader_acd2b41459e901a3aed39fd3be7270fa2}{lbann\+::image\+\_\+data\+\_\+reader\+::img\+\_\+src\+\_\+t} =  std\+::string}
+
+
+
+Definition at line 39 of file data\+\_\+reader\+\_\+image.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1image__data__reader_a7645f17852c990e80b1530509ff5e87c}\label{classlbann_1_1image__data__reader_a7645f17852c990e80b1530509ff5e87c}} 
+\index{lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}!label\+\_\+t@{label\+\_\+t}}
+\index{label\+\_\+t@{label\+\_\+t}!lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}}
+\subsubsection{\texorpdfstring{label\+\_\+t}{label\_t}}
+{\footnotesize\ttfamily using \hyperlink{classlbann_1_1image__data__reader_a7645f17852c990e80b1530509ff5e87c}{lbann\+::image\+\_\+data\+\_\+reader\+::label\+\_\+t} =  int}
+
+
+
+Definition at line 40 of file data\+\_\+reader\+\_\+image.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1image__data__reader_a7580011ef6ef9da32e1a3bc49ad0706c}\label{classlbann_1_1image__data__reader_a7580011ef6ef9da32e1a3bc49ad0706c}} 
+\index{lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}!sample\+\_\+t@{sample\+\_\+t}}
+\index{sample\+\_\+t@{sample\+\_\+t}!lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}}
+\subsubsection{\texorpdfstring{sample\+\_\+t}{sample\_t}}
+{\footnotesize\ttfamily using \hyperlink{classlbann_1_1image__data__reader_a7580011ef6ef9da32e1a3bc49ad0706c}{lbann\+::image\+\_\+data\+\_\+reader\+::sample\+\_\+t} =  std\+::pair$<$\hyperlink{classlbann_1_1image__data__reader_acd2b41459e901a3aed39fd3be7270fa2}{img\+\_\+src\+\_\+t}, \hyperlink{classlbann_1_1image__data__reader_a7645f17852c990e80b1530509ff5e87c}{label\+\_\+t}$>$}
+
+
+
+Definition at line 41 of file data\+\_\+reader\+\_\+image.\+hpp.
+
+
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classlbann_1_1image__data__reader_a582185ab03c4643117fd93e0ba843882}\label{classlbann_1_1image__data__reader_a582185ab03c4643117fd93e0ba843882}} 
+\index{lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}!image\+\_\+data\+\_\+reader@{image\+\_\+data\+\_\+reader}}
+\index{image\+\_\+data\+\_\+reader@{image\+\_\+data\+\_\+reader}!lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}}
+\subsubsection{\texorpdfstring{image\+\_\+data\+\_\+reader()}{image\_data\_reader()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily lbann\+::image\+\_\+data\+\_\+reader\+::image\+\_\+data\+\_\+reader (\begin{DoxyParamCaption}\item[{bool}]{shuffle = {\ttfamily true} }\end{DoxyParamCaption})}
+
+
+
+Definition at line 34 of file data\+\_\+reader\+\_\+image.\+cpp.
+
+
+\begin{DoxyCode}
+35   : \hyperlink{classlbann_1_1generic__data__reader_aaba933b8f7c1227801f6e80d39986af4}{generic\_data\_reader}(shuffle) \{
+36   \hyperlink{classlbann_1_1image__data__reader_a8e9dbeaa0239d56597455cc23787a21d}{set\_defaults}();
+37 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1image__data__reader_a582185ab03c4643117fd93e0ba843882_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1image__data__reader_a7a5dd69d535f2966e4f8da53f505ca7c}\label{classlbann_1_1image__data__reader_a7a5dd69d535f2966e4f8da53f505ca7c}} 
+\index{lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}!image\+\_\+data\+\_\+reader@{image\+\_\+data\+\_\+reader}}
+\index{image\+\_\+data\+\_\+reader@{image\+\_\+data\+\_\+reader}!lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}}
+\subsubsection{\texorpdfstring{image\+\_\+data\+\_\+reader()}{image\_data\_reader()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily lbann\+::image\+\_\+data\+\_\+reader\+::image\+\_\+data\+\_\+reader (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1image__data__reader}{image\+\_\+data\+\_\+reader} \&}]{rhs }\end{DoxyParamCaption})}
+
+
+
+Definition at line 39 of file data\+\_\+reader\+\_\+image.\+cpp.
+
+
+\begin{DoxyCode}
+40   : \hyperlink{classlbann_1_1generic__data__reader_aaba933b8f7c1227801f6e80d39986af4}{generic\_data\_reader}(rhs),
+41     \hyperlink{classlbann_1_1image__data__reader_ab1289f0207f3a9989c7b28e09a23c9a3}{m\_image\_dir}(rhs.m\_image\_dir),
+42     \hyperlink{classlbann_1_1image__data__reader_ae3fc949bd08c45ceafb1a03503261008}{m\_image\_list}(rhs.m\_image\_list),
+43     \hyperlink{classlbann_1_1image__data__reader_af001f3d1c0f1c580b66988233b3a64f0}{m\_image\_width}(rhs.m\_image\_width),
+44     \hyperlink{classlbann_1_1image__data__reader_a0632efa3deaa9d61e671f741909eb3fe}{m\_image\_height}(rhs.m\_image\_height),
+45     \hyperlink{classlbann_1_1image__data__reader_aab1a440f361521dc7bd583cefe1061f8}{m\_image\_num\_channels}(rhs.m\_image\_num\_channels),
+46     \hyperlink{classlbann_1_1image__data__reader_af512f1f866c0f654309b7f28886dca9a}{m\_image\_linearized\_size}(rhs.m\_image\_linearized\_size),
+47     \hyperlink{classlbann_1_1image__data__reader_af280e8758a6ec3acee7c62e6351d17e0}{m\_num\_labels}(rhs.m\_num\_labels)
+48 \{\}
+\end{DoxyCode}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classlbann_1_1image__data__reader_a1f0dbd67390a65fef106515ea7060e29}\label{classlbann_1_1image__data__reader_a1f0dbd67390a65fef106515ea7060e29}} 
+\index{lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}!fetch\+\_\+label@{fetch\+\_\+label}}
+\index{fetch\+\_\+label@{fetch\+\_\+label}!lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}}
+\subsubsection{\texorpdfstring{fetch\+\_\+label()}{fetch\_label()}}
+{\footnotesize\ttfamily bool lbann\+::image\+\_\+data\+\_\+reader\+::fetch\+\_\+label (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{Y,  }\item[{int}]{data\+\_\+id,  }\item[{int}]{mb\+\_\+idx,  }\item[{int}]{tid }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+Fetch a single label into a matrix. 
+\begin{DoxyParams}{Parameters}
+{\em Y} & The matrix to load data into. \\
+\hline
+{\em data\+\_\+id} & The index of the datum to fetch. \\
+\hline
+{\em mb\+\_\+idx} & The index within the mini-\/batch. \\
+\hline
+\end{DoxyParams}
+
+
+Reimplemented from \hyperlink{classlbann_1_1generic__data__reader_a03627408c1d1aa28691d31232fe1dce5}{lbann\+::generic\+\_\+data\+\_\+reader}.
+
+
+
+Reimplemented in \hyperlink{classlbann_1_1mnist__reader_a62404e18f0d114b99c11f3800c0d7451}{lbann\+::mnist\+\_\+reader}, and \hyperlink{classlbann_1_1imagenet__reader__single_a17b2e9f767fe36097acbc4600ce4e480}{lbann\+::imagenet\+\_\+reader\+\_\+single}.
+
+
+
+Definition at line 101 of file data\+\_\+reader\+\_\+image.\+cpp.
+
+
+\begin{DoxyCode}
+101                                                                             \{
+102   \textcolor{keyword}{const} \hyperlink{classlbann_1_1image__data__reader_a7645f17852c990e80b1530509ff5e87c}{label\_t} label = \hyperlink{classlbann_1_1image__data__reader_ae3fc949bd08c45ceafb1a03503261008}{m\_image\_list}[data\_id].second;
+103   Y.Set(label, mb\_idx, 1);
+104   \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+105 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1image__data__reader_a1f0dbd67390a65fef106515ea7060e29_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1image__data__reader_a1bb05018e059afae76d46a2a908dd75c}\label{classlbann_1_1image__data__reader_a1bb05018e059afae76d46a2a908dd75c}} 
+\index{lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}!get\+\_\+data\+\_\+dims@{get\+\_\+data\+\_\+dims}}
+\index{get\+\_\+data\+\_\+dims@{get\+\_\+data\+\_\+dims}!lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}}
+\subsubsection{\texorpdfstring{get\+\_\+data\+\_\+dims()}{get\_data\_dims()}}
+{\footnotesize\ttfamily const std\+::vector$<$int$>$ lbann\+::image\+\_\+data\+\_\+reader\+::get\+\_\+data\+\_\+dims (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Get the dimensions of the data. 
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1generic__data__reader_ae06ff27459ac4a5d8ac14655d4b31318}{lbann\+::generic\+\_\+data\+\_\+reader}.
+
+
+
+Reimplemented in \hyperlink{classlbann_1_1data__reader__multi__images_aca93e0ab0edf13397de414d41aff1cd1}{lbann\+::data\+\_\+reader\+\_\+multi\+\_\+images}, and \hyperlink{classlbann_1_1imagenet__reader__patches_a4d5c6b9780908d9beb5c6d3f017c38b5}{lbann\+::imagenet\+\_\+reader\+\_\+patches}.
+
+
+
+Definition at line 76 of file data\+\_\+reader\+\_\+image.\+hpp.
+
+
+\begin{DoxyCode}
+76                                                       \{
+77     \textcolor{keywordflow}{return} \{\hyperlink{classlbann_1_1image__data__reader_aab1a440f361521dc7bd583cefe1061f8}{m\_image\_num\_channels}, \hyperlink{classlbann_1_1image__data__reader_a0632efa3deaa9d61e671f741909eb3fe}{m\_image\_height}, 
+      \hyperlink{classlbann_1_1image__data__reader_af001f3d1c0f1c580b66988233b3a64f0}{m\_image\_width}\};
+78   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1image__data__reader_a641364038b54fe8291f23f9d879293e3}\label{classlbann_1_1image__data__reader_a641364038b54fe8291f23f9d879293e3}} 
+\index{lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}!get\+\_\+image\+\_\+height@{get\+\_\+image\+\_\+height}}
+\index{get\+\_\+image\+\_\+height@{get\+\_\+image\+\_\+height}!lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}}
+\subsubsection{\texorpdfstring{get\+\_\+image\+\_\+height()}{get\_image\_height()}}
+{\footnotesize\ttfamily virtual int lbann\+::image\+\_\+data\+\_\+reader\+::get\+\_\+image\+\_\+height (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Definition at line 63 of file data\+\_\+reader\+\_\+image.\+hpp.
+
+
+\begin{DoxyCode}
+63                                        \{
+64     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1image__data__reader_a0632efa3deaa9d61e671f741909eb3fe}{m\_image\_height};
+65   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1image__data__reader_aa03599a5f66d498d4bb90c50ae70c82a}\label{classlbann_1_1image__data__reader_aa03599a5f66d498d4bb90c50ae70c82a}} 
+\index{lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}!get\+\_\+image\+\_\+list@{get\+\_\+image\+\_\+list}}
+\index{get\+\_\+image\+\_\+list@{get\+\_\+image\+\_\+list}!lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}}
+\subsubsection{\texorpdfstring{get\+\_\+image\+\_\+list()}{get\_image\_list()}}
+{\footnotesize\ttfamily const std\+::vector$<$\hyperlink{classlbann_1_1image__data__reader_a7580011ef6ef9da32e1a3bc49ad0706c}{sample\+\_\+t}$>$\& lbann\+::image\+\_\+data\+\_\+reader\+::get\+\_\+image\+\_\+list (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+
+
+Allow read-\/only access to the entire sample list. 
+
+
+
+Definition at line 89 of file data\+\_\+reader\+\_\+image.\+hpp.
+
+
+\begin{DoxyCode}
+89                                                     \{
+90     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1image__data__reader_ae3fc949bd08c45ceafb1a03503261008}{m\_image\_list};
+91   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1image__data__reader_aa03599a5f66d498d4bb90c50ae70c82a_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1image__data__reader_a9624d37e076cf71154b65910dd7e1195}\label{classlbann_1_1image__data__reader_a9624d37e076cf71154b65910dd7e1195}} 
+\index{lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}!get\+\_\+image\+\_\+list\+\_\+of\+\_\+current\+\_\+mb@{get\+\_\+image\+\_\+list\+\_\+of\+\_\+current\+\_\+mb}}
+\index{get\+\_\+image\+\_\+list\+\_\+of\+\_\+current\+\_\+mb@{get\+\_\+image\+\_\+list\+\_\+of\+\_\+current\+\_\+mb}!lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}}
+\subsubsection{\texorpdfstring{get\+\_\+image\+\_\+list\+\_\+of\+\_\+current\+\_\+mb()}{get\_image\_list\_of\_current\_mb()}}
+{\footnotesize\ttfamily std\+::vector$<$ \hyperlink{classlbann_1_1image__data__reader_a7580011ef6ef9da32e1a3bc49ad0706c}{image\+\_\+data\+\_\+reader\+::sample\+\_\+t} $>$ lbann\+::image\+\_\+data\+\_\+reader\+::get\+\_\+image\+\_\+list\+\_\+of\+\_\+current\+\_\+mb (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const}
+
+
+
+Return the sample list of current minibatch. 
+
+
+
+Definition at line 139 of file data\+\_\+reader\+\_\+image.\+cpp.
+
+
+\begin{DoxyCode}
+139                                                                                            \{
+140   std::vector<sample\_t> ret;
+141   ret.reserve(\hyperlink{classlbann_1_1generic__data__reader_a96f87a7d09711ab3eee3940ff2aa36ec}{m\_mini\_batch\_size});
+142 
+143   \textcolor{keywordflow}{for} (El::Int i = 0; i < \hyperlink{classlbann_1_1generic__data__reader_a4ee1a159c74561c15a5e0c267ad3cc6a}{m\_indices\_fetched\_per\_mb}.Height(); ++i) \{
+144     El::Int index = \hyperlink{classlbann_1_1generic__data__reader_a4ee1a159c74561c15a5e0c267ad3cc6a}{m\_indices\_fetched\_per\_mb}.Get(i, 0);
+145     ret.push\_back(\hyperlink{classlbann_1_1image__data__reader_ae3fc949bd08c45ceafb1a03503261008}{m\_image\_list}[index]);
+146   \}
+147   \textcolor{keywordflow}{return} ret;
+148 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1image__data__reader_a9624d37e076cf71154b65910dd7e1195_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1image__data__reader_a3699aa92d3ef2ccc0c30ecf27809acbe}\label{classlbann_1_1image__data__reader_a3699aa92d3ef2ccc0c30ecf27809acbe}} 
+\index{lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}!get\+\_\+image\+\_\+num\+\_\+channels@{get\+\_\+image\+\_\+num\+\_\+channels}}
+\index{get\+\_\+image\+\_\+num\+\_\+channels@{get\+\_\+image\+\_\+num\+\_\+channels}!lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}}
+\subsubsection{\texorpdfstring{get\+\_\+image\+\_\+num\+\_\+channels()}{get\_image\_num\_channels()}}
+{\footnotesize\ttfamily virtual int lbann\+::image\+\_\+data\+\_\+reader\+::get\+\_\+image\+\_\+num\+\_\+channels (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Definition at line 66 of file data\+\_\+reader\+\_\+image.\+hpp.
+
+
+\begin{DoxyCode}
+66                                              \{
+67     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1image__data__reader_aab1a440f361521dc7bd583cefe1061f8}{m\_image\_num\_channels};
+68   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1image__data__reader_a2e75d4ec8f222f4f855e6c0162648dc7}\label{classlbann_1_1image__data__reader_a2e75d4ec8f222f4f855e6c0162648dc7}} 
+\index{lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}!get\+\_\+image\+\_\+width@{get\+\_\+image\+\_\+width}}
+\index{get\+\_\+image\+\_\+width@{get\+\_\+image\+\_\+width}!lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}}
+\subsubsection{\texorpdfstring{get\+\_\+image\+\_\+width()}{get\_image\_width()}}
+{\footnotesize\ttfamily virtual int lbann\+::image\+\_\+data\+\_\+reader\+::get\+\_\+image\+\_\+width (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}
+
+
+
+Definition at line 60 of file data\+\_\+reader\+\_\+image.\+hpp.
+
+
+\begin{DoxyCode}
+60                                       \{
+61     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1image__data__reader_af001f3d1c0f1c580b66988233b3a64f0}{m\_image\_width};
+62   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1image__data__reader_a26b8566e76ba99c017a84c49a9dec37c}\label{classlbann_1_1image__data__reader_a26b8566e76ba99c017a84c49a9dec37c}} 
+\index{lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}!get\+\_\+linearized\+\_\+data\+\_\+size@{get\+\_\+linearized\+\_\+data\+\_\+size}}
+\index{get\+\_\+linearized\+\_\+data\+\_\+size@{get\+\_\+linearized\+\_\+data\+\_\+size}!lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}}
+\subsubsection{\texorpdfstring{get\+\_\+linearized\+\_\+data\+\_\+size()}{get\_linearized\_data\_size()}}
+{\footnotesize\ttfamily int lbann\+::image\+\_\+data\+\_\+reader\+::get\+\_\+linearized\+\_\+data\+\_\+size (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Get the total number of channel values in a sample of image(s). 
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1generic__data__reader_a246a719477c8c7b6122d41b6f5618d41}{lbann\+::generic\+\_\+data\+\_\+reader}.
+
+
+
+Reimplemented in \hyperlink{classlbann_1_1data__reader__multi__images_a63d7c8f0b674f19840134ee99680f3fc}{lbann\+::data\+\_\+reader\+\_\+multi\+\_\+images}, and \hyperlink{classlbann_1_1imagenet__reader__patches_a09ce692ca31d52424dea5395ad6c8b2b}{lbann\+::imagenet\+\_\+reader\+\_\+patches}.
+
+
+
+Definition at line 70 of file data\+\_\+reader\+\_\+image.\+hpp.
+
+
+\begin{DoxyCode}
+70                                                 \{
+71     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1image__data__reader_af512f1f866c0f654309b7f28886dca9a}{m\_image\_linearized\_size};
+72   \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1image__data__reader_a26b8566e76ba99c017a84c49a9dec37c_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1image__data__reader_adb62b193a10b2b12c1bf183ea9c2095e}\label{classlbann_1_1image__data__reader_adb62b193a10b2b12c1bf183ea9c2095e}} 
+\index{lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}!get\+\_\+linearized\+\_\+label\+\_\+size@{get\+\_\+linearized\+\_\+label\+\_\+size}}
+\index{get\+\_\+linearized\+\_\+label\+\_\+size@{get\+\_\+linearized\+\_\+label\+\_\+size}!lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}}
+\subsubsection{\texorpdfstring{get\+\_\+linearized\+\_\+label\+\_\+size()}{get\_linearized\_label\_size()}}
+{\footnotesize\ttfamily int lbann\+::image\+\_\+data\+\_\+reader\+::get\+\_\+linearized\+\_\+label\+\_\+size (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Get the linearized size (i.\+e. number of elements) in a label. 
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1generic__data__reader_a99e8ba4f09fdc86d238ad7c8d2e2bce0}{lbann\+::generic\+\_\+data\+\_\+reader}.
+
+
+
+Definition at line 73 of file data\+\_\+reader\+\_\+image.\+hpp.
+
+
+\begin{DoxyCode}
+73                                                  \{
+74     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1image__data__reader_af280e8758a6ec3acee7c62e6351d17e0}{m\_num\_labels};
+75   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1image__data__reader_af821795e5104f1a8c34027de96af7b90}\label{classlbann_1_1image__data__reader_af821795e5104f1a8c34027de96af7b90}} 
+\index{lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}!get\+\_\+num\+\_\+labels@{get\+\_\+num\+\_\+labels}}
+\index{get\+\_\+num\+\_\+labels@{get\+\_\+num\+\_\+labels}!lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}}
+\subsubsection{\texorpdfstring{get\+\_\+num\+\_\+labels()}{get\_num\_labels()}}
+{\footnotesize\ttfamily int lbann\+::image\+\_\+data\+\_\+reader\+::get\+\_\+num\+\_\+labels (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+
+
+Return the number of labels (classes) in this dataset. 
+
+
+
+Reimplemented from \hyperlink{classlbann_1_1generic__data__reader_a935ce6262d75f1834e550c3bc16a6547}{lbann\+::generic\+\_\+data\+\_\+reader}.
+
+
+
+Definition at line 57 of file data\+\_\+reader\+\_\+image.\+hpp.
+
+
+\begin{DoxyCode}
+57                                       \{
+58     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1image__data__reader_af280e8758a6ec3acee7c62e6351d17e0}{m\_num\_labels};
+59   \}
+\end{DoxyCode}
+\mbox{\Hypertarget{classlbann_1_1image__data__reader_ae3f4a0b018e8212a42cbbfbd2b514bf4}\label{classlbann_1_1image__data__reader_ae3f4a0b018e8212a42cbbfbd2b514bf4}} 
+\index{lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}!get\+\_\+sample@{get\+\_\+sample}}
+\index{get\+\_\+sample@{get\+\_\+sample}!lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}}
+\subsubsection{\texorpdfstring{get\+\_\+sample()}{get\_sample()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1image__data__reader_a7580011ef6ef9da32e1a3bc49ad0706c}{sample\+\_\+t} lbann\+::image\+\_\+data\+\_\+reader\+::get\+\_\+sample (\begin{DoxyParamCaption}\item[{const size\+\_\+t}]{idx }\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Returns idx-\/th sample in the initial loading order. The second argument is only to facilitate overloading, and not to be used by users. 
+
+Definition at line 97 of file data\+\_\+reader\+\_\+image.\+hpp.
+
+
+\begin{DoxyCode}
+97                                               \{
+98     \textcolor{keywordflow}{return} \hyperlink{classlbann_1_1image__data__reader_ae3fc949bd08c45ceafb1a03503261008}{m\_image\_list}.at(idx);
+99   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1image__data__reader_ae3f4a0b018e8212a42cbbfbd2b514bf4_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1image__data__reader_a99cb80242d7d20bc1e8baeaff25ff790}\label{classlbann_1_1image__data__reader_a99cb80242d7d20bc1e8baeaff25ff790}} 
+\index{lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}!load@{load}}
+\index{load@{load}!lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}}
+\subsubsection{\texorpdfstring{load()}{load()}}
+{\footnotesize\ttfamily void lbann\+::image\+\_\+data\+\_\+reader\+::load (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Load the dataset. Each data reader implementation should implement this to initialize its internal data structures, determine the number of samples and their dimensionality (if needed), and set up and shuffle samples. 
+
+Implements \hyperlink{classlbann_1_1generic__data__reader_afeb47703d988a230a59859cbfc178215}{lbann\+::generic\+\_\+data\+\_\+reader}.
+
+
+
+Reimplemented in \hyperlink{classlbann_1_1data__reader__mnist__siamese_a2c60a89c5815fa24b34d4febfecfc3db}{lbann\+::data\+\_\+reader\+\_\+mnist\+\_\+siamese}, \hyperlink{classlbann_1_1data__reader__multi__images_afb8adef1f9ac6723d71ae5afc29b01ec}{lbann\+::data\+\_\+reader\+\_\+multi\+\_\+images}, \hyperlink{classlbann_1_1data__reader__triplet_a2601234d6d501df6170c6fb60dfb873e}{lbann\+::data\+\_\+reader\+\_\+triplet}, \hyperlink{classlbann_1_1mnist__reader_aacbd6c4dec95b9849083d96e0005b392}{lbann\+::mnist\+\_\+reader}, and \hyperlink{classlbann_1_1imagenet__reader__single_a7ea768d9784b7a9532551d7402ee4f8e}{lbann\+::imagenet\+\_\+reader\+\_\+single}.
+
+
+
+Definition at line 107 of file data\+\_\+reader\+\_\+image.\+cpp.
+
+
+\begin{DoxyCode}
+107                              \{
+108   \textcolor{comment}{//const std::string imageDir = get\_file\_dir();}
+109   \textcolor{keyword}{const} std::string imageListFile = \hyperlink{classlbann_1_1generic__data__reader_a56664e1b43f3fe923cf6d652f14b40a9}{get\_data\_filename}();
+110 
+111   \hyperlink{classlbann_1_1image__data__reader_ae3fc949bd08c45ceafb1a03503261008}{m\_image\_list}.clear();
+112 
+113   \textcolor{comment}{// load image list}
+114   FILE *fplist = fopen(imageListFile.c\_str(), \textcolor{stringliteral}{"rt"});
+115   \textcolor{keywordflow}{if} (!fplist) \{
+116     \textcolor{keywordflow}{throw} lbann\_exception(
+117       std::string\{\} + \_\_FILE\_\_ + \textcolor{stringliteral}{" "} + std::to\_string(\_\_LINE\_\_) +
+118       \textcolor{stringliteral}{" :: failed to open: "} + imageListFile);
+119   \}
+120 
+121   \textcolor{keywordflow}{while} (!feof(fplist)) \{
+122     \textcolor{keywordtype}{char} imagepath[512];
+123     \hyperlink{classlbann_1_1image__data__reader_a7645f17852c990e80b1530509ff5e87c}{label\_t} imagelabel;
+124     \textcolor{keywordflow}{if} (fscanf(fplist, \textcolor{stringliteral}{"%s%d"}, imagepath, &imagelabel) <= 1) \{
+125       \textcolor{keywordflow}{break};
+126     \}
+127     \hyperlink{classlbann_1_1image__data__reader_ae3fc949bd08c45ceafb1a03503261008}{m\_image\_list}.emplace\_back(imagepath, imagelabel);
+128   \}
+129   fclose(fplist);
+130 
+131   \textcolor{comment}{// reset indices}
+132   \hyperlink{classlbann_1_1generic__data__reader_aaab6aeff67ffff1c689336851fec2c57}{m\_shuffled\_indices}.clear();
+133   \hyperlink{classlbann_1_1generic__data__reader_aaab6aeff67ffff1c689336851fec2c57}{m\_shuffled\_indices}.resize(\hyperlink{classlbann_1_1image__data__reader_ae3fc949bd08c45ceafb1a03503261008}{m\_image\_list}.size());
+134   std::iota(\hyperlink{classlbann_1_1generic__data__reader_aaab6aeff67ffff1c689336851fec2c57}{m\_shuffled\_indices}.begin(), \hyperlink{classlbann_1_1generic__data__reader_aaab6aeff67ffff1c689336851fec2c57}{m\_shuffled\_indices}.end(), 0);
+135 
+136   \hyperlink{classlbann_1_1generic__data__reader_aa28fdeeb6af492540f507e49adff5d6c}{select\_subset\_of\_data}();
+137 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1image__data__reader_a99cb80242d7d20bc1e8baeaff25ff790_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1image__data__reader_a76a0b52eafb9ad133fb45fec7cf44700}\label{classlbann_1_1image__data__reader_a76a0b52eafb9ad133fb45fec7cf44700}} 
+\index{lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}!operator=@{operator=}}
+\index{operator=@{operator=}!lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}}
+\subsubsection{\texorpdfstring{operator=()}{operator=()}}
+{\footnotesize\ttfamily \hyperlink{classlbann_1_1image__data__reader}{image\+\_\+data\+\_\+reader} \& lbann\+::image\+\_\+data\+\_\+reader\+::operator= (\begin{DoxyParamCaption}\item[{const \hyperlink{classlbann_1_1image__data__reader}{image\+\_\+data\+\_\+reader} \&}]{rhs }\end{DoxyParamCaption})}
+
+
+
+Definition at line 50 of file data\+\_\+reader\+\_\+image.\+cpp.
+
+
+\begin{DoxyCode}
+50                                                                             \{
+51   \hyperlink{classlbann_1_1generic__data__reader_aec7e626e6efa2a4bf23f931e2ef8f607}{generic\_data\_reader::operator=}(rhs);
+52   \hyperlink{classlbann_1_1image__data__reader_ab1289f0207f3a9989c7b28e09a23c9a3}{m\_image\_dir} = rhs.m\_image\_dir;
+53   \hyperlink{classlbann_1_1image__data__reader_ae3fc949bd08c45ceafb1a03503261008}{m\_image\_list} = rhs.m\_image\_list;
+54   \hyperlink{classlbann_1_1image__data__reader_af001f3d1c0f1c580b66988233b3a64f0}{m\_image\_width} = rhs.m\_image\_width;
+55   \hyperlink{classlbann_1_1image__data__reader_a0632efa3deaa9d61e671f741909eb3fe}{m\_image\_height} = rhs.m\_image\_height;
+56   \hyperlink{classlbann_1_1image__data__reader_aab1a440f361521dc7bd583cefe1061f8}{m\_image\_num\_channels} = rhs.m\_image\_num\_channels;
+57   \hyperlink{classlbann_1_1image__data__reader_af512f1f866c0f654309b7f28886dca9a}{m\_image\_linearized\_size} = rhs.m\_image\_linearized\_size;
+58   \hyperlink{classlbann_1_1image__data__reader_af280e8758a6ec3acee7c62e6351d17e0}{m\_num\_labels} = rhs.m\_num\_labels;
+59 
+60   \textcolor{keywordflow}{return} (*\textcolor{keyword}{this});
+61 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1image__data__reader_a76a0b52eafb9ad133fb45fec7cf44700_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1image__data__reader_a76a0b52eafb9ad133fb45fec7cf44700_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1image__data__reader_a71e4fa1eb8212cce88a2ed408ceeac51}\label{classlbann_1_1image__data__reader_a71e4fa1eb8212cce88a2ed408ceeac51}} 
+\index{lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}!save\+\_\+image@{save\+\_\+image}}
+\index{save\+\_\+image@{save\+\_\+image}!lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}}
+\subsubsection{\texorpdfstring{save\+\_\+image()}{save\_image()}}
+{\footnotesize\ttfamily void lbann\+::image\+\_\+data\+\_\+reader\+::save\+\_\+image (\begin{DoxyParamCaption}\item[{\hyperlink{base_8hpp_a68f11fdc31b62516cb310831bbe54d73}{Mat} \&}]{pixels,  }\item[{const std\+::string}]{filename,  }\item[{bool}]{do\+\_\+scale = {\ttfamily true} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [override]}, {\ttfamily [virtual]}}
+
+Save pixels to an image. The implementing data reader is responsible for handling format detection, conversion, etc. 
+
+Reimplemented from \hyperlink{classlbann_1_1generic__data__reader_a8cf298061c73f55e2fe717acd2a9f178}{lbann\+::generic\+\_\+data\+\_\+reader}.
+
+
+
+Definition at line 80 of file data\+\_\+reader\+\_\+image.\+hpp.
+
+
+\begin{DoxyCode}
+80                                                                                         \{
+81     \hyperlink{classlbann_1_1lbann__image__preprocessor_a3c4f4cc5c90233696566a35a62a1708c}{internal\_save\_image}(pixels, filename, \hyperlink{classlbann_1_1image__data__reader_a0632efa3deaa9d61e671f741909eb3fe}{m\_image\_height}, 
+      \hyperlink{classlbann_1_1image__data__reader_af001f3d1c0f1c580b66988233b3a64f0}{m\_image\_width},
+82                         \hyperlink{classlbann_1_1image__data__reader_aab1a440f361521dc7bd583cefe1061f8}{m\_image\_num\_channels}, do\_scale);
+83   \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1image__data__reader_a71e4fa1eb8212cce88a2ed408ceeac51_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1image__data__reader_a8e9dbeaa0239d56597455cc23787a21d}\label{classlbann_1_1image__data__reader_a8e9dbeaa0239d56597455cc23787a21d}} 
+\index{lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}!set\+\_\+defaults@{set\+\_\+defaults}}
+\index{set\+\_\+defaults@{set\+\_\+defaults}!lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}}
+\subsubsection{\texorpdfstring{set\+\_\+defaults()}{set\_defaults()}}
+{\footnotesize\ttfamily void lbann\+::image\+\_\+data\+\_\+reader\+::set\+\_\+defaults (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [protected]}, {\ttfamily [virtual]}}
+
+
+
+Set the default values for the width, the height, the number of channels, and the number of labels of an image. 
+
+
+
+Reimplemented in \hyperlink{classlbann_1_1data__reader__multi__images_a5abe6981d750bc145e50f6141772805c}{lbann\+::data\+\_\+reader\+\_\+multi\+\_\+images}, \hyperlink{classlbann_1_1data__reader__mnist__siamese_a7e1c9530b5d56a0835db8a30af980164}{lbann\+::data\+\_\+reader\+\_\+mnist\+\_\+siamese}, \hyperlink{classlbann_1_1data__reader__triplet_a88bc385a2d42e9f78a768ff496036843}{lbann\+::data\+\_\+reader\+\_\+triplet}, \hyperlink{classlbann_1_1imagenet__reader__patches_a3458e4274b9ed894973a069cf884f04a}{lbann\+::imagenet\+\_\+reader\+\_\+patches}, \hyperlink{classlbann_1_1cifar10__reader_a4c5389d0a6641716c96aa07e58fa4e88}{lbann\+::cifar10\+\_\+reader}, \hyperlink{classlbann_1_1mnist__reader_a5b9a3d56e2d1e1c6820b3c7cc8cde17d}{lbann\+::mnist\+\_\+reader}, \hyperlink{classlbann_1_1imagenet__reader__org_af0d9fc9081013ef0ddd3222dfd9abb8b}{lbann\+::imagenet\+\_\+reader\+\_\+org}, and \hyperlink{classlbann_1_1imagenet__reader_ad1e108315d659509a3e166c2f8a4941f}{lbann\+::imagenet\+\_\+reader}.
+
+
+
+Definition at line 67 of file data\+\_\+reader\+\_\+image.\+cpp.
+
+
+\begin{DoxyCode}
+67                                      \{
+68   \hyperlink{classlbann_1_1image__data__reader_af001f3d1c0f1c580b66988233b3a64f0}{m\_image\_width} = 256;
+69   \hyperlink{classlbann_1_1image__data__reader_a0632efa3deaa9d61e671f741909eb3fe}{m\_image\_height} = 256;
+70   \hyperlink{classlbann_1_1image__data__reader_aab1a440f361521dc7bd583cefe1061f8}{m\_image\_num\_channels} = 3;
+71   \hyperlink{classlbann_1_1image__data__reader_a0164b0e3abbe92daef73b36fb925403e}{set\_linearized\_image\_size}();
+72   \hyperlink{classlbann_1_1image__data__reader_af280e8758a6ec3acee7c62e6351d17e0}{m\_num\_labels} = 1000;
+73 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1image__data__reader_a8e9dbeaa0239d56597455cc23787a21d_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1image__data__reader_a8e9dbeaa0239d56597455cc23787a21d_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1image__data__reader_a6ed9b8b12ad3ffa93ad458d872f8c044}\label{classlbann_1_1image__data__reader_a6ed9b8b12ad3ffa93ad458d872f8c044}} 
+\index{lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}!set\+\_\+input\+\_\+params@{set\+\_\+input\+\_\+params}}
+\index{set\+\_\+input\+\_\+params@{set\+\_\+input\+\_\+params}!lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}}
+\subsubsection{\texorpdfstring{set\+\_\+input\+\_\+params()}{set\_input\_params()}}
+{\footnotesize\ttfamily void lbann\+::image\+\_\+data\+\_\+reader\+::set\+\_\+input\+\_\+params (\begin{DoxyParamCaption}\item[{const int}]{width = {\ttfamily 0},  }\item[{const int}]{height = {\ttfamily 0},  }\item[{const int}]{num\+\_\+ch = {\ttfamily 0},  }\item[{const int}]{num\+\_\+labels = {\ttfamily 0} }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [virtual]}}
+
+Set up imagenet specific input parameters If argument is set to 0, then this method does not change the value of the corresponding parameter. However, width and height can only be both zero or both non-\/zero. 
+
+Reimplemented in \hyperlink{classlbann_1_1data__reader__mnist__siamese_abe572754f0b1415407c1b698b0f83656}{lbann\+::data\+\_\+reader\+\_\+mnist\+\_\+siamese}, \hyperlink{classlbann_1_1data__reader__multi__images_afdb403556ed04a9142932e89ac60435e}{lbann\+::data\+\_\+reader\+\_\+multi\+\_\+images}, \hyperlink{classlbann_1_1data__reader__triplet_a8172b4ac97d18b51814578a19a7f75c7}{lbann\+::data\+\_\+reader\+\_\+triplet}, \hyperlink{classlbann_1_1cifar10__reader_a3915005f1278a840869b8519c30c808b}{lbann\+::cifar10\+\_\+reader}, \hyperlink{classlbann_1_1imagenet__reader__org_afb843084789c6a12e01a5d4a687003cf}{lbann\+::imagenet\+\_\+reader\+\_\+org}, and \hyperlink{classlbann_1_1mnist__reader_aa50ae6f2aeb5800de0e15e3ab9046338}{lbann\+::mnist\+\_\+reader}.
+
+
+
+Definition at line 75 of file data\+\_\+reader\+\_\+image.\+cpp.
+
+
+\begin{DoxyCode}
+75                                                                                                            
+             \{
+76   \textcolor{keywordflow}{if} ((width > 0) && (height > 0)) \{ \textcolor{comment}{// set and valid}
+77     \hyperlink{classlbann_1_1image__data__reader_af001f3d1c0f1c580b66988233b3a64f0}{m\_image\_width} = width;
+78     \hyperlink{classlbann_1_1image__data__reader_a0632efa3deaa9d61e671f741909eb3fe}{m\_image\_height} = height;
+79   \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (!((width == 0) && (height == 0))) \{ \textcolor{comment}{// set but not valid}
+80     std::stringstream err;
+81     err << \_\_FILE\_\_<<\textcolor{stringliteral}{" "}<<\_\_LINE\_\_<< \textcolor{stringliteral}{" :: Imagenet data reader setup error: invalid input image sizes"};
+82     \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+83   \}
+84   \textcolor{keywordflow}{if} (num\_ch > 0) \{
+85     \hyperlink{classlbann_1_1image__data__reader_aab1a440f361521dc7bd583cefe1061f8}{m\_image\_num\_channels} = num\_ch;
+86   \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (num\_ch < 0) \{
+87     std::stringstream err;
+88     err << \_\_FILE\_\_<<\textcolor{stringliteral}{" "}<<\_\_LINE\_\_<< \textcolor{stringliteral}{" :: Imagenet data reader setup error: invalid number of channels of
+       input images"};
+89     \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+90   \}
+91   \hyperlink{classlbann_1_1image__data__reader_a0164b0e3abbe92daef73b36fb925403e}{set\_linearized\_image\_size}();
+92   \textcolor{keywordflow}{if} (num\_labels > 0) \{
+93     \hyperlink{classlbann_1_1image__data__reader_af280e8758a6ec3acee7c62e6351d17e0}{m\_num\_labels} = num\_labels;
+94   \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (num\_labels < 0) \{
+95     std::stringstream err;
+96     err << \_\_FILE\_\_<<\textcolor{stringliteral}{" "}<<\_\_LINE\_\_<< \textcolor{stringliteral}{" :: Imagenet data reader setup error: invalid number of labels"};
+97     \textcolor{keywordflow}{throw} lbann\_exception(err.str());
+98   \}
+99 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1image__data__reader_a6ed9b8b12ad3ffa93ad458d872f8c044_cgraph}
+\end{center}
+\end{figure}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1image__data__reader_a6ed9b8b12ad3ffa93ad458d872f8c044_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{classlbann_1_1image__data__reader_a0164b0e3abbe92daef73b36fb925403e}\label{classlbann_1_1image__data__reader_a0164b0e3abbe92daef73b36fb925403e}} 
+\index{lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}!set\+\_\+linearized\+\_\+image\+\_\+size@{set\+\_\+linearized\+\_\+image\+\_\+size}}
+\index{set\+\_\+linearized\+\_\+image\+\_\+size@{set\+\_\+linearized\+\_\+image\+\_\+size}!lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}}
+\subsubsection{\texorpdfstring{set\+\_\+linearized\+\_\+image\+\_\+size()}{set\_linearized\_image\_size()}}
+{\footnotesize\ttfamily void lbann\+::image\+\_\+data\+\_\+reader\+::set\+\_\+linearized\+\_\+image\+\_\+size (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+Definition at line 63 of file data\+\_\+reader\+\_\+image.\+cpp.
+
+
+\begin{DoxyCode}
+63                                                   \{
+64   \hyperlink{classlbann_1_1image__data__reader_af512f1f866c0f654309b7f28886dca9a}{m\_image\_linearized\_size} = \hyperlink{classlbann_1_1image__data__reader_af001f3d1c0f1c580b66988233b3a64f0}{m\_image\_width} * 
+      \hyperlink{classlbann_1_1image__data__reader_a0632efa3deaa9d61e671f741909eb3fe}{m\_image\_height} * \hyperlink{classlbann_1_1image__data__reader_aab1a440f361521dc7bd583cefe1061f8}{m\_image\_num\_channels};
+65 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{classlbann_1_1image__data__reader_a0164b0e3abbe92daef73b36fb925403e_icgraph}
+\end{center}
+\end{figure}
+
+
+\subsection{Member Data Documentation}
+\mbox{\Hypertarget{classlbann_1_1image__data__reader_ab1289f0207f3a9989c7b28e09a23c9a3}\label{classlbann_1_1image__data__reader_ab1289f0207f3a9989c7b28e09a23c9a3}} 
+\index{lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}!m\+\_\+image\+\_\+dir@{m\+\_\+image\+\_\+dir}}
+\index{m\+\_\+image\+\_\+dir@{m\+\_\+image\+\_\+dir}!lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}}
+\subsubsection{\texorpdfstring{m\+\_\+image\+\_\+dir}{m\_image\_dir}}
+{\footnotesize\ttfamily std\+::string lbann\+::image\+\_\+data\+\_\+reader\+::m\+\_\+image\+\_\+dir\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+where images are stored 
+
+
+
+Definition at line 108 of file data\+\_\+reader\+\_\+image.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1image__data__reader_a0632efa3deaa9d61e671f741909eb3fe}\label{classlbann_1_1image__data__reader_a0632efa3deaa9d61e671f741909eb3fe}} 
+\index{lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}!m\+\_\+image\+\_\+height@{m\+\_\+image\+\_\+height}}
+\index{m\+\_\+image\+\_\+height@{m\+\_\+image\+\_\+height}!lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}}
+\subsubsection{\texorpdfstring{m\+\_\+image\+\_\+height}{m\_image\_height}}
+{\footnotesize\ttfamily int lbann\+::image\+\_\+data\+\_\+reader\+::m\+\_\+image\+\_\+height\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+image height 
+
+
+
+Definition at line 111 of file data\+\_\+reader\+\_\+image.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1image__data__reader_af512f1f866c0f654309b7f28886dca9a}\label{classlbann_1_1image__data__reader_af512f1f866c0f654309b7f28886dca9a}} 
+\index{lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}!m\+\_\+image\+\_\+linearized\+\_\+size@{m\+\_\+image\+\_\+linearized\+\_\+size}}
+\index{m\+\_\+image\+\_\+linearized\+\_\+size@{m\+\_\+image\+\_\+linearized\+\_\+size}!lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}}
+\subsubsection{\texorpdfstring{m\+\_\+image\+\_\+linearized\+\_\+size}{m\_image\_linearized\_size}}
+{\footnotesize\ttfamily int lbann\+::image\+\_\+data\+\_\+reader\+::m\+\_\+image\+\_\+linearized\+\_\+size\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+linearized image size 
+
+
+
+Definition at line 113 of file data\+\_\+reader\+\_\+image.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1image__data__reader_ae3fc949bd08c45ceafb1a03503261008}\label{classlbann_1_1image__data__reader_ae3fc949bd08c45ceafb1a03503261008}} 
+\index{lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}!m\+\_\+image\+\_\+list@{m\+\_\+image\+\_\+list}}
+\index{m\+\_\+image\+\_\+list@{m\+\_\+image\+\_\+list}!lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}}
+\subsubsection{\texorpdfstring{m\+\_\+image\+\_\+list}{m\_image\_list}}
+{\footnotesize\ttfamily std\+::vector$<$\hyperlink{classlbann_1_1image__data__reader_a7580011ef6ef9da32e1a3bc49ad0706c}{sample\+\_\+t}$>$ lbann\+::image\+\_\+data\+\_\+reader\+::m\+\_\+image\+\_\+list\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+list of image files and labels 
+
+
+
+Definition at line 109 of file data\+\_\+reader\+\_\+image.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1image__data__reader_aab1a440f361521dc7bd583cefe1061f8}\label{classlbann_1_1image__data__reader_aab1a440f361521dc7bd583cefe1061f8}} 
+\index{lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}!m\+\_\+image\+\_\+num\+\_\+channels@{m\+\_\+image\+\_\+num\+\_\+channels}}
+\index{m\+\_\+image\+\_\+num\+\_\+channels@{m\+\_\+image\+\_\+num\+\_\+channels}!lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}}
+\subsubsection{\texorpdfstring{m\+\_\+image\+\_\+num\+\_\+channels}{m\_image\_num\_channels}}
+{\footnotesize\ttfamily int lbann\+::image\+\_\+data\+\_\+reader\+::m\+\_\+image\+\_\+num\+\_\+channels\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+number of image channels 
+
+
+
+Definition at line 112 of file data\+\_\+reader\+\_\+image.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1image__data__reader_af001f3d1c0f1c580b66988233b3a64f0}\label{classlbann_1_1image__data__reader_af001f3d1c0f1c580b66988233b3a64f0}} 
+\index{lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}!m\+\_\+image\+\_\+width@{m\+\_\+image\+\_\+width}}
+\index{m\+\_\+image\+\_\+width@{m\+\_\+image\+\_\+width}!lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}}
+\subsubsection{\texorpdfstring{m\+\_\+image\+\_\+width}{m\_image\_width}}
+{\footnotesize\ttfamily int lbann\+::image\+\_\+data\+\_\+reader\+::m\+\_\+image\+\_\+width\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+image width 
+
+
+
+Definition at line 110 of file data\+\_\+reader\+\_\+image.\+hpp.
+
+\mbox{\Hypertarget{classlbann_1_1image__data__reader_af280e8758a6ec3acee7c62e6351d17e0}\label{classlbann_1_1image__data__reader_af280e8758a6ec3acee7c62e6351d17e0}} 
+\index{lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}!m\+\_\+num\+\_\+labels@{m\+\_\+num\+\_\+labels}}
+\index{m\+\_\+num\+\_\+labels@{m\+\_\+num\+\_\+labels}!lbann\+::image\+\_\+data\+\_\+reader@{lbann\+::image\+\_\+data\+\_\+reader}}
+\subsubsection{\texorpdfstring{m\+\_\+num\+\_\+labels}{m\_num\_labels}}
+{\footnotesize\ttfamily int lbann\+::image\+\_\+data\+\_\+reader\+::m\+\_\+num\+\_\+labels\hspace{0.3cm}{\ttfamily [protected]}}
+
+
+
+number of labels 
+
+
+
+Definition at line 114 of file data\+\_\+reader\+\_\+image.\+hpp.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/data\+\_\+readers/\hyperlink{data__reader__image_8hpp}{data\+\_\+reader\+\_\+image.\+hpp}\item 
+/\+Users/mckinney27/doxy-\/testbed/lbann/src/data\+\_\+readers/\hyperlink{data__reader__image_8cpp}{data\+\_\+reader\+\_\+image.\+cpp}\end{DoxyCompactItemize}

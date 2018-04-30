@@ -1,0 +1,1277 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
+  <compounddef id="classlbann_1_1generic__target__layer" kind="class" language="C++" prot="public">
+    <compoundname>lbann::generic_target_layer</compoundname>
+    <basecompoundref refid="classlbann_1_1io__layer" prot="public" virt="non-virtual">lbann::io_layer</basecompoundref>
+    <derivedcompoundref refid="classlbann_1_1reconstruction__layer" prot="public" virt="non-virtual">lbann::reconstruction_layer&lt; T_layout &gt;</derivedcompoundref>
+    <derivedcompoundref refid="classlbann_1_1target__layer" prot="public" virt="non-virtual">lbann::target_layer&lt; T_io_buffer, T_layout &gt;</derivedcompoundref>
+    <includes refid="generic__target__layer_8hpp" local="no">generic_target_layer.hpp</includes>
+      <sectiondef kind="protected-attrib">
+      <memberdef kind="variable" id="classlbann_1_1generic__target__layer_1a84da1260e9feb4fbc3e6f2315e4cab4b" prot="protected" static="no" mutable="no">
+        <type><ref refid="classlbann_1_1generic__input__layer" kindref="compound">generic_input_layer</ref> *</type>
+        <definition>generic_input_layer* lbann::generic_target_layer::m_paired_input_layer</definition>
+        <argsstring></argsstring>
+        <name>m_paired_input_layer</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="44" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="44" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1generic__target__layer_1a7c15e3fe4f1fd7f0ccdbc4c3ed8c793e" compoundref="generic__target__layer_8hpp" startline="68" endline="81">operator=</referencedby>
+        <referencedby refid="classlbann_1_1generic__target__layer_1a4ffc26f13661686fdf7f8482beef79d4" compoundref="generic__target__layer_8hpp" startline="92" endline="94">get_paired_input_layer</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1generic__target__layer_1a8da650b94f50cc63fc90cd792fa50c3f" prot="protected" static="no" mutable="no">
+        <type><ref refid="classlbann_1_1generic__io__buffer" kindref="compound">generic_io_buffer</ref> *</type>
+        <definition>generic_io_buffer* lbann::generic_target_layer::io_buffer</definition>
+        <argsstring></argsstring>
+        <name>io_buffer</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="45" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="45" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1generic__target__layer_1a7c15e3fe4f1fd7f0ccdbc4c3ed8c793e" compoundref="generic__target__layer_8hpp" startline="68" endline="81">operator=</referencedby>
+        <referencedby refid="classlbann_1_1generic__target__layer_1a899373681fe6ede57383da34fe4156c1" compoundref="generic__target__layer_8hpp" startline="84" endline="87">~generic_target_layer</referencedby>
+        <referencedby refid="classlbann_1_1generic__target__layer_1a01a04bc2f6e6440082a1255b0de32d95" compoundref="generic__target__layer_8hpp" startline="366" endline="368">initialize_io_buffer</referencedby>
+        <referencedby refid="classlbann_1_1target__layer_1ab06729051345c739c33ea445ceed100a" compoundref="target__layer_8hpp" startline="43" endline="51">lbann::target_layer&lt; T_io_buffer, T_layout &gt;::target_layer</referencedby>
+        <referencedby refid="classlbann_1_1target__layer_1a6b5dad32cf3b771d6db1f99914ab63c4" compoundref="target__layer_8hpp" startline="65" endline="69">lbann::target_layer&lt; T_io_buffer, T_layout &gt;::get_type</referencedby>
+      </memberdef>
+      <memberdef kind="variable" id="classlbann_1_1generic__target__layer_1acb9ba351caf22b8e2378e4cd1e256da7" prot="protected" static="no" mutable="no">
+        <type><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> *</type>
+        <definition>AbsDistMat* lbann::generic_target_layer::m_ground_truth</definition>
+        <argsstring></argsstring>
+        <name>m_ground_truth</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Ground truth matrix. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="48" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="48" bodyend="-1"/>
+        <referencedby refid="classlbann_1_1generic__target__layer_1a7c15e3fe4f1fd7f0ccdbc4c3ed8c793e" compoundref="generic__target__layer_8hpp" startline="68" endline="81">operator=</referencedby>
+        <referencedby refid="classlbann_1_1generic__target__layer_1a899373681fe6ede57383da34fe4156c1" compoundref="generic__target__layer_8hpp" startline="84" endline="87">~generic_target_layer</referencedby>
+        <referencedby refid="classlbann_1_1generic__target__layer_1af8bcdbd313c9793187fe6e53396e3356" compoundref="generic__target__layer_8hpp" startline="108" endline="112">setup_matrices</referencedby>
+        <referencedby refid="classlbann_1_1generic__target__layer_1a9cbe476f3e447bc91e2834921ca7da9f" compoundref="generic__target__layer_8hpp" startline="300" endline="300">get_ground_truth</referencedby>
+        <referencedby refid="classlbann_1_1reconstruction__layer_1ad33ec2cccf89b317e22ec73b1761e427" compoundref="reconstruction_8hpp" startline="86" endline="88">lbann::reconstruction_layer&lt; T_layout &gt;::fp_compute</referencedby>
+      </memberdef>
+      </sectiondef>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a9b82afdbd6bb2671b0fde30c0116ada5" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>lbann::generic_target_layer::generic_target_layer</definition>
+        <argsstring>(lbann_comm *comm, generic_input_layer *input_layer, std::map&lt; execution_mode, generic_data_reader *&gt; data_readers, bool for_regression=false)</argsstring>
+        <name>generic_target_layer</name>
+        <param>
+          <type><ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref> *</type>
+          <declname>comm</declname>
+        </param>
+        <param>
+          <type><ref refid="classlbann_1_1generic__input__layer" kindref="compound">generic_input_layer</ref> *</type>
+          <declname>input_layer</declname>
+        </param>
+        <param>
+          <type>std::map&lt; <ref refid="base_8hpp_1a2781a159088df64ed7d47cc91c4dc0a8" kindref="member">execution_mode</ref>, <ref refid="classlbann_1_1generic__data__reader" kindref="compound">generic_data_reader</ref> *&gt;</type>
+          <declname>data_readers</declname>
+        </param>
+        <param>
+          <type>bool</type>
+          <declname>for_regression</declname>
+          <defval>false</defval>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="51" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="51" bodyend="58"/>
+        <references refid="classlbann_1_1Layer_1ac08f133dddd150319650e220ab9a523a" compoundref="layer_8hpp" startline="422">lbann::Layer::m_expected_num_child_layers</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a72f03053d39d371281339ae57e85f9aa" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>lbann::generic_target_layer::generic_target_layer</definition>
+        <argsstring>(const generic_target_layer &amp;other)</argsstring>
+        <name>generic_target_layer</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1generic__target__layer" kindref="compound">generic_target_layer</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="60" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="60" bodyend="66"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a7c15e3fe4f1fd7f0ccdbc4c3ed8c793e" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type><ref refid="classlbann_1_1generic__target__layer" kindref="compound">generic_target_layer</ref> &amp;</type>
+        <definition>generic_target_layer&amp; lbann::generic_target_layer::operator=</definition>
+        <argsstring>(const generic_target_layer &amp;other)</argsstring>
+        <name>operator=</name>
+        <param>
+          <type>const <ref refid="classlbann_1_1generic__target__layer" kindref="compound">generic_target_layer</ref> &amp;</type>
+          <declname>other</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+<para><xrefsect id="todo_1_todo000022"><xreftitle>Todo</xreftitle><xrefdescription><para>Should this be a shallow copy? </para></xrefdescription></xrefsect></para>        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="68" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="68" bodyend="81"/>
+        <references refid="classlbann_1_1Layer_1a00d8acde68fda2f38c4a39ef8c89234a" compoundref="layer_8cpp" startline="132" endline="189">lbann::Layer::operator=</references>
+        <references refid="classlbann_1_1generic__target__layer_1a84da1260e9feb4fbc3e6f2315e4cab4b" compoundref="generic__target__layer_8hpp" startline="44">m_paired_input_layer</references>
+        <references refid="classlbann_1_1generic__target__layer_1a8da650b94f50cc63fc90cd792fa50c3f" compoundref="generic__target__layer_8hpp" startline="45">io_buffer</references>
+        <references refid="classlbann_1_1generic__target__layer_1acb9ba351caf22b8e2378e4cd1e256da7" compoundref="generic__target__layer_8hpp" startline="48">m_ground_truth</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a899373681fe6ede57383da34fe4156c1" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type></type>
+        <definition>lbann::generic_target_layer::~generic_target_layer</definition>
+        <argsstring>() override</argsstring>
+        <name>~generic_target_layer</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="84" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="84" bodyend="87"/>
+        <references refid="classlbann_1_1generic__target__layer_1a8da650b94f50cc63fc90cd792fa50c3f" compoundref="generic__target__layer_8hpp" startline="45">io_buffer</references>
+        <references refid="classlbann_1_1generic__target__layer_1acb9ba351caf22b8e2378e4cd1e256da7" compoundref="generic__target__layer_8hpp" startline="48">m_ground_truth</references>
+        <references refid="classlbann_1_1generic__target__layer_1a46f2192139bd8cec23a20e1c9b67869d">initialize_io_buffer</references>
+        <references refid="file__io_8cpp_1ab048c6f9fcbcfaa57ce68b00263dbebe" compoundref="file__io_8cpp" startline="44">comm</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a46f2192139bd8cec23a20e1c9b67869d" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <templateparamlist>
+          <param>
+            <type>typename T_io_buffer</type>
+          </param>
+        </templateparamlist>
+        <type>void</type>
+        <definition>void lbann::generic_target_layer::initialize_io_buffer</definition>
+        <argsstring>(lbann_comm *comm, int num_parallel_readers, std::map&lt; execution_mode, generic_data_reader *&gt; data_readers)</argsstring>
+        <name>initialize_io_buffer</name>
+        <param>
+          <type><ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref> *</type>
+          <declname>comm</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>num_parallel_readers</declname>
+        </param>
+        <param>
+          <type>std::map&lt; <ref refid="base_8hpp_1a2781a159088df64ed7d47cc91c4dc0a8" kindref="member">execution_mode</ref>, <ref refid="classlbann_1_1generic__data__reader" kindref="compound">generic_data_reader</ref> *&gt;</type>
+          <declname>data_readers</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="90" column="1"/>
+        <referencedby refid="classlbann_1_1generic__target__layer_1a899373681fe6ede57383da34fe4156c1" compoundref="generic__target__layer_8hpp" startline="84" endline="87">~generic_target_layer</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a4ffc26f13661686fdf7f8482beef79d4" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="non-virtual">
+        <type><ref refid="classlbann_1_1generic__input__layer" kindref="compound">generic_input_layer</ref> *</type>
+        <definition>generic_input_layer* lbann::generic_target_layer::get_paired_input_layer</definition>
+        <argsstring>() const</argsstring>
+        <name>get_paired_input_layer</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="92" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="92" bodyend="94"/>
+        <references refid="classlbann_1_1generic__target__layer_1a84da1260e9feb4fbc3e6f2315e4cab4b" compoundref="generic__target__layer_8hpp" startline="44">m_paired_input_layer</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1ab1bf1a639db82f2dd6ef3994f2269ec2" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void lbann::generic_target_layer::set_paired_input_layer</definition>
+        <argsstring>(generic_input_layer *input_layer)</argsstring>
+        <name>set_paired_input_layer</name>
+        <param>
+          <type><ref refid="classlbann_1_1generic__input__layer" kindref="compound">generic_input_layer</ref> *</type>
+          <declname>input_layer</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="96" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="96" bodyend="98"/>
+        <referencedby refid="namespacelbann_1_1proto_1_1anonymous__namespace_02layer__graph__factory_8cpp_03_1a049fcca970d819d3c08bfdf71883de5c" compoundref="layer__graph__factory_8cpp" startline="64" endline="96">lbann::proto::anonymous_namespace{layer_graph_factory.cpp}::setup_target_pointers</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1aa2db5ccc0bbd40f081c8ff4501f3fc29" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>std::string</type>
+        <definition>std::string lbann::generic_target_layer::get_description</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_description</name>
+        <reimplements refid="classlbann_1_1Layer_1acc0803d3428914ca1eb5988c4309174a">get_description</reimplements>
+        <reimplementedby refid="classlbann_1_1reconstruction__layer_1a738c3f06ea3cee1e8b11672fde6b594e">get_description</reimplementedby>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Returns description of ctor params </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="101" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="101" bodyend="106"/>
+        <references refid="classlbann_1_1generic__target__layer_1ad6ea9a43254664c75aa06e8e5c1d7e8c" compoundref="generic__target__layer_8hpp" startline="255" endline="257">get_topo_description</references>
+        <references refid="classlbann_1_1generic__io__buffer_1adc77c0a280f8a200a8d8495c3a371ebb">lbann::generic_io_buffer::get_type</references>
+        <references refid="classlbann_1_1Layer_1ae3f4a5602df821f4221614b1e3782dc1" compoundref="layer_8cpp" startline="1205" endline="1216">lbann::Layer::get_data_layout_string</references>
+        <references refid="classlbann_1_1Layer_1a5dfb66e81fc085997402a5e2241316bd">lbann::Layer::get_data_layout</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1af8bcdbd313c9793187fe6e53396e3356" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::generic_target_layer::setup_matrices</definition>
+        <argsstring>(const El::Grid &amp;grid) override</argsstring>
+        <name>setup_matrices</name>
+        <reimplements refid="classlbann_1_1Layer_1a57bbe21131dc00ab5cf9ea5e3656808e">setup_matrices</reimplements>
+        <param>
+          <type>const <ref refid="base_8hpp_1a9951bb1719d534e0401b1f06cad19eab" kindref="member">El::Grid</ref> &amp;</type>
+          <declname>grid</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Instantiate distributed matrices. If the layer has already been setup, this function should destroy all matrices and reinstantiate them. However, it is not guaranteed that derived classes will obey this behavior. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="108" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="108" bodyend="112"/>
+        <references refid="classlbann_1_1Layer_1a57bbe21131dc00ab5cf9ea5e3656808e" compoundref="layer_8cpp" startline="580" endline="598">lbann::Layer::setup_matrices</references>
+        <references refid="classlbann_1_1generic__target__layer_1acb9ba351caf22b8e2378e4cd1e256da7" compoundref="generic__target__layer_8hpp" startline="48">m_ground_truth</references>
+        <references refid="classlbann_1_1Layer_1a45853df73a2e72bfaa774665a0f37ed7" compoundref="layer_8cpp" startline="373" endline="375">lbann::Layer::get_prev_activations</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a3a970c1b23f7367276f7061563fc8b65" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::generic_target_layer::setup_dims</definition>
+        <argsstring>() override</argsstring>
+        <name>setup_dims</name>
+        <reimplements refid="classlbann_1_1Layer_1a90fce1b06c1f2abb480e18cfe08a9746">setup_dims</reimplements>
+        <reimplementedby refid="classlbann_1_1reconstruction__layer_1a3abb27b670b5c57f2a6b1d669a7de508">setup_dims</reimplementedby>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Setup tensor dimensions Called by the setup function. The base method sets the dimensions of the activation tensors equal to the dimensions of the first previous activation tensor. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="114" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="114" bodyend="125"/>
+        <references refid="classlbann_1_1Layer_1a90fce1b06c1f2abb480e18cfe08a9746" compoundref="layer_8cpp" startline="535" endline="554">lbann::Layer::setup_dims</references>
+        <references refid="classlbann_1_1io__layer_1a61f2e00334c820235795154492876476" compoundref="io__layer_8hpp" startline="180" endline="182">lbann::io_layer::is_for_regression</references>
+        <references refid="classlbann_1_1Layer_1a6b5ebc8a7d9329d8a773ed787e7b41d8" compoundref="layer_8hpp" startline="365">lbann::Layer::m_num_neurons</references>
+        <references refid="classlbann_1_1generic__target__layer_1a55c3e1bcb3e4611c379b1082183b3e66" compoundref="generic__target__layer_8hpp" startline="273" endline="275">get_linearized_response_size</references>
+        <references refid="classlbann_1_1Layer_1adfd6178d21498c9095cd947ae1eb2d6a" compoundref="layer_8hpp" startline="367">lbann::Layer::m_num_neuron_dims</references>
+        <references refid="classlbann_1_1Layer_1abb34bb8031f57a483e2e327a5f229f48" compoundref="layer_8hpp" startline="363">lbann::Layer::m_neuron_dims</references>
+        <references refid="classlbann_1_1generic__target__layer_1a8a266291fb01fbcec5cac5fefdef56eb" compoundref="generic__target__layer_8hpp" startline="269" endline="271">get_linearized_label_size</references>
+        <referencedby refid="classlbann_1_1reconstruction__layer_1a3abb27b670b5c57f2a6b1d669a7de508" compoundref="reconstruction_8hpp" startline="70" endline="82">lbann::reconstruction_layer&lt; T_layout &gt;::setup_dims</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a73b35ee4dcb97a166369426d975596b2" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::generic_target_layer::setup_data</definition>
+        <argsstring>() override</argsstring>
+        <name>setup_data</name>
+        <reimplements refid="classlbann_1_1Layer_1a50a89f8a68762c677d48efe384676e81">setup_data</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Setup layer data. Called by the setup function. The base method sets the previous activation, activation, previous error signal, and error signal matrices to zero matrices with the proper dimensions. Matrix buffers are pinned if needed for GPU transfers. </para>        </detaileddescription>
+        <inbodydescription>
+<para>Note that reconstruction layers do not have io_buffers </para>        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="127" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="127" bodyend="133"/>
+        <references refid="classlbann_1_1Layer_1a50a89f8a68762c677d48efe384676e81" compoundref="layer_8cpp" startline="600" endline="635">lbann::Layer::setup_data</references>
+        <references refid="classlbann_1_1Layer_1a3d9315e99574166f2f33e37b572021d2" compoundref="layer_8hpp" startline="425">lbann::Layer::m_model</references>
+        <references refid="classlbann_1_1model_1a8c311798ff4acaeafdfbf85162ba5084" compoundref="model_8hpp" startline="161" endline="163">lbann::model::get_max_mini_batch_size</references>
+        <references refid="classlbann_1_1generic__io__buffer_1a00f3920147f7f19eceb5336bd6ddb421">lbann::generic_io_buffer::setup_data</references>
+        <references refid="classlbann_1_1Layer_1a6b5ebc8a7d9329d8a773ed787e7b41d8" compoundref="layer_8hpp" startline="365">lbann::Layer::m_num_neurons</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a35375f4cf914ba5a308fdbd98c589408" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::generic_target_layer::check_setup</definition>
+        <argsstring>() override</argsstring>
+        <name>check_setup</name>
+        <reimplements refid="classlbann_1_1Layer_1aeec1c710c3d53b5e43a4d4f67b0a21b2">check_setup</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Check that the setup is reasonable. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="135" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="135" bodyend="145"/>
+        <references refid="classlbann_1_1Layer_1aeec1c710c3d53b5e43a4d4f67b0a21b2" compoundref="layer_8cpp" startline="694" endline="763">lbann::Layer::check_setup</references>
+        <references refid="classlbann_1_1Layer_1ac7b30f4e28d58204bfcbb76886f9136d" compoundref="layer_8hpp" startline="374">lbann::Layer::m_num_prev_neurons</references>
+        <references refid="classlbann_1_1Layer_1a6b5ebc8a7d9329d8a773ed787e7b41d8" compoundref="layer_8hpp" startline="365">lbann::Layer::m_num_neurons</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1af89a8227784c005354bf937ec887a7ed" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::generic_target_layer::fp_setup_data</definition>
+        <argsstring>(int mini_batch_size) override</argsstring>
+        <name>fp_setup_data</name>
+        <reimplements refid="classlbann_1_1Layer_1af311d901a5f71e4c749454647e9fd9c7">fp_setup_data</reimplements>
+        <param>
+          <type>int</type>
+          <declname>mini_batch_size</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Setup data for forward propagation. Base method gets previous activations from parent layers and resizes activations for the current mini-batch size. </para>        </detaileddescription>
+        <inbodydescription>
+<para>Note that reconstruction layers do not have io_buffers </para>        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="147" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="147" bodyend="154"/>
+        <references refid="classlbann_1_1Layer_1af311d901a5f71e4c749454647e9fd9c7" compoundref="layer_8cpp" startline="867" endline="943">lbann::Layer::fp_setup_data</references>
+        <references refid="classlbann_1_1Layer_1a27112eb70bbfbd7f3c3e749960400dec" compoundref="layer_8hpp" startline="165" endline="167">lbann::Layer::get_num_prev_neurons</references>
+        <references refid="classlbann_1_1generic__io__buffer_1af84c26ab5ee77d1d9ed9ea5d62823815">lbann::generic_io_buffer::set_local_matrix_bypass</references>
+        <references refid="classlbann_1_1generic__io__buffer_1a458d9bf722effce4177a0ac0aee9124f">lbann::generic_io_buffer::set_std_matrix_view</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a57a60f5a28c9fb78d5151801123d4dba" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::generic_target_layer::fp_compute</definition>
+        <argsstring>() override</argsstring>
+        <name>fp_compute</name>
+        <reimplements refid="classlbann_1_1Layer_1a523319dd1bd87a0612afa1912bb5aad7">fp_compute</reimplements>
+        <reimplementedby refid="classlbann_1_1reconstruction__layer_1ad33ec2cccf89b317e22ec73b1761e427">fp_compute</reimplementedby>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Perform the computation for the forward propagation step. </para>        </detaileddescription>
+        <inbodydescription>
+<para>Only update the number of samples processed by this parallel reader, when it is the current root</para><para><xrefsect id="todo_1_todo000023"><xreftitle>Todo</xreftitle><xrefdescription><para>should this distribute the entire matrix even if there is only a partial mini-batch </para></xrefdescription></xrefsect></para>        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="156" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="156" bodyend="183"/>
+        <references refid="classlbann_1_1Layer_1a3d9315e99574166f2f33e37b572021d2" compoundref="layer_8hpp" startline="425">lbann::Layer::m_model</references>
+        <references refid="classlbann_1_1model_1addb40597cf29aa6d31b6a7d09ef48608" compoundref="model_8hpp" startline="149" endline="151">lbann::model::get_execution_mode</references>
+        <references refid="classlbann_1_1generic__io__buffer_1af9fc2100d41328fe399acf7bced950d7">lbann::generic_io_buffer::fetch_to_local_matrix</references>
+        <references refid="classlbann_1_1generic__input__layer_1a5715a966647e8cc92489f9e1950b2d28" compoundref="generic__input__layer_8hpp" startline="256" endline="275">lbann::generic_input_layer::get_data_reader</references>
+        <references refid="classlbann_1_1generic__target__layer_1a0dbe5fc5203e15ddcf8348daf2f697c5" compoundref="generic__target__layer_8hpp" startline="237" endline="239">update_num_samples_processed</references>
+        <references refid="classlbann_1_1model_1a3eaad8fd538b99ecab9afca6dc3327fd" compoundref="model_8hpp" startline="157" endline="159">lbann::model::get_current_mini_batch_size</references>
+        <references refid="classlbann_1_1distributed__io__buffer_1a3a770ec2314313761d6f0eccdb9dc09b" compoundref="distributed__io__buffer_8cpp" startline="61" endline="88">lbann::distributed_io_buffer::distribute_from_local_matrix</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1ab29b31c81b115acd7e01de25ef190b99" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::generic_target_layer::bp_compute</definition>
+        <argsstring>() override</argsstring>
+        <name>bp_compute</name>
+        <reimplements refid="classlbann_1_1Layer_1a7442e01f9ee1294df2de811efcf5171e">bp_compute</reimplements>
+        <reimplementedby refid="classlbann_1_1reconstruction__layer_1a58408a14bfe5212b12243640ed284744">bp_compute</reimplementedby>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Perform the computation for the backward propagation step. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="185" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="185" bodyend="185"/>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a43f4de7c1846b605aa9bb6daf9338c78" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type>bool</type>
+        <definition>bool lbann::generic_target_layer::update_compute</definition>
+        <argsstring>() override</argsstring>
+        <name>update_compute</name>
+        <reimplements refid="classlbann_1_1Layer_1a70e08fc96a612f67ade6ba3809536d85">update_compute</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Perform the computation for the update step. Returns false if the layer must reset for a new training epoch. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="187" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="187" bodyend="193"/>
+        <references refid="classlbann_1_1generic__io__buffer_1a9a038d40aec50dbc24c0abe21ad0c0a9">lbann::generic_io_buffer::is_data_set_processed</references>
+        <references refid="classlbann_1_1generic__input__layer_1a5715a966647e8cc92489f9e1950b2d28" compoundref="generic__input__layer_8hpp" startline="256" endline="275">lbann::generic_input_layer::get_data_reader</references>
+        <references refid="classlbann_1_1Layer_1a3d9315e99574166f2f33e37b572021d2" compoundref="layer_8hpp" startline="425">lbann::Layer::m_model</references>
+        <references refid="classlbann_1_1model_1addb40597cf29aa6d31b6a7d09ef48608" compoundref="model_8hpp" startline="149" endline="151">lbann::model::get_execution_mode</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1af2a0f4313863a029263efd0fced40571" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type><ref refid="classlbann_1_1dataset" kindref="compound">dataset</ref> &amp;</type>
+        <definition>dataset&amp; lbann::generic_target_layer::get_dataset</definition>
+        <argsstring>(execution_mode m) override</argsstring>
+        <name>get_dataset</name>
+        <reimplements refid="classlbann_1_1io__layer_1a027122c10603ede2ab9be779bad135f8">get_dataset</reimplements>
+        <param>
+          <type><ref refid="base_8hpp_1a2781a159088df64ed7d47cc91c4dc0a8" kindref="member">execution_mode</ref></type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Return the dataset for the given execution mode. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="205" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="205" bodyend="207"/>
+        <references refid="classlbann_1_1generic__input__layer_1af5699540797c22d8846028e578a6fc59" compoundref="generic__input__layer_8hpp" startline="403" endline="417">lbann::generic_input_layer::get_dataset</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a76569f34b5af75d6b822fb3349f7406f" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>const <ref refid="classlbann_1_1dataset" kindref="compound">dataset</ref> &amp;</type>
+        <definition>const dataset&amp; lbann::generic_target_layer::get_dataset</definition>
+        <argsstring>(execution_mode m) const override</argsstring>
+        <name>get_dataset</name>
+        <reimplements refid="classlbann_1_1io__layer_1ac46dfddf41dc6915db433fe269b53770">get_dataset</reimplements>
+        <param>
+          <type><ref refid="base_8hpp_1a2781a159088df64ed7d47cc91c4dc0a8" kindref="member">execution_mode</ref></type>
+          <declname>m</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="209" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="209" bodyend="211"/>
+        <references refid="classlbann_1_1generic__input__layer_1af5699540797c22d8846028e578a6fc59" compoundref="generic__input__layer_8hpp" startline="403" endline="417">lbann::generic_input_layer::get_dataset</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a0008630554477f39ad5ec950bf803876" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type><ref refid="classlbann_1_1dataset" kindref="compound">dataset</ref> &amp;</type>
+        <definition>dataset&amp; lbann::generic_target_layer::select_dataset</definition>
+        <argsstring>() override</argsstring>
+        <name>select_dataset</name>
+        <reimplements refid="classlbann_1_1io__layer_1a66acbfb9c03a2e89a751b420416ae3bf">select_dataset</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Return the dataset associated with the current execution mode. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="216" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="216" bodyend="216"/>
+        <references refid="classlbann_1_1generic__input__layer_1a654365ee97a64c75a547cfb7ef329304" compoundref="generic__input__layer_8hpp" startline="438" endline="438">lbann::generic_input_layer::select_dataset</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1ac83761609177fc272fa9c2fe098d4676" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>const <ref refid="classlbann_1_1dataset" kindref="compound">dataset</ref> &amp;</type>
+        <definition>const dataset&amp; lbann::generic_target_layer::select_dataset</definition>
+        <argsstring>() const override</argsstring>
+        <name>select_dataset</name>
+        <reimplements refid="classlbann_1_1io__layer_1abbbeb6ca3e1d95b5c35dd9bb499bdd2d">select_dataset</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="217" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="217" bodyend="217"/>
+        <references refid="classlbann_1_1generic__input__layer_1a654365ee97a64c75a547cfb7ef329304" compoundref="generic__input__layer_8hpp" startline="438" endline="438">lbann::generic_input_layer::select_dataset</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a22374687112c04dd6e0e35b94fe0e46c" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type><ref refid="classlbann_1_1dataset" kindref="compound">dataset</ref> *</type>
+        <definition>dataset* lbann::generic_target_layer::select_first_valid_dataset</definition>
+        <argsstring>() override</argsstring>
+        <name>select_first_valid_dataset</name>
+        <reimplements refid="classlbann_1_1io__layer_1a7dbc671fd5a81094854a4d865f7631ce">select_first_valid_dataset</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Return the first dataset with a valid (non-null) datareader. Returns null if none are valid. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="223" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="223" bodyend="225"/>
+        <references refid="classlbann_1_1generic__input__layer_1a777aa11816a518098212408b569b6fb8" compoundref="generic__input__layer_8hpp" startline="445" endline="455">lbann::generic_input_layer::select_first_valid_dataset</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a9591bdc69e3de9c10fbf71d1faef917a" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type><ref refid="classlbann_1_1generic__data__reader" kindref="compound">generic_data_reader</ref> *</type>
+        <definition>generic_data_reader* lbann::generic_target_layer::select_data_reader</definition>
+        <argsstring>() const override</argsstring>
+        <name>select_data_reader</name>
+        <reimplements refid="classlbann_1_1io__layer_1aed46cd991ff11bad08933dc61492e26f">select_data_reader</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Return the data reader associated with the current execution mode. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="230" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="230" bodyend="232"/>
+        <references refid="classlbann_1_1generic__input__layer_1a9783805369ec7cfe5ce61c81baa5d2e2" compoundref="generic__input__layer_8hpp" startline="460" endline="462">lbann::generic_input_layer::select_data_reader</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a0dbe5fc5203e15ddcf8348daf2f697c5" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type>long</type>
+        <definition>long lbann::generic_target_layer::update_num_samples_processed</definition>
+        <argsstring>(long num_samples) override</argsstring>
+        <name>update_num_samples_processed</name>
+        <reimplements refid="classlbann_1_1io__layer_1a4ed831842ad78aaebfc9519c51268b95">update_num_samples_processed</reimplements>
+        <param>
+          <type>long</type>
+          <declname>num_samples</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Update the number of samples processed for the current execution mode. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="237" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="237" bodyend="239"/>
+        <references refid="classlbann_1_1generic__input__layer_1a0c2f123432ec6af168012cc8699a1d3f" compoundref="generic__input__layer_8hpp" startline="467" endline="471">lbann::generic_input_layer::update_num_samples_processed</references>
+        <referencedby refid="classlbann_1_1generic__target__layer_1a57a60f5a28c9fb78d5151801123d4dba" compoundref="generic__target__layer_8hpp" startline="156" endline="183">fp_compute</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a9673d3fb3db6ecaae979886178b785ea" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type>El::Matrix&lt; El::Int &gt; *</type>
+        <definition>El::Matrix&lt;El::Int&gt;* lbann::generic_target_layer::get_sample_indices_per_mb</definition>
+        <argsstring>() override</argsstring>
+        <name>get_sample_indices_per_mb</name>
+        <reimplements refid="classlbann_1_1io__layer_1ab319ad5697e002072ee03e8c64523fb5">get_sample_indices_per_mb</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Return the sample indices fetched in the current mini-batch. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="244" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="244" bodyend="246"/>
+        <references refid="classlbann_1_1generic__input__layer_1a749741781204b17c8ca172a9a405a90e" compoundref="generic__input__layer_8hpp" startline="476" endline="479">lbann::generic_input_layer::get_sample_indices_per_mb</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1abc0a5ec9761f3cebd34d3549d4681108" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>const std::vector&lt; int &gt;</type>
+        <definition>const std::vector&lt;int&gt; lbann::generic_target_layer::get_data_dims</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_data_dims</name>
+        <reimplements refid="classlbann_1_1io__layer_1a67feb9fd903ef4d2ca782bbe7860a413">get_data_dims</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Get the dimensions of the underlying data. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="251" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="251" bodyend="253"/>
+        <references refid="classlbann_1_1generic__input__layer_1a6008b13521d27d6139201fa374b088eb" compoundref="generic__input__layer_8hpp" startline="484" endline="491">lbann::generic_input_layer::get_data_dims</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1ad6ea9a43254664c75aa06e8e5c1d7e8c" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>std::string</type>
+        <definition>std::string lbann::generic_target_layer::get_topo_description</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_topo_description</name>
+        <reimplements refid="classlbann_1_1io__layer_1a955ab7100591d07d0758e8f95c6e50be">get_topo_description</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Get a human-readable description of the activation tensors. Activation tensors are stored in distributed matrices where each column corresponds to a mini-batch sample. Within each column, the data is packed w.r.t. the last tensor dimension, then w.r.t. the penultimate dimension, and so on. 3D tensors are assumed to be 2D images in NCHW format. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="255" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="255" bodyend="257"/>
+        <references refid="classlbann_1_1generic__input__layer_1a36d9962105ca89889e3f38f1c1801560" compoundref="generic__input__layer_8hpp" startline="493" endline="502">lbann::generic_input_layer::get_topo_description</references>
+        <referencedby refid="classlbann_1_1generic__target__layer_1aa2db5ccc0bbd40f081c8ff4501f3fc29" compoundref="generic__target__layer_8hpp" startline="101" endline="106">get_description</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a26376bcc04f9c8ec35ff99bd71de43d9" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>long</type>
+        <definition>long lbann::generic_target_layer::get_linearized_data_size</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_linearized_data_size</name>
+        <reimplements refid="classlbann_1_1io__layer_1ab061ec74d131699c7fd59b992bbe7036">get_linearized_data_size</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Get the linearized size of the underlying data. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="262" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="262" bodyend="264"/>
+        <references refid="classlbann_1_1generic__input__layer_1aca46cbf29ad2762e9329b46ab2ad1ae7" compoundref="generic__input__layer_8hpp" startline="507" endline="535">lbann::generic_input_layer::get_linearized_data_size</references>
+        <referencedby refid="namespacelbann_1_1proto_1a7e4b0a66836712b1713ae4a121453cde" compoundref="layer__factory_8cpp" startline="33" endline="374">lbann::proto::construct_layer</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a8a266291fb01fbcec5cac5fefdef56eb" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>long</type>
+        <definition>long lbann::generic_target_layer::get_linearized_label_size</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_linearized_label_size</name>
+        <reimplements refid="classlbann_1_1io__layer_1a72a9a1411892b6f03de8b8f9923d77a6">get_linearized_label_size</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Get the linearized size of the labels for the underlying data. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="269" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="269" bodyend="271"/>
+        <references refid="classlbann_1_1generic__input__layer_1ab6c24db7e2b8e73e7d7894e51246dc5e" compoundref="generic__input__layer_8hpp" startline="540" endline="568">lbann::generic_input_layer::get_linearized_label_size</references>
+        <referencedby refid="classlbann_1_1generic__target__layer_1a3a970c1b23f7367276f7061563fc8b65" compoundref="generic__target__layer_8hpp" startline="114" endline="125">setup_dims</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a55c3e1bcb3e4611c379b1082183b3e66" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>long</type>
+        <definition>long lbann::generic_target_layer::get_linearized_response_size</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_linearized_response_size</name>
+        <reimplements refid="classlbann_1_1io__layer_1acbc2723e37e911eef6a38caa02c9e708">get_linearized_response_size</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="273" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="273" bodyend="275"/>
+        <references refid="classlbann_1_1generic__input__layer_1a6e5e587aa5b32bdfd2dd579a2746885d" compoundref="generic__input__layer_8hpp" startline="570" endline="598">lbann::generic_input_layer::get_linearized_response_size</references>
+        <referencedby refid="classlbann_1_1generic__target__layer_1a3a970c1b23f7367276f7061563fc8b65" compoundref="generic__target__layer_8hpp" startline="114" endline="125">setup_dims</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1abff09be96adbd480f35fcfba3c6cfc5a" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>long</type>
+        <definition>long lbann::generic_target_layer::get_num_samples_trained</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_num_samples_trained</name>
+        <reimplements refid="classlbann_1_1io__layer_1ad25bf7559a27065c39d0c1d2f849347f">get_num_samples_trained</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="277" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="277" bodyend="279"/>
+        <references refid="classlbann_1_1generic__input__layer_1a95a7a5ad2a6089ffb9197632015e6062" compoundref="generic__input__layer_8hpp" startline="600" endline="602">lbann::generic_input_layer::get_num_samples_trained</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a0187134110cd8a641e15f86e010b75a7" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>long</type>
+        <definition>long lbann::generic_target_layer::get_num_samples_tested</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_num_samples_tested</name>
+        <reimplements refid="classlbann_1_1io__layer_1a2b2c9d3c1efce23840ef0c88ec566616">get_num_samples_tested</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="280" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="280" bodyend="282"/>
+        <references refid="classlbann_1_1generic__input__layer_1a68b162bcc5fdfe2bb7279eb5d83cf884" compoundref="generic__input__layer_8hpp" startline="603" endline="605">lbann::generic_input_layer::get_num_samples_tested</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a857306496e1c55cb15cd81301edb010f" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>long</type>
+        <definition>long lbann::generic_target_layer::get_total_num_training_samples</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_total_num_training_samples</name>
+        <reimplements refid="classlbann_1_1io__layer_1a744fe02208657194120714387b49cb28">get_total_num_training_samples</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="283" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="283" bodyend="285"/>
+        <references refid="classlbann_1_1generic__input__layer_1a5fc757d16e26739cd10e5eabafa6a32b" compoundref="generic__input__layer_8hpp" startline="606" endline="608">lbann::generic_input_layer::get_total_num_training_samples</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1af41c92981e0a1731d3dee9b1b49201db" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>long</type>
+        <definition>long lbann::generic_target_layer::get_total_num_testing_samples</definition>
+        <argsstring>() const override</argsstring>
+        <name>get_total_num_testing_samples</name>
+        <reimplements refid="classlbann_1_1io__layer_1a8c1575ad108ffbdf2a553a44509211e6">get_total_num_testing_samples</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="286" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="286" bodyend="288"/>
+        <references refid="classlbann_1_1generic__input__layer_1ab5b5318cf000fbdaf35a3545335b60b2" compoundref="generic__input__layer_8hpp" startline="609" endline="611">lbann::generic_input_layer::get_total_num_testing_samples</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a9bdeadd84f0b4f31b755fdd338492b1a" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>bool</type>
+        <definition>bool lbann::generic_target_layer::at_new_epoch</definition>
+        <argsstring>() const override</argsstring>
+        <name>at_new_epoch</name>
+        <reimplements refid="classlbann_1_1io__layer_1a0cedc21bf38c1e3d60a93b41981a1626">at_new_epoch</reimplements>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="290" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="290" bodyend="292"/>
+        <references refid="classlbann_1_1generic__input__layer_1a8b375ab97f38166872e4aa9baeca0715" compoundref="generic__input__layer_8hpp" startline="613" endline="616">lbann::generic_input_layer::at_new_epoch</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a0ae18b3b410c3b6c1a5b34a3547ba4c5" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>bool</type>
+        <definition>bool lbann::generic_target_layer::is_execution_mode_valid</definition>
+        <argsstring>(execution_mode mode) const override</argsstring>
+        <name>is_execution_mode_valid</name>
+        <reimplements refid="classlbann_1_1io__layer_1a37e2f77a99ee44106ac7d9fd3a275dcc">is_execution_mode_valid</reimplements>
+        <param>
+          <type><ref refid="base_8hpp_1a2781a159088df64ed7d47cc91c4dc0a8" kindref="member">execution_mode</ref></type>
+          <declname>mode</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="294" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="294" bodyend="296"/>
+        <references refid="classlbann_1_1generic__input__layer_1a31082076a8aad937eef3cadc0b5e1b27" compoundref="generic__input__layer_8hpp" startline="618" endline="621">lbann::generic_input_layer::is_execution_mode_valid</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1ac0b88a705256ab06bbba6bbffbc7ebc1" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+        <definition>virtual AbsDistMat&amp; lbann::generic_target_layer::get_prediction</definition>
+        <argsstring>()</argsstring>
+        <name>get_prediction</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="298" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="298" bodyend="298"/>
+        <references refid="classlbann_1_1Layer_1a45853df73a2e72bfaa774665a0f37ed7" compoundref="layer_8cpp" startline="373" endline="375">lbann::Layer::get_prev_activations</references>
+        <referencedby refid="classlbann_1_1metric_1ab4e14cb4296c7b47719071b210448dec" compoundref="metric_8cpp" startline="105" endline="126">lbann::metric::evaluate</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a35de513f32f2db03587623d09ca3d3c9" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>const <ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+        <definition>virtual const AbsDistMat&amp; lbann::generic_target_layer::get_prediction</definition>
+        <argsstring>() const</argsstring>
+        <name>get_prediction</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="299" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="299" bodyend="299"/>
+        <references refid="classlbann_1_1Layer_1a45853df73a2e72bfaa774665a0f37ed7" compoundref="layer_8cpp" startline="373" endline="375">lbann::Layer::get_prev_activations</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a9cbe476f3e447bc91e2834921ca7da9f" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type><ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+        <definition>virtual AbsDistMat&amp; lbann::generic_target_layer::get_ground_truth</definition>
+        <argsstring>()</argsstring>
+        <name>get_ground_truth</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="300" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="300" bodyend="300"/>
+        <references refid="classlbann_1_1generic__target__layer_1acb9ba351caf22b8e2378e4cd1e256da7" compoundref="generic__target__layer_8hpp" startline="48">m_ground_truth</references>
+        <referencedby refid="classlbann_1_1metric_1ab4e14cb4296c7b47719071b210448dec" compoundref="metric_8cpp" startline="105" endline="126">lbann::metric::evaluate</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a073c3ea648d5ba040e3a4acaa1dcf480" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>const <ref refid="base_8hpp_1a9a697a504ae84010e7439ffec862b470" kindref="member">AbsDistMat</ref> &amp;</type>
+        <definition>virtual const AbsDistMat&amp; lbann::generic_target_layer::get_ground_truth</definition>
+        <argsstring>() const</argsstring>
+        <name>get_ground_truth</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="301" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="301" bodyend="301"/>
+        <references refid="classlbann_1_1generic__target__layer_1acb9ba351caf22b8e2378e4cd1e256da7" compoundref="generic__target__layer_8hpp" startline="48">m_ground_truth</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a0325a9703238ac0120893214fd0983b5" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type>std::vector&lt; <ref refid="classlbann_1_1Layer" kindref="compound">Layer</ref> * &gt;</type>
+        <definition>std::vector&lt;Layer*&gt; lbann::generic_target_layer::get_layer_pointers</definition>
+        <argsstring>() override</argsstring>
+        <name>get_layer_pointers</name>
+        <reimplements refid="classlbann_1_1Layer_1a9f94210cbb973f1df89ef649899094a1">get_layer_pointers</reimplements>
+        <reimplementedby refid="classlbann_1_1reconstruction__layer_1a52f5ebe2f2716b8cab5e768b1b82c3d0">get_layer_pointers</reimplementedby>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Get list of pointers to other layers. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="303" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="303" bodyend="307"/>
+        <references refid="classlbann_1_1Layer_1a9f94210cbb973f1df89ef649899094a1" compoundref="layer_8cpp" startline="1249" endline="1258">lbann::Layer::get_layer_pointers</references>
+        <referencedby refid="classlbann_1_1reconstruction__layer_1a52f5ebe2f2716b8cab5e768b1b82c3d0" compoundref="reconstruction_8hpp" startline="102" endline="106">lbann::reconstruction_layer&lt; T_layout &gt;::get_layer_pointers</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a1f8f722fadb1223b063c0917afd83b66" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type>void</type>
+        <definition>void lbann::generic_target_layer::set_layer_pointers</definition>
+        <argsstring>(std::vector&lt; Layer *&gt; layers) override</argsstring>
+        <name>set_layer_pointers</name>
+        <reimplements refid="classlbann_1_1Layer_1a001ea76cdd05e2d0d475f408f24702ee">set_layer_pointers</reimplements>
+        <reimplementedby refid="classlbann_1_1reconstruction__layer_1a663b2810780ee2b0817f611a00b0b07f">set_layer_pointers</reimplementedby>
+        <param>
+          <type>std::vector&lt; <ref refid="classlbann_1_1Layer" kindref="compound">Layer</ref> *&gt;</type>
+          <declname>layers</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para>Set list of pointers to other layers. </para>        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="309" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="309" bodyend="319"/>
+        <references refid="classlbann_1_1Layer_1a001ea76cdd05e2d0d475f408f24702ee" compoundref="layer_8cpp" startline="1260" endline="1275">lbann::Layer::set_layer_pointers</references>
+        <referencedby refid="classlbann_1_1reconstruction__layer_1a663b2810780ee2b0817f611a00b0b07f" compoundref="reconstruction_8hpp" startline="108" endline="112">lbann::reconstruction_layer&lt; T_layout &gt;::set_layer_pointers</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1aff8b79ff0392bd78c44a5a4f6b6ef549" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>bool</type>
+        <definition>bool lbann::generic_target_layer::saveToCheckpoint</definition>
+        <argsstring>(int fd, const char *filename, size_t *bytes) const override</argsstring>
+        <name>saveToCheckpoint</name>
+        <reimplements refid="classlbann_1_1Layer_1a994a4beabbace598193b1611eb06b07e">saveToCheckpoint</reimplements>
+        <param>
+          <type>int</type>
+          <declname>fd</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>filename</declname>
+        </param>
+        <param>
+          <type>size_t *</type>
+          <declname>bytes</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+<para><xrefsect id="todo_1_todo000024"><xreftitle>Todo</xreftitle><xrefdescription><para>should probably save m_shared_data_reader </para></xrefdescription></xrefsect></para>        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="325" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="325" bodyend="328"/>
+        <references refid="classlbann_1_1Layer_1a994a4beabbace598193b1611eb06b07e" compoundref="layer_8cpp" startline="822" endline="828">lbann::Layer::saveToCheckpoint</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a2d9f6ac689171acf0caceed3ed4f7ef9" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type>bool</type>
+        <definition>bool lbann::generic_target_layer::loadFromCheckpoint</definition>
+        <argsstring>(int fd, const char *filename, size_t *bytes) override</argsstring>
+        <name>loadFromCheckpoint</name>
+        <reimplements refid="classlbann_1_1Layer_1a7ac9335d75d817fc2d5cf171da9b7e22">loadFromCheckpoint</reimplements>
+        <param>
+          <type>int</type>
+          <declname>fd</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>filename</declname>
+        </param>
+        <param>
+          <type>size_t *</type>
+          <declname>bytes</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+<para><xrefsect id="todo_1_todo000025"><xreftitle>Todo</xreftitle><xrefdescription><para>should probably save m_shared_data_reader </para></xrefdescription></xrefsect></para>        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="330" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="330" bodyend="333"/>
+        <references refid="classlbann_1_1Layer_1a7ac9335d75d817fc2d5cf171da9b7e22" compoundref="layer_8cpp" startline="830" endline="837">lbann::Layer::loadFromCheckpoint</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a10a0cd1cc77c97e62f14a77ff380559a" prot="public" static="no" const="yes" explicit="no" inline="yes" virt="virtual">
+        <type>bool</type>
+        <definition>bool lbann::generic_target_layer::save_to_checkpoint_shared</definition>
+        <argsstring>(persist &amp;p, bool val_end) const override</argsstring>
+        <name>save_to_checkpoint_shared</name>
+        <reimplements refid="classlbann_1_1Layer_1afce0efa0f1c8f3b1c61069536b2fa8cc">save_to_checkpoint_shared</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1persist" kindref="compound">persist</ref> &amp;</type>
+          <declname>p</declname>
+        </param>
+        <param>
+          <type>bool</type>
+          <declname>val_end</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="335" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="335" bodyend="343"/>
+        <references refid="classlbann_1_1Layer_1afce0efa0f1c8f3b1c61069536b2fa8cc" compoundref="layer_8cpp" startline="839" endline="844">lbann::Layer::save_to_checkpoint_shared</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1af7d73f9e77b99b6a8b204cbda512726f" prot="public" static="no" const="no" explicit="no" inline="yes" virt="virtual">
+        <type>bool</type>
+        <definition>bool lbann::generic_target_layer::load_from_checkpoint_shared</definition>
+        <argsstring>(persist &amp;p) override</argsstring>
+        <name>load_from_checkpoint_shared</name>
+        <reimplements refid="classlbann_1_1Layer_1a9e262970ecc64166e8b6610e2502ad30">load_from_checkpoint_shared</reimplements>
+        <param>
+          <type><ref refid="classlbann_1_1persist" kindref="compound">persist</ref> &amp;</type>
+          <declname>p</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="345" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="345" bodyend="363"/>
+        <references refid="classlbann_1_1Layer_1a9e262970ecc64166e8b6610e2502ad30" compoundref="layer_8cpp" startline="846" endline="852">lbann::Layer::load_from_checkpoint_shared</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a01a04bc2f6e6440082a1255b0de32d95" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <templateparamlist>
+        </templateparamlist>
+        <type>void</type>
+        <definition>void lbann::generic_target_layer::initialize_io_buffer</definition>
+        <argsstring>(lbann_comm *comm, int num_parallel_readers, std::map&lt; execution_mode, generic_data_reader *&gt; data_readers)</argsstring>
+        <name>initialize_io_buffer</name>
+        <param>
+          <type><ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref> *</type>
+          <declname>comm</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>num_parallel_readers</declname>
+        </param>
+        <param>
+          <type>std::map&lt; <ref refid="base_8hpp_1a2781a159088df64ed7d47cc91c4dc0a8" kindref="member">execution_mode</ref>, <ref refid="classlbann_1_1generic__data__reader" kindref="compound">generic_data_reader</ref> *&gt;</type>
+          <declname>data_readers</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="366" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="366" bodyend="368"/>
+        <references refid="classlbann_1_1generic__target__layer_1a8da650b94f50cc63fc90cd792fa50c3f" compoundref="generic__target__layer_8hpp" startline="45">io_buffer</references>
+      </memberdef>
+      <memberdef kind="function" id="classlbann_1_1generic__target__layer_1a01a04bc2f6e6440082a1255b0de32d95" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <templateparamlist>
+        </templateparamlist>
+        <type>void</type>
+        <definition>void lbann::generic_target_layer::initialize_io_buffer</definition>
+        <argsstring>(lbann_comm *comm, int num_parallel_readers, std::map&lt; execution_mode, generic_data_reader *&gt; data_readers)</argsstring>
+        <name>initialize_io_buffer</name>
+        <param>
+          <type><ref refid="classlbann_1_1lbann__comm" kindref="compound">lbann_comm</ref> *</type>
+          <declname>comm</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>num_parallel_readers</declname>
+        </param>
+        <param>
+          <type>std::map&lt; <ref refid="base_8hpp_1a2781a159088df64ed7d47cc91c4dc0a8" kindref="member">execution_mode</ref>, <ref refid="classlbann_1_1generic__data__reader" kindref="compound">generic_data_reader</ref> *&gt;</type>
+          <declname>data_readers</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="370" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="370" bodyend="372"/>
+        <references refid="classlbann_1_1generic__target__layer_1a8da650b94f50cc63fc90cd792fa50c3f" compoundref="generic__target__layer_8hpp" startline="45">io_buffer</references>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <inheritancegraph>
+      <node id="926">
+        <label>lbann::io_layer</label>
+        <link refid="classlbann_1_1io__layer"/>
+        <childnode refid="927" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="925">
+        <label>lbann::generic_target_layer</label>
+        <link refid="classlbann_1_1generic__target__layer"/>
+        <childnode refid="926" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="929">
+        <label>lbann::target_layer&lt; T_io_buffer, T_layout &gt;</label>
+        <link refid="classlbann_1_1target__layer"/>
+        <childnode refid="925" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="928">
+        <label>lbann::reconstruction_layer&lt; T_layout &gt;</label>
+        <link refid="classlbann_1_1reconstruction__layer"/>
+        <childnode refid="925" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="927">
+        <label>lbann::Layer</label>
+        <link refid="classlbann_1_1Layer"/>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="931">
+        <label>lbann::io_layer</label>
+        <link refid="classlbann_1_1io__layer"/>
+        <childnode refid="932" relation="public-inheritance">
+        </childnode>
+      </node>
+      <node id="944">
+        <label>lbann::generic_input_layer</label>
+        <link refid="classlbann_1_1generic__input__layer"/>
+        <childnode refid="931" relation="public-inheritance">
+        </childnode>
+        <childnode refid="945" relation="usage">
+          <edgelabel>m_training_dataset</edgelabel>
+          <edgelabel>m_validation_dataset</edgelabel>
+          <edgelabel>m_testing_dataset</edgelabel>
+        </childnode>
+        <childnode refid="941" relation="usage">
+          <edgelabel>io_buffer</edgelabel>
+        </childnode>
+      </node>
+      <node id="930">
+        <label>lbann::generic_target_layer</label>
+        <link refid="classlbann_1_1generic__target__layer"/>
+        <childnode refid="931" relation="public-inheritance">
+        </childnode>
+        <childnode refid="941" relation="usage">
+          <edgelabel>io_buffer</edgelabel>
+        </childnode>
+        <childnode refid="944" relation="usage">
+          <edgelabel>m_paired_input_layer</edgelabel>
+        </childnode>
+      </node>
+      <node id="934">
+        <label>lbann::model</label>
+        <link refid="classlbann_1_1model"/>
+        <childnode refid="935" relation="usage">
+          <edgelabel>m_default_optimizer</edgelabel>
+        </childnode>
+        <childnode refid="933" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="940" relation="usage">
+          <edgelabel>m_objective_function</edgelabel>
+        </childnode>
+      </node>
+      <node id="942">
+        <label>lbann::fetch_data_functor</label>
+        <link refid="classlbann_1_1fetch__data__functor"/>
+      </node>
+      <node id="935">
+        <label>lbann::optimizer</label>
+        <link refid="classlbann_1_1optimizer"/>
+        <childnode refid="933" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="936" relation="usage">
+          <edgelabel>m_cudnn</edgelabel>
+        </childnode>
+        <childnode refid="937" relation="usage">
+          <edgelabel>m_gradient_allreduce_req</edgelabel>
+        </childnode>
+        <childnode refid="938" relation="usage">
+          <edgelabel>m_weights</edgelabel>
+        </childnode>
+      </node>
+      <node id="936">
+        <label>lbann::cudnn::cudnn_manager</label>
+        <link refid="classlbann_1_1cudnn_1_1cudnn__manager"/>
+      </node>
+      <node id="939">
+        <label>lbann::weights_initializer</label>
+        <link refid="classlbann_1_1weights__initializer"/>
+        <childnode refid="933" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+      </node>
+      <node id="945">
+        <label>lbann::dataset</label>
+        <link refid="classlbann_1_1dataset"/>
+      </node>
+      <node id="941">
+        <label>lbann::generic_io_buffer</label>
+        <link refid="classlbann_1_1generic__io__buffer"/>
+        <childnode refid="942" relation="usage">
+          <edgelabel>fetch_data_fn</edgelabel>
+        </childnode>
+        <childnode refid="933" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="943" relation="usage">
+          <edgelabel>update_data_reader_fn</edgelabel>
+        </childnode>
+      </node>
+      <node id="932">
+        <label>lbann::Layer</label>
+        <link refid="classlbann_1_1Layer"/>
+        <childnode refid="933" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="934" relation="usage">
+          <edgelabel>m_model</edgelabel>
+        </childnode>
+        <childnode refid="936" relation="usage">
+          <edgelabel>m_cudnn</edgelabel>
+        </childnode>
+      </node>
+      <node id="938">
+        <label>lbann::weights</label>
+        <link refid="classlbann_1_1weights"/>
+        <childnode refid="935" relation="usage">
+          <edgelabel>m_optimizer</edgelabel>
+        </childnode>
+        <childnode refid="933" relation="usage">
+          <edgelabel>m_comm</edgelabel>
+        </childnode>
+        <childnode refid="939" relation="usage">
+          <edgelabel>m_initializer</edgelabel>
+        </childnode>
+        <childnode refid="936" relation="usage">
+          <edgelabel>m_cudnn</edgelabel>
+        </childnode>
+      </node>
+      <node id="933">
+        <label>lbann::lbann_comm</label>
+        <link refid="classlbann_1_1lbann__comm"/>
+      </node>
+      <node id="937">
+        <label>lbann::Al::request</label>
+        <link refid="structlbann_1_1Al_1_1request"/>
+      </node>
+      <node id="943">
+        <label>lbann::update_data_reader_functor</label>
+        <link refid="classlbann_1_1update__data__reader__functor"/>
+      </node>
+      <node id="940">
+        <label>lbann::objective_function</label>
+        <link refid="classlbann_1_1objective__function"/>
+      </node>
+    </collaborationgraph>
+    <location file="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" line="42" column="1" bodyfile="/Users/mckinney27/doxy-testbed/lbann/include/lbann/layers/io/target/generic_target_layer.hpp" bodystart="42" bodyend="364"/>
+    <listofallmembers>
+      <member refid="classlbann_1_1Layer_1ace0346ac56fd7ce7b6b44f27f224f35e" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>add_child_layer</name></member>
+      <member refid="classlbann_1_1Layer_1a326668ce624a9bcc719a463820b2e3a4" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>add_parent_layer</name></member>
+      <member refid="classlbann_1_1Layer_1a8d942eb2cd37c346edc5ff473e0494a2" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>add_to_error_signal</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a9bdeadd84f0b4f31b755fdd338492b1a" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>at_new_epoch</name></member>
+      <member refid="classlbann_1_1Layer_1a0a502d9218d7dbbfd10ebebb6f917033" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>back_prop</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1ab29b31c81b115acd7e01de25ef190b99" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>bp_compute</name></member>
+      <member refid="classlbann_1_1Layer_1af7312710c0b9ac6ebe327d0ffe22cbf0" prot="protected" virt="virtual"><scope>lbann::generic_target_layer</scope><name>bp_setup_data</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a35375f4cf914ba5a308fdbd98c589408" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>check_setup</name></member>
+      <member refid="classlbann_1_1Layer_1a040bf53e261b1ef796739c09b3362a3a" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>clear_child_layers</name></member>
+      <member refid="classlbann_1_1Layer_1aa1389a70b804debaac6953b3b1147593" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>clear_error_signals</name></member>
+      <member refid="classlbann_1_1Layer_1a7336909c78e438ba5332c6c1bddeadd2" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>clear_parent_layers</name></member>
+      <member refid="classlbann_1_1Layer_1af420f22bbac801c85483ade84588a23f" prot="public" virt="pure-virtual"><scope>lbann::generic_target_layer</scope><name>copy</name></member>
+      <member refid="classlbann_1_1Layer_1a2483ccd8a4406a6891f6176f1001b4e5" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>forward_prop</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a57a60f5a28c9fb78d5151801123d4dba" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>fp_compute</name></member>
+      <member refid="classlbann_1_1Layer_1a22d31298912405660ebb210c0d7c5373" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>fp_output_dims</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1af89a8227784c005354bf937ec887a7ed" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>fp_setup_data</name></member>
+      <member refid="classlbann_1_1Layer_1ad55c455dbae0d082cedfa68511709aae" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>freeze</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a9b82afdbd6bb2671b0fde30c0116ada5" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>generic_target_layer</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a72f03053d39d371281339ae57e85f9aa" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>generic_target_layer</name></member>
+      <member refid="classlbann_1_1Layer_1a1134b1a4385af199d7272c5aa827fa99" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_activations</name></member>
+      <member refid="classlbann_1_1Layer_1af69a4773804c6982e8acaf5810eaa150" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_activations</name></member>
+      <member refid="classlbann_1_1Layer_1a81f9f4fc956daf4838a7ed248427b1f3" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>get_bp_output</name></member>
+      <member refid="classlbann_1_1Layer_1aa0058c8ec4913efc3e4de5d6f61eb8db" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_child_layers</name></member>
+      <member refid="classlbann_1_1Layer_1a0ad6c5253a4545a7322766d586a4bd33" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_child_layers</name></member>
+      <member refid="classlbann_1_1Layer_1afc7bf4e2a61a6f47f9e1f185bf92439a" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_child_names</name></member>
+      <member refid="classlbann_1_1Layer_1a1b528e5872357a82176ee487596b363c" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_comm</name></member>
+      <member refid="classlbann_1_1Layer_1a63c694744d9360208642a35412a4e8ee" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_cudnn_manager</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1abc0a5ec9761f3cebd34d3549d4681108" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>get_data_dims</name></member>
+      <member refid="classlbann_1_1Layer_1a5dfb66e81fc085997402a5e2241316bd" prot="public" virt="pure-virtual"><scope>lbann::generic_target_layer</scope><name>get_data_layout</name></member>
+      <member refid="classlbann_1_1Layer_1ae3f4a5602df821f4221614b1e3782dc1" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_data_layout_string</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1af2a0f4313863a029263efd0fced40571" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>get_dataset</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a76569f34b5af75d6b822fb3349f7406f" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>get_dataset</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1aa2db5ccc0bbd40f081c8ff4501f3fc29" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>get_description</name></member>
+      <member refid="classlbann_1_1Layer_1adb561e140e0bb601f3c5a8ee053a71d2" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_error_signals</name></member>
+      <member refid="classlbann_1_1Layer_1ae09bc5a240e9042371203ba5ff19990c" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_error_signals</name></member>
+      <member refid="classlbann_1_1Layer_1aaeef8c7631204fc415a94dcdfbcfe93d" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_expected_num_child_layers</name></member>
+      <member refid="classlbann_1_1Layer_1aa30dbf20929aaa58b5be98b98217ca88" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_expected_num_parent_layers</name></member>
+      <member refid="classlbann_1_1Layer_1ac6b43c63399f717cc1a4a0a2007350f2" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>get_fp_output</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a9cbe476f3e447bc91e2834921ca7da9f" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>get_ground_truth</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a073c3ea648d5ba040e3a4acaa1dcf480" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>get_ground_truth</name></member>
+      <member refid="classlbann_1_1Layer_1af4a093d91552cf079217eb346bbb847f" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_layer_names</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a0325a9703238ac0120893214fd0983b5" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>get_layer_pointers</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a26376bcc04f9c8ec35ff99bd71de43d9" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>get_linearized_data_size</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a8a266291fb01fbcec5cac5fefdef56eb" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>get_linearized_label_size</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a55c3e1bcb3e4611c379b1082183b3e66" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>get_linearized_response_size</name></member>
+      <member refid="classlbann_1_1Layer_1a4248f27acebf72b7b7b3ee39c8bcb62a" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_local_activations</name></member>
+      <member refid="classlbann_1_1Layer_1aadbc466c72f455c10b53bf45dca56332" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_local_activations</name></member>
+      <member refid="classlbann_1_1Layer_1af178d00b9d878aa7d87754bff2a91f3a" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_local_error_signals</name></member>
+      <member refid="classlbann_1_1Layer_1acf76bc7fba1e8ab74947ef83a3c8a141" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_local_error_signals</name></member>
+      <member refid="classlbann_1_1Layer_1a35397843bb0c84030000c7d872229acb" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_local_prev_activations</name></member>
+      <member refid="classlbann_1_1Layer_1ab0f7b4d0fdb06004dfde5358781eeece" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_local_prev_activations</name></member>
+      <member refid="classlbann_1_1Layer_1a82827edc5e869960144f3ccb2172bfcd" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_local_prev_error_signals</name></member>
+      <member refid="classlbann_1_1Layer_1af3490fe9011ef620b827970bc5dcc7a7" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_local_prev_error_signals</name></member>
+      <member refid="classlbann_1_1Layer_1afcfb6f55d12c728a59d107fe2d2fff0d" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_model</name></member>
+      <member refid="classlbann_1_1Layer_1a80027550202fa7dbb1dd55fa8a66c84b" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_name</name></member>
+      <member refid="classlbann_1_1Layer_1a54f53393fadbfdc73b4e72489c868433" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>get_neuron_dims</name></member>
+      <member refid="classlbann_1_1Layer_1a1409a117c31a7ea4f2c7a4d22a3e86c3" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_num_children</name></member>
+      <member refid="classlbann_1_1Layer_1aa35561e662de84deae26045ccb53d862" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>get_num_neuron_dims</name></member>
+      <member refid="classlbann_1_1Layer_1aa4de686cc6c2dd38166f42faf874f227" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>get_num_neurons</name></member>
+      <member refid="classlbann_1_1Layer_1ac9290d4a6453ccda5f6b4d8b57b49ba3" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_num_parents</name></member>
+      <member refid="classlbann_1_1Layer_1ace32c7df942a8d97d7a25cb8ff8ce71d" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>get_num_prev_neuron_dims</name></member>
+      <member refid="classlbann_1_1Layer_1a27112eb70bbfbd7f3c3e749960400dec" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>get_num_prev_neurons</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a0187134110cd8a641e15f86e010b75a7" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>get_num_samples_tested</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1abff09be96adbd480f35fcfba3c6cfc5a" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>get_num_samples_trained</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a4ffc26f13661686fdf7f8482beef79d4" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_paired_input_layer</name></member>
+      <member refid="classlbann_1_1Layer_1a898e72b93752abf52d35b06459cd360e" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_parent_layers</name></member>
+      <member refid="classlbann_1_1Layer_1a233ceaf4e6c6b5c24dd097ffff511579" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_parent_layers</name></member>
+      <member refid="classlbann_1_1Layer_1afdf36947beec676a71ecd6167c3bb724" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_parent_names</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1ac0b88a705256ab06bbba6bbffbc7ebc1" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>get_prediction</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a35de513f32f2db03587623d09ca3d3c9" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>get_prediction</name></member>
+      <member refid="classlbann_1_1Layer_1a45853df73a2e72bfaa774665a0f37ed7" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_prev_activations</name></member>
+      <member refid="classlbann_1_1Layer_1afc0611b7c3b1537914f25a538486a8cd" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_prev_activations</name></member>
+      <member refid="classlbann_1_1Layer_1a7ac4579d3c1671dfaf86e3b618d6938a" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_prev_error_signals</name></member>
+      <member refid="classlbann_1_1Layer_1aff2c8983548364c978acb09ddf58a6fc" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_prev_error_signals</name></member>
+      <member refid="classlbann_1_1Layer_1a1acc0fa44acdeffbac158fdac3467973" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>get_prev_neuron_dims</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a9673d3fb3db6ecaae979886178b785ea" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>get_sample_indices_per_mb</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1ad6ea9a43254664c75aa06e8e5c1d7e8c" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>get_topo_description</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1af41c92981e0a1731d3dee9b1b49201db" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>get_total_num_testing_samples</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a857306496e1c55cb15cd81301edb010f" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>get_total_num_training_samples</name></member>
+      <member refid="classlbann_1_1Layer_1a0fa0ea9160b490c151c0a17fde4f7239" prot="public" virt="pure-virtual"><scope>lbann::generic_target_layer</scope><name>get_type</name></member>
+      <member refid="classlbann_1_1Layer_1a4ee78d42284421519dd18d27b4da0957" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_weights</name></member>
+      <member refid="classlbann_1_1Layer_1ab9fe05ad8d21ba5d6dd4d22ee2e0dca0" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>get_weights</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a46f2192139bd8cec23a20e1c9b67869d" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>initialize_io_buffer</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a01a04bc2f6e6440082a1255b0de32d95" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>initialize_io_buffer</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a01a04bc2f6e6440082a1255b0de32d95" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>initialize_io_buffer</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a8da650b94f50cc63fc90cd792fa50c3f" prot="protected" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>io_buffer</name></member>
+      <member refid="classlbann_1_1io__layer_1ab2b5002dfeb0806062ecf3d9fefb9948" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>io_layer</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a0ae18b3b410c3b6c1a5b34a3547ba4c5" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>is_execution_mode_valid</name></member>
+      <member refid="classlbann_1_1io__layer_1a61f2e00334c820235795154492876476" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>is_for_regression</name></member>
+      <member refid="classlbann_1_1Layer_1af3c0f9f32eb631f4fdf34ad040ef8637" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>is_frozen</name></member>
+      <member refid="classlbann_1_1Layer_1a24e9c82354a0a2af1b70cbca2211e7d4" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>Layer</name></member>
+      <member refid="classlbann_1_1Layer_1a247cc68c730284f10a2cb42985fe5f3a" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>Layer</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1af7d73f9e77b99b6a8b204cbda512726f" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>load_from_checkpoint_shared</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a2d9f6ac689171acf0caceed3ed4f7ef9" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>loadFromCheckpoint</name></member>
+      <member refid="classlbann_1_1Layer_1a1ae0e6015dd427c63236a07f8cbd3878" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>loadFromFile</name></member>
+      <member refid="classlbann_1_1Layer_1a7caf08e938141d1584e6939cefa4baed" prot="protected" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>m_activations</name></member>
+      <member refid="classlbann_1_1Layer_1ae28626457a58943b25e7a2920fc271f0" prot="protected" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>m_bp_compute_time</name></member>
+      <member refid="classlbann_1_1Layer_1aa60fc41627bcaa9c345775bf5737bb45" prot="protected" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>m_bp_time</name></member>
+      <member refid="classlbann_1_1Layer_1ae348c0d2b4d05f74d809d09debb633c0" prot="protected" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>m_child_layers</name></member>
+      <member refid="classlbann_1_1Layer_1a5de05c52f22e0bbd7c703bec3ad4dbf2" prot="protected" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>m_comm</name></member>
+      <member refid="classlbann_1_1Layer_1a08dbb94239e3b8c96329786c57c72e21" prot="protected" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>m_cudnn</name></member>
+      <member refid="classlbann_1_1io__layer_1a05c9d6e6cb12e8eb345ac6f5cb95644b" prot="protected" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>m_data_set_spans_models</name></member>
+      <member refid="classlbann_1_1Layer_1a452e22ac81c1a799f0614b3e942ea726" prot="protected" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>m_error_signals</name></member>
+      <member refid="classlbann_1_1Layer_1ac08f133dddd150319650e220ab9a523a" prot="protected" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>m_expected_num_child_layers</name></member>
+      <member refid="classlbann_1_1Layer_1a841b96b25555247f52921c7f13ae1dfa" prot="protected" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>m_expected_num_parent_layers</name></member>
+      <member refid="classlbann_1_1Layer_1aa4e439c1d6a656e709dc4736c9380476" prot="protected" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>m_fp_compute_time</name></member>
+      <member refid="classlbann_1_1Layer_1ab1bd9ab0a6f9e554f4dc936d8316028e" prot="protected" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>m_fp_time</name></member>
+      <member refid="classlbann_1_1Layer_1afdc60df9731a3ecdeeeb8175fa483676" prot="protected" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>m_frozen</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1acb9ba351caf22b8e2378e4cd1e256da7" prot="protected" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>m_ground_truth</name></member>
+      <member refid="classlbann_1_1Layer_1a3d9315e99574166f2f33e37b572021d2" prot="protected" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>m_model</name></member>
+      <member refid="classlbann_1_1Layer_1aa47109ad09b399142fa92f9d3702189f" prot="protected" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>m_name</name></member>
+      <member refid="classlbann_1_1Layer_1abb34bb8031f57a483e2e327a5f229f48" prot="protected" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>m_neuron_dims</name></member>
+      <member refid="classlbann_1_1Layer_1adfd6178d21498c9095cd947ae1eb2d6a" prot="protected" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>m_num_neuron_dims</name></member>
+      <member refid="classlbann_1_1Layer_1a6b5ebc8a7d9329d8a773ed787e7b41d8" prot="protected" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>m_num_neurons</name></member>
+      <member refid="classlbann_1_1Layer_1adc052afb38f170e839db00d3c8151d1e" prot="protected" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>m_num_prev_neuron_dims</name></member>
+      <member refid="classlbann_1_1Layer_1ac7b30f4e28d58204bfcbb76886f9136d" prot="protected" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>m_num_prev_neurons</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a84da1260e9feb4fbc3e6f2315e4cab4b" prot="protected" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>m_paired_input_layer</name></member>
+      <member refid="classlbann_1_1Layer_1a3fa7c6cf1a22bb14ab0e85e3dc6027c5" prot="protected" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>m_parent_layers</name></member>
+      <member refid="classlbann_1_1Layer_1a52314601c3458268f56e017dc2ade357" prot="protected" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>m_prev_activations</name></member>
+      <member refid="classlbann_1_1Layer_1a6fdcbf884150d0b20cffe678fefd7caa" prot="protected" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>m_prev_error_signals</name></member>
+      <member refid="classlbann_1_1Layer_1ae204d1a2a79606eaa117273857ff62a3" prot="protected" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>m_prev_neuron_dims</name></member>
+      <member refid="classlbann_1_1Layer_1ab7d84533662b02d01ba6685ad6f20935" prot="protected" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>m_update_time</name></member>
+      <member refid="classlbann_1_1Layer_1af7881cb5eff5207c15fa835d65462e8f" prot="protected" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>m_using_gpus</name></member>
+      <member refid="classlbann_1_1Layer_1a7954e30fbf9100a6ba4b56d02767a469" prot="protected" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>m_weights</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a7c15e3fe4f1fd7f0ccdbc4c3ed8c793e" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1Layer_1a00d8acde68fda2f38c4a39ef8c89234a" prot="public" virt="non-virtual" ambiguityscope="lbann::io_layer::"><scope>lbann::generic_target_layer</scope><name>operator=</name></member>
+      <member refid="classlbann_1_1Layer_1ae9df4e0b0fe7c276c79575f9e11c53af" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>replace_weights</name></member>
+      <member refid="classlbann_1_1Layer_1a979bb6891e6bf5edba2184cd0b59cf54" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>reset_counters</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a10a0cd1cc77c97e62f14a77ff380559a" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>save_to_checkpoint_shared</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1aff8b79ff0392bd78c44a5a4f6b6ef549" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>saveToCheckpoint</name></member>
+      <member refid="classlbann_1_1Layer_1a131876b692c0e68c95d9ae1a86c446df" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>saveToFile</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a9591bdc69e3de9c10fbf71d1faef917a" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>select_data_reader</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a0008630554477f39ad5ec950bf803876" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>select_dataset</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1ac83761609177fc272fa9c2fe098d4676" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>select_dataset</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a22374687112c04dd6e0e35b94fe0e46c" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>select_first_valid_dataset</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a1f8f722fadb1223b063c0917afd83b66" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>set_layer_pointers</name></member>
+      <member refid="classlbann_1_1Layer_1a8eed87b25ea902b223c6b7a23abf78b3" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>set_model</name></member>
+      <member refid="classlbann_1_1Layer_1a82d8a038861b0af0d54fbf44ce715839" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>set_name</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1ab1bf1a639db82f2dd6ef3994f2269ec2" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>set_paired_input_layer</name></member>
+      <member refid="classlbann_1_1Layer_1a524a78dc6a812ae92834a9e1aa83434b" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>set_weights</name></member>
+      <member refid="classlbann_1_1Layer_1a93d6048c5959b27aa475673568dab956" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>setup</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a73b35ee4dcb97a166369426d975596b2" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>setup_data</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a3a970c1b23f7367276f7061563fc8b65" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>setup_dims</name></member>
+      <member refid="classlbann_1_1Layer_1a36aa22ef90ce4de65abe729d38490863" prot="protected" virt="virtual"><scope>lbann::generic_target_layer</scope><name>setup_gpu</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1af8bcdbd313c9793187fe6e53396e3356" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>setup_matrices</name></member>
+      <member refid="classlbann_1_1Layer_1a71b7a62afd9b73c23b2c0267b8ba0981" prot="protected" virt="virtual"><scope>lbann::generic_target_layer</scope><name>setup_pointers</name></member>
+      <member refid="classlbann_1_1Layer_1af7e50932bb60d4cab3b21ab3fb0707ea" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>summarize_matrices</name></member>
+      <member refid="classlbann_1_1Layer_1a7f3f26e2ae0497f9a00fd6bc56b50543" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>summarize_stats</name></member>
+      <member refid="classlbann_1_1Layer_1aa43ecf9fc67eb1d596c1a69cf35d1245" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>unfreeze</name></member>
+      <member refid="classlbann_1_1Layer_1ae4a050e51e3a9bec431cf8b7a5660f2c" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>update</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a43f4de7c1846b605aa9bb6daf9338c78" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>update_compute</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a0dbe5fc5203e15ddcf8348daf2f697c5" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>update_num_samples_processed</name></member>
+      <member refid="classlbann_1_1Layer_1a6a75532bdaa2ca3879034f2a76085a06" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>using_gpus</name></member>
+      <member refid="classlbann_1_1Layer_1ab94eb4ac28bac0c472a1da83ade4adf1" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>write_proto</name></member>
+      <member refid="classlbann_1_1generic__target__layer_1a899373681fe6ede57383da34fe4156c1" prot="public" virt="non-virtual"><scope>lbann::generic_target_layer</scope><name>~generic_target_layer</name></member>
+      <member refid="classlbann_1_1Layer_1a68c3f57587956da938406812f13ecb78" prot="public" virt="virtual"><scope>lbann::generic_target_layer</scope><name>~Layer</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

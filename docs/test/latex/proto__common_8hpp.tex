@@ -1,0 +1,948 @@
+\hypertarget{proto__common_8hpp}{}\section{/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/proto/proto\+\_\+common.hpp File Reference}
+\label{proto__common_8hpp}\index{/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/proto/proto\+\_\+common.\+hpp@{/\+Users/mckinney27/doxy-\/testbed/lbann/include/lbann/proto/proto\+\_\+common.\+hpp}}
+{\ttfamily \#include \char`\"{}lbann/lbann.\+hpp\char`\"{}}\newline
+{\ttfamily \#include $<$lbann.\+pb.\+h$>$}\newline
+{\ttfamily \#include \char`\"{}lbann/utils/cudnn\+\_\+wrapper.\+hpp\char`\"{}}\newline
+{\ttfamily \#include \char`\"{}lbann/proto/factories.\+hpp\char`\"{}}\newline
+Include dependency graph for proto\+\_\+common.\+hpp\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{proto__common_8hpp__incl}
+\end{center}
+\end{figure}
+This graph shows which files directly or indirectly include this file\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{proto__common_8hpp__dep__incl}
+\end{center}
+\end{figure}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+bool \hyperlink{proto__common_8hpp_a9a9d7504db9e1b819fcddac197da3252}{has\+\_\+motifs} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+::lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, const lbann\+\_\+data\+::\+Lbann\+PB \&p)
+\begin{DoxyCompactList}\small\item\em Returns true if the Model contains at least one Motif\+Layer. \end{DoxyCompactList}\item 
+void \hyperlink{proto__common_8hpp_a9454e517d698ec0960588364b9b42d6a}{expand\+\_\+motifs} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+::lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, lbann\+\_\+data\+::\+Lbann\+PB \&pb)
+\item 
+void \hyperlink{proto__common_8hpp_a32d4c032abc19c091fa65ace580fc057}{init\+\_\+data\+\_\+readers} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+::lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, const lbann\+\_\+data\+::\+Lbann\+PB \&p, std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{classlbann_1_1generic__data__reader}{lbann\+::generic\+\_\+data\+\_\+reader} $\ast$$>$ \&data\+\_\+readers)
+\begin{DoxyCompactList}\small\item\em instantiates one or more generic\+\_\+data\+\_\+readers and inserts them in \&data\+\_\+readers \end{DoxyCompactList}\item 
+void \hyperlink{proto__common_8hpp_ae5ac4c13a36b3222afacd8d7b4786140}{set\+\_\+num\+\_\+parallel\+\_\+readers} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+::lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, lbann\+\_\+data\+::\+Lbann\+PB \&p)
+\begin{DoxyCompactList}\small\item\em adjusts the number of parallel data readers \end{DoxyCompactList}\item 
+void \hyperlink{proto__common_8hpp_a46fd41f635ff8f352065adc85eb3d1df}{get\+\_\+cmdline\+\_\+overrides} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+::lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, lbann\+\_\+data\+::\+Lbann\+PB \&p)
+\begin{DoxyCompactList}\small\item\em adjusts the values in p by querying the options db \end{DoxyCompactList}\item 
+void \hyperlink{proto__common_8hpp_adf83ffea572cec61b853b61aa68bea27}{print\+\_\+parameters} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+::lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, lbann\+\_\+data\+::\+Lbann\+PB \&p)
+\begin{DoxyCompactList}\small\item\em print various params (learn\+\_\+rate, etc) to cout \end{DoxyCompactList}\item 
+void \hyperlink{proto__common_8hpp_a403b98ced142a0afa3b939e7af1095b0}{print\+\_\+help} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+::lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm})
+\begin{DoxyCompactList}\small\item\em prints usage information \end{DoxyCompactList}\item 
+void \hyperlink{proto__common_8hpp_a4f1af470c45e9ed06039685e5f72ea4a}{save\+\_\+session} (\hyperlink{classlbann_1_1lbann__comm}{lbann\+::lbann\+\_\+comm} $\ast$\hyperlink{file__io_8cpp_ab048c6f9fcbcfaa57ce68b00263dbebe}{comm}, int argc, char $\ast$$\ast$argv, lbann\+\_\+data\+::\+Lbann\+PB \&p)
+\begin{DoxyCompactList}\small\item\em prints prototext file, cmd line, etc to file \end{DoxyCompactList}\item 
+void \hyperlink{proto__common_8hpp_addbf693bd6d4a399daa599ba03509569}{read\+\_\+prototext\+\_\+file} (std\+::string fn, lbann\+\_\+data\+::\+Lbann\+PB \&pb, bool master)
+\item 
+void \hyperlink{proto__common_8hpp_abbea8a6a7289a147495d7391b06e0d93}{write\+\_\+prototext\+\_\+file} (std\+::string fn, lbann\+\_\+data\+::\+Lbann\+PB \&pb)
+\end{DoxyCompactItemize}
+
+
+\subsection{Function Documentation}
+\mbox{\Hypertarget{proto__common_8hpp_a9454e517d698ec0960588364b9b42d6a}\label{proto__common_8hpp_a9454e517d698ec0960588364b9b42d6a}} 
+\index{proto\+\_\+common.\+hpp@{proto\+\_\+common.\+hpp}!expand\+\_\+motifs@{expand\+\_\+motifs}}
+\index{expand\+\_\+motifs@{expand\+\_\+motifs}!proto\+\_\+common.\+hpp@{proto\+\_\+common.\+hpp}}
+\subsubsection{\texorpdfstring{expand\+\_\+motifs()}{expand\_motifs()}}
+{\footnotesize\ttfamily void expand\+\_\+motifs (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+::lbann\+\_\+comm} $\ast$}]{comm,  }\item[{lbann\+\_\+data\+::\+Lbann\+PB \&}]{pb }\end{DoxyParamCaption})}
+
+
+
+Definition at line 32 of file proto\+\_\+common.\+cpp.
+
+
+\begin{DoxyCode}
+32                                                             \{
+33   \textcolor{keywordtype}{bool} master = comm->\hyperlink{classlbann_1_1lbann__comm_a1ef526486183a29feadca9bef096a534}{am\_world\_master}();
+34   \textcolor{keywordflow}{if} (master) std::cout << \textcolor{stringliteral}{"starting expand\_motifs\(\backslash\)n"};
+35   \textcolor{keyword}{const} lbann\_data::MotifDefinitions& m = pb.motif\_definitions();
+36   \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_motifs = m.motif\_size();
+37   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} j=0; j<num\_motifs; j++) \{
+38   \}
+39 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=306pt]{proto__common_8hpp_a9454e517d698ec0960588364b9b42d6a_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{proto__common_8hpp_a46fd41f635ff8f352065adc85eb3d1df}\label{proto__common_8hpp_a46fd41f635ff8f352065adc85eb3d1df}} 
+\index{proto\+\_\+common.\+hpp@{proto\+\_\+common.\+hpp}!get\+\_\+cmdline\+\_\+overrides@{get\+\_\+cmdline\+\_\+overrides}}
+\index{get\+\_\+cmdline\+\_\+overrides@{get\+\_\+cmdline\+\_\+overrides}!proto\+\_\+common.\+hpp@{proto\+\_\+common.\+hpp}}
+\subsubsection{\texorpdfstring{get\+\_\+cmdline\+\_\+overrides()}{get\_cmdline\_overrides()}}
+{\footnotesize\ttfamily void get\+\_\+cmdline\+\_\+overrides (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+::lbann\+\_\+comm} $\ast$}]{comm,  }\item[{lbann\+\_\+data\+::\+Lbann\+PB \&}]{p }\end{DoxyParamCaption})}
+
+
+
+adjusts the values in p by querying the options db 
+
+
+
+Definition at line 386 of file proto\+\_\+common.\+cpp.
+
+
+\begin{DoxyCode}
+387 \{
+388   \textcolor{keywordtype}{bool} master = comm->\hyperlink{classlbann_1_1lbann__comm_a1ef526486183a29feadca9bef096a534}{am\_world\_master}();
+389   std::stringstream err;
+390 
+391   \hyperlink{classoptions}{options} *opts = \hyperlink{classoptions_a9ecfe9c365269df68a41b961c31ae3f5}{options::get}();
+392   lbann\_data::Model *\hyperlink{classlbann_1_1model}{model} = p.mutable\_model();
+393   lbann\_data::DataReader *d\_reader = p.mutable\_data\_reader();
+394   \textcolor{keywordtype}{int} size = d\_reader->reader\_size();
+395 
+396   \textcolor{keywordflow}{if} (opts->\hyperlink{classoptions_a01020aa5bd82bcff1b1c950b20578883}{has\_int}(\textcolor{stringliteral}{"absolute\_sample\_count"})) \{
+397     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} j=0; j<size; j++) \{
+398       \textcolor{keywordtype}{int} n = opts->\hyperlink{classoptions_a797bc1915004bdbc34c5eea3fe488952}{get\_int}(\textcolor{stringliteral}{"absolute\_sample\_count"});
+399       lbann\_data::Reader *readme = d\_reader->mutable\_reader(j);
+400       readme->set\_percent\_of\_data\_to\_use(0.0);
+401       readme->set\_absolute\_sample\_count(n);
+402     \}
+403   \}
+404 
+405   \textcolor{keywordflow}{if} (opts->\hyperlink{classoptions_a5db5b27267c27ffe1b029948f64e54c1}{has\_string}(\textcolor{stringliteral}{"dag\_model"})) \{
+406     std::string sanity = model->name();
+407     \textcolor{keywordflow}{if} (sanity != \textcolor{stringliteral}{"dnn"}) \{
+408       err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: "}
+409           << \textcolor{stringliteral}{" the current network model is: "} << model->name()
+410           << \textcolor{stringliteral}{"; you can only change the model to 'dag\_model' if the current model is 'dnn'"};
+411       \textcolor{keywordflow}{throw} \hyperlink{classlbann_1_1lbann__exception}{lbann\_exception}(err.str());
+412     \}
+413     \textcolor{keywordflow}{if} (master) \{
+414       std::cout << \textcolor{stringliteral}{"\(\backslash\)nchanging model from "} << model->name() << \textcolor{stringliteral}{" to: dag\(\backslash\)n\(\backslash\)n"};
+415     \}
+416     model->set\_name(\textcolor{stringliteral}{"dag\_model"});
+417   \}
+418 
+419   \textcolor{keywordflow}{if} (opts->\hyperlink{classoptions_a5db5b27267c27ffe1b029948f64e54c1}{has\_string}(\textcolor{stringliteral}{"data\_filedir"})
+420       or opts->\hyperlink{classoptions_a5db5b27267c27ffe1b029948f64e54c1}{has\_string}(\textcolor{stringliteral}{"data\_filedir\_train"})
+421       or opts->\hyperlink{classoptions_a5db5b27267c27ffe1b029948f64e54c1}{has\_string}(\textcolor{stringliteral}{"data\_filename\_train"})
+422       or opts->\hyperlink{classoptions_a5db5b27267c27ffe1b029948f64e54c1}{has\_string}(\textcolor{stringliteral}{"label\_filename\_train"})) \{
+423     \hyperlink{proto__common_8cpp_a2b1366b9ab5913e4db6afc8833ca4054}{set\_data\_readers\_filenames}(\textcolor{stringliteral}{"train"}, p);
+424   \}
+425   \textcolor{keywordflow}{if} (opts->\hyperlink{classoptions_a5db5b27267c27ffe1b029948f64e54c1}{has\_string}(\textcolor{stringliteral}{"data\_filedir"})
+426       or opts->\hyperlink{classoptions_a5db5b27267c27ffe1b029948f64e54c1}{has\_string}(\textcolor{stringliteral}{"data\_filedir\_test"})
+427       or opts->\hyperlink{classoptions_a5db5b27267c27ffe1b029948f64e54c1}{has\_string}(\textcolor{stringliteral}{"data\_filename\_test"})
+428       or opts->\hyperlink{classoptions_a5db5b27267c27ffe1b029948f64e54c1}{has\_string}(\textcolor{stringliteral}{"label\_filename\_test"})) \{
+429     \hyperlink{proto__common_8cpp_a2b1366b9ab5913e4db6afc8833ca4054}{set\_data\_readers\_filenames}(\textcolor{stringliteral}{"test"}, p);
+430   \}
+431   \textcolor{keywordflow}{if} (opts->\hyperlink{classoptions_a5db5b27267c27ffe1b029948f64e54c1}{has\_string}(\textcolor{stringliteral}{"data\_reader\_percent"})) \{
+432     \hyperlink{proto__common_8cpp_a900e005e45b3debc2444ded1c3ff6e1f}{set\_data\_readers\_percent}(p);
+433   \}
+434 
+435   \textcolor{keywordflow}{if} (opts->\hyperlink{classoptions_a5db5b27267c27ffe1b029948f64e54c1}{has\_string}(\textcolor{stringliteral}{"image\_dir"})) \{
+436     \textcolor{keywordtype}{int} sz = model->callback\_size();
+437     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} j=0; j<sz; j++) \{
+438       lbann\_data::Callback *c = model->mutable\_callback(j);
+439       \textcolor{keywordflow}{if} (c->has\_save\_images()) \{
+440         lbann\_data::CallbackSaveImages *i = c->mutable\_save\_images();
+441         i->set\_image\_dir(opts->\hyperlink{classoptions_aeb84be21a30b0dd41d7d9f3f52c0f3f7}{get\_string}(\textcolor{stringliteral}{"image\_dir"}));
+442       \}
+443     \}
+444   \}
+445   \textcolor{keywordflow}{if} (opts->\hyperlink{classoptions_aafb1d2a7ccde0b1bf786230ba4080ecd}{has\_bool}(\textcolor{stringliteral}{"no\_im\_comm"}) and opts->\hyperlink{classoptions_a99aa190102de33e2aed39723929f9fad}{get\_bool}(\textcolor{stringliteral}{"no\_im\_comm"})) \{
+446     \textcolor{keywordtype}{int} sz = model->callback\_size();
+447     \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} j=0; j<sz; j++) \{
+448       lbann\_data::Callback *c = model->mutable\_callback(j);
+449       \textcolor{keywordflow}{if} (c->has\_imcomm()) \{
+450         c->clear\_imcomm();
+451       \}
+452     \}
+453   \}
+454 
+455   \textcolor{keywordflow}{if} (opts->\hyperlink{classoptions_a01020aa5bd82bcff1b1c950b20578883}{has\_int}(\textcolor{stringliteral}{"mini\_batch\_size"})) \{
+456     model->set\_mini\_batch\_size(opts->\hyperlink{classoptions_a797bc1915004bdbc34c5eea3fe488952}{get\_int}(\textcolor{stringliteral}{"mini\_batch\_size"}));
+457   \}
+458   \textcolor{keywordflow}{if} (opts->\hyperlink{classoptions_a01020aa5bd82bcff1b1c950b20578883}{has\_int}(\textcolor{stringliteral}{"num\_epochs"})) \{
+459     model->set\_num\_epochs(opts->\hyperlink{classoptions_a797bc1915004bdbc34c5eea3fe488952}{get\_int}(\textcolor{stringliteral}{"num\_epochs"}));
+460   \}
+461   \textcolor{keywordflow}{if} (opts->\hyperlink{classoptions_a01020aa5bd82bcff1b1c950b20578883}{has\_int}(\textcolor{stringliteral}{"block\_size"})) \{
+462     model->set\_block\_size(opts->\hyperlink{classoptions_a797bc1915004bdbc34c5eea3fe488952}{get\_int}(\textcolor{stringliteral}{"block\_size"}));
+463   \}
+464   \textcolor{keywordflow}{if} (opts->\hyperlink{classoptions_a01020aa5bd82bcff1b1c950b20578883}{has\_int}(\textcolor{stringliteral}{"procs\_per\_model"})) \{
+465     model->set\_procs\_per\_model(opts->\hyperlink{classoptions_a797bc1915004bdbc34c5eea3fe488952}{get\_int}(\textcolor{stringliteral}{"procs\_per\_model"}));
+466   \}
+467   \textcolor{keywordflow}{if} (opts->\hyperlink{classoptions_a01020aa5bd82bcff1b1c950b20578883}{has\_int}(\textcolor{stringliteral}{"num\_gpus"})) \{
+468     model->set\_num\_gpus(opts->\hyperlink{classoptions_a797bc1915004bdbc34c5eea3fe488952}{get\_int}(\textcolor{stringliteral}{"num\_gpus"}));
+469   \}
+470   \textcolor{keywordflow}{if} (opts->\hyperlink{classoptions_a01020aa5bd82bcff1b1c950b20578883}{has\_int}(\textcolor{stringliteral}{"num\_parallel\_readers"})) \{
+471     model->set\_num\_parallel\_readers(opts->\hyperlink{classoptions_a797bc1915004bdbc34c5eea3fe488952}{get\_int}(\textcolor{stringliteral}{"num\_parallel\_readers"}));
+472   \}
+473   \textcolor{keywordflow}{if} (opts->\hyperlink{classoptions_aafb1d2a7ccde0b1bf786230ba4080ecd}{has\_bool}(\textcolor{stringliteral}{"disable\_cuda"})) \{
+474     model->set\_disable\_cuda(opts->\hyperlink{classoptions_a99aa190102de33e2aed39723929f9fad}{get\_bool}(\textcolor{stringliteral}{"disable\_cuda"}));
+475   \}
+476   \textcolor{keywordflow}{if} (opts->\hyperlink{classoptions_a01020aa5bd82bcff1b1c950b20578883}{has\_int}(\textcolor{stringliteral}{"random\_seed"})) \{
+477     model->set\_random\_seed(opts->\hyperlink{classoptions_a797bc1915004bdbc34c5eea3fe488952}{get\_int}(\textcolor{stringliteral}{"random\_seed"}));
+478   \}
+479 
+480 
+481   \textcolor{keywordflow}{if} (opts->\hyperlink{classoptions_a5db5b27267c27ffe1b029948f64e54c1}{has\_string}(\textcolor{stringliteral}{"opt"})) \{
+482     \textcolor{comment}{//defaults}
+483     \textcolor{keywordtype}{double} learn\_rate = opts->\hyperlink{classoptions_ae6f1f714c9ad1dc01cb5509df0c4c838}{has\_float}(\textcolor{stringliteral}{"learn\_rate"}) ? opts->\hyperlink{classoptions_a31607533d0c6d2fa331f4e7f52d34bc8}{get\_float}(\textcolor{stringliteral}{"learn\_rate"}) : 0
+      .01;
+484     \textcolor{keywordtype}{double} eps = opts->\hyperlink{classoptions_ae6f1f714c9ad1dc01cb5509df0c4c838}{has\_float}(\textcolor{stringliteral}{"eps"}) ? opts->\hyperlink{classoptions_a31607533d0c6d2fa331f4e7f52d34bc8}{get\_float}(\textcolor{stringliteral}{"eps"}) : 1e-8;
+485     \textcolor{keywordtype}{double} beta1 = opts->\hyperlink{classoptions_ae6f1f714c9ad1dc01cb5509df0c4c838}{has\_float}(\textcolor{stringliteral}{"beta1"}) ? opts->\hyperlink{classoptions_a31607533d0c6d2fa331f4e7f52d34bc8}{get\_float}(\textcolor{stringliteral}{"beta1"}) : 0.9;
+486     \textcolor{keywordtype}{double} beta2 = opts->\hyperlink{classoptions_ae6f1f714c9ad1dc01cb5509df0c4c838}{has\_float}(\textcolor{stringliteral}{"beta2"}) ? opts->\hyperlink{classoptions_a31607533d0c6d2fa331f4e7f52d34bc8}{get\_float}(\textcolor{stringliteral}{"beta2"}) : 0.99;
+487     \textcolor{keywordtype}{double} init\_learning\_rate = opts->\hyperlink{classoptions_ae6f1f714c9ad1dc01cb5509df0c4c838}{has\_float}(\textcolor{stringliteral}{"init\_learning\_rate"}) ? opts->
+      \hyperlink{classoptions_a31607533d0c6d2fa331f4e7f52d34bc8}{get\_float}(\textcolor{stringliteral}{"init\_learning\_rate"}) : 0.01;
+488     \textcolor{keywordtype}{double} hyper\_learning\_rate = opts->\hyperlink{classoptions_ae6f1f714c9ad1dc01cb5509df0c4c838}{has\_float}(\textcolor{stringliteral}{"hyper\_learning\_rate"}) ? opts->
+      \hyperlink{classoptions_a31607533d0c6d2fa331f4e7f52d34bc8}{get\_float}(\textcolor{stringliteral}{"hyper\_learning\_rate"}) : 1e-7;
+489     \textcolor{keywordtype}{double} momentum = opts->\hyperlink{classoptions_ae6f1f714c9ad1dc01cb5509df0c4c838}{has\_float}(\textcolor{stringliteral}{"momentum"}) ? opts->\hyperlink{classoptions_a31607533d0c6d2fa331f4e7f52d34bc8}{get\_float}(\textcolor{stringliteral}{"momentum"}) : 0.9;
+490     \textcolor{keywordtype}{double} decay\_rate = opts->\hyperlink{classoptions_ae6f1f714c9ad1dc01cb5509df0c4c838}{has\_float}(\textcolor{stringliteral}{"decay\_rate"}) ? opts->\hyperlink{classoptions_a31607533d0c6d2fa331f4e7f52d34bc8}{get\_float}(\textcolor{stringliteral}{"decay\_rate"}) : 0
+      .5;
+491     \textcolor{keywordtype}{bool} nesterov = opts->\hyperlink{classoptions_aafb1d2a7ccde0b1bf786230ba4080ecd}{has\_bool}(\textcolor{stringliteral}{"nesterov"}) ? opts->\hyperlink{classoptions_a31607533d0c6d2fa331f4e7f52d34bc8}{get\_float}(\textcolor{stringliteral}{"nesterov"}) : \textcolor{keyword}{false};
+492 
+493     \textcolor{keyword}{auto} *opt = \textcolor{keyword}{new} lbann\_data::Optimizer;
+494 
+495     \textcolor{comment}{//construct the new optimizer}
+496     std::string opt\_string = opts->\hyperlink{classoptions_aeb84be21a30b0dd41d7d9f3f52c0f3f7}{get\_string}(\textcolor{stringliteral}{"opt"});
+497     \textcolor{keywordflow}{if} (opt\_string == \textcolor{stringliteral}{"adagrad"}) \{
+498       \textcolor{keyword}{auto} *a = \textcolor{keyword}{new} lbann\_data::Adagrad;
+499       a->set\_learn\_rate(learn\_rate);
+500       a->set\_eps(eps);
+501       opt->set\_allocated\_adagrad(a);
+502     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (opt\_string == \textcolor{stringliteral}{"adam"}) \{
+503       \textcolor{keyword}{auto} *a = \textcolor{keyword}{new} lbann\_data::Adam;
+504       a->set\_learn\_rate(learn\_rate);
+505       a->set\_eps(eps);
+506       a->set\_beta1(beta1);
+507       a->set\_beta2(beta2);
+508       opt->set\_allocated\_adam(a);
+509     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (opt\_string == \textcolor{stringliteral}{"hypergradient\_adam"}) \{
+510       \textcolor{keyword}{auto} *a = \textcolor{keyword}{new} lbann\_data::HypergradientAdam;
+511       a->set\_init\_learning\_rate(init\_learning\_rate);
+512       a->set\_hyper\_learning\_rate(hyper\_learning\_rate);
+513       a->set\_beta1(beta1);
+514       a->set\_beta2(beta2);
+515       a->set\_eps(eps);
+516       opt->set\_allocated\_hypergradient\_adam(a);
+517     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (opt\_string == \textcolor{stringliteral}{"rmsprop"}) \{
+518       \textcolor{keyword}{auto} *a = \textcolor{keyword}{new} lbann\_data::Rmsprop;
+519       a->set\_learn\_rate(learn\_rate);
+520       a->set\_decay\_rate(decay\_rate);
+521       a->set\_eps(eps);
+522       opt->set\_allocated\_rmsprop(a);
+523     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (opt\_string == \textcolor{stringliteral}{"sgd"}) \{
+524       \textcolor{keywordflow}{if} (master) std::cerr << \textcolor{stringliteral}{"\(\backslash\)n\(\backslash\)nsetting: sgd\(\backslash\)n\(\backslash\)n"};
+525       \textcolor{keyword}{auto} *a = \textcolor{keyword}{new} lbann\_data::Sgd;
+526       a->set\_learn\_rate(learn\_rate);
+527       a->set\_momentum(momentum);
+528       a->set\_decay\_rate(decay\_rate);
+529       a->set\_nesterov(nesterov);
+530       opt->set\_allocated\_sgd(a);
+531     \} \textcolor{keywordflow}{else} \{
+532       err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_
+533           << \textcolor{stringliteral}{" :: unknown string for --optimizer: "} << opt\_string
+534           << \textcolor{stringliteral}{" should be on of: adagrad, adam, hypergradient\_adam, rmsprop, sgd"};
+535       \textcolor{keywordflow}{throw} \hyperlink{classlbann_1_1lbann__exception}{lbann\_exception}(err.str());
+536     \}
+537     p.set\_allocated\_optimizer(opt);
+538   \}
+539 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{proto__common_8hpp_a46fd41f635ff8f352065adc85eb3d1df_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{proto__common_8hpp_a9a9d7504db9e1b819fcddac197da3252}\label{proto__common_8hpp_a9a9d7504db9e1b819fcddac197da3252}} 
+\index{proto\+\_\+common.\+hpp@{proto\+\_\+common.\+hpp}!has\+\_\+motifs@{has\+\_\+motifs}}
+\index{has\+\_\+motifs@{has\+\_\+motifs}!proto\+\_\+common.\+hpp@{proto\+\_\+common.\+hpp}}
+\subsubsection{\texorpdfstring{has\+\_\+motifs()}{has\_motifs()}}
+{\footnotesize\ttfamily bool has\+\_\+motifs (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+::lbann\+\_\+comm} $\ast$}]{comm,  }\item[{const lbann\+\_\+data\+::\+Lbann\+PB \&}]{p }\end{DoxyParamCaption})}
+
+
+
+Returns true if the Model contains at least one Motif\+Layer. 
+
+
+
+Definition at line 18 of file proto\+\_\+common.\+cpp.
+
+
+\begin{DoxyCode}
+18                                                               \{
+19   \textcolor{keywordtype}{bool} master = comm->\hyperlink{classlbann_1_1lbann__comm_a1ef526486183a29feadca9bef096a534}{am\_world\_master}();
+20   \textcolor{keywordflow}{if} (master) std::cout << \textcolor{stringliteral}{"starting has\_motifs\(\backslash\)n"};
+21   \textcolor{keyword}{const} lbann\_data::Model& m = p.model();
+22   \textcolor{keyword}{const} \textcolor{keywordtype}{int} num\_layers = m.layer\_size();
+23   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} j=0; j<num\_layers; j++) \{
+24     \textcolor{keyword}{const} lbann\_data::Layer& layer = m.layer(j);
+25     \textcolor{keywordflow}{if} (layer.has\_motif\_layer()) \{
+26       \textcolor{keywordflow}{return} \textcolor{keyword}{true};
+27     \}
+28   \}
+29   \textcolor{keywordflow}{return} \textcolor{keyword}{false};
+30 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=289pt]{proto__common_8hpp_a9a9d7504db9e1b819fcddac197da3252_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{proto__common_8hpp_a32d4c032abc19c091fa65ace580fc057}\label{proto__common_8hpp_a32d4c032abc19c091fa65ace580fc057}} 
+\index{proto\+\_\+common.\+hpp@{proto\+\_\+common.\+hpp}!init\+\_\+data\+\_\+readers@{init\+\_\+data\+\_\+readers}}
+\index{init\+\_\+data\+\_\+readers@{init\+\_\+data\+\_\+readers}!proto\+\_\+common.\+hpp@{proto\+\_\+common.\+hpp}}
+\subsubsection{\texorpdfstring{init\+\_\+data\+\_\+readers()}{init\_data\_readers()}}
+{\footnotesize\ttfamily void init\+\_\+data\+\_\+readers (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+::lbann\+\_\+comm} $\ast$}]{comm,  }\item[{const lbann\+\_\+data\+::\+Lbann\+PB \&}]{p,  }\item[{std\+::map$<$ \hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8}{execution\+\_\+mode}, \hyperlink{classlbann_1_1generic__data__reader}{lbann\+::generic\+\_\+data\+\_\+reader} $\ast$$>$ \&}]{data\+\_\+readers }\end{DoxyParamCaption})}
+
+
+
+instantiates one or more generic\+\_\+data\+\_\+readers and inserts them in \&data\+\_\+readers 
+
+
+
+Definition at line 41 of file proto\+\_\+common.\+cpp.
+
+
+\begin{DoxyCode}
+42 \{
+43   \textcolor{keywordtype}{bool} master = comm->\hyperlink{classlbann_1_1lbann__comm_a1ef526486183a29feadca9bef096a534}{am\_world\_master}();
+44   std::stringstream err;
+45 
+46   \textcolor{keyword}{const} lbann\_data::DataReader & d\_reader = p.data\_reader();
+47   \textcolor{keywordtype}{int} size = d\_reader.reader\_size();
+48 
+49   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} j=0; j<size; j++) \{
+50     \textcolor{keyword}{const} lbann\_data::Reader& readme = d\_reader.reader(j);
+51     \textcolor{comment}{// This is a temporary measure until we individually setup data reader specific preprocessors}
+52     \textcolor{keywordtype}{bool} set\_up\_generic\_preprocessor = \textcolor{keyword}{true};
+53 
+54     \textcolor{keyword}{const} std::string& name = readme.name();
+55 
+56     \textcolor{keyword}{const} \textcolor{keywordtype}{bool} shuffle = readme.shuffle();
+57 
+58     \hyperlink{classlbann_1_1generic__data__reader}{generic\_data\_reader} *reader = \textcolor{keyword}{nullptr};
+59     \hyperlink{classlbann_1_1generic__data__reader}{generic\_data\_reader} *reader\_validation = \textcolor{keyword}{nullptr};
+60 
+61     \textcolor{keywordflow}{if} ((name == \textcolor{stringliteral}{"imagenet\_org"}) || (name == \textcolor{stringliteral}{"mnist"}) || (name == \textcolor{stringliteral}{"cifar10"})) \{
+62       \hyperlink{init__image__data__readers_8cpp_a671d9d841466d2bf6ee67336e7d45cd6}{init\_org\_image\_data\_reader}(readme, master, reader);
+63       set\_up\_generic\_preprocessor = \textcolor{keyword}{false};
+64     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} ((name == \textcolor{stringliteral}{"imagenet"}) || (name == \textcolor{stringliteral}{"imagenet\_single"}) || (name == \textcolor{stringliteral}{"imagenet\_patches"}) ||
+65                (name == \textcolor{stringliteral}{"triplet"}) || (name == \textcolor{stringliteral}{"mnist\_siamese"}) || (name == \textcolor{stringliteral}{"multi\_images"})) \{
+66       \hyperlink{init__image__data__readers_8cpp_afbbec9e8aa0c25aac424999eae6c39df}{init\_image\_data\_reader}(readme, master, reader);
+67       set\_up\_generic\_preprocessor = \textcolor{keyword}{false};
+68     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"jag"}) \{
+69       \textcolor{keyword}{auto}* reader\_jag = \textcolor{keyword}{new} \hyperlink{classlbann_1_1data__reader__jag}{data\_reader\_jag}(shuffle);
+70       reader\_jag->set\_model\_mode(static\_cast<data\_reader\_jag::model\_mode\_t>(readme.modeling\_mode()));
+71       \textcolor{keyword}{const} lbann\_data::ImagePreprocessor& pb\_preproc = readme.image\_preprocessor();
+72       reader\_jag->set\_image\_dims(pb\_preproc.raw\_width(), pb\_preproc.raw\_height());
+73       reader\_jag->set\_normalization\_mode(pb\_preproc.early\_normalization());
+74       reader = reader\_jag;
+75       set\_up\_generic\_preprocessor = \textcolor{keyword}{false};
+76     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"nci"}) \{
+77       reader = \textcolor{keyword}{new} \hyperlink{classlbann_1_1data__reader__nci}{data\_reader\_nci}(shuffle);
+78     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"csv"}) \{
+79       \textcolor{keyword}{auto}* reader\_csv = \textcolor{keyword}{new} \hyperlink{classlbann_1_1csv__reader}{csv\_reader}(shuffle);
+80       reader\_csv->set\_label\_col(readme.label\_col());
+81       reader\_csv->set\_response\_col(readme.response\_col());
+82       reader\_csv->disable\_labels(readme.disable\_labels());
+83       reader\_csv->enable\_responses(readme.disable\_responses());
+84       reader\_csv->set\_separator(readme.separator()[0]);
+85       reader\_csv->set\_skip\_cols(readme.skip\_cols());
+86       reader\_csv->set\_skip\_rows(readme.skip\_rows());
+87       reader\_csv->set\_has\_header(readme.has\_header());
+88       reader = reader\_csv;
+89     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"numpy"}) \{
+90       \textcolor{keyword}{auto}* reader\_numpy = \textcolor{keyword}{new} \hyperlink{classlbann_1_1numpy__reader}{numpy\_reader}(shuffle);
+91       reader\_numpy->set\_has\_labels(!readme.disable\_labels());
+92       reader\_numpy->set\_has\_responses(!readme.disable\_responses());
+93       reader = reader\_numpy;
+94     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"pilot2\_molecular\_reader"}) \{
+95       \hyperlink{classlbann_1_1pilot2__molecular__reader}{pilot2\_molecular\_reader}* reader\_pilot2\_molecular = \textcolor{keyword}{new} 
+      \hyperlink{classlbann_1_1pilot2__molecular__reader}{pilot2\_molecular\_reader}(readme.num\_neighbors(), readme.max\_neighborhood(), shuffle);
+96       reader = reader\_pilot2\_molecular;
+97     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"merge\_samples"} || name == \textcolor{stringliteral}{"merge\_features"}) \{
+98       \textcolor{comment}{//TODO: verify how much of wildcard conflict with label file, label file should be loaded separately}
+99       \textcolor{keyword}{auto} filedir = readme.data\_filedir();
+100       \textcolor{keywordflow}{if}(!\hyperlink{namespacelbann_a02f197bc772ef04f1ac51eb191a02cab}{endsWith}(filedir, \textcolor{stringliteral}{"/"})) \{
+101         filedir = filedir + \textcolor{stringliteral}{"/"};
+102       \}
+103       \textcolor{keyword}{auto} paths = \hyperlink{namespacelbann_a840c9f1d5f27bc30d081fb90529889e6}{glob}(filedir + readme.data\_file\_pattern());
+104       std::vector<generic\_data\_reader*> npy\_readers;
+105       \textcolor{keywordflow}{for} (\textcolor{keyword}{const} \textcolor{keyword}{auto} path : paths) \{
+106         \textcolor{keywordflow}{if}(master) \{ std::cout << \textcolor{stringliteral}{"Loading file: "} << path << std::endl; \}
+107         \textcolor{keywordflow}{if} (readme.format() == \textcolor{stringliteral}{"numpy"}) \{
+108           \textcolor{keyword}{auto} *reader\_numpy = \textcolor{keyword}{new} \hyperlink{classlbann_1_1numpy__reader}{numpy\_reader}(\textcolor{keyword}{false});
+109           reader\_numpy->set\_data\_filename(path);
+110           reader\_numpy->set\_has\_labels(!readme.disable\_labels());
+111           reader\_numpy->set\_has\_responses(!readme.disable\_responses());
+112           npy\_readers.push\_back(reader\_numpy);
+113         \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (readme.format() == \textcolor{stringliteral}{"pilot2\_molecular\_reader"}) \{
+114           \hyperlink{classlbann_1_1pilot2__molecular__reader}{pilot2\_molecular\_reader}* reader\_pilot2\_molecular = \textcolor{keyword}{new} 
+      \hyperlink{classlbann_1_1pilot2__molecular__reader}{pilot2\_molecular\_reader}(readme.num\_neighbors(), readme.max\_neighborhood(), shuffle);
+115           reader\_pilot2\_molecular->\hyperlink{classlbann_1_1generic__data__reader_a74b7ef4fe0dc7d3a96868ca3b5fbf897}{set\_data\_filename}(path);
+116           npy\_readers.push\_back(reader\_pilot2\_molecular);
+117         \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (readme.format() == \textcolor{stringliteral}{"csv"}) \{
+118           \textcolor{keyword}{auto}* reader\_csv = \textcolor{keyword}{new} \hyperlink{classlbann_1_1csv__reader}{csv\_reader}(shuffle);
+119           reader\_csv->set\_data\_filename(path);
+120           reader\_csv->set\_label\_col(readme.label\_col());
+121           reader\_csv->set\_response\_col(readme.response\_col());
+122           reader\_csv->disable\_labels(readme.disable\_labels());
+123           reader\_csv->enable\_responses(readme.disable\_responses());
+124           reader\_csv->set\_separator(readme.separator()[0]);
+125           reader\_csv->set\_skip\_cols(readme.skip\_cols());
+126           reader\_csv->set\_skip\_rows(readme.skip\_rows());
+127           reader\_csv->set\_has\_header(readme.has\_header());
+128           npy\_readers.push\_back(reader\_csv);
+129         \} \textcolor{keywordflow}{else} \{
+130           err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: unknown format for merged data reader: "}
+131               << name;
+132           \textcolor{keywordflow}{throw} \hyperlink{classlbann_1_1lbann__exception}{lbann\_exception}(err.str());
+133         \}
+134       \}
+135       \textcolor{keywordflow}{if}(name == \textcolor{stringliteral}{"merge\_samples"}) \{
+136         \hyperlink{classlbann_1_1data__reader__merge__samples}{data\_reader\_merge\_samples}* merged\_samples = \textcolor{keyword}{new} 
+      \hyperlink{classlbann_1_1data__reader__merge__samples}{data\_reader\_merge\_samples}(npy\_readers, shuffle);
+137         reader = merged\_samples;
+138       \}\textcolor{keywordflow}{else} \{
+139         \textcolor{comment}{//create label file}
+140         \textcolor{keyword}{auto}* label\_csv = \textcolor{keyword}{new} \hyperlink{classlbann_1_1csv__reader}{csv\_reader}(shuffle);
+141         label\_csv->set\_data\_filename(readme.label\_filename());
+142         label\_csv->disable\_labels(readme.disable\_labels());
+143         label\_csv->enable\_responses(readme.disable\_responses());
+144         label\_csv->set\_has\_header(readme.has\_header()); \textcolor{comment}{//use same as parent file}
+145         label\_csv->set\_label\_col(0); \textcolor{comment}{//assume there is only one label file and the column and is label
+       column}
+146         label\_csv->set\_response\_col(0);
+147         \hyperlink{classlbann_1_1data__reader__merge__features}{data\_reader\_merge\_features}* merged\_features = \textcolor{keyword}{new} 
+      \hyperlink{classlbann_1_1data__reader__merge__features}{data\_reader\_merge\_features}(npy\_readers,label\_csv, shuffle);
+148         reader = merged\_features;
+149       \}
+150 
+151     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"synthetic"}) \{
+152       reader = \textcolor{keyword}{new} \hyperlink{classlbann_1_1data__reader__synthetic}{data\_reader\_synthetic}(readme.num\_samples(), readme.num\_features(), 
+      shuffle);
+153     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"ascii"}) \{
+154       reader = \textcolor{keyword}{new} \hyperlink{classlbann_1_1ascii__reader}{ascii\_reader}(p.model().recurrent().unroll\_depth(), shuffle);
+155     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"mesh"}) \{
+156       reader = \textcolor{keyword}{new} \hyperlink{classlbann_1_1mesh__reader}{mesh\_reader}(shuffle);
+157     \} \textcolor{keywordflow}{else} \{
+158       \textcolor{keywordflow}{if} (master) \{
+159         err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: unknown name for data reader: "}
+160             << name;
+161         \textcolor{keywordflow}{throw} \hyperlink{classlbann_1_1lbann__exception}{lbann\_exception}(err.str());
+162       \}
+163     \}
+164 
+165     \textcolor{keywordflow}{if} (readme.data\_filename() != \textcolor{stringliteral}{""}) \{
+166       reader->\hyperlink{classlbann_1_1generic__data__reader_a74b7ef4fe0dc7d3a96868ca3b5fbf897}{set\_data\_filename}( readme.data\_filename() );
+167     \}
+168     \textcolor{keywordflow}{if} (readme.label\_filename() != \textcolor{stringliteral}{""} && name != \textcolor{stringliteral}{"merge\_features"}) \{ \textcolor{comment}{//label\_file set differently for
+       merge\_features}
+169       reader->\hyperlink{classlbann_1_1generic__data__reader_af45f301cc9adc2f8184b81d8d2600b8f}{set\_label\_filename}( readme.label\_filename() );
+170     \}
+171     \textcolor{keywordflow}{if} (readme.data\_filedir() != \textcolor{stringliteral}{""}) \{
+172       reader->\hyperlink{classlbann_1_1generic__data__reader_a94a6db0b62d4c98202ef309eb76b220c}{set\_file\_dir}( readme.data\_filedir() );
+173     \}
+174 
+175     reader->\hyperlink{classlbann_1_1generic__data__reader_aa2d83c4ffc58534e0c193b6b9f9fb925}{set\_absolute\_sample\_count}( readme.absolute\_sample\_count() );
+176     reader->\hyperlink{classlbann_1_1generic__data__reader_ae6929a8bd2e59da72a8c2e537f0b2b37}{set\_use\_percent}( readme.percent\_of\_data\_to\_use() );
+177     reader->\hyperlink{classlbann_1_1generic__data__reader_aca4e6c31df0a1579079274bc48fbbf26}{set\_first\_n}( readme.first\_n() );
+178 
+179     \textcolor{keywordflow}{if} (set\_up\_generic\_preprocessor) \{
+180       \hyperlink{init__image__data__readers_8cpp_a0e66a70e8fd1805c0a7433d359f73b85}{init\_generic\_preprocessor}(readme, master, reader);
+181     \}
+182 
+183     \textcolor{keywordflow}{if} (readme.role() == \textcolor{stringliteral}{"train"}) \{
+184       reader->\hyperlink{classlbann_1_1generic__data__reader_adeb9413be971a0c1454fdeb46fea0716}{set\_role}(\textcolor{stringliteral}{"train"});
+185     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (readme.role() == \textcolor{stringliteral}{"test"}) \{
+186       reader->\hyperlink{classlbann_1_1generic__data__reader_adeb9413be971a0c1454fdeb46fea0716}{set\_role}(\textcolor{stringliteral}{"test"});
+187     \} \textcolor{keywordflow}{else} \{
+188       reader->\hyperlink{classlbann_1_1generic__data__reader_adeb9413be971a0c1454fdeb46fea0716}{set\_role}(\textcolor{stringliteral}{"error"});
+189     \}
+190     \textcolor{keywordflow}{if} (readme.role() == \textcolor{stringliteral}{"train"}) \{
+191       reader->\hyperlink{classlbann_1_1generic__data__reader_a18b67bfa426eb4d2c8195d115c4df49f}{set\_validation\_percent}( readme.validation\_percent() );
+192     \}
+193 
+194     reader->\hyperlink{classlbann_1_1generic__data__reader_a343f7d791a04aa1ef30ff829a899e2ae}{set\_master}(master);
+195 
+196     reader->\hyperlink{classlbann_1_1generic__data__reader_a39f4d80661a2c8e24d8d167ad5bd6c6b}{set\_comm}(comm);
+197     reader->\hyperlink{classlbann_1_1generic__data__reader_afeb47703d988a230a59859cbfc178215}{load}();
+198 
+199     \textcolor{keywordflow}{if} (readme.role() == \textcolor{stringliteral}{"train"}) \{
+200       data\_readers[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8ac185ddac8b5a8f5aa23c5b80bc12d214}{execution\_mode::training}] = reader;
+201     \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (readme.role() == \textcolor{stringliteral}{"test"}) \{
+202       data\_readers[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aae2b1fca515949e5d54fb22b8ed95575}{execution\_mode::testing}] = reader;
+203     \}
+204 
+205     \textcolor{keywordflow}{if} (readme.role() == \textcolor{stringliteral}{"train"}) \{
+206       \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"mnist"}) \{
+207         reader\_validation = \textcolor{keyword}{new} \hyperlink{classlbann_1_1mnist__reader}{mnist\_reader}(shuffle);
+208         (*(\hyperlink{classlbann_1_1mnist__reader}{mnist\_reader} *)reader\_validation) = (*(\hyperlink{classlbann_1_1mnist__reader}{mnist\_reader} *)reader);
+209       \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"imagenet\_org"}) \{
+210         reader\_validation = \textcolor{keyword}{new} \hyperlink{classlbann_1_1imagenet__reader__org}{imagenet\_reader\_org}(shuffle);
+211         (*(\hyperlink{classlbann_1_1imagenet__reader__org}{imagenet\_reader\_org} *)reader\_validation) = (*(
+      \hyperlink{classlbann_1_1imagenet__reader__org}{imagenet\_reader\_org} *)reader);
+212       \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"imagenet"}) \{
+213         reader\_validation = \textcolor{keyword}{new} \hyperlink{classlbann_1_1imagenet__reader}{imagenet\_reader}(*dynamic\_cast<const imagenet\_reader*>(reader
+      ));
+214       \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"imagenet\_single"}) \{
+215         reader\_validation = \textcolor{keyword}{new} \hyperlink{classlbann_1_1imagenet__reader__single}{imagenet\_reader\_single}(*dynamic\_cast<const
+       imagenet\_reader\_single*>(reader));
+216       \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"imagenet\_patches"}) \{
+217         reader\_validation = \textcolor{keyword}{new} \hyperlink{classlbann_1_1imagenet__reader__patches}{imagenet\_reader\_patches}(*dynamic\_cast<const
+       imagenet\_reader\_patches*>(reader));
+218       \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"triplet"}) \{
+219         reader\_validation = \textcolor{keyword}{new} \hyperlink{classlbann_1_1data__reader__triplet}{data\_reader\_triplet}(*dynamic\_cast<const
+       data\_reader\_triplet*>(reader));
+220       \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"mnist\_siamese"}) \{
+221         reader\_validation = \textcolor{keyword}{new} \hyperlink{classlbann_1_1data__reader__mnist__siamese}{data\_reader\_mnist\_siamese}(*dynamic\_cast<const
+       data\_reader\_mnist\_siamese*>(reader));
+222       \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"multi\_images"}) \{
+223         reader\_validation = \textcolor{keyword}{new} \hyperlink{classlbann_1_1data__reader__multi__images}{data\_reader\_multi\_images}(*dynamic\_cast<const
+       data\_reader\_multi\_images*>(reader));
+224       \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"jag"}) \{
+225         reader\_validation = \textcolor{keyword}{new} \hyperlink{classlbann_1_1data__reader__jag}{data\_reader\_jag}(shuffle);
+226         *\textcolor{keyword}{dynamic\_cast<}\hyperlink{classlbann_1_1data__reader__jag}{data\_reader\_jag}*\textcolor{keyword}{>}(reader\_validation) = *dynamic\_cast<const
+       data\_reader\_jag*>(reader);
+227       \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"nci"}) \{
+228         reader\_validation = \textcolor{keyword}{new} \hyperlink{classlbann_1_1data__reader__nci}{data\_reader\_nci}(shuffle);
+229         (*(\hyperlink{classlbann_1_1data__reader__nci}{data\_reader\_nci} *)reader\_validation) = (*(
+      \hyperlink{classlbann_1_1data__reader__nci}{data\_reader\_nci} *)reader);
+230       \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"csv"}) \{
+231         reader\_validation = \textcolor{keyword}{new} \hyperlink{classlbann_1_1csv__reader}{csv\_reader}(shuffle);
+232         (*(\hyperlink{classlbann_1_1csv__reader}{csv\_reader} *)reader\_validation) = (*(\hyperlink{classlbann_1_1csv__reader}{csv\_reader} *)reader);
+233       \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"numpy"}) \{
+234         reader\_validation = \textcolor{keyword}{new} \hyperlink{classlbann_1_1numpy__reader}{numpy\_reader}(shuffle);
+235         (*(\hyperlink{classlbann_1_1numpy__reader}{numpy\_reader} *)reader\_validation) = (*(\hyperlink{classlbann_1_1numpy__reader}{numpy\_reader} *)reader);
+236       \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"merge\_samples"}) \{
+237         reader\_validation = \textcolor{keyword}{new} \hyperlink{classlbann_1_1data__reader__merge__samples}{data\_reader\_merge\_samples}(*(
+      \hyperlink{classlbann_1_1data__reader__merge__samples}{data\_reader\_merge\_samples} *)reader);
+238       \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"merge\_features"}) \{
+239         reader\_validation = \textcolor{keyword}{new} \hyperlink{classlbann_1_1data__reader__merge__features}{data\_reader\_merge\_features}(*(
+      \hyperlink{classlbann_1_1data__reader__merge__features}{data\_reader\_merge\_features} *)reader);
+240       \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"cifar10"}) \{
+241         reader\_validation = \textcolor{keyword}{new} \hyperlink{classlbann_1_1cifar10__reader}{cifar10\_reader}(shuffle);
+242         (*(\hyperlink{classlbann_1_1cifar10__reader}{cifar10\_reader} *)reader\_validation) = (*(\hyperlink{classlbann_1_1cifar10__reader}{cifar10\_reader} *)reader);
+243         \textcolor{comment}{/*}
+244 \textcolor{comment}{        \} else if (name == "synthetic") \{}
+245 \textcolor{comment}{        reader\_validation = new data\_reader\_synthetic(shuffle);}
+246 \textcolor{comment}{        */}
+247       \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"ascii"}) \{
+248         reader\_validation = \textcolor{keyword}{new} \hyperlink{classlbann_1_1ascii__reader}{ascii\_reader}(p.model().recurrent().unroll\_depth(), shuffle);
+249         (*(\hyperlink{classlbann_1_1ascii__reader}{ascii\_reader} *)reader\_validation) = (*(\hyperlink{classlbann_1_1ascii__reader}{ascii\_reader} *)reader);
+250       \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"mesh"}) \{
+251         reader\_validation = \textcolor{keyword}{new} \hyperlink{classlbann_1_1mesh__reader}{mesh\_reader}(shuffle);
+252         (*(\hyperlink{classlbann_1_1mesh__reader}{mesh\_reader} *)reader\_validation) = (*(\hyperlink{classlbann_1_1mesh__reader}{mesh\_reader} *)reader);
+253       \}
+254 
+255       reader\_validation->\hyperlink{classlbann_1_1generic__data__reader_adeb9413be971a0c1454fdeb46fea0716}{set\_role}(\textcolor{stringliteral}{"validate"});
+256       reader\_validation->\hyperlink{classlbann_1_1generic__data__reader_afa621af16f1a582b5a22405b79dbe052}{use\_unused\_index\_set}();
+257 
+258       \textcolor{keywordflow}{if} (master) \{
+259         \textcolor{keywordtype}{size\_t} num\_train = reader->\hyperlink{classlbann_1_1generic__data__reader_adcdb833aff7ce85b0879334b252f357a}{get\_num\_data}();
+260         \textcolor{keywordtype}{size\_t} num\_validate = reader\_validation->\hyperlink{classlbann_1_1generic__data__reader_adcdb833aff7ce85b0879334b252f357a}{get\_num\_data}();
+261         \textcolor{keywordtype}{double} validate\_percent = ((double) num\_validate / (\textcolor{keywordtype}{double}) (num\_train+num\_validate))*100.0;
+262         \textcolor{keywordtype}{double} train\_percent = ((double) num\_train / (\textcolor{keywordtype}{double}) (num\_train+num\_validate))*100.0;
+263         std::cout << \textcolor{stringliteral}{"Training using "} << train\_percent << \textcolor{stringliteral}{"% of the training data set, which is "} << 
+      reader->\hyperlink{classlbann_1_1generic__data__reader_adcdb833aff7ce85b0879334b252f357a}{get\_num\_data}() << \textcolor{stringliteral}{" samples."} << std::endl
+264                   << \textcolor{stringliteral}{"Validating training using "} << validate\_percent << \textcolor{stringliteral}{"% of the training data set, which
+       is "} << reader\_validation->\hyperlink{classlbann_1_1generic__data__reader_adcdb833aff7ce85b0879334b252f357a}{get\_num\_data}() << \textcolor{stringliteral}{" samples."} << std::endl;
+265       \}
+266 
+267       data\_readers[\hyperlink{base_8hpp_a2781a159088df64ed7d47cc91c4dc0a8aa617908b172c473cb8e8cda059e55bf0}{execution\_mode::validation}] = reader\_validation;
+268     \}
+269   \}
+270 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{proto__common_8hpp_a32d4c032abc19c091fa65ace580fc057_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{proto__common_8hpp_a403b98ced142a0afa3b939e7af1095b0}\label{proto__common_8hpp_a403b98ced142a0afa3b939e7af1095b0}} 
+\index{proto\+\_\+common.\+hpp@{proto\+\_\+common.\+hpp}!print\+\_\+help@{print\+\_\+help}}
+\index{print\+\_\+help@{print\+\_\+help}!proto\+\_\+common.\+hpp@{proto\+\_\+common.\+hpp}}
+\subsubsection{\texorpdfstring{print\+\_\+help()}{print\_help()}}
+{\footnotesize\ttfamily void print\+\_\+help (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+::lbann\+\_\+comm} $\ast$}]{comm }\end{DoxyParamCaption})}
+
+
+
+prints usage information 
+
+
+
+Definition at line 603 of file proto\+\_\+common.\+cpp.
+
+
+\begin{DoxyCode}
+604 \{
+605   \textcolor{keywordflow}{if} (!comm->\hyperlink{classlbann_1_1lbann__comm_a1ef526486183a29feadca9bef096a534}{am\_world\_master}()) \{
+606     \textcolor{keywordflow}{return};
+607   \}
+608 
+609   std::cerr <<
+610        \textcolor{stringliteral}{"General usage: you need to specify three prototext files, e.g:\(\backslash\)n"}
+611        \textcolor{stringliteral}{"  srun -n# proto --model=<string> --optimizer=<string> --reader=<string>\(\backslash\)n"}
+612        \textcolor{stringliteral}{"\(\backslash\)n"}
+613        \textcolor{stringliteral}{"  However, if you are re-running an experiment from a previously saved\(\backslash\)n"}
+614        \textcolor{stringliteral}{"  file, you only need to specify --model=<string>\(\backslash\)n"}
+615        \textcolor{stringliteral}{"  When proto is run, an output file containing the concatenated prototext\(\backslash\)n"}
+616        \textcolor{stringliteral}{"  files, along with other data is written. The default name for this file\(\backslash\)n"}
+617        \textcolor{stringliteral}{"  is 'data.prototext'  You can specify an alternative name via the option:\(\backslash\)n"}
+618        \textcolor{stringliteral}{"  --saveme=<string>  You can suppress writing the file via the option:\(\backslash\)n"}
+619        \textcolor{stringliteral}{"  --saveme=0\(\backslash\)n"}
+620        \textcolor{stringliteral}{"\(\backslash\)n"}
+621        \textcolor{stringliteral}{"Some prototext values can be over-riden on the command line;\(\backslash\)n"}
+622        \textcolor{stringliteral}{"(notes: use '1' or '0' for bool; if no value is given for a flag,\(\backslash\)n"}
+623        \textcolor{stringliteral}{"        e.g: --disable\_cuda, then a value of '1' is assigned)\(\backslash\)n"}
+624        \textcolor{stringliteral}{"\(\backslash\)n"}
+625        \textcolor{stringliteral}{"General:\(\backslash\)n"}
+626        \textcolor{stringliteral}{"  --dag\_model\(\backslash\)n"}
+627        \textcolor{stringliteral}{"  --mini\_batch\_size=<int>\(\backslash\)n"}
+628        \textcolor{stringliteral}{"  --num\_epochs=<int>\(\backslash\)n"}
+629        \textcolor{stringliteral}{"  --block\_size=<int>\(\backslash\)n"}
+630        \textcolor{stringliteral}{"  --procs\_per\_model=<int>\(\backslash\)n"}
+631        \textcolor{stringliteral}{"  --num\_gpus=<int>\(\backslash\)n"}
+632        \textcolor{stringliteral}{"  --disable\_cuda=<bool>\(\backslash\)n"}
+633        \textcolor{stringliteral}{"     has no effect unless lbann was compiled with: LBANN\_HAS\_CUDNN\(\backslash\)n"}
+634        \textcolor{stringliteral}{"  --random\_seed=<int>\(\backslash\)n"}
+635        \textcolor{stringliteral}{"  --objective\_function<string>\(\backslash\)n"}
+636        \textcolor{stringliteral}{"      <string> must be: categorical\_cross\_entropy or mean\_squared\_error\(\backslash\)n"}
+637        \textcolor{stringliteral}{"  --data\_layout<string>\(\backslash\)n"}
+638        \textcolor{stringliteral}{"      <string> must be: data\_parallel or model\_parallel\(\backslash\)n"}
+639        \textcolor{stringliteral}{"      note: this will be applied to all layers, metrics (and others)\(\backslash\)n"}
+640        \textcolor{stringliteral}{"            that take DATA\_PARALLEL or MODEL\_PARALLEL as a template parameter\(\backslash\)n"}
+641        \textcolor{stringliteral}{"  --print\_affinity\(\backslash\)n"}
+642        \textcolor{stringliteral}{"      display information on how OpenMP threads are provisioned\(\backslash\)n"}
+643        \textcolor{stringliteral}{"\(\backslash\)n"}
+644        \textcolor{stringliteral}{"DataReaders:\(\backslash\)n"}
+645        \textcolor{stringliteral}{"  --data\_filedir=<string>\(\backslash\)n"}
+646        \textcolor{stringliteral}{"      sets the file directory for train and test data\(\backslash\)n"}
+647        \textcolor{stringliteral}{"  --data\_filedir\_train=<string>   --data\_filedir\_test=<string>\(\backslash\)n"}
+648        \textcolor{stringliteral}{"  --data\_filename\_train=<string>  --data\_filename\_test=<string>\(\backslash\)n"}
+649        \textcolor{stringliteral}{"  --label\_filename\_train=<string> --label\_filename\_test=<string>\(\backslash\)n"}
+650        \textcolor{stringliteral}{"  --data\_reader\_percent=<float>\(\backslash\)n"}
+651        \textcolor{stringliteral}{"\(\backslash\)n"}
+652        \textcolor{stringliteral}{"Callbacks:\(\backslash\)n"}
+653        \textcolor{stringliteral}{"  --image\_dir=<string>\(\backslash\)n"}
+654        \textcolor{stringliteral}{"      if the model has callback\_save\_images, this determines where the\(\backslash\)n"}
+655        \textcolor{stringliteral}{"      images are saved\(\backslash\)n"}
+656        \textcolor{stringliteral}{"  --no\_im\_comm=<bool>\(\backslash\)n"}
+657        \textcolor{stringliteral}{"      removes ImComm callback, if present; this is intended for\(\backslash\)n"}
+658        \textcolor{stringliteral}{"      running alexnet with a single model, but may be useful elsewhere\(\backslash\)n"}
+659        \textcolor{stringliteral}{"\(\backslash\)n"}
+660        \textcolor{stringliteral}{"Optimizers; all values except for nesterov are floats;\(\backslash\)n"}
+661        \textcolor{stringliteral}{"            the values shown in <...> are the default values, that will be\(\backslash\)n"}
+662        \textcolor{stringliteral}{"            used if the option is not specified on the cmd line.\(\backslash\)n"}
+663        \textcolor{stringliteral}{"            If you specify an option that is not applicable to your choice\(\backslash\)n"}
+664        \textcolor{stringliteral}{"            of optimizer, the option is ignored\(\backslash\)n"}
+665        \textcolor{stringliteral}{"\(\backslash\)n"}
+666        \textcolor{stringliteral}{"  --opt=<string>\(\backslash\)n"}
+667        \textcolor{stringliteral}{"     <string> must be one of:\(\backslash\)n"}
+668        \textcolor{stringliteral}{"         adagrad, adam, hypergradient\_adam, rmsprop, sgd\(\backslash\)n"}
+669        \textcolor{stringliteral}{"\(\backslash\)n"}
+670        \textcolor{stringliteral}{"  --learn\_rate=< 0.01 >          (all except hypergradient\_adam)\(\backslash\)n"}
+671        \textcolor{stringliteral}{"  --eps=< 1e-8 >                 (all except sgd)\(\backslash\)n"}
+672        \textcolor{stringliteral}{"  --beta1=< 0.9 >                (adam, hypergradient\_adam)\(\backslash\)n"}
+673        \textcolor{stringliteral}{"  --beta2=< 0.99 >               (adam, hypergradient\_adam)\(\backslash\)n"}
+674        \textcolor{stringliteral}{"  --init\_learning\_rate=< 0.01 >  (hypergradient\_adam)\(\backslash\)n"}
+675        \textcolor{stringliteral}{"  --hyper\_learning\_rate=< 1e-7 > (hypergradient\_adam)\(\backslash\)n"}
+676        \textcolor{stringliteral}{"  --momentum=< 0.9 >             (sgd)\(\backslash\)n"}
+677        \textcolor{stringliteral}{"  --decay\_rate=< 0.5 >           (sgd, rmsprop)\(\backslash\)n"}
+678        \textcolor{stringliteral}{"  --nesterov=< false >           (sgd)\(\backslash\)n"};
+679 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=285pt]{proto__common_8hpp_a403b98ced142a0afa3b939e7af1095b0_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{proto__common_8hpp_adf83ffea572cec61b853b61aa68bea27}\label{proto__common_8hpp_adf83ffea572cec61b853b61aa68bea27}} 
+\index{proto\+\_\+common.\+hpp@{proto\+\_\+common.\+hpp}!print\+\_\+parameters@{print\+\_\+parameters}}
+\index{print\+\_\+parameters@{print\+\_\+parameters}!proto\+\_\+common.\+hpp@{proto\+\_\+common.\+hpp}}
+\subsubsection{\texorpdfstring{print\+\_\+parameters()}{print\_parameters()}}
+{\footnotesize\ttfamily void print\+\_\+parameters (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+::lbann\+\_\+comm} $\ast$}]{comm,  }\item[{lbann\+\_\+data\+::\+Lbann\+PB \&}]{p }\end{DoxyParamCaption})}
+
+
+
+print various params (learn\+\_\+rate, etc) to cout 
+
+
+
+Definition at line 541 of file proto\+\_\+common.\+cpp.
+
+
+\begin{DoxyCode}
+542 \{
+543   \textcolor{keywordflow}{if} (!comm->\hyperlink{classlbann_1_1lbann__comm_a1ef526486183a29feadca9bef096a534}{am\_world\_master}()) \{
+544     \textcolor{keywordflow}{return};
+545   \}
+546 
+547   \textcolor{keyword}{const} lbann\_data::Model &m = p.model();
+548 
+549   std::cout << std::endl
+550             << \textcolor{stringliteral}{"Running with these parameters:\(\backslash\)n"}
+551             << \textcolor{stringliteral}{" General:\(\backslash\)n"}
+552             << \textcolor{stringliteral}{"  datatype size:        "} << \textcolor{keyword}{sizeof}(DataType) << std::endl
+553             << \textcolor{stringliteral}{"  mini\_batch\_size:      "} << m.mini\_batch\_size() << std::endl
+554             << \textcolor{stringliteral}{"  num\_epochs:           "} << m.num\_epochs()  << std::endl
+555             << \textcolor{stringliteral}{"  block\_size:           "} << m.block\_size()  << std::endl
+556             << \textcolor{stringliteral}{"  procs\_per\_model:      "} << m.procs\_per\_model()  << std::endl
+557             << \textcolor{stringliteral}{"  num\_gpus:             "} << m.num\_gpus()  << std::endl
+558             << \textcolor{stringliteral}{"  num\_parallel\_readers: "} << m.num\_parallel\_readers()  << std::endl
+559             << \textcolor{stringliteral}{"  disable\_cuda:         "} << m.disable\_cuda()  << std::endl
+560             << \textcolor{stringliteral}{"  random\_seed:          "} << m.random\_seed() << std::endl
+561             << \textcolor{stringliteral}{"  data\_layout:          "} << m.data\_layout()  << std::endl
+562             << \textcolor{stringliteral}{"     (only used for metrics)\(\backslash\)n"}
+563             << \textcolor{stringliteral}{"\(\backslash\)n"}
+564             << \textcolor{stringliteral}{" Optimizer:  "};
+565 
+566   \textcolor{keyword}{const} lbann\_data::Optimizer &o = p.optimizer();
+567   \textcolor{keywordflow}{if} (o.has\_adagrad()) \{
+568     \textcolor{keyword}{const} lbann\_data::Adagrad &a = o.adagrad();
+569     std::cout << \textcolor{stringliteral}{"  Adagrad\(\backslash\)n"}
+570               << \textcolor{stringliteral}{"  learn\_rate: "} << a.learn\_rate()  << std::endl
+571               << \textcolor{stringliteral}{"  eps:        "} << a.eps()  << std::endl;
+572   \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (o.has\_rmsprop()) \{
+573     \textcolor{keyword}{const} lbann\_data::Rmsprop &a = o.rmsprop();
+574     std::cout <<  \textcolor{stringliteral}{"  Rmsprop\(\backslash\)n"}
+575               << \textcolor{stringliteral}{"  learn\_rate: "} << a.learn\_rate()  << std::endl
+576               << \textcolor{stringliteral}{"  decay\_rate: "} << a.decay\_rate()  << std::endl
+577               << \textcolor{stringliteral}{"  eps:        "} << a.eps()  << std::endl;
+578   \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (o.has\_adam()) \{
+579     \textcolor{keyword}{const} lbann\_data::Adam &a = o.adam();
+580     std::cout << \textcolor{stringliteral}{"  Adam\(\backslash\)n"}
+581               << \textcolor{stringliteral}{"  learn\_rate: "} << a.learn\_rate()  << std::endl
+582               << \textcolor{stringliteral}{"  beta1:      "} << a.beta1()  << std::endl
+583               << \textcolor{stringliteral}{"  beta2:      "} << a.beta2()  << std::endl
+584               << \textcolor{stringliteral}{"  eps:        "} << a.eps()  << std::endl;
+585   \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (o.has\_hypergradient\_adam()) \{
+586     \textcolor{keyword}{const} lbann\_data::HypergradientAdam &a = o.hypergradient\_adam();
+587     std::cout << \textcolor{stringliteral}{"  HypergradientAdam\(\backslash\)n"}
+588               << \textcolor{stringliteral}{"  init\_learning\_rate:  "} << a.init\_learning\_rate()  << std::endl
+589               << \textcolor{stringliteral}{"  hyper\_learning\_rate: "} << a.hyper\_learning\_rate()  << std::endl
+590               << \textcolor{stringliteral}{"  beta1:               "} << a.beta1()  << std::endl
+591               << \textcolor{stringliteral}{"  beta2:               "} << a.beta2()  << std::endl
+592               << \textcolor{stringliteral}{"  eps:                 "} << a.eps()  << std::endl;
+593   \} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (o.has\_sgd()) \{
+594     \textcolor{keyword}{const} lbann\_data::Sgd &a = o.sgd();
+595     std::cout << \textcolor{stringliteral}{"  Sgd\(\backslash\)n"}
+596               << \textcolor{stringliteral}{"  learn\_rate: "} << a.learn\_rate()  << std::endl
+597               << \textcolor{stringliteral}{"  momentum:   "} << a.momentum()  << std::endl
+598               << \textcolor{stringliteral}{"  decay\_rate: "} << a.decay\_rate()  << std::endl
+599               << \textcolor{stringliteral}{"  nesterov:   "} << a.nesterov()  << std::endl;
+600   \}
+601 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=316pt]{proto__common_8hpp_adf83ffea572cec61b853b61aa68bea27_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{proto__common_8hpp_addbf693bd6d4a399daa599ba03509569}\label{proto__common_8hpp_addbf693bd6d4a399daa599ba03509569}} 
+\index{proto\+\_\+common.\+hpp@{proto\+\_\+common.\+hpp}!read\+\_\+prototext\+\_\+file@{read\+\_\+prototext\+\_\+file}}
+\index{read\+\_\+prototext\+\_\+file@{read\+\_\+prototext\+\_\+file}!proto\+\_\+common.\+hpp@{proto\+\_\+common.\+hpp}}
+\subsubsection{\texorpdfstring{read\+\_\+prototext\+\_\+file()}{read\_prototext\_file()}}
+{\footnotesize\ttfamily void read\+\_\+prototext\+\_\+file (\begin{DoxyParamCaption}\item[{std\+::string}]{fn,  }\item[{lbann\+\_\+data\+::\+Lbann\+PB \&}]{pb,  }\item[{bool}]{master }\end{DoxyParamCaption})}
+
+
+
+Definition at line 272 of file proto\+\_\+common.\+cpp.
+
+
+\begin{DoxyCode}
+273 \{
+274   std::stringstream err;
+275   \textcolor{keywordtype}{int} fd = open(fn.c\_str(), O\_RDONLY);
+276   \textcolor{keywordflow}{if} (fd == -1) \{
+277     \textcolor{keywordflow}{if} (master) \{
+278       err <<  \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: failed to open "} << fn << \textcolor{stringliteral}{" for reading"};
+279       \textcolor{keywordflow}{throw} \hyperlink{classlbann_1_1lbann__exception}{lbann\_exception}(err.str());
+280     \}
+281   \}
+282   \textcolor{keyword}{auto} *input = \textcolor{keyword}{new} google::protobuf::io::FileInputStream(fd);
+283   \textcolor{keywordtype}{bool} success = google::protobuf::TextFormat::Parse(input, &pb);
+284   \textcolor{keywordflow}{if} (!success) \{
+285     \textcolor{keywordflow}{if} (master) \{
+286       err <<  \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_ << \textcolor{stringliteral}{" :: failed to read or parse prototext file: "} << fn << 
+      std::endl;
+287       \textcolor{keywordflow}{throw} \hyperlink{classlbann_1_1lbann__exception}{lbann\_exception}(err.str());
+288     \}
+289   \}
+290   input->Close();
+291   \textcolor{keyword}{delete} input;
+292 \}
+\end{DoxyCode}
+Here is the caller graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{proto__common_8hpp_addbf693bd6d4a399daa599ba03509569_icgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{proto__common_8hpp_a4f1af470c45e9ed06039685e5f72ea4a}\label{proto__common_8hpp_a4f1af470c45e9ed06039685e5f72ea4a}} 
+\index{proto\+\_\+common.\+hpp@{proto\+\_\+common.\+hpp}!save\+\_\+session@{save\+\_\+session}}
+\index{save\+\_\+session@{save\+\_\+session}!proto\+\_\+common.\+hpp@{proto\+\_\+common.\+hpp}}
+\subsubsection{\texorpdfstring{save\+\_\+session()}{save\_session()}}
+{\footnotesize\ttfamily void save\+\_\+session (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+::lbann\+\_\+comm} $\ast$}]{comm,  }\item[{int}]{argc,  }\item[{char $\ast$$\ast$}]{argv,  }\item[{lbann\+\_\+data\+::\+Lbann\+PB \&}]{p }\end{DoxyParamCaption})}
+
+
+
+prints prototext file, cmd line, etc to file 
+
+
+
+Definition at line 695 of file proto\+\_\+common.\+cpp.
+
+
+\begin{DoxyCode}
+696 \{
+697   \textcolor{keywordflow}{if} (!comm->\hyperlink{classlbann_1_1lbann__comm_a1ef526486183a29feadca9bef096a534}{am\_world\_master}()) \{
+698     \textcolor{keywordflow}{return};
+699   \}
+700 
+701   \hyperlink{classoptions}{options} *opts = \hyperlink{classoptions_a9ecfe9c365269df68a41b961c31ae3f5}{options::get}();
+702 
+703   \textcolor{comment}{//do not write output file for a repeated experiment;}
+704   \textcolor{comment}{//may want to revisit this decision later ...}
+705   \textcolor{keywordflow}{if} (opts->\hyperlink{classoptions_a5db5b27267c27ffe1b029948f64e54c1}{has\_string}(\textcolor{stringliteral}{"loadme"})) \{
+706     \textcolor{keywordflow}{return};
+707   \}
+708 
+709   \textcolor{comment}{//get output filename}
+710   std::string base = \textcolor{stringliteral}{"."};
+711   \textcolor{keywordflow}{if} (!opts->\hyperlink{classoptions_a5db5b27267c27ffe1b029948f64e54c1}{has\_string}(\textcolor{stringliteral}{"saveme"})) \{
+712     std::cerr << \textcolor{stringliteral}{"\(\backslash\)nNOT WRITING SAVE\_SESSION FILE since option --saveme=<string> is absent\(\backslash\)n\(\backslash\)n"};
+713     \textcolor{keywordflow}{return};
+714   \}
+715   std::string name = opts->\hyperlink{classoptions_aeb84be21a30b0dd41d7d9f3f52c0f3f7}{get\_string}(\textcolor{stringliteral}{"saveme"});
+716   \textcolor{keywordflow}{if} (name == \textcolor{stringliteral}{"0"}) \{
+717     std::cerr << \textcolor{stringliteral}{"\(\backslash\)nNOT WRITING SAVE\_SESSION FILE due to option: --saveme=0\(\backslash\)n\(\backslash\)n"};
+718     \textcolor{keywordflow}{return};
+719   \}
+720 
+721   \textcolor{comment}{//check if "name" exists; if yes, append "\_1"}
+722   \textcolor{keywordtype}{bool} \hyperlink{namespacelbann_aefae2a9fc9d742ece0fa8ca7ed9ee137}{exists} = \textcolor{keyword}{false};
+723   std::ifstream in(name.c\_str());
+724   \textcolor{keywordflow}{if} (in) \{
+725     exists = \textcolor{keyword}{true};
+726     in.close();
+727   \}
+728   \textcolor{keywordflow}{if} (exists) \{
+729     name += \textcolor{stringliteral}{"\_1"};
+730     \textcolor{comment}{//opts["saveme"] = name;}
+731   \}
+732 
+733   \textcolor{comment}{//open output file}
+734   std::ofstream out(name.c\_str());
+735   \textcolor{keywordflow}{if} (!out.is\_open()) \{
+736     std::stringstream err;
+737     err << \_\_FILE\_\_ << \textcolor{stringliteral}{" "} << \_\_LINE\_\_
+738         << \textcolor{stringliteral}{" :: failed to open file for writing: "} << name;
+739     \textcolor{keywordflow}{throw} std::runtime\_error(err.str());
+740   \}
+741   std::cout << std::endl << \textcolor{stringliteral}{"writing options and prototext to file: "} << name << \textcolor{stringliteral}{"\(\backslash\)n\(\backslash\)n"};
+742 
+743   \textcolor{comment}{//output all data}
+744   out << \textcolor{stringliteral}{"# cmd line for original experiment:\(\backslash\)n#  $ "};
+745   \textcolor{keywordflow}{for} (\textcolor{keywordtype}{int} h=0; h<argc; h++) \{
+746     out << argv[h] << \textcolor{stringliteral}{" "};
+747   \}
+748   std::string lbann\_version(\textcolor{stringliteral}{"unknown: LBANN\_VERSION is not defined"});
+749 
+750 \textcolor{preprocessor}{#ifdef LBANN\_VERSION}
+751   lbann\_version = \hyperlink{base_8hpp_a78b291de8c80b35c360c22d46d44498a}{LBANN\_MAKE\_STR}(LBANN\_VERSION);
+752 \textcolor{preprocessor}{#endif}
+753 
+754   std::time\_t r = std::time(\textcolor{keyword}{nullptr});
+755   \textcolor{keywordtype}{char} *tm = std::ctime(&r);
+756   \textcolor{keywordtype}{size\_t} fixme = strlen(tm);
+757   tm[fixme-1] = 0;
+758   out << \textcolor{stringliteral}{"\(\backslash\)n#\(\backslash\)n# Experiment conducted at: "}
+759       <<  tm
+760       << \textcolor{stringliteral}{"\(\backslash\)n#\(\backslash\)n#\(\backslash\)n# Experiment was run with lbann version: "}
+761       << lbann\_version << \textcolor{stringliteral}{"\(\backslash\)n#\(\backslash\)n#\(\backslash\)n# To rerun the experiment: \(\backslash\)n"}
+762       << \textcolor{stringliteral}{"#  $ srun -n"} << comm->\hyperlink{classlbann_1_1lbann__comm_a1eb92927a8f8bcbdd677ccecc1a33c59}{get\_procs\_in\_world}() << \textcolor{stringliteral}{" "} << argv[0]
+763       << \textcolor{stringliteral}{" --loadme="} << opts->\hyperlink{classoptions_aeb84be21a30b0dd41d7d9f3f52c0f3f7}{get\_string}(\textcolor{stringliteral}{"saveme"}) << \textcolor{stringliteral}{"\(\backslash\)n#\(\backslash\)n#\(\backslash\)n"};
+764 
+765   out << \textcolor{stringliteral}{"# Selected SLURM Environment Variables:\(\backslash\)n"};
+766   std::vector<std::string> v = \{\textcolor{stringliteral}{"HOST"}, \textcolor{stringliteral}{"SLURM\_NODELIST"}, \textcolor{stringliteral}{"SLURM\_NNODES"}, \textcolor{stringliteral}{"SLURM\_NTASKS"}, \textcolor{stringliteral}{"
+      SLURM\_TASKS\_PER\_NODE"}\};
+767   \textcolor{keywordflow}{for} (\textcolor{keyword}{auto} & i : v) \{
+768     \textcolor{keywordtype}{char} *c = std::getenv(i.c\_str());
+769     \textcolor{keywordflow}{if} (c != \textcolor{keyword}{nullptr}) \{
+770       out << \textcolor{stringliteral}{"# "} << i << \textcolor{stringliteral}{"="} << c << std::endl;
+771     \}
+772   \}
+773   out << \textcolor{stringliteral}{"\(\backslash\)n#\(\backslash\)n#\(\backslash\)n"};
+774 
+775   std::string s;
+776   google::protobuf::TextFormat::PrintToString(p, &s);
+777   out << s;
+778   out.close();
+779 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{proto__common_8hpp_a4f1af470c45e9ed06039685e5f72ea4a_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{proto__common_8hpp_ae5ac4c13a36b3222afacd8d7b4786140}\label{proto__common_8hpp_ae5ac4c13a36b3222afacd8d7b4786140}} 
+\index{proto\+\_\+common.\+hpp@{proto\+\_\+common.\+hpp}!set\+\_\+num\+\_\+parallel\+\_\+readers@{set\+\_\+num\+\_\+parallel\+\_\+readers}}
+\index{set\+\_\+num\+\_\+parallel\+\_\+readers@{set\+\_\+num\+\_\+parallel\+\_\+readers}!proto\+\_\+common.\+hpp@{proto\+\_\+common.\+hpp}}
+\subsubsection{\texorpdfstring{set\+\_\+num\+\_\+parallel\+\_\+readers()}{set\_num\_parallel\_readers()}}
+{\footnotesize\ttfamily void set\+\_\+num\+\_\+parallel\+\_\+readers (\begin{DoxyParamCaption}\item[{\hyperlink{classlbann_1_1lbann__comm}{lbann\+::lbann\+\_\+comm} $\ast$}]{comm,  }\item[{lbann\+\_\+data\+::\+Lbann\+PB \&}]{p }\end{DoxyParamCaption})}
+
+
+
+adjusts the number of parallel data readers 
+
+
+
+Definition at line 311 of file proto\+\_\+common.\+cpp.
+
+
+\begin{DoxyCode}
+312 \{
+313   \textcolor{keywordtype}{bool} master = comm->\hyperlink{classlbann_1_1lbann__comm_a1ef526486183a29feadca9bef096a534}{am\_world\_master}();
+314 
+315   lbann\_data::Model *\hyperlink{classlbann_1_1model}{model} = p.mutable\_model();
+316 
+317   \textcolor{keywordtype}{int} parallel\_io = model->num\_parallel\_readers();
+318   \textcolor{keywordflow}{if} (parallel\_io == 0) \{
+319     \textcolor{keywordflow}{if} (master) \{
+320       std::cout << \textcolor{stringliteral}{"\(\backslash\)tMax Parallel I/O Fetch: "} << comm->\hyperlink{classlbann_1_1lbann__comm_a5755dfdfc6377b4cae5ef8f7819e17de}{get\_procs\_per\_model}() <<
+321         \textcolor{stringliteral}{" (Limited to # Processes)"} << std::endl;
+322     \}
+323     parallel\_io = comm->\hyperlink{classlbann_1_1lbann__comm_a5755dfdfc6377b4cae5ef8f7819e17de}{get\_procs\_per\_model}();
+324     model->set\_num\_parallel\_readers(parallel\_io); \textcolor{comment}{//adjust the prototext}
+325   \} \textcolor{keywordflow}{else} \{
+326     \textcolor{keywordflow}{if} (master) \{
+327       std::cout << \textcolor{stringliteral}{"\(\backslash\)tMax Parallel I/O Fetch: "} << parallel\_io << std::endl;
+328     \}
+329   \}
+330 \}
+\end{DoxyCode}
+Here is the call graph for this function\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{proto__common_8hpp_ae5ac4c13a36b3222afacd8d7b4786140_cgraph}
+\end{center}
+\end{figure}
+\mbox{\Hypertarget{proto__common_8hpp_abbea8a6a7289a147495d7391b06e0d93}\label{proto__common_8hpp_abbea8a6a7289a147495d7391b06e0d93}} 
+\index{proto\+\_\+common.\+hpp@{proto\+\_\+common.\+hpp}!write\+\_\+prototext\+\_\+file@{write\+\_\+prototext\+\_\+file}}
+\index{write\+\_\+prototext\+\_\+file@{write\+\_\+prototext\+\_\+file}!proto\+\_\+common.\+hpp@{proto\+\_\+common.\+hpp}}
+\subsubsection{\texorpdfstring{write\+\_\+prototext\+\_\+file()}{write\_prototext\_file()}}
+{\footnotesize\ttfamily void write\+\_\+prototext\+\_\+file (\begin{DoxyParamCaption}\item[{std\+::string}]{fn,  }\item[{lbann\+\_\+data\+::\+Lbann\+PB \&}]{pb }\end{DoxyParamCaption})}
+

@@ -1,0 +1,7 @@
+<map id="lbann::imagenet_reader_patches::get_type" name="lbann::imagenet_reader_patches::get_type">
+<area shape="rect" id="node2" href="$classlbann_1_1imagenet__reader__patches.html#a03a784a9beaf615e9bae9b54763e951b" title="lbann::imagenet_reader\l_patches::imagenet_reader\l_patches" alt="" coords="463,5,646,57"/>
+<area shape="rect" id="node3" href="$classlbann_1_1imagenet__reader__patches.html#a02e20aa26fb3b024486b8d5c71d37aa7" title="lbann::imagenet_reader\l_patches::operator=" alt="" coords="473,87,636,125"/>
+<area shape="rect" id="node4" href="$classlbann_1_1imagenet__reader__patches.html#a714247cc547161688a66a64737527de0" title="Replicate image processor for each OpenMP thread. " alt="" coords="216,64,415,103"/>
+<area shape="rect" id="node6" href="$classlbann_1_1imagenet__reader__patches.html#a8a9e4a1339f2e9676a0e653853ebff3c" title="lbann::imagenet_reader\l_patches::fetch_datum" alt="" coords="234,179,396,217"/>
+<area shape="rect" id="node5" href="$classlbann_1_1imagenet__reader__patches.html#a4d5c6b9780908d9beb5c6d3f017c38b5" title="Get the dimensions of the data. " alt="" coords="469,159,640,197"/>
+</map>
