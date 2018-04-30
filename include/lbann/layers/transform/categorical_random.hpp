@@ -66,7 +66,7 @@ class categorical_random_layer : public transform_layer {
     // Initialize output and random numbers
     const auto& mode = this->m_model->get_execution_mode();
     El::Zero(local_output);
-    StarMat rand_mat(input.Grid(), input.Root());
+    StarVCMat rand_mat(input.Grid(), input.Root());
     if (mode == execution_mode::training) {
       uniform_fill(rand_mat, 1, width, DataType(0.5), DataType(0.5));
     }
@@ -83,7 +83,7 @@ class categorical_random_layer : public transform_layer {
         DataType cdf = DataType(0);
         for (El::Int row = 0; row < local_height; ++row) {
           cdf += local_input(row, col);
-          if (rand > cdf) {
+          if (rand < cdf) {
             index = row;
             break;
           }
