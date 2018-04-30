@@ -416,8 +416,20 @@ void generic_data_reader::set_file_dir(std::string s) {
   }
 }
 
+void generic_data_reader::set_local_file_dir(std::string s) {
+  if(endsWith(s, "/")) {
+    m_local_file_dir = s;
+  }else {
+    m_local_file_dir = s + "/";
+  }
+}
+
 std::string generic_data_reader::get_file_dir() const {
   return m_file_dir;
+}
+
+std::string generic_data_reader::get_local_file_dir() const {
+  return m_local_file_dir;
 }
 
 void generic_data_reader::set_data_filename(std::string s) {
