@@ -114,7 +114,7 @@ EvalType metric::evaluate(execution_mode mode,
   }
 
   // Evaluate objective function
-  double start = get_time();
+  const auto& start = get_time();
   const EvalType total_value = evaluate_compute(m_target_layer->get_prediction(),
                                                 m_target_layer->get_ground_truth());
   m_evaluate_time += get_time() - start;

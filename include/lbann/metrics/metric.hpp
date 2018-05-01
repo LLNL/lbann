@@ -120,8 +120,8 @@ class metric {
    *  may be different from the effective mini-batch size. The result
    *  is stored in history.
    */
-  EvalType evaluate(execution_mode mode,
-                    int mini_batch_size);
+  virtual EvalType evaluate(execution_mode mode,
+                            int mini_batch_size);
 
   /** Clear all statistics. */
   void reset_statistics() { m_statistics.clear(); }
@@ -146,8 +146,11 @@ class metric {
   /** Set list of pointers to layers. */
   void set_layer_pointers(std::vector<Layer*> layers);
 
+  /** Get the time spent in evaluation for this metric (const). */
+  EvalType get_evaluate_time() const { return m_evaluate_time; }
   /** Get the time spent in evaluation for this metric. */
-  double get_evaluate_time() const { return m_evaluate_time; }
+  EvalType& get_evaluate_time() { return m_evaluate_time; }
+
   /** Reset timing counters. */
   void reset_counters() {
     m_evaluate_time = 0.0;
@@ -170,6 +173,9 @@ class metric {
   /** Get LBANN communicator. */
   lbann_comm& get_comm() { return *m_comm; }
 
+  /** Get metric statistics. */
+  std::map<execution_mode,metric_statistics>& get_statistics() { return m_statistics; }
+
  private:
 
   /** LBANN communicator. */
@@ -182,7 +188,7 @@ class metric {
   std::map<execution_mode,metric_statistics> m_statistics;
 
   /** Runtime for the metric evaluation. */
-  double m_evaluate_time = 0.0;
+  EvalType m_evaluate_time = 0.0;
 
 };
 
