@@ -1,6 +1,20 @@
 import pytest
 import os, re, subprocess
 
+def test_compiler_build_script(cluster, dirname):
+    output_file_name = '%s/bamboo/compiler_tests/output/build_script_output.txt' % (dirname)
+    error_file_name = '%s/bamboo/compiler_tests/error/build_script_error.txt' % (dirname)
+    command = '%s/bamboo/compiler_tests/build_script.sh > %s 2> %s' % (dirname, output_file_name, error_file_name)
+    return_code = os.system(command)
+    if return_code != 0:
+        output_file = open(output_file_name, 'r')
+        for line in output_file:
+            print('%s: %s' % (output_file_name, line))
+        error_file = open(error_file_name, 'r')
+        for line in error_file:
+            print('%s: %s' % (error_file_name, line))
+    assert return_code == 0
+
 def test_compiler_clang4_release(cluster, dirname):
     skeleton_clang4(cluster, dirname, False)
 
