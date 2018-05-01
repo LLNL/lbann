@@ -112,8 +112,8 @@ def add_lstm(model, name, parent, size):
 def configure_model(model):
 
     # Data and labels
-    data_dims = [1, 28, 28]
-    label_dims = [10]
+    data_dims = [1, 227, 227]
+    label_dims = [1000]
     data_size = functools.reduce(lambda x, y: x*y, data_dims)
     label_size = functools.reduce(lambda x, y: x*y, label_dims)
     slice_points = [0, data_size, data_size + label_size]
@@ -141,7 +141,7 @@ def configure_model(model):
     l.constant.num_neurons = '1'
 
     # Glimpse position
-    num_locs = 4
+    num_locs = 32
     locs = map(lambda i: 2.0 * i / num_locs - 1.0, range(num_locs))
     l = new_layer(model, 'scaled_locy', 'locy one1', 'sum', 'cpu')
     l.sum.scaling_factors = '0.5 0.5'
@@ -154,9 +154,9 @@ def configure_model(model):
                   'cpu')
 
     # Extract glimpse data
-    crop1_dims = [1, 6, 6]
-    crop2_dims = [1, 12, 12]
-    crop3_dims = [1, 24, 24]
+    crop1_dims = [3, 32, 32]
+    crop2_dims = [3, 64, 64]
+    crop3_dims = [3, 128, 128]
     l = new_layer(model, 'glimpse1', 'data scaled_loc', 'crop')
     l.crop.dims = str_list(crop1_dims)
     l = new_layer(model, 'crop2', 'data scaled_loc', 'crop')
@@ -175,14 +175,92 @@ def configure_model(model):
     l.pooling.pool_mode = 'average'
 
     # Glimpse network
+    l = new_layer(model, 'glimpse1_conv1', 'glimpse1', 'convolution')
+    l.convolution.num_dims = 2
+    l.convolution.num_output_channels = 32
+    l.convolution.conv_dims_i = 3
+    l.convolution.conv_strides_i = 1
+    l.convolution.has_bias = True
+    l = new_layer(model, 'glimpse1_relu1', 'glimpse1_conv1', 'relu')
+    l = new_layer(model, 'glimpse1_conv2', 'glimpse1_relu1', 'convolution')
+    l.convolution.num_dims = 2
+    l.convolution.num_output_channels = 64
+    l.convolution.conv_dims_i = 3
+    l.convolution.conv_strides_i = 1
+    l.convolution.has_bias = True
+    l = new_layer(model, 'glimpse1_relu2', 'glimpse1_conv2', 'relu')
+    l = new_layer(model, 'glimpse1_conv3', 'glimpse1_relu2', 'convolution')
+    l.convolution.num_dims = 2
+    l.convolution.num_output_channels = 128
+    l.convolution.conv_dims_i = 3
+    l.convolution.conv_strides_i = 1
+    l.convolution.has_bias = True
+    l = new_layer(model, 'glimpse1_relu3', 'glimpse1_conv3', 'relu')
+    l = new_layer(model, 'glimpse1_pool', 'glimpse1_relu3', 'pooling')
+    l.pooling.num_dims = 2
+    l.pooling.pool_dims_i = 26
+    l.pooling.pool_strides_i = 1
+    l.pooling.pool_mode = 'average'
+    l = new_layer(model, 'glimpse2_conv1', 'glimpse2', 'convolution')
+    l.convolution.num_dims = 2
+    l.convolution.num_output_channels = 32
+    l.convolution.conv_dims_i = 3
+    l.convolution.conv_strides_i = 1
+    l.convolution.has_bias = True
+    l = new_layer(model, 'glimpse2_relu1', 'glimpse2_conv1', 'relu')
+    l = new_layer(model, 'glimpse2_conv2', 'glimpse2_relu1', 'convolution')
+    l.convolution.num_dims = 2
+    l.convolution.num_output_channels = 64
+    l.convolution.conv_dims_i = 3
+    l.convolution.conv_strides_i = 1
+    l.convolution.has_bias = True
+    l = new_layer(model, 'glimpse2_relu2', 'glimpse2_conv2', 'relu')
+    l = new_layer(model, 'glimpse2_conv3', 'glimpse2_relu2', 'convolution')
+    l.convolution.num_dims = 2
+    l.convolution.num_output_channels = 128
+    l.convolution.conv_dims_i = 3
+    l.convolution.conv_strides_i = 1
+    l.convolution.has_bias = True
+    l = new_layer(model, 'glimpse2_relu3', 'glimpse2_conv3', 'relu')
+    l = new_layer(model, 'glimpse2_pool', 'glimpse2_relu3', 'pooling')
+    l.pooling.num_dims = 2
+    l.pooling.pool_dims_i = 26
+    l.pooling.pool_strides_i = 1
+    l.pooling.pool_mode = 'average'
+    l = new_layer(model, 'glimpse3_conv1', 'glimpse3', 'convolution')
+    l.convolution.num_dims = 2
+    l.convolution.num_output_channels = 32
+    l.convolution.conv_dims_i = 3
+    l.convolution.conv_strides_i = 1
+    l.convolution.has_bias = True
+    l = new_layer(model, 'glimpse3_relu1', 'glimpse3_conv1', 'relu')
+    l = new_layer(model, 'glimpse3_conv2', 'glimpse3_relu1', 'convolution')
+    l.convolution.num_dims = 2
+    l.convolution.num_output_channels = 64
+    l.convolution.conv_dims_i = 3
+    l.convolution.conv_strides_i = 1
+    l.convolution.has_bias = True
+    l = new_layer(model, 'glimpse3_relu2', 'glimpse3_conv2', 'relu')
+    l = new_layer(model, 'glimpse3_conv3', 'glimpse3_relu2', 'convolution')
+    l.convolution.num_dims = 2
+    l.convolution.num_output_channels = 128
+    l.convolution.conv_dims_i = 3
+    l.convolution.conv_strides_i = 1
+    l.convolution.has_bias = True
+    l = new_layer(model, 'glimpse3_relu3', 'glimpse3_conv3', 'relu')
+    l = new_layer(model, 'glimpse3_pool', 'glimpse3_relu3', 'pooling')
+    l.pooling.num_dims = 2
+    l.pooling.pool_dims_i = 26
+    l.pooling.pool_strides_i = 1
+    l.pooling.pool_mode = 'average'
     l = new_layer(model,
                   'glimpse',
-                  'glimpse1 glimpse2 glimpse3',
+                  'glimpse1_pool glimpse2_pool glimpse3_pool',
                   'concatenation')
     
     # Recurrent network
-    add_lstm(model, 'lstm1', 'glimpse', 10)
-    add_lstm(model, 'lstm2', 'lstm1', 10)
+    add_lstm(model, 'lstm1', 'glimpse', 128)
+    add_lstm(model, 'lstm2', 'lstm1', 128)
     
     # Emission network
     l = new_layer(model, 'emission_y_fc', 'lstm2', 'fully_connected')
@@ -243,6 +321,13 @@ def configure_model(model):
     l = new_layer(model, 'obj', 'prob', 'log')
     l = new_layer(model, 'obj_eval', 'obj', 'evaluation')
 
+    # Accuracy
+    l = new_layer(model, 'prediction', 'classification_probs', 'categorical_random', 'cpu')
+    l = new_layer(model, 'accuracy_full', 'label prediction', 'hadamard', 'cpu')
+    l = new_layer(model, 'accuracy', 'accuracy_full', 'reduction')
+    l.reduction.mode = 'sum'
+    l = new_layer(model, 'accuracy_eval', 'accuracy', 'evaluation')
+    
 if __name__ == "__main__":
 
     # Make sure protobuf Python implementation is built

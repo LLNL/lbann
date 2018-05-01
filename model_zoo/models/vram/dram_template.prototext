@@ -8,7 +8,7 @@ model {
   procs_per_model: 0
   num_gpus: -1
   recurrent {
-    unroll_depth : 4
+    unroll_depth : 10
   }
 
   ###################################################
@@ -22,6 +22,17 @@ model {
     }
     l2_weight_regularization {
       scale_factor: 0.0005
+    }
+  }
+
+  ###################################################
+  # Metrics
+  ###################################################
+
+  metric {
+    layer_metric {
+      unit: "%"
+      layer: "accuracy_eval"
     }
   }
 
