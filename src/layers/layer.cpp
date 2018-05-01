@@ -629,7 +629,7 @@ void Layer::setup_data() {
 
 #ifdef LBANN_HAS_CUDNN
   // Pin host memory if needed for GPU memory transfers
-  pin_data();
+  // pin_data();
 #endif // LBANN_HAS_CUDNN
 
 }
@@ -787,6 +787,7 @@ void Layer::deallocate_matrices() {
   m_error_signals_d.clear();
 
   // Unpin matrices
+#if 0
   if (m_cudnn != nullptr) {
     for (const auto& m : m_prev_activations) {
       if (m != nullptr) { m_cudnn->unpin_matrix(*m); }
@@ -801,6 +802,7 @@ void Layer::deallocate_matrices() {
       if (m != nullptr) { m_cudnn->unpin_matrix(*m); }
     }
   }
+#endif
 #endif // LBANN_HAS_CUDNN
 
   // Deallocate matrices
