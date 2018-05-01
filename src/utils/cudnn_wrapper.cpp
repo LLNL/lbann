@@ -1026,11 +1026,13 @@ void cudnn_manager::check_error() {
     synchronize();
     for(int i=0; i<m_num_gpus; ++i) {
         CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess) {
-            std::cerr << "CUDA error: " << cudaGetErrorString(err) << "\n";
+        cudaError_t status = cudaGetLastError();
+        if (status != cudaSuccess) {
             cudaDeviceReset();
-            throw lbann::lbann_exception("CUDA error");
+            std::stringstream err;
+            err << __FILE__ << " " << __LINE__ << ":: "
+                << "CUDA error; err string: " << cudaGetErrorString(status);
+            throw lbann::lbann_exception(err.str());
         }
     }
 }

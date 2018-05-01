@@ -29,6 +29,7 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/data_readers/data_reader.hpp"
 #include "lbann/utils/timer.hpp"
+#include "lbann/utils/options.hpp"
 
 namespace lbann {
 
@@ -60,14 +61,18 @@ void data_store_image::setup() {
     if (m_master) std::cerr << "data_store_image - calling get_file_sizes\n";
     double tma = get_time();
     get_file_sizes();
-    if (m_master) std::cerr << "data_store_image - get_file_sizes time: " << get_time() - tma << " num files: " << m_file_sizes.size() << "\n";
+    size_t num_bytes = get_global_num_file_bytes();
+    if (m_master) std::cerr << "data_store_image - get_file_sizes time: " << get_time() - tma << " global num files: " << m_file_sizes.size() << " data set size: " << ((double)num_bytes/1000000) << " MB\n";
+
+    if (m_master) std::cerr << "data_store_image - calling report_memory_constrains\n";
+    report_memory_constraints();
 
     if (m_master) std::cerr << "data_store_image - calling read_files\n";
     tma = get_time();
     read_files();
     if (m_master) std::cerr << "read_files time: " << get_time() - tma << "\n";
 
-    if (m_master) std::cerr << "calling exchange_data\n";
+    if (m_master) std::cerr << "data_store_image - calling exchange_data\n";
     exchange_data();
 
     if (m_extended_testing) {
@@ -234,5 +239,127 @@ void data_store_image::exchange_file_sizes(
     m_file_sizes[all_global_indices[j]] = all_num_bytes[j];
   }
 }
+
+size_t data_store_image::get_global_num_file_bytes() {
+  size_t n = get_my_num_file_bytes();
+  size_t g = 0;
+  if (m_master) {
+    g = m_comm->reduce(n, m_comm->get_world_comm());
+  } else {
+    m_comm->reduce(n, 0, m_comm->get_world_comm());
+  }
+  return g;
+}
+
+size_t data_store_image::get_my_num_file_bytes() {
+  size_t count = 0;
+  for (auto idx : m_my_datastore_indices) {
+    for (size_t i=0; i<m_num_img_srcs; i++) {
+      int index = idx*m_num_img_srcs + i;
+      if (m_file_sizes.find(index) == m_file_sizes.end()) {
+        std::stringstream err;
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << " failed to find " << idx << " in m_file_sizes; count: " << count
+            << " m_file_sizes.size(): " << m_file_sizes.size();
+        throw lbann_exception(err.str());
+      }  
+      count += m_file_sizes[index];
+    }
+  }
+  return count;
+}
+
+size_t data_store_image::get_available_memory() {
+  std::ifstream in("/proc/meminfo");
+  std::string line;
+  size_t size;
+  bool found = false;
+  std::string name;
+  std::string units;
+  while (! in.eof()) {
+    getline(in, line);
+    std::stringstream s(line);
+    s >> name >> size >> units;
+    if (name.find("MemFree") != std::string::npos) {
+      found = true;
+      break;
+    }
+  }
+  in.close();
+
+  if (!found) {
+    if (m_master) {
+      std::cerr <<
+        "\nWARNING: data_store_image::get_available_memory failed\n"
+        "failed to find 'MemFree in /proc/meminfo\n"
+        "therefore we cannot advise whether you have enough resources\n"
+        "to contain all data files in memory\n"; 
+    }
+    return 0;
+  }
+  return size;
+}
+
+
+//note: this could be done on P_0 with no communication,
+//      but it's a cheap operation, so I'm coding it the
+//      easy way
+void data_store_image::report_memory_constraints() {
+  size_t count = get_my_num_file_bytes();
+
+  std::vector<long long> counts(m_np);
+  if (m_master) {
+    m_comm->gather<long long>(count, counts.data(), m_comm->get_world_comm());
+  } else {
+    m_comm->gather<long long>(count, 0, m_comm->get_world_comm());
+  }
+
+  double global = get_global_num_file_bytes()/1000000;
+
+  if (!m_master) { 
+    return; 
+  }
+
+  /// determine the amount of memory required for files for all
+  /// processors on this node
+  double required = 0;
+  for (int p=0; p<m_np; p++) {
+    if (m_comm->is_rank_node_local(p, m_comm->get_world_comm())) {
+      required += counts[p];
+    }
+  }
+  required /= 1000000;
+
+  double available = get_available_memory();
+  if (available == 0) {
+    std::cerr << required << " kB of memory are required for files on this node\n";
+    return;
+  }
+  available /= 1000;
+
+  double percent = required / available * 100.0;
+  std::cerr << "\n"
+            << "===============================================\n"
+            << "Memory Constraints for: " << m_reader->get_role() << "\n" 
+            << "Global data set size:               " << global << " MB\n"
+            << "Required for data set on this node: " << required << " MB\n"
+            << "Available memory on this node: "      << available << " MB\n"
+            << "Required is " << percent << " % of Available\n"
+            << "===============================================\n\n";
+
+  double limit = 0.8;
+  if (options::get()->has_float("mem_limit")) {
+    limit = options::get()->get_float("mem_limit");
+  }
+  if (required > limit*available) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "You have insufficient memory to hold all required files;\n"
+        << "required is > 80% of available\n"
+        << "quitting now, so you don't waste your time\n";
+  }
+}
+
+
 
 }  // namespace lbann
