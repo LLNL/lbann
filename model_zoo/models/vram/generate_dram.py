@@ -29,6 +29,13 @@ def new_layer(model, name, parents, layer_type, device = ''):
     exec('l.' + layer_type + '.SetInParent()')
     return l
 
+# Construct a new set of weights and add it to the model
+def new_weights(model, name, initializer = 'constant_initializer'):
+    w = model.weights.add()
+    w.name = name
+    exec('w.' + initializer + '.SetInParent()')
+    return w
+
 def add_lstm(model, name, parent, size):
 
     # Forget gate
@@ -39,9 +46,13 @@ def add_lstm(model, name, parent, size):
     l = new_layer(model, fc1, parent, 'fully_connected')
     l.fully_connected.num_neurons = size
     l.fully_connected.has_bias = True
+    w = new_weights(model, fc1 + 'linearity', 'glorot_normal_initializer')
+    l.weights = fc1 + 'linearity'
     l = new_layer(model, fc2, name, 'fully_connected')
     l.fully_connected.num_neurons = size
     l.fully_connected.has_bias = False
+    w = new_weights(model, fc2 + 'linearity', 'glorot_normal_initializer')
+    l.weights = fc2 + 'linearity'
     l = new_layer(model, linearity, [fc1, fc2], 'sum')
     l = new_layer(model, forget_gate, linearity, 'sigmoid')
 
@@ -53,9 +64,13 @@ def add_lstm(model, name, parent, size):
     l = new_layer(model, fc1, parent, 'fully_connected')
     l.fully_connected.num_neurons = size
     l.fully_connected.has_bias = True
+    w = new_weights(model, fc1 + 'linearity', 'glorot_normal_initializer')
+    l.weights = fc1 + 'linearity'
     l = new_layer(model, fc2, name, 'fully_connected')
     l.fully_connected.num_neurons = size
     l.fully_connected.has_bias = False
+    w = new_weights(model, fc2 + 'linearity', 'glorot_normal_initializer')
+    l.weights = fc2 + 'linearity'
     l = new_layer(model, linearity, [fc1, fc2], 'sum')
     l = new_layer(model, input_gate, linearity, 'sigmoid')
 
@@ -67,9 +82,13 @@ def add_lstm(model, name, parent, size):
     l = new_layer(model, fc1, parent, 'fully_connected')
     l.fully_connected.num_neurons = size
     l.fully_connected.has_bias = True
+    w = new_weights(model, fc1 + 'linearity', 'glorot_normal_initializer')
+    l.weights = fc1 + 'linearity'
     l = new_layer(model, fc2, name, 'fully_connected')
     l.fully_connected.num_neurons = size
     l.fully_connected.has_bias = False
+    w = new_weights(model, fc2 + 'linearity', 'glorot_normal_initializer')
+    l.weights = fc2 + 'linearity'
     l = new_layer(model, linearity, [fc1, fc2], 'sum')
     l = new_layer(model, output_gate, linearity, 'sigmoid')
 
@@ -81,9 +100,13 @@ def add_lstm(model, name, parent, size):
     l = new_layer(model, fc1, parent, 'fully_connected')
     l.fully_connected.num_neurons = size
     l.fully_connected.has_bias = True
+    w = new_weights(model, fc1 + 'linearity', 'glorot_normal_initializer')
+    l.weights = fc1 + 'linearity'
     l = new_layer(model, fc2, name, 'fully_connected')
     l.fully_connected.num_neurons = size
     l.fully_connected.has_bias = False
+    w = new_weights(model, fc2 + 'linearity', 'glorot_normal_initializer')
+    l.weights = fc2 + 'linearity'
     l = new_layer(model, linearity, [fc1, fc2], 'sum')
     l = new_layer(model, cell_update, linearity, 'tanh')
 
