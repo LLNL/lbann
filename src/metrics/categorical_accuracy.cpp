@@ -166,6 +166,14 @@ EvalType categorical_accuracy_metric::evaluate_compute(const AbsDistMat& predict
     const int global_row = m_prediction_indices[col];
     if (ground_truth.IsLocalRow(global_row)) {
       const int row = ground_truth.LocalRow(global_row);
+      if (row == ground_truth.Height()) {
+        std::stringstream err;
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << "ground_truth matrix has invalid index "
+            << "(row=" << row << " x "
+            << "col=" << col << ")";
+        throw lbann_exception(err.str());
+      }
       if (ground_truth_local(row, col) != DataType(0)) {
         ++correct_predictions;
       }

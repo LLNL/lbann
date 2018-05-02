@@ -30,23 +30,33 @@ namespace lbann {
 
 namespace {
 
-__global__ void adam_kernel(DataType * __restrict__ values,
-                            const DataType * __restrict__ gradient,
-                            DataType * __restrict__ moment1,
-                            DataType * __restrict__ moment2,
-                            int num_entries,
+__global__ void adam_kernel(int height,
+                            int width,
                             DataType correction,
                             DataType eps,
                             DataType beta1,
-                            DataType beta2) {
-  int offset = blockIdx.x * blockDim.x + threadIdx.x;
-  if (offset >= num_entries) return;
-  const DataType g = gradient[offset] + eps;
-  DataType &m1 = moment1[offset];
-  DataType &m2 = moment2[offset];
-  m1 = beta1 * m1 + (DataType(1) - beta1) * g;
-  m2 = beta2 * m2 + (DataType(1) - beta2) * g * g;
-  values[offset] -= correction * m1 / (sqrt(m2) + eps);
+                            DataType beta2,
+                            DataType * __restrict__ values,
+                            int values_ldim,
+                            const DataType * __restrict__ gradient,
+                            int gradient_ldim,
+                            DataType * __restrict__ moment1,
+                            int moment1_ldim,
+                            DataType * __restrict__ moment2,
+                            int moment2_ldim) {
+  const int tid = blockIdx.x * blockDim.x + threadIdx.x;
+  const int num_threads = gridDim.x * blockDim.x;
+  for (int pos = tid; pos < height * width; pos += num_threads) {
+    const auto& i = pos % height;
+    const auto& j = pos / height;
+    const auto& g = gradient[i + j * gradient_ldim] + eps;
+    auto& m1 = moment1[i + j * moment1_ldim];
+    auto& m2 = moment2[i + j * moment2_ldim];
+    auto& x = values[i + j * values_ldim];
+    m1 = beta1 * m1 + (DataType(1) - beta1) * g;
+    m2 = beta2 * m2 + (DataType(1) - beta2) * g * g;
+    x -= correction * m1 / (sqrt(m2) + eps);
+  }
 }
 
 }
@@ -61,20 +71,24 @@ void adam::step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) {
                                / (DataType(1) - m_current_beta1));
 
   // Get matrix dimensions
-  const int num_entries = m_weights->get_size();
-  if (num_entries == 0) return;
+  const int local_height = values.LocalHeight();
+  const int local_width = values.LocalWidth();
+  const int size = local_height * local_width;
+  if (size <= 0) { return; }
 
   // Launch CUDA kernels
   const int block_size = 256;
   dim3 block_dims, grid_dims;
   block_dims.x = block_size;
-  grid_dims.x = (num_entries + block_size - 1) / block_size;
+  grid_dims.x = (size + block_size - 1) / block_size;
   CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
   cudaStream_t stream = this->m_cudnn->get_stream();
   adam_kernel<<<grid_dims, block_dims, 0, stream>>>
-    (values.Buffer(), gradient.LockedBuffer(),
-     m_moment1_d[0], m_moment2_d[0],
-     num_entries, correction, m_eps, m_beta1, m_beta2);
+    (local_height, local_width, correction, m_eps, m_beta1, m_beta2,
+     values.Buffer(), values.LDim(),
+     gradient.LockedBuffer(), gradient.LDim(),
+     m_moment1->Buffer(), m_moment1->LDim(),
+     m_moment2->Buffer(), m_moment2->LDim());
 
 }
 

@@ -128,21 +128,18 @@ class relu_layer : public entrywise_activation_layer {
     const DataType one = 1;
     const DataType zero = 0;
 
-    // Apply activation on each GPU
-    const int num_gpus = this->m_cudnn->get_num_gpus();
-    for(int i = 0; i < num_gpus; ++i) {
-      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-      CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
-                                 this->m_cudnn->get_stream(i)));
-      CHECK_CUDNN(cudnnActivationForward(this->m_cudnn->get_handle(i),
-                                         m_activation_cudnn_desc,
-                                         &one,
-                                         this->m_prev_activations_cudnn_desc,
-                                         this->m_prev_activations[0]->LockedBuffer(),
-                                         &zero,
-                                         this->m_activations_cudnn_desc,
-                                         this->m_activations[0]->Buffer()));
-    }
+    // Apply activation on the GPU
+    CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(0)));
+    CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(0),
+                               this->m_cudnn->get_stream(0)));
+    CHECK_CUDNN(cudnnActivationForward(this->m_cudnn->get_handle(0),
+                                       m_activation_cudnn_desc,
+                                       &one,
+                                       this->m_prev_activations_cudnn_desc,
+                                       this->m_prev_activations[0]->LockedBuffer(),
+                                       &zero,
+                                       this->m_activations_cudnn_desc,
+                                       this->m_activations[0]->Buffer()));
 
   #endif // LBANN_HAS_CUDNN
   }
@@ -155,25 +152,22 @@ class relu_layer : public entrywise_activation_layer {
     // Useful constants
     const DataType one = 1;
 
-    // Apply activation derivative on each GPU
-    const int num_gpus = this->m_cudnn->get_num_gpus();
-    for(int i = 0; i < num_gpus; ++i) {
-      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-      CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
-                                 this->m_cudnn->get_stream(i)));
-      CHECK_CUDNN(cudnnActivationBackward(this->m_cudnn->get_handle(i),
-                                          m_activation_cudnn_desc,
-                                          &one,
-                                          this->m_prev_activations_cudnn_desc,
-                                          this->m_prev_activations[0]->LockedBuffer(),
-                                          this->m_prev_error_signals_cudnn_desc,
-                                          this->m_prev_error_signals[0]->LockedBuffer(),
-                                          this->m_activations_cudnn_desc,
-                                          this->m_activations[0]->LockedBuffer(),
-                                          &one,
-                                          this->m_error_signals_cudnn_desc,
-                                          this->m_error_signals[0]->Buffer()));
-    }
+    // Apply activation derivative on the GPU
+    CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(0)));
+    CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(0),
+                               this->m_cudnn->get_stream(0)));
+    CHECK_CUDNN(cudnnActivationBackward(this->m_cudnn->get_handle(0),
+                                        m_activation_cudnn_desc,
+                                        &one,
+                                        this->m_prev_activations_cudnn_desc,
+                                        this->m_prev_activations[0]->LockedBuffer(),
+                                        this->m_prev_error_signals_cudnn_desc,
+                                        this->m_prev_error_signals[0]->LockedBuffer(),
+                                        this->m_activations_cudnn_desc,
+                                        this->m_activations[0]->LockedBuffer(),
+                                        &one,
+                                        this->m_error_signals_cudnn_desc,
+                                        this->m_error_signals[0]->Buffer()));
 
   #endif // LBANN_HAS_CUDNN
   }

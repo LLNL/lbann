@@ -55,14 +55,6 @@ adam::adam(const adam& other)
     m_moment2(other.m_moment2) {
   if (m_moment1 != nullptr) { m_moment1 = m_moment1->Copy(); }
   if (m_moment2 != nullptr) { m_moment2 = m_moment2->Copy(); }
-  #ifdef LBANN_HAS_CUDNN
-  if (m_cudnn != nullptr && other.m_weights != nullptr) {
-    const int height = other.m_weights->get_matrix_height();
-    const int width = other.m_weights->get_matrix_width();
-    m_moment1_d = m_cudnn->copy(other.m_moment1_d, height, width);
-    m_moment2_d = m_cudnn->copy(other.m_moment2_d, height, width);
-  }
-  #endif // LBANN_HAS_CUDNN
 }
 
 adam& adam::operator=(const adam& other) {
@@ -93,30 +85,12 @@ adam& adam::operator=(const adam& other) {
     if (m_moment2 != nullptr) { m_moment2 = m_moment2->Copy(); }
   }
 
-  // Copy GPU data
-  #ifdef LBANN_HAS_CUDNN
-  if (m_cudnn != nullptr && other.m_weights != nullptr) {
-    const int height = other.m_weights->get_matrix_height();
-    const int width = other.m_weights->get_matrix_width();
-    m_cudnn->deallocate_on_gpus(m_moment1_d);
-    m_cudnn->deallocate_on_gpus(m_moment2_d);
-    m_moment1_d = m_cudnn->copy(other.m_moment1_d, height, width);
-    m_moment2_d = m_cudnn->copy(other.m_moment2_d, height, width);
-  }
-  #endif // LBANN_HAS_CUDNN
-
   return *this;
 }
 
 adam::~adam() {
   if(m_moment1 != nullptr) { delete m_moment1; }
   if(m_moment2 != nullptr) { delete m_moment2; }
-  #ifdef LBANN_HAS_CUDNN
-  if (m_cudnn != nullptr) {
-    m_cudnn->deallocate_on_gpus(m_moment1_d);
-    m_cudnn->deallocate_on_gpus(m_moment2_d);
-  }
-  #endif // LBANN_HAS_CUDNN
 }
 
 std::string adam::get_description() const {
@@ -140,14 +114,6 @@ void adam::setup(weights& w) {
                                     m_gradient->Root());
   El::Zeros(*m_moment1, height, width);
   El::Zeros(*m_moment2, height, width);
-
-  // Allocate GPU objects
-  if (m_cudnn != nullptr) {
-#ifdef LBANN_HAS_CUDNN
-    m_cudnn->allocate_on_gpus(m_moment1_d, height, width);
-    m_cudnn->allocate_on_gpus(m_moment2_d, height, width);
-#endif // LBANN_HAS_CUDNN
-  }
 
 }
 
