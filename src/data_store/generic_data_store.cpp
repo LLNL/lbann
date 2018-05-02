@@ -52,17 +52,22 @@ generic_data_store::generic_data_store(generic_data_reader *reader, model *m) :
         << " m_reader->get_comm is nullptr";
         throw lbann_exception(err.str());
   }
-
   m_master = m_comm->am_world_master();
   m_rank = m_comm->get_rank_in_model();
   m_np = m_comm->get_procs_per_model();
   m_mpi_comm = m_comm->get_model_comm().comm;
+
   set_name("generic_data_store");
   options *opts = options::get();
   if (m_master) std::cerr << "generic_data_store::generic_data_store; np: " << m_np << "\n";
-    if (opts->has_bool("extended_testing") && opts->get_bool("extended_testing")) {
-      m_extended_testing = true;
-    }
+  if (opts->has_bool("extended_testing") && opts->get_bool("extended_testing")) {
+    m_extended_testing = true;
+  }
+
+  if (opts->has_bool("local_disk") && opts->get_bool("local_disk")) {
+    if (m_master) std::cerr << "running in out-of-memory mode\n";
+    m_in_memory = false;
+  }
 }
 
 void generic_data_store::get_minibatch_index_vector() {

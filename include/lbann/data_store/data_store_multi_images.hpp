@@ -68,6 +68,8 @@ class data_store_multi_images : public data_store_imagenet {
 
   /// for use during development and testing
   void extended_testing() override;
+
+  void build_data_filepaths() override;
 };
 
 }  // namespace lbann

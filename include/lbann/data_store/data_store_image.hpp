@@ -108,6 +108,10 @@ class data_store_image : public generic_data_store {
   /// attempts to determine if there is sufficient RAM for
   /// in-memory data store; may call MPI_Abort
   void report_memory_constraints();
+
+  /// for out-of-memory mode: read files from, e.g, lscratchX, and write
+  /// to local store, e.g, /l/ssd
+  void stage_files();
 };
 
 }  // namespace lbann

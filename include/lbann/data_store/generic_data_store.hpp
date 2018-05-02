@@ -33,6 +33,7 @@
 #include "lbann/comm.hpp"
 #include <vector>
 #include <unordered_set>
+#include <unordered_map>
 
 namespace lbann {
 
@@ -222,6 +223,12 @@ protected :
 
   /// as of now, only applicable to merge_features and merge_samples
   bool m_is_subsidiary_store;
+
+  /// maps and index from m_my_datastore_indices to a filepath
+  /// for use in out-of-memory mode
+  std::unordered_map<int, std::string> m_data_filepaths;
+  /// fills in m_data_filepaths
+  virtual void build_data_filepaths() {std::cerr << "shouldn't be here!\n";}
 };
 
 }  // namespace lbann

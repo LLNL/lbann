@@ -30,6 +30,8 @@
 #include "lbann/data_readers/data_reader.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/options.hpp"
+#include <sys/sendfile.h>
+#include <sys/stat.h>
 
 namespace lbann {
 
@@ -45,7 +47,23 @@ void data_store_image::setup() {
 
   //@todo needs to be designed and implemented!
   if (! m_in_memory) {
-    LBANN_ERROR("not yet implemented");
+    if (m_master) std::cerr << "data_store_image - calling get_my_datastore_indices\n";
+    get_my_datastore_indices();
+
+    if (m_master) std::cerr << "data_store_image - calling build_data_filepaths\n";
+    build_data_filepaths();
+
+    if (m_master) std::cerr << "data_store_image - calling stage_files\n";
+    stage_files();
+    if (options::get()->has_bool("stage_and_exit") && options::get()->get_bool("stage_and_exit")) {
+      m_comm->global_barrier();
+      if (m_master) {
+        std::cerr << "\nstaging complete; exiting due to option: stage_and_exit\n";
+      }
+      m_comm->global_barrier();
+      finalize(m_comm);
+      exit(0);
+    }
   } 
   
   else {
@@ -361,5 +379,121 @@ void data_store_image::report_memory_constraints() {
 }
 
 
+// the input string "s" should be one of the forms: 
+//   dir1/[dir2/...]/filename
+//   /dir1/[dir2/...]/filename
+//   /dir1/[dir2/...]/
+void create_dirs(const std::string &s) {
+  if (s.size() == 0) {
+    return;
+  }
+  size_t idx;
+  size_t last = s[0] == '/' ? 1 : 0;
+  while ((idx = s.find('/', last)) != std::string::npos) {
+    last = idx+1;
+    std::string d = s.substr(0, idx);
+    std::ifstream in(d.c_str());
+    if (! in.good()) {
+      const int dir_err = mkdir(d.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+      //note: there can be race conditions where two procs attempt to create the
+      //      same directory, which can cause mkdir to fail with "File Exists"
+      //      error, which is errno=17. Need to guard against this!
+      if (dir_err == -1 && errno != 17) {
+        std::stringstream err;
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << "failed to create directory: " << d << "\n"
+            << "error code is: " << errno << " -> " << std::strerror(errno);
+        throw lbann_exception(err.str());
+        
+      }
+    } else {
+      in.close();
+    }
+  }
+}
+
+void data_store_image::stage_files() {
+  std::stringstream err;
+
+  //create directory structure on local file store
+  std::string local_dir = m_reader->get_local_file_dir();
+  create_dirs(local_dir);
+  m_comm->global_barrier();
+  std::unordered_set<std::string> make_dirs;
+  for (auto t : m_data_filepaths) {
+    size_t j = t.second.rfind('/');
+    if (j != std::string::npos) {
+      make_dirs.insert(t.second.substr(0, j+1));
+    }
+  }
+
+  std::string dir = m_reader->get_file_dir();
+  std::stringstream ss;
+  for (auto t : make_dirs) {
+    ss.clear();
+    ss.str("");
+    ss << local_dir << "/" << t;
+    create_dirs(ss.str());
+  }
+  m_comm->global_barrier();
+
+  size_t j = 0;
+  struct stat stat_buf;
+  double tm = get_time();
+  std::stringstream s;
+  int write_fd;
+  for (auto t : m_data_filepaths) {
+    s.clear();
+    s.str("");
+    s << local_dir << '/' << t.second;
+    ++j;
+    if (j % 100 == 0 and m_master) {
+      double e = get_time() - tm;
+      double time_per_file = e / j;
+      int remaining_files = m_data_filepaths.size()-j;
+      double estimated_remaining_time = time_per_file * remaining_files;
+      std::cerr << "P_0: staged " << j << " of " << m_data_filepaths.size() 
+                << " files; elapsed time: " << get_time() - tm 
+                << "s est. remaining time: " << estimated_remaining_time << "s\n";
+    }
+    if (access(s.str().c_str(), F_OK | R_OK) == -1 ) {
+      write_fd = open(s.str().c_str(),  O_WRONLY | O_CREAT, stat_buf.st_mode);
+      if (write_fd == -1) {
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << "failed to open " << s.str() << " for writing;\n"
+            << "error code is: " << std::strerror(errno);
+        throw lbann_exception(err.str());
+      }
+      off_t offset = 0;
+      s.clear();
+      s.str("");
+      s << dir << '/' << t.second;
+      int read_fd = open(s.str().c_str(), O_RDONLY);
+      if (read_fd == -1) {
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << "failed to open " << s.str() << " for reading;\n"
+            << "error code is: " << std::strerror(errno);
+        throw lbann_exception(err.str());
+      }
+      int e2 = fstat(read_fd, &stat_buf);
+      if (e2 == -1) {
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << "fstat failed for file: " << s.str();
+        throw lbann_exception(err.str());
+      }
+      ssize_t e = sendfile(write_fd, read_fd, &offset, stat_buf.st_size);
+      if (e == -1) {
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << "failed to copy file to location: " << s.str()
+            << ";\nerror code is: " << std::strerror(errno);
+        throw lbann_exception(err.str());
+
+      }
+      close(read_fd);
+      close(write_fd);
+    }  
+  }
+
+}
 
 }  // namespace lbann

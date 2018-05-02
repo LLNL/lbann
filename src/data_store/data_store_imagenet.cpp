@@ -58,26 +58,17 @@ void data_store_imagenet::setup() {
     options::get()->set_option("exit_after_setup", true);
   }
 
-  //@todo needs to be designed and implemented!
-  if (! m_in_memory) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "not yet implemented";
-    throw lbann_exception(err.str());
-  } 
-  
-  else {
-    data_store_image::setup();
+  data_store_image::setup();
 
-    if (run_tests) {
-      test_file_sizes();
-      test_data();
-    }  
 
-    double tm2 = get_time();
-    if (m_rank == 0) {
-      std::cerr << "data_store_imagenet setup time: " << tm2 - tm1 << std::endl;
-    }
+  if (run_tests && m_in_memory) {
+    test_file_sizes();
+    test_data();
+  }  
+
+  double tm2 = get_time();
+  if (m_rank == 0) {
+    std::cerr << "data_store_imagenet setup time: " << tm2 - tm1 << std::endl;
   }
 }
 
@@ -160,7 +151,6 @@ void data_store_imagenet::read_files() {
 }
 
 void data_store_imagenet::get_file_sizes() {
-  if (m_master) std::cerr << "starting data_store_imagenet::get_file_sizes\n";
   image_data_reader *reader = dynamic_cast<image_data_reader*>(m_reader);
   const std::vector<std::pair<std::string, int> > & image_list = reader->get_image_list();
 
@@ -177,5 +167,13 @@ void data_store_imagenet::get_file_sizes() {
   exchange_file_sizes(global_indices, bytes, m_num_global_indices);
 }
 
+void data_store_imagenet::build_data_filepaths() {
+  m_data_filepaths.clear();
+  image_data_reader *reader = dynamic_cast<image_data_reader*>(m_reader);
+  const std::vector<std::pair<std::string, int> > & image_list = reader->get_image_list();
+  for (auto index : m_my_datastore_indices) {
+    m_data_filepaths[index] = image_list[index].first;
+  }
+}
 
 }  // namespace lbann

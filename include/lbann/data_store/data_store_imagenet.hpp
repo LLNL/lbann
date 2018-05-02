@@ -67,6 +67,8 @@ class data_store_imagenet : public data_store_image {
   void test_file_sizes();
 
   void read_files() override;
+
+  void build_data_filepaths() override;
 };
 
 }  // namespace lbann

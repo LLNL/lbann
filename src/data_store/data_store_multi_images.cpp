@@ -60,20 +60,10 @@ void data_store_multi_images::setup() {
 
   m_num_img_srcs = reader->get_num_img_srcs();
 
-  //@todo needs to be designed and implemented!
-  if (! m_in_memory) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "not yet implemented";
-    throw lbann_exception(err.str());
-  } 
-  
-  else {
-    data_store_imagenet::setup();
+  data_store_imagenet::setup();
 
-    if (m_rank == 0) {
-      std::cerr << "data_store_multi_images setup time: " << get_time() - tm1 << std::endl;
-    }
+  if (m_rank == 0) {
+    std::cerr << "data_store_multi_images setup time: " << get_time() - tm1 << std::endl;
   }
 }
 
@@ -159,4 +149,18 @@ void data_store_multi_images::extended_testing() {
   std::cerr << "rank: " << m_rank << " data_store_multi_images::extended_testing, PASSED!\n";
 }
 
-}  // namespace lbann
+
+void data_store_multi_images::build_data_filepaths() {
+  m_data_filepaths.clear();
+  std::unordered_set<std::string> names;
+  for (auto base_index : m_my_datastore_indices) {
+    const std::vector<std::string> sample(get_sample(base_index));
+    for (size_t k=0; k<sample.size(); k++) {
+      size_t index = base_index*m_num_img_srcs + k; 
+      m_data_filepaths[index] = sample[k];
+    }
+  }
+}
+
+} //namespace lbann
+
