@@ -124,7 +124,6 @@ class he_normal_initializer : public fan_in_fan_out_initializer {
 
 };
 
-
 /** He uniform initializer. */
 class he_uniform_initializer : public fan_in_fan_out_initializer {
  public:
@@ -138,6 +137,46 @@ class he_uniform_initializer : public fan_in_fan_out_initializer {
   /** Create a copy. */
   he_uniform_initializer* copy() const override {
     return new he_uniform_initializer(*this);
+  }
+  
+  /** Initialize weights matrix entries. */
+  void initialize_entries(AbsDistMat& weights_matrix) const override;
+
+};
+
+/** LeCun normal initializer. */
+class lecun_normal_initializer : public fan_in_fan_out_initializer {
+ public:
+
+  /** Constructor. */
+  lecun_normal_initializer(lbann_comm* comm) 
+    : fan_in_fan_out_initializer(comm) {}
+  /** Destructor. */
+  ~lecun_normal_initializer() override = default;
+
+  /** Create a copy. */
+  lecun_normal_initializer* copy() const override {
+    return new lecun_normal_initializer(*this);
+  }
+  
+  /** Initialize weights matrix entries. */
+  void initialize_entries(AbsDistMat& weights_matrix) const override;
+
+};
+
+/** LeCun uniform initializer. */
+class lecun_uniform_initializer : public fan_in_fan_out_initializer {
+ public:
+
+  /** Constructor. */
+  lecun_uniform_initializer(lbann_comm* comm) 
+    : fan_in_fan_out_initializer(comm) {}
+  /** Destructor. */
+  ~lecun_uniform_initializer() override = default;
+
+  /** Create a copy. */
+  lecun_uniform_initializer* copy() const override {
+    return new lecun_uniform_initializer(*this);
   }
   
   /** Initialize weights matrix entries. */
