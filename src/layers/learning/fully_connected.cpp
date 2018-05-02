@@ -428,17 +428,14 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_com
   optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
   if (m_bias_scaling_factor != DataType(0)
       && bias_optimizer != nullptr) {
-
     // Initialize work space with a bias scaling vector
     GPUMat bias_scaling_vector(gradient_wrt_output.LocalWidth()/*mini_batch_size*/, 1);
     El::Fill(bias_scaling_vector, m_bias_scaling_factor);
 
     // Obtain gradient with a sum over rows locally - No need to use global GEMV
-#if 0
     El::Gemv(El::NORMAL, DataType(1),
              gradient_wrt_output.LockedMatrix(), bias_scaling_vector,
              DataType(0), m_bias_gradient->Matrix());
-#endif
     bias_optimizer->add_to_gradient_staging(
                                             *m_bias_gradient,
                                             m_bias_scaling_factor / mini_batch_size);
