@@ -1,5 +1,5 @@
 model {
-  name: "sequential_model"
+  name: "directed_acyclic_graph_model"
   data_layout: "data_parallel"
   mini_batch_size: 256
   block_size: 256
@@ -8,49 +8,33 @@ model {
   procs_per_model: 0
   num_gpus: -1
 
-  ##########################################
-  # Objective objective
-  ##########################################
+  ###################################################
+  # Objective function
+  ###################################################
 
   objective_function {
-    cross_entropy{}
+    cross_entropy {}
     l2_weight_regularization {
       scale_factor: 1e-4
     }
   }
 
-
-  #############################################
+  ###################################################
   # Metrics
-  #############################################
+  ###################################################
 
   metric { categorical_accuracy {} }
   metric {
     top_k_categorical_accuracy {
-      top_k: 5
+       top_k: 5
     }
   }
 
-  ##############################################
+  ###################################################
   # Callbacks
-  ##############################################
-  callback {
-    print {
-      interval: 1
-    }
-  }
-  callback {
-    timer {
-
-    }
-  }
-  callback {
-    summary {
-      dir: "."
-      batch_interval: 1
-      mat_interval: 25
-    }
-  }
+  ###################################################
+  callback { print {} }
+  callback { timer {} }
   callback {
     imcomm {
       intermodel_comm_method: "normal"
@@ -109,6 +93,30 @@ model {
       pool_strides_i: 2
       pool_pads_i: 1
       pool_mode: "max"
+    }
+  }
+  layer {
+    name: "resid_1_conv"
+    parents: "initial_layer_pool"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "resid_1_norm"
+    parents: "resid_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
     }
   }
   ###################################################
@@ -202,7 +210,7 @@ model {
   }
   layer {
     name: "bottleneck_block_1_sum"
-    parents: "initial_layer_pool bottleneck_block_1_bottleneck_conv_1_part_3_norm"
+    parents: "resid_1_norm bottleneck_block_1_bottleneck_conv_1_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
@@ -420,6 +428,30 @@ model {
     relu {
     }
   }
+  layer {
+    name: "resid_4_conv"
+    parents: "bottleneck_block_3_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 512
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "resid_4_norm"
+    parents: "resid_4_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
   ###################################################
   # BottleNeck 4 Block 1
   ###################################################
@@ -511,7 +543,7 @@ model {
   }
   layer {
     name: "bottleneck_block_4_sum"
-    parents: "bottleneck_block_4_bottleneck_conv_4_part_3_norm "
+    parents: "resid_4_norm bottleneck_block_4_bottleneck_conv_4_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
@@ -832,6 +864,30 @@ model {
     relu {
     }
   }
+  layer {
+    name: "resid_8_conv"
+    parents: "bottleneck_block_7_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "resid_8_norm"
+    parents: "resid_8_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
   ###################################################
   # BottleNeck 8 Block 1
   ###################################################
@@ -923,7 +979,7 @@ model {
   }
   layer {
     name: "bottleneck_block_8_sum"
-    parents: "bottleneck_block_8_bottleneck_conv_8_part_3_norm "
+    parents: "resid_8_norm bottleneck_block_8_bottleneck_conv_8_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
@@ -3201,6 +3257,30 @@ model {
     relu {
     }
   }
+  layer {
+    name: "resid_31_conv"
+    parents: "bottleneck_block_30_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 2048
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "resid_31_norm"
+    parents: "resid_31_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
   ###################################################
   # BottleNeck 31 Block 1
   ###################################################
@@ -3292,7 +3372,7 @@ model {
   }
   layer {
     name: "bottleneck_block_31_sum"
-    parents: "bottleneck_block_31_bottleneck_conv_31_part_3_norm "
+    parents: "resid_31_norm bottleneck_block_31_bottleneck_conv_31_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
@@ -3534,7 +3614,7 @@ model {
   layer {
     name: "final_layer_softmax"
     parents: "final_layer_pool"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     softmax {
     }
   }
