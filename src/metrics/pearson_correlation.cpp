@@ -114,6 +114,7 @@ void pearson_correlation_metric::setup(model& m) {
       m_ground_truth_stdevs = new StarMRMat<El::Device::CPU>(*dist_data.grid, dist_data.root);
       m_covariances         = new StarMRMat<El::Device::CPU>(*dist_data.grid, dist_data.root);
       break;
+#ifdef LBANN_HAS_GPU
     case El::Device::GPU:
       m_prediction_means    = new StarMRMat<El::Device::GPU>(*dist_data.grid, dist_data.root);
       m_prediction_stdevs   = new StarMRMat<El::Device::GPU>(*dist_data.grid, dist_data.root);
@@ -121,6 +122,7 @@ void pearson_correlation_metric::setup(model& m) {
       m_ground_truth_stdevs = new StarMRMat<El::Device::GPU>(*dist_data.grid, dist_data.root);
       m_covariances         = new StarMRMat<El::Device::GPU>(*dist_data.grid, dist_data.root);
       break;
+#endif // LBANN_HAS_GPU
     default:
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
@@ -137,6 +139,7 @@ void pearson_correlation_metric::setup(model& m) {
       m_ground_truth_stdevs = new StarVCMat<El::Device::CPU>(*dist_data.grid, dist_data.root);
       m_covariances         = new StarVCMat<El::Device::CPU>(*dist_data.grid, dist_data.root);
       break;
+#ifdef LBANN_HAS_GPU
     case El::Device::GPU:
       m_prediction_means    = new StarVCMat<El::Device::GPU>(*dist_data.grid, dist_data.root);
       m_prediction_stdevs   = new StarVCMat<El::Device::GPU>(*dist_data.grid, dist_data.root);
@@ -144,6 +147,7 @@ void pearson_correlation_metric::setup(model& m) {
       m_ground_truth_stdevs = new StarVCMat<El::Device::GPU>(*dist_data.grid, dist_data.root);
       m_covariances         = new StarVCMat<El::Device::GPU>(*dist_data.grid, dist_data.root);
       break;
+#endif // LBANN_HAS_GPU
     default:
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "

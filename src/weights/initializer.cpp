@@ -44,8 +44,10 @@ AbsDistMat* weights_initializer::construct_matrix(int height,
     switch (dev) {
     case El::Device::CPU:
       weights_matrix = new MCMRMat<El::Device::CPU>(grid); break;
+#ifdef LBANN_HAS_GPU
     case El::Device::GPU:
       weights_matrix = new MCMRMat<El::Device::GPU>(grid); break;
+#endif // LBANN_HAS_GPU
     default:
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
@@ -57,8 +59,10 @@ AbsDistMat* weights_initializer::construct_matrix(int height,
     switch (dev) {
     case El::Device::CPU:
       weights_matrix = new StarMat<El::Device::CPU>(grid); break;
+#ifdef LBANN_HAS_GPU
     case El::Device::GPU:
       weights_matrix = new StarMat<El::Device::GPU>(grid); break;
+#endif // LBANN_HAS_GPU
     default:
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
@@ -70,8 +74,10 @@ AbsDistMat* weights_initializer::construct_matrix(int height,
     switch (dev) {
     case El::Device::CPU:
       weights_matrix = new CircMat<El::Device::CPU>(grid); break;
+#ifdef LBANN_HAS_GPU
     case El::Device::GPU:
       weights_matrix = new CircMat<El::Device::CPU>(grid); break;
+#endif // LBANN_HAS_GPU
     default:
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
@@ -83,8 +89,10 @@ AbsDistMat* weights_initializer::construct_matrix(int height,
     switch (dev) {
     case El::Device::CPU:
       weights_matrix = new MRStarMat<El::Device::CPU>(grid); break;
+#ifdef LBANN_HAS_GPU
     case El::Device::GPU:
       weights_matrix = new MRStarMat<El::Device::GPU>(grid); break;
+#endif // LBANN_HAS_GPU
     default:
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
@@ -96,8 +104,10 @@ AbsDistMat* weights_initializer::construct_matrix(int height,
     switch (dev) {
     case El::Device::CPU:
       weights_matrix = new MCStarMat<El::Device::CPU>(grid); break;
+#ifdef LBANN_HAS_GPU
     case El::Device::GPU:
       weights_matrix = new MCStarMat<El::Device::GPU>(grid); break;
+#endif // LBANN_HAS_GPU
     default:
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "

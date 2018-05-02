@@ -186,9 +186,11 @@ void greedy_layerwise_autoencoder::set_phase(int phase) {
     case El::Device::CPU:
       m_reconstruction = new reconstruction_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>(m_comm, original_layer);
       break;
+#ifdef LBANN_HAS_GPU
     case El::Device::GPU:
       m_reconstruction = new reconstruction_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>(m_comm, original_layer);
       break;
+#endif // LBANN_HAS_GPU
     default:
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
@@ -201,9 +203,11 @@ void greedy_layerwise_autoencoder::set_phase(int phase) {
     case El::Device::CPU:
       m_reconstruction = new reconstruction_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(m_comm, original_layer);
       break;
+#ifdef LBANN_HAS_GPU
     case El::Device::GPU:
       m_reconstruction = new reconstruction_layer<data_layout::DATA_PARALLEL, El::Device::GPU>(m_comm, original_layer);
       break;
+#endif // LBANN_HAS_GPU
     default:
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "

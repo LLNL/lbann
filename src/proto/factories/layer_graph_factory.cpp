@@ -122,12 +122,16 @@ void setup_reconstruction_pointers(lbann_comm* comm,
       }
       auto&& recon_dp_cpu = dynamic_cast<reconstruction_layer<data_layout::DATA_PARALLEL, El::Device::CPU>*>(l);
       auto&& recon_mp_cpu = dynamic_cast<reconstruction_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>*>(l);
+#ifdef LBANN_HAS_GPU
       auto&& recon_dp_gpu = dynamic_cast<reconstruction_layer<data_layout::DATA_PARALLEL, El::Device::GPU>*>(l);
       auto&& recon_mp_gpu = dynamic_cast<reconstruction_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>*>(l);
+#endif // LBANN_HAS_GPU
       if (recon_dp_cpu != nullptr) { recon_dp_cpu->set_original_layer(original); }
       if (recon_mp_cpu != nullptr) { recon_mp_cpu->set_original_layer(original); }
+#ifdef LBANN_HAS_GPU
       if (recon_dp_gpu != nullptr) { recon_dp_gpu->set_original_layer(original); }
       if (recon_mp_gpu != nullptr) { recon_mp_gpu->set_original_layer(original); }
+#endif // LBANN_HAS_GPU
     }
   }
 }
@@ -154,6 +158,7 @@ void setup_unpooling_pointers(lbann_comm* comm,
         unpool->set_pooling_layer(pool);
       }
     }
+#ifdef LBANN_HAS_GPU
     {
       unpooling_layer<data_layout::DATA_PARALLEL, El::Device::GPU>* unpool
         = dynamic_cast<unpooling_layer<data_layout::DATA_PARALLEL, El::Device::GPU>*>(layers[i]);
@@ -169,6 +174,7 @@ void setup_unpooling_pointers(lbann_comm* comm,
         unpool->set_pooling_layer(pool);
       }
     }
+#endif // LBANN_HAS_GPU
   }
 }
 
@@ -215,7 +221,9 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
 
     const auto& device_allocation_str = proto_layer.device_allocation();
     El::Device default_device_allocation = El::Device::CPU;
+#ifdef LBANN_HAS_GPU
     if (cudnn != nullptr) { default_device_allocation = El::Device::GPU; }
+#endif // LBANN_HAS_GPU
     El::Device device_allocation;
     if (device_allocation_str.empty())  {
       // Input and Target layers are not allowed on the GPUs force the
@@ -227,7 +235,9 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
       }
     }
     if (device_allocation_str == "cpu") { device_allocation = El::Device::CPU; }
+#ifdef LBANN_HAS_GPU
     if (device_allocation_str == "gpu") { device_allocation = El::Device::GPU; }
+#endif // LBANN_HAS_GPU
 
     // Construct layer
     Layer* l = nullptr;
@@ -243,6 +253,7 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
               proto_layer
             );
         break;
+#ifdef LBANN_HAS_GPU
       case El::Device::GPU:
         l = construct_layer<data_layout::DATA_PARALLEL, El::Device::GPU>(
               comm,
@@ -252,6 +263,7 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
               proto_layer
             );
         break;
+#endif // LBANN_HAS_GPU
       default:
         err << "layer " << name << " has an invalid device allocation "
             << "(" << device_allocation_str << ")";
@@ -269,6 +281,7 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
               proto_layer
             );
         break;
+#ifdef LBANN_HAS_GPU
       case El::Device::GPU:
         l = construct_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>(
               comm,
@@ -278,6 +291,7 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
               proto_layer
             );
         break;
+#endif // LBANN_HAS_GPU
       default:
         err << "layer " << name << " has an invalid device allocation "
             << "(" << device_allocation_str << ")";

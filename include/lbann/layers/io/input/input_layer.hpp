@@ -90,6 +90,7 @@ inline void input_layer<distributed_io_buffer, data_layout::MODEL_PARALLEL, El::
 template<>
 inline void input_layer<distributed_io_buffer, data_layout::DATA_PARALLEL, El::Device::CPU>::validate_data_layout() {}
 
+#ifdef LBANN_HAS_GPU
 template<>
 inline void input_layer<partitioned_io_buffer, data_layout::MODEL_PARALLEL, El::Device::GPU>::validate_data_layout() {
   std::stringstream err;
@@ -106,6 +107,7 @@ inline void input_layer<distributed_io_buffer, data_layout::MODEL_PARALLEL, El::
 
 template<>
 inline void input_layer<distributed_io_buffer, data_layout::DATA_PARALLEL, El::Device::GPU>::validate_data_layout() {}
+#endif // LBANN_HAS_GPU
 
 }
 

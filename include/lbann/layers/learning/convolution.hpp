@@ -38,7 +38,7 @@
 namespace lbann {
 
 /// Convolution layer
-template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::GPU>
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class convolution_layer : public base_convolution_layer<Dev> {
  private:
 

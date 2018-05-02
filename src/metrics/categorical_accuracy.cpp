@@ -65,7 +65,9 @@ void categorical_accuracy_metric::setup(model& m) {
     switch(dev) {
     case El::Device::CPU:
       m_prediction_values = new StarMRMat<El::Device::CPU>(*dist_data.grid, dist_data.root); break;
+#ifdef LBANN_HAS_GPU
     case El::Device::GPU:
+#endif // LBANN_HAS_GPU
     default:
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
@@ -77,7 +79,9 @@ void categorical_accuracy_metric::setup(model& m) {
     switch(dev) {
     case El::Device::CPU:
       m_prediction_values = new StarVCMat<El::Device::CPU>(*dist_data.grid, dist_data.root); break;
+#ifdef LBANN_HAS_GPU
     case El::Device::GPU:
+#endif // LBANN_HAS_GPU
     default:
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "

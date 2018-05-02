@@ -116,12 +116,14 @@ void polya_negloglike::setup(model& m) {
       m_lgamma_alpha_sums             = new StarMRMat<El::Device::CPU>(*dist.grid);
       m_lgamma_alpha_level_count_sums = new StarMRMat<El::Device::CPU>(*dist.grid);
       break;
+#ifdef LBANN_HAS_GPU
     case El::Device::GPU:
       m_counts                        = new StarMRMat<El::Device::GPU>(*dist.grid);
       m_alpha_sums                    = new StarMRMat<El::Device::GPU>(*dist.grid);
       m_lgamma_alpha_sums             = new StarMRMat<El::Device::GPU>(*dist.grid);
       m_lgamma_alpha_level_count_sums = new StarMRMat<El::Device::GPU>(*dist.grid);
       break;
+#endif // LBANN_HAS_GPU
     default:
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
@@ -136,12 +138,14 @@ void polya_negloglike::setup(model& m) {
       m_lgamma_alpha_sums             = new StarVCMat<El::Device::CPU>(*dist.grid);
       m_lgamma_alpha_level_count_sums = new StarVCMat<El::Device::CPU>(*dist.grid);
       break;
+#ifdef LBANN_HAS_GPU
     case El::Device::GPU:
       m_counts                        = new StarVCMat<El::Device::GPU>(*dist.grid);
       m_alpha_sums                    = new StarVCMat<El::Device::GPU>(*dist.grid);
       m_lgamma_alpha_sums             = new StarVCMat<El::Device::GPU>(*dist.grid);
       m_lgamma_alpha_level_count_sums = new StarVCMat<El::Device::GPU>(*dist.grid);
       break;
+#endif // LBANN_HAS_GPU
     default:
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "

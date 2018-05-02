@@ -44,6 +44,7 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
   m_workspace = new StarVCMat<El::Device::CPU>(grid);
 }
 
+#ifdef LBANN_HAS_GPU
 template <>
 void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
   ::setup_matrices(const El::Grid& grid) {
@@ -59,5 +60,6 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
   if (m_workspace != nullptr) { delete m_workspace; }
   m_workspace = new StarVCMat<El::Device::GPU>(grid);
 }
+#endif // LBANN_HAS_GPU
 
 } // namespace lbann

@@ -575,6 +575,7 @@ void Layer::instantiate_matrices<data_layout::DATA_PARALLEL, El::Device::CPU>(co
 //  m_using_gpus = false;
 }
 
+#ifdef LBANN_HAS_GPU
 ///************************************************************************
 /// Instantiate GPU Matrices
 ///************************************************************************
@@ -603,6 +604,7 @@ void Layer::instantiate_matrices<data_layout::DATA_PARALLEL, El::Device::GPU>(co
   }
   m_using_gpus = true;
 }
+#endif // LBANN_HAS_GPU
 
 void Layer::setup_matrices(const El::Grid& grid) {
 
@@ -615,8 +617,10 @@ void Layer::setup_matrices(const El::Grid& grid) {
     switch (get_device_allocation()) {
     case El::Device::CPU:
       instantiate_matrices<data_layout::MODEL_PARALLEL, El::Device::CPU>(grid); break;
+#ifdef LBANN_HAS_GPU
     case El::Device::GPU:
       instantiate_matrices<data_layout::MODEL_PARALLEL, El::Device::GPU>(grid); break;
+#endif // LBANN_HAS_GPU
     default:
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
@@ -628,8 +632,10 @@ void Layer::setup_matrices(const El::Grid& grid) {
     switch (get_device_allocation()) {
     case El::Device::CPU:
       instantiate_matrices<data_layout::DATA_PARALLEL, El::Device::CPU>(grid); break;
+#ifdef LBANN_HAS_GPU
     case El::Device::GPU:
       instantiate_matrices<data_layout::DATA_PARALLEL, El::Device::GPU>(grid); break;
+#endif // LBANN_HAS_GPU
     default:
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
@@ -1074,8 +1080,10 @@ std::string Layer::get_device_allocation_string(El::Device dev) const {
   switch(dev) {
   case El::Device::CPU:
     return "cpu";
+#ifdef LBANN_HAS_GPU
   case El::Device::GPU:
     return "gpu";
+#endif // LBANN_HAS_GPU
   default:
     throw lbann_exception(
       std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
@@ -1087,8 +1095,10 @@ std::string Layer::get_device_allocation_string_short(El::Device dev) const {
   switch(dev) {
   case El::Device::CPU:
     return "C";
+#ifdef LBANN_HAS_GPU
   case El::Device::GPU:
     return "G";
+#endif // LBANN_HAS_GPU
   default:
     throw lbann_exception(
       std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +

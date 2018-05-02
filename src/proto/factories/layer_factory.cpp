@@ -384,6 +384,7 @@ template Layer* construct_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>(
   cudnn::cudnn_manager* cudnn,
   const lbann_data::Layer& proto_layer
 );
+#ifdef LBANN_HAS_GPU
 template Layer* construct_layer<data_layout::DATA_PARALLEL, El::Device::GPU>(
   lbann_comm* comm,
   std::map<execution_mode, generic_data_reader*>& data_readers,
@@ -398,6 +399,7 @@ template Layer* construct_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>(
   cudnn::cudnn_manager* cudnn,
   const lbann_data::Layer& proto_layer
 );
+#endif // LBANN_HAS_GPU
 
 } // namespace proto
 } // namespace lbann

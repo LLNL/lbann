@@ -35,7 +35,7 @@ using namespace lbann;
 const int lbann_default_random_seed = 42;
 
 model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &pb);
-          
+
 
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
@@ -79,13 +79,13 @@ int main(int argc, char *argv[]) {
       for(size_t l2=0; l2 < layers2.size(); l2++) {
         for(size_t l1=0; l1 < layers1.size(); l1++) {
            if(layers2[l2]->get_name() == layers1[l1]->get_name()){
-             if(master) std::cout << "Model 1 Layer " << layers1[l1]->get_name(); 
+             if(master) std::cout << "Model 1 Layer " << layers1[l1]->get_name();
              layers2[l2]->replace_weights(layers1[l1]);
              if(master) std::cout << " copied to Model2 Layer " << std::endl;
            }
          }
        }
-                
+
       if (master) std::cerr << "\n STARTING train - model 2\n\n";
       const lbann_data::Model pb_model_2 = pbs[1]->model();
       model_2->train( pb_model_2.num_epochs() );
@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
   finalize(comm);
   return 0;
 }
-   
+
 model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &pb) {
   int random_seed = lbann_default_random_seed;
   lbann_comm *comm = initialize(argc, argv, random_seed);
@@ -184,9 +184,9 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
     //save_session(comm, argc, argv, pb);
 
     // Check for cudnn, with user feedback
-    const size_t work_space_size = 1 << 9; // 1 GB
     cudnn::cudnn_manager *cudnn = nullptr;
 #ifdef LBANN_HAS_CUDNN
+    const size_t work_space_size = 1 << 9; // 1 GB
     if (! pb_model->disable_cuda()) {
       if (master) {
         std::cerr << "code was compiled with LBANN_HAS_CUDNN, and we are using cudnn\n";
@@ -263,7 +263,7 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
       init_random(random_seed + comm->get_rank_in_world());
 #else
       if(comm->am_world_master()) {
-        std::cout << 
+        std::cout <<
           "--------------------------------------------------------------------------------\n"
           "ALERT: executing in sequentially consistent mode -- performance will suffer\n"
           "--------------------------------------------------------------------------------\n";

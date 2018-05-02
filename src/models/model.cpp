@@ -595,9 +595,11 @@ void model::add_split_layers() {
         case El::Device::CPU:
           split = new split_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(m_comm, cudnn);
           break;
+#ifdef LBANN_HAS_GPU
         case El::Device::GPU:
           split = new split_layer<data_layout::DATA_PARALLEL, El::Device::GPU>(m_comm, cudnn);
           break;
+#endif // LBANN_HAS_GPU
         default:
           std::stringstream err;
           err << __FILE__ << " " << __LINE__ << " :: "
@@ -610,9 +612,11 @@ void model::add_split_layers() {
         case El::Device::CPU:
           split = new split_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>(m_comm, cudnn);
           break;
+#ifdef LBANN_HAS_GPU
         case El::Device::GPU:
           split = new split_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>(m_comm, cudnn);
           break;
+#endif // LBANN_HAS_GPU
         default:
           std::stringstream err;
           err << __FILE__ << " " << __LINE__ << " :: "

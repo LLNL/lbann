@@ -43,7 +43,9 @@ using AbsMat     = El::AbstractMatrix<lbann::DataType>;
 template <El::Device D>
 using DMat       = El::Matrix<lbann::DataType, D>;
 using CPUMat     = DMat<El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
 using GPUMat     = DMat<El::Device::GPU>;
+#endif // LBANN_HAS_GPU
 using AbsDistMat = El::AbstractDistMatrix<lbann::DataType>;
 template <El::Device D>
 using AbsDistMatReadProxy = El::AbstractDistMatrixReadDeviceProxy<lbann::DataType, D>;

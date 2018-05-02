@@ -63,8 +63,10 @@ void cross_entropy_with_uncertainty::setup(model& m) {
     switch(dev) {
     case El::Device::CPU:
       m_prediction_sums = new StarMRMat<El::Device::CPU>(*dist.grid); break;
+#ifdef LBANN_HAS_GPU
     case El::Device::GPU:
       m_prediction_sums = new StarMRMat<El::Device::GPU>(*dist.grid); break;
+#endif // LBANN_HAS_GPU
     default:
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
@@ -75,8 +77,10 @@ void cross_entropy_with_uncertainty::setup(model& m) {
     switch(dev) {
     case El::Device::CPU:
       m_prediction_sums = new StarVCMat<El::Device::CPU>(*dist.grid); break;
+#ifdef LBANN_HAS_GPU
     case El::Device::GPU:
       m_prediction_sums = new StarVCMat<El::Device::GPU>(*dist.grid); break;
+#endif // LBANN_HAS_GPU
     default:
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
