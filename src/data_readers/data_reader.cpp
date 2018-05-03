@@ -416,7 +416,7 @@ bool lbann::generic_data_reader::load_from_checkpoint_shared(persist& p, const c
 void generic_data_reader::set_file_dir(std::string s) {
   if(endsWith(s, "/")) {
     m_file_dir = s;
-  }else {
+  } else {
     m_file_dir = s + "/";
   }
 }
@@ -498,7 +498,7 @@ void generic_data_reader::setup_data_store(model *m, lbann_comm *comm) {
   m_data_store = nullptr;
   generic_data_reader *the_reader = nullptr;
 
-  //note: ordering is important here; since data_store_multi_images is 
+  //note: ordering is important here; since data_store_multi_images is
   //      descended from data_store_imagenet, it must be first
   if (dynamic_cast<data_reader_multi_images*>(this) != nullptr) {
     the_reader = dynamic_cast<data_reader_multi_images*>(this);
@@ -528,7 +528,7 @@ void generic_data_reader::setup_data_store(model *m, lbann_comm *comm) {
   if (the_reader == nullptr) {
     if (m_master) {
       std::cerr << "WARNING: " << __FILE__ << " " << __LINE__
-                << " dynamic_cast<...> failed; NOT using data_store for role: " 
+                << " dynamic_cast<...> failed; NOT using data_store for role: "
                 << get_role() << "\n";
     }
     return;

@@ -1,90 +1,54 @@
 syntax = "proto3";
-/* only including functions used in data_reader_numpy */
 
 message Request {
   oneof request {
     InitRequest           init_request            = 1;
-    TypeRequest           type_request            = 2;
-    ConfigRequest         config_request          = 3;
-    FetchDatumRequest     fetch_datum_request     = 4;
-    FetchLabelRequest     fetch_label_request     = 5;
-    FetchResponseRequest  fetch_response_request  = 6;
-    ExitRequest           exit_request            = 7;
+    FetchDataRequest      fetch_data_request      = 2;
+    FetchLabelsRequest    fetch_labels_request    = 3;
+    FetchResponsesRequest fetch_responses_request = 4;
+    string                unused                  = 5;
   }
 }
 
 message Response {
   oneof response {
-    InitResponse          init_response           = 1;
-    TypeResponse          type_response           = 2;
-    ConfigResponse        config_response         = 3;
-    FetchDatumResponse    fetch_datum_response    = 4;
-    FetchLabelResponse    fetch_label_response    = 5;
-    FetchResponseResponse fetch_response_response = 6;
+    InitResponse            init_response             = 1;
+    FetchDataResponse       fetch_data_response       = 2;
+    FetchLabelsResponse     fetch_labels_response     = 3;
+    FetchResponsesResponse  fetch_responses_response  = 4;
   }
 }
 
-/* initialize external reader */
-message InitRequest {
-  string filename = 1;
-}
+message InitRequest {}
+message FetchDataRequest {}
+message FetchLabelsRequest {}
+message FetchResponsesRequest {}
 
 message InitResponse {
   int32 num_samples = 1;
-  int32 num_features = 2;
-  int32 num_labels = 3;
-  bool has_labels = 4;
-  bool has_responses = 5;
-}
-
-/* get the type of the external reader */
-message TypeRequest {}
-
-message TypeResponse {
-  string type = 1;
-}
-
-/* get metadata */
-message ConfigRequest {}
-
-message ConfigResponse {
-  int32 label_count = 1;
   int32 data_size = 2;
-  int32 label_size = 3;
-  repeated int32 dims = 4;
+
+  bool  has_labels = 3;
+  int32 num_labels = 4;
+  int32 label_size = 5;
+
+  bool  has_responses = 6;
+  int32 num_responses = 7;
+  int32 response_size = 8;
+
+  repeated int32 data_dims = 9;
+
+  string reader_type = 10;
 }
 
-/* fetch datum */
-message FetchDatumRequest {
-  int32 data_id = 1;
-  int32 mb_idx = 2;
-  int32 tid = 3;
+message FetchDataResponse {
+  repeated float data = 1;
 }
 
-message FetchDatumResponse {
-  repeated double datum = 1; 
+message FetchLabelsResponse {
+  repeated bool labels = 1;
 }
 
-/* fetch label */
-message FetchLabelRequest {
-  int32 data_id = 1;
-  int32 mb_idx = 2;
-  int32 tid = 3;
+message FetchResponsesResponse {
+  repeated float responses = 1;
 }
-
-message FetchLabelResponse {
-  double label = 1; 
-}
-
-/* fetch response */
-message FetchResponseRequest {
-  int32 data_id = 1;
-  int32 mb_idx = 2;
-  int32 tid = 3;
-}
-
-message FetchResponseResponse {
-  double response = 1; 
-}
-
-message ExitRequest {}

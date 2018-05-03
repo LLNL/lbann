@@ -27,6 +27,7 @@ endif (LBANN_HAS_PROTOBUF)
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
   data_reader_external.cpp
+  connection.cpp
   )
 
 # Propagate the files up the tree

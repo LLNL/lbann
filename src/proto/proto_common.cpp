@@ -92,8 +92,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       reader_numpy->set_has_responses(!readme.disable_responses());
       reader = reader_numpy;
     } else if (name == "external") {
-      auto* reader_external = new external_reader(shuffle);
-      reader = reader_external;
+      reader = new external_reader();
     } else if (name == "pilot2_molecular_reader") {
       pilot2_molecular_reader* reader_pilot2_molecular = new pilot2_molecular_reader(readme.num_neighbors(), readme.max_neighborhood(), shuffle);
       reader = reader_pilot2_molecular;
@@ -237,7 +236,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
         reader_validation = new numpy_reader(shuffle);
         (*(numpy_reader *)reader_validation) = (*(numpy_reader *)reader);
       } else if (name == "external") {
-        reader_validation = new external_reader(shuffle);
+        reader_validation = new external_reader();
         //throw lbann_exception("external_reader does not support separate validation readers");
       } else if (name == "merge_samples") {
         reader_validation = new data_reader_merge_samples(*(data_reader_merge_samples *)reader);
