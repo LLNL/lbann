@@ -160,6 +160,15 @@ include(SetupProtobuf)
 # Setup the linear algebra library
 include(SetupElemental)
 
+if(LBANN_WITH_HDF5)
+  enable_language(C)
+  find_package(HDF5 COMPONENTS CXX)
+  set(LBANN_HAS_HDF5 ${HDF5_FOUND})
+  include_directories(${HDF5_INCLUDE_DIR})
+
+endif()
+
+
 # OpenCV installs a CMake configure file we can exploit
 find_package(OpenCV REQUIRED)
 set(LBANN_HAS_OPENCV ${OpenCV_FOUND})
@@ -302,7 +311,7 @@ target_link_libraries(lbann PUBLIC MPI::MPI_CXX)
 target_link_libraries(lbann PUBLIC protobuf::libprotobuf)
 target_link_libraries(lbann PUBLIC ${HYDROGEN_LIBRARIES})
 target_link_libraries(lbann PUBLIC ${OpenCV_LIBRARIES})
-
+target_link_libraries(lbann PUBLIC ${HDF5_LIBRARIES})
 if (LBANN_HAS_TBINF)
   target_link_libraries(lbann PUBLIC TBinf)
 endif ()

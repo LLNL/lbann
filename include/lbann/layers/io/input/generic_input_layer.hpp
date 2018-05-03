@@ -711,25 +711,50 @@ class generic_input_layer : public io_layer {
       if ((it != this->m_data_readers.end()) && it->second) {
         (it->second)->save_to_checkpoint_shared(p, "data_reader_testing");
       }
-      if (m_comm->am_model_master()) {
-        p.write_uint64(persist_type::train, "reader_train_processed",
-                       (uint64_t) m_training_dataset.get_num_samples_processed());
-        p.write_uint64(persist_type::train, "reader_train_total",
-                       (uint64_t) m_training_dataset.get_total_samples());
+      if (m_comm->am_model_master()) {  
+        #ifdef LBANN_HAS_HDF5
+        H5::Group input_layer = p.checkpoint_file->createGroup("/input_layer");
+        
+        long temp = m_training_dataset.get_num_samples_processed();
+        p.write_hdf5_parameter(input_layer,"reader_train_processed", &temp, H5::PredType::NATIVE_LONG);
+        temp = m_training_dataset.get_total_samples();
+        p.write_hdf5_parameter(input_layer,"reader_train_total", &temp, H5::PredType::NATIVE_LONG);
 
-        p.write_uint64(persist_type::train, "reader_test_processed",
-                       (uint64_t) m_testing_dataset.get_num_samples_processed());
-        p.write_uint64(persist_type::train, "reader_test_total",
-                     (uint64_t) m_testing_dataset.get_total_samples());
+        temp = m_testing_dataset.get_num_samples_processed();
+        p.write_hdf5_parameter(input_layer,"reader_test_processed", &temp, H5::PredType::NATIVE_LONG);
 
+        temp = m_testing_dataset.get_total_samples();
+        p.write_hdf5_parameter(input_layer,"reader_test_total", &temp, H5::PredType::NATIVE_LONG);
+        #else
+        p.write_parameter(persist_type::train, "reader_train_processed",
+          m_training_dataset.get_num_samples_processed());
+        
+        p.write_parameter(persist_type::train, "reader_train_total",
+          m_training_dataset.get_total_samples());
+
+        p.write_parameter(persist_type::train, "reader_test_processed",
+          m_testing_dataset.get_num_samples_processed());
+        
+        p.write_parameter(persist_type::train, "reader_test_total",
+          m_testing_dataset.get_total_samples());
+        #endif
       }
     }
     if(p.get_cb_type() == callback_type::validation || p.get_cb_type() == callback_type::batch){
       if (m_comm->am_model_master()) {
-        p.write_uint64(persist_type::validate, "reader_validate_processed",
-                       (uint64_t) m_validation_dataset.get_num_samples_processed());
-        p.write_uint64(persist_type::validate, "reader_validate_total",
-                       (uint64_t) m_validation_dataset.get_total_samples());
+        #ifdef LBANN_HAS_HDF5
+        H5::Group input_layer_val = p.checkpoint_file->openGroup("/input_layer");
+        long temp =  m_validation_dataset.get_num_samples_processed();  
+        p.write_hdf5_parameter(input_layer_val,"reader_validate_processed", &temp, H5::PredType::NATIVE_LONG);
+
+        temp =  m_validation_dataset.get_total_samples();
+        p.write_hdf5_parameter(input_layer_val,"reader_validate_total", &temp, H5::PredType::NATIVE_LONG);
+        #else
+        p.write_parameter(persist_type::validate, "reader_validate_processed",
+          m_validation_dataset.get_num_samples_processed());
+        p.write_parameter(persist_type::validate, "reader_validate_total",
+          m_validation_dataset.get_total_samples());
+        #endif
       }
       it = this->m_data_readers.find(execution_mode::validation);
       if ((it != this->m_data_readers.end()) && it->second) {
@@ -740,12 +765,12 @@ class generic_input_layer : public io_layer {
   }
 
   struct dataset_header {
-    uint64_t train_proc;
-    uint64_t train_total;
-    uint64_t test_proc;
-    uint64_t test_total;
-    uint64_t validate_proc;
-    uint64_t validate_total;
+    long train_proc;
+    long train_total;
+    long test_proc;
+    long test_total;
+    long validate_proc;
+    long validate_total;
   };
 
   // reload state of IO from a checkpoint
@@ -767,14 +792,25 @@ class generic_input_layer : public io_layer {
     dataset_header header;
     // Assume we are loading from a epoch end checkpoint
     if (m_comm->am_model_master()) {
-      p.read_uint64(persist_type::train, "reader_train_processed",    &header.train_proc);
-      p.read_uint64(persist_type::train, "reader_train_total",        &header.train_total);
-      p.read_uint64(persist_type::train, "reader_test_processed",     &header.test_proc);
-      p.read_uint64(persist_type::train, "reader_test_total",         &header.test_total);
-      if(m_data_readers[execution_mode::validation] != nullptr){
-        p.read_uint64(persist_type::validate, "reader_validate_processed", &header.validate_proc);
-        p.read_uint64(persist_type::validate, "reader_validate_total",     &header.validate_total);
+      #ifdef LBANN_HAS_HDF5
+      H5::Group input_layer = p.checkpoint_file->openGroup("/input_layer");
+      p.read_hdf5_parameter(input_layer,"reader_train_processed", &header.train_proc);
+      p.read_hdf5_parameter(input_layer, "reader_train_total",        &header.train_total);
+      p.read_hdf5_parameter(input_layer, "reader_test_processed",     &header.test_proc);
+      p.read_hdf5_parameter(input_layer, "reader_test_total",         &header.test_total);
+      p.read_hdf5_parameter(input_layer, "reader_validate_processed",     &header.validate_proc);
+      p.read_hdf5_parameter(input_layer, "reader_validate_total",         &header.validate_total);
+      #else
+      p.read_parameter(persist_type::train, "reader_train_processed",    &header.train_proc);
+      p.read_parameter(persist_type::train, "reader_train_total",        &header.train_total);
+      p.read_parameter(persist_type::train, "reader_test_processed",     &header.test_proc);
+      p.read_parameter(persist_type::train, "reader_test_total",         &header.test_total);
+      
+      if(m_data_readers[execution_mode::validation] != nullptr) {
+        p.read_parameter(persist_type::validate, "reader_validate_processed", &header.validate_proc);
+        p.read_parameter(persist_type::validate, "reader_validate_total",     &header.validate_total);
       }
+      #endif
     }
 
     it = this->m_data_readers.find(execution_mode::validation);
@@ -785,13 +821,13 @@ class generic_input_layer : public io_layer {
     // broadcast data from rank 0
     MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
     // set our fields
-    m_training_dataset.num_samples_processed()   = (long) header.train_proc;
-    m_training_dataset.total_samples()           = (long) header.train_total;
-    m_testing_dataset.num_samples_processed()    = (long) header.test_proc;
-    m_testing_dataset.total_samples()            = (long) header.test_total;
+    m_training_dataset.num_samples_processed()   =  header.train_proc;
+    m_training_dataset.total_samples()           =  header.train_total;
+    m_testing_dataset.num_samples_processed()    =  header.test_proc;
+    m_testing_dataset.total_samples()            =  header.test_total;
     if(m_data_readers[execution_mode::validation] != nullptr){
-      m_validation_dataset.num_samples_processed() = (long) header.validate_proc;
-      m_validation_dataset.total_samples()         = (long) header.validate_total;
+      m_validation_dataset.num_samples_processed() = header.validate_proc;
+      m_validation_dataset.total_samples()         = header.validate_total;
     }
     return true;
   }
@@ -808,22 +844,22 @@ class generic_input_layer : public io_layer {
       if ((it != this->m_data_readers.end()) && it->second) {
         (it->second)->save_to_checkpoint_distributed(p, "data_reader_testing");
       }
-      p.write_uint64(persist_type::train, "reader_train_processed",
-                     (uint64_t) m_training_dataset.get_num_samples_processed());
-      p.write_uint64(persist_type::train, "reader_train_total",
-                     (uint64_t) m_training_dataset.get_total_samples());
+      p.write_long(persist_type::train, "reader_train_processed",
+        m_training_dataset.get_num_samples_processed());
+      p.write_long(persist_type::train, "reader_train_total",
+        m_training_dataset.get_total_samples());
 
-      p.write_uint64(persist_type::train, "reader_test_processed",
-                     (uint64_t) m_testing_dataset.get_num_samples_processed());
-      p.write_uint64(persist_type::train, "reader_test_total",
-                   (uint64_t) m_testing_dataset.get_total_samples());
+      p.write_long(persist_type::train, "reader_test_processed",
+        m_testing_dataset.get_num_samples_processed());
+      p.write_long(persist_type::train, "reader_test_total",
+        m_testing_dataset.get_total_samples());
 
     }
     if(p.get_cb_type() == callback_type::validation || p.get_cb_type() == callback_type::batch){
-      p.write_uint64(persist_type::validate, "reader_validate_processed",
-                     (uint64_t) m_validation_dataset.get_num_samples_processed());
-      p.write_uint64(persist_type::validate, "reader_validate_total",
-                     (uint64_t) m_validation_dataset.get_total_samples());
+      p.write_long(persist_type::validate, "reader_validate_processed",
+                     m_validation_dataset.get_num_samples_processed());
+      p.write_long(persist_type::validate, "reader_validate_total",
+                      m_validation_dataset.get_total_samples());
       it = this->m_data_readers.find(execution_mode::validation);
       if ((it != this->m_data_readers.end()) && it->second) {
         (it->second)->save_to_checkpoint_distributed(p, "data_reader_validation");
@@ -846,14 +882,14 @@ class generic_input_layer : public io_layer {
     }
     // save our own state
     // rank 0 reads the file
-    dataset_header header;
-    p.read_uint64(persist_type::train, "reader_train_processed",    &header.train_proc);
-    p.read_uint64(persist_type::train, "reader_train_total",        &header.train_total);
-    p.read_uint64(persist_type::train, "reader_test_processed",     &header.test_proc);
-    p.read_uint64(persist_type::train, "reader_test_total",         &header.test_total);
+    //dataset_header header;
+    //p.read_uint64(persist_type::train, "reader_train_processed",    &header.train_proc);
+    //p.read_uint64(persist_type::train, "reader_train_total",        &header.train_total);
+    //p.read_uint64(persist_type::train, "reader_test_processed",     &header.test_proc);
+    //p.read_uint64(persist_type::train, "reader_test_total",         &header.test_total);
     if(m_data_readers[execution_mode::validation] != nullptr){
-      p.read_uint64(persist_type::validate, "reader_validate_processed", &header.validate_proc);
-      p.read_uint64(persist_type::validate, "reader_validate_total",     &header.validate_total);
+      //p.read_uint64(persist_type::validate, "reader_validate_processed", &header.validate_proc);
+      //p.read_uint64(persist_type::validate, "reader_validate_total",     &header.validate_total);
     }
     it = this->m_data_readers.find(execution_mode::validation);
     if ((it != this->m_data_readers.end()) && it->second) {
@@ -861,13 +897,13 @@ class generic_input_layer : public io_layer {
     }
 
     // set our fields
-    m_training_dataset.num_samples_processed()   = (long) header.train_proc;
-    m_training_dataset.total_samples()           = (long) header.train_total;
-    m_testing_dataset.num_samples_processed()    = (long) header.test_proc;
-    m_testing_dataset.total_samples()            = (long) header.test_total;
+    //m_training_dataset.num_samples_processed()   = (long) header.train_proc;
+    //m_training_dataset.total_samples()           = (long) header.train_total;
+    //m_testing_dataset.num_samples_processed()    = (long) header.test_proc;
+    //m_testing_dataset.total_samples()            = (long) header.test_total;
     if(m_data_readers[execution_mode::validation] != nullptr){
-      m_validation_dataset.num_samples_processed() = (long) header.validate_proc;
-      m_validation_dataset.total_samples()         = (long) header.validate_total;
+      //m_validation_dataset.num_samples_processed() = (long) header.validate_proc;
+      //m_validation_dataset.total_samples()         = (long) header.validate_total;
     }
     return true;
   }

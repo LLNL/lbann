@@ -71,6 +71,7 @@ ALUMINUM_WITH_MPI_CUDA=OFF
 ALUMINUM_WITH_NCCL=OFF
 WITH_CONDUIT=OFF
 WITH_TBINF=OFF
+WITH_HDF5=OFF
 RECONFIGURE=0
 # In case that autoconf fails during on-demand buid on surface, try the newer
 # version of autoconf installed under '/p/lscratche/brainusr/autoconf/bin'
@@ -122,6 +123,7 @@ Options:
   ${C}--build${N}                 Specify alternative build directory; default is <lbann_home>/build.
   ${C}--suffix${N}                Specify suffix for build directory. If you are, e.g, building on surface, your build will be <someplace>/surface.llnl.gov, regardless of your choice of compiler or other flags. This option enables you to specify, e.g: --suffix gnu_debug, in which case your build will be in the directory <someplace>/surface.llnl.gov.gnu_debug
   ${C}--instrument${N}            Use -finstrument-functions flag, for profiling stack traces
+  ${C}--with-hdf5${N}              Use HDF5 checkpointing
   ${C}--disable-cuda${N}          Disable CUDA
   ${C}--disable-topo-aware${N}    Disable topological-aware configuration (no HWLOC)
   ${C}--with-aluminum${N}              Use Aluminum allreduce library
@@ -251,6 +253,9 @@ while :; do
             ;;
         --with-conduit)
             WITH_CONDUIT=ON
+            ;;
+         --with-hdf5)
+            WITH_HDF5=ON
             ;;
         --instrument)
             INSTRUMENT="-finstrument-functions -ldl"
@@ -768,6 +773,7 @@ CONFIGURE_COMMAND=$(cat << EOF
 -D LBANN_WITH_ALUMINUM=${WITH_ALUMINUM} \
 -D LBANN_WITH_CONDUIT=${WITH_CONDUIT} \
 -D LBANN_CONDUIT_DIR=${CONDUIT_DIR} \
+-D LBANN_WITH_HDF5=${WITH_HDF5} \
 -D LBANN_BUILT_WITH_SPECTRUM=${WITH_SPECTRUM} \
 -D OPENBLAS_ARCH_COMMAND=${OPENBLAS_ARCH} \
 ${SUPERBUILD_DIR}

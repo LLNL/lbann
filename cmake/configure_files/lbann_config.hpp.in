@@ -25,6 +25,7 @@
 #cmakedefine LBANN_HAS_ALUMINUM
 #cmakedefine LBANN_ALUMINUM_MPI_PASSTHROUGH
 #cmakedefine LBANN_HAS_CONDUIT
+#cmakedefine LBANN_HAS_HDF5
 
 #cmakedefine LBANN_DETERMINISTIC
 

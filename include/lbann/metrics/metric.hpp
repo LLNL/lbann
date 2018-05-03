@@ -75,7 +75,7 @@ struct metric_statistics {
   /** struct used to serialize mode fields in file and MPI transfer */
   struct packing_header {
     double sum;
-    uint64_t num_samples;
+    int num_samples;
   };
   bool pack_scalars(persist& p);
   bool unpack_scalars(persist& p, struct packing_header *header);

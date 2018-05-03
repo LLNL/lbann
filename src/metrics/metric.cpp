@@ -52,21 +52,20 @@ void metric_statistics::reset() {
 }
 
 bool metric_statistics::pack_scalars(persist& p) {
-  p.write_double(persist_type::validate, "sum", m_sum);
-  p.write_uint64(persist_type::validate, "num_samples", m_num_samples);
+  p.write_parameter(persist_type::validate, "sum", m_sum);
+  p.write_parameter(persist_type::validate, "num_samples", m_num_samples);
   return true;
 }
 
 bool metric_statistics::unpack_scalars(persist& p, struct packing_header *header) {
   double sum;
-  uint64_t num_samples;
-  p.read_double(persist_type::validate, "sum", &sum);
-  p.read_uint64(persist_type::validate, "num_samples", (uint64_t *) &num_samples);
+  p.read_parameter(persist_type::validate, "sum", &sum);
+  p.read_parameter(persist_type::validate, "num_samples", &m_num_samples);
   m_sum = sum;
-  m_num_samples = num_samples;
+  //m_num_samples = num_samples;
   if (header != nullptr) {
     header->sum = sum;
-    header->num_samples = num_samples;
+    header->num_samples = m_num_samples;
   }
   return true;
 }

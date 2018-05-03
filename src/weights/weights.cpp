@@ -344,10 +344,28 @@ std::string weights::get_dims_string(const std::vector<int>& matrix_height_dims,
 bool weights::save_to_checkpoint_shared(lbann::persist& p)
 {
   // define name to store weight values
+  #ifdef LBANN_HAS_HDF5
+  std::string l_name = m_name + "_weights";
+  // write weights using persist call -- uses Elemental's write function.
+  //p.write_distmat(persist_type::model, l_name, m_values);
+  if( m_values->ColStride() == 1 && m_values->RowStride() == 1 ){
+    if (m_comm->am_model_master()){
+        H5::Group weights_group = p.checkpoint_file->createGroup(l_name);
+        p.write_hdf5_distmat(weights_group, m_name.c_str(), m_values);
+    }
+  } else {
+    CircMat<El::Device::CPU> temp = *m_values;
+    if (m_comm->am_world_master()){
+      H5::Group weights_group = p.checkpoint_file->createGroup(l_name);
+      p.write_hdf5_distmat(weights_group, m_name.c_str(), &temp);
+    }  
+  }
+  #else  
   char l_name[512];
   sprintf(l_name, "weights_%s_%lldx%lld", m_name.c_str(), m_values->Height(), m_values->Width());
-  // write weights using persist call -- uses Elemental's write function.
   p.write_distmat(persist_type::model, l_name, m_values);
+  #endif
+  
   // if saving training state, also write out state of optimizer
   if (m_optimizer != nullptr) {
     m_optimizer->save_to_checkpoint_shared(p, m_name);
@@ -394,10 +412,24 @@ void weights::write_proto(lbann_data::WeightsData* proto) const {
 bool weights::load_from_checkpoint_shared(lbann::persist& p)
 {
   // define filename containing saved weight values
-  char l_name[512], f_name[512];
+  #ifdef LBANN_HAS_HDF5
+  std::string l_name = m_name + "_weights";
+  CircMat<El::Device::CPU> temp(m_values->Grid());
+  temp.Resize(m_values->Height(),m_values->Width());
+  if (m_comm->am_world_master()){
+    H5::Group weights_group = p.checkpoint_file->openGroup(l_name);
+    p.read_hdf5_distmat(weights_group, m_name.c_str(), &temp);
+    temp.Resize(m_values->Height(),m_values->Width());
+  }
+  temp.MakeSizeConsistent();
+  El::Copy(temp, *m_values);
+  #else
+  char l_name[512], f_name[512]; 
   sprintf(l_name, "weights_%s_%lldx%lld", m_name.c_str(), m_values->Height(), m_values->Width());
   sprintf(f_name, "%s.bin", l_name);
   p.read_distmat(persist_type::model, f_name, m_values);
+  #endif
+  
   if (m_optimizer != nullptr) {
     m_optimizer->load_from_checkpoint_shared(p, m_name);
   }

@@ -31,7 +31,9 @@
 
 #include "lbann/base.hpp"
 #include "El.hpp"
-
+#ifdef LBANN_HAS_HDF5
+#include "H5Cpp.h"
+#endif
 namespace lbann {
 
 enum class persist_type {
@@ -59,7 +61,9 @@ class persist {
   callback_type ckpt_type; 
  public:
   char m_checkpoint_dir[1024];
-  
+  #ifdef LBANN_HAS_HDF5
+  H5::H5File* checkpoint_file; 
+  #endif
  public:
   persist();
   ~persist() {};
@@ -94,12 +98,22 @@ class persist {
 
   bool write_bytes(persist_type type, const char *name, const void *buf, size_t size);
   bool read_bytes(persist_type type, const char *name, void *buf, size_t size);
+  
+  template<typename T>
+  bool write_parameter(persist_type type, const char *name, T val) {
+    return write_bytes(type, name, &val, sizeof(T)); 
+  }
+  
+  template<typename T>
+  bool read_parameter(persist_type type, const char *name, T *val) {
+    return read_bytes(type, name, val, sizeof(T));
+  }
 
-  bool write_uint32(persist_type type, const char *name, uint32_t  val);
-  bool read_uint32 (persist_type type, const char *name, uint32_t *val);
+  bool write_int(persist_type type, const char *name, int val);
+  bool read_int(persist_type type, const char *name, int *val);
 
-  bool write_uint64(persist_type type, const char *name, uint64_t  val);
-  bool read_uint64 (persist_type type, const char *name, uint64_t *val);
+  bool write_long(persist_type type, const char *name, long  val);
+  bool read_long(persist_type type, const char *name, long *val);
 
   bool write_int32_contig(persist_type type, const char *name, const int32_t *buf, uint64_t count);
   bool read_int32_contig (persist_type type, const char *name, int32_t *buf, uint64_t count);
@@ -115,6 +129,45 @@ class persist {
 
   bool write_datatype(persist_type type, const char *name, DataType  val);
   bool read_datatype (persist_type type, const char *name, DataType *val);
+#ifdef LBANN_HAS_HDF5   
+  template<typename T>
+  bool write_hdf5_parameter(H5::Group group_name, const char *name, T *val, H5::PredType hdf5_type) {
+    H5::DataSpace dataspace = H5::DataSpace();
+    H5::Attribute attribute = group_name.createAttribute(name, hdf5_type, dataspace);
+    attribute.write(hdf5_type, static_cast<void*>(val));
+    return true;
+  }
+
+
+  template<typename T>
+  bool read_hdf5_parameter(H5::Group group_name, const char *name, T *val) {
+    H5::Attribute attr = group_name.openAttribute(name);
+    H5::DataType type = attr.getDataType();
+    attr.read(type,val);     
+    return true;
+  }
+
+  template<typename T>
+  bool write_hdf5_array(H5::Group group_name, const char *name, std::vector<T> *val, H5::PredType hdf5_type) {
+    const hsize_t arr_size = val->size();
+    H5::DataSpace dataspace = H5::DataSpace(1,&arr_size);
+    H5::DataSet dataset = group_name.createDataSet(name, hdf5_type, dataspace);
+    dataset.write(val->data(), hdf5_type);
+    return true;
+  }
+ 
+ 
+  template<typename T>
+  bool read_hdf5_array(H5::Group group_name, const char *name, T *val) {
+    H5::DataSet ds = group_name.openDataSet(name);
+    H5::DataSpace dataspace= ds.getSpace();
+    ds.read(val->data(), H5::PredType::NATIVE_INT, dataspace);
+    return true;
+  }
+   
+  bool write_hdf5_distmat(H5::Group group_name, const char *name, AbsDistMat *M);
+  bool read_hdf5_distmat(H5::Group group_name, const char *name, AbsDistMat *M);
+#endif
 
  private:
   int get_fd(persist_type type) const;

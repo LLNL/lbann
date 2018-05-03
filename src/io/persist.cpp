@@ -39,10 +39,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-
 #include "El.hpp"
 #include "mpi.h"
-
 /****************************************************
  * These functions will save a libElemental matrix
  * using a file-per-process
@@ -225,39 +223,50 @@ lbann::persist::persist() {
 void lbann::persist::open_checkpoint(const char *dir) {
   // create directory for checkpoint
   lbann::makedir(dir);
-
   // copy checkpoint directory
   strcpy(m_checkpoint_dir, dir);
 
   // open the file for writing
-   sprintf(m_model_filename, "%s/model", dir);
-
+  // temp moved to inside check
+  //sprintf(m_model_filename, "%s/model", dir);
   // define filename for train state
-  sprintf(m_train_filename, "%s/train", dir);
     
   if(ckpt_type != callback_type::validation){
+    #ifdef LBANN_HAS_HDF5
+    sprintf(m_model_filename, "%s/model.h5", dir);
+    checkpoint_file = new H5::H5File(m_model_filename, H5F_ACC_TRUNC);
+    #else
+    sprintf(m_model_filename, "%s/model", dir);
     m_model_fd = lbann::openwrite(m_model_filename);
     if (m_model_fd < 0) {
       throw lbann_exception(std::string("Failed to open file: ") + m_model_filename);
     } 
 
+    sprintf(m_train_filename, "%s/train", dir);
     m_train_fd = lbann::openwrite(m_train_filename);
     if (m_train_fd < 0) {
       throw lbann_exception(std::string("Failed to open file: ") + m_train_filename);
     }
+    #endif
   } 
   if (ckpt_type == callback_type::validation || ckpt_type == callback_type::batch){
+    #ifdef LBANN_HAS_HDF5
+    sprintf(m_model_filename, "%s/model.h5", dir);
+    checkpoint_file = new H5::H5File(m_model_filename, H5F_ACC_RDWR);
+    #else
     sprintf(m_validate_filename, "%s/validate", dir);
     m_validate_fd = lbann::openwrite(m_validate_filename);
     if (m_validate_fd < 0) {
       throw lbann_exception(std::string("Failed to open file: ") + m_validate_filename);
     }
+    #endif
   }
   //}
 }
 
 void lbann::persist::close_checkpoint() {
   // close model file
+  #ifndef LBANN_HAS_HDF5
   if (m_model_fd >= 0) {
     lbann::closewrite(m_model_fd, m_model_filename);
     m_model_fd = -1;
@@ -272,14 +281,21 @@ void lbann::persist::close_checkpoint() {
     lbann::closewrite(m_validate_fd, m_validate_filename);
     m_validate_fd = -1;
   }
+  #else
+  checkpoint_file->close();
+  #endif
 }
 
 void lbann::persist::open_restart(const char *dir) {
   // copy checkpoint directory
   strcpy(m_checkpoint_dir, dir);
   // open the file for writing
+  #ifdef LBANN_HAS_HDF5
+  sprintf(m_model_filename, "%s/model.h5", dir);
+  checkpoint_file = new H5::H5File(m_model_filename, H5F_ACC_RDONLY);
+  #else
   sprintf(m_model_filename, "%s/model", dir);
-
+  
   // define filename for train state
   sprintf(m_train_filename, "%s/train", dir);
   // define filename for validate phase state
@@ -302,10 +318,14 @@ void lbann::persist::open_restart(const char *dir) {
       std::cout << "Failed to read " << m_validate_filename << " Not an error if validation percent = 0" << std::endl;
     //throw lbann_exception(std::string("Failed to read file: ") + m_validate_filename); 
   }
+  #endif
 }
 
 void lbann::persist::close_restart() {
   // close model file
+  #ifdef LBANN_HAS_HDF5
+  checkpoint_file->close();
+  #else
   lbann::closeread(m_model_fd, m_model_filename);
   m_model_fd = -1;
   // close training file
@@ -314,7 +334,7 @@ void lbann::persist::close_restart() {
   // close validate file
   lbann::closeread(m_validate_fd, m_validate_filename);
   m_validate_fd = -1;
-
+  #endif
 }
 
 bool lbann::persist::write_distmat(persist_type type, const char *name, AbsDistMat *M) {
@@ -363,6 +383,24 @@ bool lbann::persist::read_distmat(persist_type type, const char *name, AbsDistMa
   return true;
 }
 
+#ifdef LBANN_HAS_HDF5
+bool lbann::persist::write_hdf5_distmat(H5::Group group_name, const char *name, AbsDistMat *M) {
+  const hsize_t row_count = M->Height();
+  const hsize_t col_count = M->Width();
+  const hsize_t dims[2]= {row_count,col_count};
+  H5::DataSpace dataspace = H5::DataSpace(2, dims);
+  H5::DataSet dataset = group_name.createDataSet(name, H5::PredType::NATIVE_FLOAT, dataspace);
+  dataset.write(M->LockedBuffer(), H5::PredType::NATIVE_FLOAT);
+  return true;
+}
+
+bool lbann::persist::read_hdf5_distmat(H5::Group group_name, const char *name, AbsDistMat *M) {
+    H5::DataSet ds = group_name.openDataSet(name);
+    H5::DataSpace dataspace= ds.getSpace();
+    ds.read(M->Buffer(), H5::PredType::NATIVE_FLOAT, dataspace);
+    return true;
+}
+#endif
 bool lbann::persist::write_bytes(persist_type type, const char *name, const void *buf, size_t size) {
   int fd = get_fd(type);
   if (fd >= 0) {
@@ -392,20 +430,20 @@ bool lbann::persist::read_bytes(persist_type type, const char *name, void *buf, 
   return true;
 }
 
-bool lbann::persist::write_uint32(persist_type type, const char *name, uint32_t val) {
-  return write_bytes(type, name, &val, sizeof(uint32_t));
+bool lbann::persist::write_int(persist_type type, const char *name, int val) {
+  return write_bytes(type, name, &val, sizeof(int));
 }
 
-bool lbann::persist::read_uint32(persist_type type, const char *name, uint32_t *val) {
-  return read_bytes(type, name, val, sizeof(uint32_t));
+bool lbann::persist::read_int(persist_type type, const char *name, int *val) {
+  return read_bytes(type, name, val, sizeof(int));
 }
 
-bool lbann::persist::write_uint64(persist_type type, const char *name, uint64_t val) {
-  return write_bytes(type, name, &val, sizeof(uint64_t));
+bool lbann::persist::write_long(persist_type type, const char *name, long val) {
+  return write_bytes(type, name, &val, sizeof(long));
 }
 
-bool lbann::persist::read_uint64(persist_type type, const char *name, uint64_t *val) {
-  return read_bytes(type, name, val, sizeof(uint64_t));
+bool lbann::persist::read_long(persist_type type, const char *name, long *val) {
+  return read_bytes(type, name, val, sizeof(long));
 }
 
 bool lbann::persist::write_int32_contig(persist_type type, const char *name, const int32_t *buf, uint64_t count) {

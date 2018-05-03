@@ -520,39 +520,68 @@ class generic_data_reader : public lbann_image_preprocessor {
   bool load_from_checkpoint_distributed(persist& p, const char *name);
 
   struct packing_header {
-    uint64_t current_pos;
-    uint64_t current_mini_batch_idx;
-    uint64_t data_size;
+    int current_pos;
+    int current_mini_batch_idx;
+    int data_size;
   };
   bool pack_scalars(persist& p, const char *name) {
     char fieldname[1024];
+    int size = m_shuffled_indices.size();    
+    #ifdef LBANN_HAS_HDF5
+    snprintf(fieldname, sizeof(fieldname), "%s_data_reader", name);  
+    H5::Group dr_group = p.checkpoint_file->createGroup(fieldname);
+    p.write_hdf5_parameter(dr_group,"current_mini_batch_idx", &m_current_mini_batch_idx, H5::PredType::NATIVE_FLOAT);
+    
+    p.write_hdf5_parameter(dr_group,"data_size", &size, H5::PredType::NATIVE_INT);
+
+    p.write_hdf5_parameter(dr_group, "data_position", &m_current_pos, H5::PredType::NATIVE_FLOAT);
+    
+    p.write_hdf5_array(dr_group, "data_indices", &m_shuffled_indices, H5::PredType::NATIVE_INT);
+    #else
     lbann::persist_type persist_value;
     std::string s_name(name);
     if(s_name.compare("data_reader_validation") == 0){
       persist_value = persist_type::validate;
     } else {
-       persist_value= persist_type::train;
+      persist_value= persist_type::train;
     }
-
-
     snprintf(fieldname, sizeof(fieldname), "%s_current_mini_batch_idx", name);
-    p.write_uint64(persist_value, fieldname, (uint64_t) m_current_mini_batch_idx);
-
-    int size = m_shuffled_indices.size();
+    p.write_parameter(persist_value, fieldname, m_current_mini_batch_idx);
+   
     snprintf(fieldname, sizeof(fieldname), "%s_data_size", name);
-    p.write_uint64(persist_value, fieldname, (uint64_t) size);
-
+    p.write_parameter(persist_value, fieldname,  size);
+ 
     snprintf(fieldname, sizeof(fieldname), "%s_data_position", name);
-    p.write_uint64(persist_value, fieldname, (uint64_t) m_current_pos);
+    p.write_parameter(persist_value, fieldname,  m_current_pos);
 
     snprintf(fieldname, sizeof(fieldname), "%s_data_indices", name);
     p.write_int32_contig(persist_value, fieldname, &m_shuffled_indices[0], (uint64_t) size);
-
+    #endif
+    
     return true;
   }
 
   bool unpack_scalars(persist& p, struct packing_header *header, const char *name){
     char fieldname[1024];
+    int size; 
+    // Closest to non checkpoint run only loads m_current_pos
+    #ifdef LBANN_HAS_HDF5
+    snprintf(fieldname, sizeof(fieldname), "%s_data_reader", name);
+    H5::Group dr_group = p.checkpoint_file->openGroup(fieldname); 
+    // record minibatch index
+    p.read_hdf5_parameter(dr_group, "current_mini_batch_idx", &m_current_mini_batch_idx);
+    
+    p.read_hdf5_parameter(dr_group, "data_size", &size);   
+    // get current position within data
+    p.read_hdf5_parameter(dr_group, "data_position", &m_current_pos);
+    
+    //resize shuffled index array to hold values
+    m_shuffled_indices.resize(size);
+
+     //read list of indices
+    p.read_hdf5_array(dr_group, "data_indices", &m_shuffled_indices);
+    
+    #else
     lbann::persist_type persist_value;
     std::string s_name(name);
     if(s_name.compare("data_reader_validation") == 0){
@@ -560,29 +589,24 @@ class generic_data_reader : public lbann_image_preprocessor {
     } else {
        persist_value= persist_type::train;
     }
-    // Closest to non checkpoint run only loads m_current_pos
-
-    // record minibatch index
-    uint64_t val;
-
+    int val;
     snprintf(fieldname, sizeof(fieldname), "%s_current_mini_batch_idx", name);
-    p.read_uint64(persist_value, fieldname, &val);
-    m_current_mini_batch_idx = (int) val;
+    p.read_parameter(persist_value, fieldname, &val);
+    m_current_mini_batch_idx = val;
 
     snprintf(fieldname, sizeof(fieldname), "%s_data_size", name);
-    p.read_uint64(persist_value, fieldname, &val);
-    auto size = (int) val;
+    p.read_parameter(persist_value, fieldname, &val);
+    size = val;
 
-    // get current position within data
     snprintf(fieldname, sizeof(fieldname), "%s_data_position", name);
-    p.read_uint64(persist_value, fieldname, &val);
-    m_current_pos = (int) val;
-    //resize shuffled index array to hold values
+    p.read_parameter(persist_value, fieldname, &val);
+    m_current_pos =  val;    
     m_shuffled_indices.resize(size);
 
-     //read list of indices
     snprintf(fieldname, sizeof(fieldname), "%s_data_indices", name);
-    p.read_int32_contig(persist_value, fieldname, &m_shuffled_indices[0], (uint64_t) size);
+    p.read_int32_contig(persist_value, fieldname, &m_shuffled_indices[0], (uint64_t) size);    
+
+    #endif
 
     if(header != nullptr){
       //shuffled data indices array size, used for resize after broadcast. Not unpacked.
@@ -596,8 +620,8 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
 
   void unpack_header(struct packing_header& header){
-    m_current_pos = (int) header.current_pos;
-    m_current_mini_batch_idx = (int) header.current_mini_batch_idx;
+    m_current_pos = header.current_pos;
+    m_current_mini_batch_idx = header.current_mini_batch_idx;
   }
 
   /// returns the data store

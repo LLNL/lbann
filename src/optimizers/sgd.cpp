@@ -158,13 +158,27 @@ bool sgd::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
   optimizer::save_to_checkpoint_shared(p, name_prefix);
 
   if (m_comm->am_model_master()) {
-    pack_scalars(p);
+    pack_scalars(p, name_prefix);
   }
-
+  #ifdef LBANN_HAS_HDF5
+  std::string l_name = name_prefix + "_optimizer";
+  if( m_velocity->ColStride() == 1 && m_velocity->RowStride() == 1 ){
+    if (m_comm->am_model_master()){
+      H5::Group velocity = p.checkpoint_file->createGroup(l_name);
+      p.write_hdf5_distmat(velocity, "velocity", m_velocity);
+    }
+  } else {
+      CircMat<El::Device::CPU> temp = *m_velocity;
+      if (m_comm->am_world_master()){
+        H5::Group velocity = p.checkpoint_file->createGroup(l_name);
+        p.write_hdf5_distmat(velocity,"velocity" , &temp);
+      }
+  }
+  #else
   char l_name[512];
   sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->Height(), m_velocity->Width());
   p.write_distmat(persist_type::train, l_name, m_velocity);
-
+  #endif
   return true;
 }
 
@@ -172,23 +186,34 @@ bool sgd::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
   optimizer::load_from_checkpoint_shared(p, name_prefix);
   struct packing_header header;
   if (m_comm->am_model_master()) {
-    unpack_scalars(p, &header);
+    unpack_scalars(p, name_prefix, &header);
   }
 
   m_comm->model_broadcast(0, header);
-
   unpack_header(header);
+  #ifdef LBANN_HAS_HDF5
+  std::string l_name = name_prefix + "_optimizer";
+  CircMat<El::Device::CPU> temp(m_velocity->Grid());
+  temp.Resize(m_velocity->Height(),m_velocity->Width());
+  if (m_comm->am_world_master()){
+    H5::Group weights_group = p.checkpoint_file->openGroup(l_name);
+    p.read_hdf5_distmat(weights_group, "velocity", &temp);
+    temp.Resize(m_velocity->Height(),m_velocity->Width());
+  } 
+  temp.MakeSizeConsistent();
+  El::Copy(temp, *m_velocity);
+  #else
   char l_name[512];
   sprintf(l_name, "%s_optimizer_velocity_%lldx%lld.bin", name_prefix.c_str(), m_velocity->Height(), m_velocity->Width());
   p.read_distmat(persist_type::train, l_name, m_velocity);
-
+  #endif
   return true;
 }
 
 bool sgd::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
   optimizer::save_to_checkpoint_distributed(p, name_prefix);
 
-  pack_scalars(p);
+  pack_scalars(p, name_prefix);
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->LocalHeight(), m_velocity->LocalWidth());
@@ -200,7 +225,7 @@ bool sgd::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
 bool sgd::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
   optimizer::load_from_checkpoint_distributed(p, name_prefix);
   struct packing_header header;
-  unpack_scalars(p, &header);
+  unpack_scalars(p, name_prefix, &header);
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->LocalHeight(), m_velocity->LocalWidth());

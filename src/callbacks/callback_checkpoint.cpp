@@ -201,7 +201,7 @@ bool lbann_callback_checkpoint::checkpoint(model *m) {
       write_latest(dir, "last.distributed.checkpoint", epoch, step);
     } 
   }
-  // Shared checkpoint, logic identical to Distributed.i
+  // Shared checkpoint, logic identical to Distributed.
   if(m_checkpoint_shared){
     strcpy(dir, m_checkpoint_dir.c_str());
     makedir(dir);
@@ -213,11 +213,11 @@ bool lbann_callback_checkpoint::checkpoint(model *m) {
     comm->model_broadcast(0, &(p.m_checkpoint_dir[0]), sizeof(p.m_checkpoint_dir));
     m->save_to_checkpoint_shared(p);
     // close our checkpoint
-    p.close_checkpoint();
     if (comm->am_model_master()) {
+      p.close_checkpoint();  
       write_latest(dir, "last.shared.checkpoint", epoch, step);
     }
-   }
+  }
 
   uint64_t bytes_count = p.get_bytes();
 

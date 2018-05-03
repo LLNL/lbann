@@ -86,18 +86,28 @@ class sgd : public optimizer {
     DataType momentum;
   };
 
-  bool pack_scalars(persist& p) {
+  bool pack_scalars(persist& p, std::string m_name) {
+    #ifdef LBANN_HAS_HDF5
+    std::string group_name = "/optimizer" + m_name;
+    H5::Group optimizer_group = p.checkpoint_file->openGroup(group_name);
+    p.write_hdf5_parameter(optimizer_group, "momentum", &m_momentum, H5::PredType::NATIVE_FLOAT); 
+    #else
     p.write_datatype(persist_type::train, "momentum", m_momentum);
+    #endif
     return true;
   }
 
-  bool unpack_scalars(persist& p, struct packing_header *header){
+  bool unpack_scalars(persist& p, std::string m_name, struct packing_header *header){
+    #ifdef LBANN_HAS_HDF5
+    std::string group_name = "/optimizer" + m_name;
+    H5::Group optimizer_group = p.checkpoint_file->openGroup(group_name);
+    p.read_hdf5_parameter(optimizer_group,"momentum", &m_momentum);
+    #else
     p.read_datatype(persist_type::train, "momentum",  &m_momentum);
-
+    #endif
     if(header != nullptr){
       header->momentum = m_momentum;
     }
-
   return true;
   }
 
