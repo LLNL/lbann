@@ -290,11 +290,14 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm,
 #endif
 
     // Determine number of MPI ranks on current compute node
-    const int rank_in_node = comm->get_rank_in_node();
+    // const int rank_in_node = comm->get_rank_in_node();
     const int procs_per_node = comm->get_procs_per_node();
 
+    El::GPUManager* gpu_manager = El::GPUManager::getInstance();
+
     // Determine number of visible GPUs
-    CHECK_CUDA(cudaGetDeviceCount(&m_num_visible_gpus));
+    //    CHECK_CUDA(cudaGetDeviceCount(&m_num_visible_gpus));
+    m_num_visible_gpus = gpu_manager->get_local_device_count();
     if(max_num_gpus >= 0 && max_num_gpus < m_num_visible_gpus) {
         m_num_visible_gpus = max_num_gpus;
     }
@@ -302,60 +305,24 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm,
         throw lbann::lbann_exception("cudnn_wrapper: no GPUs found");
     }
     /// It is assumed that the number of processes on this node is equal to the total number of GPUs available
-/*
-  if(procs_per_node != m_num_visible_gpus){
-  throw lbann::lbann_exception("cudnn_wrapper: the number of MPI ranks is different from than the number of GPUs available on this node");
-  }
-*/
 
-    // Assign GPUs to process
-    int gpu_start, gpu_end;
-    const char* visible_devices = getenv("CUDA_VISIBLE_DEVICES");
-    if(visible_devices != nullptr && strlen(visible_devices) > 0) {
-        // Use all visible GPUs if specified with an environment variable
-        gpu_start = 0;
-        gpu_end = m_num_visible_gpus;
-    }
-    else if(m_num_visible_gpus >= procs_per_node) {
-        // Case where compute node has more GPUs than MPI ranks
-        const int gpus_per_proc = m_num_visible_gpus / procs_per_node;
-        const int num_leftover_gpus = m_num_visible_gpus % procs_per_node;
-        gpu_start = rank_in_node * gpus_per_proc;
-        gpu_end = (rank_in_node + 1) * gpus_per_proc;
-        if(rank_in_node < num_leftover_gpus) {
-            gpu_start += rank_in_node;
-            gpu_end += rank_in_node + 1;
-        }
-        else {
-            gpu_start += num_leftover_gpus;
-            gpu_end += num_leftover_gpus;
-        }
-    }
-    else {
-        // Case where compute node has fewer GPUs than MPI ranks
-        // TODO: Support case where MPI ranks have to share GPUs
-        std::stringstream err;
-        err << "cudnn_wrapper: cannot have " << procs_per_node << " processes "
-            << "on a node with " << m_num_visible_gpus << " GPUs";
-        throw lbann_exception(err.str());
-        gpu_start = rank_in_node % m_num_visible_gpus;
-        gpu_end = gpu_start + 1;
+    if(procs_per_node != m_num_visible_gpus){
+      std::cout << "cudnn_wrapper: the number of MPI ranks "
+                << procs_per_node
+                << " is different from than the number of GPUs "
+                << m_num_visible_gpus
+                << "  available on this node" << std::endl;
     }
 
     // Construct GPU objects
-    for(int gpu = gpu_start; gpu < gpu_end; ++gpu) {
-        FORCE_CHECK_CUDA(cudaSetDevice(gpu));
-        m_gpus.push_back(gpu);
-        m_streams.push_back(nullptr);
-        m_handles.push_back(nullptr);
-        m_cublas_handles.push_back(nullptr);
-        FORCE_CHECK_CUDA(cudaStreamCreate(&m_streams.back()));
-        FORCE_CHECK_CUDNN(cudnnCreate(&m_handles.back()));
-        FORCE_CHECK_CUDNN(cudnnSetStream(m_handles.back(), m_streams.back()));
-        FORCE_CHECK_CUBLAS(cublasCreate(&m_cublas_handles.back()));
-        FORCE_CHECK_CUBLAS(cublasSetStream(m_cublas_handles.back(), m_streams.back()));
-        FORCE_CHECK_CUBLAS(cublasSetPointerMode(m_cublas_handles.back(), CUBLAS_POINTER_MODE_HOST));
-    }
+    int gpu = gpu_manager->get_local_device_id();
+    FORCE_CHECK_CUDA(cudaSetDevice(gpu));
+    m_gpus.push_back(gpu);
+    m_streams.push_back(gpu_manager->get_local_stream());
+    m_handles.push_back(nullptr);
+    m_cublas_handles.push_back(gpu_manager->get_local_cublas_handle());
+    FORCE_CHECK_CUDNN(cudnnCreate(&m_handles.back()));
+    FORCE_CHECK_CUDNN(cudnnSetStream(m_handles.back(), m_streams.back()));
 
     // Get number of GPUs for current MPI rank
     m_num_gpus = m_gpus.size();
