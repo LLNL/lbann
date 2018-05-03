@@ -132,6 +132,9 @@ class generic_data_store {
     m_all_minibatch_indices = indices;
   }
 
+  /// supports out-of-memory-mode
+  virtual void fetch_data() {}
+
 protected :
 
   virtual void exchange_data() = 0;
@@ -229,6 +232,17 @@ protected :
   std::unordered_map<int, std::string> m_data_filepaths;
   /// fills in m_data_filepaths
   virtual void build_data_filepaths() {std::cerr << "shouldn't be here!\n";}
+
+  /// supports out-of-memory mode
+  int m_minibatch_num;
+
+  /// outer vector size is m_np; m_all_partitioned_indices[i]
+  /// contains m_my_minibatch_indices from P_i
+  std::vector<std::vector<std::vector<int>>> m_all_partitioned_indices;
+  /// supports out-of-memory-mode;
+  /// all-to-all exchange of m_my_minibatch_indices;
+  /// fills in m_all_partitioned_indices
+  void exchange_partitioned_indices();
 };
 
 }  // namespace lbann

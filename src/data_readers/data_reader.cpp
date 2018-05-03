@@ -61,6 +61,10 @@ void generic_data_reader::setup() {
 }
 
 int lbann::generic_data_reader::fetch_data(Mat& X) {
+  if (m_data_store != nullptr) {
+    m_data_store->fetch_data();
+  }
+
   int nthreads = omp_get_max_threads();
   if(!position_valid()) {
     throw lbann_exception(

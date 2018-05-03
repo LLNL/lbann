@@ -45,8 +45,10 @@ void data_store_image::setup() {
 
   set_name("data_store_image");
 
-  //@todo needs to be designed and implemented!
   if (! m_in_memory) {
+    if (m_master) std::cerr << "data_store_image - calling exchange_partitioned_indices\n";
+    exchange_partitioned_indices();
+
     if (m_master) std::cerr << "data_store_image - calling get_my_datastore_indices\n";
     get_my_datastore_indices();
 
@@ -461,7 +463,8 @@ void data_store_image::stage_files() {
       if (write_fd == -1) {
         err << __FILE__ << " " << __LINE__ << " :: "
             << "failed to open " << s.str() << " for writing;\n"
-            << "error code is: " << std::strerror(errno);
+            << "error code is: " << std::strerror(errno) << "\n"
+            << "local_dir: " << local_dir;
         throw lbann_exception(err.str());
       }
       off_t offset = 0;
@@ -494,6 +497,19 @@ void data_store_image::stage_files() {
     }  
   }
 
+}
+
+void data_store_image::fetch_data() {
+  if ((size_t)m_minibatch_num >= m_all_minibatch_indices.size()) {
+    m_minibatch_num = 0;
+  }
+
+  //for (auto t : m_all_minibatch_indices
+
+  //todo: find all indices that I own that are needed for this minibatch,
+  //      and read in files
+  //
+  //exchange_data for data relevant to this minibatch
 }
 
 }  // namespace lbann

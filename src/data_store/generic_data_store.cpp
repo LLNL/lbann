@@ -44,7 +44,8 @@ generic_data_store::generic_data_store(generic_data_reader *reader, model *m) :
     m_model(m),
     m_dir(m_reader->get_file_dir()),
     m_extended_testing(false),
-    m_is_subsidiary_store(false)
+    m_is_subsidiary_store(false),
+    m_minibatch_num(INT_MAX-1)
 {
   if (m_comm == nullptr) {
     std::stringstream err;
@@ -189,6 +190,80 @@ void generic_data_store::exchange_mb_indices() {
       m_all_minibatch_indices[j].push_back(all_indices[i]);
     }
   }
+}
+
+void generic_data_store::exchange_partitioned_indices() {
+  //pack m_my_minibatch_indices into a single vector;
+  //first, compute vector size, and exchange size with all procs
+  std::vector<int> v;
+  int count = m_my_minibatch_indices->size() + 1;
+  for (auto t : (*m_my_minibatch_indices)) {
+    count += t.size();
+  }
+  std::vector<int> counts(m_np);
+  m_comm->model_all_gather<int>(count, counts);
+
+  //now, fill in the vector
+  std::vector<int> w;
+  w.reserve(count);
+  w.push_back(m_my_minibatch_indices->size());
+  for (auto t : (*m_my_minibatch_indices)) {
+    w.push_back(t.size());
+    for (size_t h=0; h<t.size(); h++) {
+      w.push_back(t[h]);
+    }
+  }
+  if (w.size() != (size_t)count) {
+    std::stringstream err;
+    err << "count: " << count << " w.size: " << w.size();
+    throw lbann_exception(err.str());
+  }
+
+  // exchange the vectors
+  std::vector<int> displ(m_np);
+  displ[0] = 0;
+  for (size_t k=1; k<counts.size(); k++) {
+    displ[k] = displ[k-1] + counts[k-1];
+  }
+
+  //recv vector
+  int n = std::accumulate(counts.begin(), counts.end(), 0);
+  std::vector<int> all_w(n);
+
+  //exchange the indices
+  m_comm->all_gather<int>(w, all_w, counts, displ, m_comm->get_world_comm());
+
+  //fill in the final data structure
+  m_all_partitioned_indices.resize(m_np);
+  for (size_t p=0; p<(size_t)m_np; p++) {
+    int *ww = all_w.data() + displ[p];
+    int num_minibatches = *ww++;
+    m_all_partitioned_indices[p].resize(num_minibatches);
+    for (int i=0; i<num_minibatches; i++) {
+      int mb_size = *ww++;
+      m_all_partitioned_indices[p][i].reserve(mb_size);
+      for (int j=0; j<mb_size; j++) {
+        m_all_partitioned_indices[p][i].push_back(*ww++);
+      }
+    }
+  }
+
+  //debug block
+  #if 0
+  if (m_master) {
+    std::cerr << "\nm_all_partitioned_indices:\n";
+    for (size_t p=0; p<m_all_partitioned_indices.size(); p++) {
+      std::cerr << "==============================================\nP_" << p << "\n";
+      for (size_t j=0; j<m_all_partitioned_indices[p].size(); j++) {
+        std::cout << "mb number: " << j << " num idx: " << m_all_partitioned_indices[p][j].size() << " :: ";
+        for (auto t : m_all_partitioned_indices[p][j]) {
+          std::cerr << t << " ";
+        }
+        std::cerr << "\n";
+      }
+    }
+  }
+  #endif
 }
 
 }  // namespace lbann

@@ -112,6 +112,9 @@ class data_store_image : public generic_data_store {
   /// for out-of-memory mode: read files from, e.g, lscratchX, and write
   /// to local store, e.g, /l/ssd
   void stage_files();
+
+  /// called by data_reader::fetch_data; supports out-of-memory mode
+  void fetch_data() override;
 };
 
 }  // namespace lbann
