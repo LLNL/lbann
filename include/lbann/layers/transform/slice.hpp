@@ -131,6 +131,7 @@ class slice_layer : public transform_layer {
       s << this->m_slice_points[h] << " ";
     }
     s << " dataLayout: " << this->get_data_layout_string(get_data_layout());
+    s << " device alloc: " << this->get_device_allocation_string(get_device_allocation());
     return s.str();
   }
 
