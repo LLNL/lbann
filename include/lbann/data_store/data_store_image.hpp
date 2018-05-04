@@ -67,10 +67,6 @@ class data_store_image : public generic_data_store {
 
   /// maps a global index (wrt image_list) to number of bytes in the file
   std::unordered_map<size_t, size_t> m_file_sizes;
-
-  /// maps a global index (wrt image_list) to the file's data location 
-  /// wrt m_data
-  std::unordered_map<size_t, size_t> m_offsets;
   /// fills in m_file_sizes
   virtual void get_file_sizes() = 0;
 
@@ -87,7 +83,10 @@ class data_store_image : public generic_data_store {
   void load_file(const std::string &dir, const std::string &fn, unsigned char *p, size_t sz); 
 
   /// reads all files assigned to this processor into memory (m_data)
+  /// version for in-memory mode
   virtual void read_files() = 0; 
+  /// version for out-of-memory mode
+  virtual void read_files(const std::unordered_set<int> &indices) = 0; 
 
   /// in multi-image scenarios, the number of images in each sample
   unsigned int m_num_img_srcs;
@@ -115,6 +114,14 @@ class data_store_image : public generic_data_store {
 
   /// called by data_reader::fetch_data; supports out-of-memory mode
   void fetch_data() override;
+
+
+  /// the input string "s" should be one of the forms: 
+  ///   dir1/[dir2/...]/filename
+  ///   /dir1/[dir2/...]/filename
+  ///   /dir1/[dir2/...]/
+  void create_dirs(const std::string &s); 
+
 };
 
 }  // namespace lbann

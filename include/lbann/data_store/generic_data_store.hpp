@@ -243,6 +243,8 @@ protected :
   /// all-to-all exchange of m_my_minibatch_indices;
   /// fills in m_all_partitioned_indices
   void exchange_partitioned_indices();
+  /// size of the largest middle vector in m_all_partitioned_indices
+  int m_num_minibatches;
 };
 
 }  // namespace lbann

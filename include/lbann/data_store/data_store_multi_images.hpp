@@ -63,6 +63,8 @@ class data_store_multi_images : public data_store_imagenet {
   void get_file_sizes() override;
 
   void read_files() override;
+  void read_files(const std::unordered_set<int> &indices) override;
+
 
   virtual std::vector<std::string> get_sample(size_t idx) const;
 

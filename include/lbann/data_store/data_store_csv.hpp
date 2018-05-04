@@ -71,9 +71,6 @@ protected :
   /// reader->fetch_line_label_response(data_id)
   int m_vector_size;
 
-  /// maps: shuffled index to offset in owner's data store
-  std::unordered_map<int, size_t> m_offset_mapping;
-
   /// buffers for data that will be passed to the data reader's fetch_datum method
   std::unordered_map<int, std::vector<DataType>> m_my_minibatch_data;
 

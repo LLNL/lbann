@@ -94,6 +94,34 @@ void data_store_multi_images::get_file_sizes() {
   exchange_file_sizes(global_indices, bytes, m_num_global_indices*m_num_img_srcs);
 }
 
+void data_store_multi_images::read_files(const std::unordered_set<int> &indices) {
+  std::stringstream err;
+  std::string local_dir = m_reader->get_local_file_dir();
+  std::stringstream fp;
+  for (auto base_index : indices) {
+    const std::vector<std::string> sample(get_sample(base_index));
+    for (size_t k=0; k<sample.size(); k++) {
+      size_t index = base_index * m_num_img_srcs + k;
+      if (m_file_sizes.find(index) == m_file_sizes.end()) {
+        err << __FILE__ << " " << __LINE__ << " :: " 
+            << " m_file_sizes.find(index) failed for index: " << index;
+        throw lbann_exception(err.str());
+      }
+      if (m_data_filepaths.find(index) == m_data_filepaths.end()) {
+        err << __FILE__ << " " << __LINE__ << " :: " 
+            << " m_data_filepaths.find(index) failed for index: " << index;
+        throw lbann_exception(err.str());
+      }
+      size_t file_len = m_file_sizes[index];
+      fp.clear();
+      fp.str("");
+      fp << local_dir << "/" << m_data_filepaths[index];
+      m_data[index].resize(file_len);
+      load_file("", fp.str(), m_data[index].data(), file_len);
+    }
+  }
+}
+
 void data_store_multi_images::read_files() {
   std::stringstream err;
   for (auto base_index : m_my_datastore_indices) {

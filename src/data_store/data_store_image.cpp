@@ -55,6 +55,9 @@ void data_store_image::setup() {
     if (m_master) std::cerr << "data_store_image - calling build_data_filepaths\n";
     build_data_filepaths();
 
+    if (m_master) std::cerr << "data_store_image - calling get_file_sizes\n";
+    get_file_sizes();
+
     if (m_master) std::cerr << "data_store_image - calling stage_files\n";
     stage_files();
     if (options::get()->has_bool("stage_and_exit") && options::get()->get_bool("stage_and_exit")) {
@@ -108,9 +111,8 @@ void data_store_image::get_data_buf(int data_id, std::vector<unsigned char> *&bu
   int index = data_id * m_num_img_srcs + multi_idx;
   if (m_my_minibatch_data.find(index) == m_my_minibatch_data.end()) {
     err << __FILE__ << " " << __LINE__ << " :: "
-        << "failed to find index: " << index << " m_num_img_srcs: " << m_num_img_srcs
-        << " multi_idx: " << multi_idx << " in m_my_data_hash; role: "
-        << m_reader->get_role();
+        << "failed to find index: " << index << " in m_my_minibatch_data; size: "
+        << m_my_minibatch_data.size() << " role: " << m_reader->get_role();
     throw lbann_exception(err.str());
   }
 
@@ -184,7 +186,6 @@ void data_store_image::exchange_data() {
 
   //build map: proc -> global indices that proc owns that I need
   proc_to_indices.clear();
-  //note: datastore indices are global; no need to consult shuffled_indices
   for (auto idx : m_my_minibatch_indices_v) {
     int index = (*m_shuffled_indices)[idx];
     int owner = get_index_owner(index);
@@ -385,7 +386,8 @@ void data_store_image::report_memory_constraints() {
 //   dir1/[dir2/...]/filename
 //   /dir1/[dir2/...]/filename
 //   /dir1/[dir2/...]/
-void create_dirs(const std::string &s) {
+void data_store_image::create_dirs(const std::string &s) {
+if (m_master) std::cerr << "create_dirs: " << s << "\n";
   if (s.size() == 0) {
     return;
   }
@@ -394,6 +396,7 @@ void create_dirs(const std::string &s) {
   while ((idx = s.find('/', last)) != std::string::npos) {
     last = idx+1;
     std::string d = s.substr(0, idx);
+if (m_master) std::cerr << "  calling mkdir(" << d << ")\n";
     std::ifstream in(d.c_str());
     if (! in.good()) {
       const int dir_err = mkdir(d.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
@@ -464,7 +467,7 @@ void data_store_image::stage_files() {
         err << __FILE__ << " " << __LINE__ << " :: "
             << "failed to open " << s.str() << " for writing;\n"
             << "error code is: " << std::strerror(errno) << "\n"
-            << "local_dir: " << local_dir;
+            << "local_dir: " << local_dir << " m_minibatch_num: " << m_minibatch_num;
         throw lbann_exception(err.str());
       }
       off_t offset = 0;
@@ -500,16 +503,96 @@ void data_store_image::stage_files() {
 }
 
 void data_store_image::fetch_data() {
-  if ((size_t)m_minibatch_num >= m_all_minibatch_indices.size()) {
+  std::stringstream err;
+  double tm1 = get_time();
+  ++m_minibatch_num;
+  if ((size_t)m_minibatch_num >= m_all_partitioned_indices.size()) {
     m_minibatch_num = 0;
   }
+  if (m_master) std::cerr << "data_store_image::fetch_data; m_minibatch_num: " << m_minibatch_num << "  m_all_partitioned_indices.size(): " << m_all_partitioned_indices.size() << " role: " << m_reader->get_role() << "\n";
 
-  //for (auto t : m_all_minibatch_indices
+  //build map: proc -> global indices that proc needs for this epoch, and
+  //                   which I own
+  std::unordered_map<int, std::unordered_set<int>> proc_to_indices;
+  for (int p = 0; p<m_np; p++) {
+     const std::vector<int> v = m_all_partitioned_indices[p][m_minibatch_num];
+     for (auto idx : v) {
+       int index = (*m_shuffled_indices)[idx];
+       if (m_my_datastore_indices.find(index) != m_my_datastore_indices.end()) {
+         proc_to_indices[p].insert(index);
+       }
+     }
+  }
 
-  //todo: find all indices that I own that are needed for this minibatch,
-  //      and read in files
-  //
-  //exchange_data for data relevant to this minibatch
+  //read required files and start sends
+  m_data.clear();
+  std::vector<std::vector<El::mpi::Request<unsigned char>>> send_req(m_np);
+  for (int p=0; p<m_np; p++) {
+    const std::unordered_set<int> &s = proc_to_indices[p];
+    read_files(s);
+    send_req[p].resize(s.size()*m_num_img_srcs);
+    size_t jj = 0;
+    for (auto idx : s) {
+      for (size_t k=0; k<m_num_img_srcs; k++) {
+        int index = idx*m_num_img_srcs+k;
+        int len = m_file_sizes[index];
+        m_comm->nb_tagged_send<unsigned char>(
+                       m_data[index].data(), len, p, index,
+                       send_req[p][jj++], m_comm->get_model_comm());
+      }
+    }
+  }
+
+  //build map: proc -> global indices that proc owns that I need
+  proc_to_indices.clear();
+  for (auto idx  : (*m_my_minibatch_indices)[m_minibatch_num]) {
+    int index = (*m_shuffled_indices)[idx];
+    int owner = get_index_owner(index);
+    proc_to_indices[owner].insert(index);
+  }
+
+  //start recvs
+  m_my_minibatch_data.clear();
+  std::vector<std::vector<El::mpi::Request<unsigned char>>> recv_req(m_np);
+  for (auto t : proc_to_indices) {
+    int owner = t.first;
+    size_t jj = 0;
+    const std::unordered_set<int> &s = t.second;
+    recv_req[owner].resize(s.size()*m_num_img_srcs);
+    for (auto idx : s) {
+      //note: for imagenet_reader, m_num_img_srcs = 1;
+      //      for other readers (multi, triplet) it is larger, probably three
+      for (size_t k=0; k<m_num_img_srcs; k++) {
+        size_t index = idx*m_num_img_srcs+k;
+        if (m_file_sizes.find(index) == m_file_sizes.end()) {
+          err << __FILE__ << " " << __LINE__ << " :: "
+              << " m_file_sizes.find(" << index << ") failed"
+              << " m_file_sizes.size(): " << m_file_sizes.size()
+              << " m_my_minibatch_indices_v.size(): " << m_my_minibatch_indices_v.size();
+        }
+        size_t len = m_file_sizes[index];
+        m_my_minibatch_data[index].resize(len);
+        m_comm->nb_tagged_recv<unsigned char>(
+            m_my_minibatch_data[index].data(), len, owner, 
+            index, recv_req[owner][jj++], m_comm->get_model_comm());
+      }
+    }
+  }
+
+  //wait for sends to finish
+  for (size_t i=0; i<send_req.size(); i++) {
+    m_comm->wait_all<unsigned char>(send_req[i]);
+  }
+
+  //wait for recvs to finish
+  for (size_t i=0; i<recv_req.size(); i++) {
+    m_comm->wait_all<unsigned char>(recv_req[i]);
+  }
+
+  if (m_master) {
+    std::cerr << "role: " << m_reader->get_role() 
+              << "; time for exchange_data: " << get_time() - tm1 << "\n";
+  }
 }
 
 }  // namespace lbann

@@ -61,7 +61,7 @@ void generic_data_reader::setup() {
 }
 
 int lbann::generic_data_reader::fetch_data(Mat& X) {
-  if (m_data_store != nullptr) {
+  if (m_data_store != nullptr && !m_save_minibatch_indices) {
     m_data_store->fetch_data();
   }
 

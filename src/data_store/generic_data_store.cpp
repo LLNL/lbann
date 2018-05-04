@@ -234,10 +234,12 @@ void generic_data_store::exchange_partitioned_indices() {
   m_comm->all_gather<int>(w, all_w, counts, displ, m_comm->get_world_comm());
 
   //fill in the final data structure
+  m_num_minibatches = 0;
   m_all_partitioned_indices.resize(m_np);
   for (size_t p=0; p<(size_t)m_np; p++) {
     int *ww = all_w.data() + displ[p];
     int num_minibatches = *ww++;
+    m_num_minibatches = num_minibatches > m_num_minibatches ? num_minibatches : m_num_minibatches;
     m_all_partitioned_indices[p].resize(num_minibatches);
     for (int i=0; i<num_minibatches; i++) {
       int mb_size = *ww++;
@@ -248,22 +250,10 @@ void generic_data_store::exchange_partitioned_indices() {
     }
   }
 
-  //debug block
-  #if 0
+
   if (m_master) {
-    std::cerr << "\nm_all_partitioned_indices:\n";
-    for (size_t p=0; p<m_all_partitioned_indices.size(); p++) {
-      std::cerr << "==============================================\nP_" << p << "\n";
-      for (size_t j=0; j<m_all_partitioned_indices[p].size(); j++) {
-        std::cout << "mb number: " << j << " num idx: " << m_all_partitioned_indices[p][j].size() << " :: ";
-        for (auto t : m_all_partitioned_indices[p][j]) {
-          std::cerr << t << " ";
-        }
-        std::cerr << "\n";
-      }
-    }
+    std::cerr << "m_all_partitioned_indices.size(): " << m_all_partitioned_indices.size() << " m_my_minibatch_indices.size(): " << m_my_minibatch_indices->size() << "\n";
   }
-  #endif
 }
 
 }  // namespace lbann

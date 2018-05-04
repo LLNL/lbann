@@ -131,11 +131,33 @@ void data_store_imagenet::test_file_sizes() {
   std::cerr << "rank:  " << m_rank << " role: " << m_reader->get_role() << " :: data_store_imagenet::test_file_sizes: PASSES!\n";
 }
 
+void data_store_imagenet::read_files(const std::unordered_set<int> &indices) {
+  std::stringstream err;
+  std::string local_dir = m_reader->get_local_file_dir();
+  std::stringstream fp;
+  for (auto index : indices) {
+    if (m_file_sizes.find(index) == m_file_sizes.end()) {
+      err << __FILE__ << " " << __LINE__ << " :: " 
+          << " m_file_sizes.find(index) failed for index: " << index;
+      throw lbann_exception(err.str());
+    }
+    if (m_data_filepaths.find(index) == m_data_filepaths.end()) {
+      err << __FILE__ << " " << __LINE__ << " :: " 
+          << " m_data_filepaths.find(index) failed for index: " << index;
+      throw lbann_exception(err.str());
+    }
+    size_t file_len = m_file_sizes[index];
+    fp.clear();
+    fp.str("");
+    fp << local_dir << "/" << m_data_filepaths[index];
+    m_data[index].resize(file_len);
+    load_file("", fp.str(), m_data[index].data(), file_len);
+  }
+}
 
 void data_store_imagenet::read_files() {
   image_data_reader *reader = dynamic_cast<image_data_reader*>(m_reader);
   const std::vector<std::pair<std::string, int> > & image_list = reader->get_image_list();
-  size_t j = 0;
   for (auto index : m_my_datastore_indices) {
     if (m_file_sizes.find(index) == m_file_sizes.end()) {
       std::stringstream err;
@@ -146,7 +168,6 @@ void data_store_imagenet::read_files() {
     size_t file_len = m_file_sizes[index];
     m_data[index].resize(file_len);
     load_file(m_dir, image_list[index].first, m_data[index].data(), file_len);
-    ++j;
   }
 }
 
