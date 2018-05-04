@@ -542,7 +542,8 @@ if [ "${CLUSTER}" == "surface" ] || [ "${CLUSTER}" == "ray" ] ||
         . /usr/share/[mM]odules/init/bash		
 		CUDA_TOOLKIT_MODULE=cudatoolkit/9.1
 	elif [ "${CLUSTER}" == "ray" ]; then
-		CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda
+		module del cuda		
+		CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/8.0}
 	fi
 fi
 
