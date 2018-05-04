@@ -254,6 +254,14 @@ class base_convolution_layer : public learning_layer {
               this->m_weights[1]->get_matrix_height(),
               this->m_weights[1]->get_matrix_width());
 
+    if (m_frozen) {
+      this->m_weights[0]->freeze();
+      this->m_weights[1]->freeze();
+    } else {
+      if (this->m_weights[0]->is_frozen() || this->m_weights[1]->is_frozen()) {
+        throw lbann_exception("base_convolution_layer: layer is not frozen but weights are");
+      }
+    }
   }
 
   /// Initialize GPU objects

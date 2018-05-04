@@ -125,6 +125,9 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
           reader_csv->set_skip_cols(readme.skip_cols());
           reader_csv->set_skip_rows(readme.skip_rows());
           reader_csv->set_has_header(readme.has_header());
+          reader_csv->set_absolute_sample_count( readme.absolute_sample_count() );
+          reader_csv->set_use_percent( readme.percent_of_data_to_use() );
+          reader_csv->set_first_n( readme.first_n() );
           npy_readers.push_back(reader_csv);
         } else {
           err << __FILE__ << " " << __LINE__ << " :: unknown format for merged data reader: "
@@ -142,6 +145,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
         label_csv->disable_labels(readme.disable_labels());
         label_csv->enable_responses(readme.disable_responses());
         label_csv->set_has_header(readme.has_header()); //use same as parent file
+        label_csv->set_comm(comm);
         label_csv->set_label_col(0); //assume there is only one label file and the column and is label column
         label_csv->set_response_col(0);
         data_reader_merge_features* merged_features = new data_reader_merge_features(npy_readers,label_csv, shuffle);
@@ -176,6 +180,9 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
     reader->set_use_percent( readme.percent_of_data_to_use() );
     reader->set_first_n( readme.first_n() );
 
+    reader->set_gan_labelling(readme.gan_labelling());
+    reader->set_gan_label_value(readme.gan_label_value());
+
     if (set_up_generic_preprocessor) {
       init_generic_preprocessor(readme, master, reader);
     }
@@ -202,7 +209,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       data_readers[execution_mode::testing] = reader;
     }
 
-    if (readme.role() == "train") {
+    if (readme.role() == "train" && readme.validation_percent() > 0.) {
       if (name == "mnist") {
         reader_validation = new mnist_reader(shuffle);
         (*(mnist_reader *)reader_validation) = (*(mnist_reader *)reader);

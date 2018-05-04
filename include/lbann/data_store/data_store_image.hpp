@@ -29,6 +29,7 @@
 #define __DATA_STORE_IMAGE_HPP__
 
 #include "lbann/data_store/generic_data_store.hpp"
+#include <unordered_map>
 
 namespace lbann {
 
@@ -40,8 +41,8 @@ class data_store_image : public generic_data_store {
  public:
 
   //! ctor
-  data_store_image(lbann_comm *comm, generic_data_reader *reader, model *m) :
-    generic_data_store(comm, reader, m),
+  data_store_image(generic_data_reader *reader, model *m) :
+    generic_data_store(reader, m),
     m_num_img_srcs(1) {}
 
   //! copy ctor
@@ -64,69 +65,49 @@ class data_store_image : public generic_data_store {
 
   void exchange_data() override;
 
-  struct Triple {
-    int global_index;
-    int num_bytes;
-    size_t offset;
-    int rank;
-  };
-
   /// maps a global index (wrt image_list) to number of bytes in the file
   std::unordered_map<size_t, size_t> m_file_sizes;
 
   /// maps a global index (wrt image_list) to the file's data location 
   /// wrt m_data
-  std::map<size_t, size_t> m_offsets;
-
+  std::unordered_map<size_t, size_t> m_offsets;
   /// fills in m_file_sizes
   virtual void get_file_sizes() = 0;
 
   /// called by get_file_sizes
-  virtual void exchange_file_sizes(std::vector<Triple> &my_file_sizes, int num_global_indices);
+  void exchange_file_sizes(
+    std::vector<int> &global_indices,
+    std::vector<int> &num_bytes,
+    int num_global_indices);
 
-  /// when running in in-memory mode, this buffer will contain
-  /// the concatenated data
-  std::vector<unsigned char> m_data;
-
-  /// allocate mem for m_data
-  void allocate_memory(); 
-
+  /// buffers that will be passed to reader::fetch_datum
+  std::unordered_map<int, std::vector<unsigned char> > m_my_minibatch_data;
+   
   /// loads file from disk into *p; checks that bytes read = sz
   void load_file(const std::string &dir, const std::string &fn, unsigned char *p, size_t sz); 
 
   /// reads all files assigned to this processor into memory (m_data)
   virtual void read_files() = 0; 
 
-  /// will contain data to be passed to the data_reader
-  std::vector<std::vector<unsigned char> > m_my_minibatch_data;
-
-  /// maps indices wrt shuffled indices to indices in m_my_minibatch_data
-  std::unordered_map<size_t, size_t> m_my_data_hash;
-
-  /// this contains a concatenation of the indices in m_minibatch_indices
-  /// (see: generic_data_reader.hpp)
-  std::vector<size_t> m_my_minibatch_indices;
-
-  /// m_num_images[j] contains the number of images "owned" by P_j
-  std::vector<int> m_num_samples;
-
-  /// fills in m_num_images
-  void compute_num_samples();
-
   /// in multi-image scenarios, the number of images in each sample
   unsigned int m_num_img_srcs;
 
-  /// used for extended testing
-  std::unordered_map<size_t, std::string> m_test_filenames;
-  /// used for extended testing
-  std::unordered_map<size_t, size_t> m_test_filesizes;
+  /// the actual data store!
+  std::unordered_map<int, std::vector<unsigned char>> m_data;
 
-  /// fills in m_test_filenames and m_test_filesizes; these are
-  /// used by run_extended_testing, which is called durring exchange_data,
-  /// *if* the "extended_testing" cmd line option is present.
-  virtual void setup_extended_testing() {}
+  /// returns memory required to hold p's files in memory
+  size_t get_my_num_file_bytes();
 
-  MPI_Win m_win;
+  /// returns number of bytes in the data set
+  size_t get_global_num_file_bytes();
+
+  /// parses /proc/meminfo to determine available memory; returned 
+  /// value is memory in kB
+  size_t get_available_memory();
+
+  /// attempts to determine if there is sufficient RAM for
+  /// in-memory data store; may call MPI_Abort
+  void report_memory_constraints();
 };
 
 }  // namespace lbann

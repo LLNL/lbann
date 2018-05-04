@@ -29,7 +29,7 @@
 
 #include "lbann/data_readers/data_reader_triplet.hpp"
 #include "lbann/data_readers/image_utils.hpp"
-#include "lbann/data_store/data_store_imagenet.hpp"
+#include "lbann/data_store/data_store_triplet.hpp"
 #include "lbann/utils/file_utils.hpp"
 #include <fstream>
 #include <sstream>
@@ -91,7 +91,7 @@ bool data_reader_triplet::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) 
     bool ret = true;
     if (m_data_store != nullptr) {
       std::vector<unsigned char> *image_buf;
-      m_data_store->get_data_buf(data_id, image_buf, tid);
+      m_data_store->get_data_buf(data_id, image_buf, i);
       // This could probably have used image_utils::import_image()
       ret = lbann::image_utils::load_image(*image_buf, width, height, img_type, *(m_pps[tid]), X_v[i]);
     } else {
@@ -173,6 +173,16 @@ void data_reader_triplet::load() {
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
 
   select_subset_of_data();
+}
+
+void data_reader_triplet::setup_data_store(model *m) {
+  if (m_data_store != nullptr) {
+    delete m_data_store;
+  }
+  m_data_store = new data_store_triplet(this, m);
+  if (m_data_store != nullptr) {
+    m_data_store->setup();
+  }
 }
 
 }  // namespace lbann

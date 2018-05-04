@@ -31,7 +31,15 @@
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/timer.hpp"
 
+
 namespace lbann {
+
+std::vector<std::string> data_store_multi_images::get_sample(size_t idx) const {
+  const data_reader_multi_images *reader = dynamic_cast<data_reader_multi_images*>(m_reader);
+  data_reader_multi_images::sample_t sample = reader->get_sample(idx);
+  return sample.first;
+}   
+
 
 void data_store_multi_images::setup() {
   double tm1 = get_time();
@@ -39,12 +47,14 @@ void data_store_multi_images::setup() {
     std::cerr << "starting data_store_multi_images::setup() for data reader with role: " << m_reader->get_role() << std::endl;
   }
 
+  set_name("data_store_multi_images");
+
   //sanity check
   data_reader_multi_images *reader = dynamic_cast<data_reader_multi_images*>(m_reader);
   if (reader == nullptr) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
-        << "dynamic_cast<data_reader_multi_images*>(m_reader) failed";
+        << "dynamic_cast<data_reader_multi_images*>(m_reader) failed\n";
     throw lbann_exception(err.str());
   }
 
@@ -68,113 +78,85 @@ void data_store_multi_images::setup() {
 }
 
 void data_store_multi_images::get_file_sizes() {
-  std::vector<Triple> my_file_sizes(m_my_global_indices.size()*m_num_img_srcs);
-  std::pair<std::vector<std::string>, int> sample;
-  size_t cur_offset = 0;
-  data_reader_multi_images *reader = dynamic_cast<data_reader_multi_images*>(m_reader);
+  std::vector<int> global_indices(m_my_datastore_indices.size()*m_num_img_srcs);
+  std::vector<int> bytes(m_my_datastore_indices.size()*m_num_img_srcs);
 
   std::unordered_map<std::string, size_t> names;
   size_t jj = 0;
-  for (size_t j=0; j<m_my_global_indices.size(); j++) {
-    size_t base_index = m_my_global_indices[j];
-    sample = reader->get_sample(base_index);
-    for (size_t k=0; k<sample.first.size(); k++) {
+  for (auto base_index : m_my_datastore_indices) {
+    const std::vector<std::string> sample(get_sample(base_index));
+    for (size_t k=0; k<sample.size(); k++) {
       size_t index = base_index*m_num_img_srcs + k; 
       size_t file_len = 0;
-      if (names.find(sample.first[k]) != names.end()) {
-        file_len = names[sample.first[k]];
+      if (names.find(sample[k]) != names.end()) {
+        file_len = names[sample[k]];
       } else {
-        file_len = get_file_size(m_dir, sample.first[k]);
-        names[sample.first[k]] = file_len;
+        file_len = get_file_size(m_dir, sample[k]);
+        names[sample[k]] = file_len;
       }
 
-      my_file_sizes[jj].global_index = index;
-      my_file_sizes[jj].num_bytes = file_len;
-      my_file_sizes[jj].offset = cur_offset;
-      my_file_sizes[jj].rank = m_rank;
-      cur_offset += my_file_sizes[jj].num_bytes;
-
-      if (my_file_sizes[jj].num_bytes == 0) {
-        std::stringstream err;
-        err << __FILE__ << " " << __LINE__ << " :: " << " j: " << j 
-          << " file size is 0";
-        throw lbann_exception(err.str());
-      }
+      global_indices[jj] = index;
+      bytes[jj] = file_len;
       ++jj;
     }
   }
 
-  exchange_file_sizes(my_file_sizes, m_num_global_indices*m_num_img_srcs);
+  exchange_file_sizes(global_indices, bytes, m_num_global_indices*m_num_img_srcs);
 }
 
 void data_store_multi_images::read_files() {
   std::stringstream err;
-  data_reader_multi_images *reader = dynamic_cast<data_reader_multi_images*>(m_reader);
-  std::pair<std::vector<std::string>, int> sample;
-  for (size_t j=0; j<m_my_global_indices.size(); j++) {
-    size_t base_index = m_my_global_indices[j];
-    sample = reader->get_sample(base_index);
-    for (size_t k=0; k<sample.first.size(); k++) {
+  for (auto base_index : m_my_datastore_indices) {
+    const std::vector<std::string> sample(get_sample(base_index));
+    for (size_t k=0; k<sample.size(); k++) {
       size_t index = base_index * m_num_img_srcs + k;
-
-      if (m_offsets.find(index) == m_offsets.end()) {
-        err << __FILE__ << " " << __LINE__ << " :: " 
-            << " m_offsets.find(index) failed for index: " << index;
-        throw lbann_exception(err.str());
-      }
-      size_t offset = m_offsets[index];
-
       if (m_file_sizes.find(index) == m_file_sizes.end()) {
         err << __FILE__ << " " << __LINE__ << " :: " 
             << " m_file_sizes.find(index) failed for index: " << index;
         throw lbann_exception(err.str());
       }
       size_t file_len = m_file_sizes[index];
-
-      if (offset + file_len > m_data.size()) {
-        err << __FILE__ << " " << __LINE__ << " :: " << " j: " << j 
-          << " of " << m_my_global_indices.size() << " offset: " << offset
-          << " file_len: " << file_len << " offset+file_len: "
-          << offset+file_len << " m_data.size(): " << m_data.size()
-          << "\noffset+file_len must be <= m_data.size()";
-        throw lbann_exception(err.str());
-      }  
-
-      load_file(m_dir, sample.first[k], &m_data[offset], file_len);
+      m_data[index].resize(file_len);
+      load_file(m_dir, sample[k], m_data[index].data(), file_len);
     }
   }
 }
 
 
-void data_store_multi_images::setup_extended_testing() {
-  if (m_master) {
-    std::cout << "STARTING data_store_multi_images::setup_extended_testing()\n";
-  }
-  std::pair<std::vector<std::string>, int> sample;
-  data_reader_multi_images *reader = dynamic_cast<data_reader_multi_images*>(m_reader);
-  for (size_t j=0; j<m_shuffled_indices->size(); j++) {
-    size_t idx = (*m_shuffled_indices)[j];
-    sample = reader->get_sample(idx);
-    for (size_t k=0; k<sample.first.size(); k++) {
-      size_t index = idx*m_num_img_srcs+k;
+void data_store_multi_images::extended_testing() {
+  if (m_master) std::cerr << "STARTING data_store_multi_images::extended_testing()\n";
+  std::stringstream err;
+  std::vector<unsigned char> v;
+  for (auto idx : m_my_minibatch_indices_v) {
+    int base_index = (*m_shuffled_indices)[idx];
+    const std::vector<std::string> sample(get_sample(base_index));
+    for (size_t k=0; k<sample.size(); k++) {
+      size_t index = base_index*m_num_img_srcs + k; 
 
-      std::string imagepath = m_dir + sample.first[k];
-      m_test_filenames[index] = imagepath;
-
-      std::ifstream in(imagepath.c_str(), std::ios::in | std::ios::binary);
-      if (! in.good()) {
-        std::stringstream err;
-        err << __FILE__ << " " << __LINE__ << " :: "
-            << "failed to open " << imagepath << " for reading";
+      if (m_file_sizes.find(index) == m_file_sizes.end()) {
+        err << __FILE__ << " " << __LINE__ << " :: " 
+            << " file length not found: " << index;
         throw lbann_exception(err.str());
       }
+      size_t file_len = m_file_sizes[index];
 
-      in.seekg(0, std::ios::end);
-      size_t sz = in.tellg();
-      in.close();
-      m_test_filesizes[index] = sz;
-    }  
+      v.resize(file_len);
+      load_file(m_dir, sample[k], v.data(), file_len);
+
+      if (m_my_minibatch_data.find(index) == m_my_minibatch_data.end()) {
+        err << __FILE__ << " " << __LINE__ << " :: " 
+            << " m_my_minibatch_data.find(" << index << ") failed.";
+        throw lbann_exception(err.str());
+      }
+      if (m_my_minibatch_data[index] != v) {
+        err << __FILE__ << " " << __LINE__ << " :: " 
+            << " data_store_multi_images::extended_testing: "
+            << " rank: " << m_rank << " index: " << index << " FAILED!\n";
+        throw lbann_exception(err.str());
+      }
+    }
   }
+  std::cerr << "rank: " << m_rank << " data_store_multi_images::extended_testing, PASSED!\n";
 }
 
 }  // namespace lbann

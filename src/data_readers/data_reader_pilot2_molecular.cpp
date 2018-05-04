@@ -44,7 +44,8 @@ void pilot2_molecular_reader::load() {
   // note: when support for merge_samples is in place, the condition
   //       "get_role() == "test" will go away. For now we need it, else
   //       merge_samples will break
-  if (options::get()->get_bool("use_data_store") && get_role() == "test") {
+  options *opts = options::get();
+  if (opts->has_bool("use_data_store") && opts->get_bool("use_data_store") && get_role() == "test") {
     if (rank != get_compound_rank()) {
       is_mine = false;
     }
@@ -120,7 +121,7 @@ void pilot2_molecular_reader::load() {
 
   // when using data store, need to bcast some variable to all procs
   if (options::get()->get_bool("use_data_store")) {
-    std::vector<int> tmp(7);
+    std::vector<int> tmp(8);
     if (rank == get_compound_rank()) {
       //@todo: fix if we have floats!
       m_neighbors_data_size = m_neighbors.data_holder->size() / 8;
@@ -222,6 +223,16 @@ void pilot2_molecular_reader::fetch_molecule(Mat& X, int data_id, int idx,
     for (int i = 0; i < m_num_features; ++i) {
       X(m_num_features * idx + i, mb_idx) = scale_data<double>(i, data[i]);
     }
+  }
+}
+
+void pilot2_molecular_reader::setup_data_store(model *m) {
+  if (m_data_store != nullptr) {
+    delete m_data_store;
+  }
+  m_data_store = new data_store_pilot2_molecular(this, m);
+  if (m_data_store != nullptr) {
+    m_data_store->setup();
   }
 }
 

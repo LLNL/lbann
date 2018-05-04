@@ -32,7 +32,7 @@
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include <vector>
-#include <unordered_map>
+#include <unordered_set>
 
 namespace lbann {
 
@@ -48,7 +48,7 @@ class generic_data_store {
  public:
 
   //! ctor
-  generic_data_store(lbann_comm *comm, generic_data_reader *reader, model *m); 
+  generic_data_store(generic_data_reader *reader, model *m); 
 
   //! copy ctor
   generic_data_store(const generic_data_store&) = default;
@@ -64,16 +64,82 @@ class generic_data_store {
   /// called by generic_data_reader::setup_data_store
   virtual void setup();
 
-  /// called by generic_data_reader::update
-  void set_shuffled_indices(const std::vector<int> *indices);
+  /// called by generic_data_reader::update;
+  /// this method call exchange_data if m_epoch > 1
+  virtual void set_shuffled_indices(const std::vector<int> *indices, bool exchange_indices = true);
 
   /// called by various image data readers 
   virtual void get_data_buf(int data_id, std::vector<unsigned char> *&buf, int multi_idx = 0) {}
   virtual void get_data_buf(int data_id, int tid, std::vector<double> *&buf) {}
 
- protected :
+  virtual void get_data_buf_DataType(int data_id, std::vector<DataType> *&buf) {}
+
+  const std::string & get_name() const {
+    return m_name;
+  }
+
+  void set_name(std::string name) {
+    m_name = name;
+  }
+
+  void set_is_subsidiary_store() {
+    m_is_subsidiary_store = true;
+  }
+
+  bool is_subsidiary_store() const {
+    return m_is_subsidiary_store;
+  }
+
+  const std::vector<std::vector<int> > * get_minibatch_indices() const {
+    return m_my_minibatch_indices;
+  }
+
+  void set_minibatch_indices(const std::vector<std::vector<int> > *indices) {
+    m_my_minibatch_indices = indices;
+  }
+
+  //@todo: for optimization, change m_my_minibatch_indices_v to a pointer,
+  //       and properly handle ownership and destruction; this is needed
+  //       to reduce memory requirements in, e.g, data_store_merge_features
+  const std::vector<int>  & get_minibatch_indices_v() const {
+    return m_my_minibatch_indices_v;
+  }
+
+  void set_minibatch_indices_v(const std::vector<int > &indices) {
+    m_my_minibatch_indices_v = indices;
+  }
+
+  //@todo: for optimization, change m_my_minibatch_indices_v to a pointer,
+  //       and properly handle ownership and destruction; this is needed
+  //       to reduce memory requirements in, e.g, data_store_merge_features
+  const std::unordered_set<int> & get_datastore_indices() const {
+    return m_my_datastore_indices;
+  }
+
+  void set_datastore_indices(const std::unordered_set<int> &indices) {
+    m_my_datastore_indices = indices;
+  }
+
+  const std::vector<std::vector<int>> & get_all_minibatch_indices() const {
+    return m_all_minibatch_indices;
+  }
+
+  //@todo: for optimization, change m_all_minibatch_indices to a pointer,
+  //       and properly handle ownership and destruction; this is needed
+  //       to reduce memory requirements in, e.g, data_store_merge_features
+  void set_all_minibatch_indices(const std::vector<std::vector<int>> &indices) {
+    m_all_minibatch_indices = indices;
+  }
+
+protected :
 
   virtual void exchange_data() = 0;
+
+  generic_data_reader *m_reader;
+
+  lbann_comm *m_comm;
+
+  std::string m_name;
 
   /// returns the number of bytes in dir/fn; it's OK if dir = ""
   size_t get_file_size(std::string dir, std::string fn);
@@ -88,18 +154,36 @@ class generic_data_store {
 
   /// the indices that will be used locally; the inner j-th vector
   /// contains indices referenced during the j-th call to
-  /// genreic_data_reader::fetch_data(...)
-  const std::vector<std::vector<int> > *m_minibatch_indices;
+  /// generic_data_reader::fetch_data(...)
+  const std::vector<std::vector<int> > *m_my_minibatch_indices;
+  /// contains a concatenation of the indices in m_my_minibatch_indices
+  ///@todo: for optimization, this should be a pointer -- as it is now,
+  ///       in merge_features the vector must be copied to the subsidiary
+  ///       data_store_cvs
+  std::vector<int> m_my_minibatch_indices_v;
+  /// fills in m_my_minibatch_indices_v
+  void get_minibatch_index_vector();
 
-  /// the indices that this processor owns; these are in the
-  /// range [0..m_num_global_indices]
-  std::vector<size_t> m_my_datastore_indices;
+  /// m_mb_counts[j] contains the number of indices
+  /// passed to data_reader::fetch_data in one epoch
+  std::vector<int> m_mb_counts;
+  /// fills in m_mb_counts
+  void exchange_mb_counts();
 
-  ///m_my_global_indices[i] = m_shuffled_indices[ m_my_datastore_indices[i]];
-  /// this is wrt the initial shuffled index vector
-  std::vector<size_t> m_my_global_indices;
+  /// m_all_minibatch_indices[j] will contain all indices that
+  /// will be passed to data_reader::fetch_data in one epoch,
+  /// for all processors
+  std::vector<std::vector<int>> m_all_minibatch_indices;
+  /// fills in m_all_minibatch_indices
+  void  exchange_mb_indices();
 
-  /// fills in m_my_datastore_indices and m_my_global_indices
+  /// m_num_samples[j] contains the number of samples 
+  /// (datastore indices) that are owned by P_j
+  std::vector<int> m_num_samples;
+
+  /// the indices that this processor owns;
+  std::unordered_set<int> m_my_datastore_indices;
+  /// fills in m_my_datastore_indices and m_num_samples
   void get_my_datastore_indices();
 
   size_t m_num_readers;
@@ -114,16 +198,9 @@ class generic_data_store {
 
   bool m_in_memory;
 
-  lbann_comm *m_comm;
-
   bool m_master;
 
-  generic_data_reader *m_reader;
-
   const std::vector<int> *m_shuffled_indices;
-
-  /// maps global indices (wrt shuffled_indices) to owning processor
-  std::unordered_map<size_t, size_t> m_owner_mapping;
 
   model *m_model;
 
@@ -133,8 +210,18 @@ class generic_data_store {
   /// conduct extensive testing
   bool m_extended_testing;
 
-  bool m_collect_minibatch_indices;
+  /// returns the processor that owns the data associated
+  /// with the index
+  int get_index_owner(int idx) {
+    return idx % m_np;
+  }
 
+  virtual void extended_testing() {}
+
+  MPI_Comm m_mpi_comm;
+
+  /// as of now, only applicable to merge_features and merge_samples
+  bool m_is_subsidiary_store;
 };
 
 }  // namespace lbann

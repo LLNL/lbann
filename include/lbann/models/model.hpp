@@ -288,6 +288,13 @@ class model {
   virtual void remap_pointers(const std::unordered_map<Layer *,Layer *>& layer_map,
                               const std::unordered_map<weights *,weights *>& weights_map);
 
+  /** In case that a layer is frozen, also freeze layers that precede it if that
+   *  makes senses for the particular model, such as sequential or siamese.
+   *  For othe models, users can manually control the behaivor by indicating
+   *  whether to freeze each layer in the model description prototext.
+   */
+  virtual void freeze_layers_under_frozen_surface();
+
   /** Set up topology of layer graph.
    *  Called in setup function. All layers in connected component of
    *  layer graph are added to the model and all parent/child
@@ -297,7 +304,7 @@ class model {
   /** Set up layer execution order.
    *  Called in setup function.
    */
-  virtual void setup_layer_execution_order() {}
+  virtual void setup_layer_execution_order();
   /** Set up layers.
    *  Called in setup function.
    */

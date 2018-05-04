@@ -52,8 +52,21 @@ metric* construct_metric(lbann_comm* comm,
   if (proto_metric.has_r2()) {
     return new r2_metric(comm);
   }
+  if (proto_metric.has_boolean_accuracy()) {
+    return new boolean_accuracy_metric(comm);
+  }
+  if (proto_metric.has_boolean_false_positives()) {
+    return new boolean_false_positives_metric(comm);
+  }
+  if (proto_metric.has_boolean_false_negatives()) {
+    return new boolean_false_negatives_metric(comm);
+  }
+  if (proto_metric.has_layer_metric()) {
+    const auto& params = proto_metric.layer_metric();
+    return new layer_metric(comm, params.unit());
+  }
 
-  // Return null pointer if no optimizer is specified
+  // Return null pointer if no metric is specified
   return nullptr;
 
 }

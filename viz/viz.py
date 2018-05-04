@@ -133,6 +133,7 @@ def getLinkedLayers(layers) :
 #load properties database
 props = properties(prop_fn)
 
+
 #parse the prototext file; 'layers' is a list of Layer objects
 layers = parsePrototext(argv[1])
 
@@ -140,6 +141,7 @@ fixSequentialParents(layers)
 
 #get list of linked layer sets
 linked = getLinkedLayers(layers)
+
 
 #build a couple of maps
 edges = {}

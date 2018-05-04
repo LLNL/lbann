@@ -27,6 +27,7 @@
 #include "lbann/metrics/metric.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/layers/io/target/generic_target_layer.hpp"
+#include "lbann/utils/timer.hpp"
 
 namespace lbann {
 
@@ -113,8 +114,10 @@ EvalType metric::evaluate(execution_mode mode,
   }
 
   // Evaluate objective function
+  const auto& start = get_time();
   const EvalType total_value = evaluate_compute(m_target_layer->get_prediction(),
                                                 m_target_layer->get_ground_truth());
+  m_evaluate_time += get_time() - start;
 
   // Record result in statistics and return
   m_statistics[mode].add_value(total_value, mini_batch_size);

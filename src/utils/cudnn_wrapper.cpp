@@ -351,6 +351,7 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nc
         FORCE_CHECK_CUDNN(cudnnSetStream(m_handles.back(), m_streams.back()));
         FORCE_CHECK_CUBLAS(cublasCreate(&m_cublas_handles.back()));
         FORCE_CHECK_CUBLAS(cublasSetStream(m_cublas_handles.back(), m_streams.back()));
+        FORCE_CHECK_CUBLAS(cublasSetPointerMode(m_cublas_handles.back(), CUBLAS_POINTER_MODE_HOST));
     }
 
     // Get number of GPUs for current MPI rank
@@ -466,17 +467,12 @@ void cudnn_manager::cudnn_manager::allocate_on_gpus(std::vector<DataType *>& gpu
 void cudnn_manager::cudnn_manager::deallocate_on_gpus(std::vector<DataType *>& gpu_data) {
 
   // Stop early if deallocation is not needed
-  bool deallocation_needed = false;
-  if(gpu_data.empty()) {
-    deallocation_needed = true;
-  } else if((int) gpu_data.size() != m_num_gpus) {
+  if (gpu_data.empty()) { return; }
+  if ((int) gpu_data.size() != m_num_gpus) {
     throw lbann_exception("cudnn_wrapper: number of GPU memory pointers doesn't match number of GPUs");
-  } else {
-    for (const auto& ptr : gpu_data) {
-      if (ptr != nullptr) { deallocation_needed = true; }
-    }
   }
-  if (!deallocation_needed) {
+  if (std::count(gpu_data.begin(), gpu_data.end(), nullptr)
+      == m_num_gpus) {
     gpu_data.clear();
     return;
   }
@@ -615,7 +611,7 @@ void cudnn_manager::cudnn_manager::set_on_gpus(std::vector<DataType *>& gpu_data
                                                int width_per_gpu) {
   if(!gpu_data.empty()) {
     for(int i=0; i<m_num_gpus; ++i) {
-      set_on_gpu(i, gpu_data[i], height, width_per_gpu);
+      set_on_gpu(i, gpu_data[i], val, height, width_per_gpu);
     }
   }
 }
@@ -1029,11 +1025,13 @@ void cudnn_manager::check_error() {
     synchronize();
     for(int i=0; i<m_num_gpus; ++i) {
         CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess) {
-            std::cerr << "CUDA error: " << cudaGetErrorString(err) << "\n";
+        cudaError_t status = cudaGetLastError();
+        if (status != cudaSuccess) {
             cudaDeviceReset();
-            throw lbann::lbann_exception("CUDA error");
+            std::stringstream err;
+            err << __FILE__ << " " << __LINE__ << ":: "
+                << "CUDA error; err string: " << cudaGetErrorString(status);
+            throw lbann::lbann_exception(err.str());
         }
     }
 }

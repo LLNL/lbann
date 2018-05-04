@@ -55,10 +55,14 @@ class objective_function_term {
   /** Setup objective function term. */
   virtual void setup(model& m);
 
-  /** Evaluate the objective function term.
-   *  This should include the scaling factor.
+  /** Start evaluation of the objective function term.
+   *  This should include the scaling factor. The result is not available until
+   *  finish_evaluation has been called.
    */
-  virtual EvalType evaluate() = 0;
+  virtual void start_evaluation() = 0;
+
+  /** Complete evaluation of the objective function term. */
+  virtual EvalType finish_evaluation() = 0;
 
   /** Compute the gradient of the objective function term.
    *  The gradient is computed w.r.t. the objective function term

@@ -45,9 +45,300 @@ model {
   callback { print {} }
   callback { timer {} }
   callback {
-    summary {
-      dir: "."
-      mat_interval: 25
+    poly_learning_rate {
+      power: 0.5
+    }
+  }
+#  callback {
+#    checkpoint {
+#      checkpoint_dir: "pretrain"
+#      checkpoint_epochs: 1
+##      checkpoint_steps: 50000
+#    }
+#  }
+
+  ###################################################
+  # start of weights
+  ###################################################
+  # In general it is not necessary to explicitly describe weights whether they are shared or not.
+  # Here, we do so to apply a specific initialization method for each weight.
+
+  weights {
+    name: "conv1_kernel"
+    normal_initializer {
+      mean: 0.0
+      standard_deviation: 0.01
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.01
+        momentum: 0.9
+        decay_rate: 0.0002
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv1_bias"
+    constant_initializer {
+      value: 0.0
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.02
+        momentum: 0.9
+        decay_rate: 0
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv2_kernel"
+    normal_initializer {
+      mean: 0.0
+      standard_deviation: 0.01
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.01
+        momentum: 0.9
+        decay_rate: 0.0002
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv2_bias"
+    constant_initializer {
+      value: 1.0
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.02
+        momentum: 0.9
+        decay_rate: 0
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv3_kernel"
+    normal_initializer {
+      mean: 0.0
+      standard_deviation: 0.01
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.01
+        momentum: 0.9
+        decay_rate: 0.0002
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv3_bias"
+    constant_initializer {
+      value: 0.0
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.02
+        momentum: 0.9
+        decay_rate: 0
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv4_kernel"
+    normal_initializer {
+      mean: 0.0
+      standard_deviation: 0.01
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.01
+        momentum: 0.9
+        decay_rate: 0.0002
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv4_bias"
+    constant_initializer {
+      value: 1.0
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.02
+        momentum: 0.9
+        decay_rate: 0
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv5_kernel"
+    normal_initializer {
+      mean: 0.0
+      standard_deviation: 0.01
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.01
+        momentum: 0.9
+        decay_rate: 0.0002
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "conv5_bias"
+    constant_initializer {
+      value: 1.0
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.02
+        momentum: 0.9
+        decay_rate: 0
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "fc6_linearity"
+    normal_initializer {
+      mean: 0.0
+      standard_deviation: 0.005
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.01
+        momentum: 0.9
+        decay_rate: 0.0002
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "fc6_bias"
+    constant_initializer {
+      value: 0.1
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.02
+        momentum: 0.9
+        decay_rate: 0
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "fc7_linearity"
+    normal_initializer {
+      mean: 0.0
+      standard_deviation: 0.01
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.01
+        momentum: 0.9
+        decay_rate: 0.0002
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "fc7_bias"
+    constant_initializer {
+      value: 0.0
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.02
+        momentum: 0.9
+        decay_rate: 0
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "fc8_linearity"
+    normal_initializer {
+      mean: 0.0
+      standard_deviation: 0.01
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.01
+        momentum: 0.9
+        decay_rate: 0.0002
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "fc8_bias"
+    constant_initializer {
+      value: 0.0
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.02
+        momentum: 0.9
+        decay_rate: 0
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "fc9_linearity"
+    normal_initializer {
+      mean: 0.0
+      standard_deviation: 0.01
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.01
+        momentum: 0.9
+        decay_rate: 0.0002
+        nesterov: false
+      }
+    }
+  }
+
+  weights {
+    name: "fc9_bias"
+    constant_initializer {
+      value: 0.0
+    }
+    optimizer {
+      sgd {
+        learn_rate: 0.02
+        momentum: 0.9
+        decay_rate: 0
+        nesterov: false
+      }
     }
   }
 
@@ -89,6 +380,7 @@ model {
       has_bias: true
       has_vectors: true
     }
+    weights: "conv1_kernel conv1_bias"
   }
 
   layer {
@@ -141,6 +433,7 @@ model {
       has_bias: true
       has_vectors: true
     }
+    weights: "conv2_kernel conv2_bias"
   }
 
   layer {
@@ -193,6 +486,7 @@ model {
       has_bias: true
       has_vectors: true
     }
+    weights: "conv3_kernel conv3_bias"
   }
 
   layer {
@@ -217,6 +511,7 @@ model {
       has_bias: true
       has_vectors: true
     }
+    weights: "conv4_kernel conv4_bias"
   }
 
   layer {
@@ -241,6 +536,7 @@ model {
       has_bias: true
       has_vectors: true
     }
+    weights: "conv5_kernel conv5_bias"
   }
 
   layer {
@@ -275,6 +571,7 @@ model {
       num_neurons: 4096
       has_bias: true
     }
+    weights: "fc6_linearity fc6_bias"
   }
 
   layer {
@@ -312,6 +609,7 @@ model {
       num_neurons: 4096
       has_bias: true
     }
+    weights: "fc7_linearity fc7_bias"
   }
 
   layer {
@@ -341,6 +639,7 @@ model {
       num_neurons: 4096
       has_bias: true
     }
+    weights: "fc8_linearity fc8_bias"
   }
 
   layer {
@@ -360,6 +659,7 @@ model {
       num_neurons: 20
       has_bias: false
     }
+    weights: "fc9_linearity fc9_bias"
   }
 
   layer {

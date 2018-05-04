@@ -112,7 +112,7 @@ model {
     pooling {
       num_dims: 2
       pool_dims_i: 3
-      pool_pads_i: 0
+      pool_pads_i: 1
       pool_strides_i: 2
       pool_mode: "max"
     }

@@ -85,7 +85,10 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_use_percent(1.0),
     m_master(false),
     m_save_minibatch_indices(false),
-    m_compound_rank(0)
+    m_compound_rank(0),
+    m_gan_labelling(false), //default, not GAN
+    m_gan_label_value(0),  //If GAN, default for fake label, discriminator model
+    m_num_global_indices(0)
   {}
   generic_data_reader(const generic_data_reader&) = default;
   generic_data_reader& operator=(const generic_data_reader&) = default;
@@ -760,22 +763,24 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_world_master_mini_batch_adjustment = (int) header.world_master_mini_batch_adjustment;
   }
   
-  /// returns the data store, which may be a nullptr
-  generic_data_store * get_data_store() {
+  /// returns the data store
+  generic_data_store * get_data_store() const {
+    if (m_data_store == nullptr) {
+      std::stringstream err;
+      err << __FILE__  << " :: " << __LINE__ << " :: "
+          << " m_data_store is nullptr";
+    }
     return m_data_store;
   }
 
-  /// sets up a data_store. @todo: must modify this method
-  /// anytime you derive a class from generic_data_store
-  void setup_data_store(model *m, lbann_comm *comm);
+  /// sets up a data_store.
+  virtual void setup_data_store(model *m);
 
   /** This call changes the functionality of fetch_data(); when set,
     * indices are added to m_my_minibatch_indices, but fetch_datum()
     * is not called. This method is added to support data store functionality.
     */
-  void set_save_minibatch_entries(bool b) {
-      m_save_minibatch_indices = b;
-  }
+  void set_save_minibatch_entries(bool b);
 
   /// support of data store functionality
   const std::vector<std::vector<int> > & get_minibatch_indices() const {
@@ -791,6 +796,14 @@ class generic_data_reader : public lbann_image_preprocessor {
   void set_compound_rank(int r) {
     m_compound_rank = r;
   }
+
+  void set_gan_labelling(bool has_gan_labelling) {
+     m_gan_labelling = has_gan_labelling;
+  }
+  void set_gan_label_value(int gan_label_value) { m_gan_label_value = gan_label_value; }
+  
+  /// support of data store functionality
+  void set_data_store(generic_data_store *g); 
 
  protected:
 
@@ -812,6 +825,13 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   double get_validation_percent() const;
 
+  /**
+   * Returns the number of global indices. For train and validation,
+   * this is the sum of their numbers
+   */
+  size_t get_num_global_indices() {
+    return m_num_global_indices;
+  }
  protected:
 
    int m_rank;
@@ -930,6 +950,14 @@ class generic_data_reader : public lbann_image_preprocessor {
 
    /// added to support data store functionality
    int m_compound_rank;
+
+  
+  //var to support GAN
+  bool m_gan_labelling; //boolean flag of whether its GAN binary label, default is false
+  int m_gan_label_value; //zero(0) or 1 label value for discriminator, default is 0
+
+   /// added to support data store functionality
+   size_t m_num_global_indices;
 };
 
 }  // namespace lbann

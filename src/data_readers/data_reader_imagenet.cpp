@@ -134,7 +134,7 @@ bool imagenet_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
 
   bool ret;
   if (m_data_store != nullptr) {
-    m_data_store->get_data_buf(data_id, image_buf, tid);
+    m_data_store->get_data_buf(data_id, image_buf, 0);
     ret = lbann::image_utils::load_image(*image_buf, width, height, img_type, *(m_pps[tid]), X_v);
   } else {
     ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v);
@@ -152,6 +152,16 @@ bool imagenet_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
                           + "x" + std::to_string(CV_MAT_CN(img_type)) + "]");
   }
   return true;
+}
+
+void imagenet_reader::setup_data_store(model *m) {
+  if (m_data_store != nullptr) {
+    delete m_data_store;
+  }
+  m_data_store = new data_store_imagenet(this, m);
+  if (m_data_store != nullptr) {
+    m_data_store->setup();
+  }
 }
 
 }  // namespace lbann
