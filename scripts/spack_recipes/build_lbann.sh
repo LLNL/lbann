@@ -1,8 +1,12 @@
 #!/bin/bash
 
+set -e
+
 if [ ! -z "$bamboo_SPACK_ROOT" ]; then
     . $bamboo_SPACK_ROOT/share/spack/setup-env.sh
 fi
+
+CLUSTER=`hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g'`
 
 SPACK_RECIPES=`dirname ${0}`
 #Set Script Name variable
@@ -94,7 +98,6 @@ shift $((OPTIND-1))
 # now do something with $@
 
 # Figure out which cluster we are on
-CLUSTER=`hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g'`
 ARCH=`uname -m`
 
 PLATFORM=
