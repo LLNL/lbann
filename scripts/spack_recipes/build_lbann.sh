@@ -106,7 +106,7 @@ if [ "${GPU}" == "1" -o "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" -o "$
   if [ "${CLUSTER}" == "flash" ]; then
     PLATFORM="+gpu ^cuda@7.5 ^cudnn@5.1"
     FEATURE="_gpu_cuda-7.5_cudnn-5.1"
-  elif [ "${CLUSETER}" == "sierra" ]; then
+  elif [ "${CLUSTER}" == "sierra" ]; then
     PLATFORM="+gpu ^cuda@9.1.76 ^cudnn@7.0"
     FEATURE="_gpu_cuda-9.1.76_cudnn-7.0"
   else
