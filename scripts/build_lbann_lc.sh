@@ -42,6 +42,8 @@ if [ "${ARCH}" == "x86_64" ]; then
     fi
 fi
 
+#CONDUIT_DIR=/usr/workspace/wsb/icfsi/conduit/install-toss3
+
 ELEMENTAL_MATH_LIBS=
 PATCH_OPENBLAS=ON
 C_FLAGS=
@@ -62,6 +64,7 @@ WITH_CUDA=
 WITH_TOPO_AWARE=ON
 INSTRUMENT=
 WITH_ALUMINUM=OFF
+WITH_CONDUIT=OFF
 WITH_TBINF=OFF
 RECONFIGURE=0
 # In case that autoconf fails during on-demand buid on surface, try the newer
@@ -234,6 +237,9 @@ while :; do
             ;;
         --with-aluminum)
             WITH_ALUMINUM=ON
+            ;;
+        --with-conduit)
+            WITH_CONDUIT=ON
             ;;
         --instrument)
             INSTRUMENT="-finstrument-functions -ldl"
@@ -542,7 +548,8 @@ if [ "${CLUSTER}" == "surface" ] || [ "${CLUSTER}" == "ray" ] ||
         . /usr/share/[mM]odules/init/bash		
 		CUDA_TOOLKIT_MODULE=cudatoolkit/9.1
 	elif [ "${CLUSTER}" == "ray" ]; then
-		CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda
+		module del cuda		
+		CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/8.0}
 	fi
 fi
 
@@ -571,7 +578,7 @@ if [ "${WITH_CUDA}" == "ON" ]; then
 
 	# CUDNN
 	if [ -z "${CUDNN_DIR}" ]; then
-		CUDNN_DIR=/usr/gapps/brain/cudnn/cudnn-7.1.1/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
+		CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-7.1.1/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
 	fi
 	if [ ! -d "${CUDNN_DIR}" ]; then
 		echo "Could not find cuDNN at $CUDNN_DIR"
@@ -705,6 +712,8 @@ ${CMAKE_PATH}/cmake \
 -D LBANN_SEQUENTIAL_INITIALIZATION=${SEQ_INIT} \
 -D LBANN_WITH_ALUMINUM=${WITH_ALUMINUM} \ 
 -D LBANN_ALUMINUM_DIR=${ALUMINUM_DIR} \
+-D LBANN_WITH_CONDUIT=${WITH_CONDUIT} \
+-D LBANN_CONDUIT_DIR=${CONDUIT_DIR} \
 -D LBANN_BUILT_WITH_SPECTRUM=${WITH_SPECTRUM} \
 ${SUPERBUILD_DIR}
 EOF

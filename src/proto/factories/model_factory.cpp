@@ -115,6 +115,34 @@ void assign_layers_to_objective_function(std::vector<Layer*>& layer_list,
   
 }
 
+void assign_layers_to_metrics(std::vector<Layer*>& layer_list,
+                              std::vector<metric*>& metric_list,
+                              const lbann_data::Model& proto_model) {
+
+  // Construct map from layer names to layers
+  std::unordered_map<std::string, Layer*> names_to_layers;
+  for (auto&& l : layer_list) {
+    const auto& name = l->get_name();
+    if (names_to_layers.count(name) > 0) {
+      std::stringstream err;
+      err << "layer name \"" << name << "\" is not unique";
+      LBANN_ERROR(err.str());
+    }
+    names_to_layers[name] = l;
+  }
+
+  // Assign evaluation layers to layer metrics
+  for (int i=0; i<proto_model.metric_size(); ++i) {
+    auto&& m = dynamic_cast<layer_metric*>(metric_list[i]);
+    if (m != nullptr) {
+      const auto& params = proto_model.metric(i).layer_metric();
+      auto&& eval = names_to_layers[params.layer()];
+      m->set_evaluation_layer(eval);
+    }
+  }
+  
+}
+
 /** Setup pointers from layers to weights. */
 void assign_weights_to_layers(std::vector<Layer*>& layer_list,
                               std::vector<weights*>& weights_list,
@@ -186,6 +214,8 @@ model* construct_model(lbann_comm* comm,
   for (int i=0; i<proto_model.metric_size(); ++i) {
     m->add_metric(construct_metric(comm, proto_model.metric(i)));
   }
+  auto metric_list = m->get_metrics();
+  assign_layers_to_metrics(layer_list, metric_list, proto_model);
 
   // Add callbacks
   auto&& summarizer = construct_summarizer(comm, proto_model);

@@ -48,15 +48,17 @@ void layer_term::setup(model& m) {
   if (m_layers[0] == nullptr) {
     LBANN_ERROR("layer term in objective function points to a null pointer");
   }
-  auto&& eval = dynamic_cast<evaluation_layer<data_layout::DATA_PARALLEL>*>(m_layers[0]);
-  if (eval == nullptr) {
+  auto&& eval_dp = dynamic_cast<evaluation_layer<data_layout::DATA_PARALLEL>*>(m_layers[0]);
+  auto&& eval_mp = dynamic_cast<evaluation_layer<data_layout::MODEL_PARALLEL>*>(m_layers[0]);
+  if (eval_dp == nullptr && eval_mp == nullptr) {
     err << "layer term in objective function must point to an evaluation layer, "
         << "but " << m_layers[0]->get_name() << " is type " << m_layers[0]->get_type();
     LBANN_ERROR(err.str());
   }
 
   // Set scaling factor
-  eval->set_scale(m_scale_factor);
+  if (eval_dp != nullptr) { eval_dp->set_scale(m_scale_factor); }
+  if (eval_mp != nullptr) { eval_mp->set_scale(m_scale_factor); }
 
 }
 
@@ -64,14 +66,25 @@ void layer_term::start_evaluation() {}
 
 EvalType layer_term::finish_evaluation() {
   if (m_scale_factor == EvalType(0)) { return EvalType(0); }
-  auto&& eval = dynamic_cast<evaluation_layer<data_layout::DATA_PARALLEL>*>(m_layers[0]);
-  eval->set_scale(m_scale_factor);
-  return eval->get_value();
+  EvalType value = 0;
+  auto&& eval_dp = dynamic_cast<evaluation_layer<data_layout::DATA_PARALLEL>*>(m_layers[0]);
+  auto&& eval_mp = dynamic_cast<evaluation_layer<data_layout::MODEL_PARALLEL>*>(m_layers[0]);
+  if (eval_dp != nullptr) {
+    eval_dp->set_scale(m_scale_factor);
+    value = eval_dp->get_value();
+  }
+  if (eval_mp != nullptr) {
+    eval_mp->set_scale(m_scale_factor);
+    value = eval_mp->get_value();
+  }
+  return value;
 }
 
 void layer_term::differentiate() {
-  auto&& eval = dynamic_cast<evaluation_layer<data_layout::DATA_PARALLEL>*>(m_layers[0]);
-  eval->set_scale(m_scale_factor);
+  auto&& eval_dp = dynamic_cast<evaluation_layer<data_layout::DATA_PARALLEL>*>(m_layers[0]);
+  auto&& eval_mp = dynamic_cast<evaluation_layer<data_layout::MODEL_PARALLEL>*>(m_layers[0]);
+  if (eval_dp != nullptr) { eval_dp->set_scale(m_scale_factor); }
+  if (eval_mp != nullptr) { eval_mp->set_scale(m_scale_factor); }
 }
 
 }  // namespace lbann

@@ -317,6 +317,7 @@ message Metric {
   BooleanAccuracy boolean_accuracy = 8;
   BooleanFalsePositives boolean_false_positives = 9;
   BooleanFalseNegatives boolean_false_negatives = 10;
+  LayerMetric layer_metric = 11;
 }
 
 message CategoricalAccuracy {
@@ -342,6 +343,11 @@ message BooleanFalsePositives {
 }
 
 message BooleanFalseNegatives {
+}
+
+message LayerMetric {
+  string unit = 1;
+  string layer = 2;
 }
 
 //========================================================================
@@ -602,6 +608,8 @@ message Weights {
   GlorotUniformInitializer glorot_uniform_initializer = 24;
   HeNormalInitializer he_normal_initializer = 25;
   HeUniformInitializer he_uniform_initializer = 26;
+  LeCunNormalInitializer lecun_normal_initializer = 27;
+  LeCunUniformInitializer lecun_uniform_initializer = 28;
 
 }
 
@@ -621,6 +629,8 @@ message GlorotNormalInitializer {}
 message GlorotUniformInitializer {}
 message HeNormalInitializer {}
 message HeUniformInitializer {}
+message LeCunNormalInitializer {}
+message LeCunUniformInitializer {}
 
 //note: I'd like to put this enum inside of Layer, but if I do the enum values
 //      become, e.g, Layer_Imcomm_EXCLUDE, which is just ugly
@@ -940,7 +950,7 @@ message Uniform {
 /////////////////////
 message FullyConnected {
   int64 num_neurons = 1;
-  string weight_initialization = 2;
+  string weight_initialization = 2;    //DEPRECATED
   bool has_bias = 3;                   //default: true
   double bias_initial_value = 4;       //default: 0
   double l2_regularization_factor = 5; //default: 0
@@ -963,7 +973,7 @@ message Convolution {
   int64 conv_pads_i = 60;
   int64 conv_strides_i = 70;
 
-  string weight_initialization = 9;
+  string weight_initialization = 9;     //DEPRECATED
   bool has_bias = 10;                   //default: true
   double bias_initial_value = 11;       //default: 0
   double l2_regularization_factor = 12; //default: 0
@@ -985,7 +995,7 @@ message Deconvolution {
   int64 conv_pads_i = 60;
   int64 conv_strides_i = 70;
 
-  string weight_initialization = 9;
+  string weight_initialization = 9;     //DEPRECATED
   bool has_bias = 10;                   //default: true
   double bias_initial_value = 11;       //default: 0
   double l2_regularization_factor = 12; //default: 0

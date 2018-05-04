@@ -181,16 +181,5 @@ class data_reader_jag : public generic_data_reader {
   data_t m_img_max;
 };
 
-template<typename T>
-inline void set_minibatch_item(Mat& M, const int mb_idx, const T* const ptr, const size_t count) {
-  if ((count > 0u) && (ptr == nullptr)) {
-    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-                          " :: attempt to dereference a nullptr ");
-  }
-  for (size_t i = 0u; i < count; ++i) {
-    M.Set(static_cast<El::Int>(i), static_cast<El::Int>(mb_idx), static_cast<DataType>(ptr[i]));
-  }
-}
-
 } // end of namespace lbann
 #endif // _DATA_READER_JAG_HPP_
