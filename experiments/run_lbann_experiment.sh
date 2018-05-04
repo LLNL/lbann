@@ -68,6 +68,13 @@ case ${CLUSTER} in
         CORES_PER_NODE=24
         HAS_GPU=NO
         ;;
+    "flash")
+        SCHEDULER=slurm
+        PARTITION=${PARTITION:-pbatch}
+        CACHE_DIR=${CACHE_DIR:-/l/ssd}
+        CORES_PER_NODE=20
+        HAS_GPU=NO
+        ;;
     "quartz")
         SCHEDULER=slurm
         PARTITION=${PARTITION:-pbatch}
@@ -118,7 +125,7 @@ if [ -n "${IMAGENET_CLASSES}" ]; then
     esac
     EXPERIMENT_NAME=${EXPERIMENT_NAME}_imagenet${IMAGENET_CLASSES}
     case ${CLUSTER} in
-        catalyst|quartz|surface)
+        catalyst|flash|quartz|surface)
             case ${IMAGENET_CLASSES} in
                 10|100|300|1000)
                     IMAGENET_DIR=/p/lscratchf/brainusr/datasets/ILSVRC2012
@@ -272,7 +279,9 @@ case ${SCHEDULER} in
         echo "#SBATCH --job-name=${EXPERIMENT_NAME}"    >> ${BATCH_SCRIPT}
         echo "#SBATCH --nodes=${NUM_NODES}"             >> ${BATCH_SCRIPT}
         echo "#SBATCH --partition=${PARTITION}"         >> ${BATCH_SCRIPT}
-        echo "#SBATCH --account=${ACCOUNT}"             >> ${BATCH_SCRIPT}
+        if [ "${CLUSTER}" != "flash" ]; then
+            echo "#SBATCH --account=${ACCOUNT}"         >> ${BATCH_SCRIPT}
+        fi
         echo "#SBATCH --workdir=${EXPERIMENT_DIR}"      >> ${BATCH_SCRIPT}
         echo "#SBATCH --output=${LOG_FILE}"             >> ${BATCH_SCRIPT}
         echo "#SBATCH --error=${LOG_FILE}"              >> ${BATCH_SCRIPT}

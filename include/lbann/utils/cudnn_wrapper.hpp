@@ -63,24 +63,27 @@
 
 // Error utility macros
 #ifdef LBANN_HAS_CUDNN
-#define FORCE_CHECK_CUDA(cuda_call)                                     \
-  do {                                                                  \
-    const cudaError_t cuda_status = cuda_call;                          \
-    if (cuda_status != cudaSuccess) {                                   \
-      std::cerr << "CUDA error: " << cudaGetErrorString(cuda_status) << "\n"; \
-      std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";  \
-      cudaDeviceReset();                                                \
-      throw lbann::lbann_exception("CUDA error");                       \
-    }                                                                   \
+#define FORCE_CHECK_CUDA(cuda_call)                                         \
+  do {                                                                      \
+    const cudaError_t cuda_status = cuda_call;                              \
+    if (cuda_status != cudaSuccess) {                                       \
+      cudaDeviceReset();                                                    \
+      std::stringstream err;                                                \
+      err << __FILE__ << " " << __LINE__ << " :: "                          \
+          << "CUDA error; err string: " << cudaGetErrorString(cuda_status); \
+      throw lbann::lbann_exception(err.str());                              \
+    }                                                                       \
   } while (0)
 #define FORCE_CHECK_CUDNN(cudnn_call)                                   \
   do {                                                                  \
     const cudnnStatus_t cudnn_status = cudnn_call;                      \
     if (cudnn_status != CUDNN_STATUS_SUCCESS) {                         \
-      std::cerr << "cuDNN error: " << cudnnGetErrorString(cudnn_status) << "\n"; \
-      std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";  \
       cudaDeviceReset();                                                \
-      throw lbann::lbann_exception("cuDNN error");                      \
+      std::stringstream err;                                            \
+      err << __FILE__ << " " << __LINE__ << " :: "                      \
+          << "CUDNN error; err string: "                                \
+          << cudnnGetErrorString(cudnn_status);                         \
+      throw lbann::lbann_exception(err.str());                          \
     }                                                                   \
   } while (0)
 #ifdef LBANN_DEBUG

@@ -9,9 +9,12 @@ add_executable( lbann-bin2 lbann2.cpp )
 target_link_libraries(lbann-bin2 lbann )
 set_target_properties(lbann-bin2 PROPERTIES OUTPUT_NAME lbann2)
 
+add_executable( lbann-gan-bin lbann_gan.cpp )
+target_link_libraries(lbann-gan-bin lbann )
+set_target_properties(lbann-gan-bin PROPERTIES OUTPUT_NAME lbann_gan)
 # Install the binaries
 install(
-  TARGETS lbann-bin lbann-bin2
+  TARGETS lbann-bin lbann-bin2 lbann-gan-bin
   EXPORT LBANNTargets
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}

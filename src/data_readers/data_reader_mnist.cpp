@@ -45,7 +45,7 @@ void mnist_reader::set_defaults() {
   m_image_height = 28;
   m_image_num_channels = 1;
   set_linearized_image_size();
-  m_num_labels = 10;
+  m_num_labels=10;
 }
 
 bool mnist_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
@@ -64,8 +64,16 @@ bool mnist_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
 }
 
 bool mnist_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) {
-  unsigned char label = m_image_data[data_id][0];
-  Y.Set(label, mb_idx, 1);
+  if(!m_gan_labelling) { //default
+    unsigned char label = m_image_data[data_id][0];
+    Y.Set(label, mb_idx, 1);
+  } else {
+    if(m_gan_label_value) Y.Set(m_gan_label_value,mb_idx,1); //fake sample is set to 1; adversarial model
+    else { //fake sample (second half of minibatch is set to 0;discriminator model
+      //mb_idx < (m_mb_size/2) ? Y.Set(1,mb_idx,1) : Y.Set(m_gan_label_value,mb_idx,1);
+      mb_idx < (get_current_mini_batch_size()/2) ? Y.Set(1,mb_idx,1) : Y.Set(m_gan_label_value,mb_idx,1);
+    }
+  }
   return true;
 }
 
@@ -134,6 +142,10 @@ void mnist_reader::load() {
     std::cerr << "starting lbann::mnist_reader::load\n";
   }
   m_image_data.clear();
+
+  if(m_gan_labelling) m_num_labels=2;
+  std::cout << "MNIST load GAN m_gan_labelling : label_value "
+            << m_gan_labelling <<" : " << m_gan_label_value << std::endl;
 
   const std::string FileDir = get_file_dir();
   const std::string ImageFile = get_data_filename();

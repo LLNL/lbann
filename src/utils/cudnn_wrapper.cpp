@@ -584,7 +584,7 @@ void cudnn_manager::cudnn_manager::set_on_gpus(std::vector<DataType *>& gpu_data
                                                int width_per_gpu) {
   if(!gpu_data.empty()) {
     for(int i=0; i<m_num_gpus; ++i) {
-      set_on_gpu(i, gpu_data[i], height, width_per_gpu);
+      set_on_gpu(i, gpu_data[i], val, height, width_per_gpu);
     }
   }
 }
@@ -974,11 +974,13 @@ void cudnn_manager::check_error() {
     synchronize();
     for(int i=0; i<m_num_gpus; ++i) {
         CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess) {
-            std::cerr << "CUDA error: " << cudaGetErrorString(err) << "\n";
+        cudaError_t status = cudaGetLastError();
+        if (status != cudaSuccess) {
             cudaDeviceReset();
-            throw lbann::lbann_exception("CUDA error");
+            std::stringstream err;
+            err << __FILE__ << " " << __LINE__ << ":: "
+                << "CUDA error; err string: " << cudaGetErrorString(status);
+            throw lbann::lbann_exception(err.str());
         }
     }
 }

@@ -74,6 +74,7 @@
 #include "lbann/layers/transform/dummy.hpp"
 #include "lbann/layers/transform/safe_inv.hpp"
 #include "lbann/layers/transform/hadamard.hpp"
+#include "lbann/layers/transform/zero.hpp"
 #include "lbann/layers/transform/reduction.hpp"
 #include "lbann/layers/transform/evaluation.hpp"
 #include "lbann/layers/transform/gaussian.hpp"
@@ -178,6 +179,7 @@
 #include "lbann/objective_functions/layer_term.hpp"
 
 /// Metrics
+#include "lbann/metrics/layer_metric.hpp"
 #include "lbann/metrics/categorical_accuracy.hpp"
 #include "lbann/metrics/top_k_categorical_accuracy.hpp"
 #include "lbann/metrics/mean_squared_error.hpp"

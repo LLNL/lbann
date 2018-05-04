@@ -56,11 +56,11 @@ void glorot_uniform_initializer::initialize_entries(AbsDistMat& weights_matrix) 
     throw lbann_exception(err.str());
   }
   const DataType variance = DataType(2) / (m_fan_in + m_fan_out);
-  gaussian_fill(weights_matrix,
-                weights_matrix.Height(),
-                weights_matrix.Width(),
-                DataType(0),
-                std::sqrt(3*variance));
+  uniform_fill(weights_matrix,
+               weights_matrix.Height(),
+               weights_matrix.Width(),
+               DataType(0),
+               std::sqrt(3*variance));
 }
 
 void he_normal_initializer::initialize_entries(AbsDistMat& weights_matrix) const {
@@ -71,7 +71,7 @@ void he_normal_initializer::initialize_entries(AbsDistMat& weights_matrix) const
         << "(fan_in=" << this->m_fan_in << ",fan_out=" << this->m_fan_out << ")";
     throw lbann_exception(err.str());
   }
-  const DataType variance = DataType(1) / m_fan_in;
+  const DataType variance = DataType(2) / m_fan_in;
   gaussian_fill(weights_matrix,
                 weights_matrix.Height(),
                 weights_matrix.Width(),
@@ -87,12 +87,44 @@ void he_uniform_initializer::initialize_entries(AbsDistMat& weights_matrix) cons
         << "(fan_in=" << this->m_fan_in << ",fan_out=" << this->m_fan_out << ")";
     throw lbann_exception(err.str());
   }
+  const DataType variance = DataType(2) / m_fan_in;
+  uniform_fill(weights_matrix,
+               weights_matrix.Height(),
+               weights_matrix.Width(),
+               DataType(0),
+               std::sqrt(3*variance));
+}
+
+void lecun_normal_initializer::initialize_entries(AbsDistMat& weights_matrix) const {
+  if (m_fan_in <= 0 || m_fan_out <= 0) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "invalid dimensions for LeCun normal initialization "
+        << "(fan_in=" << this->m_fan_in << ",fan_out=" << this->m_fan_out << ")";
+    throw lbann_exception(err.str());
+  }
   const DataType variance = DataType(1) / m_fan_in;
   gaussian_fill(weights_matrix,
                 weights_matrix.Height(),
                 weights_matrix.Width(),
                 DataType(0),
-                std::sqrt(3*variance));
+                std::sqrt(variance));
+}
+
+void lecun_uniform_initializer::initialize_entries(AbsDistMat& weights_matrix) const {
+  if (m_fan_in <= 0 || m_fan_out <= 0) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "invalid dimensions for LeCun uniform initialization "
+        << "(fan_in=" << this->m_fan_in << ",fan_out=" << this->m_fan_out << ")";
+    throw lbann_exception(err.str());
+  }
+  const DataType variance = DataType(1) / m_fan_in;
+  uniform_fill(weights_matrix,
+               weights_matrix.Height(),
+               weights_matrix.Width(),
+               DataType(0),
+               std::sqrt(3*variance));
 }
 
 }  // namespace lbann
