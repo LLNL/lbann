@@ -63,43 +63,64 @@
 
 // Error utility macros
 #ifdef LBANN_HAS_CUDNN
-#define FORCE_CHECK_CUDA(cuda_call)                                         \
-  do {                                                                      \
-    const cudaError_t cuda_status = cuda_call;                              \
-    if (cuda_status != cudaSuccess) {                                       \
-      cudaDeviceReset();                                                    \
-      std::stringstream err;                                                \
-      err << __FILE__ << " " << __LINE__ << " :: "                          \
-          << "CUDA error; err string: " << cudaGetErrorString(cuda_status); \
-      throw lbann::lbann_exception(err.str());                              \
-    }                                                                       \
+#define FORCE_CHECK_CUDA(cuda_call)                                     \
+  do {                                                                  \
+    {                                                                   \
+      /* Check for earlier asynchronous errors. */                      \
+      cudaError_t status_FORCE_CHECK_CUDA = cudaDeviceSynchronize();    \
+      if (status_FORCE_CHECK_CUDA == cudaSuccess)                       \
+        status_FORCE_CHECK_CUDA = cudaGetLastError();                   \
+      if (status_FORCE_CHECK_CUDA != cudaSuccess) {                     \
+        cudaDeviceReset();                                              \
+        LBANN_ERROR(std::string("Asynchronous CUDA error: ")            \
+                    + cudaGetErrorString(status_FORCE_CHECK_CUDA));     \
+      }                                                                 \
+    }                                                                   \
+    {                                                                   \
+      /* Make CUDA call and check for errors. */                        \
+      cudaError_t status_FORCE_CHECK_CUDA = (cuda_call);                \
+      if (status_FORCE_CHECK_CUDA == cudaSuccess)                       \
+        status_FORCE_CHECK_CUDA = cudaDeviceSynchronize();              \
+      if (status_FORCE_CHECK_CUDA == cudaSuccess)                       \
+        status_FORCE_CHECK_CUDA = cudaGetLastError();                   \
+      if (status_FORCE_CHECK_CUDA != cudaSuccess) {                     \
+        cudaDeviceReset();                                              \
+        LBANN_ERROR(std::string("CUDA error: ")                         \
+                    + cudaGetErrorString(status_FORCE_CHECK_CUDA));     \
+      }                                                                 \
+    }                                                                   \
   } while (0)
 #define FORCE_CHECK_CUDNN(cudnn_call)                                   \
   do {                                                                  \
-    const cudnnStatus_t cudnn_status = cudnn_call;                      \
-    if (cudnn_status != CUDNN_STATUS_SUCCESS) {                         \
-      cudaDeviceReset();                                                \
-      std::stringstream err;                                            \
-      err << __FILE__ << " " << __LINE__ << " :: "                      \
-          << "CUDNN error; err string: "                                \
-          << cudnnGetErrorString(cudnn_status);                         \
-      throw lbann::lbann_exception(err.str());                          \
+    /* Check for earlier asynchronous errors. */                        \
+    FORCE_CHECK_CUDA(cudaSuccess);                                      \
+    {                                                                   \
+      /* Make cuDNN call and check for errors. */                       \
+      const cudnnStatus_t status_FORCE_CHECK_CUDNN = (cudnn_call);      \
+      if (status_FORCE_CHECK_CUDNN != CUDNN_STATUS_SUCCESS) {           \
+        cudaDeviceReset();                                              \
+        LBANN_ERROR(std::string("cuDNN error: ")                        \
+                    + cudnnGetErrorString(status_FORCE_CHECK_CUDNN));   \
+      }                                                                 \
+    }                                                                   \
+    {                                                                   \
+      /* Check for CUDA errors. */                                      \
+      cudaError_t status_FORCE_CHECK_CUDNN = cudaDeviceSynchronize();   \
+      if (status_FORCE_CHECK_CUDNN == cudaSuccess)                      \
+        status_FORCE_CHECK_CUDNN = cudaGetLastError();                  \
+      if (status_FORCE_CHECK_CUDNN != cudaSuccess) {                    \
+        cudaDeviceReset();                                              \
+        LBANN_ERROR(std::string("CUDA error: ")                         \
+                    + cudaGetErrorString(status_FORCE_CHECK_CUDNN));    \
+      }                                                                 \
     }                                                                   \
   } while (0)
 #ifdef LBANN_DEBUG
-#define CHECK_CUDA(cuda_call)                   \
-  do {                                          \
-    FORCE_CHECK_CUDA(cuda_call);                \
-    FORCE_CHECK_CUDA(cudaDeviceSynchronize());  \
-  } while (0)
-#define CHECK_CUDNN(cudnn_call)                 \
-  do {                                          \
-    FORCE_CHECK_CUDNN(cudnn_call);              \
-    FORCE_CHECK_CUDA(cudaDeviceSynchronize());  \
-  } while (0)
+#define CHECK_CUDA(cuda_call)   FORCE_CHECK_CUDA(cuda_call);
+#define CHECK_CUDNN(cudnn_call) FORCE_CHECK_CUDNN(cudnn_call);
 #else
-#define CHECK_CUDA(cuda_call)     cuda_call
-#define CHECK_CUDNN(cudnn_call)   cudnn_call
+#define CHECK_CUDA(cuda_call)   (cuda_call)
+#define CHECK_CUDNN(cudnn_call) (cudnn_call)
 #endif // #ifdef LBANN_DEBUG
 #endif // #ifdef LBANN_HAS_CUDNN
 

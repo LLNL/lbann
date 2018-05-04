@@ -191,50 +191,50 @@ void uniform_fill(AbsDistMat& mat, El::Int m, El::Int n, DataType center,
 
 void gaussian_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n, DataType mean,
                            DataType stddev) {
-  El::Zeros(mat, m, n);
-  if (mat.Grid().Rank() == 0) {
-    mat.Reserve(n * m);
+  CircMat<El::Device::CPU> vals(m, n, mat.Grid(), 0);
+  if (vals.Participating()) {
+    auto& local_vals = vals.Matrix();
     auto& gen = get_generator();
     std::normal_distribution<DataType> dist(mean, stddev);
-    for (El::Int col = 0; col < n; ++col) {
-      for (El::Int row = 0; row < m; ++row) {
-        mat.QueueUpdate(row, col, dist(gen));
+    for (El::Int col = 0; col < local_vals.Width(); ++col) {
+      for (El::Int row = 0; row < local_vals.Height(); ++row) {
+        local_vals(row, col) = dist(gen);
       }
     }
   }
-  mat.ProcessQueues();
+  El::Copy(vals, mat);
 }
 
 void bernoulli_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n, double p) {
-  El::Zeros(mat, m, n);
-  if (mat.Grid().Rank() == 0) {
-    mat.Reserve(m * n);
+  CircMat<El::Device::CPU> vals(m, n, mat.Grid(), 0);
+  if (vals.Participating()) {
+    auto& local_vals = vals.Matrix();
     auto& gen = get_generator();
     std::bernoulli_distribution dist(p);
-    for (El::Int col = 0; col < n; ++col) {
-      for (El::Int row = 0; row < m; ++row) {
-        mat.QueueUpdate(row, col, dist(gen) ? 1.0f : 0.0f);
+    for (El::Int col = 0; col < local_vals.Width(); ++col) {
+      for (El::Int row = 0; row < local_vals.Height(); ++row) {
+        local_vals(row, col) = dist(gen);
       }
     }
   }
-  mat.ProcessQueues();
+  El::Copy(vals, mat);
 }
 
 void uniform_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n, DataType center,
                           DataType radius) {
-  El::Zeros(mat, m, n);
-  if (mat.Grid().Rank() == 0) {
-    mat.Reserve(n * m);
+  CircMat<El::Device::CPU> vals(m, n, mat.Grid(), 0);
+  if (vals.Participating()) {
+    auto& local_vals = vals.Matrix();
     auto& gen = get_generator();
     std::uniform_real_distribution<DataType> dist(center - radius,
-        center + radius);
-    for (El::Int col = 0; col < n; ++col) {
-      for (El::Int row = 0; row < m; ++row) {
-        mat.QueueUpdate(row, col, dist(gen));
+                                                  center + radius);
+    for (El::Int col = 0; col < local_vals.Width(); ++col) {
+      for (El::Int row = 0; row < local_vals.Height(); ++row) {
+        local_vals(row, col) = dist(gen);
       }
     }
   }
-  mat.ProcessQueues();
+  El::Copy(vals, mat);
 }
 
 }  // namespace lbann
