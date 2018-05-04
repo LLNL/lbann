@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef _DATA_READERLBANN_HAS_CONDUITHPP_
-#define _DATA_READERLBANN_HAS_CONDUITHPP_
+#ifndef _DATA_READER_JAG_CONDUIT_HPP_
+#define _DATA_READER_JAG_CONDUIT_HPP_
 
 #ifdef LBANN_HAS_CONDUIT
 #include "lbann/data_readers/opencv.hpp"
@@ -188,4 +188,4 @@ class data_reader_jag_conduit : public generic_data_reader {
 
 } // end of namespace lbann
 #endif // LBANN_HAS_CONDUIT
-#endif // _DATA_READERLBANN_HAS_CONDUITHPP_
+#endif // _DATA_READER_JAG_CONDUIT_HPP_
