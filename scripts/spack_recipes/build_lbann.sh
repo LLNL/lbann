@@ -189,12 +189,15 @@ if [ "${SPACK_DIRTY}" == "1" ]; then
   SPACK_SETUP_FLAGS="--dirty"
 fi
 
-SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ^elemental@${EL_VER} blas=${BLAS} ^${MPI}"
+SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ^elemental@${EL_VER} blas=${BLAS} build_type=${BUILD_TYPE} ^${MPI}"
 # Disable the extra compiler flags until spack supports propagating flags properly
 #SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ${SPACK_CFLAGS} ${SPACK_CXXFLAGS} ${SPACK_FFLAGS} ^elemental@${EL_VER} blas=${BLAS} ^${MPI}"
 
 if [ "${CLUSTER}" == "ray" ]; then
   SPACK_OPTIONS="$SPACK_OPTIONS ^cuda@8.0 ^cudnn@5.1 ^cmake@3.9.0"
+fi
+if [ "${CLUSTER}" == "sierra" ]; then
+  SPACK_OPTIONS="$SPACK_OPTIONS ^cmake@3.9.0"
 fi
 
 SPEC="spack spec ${SPACK_OPTIONS}"
