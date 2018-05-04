@@ -240,13 +240,11 @@ class cudnn_manager {
   /** Get ith GPU. */
   int get_gpu(int i = 0) const;
   /** Get CUDA streams. */
-  std::vector<cudaStream_t>& get_streams();
-  /** Get CUDA streams (const). */
-  const std::vector<cudaStream_t>& get_streams() const;
-  /** Get ith CUDA stream. */
-  cudaStream_t& get_stream(int i = 0);
-  /** Get ith CUDA stream (const). */
-  const cudaStream_t& get_stream(int i = 0) const;
+  std::vector<cudaStream_t> get_streams() const;
+  /** Get ith CUDA stream.
+   *  Currently only supported for i=0;
+   */
+  cudaStream_t get_stream(int i = 0) const;
   /** Get cuDNN handles. */
   std::vector<cudnnHandle_t>& get_handles();
   /** Get cuDNN handles (const). */
@@ -256,13 +254,11 @@ class cudnn_manager {
   /** Get ith cuDNN handle (const). */
   const cudnnHandle_t& get_handle(int i = 0) const;
   /** Get CUBLAS handles. */
-  std::vector<cublasHandle_t>& get_cublas_handles();
-  /** Get CUBLAS handles (const). */
-  const std::vector<cublasHandle_t>& get_cublas_handles() const;
-  /** Get ith CUBLAS handle. */
-  cublasHandle_t& get_cublas_handle(int i = 0);
-  /** Get ith CUBLAS handle (const). */
-  const cublasHandle_t& get_cublas_handle(int i) const;
+  std::vector<cublasHandle_t> get_cublas_handles() const;
+  /** Get ith CUBLAS handle.
+   *  Currently only supported for i=0;
+   */
+  cublasHandle_t get_cublas_handle(int i = 0) const;
   /** Get GPU work spaces. */
   std::vector<void*> get_work_spaces();
   /** Get ith GPU work space. */
@@ -420,12 +416,8 @@ class cudnn_manager {
 
   /** List of GPUs. */
   std::vector<int> m_gpus;
-  /** List of CUDA streams. */
-  std::vector<cudaStream_t> m_streams;
   /** List of cuDNN handles. */
   std::vector<cudnnHandle_t> m_handles;
-  /** List of cuDNN handles. */
-  std::vector<cublasHandle_t> m_cublas_handles;
 
   /** List of GPU work spaces. */
   std::vector<void *> m_work_spaces;
