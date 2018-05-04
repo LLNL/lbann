@@ -42,6 +42,7 @@
 #include <set>
 #include <map>
 
+// This macro may be moved to a global scope
 #define _THROW_LBANN_EXCEPTION_(_CLASS_NAME_,_MSG_) { \
   std::stringstream err; \
   err << __FILE__ << ' '  << __LINE__ << " :: " \
@@ -49,8 +50,9 @@
   throw lbann_exception(err.str()); \
 }
 
-#define _THROW_EXCEPTION_(_MSG_) \
-        _THROW_LBANN_EXCEPTION_("data_reader_jag_conduit", _MSG_)
+// This comes after all the headers, and is only visible within the current implementation file.
+// To make sure, we put '#undef _CN_' at the end of this file
+#define _CN_ "data_reader_jag_conduit"
 
 namespace lbann {
 
@@ -74,7 +76,7 @@ const conduit::Node& data_reader_jag_conduit::get_conduit_node(const std::string
 
 void data_reader_jag_conduit::set_model_mode(const model_mode_t mm) {
   if (static_cast<int>(AutoS) < static_cast<int>(mm)) {
-    _THROW_EXCEPTION_("set_model_mode() : unrecognized mode " \
+    _THROW_LBANN_EXCEPTION_(_CN_, "set_model_mode() : unrecognized mode " \
                      + std::to_string(static_cast<int>(mm)));
   }
   m_model_mode = mm;
@@ -85,7 +87,7 @@ void data_reader_jag_conduit::set_image_dims(const int width, const int height) 
     m_image_width = width;
     m_image_height = height;
   } else if (!((width == 0) && (height == 0))) { // set but not valid
-    _THROW_EXCEPTION_("set_image_dims() : invalid image dims");
+    _THROW_LBANN_EXCEPTION_(_CN_, "set_image_dims() : invalid image dims");
   }
 }
 
@@ -180,7 +182,7 @@ void data_reader_jag_conduit::check_image_size() {
       m_image_height = 1;
       m_image_width = static_cast<int>(m_linearized_image_size/get_num_views());
     } else {
-      _THROW_EXCEPTION_("check_image_size() : image size mismatch");
+      _THROW_LBANN_EXCEPTION_(_CN_, "check_image_size() : image size mismatch");
     }
   }
 }
@@ -218,7 +220,7 @@ void data_reader_jag_conduit::check_scalar_keys() {
         msg += ' ' + m_scalar_keys[i];
       }
     }
-    _THROW_EXCEPTION_("check_scalar_keys() : " + msg);
+    _THROW_LBANN_EXCEPTION_(_CN_, "check_scalar_keys() : " + msg);
   }
 }
 
@@ -255,7 +257,7 @@ void data_reader_jag_conduit::check_input_keys() {
         msg += ' ' + m_input_keys[i];
       }
     }
-    _THROW_EXCEPTION_("check_input_keys() : " + msg);
+    _THROW_LBANN_EXCEPTION_(_CN_, "check_input_keys() : " + msg);
   }
 }
 
@@ -268,7 +270,7 @@ void data_reader_jag_conduit::load() {
   load_conduit(data_dir + conduit_file_name);
 
   if (m_first_n > 0) {
-    _THROW_EXCEPTION_("load() does not support first_n feature.");
+    _THROW_LBANN_EXCEPTION_(_CN_, "load() does not support first_n feature.");
   }
 
   // reset indices
@@ -322,7 +324,7 @@ int data_reader_jag_conduit::get_linearized_data_size() const {
     case AutoS:
       return static_cast<int>(get_linearized_scalar_size());
     default: {
-      _THROW_EXCEPTION_("get_linearized_data_size() : unknown mode");
+      _THROW_LBANN_EXCEPTION_(_CN_, "get_linearized_data_size() : unknown mode");
     }
   }
   return 0;
@@ -337,7 +339,7 @@ int data_reader_jag_conduit::get_linearized_response_size() const {
     case AutoS:
       return static_cast<int>(get_linearized_scalar_size());
     default: {
-      _THROW_EXCEPTION_("get_linearized_response_size() : unknown mode");
+      _THROW_LBANN_EXCEPTION_(_CN_, "get_linearized_response_size() : unknown mode");
     }
   }
   return 0;
@@ -353,7 +355,7 @@ const std::vector<int> data_reader_jag_conduit::get_data_dims() const {
     case AutoS:
       return {static_cast<int>(get_linearized_scalar_size())};
     default: {
-      _THROW_EXCEPTION_("get_data_dims() : unknown mode");
+      _THROW_LBANN_EXCEPTION_(_CN_, "get_data_dims() : unknown mode");
     }
   }
   return {};
@@ -417,7 +419,7 @@ std::vector<int> data_reader_jag_conduit::choose_image_near_bang_time(const size
 std::vector< std::pair<size_t, const data_reader_jag_conduit::ch_t*> >
 data_reader_jag_conduit::get_image_ptrs(const size_t sample_id) const {
   if (!check_sample_id(sample_id)) {
-    _THROW_EXCEPTION_("get_images() : invalid sample index");
+    _THROW_LBANN_EXCEPTION_(_CN_, "get_images() : invalid sample index");
   }
   std::vector<int> img_indices = choose_image_near_bang_time(sample_id);
   std::vector< std::pair<size_t, const ch_t*> >image_ptrs;
@@ -471,7 +473,7 @@ std::vector<data_reader_jag_conduit::ch_t> data_reader_jag_conduit::get_images(c
 
 std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scalars(const size_t sample_id) const {
   if (!check_sample_id(sample_id)) {
-    _THROW_EXCEPTION_("get_scalars() : invalid sample index");
+    _THROW_LBANN_EXCEPTION_(_CN_, "get_scalars() : invalid sample index");
   }
 
   std::vector<scalar_t> scalars;
@@ -487,7 +489,7 @@ std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scal
 
 std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_inputs(const size_t sample_id) const {
   if (!check_sample_id(sample_id)) {
-    _THROW_EXCEPTION_("get_inputs() : invalid sample index");
+    _THROW_LBANN_EXCEPTION_(_CN_, "get_inputs() : invalid sample index");
   }
 
   std::vector<input_t> inputs;
@@ -503,7 +505,7 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
 
 int data_reader_jag_conduit::check_exp_success(const size_t sample_id) const {
   if (!check_sample_id(sample_id)) {
-    _THROW_EXCEPTION_("check_exp_success() : invalid sample index");
+    _THROW_LBANN_EXCEPTION_(_CN_, "check_exp_success() : invalid sample index");
   }
 
   return static_cast<int>(get_conduit_node(std::to_string(sample_id) + "performance/success").value());
@@ -528,7 +530,7 @@ bool data_reader_jag_conduit::fetch_datum(Mat& X, int data_id, int mb_idx, int t
       break;
     }
     default: {
-      _THROW_EXCEPTION_("fetch_datum() : unknown mode");
+      _THROW_LBANN_EXCEPTION_(_CN_, "fetch_datum() : unknown mode");
     }
   }
   return true;
@@ -552,7 +554,7 @@ bool data_reader_jag_conduit::fetch_response(Mat& Y, int data_id, int mb_idx, in
       break;
     }
     default: {
-      _THROW_EXCEPTION_("fetch_response() : unknown mode");
+      _THROW_LBANN_EXCEPTION_(_CN_, "fetch_response() : unknown mode");
     }
   }
   return true;
@@ -565,4 +567,6 @@ void data_reader_jag_conduit::save_image(Mat& pixels, const std::string filename
 }
 
 } // end of namespace lbann
+
+#undef _CN_
 #endif // LBANN_HAS_CONDUIT

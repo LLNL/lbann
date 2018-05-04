@@ -116,11 +116,11 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   /**
    * Return the images of the i-th sample as an 1-D vector of lbann::DataType
-   * There is one image per view, each of which is taken at closet to the bang time.
+   * There is one image per view, each of which is taken at closest to the bang time.
    */
   std::vector<ch_t> get_images(const size_t i) const;
 
-  /// Return the scalar simulatino output data of the i-th sample
+  /// Return the scalar simulation output data of the i-th sample
   std::vector<scalar_t> get_scalars(const size_t i) const;
 
   /// Return the simulation input parameters of the i-th sample
@@ -154,7 +154,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Check if the given sample id is valid
   bool check_sample_id(const size_t i) const;
 
-  /// Choose the image closet to the bang time among those associated with the i-th sample
+  /// Choose the image closest to the bang time among those associated with the i-th sample
   std::vector<int> choose_image_near_bang_time(const size_t i) const;
 
   /// Allow const access to the conduit data structure
