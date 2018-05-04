@@ -1,5 +1,5 @@
 model {
-  name: "directed_acyclic_graph_model"
+  name: "sequential_model"
   data_layout: "data_parallel"
   mini_batch_size: 256
   block_size: 256
@@ -3613,8 +3613,8 @@ model {
   }
   layer {
     name: "final_layer_softmax"
-    parents: "final_layer_pool"
-    data_layout: "model_parallel"
+    parents: "final_layer_fc"
+    data_layout: "data_parallel"
     softmax {
     }
   }
