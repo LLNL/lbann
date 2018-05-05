@@ -146,7 +146,7 @@ if [ -n "${IMAGENET_CLASSES}" ]; then
     esac
     EXPERIMENT_NAME=${EXPERIMENT_NAME}_imagenet${IMAGENET_CLASSES}
     case ${CLUSTER} in
-        catalyst|flash|quartz|surface)
+        catalyst|flash|quartz|surface|pascal)
             case ${IMAGENET_CLASSES} in
                 10|100|300|1000)
                     IMAGENET_DIR=/p/lscratchf/brainusr/datasets/ILSVRC2012
@@ -351,6 +351,12 @@ echo "# ======== Useful info and initialization ========" >> ${BATCH_SCRIPT}
 echo "date"                                             >> ${BATCH_SCRIPT}
 echo "${MPIRUN} hostname > ${NODE_LIST}"                >> ${BATCH_SCRIPT}
 echo "sort --unique --output=${NODE_LIST} ${NODE_LIST}" >> ${BATCH_SCRIPT}
+case ${USE_GPU} in
+    YES|yes|TRUE|true|ON|on|1)
+        echo "nvidia-smi > nvidia-smi.out"              >> ${BATCH_SCRIPT}
+        echo "export MV2_USE_CUDA=1"                    >> ${BATCH_SCRIPT}
+        ;;
+esac
 echo ""
 echo ""                                                 >> ${BATCH_SCRIPT}
 
