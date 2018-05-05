@@ -25,14 +25,14 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifdef LBANN_HAS_CONDUIT
 #ifndef _JAG_OFFLINE_TOOL_MODE_
-#include "lbann/utils/file_utils.hpp"
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
+#include "lbann/utils/file_utils.hpp" // for add_delimiter() in load()
 #else
 #include "data_reader_jag_conduit.hpp"
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
+#ifdef LBANN_HAS_CONDUIT
 #include "lbann/data_readers/opencv_extensions.hpp"
 #include <limits>     // numeric_limits
 #include <algorithm>  // max_element
@@ -57,7 +57,8 @@
 namespace lbann {
 
 data_reader_jag_conduit::data_reader_jag_conduit(bool shuffle)
-  : generic_data_reader(shuffle), m_model_mode(Inverse),
+  : generic_data_reader(shuffle),
+    m_independent(JAG_Image), m_dependent(JAG_Input),
     m_linearized_image_size(0u),
     m_num_views(2u),
     m_image_width(0u), m_image_height(0u),
@@ -74,12 +75,30 @@ const conduit::Node& data_reader_jag_conduit::get_conduit_node(const std::string
 }
 
 
-void data_reader_jag_conduit::set_model_mode(const model_mode_t mm) {
-  if (static_cast<int>(AutoS) < static_cast<int>(mm)) {
-    _THROW_LBANN_EXCEPTION_(_CN_, "set_model_mode() : unrecognized mode " \
-                     + std::to_string(static_cast<int>(mm)));
+void data_reader_jag_conduit::set_independent_variable_type(
+  const data_reader_jag_conduit::variable_t independent) {
+  if (!(independent == JAG_Image || independent == JAG_Scalar || independent == JAG_Input)) {
+    _THROW_LBANN_EXCEPTION_(_CN_, "unrecognized independent variable type ");
   }
-  m_model_mode = mm;
+  m_independent = independent;
+}
+
+void data_reader_jag_conduit::set_dependent_variable_type(
+  const data_reader_jag_conduit::variable_t dependent) {
+  if (!(dependent == JAG_Image || dependent == JAG_Scalar || dependent == JAG_Input)) {
+    _THROW_LBANN_EXCEPTION_(_CN_, "unrecognized dependent variable type ");
+  }
+  m_dependent = dependent;
+}
+
+data_reader_jag_conduit::variable_t
+data_reader_jag_conduit::get_independent_variable_type() const {
+  return m_independent;
+}
+
+data_reader_jag_conduit::variable_t
+data_reader_jag_conduit::get_dependent_variable_type() const {
+  return m_dependent;
 }
 
 void data_reader_jag_conduit::set_image_dims(const int width, const int height) {
@@ -316,46 +335,46 @@ size_t data_reader_jag_conduit::get_linearized_input_size() const {
 
 
 int data_reader_jag_conduit::get_linearized_data_size() const {
-  switch (m_model_mode) {
-    case Inverse:
+  switch (m_independent) {
+    case JAG_Image:
       return static_cast<int>(get_linearized_image_size());
-    case AutoI:
-      return static_cast<int>(get_linearized_image_size());
-    case AutoS:
+    case JAG_Scalar:
       return static_cast<int>(get_linearized_scalar_size());
+    case JAG_Input:
+      return static_cast<int>(get_linearized_input_size());
     default: {
-      _THROW_LBANN_EXCEPTION_(_CN_, "get_linearized_data_size() : unknown mode");
+      _THROW_LBANN_EXCEPTION_(_CN_, "get_linearized_data_size() : unknown variable type");
     }
   }
   return 0;
 }
 
 int data_reader_jag_conduit::get_linearized_response_size() const {
-  switch (m_model_mode) {
-    case Inverse:
-      return static_cast<int>(get_linearized_input_size());
-    case AutoI:
+  switch (m_dependent) {
+    case JAG_Image:
       return static_cast<int>(get_linearized_image_size());
-    case AutoS:
+    case JAG_Scalar:
       return static_cast<int>(get_linearized_scalar_size());
+    case JAG_Input:
+      return static_cast<int>(get_linearized_input_size());
     default: {
-      _THROW_LBANN_EXCEPTION_(_CN_, "get_linearized_response_size() : unknown mode");
+      _THROW_LBANN_EXCEPTION_(_CN_, "get_linearized_response_size() : unknown variable type");
     }
   }
   return 0;
 }
 
 const std::vector<int> data_reader_jag_conduit::get_data_dims() const {
-  switch (m_model_mode) {
-    case Inverse:
-      return {static_cast<int>(m_num_views), m_image_height, m_image_width};
+  switch (m_independent) {
+    case JAG_Image:
+      return {static_cast<int>(get_num_views()), m_image_height, m_image_width};
       //return {static_cast<int>(get_linearized_image_size())};
-    case AutoI:
-      return {static_cast<int>(get_linearized_image_size())};
-    case AutoS:
+    case JAG_Scalar:
       return {static_cast<int>(get_linearized_scalar_size())};
+    case JAG_Input:
+      return {static_cast<int>(get_linearized_input_size())};
     default: {
-      _THROW_LBANN_EXCEPTION_(_CN_, "get_data_dims() : unknown mode");
+      _THROW_LBANN_EXCEPTION_(_CN_, "get_data_dims() : unknown variable type");
     }
   }
   return {};
@@ -366,7 +385,8 @@ std::string data_reader_jag_conduit::get_description() const {
   using std::string;
   using std::to_string;
   string ret = string("data_reader_jag_conduit:\n")
-    + " - mode: " + to_string(static_cast<int>(m_model_mode)) + "\n"
+    + " - independent: " + to_string(static_cast<int>(m_independent)) + "\n"
+    + " - dependent: " + to_string(static_cast<int>(m_dependent)) + "\n"
     + " - images: "   + to_string(m_num_views) + 'x'
                       + to_string(m_image_width) + 'x'
                       + to_string(m_image_height) + "\n"
@@ -513,48 +533,50 @@ int data_reader_jag_conduit::check_exp_success(const size_t sample_id) const {
 
 
 bool data_reader_jag_conduit::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
-  switch (m_model_mode) {
-    case Inverse: {
+  switch (m_independent) {
+    case JAG_Image: {
+      // TODO: use get_image_ptrs() and views of matrix X to avoid data copying
       const std::vector<ch_t> images(get_images(data_id));
       set_minibatch_item<ch_t>(X, mb_idx, images.data(), get_linearized_image_size());
       break;
     }
-    case AutoI: {
-      const std::vector<ch_t> images(get_images(data_id));
-      set_minibatch_item<ch_t>(X, mb_idx, images.data(), get_linearized_image_size());
-      break;
-    }
-    case AutoS: {
+    case JAG_Scalar: {
       const std::vector<scalar_t> scalars(get_scalars(data_id));
       set_minibatch_item<scalar_t>(X, mb_idx, scalars.data(), get_linearized_scalar_size());
       break;
     }
+    case JAG_Input: {
+      const std::vector<input_t> inputs(get_inputs(data_id));
+      set_minibatch_item<input_t>(X, mb_idx, inputs.data(), get_linearized_input_size());
+      break;
+    }
     default: {
-      _THROW_LBANN_EXCEPTION_(_CN_, "fetch_datum() : unknown mode");
+      _THROW_LBANN_EXCEPTION_(_CN_, "fetch_datum() : unknown variable type");
     }
   }
   return true;
 }
 
 bool data_reader_jag_conduit::fetch_response(Mat& Y, int data_id, int mb_idx, int tid) {
-  switch (m_model_mode) {
-    case Inverse: {
-      const std::vector<input_t> inputs(get_inputs(data_id));
-      set_minibatch_item<input_t>(Y, mb_idx, inputs.data(), get_linearized_input_size());
-      break;
-    }
-    case AutoI: {
+  switch (m_dependent) {
+    case JAG_Image: {
+      // TODO: use get_image_ptrs() and views of matrix Y to avoid data copying
       const std::vector<ch_t> images(get_images(data_id));
       set_minibatch_item<ch_t>(Y, mb_idx, images.data(), get_linearized_image_size());
       break;
     }
-    case AutoS: {
+    case JAG_Scalar: {
       const std::vector<scalar_t> scalars(get_scalars(data_id));
       set_minibatch_item<scalar_t>(Y, mb_idx, scalars.data(), get_linearized_scalar_size());
       break;
     }
+    case JAG_Input: {
+      const std::vector<input_t> inputs(get_inputs(data_id));
+      set_minibatch_item<input_t>(Y, mb_idx, inputs.data(), get_linearized_input_size());
+      break;
+    }
     default: {
-      _THROW_LBANN_EXCEPTION_(_CN_, "fetch_response() : unknown mode");
+      _THROW_LBANN_EXCEPTION_(_CN_, "fetch_response() : unknown variable type");
     }
   }
   return true;
