@@ -51,8 +51,9 @@ class data_reader_jag_conduit : public generic_data_reader {
    * - JAG_Image: simulation output images
    * - JAG_Scalar: simulation output scalars
    * - JAG_Input: simulation input parameters
+   * - Undefined: the default
    */
-  enum variable_t {JAG_Image, JAG_Scalar, JAG_Input};
+  enum variable_t {JAG_Image, JAG_Scalar, JAG_Input, Undefined};
 
   data_reader_jag_conduit(bool shuffle = true);
   data_reader_jag_conduit(const data_reader_jag_conduit&) = default;

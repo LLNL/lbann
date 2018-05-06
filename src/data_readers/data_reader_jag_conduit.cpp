@@ -42,6 +42,9 @@
 #include <set>
 #include <map>
 
+#define _THROW_LBANN_EXCEPTION2_(_CLASS_NAME_,_MSG1_,_MSG2_) \
+        _THROW_LBANN_EXCEPTION_(_CLASS_NAME_, (_MSG1_) << (_MSG2_))
+
 // This macro may be moved to a global scope
 #define _THROW_LBANN_EXCEPTION_(_CLASS_NAME_,_MSG_) { \
   std::stringstream err; \
@@ -58,7 +61,7 @@ namespace lbann {
 
 data_reader_jag_conduit::data_reader_jag_conduit(bool shuffle)
   : generic_data_reader(shuffle),
-    m_independent(JAG_Image), m_dependent(JAG_Input),
+    m_independent(Undefined), m_dependent(Undefined),
     m_linearized_image_size(0u),
     m_num_views(2u),
     m_image_width(0u), m_image_height(0u),
@@ -77,7 +80,8 @@ const conduit::Node& data_reader_jag_conduit::get_conduit_node(const std::string
 
 void data_reader_jag_conduit::set_independent_variable_type(
   const data_reader_jag_conduit::variable_t independent) {
-  if (!(independent == JAG_Image || independent == JAG_Scalar || independent == JAG_Input)) {
+  if (!(independent == JAG_Image || independent == JAG_Scalar ||
+        independent == JAG_Input || independent == Undefined)) {
     _THROW_LBANN_EXCEPTION_(_CN_, "unrecognized independent variable type ");
   }
   m_independent = independent;
@@ -85,7 +89,8 @@ void data_reader_jag_conduit::set_independent_variable_type(
 
 void data_reader_jag_conduit::set_dependent_variable_type(
   const data_reader_jag_conduit::variable_t dependent) {
-  if (!(dependent == JAG_Image || dependent == JAG_Scalar || dependent == JAG_Input)) {
+  if (!(dependent == JAG_Image || dependent == JAG_Scalar ||
+        dependent == JAG_Input || dependent == Undefined)) {
     _THROW_LBANN_EXCEPTION_(_CN_, "unrecognized dependent variable type ");
   }
   m_dependent = dependent;
@@ -342,8 +347,9 @@ int data_reader_jag_conduit::get_linearized_data_size() const {
       return static_cast<int>(get_linearized_scalar_size());
     case JAG_Input:
       return static_cast<int>(get_linearized_input_size());
-    default: {
-      _THROW_LBANN_EXCEPTION_(_CN_, "get_linearized_data_size() : unknown variable type");
+    default: { // includes Unefined case
+      _THROW_LBANN_EXCEPTION2_(_CN_, "get_linearized_data_size() : ", \
+                                     "unknown or undefined variable type");
     }
   }
   return 0;
@@ -357,8 +363,9 @@ int data_reader_jag_conduit::get_linearized_response_size() const {
       return static_cast<int>(get_linearized_scalar_size());
     case JAG_Input:
       return static_cast<int>(get_linearized_input_size());
-    default: {
-      _THROW_LBANN_EXCEPTION_(_CN_, "get_linearized_response_size() : unknown variable type");
+    default: { // includes Undefined case
+      _THROW_LBANN_EXCEPTION2_(_CN_, "get_linearized_response_size() : ", \
+                                     "unknown or undefined variable type");
     }
   }
   return 0;
@@ -373,8 +380,9 @@ const std::vector<int> data_reader_jag_conduit::get_data_dims() const {
       return {static_cast<int>(get_linearized_scalar_size())};
     case JAG_Input:
       return {static_cast<int>(get_linearized_input_size())};
-    default: {
-      _THROW_LBANN_EXCEPTION_(_CN_, "get_data_dims() : unknown variable type");
+    default: { // includes Undefined case
+      _THROW_LBANN_EXCEPTION2_(_CN_, "get_data_dims() : ", \
+                                     "unknown or undefined variable type");
     }
   }
   return {};
@@ -550,8 +558,8 @@ bool data_reader_jag_conduit::fetch_datum(Mat& X, int data_id, int mb_idx, int t
       set_minibatch_item<input_t>(X, mb_idx, inputs.data(), get_linearized_input_size());
       break;
     }
-    default: {
-      _THROW_LBANN_EXCEPTION_(_CN_, "fetch_datum() : unknown variable type");
+    default: { // includes Undefined case
+      _THROW_LBANN_EXCEPTION_(_CN_, "fetch_datum() : unknown or undefined variable type");
     }
   }
   return true;
@@ -575,8 +583,8 @@ bool data_reader_jag_conduit::fetch_response(Mat& Y, int data_id, int mb_idx, in
       set_minibatch_item<input_t>(Y, mb_idx, inputs.data(), get_linearized_input_size());
       break;
     }
-    default: {
-      _THROW_LBANN_EXCEPTION_(_CN_, "fetch_response() : unknown variable type");
+    default: { // includes Undefined case
+      _THROW_LBANN_EXCEPTION_(_CN_, "fetch_response() : unknown or undefined variable type");
     }
   }
   return true;
