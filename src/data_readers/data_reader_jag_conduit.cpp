@@ -42,14 +42,19 @@
 #include <set>
 #include <map>
 
-#define _THROW_LBANN_EXCEPTION2_(_CLASS_NAME_,_MSG1_,_MSG2_) \
-        _THROW_LBANN_EXCEPTION_(_CLASS_NAME_, (_MSG1_) << (_MSG2_))
 
 // This macro may be moved to a global scope
 #define _THROW_LBANN_EXCEPTION_(_CLASS_NAME_,_MSG_) { \
   std::stringstream err; \
   err << __FILE__ << ' '  << __LINE__ << " :: " \
-      << _CLASS_NAME_ << "::" << _MSG_; \
+      << (_CLASS_NAME_) << "::" << (_MSG_); \
+  throw lbann_exception(err.str()); \
+}
+
+#define _THROW_LBANN_EXCEPTION2_(_CLASS_NAME_,_MSG1_,_MSG2_) { \
+  std::stringstream err; \
+  err << __FILE__ << ' '  << __LINE__ << " :: " \
+      << (_CLASS_NAME_) << "::" << (_MSG1_) << (_MSG2_); \
   throw lbann_exception(err.str()); \
 }
 
@@ -115,8 +120,19 @@ void data_reader_jag_conduit::set_image_dims(const int width, const int height) 
   }
 }
 
+/**
+ * To use no key, set 'Undefined' to the corresponding variable type,
+ * or call this with an empty vector argument after loading data.
+ */
 void data_reader_jag_conduit::set_scalar_choices(const std::vector<std::string>& keys) {
   m_scalar_keys = keys;
+  // If this call is made after loading data, check the keys
+  if (m_is_data_loaded) {
+    check_scalar_keys();
+  } else if (keys.empty()) {
+    _THROW_LBANN_EXCEPTION2_(_CN_, "set_scalar_choices() : ", \
+                                   "empty keys not allowed before data loading");
+  }
 }
 
 void data_reader_jag_conduit::set_all_scalar_choices() {
@@ -137,8 +153,19 @@ const std::vector<std::string>& data_reader_jag_conduit::get_scalar_choices() co
 }
 
 
+/**
+ * To use no key, set 'Undefined' to the corresponding variable type,
+ * or call this with an empty vector argument after loading data.
+ */
 void data_reader_jag_conduit::set_input_choices(const std::vector<std::string>& keys) {
   m_input_keys = keys;
+  // If this call is made after loading data, check the keys
+  if (m_is_data_loaded) {
+    check_input_keys();
+  } else if (keys.empty()) {
+    _THROW_LBANN_EXCEPTION2_(_CN_, "set_input_choices() : ", \
+                                   "empty keys not allowed before data loading");
+  }
 }
 
 void data_reader_jag_conduit::set_all_input_choices() {
@@ -311,8 +338,18 @@ void data_reader_jag_conduit::load_conduit(const std::string conduit_file_path) 
   set_num_views();
   set_linearized_image_size();
   check_image_size();
-  check_scalar_keys();
-  check_input_keys();
+
+  if (!m_is_data_loaded) {
+    if (m_scalar_keys.size() == 0u) {
+      set_all_scalar_choices(); // use all by default if none is specified
+    }
+    check_scalar_keys();
+
+    if (m_input_keys.size() == 0u) {
+      set_all_input_choices(); // use all by default if none is specified
+    }
+    check_input_keys();
+  }
 
   m_is_data_loaded = true;
 }

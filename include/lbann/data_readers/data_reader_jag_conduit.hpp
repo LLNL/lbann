@@ -186,9 +186,9 @@ class data_reader_jag_conduit : public generic_data_reader {
   int m_image_width; ///< image width
   int m_image_height; ///< image height
 
-  /// keys to select a set of scalar simulation outputs to use
+  /// Keys to select a set of scalar simulation outputs to use. By default, use all.
   std::vector<std::string> m_scalar_keys;
-  /// keys to select a set of simulation input parameters to use
+  /// Keys to select a set of simulation input parameters to use. By default, use all.
   std::vector<std::string> m_input_keys;
 
   /// Whether data have been loaded
