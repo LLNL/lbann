@@ -39,7 +39,7 @@ namespace lbann {
 
 data_reader_jag::data_reader_jag(bool shuffle)
   : generic_data_reader(shuffle),
-    m_independent(JAG_Image), m_dependent(JAG_Input),
+    m_independent(Undefined), m_dependent(Undefined),
     m_image_loaded(false), m_scalar_loaded(false),
     m_input_loaded(false), m_num_samples(0u),
     m_linearized_image_size(0u),
@@ -47,7 +47,7 @@ data_reader_jag::data_reader_jag(bool shuffle)
     m_linearized_input_size(0u),
     m_image_normalization(0u),
     m_image_width(0u), m_image_height(0u),
-    m_img_min(std::numeric_limits<data_t>::max()), 
+    m_img_min(std::numeric_limits<data_t>::max()),
     m_img_max(std::numeric_limits<data_t>::min()) {
 }
 
@@ -57,7 +57,8 @@ data_reader_jag::~data_reader_jag() {
 
 void data_reader_jag::set_independent_variable_type(
   const data_reader_jag::variable_t independent) {
-  if (!(independent == JAG_Image || independent == JAG_Scalar || independent == JAG_Input)) {
+  if (!(independent == JAG_Image || independent == JAG_Scalar ||
+        independent == JAG_Input || independent == Undefined)) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
       " :: unrecognized variable type " + std::to_string(static_cast<int>(independent)));
   }
@@ -66,7 +67,8 @@ void data_reader_jag::set_independent_variable_type(
 
 void data_reader_jag::set_dependent_variable_type(
   const data_reader_jag::variable_t dependent) {
-  if (!(dependent == JAG_Image || dependent == JAG_Scalar || dependent == JAG_Input)) {
+  if (!(dependent == JAG_Image || dependent == JAG_Scalar ||
+        dependent == JAG_Input || dependent == Undefined)) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
       " :: unrecognized variable type " + std::to_string(static_cast<int>(dependent)));
   }
@@ -168,8 +170,9 @@ int data_reader_jag::get_linearized_data_size() const {
       return static_cast<int>(m_linearized_scalar_size);
     case JAG_Input:
       return static_cast<int>(m_linearized_input_size);
-    default: {
-      throw lbann_exception("data_reader_jag::get_linearized_data_size() : unknown variable type");
+    default: { // includes Undefined case
+      throw lbann_exception(std::string("data_reader_jag::get_linearized_data_size() : ") +
+                                        "unknown or undefined variable type");
     }
   }
   return 0;
@@ -183,8 +186,9 @@ int data_reader_jag::get_linearized_response_size() const {
       return static_cast<int>(m_linearized_scalar_size);
     case JAG_Input:
       return static_cast<int>(m_linearized_input_size);
-    default: {
-      throw lbann_exception("data_reader_jag::get_linearized_response_size() : unknown variable type");
+    default: { // includes Undefined case
+      throw lbann_exception(std::string("data_reader_jag::get_linearized_response_size() : ") +
+                                        "unknown or undefined variable type");
     }
   }
   return 0;
@@ -200,7 +204,8 @@ const std::vector<int> data_reader_jag::get_data_dims() const {
     case JAG_Input:
       return {static_cast<int>(m_linearized_input_size)};
     default: {
-      throw lbann_exception("data_reader_jag::get_data_dims() : unknown variable type");
+      throw lbann_exception(std::string("data_reader_jag::get_data_dims() : ") +
+                                        "unknown or undefined variable type");
     }
   }
   return {};
@@ -247,6 +252,9 @@ void data_reader_jag::load(const std::string image_file,
             const std::string scalar_file,
             const std::string input_file,
             const size_t first_n) {
+  if ((m_independent == Undefined) && (m_dependent == Undefined)) {
+    throw lbann_exception("data_reader_jag: no type of variables to load is defined.");
+  }
   if ((m_independent == JAG_Image || m_dependent == JAG_Image) &&
       !image_file.empty() && !check_if_file_exists(image_file)) {
     throw lbann_exception("data_reader_jag: failed to load " + image_file);
@@ -260,7 +268,6 @@ void data_reader_jag::load(const std::string image_file,
     throw lbann_exception("data_reader_jag: failed to load " + input_file);
   }
 
-  
   m_num_samples = 0u;
 
   // read in only those that will be used
@@ -291,7 +298,7 @@ void data_reader_jag::load(const std::string image_file,
     m_input_loaded = true;
     set_linearized_input_size();
   }
-  
+
   size_t num_samples = 0u;
   bool ok = check_data(num_samples);
 
@@ -427,7 +434,7 @@ data_reader_jag::data_t* data_reader_jag::get_image_ptr(const size_t i) const {
 
 cv::Mat data_reader_jag::get_image(const size_t i) const {
   using InputBuf_T = cv_image_type<data_t>;
-  
+
   data_t* const ptr = get_image_ptr(i);
   if (ptr == nullptr) {
     return cv::Mat();
@@ -513,8 +520,9 @@ bool data_reader_jag::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
       set_minibatch_item<input_t>(X, mb_idx, ptr, m_linearized_input_size);
       break;
     }
-    default: {
-      throw lbann_exception("data_reader_jag::fetch_datum() : unknown variable type");
+    default: { // includes Undefined case
+      throw lbann_exception(std::string("data_reader_jag::fetch_datum() : ") + \
+                                        "unknown or undefined variable type");
     }
   }
   return true;
@@ -537,8 +545,9 @@ bool data_reader_jag::fetch_response(Mat& Y, int data_id, int mb_idx, int tid) {
       set_minibatch_item<input_t>(Y, mb_idx, ptr, m_linearized_input_size);
       break;
     }
-    default: {
-      throw lbann_exception("data_reader_jag::fetch_response() : unknown variable type");
+    default: { // includes Undefined case
+      throw lbann_exception(std::string("data_reader_jag::fetch_response() : ") +
+                                        "unknown or undefined variable type");
     }
   }
   return true;
