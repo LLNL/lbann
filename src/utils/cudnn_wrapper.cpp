@@ -293,11 +293,9 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm,
     // const int rank_in_node = comm->get_rank_in_node();
     const int procs_per_node = comm->get_procs_per_node();
 
-    El::GPUManager* gpu_manager = El::GPUManager::getInstance();
-
     // Determine number of visible GPUs
     //    CHECK_CUDA(cudaGetDeviceCount(&m_num_visible_gpus));
-    m_num_visible_gpus = gpu_manager->get_local_device_count();
+    m_num_visible_gpus = El::GPUManager::NumDevices();
     if(max_num_gpus >= 0 && max_num_gpus < m_num_visible_gpus) {
         m_num_visible_gpus = max_num_gpus;
     }
@@ -315,12 +313,12 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm,
     }
 
     // Construct GPU objects
-    int gpu = gpu_manager->get_local_device_id();
+    int gpu = El::GPUManager::Device();
     FORCE_CHECK_CUDA(cudaSetDevice(gpu));
     m_gpus.push_back(gpu);
-    m_streams.push_back(gpu_manager->get_local_stream());
+    m_streams.push_back(El::GPUManager::Stream());
     m_handles.push_back(nullptr);
-    m_cublas_handles.push_back(gpu_manager->get_local_cublas_handle());
+    m_cublas_handles.push_back(El::GPUManager::cuBLASHandle());
     FORCE_CHECK_CUDNN(cudnnCreate(&m_handles.back()));
     FORCE_CHECK_CUDNN(cudnnSetStream(m_handles.back(), m_streams.back()));
 
