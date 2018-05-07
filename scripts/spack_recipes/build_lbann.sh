@@ -95,7 +95,7 @@ ARCH=`uname -m`
 
 PLATFORM=
 FEATURE=
-if [ "${GPU}" == "1" -o "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" ]; then
+if [ "${GPU}" == "1" -o "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" -o "${CLUSTER}" == "pascal" ]; then
   if [ "${CLUSTER}" == "flash" ]; then
     PLATFORM="+gpu ^cuda@7.5 ^cudnn@5.1"
     FEATURE="_gpu_cuda-7.5_cudnn-5.1"
@@ -234,6 +234,6 @@ if [ ! -z ${PATH_TO_SRC} -a -d ${PATH_TO_SRC}/src ]; then
 fi
 
 # Deal with the fact that spack should not install a package when doing setup"
-FIX="spack uninstall -y lbann %${COMPILER}"
+FIX="spack uninstall -y lbann %${COMPILER} build_type=${BUILD_TYPE}"
 echo $FIX
 eval $FIX

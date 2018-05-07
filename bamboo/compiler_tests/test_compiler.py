@@ -40,14 +40,14 @@ def test_compiler_intel18_debug(cluster, dirname):
     skeleton_intel18(cluster, dirname, True)
 
 def skeleton_clang4(cluster, dir_name, debug, should_log=False):
-    if cluster == 'catalyst':
+    if cluster in ['catalyst', 'pascal', 'quartz']:
         spack_skeleton(dir_name, 'clang@4.0.0', 'mvapich2@2.2', debug, should_log)
         build_skeleton(dir_name, 'clang@4.0.0', 'mvapich2@2.2', debug, should_log)
     else:
         pytest.skip('Unsupported Cluster %s' % cluster)
 
 def skeleton_gcc4(cluster, dir_name, debug, should_log=False):
-    if cluster in ['catalyst', 'ray']:
+    if cluster in ['catalyst', 'pascal', 'quartz', 'ray']:
         if cluster == 'catalyst':
             mpi = 'mvapich2@2.2'
         elif cluster == 'ray':
@@ -60,14 +60,14 @@ def skeleton_gcc4(cluster, dir_name, debug, should_log=False):
         pytest.skip('Unsupported Cluster %s' % cluster)
 
 def skeleton_gcc7(cluster, dir_name, debug, should_log=False):
-    if cluster == 'catalyst':
+    if cluster in ['catalyst', 'pascal', 'quartz']:
         spack_skeleton(dir_name, 'gcc@7.1.0', 'mvapich2@2.2', debug, should_log)
         build_skeleton(dir_name, 'gcc@7.1.0', 'mvapich2@2.2', debug, should_log)
     else:
         pytest.skip('Unsupported Cluster %s' % cluster)
 
 def skeleton_intel18(cluster, dir_name, debug, should_log=False):
-    if cluster == 'catalyst':
+    if cluster in ['catalyst', 'pascal', 'quartz']:
         spack_skeleton(dir_name, 'intel@18.0.0', 'mvapich2@2.2', debug, should_log)
         build_skeleton(dir_name, 'intel@18.0.0', 'mvapich2@2.2', debug, should_log)
     else:

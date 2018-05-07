@@ -9,6 +9,16 @@ def test_command_catalyst():
     expected = 'salloc --nodes=20 --partition=pdebug --time=30 srun --ntasks=40 exe --reader=dir/model_zoo/data_readers/data_reader_mnist.prototext --data_reader_percent=0.100000 --exit_after_setup --mini_batch_size=15 --model=dir/model_zoo/models/folder/model_lenet.prototext --num_epochs=7 --optimizer=dir/model_zoo/optimizers/opt_adagrad.prototext --procs_per_model=10 > output_file 2> error_file'
     assert actual == expected
 
+def test_command_pascal():
+    actual = tools.get_command(cluster='pascal', executable='exe', num_nodes=20, partition='pdebug', time_limit=30, num_processes=40, dir_name='dir', data_filedir_ray='filedir', data_reader_name='mnist', data_reader_percent=0.10, exit_after_setup=True, mini_batch_size=15, model_folder='models/folder', model_name='lenet', num_epochs=7, optimizer_name='adagrad', processes_per_model=10, output_file_name='output_file', error_file_name='error_file', check_executable_existance=False)
+    expected = 'salloc --nodes=20 --partition=pdebug --time=30 srun --ntasks=40 exe --reader=dir/model_zoo/data_readers/data_reader_mnist.prototext --data_reader_percent=0.100000 --exit_after_setup --mini_batch_size=15 --model=dir/model_zoo/models/folder/model_lenet.prototext --num_epochs=7 --optimizer=dir/model_zoo/optimizers/opt_adagrad.prototext --procs_per_model=10 > output_file 2> error_file'
+    assert actual == expected
+
+def test_command_quartz():
+    actual = tools.get_command(cluster='quartz', executable='exe', num_nodes=20, partition='pdebug', time_limit=30, num_processes=40, dir_name='dir', data_filedir_ray='filedir', data_reader_name='mnist', data_reader_percent=0.10, exit_after_setup=True, mini_batch_size=15, model_folder='models/folder', model_name='lenet', num_epochs=7, optimizer_name='adagrad', processes_per_model=10, output_file_name='output_file', error_file_name='error_file', check_executable_existance=False)
+    expected = 'salloc --nodes=20 --partition=pdebug --time=30 srun --ntasks=40 exe --reader=dir/model_zoo/data_readers/data_reader_mnist.prototext --data_reader_percent=0.100000 --exit_after_setup --mini_batch_size=15 --model=dir/model_zoo/models/folder/model_lenet.prototext --num_epochs=7 --optimizer=dir/model_zoo/optimizers/opt_adagrad.prototext --procs_per_model=10 > output_file 2> error_file'
+    assert actual == expected
+    
 def test_command_surface():
     actual = tools.get_command(cluster='surface', executable='exe', num_nodes=20, partition='pdebug', time_limit=30, num_processes=40, dir_name='dir', data_filedir_ray='filedir', data_reader_name='mnist', data_reader_percent=0.10, exit_after_setup=True, mini_batch_size=15, model_folder='models/folder', model_name='lenet', num_epochs=7, optimizer_name='adagrad', processes_per_model=10, output_file_name='output_file', error_file_name='error_file', check_executable_existance=False)
     expected = 'salloc --nodes=20 --partition=pbatch --time=30 srun --ntasks=40 exe --reader=dir/model_zoo/data_readers/data_reader_mnist.prototext --data_reader_percent=0.100000 --exit_after_setup --mini_batch_size=15 --model=dir/model_zoo/models/folder/model_lenet.prototext --num_epochs=7 --optimizer=dir/model_zoo/optimizers/opt_adagrad.prototext --procs_per_model=10 > output_file 2> error_file'
