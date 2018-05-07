@@ -65,6 +65,11 @@ class fully_connected_layer : public learning_layer {
    */
   AbsDistMat* m_bias_gradient;
 
+  #ifdef LBANN_HAS_CUDNN
+  /** Vector composed of ones. */
+  GPUMat m_ones;
+  #endif // LBANN_HAS_CUDNN
+
  public:
 
   fully_connected_layer(lbann_comm *comm,

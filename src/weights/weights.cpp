@@ -317,26 +317,11 @@ void weights::set_value(DataType value, int row, int col) {
   }
 #endif // LBANN_DEBUG
 
-  if (m_cudnn == nullptr) {
-    // Set value if it is local
-    if (m_values->IsLocal(row, col)) {
-      const El::Int local_row = m_values->LocalRow(row);
-      const El::Int local_col = m_values->LocalCol(col);
-      m_values->SetLocal(local_row, local_col, value);
-    }
-  } else {
-    /// @todo FIXME we need to deal with setting individual values
-    // // Set value on GPU
-    // #ifdef LBANN_HAS_CUDNN
-    // Mat cpu_value(1, 1);
-    // cpu_value(0, 0) = value;
-    // std::vector<DataType*> gpu_value = m_values_d;
-    // const int height = get_matrix_height();
-    // for (DataType*& pointer : gpu_value) {
-    //   pointer += row + col * height;
-    // }
-    // m_cudnn->broadcast_to_gpus(gpu_value, cpu_value);
-    // #endif // LBANN_HAS_CUDNN
+  // Set value if it is local
+  if (m_values->IsLocal(row, col)) {
+    const El::Int local_row = m_values->LocalRow(row);
+    const El::Int local_col = m_values->LocalCol(col);
+    m_values->SetLocal(local_row, local_col, value);
   }
 
 }
