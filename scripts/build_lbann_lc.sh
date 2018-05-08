@@ -464,6 +464,11 @@ if [ "${MPI}" == "spectrum" ]; then
     MPI=spectrum-mpi
 fi
 
+if [ "${CLUSTER}" == "surface" ] || [ "${CLUSTER}" == "pascal" ]; then
+  MPI_HOME=/usr/global/tools/mpi/sideinstalls/$SYS_TYPE/mvapich2-2.3/install-gcc-4.9.3-cuda-9.1
+  setenv MV2_USE_CUDA 1
+fi
+
 if [ -z "${MPI_HOME}" ]; then
 	if [ ${USE_MODULES} -ne 0 ]; then
 		if [ -z "$(module list 2>&1 | grep ${MPI})" ]; then
@@ -548,7 +553,7 @@ if [ "${CLUSTER}" == "surface" ] || [ "${CLUSTER}" == "ray" ] ||
         . /usr/share/[mM]odules/init/bash
 		CUDA_TOOLKIT_MODULE=cudatoolkit/9.1
 	elif [ "${CLUSTER}" == "ray" ]; then
-		module del cuda		
+		module del cuda
 		CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/8.0}
 	fi
 fi
