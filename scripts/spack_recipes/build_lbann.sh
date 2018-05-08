@@ -122,7 +122,7 @@ case ${BUILD_TYPE} in
     if [[ (${COMPILER} == gcc@*) ]]; then
         if [ "${CLUSTER}" == "catalyst" ]; then
             ARCH_FLAGS="-march=ivybridge -mtune=ivybridge"
-        elif [ "${CLUSTER}" == "quartz" ]; then
+        elif [ "${CLUSTER}" == "quartz"  -o "${CLUSTER}" == "pascal" ]; then
             ARCH_FLAGS="-march=broadwell -mtune=broadwell"
         elif [ "${CLUSTER}" == "surface" ]; then
             ARCH_FLAGS="-march=sandybridge -mtune=sandybridge"
@@ -132,7 +132,7 @@ case ${BUILD_TYPE} in
     elif [[ (${COMPILER} == intel@*) ]]; then
         if [ "${CLUSTER}" == "catalyst" ]; then
             ARCH_FLAGS="-march=corei7-avx -mtune=ivybridge"
-        elif [ "${CLUSTER}" == "quartz" ]; then
+        elif [ "${CLUSTER}" == "quartz"  -o "${CLUSTER}" == "pascal" ]; then
             ARCH_FLAGS="-march=core-avx2 -mtune=broadwell"
         elif [ "${CLUSTER}" == "surface" ]; then
             ARCH_FLAGS="-march=corei7-avx -mtune=sandybridge"
@@ -142,7 +142,7 @@ case ${BUILD_TYPE} in
     elif [[ ${COMPILER} == clang@* ]]; then
         if [ "${CLUSTER}" == "catalyst" -o "${CLUSTER}" == "surface" ]; then
             ARCH_FLAGS="-mavx -march=native"
-        elif [ "${CLUSTER}" == "quartz" -o "${CLUSTER}" == "flash" ]; then
+        elif [ "${CLUSTER}" == "quartz" -o "${CLUSTER}" == "flash"  -o "${CLUSTER}" == "pascal" ]; then
             ARCH_FLAGS="-mavx2 -march=native"
         fi
     fi
