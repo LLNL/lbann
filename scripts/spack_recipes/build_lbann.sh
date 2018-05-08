@@ -95,7 +95,7 @@ ARCH=`uname -m`
 
 PLATFORM=
 FEATURE=
-if [ "${GPU}" == "1" -o "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" ]; then
+if [ "${GPU}" == "1" -o "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" -o "${CLUSTER}" == "pascal" ]; then
   if [ "${CLUSTER}" == "flash" ]; then
     PLATFORM="+gpu ^cuda@7.5 ^cudnn@5.1"
     FEATURE="_gpu_cuda-7.5_cudnn-5.1"
@@ -122,7 +122,7 @@ case ${BUILD_TYPE} in
     if [[ (${COMPILER} == gcc@*) ]]; then
         if [ "${CLUSTER}" == "catalyst" ]; then
             ARCH_FLAGS="-march=ivybridge -mtune=ivybridge"
-        elif [ "${CLUSTER}" == "quartz" ]; then
+        elif [ "${CLUSTER}" == "quartz"  -o "${CLUSTER}" == "pascal" ]; then
             ARCH_FLAGS="-march=broadwell -mtune=broadwell"
         elif [ "${CLUSTER}" == "surface" ]; then
             ARCH_FLAGS="-march=sandybridge -mtune=sandybridge"
@@ -132,7 +132,7 @@ case ${BUILD_TYPE} in
     elif [[ (${COMPILER} == intel@*) ]]; then
         if [ "${CLUSTER}" == "catalyst" ]; then
             ARCH_FLAGS="-march=corei7-avx -mtune=ivybridge"
-        elif [ "${CLUSTER}" == "quartz" ]; then
+        elif [ "${CLUSTER}" == "quartz"  -o "${CLUSTER}" == "pascal" ]; then
             ARCH_FLAGS="-march=core-avx2 -mtune=broadwell"
         elif [ "${CLUSTER}" == "surface" ]; then
             ARCH_FLAGS="-march=corei7-avx -mtune=sandybridge"
@@ -142,7 +142,7 @@ case ${BUILD_TYPE} in
     elif [[ ${COMPILER} == clang@* ]]; then
         if [ "${CLUSTER}" == "catalyst" -o "${CLUSTER}" == "surface" ]; then
             ARCH_FLAGS="-mavx -march=native"
-        elif [ "${CLUSTER}" == "quartz" -o "${CLUSTER}" == "flash" ]; then
+        elif [ "${CLUSTER}" == "quartz" -o "${CLUSTER}" == "flash"  -o "${CLUSTER}" == "pascal" ]; then
             ARCH_FLAGS="-mavx2 -march=native"
         fi
     fi
@@ -234,6 +234,6 @@ if [ ! -z ${PATH_TO_SRC} -a -d ${PATH_TO_SRC}/src ]; then
 fi
 
 # Deal with the fact that spack should not install a package when doing setup"
-FIX="spack uninstall -y lbann %${COMPILER}"
+FIX="spack uninstall -y lbann %${COMPILER} build_type=${BUILD_TYPE}"
 echo $FIX
 eval $FIX
