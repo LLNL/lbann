@@ -326,7 +326,7 @@ if (LBANN_HAS_ALUMINUM)
 endif ()
 
 if (LBANN_HAS_CONDUIT)
-  target_link_libraries(lbann PUBLIC ${CONDUIT_LIBRARIES})
+  target_link_libraries(lbann PUBLIC CONDUIT::CONDUIT)
 endif ()
 
 #== FIXME HERE DOWN ==

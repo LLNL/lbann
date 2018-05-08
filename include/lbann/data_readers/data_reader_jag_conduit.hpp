@@ -27,6 +27,8 @@
 #ifndef _DATA_READER_JAG_CONDUIT_HPP_
 #define _DATA_READER_JAG_CONDUIT_HPP_
 
+#include "lbann_config.hpp" // may define LBANN_HAS_CONDUIT
+
 #ifdef LBANN_HAS_CONDUIT
 #include "lbann/data_readers/opencv.hpp"
 #include "data_reader.hpp"
@@ -45,12 +47,13 @@ class data_reader_jag_conduit : public generic_data_reader {
   using input_t = double; ///< jag input parameter type
 
   /**
-   * Mode of modeling.
-   * - Inverse: image to input param
-   * - AutoI: image to image
-   * - AutoS: scalar to scalar  
+   * Dependent/indepdendent variable types
+   * - JAG_Image: simulation output images
+   * - JAG_Scalar: simulation output scalars
+   * - JAG_Input: simulation input parameters
+   * - Undefined: the default
    */
-  enum model_mode_t {Inverse, AutoI, AutoS};
+  enum variable_t {JAG_Image, JAG_Scalar, JAG_Input, Undefined};
 
   data_reader_jag_conduit(bool shuffle = true);
   data_reader_jag_conduit(const data_reader_jag_conduit&) = default;
@@ -62,8 +65,15 @@ class data_reader_jag_conduit : public generic_data_reader {
     return "data_reader_jag_conduit";
   }
 
-  /// Set the modeling mode: Inverse, AutoI, or AutoS
-  void set_model_mode(const model_mode_t mm);
+  /// Choose which data to use for independent variable
+  void set_independent_variable_type(const variable_t independent);
+  /// Choose which data to use for dependent variable
+  void set_dependent_variable_type(const variable_t dependent);
+
+  /// Tell which data to use for independent variable
+  variable_t get_independent_variable_type() const;
+  /// Tell which data to use for dependent variable
+  variable_t get_dependent_variable_type() const;
 
   /// Set the image dimension
   void set_image_dims(const int width, const int height);
@@ -164,8 +174,10 @@ class data_reader_jag_conduit : public generic_data_reader {
   std::vector< std::pair<size_t, const ch_t*> > get_image_ptrs(const size_t i) const;
 
  protected:
-  /// The current mode of modeling
-  model_mode_t m_model_mode;
+  /// independent variable type
+  variable_t m_independent;
+  /// dependent variable type
+  variable_t m_dependent;
 
   /// The linearized size of an image
   size_t m_linearized_image_size;
@@ -174,9 +186,9 @@ class data_reader_jag_conduit : public generic_data_reader {
   int m_image_width; ///< image width
   int m_image_height; ///< image height
 
-  /// keys to select a set of scalar simulation outputs to use
+  /// Keys to select a set of scalar simulation outputs to use. By default, use all.
   std::vector<std::string> m_scalar_keys;
-  /// keys to select a set of simulation input parameters to use
+  /// Keys to select a set of simulation input parameters to use. By default, use all.
   std::vector<std::string> m_input_keys;
 
   /// Whether data have been loaded
