@@ -38,7 +38,7 @@ def get_command(cluster, executable, num_nodes=None, partition=None,
             raise Exception('Executable does not exist: %s' % executable)
 
     # Determine scheduler
-    if cluster in ['catalyst', 'surface']:
+    if cluster in ['catalyst', 'pascal', 'quartz', 'surface']:
         scheduler = 'slurm'
     elif cluster == 'ray':
         scheduler = 'lsf'
