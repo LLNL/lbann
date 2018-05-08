@@ -61,11 +61,6 @@ class data_store_csv : public generic_data_store {
 
   void setup() override;
 
-  // set shuffled indices without calling exchange_data
-  void set_shuffled_indices(const std::vector<int> *indices) override {
-    m_shuffled_indices = indices;
-  }
-
 protected :
 
   friend data_store_merge_features;

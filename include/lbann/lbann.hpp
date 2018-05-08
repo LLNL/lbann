@@ -74,6 +74,7 @@
 #include "lbann/layers/transform/dummy.hpp"
 #include "lbann/layers/transform/safe_inv.hpp"
 #include "lbann/layers/transform/hadamard.hpp"
+#include "lbann/layers/transform/zero.hpp"
 #include "lbann/layers/transform/reduction.hpp"
 #include "lbann/layers/transform/evaluation.hpp"
 #include "lbann/layers/transform/gaussian.hpp"
@@ -105,6 +106,7 @@
 #include "lbann/data_readers/data_reader_triplet.hpp"
 #include "lbann/data_readers/data_reader_synthetic.hpp"
 #include "lbann/data_readers/data_reader_jag.hpp"
+#include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/data_readers/data_reader_nci.hpp"
 #include "lbann/data_readers/data_reader_numpy.hpp"
 #include "lbann/data_readers/data_reader_csv.hpp"
@@ -178,6 +180,7 @@
 #include "lbann/objective_functions/layer_term.hpp"
 
 /// Metrics
+#include "lbann/metrics/layer_metric.hpp"
 #include "lbann/metrics/categorical_accuracy.hpp"
 #include "lbann/metrics/top_k_categorical_accuracy.hpp"
 #include "lbann/metrics/mean_squared_error.hpp"

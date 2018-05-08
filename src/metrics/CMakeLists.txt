@@ -1,5 +1,6 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
+  layer_metric.cpp
   categorical_accuracy.cpp
   mean_absolute_deviation.cpp
   mean_squared_error.cpp

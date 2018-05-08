@@ -29,6 +29,7 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/data_readers/data_reader.hpp"
 #include "lbann/utils/timer.hpp"
+#include "lbann/utils/options.hpp"
 
 namespace lbann {
 
@@ -48,33 +49,34 @@ void data_store_image::setup() {
   } 
   
   else {
-    if (m_master) std::cerr << "calling get_minibatch_index_vector\n";
+    if (m_master) std::cerr << "data_store_image - calling get_minibatch_index_vector\n";
     get_minibatch_index_vector();
 
-    if (m_master) std::cerr << "calling exchange_mb_indices\n";
+    if (m_master) std::cerr << "data_store_image - calling exchange_mb_indices\n";
     exchange_mb_indices();
 
-    if (m_master) std::cerr << "calling get_my_datastore_indices\n";
+    if (m_master) std::cerr << "data_store_image - calling get_my_datastore_indices\n";
     get_my_datastore_indices();
 
-    if (m_master) std::cerr << "calling get_file_sizes\n";
+    if (m_master) std::cerr << "data_store_image - calling get_file_sizes\n";
     double tma = get_time();
     get_file_sizes();
-    if (m_master) std::cerr << "get_file_sizes time: " << get_time() - tma << "\n";
+    size_t num_bytes = get_global_num_file_bytes();
+    if (m_master) std::cerr << "data_store_image - get_file_sizes time: " << get_time() - tma << " global num files: " << m_file_sizes.size() << " data set size: " << ((double)num_bytes/1000000) << " MB\n";
 
-    if (m_master) std::cerr << "calling allocate_memory\n";
-    allocate_memory();
+    if (m_master) std::cerr << "data_store_image - calling report_memory_constrains\n";
+    report_memory_constraints();
 
-    if (m_master) std::cerr << "calling read_files\n";
+    if (m_master) std::cerr << "data_store_image - calling read_files\n";
     tma = get_time();
     read_files();
     if (m_master) std::cerr << "read_files time: " << get_time() - tma << "\n";
 
-    if (m_master) std::cerr << "calling exchange_data\n";
+    if (m_master) std::cerr << "data_store_image - calling exchange_data\n";
     exchange_data();
 
     if (m_extended_testing) {
-      if (m_master) std::cerr << "calling extended_testing\n";
+      if (m_master) std::cerr << "data_store_image - calling extended_testing\n";
       extended_testing();
     }
   }
@@ -93,16 +95,6 @@ void data_store_image::get_data_buf(int data_id, std::vector<unsigned char> *&bu
   }
 
   buf = &m_my_minibatch_data[index];
-}
-
-void data_store_image::allocate_memory() {
-  size_t m = 0;
-  for (auto t : m_my_datastore_indices) {
-    for (size_t i=0; i<m_num_img_srcs; i++) {
-      m += m_file_sizes[t*m_num_img_srcs+i];
-    }    
-  }    
-  m_data.resize(m);
 }
 
 void data_store_image::load_file(const std::string &dir, const std::string &fn, unsigned char *p, size_t sz) {
@@ -132,7 +124,7 @@ void data_store_image::load_file(const std::string &dir, const std::string &fn, 
 }
 
 void data_store_image::exchange_data() {
-  if (m_master) std::cerr << "starting exchange_data\n";
+  double tm1 = get_time();
   std::stringstream err;
 
   //build map: proc -> global indices that proc needs for this epoch, and
@@ -148,11 +140,9 @@ void data_store_image::exchange_data() {
   }
 
   //start sends
-  std::vector<std::vector<MPI_Request>> send_req(m_np);
-  std::vector<std::vector<MPI_Status>> send_status(m_np);
+  std::vector<std::vector<El::mpi::Request<unsigned char>>> send_req(m_np);
   for (int p=0; p<m_np; p++) {
     send_req[p].resize(proc_to_indices[p].size()*m_num_img_srcs);
-    send_status[p].resize(proc_to_indices[p].size()*m_num_img_srcs);
     size_t jj = 0;
     for (auto idx : proc_to_indices[p]) {
       for (size_t k=0; k<m_num_img_srcs; k++) {
@@ -162,19 +152,15 @@ void data_store_image::exchange_data() {
               << " m_file_sizes.find(" << index << ") failed";
           throw lbann_exception(err.str());
         }
-        if (m_offsets.find(index) == m_offsets.end()) {
-          err << __FILE__ << " " << __LINE__ << " :: "
-              << " m_offets.find(" << index << ") failed";
-          throw lbann_exception(err.str());
-        }
         int len = m_file_sizes[index];
-        size_t offset = m_offsets[index];
-        MPI_Isend(m_data.data()+offset, len, MPI_BYTE, p, index, m_mpi_comm, &(send_req[p][jj++]));
+        m_comm->nb_tagged_send<unsigned char>(
+            m_data[index].data(), len, p, index, 
+            send_req[p][jj++], m_comm->get_model_comm());
+
       }
     }
     if (jj != send_req[p].size()) throw lbann_exception("ERROR 1");
   } //start sends
-
 
   //build map: proc -> global indices that proc owns that I need
   proc_to_indices.clear();
@@ -187,14 +173,12 @@ void data_store_image::exchange_data() {
   
   //start recvs
   m_my_minibatch_data.clear();
-  std::vector<std::vector<MPI_Request>> recv_req(m_np);
-  std::vector<std::vector<MPI_Status>> recv_status(m_np);
+  std::vector<std::vector<El::mpi::Request<unsigned char>>> recv_req(m_np);
   for (auto t : proc_to_indices) {
     int owner = t.first;
     size_t jj = 0;
     const std::unordered_set<int> &s = t.second;
     recv_req[owner].resize(s.size()*m_num_img_srcs);
-    recv_status[owner].resize(s.size()*m_num_img_srcs);
     for (auto idx : s) {
       for (size_t k=0; k<m_num_img_srcs; k++) {
         size_t index = idx*m_num_img_srcs+k;
@@ -206,58 +190,176 @@ void data_store_image::exchange_data() {
         }
         size_t len = m_file_sizes[index];
         m_my_minibatch_data[index].resize(len);
-        MPI_Irecv(m_my_minibatch_data[index].data(), len, MPI_BYTE, owner, index, m_mpi_comm, &(recv_req[owner][jj++]));
+        m_comm->nb_tagged_recv<unsigned char>(
+            m_my_minibatch_data[index].data(), len, owner, 
+            index, recv_req[owner][jj++], m_comm->get_model_comm());
       }
     }
   }
 
   //wait for sends to finish
   for (size_t i=0; i<send_req.size(); i++) {
-    MPI_Waitall(send_req[i].size(), send_req[i].data(), send_status[i].data());
+    m_comm->wait_all<unsigned char>(send_req[i]);
   }
 
   //wait for recvs to finish
   for (size_t i=0; i<recv_req.size(); i++) {
-    MPI_Waitall(recv_req[i].size(), recv_req[i].data(), recv_status[i].data());
+    m_comm->wait_all<unsigned char>(recv_req[i]);
+  }
+
+  if (m_master) {
+    std::cerr << "role: " << m_reader->get_role() 
+              << "; time for exchange_data: " << get_time() - tm1 << "\n";
   }
 }
 
 
-void data_store_image::exchange_file_sizes(std::vector<Triple> &my_file_sizes, int num_global_indices) {
-  std::vector<int> num_bytes(m_np);
-  int bytes = my_file_sizes.size()*sizeof(Triple);
-  MPI_Allgather(&bytes, 1, MPI_INT,
-                 num_bytes.data(), 1, MPI_INT,
-                 m_mpi_comm);
+void data_store_image::exchange_file_sizes(
+  std::vector<int> &my_global_indices,
+  std::vector<int> &my_num_bytes,
+  int num_global_indices) {
+
+  std::vector<int> rcv_counts(m_np);
+  int nbytes = my_global_indices.size();
+  m_comm->model_all_gather<int>(nbytes, rcv_counts);
 
   std::vector<int> disp(m_num_readers); 
   disp[0] = 0;
   for (int h=1; h<(int)m_num_readers; h++) {
-    disp[h] = disp[h-1] + num_bytes[h-1];
+    disp[h] = disp[h-1] + rcv_counts[h-1];
   }
-  std::vector<Triple> global_file_sizes(num_global_indices);
+  std::vector<int> all_global_indices(num_global_indices);
+  std::vector<int> all_num_bytes(num_global_indices);
 
-  //@todo: couldn't get m_comm->model_gatherv to work
-  //m_comm->model_gatherv(&my_file_sizes[0], my_file_sizes.size(), 
-   //                     &global_file_sizes[0], &num_images[0], &disp[0]);
-  MPI_Allgatherv(my_file_sizes.data(), my_file_sizes.size()*sizeof(Triple), MPI_BYTE,
-                 global_file_sizes.data(), num_bytes.data(), disp.data(), MPI_BYTE,
-                 m_mpi_comm);
+  m_comm->all_gather<int>(my_global_indices, all_global_indices, rcv_counts, disp, m_comm->get_world_comm());
 
-  size_t j = 0;
-  for (auto t : global_file_sizes) {
-    m_file_sizes[t.global_index] = t.num_bytes;
-    m_offsets[t.global_index] = t.offset;
-    if (t.num_bytes <= 0) {
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: " 
-        << "num_bytes  <= 0 (" << t.num_bytes << ")"
-        << " for # " << j << " of " << global_file_sizes.size();
-      throw lbann_exception(err.str());
-    }
-    //m_owner_mapping[t.global_index] = t.rank;
-    ++j;
+  m_comm->all_gather<int>(my_num_bytes, all_num_bytes, rcv_counts, disp, m_comm->get_world_comm());
+
+  for (size_t j=0; j<all_global_indices.size(); j++) {
+    m_file_sizes[all_global_indices[j]] = all_num_bytes[j];
   }
 }
+
+size_t data_store_image::get_global_num_file_bytes() {
+  size_t n = get_my_num_file_bytes();
+  size_t g = 0;
+  if (m_master) {
+    g = m_comm->reduce(n, m_comm->get_world_comm());
+  } else {
+    m_comm->reduce(n, 0, m_comm->get_world_comm());
+  }
+  return g;
+}
+
+size_t data_store_image::get_my_num_file_bytes() {
+  size_t count = 0;
+  for (auto idx : m_my_datastore_indices) {
+    for (size_t i=0; i<m_num_img_srcs; i++) {
+      int index = idx*m_num_img_srcs + i;
+      if (m_file_sizes.find(index) == m_file_sizes.end()) {
+        std::stringstream err;
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << " failed to find " << idx << " in m_file_sizes; count: " << count
+            << " m_file_sizes.size(): " << m_file_sizes.size();
+        throw lbann_exception(err.str());
+      }  
+      count += m_file_sizes[index];
+    }
+  }
+  return count;
+}
+
+size_t data_store_image::get_available_memory() {
+  std::ifstream in("/proc/meminfo");
+  std::string line;
+  size_t size;
+  bool found = false;
+  std::string name;
+  std::string units;
+  while (! in.eof()) {
+    getline(in, line);
+    std::stringstream s(line);
+    s >> name >> size >> units;
+    if (name.find("MemFree") != std::string::npos) {
+      found = true;
+      break;
+    }
+  }
+  in.close();
+
+  if (!found) {
+    if (m_master) {
+      std::cerr <<
+        "\nWARNING: data_store_image::get_available_memory failed\n"
+        "failed to find 'MemFree in /proc/meminfo\n"
+        "therefore we cannot advise whether you have enough resources\n"
+        "to contain all data files in memory\n"; 
+    }
+    return 0;
+  }
+  return size;
+}
+
+
+//note: this could be done on P_0 with no communication,
+//      but it's a cheap operation, so I'm coding it the
+//      easy way
+void data_store_image::report_memory_constraints() {
+  size_t count = get_my_num_file_bytes();
+
+  std::vector<long long> counts(m_np);
+  if (m_master) {
+    m_comm->gather<long long>(count, counts.data(), m_comm->get_world_comm());
+  } else {
+    m_comm->gather<long long>(count, 0, m_comm->get_world_comm());
+  }
+
+  double global = get_global_num_file_bytes()/1000000;
+
+  if (!m_master) { 
+    return; 
+  }
+
+  /// determine the amount of memory required for files for all
+  /// processors on this node
+  double required = 0;
+  for (int p=0; p<m_np; p++) {
+    if (m_comm->is_rank_node_local(p, m_comm->get_world_comm())) {
+      required += counts[p];
+    }
+  }
+  required /= 1000000;
+
+  double available = get_available_memory();
+  if (available == 0) {
+    std::cerr << required << " kB of memory are required for files on this node\n";
+    return;
+  }
+  available /= 1000;
+
+  double percent = required / available * 100.0;
+  std::cerr << "\n"
+            << "===============================================\n"
+            << "Memory Constraints for: " << m_reader->get_role() << "\n" 
+            << "Global data set size:               " << global << " MB\n"
+            << "Required for data set on this node: " << required << " MB\n"
+            << "Available memory on this node: "      << available << " MB\n"
+            << "Required is " << percent << " % of Available\n"
+            << "===============================================\n\n";
+
+  double limit = 0.8;
+  if (options::get()->has_float("mem_limit")) {
+    limit = options::get()->get_float("mem_limit");
+  }
+  if (required > limit*available) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "You have insufficient memory to hold all required files;\n"
+        << "required is > 80% of available\n"
+        << "quitting now, so you don't waste your time\n";
+  }
+}
+
+
 
 }  // namespace lbann

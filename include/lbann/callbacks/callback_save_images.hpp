@@ -44,12 +44,14 @@ class lbann_callback_save_images : public lbann_callback {
   /**
    * @param data reader type e.g., imagenet, mnist, cifar10....
    * @param image_dir directory to save image
+   * @param layer_names list of layers from which to save images 
    * @param image extension e.g., jpg, png, pgm......
    */
   lbann_callback_save_images(generic_data_reader *reader, std::string image_dir,
+                             std::vector<std::string> layer_names,
                              std::string extension="jpg") :
     lbann_callback(), m_image_dir(std::move(image_dir)), m_extension(std::move(extension)),
-    m_reader(reader) {}
+    m_reader(reader), m_layer_names(layer_names) {}
   lbann_callback_save_images(const lbann_callback_save_images&) = default;
   lbann_callback_save_images& operator=(
     const lbann_callback_save_images&) = default;
@@ -61,10 +63,12 @@ class lbann_callback_save_images : public lbann_callback {
   void on_test_end(model *m) override;
   std::string name() const override { return "save images"; }
  private:
-  std::string m_image_dir; //directory to save image
+  std::string m_image_dir; //directory to save images
   std::string m_extension; //image extension; pgm, jpg, png etc
   generic_data_reader *m_reader;
-  void save_image(model& m, AbsDistMat& input, AbsDistMat& output, std::string tag);
+  /** List of layers at which to save images*/
+  std::vector<std::string> m_layer_names;
+  void save_image(model& m, std::string tag);
 };
 
 }  // namespace lbann

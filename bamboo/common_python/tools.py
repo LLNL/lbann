@@ -18,7 +18,7 @@ def get_command(cluster, executable, num_nodes=None, partition=None,
                 model_folder=None, model_name=None, model_path=None,
                 num_epochs=None, optimizer_name=None, optimizer_path=None,
                 processes_per_model=None, output_file_name=None,
-                error_file_name=None, return_tuple=False):
+                error_file_name=None, return_tuple=False, check_executable_existance=True):
     # Check parameters for black-listed characters like semi-colons that
     # would terminate the command and allow for an extra command
     blacklist = [';', '--']
@@ -31,8 +31,14 @@ def get_command(cluster, executable, num_nodes=None, partition=None,
     if invalid_character_errors != []:
         raise Exception('Invalid character(s): %s' % ' , '.join(invalid_character_errors))
 
+    # Check executable existance
+    if check_executable_existance:
+        executable_exists = os.path.exists(executable)
+        if not executable_exists:
+            raise Exception('Executable does not exist: %s' % executable)
+
     # Determine scheduler
-    if cluster in ['catalyst', 'surface']:
+    if cluster in ['catalyst', 'pascal', 'quartz', 'surface']:
         scheduler = 'slurm'
     elif cluster == 'ray':
         scheduler = 'lsf'
@@ -118,6 +124,10 @@ def get_command(cluster, executable, num_nodes=None, partition=None,
                 # q => Submits the job to one of the specified queues.
                 option_partition = ' -q %s' % partition
             if time_limit != None:
+                if cluster == 'ray':
+                    max_ray_time = 480
+                    if time_limit > max_ray_time:
+                        time_limit = max_ray_time
                 # W => Sets the runtime limit of the job.
                 option_time_limit = ' -W %d' % time_limit
             command_allocate = '%s%s%s%s%s%s%s%s' % (

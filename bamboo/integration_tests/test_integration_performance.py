@@ -1,5 +1,5 @@
 import pytest
-import os
+import operator, os
 import common_code
 
 def error_if(f, f_symbol, data_field, actual_values, expected_values, model_name, errors, all_values, frequency_str):
@@ -34,8 +34,8 @@ def run_tests(actual_performance, model_name, dir_name, should_log, compiler_nam
   expected_performance = common_code.csv_to_dict('%s/bamboo/integration_tests/expected_values/%s/%s/expected_performance.csv' % (dir_name, cluster, compiler_name))
   errors = []
   all_values = []
-  greater_than = lambda x,y: x > y
-  less_than = lambda x,y: x < y
+  greater_than = operator.gt
+  less_than = operator.lt
   max_run_time = error_if(greater_than, '>', 'training_run_time', actual_performance, expected_performance, model_name, errors, all_values, frequency_str)
   max_mean = error_if(greater_than, '>', 'training_mean', actual_performance, expected_performance, model_name, errors, all_values, frequency_str)
   max_max = error_if(greater_than, '>', 'training_max', actual_performance, expected_performance, model_name, errors, all_values, frequency_str)
@@ -115,7 +115,7 @@ def skeleton_performance_cache_alexnet(cluster, dir_name, executables, weekly, c
     pytest.skip('Ray is unsupported for skeleton_performance_cache_alexnet')
   else:
     raise Exception('Unsupported Cluster %s' % cluster)
-  common_code.run_lbann(command, model_name, output_file_name, error_file_name, should_log)
+  common_code.run_lbann(command, model_name, output_file_name, error_file_name, should_log) # Don't need return value
   actual_performance = common_code.extract_data(output_file_name, DATA_FIELDS, should_log)
   run_tests(actual_performance, model_name, dirname, should_log, compiler_name, cluster)
 
