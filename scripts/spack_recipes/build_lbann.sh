@@ -179,12 +179,16 @@ if [ "${SPACK_DIRTY}" == "1" ]; then
   SPACK_SETUP_FLAGS="--dirty"
 fi
 
+if [ "${CLUSTER}" == "ray" ]; then
+  MPI="spectrum-mpi@2018.04.27"
+fi
+
 SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ^elemental@${EL_VER} blas=${BLAS} ^${MPI}"
 # Disable the extra compiler flags until spack supports propagating flags properly
 #SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ${SPACK_CFLAGS} ${SPACK_CXXFLAGS} ${SPACK_FFLAGS} ^elemental@${EL_VER} blas=${BLAS} ^${MPI}"
 
 if [ "${CLUSTER}" == "ray" ]; then
-  SPACK_OPTIONS="$SPACK_OPTIONS ^cuda@8.0 ^cudnn@5.1 ^cmake@3.9.0"
+  SPACK_OPTIONS="$SPACK_OPTIONS ^cuda@9.0.176 ^cudnn@7.0 ^cmake@3.9.0"
 fi
 
 SPEC="spack spec ${SPACK_OPTIONS}"
