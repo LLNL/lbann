@@ -134,7 +134,7 @@ void greedy_layerwise_autoencoder::setup_layer_topology() {
 
 }
 
-void greedy_layerwise_autoencoder::train(int num_epochs) {
+void greedy_layerwise_autoencoder::train(int num_epochs,int num_batches) {
   do_train_begin_cbs();
 
   // Train each autoencoder phase on several epochs

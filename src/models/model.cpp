@@ -246,6 +246,18 @@ void model::replace_weights(std::vector<weights*>& new_weights) {
 
 }
 
+void model::replace_weights_by_name(std::vector<weights*>& new_weights) {
+  if (new_weights.empty()) {
+    throw lbann_exception("Model::replace_weights_by name failed : because new_weight vector is empty.");
+  }
+  for(size_t i = 0; i < new_weights.size(); ++i) {
+     for (size_t j = 0; j < m_weights.size(); ++j) {
+       if(m_weights[j]->get_name() == new_weights[i]->get_name())
+         m_weights[j]->set_values(new_weights[i]->get_values());
+     }
+   }
+}
+
 optimizer* model::create_optimizer() const {
   if (m_default_optimizer != nullptr) {
     return m_default_optimizer->copy();
@@ -676,7 +688,7 @@ void model::collect_indices(execution_mode mode) {
 }
 
 
-void model::train(int num_epochs) {
+void model::train(int num_epochs, int num_batches) {
   do_train_begin_cbs();
   for (int epoch = m_current_epoch; epoch < num_epochs; ++epoch) {
 
@@ -688,7 +700,7 @@ void model::train(int num_epochs) {
 
     // Train on mini-batches
     do_epoch_begin_cbs();
-    while (!train_mini_batch()) {}
+    while (!train_mini_batch(num_batches)) {}
     // Once the epoch is complete, Increase the count
     ++m_current_epoch;
     do_epoch_end_cbs();
@@ -741,7 +753,7 @@ bool model::evaluate_mini_batch(execution_mode mode) {
   return finished;
 }
 
-bool model::train_mini_batch() {
+bool model::train_mini_batch(int num_batches) {
   reset_mode_and_model(execution_mode::training);
   do_batch_begin_cbs(execution_mode::training);
 
@@ -772,6 +784,8 @@ bool model::train_mini_batch() {
 
   ++m_current_step;
   do_batch_end_cbs(execution_mode::training);
+  if(num_batches && m_current_step % num_batches == 0) return true; 
+
   return finished;
 }
 

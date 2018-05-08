@@ -116,6 +116,10 @@ class model {
   /** Replace the model's weights. */
   void replace_weights(std::vector<weights *>& w);
 
+  /** Replace the model's weights values using weights name. 
+ *  Only weight values are placed, pointers and layer structure are in place*/
+  void replace_weights_by_name(std::vector<weights *>& w);
+
   /** Return the model's weights. */
   const std::vector<weights *>& get_weights() const { return m_weights; }
 
@@ -197,7 +201,7 @@ class model {
   }
 
   /** Train model. */
-  virtual void train(int num_epochs);
+  virtual void train(int num_epochs, int num_batches=0);
   /** Evaluate model. */
   virtual void evaluate(execution_mode mode);
 
@@ -323,7 +327,7 @@ class model {
   /** Evaluate model on a mini-batch */
   virtual bool evaluate_mini_batch(execution_mode mode);
   /** Train model on a mini-batch. */
-  virtual bool train_mini_batch();
+  virtual bool train_mini_batch(int num_batches=0);
 
   /** Forward propagation step. */
   virtual void forward_prop(execution_mode mode);
