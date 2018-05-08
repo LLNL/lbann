@@ -31,7 +31,7 @@ else
   MPI=mvapich2
 fi
 VARIANTS=
-GPU=0 # ignored for surface, ray, sierra
+GPU=0 # usually ignored
 
 #Help function
 function HELP {
@@ -106,9 +106,9 @@ if [ "${GPU}" == "1" -o "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" -o "$
   if [ "${CLUSTER}" == "flash" ]; then
     PLATFORM="+gpu ^cuda@7.5 ^cudnn@5.1"
     FEATURE="_gpu_cuda-7.5_cudnn-5.1"
-  elif [ "${CLUSTER}" == "sierra" ]; then
-    PLATFORM="+gpu ^cuda@9.1.76 ^cudnn@7.0"
-    FEATURE="_gpu_cuda-9.1.76_cudnn-7.0"
+  elif [ "${CLUSTER}" == "sierra" -o "${CLUSTER}" == "ray" ]; then
+    PLATFORM="+gpu ^cuda@9.2.64 ^cudnn@7.0"
+    FEATURE="_gpu_cuda-9.2.64_cudnn-7.0"
   else
     PLATFORM="+gpu"
     FEATURE="_gpu"
@@ -193,14 +193,12 @@ if [ "${CLUSTER}" == "ray" ]; then
   MPI="spectrum-mpi@2018.04.27"
 fi
 
-SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ^elemental@${EL_VER} blas=${BLAS} ^${MPI}"
+SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ^elemental@${EL_VER} build_type=${BUILD_TYPE} blas=${BLAS} ^${MPI}"
 # Disable the extra compiler flags until spack supports propagating flags properly
 #SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ${SPACK_CFLAGS} ${SPACK_CXXFLAGS} ${SPACK_FFLAGS} ^elemental@${EL_VER} blas=${BLAS} ^${MPI}"
 
-if [ "${CLUSTER}" == "ray" ]; then
-  SPACK_OPTIONS="$SPACK_OPTIONS ^cuda@9.0.176 ^cudnn@7.0 ^cmake@3.9.0"
-fi
-if [ "${CLUSTER}" == "sierra" ]; then
+# Use older cmake to avoid passing -pthread to nvcc
+if [ "${CLUSTER}" == "ray" -o "${CLUSTER}" == "sierra" ]; then
   SPACK_OPTIONS="$SPACK_OPTIONS ^cmake@3.9.0"
 fi
 
