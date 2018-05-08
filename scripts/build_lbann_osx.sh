@@ -26,7 +26,6 @@ brew_check_install cmake
 brew_check_install llvm       # Require OpenMP support in clang
 brew_check_install gcc49      # gfortran-4.9 is compatible with clang
 brew_check_install open-mpi
-brew_check_install opencv
 brew_check_install doxygen
 brew_check_install graphviz   # Doxygen dependency
 brew_check_install metis      # Elemental dependency
@@ -38,6 +37,7 @@ brew_check_install scalapack  # Elemental dependency
 
 # Parameters
 COMPILER=clang
+COMPILER_ROOT=/usr/local/opt/llvm
 C_COMPILER=/usr/local/opt/llvm/bin/clang
 CXX_COMPILER=/usr/local/opt/llvm/bin/clang++
 Fortran_COMPILER=/usr/local/bin/gfortran-4.9
