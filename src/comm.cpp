@@ -1133,4 +1133,8 @@ uint8_t *lbann_comm::get_collective_buffer(size_t size, size_t idx) {
 }
 #endif
 
+void lbann_comm::lbann_comm_abort(std::string msg) {
+  throw lbann_exception(msg);
+}
+
 }  // namespace lbann
