@@ -37,11 +37,8 @@ from connection import Server
 #  * removed debug print()s
 #  * removed all customization except molecular_nbrs
 #  * TODO make this able to take directory information
-
 import helper
 import numpy as np
-
-
 class Candle_Molecular_Datagen():
     def __init__(self):
         self.numpylist, _ = helper.get_local_files('3k_run16')
@@ -62,8 +59,7 @@ class Candle_Molecular_Datagen():
             # normalizing the location coordinates and bond lengths and scale type encoding
             # Changed the xyz normalization from 255 to 350
             Xnorm = np.concatenate([X[:, :, :, 0:3] / 320., X[:, :, :, 3:8],
-                                    X[:, :, :, 8:] / 10.],
-                                   axis=3)
+                                    X[:, :, :, 8:] / 10.], axis=3)
 
             num_frames = X.shape[0]
             input_feature_dim = np.prod(Xnorm.shape[2:])
@@ -84,28 +80,28 @@ class Candle_Molecular_Datagen():
                     xt_all = np.expand_dims(xt, axis=0)
                     yt_all = np.expand_dims(yt, axis=0)
                 else:
-                    xt_all = np.append(xt_all, np.expand_dims(xt,
-                                                              axis=0),
+                    xt_all = np.append(xt_all,
+                                       np.expand_dims(xt, axis=0),
                                        axis=0)
-                    yt_all = np.append(yt_all, np.expand_dims(yt,
-                                                              axis=0),
+                    yt_all = np.append(yt_all,
+                                       np.expand_dims(yt, axis=0),
                                        axis=0)
 
             yield files[f_ind], xt_all, yt_all
-
         return
-
 
 class Pilot2DataReader(ExternalDataReader):
     def __init__(self, connection, address):
         super(Pilot2DataReader, self).__init__(connection, address)
 
-        self.data = candle_data
-
+        # TODO abstract this a little more
+        # eg take data, do samples = np.prod(shape[:-1]); data_size = shape[-1]
+        # if there's labels xor responses set that and do the same
+        # data_dims is ??
         self.params = {}
 
-        self.params["num_samples"] = self.data.shape[0] * self.data.shape[1]
-        self.params["data_size"] = self.data.shape[2]
+        self.params["num_samples"] = candle_data.shape[0] * candle_data.shape[1]
+        self.params["data_size"] = candle_data.shape[2]
         self.params["has_labels"] = False
         self.params["num_labels"] = 0
         self.params["label_size"] = 0
@@ -113,29 +109,20 @@ class Pilot2DataReader(ExternalDataReader):
         self.params["num_responses"] = 0
         self.params["response_size"] = 0
         self.params["data_dims"] = [
-            11,  #cmd.molecular_nbrs+1,
-            12,  # always 12 beads
-            19
+            11,  # cmd.molecular_nbrs + 1st bead
+            12,  # always 12 beads per
+            19   # 19 features
         ]
         self.params["reader_type"] = 'Pilot2 DataReader'
 
-    def get_data_parameters(self):
-        return self.params
-
-    def get_data(self):
-        return self.data
-
-    def get_labels(self):
-        raise NotImplementedError()
-
-    def get_responses(self):
-        raise NotImplementedError()
-
+        self.params["data"] = flattened_candle_data
+        self.params["labels"] = None
+        self.params["responses"] = None
 
 class Pilot2Server(Server):
     def __init__(self):
         super(Pilot2Server, self).__init__()
-        self.data_reader_class = Pilot2DataReader
+        self.runner = Pilot2DataReader
 
 # print('loading data')
 # candle_data = None
@@ -146,9 +133,17 @@ class Pilot2Server(Server):
 #     break
 # print('loaded data')
 
-candle_data = np.zeros((100, 3040, 2508))
+# messages are currently too large with 100 samples
+# TODO take indices and give only what's requested
+# also see if submessages will get around the size limit
+# (one per sample?)
+#candle_data = np.zeros((100, 3040, 2508))
+#candle_data[:, :, 0] = np.ones((100, 3040))
+candle_data = np.random.randn(*(1, 3040, 2508))
+candle_data[:, :, 0] = np.ones((1, 3040))
+flattened_candle_data = list(candle_data.flatten())
 
 if __name__ == '__main__':
     s = Pilot2Server()
-    print("[edr] running")
+    print("[Pilot2 ExternalDataReader] running")
     s.run()

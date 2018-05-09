@@ -4,7 +4,8 @@
 
 namespace lbann {
 
-void connection::connect(const std::string &address) {
+connection::connection(const std::string &address) {
+  m_address = address; // for copy constructor
   m_socket_fd = ::socket(AF_UNIX, SOCK_STREAM, 0);
 
   if (m_socket_fd == -1) {
@@ -21,11 +22,6 @@ void connection::connect(const std::string &address) {
   std::copy(address.begin(), address.end(),
             external_socketaddr.sun_path+1);
 
-  // volatile bool halt=true;
-  // while (halt) {}
-
-  printf("connecting\n");
-
   // sizeof(external_socketaddr) gets you the whole character buffer, but
   // the socket address is only '\0' + address, not '\0' + address + '\0'*95
   if (::connect(m_socket_fd,
@@ -36,15 +32,12 @@ void connection::connect(const std::string &address) {
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
       " external_reader::connect() - connect failed");
   }
-
-  m_connected = true;
 }
 
-void connection::disconnect() {
-  if (m_connected) {
-    ::close(m_socket_fd);
-    m_connected = false;
-  }
+connection::~connection() {
+  ::close(m_socket_fd);
+  ::free(m_read_buffer);
+  ::free(m_write_buffer);
 }
 
 void connection::recv_to_buffer(size_t data_size) {
@@ -58,10 +51,12 @@ void connection::recv_to_buffer(size_t data_size) {
   size_t offset = 0;
   while (offset < data_size) {
     ssize_t receive_size = recv(m_socket_fd, m_read_buffer + offset, data_size - offset, 0);
+//    std::cout << "recv size: " << receive_size << std::endl;
     if (receive_size <= 0) {
       throw lbann_exception(
-        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-        " external_reader::recv_to_buffer() did not receive enough data");
+        std::string{} + __FILE__ + ":" + std::to_string(__LINE__) +
+        " external_reader::recv_to_buffer() did not receive enough data\n"
+        "\texpected: " + std::to_string(data_size) + " got: " + std::to_string(offset));
     }
     offset += static_cast<size_t>(receive_size);
   }
@@ -97,7 +92,6 @@ Response connection::message_read() {
 
   Response response;
   response.ParseFromArray(m_read_buffer, response_message_size);
-
   return response;
 }
 

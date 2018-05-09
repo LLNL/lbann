@@ -1,5 +1,7 @@
-from data_reader_communication_pb2 import Request, Response
+from data_reader_communication_pb2 import Request, Response, FetchDataResponse
 from connection import Connection
+
+import time
 
 class ExternalDataReader(object):
     'External DataReader: provides data to lbann'
@@ -12,31 +14,14 @@ class ExternalDataReader(object):
 
         self.params = None
 
-        #https://github.com/keras-team/keras/blob/adc321b4d7a4e22f6bdb00b404dfe5e23d4887aa/keras/engine/training.py
-
-    def get_data_parameters(self):
-        pass
-
-    def get_data(self):
-        pass
-
-    def get_labels(self):
-        pass
-
-    def get_responses(self):
-        pass
-
     def receive_init_request(self):
         data = self.connection.recv_message()
         message = Request()
         message.ParseFromString(data)
-        if not message.has_init_request():
-            raise RuntimeError("expected init request")
+        assert (message.HasField('init_request'))
         return message.init_request
 
     def handle_init_request(self, message):
-        if self.params is None:
-            self.params = self.get_data_parameters()
         response = Response()
         response.init_response.num_samples = self.params["num_samples"]
         response.init_response.data_size = self.params["data_size"]
@@ -46,32 +31,40 @@ class ExternalDataReader(object):
         response.init_response.has_responses = self.params["has_responses"]
         response.init_response.num_responses = self.params["num_responses"]
         response.init_response.response_size = self.params["response_size"]
-        response.init_response.data_dims = self.params["data_dims"]
-        response.reader_type = self.params["reader_type"]
+        response.init_response.data_dims[:] = self.params["data_dims"]
+        response.init_response.reader_type = self.params["reader_type"]
         return response
 
     def send_init_response(self, message):
         data = message.SerializeToString()
         self.connection.send_message(data)
+        t_i = time.time()
+        # TODO this is bad. Needs to happen after __init__, but ideally before handle_data_request
+        self.fdr = FetchDataResponse(data=self.params["data"])
+        t_f = time.time()
+        print("data->fdr took {}".format(t_f-t_i))
 
     def receive_data_request(self):
         data = self.connection.recv_message()
         message = Request()
         message.ParseFromString(data)
-        if not (message.has_fetch_data_request() or
-                message.has_fetch_responses_request() or
-                message.has_fetch_labels_request()):
+        if not (message.HasField("fetch_data_request") or
+                message.HasField("fetch_responses_request") or
+                message.HasField("fetch_labels_request")):
             raise RuntimeError("expected data request")
         return message
 
     def handle_data_request(self, message):
-        response = Response()
-        if message.has_fetch_data_request():
-            response.fetch_data_response.data = self.x
-        elif message.has_fetch_labels_request():
-            response.fetch_labels_response.labels = self.y
-        elif message.has_fetch_responses_request():
-            response.fetch_responses_response.responses = self.y
+        response = None
+        if message.HasField("fetch_data_request"):
+            t_i = time.time()
+            response = Response(fetch_data_response=self.fdr) #FetchDataResponse(data=self.params["data"]))
+            t_f = time.time()
+            print('assign data took {}'.fomrat(t_f-t_i))
+        elif message.HasField("fetch_labels_request"):
+            response.fetch_labels_response.labels[:] = self.params["labels"]
+        elif message.HasField("fetch_responses_request"):
+            response.fetch_responses_response.responses[:] = self.params["responses"]
         return response
 
     def send_data_response(self, message):
@@ -85,7 +78,7 @@ class ExternalDataReader(object):
         self.send_init_response(response)
 
         while self.running:
-            # TODO add hangup request
+            # TODO add hangup request so things close cleanly
             request = self.receive_data_request()
             response = self.handle_data_request(request)
             self.send_data_response(response)

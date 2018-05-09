@@ -36,9 +36,7 @@ namespace lbann {
 
 external_reader::external_reader() {}
 
-external_reader::~external_reader() {
-  m_connection.disconnect();
-}
+external_reader::~external_reader() {}
 
 external_reader* external_reader::copy() const {
   return new external_reader(*this);
@@ -47,13 +45,15 @@ external_reader* external_reader::copy() const {
 void external_reader::load() {
   //m_connection.connect(get_file_dir() + get_data_filename());
 
-  m_connection.connect("socket_test");
+  //m_connection = std::make_unique<connection>("socket_test");
+  m_connection = std::unique_ptr<connection>(new connection("socket_test"));
 
   Request request;
-//  request.set_init_request(InitRequest());
 
-//  m_connection.message_write(request);
-  Response response = m_connection.message_read();
+  request.mutable_init_request();
+
+  m_connection->message_write(request);
+  Response response = m_connection->message_read();
 
   InitResponse init_response = response.init_response();
 
@@ -72,21 +72,46 @@ void external_reader::load() {
 
   m_reader_type = init_response.reader_type();
 
+  m_X.Resize(m_data_size, m_num_samples);
+
   // Reset indices.
   m_shuffled_indices.clear();
   m_shuffled_indices.resize(m_num_samples);
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
 
   select_subset_of_data();
+
+
+}
+
+void external_reader::load_data() {
+  Request request;
+  request.mutable_fetch_data_request();
+
+  m_connection->message_write(request);
+  Response response = m_connection->message_read();
+  auto data = response.fetch_data_response().data();
+
+  //std::cout << "m_num_samples: " << m_num_samples << std::endl;
+  //std::cout << "m_data_size: " << m_data_size << std::endl;
+  //std::cout << "protobuf size: " << response.fetch_data_response().data_size() << std::endl;
+
+  for (El::Int j = 0; j < m_num_samples; j++) {
+    for (El::Int i = 0; i < m_data_size; i++) {
+      El::Int sample = j*m_data_size + i;
+      m_X(i, j) = data[sample];
+    }
+  }
+
+  //std::cout << "wasn't here :/" << std::endl;
+
+  m_loaded = true;
 }
 
 int external_reader::fetch_data(Mat& X) {
-//  Request request;
-//  request.set_fetch_data_request(FetchDataRequest());
-
-//  m_connection.write_message(request);
-//  Response response = m_connection.read_message();
-//  auto data = response.fetch_data_response().data();
+  if (!m_loaded) {
+    load_data();
+  }
 
   if(!position_valid()) {
     throw lbann_exception(
@@ -107,13 +132,14 @@ int external_reader::fetch_data(Mat& X) {
   El::Zeros(m_indices_fetched_per_mb, mb_size, 1);
 
   for (El::Int s = 0; s < mb_size; s++) {
-    // Catch exceptions within the OpenMP thread.
-    auto view = El::View(X, s, 0, m_data_size, 1);
+    int n = m_current_pos + s;
+    int index = m_shuffled_indices[n];
+    m_indices_fetched_per_mb.Set(s, 0, index);
+
+    auto X_view   = El::View(X,   El::IR(0, m_data_size), El::IR(s, s+1));
+    auto m_X_view = El::View(m_X, El::IR(0, m_data_size), El::IR(index, index+1));
     for (El::Int j = 0; j < m_data_size; j++) {
-      int n = m_current_pos + s;
-      int index = m_shuffled_indices[n];
-      m_indices_fetched_per_mb.Set(s, 0, index);
-      view.Set(0, j, s+j);
+      X_view(j, 0) = m_X_view(j, 0);
     }
   }
 

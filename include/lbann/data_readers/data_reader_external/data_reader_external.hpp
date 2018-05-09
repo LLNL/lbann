@@ -29,6 +29,8 @@
 #ifndef LBANN_DATA_READER_EXTERNAL_HPP
 #define LBANN_DATA_READER_EXTERNAL_HPP
 
+#include <memory>
+
 #include <data_reader_communication.pb.h>
 
 #include "lbann/data_readers/data_reader_external/connection.hpp"
@@ -82,7 +84,9 @@ class external_reader : public generic_data_reader {
     }
 
   private:
-    connection m_connection;
+    void load_data();
+
+    std::unique_ptr<connection> m_connection = nullptr;
 
     int m_num_samples = 0; // total training examples
     int m_data_size = 0; // elements in a sample
@@ -98,6 +102,9 @@ class external_reader : public generic_data_reader {
     std::vector<int> m_data_dims{};
 
     std::string m_reader_type{};
+
+    Mat m_X;
+    bool m_loaded = false;
 };
 }  // namespace lbann
 
