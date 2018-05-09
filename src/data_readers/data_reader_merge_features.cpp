@@ -58,7 +58,7 @@ data_reader_merge_features& data_reader_merge_features::operator=(
 }
 
 data_reader_merge_features::~data_reader_merge_features() {
-  delete m_label_reader;
+  if(m_label_reader != nullptr) delete m_label_reader;
 }
 
 void data_reader_merge_features::load() {
@@ -80,7 +80,7 @@ void data_reader_merge_features::load() {
         "data_reader_merge_features: data readers do not have the same amount of data");
     }
   }
-  m_label_reader->load();
+  if(m_label_reader != nullptr) m_label_reader->load();
   // Reset indices.
   m_shuffled_indices.resize(num_samples);
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
