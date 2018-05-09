@@ -11,7 +11,7 @@ def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name, compiler_na
     command = tools.get_command(
         cluster=cluster, executable=exe, num_nodes=1, num_processes=2,
         dir_name=dir_name,
-        data_filedir_ray='/p/gscratchr/brainusr/datasets/MNIST',
+        data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
         data_reader_name='mnist', model_folder='tests',
         model_name='lenet_mnist_ckpt', num_epochs=2, optimizer_name='sgd')
     return_code_nockpt = os.system(command)
@@ -23,7 +23,7 @@ def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name, compiler_na
     command = tools.get_command(
         cluster=cluster, executable=exe, num_nodes=1, num_processes=2,
         dir_name=dir_name,
-        data_filedir_ray='/p/gscratchr/brainusr/datasets/MNIST',
+        data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
         data_reader_name='mnist', model_folder='tests',
         model_name='lenet_mnist_ckpt', num_epochs=1, optimizer_name='sgd')
     return_code_ckpt_1 = os.system(command)
@@ -34,7 +34,7 @@ def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name, compiler_na
     command = tools.get_command(
         cluster=cluster, executable=exe, num_nodes=1, num_processes=2,
         dir_name=dir_name,
-        data_filedir_ray='/p/gscratchr/brainusr/datasets/MNIST',
+        data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
         data_reader_name='mnist', model_folder='tests',
         model_name='lenet_mnist_ckpt', num_epochs=2, optimizer_name='sgd')
     return_code_ckpt_2 = os.system(command)
@@ -53,7 +53,7 @@ def skeleton_checkpoint_lenet_dist(cluster, executables, dir_name, compiler_name
      command = tools.get_command(
          cluster=cluster, executable=exe, num_nodes=1, num_processes=2,
          dir_name=dir_name,
-         data_filedir_ray='/p/gscratchr/brainusr/datasets/MNIST',
+         data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
          data_reader_name='mnist', model_folder='tests',
          model_name='lenet_mnist_ckpt_dist', num_epochs=2, optimizer_name='sgd')
      return_code_nockpt = os.system(command)
@@ -65,7 +65,7 @@ def skeleton_checkpoint_lenet_dist(cluster, executables, dir_name, compiler_name
      command = tools.get_command(
          cluster=cluster, executable=exe, num_nodes=1, num_processes=2,
          dir_name=dir_name,
-         data_filedir_ray='/p/gscratchr/brainusr/datasets/MNIST',
+         data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
          data_reader_name='mnist', model_folder='tests',
          model_name='lenet_mnist_ckpt_dist', num_epochs=1, optimizer_name='sgd')
      return_code_ckpt_1 = os.system(command)
@@ -76,7 +76,7 @@ def skeleton_checkpoint_lenet_dist(cluster, executables, dir_name, compiler_name
      command = tools.get_command(
          cluster=cluster, executable=exe, num_nodes=1, num_processes=2,
          dir_name=dir_name,
-         data_filedir_ray='/p/gscratchr/brainusr/datasets/MNIST',
+         data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
          data_reader_name='mnist', model_folder='tests',
          model_name='lenet_mnist_ckpt_dist', num_epochs=2, optimizer_name='sgd')
      return_code_ckpt_2 = os.system(command)
