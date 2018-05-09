@@ -44,13 +44,15 @@ class data_reader_jag : public generic_data_reader {
   using data_t = double;
   using scalar_t = double;
   using input_t = double;
+
   /**
-   * Mode of modeling.
-   * - Inverse: image to input param
-   * - AutoI: image to image
-   * - AutoS: scalar to scalar
+   * Dependent/indepdendent variable types
+   * - JAG_Image: simulation output images
+   * - JAG_Scalar: simulation output scalars
+   * - JAG_Input: simulation input parameters
+   * - Undefined: the default
    */
-  enum model_mode_t {Inverse, AutoI, AutoS};
+  enum variable_t {JAG_Image, JAG_Scalar, JAG_Input, Undefined};
 
   data_reader_jag(bool shuffle = true);
   // TODO: copy constructor and assignment operator for deep-copying if needed
@@ -64,8 +66,15 @@ class data_reader_jag : public generic_data_reader {
     return "data_reader_jag";
   }
 
-  /// Set the modeling mode: Inverse, AutoI, or AutoS
-  void set_model_mode(const model_mode_t mm);
+  /// Choose which data to use for independent variable
+  void set_independent_variable_type(const variable_t independent);
+  /// Choose which data to use for dependent variable
+  void set_dependent_variable_type(const variable_t dependent);
+
+  /// Tell which data to use for independent variable
+  variable_t get_independent_variable_type() const;
+  /// Tell which data to use for dependent variable
+  variable_t get_dependent_variable_type() const;
 
   /// Set normalization mode: 0 = none, 1 = dataset-wise, 2 = image-wise
   void set_normalization_mode(int mode);
@@ -145,8 +154,11 @@ class data_reader_jag : public generic_data_reader {
   data_t get_image_min() const;
 
  protected:
-  /// The current mode of modeling
-  model_mode_t m_model_mode;
+  /// independent variable type
+  variable_t m_independent;
+  /// dependent variable type
+  variable_t m_dependent;
+
   /// Whether image output data have been loaded
   bool m_image_loaded;
   /// Whether scalar output data have been loaded

@@ -38,7 +38,8 @@
 namespace lbann {
 
 data_reader_jag::data_reader_jag(bool shuffle)
-  : generic_data_reader(shuffle), m_model_mode(Inverse),
+  : generic_data_reader(shuffle),
+    m_independent(Undefined), m_dependent(Undefined),
     m_image_loaded(false), m_scalar_loaded(false),
     m_input_loaded(false), m_num_samples(0u),
     m_linearized_image_size(0u),
@@ -54,12 +55,32 @@ data_reader_jag::data_reader_jag(bool shuffle)
 data_reader_jag::~data_reader_jag() {
 }
 
-void data_reader_jag::set_model_mode(const model_mode_t mm) {
-  if (static_cast<int>(AutoS) < static_cast<int>(mm)) {
+void data_reader_jag::set_independent_variable_type(
+  const data_reader_jag::variable_t independent) {
+  if (!(independent == JAG_Image || independent == JAG_Scalar ||
+        independent == JAG_Input || independent == Undefined)) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: unrecognized mode " + std::to_string(static_cast<int>(mm)));
+      " :: unrecognized variable type " + std::to_string(static_cast<int>(independent)));
   }
-  m_model_mode = mm;
+  m_independent = independent;
+}
+
+void data_reader_jag::set_dependent_variable_type(
+  const data_reader_jag::variable_t dependent) {
+  if (!(dependent == JAG_Image || dependent == JAG_Scalar ||
+        dependent == JAG_Input || dependent == Undefined)) {
+    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+      " :: unrecognized variable type " + std::to_string(static_cast<int>(dependent)));
+  }
+  m_dependent = dependent;
+}
+
+data_reader_jag::variable_t data_reader_jag::get_independent_variable_type() const {
+  return m_independent;
+}
+
+data_reader_jag::variable_t data_reader_jag::get_dependent_variable_type() const {
+  return m_dependent;
 }
 
 void data_reader_jag::set_normalization_mode(int mode) {
@@ -142,46 +163,49 @@ void data_reader_jag::set_linearized_input_size() {
 }
 
 int data_reader_jag::get_linearized_data_size() const {
-  switch (m_model_mode) {
-    case Inverse:
+  switch (m_independent) {
+    case JAG_Image:
       return static_cast<int>(m_linearized_image_size);
-    case AutoI:
-      return static_cast<int>(m_linearized_image_size);
-    case AutoS:
+    case JAG_Scalar:
       return static_cast<int>(m_linearized_scalar_size);
-    default: {
-      throw lbann_exception("data_reader_jag::get_linearized_data_size() : unknown mode");
+    case JAG_Input:
+      return static_cast<int>(m_linearized_input_size);
+    default: { // includes Undefined case
+      throw lbann_exception(std::string("data_reader_jag::get_linearized_data_size() : ") +
+                                        "unknown or undefined variable type");
     }
   }
   return 0;
 }
 
 int data_reader_jag::get_linearized_response_size() const {
-  switch (m_model_mode) {
-    case Inverse:
-      return static_cast<int>(m_linearized_input_size);
-    case AutoI:
+  switch (m_dependent) {
+    case JAG_Image:
       return static_cast<int>(m_linearized_image_size);
-    case AutoS:
+    case JAG_Scalar:
       return static_cast<int>(m_linearized_scalar_size);
-    default: {
-      throw lbann_exception("data_reader_jag::get_linearized_response_size() : unknown mode");
+    case JAG_Input:
+      return static_cast<int>(m_linearized_input_size);
+    default: { // includes Undefined case
+      throw lbann_exception(std::string("data_reader_jag::get_linearized_response_size() : ") +
+                                        "unknown or undefined variable type");
     }
   }
   return 0;
 }
 
 const std::vector<int> data_reader_jag::get_data_dims() const {
-  switch (m_model_mode) {
-    case Inverse:
+  switch (m_independent) {
+    case JAG_Image:
       return {1, m_image_height, m_image_width};
       //return {static_cast<int>(m_linearized_image_size)};
-    case AutoI:
-      return {static_cast<int>(m_linearized_image_size)};
-    case AutoS:
+    case JAG_Scalar:
       return {static_cast<int>(m_linearized_scalar_size)};
+    case JAG_Input:
+      return {static_cast<int>(m_linearized_input_size)};
     default: {
-      throw lbann_exception("data_reader_jag::get_data_dims() : unknown mode");
+      throw lbann_exception(std::string("data_reader_jag::get_data_dims() : ") +
+                                        "unknown or undefined variable type");
     }
   }
   return {};
@@ -228,24 +252,27 @@ void data_reader_jag::load(const std::string image_file,
             const std::string scalar_file,
             const std::string input_file,
             const size_t first_n) {
-  if ((m_model_mode == Inverse || m_model_mode == AutoI) &&
+  if ((m_independent == Undefined) && (m_dependent == Undefined)) {
+    throw lbann_exception("data_reader_jag: no type of variables to load is defined.");
+  }
+  if ((m_independent == JAG_Image || m_dependent == JAG_Image) &&
       !image_file.empty() && !check_if_file_exists(image_file)) {
     throw lbann_exception("data_reader_jag: failed to load " + image_file);
   }
-  if ((m_model_mode == AutoS) &&
+  if ((m_independent == JAG_Scalar || m_dependent == JAG_Scalar) &&
       !scalar_file.empty() && !check_if_file_exists(scalar_file)) {
     throw lbann_exception("data_reader_jag: failed to load " + scalar_file);
   }
-  if ((m_model_mode == Inverse) &&
+  if ((m_independent == JAG_Input || m_dependent == JAG_Input) &&
       !input_file.empty() && !check_if_file_exists(input_file)) {
     throw lbann_exception("data_reader_jag: failed to load " + input_file);
   }
 
-
   m_num_samples = 0u;
 
   // read in only those that will be used
-  if ((m_model_mode == Inverse || m_model_mode == AutoI) && !image_file.empty()) {
+  if ((m_independent == JAG_Image || m_dependent == JAG_Image) &&
+      !image_file.empty()) {
     m_images  = cnpy::npy_load(image_file);
     if (first_n > 0u) { // to use only first_n samples
       cnpy_utils::shrink_to_fit(m_images, first_n);
@@ -253,7 +280,8 @@ void data_reader_jag::load(const std::string image_file,
     m_image_loaded = true;
     set_linearized_image_size();
   }
-  if ((m_model_mode == AutoS) && !scalar_file.empty()) {
+  if ((m_independent == JAG_Scalar || m_dependent == JAG_Scalar) &&
+      !scalar_file.empty()) {
     m_scalars = cnpy::npy_load(scalar_file);
     if (first_n > 0u) { // to use only first_n samples
       cnpy_utils::shrink_to_fit(m_scalars, first_n);
@@ -261,7 +289,8 @@ void data_reader_jag::load(const std::string image_file,
     m_scalar_loaded = true;
     set_linearized_scalar_size();
   }
-  if ((m_model_mode == Inverse) && !input_file.empty()) {
+  if ((m_independent == JAG_Input || m_dependent == JAG_Input) &&
+      !input_file.empty()) {
     m_inputs  = cnpy::npy_load(input_file);
     if (first_n > 0u) { // to use only first_n samples
       cnpy_utils::shrink_to_fit(m_inputs, first_n);
@@ -336,18 +365,14 @@ bool data_reader_jag::check_data(size_t& num_samples) const {
   if (!ok) {
     num_samples = 0u;
   } else {
-    switch (m_model_mode) {
-      case Inverse:
-        ok = m_image_loaded && m_input_loaded;
-        break;
-      case AutoI:
-        ok = m_image_loaded;
-        break;
-      case AutoS:
-        ok = m_scalar_loaded;
-        break;
-      default:
-        throw lbann_exception("data_reader_jag::check_data() : unknown mode");
+    if (m_independent == JAG_Image || m_dependent == JAG_Image) {
+      ok = ok && m_image_loaded;
+    }
+    if (m_independent == JAG_Scalar || m_dependent == JAG_Scalar) {
+      ok = ok && m_scalar_loaded;
+    }
+    if (m_independent == JAG_Input || m_dependent == JAG_Input) {
+      ok = ok && m_input_loaded;
     }
   }
 
@@ -359,7 +384,8 @@ std::string data_reader_jag::get_description() const {
   using std::string;
   using std::to_string;
   string ret = string("data_reader_jag:\n")
-    + " - mode: " + to_string(static_cast<int>(m_model_mode)) + "\n"
+    + " - independent: " + to_string(static_cast<int>(m_independent)) + "\n"
+    + " - dependent: " + to_string(static_cast<int>(m_dependent)) + "\n"
     + " - images: "   + cnpy_utils::show_shape(m_images) + "\n"
     + " - scalars: "  + cnpy_utils::show_shape(m_scalars) + "\n"
     + " - inputs: "   + cnpy_utils::show_shape(m_inputs) + "\n";
@@ -478,48 +504,50 @@ std::vector<DataType> data_reader_jag::get_input(const size_t i) const {
 
 
 bool data_reader_jag::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
-  switch (m_model_mode) {
-    case Inverse: {
+  switch (m_independent) {
+    case JAG_Image: {
       const data_t* ptr = get_image_ptr(data_id);
       set_minibatch_item<data_t>(X, mb_idx, ptr, m_linearized_image_size);
       break;
     }
-    case AutoI: {
-      const data_t* ptr = get_image_ptr(data_id);
-      set_minibatch_item<data_t>(X, mb_idx, ptr, m_linearized_image_size);
-      break;
-    }
-    case AutoS: {
+    case JAG_Scalar: {
       const scalar_t* ptr = get_scalar_ptr(data_id);
       set_minibatch_item<scalar_t>(X, mb_idx, ptr, m_linearized_scalar_size);
       break;
     }
-    default: {
-      throw lbann_exception("data_reader_jag::fetch_datum() : unknown mode");
+    case JAG_Input: {
+      const input_t* ptr = get_input_ptr(data_id);
+      set_minibatch_item<input_t>(X, mb_idx, ptr, m_linearized_input_size);
+      break;
+    }
+    default: { // includes Undefined case
+      throw lbann_exception(std::string("data_reader_jag::fetch_datum() : ") + \
+                                        "unknown or undefined variable type");
     }
   }
   return true;
 }
 
 bool data_reader_jag::fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) {
-  switch (m_model_mode) {
-    case Inverse: {
-      const input_t* ptr = get_input_ptr(data_id);
-      set_minibatch_item<input_t>(Y, mb_idx, ptr, m_linearized_input_size);
-      break;
-    }
-    case AutoI: {
+  switch (m_dependent) {
+    case JAG_Image: {
       const data_t* ptr = get_image_ptr(data_id);
       set_minibatch_item<data_t>(Y, mb_idx, ptr, m_linearized_image_size);
       break;
     }
-    case AutoS: {
+    case JAG_Scalar: {
       const scalar_t* ptr = get_scalar_ptr(data_id);
       set_minibatch_item<scalar_t>(Y, mb_idx, ptr, m_linearized_scalar_size);
       break;
     }
-    default: {
-      throw lbann_exception("data_reader_jag::fetch_response() : unknown mode");
+    case JAG_Input: {
+      const input_t* ptr = get_input_ptr(data_id);
+      set_minibatch_item<input_t>(Y, mb_idx, ptr, m_linearized_input_size);
+      break;
+    }
+    default: { // includes Undefined case
+      throw lbann_exception(std::string("data_reader_jag::fetch_response() : ") +
+                                        "unknown or undefined variable type");
     }
   }
   return true;

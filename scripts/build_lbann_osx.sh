@@ -26,7 +26,6 @@ brew_check_install cmake
 brew_check_install llvm       # Require OpenMP support in clang
 brew_check_install gcc49      # gfortran-4.9 is compatible with clang
 brew_check_install open-mpi
-brew_check_install opencv
 brew_check_install doxygen
 brew_check_install graphviz   # Doxygen dependency
 brew_check_install metis      # Elemental dependency
@@ -38,6 +37,7 @@ brew_check_install scalapack  # Elemental dependency
 
 # Parameters
 COMPILER=clang
+COMPILER_ROOT=/usr/local/opt/llvm
 C_COMPILER=/usr/local/opt/llvm/bin/clang
 CXX_COMPILER=/usr/local/opt/llvm/bin/clang++
 Fortran_COMPILER=/usr/local/bin/gfortran-4.9
@@ -45,10 +45,6 @@ MPI_C_COMPILER=/usr/local/bin/mpicc
 MPI_CXX_COMPILER=/usr/local/bin/mpicxx
 MPI_Fortran_COMPILER=/usr/local/bin/mpifort
 BUILD_TYPE=Release
-#Elemental_DIR=
-OpenCV_DIR=/usr/local/share/OpenCV
-#CUDA_TOOLKIT_ROOT_DIR=
-#cuDNN_DIR=
 WITH_CUDA=OFF
 WITH_CUDNN=OFF
 WITH_CUB=OFF
@@ -58,7 +54,12 @@ CMAKE_INSTALL_MESSAGE=LAZY
 MAKE_NUM_PROCESSES=$(($(sysctl -n hw.ncpu) + 1))
 INSTALL_LBANN=0
 WITH_ALUMINUM=OFF
-
+GEN_DOC=0
+ 
+ export C_INCLUDE_PATH=$($COMPILER_ROOT/bin/llvm-config --includedir)
+ export LIBRARY_PATH=$($COMPILER_ROOT/bin/llvm-config --libdir)
+ export CPLUS_INCLUDE_PATH=$($COMPILER_ROOT/bin/llvm-config --includedir)
+ 
 ################################################################
 # Help message
 ################################################################
@@ -78,6 +79,7 @@ Options:
   ${C}--clean-build${N}           Clean build directory before building.
   ${C}--make-processes${N} <val>  Number of parallel processes for make.
   ${C}--install-lbann${N}         Install LBANN headers and dynamic library into the build directory.
+  ${C}--doc${N}                   Build LBANN's doxygen documentation
 EOF
 }
 
@@ -117,6 +119,9 @@ while :; do
     -i|--install-lbann)
       INSTALL_LBANN=1
       ;;
+    --doc)
+      GEN_DOC=1
+      ;;      
     -?*)
       # Unknown option
       echo "Unknown option (${1})" >&2
@@ -199,28 +204,6 @@ ${SUPERBUILD_DIR}
 EOF
 )
 
-#   # Configure build with CMake
-#   CONFIGURE_COMMAND=$(cat << EOF
-# cmake \
-# -D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
-
-# -D CMAKE_C_COMPILER=${CMAKE_C_COMPILER} \
-# -D CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} \
-# -D CMAKE_Fortran_COMPILER=${CMAKE_Fortran_COMPILER} \
-# -D MPI_C_COMPILER=${MPI_C_COMPILER} \
-# -D MPI_CXX_COMPILER=${MPI_CXX_COMPILER} \
-# -D MPI_Fortran_COMPILER=${MPI_Fortran_COMPILER} \
-
-# -D Elemental_DIR=${Elemental_DIR} \
-# -D OpenCV_DIR=${OpenCV_DIR} \
-# -D CUDA_TOOLKIT_ROOT_DIR=${CUDA_TOOLKIT_ROOT_DIR} \
-# -D cuDNN_DIR=${cuDNN_DIR} \
-# -D WITH_TBINF=OFF \
-# -D VERBOSE=${VERBOSE} \
-# -D MAKE_NUM_PROCESSES=${MAKE_NUM_PROCESSES} \
-# ${ROOT_DIR}
-# EOF
-# )
   if [ ${VERBOSE} -ne 0 ]; then
     echo "${CONFIGURE_COMMAND}"
   fi
@@ -261,22 +244,17 @@ EOF
   fi
 
   # Generate documentation with make
-  DOC_COMMAND="make doc"
-  if [ ${VERBOSE} -ne 0 ]; then
-    echo "${DOC_COMMAND}"
+  if [ ${GEN_DOC} -ne 0 ]; then
+    DOC_COMMAND="make doc"
+    if [ ${VERBOSE} -ne 0 ]; then
+      echo "${DOC_COMMAND}"
+    fi
+    ${DOC_COMMAND}
+    if [ $? -ne 0 ] ; then
+      echo "--------------------"
+      echo "MAKE DOC FAILED"
+      echo "--------------------"
+      exit 1
+    fi
   fi
-  ${DOC_COMMAND}
-  if [ $? -ne 0 ] ; then
-    echo "--------------------"
-    echo "MAKE DOC FAILED"
-    echo "--------------------"
-    exit 1
-  fi
-  
 popd
-
-
-#cmake $LBANN_HOME/superbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$LBANN_HOME/build/vandamme.llnl.gov -DLBANN_SB_BUILD_CNPY=ON -DLBANN_SB_BUILD_HYDROGEN=ON -DLBANN_SB_BUILD_OPENCV=ON -DLBANN_SB_BUILD_PROTOBUF=ON -DLBANN_SB_BUILD_LBANN=ON -DCMAKE_C_COMPILER=$(which clang) -DCMAKE_CXX_COMPILER=$(which clang++) -DCMAKE_Fortran_COMPILER=$(which gfortran) -DLBANN_SB_FWD_HYDROGEN_OpenMP_DIR=/usr/local/opt/llvm/ -DLBANN_SB_FWD_LBANN_OpenMP_CXX_FLAGS=-fopenmp=libomp -DLBANN_SB_FWD_LBANN_OpenMP_CXX_LIB_NAMES=libomp -DLBANN_SB_FWD_LBANN_OpenMP_libomp_LIBRARY=/usr/local/opt/llvm/lib/libomp.dylib
-
-
-#-DLBANN_SB_FWD_HYDROGEN_ENABLE_CUDA=OFF
