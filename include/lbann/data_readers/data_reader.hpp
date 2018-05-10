@@ -791,6 +791,9 @@ class generic_data_reader : public lbann_image_preprocessor {
   void set_save_minibatch_entries(bool b);
 
   /// support of data store functionality
+  void init_minibatch();
+
+  /// support of data store functionality
   const std::vector<std::vector<int> > & get_minibatch_indices() const {
     return m_my_minibatch_indices;
   }

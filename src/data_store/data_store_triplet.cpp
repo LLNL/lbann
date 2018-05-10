@@ -59,7 +59,7 @@ void data_store_triplet::setup() {
   data_store_multi_images::setup();
 
   if (m_rank == 0) {
-    std::cerr << "data_store_triplet setup time: " << get_time() - tm1 << std::endl;
+    std::cerr << "TIME for data_store_triplet setup: " << get_time() - tm1 << std::endl;
   }
 }
 

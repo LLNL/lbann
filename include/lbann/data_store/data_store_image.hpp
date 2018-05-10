@@ -73,8 +73,7 @@ class data_store_image : public generic_data_store {
   /// called by get_file_sizes
   void exchange_file_sizes(
     std::vector<int> &global_indices,
-    std::vector<int> &num_bytes,
-    int num_global_indices);
+    std::vector<int> &num_bytes);
 
   /// buffers that will be passed to reader::fetch_datum
   std::unordered_map<int, std::vector<unsigned char> > m_my_minibatch_data;

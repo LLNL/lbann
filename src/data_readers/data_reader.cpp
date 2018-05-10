@@ -61,10 +61,6 @@ void generic_data_reader::setup() {
 }
 
 int lbann::generic_data_reader::fetch_data(Mat& X) {
-  if (m_data_store != nullptr && !m_save_minibatch_indices) {
-    m_data_store->fetch_data();
-  }
-
   int nthreads = omp_get_max_threads();
   if(!position_valid()) {
     throw lbann_exception(
@@ -521,6 +517,12 @@ void generic_data_reader::set_data_store(generic_data_store *g) {
       delete m_data_store;
     }
     m_data_store = g;
+}
+
+void generic_data_reader::init_minibatch() {
+  if (m_data_store != nullptr) {
+    m_data_store->init_minibatch();
   }
+}
 
 }  // namespace lbann

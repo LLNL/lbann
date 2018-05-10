@@ -68,7 +68,7 @@ void data_store_imagenet::setup() {
 
   double tm2 = get_time();
   if (m_rank == 0) {
-    std::cerr << "data_store_imagenet setup time: " << tm2 - tm1 << std::endl;
+    std::cerr << "TIME for data_store_imagenet setup: " << tm2 - tm1 << std::endl;
   }
 }
 
@@ -135,7 +135,18 @@ void data_store_imagenet::read_files(const std::unordered_set<int> &indices) {
   std::stringstream err;
   std::string local_dir = m_reader->get_local_file_dir();
   std::stringstream fp;
+  int n = 0;
+  double tm = get_time();
   for (auto index : indices) {
+    ++n;
+    if (n % 100 == 0 && m_master) {
+      double time_per_file = (get_time() - tm) / n;
+      int remaining_files = indices.size() - n;
+      double estimated_remaining_time = time_per_file * remaining_files;
+      std::cerr << "P_0, " << m_reader->get_role() << "; read " << n << " of " 
+                << indices.size() << " files; elapsed time " << (get_time() - tm)
+                << "s; est. remaining time: " << estimated_remaining_time << "\n";
+    }
     if (m_file_sizes.find(index) == m_file_sizes.end()) {
       err << __FILE__ << " " << __LINE__ << " :: " 
           << " m_file_sizes.find(index) failed for index: " << index;
@@ -151,7 +162,14 @@ void data_store_imagenet::read_files(const std::unordered_set<int> &indices) {
     fp.str("");
     fp << local_dir << "/" << m_data_filepaths[index];
     m_data[index].resize(file_len);
-    load_file("", fp.str(), m_data[index].data(), file_len);
+    try {
+      load_file("", fp.str(), m_data[index].data(), file_len);
+    } catch (std::bad_alloc& ba) {
+      err << m_rank << " caught std::bad_alloc, what: " << ba.what()
+          << " " << getenv("SLURMD_NODENAME") << " file: "
+          << fp.str() << " length: " << file_len << "\n";
+      throw lbann_exception(err.str()); 
+    }
   }
 }
 
@@ -179,13 +197,24 @@ void data_store_imagenet::get_file_sizes() {
   std::vector<int> bytes(m_my_datastore_indices.size());
 
   size_t j = 0;
+  double tm = get_time();
   for (auto index : m_my_datastore_indices) {
     global_indices[j] = index;
     bytes[j] = get_file_size(m_dir, image_list[index].first);
     ++j;
+    if (j % 100 == 0 and m_master) {
+      double e = get_time() - tm;
+      double time_per_file = e / j;
+      int remaining_files = m_my_datastore_indices.size()-j;
+      double estimated_remaining_time = time_per_file * remaining_files;
+      std::cerr << "P_0: got size for " << j << " of " << m_data_filepaths.size()
+                << " files; elapsed time: " << get_time() - tm
+                << "s est. remaining time: " << estimated_remaining_time << "s\n";
+    }
+
   }
 
-  exchange_file_sizes(global_indices, bytes, m_num_global_indices);
+  exchange_file_sizes(global_indices, bytes);
 }
 
 void data_store_imagenet::build_data_filepaths() {
