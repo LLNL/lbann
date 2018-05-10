@@ -492,6 +492,11 @@ void copy_lrn_cudnn_desc(const cudnnLRNDescriptor_t& src,
 #endif // #ifdef LBANN_HAS_CUDNN
 
 }// namespace cudnn
+
+void set_mat_state_on_host(AbsDistMat* state, const std::vector<DataType*>& state_d, cudnn::cudnn_manager* m_cudnn);
+
+void set_mat_state_on_device(AbsDistMat* state, std::vector<DataType*>& state_d, cudnn::cudnn_manager* m_cudnn);
+
 }// namespace lbann
 
 #endif // CUDNN_WRAPPER_HPP_INCLUDED

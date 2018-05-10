@@ -8,25 +8,45 @@ def check_list(substrings, strings):
                errors.append('%s contains %s' % (string, substring))
     return errors
 
-def get_command(cluster, executable, num_nodes=None, partition=None,
-                time_limit=None, num_processes=None, dir_name=None,
-                data_filedir_ray=None, data_filedir_train_ray=None,
-                data_filename_train_ray=None, data_filedir_test_ray=None,
-                data_filename_test_ray=None, data_reader_name=None,
-                data_reader_path=None, data_reader_percent=None,
-                exit_after_setup=False, mini_batch_size=None,
-                model_folder=None, model_name=None, model_path=None,
-                num_epochs=None, optimizer_name=None, optimizer_path=None,
-                processes_per_model=None, output_file_name=None,
-                error_file_name=None, return_tuple=False, check_executable_existance=True):
+def get_command(cluster,
+                executable,
+                num_nodes=None,
+                partition=None,
+                time_limit=None,
+                num_processes=None,
+                dir_name=None,
+                data_filedir_quartz=None,
+                data_filedir_ray=None,
+                data_filedir_train_ray=None,
+                data_filename_train_ray=None,
+                data_filedir_test_ray=None,
+                data_filename_test_ray=None,
+                data_reader_name=None,
+                data_reader_path=None,
+                data_reader_percent=None,
+                exit_after_setup=False,
+                mini_batch_size=None,
+                model_folder=None,
+                model_name=None,
+                model_path=None,
+                num_epochs=None,
+                optimizer_name=None,
+                optimizer_path=None,
+                processes_per_model=None,
+                ckpt_dir=None,
+                output_file_name=None,
+                error_file_name=None,
+                return_tuple=False,
+                check_executable_existance=True,
+                skip_no_exe=True):
     # Check parameters for black-listed characters like semi-colons that
     # would terminate the command and allow for an extra command
     blacklist = [';', '--']
-    strings = [partition, dir_name, data_filedir_ray, data_filedir_train_ray,
+    strings = [partition, dir_name, data_filedir_quartz, data_filedir_ray, data_filedir_train_ray,
                data_filename_train_ray, data_filedir_test_ray,
                data_filename_test_ray, data_reader_name, data_reader_path,
                model_folder, model_name, model_path, optimizer_name,
-               optimizer_path, output_file_name]
+               optimizer_path, output_file_name, error_file_name]
     invalid_character_errors = check_list(blacklist, strings)
     if invalid_character_errors != []:
         raise Exception('Invalid character(s): %s' % ' , '.join(invalid_character_errors))
@@ -35,10 +55,14 @@ def get_command(cluster, executable, num_nodes=None, partition=None,
     if check_executable_existance:
         executable_exists = os.path.exists(executable)
         if not executable_exists:
-            raise Exception('Executable does not exist: %s' % executable)
+            error_string = 'Executable does not exist: %s' % executable
+            if skip_no_exe:
+                pytest.skip(error_string)
+            else:
+                raise Exception(error_string)
 
     # Determine scheduler
-    if cluster in ['catalyst', 'surface']:
+    if cluster in ['catalyst', 'pascal', 'quartz', 'surface']:
         scheduler = 'slurm'
     elif cluster == 'ray':
         scheduler = 'lsf'
@@ -78,7 +102,7 @@ def get_command(cluster, executable, num_nodes=None, partition=None,
             command_allocate = '%s%s%s%s' % (
                 command_allocate, option_num_nodes, option_partition,
                 option_time_limit)
-            
+
         # Create run command
         if command_allocate == '':
             command_run = 'srun'
@@ -90,7 +114,7 @@ def get_command(cluster, executable, num_nodes=None, partition=None,
             # Number of processes to run => MPI Rank
             option_num_processes = ' --ntasks=%d' % num_processes
         command_run = '%s%s' % (command_run, option_num_processes)
-        
+
     elif scheduler == 'lsf':
         # Create allocate command
         command_allocate = ''
@@ -150,11 +174,12 @@ def get_command(cluster, executable, num_nodes=None, partition=None,
                     math.ceil(float(num_processes)/num_nodes))
         command_run = '%s%s%s' % (
             command_run, option_num_processes, option_processes_per_node)
-        
+
     else:
         raise Exception('Unsupported Scheduler %s' % scheduler)
 
     # Create LBANN command
+    option_ckpt_dir = ''
     option_data_filedir = ''
     option_data_filedir_train = ''
     option_data_filename_train = ''
@@ -211,7 +236,7 @@ def get_command(cluster, executable, num_nodes=None, partition=None,
                       data_filedir_test_ray,
                       data_filename_test_ray]
     if (data_reader_name != None) or (data_reader_path != None):
-        if (cluster == 'ray'):
+        if cluster == 'ray':
             if data_filedir_ray != None:
                 if ray_parameters == [None, None, None, None]:
                     option_data_filedir = ' --data_filedir=%s' % data_filedir_ray
@@ -224,6 +249,14 @@ def get_command(cluster, executable, num_nodes=None, partition=None,
                 option_data_filename_test = ' --data_filename_test=%s' % data_filename_test_ray
             else:
                 lbann_errors.append('data_reader_name or data_reader_path is set but not data_filedir_ray. If a data reader is provided, an alternative filedir must be available for Ray. Alternatively, all of [data_filedir_train_ray, data_filename_train_ray, data_filedir_test_ray, data_filename_test_ray] can be set.')
+        elif cluster == 'quartz':
+            if data_filedir_quartz != None:
+                option_data_filedir = ' --data_filedir=%s' % data_filedir_quartz
+            else:
+                lbann_errors.append('data_reader_name or data_reader_path is set but not data_filedir_quartz. If a data reader is provided, an alternative filedir must be available for Quartz.')
+    elif data_filedir_quartz != None:
+        lbann_errors.append(
+            'data_filedir_quartz set but neither data_reader_name or data_reader_path are.')
     elif data_filedir_ray != None:
         lbann_errors.append(
             'data_filedir_ray set but neither data_reader_name or data_reader_path are.')
@@ -239,15 +272,18 @@ def get_command(cluster, executable, num_nodes=None, partition=None,
         option_num_epochs = ' --num_epochs=%d' % num_epochs
     if processes_per_model != None:
         option_processes_per_model = ' --procs_per_model=%d' % processes_per_model
+    if ckpt_dir != None:
+        option_ckpt_dir = ' --ckpt_dir=%s' % ckpt_dir
     if lbann_errors != []:
         raise Exception('Invalid Usage: ' + ' , '.join(lbann_errors))
-    command_lbann = '%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (
-        executable, option_data_filedir, option_data_filedir_train,
-        option_data_filename_train, option_data_filedir_test,
-        option_data_filename_test, option_data_reader,
-        option_data_reader_percent, option_exit_after_setup,
-        option_mini_batch_size, option_model, option_num_epochs,
-        option_optimizer, option_processes_per_model)
+    command_lbann = '%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (
+        executable, option_ckpt_dir, option_data_filedir,
+        option_data_filedir_train, option_data_filename_train,
+        option_data_filedir_test, option_data_filename_test,
+        option_data_reader, option_data_reader_percent,
+        option_exit_after_setup, option_mini_batch_size,
+        option_model, option_num_epochs, option_optimizer,
+        option_processes_per_model)
 
     # Create redirect command
     command_output = ''

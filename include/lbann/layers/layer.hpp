@@ -188,6 +188,9 @@ class Layer {
   /** Whether the layer is using a GPU implementation. */
   inline bool using_gpus() const { return m_using_gpus; }
 
+  /** To make sure copying between host and devices is complete */
+  void synchronize() const;
+
   /** Get expected number of parent layers.
    *  A negative value indicates no limit.
    */
@@ -204,14 +207,11 @@ class Layer {
 
   virtual El::Matrix<El::Int>* get_sample_indices_per_mb() { return nullptr; };
 
-  virtual bool saveToFile(int fd, const char *filename) const { return true; };
-  virtual bool loadFromFile(int fd, const char *filename) { return true; };
-
-  virtual bool saveToCheckpoint(int fd, const char *filename, size_t *bytes) const;
-  virtual bool loadFromCheckpoint(int fd, const char *filename, size_t *bytes);
-
-  virtual bool save_to_checkpoint_shared(persist& p,bool val_end) const;
+  virtual bool save_to_checkpoint_shared(persist& p) const;
   virtual bool load_from_checkpoint_shared(persist& p);
+
+  virtual bool save_to_checkpoint_distributed(persist& p) const;
+  virtual bool load_from_checkpoint_distributed(persist& p);
   
   /** Write layer to proto file */
   virtual void write_proto(lbann_data::Layer* proto) const;

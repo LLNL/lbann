@@ -233,7 +233,11 @@ int main(int argc, char *argv[]) {
       // Under normal conditions, reinitialize the random number generator so
       // that regularization techniques (e.g. dropout) generate unique patterns
       // on different ranks.
-      init_random(random_seed + comm->get_rank_in_world());
+      // Do not do this if current epoch/iter is not 0. 
+      // Signifies a restart has occured and rng state has been loaded in. 
+      if(model->get_cur_epoch() == 0 && model->get_cur_step() == 0){
+        init_random(random_seed + comm->get_rank_in_world());
+      }
 #else
       if(comm->am_world_master()) {
         std::cout <<

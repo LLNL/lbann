@@ -33,7 +33,8 @@ message Reader {
   bool gan_labelling = 201;
   int32 gan_label_value = 202;
   ImagePreprocessor image_preprocessor = 13;
-  int32 modeling_mode = 98; // only for jag
+  int32 independent = 97; // only for jag
+  int32 dependent = 98; // only for jag
   int32 num_labels = 99; //for imagenet
   int64 num_samples = 100; //only for synthetic
   int64 num_features = 101; //only for synthetic
@@ -583,7 +584,9 @@ message CallbackCheckpoint {
   int64 checkpoint_epochs = 2;
   int64 checkpoint_steps = 3;
   double checkpoint_secs = 4;
-  bool checkpoint_per_rank = 5;
+  string per_rank_dir = 5;
+  int64 ckpt_dist_epochs = 6;
+  int64 ckpt_dist_steps = 7;
 }
 
 

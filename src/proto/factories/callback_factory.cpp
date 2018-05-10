@@ -204,7 +204,9 @@ lbann_callback* construct_callback(lbann_comm* comm,
                                          params.checkpoint_epochs(),
                                          params.checkpoint_steps(),
                                          params.checkpoint_secs(),
-                                         params.checkpoint_per_rank());
+                                         params.per_rank_dir(),
+                                         params.ckpt_dist_epochs(),
+                                         params.ckpt_dist_steps());
   }
   if (proto_cb.has_save_model()) {
     const auto& params = proto_cb.save_model();

@@ -46,8 +46,16 @@ class lbann_callback_checkpoint : public lbann_callback {
  * @param checkpoint_secs interval to checkpoint
  * @param checkpoint_per_rank true to save/load a file per mpi rank
  */
-  lbann_callback_checkpoint(std::string checkpoint_dir, int checkpoint_epochs, int checkpoint_steps, int checkpoint_secs, bool checkpoint_per_rank) : 
-    lbann_callback(), m_checkpoint_dir(checkpoint_dir), m_checkpoint_epochs(checkpoint_epochs), m_checkpoint_steps(checkpoint_steps), m_checkpoint_secs(checkpoint_secs), m_checkpoint_per_rank(checkpoint_per_rank) {}
+  lbann_callback_checkpoint(std::string checkpoint_dir, 
+                            int checkpoint_epochs, int checkpoint_steps, int checkpoint_secs, std::string per_rank_dir, int ckpt_dist_epochs, int ckpt_dist_steps) : 
+    lbann_callback(),
+    m_checkpoint_dir(checkpoint_dir),
+    m_checkpoint_epochs(checkpoint_epochs), 
+    m_checkpoint_steps(checkpoint_steps), 
+    m_checkpoint_secs(checkpoint_secs), 
+    m_per_rank_dir(per_rank_dir),
+    m_ckpt_dist_epochs(ckpt_dist_epochs), 
+    m_ckpt_dist_steps(ckpt_dist_steps) {}
   lbann_callback_checkpoint(const lbann_callback_checkpoint&) = default;
   lbann_callback_checkpoint& operator=(const lbann_callback_checkpoint&) = default;
   lbann_callback_checkpoint* copy() const override { return new lbann_callback_checkpoint(*this); }
@@ -72,23 +80,34 @@ class lbann_callback_checkpoint : public lbann_callback {
     m_checkpoint_secs= secs;
   }
   
-  inline void set_checkpoint_per_rank(bool per_rank){
-    m_checkpoint_per_rank= per_rank;
+  inline void set_per_rank_dir(std::string dir){
+    m_per_rank_dir = dir;
+  }
+
+  inline void set_ckpt_dist_epochs(int ckpt_dist_epochs){                                                                  
+    m_ckpt_dist_epochs = ckpt_dist_epochs;
+  }  
+
+  inline void set_ckpt_dist_steps(int ckpt_dist_steps){
+    m_ckpt_dist_steps = ckpt_dist_steps;
   }
 
   bool need_checkpoint(model *m);
-  bool checkpointShared(model *m);
-  bool restartShared(model *m);
+  bool checkpoint(model *m);
+  bool restart(model *m);
   std::string name() const override { return "checkpoint"; }
  protected:
   std::string m_checkpoint_dir;
   int m_checkpoint_epochs;
   int m_checkpoint_steps;
   EvalType m_checkpoint_secs;
-  bool m_checkpoint_per_rank;
+  std::string m_per_rank_dir;
+  int m_ckpt_dist_epochs;
+  int m_ckpt_dist_steps;
   EvalType m_checkpoint_last;
-  bool m_epoch_end;
-  bool m_val_end;
+  persist p;
+  bool m_checkpoint_dist;
+  bool m_checkpoint_shared;
 };
 
 }  // namespace lbann
