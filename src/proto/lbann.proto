@@ -722,7 +722,7 @@ message Layer {
    Gaussian gaussian = 312;
    Bernoulli bernoulli = 313;
    Uniform uniform = 314;
-   Binary_Cross_Entropy_With_Logits bce_with_logits = 316;
+   Sigmoid_Binary_Cross_Entropy_With_Logits bce_with_logits = 316;
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -945,7 +945,7 @@ message Uniform {
   string neuron_dims = 3;
 }
 
-message Binary_Cross_Entropy_With_Logits {
+message Sigmoid_Binary_Cross_Entropy_With_Logits {
   int32 true_label = 1;
 }
 /////////////////////

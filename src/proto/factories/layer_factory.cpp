@@ -231,7 +231,7 @@ Layer* construct_layer(lbann_comm* comm,
   }
   if (proto_layer.has_bce_with_logits()) {
     const auto& params = proto_layer.bce_with_logits();
-    return new binary_cross_entropy_with_logits_layer<layout>(comm, params.true_label(), cudnn);
+    return new sigmoid_bce_with_logits_layer<layout>(comm, params.true_label());
   }
   if (proto_layer.has_pooling()) {
     const auto& params = proto_layer.pooling();

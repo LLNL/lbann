@@ -73,6 +73,7 @@ bool mnist_reader::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
       //mb_idx < (m_mb_size/2) ? Y.Set(1,mb_idx,1) : Y.Set(m_gan_label_value,mb_idx,1);
       mb_idx < (get_current_mini_batch_size()/2) ? Y.Set(1,mb_idx,1) : Y.Set(m_gan_label_value,mb_idx,1);
     }
+    //Y.Set(m_gan_label_value, mb_idx, 1);
   } 
   return true;
 }
