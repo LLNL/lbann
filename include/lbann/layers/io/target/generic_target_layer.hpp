@@ -317,50 +317,6 @@ class generic_target_layer : public io_layer {
     layers.pop_back();
     io_layer::set_layer_pointers(layers);
   }
-
-  //************************************************************************
-  //
-  //************************************************************************
-
-  bool saveToCheckpoint(int fd, const char *filename, size_t *bytes) const override {
-    /// @todo should probably save m_shared_data_reader
-    return Layer::saveToCheckpoint(fd, filename, bytes);
-  }
-
-  bool loadFromCheckpoint(int fd, const char *filename, size_t *bytes) override {
-    /// @todo should probably save m_shared_data_reader
-    return Layer::loadFromCheckpoint(fd, filename, bytes);
-  }
-
-  bool save_to_checkpoint_shared(persist& p, bool val_end) const override {
-    // rank 0 writes softmax cost to file
-    //if (p.get_rank() == 0) {
-      // p.write_double(persist_type::train, "aggregate cost", (double) aggregate_cost);
-      // p.write_uint64(persist_type::train, "num backprop steps", (uint64_t) num_backprop_steps);
-    //}
-
-    return Layer::save_to_checkpoint_shared(p,val_end);
-  }
-
-  bool load_from_checkpoint_shared(persist& p) override {
-    // rank 0 writes softmax cost to file
-    // if (p.get_rank() == 0) {
-    //     double dval;
-    //     p.read_double(persist_type::train, "aggregate cost", &dval);
-    //     aggregate_cost = (DataType) dval;
-
-    //     uint64_t val;
-    //     p.read_uint64(persist_type::train, "num backprop steps", &val);
-    //     num_backprop_steps = (long) val;
-    // }
-
-    // // get values from rank 0
-    // MPI_Bcast(&aggregate_cost, 1, DataTypeMPI, 0, MPI_COMM_WORLD);
-    // MPI_Bcast(&num_backprop_steps, 1, MPI_LONG, 0, MPI_COMM_WORLD);
-
-    return Layer::load_from_checkpoint_shared(p);
-    //return true;
-  }
 };
 
 template<> inline void generic_target_layer::initialize_io_buffer<partitioned_io_buffer>(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers) {

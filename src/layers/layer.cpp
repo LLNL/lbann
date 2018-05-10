@@ -312,6 +312,14 @@ void Layer::reset_counters() {
   m_update_time     = EvalType(0);
 }
 
+void Layer::synchronize() const {
+  #ifdef LBANN_HAS_CUDNN
+  if (this->m_cudnn != nullptr) {
+    this->m_cudnn->synchronize();
+  }
+  #endif // LBANN_HAS_CUDNN
+}
+
 void Layer::summarize_stats(lbann_summary& summarizer, int step) {
   std::string prefix = m_name + "/";
   summarizer.reduce_scalar(prefix + "fp_time", m_fp_time, step);
@@ -864,35 +872,20 @@ void Layer::deallocate_matrices() {
 
 }
 
-bool Layer::saveToCheckpoint(int fd, const char *filename, size_t *bytes) const {
-  //writeDist(fd, filename, *m_weights, bytes);
 
-  // Need to catch return value from function
-  // m_optimizer->saveToCheckpoint(fd, filename, bytes);
-  return true;
-}
-
-bool Layer::loadFromCheckpoint(int fd, const char *filename, size_t *bytes) {
-  // TODO: implement reader for other matrix distributions
-  //readDist(fd, filename, (DistMat&) *m_weights, bytes);
-
-  // Need to catch return value from function
-  // m_optimizer->loadFromCheckpoint(fd, filename, bytes);
-  return true;
-}
-
-bool Layer::save_to_checkpoint_shared(persist& p, bool val_end) const {
-  //for (weights *w : m_weights) {
-  //  w->saveToCheckpointShared(p);
-  //}
+bool Layer::save_to_checkpoint_shared(persist& p) const {
   return true;
 }
 
 bool Layer::load_from_checkpoint_shared(persist& p) {
-  //for (weights *w : m_weights) {
-  //  w->loadFromCheckpointShared(p);
-  //}
+  return true;
+}
 
+bool Layer::save_to_checkpoint_distributed(persist& p) const {
+  return true;
+}
+
+bool Layer::load_from_checkpoint_distributed(persist& p) {
   return true;
 }
 

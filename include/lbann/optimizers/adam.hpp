@@ -135,9 +135,12 @@ class adam : public optimizer {
     m_current_beta2 = header.current_beta2;
   }
 
+  void set_states_on_host() override;
+  void set_states_on_device() override;
   bool save_to_checkpoint_shared(persist& p, std::string m_name) override;
   bool load_from_checkpoint_shared(persist& p, std::string m_name) override;
-
+  bool save_to_checkpoint_distributed(persist& p, std::string m_name) override;
+  bool load_from_checkpoint_distributed(persist& p, std::string m_name) override;
 };
 
 } // namespace lbann

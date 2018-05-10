@@ -29,6 +29,8 @@
 #include "lbann/weights/weights.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include <numeric>
+#include<sys/types.h>
+#include <unistd.h>
 
 namespace lbann {
 
@@ -352,17 +354,43 @@ std::string weights::get_dims_string(const std::vector<int>& matrix_height_dims,
   return ss.str();
 }
 
+/**
+ * Copies states from GPU to host only if the data is on GPU, which is done
+ * asynchronously. Thus, needs synchronization before accessing the states.
+ */
+void weights::set_states_on_host() {
+#ifdef LBANN_HAS_CUDNN
+  set_mat_state_on_host(m_values, m_values_d, m_cudnn);
+  if (m_optimizer != nullptr) {
+    m_optimizer->set_states_on_host();
+  }
+#endif // __LIB_CUDN
+}
+
+/**
+ * Copies states from host to GPU if the data has to be on GPU. This is done
+ * asynchronously. Thus, needs synchronization before accessing the states.
+ */
+void weights::set_states_on_device() {
+#ifdef LBANN_HAS_CUDNN
+  set_mat_state_on_device(m_values, m_values_d, m_cudnn);
+  if (m_optimizer != nullptr) {
+    m_optimizer->set_states_on_device();
+  }
+#endif // __LIB_CUDN
+}
+
 bool weights::save_to_checkpoint_shared(lbann::persist& p)
 {
-  // define name to store our parameters
+  // define name to store weight values
   char l_name[512];
   sprintf(l_name, "weights_%s_%lldx%lld", m_name.c_str(), m_values->Height(), m_values->Width());
-
-  // write out our weights to the model file
-  p.write_distmat(persist_type::model, l_name, (DistMat*)m_values);
-  //
+  // write weights using persist call -- uses Elemental's write function. 
+  p.write_distmat(persist_type::model, l_name, m_values);
   // if saving training state, also write out state of optimizer
-  m_optimizer->save_to_checkpoint_shared(p, l_name);
+  if (m_optimizer != nullptr) {
+    m_optimizer->save_to_checkpoint_shared(p, m_name);
+  }
 
   return true;
 }
@@ -404,17 +432,53 @@ void weights::write_proto(lbann_data::WeightsData* proto) const {
 
 bool weights::load_from_checkpoint_shared(lbann::persist& p)
 {
-  // define name to store our parameters
+  // define filename containing saved weight values
   char l_name[512], f_name[512];
   sprintf(l_name, "weights_%s_%lldx%lld", m_name.c_str(), m_values->Height(), m_values->Width());
   sprintf(f_name, "%s.bin", l_name);
+  p.read_distmat(persist_type::model, f_name, m_values);
+  if (m_optimizer != nullptr) {
+    m_optimizer->load_from_checkpoint_shared(p, m_name);
+  }
 
-  // read our weights from model file
-  p.read_distmat(persist_type::model, f_name, (DistMat*)m_values);
+  return true;
+}
 
-  // if loading training state, read in state of optimizer
-  m_optimizer->load_from_checkpoint_shared(p, l_name);
+bool weights::load_from_save(std::string ckpt_dir, std::vector<std::string> weight_list){
+  // create weight file name to match to weight list entry
+  char l_name[1024];
+  sprintf(l_name, "model_weights_%s_%lldx%lld.bin", m_name.c_str(), m_values->Height(), m_values->Width());  
+  std::vector<std::string>::iterator it;
+  it = find(weight_list.begin(),weight_list.end(),l_name);
+  auto pos = std::distance(weight_list.begin(),it);
+  // If match is found read in weight values. 
+  if((unsigned) pos < weight_list.size()){
+    std::string full_path = ckpt_dir + weight_list[pos];
+    if(m_comm->am_world_master())
+      std::cout << "Loading " << m_name <<  "\n";
+    El::Read(*m_values,full_path, El::BINARY, true);
+    
+  }
+  return true;
+}
 
+bool weights::save_to_checkpoint_distributed(lbann::persist& p){
+  // Functions identically to shared checkpoint except weights and parameters are saved on a per rank basis
+  char l_name[512];
+  sprintf(l_name, "weights_%s_%lldx%lld", m_name.c_str(), m_values->LocalHeight(), m_values->LocalWidth());
+  p.write_rank_distmat(persist_type::model, l_name, *m_values);
+  if (m_optimizer != nullptr) 
+    m_optimizer->save_to_checkpoint_distributed(p, m_name);
+  return true;
+}
+
+bool weights::load_from_checkpoint_distributed(lbann::persist& p){
+  // Functions identically to shared checkpoint except weights and parameters are loaded on a per rank basis
+  char l_name[512];
+  sprintf(l_name, "weights_%s_%lldx%lld", m_name.c_str(), m_values->LocalHeight(), m_values->LocalWidth());
+  p.read_rank_distmat(persist_type::model, l_name, *m_values);
+  if (m_optimizer != nullptr)
+    m_optimizer->load_from_checkpoint_distributed(p, m_name);
   return true;
 }
 

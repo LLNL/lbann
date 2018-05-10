@@ -153,6 +153,10 @@ class optimizer {
     m_step_time = 0.0;
   }
 
+  // For checkpointing
+  virtual void set_states_on_host() {}
+  virtual void set_states_on_device() {}
+
  protected:
 
   /** LBANN communicator. */
@@ -210,6 +214,8 @@ class optimizer {
   virtual bool save_to_checkpoint_shared(persist& p, std::string m_name);
   virtual bool load_from_checkpoint_shared(persist& p, std::string m_name);
 
+  virtual bool save_to_checkpoint_distributed(persist& p, std::string m_name);
+  virtual bool load_from_checkpoint_distributed(persist& p, std::string m_name);
 };
 
 } // namespace lbann

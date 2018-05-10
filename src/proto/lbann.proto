@@ -583,7 +583,9 @@ message CallbackCheckpoint {
   int64 checkpoint_epochs = 2;
   int64 checkpoint_steps = 3;
   double checkpoint_secs = 4;
-  bool checkpoint_per_rank = 5;
+  string per_rank_dir = 5;
+  int64 ckpt_dist_epochs = 6;
+  int64 ckpt_dist_steps = 7;
 }
 
 
