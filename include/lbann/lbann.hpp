@@ -56,7 +56,7 @@
 #include "lbann/layers/activations/swish.hpp"
 #include "lbann/layers/activations/tanh.hpp"
 #include "lbann/layers/activations/power.hpp"
-
+#include "lbann/layers/activations/sigmoid_bce_with_logits.hpp"
 /// Learning Layers
 #include "lbann/layers/learning/fully_connected.hpp"
 #include "lbann/layers/learning/convolution.hpp"
@@ -80,7 +80,6 @@
 #include "lbann/layers/transform/gaussian.hpp"
 #include "lbann/layers/transform/bernoulli.hpp"
 #include "lbann/layers/transform/uniform.hpp"
-#include "lbann/layers/transform/binary_cross_entropy_with_logits.hpp"
 
 /// Regularization layers.
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
