@@ -86,7 +86,7 @@ void sgd::setup(weights& w) {
   m_velocity = m_gradient->Construct(m_gradient->Grid(),
                                      m_gradient->Root());
   El::Zeros(*m_velocity, height, width);
-  
+
 }
 
 void sgd::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
@@ -96,7 +96,7 @@ void sgd::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
     El::Axpy(-m_learning_rate, gradient, values);
     return;
   }
-  
+
   // Get local matrix data
   const int local_height = values.LocalHeight();
   const int local_width = values.LocalWidth();
@@ -106,7 +106,7 @@ void sgd::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
   const int gradient_ldim = gradient.LDim();
   DataType* __restrict__ velocity_buffer = m_velocity->Buffer();
   const int velocity_ldim = m_velocity->LDim();
-  
+
   // Check if matrix data is contiguous
   if (values_ldim != local_height
       || gradient_ldim != local_height
@@ -154,27 +154,6 @@ void sgd::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
 // Checkpointing
 ////////////////////////////////////////////////////////////
 
-/**
- * Copies states from GPU to host only if the data is on GPU, which is done
- * asynchronously. Thus, needs synchronization before accessing the states.
- */
-void sgd::set_states_on_host() {
-#ifdef LBANN_HAS_CUDNN
-  set_mat_state_on_host(m_velocity, m_velocity_d, m_cudnn);
-#endif
-}
-
-/**
- * Copies states from host to GPU if the data has to be on GPU. This is done
- * asynchronously. Thus, needs synchronization before accessing the states.
- */
-void sgd::set_states_on_device() {
-#ifdef LBANN_HAS_CUDNN
-  set_mat_state_on_device(m_velocity, m_velocity_d, m_cudnn);
-#endif
-}
-
-  
 bool sgd::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
   optimizer::save_to_checkpoint_shared(p, name_prefix);
 
@@ -201,7 +180,7 @@ bool sgd::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
   unpack_header(header);
   char l_name[512];
   sprintf(l_name, "%s_optimizer_velocity_%lldx%lld.bin", name_prefix.c_str(), m_velocity->Height(), m_velocity->Width());
-  p.read_distmat(persist_type::train, l_name, m_velocity); 
+  p.read_distmat(persist_type::train, l_name, m_velocity);
 
   return true;
 }

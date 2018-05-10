@@ -1195,10 +1195,6 @@ bool model::save_to_checkpoint_shared(persist& p) {
       if(p.get_cb_type() == callback_type::batch)
         p.write_uint64(persist_type::validate, "current_validataion_step",       (uint64_t) m_current_validation_step);
     }
-    for (weights *w : m_weights) {
-      w->set_states_on_host();
-    }
-    synchronize();
 
     for (weights *w : m_weights) {
       w->save_to_checkpoint_shared(p);
@@ -1271,7 +1267,6 @@ bool model::load_from_checkpoint_shared(persist& p) {
 
   for (weights *w : m_weights) {
     w->load_from_checkpoint_shared(p);
-    w->set_states_on_device(); // only if needed
   }
 
   // read in each layer

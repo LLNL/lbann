@@ -68,10 +68,6 @@ class sgd : public optimizer {
   void step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) override;
 #endif // LBANN_HAS_CUDNN
 
-  // For checkpointing
-  void set_states_on_host() override;
-  void set_states_on_device() override;
-
  private:
 
   /** Momentum. */

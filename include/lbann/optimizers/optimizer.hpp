@@ -153,10 +153,6 @@ class optimizer {
     m_step_time = 0.0;
   }
 
-  // For checkpointing
-  virtual void set_states_on_host() {}
-  virtual void set_states_on_device() {}
-
  protected:
 
   /** LBANN communicator. */

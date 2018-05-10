@@ -191,8 +191,6 @@ class weights {
   bool is_frozen() const { return m_frozen; }
 
   // For checkpointing
-  virtual void set_states_on_host();
-  virtual void set_states_on_device();
   bool save_to_checkpoint_shared(persist& p);
   bool load_from_checkpoint_shared(persist& p);
   bool load_from_save(std::string ckpt_dir, std::vector<std::string> weight_list);
