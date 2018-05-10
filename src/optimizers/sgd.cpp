@@ -183,36 +183,80 @@ void sgd::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
 // Checkpointing
 ////////////////////////////////////////////////////////////
 
-  bool sgd::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
-    optimizer::save_to_checkpoint_shared(p, name_prefix);
-    
-    if(p.get_rank() == 0){
-      pack_scalars(p);
-    }
+/**
+ * Copies states from GPU to host only if the data is on GPU, which is done
+ * asynchronously. Thus, needs synchronization before accessing the states.
+ */
+void sgd::set_states_on_host() {
+#ifdef LBANN_HAS_CUDNN
+  set_mat_state_on_host(m_velocity, m_velocity_d, m_cudnn);
+#endif
+}
 
-    char l_name[512];
-    sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->Height(), m_velocity->Width());
-    p.write_distmat(persist_type::train, l_name, (DistMat *)m_velocity);
-    
-    return true;
+/**
+ * Copies states from host to GPU if the data has to be on GPU. This is done
+ * asynchronously. Thus, needs synchronization before accessing the states.
+ */
+void sgd::set_states_on_device() {
+#ifdef LBANN_HAS_CUDNN
+  set_mat_state_on_device(m_velocity, m_velocity_d, m_cudnn);
+#endif
+}
+
+  
+bool sgd::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
+  optimizer::save_to_checkpoint_shared(p, name_prefix);
+
+  if (m_comm->am_model_master()) {
+    pack_scalars(p);
   }
 
-  bool sgd::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
-    optimizer::load_from_checkpoint_shared(p, name_prefix);
-    struct packing_header header;
-    if (p.get_rank() == 0) {
-      unpack_scalars(p, &header);
-    }
-    
-    MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
+  char l_name[512];
+  sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->Height(), m_velocity->Width());
+  p.write_distmat(persist_type::train, l_name, m_velocity);
 
-    unpack_header(header);
-    char l_name[512];
-    
-    sprintf(l_name, "%s_optimizer_velocity_%lldx%lld.bin", name_prefix.c_str(), m_velocity->Height(), m_velocity->Width());
-    p.read_distmat(persist_type::train, l_name, (DistMat *)m_velocity);
-    
-    return true;
+  return true;
+}
+
+bool sgd::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
+  optimizer::load_from_checkpoint_shared(p, name_prefix);
+  struct packing_header header;
+  if (m_comm->am_model_master()) {
+    unpack_scalars(p, &header);
   }
+
+  m_comm->model_broadcast(0, header);
+
+  unpack_header(header);
+  char l_name[512];
+  sprintf(l_name, "%s_optimizer_velocity_%lldx%lld.bin", name_prefix.c_str(), m_velocity->Height(), m_velocity->Width());
+  p.read_distmat(persist_type::train, l_name, m_velocity); 
+
+  return true;
+}
+
+bool sgd::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
+  optimizer::save_to_checkpoint_distributed(p, name_prefix);
+
+  pack_scalars(p);
+
+  char l_name[512];
+  sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->LocalHeight(), m_velocity->LocalWidth());
+  p.write_rank_distmat(persist_type::train, l_name, *m_velocity);
+
+  return true;
+}
+
+bool sgd::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
+  optimizer::load_from_checkpoint_distributed(p, name_prefix);
+  struct packing_header header;
+  unpack_scalars(p, &header);
+
+  char l_name[512];
+  sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->LocalHeight(), m_velocity->LocalWidth());
+  p.read_rank_distmat(persist_type::train, l_name, *m_velocity);
+
+  return true;
+}
 
 }  // namespace lbann

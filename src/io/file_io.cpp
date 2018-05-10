@@ -44,7 +44,6 @@ static mode_t mode_dir = S_IRWXU | S_IRWXG;
 static MPI_Comm comm = MPI_COMM_WORLD;
 
 /* creates directory given in dir (absolute path),
- * rank 0 creates directory, all other procs get result via bcast,
  * returns 1 if dir was created, 0 otherwise */
 int lbann::makedir(const char *dir) {
   // get our rank
@@ -53,23 +52,18 @@ int lbann::makedir(const char *dir) {
 
   // have rank 0 create directory
   int mkdir_rc;
-  if (rank == 0) {
-    mkdir_rc = mkdir(dir, mode_dir);
-    if (mkdir_rc != 0) {
-      if (errno == EEXIST) {
-        // not an error if the directory already exists
-        mkdir_rc = 0;
-      } else {
-        fprintf(stderr, "ERROR: Failed to create directory `%s' (%d: %s) @ %s:%d\n",
-                dir, errno, strerror(errno), __FILE__, __LINE__
-               );
-        fflush(stderr);
-      }
+  mkdir_rc = mkdir(dir, mode_dir);
+  if (mkdir_rc != 0) {
+    if (errno == EEXIST) {
+      // not an error if the directory already exists
+      mkdir_rc = 0;
+    } else {
+      fprintf(stderr, "ERROR: Failed to create directory `%s' (%d: %s) @ %s:%d\n",
+              dir, errno, strerror(errno), __FILE__, __LINE__
+             );
+      fflush(stderr);
     }
   }
-
-  // bcast whether directory was created or not
-  MPI_Bcast(&mkdir_rc, 1, MPI_INT, 0, comm);
 
   // return 1 if dir was created successfully
   int ret = (mkdir_rc == 0);

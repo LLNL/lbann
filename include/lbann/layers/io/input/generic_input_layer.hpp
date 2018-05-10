@@ -624,10 +624,10 @@ class generic_input_layer : public io_layer {
   //************************************************************************
 
   // save state of IO to a checkpoint
-  bool save_to_checkpoint_shared(persist& p, bool val_end) const override {
+  bool save_to_checkpoint_shared(persist& p) const override {
     // save state of data readers from input layer
     data_reader_map_t::const_iterator it;
-    if(!val_end){
+    if(p.get_cb_type() != callback_type::validation){
       it = this->m_data_readers.find(execution_mode::training);
       if ((it != this->m_data_readers.end()) && it->second) {
         (it->second)->save_to_checkpoint_shared(p, "data_reader_training");
@@ -636,7 +636,7 @@ class generic_input_layer : public io_layer {
       if ((it != this->m_data_readers.end()) && it->second) {
         (it->second)->save_to_checkpoint_shared(p, "data_reader_testing");
       }
-      if (p.get_rank() == 0) {
+      if (m_comm->am_model_master()) {
         p.write_uint64(persist_type::train, "reader_train_processed",
                        (uint64_t) m_training_dataset.get_num_samples_processed());
         p.write_uint64(persist_type::train, "reader_train_total",
@@ -649,12 +649,13 @@ class generic_input_layer : public io_layer {
 
       }
     }
-    else if(val_end){
-      p.write_uint64(persist_type::validate, "reader_validate_processed",
-                     (uint64_t) m_validation_dataset.get_num_samples_processed());
-      p.write_uint64(persist_type::validate, "reader_validate_total",
-                     (uint64_t) m_validation_dataset.get_total_samples());
-      
+    if(p.get_cb_type() == callback_type::validation || p.get_cb_type() == callback_type::batch){
+      if (m_comm->am_model_master()) {
+        p.write_uint64(persist_type::validate, "reader_validate_processed",
+                       (uint64_t) m_validation_dataset.get_num_samples_processed());
+        p.write_uint64(persist_type::validate, "reader_validate_total",
+                       (uint64_t) m_validation_dataset.get_total_samples());
+      }
       it = this->m_data_readers.find(execution_mode::validation);
       if ((it != this->m_data_readers.end()) && it->second) {
         (it->second)->save_to_checkpoint_shared(p, "data_reader_validation");
@@ -689,31 +690,110 @@ class generic_input_layer : public io_layer {
     // save our own state
     // rank 0 reads the file
     dataset_header header;
-    if (p.get_rank() == 0) {
+    // Assume we are loading from a epoch end checkpoint
+    if (m_comm->am_model_master()) {
       p.read_uint64(persist_type::train, "reader_train_processed",    &header.train_proc);
       p.read_uint64(persist_type::train, "reader_train_total",        &header.train_total);
       p.read_uint64(persist_type::train, "reader_test_processed",     &header.test_proc);
       p.read_uint64(persist_type::train, "reader_test_total",         &header.test_total);
-      p.read_uint64(persist_type::validate, "reader_validate_processed", &header.validate_proc);
-      p.read_uint64(persist_type::validate, "reader_validate_total",     &header.validate_total);
+      if(m_data_readers[execution_mode::validation] != nullptr){
+        p.read_uint64(persist_type::validate, "reader_validate_processed", &header.validate_proc);
+        p.read_uint64(persist_type::validate, "reader_validate_total",     &header.validate_total);
+      }
     }
-
+    
     it = this->m_data_readers.find(execution_mode::validation);
     if ((it != this->m_data_readers.end()) && it->second) {
       (it->second)->load_from_checkpoint_shared(p, "data_reader_validation");
     }
-
     // TODO: assumes homogeneous hardware
     // broadcast data from rank 0
     MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
-
     // set our fields
     m_training_dataset.num_samples_processed()   = (long) header.train_proc;
     m_training_dataset.total_samples()           = (long) header.train_total;
     m_testing_dataset.num_samples_processed()    = (long) header.test_proc;
     m_testing_dataset.total_samples()            = (long) header.test_total;
-    m_validation_dataset.num_samples_processed() = (long) header.validate_proc;
-    m_validation_dataset.total_samples()         = (long) header.validate_total;
+    if(m_data_readers[execution_mode::validation] != nullptr){
+      m_validation_dataset.num_samples_processed() = (long) header.validate_proc;
+      m_validation_dataset.total_samples()         = (long) header.validate_total;
+    }
+    return true;
+  }
+
+  bool save_to_checkpoint_distributed(persist& p) const override {
+    // save state of data readers from input layer
+    data_reader_map_t::const_iterator it;
+    if(p.get_cb_type() != callback_type::validation){
+      it = this->m_data_readers.find(execution_mode::training);
+      if ((it != this->m_data_readers.end()) && it->second) {
+        (it->second)->save_to_checkpoint_distributed(p, "data_reader_training");
+      }
+      it = this->m_data_readers.find(execution_mode::testing);
+      if ((it != this->m_data_readers.end()) && it->second) {
+        (it->second)->save_to_checkpoint_distributed(p, "data_reader_testing");
+      }
+      p.write_uint64(persist_type::train, "reader_train_processed",
+                     (uint64_t) m_training_dataset.get_num_samples_processed());
+      p.write_uint64(persist_type::train, "reader_train_total",
+                     (uint64_t) m_training_dataset.get_total_samples());
+
+      p.write_uint64(persist_type::train, "reader_test_processed",
+                     (uint64_t) m_testing_dataset.get_num_samples_processed());
+      p.write_uint64(persist_type::train, "reader_test_total",
+                   (uint64_t) m_testing_dataset.get_total_samples());
+
+    }
+    if(p.get_cb_type() == callback_type::validation || p.get_cb_type() == callback_type::batch){
+      p.write_uint64(persist_type::validate, "reader_validate_processed",
+                     (uint64_t) m_validation_dataset.get_num_samples_processed());
+      p.write_uint64(persist_type::validate, "reader_validate_total",
+                     (uint64_t) m_validation_dataset.get_total_samples());
+      it = this->m_data_readers.find(execution_mode::validation);
+      if ((it != this->m_data_readers.end()) && it->second) {
+        (it->second)->save_to_checkpoint_distributed(p, "data_reader_validation");
+      }
+
+    }
+    return true;
+  }
+
+  bool load_from_checkpoint_distributed(persist& p) override {
+    // save state of data readers from input layer
+    data_reader_map_t::const_iterator it;
+    it = this->m_data_readers.find(execution_mode::training);
+    if ((it != this->m_data_readers.end()) && it->second) {
+      (it->second)->load_from_checkpoint_distributed(p, "data_reader_training");
+    }
+    it = this->m_data_readers.find(execution_mode::testing);
+    if ((it != this->m_data_readers.end()) && it->second) {
+      (it->second)->load_from_checkpoint_distributed(p, "data_reader_testing");
+    }
+    // save our own state
+    // rank 0 reads the file
+    dataset_header header;
+    p.read_uint64(persist_type::train, "reader_train_processed",    &header.train_proc);
+    p.read_uint64(persist_type::train, "reader_train_total",        &header.train_total);
+    p.read_uint64(persist_type::train, "reader_test_processed",     &header.test_proc);
+    p.read_uint64(persist_type::train, "reader_test_total",         &header.test_total);
+    if(m_data_readers[execution_mode::validation] != nullptr){
+      p.read_uint64(persist_type::validate, "reader_validate_processed", &header.validate_proc);
+      p.read_uint64(persist_type::validate, "reader_validate_total",     &header.validate_total);
+    }
+    it = this->m_data_readers.find(execution_mode::validation);
+    if ((it != this->m_data_readers.end()) && it->second) {
+      (it->second)->load_from_checkpoint_distributed(p, "data_reader_validation");
+    }
+    
+    // set our fields
+    m_training_dataset.num_samples_processed()   = (long) header.train_proc;
+    m_training_dataset.total_samples()           = (long) header.train_total;
+    m_testing_dataset.num_samples_processed()    = (long) header.test_proc;
+    m_testing_dataset.total_samples()            = (long) header.test_total;
+    if(m_data_readers[execution_mode::validation] != nullptr){
+      m_validation_dataset.num_samples_processed() = (long) header.validate_proc;
+      m_validation_dataset.total_samples()         = (long) header.validate_total;
+    }
     return true;
   }
 

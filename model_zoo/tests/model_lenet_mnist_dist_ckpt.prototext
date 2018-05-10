@@ -43,8 +43,9 @@ model {
   callback {
     checkpoint {
       checkpoint_dir: "ckpt"
-      checkpoint_epochs: 1
-      checkpoint_steps: 845 
+      ckpt_dist_epochs: 1
+      ckpt_dist_steps: 845 
+      per_rank_dir: "." 
     }
   }
   callback {
@@ -59,6 +60,7 @@ model {
       all_optimizers: true
     }
   }
+
 
   ###################################################
   # Layers
@@ -136,7 +138,7 @@ model {
     data_layout: "model_parallel"
     relu {}
   }
-
+  
   layer {
     name: "ip2"
     data_layout: "model_parallel"
