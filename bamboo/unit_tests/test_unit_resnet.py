@@ -9,7 +9,7 @@ def skeleton_gradient_check_resnet(cluster, executables, dir_name, compiler_name
       pytest.skip('default_exes[%s] does not exist' % compiler_name)
     command = tools.get_command(
         cluster=cluster, executable=executables[compiler_name], num_nodes=1, num_processes=1,
-        dir_name=dir_name, data_filedir_ray='/p/gscratchr/brainusr/datasets/MNIST',
+        dir_name=dir_name, data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
         data_reader_name='mnist', model_folder='tests', model_name='mnist_resnet',
         optimizer_name='adam')
     return_code = os.system(command)

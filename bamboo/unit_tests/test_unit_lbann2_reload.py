@@ -4,12 +4,12 @@ import tools
 import pytest
 import os, sys
 
-def test_unit_lbann2_reload(cluster, exe, dirname):
-    lbann2  = exe + '2'
+def test_unit_lbann2_reload(cluster, exes, dirname):
+    lbann2  = exes['gcc4'] + '2'
     model_path = '{../../model_zoo/models/lenet_mnist/model_lenet_mnist.prototext,../../model_zoo/tests/model_lenet_mnist_lbann2ckpt.prototext}'
     command = tools.get_command(
         cluster=cluster, executable=lbann2, data_reader_name='mnist',
-        data_filedir_ray='/p/gscratchr/brainusr/datasets/MNIST',
+        data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
         dir_name=dirname, 
         model_path=model_path,
         optimizer_name='sgd',
@@ -25,7 +25,7 @@ def test_unit_lbann2_reload(cluster, exe, dirname):
     command = tools.get_command(
         cluster=cluster, executable=exe, num_nodes=1, num_processes=1,
         dir_name=dirname,
-        data_filedir_ray='/p/gscratchr/brainusr/datasets/MNIST',
+        data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
         data_reader_name='mnist', model_folder='tests',
         model_name='lenet_mnist_ckpt', num_epochs=2, optimizer_name='sgd')   
     return_code_ckpt_1 = os.system(command)
@@ -36,7 +36,7 @@ def test_unit_lbann2_reload(cluster, exe, dirname):
     command = tools.get_command(
         cluster=cluster, executable=lbann2, num_nodes=1, num_processes=1,
         dir_name=dirname,
-        data_filedir_ray='/p/gscratchr/brainusr/datasets/MNIST',
+        data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
         data_reader_name='mnist',
         model_path='../../model_zoo/tests/model_lenet_mnist_lbann2ckpt.prototext', num_epochs=2, optimizer_name='sgd', ckpt_dir='ckpt/')
     return_code_ckpt_2 = os.system(command)

@@ -99,20 +99,22 @@ def skeleton_performance_alexnet(cluster, dir_name, executables, compiler_name, 
     frequency_str = '_weekly'
   run_tests(actual_performance, model_name, dir_name, should_log, compiler_name, cluster, frequency_str)
 
-def skeleton_performance_cache_alexnet(cluster, dir_name, executables, weekly, compiler_name):
+def skeleton_performance_full_alexnet(cluster, dir_name, executables, weekly, compiler_name):
   if not weekly:
     pytest.skip('Not doing weekly testing')
   if compiler_name not in executables:
     pytest.skip('default_exes[%s] does not exist' % compiler_name)
   executable = executables[compiler_name]
-  model_name = 'cache_alexnet'
+  if not os.path.exists(executable):
+    pytest.skip('Executable does not exist: %s' % executable)
+  model_name = 'full_alexnet'
   should_log = False
   output_file_name = '%s/bamboo/integration_tests/output/%s_%s_output.txt' %(dir_name, model_name, compiler_name)
   error_file_name = '%s/bamboo/integration_tests/error/%s_%s_error.txt' %(dir_name, model_name, compiler_name) 
   if (cluster in ['catalyst', 'surface']):
     command = 'salloc %s/bamboo/integration_tests/%s.sh > %s' % (dir_name, model_name, output_file_name)
   elif cluster == 'ray':
-    pytest.skip('Ray is unsupported for skeleton_performance_cache_alexnet')
+    pytest.skip('Ray is unsupported for skeleton_performance_full_alexnet')
   else:
     raise Exception('Unsupported Cluster %s' % cluster)
   common_code.run_lbann(command, model_name, output_file_name, error_file_name, should_log) # Don't need return value
@@ -125,8 +127,8 @@ def test_integration_performance_lenet_mnist_clang4(cluster, dirname, exes):
 def test_integration_performance_alexnet_clang4(cluster, dirname, exes, weekly):
   skeleton_performance_alexnet(cluster, dirname, exes, 'clang4', weekly)
 
-def test_integration_performance_cache_alexnet_clang4(cluster, dirname, exes, weekly):
-  skeleton_performance_cache_alexnet(cluster, dirname, exes, 'clang4', weekly)
+def test_integration_performance_full_alexnet_clang4(cluster, dirname, exes, weekly):
+  skeleton_performance_full_alexnet(cluster, dirname, exes, 'clang4', weekly)
                                         
 def test_integration_performance_lenet_mnist_gcc4(cluster, dirname, exes):
   skeleton_performance_lenet_mnist(cluster, dirname, exes, 'gcc4')
@@ -134,8 +136,8 @@ def test_integration_performance_lenet_mnist_gcc4(cluster, dirname, exes):
 def test_integration_performance_alexnet_gcc4(cluster, dirname, exes, weekly):
   skeleton_performance_alexnet(cluster, dirname, exes, 'gcc4', weekly)
 
-def test_integration_performance_cache_alexnet_gcc4(cluster, dirname, exes, weekly):
-  skeleton_performance_cache_alexnet(cluster, dirname, exes, 'gcc4', weekly)
+def test_integration_performance_full_alexnet_gcc4(cluster, dirname, exes, weekly):
+  skeleton_performance_full_alexnet(cluster, dirname, exes, 'gcc4', weekly)
 
 def test_integration_performance_lenet_mnist_gcc7(cluster, dirname, exes):
   skeleton_performance_lenet_mnist(cluster, dirname, exes, 'gcc7')
@@ -143,8 +145,8 @@ def test_integration_performance_lenet_mnist_gcc7(cluster, dirname, exes):
 def test_integration_performance_alexnet_gcc7(cluster, dirname, exes, weekly):
   skeleton_performance_alexnet(cluster, dirname, exes, 'gcc7', weekly)
 
-def test_integration_performance_cache_alexnet_gcc7(cluster, dirname, exes, weekly):
-  skeleton_performance_cache_alexnet(cluster, dirname, exes, 'gcc7', weekly)
+def test_integration_performance_full_alexnet_gcc7(cluster, dirname, exes, weekly):
+  skeleton_performance_full_alexnet(cluster, dirname, exes, 'gcc7', weekly)
 
 def test_integration_performance_lenet_mnist_intel18(cluster, dirname, exes):
   skeleton_performance_lenet_mnist(cluster, dirname, exes, 'intel18')
@@ -152,5 +154,5 @@ def test_integration_performance_lenet_mnist_intel18(cluster, dirname, exes):
 def test_integration_performance_alexnet_intel18(cluster, dirname, exes, weekly):
   skeleton_performance_alexnet(cluster, dirname, exes, 'intel18', weekly)
 
-def test_integration_performance_cache_alexnet_intel18(cluster, dirname, exes, weekly):
-  skeleton_performance_cache_alexnet(cluster, dirname, exes, 'intel18', weekly)
+def test_integration_performance_full_alexnet_intel18(cluster, dirname, exes, weekly):
+  skeleton_performance_full_alexnet(cluster, dirname, exes, 'intel18', weekly)
