@@ -39,15 +39,51 @@ data_store_image::~data_store_image() {
 }
 
 void data_store_image::setup() {
+  set_name("data_store_image");
+
+  options *opts = options::get();
+  bool prestage = false;
+  std::string prestage_dir;
+  if (opts->has_string("create_tarball")) {
+    prestage_dir = options::get()->get_string("create_tarball");
+    prestage = true;
+  }
+  if (m_master) {
+    std::cerr << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
+      << "====================================================================\n"
+      << "\ndata_store is running in prestage mode; after writing files to ssd,\n"
+      << "a tarball will be created and written to " << prestage_dir << "\n\n";
+
+    // do some quick sanity checking
+    std::string local_dir = m_reader->get_local_file_dir();
+    size_t n = std::count(local_dir.begin(), local_dir.end(), '/');
+    if (n < 2) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "\nlocal dir is: " << local_dir << "; does not meet requirement"
+          << " of containing two '/'; name should probably be something like"
+          << " /l/ssd/train";
+      throw lbann_exception(err.str());
+    }
+
+    std::string exe = get_tarball_exe();
+    std::cerr 
+      << "example system call to create tarball;\n"
+      << "IF THIS DOESN'T LOOK CORRECT, ABORT NOW!\n"
+      << "  " << exe << "\n\nsleeping for five seconds\n"
+      << "====================================================================\n"
+      << "\n\n\n\n\n\n\n\n\n\n\n\n";
+  }
+  sleep(5);
 
   if (m_master) std::cerr << "starting data_store_image::setup(); calling generic_data_store::setup()\n";
   generic_data_store::setup();
 
-  set_name("data_store_image");
-
   if (! m_in_memory) {
-    if (m_master) std::cerr << "data_store_image - calling exchange_partitioned_indices\n";
-    exchange_partitioned_indices();
+    if (!prestage) {
+      if (m_master) std::cerr << "data_store_image - calling exchange_partitioned_indices\n";
+      exchange_partitioned_indices();
+    }
 
     if (m_master) std::cerr << "data_store_image - calling get_my_datastore_indices\n";
     get_my_datastore_indices();
@@ -56,13 +92,24 @@ void data_store_image::setup() {
     build_data_filepaths();
 
     if (m_master) std::cerr << "data_store_image - calling get_file_sizes\n";
+    double tm = get_time();
     get_file_sizes();
+    if (m_master) std::cerr << "TIME for get_file_sizes: " << get_time() - tm << "\n";
 
     if (m_master) std::cerr << "data_store_image - calling stage_files\n";
+    tm = get_time();
     stage_files();
+    if (m_master) std::cerr << "TIME for stage_files: " << get_time() - tm << "\n";
+    // create tarball and copy to lscratch (or where ever)
+    if (prestage) {
+      create_tarball();
+      m_comm->global_barrier();
+      finalize(m_comm);
+      exit(0);
+    }
 
     // Early exit if we're only staging files
-    if (options::get()->has_bool("stage_and_exit") && options::get()->get_bool("stage_and_exit")) {
+    if (opts->has_bool("stage_and_exit") && opts->get_bool("stage_and_exit")) {
       m_comm->global_barrier();
       if (m_master) {
         std::cerr << "\nstaging complete; exiting due to option: stage_and_exit\n";
@@ -144,7 +191,8 @@ void data_store_image::load_file(const std::string &dir, const std::string &fn, 
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "failed to read " << sz << " bytes from " << imagepath
-        << " num bytes read: " << in.gcount();
+        << " num bytes read: " << in.gcount()
+        << "\nhostname: " << getenv("SLURMD_NODENAME") << " role: " << m_reader->get_role();
     throw lbann_exception(err.str());
   }
   in.close();
@@ -402,6 +450,11 @@ void data_store_image::create_dirs(const std::string &s) {
   if (s.size() == 0) {
     return;
   }
+  /*
+  if (m_verbose && m_master) {
+    std::cerr << "starting data_store_image::create_dirs for: " << s << "\n";
+  }
+  */
   size_t idx;
   size_t last = s[0] == '/' ? 1 : 0;
   while ((idx = s.find('/', last)) != std::string::npos) {
@@ -424,6 +477,11 @@ void data_store_image::create_dirs(const std::string &s) {
       }
     } else {
       in.close();
+      /*
+      if (m_verbose && m_master) {
+        std::cerr << "  mkdir(" << d << "\n";
+      }
+      */
     }
   }
 }
@@ -634,6 +692,31 @@ void data_store_image::fetch_data() {
               << "  minibatch " << 1+m_cur_minibatch << " of " 
               << m_num_minibatches << "; " << m_reader->get_role() << "\n";
   }
+}
+
+void data_store_image::write_file_sizes() {
+  //@todo
+}
+
+std::string data_store_image::get_tarball_exe() {
+  std::string prestage_dir = options::get()->get_string("create_tarball");
+  std::stringstream s;
+  std::string local_dir = m_reader->get_local_file_dir();
+  s << "tar cvf " << prestage_dir << "/" << m_reader->get_role()
+    << "_rank=" << m_rank << "_np=" << m_np << ".tar ";
+  size_t j2 = local_dir.rfind('/');
+  std::string name = local_dir.substr(j2+1);
+  if (name[name.size()-1] == '/') {
+    j2 = name.rfind('/');
+    name = name.substr(j2+1);
+  }
+  s << name;
+  return s.str();
+}
+
+void data_store_image::create_tarball() {
+  write_file_sizes();
+  //std::string e = get_tarball_exe();
 }
 
 }  // namespace lbann

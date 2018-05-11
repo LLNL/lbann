@@ -170,7 +170,8 @@ size_t generic_data_store::get_file_size(std::string dir, std::string fn) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "stat failed for dir: " << dir
-        << " and fn: " << fn;
+        << " and fn: " << fn 
+        << " on node: " << getenv("SLURMD_NODENAME");
     throw lbann_exception(err.str());
   }
   return st.st_size;   

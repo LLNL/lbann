@@ -121,6 +121,18 @@ class data_store_image : public generic_data_store {
   ///   /dir1/[dir2/...]/
   void create_dirs(const std::string &s); 
 
+  /// creates a tarball of files written to local disk, then
+  /// copies the tarball to, e.g, lscratchX. Activated by the cmd line
+  /// options: --create_tarball <name> where <name> is the directory
+  /// to which to copy the tarball. 
+  void create_tarball();
+
+  /// returns the string that will be passed to a system call to
+  /// create the tarball
+  std::string get_tarball_exe();
+
+  /// called by create_tarball
+  void write_file_sizes();
 };
 
 }  // namespace lbann
