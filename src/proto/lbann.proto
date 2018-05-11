@@ -22,6 +22,7 @@ message Reader {
   string role = 3; //train, test
   bool shuffle = 4;
   string data_filedir = 5;
+  string data_local_filedir = 50; //to support data_store
   string data_filename = 6;
   string label_filename = 7;
   double validation_percent = 9;

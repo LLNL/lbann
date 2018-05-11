@@ -111,18 +111,26 @@ class generic_data_reader : public lbann_image_preprocessor {
   // load, etc.
 
   /**
-   * Set base directory for your data. Optional: if given,
-   * then get_data_filename will concatenate the value passed
-   * to this method with the value passed to set_data_filename,
-   * and similarly for get_label_filename
+   * Set base directory for your data. 
    */
   void set_file_dir(std::string s);
+
+  /**
+   * Set base directory for your locally cached (e.g, on ssd) data. 
+   */
+  void set_local_file_dir(std::string s);
 
   /**
    * Returns the base directory for your data.
    * If set_file_dir was not called, returns the empty string
    */
   std::string get_file_dir() const;
+
+  /**
+   * Returns the base directory for caching files in local ssd
+   * If set_local_file_dir was not called, returns the empty string
+   */
+  std::string get_local_file_dir() const;
 
   /**
    * Set the filename for your data (images, etc).
@@ -612,6 +620,9 @@ class generic_data_reader : public lbann_image_preprocessor {
   void set_save_minibatch_entries(bool b);
 
   /// support of data store functionality
+  void init_minibatch();
+
+  /// support of data store functionality
   const std::vector<std::vector<int> > & get_minibatch_indices() const {
     return m_my_minibatch_indices;
   }
@@ -753,6 +764,7 @@ class generic_data_reader : public lbann_image_preprocessor {
 
   int m_model_rank;  /// What is the rank of the data reader within a given model
   std::string m_file_dir;
+  std::string m_local_file_dir;
   std::string m_data_fn;
   std::string m_label_fn;
   bool m_shuffle;

@@ -54,7 +54,7 @@ if (GIT_REPO)
   set(${UPPER_PROJECT_NAME}_VERSION ${GIT_VERSION}
     CACHE STRING "LBANN's version string")
 else ()
-  set(${UPPER_PROJECT_NAME}_VERSION v0.UNKN
+  set(${UPPER_PROJECT_NAME}_VERSION v0.94
     CACHE STRING "LBANN's version string")
 endif (GIT_REPO)
 

@@ -102,7 +102,7 @@ void data_store_pilot2_molecular::setup() {
   }
 
   if (m_owner) {
-    std::cerr << "data_store_pilot2_molecular::setup time: " << get_time() - tm1 << "\n";
+    std::cerr << "TIME data_store_pilot2_molecular setup: " << get_time() - tm1 << "\n";
   }
 }
 
@@ -297,7 +297,8 @@ void data_store_pilot2_molecular::exchange_data() {
   m_comm->wait_all<double>(recv_req);
 
   if (m_owner) {
-    std::cout << "role: " << m_reader->get_role() << " data_store_pilot2_molecular::exchange_data() time: " << get_time() - tm1 << std::endl;
+    std::cout << "TIME for data_store_pilot2_molecular::exchange_data(): "
+              << get_time() - tm1 << "; role: " << m_reader->get_role() << "\n";
   }
 }
 

@@ -33,6 +33,7 @@
 #include "lbann/comm.hpp"
 #include <vector>
 #include <unordered_set>
+#include <unordered_map>
 
 namespace lbann {
 
@@ -131,6 +132,11 @@ class generic_data_store {
     m_all_minibatch_indices = indices;
   }
 
+  /// supports out-of-memory-mode
+  virtual void fetch_data() {}
+
+  void init_minibatch();
+
 protected :
 
   virtual void exchange_data() = 0;
@@ -222,6 +228,33 @@ protected :
 
   /// as of now, only applicable to merge_features and merge_samples
   bool m_is_subsidiary_store;
+
+  /// maps and index from m_my_datastore_indices to a filepath
+  /// for use in out-of-memory mode
+  std::unordered_map<int, std::string> m_data_filepaths;
+  /// fills in m_data_filepaths
+  virtual void build_data_filepaths() {std::cerr << "shouldn't be here!\n";}
+
+  /// outer vector size is m_np; m_all_partitioned_indices[i]
+  /// contains m_my_minibatch_indices from P_i
+  std::vector<std::vector<std::vector<int>>> m_all_partitioned_indices;
+  /// supports out-of-memory-mode;
+  /// all-to-all exchange of m_my_minibatch_indices;
+  /// fills in m_all_partitioned_indices
+  void exchange_partitioned_indices();
+  /// size of the largest middle vector in m_all_partitioned_indices;
+  /// this should be the number of minibatches in an epoch
+  size_t m_num_minibatches;
+
+  /// for debugging during development
+  void print_partitioned_indices();
+
+  /// supports out-of-memory mode; this is the current
+  /// minibatch that is read into memory
+  size_t m_cur_minibatch;
+
+  bool m_is_setup;
+  bool m_verbose;
 };
 
 }  // namespace lbann

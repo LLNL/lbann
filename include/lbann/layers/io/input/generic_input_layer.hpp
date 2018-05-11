@@ -197,6 +197,12 @@ class generic_input_layer : public io_layer {
 
   void fp_compute() override {
     execution_mode mode = this->m_model->get_execution_mode();
+
+    /// support for data_store out-of-memory mode; this instructs
+    /// the data_store (via the data_reader) to read in the
+    /// next mb from file, then exchange data as needed
+    get_data_reader()->init_minibatch();
+
     int num_samples_in_batch = io_buffer->fetch_to_local_matrix(get_data_reader(), mode);
 
     if(dynamic_cast<partitioned_io_buffer*>(io_buffer) != nullptr) {

@@ -109,6 +109,14 @@ case ${CLUSTER} in
         HAS_GPU=YES
         GPUS_PER_NODE=2
         ;;
+    "pascal")
+        SCHEDULER=slurm
+        PARTITION=${PARTITION:-pbatch}
+        ACCOUNT=${ACCOUNT:-lc}
+        CACHE_DIR=${CACHE_DIR:-/tmp/${USER}}
+        CORES_PER_NODE=36
+        HAS_GPU=YES
+        ;;
     *)
         SCHEDULER=slurm
         PARTITION=${PARTITION:-pbatch}
@@ -256,14 +264,13 @@ esac
 case ${SCHEDULER} in
     slurm)
         MPIRUN="srun --nodes=${NUM_NODES} --ntasks=${NUM_PROCS}"
-        case ${CLUSTER} in
-            surface|ray)
-                case ${HAS_GPU} in
-                    YES|yes|TRUE|true|ON|on|1)
+        case ${HAS_GPU} in
+            YES|yes|TRUE|true|ON|on|1)
+                case ${CLUSTER} in
+                    surface|ray)
                         MPIRUN="${MPIRUN} --nvidia_compute_mode=default"
                         ;;
                 esac
-                ;;
         esac
         MPIRUN1="srun --nodes=${NUM_NODES} --ntasks=${NUM_NODES}"
         MPIRUN2="srun --nodes=${NUM_NODES} --ntasks=$((2*${NUM_NODES}))"

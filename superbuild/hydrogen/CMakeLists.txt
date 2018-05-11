@@ -54,7 +54,7 @@ set(Hydrogen_URL "https://github.com/LLNL/Elemental.git"
   CACHE STRING "The URL from which to clone Hydrogen")
 
 # ... then the tag.
-set(Hydrogen_TAG "hydrogen"
+set(Hydrogen_TAG "0.99"
   CACHE STRING "The git tag or hash to checkout for Hydrogen")
 
 
