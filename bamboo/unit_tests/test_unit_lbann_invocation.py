@@ -49,7 +49,7 @@ def test_unit_missing_optimizer(cluster, exes, dirname):
     data_reader_path='prototext/data_reader_mnist.prototext'
     command = tools.get_command(
         cluster=cluster, executable=exe, data_reader_path=data_reader_path,
-        data_filedir_ray='/p/gscratchr/brainusr/datasets/MNIST',
+        data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
         exit_after_setup=True, model_path=model_path)
     return_code = os.system(command)
     assert return_code != 0
@@ -80,7 +80,7 @@ def test_unit_should_work(cluster, exes, dirname):
     optimizer_path = 'prototext/opt_sgd.prototext'
     command = tools.get_command(
         cluster=cluster, executable=exe, data_reader_path=data_reader_path,
-        data_filedir_ray='/p/gscratchr/brainusr/datasets/MNIST',
+        data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
         exit_after_setup=True, model_path=model_path,
         optimizer_path=optimizer_path)
     return_code = os.system(command)

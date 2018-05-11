@@ -35,7 +35,7 @@ def skeleton_io_buffers(cluster, dir_name, executables, compiler_name, weekly):
                 command = tools.get_command(
                     cluster=cluster, executable=executables[compiler_name], num_nodes=2,
                     num_processes=num_ranks, dir_name=dir_name,
-                    data_filedir_ray='/p/gscratchr/brainusr/datasets/MNIST',
+                    data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
                     data_reader_name='mnist', mini_batch_size=mini_batch_size,
                     model_folder='tests', model_name=model_name, num_epochs=5,
                     optimizer_name='adagrad',
