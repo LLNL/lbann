@@ -296,7 +296,9 @@ std::string model::print_layer_description(const Layer* layer) const {
   std::stringstream os;
   //std::string description = layer->get_description();
   os << std::setw(12) << layer->get_name() << ":[" << std::setw(18)
-     << layer->get_type() <<  "] Set up a layer with input " << std::setw(7)
+     << layer->get_type()
+     << "(" << layer->get_device_allocation_string_short(layer->get_device_allocation()) << ")"
+     <<  "] Set up a layer with input " << std::setw(7)
      << layer->get_num_prev_neurons() << " and " << std::setw(7)
      << layer->get_num_neurons() << " neurons.";
   std::string s = layer->get_topo_description();
@@ -535,7 +537,7 @@ void model::add_connected_layers() {
     }
 
   }
-  
+
 }
 
 void model::add_dummy_layers() {
@@ -585,14 +587,42 @@ void model::add_split_layers() {
         && children.size() != 1) {
 
       // Create split layer
-      Layer *split;
+      Layer *split = nullptr;
       auto&& cudnn = layer->get_cudnn_manager();
       switch (layer->get_data_layout()) {
       case data_layout::DATA_PARALLEL:
-        split = new split_layer<data_layout::DATA_PARALLEL>(m_comm, cudnn);
+        switch(layer->get_device_allocation()) {
+        case El::Device::CPU:
+          split = new split_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(m_comm, cudnn);
+          break;
+#ifdef LBANN_HAS_GPU
+        case El::Device::GPU:
+          split = new split_layer<data_layout::DATA_PARALLEL, El::Device::GPU>(m_comm, cudnn);
+          break;
+#endif // LBANN_HAS_GPU
+        default:
+          std::stringstream err;
+          err << __FILE__ << " " << __LINE__ << " :: "
+              << "invalid matrix data allocation";
+          throw lbann_exception(err.str());
+        }
         break;
       case data_layout::MODEL_PARALLEL:
-        split = new split_layer<data_layout::MODEL_PARALLEL>(m_comm, cudnn);
+        switch(layer->get_device_allocation()) {
+        case El::Device::CPU:
+          split = new split_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>(m_comm, cudnn);
+          break;
+#ifdef LBANN_HAS_GPU
+        case El::Device::GPU:
+          split = new split_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>(m_comm, cudnn);
+          break;
+#endif // LBANN_HAS_GPU
+        default:
+          std::stringstream err;
+          err << __FILE__ << " " << __LINE__ << " :: "
+              << "invalid matrix data allocation";
+          throw lbann_exception(err.str());
+        }
         break;
       default:
         std::stringstream err;
@@ -1165,15 +1195,11 @@ bool model::save_to_checkpoint_shared(persist& p) {
       if(p.get_cb_type() == callback_type::batch)
         p.write_uint64(persist_type::validate, "current_validataion_step",       (uint64_t) m_current_validation_step);
     }
-    for (weights *w : m_weights) {
-      w->set_states_on_host();
-    }
-    synchronize();
 
     for (weights *w : m_weights) {
       w->save_to_checkpoint_shared(p);
     }
-    
+
     for (size_t l = 0; l < m_layers.size(); l++) {
       if (! m_layers[l]->save_to_checkpoint_shared(p)) {
         return false;
@@ -1186,15 +1212,15 @@ bool model::save_to_checkpoint_shared(persist& p) {
       }
     }
   }
-  else{ 
+  else{
     if (m_comm->am_model_master()) {
       p.write_uint64(persist_type::validate, "current_validataion_step",       (uint64_t) m_current_validation_step);
     }
     save_rng_to_checkpoint_shared(p, m_comm);
     for (size_t l = 0; l < m_layers.size(); l++) {
       if (! m_layers[l]->save_to_checkpoint_shared(p)) {
-        return false; 
-      } 
+        return false;
+      }
     }
     for (const auto& m : m_metrics) {
       m->save_to_checkpoint_shared(p);
@@ -1236,12 +1262,11 @@ bool model::load_from_checkpoint_shared(persist& p) {
   m_max_mini_batch_size = (int)           header.max_mini_batch_size;
   m_current_mini_batch_size = (int)       header.current_mini_batch_size;
   m_current_phase      =                  header.current_phase;
-  // set state of persist object to know which type of ckpt we are returning from. 
+  // set state of persist object to know which type of ckpt we are returning from.
   p.set_cb_type((callback_type) header.callback_type);
-  
+
   for (weights *w : m_weights) {
     w->load_from_checkpoint_shared(p);
-    w->set_states_on_device(); // only if needed
   }
 
   // read in each layer
@@ -1273,7 +1298,7 @@ bool model::save_to_checkpoint_distributed(persist& p){
     p.write_uint32(persist_type::train, "persist_callback_type",      (uint32_t) p.get_cb_type());
     if(p.get_cb_type() == callback_type::batch)
       p.write_uint64(persist_type::validate, "current_validataion_step",       (uint64_t) m_current_validation_step);
-    
+
     for (weights *w : m_weights) {
       w->save_to_checkpoint_distributed(p);
     }
@@ -1289,13 +1314,13 @@ bool model::save_to_checkpoint_distributed(persist& p){
         m->save_to_checkpoint_distributed(p);
       }
     }
-  } 
-  
+  }
+
   else {
     p.write_uint64(persist_type::validate, "current_validataion_step",       (uint64_t) m_current_validation_step);
     save_rng_to_checkpoint_shared(p, m_comm);
-    
-    for (size_t l = 0; l < m_layers.size(); l++) { 
+
+    for (size_t l = 0; l < m_layers.size(); l++) {
       if (! m_layers[l]->save_to_checkpoint_distributed(p)) {
         return false;
       }
@@ -1320,7 +1345,7 @@ bool model::load_from_checkpoint_distributed(persist& p){
   p.read_uint32(persist_type::train, "current_mini_batch_size",      &header.current_mini_batch_size);
   p.read_uint32(persist_type::train, "current_phase",      &header.current_phase);
   p.read_uint32(persist_type::train, "persist_callback_type",     &header.callback_type);
-  
+
   m_execution_mode     = (execution_mode) header.execution_mode;
   m_terminate_training = (bool)           header.terminate_training;
   m_current_epoch      = (int)            header.current_epoch;
@@ -1330,8 +1355,8 @@ bool model::load_from_checkpoint_distributed(persist& p){
   m_current_testing_step = (int)          header.current_testing_step;
   m_max_mini_batch_size = (int)           header.max_mini_batch_size;
   m_current_mini_batch_size = (int)       header.current_mini_batch_size;
-  m_current_phase      =                  header.current_phase; 
-  
+  m_current_phase      =                  header.current_phase;
+
   p.set_cb_type((callback_type) header.callback_type);
   load_rng_from_checkpoint_shared(p, m_comm);
 
@@ -1344,7 +1369,7 @@ bool model::load_from_checkpoint_distributed(persist& p){
       return false;
     }
   }
-  if(get_num_iterations_per_epoch(execution_mode::validation) != 0){ 
+  if(get_num_iterations_per_epoch(execution_mode::validation) != 0){
     for (const auto& m : m_metrics) {
       m->load_from_checkpoint_distributed(p);
     }
@@ -1354,7 +1379,7 @@ bool model::load_from_checkpoint_distributed(persist& p){
 
 void model::write_proto(lbann_data::Model* proto) {
   proto->Clear();
-  if (m_comm->am_world_master()) 
+  if (m_comm->am_world_master())
     proto->set_mini_batch_size(m_max_mini_batch_size);
 }
 

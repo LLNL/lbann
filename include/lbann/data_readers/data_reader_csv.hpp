@@ -89,7 +89,7 @@ class csv_reader : public generic_data_reader {
   /**
    * Supply a custom transform to convert the label column to an integer.
    * Note that the label should be an integer starting from 0.
-   */ 
+   */
   void set_label_transform(std::function<int(const std::string&)> f) {
     m_label_transform = f;
   }
@@ -137,11 +137,11 @@ class csv_reader : public generic_data_reader {
    * Fetch the data associated with data_id.
    * Note this does *not* normalize the data.
    */
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
   /// Fetch the label associated with data_id.
-  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) override;
   /// Fetch the response associated with data_id.
-  bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) override;
 
   /**
    * Return the parsed CSV line. This does not extract the label/response.

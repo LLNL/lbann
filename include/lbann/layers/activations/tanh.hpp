@@ -32,13 +32,14 @@
 namespace lbann {
 
 /** Hyperbolic tangent activation function. */
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class tanh_layer : public entrywise_activation_layer {
  public:
   tanh_layer(lbann_comm *comm) : entrywise_activation_layer(comm) {}
   tanh_layer* copy() const override { return new tanh_layer(*this); }
   std::string get_type() const override { return "tanh"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
  protected:
   DataType activation(DataType z) const override {

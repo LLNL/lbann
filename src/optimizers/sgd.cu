@@ -31,53 +31,65 @@ namespace lbann {
 
 namespace {
 
-__global__ void momentum_kernel(DataType * __restrict__ values,
-                                const DataType * __restrict__ gradient,
-                                DataType * __restrict__ velocity,
-                                int num_entries,
+__global__ void momentum_kernel(int height,
+                                int width,
                                 DataType learning_rate,
-                                DataType momentum) {
-  int offset = blockIdx.x * blockDim.x + threadIdx.x;
-  if (offset >= num_entries) return;
-  const DataType g = gradient[offset];
-  DataType &v = velocity[offset];
-  v = momentum * v + g;
-  values[offset] -= learning_rate * v;
-}
-
-__global__ void nesterov_kernel(DataType * __restrict__ values,
+                                DataType momentum,
+                                DataType * __restrict__ values,
+                                int values_ldim,
                                 const DataType * __restrict__ gradient,
+                                int gradient_ldim,
                                 DataType * __restrict__ velocity,
-                                int num_entries,
+                                int velocity_ldim) {
+  const int tid = blockIdx.x * blockDim.x + threadIdx.x;
+  const int num_threads = gridDim.x * blockDim.x;
+  for (int pos = tid; pos < height * width; pos += num_threads) {
+    const auto& i = pos % height;
+    const auto& j = pos / height;
+    const auto& g = gradient[i + j * gradient_ldim];
+    auto& v = velocity[i + j * velocity_ldim];
+    auto& x = values[i + j * values_ldim];
+    v = momentum * v + g;
+    x -= learning_rate * v;
+  }
+}
+
+__global__ void nesterov_kernel(int height,
+                                int width,
                                 DataType learning_rate,
-                                DataType momentum) {
-  int offset = blockIdx.x * blockDim.x + threadIdx.x;
-  if (offset >= num_entries) return;
-  const DataType g = gradient[offset];
-  DataType &v = velocity[offset];
-  v = momentum * v + g;
-  values[offset] -= learning_rate * (momentum * v + g);
+                                DataType momentum,
+                                DataType * __restrict__ values,
+                                int values_ldim,
+                                const DataType * __restrict__ gradient,
+                                int gradient_ldim,
+                                DataType * __restrict__ velocity,
+                                int velocity_ldim) {
+  const int tid = blockIdx.x * blockDim.x + threadIdx.x;
+  const int num_threads = gridDim.x * blockDim.x;
+  for (int pos = tid; pos < height * width; pos += num_threads) {
+    const auto& i = pos % height;
+    const auto& j = pos / height;
+    const auto& g = gradient[i + j * gradient_ldim];
+    auto& v = velocity[i + j * velocity_ldim];
+    auto& x = values[i + j * values_ldim];
+    v = momentum * v + g;
+    x -= learning_rate * (momentum * v + g);
+  }
 }
 
 }
 
-void sgd::step_compute_gpu(cudnn::matrix& values_d,
-                           const cudnn::matrix& gradient_d) {
+void sgd::step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) {
 
   // Get matrix dimensions
-  const int num_entries = m_weights->get_size();
-  if (num_entries == 0) return;
+  const int local_height = values.LocalHeight();
+  const int local_width = values.LocalWidth();
+  const int size = local_height * local_width;
+  if (size <= 0) { return; }
 
   // SGD without momentum
   if (m_momentum == DataType(0)) {
-    for (int i = 0; i < m_cudnn->get_num_gpus(); ++i) {
-      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-      cublas::axpy(m_cudnn->get_cublas_handle(i),
-                   num_entries,
-                   -m_learning_rate,
-                   gradient_d.get_locked_data(i), 1,
-                   values_d.get_data(i), 1);
-    }
+    El::Axpy(-m_learning_rate, gradient, values);
     return;
   }
 
@@ -85,19 +97,21 @@ void sgd::step_compute_gpu(cudnn::matrix& values_d,
   const int block_size = 256;
   dim3 block_dims, grid_dims;
   block_dims.x = block_size;
-  grid_dims.x = (num_entries + block_size - 1) / block_size;
-  for (int i = 0; i < m_cudnn->get_num_gpus(); ++i) {
-    CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-    cudaStream_t stream = this->m_cudnn->get_stream(i);
-    if (m_nesterov) {
-      nesterov_kernel<<<grid_dims, block_dims, 0, stream>>>
-        (values_d.get_data(i), gradient_d.get_locked_data(i),
-         m_velocity_d[i], num_entries, m_learning_rate, m_momentum);
-    } else {
-      momentum_kernel<<<grid_dims, block_dims, 0, stream>>>
-        (values_d.get_data(i), gradient_d.get_locked_data(i),
-         m_velocity_d[i], num_entries, m_learning_rate, m_momentum);
-    }
+  grid_dims.x = (size + block_size - 1) / block_size;
+  CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
+  cudaStream_t stream = this->m_cudnn->get_stream();
+  if (m_nesterov) {
+    nesterov_kernel<<<grid_dims, block_dims, 0, stream>>>
+      (local_height, local_width, m_learning_rate, m_momentum,
+       values.Buffer(), values.LDim(),
+       gradient.LockedBuffer(), gradient.LDim(),
+       m_velocity->Buffer(), m_velocity->LDim());
+  } else {
+    momentum_kernel<<<grid_dims, block_dims, 0, stream>>>
+      (local_height, local_width, m_learning_rate, m_momentum,
+       values.Buffer(), values.LDim(),
+       gradient.LockedBuffer(), gradient.LDim(),
+       m_velocity->Buffer(), m_velocity->LDim());
   }
 
 }

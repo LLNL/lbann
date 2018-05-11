@@ -10,7 +10,7 @@ IMAGENET_CLASSES=10 # options: 10, 100, 300, 1000 (leave blank to use other data
 
 # Hardware configuration
 NUM_NODES=      # default: number of allocated nodes (1 if none)
-PROCS_PER_NODE= # default: 2 (1 if NUM_NODES=1)
+PROCS_PER_NODE= # default: GPUs per node (2 if cluster has no GPUs)
 CLUSTER=
 PARTITION=
 ACCOUNT=
@@ -42,14 +42,6 @@ if [ -z "${NUM_NODES}" ]; then
         NUM_NODES=1
     fi
 fi
-if [ -z "${PROCS_PER_NODE}" ]; then
-    if [ "${NUM_NODES}" -eq 1 ]; then
-        PROCS_PER_NODE=1
-    else
-        PROCS_PER_NODE=2
-    fi
-fi
-NUM_PROCS=$((${NUM_NODES}*${PROCS_PER_NODE}))
 TIME_LIMIT=${TIME_LIMIT:-1:00}
 SUBMIT_JOB=${SUBMIT_JOB:-YES}
 USE_GPU=${USE_GPU:-YES}
@@ -90,6 +82,14 @@ case ${CLUSTER} in
         CACHE_DIR=${CACHE_DIR:-/tmp/${USER}}
         CORES_PER_NODE=16
         HAS_GPU=YES
+        case ${PARTITION} in
+            "pbatch")
+                GPUS_PER_NODE=2
+                ;;
+            "gpgpu")
+                GPUS_PER_NODE=4
+                ;;
+        esac
         ;;
     "ray")
         SCHEDULER=lsf
@@ -98,6 +98,16 @@ case ${CLUSTER} in
         CACHE_DIR=${CACHE_DIR:-/tmp}
         CORES_PER_NODE=20
         HAS_GPU=YES
+        GPUS_PER_NODE=4
+        ;;
+    "pascal")
+        SCHEDULER=slurm
+        PARTITION=${PARTITION:-pbatch}
+        ACCOUNT=${ACCOUNT:-lc}
+        CACHE_DIR=${CACHE_DIR:-/tmp/${USER}}
+        CORES_PER_NODE=36
+        HAS_GPU=YES
+        GPUS_PER_NODE=2
         ;;
     "pascal")
         SCHEDULER=slurm
@@ -118,6 +128,17 @@ case ${CLUSTER} in
         exit 1
         ;;
 esac
+if [ -z "${PROCS_PER_NODE}" ]; then
+    case ${USE_GPU} in
+        YES|yes|TRUE|true|ON|on|1)
+            PROCS_PER_NODE=${GPUS_PER_NODE}
+            ;;
+        *)
+            PROCS_PER_NODE=2
+            ;;
+    esac
+fi
+NUM_PROCS=$((${NUM_NODES}*${PROCS_PER_NODE}))
 CORES_PER_PROC=$((${CORES_PER_NODE}/${PROCS_PER_NODE}))
 
 # Initialize dataset
@@ -209,7 +230,7 @@ if [ -n "${TEST_DATASET_LABELS}" ]; then
 fi
 
 # Initialize experiment command
-LBANN_EXE="${LBANN_DIR}/build/gnu.${CLUSTER}.llnl.gov/lbann/build/model_zoo/lbann"
+LBANN_EXE="${LBANN_DIR}/build/gnu.Release.${CLUSTER}.llnl.gov/lbann/build/model_zoo/lbann"
 case ${USE_GPU} in
     YES|yes|TRUE|true|ON|on|1)
         case ${HAS_GPU} in
@@ -246,7 +267,7 @@ case ${SCHEDULER} in
         case ${HAS_GPU} in
             YES|yes|TRUE|true|ON|on|1)
                 case ${CLUSTER} in
-                    surface)
+                    surface|ray)
                         MPIRUN="${MPIRUN} --nvidia_compute_mode=default"
                         ;;
                 esac
@@ -337,6 +358,13 @@ echo "# ======== Useful info and initialization ========" >> ${BATCH_SCRIPT}
 echo "date"                                             >> ${BATCH_SCRIPT}
 echo "${MPIRUN} hostname > ${NODE_LIST}"                >> ${BATCH_SCRIPT}
 echo "sort --unique --output=${NODE_LIST} ${NODE_LIST}" >> ${BATCH_SCRIPT}
+case ${USE_GPU} in
+    YES|yes|TRUE|true|ON|on|1)
+        echo "nvidia-smi > nvidia-smi.out"              >> ${BATCH_SCRIPT}
+        echo "export MV2_USE_CUDA=1"                    >> ${BATCH_SCRIPT}
+        ;;
+esac
+echo ""
 echo ""                                                 >> ${BATCH_SCRIPT}
 
 # Cache dataset in node-local memory

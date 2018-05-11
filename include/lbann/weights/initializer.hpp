@@ -55,7 +55,8 @@ class weights_initializer {
   AbsDistMat* construct_matrix(int height = 0,
                                int width = 0,
                                El::Distribution col_dist = El::STAR,
-                               El::Distribution row_dist = El::STAR) const;
+                               El::Distribution row_dist = El::STAR,
+                               El::Device dev = El::Device::CPU) const;
 
   /** Initialize entries in a weights matrix. */
   virtual void initialize_entries(AbsDistMat& weights_matrix) const = 0;
@@ -72,7 +73,7 @@ class constant_initializer : public weights_initializer {
  public:
 
   /** Constructor. */
-  constant_initializer(lbann_comm* comm, DataType value) 
+  constant_initializer(lbann_comm* comm, DataType value)
     : weights_initializer(comm), m_value(value) {}
   /** Destructor. */
   ~constant_initializer() override = default;
@@ -81,7 +82,7 @@ class constant_initializer : public weights_initializer {
   constant_initializer* copy() const override {
     return new constant_initializer(*this);
   }
-  
+
   /** Initialize entries in a weights matrix to a constant value. */
   void initialize_entries(AbsDistMat& weights_matrix) const override;
 
@@ -110,7 +111,7 @@ class uniform_initializer : public weights_initializer {
   uniform_initializer* copy() const override {
     return new uniform_initializer(*this);
   }
-  
+
   /** Draw weights matrix entries from uniform distribution. */
   void initialize_entries(AbsDistMat& weights_matrix) const override;
 

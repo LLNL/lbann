@@ -55,14 +55,6 @@ adam::adam(const adam& other)
     m_moment2(other.m_moment2) {
   if (m_moment1 != nullptr) { m_moment1 = m_moment1->Copy(); }
   if (m_moment2 != nullptr) { m_moment2 = m_moment2->Copy(); }
-  #ifdef LBANN_HAS_CUDNN
-  if (m_cudnn != nullptr && other.m_weights != nullptr) {
-    const int height = other.m_weights->get_matrix_height();
-    const int width = other.m_weights->get_matrix_width();
-    m_moment1_d = m_cudnn->copy(other.m_moment1_d, height, width);
-    m_moment2_d = m_cudnn->copy(other.m_moment2_d, height, width);
-  }
-  #endif // LBANN_HAS_CUDNN
 }
 
 adam& adam::operator=(const adam& other) {
@@ -93,30 +85,12 @@ adam& adam::operator=(const adam& other) {
     if (m_moment2 != nullptr) { m_moment2 = m_moment2->Copy(); }
   }
 
-  // Copy GPU data
-  #ifdef LBANN_HAS_CUDNN
-  if (m_cudnn != nullptr && other.m_weights != nullptr) {
-    const int height = other.m_weights->get_matrix_height();
-    const int width = other.m_weights->get_matrix_width();
-    m_cudnn->deallocate_on_gpus(m_moment1_d);
-    m_cudnn->deallocate_on_gpus(m_moment2_d);
-    m_moment1_d = m_cudnn->copy(other.m_moment1_d, height, width);
-    m_moment2_d = m_cudnn->copy(other.m_moment2_d, height, width);
-  }
-  #endif // LBANN_HAS_CUDNN
-
   return *this;
 }
 
 adam::~adam() {
   if(m_moment1 != nullptr) { delete m_moment1; }
   if(m_moment2 != nullptr) { delete m_moment2; }
-  #ifdef LBANN_HAS_CUDNN
-  if (m_cudnn != nullptr) {
-    m_cudnn->deallocate_on_gpus(m_moment1_d);
-    m_cudnn->deallocate_on_gpus(m_moment2_d);
-  }
-  #endif // LBANN_HAS_CUDNN
 }
 
 std::string adam::get_description() const {
@@ -140,14 +114,6 @@ void adam::setup(weights& w) {
                                     m_gradient->Root());
   El::Zeros(*m_moment1, height, width);
   El::Zeros(*m_moment2, height, width);
-
-  // Allocate GPU objects
-  if (m_cudnn != nullptr) {
-#ifdef LBANN_HAS_CUDNN
-    m_cudnn->allocate_on_gpus(m_moment1_d, height, width);
-    m_cudnn->allocate_on_gpus(m_moment2_d, height, width);
-#endif // LBANN_HAS_CUDNN
-  }
 
 }
 
@@ -213,28 +179,6 @@ void adam::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
 // Checkpointing
 ////////////////////////////////////////////////////////////
 
-/**
- * Copies states from GPU to host only if the data is on GPU, which is done
- * asynchronously. Thus, needs synchronization before accessing the states.
- */
-void adam::set_states_on_host() {
-  #ifdef LBANN_HAS_CUDNN
-  set_mat_state_on_host(m_moment1, m_moment1_d, m_cudnn);
-  set_mat_state_on_host(m_moment2, m_moment2_d, m_cudnn);
-  #endif // LBANN_HAS_CUDNN
-}
-
-/**
- * Copies states from host to GPU if the data has to be on GPU. This is done
- * asynchronously. Thus, needs synchronization before accessing the states.
- */
-void adam::set_states_on_device() {
-  #ifdef LBANN_HAS_CUDNN
-  set_mat_state_on_device(m_moment1, m_moment1_d, m_cudnn);
-  set_mat_state_on_device(m_moment2, m_moment2_d, m_cudnn);
-  #endif // LBANN_HAS_CUDNN
-}
-
 bool adam::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
   optimizer::save_to_checkpoint_shared(p, name_prefix);
 
@@ -277,29 +221,29 @@ bool adam::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
   optimizer::save_to_checkpoint_distributed(p, name_prefix);
 
   pack_scalars(p);
- 
+
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
   p.write_rank_distmat(persist_type::train, l_name, *m_moment1);
- 
+
   sprintf(l_name, "%s_optimizer_adam_moment2_%lldx%lld", name_prefix.c_str(), m_moment2->Height(), m_moment2->Width());
   p.write_rank_distmat(persist_type::train, l_name, *m_moment2);
- 
+
   return true;
 }
- 
+
 bool adam::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
   optimizer::load_from_checkpoint_distributed(p, name_prefix);
   struct packing_header header;
   unpack_scalars(p, &header);
- 
+
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
   p.read_rank_distmat(persist_type::train, l_name, *m_moment1);
- 
+
   sprintf(l_name, "%s_optimizer_adam_moment2_%lldx%lld", name_prefix.c_str(), m_moment2->Height(), m_moment2->Width());
   p.read_rank_distmat(persist_type::train, l_name, *m_moment2);
- 
+
   return true;
 }
 

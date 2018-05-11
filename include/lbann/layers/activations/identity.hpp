@@ -32,13 +32,14 @@
 namespace lbann {
 
 /** Identity activation function. */
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class identity_layer : public activation_layer {
  public:
   identity_layer(lbann_comm *comm) : activation_layer(comm) {}
   identity_layer* copy() const override { return new identity_layer(*this); }
   std::string get_type() const override { return "identity"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   void fp_compute() override {
     El::LockedView(get_activations(), get_prev_activations());

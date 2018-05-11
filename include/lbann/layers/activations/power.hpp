@@ -32,7 +32,7 @@
 namespace lbann {
 
 /** Power function. */
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class power_layer : public entrywise_activation_layer {
  public:
   power_layer(lbann_comm *comm, EvalType exponent)
@@ -40,6 +40,7 @@ class power_layer : public entrywise_activation_layer {
   power_layer* copy() const override { return new power_layer(*this); }
   std::string get_type() const override { return "power"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
  protected:
   DataType activation(DataType z) const override {

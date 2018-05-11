@@ -503,7 +503,7 @@ std::vector<DataType> data_reader_jag::get_input(const size_t i) const {
 }
 
 
-bool data_reader_jag::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+bool data_reader_jag::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
   switch (m_independent) {
     case JAG_Image: {
       const data_t* ptr = get_image_ptr(data_id);
@@ -528,7 +528,7 @@ bool data_reader_jag::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   return true;
 }
 
-bool data_reader_jag::fetch_response(Mat& Y, int data_id, int mb_idx, int tid) {
+bool data_reader_jag::fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) {
   switch (m_dependent) {
     case JAG_Image: {
       const data_t* ptr = get_image_ptr(data_id);

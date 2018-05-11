@@ -485,7 +485,7 @@ message CallbackDumpActivations {
   string basename = 1;
   int64 interval = 2;
   string layer_names = 3; //layer(s) at which to dump activations e.g., "relu1 relu4 relu12"
-  
+
 }
 
 message CallbackDumpGradients {
@@ -602,7 +602,7 @@ message CallbackSaveModel {
 message Weights {
 
   string name = 1;
-  Optimizer optimizer = 2;  
+  Optimizer optimizer = 2;
 
   ConstantInitializer constant_initializer = 20;
   UniformInitializer uniform_initializer = 21;
@@ -622,11 +622,11 @@ message ConstantInitializer {
 }
 message UniformInitializer {
   double min = 1;
-  double max = 2; 
+  double max = 2;
 }
 message NormalInitializer {
   double mean = 1;
-  double standard_deviation = 2; 
+  double standard_deviation = 2;
 }
 message GlorotNormalInitializer {}
 message GlorotUniformInitializer {}
@@ -683,6 +683,7 @@ message Layer {
    string parents = 151;
    string children = 152;
    string data_layout = 52;
+   string device_allocation = 55;
    string weights = 54;
    bool num_neurons_from_data_reader = 53;
    bool freeze = 5;

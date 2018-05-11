@@ -45,7 +45,7 @@ enum class device {CPU, CUDA};
 /** Fully-connected layer.
  *  This layer applies an affine transformation.
  */
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class fully_connected_layer : public learning_layer {
  private:
 
@@ -65,12 +65,10 @@ class fully_connected_layer : public learning_layer {
    */
   AbsDistMat* m_bias_gradient;
 
-#ifdef LBANN_HAS_CUDNN
-  /** GPU memory for linearity gradient. */
-  cudnn::matrix m_linearity_gradient_d;
-  /** GPU memory for bias gradient. */
-  cudnn::matrix m_bias_gradient_d;
-#endif // __LIB_CUNN
+  #ifdef LBANN_HAS_CUDNN
+  /** Vector composed of ones. */
+  GPUMat m_ones;
+  #endif // LBANN_HAS_CUDNN
 
  public:
 
@@ -92,9 +90,8 @@ class fully_connected_layer : public learning_layer {
     m_bias_scaling_factor = has_bias ? DataType(1) : DataType(0);
 
 #ifdef LBANN_HAS_CUDNN
-    if (cudnn && T_layout == data_layout::DATA_PARALLEL) {
-      this->m_using_gpus = true;
-      this->m_cudnn = cudnn;
+    if (cudnn) {
+     this->m_cudnn = cudnn;
     }
 #endif // LBANN_HAS_CUDNN
   }
@@ -105,13 +102,14 @@ class fully_connected_layer : public learning_layer {
      " fully_connected; num_neurons: "
      + std::to_string(this->m_num_neurons)
      + " has_bias: " + std::to_string(this->m_bias_scaling_factor)
-     + " dataLayout: " + this->get_data_layout_string(get_data_layout());
+     + " dataLayout: " + this->get_data_layout_string(get_data_layout())
+     + " device alloc: " + this->get_device_allocation_string(get_device_allocation());
   }
 
   fully_connected_layer(const fully_connected_layer& other) :
     learning_layer(other),
     m_bias_scaling_factor(other.m_bias_scaling_factor) {
-    
+
     // Deep matrix copies
     m_linearity_gradient = other.m_linearity_gradient;
     m_bias_gradient = other.m_bias_gradient;
@@ -121,11 +119,6 @@ class fully_connected_layer : public learning_layer {
     if (m_bias_gradient != nullptr) {
       m_bias_gradient = m_bias_gradient->Copy();
     }
-
-#ifdef LBANN_HAS_CUDNN
-    m_linearity_gradient_d = other.m_linearity_gradient_d;
-    m_bias_gradient_d = other.m_bias_gradient_d;
-#endif // LBANN_HAS_CUDNN
 
   }
 
@@ -144,11 +137,6 @@ class fully_connected_layer : public learning_layer {
       m_bias_gradient = m_bias_gradient->Copy();
     }
 
-  #ifdef LBANN_HAS_CUDNN
-    m_linearity_gradient_d = other.m_linearity_gradient_d;
-    m_bias_gradient_d = other.m_bias_gradient_d;
-  #endif // LBANN_HAS_CUDNN
-
     return *this;
   }
 
@@ -163,6 +151,8 @@ class fully_connected_layer : public learning_layer {
   std::string get_type() const override { return "fully connected"; }
 
   data_layout get_data_layout() const override { return T_layout; }
+
+  El::Device get_device_allocation() const override { return Dev; }
 
   void setup_matrices(const El::Grid& grid) override;
 
@@ -225,11 +215,11 @@ class fully_connected_layer : public learning_layer {
     }
     this->m_weights[0]->setup(this->m_num_neurons,
                               this->m_num_prev_neurons,
-                              col_dist, row_dist);
+                              col_dist, row_dist, Dev);
     this->m_weights[1]->setup(this->m_num_neurons,
                               1,
                               get_activations().DistData().colDist,
-                              El::STAR);
+                              El::STAR, Dev);
 
     // Setup weight gradients
     El::Zeros(*this->m_linearity_gradient,
@@ -249,190 +239,10 @@ class fully_connected_layer : public learning_layer {
     }
   }
 
-  void setup_gpu() override {
-    learning_layer::setup_gpu();
-#ifndef LBANN_HAS_CUDNN
-    throw lbann_exception("fully_connected_layer: CUDA not detected");
-#else
-    m_linearity_gradient_d = cudnn::matrix(m_cudnn,
-                                           m_linearity_gradient->Height(),
-                                           m_linearity_gradient->Width());
-    if(m_bias_scaling_factor != DataType(0)) {
-      m_bias_gradient_d = cudnn::matrix(m_cudnn,
-                                        m_bias_gradient->Height(),
-                                        m_bias_gradient->Width());
-    }
-#endif // LBANN_HAS_CUDNN
-  }
-
-  void fp_compute() override {
-    if(this->m_using_gpus) {
-      fp_compute_cuda();
-    } else {
-      fp_compute_cpu();
-    }
-  }
-
-  void bp_compute() override {
-    if(this->m_using_gpus) {
-      bp_compute_cuda();
-    } else {
-      bp_compute_cpu();
-    }
-  }
+  void fp_compute() override;
+  void bp_compute() override;
 
  private:
-
-  /** CPU implementation of forward prop computation. */
-  void fp_compute_cpu();
-  /** CPU implementation of backward prop computation. */
-  void bp_compute_cpu();
-
-  /** GPU implementation of forward prop computation. */
-  void fp_compute_cuda() {
-#ifndef LBANN_HAS_CUDNN
-    throw lbann_exception("fully_connected: CUDA not detected");
-#else
-
-    // GPU matrices
-    const auto& linearity_d = m_weights[0]->get_values_gpu();
-    const auto& input_d = this->m_prev_activations_d[0];
-    auto& output_d = this->m_activations_d[0];
-    
-    // Matrix parameters
-    const int input_size = get_num_prev_neurons();
-    const int output_size = get_num_neurons();
-    const int mini_batch_size = m_mini_batch_size_per_gpu;
-    const int num_gpus = this->m_cudnn->get_num_gpus();
-    const int input_ldim = input_d.get_leading_dim();
-    const int output_ldim = output_d.get_leading_dim();
-
-    // Stop early if possible
-    if (mini_batch_size == 0) { return; }
-
-    // Apply linearity
-    for (int i=0; i<num_gpus; ++i) {
-      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-      cublas::gemm(this->m_cudnn->get_cublas_handle(i),
-                   CUBLAS_OP_N, CUBLAS_OP_N,
-                   output_size, mini_batch_size, input_size,
-                   DataType(1),
-                   linearity_d[i], output_size,
-                   input_d.get_locked_data(i), input_ldim,
-                   DataType(0),
-                   output_d.get_data(i), output_ldim);
-    }
-
-    // Apply bias if needed
-    if(m_bias_scaling_factor != DataType(0)) {
-      const auto& bias_d = m_weights[1]->get_values_gpu();
-      
-      // Initialize work space with ones
-      cudnn::matrix ones_d(this->m_cudnn);
-      ones_d.attach_to_work_spaces(mini_batch_size);
-      m_cudnn->set_on_gpus(ones_d.get_data(), DataType(1), mini_batch_size);
-
-      // Apply bias with outer product
-      for (int i = 0; i < num_gpus; ++i) {
-        CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-        cublas::gemm(this->m_cudnn->get_cublas_handle(i),
-                     CUBLAS_OP_N, CUBLAS_OP_T,
-                     output_size, mini_batch_size, 1,
-                     DataType(1),
-                     bias_d[i], output_size,
-                     ones_d.get_data(i), mini_batch_size,
-                     DataType(1),
-                     output_d.get_data(i), output_ldim);
-      }
-
-    }
-#endif // LBANN_HAS_CUDNN
-  }
-
-  /** GPU implementation of backward prop computation. */
-  void bp_compute_cuda() {
-#ifndef LBANN_HAS_CUDNN
-    throw lbann_exception("fully_connected: CUDA not detected");
-#else
-
-    // GPU matrices
-    const auto& linearity_d = m_weights[0]->get_values_gpu();
-    const auto& input_d = this->m_prev_activations_d[0];
-    const auto& gradient_wrt_output_d = this->m_prev_error_signals_d[0];
-    auto& gradient_wrt_input_d = this->m_error_signals_d[0];
-    
-    // Matrix parameters
-    const int input_size = get_num_prev_neurons();
-    const int output_size = get_num_neurons();
-    const int mini_batch_size = m_mini_batch_size_per_gpu;
-    const int num_gpus = this->m_cudnn->get_num_gpus();
-    const int input_ldim = input_d.get_leading_dim();
-    const int gradient_wrt_output_ldim = gradient_wrt_output_d.get_leading_dim();
-    const int gradient_wrt_input_ldim = gradient_wrt_input_d.get_leading_dim();
-
-    // Compute gradient w.r.t. bias if needed
-    optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
-    if (m_bias_scaling_factor != DataType(0)
-        && bias_optimizer != nullptr) {
-
-      // Initialize work space with ones
-      cudnn::matrix ones_d(this->m_cudnn);
-      ones_d.attach_to_work_spaces(mini_batch_size);
-      m_cudnn->set_on_gpus(ones_d.get_data(), DataType(1), mini_batch_size);
-
-      // Obtain gradient with a sum over rows
-      for (int i = 0; i < num_gpus; ++i) {
-        CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-        cublas::gemv(this->m_cudnn->get_cublas_handle(i),
-                     CUBLAS_OP_N, 
-                     output_size, mini_batch_size,
-                     DataType(1),
-                     gradient_wrt_output_d.get_locked_data(i), gradient_wrt_output_ldim,
-                     ones_d.get_data(i), 1,
-                     DataType(0),
-                     m_bias_gradient_d.get_data(i), 1);
-      }
-      bias_optimizer->add_to_gradient_staging(
-        m_bias_gradient_d,
-        m_bias_scaling_factor / this->m_model->get_effective_mini_batch_size());
-    }
-      
-    // Compute gradient w.r.t. linearity if needed
-    optimizer* linearity_optimizer = this->m_weights[0]->get_optimizer();
-    if (linearity_optimizer != nullptr) {
-      for (int i = 0; i < num_gpus; ++i) {
-        CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-        cublas::gemm(this->m_cudnn->get_cublas_handle(i),
-                     CUBLAS_OP_N, CUBLAS_OP_T,
-                     output_size, input_size, mini_batch_size,
-                     DataType(1),
-                     gradient_wrt_output_d.get_locked_data(i), gradient_wrt_output_ldim,
-                     input_d.get_locked_data(i), input_ldim,
-                     DataType(0),
-                     m_linearity_gradient_d.get_data(i), output_size);
-      }
-      linearity_optimizer->add_to_gradient_staging(
-        m_linearity_gradient_d,
-        DataType(1) / this->m_model->get_effective_mini_batch_size());
-    }
-
-    // Compute gradient w.r.t. input
-    if (mini_batch_size != 0) {
-      for (int i = 0; i < num_gpus; ++i) {
-        CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-        cublas::gemm(this->m_cudnn->get_cublas_handle(i),
-                     CUBLAS_OP_T, CUBLAS_OP_N,
-                     input_size, mini_batch_size, output_size,
-                     DataType(1),
-                     linearity_d[i], output_size,
-                     gradient_wrt_output_d.get_locked_data(i), gradient_wrt_output_ldim,
-                     DataType(1),
-                     gradient_wrt_input_d.get_data(i), gradient_wrt_input_ldim);
-      }
-    }
-
-#endif // LBANN_HAS_CUDNN
-  }
 
   /** Deallocate distributed matrices. */
   void deallocate_matrices() {

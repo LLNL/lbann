@@ -37,7 +37,7 @@ namespace lbann {
  * @param second_half output zeros for second half of minibatch samples if true
  * @todo generalzie if there are other use cases
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class zero_layer : public transform_layer {
  private:
   bool  m_first_half;
@@ -56,12 +56,14 @@ class zero_layer : public transform_layer {
   zero_layer* copy() const override { return new zero_layer(*this); }
   std::string get_type() const override { return "zero"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   /** Returns description of constructor params */
   std::string get_description() const override {
     std::stringstream s;
-     s << "zero_layer  first half: " << m_first_half << "second half: " << m_second_half  
-       << " dataLayout: " << this->get_data_layout_string(get_data_layout());
+     s << "zero_layer  first half: " << m_first_half << "second half: " << m_second_half
+       << " dataLayout: " << this->get_data_layout_string(get_data_layout())
+       << " device alloc: " << this->get_device_allocation_string(get_device_allocation());
      return s.str();
   }
 

@@ -249,11 +249,11 @@ class generic_data_reader : public lbann_image_preprocessor {
   virtual std::string get_type() const = 0;
 
   /// Fetch this mini-batch's samples into X.
-  virtual int fetch_data(Mat& X);
+  virtual int fetch_data(CPUMat& X);
   /// Fetch this mini-batch's labels into Y.
-  virtual int fetch_labels(Mat& Y);
+  virtual int fetch_labels(CPUMat& Y);
   /// Fetch this mini-batch's responses into Y.
-  virtual int fetch_responses(Mat& Y);
+  virtual int fetch_responses(CPUMat& Y);
 
   /**
    * Save pixels to an image. The implementing data reader is responsible for
@@ -523,7 +523,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     uint64_t current_pos;
     uint64_t current_mini_batch_idx;
     uint64_t data_size;
-  };  
+  };
   bool pack_scalars(persist& p, const char *name) {
     char fieldname[1024];
     lbann::persist_type persist_value;
@@ -537,17 +537,17 @@ class generic_data_reader : public lbann_image_preprocessor {
 
     snprintf(fieldname, sizeof(fieldname), "%s_current_mini_batch_idx", name);
     p.write_uint64(persist_value, fieldname, (uint64_t) m_current_mini_batch_idx);
-    
+
     int size = m_shuffled_indices.size();
     snprintf(fieldname, sizeof(fieldname), "%s_data_size", name);
     p.write_uint64(persist_value, fieldname, (uint64_t) size);
-    
+
     snprintf(fieldname, sizeof(fieldname), "%s_data_position", name);
     p.write_uint64(persist_value, fieldname, (uint64_t) m_current_pos);
-    
+
     snprintf(fieldname, sizeof(fieldname), "%s_data_indices", name);
     p.write_int32_contig(persist_value, fieldname, &m_shuffled_indices[0], (uint64_t) size);
-    
+
     return true;
   }
 
@@ -564,7 +564,7 @@ class generic_data_reader : public lbann_image_preprocessor {
 
     // record minibatch index
     uint64_t val;
-    
+
     snprintf(fieldname, sizeof(fieldname), "%s_current_mini_batch_idx", name);
     p.read_uint64(persist_value, fieldname, &val);
     m_current_mini_batch_idx = (int) val;
@@ -583,7 +583,7 @@ class generic_data_reader : public lbann_image_preprocessor {
      //read list of indices
     snprintf(fieldname, sizeof(fieldname), "%s_data_indices", name);
     p.read_int32_contig(persist_value, fieldname, &m_shuffled_indices[0], (uint64_t) size);
-    
+
     if(header != nullptr){
       //shuffled data indices array size, used for resize after broadcast. Not unpacked.
       header->data_size = size;
@@ -599,7 +599,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_current_pos = (int) header.current_pos;
     m_current_mini_batch_idx = (int) header.current_mini_batch_idx;
   }
-  
+
   /// returns the data store
   generic_data_store * get_data_store() const {
     if (m_data_store == nullptr) {
@@ -641,9 +641,9 @@ class generic_data_reader : public lbann_image_preprocessor {
      m_gan_labelling = has_gan_labelling;
   }
   void set_gan_label_value(int gan_label_value) { m_gan_label_value = gan_label_value; }
-  
+
   /// support of data store functionality
-  void set_data_store(generic_data_store *g); 
+  void set_data_store(generic_data_store *g);
 
  protected:
 
@@ -686,7 +686,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * @param data_id The index of the datum to fetch.
    * @param mb_idx The index within the mini-batch.
    */
-  virtual bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+  virtual bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
     NOT_IMPLEMENTED("fetch_dataum");
     return false;
   }
@@ -697,7 +697,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * @param data_id The index of the datum to fetch.
    * @param mb_idx The index within the mini-batch.
    */
-  virtual bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
+  virtual bool fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) {
     NOT_IMPLEMENTED("fetch_label");
     return false;
   }
@@ -708,7 +708,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * @param data_id The index of the datum to fetch.
    * @param mb_idx The index within the mini-batch.
    */
-  virtual bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid) {
+  virtual bool fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) {
     NOT_IMPLEMENTED("fetch_response");
     return false;
   }
@@ -792,7 +792,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    /// added to support data store functionality
    int m_compound_rank;
 
-  
+
   //var to support GAN
   bool m_gan_labelling; //boolean flag of whether its GAN binary label, default is false
   int m_gan_label_value; //zero(0) or 1 label value for discriminator, default is 0

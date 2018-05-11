@@ -146,16 +146,15 @@ int main(int argc, char *argv[]) {
     // Check for cudnn, with user feedback
     cudnn::cudnn_manager *cudnn = nullptr;
 #ifdef LBANN_HAS_CUDNN
+    const size_t work_space_size = 1 << 9; // 1 GB
     if (! pb_model->disable_cuda()) {
       if (master) {
         std::cerr << "code was compiled with LBANN_HAS_CUDNN, and we are using cudnn\n";
       }
-      if(pb_model->use_nccl()) {
-        cudnn = new cudnn::cudnn_manager(comm, pb_model->num_gpus(), true);
-      }
-      else{
-        cudnn = new cudnn::cudnn_manager(comm, pb_model->num_gpus(), false);
-      }
+      cudnn = new cudnn::cudnn_manager(comm,
+                                       work_space_size,
+                                       pb_model->num_gpus(),
+                                       pb_model->use_nccl());
     } else {
       if (master) {
         std::cerr << "code was compiled with LBANN_HAS_CUDNN, but we are NOT USING cudnn\n";
@@ -205,11 +204,11 @@ int main(int argc, char *argv[]) {
     if (opts->has_bool("use_data_store") && opts->get_bool("use_data_store")) {
       if (master) {
         std::cerr << "\nUSING DATA STORE!\n\n";
-      }  
+      }
       for (auto r : data_readers) {
         r.second->setup_data_store(model);
-      }  
-    }  
+      }
+    }
 
     // restart model from checkpoint if we have one
     //@todo

@@ -135,13 +135,13 @@ void lbann_callback_imcomm::on_epoch_end(model *m) {
       opt->clear_gradient();
       auto gradient = opt->get_gradient().Copy();
       Mat *local_gradients = nullptr;
-      Mat reshaped;
+      CPUMat reshaped;
       if (params.reshape_height > 0) {
         reshape_mat(gradient->Matrix(),
                     reshaped, params.reshape_height, params.reshape_width);
         local_gradients = &reshaped;
       } else {
-        local_gradients = &(gradient->Matrix());
+        local_gradients = &(static_cast<CPUMat&>(gradient->Matrix()));
       }
       *local_gradients = params.error;
       opt->add_to_gradient(*gradient);
@@ -168,13 +168,13 @@ void lbann_callback_imcomm::on_backward_prop_end(model *m) {
     optimizer *opt = w->get_optimizer();
     auto gradient = opt->get_gradient().Copy();
     Mat* local_gradients = nullptr;
-    Mat reshaped;
+    CPUMat reshaped;
     if (params.reshape_height > 0) {
       reshape_mat(gradient->Matrix(),
                   reshaped, params.reshape_height, params.reshape_width);
       local_gradients = &reshaped;
     } else {
-      local_gradients = &(gradient->Matrix());
+      local_gradients = &(static_cast<CPUMat&>(gradient->Matrix()));
     }
     switch (params.ct) {
     case NORMAL:
@@ -220,8 +220,8 @@ void lbann_callback_imcomm::do_summary(model *m, weights *w,
     bytes_received = comm->get_ar_bytes_received();
   } else {
     // Use the same approximation the comm layer does.
-    const Mat& local_gradients =
-      w->get_optimizer()->get_gradient().LockedMatrix();
+    const CPUMat& local_gradients =
+      static_cast<const CPUMat&>(w->get_optimizer()->get_gradient().LockedMatrix());
     bytes_sent =
       sizeof(DataType) * local_gradients.Height() * local_gradients.Width();
     bytes_received =
