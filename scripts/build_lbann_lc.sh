@@ -464,6 +464,12 @@ if [ "${MPI}" == "spectrum" ]; then
     MPI=spectrum-mpi
 fi
 
+# Use CUDA-aware MVAPICH2 on Surface and Pascal
+if [ "${CLUSTER}" == "pascal" -o "${CLUSTER}" == "surface" ]; then
+  MPI_HOME=/usr/global/tools/mpi/sideinstalls/${SYS_TYPE}/mvapich2-2.3/install-gcc-4.9.3-cuda-9.1
+  export MV2_USE_CUDA=1
+fi
+
 if [ -z "${MPI_HOME}" ]; then
 	if [ ${USE_MODULES} -ne 0 ]; then
 		if [ -z "$(module list 2>&1 | grep ${MPI})" ]; then
