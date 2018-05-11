@@ -1,4 +1,4 @@
-from data_reader_communication_pb2 import Request, Response, FetchDataResponse
+from data_reader_communication_pb2 import Request, Response, FetchDataResponse, Sample, FloatSamples
 from connection import Connection
 
 import time
@@ -38,11 +38,6 @@ class ExternalDataReader(object):
     def send_init_response(self, message):
         data = message.SerializeToString()
         self.connection.send_message(data)
-        t_i = time.time()
-        # TODO this is bad. Needs to happen after __init__, but ideally before handle_data_request
-        self.fdr = FetchDataResponse(data=self.params["data"])
-        t_f = time.time()
-        print("data->fdr took {}".format(t_f-t_i))
 
     def receive_data_request(self):
         data = self.connection.recv_message()
@@ -51,21 +46,33 @@ class ExternalDataReader(object):
         if not (message.HasField("fetch_data_request") or
                 message.HasField("fetch_responses_request") or
                 message.HasField("fetch_labels_request")):
-            raise RuntimeError("expected data request")
+            raise RuntimeError("expected data/label/response request")
         return message
 
     def handle_data_request(self, message):
-        response = None
+        response_message = None
         if message.HasField("fetch_data_request"):
-            t_i = time.time()
-            response = Response(fetch_data_response=self.fdr) #FetchDataResponse(data=self.params["data"]))
-            t_f = time.time()
-            print('assign data took {}'.fomrat(t_f-t_i))
+            indices = message.fetch_data_request.indices.value
+            data = self.params["data"][indices]
+            response_message = Response()
+            for datum in data:
+                f = FloatSamples(float_samples=datum)
+                response_message.fetch_data_response.data.samples.add(float_values=f)
         elif message.HasField("fetch_labels_request"):
-            response.fetch_labels_response.labels[:] = self.params["labels"]
+            indices = message.fetch_data_request.indices.value
+            labels = self.params["labels"][indices]
+            response_message = Response()
+            for label in labels:
+                f = FloatSamples(bool_samples=label)
+                response_message.fetch_data_response.data.samples.add(float_values=f)
         elif message.HasField("fetch_responses_request"):
-            response.fetch_responses_response.responses[:] = self.params["responses"]
-        return response
+            indices = message.fetch_data_request.indices.value
+            responses = self.params["responses"][indices]
+            response_message = Response()
+            for response in responses:
+                f = FloatSamples(float_samples=response)
+                response_message.fetch_data_response.data.samples.add(float_values=f)
+        return response_message
 
     def send_data_response(self, message):
         data = message.SerializeToString()

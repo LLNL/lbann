@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='data_reader_communication.proto',
   package='',
   syntax='proto3',
-  serialized_pb=_b('\n\x1f\x64\x61ta_reader_communication.proto\"\xed\x01\n\x07Request\x12$\n\x0cinit_request\x18\x01 \x01(\x0b\x32\x0c.InitRequestH\x00\x12/\n\x12\x66\x65tch_data_request\x18\x02 \x01(\x0b\x32\x11.FetchDataRequestH\x00\x12\x33\n\x14\x66\x65tch_labels_request\x18\x03 \x01(\x0b\x32\x13.FetchLabelsRequestH\x00\x12\x39\n\x17\x66\x65tch_responses_request\x18\x04 \x01(\x0b\x32\x16.FetchResponsesRequestH\x00\x12\x10\n\x06unused\x18\x05 \x01(\tH\x00\x42\t\n\x07request\"\xe5\x01\n\x08Response\x12&\n\rinit_response\x18\x01 \x01(\x0b\x32\r.InitResponseH\x00\x12\x31\n\x13\x66\x65tch_data_response\x18\x02 \x01(\x0b\x32\x12.FetchDataResponseH\x00\x12\x35\n\x15\x66\x65tch_labels_response\x18\x03 \x01(\x0b\x32\x14.FetchLabelsResponseH\x00\x12;\n\x18\x66\x65tch_responses_response\x18\x04 \x01(\x0b\x32\x17.FetchResponsesResponseH\x00\x42\n\n\x08response\"\r\n\x0bInitRequest\"\x12\n\x10\x46\x65tchDataRequest\"\x14\n\x12\x46\x65tchLabelsRequest\"\x17\n\x15\x46\x65tchResponsesRequest\"\xdf\x01\n\x0cInitResponse\x12\x13\n\x0bnum_samples\x18\x01 \x01(\x05\x12\x11\n\tdata_size\x18\x02 \x01(\x05\x12\x12\n\nhas_labels\x18\x03 \x01(\x08\x12\x12\n\nnum_labels\x18\x04 \x01(\x05\x12\x12\n\nlabel_size\x18\x05 \x01(\x05\x12\x15\n\rhas_responses\x18\x06 \x01(\x08\x12\x15\n\rnum_responses\x18\x07 \x01(\x05\x12\x15\n\rresponse_size\x18\x08 \x01(\x05\x12\x11\n\tdata_dims\x18\t \x03(\x05\x12\x13\n\x0breader_type\x18\n \x01(\t\"!\n\x11\x46\x65tchDataResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x03(\x02\"%\n\x13\x46\x65tchLabelsResponse\x12\x0e\n\x06labels\x18\x01 \x03(\x08\"+\n\x16\x46\x65tchResponsesResponse\x12\x11\n\tresponses\x18\x01 \x03(\x02\x62\x06proto3')
+  serialized_pb=_b('\n\x1f\x64\x61ta_reader_communication.proto\"\xdb\x01\n\x07Request\x12$\n\x0cinit_request\x18\x01 \x01(\x0b\x32\x0c.InitRequestH\x00\x12/\n\x12\x66\x65tch_data_request\x18\x02 \x01(\x0b\x32\x11.FetchDataRequestH\x00\x12\x33\n\x14\x66\x65tch_labels_request\x18\x03 \x01(\x0b\x32\x13.FetchLabelsRequestH\x00\x12\x39\n\x17\x66\x65tch_responses_request\x18\x04 \x01(\x0b\x32\x16.FetchResponsesRequestH\x00\x42\t\n\x07request\"\xe5\x01\n\x08Response\x12&\n\rinit_response\x18\x01 \x01(\x0b\x32\r.InitResponseH\x00\x12\x31\n\x13\x66\x65tch_data_response\x18\x02 \x01(\x0b\x32\x12.FetchDataResponseH\x00\x12\x35\n\x15\x66\x65tch_labels_response\x18\x03 \x01(\x0b\x32\x14.FetchLabelsResponseH\x00\x12;\n\x18\x66\x65tch_responses_response\x18\x04 \x01(\x0b\x32\x17.FetchResponsesResponseH\x00\x42\n\n\x08response\"\x1c\n\x07Indices\x12\x11\n\x05value\x18\x01 \x03(\x05\x42\x02\x10\x01\"\r\n\x0bInitRequest\"-\n\x10\x46\x65tchDataRequest\x12\x19\n\x07indices\x18\x01 \x01(\x0b\x32\x08.Indices\"/\n\x12\x46\x65tchLabelsRequest\x12\x19\n\x07indices\x18\x01 \x01(\x0b\x32\x08.Indices\"2\n\x15\x46\x65tchResponsesRequest\x12\x19\n\x07indices\x18\x01 \x01(\x0b\x32\x08.Indices\"\xdf\x01\n\x0cInitResponse\x12\x13\n\x0bnum_samples\x18\x01 \x01(\x05\x12\x11\n\tdata_size\x18\x02 \x01(\x05\x12\x12\n\nhas_labels\x18\x03 \x01(\x08\x12\x12\n\nnum_labels\x18\x04 \x01(\x05\x12\x12\n\nlabel_size\x18\x05 \x01(\x05\x12\x15\n\rhas_responses\x18\x06 \x01(\x08\x12\x15\n\rnum_responses\x18\x07 \x01(\x05\x12\x15\n\rresponse_size\x18\x08 \x01(\x05\x12\x11\n\tdata_dims\x18\t \x03(\x05\x12\x13\n\x0breader_type\x18\n \x01(\t\")\n\x0c\x46loatSamples\x12\x19\n\rfloat_samples\x18\x01 \x03(\x02\x42\x02\x10\x01\"+\n\rDoubleSamples\x12\x1a\n\x0e\x64ouble_samples\x18\x01 \x03(\x01\x42\x02\x10\x01\"\'\n\x0b\x42oolSamples\x12\x18\n\x0c\x62ool_samples\x18\x01 \x03(\x08\x42\x02\x10\x01\"\x8a\x01\n\x06Sample\x12%\n\x0c\x66loat_values\x18\x01 \x01(\x0b\x32\r.FloatSamplesH\x00\x12\'\n\rdouble_values\x18\x02 \x01(\x0b\x32\x0e.DoubleSamplesH\x00\x12#\n\x0b\x62ool_values\x18\x03 \x01(\x0b\x32\x0c.BoolSamplesH\x00\x42\x0b\n\tdata_type\"$\n\x08\x44\x61taList\x12\x18\n\x07samples\x18\x01 \x03(\x0b\x32\x07.Sample\",\n\x11\x46\x65tchDataResponse\x12\x17\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\t.DataList\"0\n\x13\x46\x65tchLabelsResponse\x12\x19\n\x06labels\x18\x01 \x01(\x0b\x32\t.DataList\"6\n\x16\x46\x65tchResponsesResponse\x12\x1c\n\tresponses\x18\x01 \x01(\x0b\x32\t.DataListb\x06proto3')
 )
 
 
@@ -60,13 +60,6 @@ _REQUEST = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='unused', full_name='Request.unused', index=4,
-      number=5, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -83,7 +76,7 @@ _REQUEST = _descriptor.Descriptor(
       index=0, containing_type=None, fields=[]),
   ],
   serialized_start=36,
-  serialized_end=273,
+  serialized_end=255,
 )
 
 
@@ -137,8 +130,39 @@ _RESPONSE = _descriptor.Descriptor(
       name='response', full_name='Response.response',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=276,
-  serialized_end=505,
+  serialized_start=258,
+  serialized_end=487,
+)
+
+
+_INDICES = _descriptor.Descriptor(
+  name='Indices',
+  full_name='Indices',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='value', full_name='Indices.value', index=0,
+      number=1, type=5, cpp_type=1, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=_descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\020\001')), file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=489,
+  serialized_end=517,
 )
 
 
@@ -161,8 +185,8 @@ _INITREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=507,
-  serialized_end=520,
+  serialized_start=519,
+  serialized_end=532,
 )
 
 
@@ -173,6 +197,13 @@ _FETCHDATAREQUEST = _descriptor.Descriptor(
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
+    _descriptor.FieldDescriptor(
+      name='indices', full_name='FetchDataRequest.indices', index=0,
+      number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -185,8 +216,8 @@ _FETCHDATAREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=522,
-  serialized_end=540,
+  serialized_start=534,
+  serialized_end=579,
 )
 
 
@@ -197,6 +228,13 @@ _FETCHLABELSREQUEST = _descriptor.Descriptor(
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
+    _descriptor.FieldDescriptor(
+      name='indices', full_name='FetchLabelsRequest.indices', index=0,
+      number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -209,8 +247,8 @@ _FETCHLABELSREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=542,
-  serialized_end=562,
+  serialized_start=581,
+  serialized_end=628,
 )
 
 
@@ -221,6 +259,13 @@ _FETCHRESPONSESREQUEST = _descriptor.Descriptor(
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
+    _descriptor.FieldDescriptor(
+      name='indices', full_name='FetchResponsesRequest.indices', index=0,
+      number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -233,8 +278,8 @@ _FETCHRESPONSESREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=564,
-  serialized_end=587,
+  serialized_start=630,
+  serialized_end=680,
 )
 
 
@@ -327,8 +372,180 @@ _INITRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=590,
-  serialized_end=813,
+  serialized_start=683,
+  serialized_end=906,
+)
+
+
+_FLOATSAMPLES = _descriptor.Descriptor(
+  name='FloatSamples',
+  full_name='FloatSamples',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='float_samples', full_name='FloatSamples.float_samples', index=0,
+      number=1, type=2, cpp_type=6, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=_descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\020\001')), file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=908,
+  serialized_end=949,
+)
+
+
+_DOUBLESAMPLES = _descriptor.Descriptor(
+  name='DoubleSamples',
+  full_name='DoubleSamples',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='double_samples', full_name='DoubleSamples.double_samples', index=0,
+      number=1, type=1, cpp_type=5, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=_descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\020\001')), file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=951,
+  serialized_end=994,
+)
+
+
+_BOOLSAMPLES = _descriptor.Descriptor(
+  name='BoolSamples',
+  full_name='BoolSamples',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='bool_samples', full_name='BoolSamples.bool_samples', index=0,
+      number=1, type=8, cpp_type=7, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=_descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\020\001')), file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=996,
+  serialized_end=1035,
+)
+
+
+_SAMPLE = _descriptor.Descriptor(
+  name='Sample',
+  full_name='Sample',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='float_values', full_name='Sample.float_values', index=0,
+      number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='double_values', full_name='Sample.double_values', index=1,
+      number=2, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='bool_values', full_name='Sample.bool_values', index=2,
+      number=3, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+    _descriptor.OneofDescriptor(
+      name='data_type', full_name='Sample.data_type',
+      index=0, containing_type=None, fields=[]),
+  ],
+  serialized_start=1038,
+  serialized_end=1176,
+)
+
+
+_DATALIST = _descriptor.Descriptor(
+  name='DataList',
+  full_name='DataList',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='samples', full_name='DataList.samples', index=0,
+      number=1, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1178,
+  serialized_end=1214,
 )
 
 
@@ -341,8 +558,8 @@ _FETCHDATARESPONSE = _descriptor.Descriptor(
   fields=[
     _descriptor.FieldDescriptor(
       name='data', full_name='FetchDataResponse.data', index=0,
-      number=1, type=2, cpp_type=6, label=3,
-      has_default_value=False, default_value=[],
+      number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
@@ -358,8 +575,8 @@ _FETCHDATARESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=815,
-  serialized_end=848,
+  serialized_start=1216,
+  serialized_end=1260,
 )
 
 
@@ -372,8 +589,8 @@ _FETCHLABELSRESPONSE = _descriptor.Descriptor(
   fields=[
     _descriptor.FieldDescriptor(
       name='labels', full_name='FetchLabelsResponse.labels', index=0,
-      number=1, type=8, cpp_type=7, label=3,
-      has_default_value=False, default_value=[],
+      number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
@@ -389,8 +606,8 @@ _FETCHLABELSRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=850,
-  serialized_end=887,
+  serialized_start=1262,
+  serialized_end=1310,
 )
 
 
@@ -403,8 +620,8 @@ _FETCHRESPONSESRESPONSE = _descriptor.Descriptor(
   fields=[
     _descriptor.FieldDescriptor(
       name='responses', full_name='FetchResponsesResponse.responses', index=0,
-      number=1, type=2, cpp_type=6, label=3,
-      has_default_value=False, default_value=[],
+      number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
@@ -420,8 +637,8 @@ _FETCHRESPONSESRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=889,
-  serialized_end=932,
+  serialized_start=1312,
+  serialized_end=1366,
 )
 
 _REQUEST.fields_by_name['init_request'].message_type = _INITREQUEST
@@ -440,9 +657,6 @@ _REQUEST.fields_by_name['fetch_labels_request'].containing_oneof = _REQUEST.oneo
 _REQUEST.oneofs_by_name['request'].fields.append(
   _REQUEST.fields_by_name['fetch_responses_request'])
 _REQUEST.fields_by_name['fetch_responses_request'].containing_oneof = _REQUEST.oneofs_by_name['request']
-_REQUEST.oneofs_by_name['request'].fields.append(
-  _REQUEST.fields_by_name['unused'])
-_REQUEST.fields_by_name['unused'].containing_oneof = _REQUEST.oneofs_by_name['request']
 _RESPONSE.fields_by_name['init_response'].message_type = _INITRESPONSE
 _RESPONSE.fields_by_name['fetch_data_response'].message_type = _FETCHDATARESPONSE
 _RESPONSE.fields_by_name['fetch_labels_response'].message_type = _FETCHLABELSRESPONSE
@@ -459,13 +673,38 @@ _RESPONSE.fields_by_name['fetch_labels_response'].containing_oneof = _RESPONSE.o
 _RESPONSE.oneofs_by_name['response'].fields.append(
   _RESPONSE.fields_by_name['fetch_responses_response'])
 _RESPONSE.fields_by_name['fetch_responses_response'].containing_oneof = _RESPONSE.oneofs_by_name['response']
+_FETCHDATAREQUEST.fields_by_name['indices'].message_type = _INDICES
+_FETCHLABELSREQUEST.fields_by_name['indices'].message_type = _INDICES
+_FETCHRESPONSESREQUEST.fields_by_name['indices'].message_type = _INDICES
+_SAMPLE.fields_by_name['float_values'].message_type = _FLOATSAMPLES
+_SAMPLE.fields_by_name['double_values'].message_type = _DOUBLESAMPLES
+_SAMPLE.fields_by_name['bool_values'].message_type = _BOOLSAMPLES
+_SAMPLE.oneofs_by_name['data_type'].fields.append(
+  _SAMPLE.fields_by_name['float_values'])
+_SAMPLE.fields_by_name['float_values'].containing_oneof = _SAMPLE.oneofs_by_name['data_type']
+_SAMPLE.oneofs_by_name['data_type'].fields.append(
+  _SAMPLE.fields_by_name['double_values'])
+_SAMPLE.fields_by_name['double_values'].containing_oneof = _SAMPLE.oneofs_by_name['data_type']
+_SAMPLE.oneofs_by_name['data_type'].fields.append(
+  _SAMPLE.fields_by_name['bool_values'])
+_SAMPLE.fields_by_name['bool_values'].containing_oneof = _SAMPLE.oneofs_by_name['data_type']
+_DATALIST.fields_by_name['samples'].message_type = _SAMPLE
+_FETCHDATARESPONSE.fields_by_name['data'].message_type = _DATALIST
+_FETCHLABELSRESPONSE.fields_by_name['labels'].message_type = _DATALIST
+_FETCHRESPONSESRESPONSE.fields_by_name['responses'].message_type = _DATALIST
 DESCRIPTOR.message_types_by_name['Request'] = _REQUEST
 DESCRIPTOR.message_types_by_name['Response'] = _RESPONSE
+DESCRIPTOR.message_types_by_name['Indices'] = _INDICES
 DESCRIPTOR.message_types_by_name['InitRequest'] = _INITREQUEST
 DESCRIPTOR.message_types_by_name['FetchDataRequest'] = _FETCHDATAREQUEST
 DESCRIPTOR.message_types_by_name['FetchLabelsRequest'] = _FETCHLABELSREQUEST
 DESCRIPTOR.message_types_by_name['FetchResponsesRequest'] = _FETCHRESPONSESREQUEST
 DESCRIPTOR.message_types_by_name['InitResponse'] = _INITRESPONSE
+DESCRIPTOR.message_types_by_name['FloatSamples'] = _FLOATSAMPLES
+DESCRIPTOR.message_types_by_name['DoubleSamples'] = _DOUBLESAMPLES
+DESCRIPTOR.message_types_by_name['BoolSamples'] = _BOOLSAMPLES
+DESCRIPTOR.message_types_by_name['Sample'] = _SAMPLE
+DESCRIPTOR.message_types_by_name['DataList'] = _DATALIST
 DESCRIPTOR.message_types_by_name['FetchDataResponse'] = _FETCHDATARESPONSE
 DESCRIPTOR.message_types_by_name['FetchLabelsResponse'] = _FETCHLABELSRESPONSE
 DESCRIPTOR.message_types_by_name['FetchResponsesResponse'] = _FETCHRESPONSESRESPONSE
@@ -484,6 +723,13 @@ Response = _reflection.GeneratedProtocolMessageType('Response', (_message.Messag
   # @@protoc_insertion_point(class_scope:Response)
   ))
 _sym_db.RegisterMessage(Response)
+
+Indices = _reflection.GeneratedProtocolMessageType('Indices', (_message.Message,), dict(
+  DESCRIPTOR = _INDICES,
+  __module__ = 'data_reader_communication_pb2'
+  # @@protoc_insertion_point(class_scope:Indices)
+  ))
+_sym_db.RegisterMessage(Indices)
 
 InitRequest = _reflection.GeneratedProtocolMessageType('InitRequest', (_message.Message,), dict(
   DESCRIPTOR = _INITREQUEST,
@@ -520,6 +766,41 @@ InitResponse = _reflection.GeneratedProtocolMessageType('InitResponse', (_messag
   ))
 _sym_db.RegisterMessage(InitResponse)
 
+FloatSamples = _reflection.GeneratedProtocolMessageType('FloatSamples', (_message.Message,), dict(
+  DESCRIPTOR = _FLOATSAMPLES,
+  __module__ = 'data_reader_communication_pb2'
+  # @@protoc_insertion_point(class_scope:FloatSamples)
+  ))
+_sym_db.RegisterMessage(FloatSamples)
+
+DoubleSamples = _reflection.GeneratedProtocolMessageType('DoubleSamples', (_message.Message,), dict(
+  DESCRIPTOR = _DOUBLESAMPLES,
+  __module__ = 'data_reader_communication_pb2'
+  # @@protoc_insertion_point(class_scope:DoubleSamples)
+  ))
+_sym_db.RegisterMessage(DoubleSamples)
+
+BoolSamples = _reflection.GeneratedProtocolMessageType('BoolSamples', (_message.Message,), dict(
+  DESCRIPTOR = _BOOLSAMPLES,
+  __module__ = 'data_reader_communication_pb2'
+  # @@protoc_insertion_point(class_scope:BoolSamples)
+  ))
+_sym_db.RegisterMessage(BoolSamples)
+
+Sample = _reflection.GeneratedProtocolMessageType('Sample', (_message.Message,), dict(
+  DESCRIPTOR = _SAMPLE,
+  __module__ = 'data_reader_communication_pb2'
+  # @@protoc_insertion_point(class_scope:Sample)
+  ))
+_sym_db.RegisterMessage(Sample)
+
+DataList = _reflection.GeneratedProtocolMessageType('DataList', (_message.Message,), dict(
+  DESCRIPTOR = _DATALIST,
+  __module__ = 'data_reader_communication_pb2'
+  # @@protoc_insertion_point(class_scope:DataList)
+  ))
+_sym_db.RegisterMessage(DataList)
+
 FetchDataResponse = _reflection.GeneratedProtocolMessageType('FetchDataResponse', (_message.Message,), dict(
   DESCRIPTOR = _FETCHDATARESPONSE,
   __module__ = 'data_reader_communication_pb2'
@@ -542,4 +823,12 @@ FetchResponsesResponse = _reflection.GeneratedProtocolMessageType('FetchResponse
 _sym_db.RegisterMessage(FetchResponsesResponse)
 
 
+_INDICES.fields_by_name['value'].has_options = True
+_INDICES.fields_by_name['value']._options = _descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\020\001'))
+_FLOATSAMPLES.fields_by_name['float_samples'].has_options = True
+_FLOATSAMPLES.fields_by_name['float_samples']._options = _descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\020\001'))
+_DOUBLESAMPLES.fields_by_name['double_samples'].has_options = True
+_DOUBLESAMPLES.fields_by_name['double_samples']._options = _descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\020\001'))
+_BOOLSAMPLES.fields_by_name['bool_samples'].has_options = True
+_BOOLSAMPLES.fields_by_name['bool_samples']._options = _descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\020\001'))
 # @@protoc_insertion_point(module_scope)

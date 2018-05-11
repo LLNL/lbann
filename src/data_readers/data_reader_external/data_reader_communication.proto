@@ -6,7 +6,6 @@ message Request {
     FetchDataRequest      fetch_data_request      = 2;
     FetchLabelsRequest    fetch_labels_request    = 3;
     FetchResponsesRequest fetch_responses_request = 4;
-    string                unused                  = 5;
   }
 }
 
@@ -19,10 +18,20 @@ message Response {
   }
 }
 
+message Indices {
+  repeated int32 value = 1 [packed=true];
+}
+
 message InitRequest {}
-message FetchDataRequest {}
-message FetchLabelsRequest {}
-message FetchResponsesRequest {}
+message FetchDataRequest {
+  Indices indices = 1;
+}
+message FetchLabelsRequest {
+  Indices indices = 1;
+}
+message FetchResponsesRequest {
+  Indices indices = 1;
+}
 
 message InitResponse {
   int32 num_samples = 1;
@@ -41,14 +50,38 @@ message InitResponse {
   string reader_type = 10;
 }
 
+message FloatSamples {
+  repeated float float_samples = 1 [packed=true];
+}
+
+message DoubleSamples {
+  repeated double double_samples = 1 [packed=true];
+}
+
+message BoolSamples {
+  repeated bool bool_samples = 1 [packed=true];
+}
+
+message Sample {
+  oneof data_type {
+    FloatSamples float_values = 1;
+    DoubleSamples double_values = 2;
+    BoolSamples bool_values = 3;
+  }
+}
+
+message DataList {
+  repeated Sample samples = 1;
+}
+
 message FetchDataResponse {
-  repeated float data = 1;
+  DataList data = 1;
 }
 
 message FetchLabelsResponse {
-  repeated bool labels = 1;
+  DataList labels = 1;
 }
 
 message FetchResponsesResponse {
-  repeated float responses = 1;
+  DataList responses = 1;
 }

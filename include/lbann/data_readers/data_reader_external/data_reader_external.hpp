@@ -102,9 +102,6 @@ class external_reader : public generic_data_reader {
     std::vector<int> m_data_dims{};
 
     std::string m_reader_type{};
-
-    Mat m_X;
-    bool m_loaded = false;
 };
 }  // namespace lbann
 

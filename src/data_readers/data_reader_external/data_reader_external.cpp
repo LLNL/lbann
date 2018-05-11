@@ -72,47 +72,25 @@ void external_reader::load() {
 
   m_reader_type = init_response.reader_type();
 
-  m_X.Resize(m_data_size, m_num_samples);
-
   // Reset indices.
   m_shuffled_indices.clear();
   m_shuffled_indices.resize(m_num_samples);
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
 
   select_subset_of_data();
-
-
 }
 
 void external_reader::load_data() {
-  Request request;
-  request.mutable_fetch_data_request();
-
-  m_connection->message_write(request);
-  Response response = m_connection->message_read();
-  auto data = response.fetch_data_response().data();
 
   //std::cout << "m_num_samples: " << m_num_samples << std::endl;
   //std::cout << "m_data_size: " << m_data_size << std::endl;
   //std::cout << "protobuf size: " << response.fetch_data_response().data_size() << std::endl;
 
-  for (El::Int j = 0; j < m_num_samples; j++) {
-    for (El::Int i = 0; i < m_data_size; i++) {
-      El::Int sample = j*m_data_size + i;
-      m_X(i, j) = data[sample];
-    }
-  }
-
-  //std::cout << "wasn't here :/" << std::endl;
-
-  m_loaded = true;
 }
 
 int external_reader::fetch_data(Mat& X) {
-  if (!m_loaded) {
-    load_data();
-  }
-
+  // TODO split out index construction into its own thing
+  // TODO do a similar thing for fetch_labels, fetch_responses
   if(!position_valid()) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__)
@@ -131,20 +109,30 @@ int external_reader::fetch_data(Mat& X) {
   El::Zeros(X, X.Height(), X.Width());
   El::Zeros(m_indices_fetched_per_mb, mb_size, 1);
 
+  Request request;
+  auto fdrequest = request.mutable_fetch_data_request();
+  auto indices = fdrequest->mutable_indices();
+
+  for (int i = m_current_pos; i < end_pos; i++) {
+    indices->add_value(m_shuffled_indices[i]);
+  }
+
+  m_connection->message_write(request);
+  Response response = m_connection->message_read();
+  auto samples = response.fetch_data_response().data().samples();
+
   for (El::Int s = 0; s < mb_size; s++) {
     int n = m_current_pos + s;
     int index = m_shuffled_indices[n];
     m_indices_fetched_per_mb.Set(s, 0, index);
 
-    auto X_view   = El::View(X,   El::IR(0, m_data_size), El::IR(s, s+1));
-    auto m_X_view = El::View(m_X, El::IR(0, m_data_size), El::IR(index, index+1));
+    auto X_view = El::View(X,   El::IR(0, m_data_size), El::IR(s, s+1));
+    auto float_values = samples[s].float_values();
+
     for (El::Int j = 0; j < m_data_size; j++) {
-      X_view(j, 0) = m_X_view(j, 0);
+      X_view(j, 0) = float_values.float_samples(j);
     }
   }
-
-  El::Print(X);
-  throw lbann_exception("done");
 
   return mb_size;
 }

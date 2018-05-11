@@ -121,8 +121,7 @@ class Pilot2DataReader(ExternalDataReader):
 
 class Pilot2Server(Server):
     def __init__(self):
-        super(Pilot2Server, self).__init__()
-        self.runner = Pilot2DataReader
+        super(Pilot2Server, self).__init__(Pilot2DataReader)
 
 # print('loading data')
 # candle_data = None
@@ -141,7 +140,7 @@ class Pilot2Server(Server):
 #candle_data[:, :, 0] = np.ones((100, 3040))
 candle_data = np.random.randn(*(1, 3040, 2508))
 candle_data[:, :, 0] = np.ones((1, 3040))
-flattened_candle_data = list(candle_data.flatten())
+flattened_candle_data = candle_data.reshape(-1, candle_data.shape[-1])
 
 if __name__ == '__main__':
     s = Pilot2Server()
