@@ -12,7 +12,7 @@ ARCH=$(uname -m)
 COMPILER=gnu
 if [ "${CLUSTER}" == "pascal" ]; then
 	# The latest GCC version on Pascal is 7, which is not supported by nvcc.
-	# Version 6.1.0 does not work with CUDA 9.1, either. 
+	# Version 6.1.0 does not work with CUDA 9.1, either.
 	COMPILER=gnu
 	module load gcc/4.9.3
 fi
@@ -430,7 +430,7 @@ ROOT_DIR=$(git rev-parse --show-toplevel)
 
 # Initialize build directory
 if [ -z "${BUILD_DIR}" ]; then
-    BUILD_DIR=${ROOT_DIR}/build/${COMPILER}.${CLUSTER}.llnl.gov
+    BUILD_DIR=${ROOT_DIR}/build/${COMPILER}.${BUILD_TYPE}.${CLUSTER}.llnl.gov
 fi
 if [ -n "${BUILD_SUFFIX}" ]; then
     BUILD_DIR=${BUILD_DIR}.${BUILD_SUFFIX}
@@ -462,6 +462,12 @@ fi
 
 if [ "${MPI}" == "spectrum" ]; then
     MPI=spectrum-mpi
+fi
+
+# Use CUDA-aware MVAPICH2 on Surface and Pascal
+if [ "${CLUSTER}" == "pascal" -o "${CLUSTER}" == "surface" ]; then
+  MPI_HOME=/usr/global/tools/mpi/sideinstalls/${SYS_TYPE}/mvapich2-2.3/install-gcc-4.9.3-cuda-9.1
+  export MV2_USE_CUDA=1
 fi
 
 if [ -z "${MPI_HOME}" ]; then
@@ -542,13 +548,13 @@ if [ "${CLUSTER}" == "surface" ] || [ "${CLUSTER}" == "ray" ] ||
     else
         export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.1.15-1+cuda9.1_x86_64
     fi
-	
-    # Hack for surface	
+
+    # Hack for surface
 	if [ "${CLUSTER}" == "surface" ]; then
-        . /usr/share/[mM]odules/init/bash		
+        . /usr/share/[mM]odules/init/bash
 		CUDA_TOOLKIT_MODULE=cudatoolkit/9.1
 	elif [ "${CLUSTER}" == "ray" ]; then
-		module del cuda		
+		module del cuda
 		CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/8.0}
 	fi
 fi
@@ -707,10 +713,10 @@ ${CMAKE_PATH}/cmake \
 -D LBANN_WITH_CUDA=${WITH_CUDA} \
 -D LBANN_WITH_NVPROF=${WITH_NVPROF} \
 -D LBANN_WITH_VTUNE=${WITH_VTUNE} \
--D LBANN_WITH_TBINF=${WITH_TBINF} \ 
+-D LBANN_WITH_TBINF=${WITH_TBINF} \
 -D LBANN_WITH_TOPO_AWARE=${WITH_TOPO_AWARE} \
 -D LBANN_SEQUENTIAL_INITIALIZATION=${SEQ_INIT} \
--D LBANN_WITH_ALUMINUM=${WITH_ALUMINUM} \ 
+-D LBANN_WITH_ALUMINUM=${WITH_ALUMINUM} \
 -D LBANN_ALUMINUM_DIR=${ALUMINUM_DIR} \
 -D LBANN_WITH_CONDUIT=${WITH_CONDUIT} \
 -D LBANN_CONDUIT_DIR=${CONDUIT_DIR} \
