@@ -48,7 +48,7 @@ def skeleton_clang4(cluster, dir_name, debug, should_log=False):
 
 def skeleton_gcc4(cluster, dir_name, debug, should_log=False):
     if cluster in ['catalyst', 'pascal', 'quartz', 'ray']:
-        if cluster == 'catalyst':
+        if cluster in ['catalyst', 'pascal', 'quartz']:
             mpi = 'mvapich2@2.2'
         elif cluster == 'ray':
             mpi = 'spectrum-mpi@2018.04.27'
