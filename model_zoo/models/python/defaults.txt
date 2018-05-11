@@ -1,0 +1,23 @@
+# lscratch file systems
+lscratch catalyst f
+lscratch sierra e
+lscratch flash f
+lscratch surface f
+lscratch default f
+
+# where to stage the input data, if not reading from /p/lscratchX
+ssd catalyst /l/ssd
+ssd quartz /tmp
+ssd surface /tmp
+ssd default /tmp
+
+# which partition to use
+partition catalyst pbatch
+partition quartz  pbatch
+partition surface gpgpu
+
+# which bank to use
+bank catalyst brain
+bank quartz brain
+bank surface hpclearn
+

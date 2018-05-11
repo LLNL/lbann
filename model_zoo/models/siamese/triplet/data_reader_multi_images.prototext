@@ -1,0 +1,99 @@
+data_reader {
+  reader {
+    name: "multi_images"
+    role: "train"
+    shuffle: true
+    data_filedir: "/p/lscratche/brainusr/datasets/ILSVRC2012/patches_84h_110x110_13x13-blur-ab_compact/"
+    data_filename: "/p/lscratche/brainusr/datasets/ILSVRC2012/birds_and_cars/patches_84h_110x110_13x13-blur-ab_compact/train_list_8h_birds.txt"
+    label_filename: ""
+    validation_percent: 0.1
+    absolute_sample_count: 0
+    percent_of_data_to_use: 1.0
+    num_labels: 20
+    num_image_srcs: 3
+
+    image_preprocessor {
+      raw_width: 110
+      raw_height: 110
+
+      subtractor {
+        disable: true
+        image_to_sub: "mean_uniform-110x110x3-6.bin"
+      }
+
+      cropper {
+        disable: false
+        crop_width: 96
+        crop_height: 96
+        crop_randomly: false
+        resized_width: 96
+        resized_height: 96
+      }
+
+      colorizer {
+        disable: true
+      }
+
+      augmenter {
+        disable: true
+      }
+
+      normalizer {
+        disable: false
+        scale: true
+        subtract_mean: true
+        unit_variance: true
+        z_score: false
+      }
+    }
+  }
+
+  reader {
+    name: "multi_images"
+    role: "test"
+    shuffle: true
+    data_filedir: "/p/lscratche/brainusr/datasets/ILSVRC2012/patches_84h_110x110_13x13-blur-ab_compact/"
+    data_filename: "/p/lscratche/brainusr/datasets/ILSVRC2012/birds_and_cars/patches_84h_110x110_13x13-blur-ab_compact/val_list_8h.txt"
+    label_filename: ""
+    validation_percent: 1.0
+    absolute_sample_count: 0
+    percent_of_data_to_use: 1.0
+    num_labels: 20
+    num_image_srcs: 3
+
+    image_preprocessor {
+      raw_width: 110
+      raw_height: 110
+
+      subtractor {
+        disable: true
+        image_to_sub: "mean_uniform-110x110x3-6.bin"
+      }
+
+      cropper {
+        disable: false
+        crop_width: 96
+        crop_height: 96
+        crop_randomly: false
+        resized_width: 96
+        resized_height: 96
+      }
+
+      colorizer {
+        disable: true
+      }
+
+      augmenter {
+        disable: true
+      }
+
+      normalizer {
+        disable: false
+        scale: true
+        subtract_mean: true
+        unit_variance: true
+        z_score: false
+      }
+    }
+  }
+}

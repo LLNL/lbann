@@ -1,0 +1,102 @@
+model {
+  name: "sequential_model"
+  data_layout: "data_parallel"
+  mini_batch_size: 32
+  block_size: 256
+  num_epochs: 4
+  num_parallel_readers: 0
+  procs_per_model: 0
+  num_gpus: -1
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    cross_entropy {}
+    l2_weight_regularization {
+      scale_factor: 0.01
+    }
+  }
+
+  ###################################################
+  # Metrics
+  ###################################################
+
+  metric { categorical_accuracy {} }
+
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback {
+    print {
+      interval: 1
+    }
+  }
+  callback {
+    timer {
+    }
+  }
+  callback {
+    summary {
+      dir: "."
+      batch_interval: 1
+      mat_interval: 25
+    }
+  }
+  callback {
+    gradient_check {
+      verbose: false
+      fail_on_error: true
+    }
+  }
+
+  ###################################################
+  # start of layers
+  ###################################################
+
+  #######
+  # INPUT
+  #######
+  layer {
+    data_layout: "data_parallel"
+    input {
+      io_buffer: "partitioned"
+    }
+  }
+
+  #################
+  # FULLY_CONNECTED
+  #################
+  layer {
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 10
+      weight_initialization: "glorot_uniform"
+      has_bias: false
+    }
+  }
+
+  #########
+  # SOFTMAX
+  #########
+  layer {
+    data_layout: "model_parallel"
+    softmax {}
+  }
+
+  ########
+  # TARGET
+  ########
+  layer {
+    data_layout: "data_parallel"
+    target {
+      io_buffer: "partitioned"
+      shared_data_reader: true
+    }
+  }
+
+  ###################################################
+  # end of layers
+  ###################################################
+}

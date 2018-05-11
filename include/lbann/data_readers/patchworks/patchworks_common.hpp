@@ -31,7 +31,9 @@
  *  - includes commonly used macros, definitions and declarations
  */
 
-#ifdef __LIB_OPENCV
+#include "lbann_config.hpp"
+
+#ifdef LBANN_HAS_OPENCV
 #ifndef _PATCHWORKS_COMMON_H_
 #define _PATCHWORKS_COMMON_H_
 
@@ -39,24 +41,24 @@
 #include <limits>
 #include <cstdint>
 #include <string>
-#include "patchworks_opencv.hpp"
+#include "lbann/data_readers/opencv_extensions.hpp"
 
 namespace lbann {
 namespace patchworks {
 
 /// Patch displacement type
-typedef std::pair<int, int> displacement_type;
+using displacement_type = std::pair<int, int>;
 
 #if 0
 // using 32-bit floating point for intermediate image data processing
-typedef float pw_fp_t;
-typedef cv::Vec3f pw_cv_vec3;
+using pw_fp_t = float;
+using pw_cv_vec3 = cv::Vec3f;
 #define _PATCHWORKS_STAT_FLOAT_ 32
 #define _PW_CV_FP_ CV_32FC3
 #else
 // using 64-bit floating point for intermediate image data processing
-typedef double pw_fp_t;
-typedef cv::Vec3d pw_cv_vec3;
+using pw_fp_t = double;
+using pw_cv_vec3 = cv::Vec3d;
 #define _PATCHWORKS_STAT_FLOAT_ 64
 #define _PW_CV_FP_ CV_64FC3
 #endif
@@ -65,4 +67,4 @@ typedef cv::Vec3d pw_cv_vec3;
 } // end of namespace lbann
 
 #endif // _PATCHWORKS_COMMON_H_
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV

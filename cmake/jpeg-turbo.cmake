@@ -23,7 +23,7 @@ else()
     set(JPEG_TURBO_URL https://github.com/libjpeg-turbo/libjpeg-turbo)
   endif()
   if(NOT JPEG_TURBO_TAG)
-     set(JPEG_TURBO_TAG "1.5.1")
+     set(JPEG_TURBO_TAG "1.5.2")
   endif()
   message(STATUS "Will pull jpeg-turbo (tag ${JPEG_TURBO_TAG}) from ${JPEG_TURBO_URL}")
 

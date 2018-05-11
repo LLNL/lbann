@@ -1,0 +1,49 @@
+--- Makefile.power	2017-10-03 13:34:06.000000000 -0700
++++ ./Makefile.power.new	2017-10-02 15:15:02.000000000 -0700
+@@ -13,11 +13,11 @@
+ 
+ ifeq ($(CORE), POWER8)
+ ifeq ($(USE_OPENMP), 1)
+-COMMON_OPT += -Ofast -mcpu=power8 -mtune=power8 -mvsx -malign-power -DUSE_OPENMP -fno-fast-math -fopenmp
+-FCOMMON_OPT += -O2 -frecursive -mcpu=power8 -mtune=power8 -malign-power -DUSE_OPENMP -fno-fast-math -fopenmp
++COMMON_OPT += -Ofast -mcpu=power8 -mtune=power8 -mvsx -DUSE_OPENMP -fno-fast-math -fopenmp
++FCOMMON_OPT += -O2 -frecursive -mcpu=power8 -mtune=power8 -DUSE_OPENMP -fno-fast-math -fopenmp
+ else
+-COMMON_OPT += -Ofast -mcpu=power8 -mtune=power8 -mvsx -malign-power -fno-fast-math
+-FCOMMON_OPT += -O2 -frecursive -mcpu=power8 -mtune=power8 -malign-power -fno-fast-math
++COMMON_OPT += -Ofast -mcpu=power8 -mtune=power8 -mvsx -fno-fast-math
++FCOMMON_OPT += -O2 -frecursive -mcpu=power8 -mtune=power8 -fno-fast-math
+ endif
+ endif
+ 
+--- Makefile.system	2017-10-03 13:34:06.000000000 -0700
++++ ./Makefile.system.new	2017-10-03 13:41:05.000000000 -0700
+@@ -422,7 +422,7 @@
+ endif
+ 
+ ifeq ($(C_COMPILER), INTEL)
+-CCOMMON_OPT    += -openmp
++CCOMMON_OPT    += -qopenmp
+ endif
+ 
+ ifeq ($(C_COMPILER), PGI)
+@@ -687,7 +687,7 @@
+ endif
+ endif
+ ifeq ($(USE_OPENMP), 1)
+-FCOMMON_OPT += -openmp
++FCOMMON_OPT += -qopenmp
+ endif
+ endif
+ 
+--- c_check	2017-10-03 13:34:06.000000000 -0700
++++ ./c_check.new	2017-10-02 15:15:02.000000000 -0700
+@@ -133,7 +133,7 @@
+ }
+ 
+ if ($compiler eq "INTEL") {
+-    $openmp = "-openmp";
++    $openmp = "-qopenmp";
+ }
+ 
+ if ($compiler eq "PATHSCALE") {

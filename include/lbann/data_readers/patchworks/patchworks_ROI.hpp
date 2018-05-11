@@ -31,7 +31,9 @@
  *  - Region of interest descriptor
  */
 
-#ifdef __LIB_OPENCV
+#include "lbann_config.hpp"
+
+#ifdef LBANN_HAS_OPENCV
 #ifndef _PATCHWORKS_ROI_H_INCLUDED_
 #define _PATCHWORKS_ROI_H_INCLUDED_
 
@@ -56,13 +58,13 @@ class ROI {
   int m_right; ///< The right-most pixel position of the region
   int m_bottom; ///< The bottom-most pixel position of the region
 
-  ROI(void) ///< The default constructor
+  ROI() ///< The default constructor
     : m_left(undefined_coordinate), m_top(undefined_coordinate),
       m_right(undefined_coordinate), m_bottom(undefined_coordinate) {}
 
-  void init(void); ///< Reset the structure with undefined coordinate values
-  bool is_undefined(void) const; ///< Tell if the structure has not been initialized
-  bool is_valid(void) const; ///< Check if the region is valid
+  void init(); ///< Reset the structure with undefined coordinate values
+  bool is_undefined() const; ///< Tell if the structure has not been initialized
+  bool is_valid() const; ///< Check if the region is valid
   bool set_overlapping_region(const cv::Mat& img);
   /// Check if the region of interest covers the whole image
   bool is_whole_image(const cv::Mat& img);
@@ -78,36 +80,36 @@ class ROI {
   void move(const std::pair<int, int> displacement);
 
   /// Returns the left position of the region
-  int left(void) const {
+  int left() const {
     return m_left;
   }
   /// Returns the top poisition of the region
-  int top(void) const {
+  int top() const {
     return m_top;
   }
   /// Returns the right position of the region
-  int right(void) const {
+  int right() const {
     return m_right;
   }
   /// Returns the bottom position of the region
-  int bottom(void) const {
+  int bottom() const {
     return m_bottom;
   }
 
   /// Returns a cv::Rect equivalent
-  cv::Rect rect(void) const {
+  cv::Rect rect() const {
     return cv::Rect(m_left, m_top, m_right-m_left, m_bottom-m_top);
   }
   /// Returns the width of the rectangular region
-  int width(void) const {
+  int width() const {
     return (m_right - m_left);
   }
   /// Returns the height of the rectangular region
-  int height(void) const {
+  int height() const {
     return (m_bottom - m_top);
   }
   /// Returns the area of the rectangular region
-  int area(void) const {
+  int area() const {
     return width()*height();
   }
   /// Returns the size of the area (width, hegiht)
@@ -148,4 +150,4 @@ std::ostream& operator<<(std::ostream& os, const ROI& roi);
 } // end of namespace patchworks
 } // end of namespace lbann
 #endif // _PATCHWORKS_ROI_H_INCLUDED_
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV

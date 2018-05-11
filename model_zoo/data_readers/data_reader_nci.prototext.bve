@@ -1,0 +1,25 @@
+data_reader {
+  reader {
+    name: "nci"
+    role: "train"
+    shuffle: true
+    data_filename: "/p/lscratchf/allen99/anlftp/ftp.mcs.anl.gov/pub/candle/public/benchmarks/P1B3/chem.P1B3_test_drugs.txt.train.X.2"
+    label_filename: "/p/lscratchf/allen99/anlftp/ftp.mcs.anl.gov/pub/candle/public/benchmarks/P1B3/chem.P1B3_test_drugs.txt.train.X.2.lb"
+    train_or_test_percent: 1.0
+    validation_percent: 0.1
+    max_sample_count: 0
+    percent_of_data_to_use: 0
+  }
+
+  reader {
+    name: "nci"
+    role: "test"
+    shuffle: true
+    data_filename: "/p/lscratchf/allen99/anlftp/ftp.mcs.anl.gov/pub/candle/public/benchmarks/P1B3/chem.P1B3_test_drugs.txt.train.X.2"
+    label_filename: "/p/lscratchf/allen99/anlftp/ftp.mcs.anl.gov/pub/candle/public/benchmarks/P1B3/chem.P1B3_test_drugs.txt.train.X.2.lb"
+    train_or_test_percent: 1.0
+    validation_percent: 1.0
+    max_sample_count: 0
+    percent_of_data_to_use: 0
+  }
+}

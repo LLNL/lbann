@@ -31,8 +31,9 @@
  *  - Region of interest descriptor
  */
 
-#ifdef __LIB_OPENCV
 #include "lbann/data_readers/patchworks/patchworks_ROI.hpp"
+
+#ifdef LBANN_HAS_OPENCV
 #include <iostream>
 
 namespace lbann {
@@ -41,14 +42,14 @@ namespace patchworks {
 const int ROI::undefined_coordinate = -1;
 
 /// Reset to the initial condition indicating to cover the whole image
-void ROI::init(void) {
+void ROI::init() {
   m_left = undefined_coordinate;
   m_top = undefined_coordinate;
   m_right = undefined_coordinate;
   m_bottom = undefined_coordinate;
 }
 
-bool ROI::is_undefined(void) const {
+bool ROI::is_undefined() const {
   return ((m_left == undefined_coordinate)  ||
           (m_top == undefined_coordinate)   ||
           (m_right == undefined_coordinate) ||
@@ -57,7 +58,7 @@ bool ROI::is_undefined(void) const {
 }
 
 /// Sanity check on a set of two coordinates that defines a region of interest
-bool ROI::is_valid(void) const {
+bool ROI::is_valid() const {
   return (!is_undefined() && (m_left < m_right) && (m_top < m_bottom));
 }
 
@@ -66,7 +67,7 @@ bool ROI::is_valid(void) const {
  * preceisely match the image boundary in case that it is out of boundary.
  */
 bool ROI::set_overlapping_region(const cv::Mat& img) {
-  if (!is_valid() || (img.data == NULL)) {
+  if (!is_valid() || (img.data == nullptr)) {
     return false;
   }
   if (m_left < 0) {
@@ -149,4 +150,4 @@ std::ostream& operator<<(std::ostream& os, const ROI& roi) {
 
 } // end of namespace patchworks
 } // end of namespace lbann
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV

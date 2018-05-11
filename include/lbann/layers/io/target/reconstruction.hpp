@@ -27,131 +27,92 @@
 #ifndef LBANN_LAYERS_RECONSTRUCTION_HPP_INCLUDED
 #define LBANN_LAYERS_RECONSTRUCTION_HPP_INCLUDED
 
-#include "lbann/layers/lbann_layer.hpp"
-#include "lbann/layers/io/target/lbann_target_layer.hpp"
-#include "lbann/models/lbann_model.hpp"
+#include "lbann/layers/layer.hpp"
+#include "lbann/layers/io/target/generic_target_layer.hpp"
+#include "lbann/models/model.hpp"
 #include <string>
-#include "lbann/utils/lbann_random.hpp"
+#include "lbann/utils/random.hpp"
 
 namespace lbann {
 template <data_layout T_layout>
-class reconstruction_layer : public target_layer {
+class reconstruction_layer : public generic_target_layer {
  private:
+
+  /** Original layer to reconstruct. */
   Layer *m_original_layer;
-  DataType aggregate_cost;
-  long num_forwardprop_steps;
-  //  weight_initialization m_weight_initialization;
-  DistMat original_layer_act_v;
 
  public:
-  /// @todo note that the reconstruction layer used to use weight_initialization::glorot_uniform
-  reconstruction_layer(size_t index,lbann_comm *comm,
-                       optimizer *opt,/*needed?*/
-                       const uint minim_batch_size,
+  reconstruction_layer(lbann_comm *comm,
                        Layer *original_layer)
-    :  target_layer(comm, minim_batch_size, {}, false), m_original_layer(original_layer) {
-    set_name("reconstruction_layer");
-    // Setup the data distribution
-    initialize_distributed_matrices();
-    this->m_type = layer_type::reconstruction;
-    this->m_index = index;
-    this->m_num_neurons = original_layer->get_num_neurons();
-    aggregate_cost = 0.0;
-    num_forwardprop_steps = 0;
+    :  generic_target_layer(comm, dynamic_cast<generic_input_layer*>(original_layer), {}, false),
+       m_original_layer(original_layer) {}
+
+  reconstruction_layer* copy() const override {
+    throw lbann_exception("reconstruction_layer can't be copied");
+    return nullptr;
   }
 
-  virtual inline void initialize_distributed_matrices() {
-    target_layer::initialize_distributed_matrices<T_layout>();
+  std::string get_type() const override { return "reconstruction"; }
+
+  std::string get_description() const override {
+    return std::string{} + " reconstruction_layer " +
+                           " original: " + m_original_layer->get_name() +
+                           " dataLayout: " + this->get_data_layout_string(get_data_layout());
   }
-  virtual inline data_layout get_data_layout() { return T_layout; }
 
-  void setup(int num_prev_neurons) {
-    target_layer::setup(num_prev_neurons);
-    Layer::setup(num_prev_neurons);
+  data_layout get_data_layout() const override { return T_layout; }
 
-    // Initialize other matrices
-    Zeros(*this->m_error_signal, num_prev_neurons, this->m_mini_batch_size); // m_error_signal holds the product of m_weights^T * m_prev_error_signal
-    Zeros(*this->m_activations, this->m_num_neurons, this->m_mini_batch_size); //clear up m_activations before copying fp_input to it
-    Zeros(*this->m_prev_error_signal, this->m_num_neurons, this->m_mini_batch_size); //clear up before filling with new results
-    Zeros(*this->m_prev_activations, num_prev_neurons, this->m_mini_batch_size);
+  /** Set original layer. */
+  void set_original_layer(Layer *original_layer) {
+    m_original_layer = original_layer;
+  }
+
+  void setup_dims() override {
+    generic_target_layer::setup_dims();
+    this->m_neuron_dims = m_original_layer->get_neuron_dims();
+    this->m_num_neuron_dims = m_original_layer->get_num_neuron_dims();
+    this->m_num_neurons = m_original_layer->get_num_neurons();
+    if(this->m_num_neurons != this->m_num_prev_neurons) {
+      throw lbann_exception("reconstruction_layer: original layer ("
+                            + std::to_string(this->m_num_neurons)
+                            + ") and reconstruction layer ("
+                            + std::to_string(this->m_num_prev_neurons)
+                            +") do not have the same number of neurons");
+    }
   }
 
  protected:
-  void fp_set_std_matrix_view() {
-    int64_t cur_mini_batch_size = this->m_neural_network_model->get_current_mini_batch_size();
 
-    target_layer::fp_set_std_matrix_view();
-
-    //view of original layer
-    View(original_layer_act_v,*(m_original_layer->m_activations),IR(0,m_original_layer->m_activations->Height()),IR(0,cur_mini_batch_size));
+  void fp_compute() override {
+    El::Copy(m_original_layer->get_activations(), *m_ground_truth);
   }
 
-
-  void fp_compute() {
-    // Compute cost will be sum of squared error of fp_input (linearly transformed to m_activations)
-    // and original layer fp_input/original input
-    DataType avg_error = this->m_neural_network_model->m_obj_fn->compute_obj_fn(*this->m_prev_activations_v, original_layer_act_v);
-    aggregate_cost += avg_error;
-    num_forwardprop_steps++;
-  }
-
-  void bp_compute() {
-    // Compute error signal
-    this->m_neural_network_model->m_obj_fn->compute_obj_fn_derivative(this->m_prev_layer_type, *this->m_prev_activations_v, original_layer_act_v,*this->m_prev_error_signal_v);
-
-    //m_prev_error_signal_v is the error computed by objective function
-    //is really not previous, but computed in this layer
-    //@todo: rename as obj_error_signal
-  }
+  void bp_compute() override {}
 
  public:
-  execution_mode get_execution_mode() {
-    return this->m_execution_mode;
+
+  void summarize_stats(lbann_summary& summarizer, int step) override {
+    std::string tag = this->m_name + "/ReconstructionCost";
+    execution_mode mode = this->m_model->get_execution_mode();
+    summarizer.reduce_scalar(tag, this->m_model->get_objective_function()->get_mean_value(mode), step);
+    // Skip target layer (for now).
+    io_layer::summarize_stats(summarizer, step);
   }
 
-  bool update_compute() {
-    if(this->m_execution_mode == execution_mode::training) {
-      double start = get_time();
-      this->update_time += get_time() - start;
-    }
-    return true;
+  std::vector<Layer*> get_layer_pointers() override {
+    std::vector<Layer*> layers = generic_target_layer::get_layer_pointers();
+    layers.push_back(m_original_layer);
+    return layers;
   }
 
-  void summarize(lbann_summary& summarizer, int64_t step) {
-    Layer::summarize(summarizer, step);
-    std::string tag = "layer" + std::to_string(static_cast<long long>(this->m_index))
-      + "/ReconstructionCost";
-    summarizer.reduce_scalar(tag, average_cost(), step);
-  }
-
-  void epoch_print() const {
-    double avg_cost = average_cost();
-    if (this->m_comm->am_world_master()) {
-      std::vector<double> avg_costs(this->m_comm->get_num_models());
-      this->m_comm->intermodel_gather(avg_cost, avg_costs);
-      for (size_t i = 0; i < avg_costs.size(); ++i) {
-        std::cout << "model " << i << " average reconstruction cost: " << avg_costs[i] << std::endl;
-      }
-    } else {
-      this->m_comm->intermodel_gather(avg_cost, this->m_comm->get_world_master());
-    }
-  }
-
-  void epoch_reset() {
-    Layer::epoch_reset();
-    reset_cost();
-  }
-
-  void reset_cost() {
-    aggregate_cost = 0.0;
-    num_forwardprop_steps = 0;
-  }
-
-  DataType average_cost() const {
-    return aggregate_cost / num_forwardprop_steps;
+  void set_layer_pointers(std::vector<Layer*> layers) override {
+    m_original_layer = layers.back();
+    layers.pop_back();
+    generic_target_layer::set_layer_pointers(layers);
   }
 
 };
+
 }
 
 #endif  // LBANN_LAYERS_RECONSTRUCTION_HPP_INCLUDED

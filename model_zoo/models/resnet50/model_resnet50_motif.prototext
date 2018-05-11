@@ -1,0 +1,552 @@
+motif_definitions {
+  #--------------------------------------------------------------
+  # primary resnet motif; this is repeated 16 times for resnet 50
+  #--------------------------------------------------------------
+  motif {
+    name: "motif_resnet"
+
+    #----------------------------------------------------------
+    # input layer: split
+    #----------------------------------------------------------
+    layer {
+      parents: ""
+      children: "branch1 branch2a"
+      name: "split"
+      data_layout: "data_parallel"
+      split { }
+    }
+
+    #----------------------------------------------------------
+    # final layers: sum -> relu
+    #----------------------------------------------------------
+    layer {
+      name: "sum"
+      parents: "branch2c_bn branch1_bn"
+      children: "relu"
+      data_layout: "data_parallel"
+      sum { }
+    }
+    layer {
+      name: "relu"
+      parents: "sum"
+      children: ""
+      data_layout: "data_parallel"
+      relu { }
+    }
+
+    #----------------------------------------------------------
+    # branch1: conv -> batch_norm -> [sum]
+    #----------------------------------------------------------
+    layer {
+      name: "branch1"
+      parents: "split"
+      children: "branch1_bn"
+      data_layout: "data_parallel"
+      convolution {
+        num_dims: 2
+        num_output_channels: -1
+        conv_dims_i: 1
+        conv_pads_i: 0
+        conv_strides_i: 2
+        has_bias: false
+      }
+    }
+    layer {
+      name: "branch1_bn"
+      parents: "branch1"
+      children: "sum"
+      data_layout: "data_parallel"
+      batch_normalization {
+        decay: 0.9
+        scale_init: 1.0
+        bias_init: 0.0
+        epsilon: 1e-5
+      }
+    }
+
+    #----------------------------------------------------------
+    # branch2: conv -> batch_norm -> relu ->
+    #          conv -> batch_norm -> relu ->
+    #          conv -> batch_norm -> [sum]
+    #----------------------------------------------------------
+    layer {
+      name: "branch2a"
+      parents: "split"
+      children: "branch2a_bn"
+      data_layout: "data_parallel"
+      convolution {
+        num_dims: 2
+        num_output_channels: -1
+        conv_dims_i: 1
+        conv_pads_i: 0
+        conv_strides_i: 1
+        has_bias: false
+      }
+    }
+    layer {
+      name: "branch2a_bn"
+      parents: "branch2a"
+      children: "branch2a_relu"
+      data_layout: "data_parallel"
+      batch_normalization {
+        decay: 0.9
+        scale_init: 1.0
+        bias_init: 0.0
+        epsilon: 1e-5
+      }
+    }
+    layer {
+      name: "branch2a_relu"
+      parents: "branch2a_bn"
+      children: "branch2b"
+      data_layout: "data_parallel"
+      relu { }
+    }
+
+    layer {
+      name: "branch2b"
+      parents: "branch2a_relu"
+      children: "branch2b_bn"
+      data_layout: "data_parallel"
+      convolution {
+        num_dims: 2
+        num_output_channels: -1
+        conv_dims_i: 3
+        conv_pads_i: 1
+        conv_strides_i: 1
+        has_bias: false
+      }
+    }
+    layer {
+      name: "branch2b_bn"
+      parents: "branch2b"
+      children: "branch2b_relu"
+      data_layout: "data_parallel"
+      batch_normalization {
+        decay: 0.9
+        scale_init: 1.0
+        bias_init: 0.0
+        epsilon: 1e-5
+      }
+    }
+    layer {
+      name: "branch2b_relu"
+      parents: "branch2b_bn"
+      children: "branch2c"
+      data_layout: "data_parallel"
+      relu { }
+    }
+    layer {
+      name: "branch2c"
+      parents: "branch2b_relu"
+      children: "branch2c_bn"
+      data_layout: "data_parallel"
+      convolution {
+        num_dims: 2
+        num_output_channels: -1
+        conv_dims_i: 1
+        conv_pads_i: 0
+        conv_strides_i: 1
+        has_bias: false
+      }
+    }
+    layer {
+      name: "branch2c_bn"
+      parents: "branch2c"
+      children: "sum"
+      data_layout: "data_parallel"
+      batch_normalization {
+        decay: 0.9
+        scale_init: 1.0
+        bias_init: 0.0
+        epsilon: 1e-5
+      }
+    }
+
+  } # motif_resnet
+
+} # motif_definitions
+
+
+model {
+  name: "directed_acyclic_graph_model"
+  data_layout: "data_parallel"
+  mini_batch_size: 256
+  block_size: 256
+  num_epochs: 10
+  num_parallel_readers: 0
+  procs_per_model: 0
+  num_gpus: -1
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    cross_entropy {}
+    l2_weight_regularization {
+      scale_factor: 1e-4
+    }
+  }
+
+  ###################################################
+  # Metrics
+  ###################################################
+
+  metric { categorical_accuracy {} }
+  metric {
+    top_k_categorical_accuracy {
+       top_k: 5
+    }
+  }
+
+  ###################################################
+  # Layers
+  ###################################################
+
+  # conv1
+  layer {
+    parents: ""
+    name: "data"
+    children: "conv1"
+    data_layout: "data_parallel"
+    input {
+      io_buffer: "partitioned"
+    }
+  }
+  layer {
+    parents: "data"
+    name: "conv1"
+    children: "bn_conv1"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 64
+      conv_dims_i: 7
+      conv_pads_i: 3
+      conv_strides_i: 2
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "conv1"
+    name: "bn_conv1"
+    children: "conv1_relu"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "conv1_relu"
+    parents: "bn_conv1"
+    children: "pool1"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "pool1"
+    parents: "conv1_relu"
+    children: "res2a"
+    data_layout: "data_parallel"
+    pooling {
+      num_dims: 2
+      pool_dims_i: 3
+      pool_pads_i: 1
+      pool_strides_i: 2
+      pool_mode: "max"
+    }
+  }
+
+  # res2a
+  layer {
+    name: "res2a"
+    parents: "pool1"
+    children: "res2b"
+    data_layout: "data_parallel"
+    motif_layer {
+      motif_id: "motif_resnet"
+      variable: "branch1 num_output_channels 256"
+      variable: "branch1 conv_strides_i 1"
+      variable: "branch2a num_output_channels 64"
+      variable: "branch2b num_output_channels 64"
+      variable: "branch2c num_output_channels 256"
+    }
+  }
+  # res2b
+  layer {
+    name: "res2b"
+    parents: "res2a"
+    children: "res2c"
+    data_layout: "data_parallel"
+    motif_layer {
+      motif_id: "motif_resnet"
+      variable: "do_not_use branch1"
+      variable: "do_not_use branch1_bn"
+      variable: "branch2a num_output_channels 64"
+      variable: "branch2b num_output_channels 64"
+      variable: "branch2c num_output_channels 256"
+    }
+  }
+  # res2c
+  layer {
+    name: "res2c"
+    parents: "res2b"
+    children: "res3a"
+    data_layout: "data_parallel"
+    motif_layer {
+      motif_id: "motif_resnet"
+      variable: "do_not_use branch1"
+      variable: "do_not_use branch1_bn"
+      variable: "branch2a num_output_channels 64"
+      variable: "branch2b num_output_channels 64"
+      variable: "branch2c num_output_channels 256"
+    }
+  }
+  #=================================================
+  # res3a
+  layer {
+    name: "res3a"
+    parents: "res2c"
+    children: "res3b"
+    data_layout: "data_parallel"
+    motif_layer {
+      motif_id: "motif_resnet"
+      variable: "branch1 num_output_channels 512"
+      variable: "branch2a num_output_channels 128"
+      variable: "branch2a conv_strides_i 2"
+      variable: "branch2b num_output_channels 128"
+      variable: "branch2c num_output_channels 512"
+    }
+  }
+  # res3b
+  layer {
+    name: "res3b"
+    parents: "res3a"
+    children: "res3c"
+    data_layout: "data_parallel"
+    motif_layer {
+      motif_id: "motif_resnet"
+      variable: "do_not_use branch1"
+      variable: "do_not_use branch1_bn"
+      variable: "branch2a num_output_channels 128"
+      variable: "branch2b num_output_channels 128"
+      variable: "branch2c num_output_channels 512"
+    }
+  }
+  # res3c
+  layer {
+    name: "res3c"
+    parents: "res3b"
+    children: "res3d"
+    data_layout: "data_parallel"
+    motif_layer {
+      motif_id: "motif_resnet"
+      variable: "do_not_use branch1"
+      variable: "do_not_use branch1_bn"
+      variable: "branch2a num_output_channels 128"
+      variable: "branch2b num_output_channels 128"
+      variable: "branch2c num_output_channels 512"
+    }
+  }
+  # res3d
+  layer {
+    name: "res3d"
+    parents: "res3c"
+    children: "res4a"
+    data_layout: "data_parallel"
+    motif_layer {
+      motif_id: "motif_resnet"
+      variable: "do_not_use branch1"
+      variable: "do_not_use branch1_bn"
+      variable: "branch2a num_output_channels 128"
+      variable: "branch2b num_output_channels 128"
+      variable: "branch2c num_output_channels 512"
+    }
+  }
+  #==========================================================
+  # res4a
+  layer {
+    name: "res4a"
+    parents: "res3d"
+    children: "res4b"
+    data_layout: "data_parallel"
+    motif_layer {
+      motif_id: "motif_resnet"
+      variable: "branch1 num_output_channels 1024"
+      variable: "branch2a num_output_channels 256"
+      variable: "branch2a conv_strides_i 2"
+      variable: "branch2b num_output_channels 256"
+      variable: "branch2c num_output_channels 1024"
+    }
+  }
+  # res4b
+  layer {
+    name: "res4b"
+    parents: "res4a"
+    children: "res4c"
+    data_layout: "data_parallel"
+    motif_layer {
+      motif_id: "motif_resnet"
+      variable: "do_not_use branch1"
+      variable: "do_not_use branch1_bn"
+      variable: "branch2a num_output_channels 256"
+      variable: "branch2b num_output_channels 256"
+      variable: "branch2c num_output_channels 1024"
+    }
+  }
+  # res4c
+  layer {
+    name: "res4c"
+    parents: "res4b"
+    children: "res4d"
+    data_layout: "data_parallel"
+    motif_layer {
+      motif_id: "motif_resnet"
+      variable: "do_not_use branch1"
+      variable: "do_not_use branch1_bn"
+      variable: "branch2a num_output_channels 256"
+      variable: "branch2b num_output_channels 256"
+      variable: "branch2c num_output_channels 1024"
+    }
+  }
+  # res4d
+  layer {
+    name: "res4d"
+    parents: "res4c"
+    children: "res4e"
+    data_layout: "data_parallel"
+    motif_layer {
+      motif_id: "motif_resnet"
+      variable: "do_not_use branch1"
+      variable: "do_not_use branch1_bn"
+      variable: "branch2a num_output_channels 256"
+      variable: "branch2b num_output_channels 256"
+      variable: "branch2c num_output_channels 1024"
+    }
+  }
+  # res4e
+  layer {
+    name: "res4e"
+    parents: "res4d"
+    children: "res4f"
+    data_layout: "data_parallel"
+    motif_layer {
+      motif_id: "motif_resnet"
+      variable: "do_not_use branch1"
+      variable: "do_not_use branch1_bn"
+      variable: "branch2a num_output_channels 256"
+      variable: "branch2b num_output_channels 256"
+      variable: "branch2c num_output_channels 1024"
+    }
+  }
+  # res4f
+  layer {
+    name: "res4f"
+    parents: "res4e"
+    children: "res5a"
+    data_layout: "data_parallel"
+    motif_layer {
+      motif_id: "motif_resnet"
+      variable: "do_not_use branch1"
+      variable: "do_not_use branch1_bn"
+      variable: "branch2a num_output_channels 256"
+      variable: "branch2b num_output_channels 256"
+      variable: "branch2c num_output_channels 1024"
+    }
+  }
+  #======================================================================
+  # res5a
+  layer {
+    name: "res5a"
+    parents: "res4f"
+    children: "res5b"
+    data_layout: "data_parallel"
+    motif_layer {
+      motif_id: "motif_resnet"
+      variable: "branch1 num_output_channels 2048"
+      variable: "branch2a num_output_channels 512"
+      variable: "branch2a conv_strides_i 2"
+      variable: "branch2b num_output_channels 512"
+      variable: "branch2c num_output_channels 2048"
+    }
+  }
+  # res5b
+  layer {
+    name: "res5b"
+    parents: "res5a"
+    children: "res5c"
+    data_layout: "data_parallel"
+    motif_layer {
+      motif_id: "motif_resnet"
+      variable: "do_not_use branch1"
+      variable: "do_not_use branch1_bn"
+      variable: "branch2a num_output_channels 512"
+      variable: "branch2b num_output_channels 512"
+      variable: "branch2c num_output_channels 2048"
+    }
+  }
+  # res5c
+  layer {
+    name: "res5c"
+    parents: "res5b"
+    children: "pool5"
+    data_layout: "data_parallel"
+    motif_layer {
+      motif_id: "motif_resnet"
+      variable: "do_not_use branch1"
+      variable: "do_not_use branch1_bn"
+      variable: "branch2a num_output_channels 512"
+      variable: "branch2b num_output_channels 512"
+      variable: "branch2c num_output_channels 2048"
+    }
+  }
+
+  #================================================================
+  # Inference
+  layer {
+    name: "pool5"
+    parents: "res5c"
+    children: "fc1000"
+    data_layout: "data_parallel"
+    pooling {
+      num_dims: 2
+      pool_dims_i: 7
+      pool_pads_i: 0
+      pool_strides_i: 1
+      pool_mode: "average"
+    }
+  }
+  layer {
+    parents: "pool5"
+    name: "fc1000"
+    children: "prob"
+    data_layout: "model_parallel"
+    fully_connected {
+    num_neurons: 1000
+    has_bias: false
+    }
+  }
+  layer {
+    parents: "fc1000"
+    name: "prob"
+    children: "target"
+    data_layout: "model_parallel"
+    softmax {
+    }
+  }
+  layer {
+    parents: "prob"
+    name: "target"
+    children: ""
+    data_layout: "data_parallel"
+    target {
+      io_buffer: "partitioned"
+      shared_data_reader: true
+    }
+  }
+}

@@ -31,43 +31,35 @@
 
 namespace lbann {
 
-/**
- * Leaky rectified linear unit activation function.
- * This is a ReLU variant that avoids the dying ReLU problem where a ReLU neuron
- * can stop updating. See:
- * Maas, Andrew L., Awni Y. Hannun, and Andrew Y. Ng. "Rectifier nonlinearities
- * improve neural network acoustic models." Proc. ICML. Vol. 30. No. 1. 2013.
+/** Leaky rectified linear unit activation function.
+ *  This is a ReLU variant that avoids the dying ReLU problem where a
+ *  ReLU neuron can stop updating. See:
+ *  Maas, Andrew L., Awni Y. Hannun, and Andrew Y. Ng. "Rectifier
+ *  nonlinearities improve neural network acoustic models."
+ *  Proc. ICML. Vol. 30. No. 1. 2013.
  */
 template <data_layout T_layout>
 class leaky_relu_layer : public entrywise_activation_layer {
  public:
   /** Leak is the amount of signal to permit for negative values. */
-  leaky_relu_layer(uint index, lbann_comm *comm,
-                   const uint mini_batch_size, uint num_neurons,
-                   DataType leak = DataType(0.01)) :
-    entrywise_activation_layer(index, comm,
-                               mini_batch_size, num_neurons),
-    m_leak(leak) { 
-    set_name("leaky_relu_layer");
-    initialize_distributed_matrices(); 
-    }
-
-  virtual inline void initialize_distributed_matrices() {
-    entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
-  }
-  virtual inline data_layout get_data_layout() { return T_layout; }
+  leaky_relu_layer(lbann_comm *comm,
+                   DataType leak = DataType(0.01))
+    : entrywise_activation_layer(comm), m_leak(leak) {}
+  leaky_relu_layer* copy() const override { return new leaky_relu_layer(*this); }
+  std::string get_type() const override { return "leaky relu"; }
+  data_layout get_data_layout() const override { return T_layout; }
 
  protected:
-  DataType activation_function(DataType z) {
+  DataType activation(DataType z) const override {
     return std::max(m_leak * z, z);
   }
-  DataType activation_function_gradient(DataType z) {
+  DataType activation_derivative(DataType z) const override {
     return (z > DataType(0)) ? DataType(1) : m_leak;
   }
  private:
   DataType m_leak;
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LEAKY_RELU_HPP_INCLUDED
+#endif // LEAKY_RELU_HPP_INCLUDED

@@ -1,0 +1,56 @@
+/** \page obj_fn Objective Functions
+
+\section loss_functions Loss Functions
+
+  \subsection bin_cross_ent Binary Cross Entropy
+    \copydetails lbann::objective_functions::binary_cross_entropy
+
+    Implementation details: lbann::objective_functions::binary_cross_entropy
+
+
+  \subsection cross_ent Cross Entropy
+    \copydetails lbann::_cross_entropy
+         
+    Implementation details: lbann::cross_entropy
+
+  \subsection cross_ent_uncertain Cross Entropy with Uncertainty
+    \copydetails lbann::objective_functions::binary_cross_entropy_with_uncertainty
+         
+    Implementation details: lbann::objective_functions::cross_enropy_with_uncertainty
+
+  \subsection gemo_negloglike Geometric Negative Log Likelihood
+    \copydetails lbann::objective_functions::geom_negloglike
+         
+    Implementation details: lbann::objective_functions::geom_negloglike
+
+  \subsection mad Mean Absolute Deviation
+    \copydetails lbann::objective_functions::mean_absolute_deviation
+             
+    Implementation details: lbann::objective_functions::mean_absolute_deviation
+
+  \subsection m_s_e Mean Squared Error
+    \copydetails lbann::mean_squared_error
+
+    Implementation details: lbann::mean_squared_error
+
+  \subsection pos_negloglike Poisson Negative Log Likelihood
+    \copydetails lbann::objective_functions::posson_negloglike
+             
+    Implementation details: lbann::objective_functions::poisson_negloglike
+
+
+  \subsection poly_negloglike Polya Negative Log Likelihood
+    \copydetails lbann::objective_functions::polya_negloglike
+                               
+    Implementation details: lbann::objective_functions::polya_negloglike
+
+
+\section weight_regularization Weight Regularization
+  
+  \subsection l2_weight L2 Weight Regularization
+    \copydetails  lbann::l2_weight_regularization
+
+    Implementation details: lbann::l2_weight_regularization
+
+*/
+

@@ -22,34 +22,22 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_layer .h .cpp - Parent class for all layer types
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_LAYER_REGULARIZER_HPP_INCLUDED
 #define LBANN_LAYER_REGULARIZER_HPP_INCLUDED
-
-#include "lbann/layers/lbann_layer.hpp"
-#include <string>
-#include <vector>
+#include "lbann/layers/layer.hpp"
 
 namespace lbann {
 
+/** Abstract base class for regularizer layers.
+ *  Regularizer layers are designed to reduce generalization error.
+ */
 class regularizer_layer : public Layer {
  public:
-  regularizer_layer(const uint index, 
-                    lbann_comm *comm,
-                    const uint mini_batch_size) :
-    Layer(index, comm, mini_batch_size) {
-    
-  }
-  virtual ~regularizer_layer() {}
-
-  template<data_layout T_layout> inline void initialize_distributed_matrices() {
-    Layer::initialize_distributed_matrices<T_layout>();
-  }
+  regularizer_layer(lbann_comm *comm) : Layer(comm) {}
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_LAYER_REGULARIZER_HPP_INCLUDED
+#endif // LBANN_LAYER_REGULARIZER_HPP_INCLUDED

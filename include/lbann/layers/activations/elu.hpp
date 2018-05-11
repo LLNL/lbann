@@ -31,15 +31,14 @@
 
 namespace lbann {
 
-/**
- * Exponential linear unit.
- * Tries to speed up learning by pushing the mean of activations more towards
- * zero by allowing negative values. Helps avoid the need for batch
- * normalization.
- * See:
- * Djork-Arne Clevert, Thomas Unterthiner, and Sepp Hochreiter
- * "Fast and Accurate Deep Network Learning by Exponential Linear Units (ELUs)"
- * ICLR 2016.
+/** Exponential linear unit.
+
+ *  Tries to speed up learning by pushing the mean of activations more
+ *  towards zero by allowing negative values. Helps avoid the need for
+ *  batch normalization. See:
+ *  Djork-Arne Clevert, Thomas Unterthiner, and Sepp Hochreiter "Fast
+ *  and Accurate Deep Network Learning by Exponential Linear Units
+ *  (ELUs)" ICLR 2016.
  */
 template <data_layout T_layout>
 class elu_layer : public entrywise_activation_layer {
@@ -50,33 +49,24 @@ class elu_layer : public entrywise_activation_layer {
    * If alpha = 0, this turns into a ReLU.
    * Paper uses alpha = 1.0 as a good starting point.
    */
-  elu_layer(uint index, lbann_comm *comm,
-            const uint mini_batch_size, uint num_neurons,
-            DataType alpha = DataType(1.0)) :
-    entrywise_activation_layer(index, comm,
-                               mini_batch_size, num_neurons),
-    m_alpha(alpha) { 
-    
-    set_name("elu_layer");
-    initialize_distributed_matrices(); 
-    }
-
-  virtual inline void initialize_distributed_matrices() {
-    entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
-  }
-  virtual inline data_layout get_data_layout() { return T_layout; }
+  elu_layer(lbann_comm *comm,
+            DataType alpha = DataType(1.0))
+    : entrywise_activation_layer(comm), m_alpha(alpha) {}
+  elu_layer* copy() const override { return new elu_layer(*this); }
+  std::string get_type() const override { return "ELU"; }
+  data_layout get_data_layout() const override { return T_layout; }
 
  protected:
-  DataType activation_function(DataType z) {
-    return (z > DataType(0)) ? z : (m_alpha*std::expm1(z));
+  DataType activation(DataType z) const override {
+    return (z > DataType(0)) ? z : (m_alpha * std::expm1(z));
   }
-  DataType activation_function_gradient(DataType z) {
-    return (z > DataType(0)) ? DataType(1) : (m_alpha*std::expm1(z) + m_alpha);
+  DataType activation_derivative(DataType z) const override {
+    return (z > DataType(0)) ? DataType(1) : (m_alpha * std::expm1(z) + m_alpha);
   }
  private:
   DataType m_alpha;
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // ELU_HPP_INCLUDED
+#endif // ELU_HPP_INCLUDED

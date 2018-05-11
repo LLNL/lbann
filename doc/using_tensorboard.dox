@@ -20,7 +20,7 @@ to the output directory you chose. To view it with Tensorboard on an
 LC machine:
 
 \code{.sh}
- $ use tensorflow
+ $ use tensorflow-0.10.0
  $ tensorboard --logdir=./out --host=localhost
 \endcode
 

@@ -1,0 +1,127 @@
+model {
+  name: "sequential_model"
+  num_epochs: 20
+  data_layout: "data_parallel"
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    cross_entropy {}
+    l2_weight_regularization {
+      scale_factor: 0.0005
+    }
+  }
+
+  ###################################################
+  # Metrics
+  ###################################################
+
+  metric { categorical_accuracy {} }
+  metric {
+    top_k_categorical_accuracy {
+       top_k: 5
+    }
+  }
+
+  layer {
+    input {
+      io_buffer: "partitioned"
+    }
+    name: "1"
+    parents: "1"
+    children: ""
+    data_layout: "data_parallel"
+  }
+  #############################################
+  layer {
+    fully_connected {
+      num_neurons: 4096
+      has_bias: true
+    }
+    name: "2"
+    parents: "1"
+    children: ""
+    data_layout: "model_parallel"
+  }
+  layer {
+    relu {
+    }
+    name: "3"
+    parents: "2"
+    children: ""
+    data_layout: "model_parallel"
+  }
+  layer {
+    dropout {
+      keep_prob: 0.9
+    }
+    name: "4"
+    parents: "3"
+    children: ""
+    data_layout: "model_parallel"
+  }
+  #############################################
+  layer {
+    fully_connected {
+      num_neurons: 1000
+    }
+    name: "5"
+    parents: "4"
+    children: ""
+    data_layout: "model_parallel"
+  }
+  layer {
+    name: "6"
+    parents: "5"
+    children: ""
+    data_layout: "model_parallel"
+    softmax {
+    }
+  }
+  #############################################
+  layer {
+    name: "7"
+    parents: "6"
+    children: ""
+    data_layout: "data_parallel"
+    target {
+      io_buffer: "partitioned"
+      shared_data_reader: true
+    }
+  }
+  #############################################
+  mini_batch_size: 256
+  callback {
+    imcomm {
+      intermodel_comm_method: "normal"
+      all_optimizers: true
+    }
+  }
+  callback {
+    print {
+      interval: 1
+    }
+  }
+  callback {
+    timer {
+    }
+  }
+  callback {
+    summary {
+      dir: "."
+      batch_interval: 1
+      mat_interval: 25
+    }
+  }
+  block_size: 256
+  num_gpus: -1
+  num_parallel_readers: 12
+}
+optimizer {
+  adagrad {
+    learn_rate: 0.0001
+    eps: 1e-08
+  }
+}

@@ -1,0 +1,120 @@
+model {
+  name: "greedy_layerwise_autoencoder"
+  data_layout: "model_parallel"
+  mini_batch_size: 192
+  block_size: 256
+  num_epochs: 10
+  num_parallel_readers: 0
+  procs_per_model: 0
+  num_gpus: -1
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    mean_squared_error {}
+  }
+
+  ###################################################
+  # Metrics
+  ###################################################
+
+  metric { mean_squared_error {} }
+
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback {
+    print {
+      interval: 1
+    }
+  }
+#  callback {
+#    timer {
+#    }
+#  }
+#  callback {
+#    save_images {
+#      image_dir: "images_"
+#      extension: "pgm"
+#    }
+#  }
+
+  ###################################################
+  # start of layers
+  ###################################################
+
+  # data
+  layer {
+    name: "data"
+    data_layout: "model_parallel"
+    input {
+      io_buffer: "distributed"
+    }
+  }
+
+  # encode1
+  layer {
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 100
+      has_bias: true
+    }
+  }
+  layer {
+    data_layout: "model_parallel"
+    sigmoid {}
+  }
+
+  # encode2
+  layer {
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 50
+      has_bias: true
+    }
+  }
+  layer {
+    data_layout: "model_parallel"
+    sigmoid {}
+  }
+
+  # decode2
+  layer {
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 100
+      has_bias: true
+    }
+  }
+  layer {
+    data_layout: "model_parallel"
+    sigmoid {}
+  }
+
+  # decode1
+  layer {
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 784
+      has_bias: true
+    }
+  }
+  layer {
+    data_layout: "model_parallel"
+    sigmoid {}
+  }
+
+  # reconstruction
+  layer {
+    data_layout: "model_parallel"
+    reconstruction {
+      original_layer: "data"
+    }
+  }
+
+  ###################################################
+  # end of layers
+  ###################################################
+}

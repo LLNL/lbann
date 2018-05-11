@@ -1,0 +1,236 @@
+model {
+  name: "sequential_model"
+  data_layout: "model_parallel"
+  mini_batch_size: 10
+  block_size: 256
+  num_epochs: 20
+  num_parallel_readers: 0
+  procs_per_model: 1
+  num_gpus: -1
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    cross_entropy {}
+    l2_weight_regularization {
+      scale_factor: 1e-4
+    }
+  }
+
+  ###################################################
+  # Metrics
+  ###################################################
+
+  metric {
+    categorical_accuracy {}
+  }
+
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback {
+    print {
+      interval: 1
+    }
+  }
+  callback {
+    timer {
+    }
+  }
+  callback {
+    summary {
+      dir: "."
+      batch_interval: 1
+      mat_interval: 25
+    }
+  }
+  # callback {
+  #   debug {
+  #     phase: "test"
+  #   }
+  # }
+  # callback {
+  #   debug_io {
+  #     phase: "test"
+  #     lvl: 1
+  #   }
+  # }
+  callback {
+    adaptive_learning_rate {
+      patience: 4
+      amt: 0.1
+    }
+  }
+  callback {
+    imcomm {
+      intermodel_comm_method: "normal"
+      all_optimizers: true
+    }
+  }
+  # callback {
+  #   dump_mb_indices {
+  #     basename: "debug_alexnet/"
+  #     interval: 1
+  #   }
+  # }
+  # callback {
+  #   disp_io_stats {
+  #     layers: "1"
+  #   }
+  # }
+
+  ###################################################
+  # start of layers
+  ###################################################
+
+
+  # INPUT 1
+  ######################
+  layer {
+    name: "1"
+    parents: "1"
+    data_layout: "model_parallel"
+    input {
+      io_buffer: "distributed"
+    }
+  }
+
+  # FULLY_CONNECTED 2
+  ######################
+  layer {
+    name: "2"
+    parents: "1"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 1024
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+    }
+  }
+
+  # RELU 3
+  ######################
+  layer {
+    name: "3"
+    parents: "2"
+    data_layout: "model_parallel"
+    relu {
+    }
+  }
+
+  # DROPOUT 4
+  ######################
+  layer {
+    name: "4"
+    parents: "3"
+    data_layout: "model_parallel"
+    dropout {
+      keep_prob: -1
+    }
+  }
+
+  # FULLY_CONNECTED 5
+  ######################
+  layer {
+    name: "5"
+    parents: "4"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 1024
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+    }
+  }
+
+  # RELU 6
+  ######################
+  layer {
+    name: "6"
+    parents: "5"
+    data_layout: "model_parallel"
+    relu {
+    }
+  }
+
+  # DROPOUT 7
+  ######################
+  layer {
+    name: "7"
+    parents: "6"
+    data_layout: "model_parallel"
+    dropout {
+      keep_prob: -1
+    }
+  }
+
+  # FULLY_CONNECTED 8
+  ######################
+  layer {
+    name: "8"
+    parents: "7"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 1024
+      weight_initialization: "glorot_uniform"
+      has_bias: true
+    }
+  }
+
+  # RELU 9
+  ######################
+  layer {
+    name: "9"
+    parents: "8"
+    data_layout: "model_parallel"
+    relu {
+    }
+  }
+
+  # DROPOUT 10
+  ######################
+  layer {
+    name: "10"
+    parents: "9"
+    data_layout: "model_parallel"
+    dropout {
+      keep_prob: -1
+    }
+  }
+
+  # FULLY_CONNECTED 11
+  ######################
+  layer {
+    name: "11"
+    parents: "10"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 10
+      weight_initialization: "glorot_uniform"
+      has_bias: false
+    }
+  }
+
+  # SOFTMAX 12
+  ######################
+  layer {
+    name: "12"
+    parents: "11"
+    data_layout: "model_parallel"
+    softmax {
+    }
+  }
+
+  # TARGET 13
+  ######################
+  layer {
+    name: "13"
+    parents: "12"
+    data_layout: "model_parallel"
+    target {
+      io_buffer: "distributed"
+      shared_data_reader: true
+    }
+  }
+}

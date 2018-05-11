@@ -30,14 +30,15 @@
  * LBANN PATCHWORKS header for patch descriptor
  */
 
-#ifdef __LIB_OPENCV
+#include "lbann_config.hpp"
+
+#ifdef LBANN_HAS_OPENCV
 #ifndef _PATCHWORKS_PATCH_DESCRIPTOR_H_INCLUDED_
 #define _PATCHWORKS_PATCH_DESCRIPTOR_H_INCLUDED_
 
 #include <string>
 #include <ostream>
 #include "patchworks_common.hpp"
-#include "patchworks_opencv.hpp"
 #include "patchworks_ROI.hpp"
 
 namespace lbann {
@@ -45,15 +46,16 @@ namespace patchworks {
 
 class patch_descriptor {
  public:
+  // --- configuration variables ---
   unsigned int m_width; ///< patch width
   unsigned int m_height; ///< patch height
   unsigned int m_gap; ///< gap between patches
-  unsigned int m_jitter; ///< patch position randomization
+  unsigned int m_jitter; ///< for patch position randomization
 
   /** patch centering mode
    *  0: place the center patch anywhere within the image
-   *  1: place the center patch anywhere allowing the space for all 8 neighbor patches
-   *  the rest: place the center patch at the center of the image
+   *  1: place the center patch anywhere as long as it allows the space for all 8 neighboring patches
+   *  other: place the center patch at the center of the image
    */
   unsigned int m_mode_center;
 
@@ -64,24 +66,35 @@ class patch_descriptor {
    */
   unsigned int m_mode_chrom;
 
-  ROI m_sample_area; ///< The area to sample patches from
-  ROI m_patch_center; ///< The center patch region
-  std::string m_ext; ///< The file extension name (i.e., image type)
+  /// Whether patches are self-labeled
+  bool m_self_label;
 
+  /// The file extension name (i.e., image type)
+  std::string m_ext;
+
+  // --- post-configuration variables ---
+  ROI m_sample_area; ///< The area to sample patches from
+  /// The list of displacements used to generate consecutive patches
+  std::vector<displacement_type> m_displacements;
+
+  // --- state variables ---
+  ROI m_patch_center; ///< The center patch region
+  /// The actual patch positions
+  std::vector<ROI> m_positions;
   /// The index of displacement used to generate the current patch
   unsigned int m_cur_patch_idx;
 
-  /// The list of displacements to used to generate consecutive patches
-  std::vector<displacement_type> m_displacements;
-  /// The actual patch positions
-  std::vector<ROI> m_positions;
-
  public:
-  patch_descriptor(void) {
+  patch_descriptor() {
     init();  ///< Default constructor
   }
   virtual ~patch_descriptor() {}
-  void init(void); ///< Initializer
+  void init(); ///< Initializer
+  void reset(); ///< Clear state variables other than configuration variables
+
+  /// Get patch size
+  unsigned int get_patch_width() const { return m_width; }
+  unsigned int get_patch_height() const { return m_height; }
 
   /// Set patch size
   void set_size(const int w, const int h);
@@ -90,13 +103,13 @@ class patch_descriptor {
     m_gap = g;
   }
   /// Set poisiton radomization parameter, the maximum jitter
-  void set_jitter(const unsigned int j);
-
+  void set_jitter(const unsigned int j) {
+    m_jitter = j;
+  }
   /// Set mode to place center patch
   void set_mode_centering(const unsigned int m) {
     m_mode_center = m;
   }
-
   /// Set correction mode for chromatic aberration
   void set_mode_chromatic_aberration(const unsigned int m) {
     m_mode_chrom = m;
@@ -112,23 +125,35 @@ class patch_descriptor {
     m_ext = e;
   }
 
+  /// Mark self labeling for patches
+  void set_self_label() { m_self_label = true; }
+
+  /// Unmark self labeling
+  void unset_self_label() { m_self_label = false; }
+
+  bool is_self_labeling() const { return m_self_label; }
+
+  unsigned int get_num_labels() const { return 8u; }
+
   /// A function that populates the list of displacements from the base patch to the next one
-  virtual void define_patch_set(void);
+  virtual void define_patch_set();
 
   /// transform each pixel by B = I - a'*a/(a*a') where a=[-1 2 -1] to mitigate chromatic aberration
-  bool is_to_correct_chromatic_aberration_at_pixel(void) const {
+  bool is_to_correct_chromatic_aberration_at_pixel() const {
     return (m_mode_chrom == 1);
   }
 
   /// randomly drop two channels to avoid chromatic aberration impact
-  bool is_to_drop_2channels(void) const {
+  bool is_to_drop_2channels() const {
     return (m_mode_chrom == 2);
   }
 
   /// Allow read-only access to the patch displacements
-  const std::vector<displacement_type>& get_displacements(void) const {
+  const std::vector<displacement_type>& get_displacements() const {
     return m_displacements;
   }
+
+  virtual unsigned int get_num_patches() const { return 2u; }
 
   /// Compute the position of the first patch
   virtual bool get_first_patch(ROI& patch);
@@ -136,12 +161,19 @@ class patch_descriptor {
   virtual bool get_next_patch(ROI& patch);
   /// extract all the patches defined
   virtual bool extract_patches(const cv::Mat& img, std::vector<cv::Mat>& patches);
+  /**
+   * Return the label of the last patch generated.
+   * For dual patch scenarios, it is one less the id of the non-center patch position.
+   */
+  virtual unsigned int get_last_label() const { return m_cur_patch_idx - 1; }
 
   /// Allow read-only access to the positions of the patches generated
-  const std::vector<ROI>& access_positions(void) const {
+  const std::vector<ROI>& access_positions() const {
     return m_positions;
   }
-  /// print out the content of patch descriptor
+  virtual std::string get_type() const { return "patch_descriptor"; }
+  virtual std::string get_description() const;
+  /// Print out the content of patch descriptor
   virtual std::ostream& print(std::ostream& os) const;
 };
 
@@ -151,4 +183,4 @@ std::ostream& operator<<(std::ostream& os, const patch_descriptor& pd);
 } // end of namespace patchworks
 } // end of namespace lbann
 #endif // _PATCHWORKS_PATCH_DESCRIPTOR_H_INCLUDED_
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV

@@ -31,38 +31,30 @@
 
 namespace lbann {
 
-/**
- * Softplus activation function.
- * This is a smooth approximation of the ReLU.
- * See: https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
+/** Softplus activation function.
+ *  This is a smooth approximation of the ReLU. See
+ *  https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
  */
 template <data_layout T_layout>
 class softplus_layer : public entrywise_activation_layer {
-  softplus_layer(uint index, lbann_comm *comm,
-                 const uint mini_batch_size, uint num_neurons) :
-    entrywise_activation_layer(index, comm,
-                               mini_batch_size, num_neurons) { 
-    set_name("softplus_layer");
-    initialize_distributed_matrices(); 
-  }
-
-  virtual inline void initialize_distributed_matrices() {
-    entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
-  }
-  virtual inline data_layout get_data_layout() { return T_layout; }
+public :
+  softplus_layer(lbann_comm *comm) : entrywise_activation_layer(comm) {}
+  softplus_layer* copy() const override { return new softplus_layer(*this); }
+  std::string get_type() const override { return "softplus"; }
+  data_layout get_data_layout() const override { return T_layout; }
 
  protected:
-  DataType activation_function(DataType z) {
+  DataType activation(DataType z) const override {
     // Warning: Not numerically stable.
     // Better approach is to determine a threshold so that for large z,
     // softplus(z) ~= z and for small z, softplus(z) ~= exp(z).
     return std::log1p(std::exp(z));
   }
-  DataType activation_function_gradient(DataType z) {
-    return DataType(1.0) / (DataType(1.0) + std::exp(-z));
+  DataType activation_derivative(DataType z) const override {
+    return 1 / (DataType(1) + std::exp(-z));
   }
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // SOFTPLUS_HPP_INCLUDED
+#endif // SOFTPLUS_HPP_INCLUDED

@@ -68,6 +68,9 @@ endif
 ifeq ($(TARGET), EXCAVATOR)
 GETARCH_FLAGS := -DFORCE_BARCELONA
 endif
+ifeq ($(TARGET), ZEN)
+GETARCH_FLAGS := -DFORCE_BARCELONA
+endif
 endif
 
 
@@ -96,6 +99,9 @@ ifeq ($(TARGET_CORE), STEAMROLLER)
 GETARCH_FLAGS := -DFORCE_BARCELONA
 endif
 ifeq ($(TARGET_CORE), EXCAVATOR)
+GETARCH_FLAGS := -DFORCE_BARCELONA
+endif
+ifeq ($(TARGET_CORE), ZEN)
 GETARCH_FLAGS := -DFORCE_BARCELONA
 endif
 endif
@@ -217,7 +223,9 @@ endif
 #
 
 ifeq ($(OSNAME), Darwin)
+ifndef MACOSX_DEPLOYMENT_TARGET
 export MACOSX_DEPLOYMENT_TARGET=10.6
+endif
 MD5SUM = md5 -r
 endif
 
@@ -232,6 +240,10 @@ endif
 ifeq ($(OSNAME), Linux)
 EXTRALIB	+= -lm
 NO_EXPRECISION = 1
+endif
+
+ifeq ($(OSNAME), Android)
+EXTRALIB	+= -lm
 endif
 
 ifeq ($(OSNAME), AIX)
@@ -397,7 +409,7 @@ ifeq ($(USE_OPENMP), 1)
 
 #check
 ifeq ($(USE_THREAD), 0)
-#$(error OpenBLAS: Cannot set both USE_OPENMP=1 and USE_THREAD=0. The USE_THREAD=0 is only for building single thread version.)
+$(error OpenBLAS: Cannot set both USE_OPENMP=1 and USE_THREAD=0. The USE_THREAD=0 is only for building single thread version.)
 endif
 
 # ifeq logical or. GCC or LSB
@@ -410,7 +422,6 @@ CCOMMON_OPT    += -fopenmp
 endif
 
 ifeq ($(C_COMPILER), INTEL)
-#CCOMMON_OPT    += -openmp
 CCOMMON_OPT    += -qopenmp
 endif
 
@@ -441,12 +452,13 @@ ifneq ($(NO_AVX), 1)
 DYNAMIC_CORE += SANDYBRIDGE BULLDOZER PILEDRIVER STEAMROLLER EXCAVATOR
 endif
 ifneq ($(NO_AVX2), 1)
-DYNAMIC_CORE += HASWELL
+DYNAMIC_CORE += HASWELL ZEN
 endif
 endif
 
+# If DYNAMIC_CORE is not set, DYNAMIC_ARCH cannot do anything, so force it to empty
 ifndef DYNAMIC_CORE
-DYNAMIC_ARCH =
+override DYNAMIC_ARCH=
 endif
 endif
 
@@ -474,6 +486,23 @@ endif
 ifeq ($(ARCH), arm)
 NO_BINARY_MODE  = 1
 BINARY_DEFINED  = 1
+
+CCOMMON_OPT += -marm
+FCOMMON_OPT += -marm
+
+# If softfp abi is mentioned on the command line, force it.
+ifeq ($(ARM_SOFTFP_ABI), 1)
+CCOMMON_OPT += -mfloat-abi=softfp
+FCOMMON_OPT += -mfloat-abi=softfp
+endif
+
+ifeq ($(OSNAME), Android)
+ifeq ($(ARM_SOFTFP_ABI), 1)
+EXTRALIB	+= -lm
+else
+EXTRALIB	+= -Wl,-lm_hard
+endif
+endif
 endif
 
 ifeq ($(ARCH), arm64)
@@ -539,6 +568,11 @@ CCOMMON_OPT += -mips64r6 -mnan=2008 -mtune=p6600 $(MSA_FLAGS)
 FCOMMON_OPT += -mips64r6 -mnan=2008 -mtune=p6600 $(MSA_FLAGS)
 endif
 
+ifeq ($(CORE), I6500)
+CCOMMON_OPT += -mips64r6 -mnan=2008 -mtune=i6400 $(MSA_FLAGS)
+FCOMMON_OPT += -mips64r6 -mnan=2008 -mtune=i6400 $(MSA_FLAGS)
+endif
+
 ifeq ($(OSNAME), AIX)
 BINARY_DEFINED = 1
 endif
@@ -546,10 +580,12 @@ endif
 endif
 
 ifndef BINARY_DEFINED
+ifneq ($(OSNAME), AIX)
 ifdef BINARY64
 CCOMMON_OPT += -m64
 else
 CCOMMON_OPT += -m32
+endif
 endif
 endif
 
@@ -575,14 +611,33 @@ endif
 #  Fortran Compiler dependent settings
 #
 
+ifeq ($(F_COMPILER), FLANG)
+CCOMMON_OPT += -DF_INTERFACE_FLANG
+ifdef BINARY64
+ifdef INTERFACE64
+ifneq ($(INTERFACE64), 0)
+FCOMMON_OPT += -i8
+endif
+endif
+FCOMMON_OPT += -Wall
+else
+FCOMMON_OPT += -Wall
+endif
+ifeq ($(USE_OPENMP), 1)
+FCOMMON_OPT += -fopenmp
+endif
+endif
+
 ifeq ($(F_COMPILER), G77)
 CCOMMON_OPT += -DF_INTERFACE_G77
 FCOMMON_OPT += -Wall
 ifndef NO_BINARY_MODE
+ifneq ($(OSNAME), AIX)
 ifdef BINARY64
 FCOMMON_OPT += -m64
 else
 FCOMMON_OPT += -m32
+endif
 endif
 endif
 endif
@@ -590,11 +645,13 @@ endif
 ifeq ($(F_COMPILER), G95)
 CCOMMON_OPT += -DF_INTERFACE_G95
 FCOMMON_OPT += -Wall
+ifneq ($(OSNAME), AIX)
 ifndef NO_BINARY_MODE
 ifdef BINARY64
 FCOMMON_OPT += -m64
 else
 FCOMMON_OPT += -m32
+endif
 endif
 endif
 endif
@@ -618,14 +675,18 @@ FCOMMON_OPT += -mabi=32
 endif
 else
 ifdef BINARY64
+ifneq ($(OSNAME), AIX)
 FCOMMON_OPT += -m64
+endif
 ifdef INTERFACE64
 ifneq ($(INTERFACE64), 0)
 FCOMMON_OPT +=  -fdefault-integer-8
 endif
 endif
 else
+ifneq ($(OSNAME), AIX)
 FCOMMON_OPT += -m32
+endif
 endif
 endif
 ifeq ($(USE_OPENMP), 1)
@@ -641,7 +702,7 @@ FCOMMON_OPT += -i8
 endif
 endif
 ifeq ($(USE_OPENMP), 1)
-FCOMMON_OPT += -openmp
+FCOMMON_OPT += -qopenmp
 endif
 endif
 
@@ -902,9 +963,15 @@ SYMBOLSUFFIX =
 endif
 
 ifndef LIBNAMESUFFIX
-LIBPREFIX = lib$(SYMBOLPREFIX)openblas$(SYMBOLSUFFIX)
+LIBNAMEBASE = $(SYMBOLPREFIX)openblas$(SYMBOLSUFFIX)
 else
-LIBPREFIX = lib$(SYMBOLPREFIX)openblas$(SYMBOLSUFFIX)_$(LIBNAMESUFFIX)
+LIBNAMEBASE = $(SYMBOLPREFIX)openblas$(SYMBOLSUFFIX)_$(LIBNAMESUFFIX)
+endif
+
+ifeq ($(OSNAME), CYGWIN_NT)
+LIBPREFIX = cyg$(LIBNAMEBASE)
+else
+LIBPREFIX = lib$(LIBNAMEBASE)
 endif
 
 KERNELDIR	= $(TOPDIR)/kernel/$(ARCH)
@@ -1002,7 +1069,7 @@ endif
 override CFLAGS     += $(COMMON_OPT) $(CCOMMON_OPT) -I$(TOPDIR)
 override PFLAGS     += $(COMMON_OPT) $(CCOMMON_OPT) -I$(TOPDIR) -DPROFILE $(COMMON_PROF)
 
-override FFLAGS     += $(FCOMMON_OPT)
+override FFLAGS     += $(COMMON_OPT) $(FCOMMON_OPT)
 override FPFLAGS    += $(FCOMMON_OPT) $(COMMON_PROF)
 #MAKEOVERRIDES =
 
@@ -1063,6 +1130,7 @@ endif
 
 
 LIBDLLNAME   = $(LIBPREFIX).dll
+IMPLIBNAME   = lib$(LIBNAMEBASE).dll.a
 LIBSONAME    = $(LIBNAME:.$(LIBSUFFIX)=.so)
 LIBDYNNAME   = $(LIBNAME:.$(LIBSUFFIX)=.dylib)
 LIBDEFNAME   = $(LIBNAME:.$(LIBSUFFIX)=.def)
@@ -1082,6 +1150,9 @@ ifneq ($(NO_LAPACK), 1)
 LIB_COMPONENTS += LAPACK
 ifneq ($(NO_LAPACKE), 1)
 LIB_COMPONENTS += LAPACKE
+endif
+ifeq ($(BUILD_RELAPACK), 1)
+LIB_COMPONENTS += ReLAPACK
 endif
 endif
 

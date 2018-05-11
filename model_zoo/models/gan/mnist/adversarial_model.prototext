@@ -1,0 +1,356 @@
+#Adversarial Model
+model {
+  name: "directed_acyclic_graph_model"
+  data_layout: "model_parallel"
+  mini_batch_size: 128 
+  block_size: 256
+  super_steps: 100
+  num_epochs: 16 
+  num_parallel_readers: 0
+  procs_per_model: 0
+  num_gpus: -1
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    cross_entropy {}
+    l2_weight_regularization {
+      scale_factor: 1e-4
+    }
+  }
+
+  ###################################################
+  # Metrics
+  ###################################################
+
+  metric {
+    categorical_accuracy {}
+  }
+
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback {
+    print {
+      interval: 1
+    }
+  }
+  callback { timer {} }
+
+  ###################################################
+  # start of layers
+  ###################################################
+
+
+  # INPUT real data
+  layer {
+    name: "data"
+    data_layout: "data_parallel"
+    input {
+      io_buffer: "partitioned"
+    }
+  }
+
+  #ZERO
+  layer {
+    parents: "data"
+    name: "zero_data"
+    data_layout: "data_parallel"
+    zero {
+      first_half: false
+      second_half: true
+    }
+  }
+  
+
+  #Generator Path
+  
+  #NOISE
+  layer {
+    name: "noise"
+    data_layout: "data_parallel"
+    gaussian {
+      mean: 0.0
+      stdev: 1.0
+      neuron_dims: "100"
+    }
+  }
+  
+  weights {
+     name: "gen_fc_weights"
+     optimizer { }
+     glorot_normal_initializer {}
+  }
+  #############
+  # FC 1
+  #############
+  layer {
+    name: "fc1"
+    parents: "noise"
+    data_layout: "data_parallel"
+    #weights: "gen_fc_weights"
+    fully_connected {
+      num_neurons: 256 
+      weight_initialization: "glorot_normal"
+      has_bias: true
+    }
+  }
+  layer {
+    parents: "fc1"
+    name: "fc1_relu"
+    data_layout: "data_parallel"
+    leaky_relu {
+    }
+  }
+  layer {
+    parents: "fc1_relu"
+    name: "fc1_bn"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+
+  #############
+  # FC 2
+  #############
+  layer {
+    name: "fc2"
+    parents: "fc1_bn"
+    data_layout: "data_parallel"
+    #weights: "gen_fc_weights"
+    fully_connected {
+      num_neurons: 512 
+      weight_initialization: "glorot_normal"
+      has_bias: true
+    }
+  }
+  layer {
+    parents: "fc2"
+    name: "fc2_relu"
+    data_layout: "data_parallel"
+    leaky_relu {
+    }
+  }
+  layer {
+    parents: "fc2_relu"
+    name: "fc2_bn"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+
+  #############
+  # FC 3
+  #############
+  layer {
+    name: "fc3"
+    parents: "fc2_bn"
+    data_layout: "data_parallel"
+    #weights: "gen_fc_weights"
+    fully_connected {
+      num_neurons: 1024 
+      weight_initialization: "glorot_normal"
+      has_bias: true
+    }
+  }
+  layer {
+    parents: "fc3"
+    name: "fc3_relu"
+    data_layout: "data_parallel"
+    leaky_relu {
+    }
+  }
+  layer {
+    parents: "fc3_relu"
+    name: "fc3_bn"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+
+  #############
+  # FC 4
+  #############
+  layer {
+    name: "fc4"
+    parents: "fc3_bn"
+    data_layout: "data_parallel"
+    #weights: "gen_fc_weights"
+    fully_connected {
+      num_neurons: 784 
+      weight_initialization: "glorot_normal"
+      has_bias: true
+    }
+  }
+  layer {
+    parents: "fc4"
+    name: "fc4_tanh"
+    data_layout: "data_parallel"
+    tanh {
+    }
+  }
+
+  #######
+  # Reshape for discrimnator 
+  ######
+  layer {
+    name: "reshape1"
+    parents: "fc4_tanh"
+    data_layout: "data_parallel"
+    reshape{
+      num_dims: 3
+      dims: "1 28 28"
+    }
+  }
+
+
+  #ZERO
+  layer {
+    parents: "reshape1"
+    name: "zero_fake"
+    data_layout: "data_parallel"
+    zero {
+      first_half:true
+      second_half:false 
+    }
+  }
+  
+  #SUM
+  layer {
+    name: "sum"
+    parents: "zero_data zero_fake"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+    
+
+#DISCRIMINATOR MODEL
+  
+  weights {
+     name: "dis_flatten_weights"
+     optimizer { }
+     he_normal_initializer {}
+  }
+ # FULLY_CONNECTED dis_flatten
+  layer {
+    parents: "sum"
+    name: "dis_flatten_proxy"
+    data_layout: "data_parallel"
+    weights: "dis_flatten_weights"
+    fully_connected {
+      num_neurons: 784
+      #weight_initialization: "he_normal"
+      has_bias: true
+    }
+  }
+
+  weights {
+     name: "dis_fc1_weights"
+     optimizer { }
+     glorot_normal_initializer {}
+  }
+  layer {
+    name: "dis_fc1_proxy"
+    parents: "dis_flatten_proxy"
+    data_layout: "data_parallel"
+    weights: "dis_fc1_weights"
+    fully_connected {
+      num_neurons: 512 
+      #weight_initialization: "glorot_normal"
+      has_bias: true
+    }
+  }
+
+  layer {
+    parents: "dis_fc1_proxy"
+    name: "dis_fc1_relu"
+    data_layout: "data_parallel"
+    leaky_relu {
+    }
+  }
+
+  weights {
+     name: "dis_fc2_weights"
+     optimizer { }
+     glorot_normal_initializer {}
+  }
+  layer {
+    parents: "dis_fc1_relu"
+    name: "dis_fc2_proxy"
+    data_layout: "data_parallel"
+    weights: "dis_fc2_weights"
+    fully_connected {
+      num_neurons: 256 
+      #weight_initialization: "glorot_normal"
+      has_bias: true
+    }
+  }
+
+  layer {
+    parents: "dis_fc2_proxy"
+    name: "dis_fc2_relu"
+    data_layout: "data_parallel"
+    leaky_relu {
+    }
+  }
+
+ # FULLY_CONNECTED fc1
+  weights {
+     name: "dis_fc3_weights"
+     optimizer { }
+     glorot_normal_initializer {}
+  }
+  layer {
+    parents: "dis_fc2_relu"
+    name: "dis_fc3_proxy"
+    data_layout: "data_parallel"
+    weights: "dis_fc3_weights"
+    fully_connected {
+      num_neurons: 2
+      #weight_initialization: "he_normal"
+      has_bias: true
+    }
+  }
+
+  layer {
+    parents: "dis_fc3_proxy"
+    name: "sigmoid2"
+    data_layout: "data_parallel"
+    sigmoid {
+    }
+  }
+
+ #Softmax
+  layer {
+    parents: "sigmoid2"
+    name: "prob"
+    data_layout: "data_parallel"
+    softmax {}
+  }
+
+  layer {
+    parents: "prob"
+    name: "target"
+    data_layout: "data_parallel"
+    target {
+      io_buffer: "partitioned"
+      shared_data_reader: true
+    }
+  }
+ 
+}

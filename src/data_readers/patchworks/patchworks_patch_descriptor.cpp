@@ -30,22 +30,32 @@
  * LBANN PATCHWORKS implementation for patch descriptor
  */
 
-#ifdef __LIB_OPENCV
-#include <iostream>
 #include "lbann/data_readers/patchworks/patchworks_patch_descriptor.hpp"
-#include "lbann/utils/lbann_random.hpp"
+
+#ifdef LBANN_HAS_OPENCV
+#include <iostream>
+#include "lbann/utils/random.hpp"
 
 namespace lbann {
 namespace patchworks {
 
-void patch_descriptor::init(void) {
+void patch_descriptor::init() {
   m_width = 0u;
   m_height = 0u;
   m_gap = 0u;
   m_jitter = 0u;
   m_mode_center = 1u;
   m_mode_chrom = 0u;
+  m_self_label = false;
   m_ext = "";
+  m_sample_area = ROI();
+  m_displacements.clear();
+  reset();
+}
+
+void patch_descriptor::reset() {
+  m_patch_center = ROI();
+  m_positions.clear();
   m_cur_patch_idx = 0u;
 }
 
@@ -69,22 +79,18 @@ bool patch_descriptor::set_sample_image(const unsigned int img_width, const unsi
   return set_sample_area(whole_image);
 }
 
-void patch_descriptor::define_patch_set(void) {
+void patch_descriptor::define_patch_set() {
   const int wdisp = m_width + m_gap;
   const int hdisp = m_height + m_gap;
   m_displacements.clear();
-  m_displacements.push_back(std::make_pair(-wdisp, -hdisp));
-  m_displacements.push_back(std::make_pair( 0,     -hdisp));
-  m_displacements.push_back(std::make_pair( wdisp, -hdisp));
-  m_displacements.push_back(std::make_pair(-wdisp,  0));
-  m_displacements.push_back(std::make_pair( wdisp,  0));
-  m_displacements.push_back(std::make_pair(-wdisp,  hdisp));
-  m_displacements.push_back(std::make_pair( 0,      hdisp));
-  m_displacements.push_back(std::make_pair( wdisp,  hdisp));
-}
-
-void patch_descriptor::set_jitter(const unsigned int j) {
-  m_jitter = j;
+  m_displacements.emplace_back(-wdisp, -hdisp);
+  m_displacements.emplace_back( 0,     -hdisp);
+  m_displacements.emplace_back( wdisp, -hdisp);
+  m_displacements.emplace_back(-wdisp,  0);
+  m_displacements.emplace_back( wdisp,  0);
+  m_displacements.emplace_back(-wdisp,  hdisp);
+  m_displacements.emplace_back( 0,      hdisp);
+  m_displacements.emplace_back( wdisp,  hdisp);
 }
 
 bool patch_descriptor::get_first_patch(ROI& patch) {
@@ -184,7 +190,7 @@ bool patch_descriptor::get_next_patch(ROI& patch) {
 
 bool patch_descriptor::extract_patches(const cv::Mat& img, std::vector<cv::Mat>& patches) {
   patches.clear();
-  if (img.data == NULL) {
+  if (img.data == nullptr) {
     return false;
   }
 
@@ -196,6 +202,7 @@ bool patch_descriptor::extract_patches(const cv::Mat& img, std::vector<cv::Mat>&
 
   patches.push_back(img(roi.rect()).clone());
 
+#if 0 // to generate all the patches defined in the set
   unsigned int i = 1u;
 
   while (get_next_patch(roi)) {
@@ -205,10 +212,26 @@ bool patch_descriptor::extract_patches(const cv::Mat& img, std::vector<cv::Mat>&
   if (i == 1u) {
     return false;
   }
+#else // to randomly generate another patch. The label will be recorded to m_cur_patch_idx.
+  if (m_displacements.size() == 0) {
+    return false;
+  }
+
+  std::uniform_int_distribution<int> rg_patch_idx(0, m_displacements.size()-1);
+  ::lbann::rng_gen& gen = ::lbann::get_generator();
+  m_cur_patch_idx = rg_patch_idx(gen);
+
+  if (!get_next_patch(roi)) {
+    return false;
+  }
+  patches.push_back(img(roi.rect()).clone());
+#endif
+
   return true;
 }
 
-std::ostream& patch_descriptor::print(std::ostream& os) const {
+std::string patch_descriptor::get_description() const {
+  std::stringstream os;
   os << "patch descriptor:" << std::endl
      << '\t' << "m_width: " << m_width << std::endl
      << '\t' << "m_height: " << m_height << std::endl
@@ -216,18 +239,23 @@ std::ostream& patch_descriptor::print(std::ostream& os) const {
      << '\t' << "m_jitter: " << m_jitter << std::endl
      << '\t' << "m_mode_center: " << m_mode_center << std::endl
      << '\t' << "m_mode_chrom: " << m_mode_chrom << std::endl
+     << '\t' << "m_self_label: " << m_self_label << std::endl
      << '\t' << "m_ext: " << m_ext << std::endl
      << '\t' << "m_sample_area: " << m_sample_area << std::endl
-     << '\t' << "m_cur_patch_idx: " << m_cur_patch_idx << std::endl;
-
-  os << std::endl << "patch displacements from the center: " << std::endl;
+     << '\t' << "patch displacements from the center: " << std::endl;
   for (unsigned int i=0u; i < m_displacements.size() ; ++i) {
-    os << '\t' << i+1 << ' ' << m_displacements[i].first << ' ' << m_displacements[i].second << std::endl;
+    os << "\t\t" << i+1 << ' ' << m_displacements[i].first << ' ' << m_displacements[i].second << std::endl;
   }
 
-  os << std::endl << "patch regions: " << std::endl;
+  return os.str();
+}
+
+std::ostream& patch_descriptor::print(std::ostream& os) const {
+  os << get_description()
+     << '\t' << "m_cur_patch_idx: " << m_cur_patch_idx << std::endl
+     << '\t' << "patch regions: " << std::endl;
   for (unsigned int i=0u; i < m_positions.size() ; ++i) {
-    os << '\t' << i << '\t' << m_positions[i] << std::endl;
+    os << "\t\t" << i << '\t' << m_positions[i] << std::endl;
   }
 
   return os;
@@ -239,4 +267,4 @@ std::ostream& operator<<(std::ostream& os, const patch_descriptor& pd) {
 
 } // end of namespace patchworks
 } // end of namespace lbann
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV

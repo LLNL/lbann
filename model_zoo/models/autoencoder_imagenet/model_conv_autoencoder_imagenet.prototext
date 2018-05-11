@@ -1,0 +1,155 @@
+model {
+  name: "sequential_model"
+  data_layout: "data_parallel"
+  mini_batch_size: 128
+  block_size: 256
+  num_epochs: 4
+  num_parallel_readers: 1
+  procs_per_model: 0
+  num_gpus: -1
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    mean_squared_error {}
+    l2_weight_regularization {
+      scale_factor: 0.0005
+    }
+  }
+
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback {
+    print {
+      interval: 1
+    }
+  }
+  callback {
+    timer {
+    }
+  }
+  callback {
+    save_images {
+      image_dir: "images_"
+      extension: "pgm"
+    }
+  }
+
+  ###################################################
+  # start of layers
+  ###################################################
+
+  #######
+  # INPUT
+  #######
+  layer {
+    name: "data"
+    data_layout: "data_parallel"
+    input {
+      io_buffer: "partitioned"
+    }
+  }
+
+  #############
+  # CONVOLUTION 1
+  #############
+  layer {
+    name: "conv1"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 16
+      conv_dims: "3 3"
+      conv_pads: "0 0"
+      conv_strides: "1 1"
+      has_bias: true
+      has_vectors: true
+    }
+  }
+
+  ######
+  # RELU 1
+  ######
+  layer {
+    name: "relu1"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+
+  #########
+  # POOLING 1
+  #########
+  layer {
+    name: "pool1"
+    data_layout: "data_parallel"
+    pooling {
+      num_dims: 2
+      pool_dims: "2 2"
+      pool_pads: "0 0"
+      pool_strides: "1 1"
+      pool_mode: "max"
+      has_vectors: true
+    }
+  }
+
+#DECODER
+
+  #########
+  # UNPOOLING 1
+  #########
+  layer {
+    name: "unpool1"
+    data_layout: "data_parallel"
+    unpooling {
+      num_dims: 2
+      pooling_layer: "pool1"
+    }
+  }
+
+  #############
+  # DECONVOLUTION 1
+  #############
+  layer {
+    name: "deconv1"
+    data_layout: "data_parallel"
+    deconvolution {
+      num_dims: 2
+      num_output_channels: 3
+      conv_dims: "3 3"
+      conv_pads: "0 0"
+      conv_strides: "1 1"
+      has_bias: true
+      has_vectors: true
+    }
+  }
+
+  #######
+  # SIGMOID sigmoid
+  #######
+  layer {
+    name: "sigmoid"
+    data_layout: "data_parallel"
+    sigmoid {
+    }
+  }
+
+
+  #################
+  # RECONSTRUCTION
+  #################
+  layer {
+    name: "reconstruction"
+    data_layout: "data_parallel"
+    reconstruction {
+      original_layer: "data"
+    }
+  }
+
+  ###################################################
+  # end of layers
+  ###################################################
+}

@@ -1,7 +1,7 @@
 check Elemental_DIR in CMakeList.txt
-This is a stand alone installation of Elemental
-
-In addition, check the opencv path, which is a stand alone installation (e.g., on cab or surface)
+This requires OpenCV, Elemental, and MPI. cmake will attempt to find these
+under system or LBANN build directories.
+To set the LBANN build directory, set CLUSTER variable in CMakeList.txt
 
 Make sure if the compiler supports c++11, and the environment viriables, CC and CXX, are set.
 e.g.,
