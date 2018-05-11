@@ -304,6 +304,13 @@ class lbann_comm {
    */
   template <typename T>
   void all_gather(std::vector<T> &src, std::vector<T> &rcs, std::vector<int> &rcv_counts, std::vector<int> &rcv_disp, El::mpi::Comm c) {
+    if (src.size() == 0) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+              << "all_gather for vector<>: vector.size() == 0;\n"
+              << "this doesn't work!";
+      lbann_comm_abort(err.str());
+    }
     El::mpi::AllGather<T>(src.data(), src.size(), rcs.data(), rcv_counts.data(), rcv_disp.data(), c);
   }
   /** 
@@ -1027,6 +1034,9 @@ class lbann_comm {
     return streams;
   }
   #endif // LBANN_HAS_CUDA
+
+  /** throws an lbann_exception **/
+  void lbann_comm_abort(std::string msg);
 
  private:
   /** World communicator. */

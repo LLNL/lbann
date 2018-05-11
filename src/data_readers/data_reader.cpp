@@ -423,8 +423,20 @@ void generic_data_reader::set_file_dir(std::string s) {
   }
 }
 
+void generic_data_reader::set_local_file_dir(std::string s) {
+  if(endsWith(s, "/")) {
+    m_local_file_dir = s;
+  }else {
+    m_local_file_dir = s + "/";
+  }
+}
+
 std::string generic_data_reader::get_file_dir() const {
   return m_file_dir;
+}
+
+std::string generic_data_reader::get_local_file_dir() const {
+  return m_local_file_dir;
 }
 
 void generic_data_reader::set_data_filename(std::string s) {
@@ -512,6 +524,12 @@ void generic_data_reader::set_data_store(generic_data_store *g) {
       delete m_data_store;
     }
     m_data_store = g;
+}
+
+void generic_data_reader::init_minibatch() {
+  if (m_data_store != nullptr) {
+    m_data_store->init_minibatch();
   }
+}
 
 }  // namespace lbann
