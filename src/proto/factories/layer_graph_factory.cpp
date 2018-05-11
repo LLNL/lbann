@@ -227,9 +227,9 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
     El::Device device_allocation = default_device_allocation;
     if (device_allocation_str.empty()
         && (proto_layer.has_input() || proto_layer.has_target()
-            || proto_layer.has_softmax())) {
-      // Input and Target layers are not allowed on the GPUs force the
-      // default to be the CPU
+            || proto_layer.has_reconstruction() || proto_layer.has_softmax())) {
+      // Input, Target, Reconstruction, and Softmax layers are not
+      // allowed on the GPUs force the default to be the CPU
       device_allocation = El::Device::CPU;
     }
     if (device_allocation_str == "cpu") { device_allocation = El::Device::CPU; }
