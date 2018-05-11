@@ -48,33 +48,28 @@ class sigmoid_bce_with_logits_layer : public entrywise_activation_layer {
   data_layout get_data_layout() const override { return T_layout; }
 
  protected:
-  DataType activation(DataType z) const override {
-    DataType res;
-    if( z>= 0) {
-      DataType log_term = std::log(DataType(1) + std::exp(-z));
-      if(m_ground_truth_label) res = log_term;
-      else res = z + log_term;
-    //for z < 0, reformulate to avoid overflow in exp(-z) 
-    }else {
-      DataType log_term = std::log(DataType(1) + std::exp(-(std::abs(z))));
-      if(m_ground_truth_label) res = std::max(z,DataType(0)) - z + log_term;
-      else res = std::max(z,DataType(0))  + log_term;
+  DataType activation(DataType x) const override {
+    // Note: This formulation has very good numerical accuracy if
+    // ground truth is exactly zero or one, but also may introduce
+    // denormalized floats.
+    if (x >= DataType(0)) {
+      return x * (DataType(1) - m_ground_truth_label) + std::log1p(std::exp(-x));
+    } else {
+      return -x * m_ground_truth_label + std::log1p(std::exp(x));
     }
-    return res;
   }
 
-  DataType activation_derivative(DataType z) const override {
-    DataType res;
-    if( z >=0 ) {
-      DataType log_term_derivative = std::exp(-(z)) / (DataType(1) + std::exp(-(z)));
-      if(m_ground_truth_label) res = DataType(0) - log_term_derivative;
-      else res = DataType(1) - log_term_derivative;
-    }else {
-      DataType log_term_derivative = std::exp(-(std::abs(z))) / (DataType(1) + std::exp(-(std::abs(z))));
-      if(m_ground_truth_label) res = log_term_derivative;
-      else res = DataType(1) + log_term_derivative;
+  DataType activation_derivative(DataType x) const override {
+    // Note: This formulation has very good numerical accuracy if
+    // ground truth is exactly zero or one, but also may introduce
+    // denormalized floats.
+    const DataType one = DataType(1);
+    const DataType one_minus_truth = one - m_ground_truth_label;
+    if (x >= DataType(0)) {
+      return (one_minus_truth - m_ground_truth_label * std::exp(-x)) / (one + std::exp(-x));
+    } else {
+      return (one_minus_truth * std::exp(x) - m_ground_truth_label) / (one + std::exp(x));
     }
-    return res;
   }
 };
 
