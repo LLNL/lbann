@@ -35,7 +35,7 @@ Unlike Nightly Develop, the individual plans are triggered to run by polling you
 
 ## Navigating Bamboo
 
-From the [list of build projects](https://lc.llnl.gov/bamboo/browse/LBANN "https://lc.llnl.gov/bamboo/browse/LBANN"), click on a build project. From there, click on a build (builds are listed under "Recent History" and can also be accessed from the pass/fail marks in the top right, to the left of the "Run" button). This will bring you to a certain build's page. The most relevant tabs are "Tests" and "Logs". It is recommended to look at failures first in the "Tests" tab, as the build logs can be difficult to parse through. The build's "Tests" tab shows "New test failures", "Existing test failures", "Fixed tests", and "Skipped Tests".
+From the [LBANN Project Summary](https://lc.llnl.gov/bamboo/browse/LBANN "https://lc.llnl.gov/bamboo/browse/LBANN"), click on a build project. From there, click on a build (builds are listed under "Recent History" and can also be accessed from the pass/fail marks in the top right, to the left of the "Run" button). This will bring you to a certain build's page. The most relevant tabs are "Tests" and "Logs". It is recommended to look at failures first in the "Tests" tab, as the build logs can be difficult to parse through. The build's "Tests" tab shows "New test failures", "Existing test failures", "Fixed tests", and "Skipped Tests".
 
 From the build's page, you can also click on individual	jobs, which have the same tabs. The "Tests" tabs of the individual jobs have two sub-tabs, "Failed tests" and "Successful tests". They do not display skipped tests. The Bamboo agent that ran the job can be found by looking at the "Agent" field under the "Job Summary" tab. Alternatively, you can determine the agent from one of the first lines in the build logs: `Build working directory is /usr/workspace/wsb/lbannusr/bamboo/<bamboo-agent-name>/xml-data/build-dir/<build-plan-and-job>`.
 
@@ -73,7 +73,7 @@ Currently, it is not possible to run a test with a different executable. We plan
 
 First, run `sudo lbannusr`.
 
-To look at output and error from previous builds: `cd /usr/workspace/wsb/lbannusr/bamboo/<bamboo-agent-name>/xml-data/build-dir/<build-plan-and-job>/bamboo/<compiler_tests or integration_tests>/<error or output>`
+To look at output and error from previous builds: `cd /usr/workspace/wsb/lbannusr/bamboo/<bamboo-agent-name>/xml-data/build-dir/<build-plan-and-job>/bamboo/<compiler_tests, integration_tests, or unit_tests>/<error or output>`
 
 To look at archived results from previous builds: `cd /usr/workspace/wsb/lbannusr/archives/<build-plan>`
 
