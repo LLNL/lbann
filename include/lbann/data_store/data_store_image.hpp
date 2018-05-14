@@ -114,13 +114,6 @@ class data_store_image : public generic_data_store {
   /// called by data_reader::fetch_data; supports out-of-memory mode
   void fetch_data() override;
 
-
-  /// the input string "s" should be one of the forms: 
-  ///   dir1/[dir2/...]/filename
-  ///   /dir1/[dir2/...]/filename
-  ///   /dir1/[dir2/...]/
-  void create_dirs(const std::string &s); 
-
   /// creates a tarball of files written to local disk, then
   /// copies the tarball to, e.g, lscratchX. Activated by the cmd line
   /// options: --create_tarball <name> where <name> is the directory

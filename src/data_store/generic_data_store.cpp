@@ -91,13 +91,18 @@ void generic_data_store::get_minibatch_index_vector() {
   }
 }
 
+void generic_data_store::get_my_tarball_indices() {
+ size_t idx = m_rank;
+ do {
+   m_my_datastore_indices.insert(idx);
+   idx += m_np;
+ } while (idx < m_num_global_indices);
+}
+
 void generic_data_store::get_my_datastore_indices() {
-  m_num_samples.resize(m_np, 0);
-  std::unordered_set<int> mine;
   for (size_t j=0; j<m_shuffled_indices->size(); ++j) {
     int idx = (*m_shuffled_indices)[j];
     int owner = idx % m_np;
-    m_num_samples[owner] += 1;
     if (owner == m_rank) {
       m_my_datastore_indices.insert(idx);
     }
@@ -291,6 +296,40 @@ void generic_data_store::exchange_partitioned_indices() {
 void generic_data_store::init_minibatch() {
   if (! m_in_memory) {
     fetch_data();
+  }
+}
+
+std::pair<std::string, std::string>  generic_data_store::get_pahtname_and_prefix(std::string s) {
+  int num_slash = std::count(s.begin(), s.end(), '/');
+  if (num_slash < 1 || s.back() == '/') {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "<string> must be of the form: <pathname>/prefix"
+    throw lbann_exception
+  }
+
+  size_t j = s.rfind('/');
+  std::string prefix = s.substr(j+1);
+  std::string pathname = s.substr(0, j);
+  return std::make_pair(prefix, pathname);
+}
+
+void generic_data_store::create_dirs(std::string s) {
+  if (s.back() != '/') {
+    s += '/';
+  }
+  size_t i = s.find('/');
+  while (i != std::string::npos) {
+    std::string s2 = s.substr(0, i);
+    const int dir_err = mkdir(s.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    if (dir_err == -1 && errno != 17) { // 17: File Exists
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "failed to create directory: " << d << "\n"
+          << "error code is: " << errno << " -> " << std::strerror(errno)
+          << "\n" << getenv("SLURMD_NODENAME");
+      throw lbann_exception(err.str());
+    }
   }
 }
 

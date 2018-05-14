@@ -183,14 +183,13 @@ protected :
   /// fills in m_all_minibatch_indices
   void  exchange_mb_indices();
 
-  /// m_num_samples[j] contains the number of samples 
-  /// (datastore indices) that are owned by P_j
-  std::vector<int> m_num_samples;
-
   /// the indices that this processor owns;
   std::unordered_set<int> m_my_datastore_indices;
-  /// fills in m_my_datastore_indices and m_num_samples
+  /// fills in m_my_datastore_indices 
   void get_my_datastore_indices();
+  /// fills in m_my_datastore_indices; this call is used when creating tarballs
+  /// for pre-staging data
+  void get_my_tarball_indices();
 
   size_t m_num_readers;
 
@@ -255,6 +254,15 @@ protected :
 
   bool m_is_setup;
   bool m_verbose;
+
+  /// given a pathname: someplace/[someplace_else/...]/prefix
+  /// returns <prefix,pathname>' throws exception if 's' does not contain
+  /// at least one directory name, or 's' end with //'
+  std::pair<std::string, std::string> get_pathname_and_prefix(std::string s);
+
+  /// created the directory structure specified in 's', if it doesn't exist;
+  /// 's' may optionally end in '/'
+  void create_dirs(std::string s);
 };
 
 }  // namespace lbann

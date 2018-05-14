@@ -45,36 +45,34 @@ void data_store_image::setup() {
   bool prestage = false;
   std::string prestage_dir;
   if (opts->has_string("create_tarball")) {
-    prestage_dir = options::get()->get_string("create_tarball");
-    prestage = true;
-  }
-  if (m_master) {
-    std::cerr << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
-      << "====================================================================\n"
-      << "\ndata_store is running in prestage mode; after writing files to ssd,\n"
-      << "a tarball will be created and written to " << prestage_dir << "\n\n";
-
-    // do some quick sanity checking
-    std::string local_dir = m_reader->get_local_file_dir();
-    size_t n = std::count(local_dir.begin(), local_dir.end(), '/');
-    if (n < 2) {
+    if (m_comm->get_procs_per_node() != 1) {
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
-          << "\nlocal dir is: " << local_dir << "; does not meet requirement"
-          << " of containing two '/'; name should probably be something like"
-          << " /l/ssd/train";
+          << "--create_tarball=<string> was specified; you have " 
+          << m_comm->get_procs_per_node() << "; you must use a"
+          << "single core per node when creating tarballs";
       throw lbann_exception(err.str());
     }
-
-    std::string exe = get_tarball_exe();
-    std::cerr 
-      << "example system call to create tarball;\n"
-      << "IF THIS DOESN'T LOOK CORRECT, ABORT NOW!\n"
-      << "  " << exe << "\n\nsleeping for five seconds\n"
-      << "====================================================================\n"
-      << "\n\n\n\n\n\n\n\n\n\n\n\n";
+    prestage_dir = options::get()->get_string("create_tarball");
+    prestage = true;
+    if (m_reader->get_role() == "validate") {
+      return;
+    }
+    if (m_master) {
+      std::cerr << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
+        << "====================================================================\n"
+        << "data_store is running in prestage mode; after writing files to ssd,\n"
+        << "a tarball will be created and written to " << prestage_dir << "\n\n";
+      std::string exe = get_tarball_exe();
+      std::cerr 
+        << "example system call to create tarball;\n"
+        << "IF THIS DOESN'T LOOK CORRECT, ABORT NOW!\n"
+        << "  " << exe << "\n\nsleeping for five seconds\n"
+        << "====================================================================\n"
+        << "\n\n\n\n\n\n\n\n\n\n\n\n";
+    }
+    sleep(5);
   }
-  sleep(5);
 
   if (m_master) std::cerr << "starting data_store_image::setup(); calling generic_data_store::setup()\n";
   generic_data_store::setup();
@@ -86,7 +84,11 @@ void data_store_image::setup() {
     }
 
     if (m_master) std::cerr << "data_store_image - calling get_my_datastore_indices\n";
-    get_my_datastore_indices();
+    if (prestage) {
+      get_my_tarball_indices();
+    } else {
+      get_my_datastore_indices();
+    }
 
     if (m_master) std::cerr << "data_store_image - calling build_data_filepaths\n";
     build_data_filepaths();
@@ -103,20 +105,6 @@ void data_store_image::setup() {
     // create tarball and copy to lscratch (or where ever)
     if (prestage) {
       create_tarball();
-      m_comm->global_barrier();
-      finalize(m_comm);
-      exit(0);
-    }
-
-    // Early exit if we're only staging files
-    if (opts->has_bool("stage_and_exit") && opts->get_bool("stage_and_exit")) {
-      m_comm->global_barrier();
-      if (m_master) {
-        std::cerr << "\nstaging complete; exiting due to option: stage_and_exit\n";
-      }
-      m_comm->global_barrier();
-      finalize(m_comm);
-      exit(0);
     }
 
     m_is_setup = true;
@@ -446,45 +434,6 @@ void data_store_image::report_memory_constraints() {
 //   dir1/[dir2/...]/filename
 //   /dir1/[dir2/...]/filename
 //   /dir1/[dir2/...]/
-void data_store_image::create_dirs(const std::string &s) {
-  if (s.size() == 0) {
-    return;
-  }
-  /*
-  if (m_verbose && m_master) {
-    std::cerr << "starting data_store_image::create_dirs for: " << s << "\n";
-  }
-  */
-  size_t idx;
-  size_t last = s[0] == '/' ? 1 : 0;
-  while ((idx = s.find('/', last)) != std::string::npos) {
-    last = idx+1;
-    std::string d = s.substr(0, idx);
-    std::ifstream in(d.c_str());
-    if (! in.good()) {
-      const int dir_err = mkdir(d.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-      //note: there can be race conditions where two procs attempt to create the
-      //      same directory, which can cause mkdir to fail with "File Exists"
-      //      error, which is errno=17. Need to guard against this!
-      if (dir_err == -1 && errno != 17) {
-        std::stringstream err;
-        err << __FILE__ << " " << __LINE__ << " :: "
-            << "failed to create directory: " << d << "\n"
-            << "error code is: " << errno << " -> " << std::strerror(errno)
-            << "\n" << getenv("SLURMD_NODENAME");
-        throw lbann_exception(err.str());
-        
-      }
-    } else {
-      in.close();
-      /*
-      if (m_verbose && m_master) {
-        std::cerr << "  mkdir(" << d << "\n";
-      }
-      */
-    }
-  }
-}
 
 void data_store_image::stage_files() {
   std::stringstream err;
@@ -511,6 +460,7 @@ void data_store_image::stage_files() {
   }
   m_comm->global_barrier();
 
+  // copy files to local store
   size_t j = 0;
   struct stat stat_buf;
   double tm = get_time();
@@ -533,7 +483,6 @@ void data_store_image::stage_files() {
     }
     if (access(s.str().c_str(), F_OK | R_OK) == -1 ) {
       write_fd = open(s.str().c_str(),  O_RDWR | O_CREAT, S_IRWXU);
-      //write_fd = open(s.str().c_str(),  O_RDWR | O_CREAT, stat_buf.st_mode);
       if (write_fd == -1) {
         err << __FILE__ << " " << __LINE__ << " :: "
             << "failed to open " << s.str() << " for writing;\n"
@@ -695,27 +644,56 @@ void data_store_image::fetch_data() {
 }
 
 void data_store_image::write_file_sizes() {
-  //@todo
+  std::string local_dir = m_reader->get_local_file_dir();
+  std::stringstream s;
+  s << local_dir << "/file_sizes.txt";
+  std::ofstream out(s.str().c_str());
+  if (! out.good()) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "failed to open " << imagepath << " for reading";
+    throw lbann_exception(err.str());
+  }
+  for (auto t : m_file_sizes) {
+    out << t.first << " " << t.second << "\n";
+  }
+  out.close();
 }
 
 std::string data_store_image::get_tarball_exe() {
-  std::string prestage_dir = options::get()->get_string("create_tarball");
-  std::stringstream s;
   std::string local_dir = m_reader->get_local_file_dir();
-  s << "tar cvf " << prestage_dir << "/" << m_reader->get_role()
-    << "_rank=" << m_rank << "_np=" << m_np << ".tar ";
-  size_t j2 = local_dir.rfind('/');
-  std::string name = local_dir.substr(j2+1);
-  if (name[name.size()-1] == '/') {
-    j2 = name.rfind('/');
-    name = name.substr(j2+1);
+
+  // tarball name must be of form: <pathname>/filename_prefix;
+  // the output fn is <pathname>/filename_prefix_rank=<rank>_np=<num procs>
+  std::string prestage_dir = options::get()->get_string("create_tarball");
+  int num_slash = std::count(presage_dir.begin(), presage_dir.end(), '/');
+  if (num_slash < 1 || prestage_dir.back() == '/') {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "error in option --create_tarball=<<string>;
+        << "<string> must be of the form: <pathname>/prefix"
+    throw lbann_exception
   }
-  s << name;
+
+  size_t j = prestage_dir.rfind('/');
+  std::string pathname = j.substr(j);
+  std::string prefix = prestage_dir.substr(j+1);
+  if (m_master) {
+    std::cerr << "tarball dir: " << pathname << "\n"
+              << "tarball prefix: " << prefix << "\n\n";
+  }
+
+  size_t j = local_dir.rfind
+                        
+  std::stringstream s;
+  s << "tar cvf " << prestage_dir << m_reader->get_role()
+    << "_rank=" << m_rank << "_np=" << m_np << ".tar " << local_dir;
   return s.str();
 }
 
 void data_store_image::create_tarball() {
   write_file_sizes();
+  system(get_tarball_exe().c_str());
   //std::string e = get_tarball_exe();
 }
 
