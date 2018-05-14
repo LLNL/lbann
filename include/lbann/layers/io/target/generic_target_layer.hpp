@@ -71,7 +71,7 @@ class generic_target_layer : public io_layer {
     // Shallow copies
     m_paired_input_layer = other.m_paired_input_layer;
     io_buffer = other.io_buffer; /// @todo Should this be a shallow copy?
-    
+
     // Deep copy matrix
     if (m_ground_truth != nullptr) { delete m_ground_truth; }
     m_ground_truth = other.m_ground_truth;
@@ -148,7 +148,7 @@ class generic_target_layer : public io_layer {
     io_layer::fp_setup_data(mini_batch_size);
     if(io_buffer != nullptr) {  /// Note that reconstruction layers do not have io_buffers
       m_ground_truth->Resize(get_num_prev_neurons(), mini_batch_size);
-      io_buffer->set_local_matrix_bypass(&m_ground_truth->Matrix());
+      io_buffer->set_local_matrix_bypass(static_cast<CPUMat*>(&m_ground_truth->Matrix()));
       io_buffer->set_std_matrix_view(mini_batch_size);
     }
   }

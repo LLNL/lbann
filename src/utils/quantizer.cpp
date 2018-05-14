@@ -208,7 +208,7 @@ void lbann_quantizer::onebit_unquantize_add(const QuantizedMatrix& qmat,
 }
 
 void lbann_quantizer::intermodel_sum_onebit_quantized(
-  lbann_comm *comm, Mat& mat, Mat& qerror) {
+  lbann_comm *comm, CPUMat& mat, CPUMat& qerror) {
   // Initialize qerror.
   if (qerror.Height() == 0) {
     qerror.Resize(mat.Height(), mat.Width(), mat.LDim());
@@ -266,7 +266,7 @@ void lbann_quantizer::intermodel_sum_onebit_quantized(
 }
 
 void lbann_quantizer::intermodel_sum_onebit_quantized(
-  lbann_comm *comm, DistMat& mat, Mat& qerror) {
+  lbann_comm *comm, DistMat& mat, CPUMat& qerror) {
   intermodel_sum_onebit_quantized(comm, mat.Matrix(), qerror);
 }
 

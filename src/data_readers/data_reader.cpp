@@ -60,7 +60,7 @@ void generic_data_reader::setup() {
   shuffle_indices();
 }
 
-int lbann::generic_data_reader::fetch_data(Mat& X) {
+int lbann::generic_data_reader::fetch_data(CPUMat& X) {
   int nthreads = omp_get_max_threads();
   if(!position_valid()) {
     throw lbann_exception(
@@ -131,7 +131,7 @@ int lbann::generic_data_reader::fetch_data(Mat& X) {
   return mb_size;
 }
 
-int lbann::generic_data_reader::fetch_labels(Mat& Y) {
+int lbann::generic_data_reader::fetch_labels(CPUMat& Y) {
   if(!position_valid()) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
@@ -176,7 +176,7 @@ int lbann::generic_data_reader::fetch_labels(Mat& Y) {
   return mb_size;
 }
 
-int lbann::generic_data_reader::fetch_responses(Mat& Y) {
+int lbann::generic_data_reader::fetch_responses(CPUMat& Y) {
   if(!position_valid()) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +

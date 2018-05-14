@@ -32,10 +32,16 @@ template<typename F>
 void ColumnSum(const Matrix<F>& X, Matrix<F>& sums);
 
 template<typename F>
+void ColumnSum(const AbstractMatrix<F>& X, AbstractMatrix<F>& sums);
+
+template<typename F>
 void ColumnSum(const AbstractDistMatrix<F>& A, AbstractDistMatrix<F>& sums);
 
 template<typename F>
 void RowSum(const Matrix<F>& X, Matrix<F>& sums);
+
+template<typename F>
+void RowSum(const AbstractMatrix<F>& X, AbstractMatrix<F>& sums);
 
 template <typename F>
 void RowSum(const AbstractDistMatrix<F>& A, AbstractDistMatrix<F>& sums);
@@ -45,6 +51,10 @@ void RowSum(const AbstractDistMatrix<F>& A, AbstractDistMatrix<F>& sums);
   ( const Matrix<F>& X, Matrix<F>& norms );                      \
   template void RowSum                                           \
   ( const Matrix<F>& X, Matrix<F>& norms );                      \
+  template void ColumnSum                                        \
+  ( const AbstractMatrix<F>& X, AbstractMatrix<F>& norms );      \
+  template void RowSum                                           \
+  ( const AbstractMatrix<F>& X, AbstractMatrix<F>& norms );      \
   template void ColumnSum                                        \
   (const AbstractDistMatrix<F>& X, AbstractDistMatrix<F>& sums); \
   template void RowSum                                           \

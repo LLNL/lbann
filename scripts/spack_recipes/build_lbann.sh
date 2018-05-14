@@ -113,7 +113,7 @@ if [ "${GPU}" == "1" -o "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" -o "$
     PLATFORM="+gpu"
     FEATURE="_gpu"
   fi
-  EL_VER="${EL_VER}+cublas"
+  EL_VER="${EL_VER}+cuda"
 fi
 
 C_FLAGS=
@@ -193,7 +193,8 @@ if [ "${CLUSTER}" == "ray" ]; then
   MPI="spectrum-mpi@2018.04.27"
 fi
 
-SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ^elemental@${EL_VER} build_type=${BUILD_TYPE} blas=${BLAS} ^${MPI}"
+SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ^hydrogen@${EL_VER} build_type=${BUILD_TYPE} blas=${BLAS} ^${MPI}"
+#SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ^elemental@${EL_VER} build_type=${BUILD_TYPE} blas=${BLAS} ^${MPI}"
 # Disable the extra compiler flags until spack supports propagating flags properly
 #SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ${SPACK_CFLAGS} ${SPACK_CXXFLAGS} ${SPACK_FFLAGS} ^elemental@${EL_VER} blas=${BLAS} ^${MPI}"
 

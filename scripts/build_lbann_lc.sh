@@ -413,7 +413,7 @@ fi
 
 # Add flag for libldl: may be needed some compilers
 CXX_FLAGS="${CXX_FLAGS} -ldl"
-C_FLAGS="${CXX_FLAGS} -ldl"
+C_FLAGS="${CXX_FLAGS}"
 
 
 # Set environment variables
@@ -698,6 +698,7 @@ ${CMAKE_PATH}/cmake \
 -D CMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
 -D LBANN_SB_BUILD_CNPY=ON \
 -D LBANN_SB_BUILD_HYDROGEN=ON \
+-D LBANN_SB_FWD_HYDROGEN_Hydrogen_ENABLE_CUDA=${WITH_CUDA} \
 -D LBANN_SB_BUILD_OPENBLAS=ON \
 -D LBANN_SB_BUILD_OPENCV=ON \
 -D LBANN_SB_BUILD_JPEG_TURBO=ON \

@@ -1,6 +1,12 @@
 #ifndef LBANN_CONFIG_HPP__
 #define LBANN_CONFIG_HPP__
 
+#include <El/hydrogen_config.h>
+
+#ifdef HYDROGEN_HAVE_CUDA
+#define LBANN_HAS_GPU
+#endif // HYDROGEN_HAVE_CUDA
+
 /* Version string for LBANN */
 #define LBANN_VERSION @LBANN_VERSION@
 

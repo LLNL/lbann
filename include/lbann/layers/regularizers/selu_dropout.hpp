@@ -37,7 +37,7 @@ namespace lbann {
  * This makes the same default assumptions as our SELU activations.
  * The paper recommends a default dropout rate of 0.05 (keep 0.95).
  */
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class selu_dropout : public regularizer_layer {
  public:
   /** Keep units with probabiliy keep_prob. */
@@ -91,10 +91,12 @@ class selu_dropout : public regularizer_layer {
 
   data_layout get_data_layout() const override { return T_layout; }
 
+  El::Device get_device_allocation() const override { return Dev; }
+
   void setup_matrices(const El::Grid& grid) override {
     regularizer_layer::setup_matrices(grid);
     if (m_mask != nullptr) { delete m_mask; }
-    m_mask = get_activations().Copy();    
+    m_mask = get_activations().Copy();
   }
 
  protected:

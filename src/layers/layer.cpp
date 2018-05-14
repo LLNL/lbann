@@ -84,7 +84,6 @@ Layer::Layer(const Layer& other) :
   m_expected_num_parent_layers(other.m_expected_num_parent_layers),
   m_expected_num_child_layers(other.m_expected_num_child_layers),
   m_model(other.m_model),
-  m_using_gpus(other.m_using_gpus),
   m_cudnn(other.m_cudnn),
   m_frozen(other.m_frozen),
 #ifdef LBANN_HAS_CUDNN
@@ -96,7 +95,8 @@ Layer::Layer(const Layer& other) :
   m_bp_time(other.m_bp_time),
   m_bp_compute_time(other.m_bp_compute_time),
   m_update_time(other.m_update_time),
-  m_name(other.m_name) {
+  m_name(other.m_name),
+  m_using_gpus(other.m_using_gpus) {
 
   // Deep matrix copies
   m_prev_activations   = other.m_prev_activations;
@@ -109,11 +109,6 @@ Layer::Layer(const Layer& other) :
   for (auto& m : m_error_signals)      { m = m->Copy(); }
 
 #ifdef LBANN_HAS_CUDNN
-  // Copy GPU objects
-  m_prev_activations_d = other.m_prev_activations_d;
-  m_activations_d = other.m_activations_d;
-  m_prev_error_signals_d = other.m_prev_error_signals_d;
-  m_error_signals_d = other.m_error_signals_d;
   m_prev_activations_cudnn_desc = nullptr;
   m_activations_cudnn_desc = nullptr;
   m_prev_error_signals_cudnn_desc = nullptr;
@@ -130,7 +125,7 @@ Layer::Layer(const Layer& other) :
 }
 
 Layer& Layer::operator=(const Layer& other) {
-  
+
   // Shallow copies
   m_comm = other.m_comm;
   m_neuron_dims = other.m_neuron_dims;
@@ -171,10 +166,6 @@ Layer& Layer::operator=(const Layer& other) {
   for (auto& m : m_error_signals)      { m = m->Copy(); }
 
 #ifdef LBANN_HAS_CUDNN
-  m_prev_activations_d = other.m_prev_activations_d;
-  m_activations_d = other.m_activations_d;
-  m_prev_error_signals_d = other.m_prev_error_signals_d;
-  m_error_signals_d = other.m_error_signals_d;
   cudnn::copy_tensor_cudnn_desc(other.m_prev_activations_cudnn_desc,
                                 m_prev_activations_cudnn_desc);
   cudnn::copy_tensor_cudnn_desc(other.m_activations_cudnn_desc,
@@ -252,7 +243,7 @@ void Layer::forward_prop() {
 
   #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
-  if (m_using_gpus) { this->m_cudnn->check_error(); }
+  if (using_gpus()) { this->m_cudnn->check_error(); }
   #endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
 
   // Apply layer's compute function
@@ -268,7 +259,7 @@ void Layer::forward_prop() {
 
   #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
-  if (m_using_gpus) { this->m_cudnn->check_error(); }
+  if (using_gpus()) { this->m_cudnn->check_error(); }
   #endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
 
   m_fp_time += get_time() - fp_start;
@@ -282,7 +273,7 @@ void Layer::back_prop() {
 
   #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
-  if (m_using_gpus) { this->m_cudnn->check_error(); }
+  if (using_gpus()) { this->m_cudnn->check_error(); }
   #endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
 
   // Backprop the compute function.
@@ -298,7 +289,7 @@ void Layer::back_prop() {
 
   #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
-  if (m_using_gpus) { this->m_cudnn->check_error(); }
+  if (using_gpus()) { this->m_cudnn->check_error(); }
   #endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
 
   m_bp_time += get_time() - bp_start;
@@ -352,25 +343,27 @@ void Layer::summarize_matrices(lbann_summary& summarizer, int step) {
   // Summarize activation matrices
   const int num_children = get_num_children();
   for (int i = 0; i < num_children; ++i) {
+    AbsDistMatReadProxy<El::Device::CPU> acts(*m_activations[i]);
     std::string prefix = m_name + "/activations";
     if (num_children > 1) { prefix += std::to_string(i); }
-    summarizer.reduce_mean(prefix + "/mean", *m_activations[i], step);
-    summarizer.reduce_min(prefix + "/min", *m_activations[i], step);
-    summarizer.reduce_max(prefix + "/max", *m_activations[i], step);
-    summarizer.reduce_stdev(prefix + "/stdev", *m_activations[i], step);
-    summarizer.reduce_2norm(prefix + "/2norm2", *m_activations[i], step);
+    summarizer.reduce_mean(prefix + "/mean", acts.GetLocked(), step);
+    summarizer.reduce_min(prefix + "/min", acts.GetLocked(), step);
+    summarizer.reduce_max(prefix + "/max", acts.GetLocked(), step);
+    summarizer.reduce_stdev(prefix + "/stdev", acts.GetLocked(), step);
+    summarizer.reduce_2norm(prefix + "/2norm2", acts.GetLocked(), step);
   }
 
   // Summarize error signal matrices
   const int num_parents = get_num_parents();
   for (int i = 0; i < num_parents; ++i) {
+    AbsDistMatReadProxy<El::Device::CPU> error_signals(*m_error_signals[i]);
     std::string prefix = m_name + "/error_signals";
     if (num_parents > 1) { prefix += std::to_string(i); }
-    summarizer.reduce_mean(prefix + "/mean", *m_error_signals[i], step);
-    summarizer.reduce_min(prefix + "/min", *m_error_signals[i], step);
-    summarizer.reduce_max(prefix + "/max", *m_error_signals[i], step);
-    summarizer.reduce_stdev(prefix + "/stdev", *m_error_signals[i], step);
-    summarizer.reduce_2norm(prefix + "/2norm2", *m_error_signals[i], step);
+    summarizer.reduce_mean(prefix + "/mean", error_signals.GetLocked(), step);
+    summarizer.reduce_min(prefix + "/min", error_signals.GetLocked(), step);
+    summarizer.reduce_max(prefix + "/max", error_signals.GetLocked(), step);
+    summarizer.reduce_stdev(prefix + "/stdev", error_signals.GetLocked(), step);
+    summarizer.reduce_2norm(prefix + "/2norm2", error_signals.GetLocked(), step);
   }
 
 }
@@ -438,28 +431,28 @@ const AbsDistMat& Layer::get_error_signals(int parent_index) const {
   }
   return *m_error_signals[parent_index];
 }
-Mat& Layer::get_local_prev_activations(int parent_index) {
+AbsMat& Layer::get_local_prev_activations(int parent_index) {
   return get_prev_activations(parent_index).Matrix();
 }
-Mat& Layer::get_local_activations(int child_index) {
+AbsMat& Layer::get_local_activations(int child_index) {
   return get_activations(child_index).Matrix();
 }
-Mat& Layer::get_local_prev_error_signals(int child_index) {
+AbsMat& Layer::get_local_prev_error_signals(int child_index) {
   return get_prev_error_signals(child_index).Matrix();
 }
-Mat& Layer::get_local_error_signals(int parent_index) {
+AbsMat& Layer::get_local_error_signals(int parent_index) {
   return get_error_signals(parent_index).Matrix();
 }
-const Mat& Layer::get_local_prev_activations(int parent_index) const {
+const AbsMat& Layer::get_local_prev_activations(int parent_index) const {
   return get_prev_activations(parent_index).LockedMatrix();
 }
-const Mat& Layer::get_local_activations(int child_index) const {
+const AbsMat& Layer::get_local_activations(int child_index) const {
   return get_activations(child_index).LockedMatrix();
 }
-const Mat& Layer::get_local_prev_error_signals(int child_index) const {
+const AbsMat& Layer::get_local_prev_error_signals(int child_index) const {
   return get_prev_error_signals(child_index).LockedMatrix();
 }
-const Mat& Layer::get_local_error_signals(int parent_index) const {
+const AbsMat& Layer::get_local_error_signals(int parent_index) const {
   return get_error_signals(parent_index).LockedMatrix();
 }
 
@@ -473,13 +466,7 @@ void Layer::clear_error_signals(int mini_batch_size) {
   for (int i = 0; i < get_num_parents(); ++i) {
     get_error_signals(i).Empty(false);
     get_error_signals(i).Resize(get_num_prev_neurons(i), mini_batch_size);
-    if (m_using_gpus) {
-#ifdef LBANN_HAS_CUDNN
-      m_error_signals_d[i].zero();
-#endif // LBANN_HAS_CUDNN
-    } else {
-      El::Zero(get_error_signals(i));
-    }
+    El::Zero(get_error_signals(i));
   }
 }
 
@@ -511,7 +498,13 @@ void Layer::setup() {
   setup_dims();
   setup_matrices(m_comm->get_model_grid());
   setup_data();
-  if (m_using_gpus) {
+  if (using_gpus()) {
+    if(m_cudnn == nullptr) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "layer " << m_name << " is trying to use GPUs but has an invalid pointer to the cudnn object";
+      throw lbann_exception(err.str());
+    }
     setup_gpu();
   }
 }
@@ -553,37 +546,73 @@ void Layer::setup_dims() {
                                        m_prev_neuron_dims.end(),
                                        1,
                                        std::multiplies<int>());
-  
+
   // Set neuron tensor dimensions equal to previous neuron tensor
   m_num_neurons = m_num_prev_neurons;
   m_num_neuron_dims = m_num_prev_neuron_dims;
   m_neuron_dims = m_prev_neuron_dims;
-  
+
+}
+
+///************************************************************************
+/// Instantiate CPU Matrices
+///************************************************************************
+template <>
+void Layer::instantiate_matrices<data_layout::MODEL_PARALLEL, El::Device::CPU>(const El::Grid& grid) {
+  for (int i = 0; i < get_num_parents(); ++i) {
+    m_prev_activations.push_back(new MCMRMat<El::Device::CPU>(grid));
+    m_error_signals.push_back(new MCMRMat<El::Device::CPU>(grid));
+  }
+  for (int i = 0; i < get_num_children(); ++i) {
+    m_activations.push_back(new MCMRMat<El::Device::CPU>(grid));
+    m_prev_error_signals.push_back(new MCMRMat<El::Device::CPU>(grid));
+  }
+//  m_using_gpus = false;
 }
 
 template <>
-void Layer::instantiate_matrices<data_layout::MODEL_PARALLEL>(const El::Grid& grid) {
+void Layer::instantiate_matrices<data_layout::DATA_PARALLEL, El::Device::CPU>(const El::Grid& grid) {
   for (int i = 0; i < get_num_parents(); ++i) {
-    m_prev_activations.push_back(new MCMRMat(grid));
-    m_error_signals.push_back(new MCMRMat(grid));
+    m_prev_activations.push_back(new StarVCMat<El::Device::CPU>(grid));
+    m_error_signals.push_back(new StarVCMat<El::Device::CPU>(grid));
   }
   for (int i = 0; i < get_num_children(); ++i) {
-    m_activations.push_back(new MCMRMat(grid));
-    m_prev_error_signals.push_back(new MCMRMat(grid));
+    m_activations.push_back(new StarVCMat<El::Device::CPU>(grid));
+    m_prev_error_signals.push_back(new StarVCMat<El::Device::CPU>(grid));
   }
+//  m_using_gpus = false;
+}
+
+#ifdef LBANN_HAS_GPU
+///************************************************************************
+/// Instantiate GPU Matrices
+///************************************************************************
+template <>
+void Layer::instantiate_matrices<data_layout::MODEL_PARALLEL, El::Device::GPU>(const El::Grid& grid) {
+  for (int i = 0; i < get_num_parents(); ++i) {
+    m_prev_activations.push_back(new MCMRMat<El::Device::GPU>(grid));
+    m_error_signals.push_back(new MCMRMat<El::Device::GPU>(grid));
+  }
+  for (int i = 0; i < get_num_children(); ++i) {
+    m_activations.push_back(new MCMRMat<El::Device::GPU>(grid));
+    m_prev_error_signals.push_back(new MCMRMat<El::Device::GPU>(grid));
+  }
+  m_using_gpus = true;
 }
 
 template <>
-void Layer::instantiate_matrices<data_layout::DATA_PARALLEL>(const El::Grid& grid) {
+void Layer::instantiate_matrices<data_layout::DATA_PARALLEL, El::Device::GPU>(const El::Grid& grid) {
   for (int i = 0; i < get_num_parents(); ++i) {
-    m_prev_activations.push_back(new StarVCMat(grid));
-    m_error_signals.push_back(new StarVCMat(grid));
+    m_prev_activations.push_back(new StarVCMat<El::Device::GPU>(grid));
+    m_error_signals.push_back(new StarVCMat<El::Device::GPU>(grid));
   }
   for (int i = 0; i < get_num_children(); ++i) {
-    m_activations.push_back(new StarVCMat(grid));
-    m_prev_error_signals.push_back(new StarVCMat(grid));
+    m_activations.push_back(new StarVCMat<El::Device::GPU>(grid));
+    m_prev_error_signals.push_back(new StarVCMat<El::Device::GPU>(grid));
   }
+  m_using_gpus = true;
 }
+#endif // LBANN_HAS_GPU
 
 void Layer::setup_matrices(const El::Grid& grid) {
 
@@ -593,9 +622,35 @@ void Layer::setup_matrices(const El::Grid& grid) {
   // Allocate input and output matrices for forward an back prop
   switch (get_data_layout()) {
   case data_layout::MODEL_PARALLEL:
-    instantiate_matrices<data_layout::MODEL_PARALLEL>(grid); break;
+    switch (get_device_allocation()) {
+    case El::Device::CPU:
+      instantiate_matrices<data_layout::MODEL_PARALLEL, El::Device::CPU>(grid); break;
+#ifdef LBANN_HAS_GPU
+    case El::Device::GPU:
+      instantiate_matrices<data_layout::MODEL_PARALLEL, El::Device::GPU>(grid); break;
+#endif // LBANN_HAS_GPU
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid matrix data allocation";
+      throw lbann_exception(err.str());
+    }
+    break;
   case data_layout::DATA_PARALLEL:
-    instantiate_matrices<data_layout::DATA_PARALLEL>(grid); break;
+    switch (get_device_allocation()) {
+    case El::Device::CPU:
+      instantiate_matrices<data_layout::DATA_PARALLEL, El::Device::CPU>(grid); break;
+#ifdef LBANN_HAS_GPU
+    case El::Device::GPU:
+      instantiate_matrices<data_layout::DATA_PARALLEL, El::Device::GPU>(grid); break;
+#endif // LBANN_HAS_GPU
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid matrix data allocation";
+      throw lbann_exception(err.str());
+    }
+    break;
   default:
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
@@ -634,29 +689,13 @@ void Layer::setup_data() {
               get_num_neurons(i),
               mini_batch_size);
   }
-
-#ifdef LBANN_HAS_CUDNN
-  // Pin host memory if needed for GPU memory transfers
-  pin_data();
-#endif // LBANN_HAS_CUDNN
-
 }
 
 void Layer::setup_gpu() {
 #ifndef LBANN_HAS_CUDNN
-  throw lbann_exception(
-      std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
-      "Layer: cuDNN not detected");
+  LBANN_ERROR("cuDNN not detected");
 #else
 
-  // Throw error if data layout is not data parallel
-  // TODO: Design a more general interface
-  if(get_data_layout() != data_layout::DATA_PARALLEL) {
-    throw lbann_exception(
-      std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
-      "Layer: GPUs are currently only supported for data parallel layers");
-  }
-  
   // Split mini-batch amongst GPUs
   const int num_gpus = m_cudnn->get_num_gpus();
   const int num_processes = m_comm->get_procs_per_model();
@@ -665,37 +704,67 @@ void Layer::setup_gpu() {
   m_max_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
   m_mini_batch_size_per_gpu = m_max_mini_batch_size_per_gpu;
 
-  // Initialize GPU memory
-  m_prev_activations_d.reserve(get_num_parents());
-  m_activations_d.reserve(get_num_children());
-  m_prev_error_signals_d.reserve(get_num_children());
-  m_error_signals_d.reserve(get_num_parents());
-  for (int i = 0; i < get_num_parents(); ++i) {
-    m_prev_activations_d.emplace_back(m_cudnn);
-    m_error_signals_d.emplace_back(m_cudnn,
-                                   get_num_prev_neurons(i),
-                                   m_mini_batch_size_per_gpu);
+  // Set tensor descriptors
+  // Note: If the data layout is data-parallel, then the descriptors
+  // describe the corresponding neuron tensors. If the data layout is
+  // model-parallel, the descriptors describe the local matrix.
+  if (get_num_parents() > 0) {
+    const auto& input = get_prev_activations();
+    const auto& gradient_wrt_input = get_error_signals();
+    switch (get_data_layout()) {
+    case data_layout::DATA_PARALLEL:
+      cudnn::set_tensor_cudnn_desc(m_prev_activations_cudnn_desc,
+                                   m_mini_batch_size_per_gpu,
+                                   get_prev_neuron_dims(),
+                                   input.LDim());
+      cudnn::set_tensor_cudnn_desc(m_error_signals_cudnn_desc,
+                                   m_mini_batch_size_per_gpu,
+                                   get_prev_neuron_dims(),
+                                   gradient_wrt_input.LDim());
+      break;
+    case data_layout::MODEL_PARALLEL:
+      cudnn::set_tensor_cudnn_desc(m_prev_activations_cudnn_desc,
+                                   input.LocalHeight(),
+                                   input.LocalWidth(),
+                                   input.LDim());
+      cudnn::set_tensor_cudnn_desc(m_error_signals_cudnn_desc,
+                                   gradient_wrt_input.LocalHeight(),
+                                   gradient_wrt_input.LocalWidth(),
+                                   gradient_wrt_input.LDim());
+      break;
+    default:
+      LBANN_ERROR("invalid distributed matrix layout");
+    }
   }
-  for (int i = 0; i < get_num_children(); ++i) {
-    m_activations_d.emplace_back(m_cudnn,
-                                 get_num_neurons(i),
-                                 m_mini_batch_size_per_gpu);
-    m_prev_error_signals_d.emplace_back(m_cudnn);
+  if (get_num_children() > 0) {
+    const auto& output = get_activations();
+    const auto& gradient_wrt_output = get_prev_error_signals();
+    switch (get_data_layout()) {
+    case data_layout::DATA_PARALLEL:
+      cudnn::set_tensor_cudnn_desc(m_activations_cudnn_desc,
+                                   m_mini_batch_size_per_gpu,
+                                   get_neuron_dims(),
+                                   output.LDim());
+      cudnn::set_tensor_cudnn_desc(m_prev_error_signals_cudnn_desc,
+                                   m_mini_batch_size_per_gpu,
+                                   get_neuron_dims(),
+                                   gradient_wrt_output.LDim());
+      break;
+    case data_layout::MODEL_PARALLEL:
+      cudnn::set_tensor_cudnn_desc(m_activations_cudnn_desc,
+                                   output.LocalHeight(),
+                                   output.LocalWidth(),
+                                   output.LDim());
+      cudnn::set_tensor_cudnn_desc(m_prev_error_signals_cudnn_desc,
+                                   gradient_wrt_output.LocalHeight(),
+                                   gradient_wrt_output.LocalWidth(),
+                                   gradient_wrt_output.LDim());
+      break;
+    default:
+      LBANN_ERROR("invalid distributed matrix layout");
+    }
   }
 
-  // Set tensor descriptors
-  cudnn::set_tensor_cudnn_desc(m_prev_activations_cudnn_desc,
-                               m_mini_batch_size_per_gpu,
-                               m_prev_neuron_dims);
-  cudnn::set_tensor_cudnn_desc(m_activations_cudnn_desc,
-                               m_mini_batch_size_per_gpu,
-                               m_neuron_dims);
-  cudnn::set_tensor_cudnn_desc(m_prev_error_signals_cudnn_desc,
-                               m_mini_batch_size_per_gpu,
-                               m_neuron_dims);
-  cudnn::set_tensor_cudnn_desc(m_error_signals_cudnn_desc,
-                               m_mini_batch_size_per_gpu,
-                               m_prev_neuron_dims);
 #endif // LBANN_HAS_CUDNN
 }
 
@@ -774,7 +843,7 @@ void Layer::replace_weights(Layer* other_layer) {
   if (other_layer == nullptr) {
     throw lbann_exception("Layer::replace_weights: Attempted to add null pointer as a replacement layer.");
   }
-  
+
   const std::vector<weights *> other_layer_weights = other_layer->get_weights();
   for (size_t i = 0; i < m_weights.size(); ++i) {
     m_weights[i]->set_values(other_layer_weights[i]->get_values());
@@ -783,30 +852,6 @@ void Layer::replace_weights(Layer* other_layer) {
 }
 
 void Layer::deallocate_matrices() {
-#ifdef LBANN_HAS_CUDNN
-  // Deallocate GPU memory
-  m_prev_activations_d.clear();
-  m_activations_d.clear();
-  m_prev_error_signals_d.clear();
-  m_error_signals_d.clear();
-
-  // Unpin matrices
-  if (m_cudnn != nullptr) {
-    for (const auto& m : m_prev_activations) {
-      if (m != nullptr) { m_cudnn->unpin_matrix(*m); }
-    }
-    for (const auto& m : m_activations) {
-      if (m != nullptr) { m_cudnn->unpin_matrix(*m); }
-    }
-    for (const auto& m : m_prev_error_signals) {
-      if (m != nullptr) { m_cudnn->unpin_matrix(*m); }
-    }
-    for (const auto& m : m_error_signals) {
-      if (m != nullptr) { m_cudnn->unpin_matrix(*m); }
-    }
-  }
-#endif // LBANN_HAS_CUDNN
-
   // Deallocate matrices
   for (const auto& m : m_prev_activations) {
     if (m != nullptr) delete m;
@@ -872,7 +917,7 @@ void Layer::fp_setup_data(int mini_batch_size) {
   }
 
   #ifdef LBANN_HAS_CUDNN
-  if(m_using_gpus) {
+  if(using_gpus()) {
     // Determine mini-batch size per GPU
     const int num_gpus = m_cudnn->get_num_gpus();
     const int local_mini_batch_size = (get_num_parents() > 0 ?
@@ -886,15 +931,7 @@ void Layer::fp_setup_data(int mini_batch_size) {
     const auto& parent = m_parent_layers[i];
 
     // Get previous activation from parent layer
-    if (!m_using_gpus) {
-      parent->get_fp_output(get_prev_activations(i), this);
-    } else {
-      #ifdef LBANN_HAS_CUDNN
-      parent->get_gpu_fp_output(m_prev_activations_d[i],
-                                get_prev_activations(i),
-                                this);
-      #endif // LBANN_HAS_CUDNN
-    }
+    parent->get_fp_output(get_prev_activations(i), this);
 
     // Check dimensions of previous activations matrix
     const int expected_height = get_num_prev_neurons(i);
@@ -915,21 +952,48 @@ void Layer::fp_setup_data(int mini_batch_size) {
 
   #ifdef LBANN_HAS_CUDNN
   // Set cuDNN tensor descriptors if needed
-  if (m_using_gpus) {
-    const int input_stride = (m_prev_activations_d.empty() ?
-                              m_num_prev_neurons :
-                              m_prev_activations_d[0].get_leading_dim());
-    const int output_stride = (m_activations_d.empty() ?
-                               m_num_neurons :
-                               m_activations_d[0].get_leading_dim());
-    cudnn::set_tensor_cudnn_desc(m_prev_activations_cudnn_desc,
-                                 m_mini_batch_size_per_gpu,
-                                 m_prev_neuron_dims,
-                                 input_stride);
-    cudnn::set_tensor_cudnn_desc(m_activations_cudnn_desc,
-                                 m_mini_batch_size_per_gpu,
-                                 m_neuron_dims,
-                                 output_stride);
+  // Note: If the data layout is data-parallel, then the descriptors
+  // describe the corresponding neuron tensors. If the data layout is
+  // model-parallel, the descriptors describe the local matrix.
+  if (using_gpus()) {
+    if (get_num_parents() > 0) {
+      const auto& input = get_prev_activations();
+      switch (get_data_layout()) {
+      case data_layout::DATA_PARALLEL:
+        cudnn::set_tensor_cudnn_desc(m_prev_activations_cudnn_desc,
+                                     m_mini_batch_size_per_gpu,
+                                     get_prev_neuron_dims(),
+                                     input.LDim());
+        break;
+      case data_layout::MODEL_PARALLEL:
+        cudnn::set_tensor_cudnn_desc(m_prev_activations_cudnn_desc,
+                                     input.LocalHeight(),
+                                     input.LocalWidth(),
+                                     input.LDim());
+        break;
+      default:
+        LBANN_ERROR("invalid distributed matrix layout");
+      }
+    }
+    if (get_num_children() > 0) {
+      const auto& output = get_activations();
+      switch (get_data_layout()) {
+      case data_layout::DATA_PARALLEL:
+        cudnn::set_tensor_cudnn_desc(m_activations_cudnn_desc,
+                                     m_mini_batch_size_per_gpu,
+                                     get_neuron_dims(),
+                                     output.LDim());
+        break;
+      case data_layout::MODEL_PARALLEL:
+        cudnn::set_tensor_cudnn_desc(m_activations_cudnn_desc,
+                                     output.LocalHeight(),
+                                     output.LocalWidth(),
+                                     output.LDim());
+        break;
+      default:
+        LBANN_ERROR("invalid distributed matrix layout");
+      }
+    }
   }
   #endif // LBANN_HAS_CUDNN
 
@@ -941,15 +1005,7 @@ void Layer::bp_setup_data(int mini_batch_size) {
     const auto& child = m_child_layers[i];
 
     // Get previous error signal from child layer
-    if (!m_using_gpus) {
-      child->get_bp_output(get_prev_error_signals(i), this);
-    } else {
-      #ifdef LBANN_HAS_CUDNN
-      child->get_gpu_bp_output(m_prev_error_signals_d[i],
-                               get_prev_error_signals(i),
-                               this);
-      #endif // LBANN_HAS_CUDNN
-    }
+    child->get_bp_output(get_prev_error_signals(i), this);
 
     // Check dimensions of previous error signal matrix
     auto& input = *m_prev_error_signals[i];
@@ -970,22 +1026,48 @@ void Layer::bp_setup_data(int mini_batch_size) {
 
   #ifdef LBANN_HAS_CUDNN
   // Set cuDNN tensor descriptors if needed
-  if (m_using_gpus) {
-    // Set tensor descriptors
-    const int input_stride = (m_prev_error_signals_d.empty() ?
-                              m_num_neurons :
-                              m_prev_error_signals_d[0].get_leading_dim());
-    const int output_stride = (m_error_signals_d.empty() ?
-                               m_num_prev_neurons :
-                               m_error_signals_d[0].get_leading_dim());
-    cudnn::set_tensor_cudnn_desc(m_prev_error_signals_cudnn_desc,
-                                 m_mini_batch_size_per_gpu,
-                                 m_neuron_dims,
-                                 input_stride);
-    cudnn::set_tensor_cudnn_desc(m_error_signals_cudnn_desc,
-                                 m_mini_batch_size_per_gpu,
-                                 m_prev_neuron_dims,
-                                 output_stride);
+  // Note: If the data layout is data-parallel, then the descriptors
+  // describe the corresponding neuron tensors. If the data layout is
+  // model-parallel, the descriptors describe the local matrix.
+  if (using_gpus()) {
+    if (get_num_children() > 0) {
+      const auto& gradient_wrt_output = get_prev_error_signals();
+      switch (get_data_layout()) {
+      case data_layout::DATA_PARALLEL:
+        cudnn::set_tensor_cudnn_desc(m_prev_error_signals_cudnn_desc,
+                                     m_mini_batch_size_per_gpu,
+                                     get_neuron_dims(),
+                                     gradient_wrt_output.LDim());
+        break;
+      case data_layout::MODEL_PARALLEL:
+        cudnn::set_tensor_cudnn_desc(m_prev_error_signals_cudnn_desc,
+                                     gradient_wrt_output.LocalHeight(),
+                                     gradient_wrt_output.LocalWidth(),
+                                     gradient_wrt_output.LDim());
+        break;
+      default:
+        LBANN_ERROR("invalid distributed matrix layout");
+      }
+    }
+    if (get_num_parents() > 0) {
+      const auto& gradient_wrt_input = get_error_signals();
+      switch (get_data_layout()) {
+      case data_layout::DATA_PARALLEL:
+        cudnn::set_tensor_cudnn_desc(m_error_signals_cudnn_desc,
+                                     m_mini_batch_size_per_gpu,
+                                     get_prev_neuron_dims(),
+                                     gradient_wrt_input.LDim());
+        break;
+      case data_layout::MODEL_PARALLEL:
+        cudnn::set_tensor_cudnn_desc(m_error_signals_cudnn_desc,
+                                     gradient_wrt_input.LocalHeight(),
+                                     gradient_wrt_input.LocalWidth(),
+                                     gradient_wrt_input.LDim());
+        break;
+      default:
+        LBANN_ERROR("invalid distributed matrix layout");
+      }
+    }
   }
   #endif // LBANN_HAS_CUDNN
 
@@ -1035,17 +1117,6 @@ void Layer::get_fp_output(AbsDistMat& output, const Layer* child) const {
   }
   auto& activation = const_cast<Layer*>(this)->get_activations(child_index);
 
-#ifdef LBANN_HAS_CUDNN
-  // Copy activations matrix to CPU if needed
-  if (m_using_gpus) {
-    m_cudnn->gather_from_gpus(activation.Matrix(),
-                              m_activations_d[child_index].get_locked_data(),
-                              m_mini_batch_size_per_gpu,
-                              m_activations_d[child_index].get_leading_dim());
-    m_cudnn->synchronize();
-  }
-#endif // LBANN_HAS_CUDNN
-
   // Put view or copy of activation matrix in output matrix
   if(activation.DistData() == output.DistData()) {
     El::LockedView(output, activation);
@@ -1074,17 +1145,6 @@ void Layer::get_bp_output(AbsDistMat& output, const Layer* parent) const {
   }
   auto& error_signal = const_cast<Layer*>(this)->get_error_signals(parent_index);
 
-#ifdef LBANN_HAS_CUDNN
-  // Copy error signal matrix to CPU if needed
-  if (m_using_gpus) {
-    m_cudnn->gather_from_gpus(error_signal.Matrix(),
-                              m_error_signals_d[parent_index].get_locked_data(),
-                              m_mini_batch_size_per_gpu,
-                              m_error_signals_d[parent_index].get_leading_dim());
-    m_cudnn->synchronize();
-  }
-#endif // LBANN_HAS_CUDNN
-
   // Put view or copy of error signal matrix in output matrix
   if(error_signal.DistData() == output.DistData()) {
     El::LockedView(output, error_signal);
@@ -1094,106 +1154,6 @@ void Layer::get_bp_output(AbsDistMat& output, const Layer* parent) const {
   }
 
 }
-
-#ifdef LBANN_HAS_CUDNN
-
-void Layer::get_gpu_fp_output(cudnn::matrix& output_d,
-                              AbsDistMat& workspace,
-                              const Layer* child) const {
-  const size_t child_index = (std::find(m_child_layers.begin(),
-                                        m_child_layers.end(),
-                                        child)
-                              - m_child_layers.begin());
-  if (child_index >= m_child_layers.size()) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << get_name() << " has no forward prop output corresponding to "
-        << child->get_name();
-    throw lbann_exception(err.str());
-  }
-
-  if (m_using_gpus) {
-    output_d.locked_view(m_activations_d[child_index]);
-  } else {
-
-    // Redistribute activations matrix to Star,VC format if needed
-    const auto& activation = get_activations(child_index);
-    if(activation.DistData() == workspace.DistData()) {
-      El::LockedView(workspace, activation);
-    }
-    else {
-      El::Copy(activation, workspace);
-    }
-
-    // Initialize GPU matrix
-    auto&& cudnn = output_d.get_cudnn_manager();
-    const int num_gpus = cudnn->get_num_gpus();
-    const int num_processes = m_comm->get_procs_per_model();
-    const int max_local_mini_batch_size = (m_model->get_max_mini_batch_size() + num_processes - 1) / num_processes;
-    const int max_mini_batch_size_per_gpu = (max_local_mini_batch_size + num_gpus - 1) / num_gpus;
-    output_d.resize(get_num_neurons(child_index), max_mini_batch_size_per_gpu);
-
-    // Copy activations matrix to GPU
-    const int local_mini_batch_size = workspace.LocalWidth();
-    const int mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
-    cudnn->scatter_to_gpus(output_d.get_data(),
-                           workspace.LockedMatrix(),
-                           mini_batch_size_per_gpu,
-                           output_d.get_leading_dim());
-
-  }  
-
-}
-
-void Layer::get_gpu_bp_output(cudnn::matrix& output_d,
-                              AbsDistMat& workspace,
-                              const Layer* parent) const {
-  const size_t parent_index = (std::find(m_parent_layers.begin(),
-                                         m_parent_layers.end(),
-                                         parent)
-                               - m_parent_layers.begin());
-  if (parent_index >= m_parent_layers.size()) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << get_name() << " has no backward prop output corresponding to "
-        << parent->get_name();
-    throw lbann_exception(err.str());
-  }
-
-  if (m_using_gpus) {
-    output_d.locked_view(m_error_signals_d[parent_index]);
-  } else {
-
-    // Redistribute activations matrix to Star,VC format if needed
-    const auto& error_signal = get_error_signals(parent_index);
-    if(error_signal.DistData() == workspace.DistData()) {
-      El::LockedView(workspace, error_signal);
-    }
-    else {
-      El::Copy(error_signal, workspace);
-    }
-
-    // Initialize GPU matrix
-    auto&& cudnn = output_d.get_cudnn_manager();
-    const int num_gpus = cudnn->get_num_gpus();
-    const int num_processes = m_comm->get_procs_per_model();
-    const int max_local_mini_batch_size = (m_model->get_max_mini_batch_size() + num_processes - 1) / num_processes;
-    const int max_mini_batch_size_per_gpu = (max_local_mini_batch_size + num_gpus - 1) / num_gpus;
-    output_d.resize(get_num_prev_neurons(parent_index), max_mini_batch_size_per_gpu);
-
-    // Copy activations matrix to GPU
-    const int local_mini_batch_size = workspace.LocalWidth();
-    const int mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
-    cudnn->scatter_to_gpus(output_d.get_data(),
-                           workspace.LockedMatrix(),
-                           mini_batch_size_per_gpu,
-                           output_d.get_leading_dim());
-
-  }
-
-}
-
-#endif // LBANN_HAS_CUDNN
 
 std::string Layer::get_data_layout_string(data_layout d) const {
   switch(d) {
@@ -1205,6 +1165,36 @@ std::string Layer::get_data_layout_string(data_layout d) const {
     throw lbann_exception(
       std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
       "Layer: invalid data layout");
+  }
+}
+
+std::string Layer::get_device_allocation_string(El::Device dev) const {
+  switch(dev) {
+  case El::Device::CPU:
+    return "cpu";
+#ifdef LBANN_HAS_GPU
+  case El::Device::GPU:
+    return "gpu";
+#endif // LBANN_HAS_GPU
+  default:
+    throw lbann_exception(
+      std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
+      "Layer: invalid device allocation");
+  }
+}
+
+std::string Layer::get_device_allocation_string_short(El::Device dev) const {
+  switch(dev) {
+  case El::Device::CPU:
+    return "C";
+#ifdef LBANN_HAS_GPU
+  case El::Device::GPU:
+    return "G";
+#endif // LBANN_HAS_GPU
+  default:
+    throw lbann_exception(
+      std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
+      "Layer: invalid device allocation");
   }
 }
 

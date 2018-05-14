@@ -17,7 +17,7 @@ def skeleton_mnist_debug(cluster, dir_name, executables, compiler_name, weekly, 
     command = tools.get_command(
         cluster=cluster, executable=executables[compiler_name], num_nodes=1,
         partition='pbatch', time_limit=100, dir_name=dir_name,
-        data_filedir_ray='/p/gscratchr/brainusr/datasets/MNIST',
+        data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
         data_reader_name='mnist', model_folder='models/' + model_name,
         model_name=model_name, num_epochs=5, optimizer_name='adagrad',
         output_file_name=output_file_name, error_file_name=error_file_name)
@@ -38,6 +38,8 @@ def skeleton_cifar_debug(cluster, dir_name, executables, compiler_name, weekly, 
     command = tools.get_command(
         cluster=cluster, executable=executables[compiler_name],	num_nodes=1,
         partition='pbatch', time_limit=100, dir_name=dir_name,
+        data_filename_train_default='/p/lscratchf/brainusr/datasets/cifar10-bin/data_all.bin',
+        data_filename_test_default='/p/lscratchf/brainusr/datasets/cifar10-bin/test_batch.bin',
         data_reader_name='cifar10', data_reader_percent=0.01, model_folder='models/' + model_name,
         model_name='conv_' + model_name, num_epochs=5, optimizer_name='adagrad',
         output_file_name=output_file_name, error_file_name=error_file_name)

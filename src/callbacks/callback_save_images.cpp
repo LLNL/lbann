@@ -54,14 +54,14 @@ void lbann_callback_save_images::save_image(model& m,
 
   // Save image
   if(m_layer_names.empty()) {
-    if(m.get_comm()->am_world_master()) 
+    if(m.get_comm()->am_world_master())
       std::cout << "Layer list empty, images not saved " << std::endl;
     return;
   }
- //@todo: check that number of neurons (linearized) equal mat heigth? 
- if(m.get_comm()->am_world_master()) 
+ //@todo: check that number of neurons (linearized) equal mat heigth?
+ if(m.get_comm()->am_world_master())
       std::cout << "Saving images to " << m_image_dir << std::endl;
-  
+
   const auto layers = m.get_layers();
   for(auto& l: layers) {
     auto layer_name = l->get_name();
@@ -72,15 +72,15 @@ void lbann_callback_save_images::save_image(model& m,
                                           l->get_activations().Grid(),
                                           l->get_activations().Root());
       El::View(*input_col, l->get_activations(), El::ALL, El::IR(0));
-      CircMat input_circ = *input_col;
+      CircMat<El::Device::CPU> input_circ = *input_col;
       delete input_col;
 
-      if(m.get_comm()->am_world_master()) 
-        m_reader->save_image(input_circ.Matrix(), 
+      if(m.get_comm()->am_world_master())
+        m_reader->save_image(input_circ.Matrix(),
                              m_image_dir+tag+"-"+layer_name+"."+m_extension);
     }
-  }  
+  }
 }
-  
+
 
 }  // namespace lbann
