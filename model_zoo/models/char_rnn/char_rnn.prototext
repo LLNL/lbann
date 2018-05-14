@@ -1,0 +1,119 @@
+model {
+  name: "recurrent_model"
+  data_layout: "data_parallel"
+  mini_batch_size: 256
+  block_size: 256
+  num_epochs: 20
+  num_parallel_readers: 0
+  procs_per_model: 0
+  num_gpus: -1
+  recurrent {
+    unroll_depth : 5
+  }
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    mean_squared_error {}
+    l2_weight_regularization {
+      scale_factor: 0.0005
+    }
+  }
+
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback {
+    print {
+      interval: 1
+    }
+  }
+  callback {
+    timer {
+    }
+  }
+
+  ###################################################
+  # Layers
+  ###################################################
+
+  # Data
+  layer {
+    name: "data"
+    input {
+      io_buffer: "partitioned"
+    }
+    data_layout: "data_parallel"
+  }
+
+  # rnn1
+  layer {
+    parents: "data"
+    name: "rnn1_input"
+    fully_connected {
+      num_neurons: 256
+      has_bias: true
+    }
+    data_layout: "model_parallel"
+  }
+  layer {
+    parents: "rnn1"
+    name: "rnn1_context"
+    fully_connected {
+      num_neurons: 256
+      has_bias: true
+    }
+    data_layout: "model_parallel"
+  }
+  layer {
+    parents: "rnn1_input rnn1_context"
+    name: "rnn1_sum"
+    sum {}
+    data_layout: "model_parallel"
+  }
+  layer {
+    parents: "rnn1_sum"
+    name: "rnn1_act"
+    tanh {}
+    data_layout: "model_parallel"
+  }
+  layer {
+    # This reshape layer is a hack to get around ambiguous neuron dimensions
+    parents: "rnn1_act"
+    name: "rnn1"
+    reshape {
+      num_dims: 1
+      dims: "256"
+    }
+    data_layout: "model_parallel"
+  }
+
+  # Decode
+  layer {
+    parents: "rnn1"
+    name: "decode"
+    fully_connected {
+      num_neurons: 128
+      has_bias: false
+    }
+    data_layout: "model_parallel"
+  }
+  layer {
+    parents: "decode"
+    name: "prob"
+    softmax {}
+    data_layout: "model_parallel"
+  }
+  layer {
+    parents: "prob"
+    name: "eval"
+    target {
+      io_buffer: "partitioned"
+      shared_data_reader: true
+    }
+    data_layout: "data_parallel"
+  }
+
+}

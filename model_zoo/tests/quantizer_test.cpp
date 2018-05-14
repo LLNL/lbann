@@ -203,7 +203,7 @@ void test_allreduces() {
       comm->intermodel_broadcast_matrix(rademacher_mat, 0);
     }
     if (comm->get_model_rank() % 2 == 1) {
-      El::Scale(-1, rademacher_mat);
+      El::Scale(DataType(-1), rademacher_mat);
     }
     DistMat onebit_rademacher(rademacher_mat),
             threshold_rademacher(rademacher_mat),
@@ -213,7 +213,7 @@ void test_allreduces() {
       // different value instead.
       // In the case of 3 models, don't scale by 2 or else elements sum to 0.
       if (comm->get_num_models() != 3) {
-        El::Scale(2, adaptive_rademacher);
+        El::Scale(DataType(2), adaptive_rademacher);
       }
     }
     if (comm->am_world_master()) {

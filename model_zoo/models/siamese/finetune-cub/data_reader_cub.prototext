@@ -17,24 +17,29 @@ data_reader {
 
       subtractor {
         disable: false
-        image_to_sub: "../../../../tools/compute_mean/sample/imagenet-trainset/mean-256x256x3-6.bin"
+#        image_to_sub: "../../../../tools/compute_mean/sample/imagenet-trainset/mean-256x256x3-6.bin"
+        image_to_sub: "mean-256x256x3-6.bin"
       }
 
       cropper {
         disable: false
-        crop_width: 227
-        crop_height: 227
+        crop_width: 224
+        crop_height: 224
         crop_randomly: true
         resized_width: 256
         resized_height: 256
       }
 
+      colorizer {
+        disable: true
+      }
+
+      augmenter {
+        disable: true
+      }
+
       normalizer {
         disable: true
-        scale: false
-        subtract_mean: false
-        unit_variance: false
-        z_score: true
       }
     }
   }
@@ -57,24 +62,29 @@ data_reader {
 
       subtractor {
         disable: false
-        image_to_sub: "../../../../tools/compute_mean/sample/imagenet-trainset/mean-256x256x3-6.bin"
+#        image_to_sub: "../../../../tools/compute_mean/sample/imagenet-trainset/mean-256x256x3-6.bin"
+        image_to_sub: "mean-256x256x3-6.bin"
       }
 
       cropper {
         disable: false
-        crop_width: 227
-        crop_height: 227
+        crop_width: 224
+        crop_height: 224
         crop_randomly: false
         resized_width: 256
         resized_height: 256
       }
 
+      colorizer {
+        disable: true
+      }
+
+      augmenter {
+        disable: true
+      }
+
       normalizer {
         disable: true
-        scale: false
-        subtract_mean: false
-        unit_variance: false
-        z_score: true
       }
     }
   }

@@ -50,7 +50,7 @@ class l2_weight_regularization : public objective_function_term {
   void start_evaluation() override;
   EvalType finish_evaluation() override;
 
-  /** Compute the gradient w.r.t. the activations. 
+  /** Compute the gradient w.r.t. the activations.
    *  L2 weight regularization is independent of the activations.
    */
   void differentiate() override {};
@@ -64,12 +64,19 @@ class l2_weight_regularization : public objective_function_term {
   void compute_weight_regularization() override;
 
  private:
+
   /** Holds intermediate terms for each weights. */
   std::vector<EvalType> m_sqsums;
   /** Holds an allreduce request for each weights. */
   std::vector<Al::request> m_allreduce_reqs;
   /** Whether an allreduce is needed for each weights. */
   std::vector<bool> m_allreduce_started;
+
+#ifdef LBANN_HAS_CUDNN
+  /** Reference to cuDNN manager. */
+  cudnn::cudnn_manager* m_cudnn = nullptr;
+#endif // LBANN_HAS_CUDNN
+
 };
 
 } // namespace lbann

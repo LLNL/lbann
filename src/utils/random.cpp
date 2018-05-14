@@ -26,6 +26,7 @@
 
 #include <omp.h>
 #include "lbann/utils/random.hpp"
+#include "lbann/io/file_io.hpp"
 
 namespace {
 #ifdef __ICC
@@ -69,37 +70,93 @@ rng_gen& get_data_seq_generator() {
   return ::data_seq_generator;
 }
 
-bool save_rng_to_checkpoint_shared(persist& p){
+bool save_rng_to_checkpoint_shared(persist& p, const lbann_comm* comm) {
+  std::string dirname = std::string(p.m_checkpoint_dir) + "/rng_state";
+  makedir(dirname.c_str());
   std::string rng_name;
-  rng_name = std::string(p.m_checkpoint_dir) + "/rng_seq_generator";
+
+  rng_name = dirname + "/rng_seq_generator";
   std::ofstream rng_seq(rng_name);
   rng_seq << ::data_seq_generator;
-  
-  rng_name = std::string(p.m_checkpoint_dir) + "/rng_generator";
-  std::ofstream rng(rng_name);
-  rng << ::generator;
-  
-  rng_name = std::string(p.m_checkpoint_dir) + "/rng_fast_generator";
-  std::ofstream rng_fast(rng_name);
-  rng_fast << ::fast_generator;
+#ifdef LBANN_SET_EL_RNG
+  rng_name = dirname + "/EL_generator";
+  std::ofstream rng_EL(rng_name);
+  rng_EL << El::Generator();
+#endif
 
-  return true;
+  std::string rank_in_world;
+  if (comm == nullptr) {
+    rank_in_world = std::to_string(El::mpi::Rank(El::mpi::COMM_WORLD));
+  } else {
+    rank_in_world = std::to_string(comm->get_rank_in_world());
+
+  }
+#ifdef _OPENMP
+  #pragma omp parallel private(rng_name)
+  {
+    rng_name = dirname + "/rng_generator_" + rank_in_world + "_" + std::to_string(omp_get_thread_num());
+    std::ofstream rng(rng_name);
+    rng << ::generator;
+
+    rng_name = dirname + "/rng_fast_generator_" + rank_in_world + "_" + std::to_string(omp_get_thread_num());
+    std::ofstream rng_fast(rng_name);
+    rng_fast << ::fast_generator;
+  }
+#else
+    rng_name = dirname + "/rng_generator_" + rank_in_world;
+    std::ofstream rng(rng_name);
+    rng << ::generator;
+
+    rng_name = dirname + "/rng_fast_generator_" + rank_in_world;
+    std::ofstream rng_fast(rng_name);
+    rng_fast << ::fast_generator;
+#endif
+
+   return true;
 }
 
-bool load_rng_from_checkpoint_shared(persist& p){
+bool load_rng_from_checkpoint_shared(persist& p, const lbann_comm* comm) {
+
+  std::string dirname = std::string(p.m_checkpoint_dir) + "/rng_state";
   std::string rng_name;
-  rng_name = std::string(p.m_checkpoint_dir) + "/rng_seq_generator";
+
+  rng_name = dirname + "/rng_seq_generator";
   std::ifstream rng_seq(rng_name);
   rng_seq >> ::data_seq_generator;
+#ifdef LBANN_SET_EL_RNG
+  rng_name = dirname + "/EL_generator";
+  std::ifstream rng_EL(rng_name);
+  rng_EL >> El::Generator();
+#endif
 
-  rng_name = std::string(p.m_checkpoint_dir) + "/rng_generator";
-  std::ifstream rng(rng_name);
-  rng >> ::generator;
- 
-  rng_name = std::string(p.m_checkpoint_dir) + "/rng_fast_generator";
-  std::ifstream rng_fast(rng_name);
-  rng_fast >> ::fast_generator;
+  std::string rank_in_world;
+  if (comm == nullptr) {
+    rank_in_world = std::to_string(El::mpi::Rank(El::mpi::COMM_WORLD));
+  } else {
+    rank_in_world = std::to_string(comm->get_rank_in_world());
+  }
 
+ #ifdef _OPENMP
+  #pragma omp parallel private(rng_name)
+  {
+    rng_name = dirname + "/rng_generator_" + rank_in_world + "_" + std::to_string(omp_get_thread_num());
+    std::ifstream rng(rng_name);
+    rng >> ::generator;
+
+    rng_name = dirname + "/rng_fast_generator_" + rank_in_world + "_" + std::to_string(omp_get_thread_num());
+    std::ifstream rng_fast(rng_name);
+    rng_fast >> ::fast_generator;
+   }
+#else
+    rng_name = dirname + "/rng_generator_" + rank_in_world;
+    std::ifstream rng(rng_name);
+    rng >> ::generator;
+
+    rng_name = dirname + "/rng_fast_generator_" + rank_in_world;
+    std::ifstream rng_fast(rng_name);
+    rng_fast >> ::fast_generator;
+   }
+#endif
   return true;
 }
 
@@ -177,7 +234,7 @@ void bernoulli_fill(AbsDistMat& mat, El::Int m, El::Int n, double p) {
   El::Bernoulli(mat, m, n, p);
 #else
   bernoulli_fill_procdet(mat, m, n, p);
-#endif  // LBANN_PARALLEL_RANDOM_MATRICES  
+#endif  // LBANN_PARALLEL_RANDOM_MATRICES
 }
 
 void uniform_fill(AbsDistMat& mat, El::Int m, El::Int n, DataType center,
@@ -191,51 +248,50 @@ void uniform_fill(AbsDistMat& mat, El::Int m, El::Int n, DataType center,
 
 void gaussian_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n, DataType mean,
                            DataType stddev) {
-  El::Zeros(mat, m, n);
-  if (mat.Grid().Rank() == 0) {
-    mat.Reserve(n * m);
+  CircMat<El::Device::CPU> vals(m, n, mat.Grid(), 0);
+  if (vals.Participating()) {
+    auto& local_vals = vals.Matrix();
     auto& gen = get_generator();
     std::normal_distribution<DataType> dist(mean, stddev);
-    for (El::Int col = 0; col < n; ++col) {
-      for (El::Int row = 0; row < m; ++row) {
-        mat.QueueUpdate(row, col, dist(gen));
+    for (El::Int col = 0; col < local_vals.Width(); ++col) {
+      for (El::Int row = 0; row < local_vals.Height(); ++row) {
+        local_vals(row, col) = dist(gen);
       }
     }
   }
-  mat.ProcessQueues();
+  El::Copy(vals, mat);
 }
 
 void bernoulli_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n, double p) {
-  El::Zeros(mat, m, n);
-  if (mat.Grid().Rank() == 0) {
-    mat.Reserve(m * n);
+  CircMat<El::Device::CPU> vals(m, n, mat.Grid(), 0);
+  if (vals.Participating()) {
+    auto& local_vals = vals.Matrix();
     auto& gen = get_generator();
     std::bernoulli_distribution dist(p);
-    for (El::Int col = 0; col < n; ++col) {
-      for (El::Int row = 0; row < m; ++row) {
-        mat.QueueUpdate(row, col, dist(gen) ? 1.0f : 0.0f);
+    for (El::Int col = 0; col < local_vals.Width(); ++col) {
+      for (El::Int row = 0; row < local_vals.Height(); ++row) {
+        local_vals(row, col) = dist(gen);
       }
     }
   }
-  mat.ProcessQueues();
+  El::Copy(vals, mat);
 }
 
 void uniform_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n, DataType center,
                           DataType radius) {
-  El::Zeros(mat, m, n);
-  if (mat.Grid().Rank() == 0) {
-    mat.Reserve(n * m);
+  CircMat<El::Device::CPU> vals(m, n, mat.Grid(), 0);
+  if (vals.Participating()) {
+    auto& local_vals = vals.Matrix();
     auto& gen = get_generator();
     std::uniform_real_distribution<DataType> dist(center - radius,
-        center + radius);
-    for (El::Int col = 0; col < n; ++col) {
-      for (El::Int row = 0; row < m; ++row) {
-        mat.QueueUpdate(row, col, dist(gen));
+                                                  center + radius);
+    for (El::Int col = 0; col < local_vals.Width(); ++col) {
+      for (El::Int row = 0; row < local_vals.Height(); ++row) {
+        local_vals(row, col) = dist(gen);
       }
     }
   }
-  mat.ProcessQueues();
+  El::Copy(vals, mat);
 }
 
 }  // namespace lbann
-

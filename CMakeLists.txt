@@ -54,7 +54,7 @@ if (GIT_REPO)
   set(${UPPER_PROJECT_NAME}_VERSION ${GIT_VERSION}
     CACHE STRING "LBANN's version string")
 else ()
-  set(${UPPER_PROJECT_NAME}_VERSION v0.UNKN
+  set(${UPPER_PROJECT_NAME}_VERSION v0.94
     CACHE STRING "LBANN's version string")
 endif (GIT_REPO)
 
@@ -91,6 +91,9 @@ option(${UPPER_PROJECT_NAME}_WITH_TOPO_AWARE
 
 option(${UPPER_PROJECT_NAME}_WITH_ALUMINUM 
   "Enable Aluminum all-reduce library" OFF)
+
+option(${UPPER_PROJECT_NAME}_WITH_CONDUIT
+  "Enable Conduit library" OFF)
 
 option(${UPPER_PROJECT_NAME}_VERBOSE "Enable verbose output" OFF)
 
@@ -260,6 +263,18 @@ if (LBANN_WITH_ALUMINUM)
   endif (LBANN_BUILT_WITH_SPECTRUM)
 endif (LBANN_WITH_ALUMINUM)
 
+if (LBANN_WITH_CONDUIT)
+  find_package(CONDUIT)
+  set(LBANN_HAS_CONDUIT ${CONDUIT_FOUND})
+  if (NOT LBANN_HAS_CONDUIT)
+    message(FATAL_ERROR
+      "Requested LBANN_WITH_CONDUIT but Conduit not found. "
+      "Conduit is now disabled. "
+      "Try specifying CONDUIT_DIR as the root of an CONDUIT install. "
+      "Alternatively, build with LBANN_WITH_CONDUIT=OFF.")
+  endif(NOT LBANN_HAS_CONDUIT)
+endif (LBANN_WITH_CONDUIT)
+
 # Handle the documentation
 add_subdirectory(doc)
 
@@ -309,6 +324,10 @@ endif ()
 
 if (LBANN_HAS_ALUMINUM)
   target_link_libraries(lbann PUBLIC ALUMINUM::ALUMINUM)
+endif ()
+
+if (LBANN_HAS_CONDUIT)
+  target_link_libraries(lbann PUBLIC CONDUIT::CONDUIT)
 endif ()
 
 #== FIXME HERE DOWN ==
@@ -414,3 +433,4 @@ message("  LBANN_HAS_VTUNE:      ${LBANN_HAS_VTUNE}")
 message("  LBANN_HAS_DOXYGEN:    ${LBANN_HAS_DOXYGEN}")
 message("  LBANN_HAS_LBANN_PROTO:${LBANN_HAS_LBANN_PROTO}")
 message("  LBANN_HAS_ALUMINUM:   ${LBANN_HAS_ALUMINUM}")
+message("  LBANN_HAS_CONDUIT:    ${LBANN_HAS_CONDUIT}")

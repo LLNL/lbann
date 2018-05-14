@@ -27,6 +27,7 @@
 #include "lbann/metrics/metric.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/layers/io/target/generic_target_layer.hpp"
+#include "lbann/utils/timer.hpp"
 
 namespace lbann {
 
@@ -113,8 +114,10 @@ EvalType metric::evaluate(execution_mode mode,
   }
 
   // Evaluate objective function
+  const auto& start = get_time();
   const EvalType total_value = evaluate_compute(m_target_layer->get_prediction(),
                                                 m_target_layer->get_ground_truth());
+  m_evaluate_time += get_time() - start;
 
   // Record result in statistics and return
   m_statistics[mode].add_value(total_value, mini_batch_size);
@@ -168,25 +171,25 @@ void metric::set_layer_pointers(std::vector<Layer*> layers) {
 
 bool metric::save_to_checkpoint_shared(persist& p) {
   // write out fields we need to save for model
-  if (p.get_rank() == 0) {
+  if (m_comm->am_model_master()) {
     m_statistics[execution_mode::training].pack_scalars(p);
-    m_statistics[execution_mode::validation].pack_scalars(p);
     m_statistics[execution_mode::testing].pack_scalars(p);
+    m_statistics[execution_mode::validation].pack_scalars(p);
   }
   return true;
 }
 
 bool metric::load_from_checkpoint_shared(persist& p) {
   struct metric_statistics::packing_header training_header, validation_header, testing_header;
-  if (p.get_rank() == 0) {
+  if (m_comm->am_model_master()) {
     m_statistics[execution_mode::training].unpack_scalars(p, &training_header);
-    m_statistics[execution_mode::validation].unpack_scalars(p, &validation_header);
     m_statistics[execution_mode::testing].unpack_scalars(p, &testing_header);
+    m_statistics[execution_mode::validation].unpack_scalars(p, &validation_header);
   }
 
-  MPI_Bcast(&training_header, sizeof(training_header), MPI_BYTE, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&validation_header, sizeof(validation_header), MPI_BYTE, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&testing_header, sizeof(testing_header), MPI_BYTE, 0, MPI_COMM_WORLD);
+  m_comm->model_broadcast(0, training_header);
+  m_comm->model_broadcast(0, validation_header);
+  m_comm->model_broadcast(0, testing_header);
 
   m_statistics[execution_mode::training].unpack_header(training_header);
   m_statistics[execution_mode::validation].unpack_header(validation_header);
@@ -194,5 +197,24 @@ bool metric::load_from_checkpoint_shared(persist& p) {
   return true;
 }
 
+bool metric::save_to_checkpoint_distributed(persist& p) {
+  // write out fields we need to save for model
+  m_statistics[execution_mode::training].pack_scalars(p);
+  m_statistics[execution_mode::testing].pack_scalars(p);
+  m_statistics[execution_mode::validation].pack_scalars(p);
+  return true;
+}
+
+bool metric::load_from_checkpoint_distributed(persist& p) {
+  struct metric_statistics::packing_header training_header, validation_header, testing_header;
+  m_statistics[execution_mode::training].unpack_scalars(p, &training_header);
+  m_statistics[execution_mode::testing].unpack_scalars(p, &testing_header);
+  m_statistics[execution_mode::validation].unpack_scalars(p, &validation_header);
+
+  m_statistics[execution_mode::training].unpack_header(training_header);
+  m_statistics[execution_mode::validation].unpack_header(validation_header);
+  m_statistics[execution_mode::testing].unpack_header(testing_header);
+  return true;
+}
 
 }  // namespace lbann

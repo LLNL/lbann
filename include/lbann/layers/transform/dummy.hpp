@@ -32,7 +32,7 @@
 namespace lbann {
 
 /** Dummy layer with no output. */
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class dummy_layer : public transform_layer {
 
  public:
@@ -47,7 +47,6 @@ class dummy_layer : public transform_layer {
   #ifdef LBANN_HAS_CUDNN
     // Initialize GPU memory if using GPU
     if (cudnn) {
-      this->m_using_gpus = true;
       this->m_cudnn = cudnn;
     }
   #endif // LBANN_HAS_CUDNN
@@ -57,6 +56,7 @@ class dummy_layer : public transform_layer {
   dummy_layer* copy() const override { return new dummy_layer(*this); }
   std::string get_type() const override { return "dummy"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   /** Returns description. */
   std::string get_description() const override {

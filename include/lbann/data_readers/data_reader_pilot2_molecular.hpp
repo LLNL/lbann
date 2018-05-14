@@ -125,18 +125,21 @@ class pilot2_molecular_reader : public generic_data_reader {
   /// support for data_store_pilot2_molecular
   int get_num_features() const {
     return m_num_features;
-  }  
+  }
 
   /// support for data_store_pilot2_molecular
   int get_neighbors_data_size() {
     return m_neighbors_data_size;
   }
 
+  /// sets up a data_store.
+  void setup_data_store(model *m) override;
+
  protected:
   /// Fetch a molecule and its neighbors.
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
   /// Fetch molecule data_id into X at molecule offset idx.
-  void fetch_molecule(Mat& X, int data_id, int idx, int mb_idx);
+  void fetch_molecule(CPUMat& X, int data_id, int idx, int mb_idx);
 
   /// Number of samples.
   int m_num_samples = 0;

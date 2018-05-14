@@ -103,20 +103,23 @@ void lbann_callback_summary::save_histograms(model *m) {
   for (const auto& layer : m->get_layers()) {
     const std::string prefix = layer->get_name() + "/";
     for (int i = 0; i < layer->get_num_children(); ++i) {
+      AbsDistMatReadProxy<El::Device::CPU> acts(layer->get_activations(i));
       m_summarizer->reduce_histogram(prefix + "activations" + std::to_string(i),
-                                     layer->get_activations(i),
+                                     acts.GetLocked(),
                                      m->get_cur_step());
     }
   }
   for (const auto& w : m->get_weights()) {
     const std::string prefix = w->get_name() + "/";
+    AbsDistMatReadProxy<El::Device::CPU> weights(w->get_values());
     m_summarizer->reduce_histogram(prefix + "weights",
-                                   w->get_values(),
+                                   weights.GetLocked(),
                                    m->get_cur_step());
     optimizer *opt = w->get_optimizer();
     if (opt != nullptr) {
+      AbsDistMatReadProxy<El::Device::CPU> gradients(opt->get_gradient());
       m_summarizer->reduce_histogram(prefix + "weights_gradient",
-                                     opt->get_gradient(),
+                                     gradients.GetLocked(),
                                      m->get_cur_step());
     }
   }

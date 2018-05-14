@@ -37,7 +37,7 @@ class fetch_data_functor {
  public:
   fetch_data_functor (bool is_input_layer, bool is_for_regression) :
     _is_input_layer(is_input_layer), _is_for_regression(is_for_regression) {}
-  int operator() (Mat& M_local, generic_data_reader* data_reader) const {
+  int operator() (CPUMat& M_local, generic_data_reader* data_reader) const {
     if (_is_input_layer) {
       return data_reader->fetch_data(M_local);
     } else {
@@ -87,7 +87,7 @@ public:
 
   /** Return this buffer's type, e.g: "partitioned_io_buffer," "distributed_io_buffer," etc. */
   virtual std::string get_type() const = 0;
-  virtual void set_local_matrix_bypass(Mat *M_local) = 0;
+  virtual void set_local_matrix_bypass(CPUMat *M_local) = 0;
   virtual void set_std_matrix_view(El::Int cur_mini_batch_size) = 0;
   virtual void setup_data(El::Int num_neurons, El::Int max_minibatch_size) = 0;
 

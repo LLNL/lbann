@@ -22,14 +22,19 @@ message Reader {
   string role = 3; //train, test
   bool shuffle = 4;
   string data_filedir = 5;
+  string data_local_filedir = 50; //to support data_store
   string data_filename = 6;
   string label_filename = 7;
   double validation_percent = 9;
   int64 absolute_sample_count = 11;
   int64 first_n = 200;
   double percent_of_data_to_use = 12;
+  //for GAN model
+  bool gan_labelling = 201;
+  int32 gan_label_value = 202;
   ImagePreprocessor image_preprocessor = 13;
-  int32 modeling_mode = 98; // only for jag
+  int32 independent = 97; // only for jag
+  int32 dependent = 98; // only for jag
   int32 num_labels = 99; //for imagenet
   int64 num_samples = 100; //only for synthetic
   int64 num_features = 101; //only for synthetic
@@ -182,6 +187,7 @@ message Model {
 
   int64 mini_batch_size = 12;
   int64 num_epochs = 4;
+  int64 super_steps = 121; //multiple steps/epochs currently use in GAN 
   int64 block_size = 50;
   int64 procs_per_model = 51;
   int64 num_gpus = 53;
@@ -234,6 +240,7 @@ message ObjectiveFunction {
   repeated L2WeightRegularization l2_weight_regularization = 21;
   repeated GroupLassoWeightRegularization group_lasso_weight_regularization = 22;
   repeated KLDivergence kl_divergence = 23;
+  repeated LayerTerm layer_term = 25;
 }
 
 message MeanSquaredError {
@@ -290,6 +297,11 @@ message KLDivergence {
   string layer2 = 2;
 }
 
+message LayerTerm {
+  double scale_factor = 1;
+  string layer = 2;
+}
+
 //========================================================================
 // Metrics
 //========================================================================
@@ -306,6 +318,7 @@ message Metric {
   BooleanAccuracy boolean_accuracy = 8;
   BooleanFalsePositives boolean_false_positives = 9;
   BooleanFalseNegatives boolean_false_negatives = 10;
+  LayerMetric layer_metric = 11;
 }
 
 message CategoricalAccuracy {
@@ -331,6 +344,11 @@ message BooleanFalsePositives {
 }
 
 message BooleanFalseNegatives {
+}
+
+message LayerMetric {
+  string unit = 1;
+  string layer = 2;
 }
 
 //========================================================================
@@ -439,7 +457,8 @@ message CallbackAdaptiveLearningRate {
 
 message CallbackSaveImages {
   string image_dir = 1;
-  string extension = 2;
+  string layer_names = 2; //layer(s) at which to save images  e.g., "input, reconstruction"
+  string extension = 3;
 }
 
 message CallbackPrint {
@@ -460,14 +479,13 @@ message CallbackSummary {
 
 message CallbackDumpWeights {
   string basename = 1;
-  int64 interval = 2;
 }
 
 message CallbackDumpActivations {
   string basename = 1;
   int64 interval = 2;
   string layer_names = 3; //layer(s) at which to dump activations e.g., "relu1 relu4 relu12"
-  
+
 }
 
 message CallbackDumpGradients {
@@ -566,7 +584,9 @@ message CallbackCheckpoint {
   int64 checkpoint_epochs = 2;
   int64 checkpoint_steps = 3;
   double checkpoint_secs = 4;
-  bool checkpoint_per_rank = 5;
+  string per_rank_dir = 5;
+  int64 ckpt_dist_epochs = 6;
+  int64 ckpt_dist_steps = 7;
 }
 
 
@@ -582,7 +602,7 @@ message CallbackSaveModel {
 message Weights {
 
   string name = 1;
-  Optimizer optimizer = 2;  
+  Optimizer optimizer = 2;
 
   ConstantInitializer constant_initializer = 20;
   UniformInitializer uniform_initializer = 21;
@@ -591,6 +611,8 @@ message Weights {
   GlorotUniformInitializer glorot_uniform_initializer = 24;
   HeNormalInitializer he_normal_initializer = 25;
   HeUniformInitializer he_uniform_initializer = 26;
+  LeCunNormalInitializer lecun_normal_initializer = 27;
+  LeCunUniformInitializer lecun_uniform_initializer = 28;
 
 }
 
@@ -600,16 +622,18 @@ message ConstantInitializer {
 }
 message UniformInitializer {
   double min = 1;
-  double max = 2; 
+  double max = 2;
 }
 message NormalInitializer {
   double mean = 1;
-  double standard_deviation = 2; 
+  double standard_deviation = 2;
 }
 message GlorotNormalInitializer {}
 message GlorotUniformInitializer {}
 message HeNormalInitializer {}
 message HeUniformInitializer {}
+message LeCunNormalInitializer {}
+message LeCunUniformInitializer {}
 
 //note: I'd like to put this enum inside of Layer, but if I do the enum values
 //      become, e.g, Layer_Imcomm_EXCLUDE, which is just ugly
@@ -659,8 +683,10 @@ message Layer {
    string parents = 151;
    string children = 152;
    string data_layout = 52;
+   string device_allocation = 55;
    string weights = 54;
    bool num_neurons_from_data_reader = 53;
+   bool freeze = 5;
 
    repeated WeightsData weights_data = 153;
    string top = 154;
@@ -692,10 +718,15 @@ message Layer {
    Slice slice = 301;
    Split split = 302;
    Sum sum = 303;
-   Noise noise = 307;
    Unpooling unpooling = 304;
    Hadamard hadamard = 308;
    Constant constant = 309;
+   Zero zero = 315; 
+   Reduction reduction = 310;
+   Evaluation evaluation = 311;
+   Gaussian gaussian = 312;
+   Bernoulli bernoulli = 313;
+   Uniform uniform = 314;
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -727,6 +758,7 @@ message Layer {
    BentIdentity bent_identity = 40;
    Exponential exponential = 41;
    Swish swish = 42;
+   Power power = 43;
 }
 ///////////////////////
 // MotifLayer //
@@ -784,6 +816,10 @@ message Selu {
 }
 
 message Softmax {
+}
+
+message Power {
+  double exponent = 1;
 }
 
 ///////////////////////////
@@ -875,11 +911,6 @@ message Sum {
   string scaling_factors = 1; //should be a space-separated list of doubles, e.g. "1.0 2.0 -1.0"
 }
 
-message Noise {
-  double noise_factor=1;
-  string num_neurons=2;
-}
-
 message Hadamard {
 }
 
@@ -887,12 +918,43 @@ message Constant {
   double value=1;
   string num_neurons=2;
 }
+
+
+message Zero {
+  bool first_half=1; //default: true
+  bool second_half=2; //default: true
+}
+
+message Reduction {
+  string mode=1;
+}
+
+message Evaluation {
+}
+
+message Gaussian {
+  double mean = 1;
+  double stdev = 2;
+  string neuron_dims = 3;
+}
+
+message Bernoulli {
+  double prob = 1;
+  string neuron_dims = 2;
+}
+
+message Uniform {
+  double min = 1;
+  double max = 2;
+  string neuron_dims = 3;
+}
+
 /////////////////////
 // learning Layers //
 /////////////////////
 message FullyConnected {
   int64 num_neurons = 1;
-  string weight_initialization = 2;
+  string weight_initialization = 2;    //DEPRECATED
   bool has_bias = 3;                   //default: true
   double bias_initial_value = 4;       //default: 0
   double l2_regularization_factor = 5; //default: 0
@@ -915,7 +977,7 @@ message Convolution {
   int64 conv_pads_i = 60;
   int64 conv_strides_i = 70;
 
-  string weight_initialization = 9;
+  string weight_initialization = 9;     //DEPRECATED
   bool has_bias = 10;                   //default: true
   double bias_initial_value = 11;       //default: 0
   double l2_regularization_factor = 12; //default: 0
@@ -937,7 +999,7 @@ message Deconvolution {
   int64 conv_pads_i = 60;
   int64 conv_strides_i = 70;
 
-  string weight_initialization = 9;
+  string weight_initialization = 9;     //DEPRECATED
   bool has_bias = 10;                   //default: true
   double bias_initial_value = 11;       //default: 0
   double l2_regularization_factor = 12; //default: 0

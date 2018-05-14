@@ -54,20 +54,31 @@ void lbann_callback_dump_activations::on_forward_prop_end(model *m, Layer *l) {
 
 }
 
+void lbann_callback_dump_activations::on_epoch_end(model *m) {
+  auto tag = "epoch" + std::to_string(m->get_cur_epoch());
+  dump_activations(*m,tag);
+}
+
 void lbann_callback_dump_activations::on_test_end(model *m) {
+  dump_activations(*m,"test");
+}
+
+void lbann_callback_dump_activations::dump_activations(model& m,
+                                            std::string tag) {
   //Skip if layer list is empty, user may interested in the saving all activations
   //Use method above 
   if(m_layer_names.empty()) return;
 
-  const auto layers = m->get_layers();
+  const auto layers = m.get_layers();
   for(auto& l: layers) {
     if(std::find(std::begin(m_layer_names), std::end(m_layer_names),
                   l->get_name()) != std::end(m_layer_names)) {
       //@todo: generalize to support different format
       const std::string file
         = (m_basename
-           + "model" + std::to_string(m->get_comm()->get_model_rank())
+           + "model" + std::to_string(m.get_comm()->get_model_rank())
            + "-" + l->get_name()
+           + "-" + tag
            + "-Activations");
        El::Write(l->get_activations(), file, El::ASCII);
       }

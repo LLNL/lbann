@@ -26,16 +26,10 @@
 // lbann_data_reader .hpp .cpp - Input data base class for training, testing
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_readers/data_reader_imagenet.hpp"
-#include "lbann/data_readers/data_reader_multi_images.hpp"
-#include "lbann/data_readers/data_reader_merge_samples.hpp"
-#include "lbann/data_readers/data_reader_pilot2_molecular.hpp"
-
-#include "lbann/data_store/data_store_imagenet.hpp"
-#include "lbann/data_store/data_store_multi_images.hpp"
-#include "lbann/data_store/data_store_merge_samples.hpp"
-#include "lbann/data_store/data_store_pilot2_molecular.hpp"
+#include "lbann/data_readers/data_reader.hpp"
+#include "lbann/data_store/generic_data_store.hpp"
 #include <omp.h>
+
 namespace lbann {
 
 void generic_data_reader::shuffle_indices() {
@@ -66,7 +60,7 @@ void generic_data_reader::setup() {
   shuffle_indices();
 }
 
-int lbann::generic_data_reader::fetch_data(Mat& X) {
+int lbann::generic_data_reader::fetch_data(CPUMat& X) {
   int nthreads = omp_get_max_threads();
   if(!position_valid()) {
     throw lbann_exception(
@@ -137,7 +131,7 @@ int lbann::generic_data_reader::fetch_data(Mat& X) {
   return mb_size;
 }
 
-int lbann::generic_data_reader::fetch_labels(Mat& Y) {
+int lbann::generic_data_reader::fetch_labels(CPUMat& Y) {
   if(!position_valid()) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
@@ -182,7 +176,7 @@ int lbann::generic_data_reader::fetch_labels(Mat& Y) {
   return mb_size;
 }
 
-int lbann::generic_data_reader::fetch_responses(Mat& Y) {
+int lbann::generic_data_reader::fetch_responses(CPUMat& Y) {
   if(!position_valid()) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
@@ -267,10 +261,7 @@ bool generic_data_reader::update(bool is_active_reader) {
     }
 
     if (!m_save_minibatch_indices) {
-      if (m_shuffle) {
-        std::shuffle(m_shuffled_indices.begin(), m_shuffled_indices.end(),
-                     get_data_seq_generator());
-      }
+      shuffle_indices();
     }
 
     set_initial_position();
@@ -332,6 +323,7 @@ int generic_data_reader::get_next_position() const {
 }
 
 void generic_data_reader::select_subset_of_data() {
+  m_num_global_indices = m_shuffled_indices.size();
   shuffle_indices();
 
   size_t count = get_absolute_sample_count();
@@ -389,7 +381,7 @@ void generic_data_reader::use_unused_index_set() {
 /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
 bool generic_data_reader::save_to_checkpoint_shared(persist& p, const char *name) {
   // rank 0 writes the training state file
-  if (p.get_rank() == 0) {
+  if (m_comm->am_model_master()) {
     pack_scalars(p,name);
   }
   return true;
@@ -399,17 +391,27 @@ bool generic_data_reader::save_to_checkpoint_shared(persist& p, const char *name
 bool lbann::generic_data_reader::load_from_checkpoint_shared(persist& p, const char *name) {
   // rank 0 reads the training state file
   struct packing_header header;
-  if (p.get_rank() == 0) {
+  if (m_comm->am_model_master()) {
     unpack_scalars(p,&header,name);
   }
-  MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
+  m_comm->model_broadcast(0, header);
   unpack_header(header);
-  if(p.get_rank() ==0){
-    m_shuffled_indices.resize(header.data_size);
-    m_unused_indices.resize(header.unused_data_size);
-  }
-  MPI_Bcast(&m_shuffled_indices[0], header.data_size, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&m_unused_indices[0], header.unused_data_size, MPI_INT, 0, MPI_COMM_WORLD);
+
+  m_comm->model_broadcast(0, m_shuffled_indices);
+
+  // Adjust current position to deal with fact that it was just loaded to all ranks from rank 0 (differs by rank #)
+  m_current_pos += m_comm->get_rank_in_model();
+  return true;
+}
+
+bool generic_data_reader::save_to_checkpoint_distributed(persist& p, const char *name) {
+  pack_scalars(p,name);
+  return true;
+}
+
+bool lbann::generic_data_reader::load_from_checkpoint_distributed(persist& p, const char *name) {
+  struct packing_header header;
+  unpack_scalars(p,&header,name);
   return true;
 }
 
@@ -421,8 +423,20 @@ void generic_data_reader::set_file_dir(std::string s) {
   }
 }
 
+void generic_data_reader::set_local_file_dir(std::string s) {
+  if(endsWith(s, "/")) {
+    m_local_file_dir = s;
+  }else {
+    m_local_file_dir = s + "/";
+  }
+}
+
 std::string generic_data_reader::get_file_dir() const {
   return m_file_dir;
+}
+
+std::string generic_data_reader::get_local_file_dir() const {
+  return m_local_file_dir;
 }
 
 void generic_data_reader::set_data_filename(std::string s) {
@@ -494,48 +508,28 @@ double generic_data_reader::get_use_percent() const {
   return m_use_percent;
 }
 
-void generic_data_reader::setup_data_store(model *m, lbann_comm *comm) {
+void generic_data_reader::setup_data_store(model *m) {
   m_data_store = nullptr;
-  generic_data_reader *the_reader = nullptr;
+}
 
-  //note: ordering is important here; since data_store_multi_images is
-  //      descended from data_store_imagenet, it must be first
-  if (dynamic_cast<data_reader_multi_images*>(this) != nullptr) {
-    the_reader = dynamic_cast<data_reader_multi_images*>(this);
-    m_data_store = new data_store_multi_images(comm, this, m);
+void generic_data_reader::set_save_minibatch_entries(bool b) {
+  m_save_minibatch_indices = b;
+  if (b) {
+    m_my_minibatch_indices.reserve(get_num_iterations_per_epoch());
   }
-  else if (dynamic_cast<pilot2_molecular_reader*>(this) != nullptr) {
-    the_reader = dynamic_cast<pilot2_molecular_reader*>(this);
-    m_data_store = new data_store_pilot2_molecular(comm, this, m);
-  }
-  else if (dynamic_cast<imagenet_reader*>(this) != nullptr) {
-    the_reader = dynamic_cast<imagenet_reader*>(this);
-    m_data_store = new data_store_imagenet(comm, this, m);
-  }
-  /*
-  else if (dynamic_cast<data_reader_merge_samples*>(this) != nullptr) {
-    the_reader = dynamic_cast<data_reader_merge_samples*>(this);
-    m_data_store = new data_store_merge_samples(comm, this, m);
-  }
-  */
+}
 
-  //note: this is not an error, since data readers for a single model
-  //      may be of different types (e.g, pilot2 has merge_samples and
-  //      pilot2 readers), and it's possible that we don't want to use
-  //      data store for one of these (possibly because the code
-  //      has not been written. @todo revisit in future: should this
-  //      be considered an error condition with thrown exception?
-  if (the_reader == nullptr) {
-    if (m_master) {
-      std::cerr << "WARNING: " << __FILE__ << " " << __LINE__
-                << " dynamic_cast<...> failed; NOT using data_store for role: "
-                << get_role() << "\n";
+void generic_data_reader::set_data_store(generic_data_store *g) {
+    if (m_data_store != nullptr) {
+      delete m_data_store;
     }
-    return;
+    m_data_store = g;
+}
+
+void generic_data_reader::init_minibatch() {
+  if (m_data_store != nullptr) {
+    m_data_store->init_minibatch();
   }
-
-  m_data_store->setup();
-
 }
 
 }  // namespace lbann

@@ -61,7 +61,7 @@ lbann_comm::lbann_comm(int ppm, const El::mpi::Comm world) :
   // Don't have argc/argv here, but MPI should already be init'd.
   int argc_dummy = 0;
   char** argv_dummy = nullptr;
-  allreduces::Initialize(argc_dummy, argv_dummy);
+  ::Al::Initialize(argc_dummy, argv_dummy);
 #endif
   // Set up the initial model split
   split_models(procs_per_model);
@@ -72,7 +72,7 @@ lbann_comm::lbann_comm(int ppm, const El::mpi::Comm world) :
   rank_in_node = El::mpi::Rank(node_comm);
 
   // Setup threads
-  setup_threads();  
+  setup_threads();
 }
 
 lbann_comm::~lbann_comm() {
@@ -87,7 +87,7 @@ lbann_comm::~lbann_comm() {
   }
 #ifdef LBANN_HAS_ALUMINUM
   m_al_comms.clear();
-  allreduces::Finalize();
+  ::Al::Finalize();
 #endif
 }
 
@@ -129,7 +129,7 @@ void lbann_comm::split_models(int ppm) {
   grid = new Grid(model_comm);
 }
 
-void lbann_comm::intermodel_sum_matrix(Mat& mat) {
+void lbann_comm::intermodel_sum_matrix(AbsMat& mat) {
   bytes_sent += sizeof(DataType) * mat.Height() * mat.Width();
   El::AllReduce(mat, intermodel_comm, El::mpi::SUM);
   bytes_received += sizeof(DataType) * mat.Height() * mat.Width();
@@ -151,8 +151,8 @@ void lbann_comm::allreduce(AbsDistMat& m,
                           " non-contiguous matrices");
   }
   auto&& comm = get_al_comm(c, t);
-  if (t == std::type_index(typeid(allreduces::MPIBackend))) {
-    allreduces::Allreduce<allreduces::MPIBackend>(
+  if (t == std::type_index(typeid(::Al::MPIBackend))) {
+    ::Al::Allreduce<::Al::MPIBackend>(
       m.Buffer(),
       local_size,
       mpi_op_to_al_op(op),
@@ -160,12 +160,12 @@ void lbann_comm::allreduce(AbsDistMat& m,
   }
   /// @todo MPI-CUDA backend
 #ifdef LBANN_HAS_NCCL2
-  if (t == std::type_index(typeid(allreduces::NCCLBackend))) {
-    allreduces::Allreduce<allreduces::NCCLBackend>(
+  if (t == std::type_index(typeid(::Al::NCCLBackend))) {
+    ::Al::Allreduce<::Al::NCCLBackend>(
       m.Buffer(),
       local_size,
       mpi_op_to_al_op(op),
-      *static_cast<allreduces::NCCLCommunicator*>(comm));
+      *static_cast<::Al::NCCLCommunicator*>(comm));
   }
 #endif // LBANN_HAS_NCCL2
 #else
@@ -187,8 +187,8 @@ void lbann_comm::nb_allreduce(AbsDistMat& m,
                           " non-contiguous matrices");
   }
   auto&& comm = get_al_comm(c, t);
-  if (t == std::type_index(typeid(allreduces::MPIBackend))) {
-    allreduces::NonblockingAllreduce<allreduces::MPIBackend>(
+  if (t == std::type_index(typeid(::Al::MPIBackend))) {
+    ::Al::NonblockingAllreduce<::Al::MPIBackend>(
       m.Buffer(),
       local_size,
       mpi_op_to_al_op(op),
@@ -197,12 +197,12 @@ void lbann_comm::nb_allreduce(AbsDistMat& m,
   }
   /// @todo MPI-CUDA backend
 #ifdef LBANN_HAS_NCCL2
-  if (t == std::type_index(typeid(allreduces::NCCLBackend))) {
-    allreduces::NonblockingAllreduce<allreduces::NCCLBackend>(
+  if (t == std::type_index(typeid(::Al::NCCLBackend))) {
+    ::Al::NonblockingAllreduce<::Al::NCCLBackend>(
       m.Buffer(),
       local_size,
       mpi_op_to_al_op(op),
-      *static_cast<allreduces::NCCLCommunicator*>(comm),
+      *static_cast<::Al::NCCLCommunicator*>(comm),
       req.nccl_req);
   }
 #endif // LBANN_HAS_NCCL2
@@ -215,12 +215,12 @@ void lbann_comm::nb_allreduce(AbsDistMat& m,
 void lbann_comm::wait(Al::request& req) {
 #ifdef LBANN_HAS_ALUMINUM
   if (req.mpi_req != Al::mpi_backend::null_req) {
-    allreduces::Wait<allreduces::MPIBackend>(req.mpi_req);
+    ::Al::Wait<::Al::MPIBackend>(req.mpi_req);
   }
   /// @todo MPI-CUDA backend
 #ifdef LBANN_HAS_NCCL2
   if (req.nccl_req != Al::nccl_backend::null_req) {
-    allreduces::Wait<allreduces::NCCLBackend>(req.nccl_req);
+    ::Al::Wait<::Al::NCCLBackend>(req.nccl_req);
   }
 #endif // LBANN_HAS_NCCL2
 #endif // LBANN_HAS_ALUMINUM
@@ -230,24 +230,31 @@ bool lbann_comm::test(Al::request& req) {
   bool req_test = true;
 #ifdef LBANN_HAS_ALUMINUM
   if (req.mpi_req != Al::mpi_backend::null_req) {
-    req_test = req_test && allreduces::Test<allreduces::MPIBackend>(req.mpi_req);
+    req_test = req_test && ::Al::Test<::Al::MPIBackend>(req.mpi_req);
   }
   /// @todo MPI-CUDA backend
 #ifdef LBANN_HAS_NCCL2
   if (req.nccl_req != Al::nccl_backend::null_req) {
-    req_test = req_test && allreduces::Test<allreduces::NCCLBackend>(req.nccl_req);
+    req_test = req_test && ::Al::Test<::Al::NCCLBackend>(req.nccl_req);
   }
 #endif // LBANN_HAS_NCCL2
 #endif // LBANN_HAS_ALUMINUM
   return req_test;
 }
 
-void lbann_comm::intermodel_broadcast_matrix(Mat& mat, int root) {
+void lbann_comm::intermodel_broadcast_matrix(AbsMat& mat, int root) {
   El::Broadcast(mat, intermodel_comm, root);
 }
 
 void lbann_comm::intermodel_broadcast_matrix(AbsDistMat& mat, int root) {
   El::Broadcast(mat, intermodel_comm, root);
+}
+
+template<>
+void lbann_comm::broadcast<std::string>(const int root, std::string& str, const El::mpi::Comm c) {
+  std::vector<char> data(str.begin(), str.end());
+  broadcast(root, data, c);
+  str.assign(data.begin(), data.end());
 }
 
 void lbann_comm::intermodel_barrier() {
@@ -269,7 +276,7 @@ void lbann_comm::barrier(const El::mpi::Comm c) {
   El::mpi::Barrier(c);
 }
 
-void lbann_comm::send(const Mat& mat, int model, int rank) {
+void lbann_comm::send(const AbsMat& mat, int model, int rank) {
   send(mat.LockedBuffer(), mat.Height() * mat.Width(), model, rank);
 }
 
@@ -277,7 +284,7 @@ void lbann_comm::send(const DistMat& mat, int model, int rank) {
   send(mat.LockedBuffer(), mat.LocalHeight() * mat.LocalWidth(), model, rank);
 }
 
-void lbann_comm::nb_send(const Mat& mat, int model, int rank,
+void lbann_comm::nb_send(const AbsMat& mat, int model, int rank,
                          El::mpi::Request<DataType>& req) {
   nb_send(mat.LockedBuffer(), mat.Height() * mat.Width(), model, rank, req);
 }
@@ -288,7 +295,7 @@ void lbann_comm::nb_send(const DistMat& mat, int model, int rank,
           rank, req);
 }
 
-void lbann_comm::recv(Mat& mat, int model, int rank) {
+void lbann_comm::recv(AbsMat& mat, int model, int rank) {
   recv(mat.Buffer(), mat.Height() * mat.Width(), model, rank);
 }
 
@@ -296,7 +303,7 @@ void lbann_comm::recv(DistMat& mat, int model, int rank) {
   recv(mat.Buffer(), mat.LocalHeight() * mat.LocalWidth(), model, rank);
 }
 
-void lbann_comm::recv(Mat& mat) {
+void lbann_comm::recv(AbsMat& mat) {
   recv(mat.Buffer(), mat.Height() * mat.Width());
 }
 
@@ -304,7 +311,7 @@ void lbann_comm::recv(DistMat& mat) {
   recv(mat.Buffer(), mat.LocalHeight() * mat.LocalWidth());
 }
 
-void lbann_comm::nb_recv(Mat& mat, int model, int rank,
+void lbann_comm::nb_recv(AbsMat& mat, int model, int rank,
                          El::mpi::Request<DataType>& req) {
   nb_recv(mat.Buffer(), mat.Height() * mat.Width(), model, rank, req);
 }
@@ -314,7 +321,7 @@ void lbann_comm::nb_recv(DistMat& mat, int model, int rank,
   nb_recv(mat.Buffer(), mat.LocalHeight() * mat.LocalWidth(), model, rank, req);
 }
 
-void lbann_comm::nb_recv(Mat& mat, El::mpi::Request<DataType>& req) {
+void lbann_comm::nb_recv(AbsMat& mat, El::mpi::Request<DataType>& req) {
   nb_recv(mat.Buffer(), mat.Height() * mat.Width(), req);
 }
 
@@ -323,10 +330,10 @@ void lbann_comm::nb_recv(DistMat& mat, El::mpi::Request<DataType>& req) {
 }
 
 void lbann_comm::intermodel_allreduce(
-  Mat& mat, int max_recv_count,
-  std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)> send_transform,
-  std::function<int(uint8_t *, Mat&)> recv_transform,
-  std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
+  AbsMat& mat, int max_recv_count,
+  std::function<uint8_t *(AbsMat&, El::IR, El::IR, int&, bool, int)> send_transform,
+  std::function<int(uint8_t *, AbsMat&)> recv_transform,
+  std::function<int(uint8_t *, AbsMat&, bool)> recv_apply_transform,
   const lbann_comm::allreduce_options opts) {
   // Determine which algorithm to actually use.
   lbann_comm::allreduce_algorithm algo = opts.algo;
@@ -351,17 +358,17 @@ void lbann_comm::intermodel_allreduce(
       send_transform, recv_apply_transform, opts);
     break;
   case allreduce_algorithm::PAIRWISE_EXCHANGE_RING:
-    pe_ring_allreduce(
+    pe_ring_allreduce<El::Device::CPU>(
       intermodel_comm, mat, max_recv_count, send_transform,
       recv_transform, recv_apply_transform, opts);
     break;
   case allreduce_algorithm::RING:
-    ring_allreduce(
+    ring_allreduce<El::Device::CPU>(
       intermodel_comm, mat, max_recv_count, send_transform,
       recv_transform, recv_apply_transform, opts);
     break;
   case allreduce_algorithm::RABENSEIFNER:
-    rabenseifner_allreduce(
+    rabenseifner_allreduce<El::Device::CPU>(
       intermodel_comm, mat, max_recv_count, send_transform,
       recv_transform, recv_apply_transform, opts);
     break;
@@ -374,9 +381,9 @@ void lbann_comm::intermodel_allreduce(
 }
 
 void lbann_comm::recursive_doubling_allreduce_pow2(
-  const El::mpi::Comm comm, Mat& mat, int max_recv_count,
-  std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)> send_transform,
-  std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
+  const El::mpi::Comm comm, AbsMat& mat, int max_recv_count,
+  std::function<uint8_t *(AbsMat&, El::IR, El::IR, int&, bool, int)> send_transform,
+  std::function<int(uint8_t *, AbsMat&, bool)> recv_apply_transform,
   const lbann_comm::allreduce_options opts) {
   double ar_start = get_time();
   const int rank = El::mpi::Rank(comm);
@@ -430,11 +437,12 @@ void lbann_comm::recursive_doubling_allreduce_pow2(
   ar_time += get_time() - ar_start;
 }
 
+template <El::Device D>
 void lbann_comm::pe_ring_allreduce(
-  const El::mpi::Comm comm, Mat& mat, int max_recv_count,
-  std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)> send_transform,
-  std::function<int(uint8_t *, Mat&)> recv_transform,
-  std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
+  const El::mpi::Comm comm, DMat<D>& mat, int max_recv_count,
+  std::function<uint8_t *(AbsMat&, El::IR, El::IR, int&, bool, int)> send_transform,
+  std::function<int(uint8_t *, AbsMat&)> recv_transform,
+  std::function<int(uint8_t *, AbsMat&, bool)> recv_apply_transform,
   const lbann_comm::allreduce_options opts) {
   double ar_start = get_time();
   const int rank = El::mpi::Rank(comm);
@@ -460,7 +468,7 @@ void lbann_comm::pe_ring_allreduce(
   }
   // Local slice of our accumulated data.
   auto accum_view = mat(El::ALL, El::IR(slice_ends[rank] - slice_lengths[rank],
-                                    slice_ends[rank]));
+                                        slice_ends[rank]));
   // Do a pairwise-exchange reduce-scatter.
   double rs_start = get_time();
   for (int outer_step = 1;
@@ -650,11 +658,12 @@ void lbann_comm::pe_ring_allreduce(
   ar_time += get_time() - ar_start;
 }
 
+template <El::Device D>
 void lbann_comm::ring_allreduce(
-  const El::mpi::Comm comm, Mat& mat, int max_recv_count,
-  std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)> send_transform,
-  std::function<int(uint8_t *, Mat&)> recv_transform,
-  std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
+  const El::mpi::Comm comm, DMat<D>& mat, int max_recv_count,
+  std::function<uint8_t *(AbsMat&, El::IR, El::IR, int&, bool, int)> send_transform,
+  std::function<int(uint8_t *, AbsMat&)> recv_transform,
+  std::function<int(uint8_t *, AbsMat&, bool)> recv_apply_transform,
   const lbann_comm::allreduce_options opts) {
   double ar_start = get_time();
   const int rank = El::mpi::Rank(comm);
@@ -823,11 +832,12 @@ void lbann_comm::ring_allreduce(
   ar_time += get_time() - ar_start;
 }
 
+template <El::Device D>
 void lbann_comm::rabenseifner_allreduce(
-  const El::mpi::Comm comm, Mat& mat, int max_recv_count,
-  std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)> send_transform,
-  std::function<int(uint8_t *, Mat&)> recv_transform,
-  std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
+  const El::mpi::Comm comm, DMat<D>& mat, int max_recv_count,
+  std::function<uint8_t *(AbsMat&, El::IR, El::IR, int&, bool, int)> send_transform,
+  std::function<int(uint8_t *, AbsMat&)> recv_transform,
+  std::function<int(uint8_t *, AbsMat&, bool)> recv_apply_transform,
   const lbann_comm::allreduce_options opts) {
   double ar_start = get_time();
   const int rank = El::mpi::Rank(comm);
@@ -1084,21 +1094,21 @@ uint8_t *lbann_comm::get_collective_buffer(size_t size, size_t idx) {
 }
 
 #ifdef LBANN_HAS_ALUMINUM
-allreduces::MPICommunicator* lbann_comm::get_al_comm(El::mpi::Comm c,
-                                                     std::type_index t) {
+::Al::MPICommunicator* lbann_comm::get_al_comm(El::mpi::Comm c,
+                                               std::type_index t) {
 
   // Construct Aluminum communicator if needed
   const al_comms_key_type key(c.comm, t);
   if (m_al_comms.count(key) == 0) {
-    if (t == std::type_index(typeid(allreduces::MPIBackend))) {
-      m_al_comms[key] = al_comms_val_type(new allreduces::MPICommunicator(c.comm));
+    if (t == std::type_index(typeid(::Al::MPIBackend))) {
+      m_al_comms[key] = al_comms_val_type(new ::Al::MPICommunicator(c.comm));
     }
     /// @todo MPI-CUDA backend
     #ifdef LBANN_HAS_NCCL2
-    if (t == std::type_index(typeid(allreduces::NCCLBackend))) {
-      auto&& val = new allreduces::NCCLCommunicator(c.comm, get_gpus());
+    if (t == std::type_index(typeid(::Al::NCCLBackend))) {
+      auto&& val = new ::Al::NCCLCommunicator(c.comm, get_gpus());
       m_al_comms[key] = al_comms_val_type(val);
-    }    
+    }
     #endif // LBANN_HAS_NCCL2
   }
 
@@ -1111,19 +1121,23 @@ allreduces::MPICommunicator* lbann_comm::get_al_comm(El::mpi::Comm c,
 
 }
 
-allreduces::ReductionOperator lbann_comm::mpi_op_to_al_op(El::mpi::Op op) {
+::Al::ReductionOperator lbann_comm::mpi_op_to_al_op(El::mpi::Op op) {
   if (op == El::mpi::SUM) {
-    return allreduces::ReductionOperator::sum;
+    return ::Al::ReductionOperator::sum;
   } else if (op == El::mpi::PROD) {
-    return allreduces::ReductionOperator::prod;
+    return ::Al::ReductionOperator::prod;
   } else if (op == El::mpi::MIN) {
-    return allreduces::ReductionOperator::min;
+    return ::Al::ReductionOperator::min;
   } else if (op == El::mpi::MAX) {
-    return allreduces::ReductionOperator::max;
+    return ::Al::ReductionOperator::max;
   } else {
     throw lbann_exception("Reduction operator not supported in Aluminum");
   }
 }
 #endif
+
+void lbann_comm::lbann_comm_abort(std::string msg) {
+  throw lbann_exception(msg);
+}
 
 }  // namespace lbann

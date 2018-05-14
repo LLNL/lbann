@@ -40,7 +40,7 @@ namespace lbann {
  *  and Accurate Deep Network Learning by Exponential Linear Units
  *  (ELUs)" ICLR 2016.
  */
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class elu_layer : public entrywise_activation_layer {
  public:
   /**
@@ -55,6 +55,7 @@ class elu_layer : public entrywise_activation_layer {
   elu_layer* copy() const override { return new elu_layer(*this); }
   std::string get_type() const override { return "ELU"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
  protected:
   DataType activation(DataType z) const override {

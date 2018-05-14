@@ -44,13 +44,6 @@ sgd::sgd(const sgd& other)
     m_nesterov(other.m_nesterov),
     m_velocity(other.m_velocity) {
   if (m_velocity != nullptr) { m_velocity = m_velocity->Copy(); }
-  #ifdef LBANN_HAS_CUDNN
-  if (m_cudnn != nullptr && other.m_weights != nullptr) {
-    const int height = other.m_weights->get_matrix_height();
-    const int width = other.m_weights->get_matrix_width();
-    m_velocity_d = m_cudnn->copy(other.m_velocity_d, height, width);
-  }
-  #endif // LBANN_HAS_CUDNN
 }
 
 sgd& sgd::operator=(const sgd& other) {
@@ -69,26 +62,11 @@ sgd& sgd::operator=(const sgd& other) {
     if (m_velocity != nullptr) { m_velocity = m_velocity->Copy(); }
   }
 
-  // Copy GPU data
-  #ifdef LBANN_HAS_CUDNN
-  if (m_cudnn != nullptr && other.m_weights != nullptr) {
-    const int height = other.m_weights->get_matrix_height();
-    const int width = other.m_weights->get_matrix_width();
-    m_cudnn->deallocate_on_gpus(m_velocity_d);
-    m_velocity_d = m_cudnn->copy(other.m_velocity_d, height, width);
-  }
-  #endif // LBANN_HAS_CUDNN
-
   return *this;
 }
 
 sgd::~sgd() {
   if (m_velocity != nullptr) { delete m_velocity; }
-  #ifdef LBANN_HAS_CUDNN
-  if (m_cudnn != nullptr) {
-    m_cudnn->deallocate_on_gpus(m_velocity_d);
-  }
-  #endif // LBANN_HAS_CUDNN
 }
 
 std::string sgd::get_description() const {
@@ -109,13 +87,6 @@ void sgd::setup(weights& w) {
                                      m_gradient->Root());
   El::Zeros(*m_velocity, height, width);
 
-  // Allocate GPU objects
-  if (m_cudnn != nullptr) {
-#ifdef LBANN_HAS_CUDNN
-    m_cudnn->allocate_on_gpus(m_velocity_d, height, width);
-#endif // LBANN_HAS_CUDNN
-  }
-  
 }
 
 void sgd::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
@@ -125,7 +96,7 @@ void sgd::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
     El::Axpy(-m_learning_rate, gradient, values);
     return;
   }
-  
+
   // Get local matrix data
   const int local_height = values.LocalHeight();
   const int local_width = values.LocalWidth();
@@ -135,7 +106,7 @@ void sgd::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
   const int gradient_ldim = gradient.LDim();
   DataType* __restrict__ velocity_buffer = m_velocity->Buffer();
   const int velocity_ldim = m_velocity->LDim();
-  
+
   // Check if matrix data is contiguous
   if (values_ldim != local_height
       || gradient_ldim != local_height
@@ -183,36 +154,59 @@ void sgd::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
 // Checkpointing
 ////////////////////////////////////////////////////////////
 
-  bool sgd::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
-    optimizer::save_to_checkpoint_shared(p, name_prefix);
-    
-    if(p.get_rank() == 0){
-      pack_scalars(p);
-    }
+bool sgd::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
+  optimizer::save_to_checkpoint_shared(p, name_prefix);
 
-    char l_name[512];
-    sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->Height(), m_velocity->Width());
-    p.write_distmat(persist_type::train, l_name, (DistMat *)m_velocity);
-    
-    return true;
+  if (m_comm->am_model_master()) {
+    pack_scalars(p);
   }
 
-  bool sgd::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
-    optimizer::load_from_checkpoint_shared(p, name_prefix);
-    struct packing_header header;
-    if (p.get_rank() == 0) {
-      unpack_scalars(p, &header);
-    }
-    
-    MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
+  char l_name[512];
+  sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->Height(), m_velocity->Width());
+  p.write_distmat(persist_type::train, l_name, m_velocity);
 
-    unpack_header(header);
-    char l_name[512];
-    
-    sprintf(l_name, "%s_optimizer_velocity_%lldx%lld.bin", name_prefix.c_str(), m_velocity->Height(), m_velocity->Width());
-    p.read_distmat(persist_type::train, l_name, (DistMat *)m_velocity);
-    
-    return true;
+  return true;
+}
+
+bool sgd::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
+  optimizer::load_from_checkpoint_shared(p, name_prefix);
+  struct packing_header header;
+  if (m_comm->am_model_master()) {
+    unpack_scalars(p, &header);
   }
+
+  m_comm->model_broadcast(0, header);
+
+  unpack_header(header);
+  char l_name[512];
+  sprintf(l_name, "%s_optimizer_velocity_%lldx%lld.bin", name_prefix.c_str(), m_velocity->Height(), m_velocity->Width());
+  p.read_distmat(persist_type::train, l_name, m_velocity);
+
+  return true;
+}
+
+bool sgd::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
+  optimizer::save_to_checkpoint_distributed(p, name_prefix);
+
+  pack_scalars(p);
+
+  char l_name[512];
+  sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->LocalHeight(), m_velocity->LocalWidth());
+  p.write_rank_distmat(persist_type::train, l_name, *m_velocity);
+
+  return true;
+}
+
+bool sgd::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
+  optimizer::load_from_checkpoint_distributed(p, name_prefix);
+  struct packing_header header;
+  unpack_scalars(p, &header);
+
+  char l_name[512];
+  sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->LocalHeight(), m_velocity->LocalWidth());
+  p.read_rank_distmat(persist_type::train, l_name, *m_velocity);
+
+  return true;
+}
 
 }  // namespace lbann

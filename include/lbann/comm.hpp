@@ -38,10 +38,11 @@
 #endif // LBANN_HAS_CUDA
 #ifdef LBANN_HAS_ALUMINUM
 #ifdef LBANN_HAS_NCCL2
-#define ALUMINUM_HAS_NCCL
+#define AL_HAS_NCCL
 #endif // LBANN_HAS_ALUMINUM
-#include <allreduce.hpp>
+#include <Al.hpp>
 #endif // LBANN_HAS_ALUMINUM
+#include "detect_El_mpi.hpp"
 
 namespace lbann {
 
@@ -56,13 +57,13 @@ public:
 
 // Define aliases for Aluminum backends
 #ifdef LBANN_HAS_ALUMINUM
-using mpi_backend = ::allreduces::MPIBackend;
+using mpi_backend = ::Al::MPIBackend;
 #else
 using mpi_backend = lbann::Al::dummy_backend;
 #endif // LBANN_HAS_ALUMINUM
 /// @todo MPI-CUDA backend
 #if defined(LBANN_HAS_ALUMINUM) && defined(LBANN_HAS_NCCL2)
-using nccl_backend = ::allreduces::NCCLBackend;
+using nccl_backend = ::Al::NCCLBackend;
 #else
 using nccl_backend = lbann::Al::dummy_backend;
 #endif // defined(LBANN_HAS_ALUMINUM) && defined(LBANN_HAS_NCCL2)
@@ -175,7 +176,7 @@ class lbann_comm {
                      rank) != world_ranks_on_node.end();
   }
 
-  /** Get default number of threads per process. 
+  /** Get default number of threads per process.
    *  This is the number of OpenMP threads to use for parallel
    *  regions, provided omp_set_num_threads has not been called or the
    *  num_threads directive has not been provided.
@@ -188,60 +189,155 @@ class lbann_comm {
   void reset_threads();
 
   /** Perform a sum reduction of mat over the inter-model communicator. */
-  void intermodel_sum_matrix(Mat& mat);
+  void intermodel_sum_matrix(AbsMat& mat);
   void intermodel_sum_matrix(AbsDistMat& mat);
   /** Broadcast mat over the inter-model communicator starting from root. */
-  void intermodel_broadcast_matrix(Mat& mat, int root);
+  void intermodel_broadcast_matrix(AbsMat& mat, int root);
   void intermodel_broadcast_matrix(AbsDistMat& mat, int root);
+
+  /// Broadcast a scalar value over an arbitrary communicator
+  template < typename T, bool S = is_instantiated_El_mpi_type<T>::value >
+  void broadcast(int root, T& val, const El::mpi::Comm c);
+
+  template <typename T>
+  void broadcast_custom(int root, T& val, const El::mpi::Comm c) const;
+  template <typename T>
+  void broadcast_native(int root, T& val, const El::mpi::Comm c) const;
+
+  /// World broadcast of a scalar.
+  template <typename T>
+  void world_broadcast(int root, T& val) {
+    broadcast(root, val, get_world_comm());
+  }
+  /// Inter-model broadcast of a scalar.
+  template <typename T>
+  void intermodel_broadcast(int root, T& val) {
+    broadcast(root, val, get_intermodel_comm());
+  }
+  /// Within-model broadcast of a scalar.
+  template <typename T>
+  void model_broadcast(int root, T& val) {
+    broadcast(root, val, get_model_comm());
+  }
+
   /**
-   * Inter-model broadcast, returns the broadcast value.
-   * Root process specifies root and val, other processes just root.
+   * Broadcast a buffer over an arbitrary communicator assuming that
+   * the buffer space is already allocated.
+   */
+  template < typename T, bool S = is_instantiated_El_mpi_type<T>::value >
+  void broadcast(const int root, T* data, const int count, const El::mpi::Comm c);
+
+  /// World broadcast of a buffer.
+  template <typename T>
+  void world_broadcast(const int root, T* data, const int count) {
+    broadcast(root, data, count, get_world_comm());
+  }
+  /// Inter-model broadcast of a buffer.
+  template <typename T>
+  void intermodel_broadcast(const int root, T* data, const int count) {
+    broadcast(root, data, count, get_intermodel_comm());
+  }
+  /// Within-model broadcast of a buffer.
+  template <typename T>
+  void model_broadcast(const int root, T* data, const int count) {
+    broadcast(root, data, count, get_model_comm());
+  }
+
+  /**
+   * Resize vector<> over an arbitrary communicator to match the one on root.
    */
   template <typename T>
-  T intermodel_broadcast(int root, T val = {}) {
-    El::mpi::Broadcast(&val, 1, root, intermodel_comm);
-    if (get_rank_in_model() == root) {
-      bytes_sent += sizeof(T);
-    } else {
-      bytes_received += sizeof(T);
+  size_t resize(const int root, std::vector<T> &data, const El::mpi::Comm c) {
+    size_t count = data.size();
+    El::mpi::Broadcast(&count, 1, root, c);
+    count_bytes_broadcast(sizeof(size_t), El::mpi::Rank(c), root);
+    data.resize(count);
+    return count;
+  }
+
+  /**
+   * Broadcast vector<> over an arbitrary communicator;
+   * vector<> for non-root processes will be resized as needed.
+   */
+  template <typename T>
+  void broadcast(const int root, std::vector<T> &data, const El::mpi::Comm c) {
+    const int count = static_cast<int>(resize(root, data, c));
+    if (count <= 0) {
+      return;
     }
-    return val;
+    broadcast<T>(root, data.data(), count, c);
+  }
+  /// Broadcast vector<> to world.
+  template <typename T>
+  void world_broadcast(int root, std::vector<T> &data) {
+    broadcast(root, data, get_world_comm());
   }
   /**
-   * Within-model broadcast, returns the broadcast value.
-   * Root process specifies root and val, other processes just root.
+   * Broadcast vector<> within model;
+   * vector<> for non-root processes will be resized as needed.
    */
+  /// Broadcast vector<> across models.
   template <typename T>
-  T model_broadcast(int root, T val = {}) {
-    El::mpi::Broadcast(&val, 1, root, model_comm);
-    if (get_rank_in_model() == root) {
-      bytes_sent += sizeof(T);
+  void intermodel_broadcast(int root, std::vector<T> &data) {
+    broadcast(root, data, get_intermodel_comm());
+  }
+  /// Broadcast vector<> within model.
+  template <typename T>
+  void model_broadcast(int root, std::vector<T> &data) {
+    broadcast(root, data, get_model_comm());
+  }
+
+  /**
+   * Keep track of the number of broadcast bytes transmitted and received
+   */
+  void count_bytes_broadcast(const size_t bytes, const int rank, const int root) {
+    if (rank == root) {
+      bytes_sent += bytes;
     } else {
-      bytes_received += sizeof(T);
+      bytes_received += bytes;
     }
-    return val;
   }
-  /**
-   * Broadcast over an arbitrary communicator, returns the broadcast value
-   * (for non-root processes).
+
+  /** 
+   * Allgatherv over an arbitrary communicator;
+   * all vectors must be correctly sized prior to entry.
    */
   template <typename T>
-  T broadcast(int root, const El::mpi::Comm c) {
-    T val = {};
-    El::mpi::Broadcast(&val, 1, root, c);
-    bytes_received += sizeof(T);
-    return val;
+  void all_gather(std::vector<T> &src, std::vector<T> &rcs, std::vector<int> &rcv_counts, std::vector<int> &rcv_disp, El::mpi::Comm c) {
+    if (src.size() == 0) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+              << "all_gather for vector<>: vector.size() == 0;\n"
+              << "this doesn't work!";
+      lbann_comm_abort(err.str());
+    }
+    El::mpi::AllGather<T>(src.data(), src.size(), rcs.data(), rcv_counts.data(), rcv_disp.data(), c);
   }
-  /**
-   * Broadcast over an arbitrary communicator, returns the broadcast value
-   * (for root processes).
+  /** 
+   * Allgatherv over a model communicator;
+   * all vectors must be correctly sized prior to entry.
    */
   template <typename T>
-  T broadcast(int root, T val, const El::mpi::Comm c) {
-    El::mpi::Broadcast(&val, 1, root, c);
-    bytes_sent += sizeof(T);
-    return val;
+  void model_all_gather(std::vector<T> &src, std::vector<T> &rcs, std::vector<int> &rcv_counts, std::vector<int> &rcv_disp, const El::mpi::Comm c) {
+    all_gather(src, rcs, rcv_counts, rcv_disp, get_model_comm());
   }
+  /** 
+   * Allgather for a single element over an arbitrary communicator;
+   * std::vector<T> &data must be correctly sized prior to entry.
+   */
+  template <typename T>
+  void all_gather(T &src, std::vector<T> &data, const El::mpi::Comm c) {
+    El::mpi::AllGather(&src, 1, data.data(), 1, c);
+  }
+  /** 
+   * Allgather for a single element over the model communicator;
+   * std::vector<T> &data must be correctly sized prior to entry.
+   */
+  template <typename T>
+  void model_all_gather(T &src, std::vector<T> &data) {
+    all_gather(src, data, get_model_comm());
+  }
+
   /** Within-model scalar gather (for non-root processes). */
   template <typename T>
   void model_gather(T snd, int root) {
@@ -428,11 +524,11 @@ class lbann_comm {
     bytes_sent += count * sizeof(T);
 #ifdef LBANN_HAS_ALUMINUM
 #ifdef LBANN_ALUMINUM_MPI_PASSTHROUGH
-    allreduces::AllreduceAlgorithm algo = allreduces::AllreduceAlgorithm::mpi_passthrough;
+    ::Al::AllreduceAlgorithm algo = ::Al::AllreduceAlgorithm::mpi_passthrough;
 #else
-    allreduces::AllreduceAlgorithm algo = allreduces::AllreduceAlgorithm::automatic;
+    ::Al::AllreduceAlgorithm algo = ::Al::AllreduceAlgorithm::automatic;
 #endif
-    allreduces::Allreduce<allreduces::MPIBackend>(
+    ::Al::Allreduce<::Al::MPIBackend>(
       snd, rcv, count, mpi_op_to_al_op(op), *get_al_comm(c), algo);
 #else
     El::mpi::AllReduce(snd, rcv, count, op, c);
@@ -445,11 +541,11 @@ class lbann_comm {
     bytes_sent += count * sizeof(T);
 #ifdef LBANN_HAS_ALUMINUM
 #ifdef LBANN_ALUMINUM_MPI_PASSTHROUGH
-    allreduces::AllreduceAlgorithm algo = allreduces::AllreduceAlgorithm::mpi_passthrough;
+    ::Al::AllreduceAlgorithm algo = ::Al::AllreduceAlgorithm::mpi_passthrough;
 #else
-    allreduces::AllreduceAlgorithm algo = allreduces::AllreduceAlgorithm::automatic;
+    ::Al::AllreduceAlgorithm algo = ::Al::AllreduceAlgorithm::automatic;
 #endif
-    allreduces::Allreduce<allreduces::MPIBackend>(
+    ::Al::Allreduce<::Al::MPIBackend>(
       data, count, mpi_op_to_al_op(op), *get_al_comm(c), algo);
 #else
     El::mpi::AllReduce(data, count, op, c);
@@ -481,12 +577,18 @@ class lbann_comm {
 #ifdef LBANN_HAS_ALUMINUM
     bytes_sent += count * sizeof(T);
     req.mpi_req = Al::mpi_backend::null_req;
-    allreduces::NonblockingAllreduce<allreduces::MPIBackend>(
+    ::Al::NonblockingAllreduce<::Al::MPIBackend>(
       data, count, mpi_op_to_al_op(op), *get_al_comm(c), req.mpi_req);
     bytes_received += count * sizeof(T) * (El::mpi::Size(c) - 1);
 #else
     allreduce(data, count, c, op);
 #endif  // LBANN_HAS_ALUMINUM
+  }
+
+  /** Wait for a all non-blocking requests to complete. */
+  template <typename T>
+  void wait_all(std::vector<El::mpi::Request<T>>& req) {
+    El::mpi::WaitAll(req.size(), req.data());
   }
 
   /** Wait for a non-blocking request to complete. */
@@ -518,9 +620,9 @@ class lbann_comm {
   template <typename T> void send(const T *data, int count, int model) {
     send(data, count, model, rank_in_model);
   }
-  void send(const Mat& mat, int model, int rank);
+  void send(const AbsMat& mat, int model, int rank);
   void send(const DistMat& mat, int model, int rank);
-  void send(const Mat& mat, int model) {
+  void send(const AbsMat& mat, int model) {
     send(mat, model, rank_in_model);
   }
   void send(const DistMat& mat, int model) {
@@ -534,15 +636,21 @@ class lbann_comm {
     bytes_sent += sizeof(T) * count;
     El::mpi::ISend(data, count, get_world_rank(model, rank), get_world_comm(), req);
   }
+  template <typename T>
+  void nb_tagged_send(const T *data, int count, int rank, int tag,
+               El::mpi::Request<T>& req, const El::mpi::Comm c) {
+    bytes_sent += sizeof(T) * count;
+    El::mpi::TaggedISend(data, count, rank, tag, c, req);
+  }
   template <typename T> void nb_send(const T *data, int count, int model,
                                      El::mpi::Request<T>& req) {
     nb_send(data, count, model, rank_in_model, req);
   }
-  void nb_send(const Mat& mat, int model, int rank,
+  void nb_send(const AbsMat& mat, int model, int rank,
                El::mpi::Request<DataType>& req);
   void nb_send(const DistMat& mat, int model, int rank,
                El::mpi::Request<DataType>& req);
-  void nb_send(const Mat& mat, int model, El::mpi::Request<DataType>& req) {
+  void nb_send(const AbsMat& mat, int model, El::mpi::Request<DataType>& req) {
     nb_send(mat, model, rank_in_model, req);
   }
   void nb_send(const DistMat& mat, int model, El::mpi::Request<DataType>& req) {
@@ -557,9 +665,9 @@ class lbann_comm {
   template <typename T> void recv(T *data, int count, int model) {
     recv(data, count, model, rank_in_model);
   }
-  void recv(Mat& mat, int model, int rank);
+  void recv(AbsMat& mat, int model, int rank);
   void recv(DistMat& mat, int model, int rank);
-  void recv(Mat& mat, int model) {
+  void recv(AbsMat& mat, int model) {
     recv(mat, model, rank_in_model);
   }
   void recv(DistMat& mat, int model) {
@@ -570,7 +678,7 @@ class lbann_comm {
     El::mpi::Recv(data, count, El::mpi::ANY_SOURCE, get_world_comm());
     bytes_received += sizeof(T) * count;
   }
-  void recv(Mat& mat);
+  void recv(AbsMat& mat);
   void recv(DistMat& mat);
 
   /** Corresponding non-blocking receives. */
@@ -580,13 +688,20 @@ class lbann_comm {
                req);
     bytes_received += sizeof(T) * count;
   }
+  template <typename T> void nb_tagged_recv(
+               T *data, int count, int rank, int tag,
+               El::mpi::Request<T>& req, const El::mpi::Comm c) {
+    El::mpi::TaggedIRecv(data, count, rank, tag, c, req);
+    bytes_received += sizeof(T) * count;
+  }
+
   template <typename T> void nb_recv(T *data, int count, int model,
                                      El::mpi::Request<T>& req) {
     nb_recv(data, count, model, rank_in_model, req);
   }
-  void nb_recv(Mat& mat, int model, int rank, El::mpi::Request<DataType>& req);
+  void nb_recv(AbsMat& mat, int model, int rank, El::mpi::Request<DataType>& req);
   void nb_recv(DistMat& mat, int model, int rank, El::mpi::Request<DataType>& req);
-  void nb_recv(Mat& mat, int model, El::mpi::Request<DataType>& req) {
+  void nb_recv(AbsMat& mat, int model, El::mpi::Request<DataType>& req) {
     nb_recv(mat, model, rank_in_model, req);
   }
   void nb_recv(DistMat& mat, int model, El::mpi::Request<DataType>& req) {
@@ -596,7 +711,7 @@ class lbann_comm {
     El::mpi::IRecv(data, count, El::mpi::ANY_SOURCE, get_world_comm(), req);
     bytes_received += sizeof(T) * count;
   }
-  void nb_recv(Mat& mat, El::mpi::Request<DataType>& req);
+  void nb_recv(AbsMat& mat, El::mpi::Request<DataType>& req);
   void nb_recv(DistMat& mat, El::mpi::Request<DataType>& req);
 
   /** Send/recv to/from ranks. */
@@ -747,7 +862,7 @@ class lbann_comm {
   }
 
   /** Return true if mat can be transmitted. */
-  static inline bool is_sendable(const Mat& mat) {
+  static inline bool is_sendable(const AbsMat& mat) {
     // This assumes we do not transmit mat with a datatype smaller than
     // DataType.
     // MPI uses "int" as its count type; do calculations with larger ints.
@@ -827,10 +942,10 @@ class lbann_comm {
    * @param options Various allreduce options.
    */
   void intermodel_allreduce(
-    Mat& mat, int max_recv_count,
-    std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)> send_transform,
-    std::function<int(uint8_t *, Mat&)> recv_transform,
-    std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
+    AbsMat& mat, int max_recv_count,
+    std::function<uint8_t *(AbsMat&, El::IR, El::IR, int&, bool, int)> send_transform,
+    std::function<int(uint8_t *, AbsMat&)> recv_transform,
+    std::function<int(uint8_t *, AbsMat&, bool)> recv_apply_transform,
     const allreduce_options opts);
 
   /**
@@ -838,9 +953,9 @@ class lbann_comm {
    * This implementation only works for a power-of-2 number of processes.
    */
   void recursive_doubling_allreduce_pow2(
-    const El::mpi::Comm comm, Mat& mat, int max_recv_count,
-    std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)> send_transform,
-    std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
+    const El::mpi::Comm comm, AbsMat& mat, int max_recv_count,
+    std::function<uint8_t *(AbsMat&, El::IR, El::IR, int&, bool, int)> send_transform,
+    std::function<int(uint8_t *, AbsMat&, bool)> recv_apply_transform,
     const allreduce_options opts);
 
   /**
@@ -849,32 +964,35 @@ class lbann_comm {
    * @param num_reduces If >1, performs up to num_reduces reduces concurrently
    * in the reduce-scatter phase.
    */
+  template <El::Device D>
   void pe_ring_allreduce(
-    const El::mpi::Comm comm, Mat& mat, int max_recv_count,
-    std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)> send_transform,
-    std::function<int(uint8_t *, Mat&)> recv_transform,
-    std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
+                         const El::mpi::Comm comm, DMat<D>& mat, int max_recv_count,
+    std::function<uint8_t *(AbsMat&, El::IR, El::IR, int&, bool, int)> send_transform,
+    std::function<int(uint8_t *, AbsMat&)> recv_transform,
+    std::function<int(uint8_t *, AbsMat&, bool)> recv_apply_transform,
     const allreduce_options opts);
 
   /**
    * An allreduce using ring-based reduce-scatter and allgather.
    */
+  template <El::Device D>
   void ring_allreduce(
-    const El::mpi::Comm comm, Mat& mat, int max_recv_count,
-    std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)> send_transform,
-    std::function<int(uint8_t *, Mat&)> recv_transform,
-    std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
+    const El::mpi::Comm comm, DMat<D>& mat, int max_recv_count,
+    std::function<uint8_t *(AbsMat&, El::IR, El::IR, int&, bool, int)> send_transform,
+    std::function<int(uint8_t *, AbsMat&)> recv_transform,
+    std::function<int(uint8_t *, AbsMat&, bool)> recv_apply_transform,
     const allreduce_options opts);
 
   /**
    * An allreduce using a recursive-halving reduce-scatter followed by a
    * recursive-doubling allgather.
    */
+  template <El::Device D>
   void rabenseifner_allreduce(
-    const El::mpi::Comm comm, Mat& mat, int max_recv_count,
-    std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)> send_transform,
-    std::function<int(uint8_t *, Mat&)> recv_transform,
-    std::function<int(uint8_t *, Mat&, bool)> recv_apply_transform,
+    const El::mpi::Comm comm, DMat<D>& mat, int max_recv_count,
+    std::function<uint8_t *(AbsMat&, El::IR, El::IR, int&, bool, int)> send_transform,
+    std::function<int(uint8_t *, AbsMat&)> recv_transform,
+    std::function<int(uint8_t *, AbsMat&, bool)> recv_apply_transform,
     const allreduce_options opts);
 
   /** Return the intermodel communicator. */
@@ -920,6 +1038,9 @@ class lbann_comm {
   }
   #endif // LBANN_HAS_CUDA
 
+  /** throws an lbann_exception **/
+  void lbann_comm_abort(std::string msg);
+
  private:
   /** World communicator. */
   const El::mpi::Comm world_comm;
@@ -945,7 +1066,7 @@ class lbann_comm {
   int rank_in_node;
   /** The list of world ranks that are on this compute node. */
   std::vector<int> world_ranks_on_node;
-  /** Default number of threads per process. 
+  /** Default number of threads per process.
    *  This is the number of OpenMP threads to use for parallel
    *  regions, provided omp_set_num_threads has not been called or the
    *  num_threads directive has not been provided.
@@ -959,7 +1080,7 @@ class lbann_comm {
 
 #ifdef LBANN_HAS_ALUMINUM
   using al_comms_key_type = std::pair<MPI_Comm, std::type_index>;
-  using al_comms_val_type = std::unique_ptr<allreduces::MPICommunicator>;
+  using al_comms_val_type = std::unique_ptr<::Al::MPICommunicator>;
   std::map<al_comms_key_type, al_comms_val_type> m_al_comms;
 
   /** Get an Aluminum communicator.
@@ -968,11 +1089,11 @@ class lbann_comm {
    *  type index t. An Aluminum communicator will be created if
    *  needed.
    */
-  allreduces::MPICommunicator* get_al_comm(
+  ::Al::MPICommunicator* get_al_comm(
     El::mpi::Comm c, std::type_index t = std::type_index(typeid(Al::mpi_backend)));
 
   /** Convert an MPI_Op to an Aluminum reduction operator. */
-  allreduces::ReductionOperator mpi_op_to_al_op(El::mpi::Op op);
+  ::Al::ReductionOperator mpi_op_to_al_op(El::mpi::Op op);
 #endif
 
   // Various statistics counters.
@@ -1022,6 +1143,43 @@ class lbann_comm {
   uint8_t *get_collective_buffer(size_t size, size_t idx = 0);
 
 };
+
+template <typename T, bool S>
+void lbann_comm::broadcast(int root, T& val, const El::mpi::Comm c) {
+  if (S) {
+    // Avoid linking error from uninstantiated El::mpi routine if !S by converting T to El::byte
+    using TT = typename interpret_as_byte_if_needed<S, T>::type;
+    broadcast_native<TT>(root, reinterpret_cast<TT&>(val), c);
+  } else {
+    broadcast_custom(root, val, c);
+  }
+  count_bytes_broadcast(sizeof(T), El::mpi::Rank(c), root);
 }
+
+template <typename T>
+void lbann_comm::broadcast_native(int root, T& val, const El::mpi::Comm c) const {
+  El::mpi::Broadcast(val, root, c);
+}
+
+template <typename T>
+void lbann_comm::broadcast_custom(int root, T& val, const El::mpi::Comm c) const {
+ const int bytes =  static_cast<int>(sizeof(T));
+ El::mpi::Broadcast<El::byte>(reinterpret_cast<El::byte*>(&val), bytes, root, c);
+}
+
+template <typename T, bool S>
+void lbann_comm::broadcast(const int root, T* data, const int count, const El::mpi::Comm c) {
+  const int size = static_cast<int>(S? count : sizeof(T)*count);
+  // Avoid linking error from uninstantiated El::mpi routine if !S by converting T to El::byte
+  using TT = typename interpret_as_byte_if_needed<S, T>::type;
+  El::mpi::Broadcast<TT>(reinterpret_cast<TT*>(data), size, root, c);
+  count_bytes_broadcast(sizeof(T)*count, El::mpi::Rank(c), root);
+}
+
+/// Broadcast std::string over an arbitrary communicator.
+template<>
+void lbann_comm::broadcast<std::string>(const int root, std::string& str, const El::mpi::Comm c);
+
+} // namespace lbann
 
 #endif  // LBANN_COMM_HPP_INCLUDED

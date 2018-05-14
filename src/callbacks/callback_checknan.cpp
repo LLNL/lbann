@@ -78,7 +78,7 @@ void lbann_callback_checknan::on_batch_end(model *m) {
 }
 
 bool lbann_callback_checknan::is_good(const AbsDistMat& m) {
-  const Mat& lm = m.LockedMatrix();
+  const AbsMat& lm = m.LockedMatrix();
   const El::Int height = lm.Height();
   const El::Int width = lm.Width();
   for (El::Int col = 0; col < width; ++col) {

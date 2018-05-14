@@ -78,8 +78,10 @@ lbann_callback* construct_callback(lbann_comm* comm,
   if (proto_cb.has_save_images()) {
     const auto& params = proto_cb.save_images();
     auto&& reader = data_readers[execution_mode::training] ;
+    const auto& layer_names = parse_list<>(params.layer_names());
     return new lbann_callback_save_images(reader,
                                           params.image_dir(),
+                                          layer_names,
                                           params.extension());
   }
 
@@ -202,7 +204,9 @@ lbann_callback* construct_callback(lbann_comm* comm,
                                          params.checkpoint_epochs(),
                                          params.checkpoint_steps(),
                                          params.checkpoint_secs(),
-                                         params.checkpoint_per_rank());
+                                         params.per_rank_dir(),
+                                         params.ckpt_dist_epochs(),
+                                         params.ckpt_dist_steps());
   }
   if (proto_cb.has_save_model()) {
     const auto& params = proto_cb.save_model();
@@ -254,8 +258,7 @@ lbann_callback* construct_callback(lbann_comm* comm,
   }
   if (proto_cb.has_dump_weights()) {
     const auto& params = proto_cb.dump_weights();
-    return new lbann_callback_dump_weights(params.basename(),
-                                           params.interval());
+    return new lbann_callback_dump_weights(params.basename());
   }
   if (proto_cb.has_dump_activations()) {
     const auto& params = proto_cb.dump_activations();

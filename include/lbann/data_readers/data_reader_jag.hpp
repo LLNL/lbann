@@ -44,13 +44,15 @@ class data_reader_jag : public generic_data_reader {
   using data_t = double;
   using scalar_t = double;
   using input_t = double;
+
   /**
-   * Mode of modeling.
-   * - Inverse: image to input param
-   * - AutoI: image to image
-   * - AutoS: scalar to scalar  
+   * Dependent/indepdendent variable types
+   * - JAG_Image: simulation output images
+   * - JAG_Scalar: simulation output scalars
+   * - JAG_Input: simulation input parameters
+   * - Undefined: the default
    */
-  enum model_mode_t {Inverse, AutoI, AutoS};
+  enum variable_t {JAG_Image, JAG_Scalar, JAG_Input, Undefined};
 
   data_reader_jag(bool shuffle = true);
   // TODO: copy constructor and assignment operator for deep-copying if needed
@@ -64,8 +66,15 @@ class data_reader_jag : public generic_data_reader {
     return "data_reader_jag";
   }
 
-  /// Set the modeling mode: Inverse, AutoI, or AutoS
-  void set_model_mode(const model_mode_t mm);
+  /// Choose which data to use for independent variable
+  void set_independent_variable_type(const variable_t independent);
+  /// Choose which data to use for dependent variable
+  void set_dependent_variable_type(const variable_t dependent);
+
+  /// Tell which data to use for independent variable
+  variable_t get_independent_variable_type() const;
+  /// Tell which data to use for dependent variable
+  variable_t get_dependent_variable_type() const;
 
   /// Set normalization mode: 0 = none, 1 = dataset-wise, 2 = image-wise
   void set_normalization_mode(int mode);
@@ -111,8 +120,8 @@ class data_reader_jag : public generic_data_reader {
   void save_image(Mat& pixels, const std::string filename, bool do_scale = true) override;
 
  protected:
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
-  bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) override;
 
   /**
    * Load the data in the numpy format file.
@@ -145,14 +154,17 @@ class data_reader_jag : public generic_data_reader {
   data_t get_image_min() const;
 
  protected:
-  /// The current mode of modeling
-  model_mode_t m_model_mode;
+  /// independent variable type
+  variable_t m_independent;
+  /// dependent variable type
+  variable_t m_dependent;
+
   /// Whether image output data have been loaded
-  bool m_image_loaded; 
+  bool m_image_loaded;
   /// Whether scalar output data have been loaded
-  bool m_scalar_loaded; 
+  bool m_scalar_loaded;
   /// Whether simulation input data have been loaded
-  bool m_input_loaded; 
+  bool m_input_loaded;
 
   /// The number of samples
   size_t m_num_samples;
@@ -172,7 +184,7 @@ class data_reader_jag : public generic_data_reader {
   cnpy::NpyArray m_images;
   /// List of jag scalar outputs
   cnpy::NpyArray m_scalars;
-  /// List of jag input 
+  /// List of jag input
   cnpy::NpyArray m_inputs;
 
   /// The smallest pixel value in image data (useful for normalization or visualization)
@@ -180,17 +192,6 @@ class data_reader_jag : public generic_data_reader {
   /// The largest pixel value in image data (useful for normalization or visualization)
   data_t m_img_max;
 };
-
-template<typename T>
-inline void set_minibatch_item(Mat& M, const int mb_idx, const T* const ptr, const size_t count) {
-  if ((count > 0u) && (ptr == nullptr)) {
-    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-                          " :: attempt to dereference a nullptr ");
-  }
-  for (size_t i = 0u; i < count; ++i) {
-    M.Set(static_cast<El::Int>(i), static_cast<El::Int>(mb_idx), static_cast<DataType>(ptr[i]));
-  }
-}
 
 } // end of namespace lbann
 #endif // _DATA_READER_JAG_HPP_

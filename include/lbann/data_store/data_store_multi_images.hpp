@@ -40,8 +40,10 @@ class data_store_multi_images : public data_store_imagenet {
  public:
 
   //! ctor
-  data_store_multi_images(lbann_comm *comm, generic_data_reader *reader, model *m) :
-    data_store_imagenet(comm, reader, m) {}
+  data_store_multi_images(generic_data_reader *reader, model *m) :
+    data_store_imagenet(reader, m) {
+    set_name("data_store_multi_images");
+  }
 
   //! copy ctor
   data_store_multi_images(const data_store_multi_images&) = default;
@@ -61,8 +63,15 @@ class data_store_multi_images : public data_store_imagenet {
   void get_file_sizes() override;
 
   void read_files() override;
+  void read_files(const std::unordered_set<int> &indices) override;
 
-  void setup_extended_testing() override;
+
+  virtual std::vector<std::string> get_sample(size_t idx) const;
+
+  /// for use during development and testing
+  void extended_testing() override;
+
+  void build_data_filepaths() override;
 };
 
 }  // namespace lbann

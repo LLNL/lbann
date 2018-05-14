@@ -98,7 +98,7 @@ void image_data_reader::set_input_params(const int width, const int height, cons
   }
 }
 
-bool image_data_reader::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
+bool image_data_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) {
   const label_t label = m_image_list[data_id].second;
   Y.Set(label, mb_idx, 1);
   return true;

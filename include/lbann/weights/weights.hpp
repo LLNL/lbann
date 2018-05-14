@@ -84,12 +84,12 @@ class weights {
    *  The weight matrix is setup as a (size x 1) matrix in STAR,STAR
    *  format.
    */
-  virtual void setup(int size);
+  virtual void setup(int size, El::Device dev);
   /** Setup weights as a tensor.
    *  The weight matrix is setup as a (prod(dims) x 1) matrix in
    *  STAR,STAR format.
    */
-  virtual void setup(std::vector<int> dims);
+  virtual void setup(std::vector<int> dims, El::Device dev);
   /** Setup weights as a matrix.
    *  The weight matrix is setup as a (matrix_height x matrix_width)
    *  matrix in col_dist,row_dist format.
@@ -97,7 +97,8 @@ class weights {
   virtual void setup(int matrix_height,
                      int matrix_width,
                      El::Distribution col_dist,
-                     El::Distribution row_dist);
+                     El::Distribution row_dist,
+                     El::Device dev);
   /** Setup weights as a matrix with tensor dimensions.
    *  The weight matrix is setup as a (prod(matrix_height_dims) x
    *  prod(matrix_width_dims)) matrix in col_dist,row_dist format.
@@ -105,7 +106,8 @@ class weights {
   virtual void setup(std::vector<int> matrix_height_dims,
                      std::vector<int> matrix_width_dims,
                      El::Distribution col_dist,
-                     El::Distribution row_dist);
+                     El::Distribution row_dist,
+                     El::Device dev);
 
   /** Get weight tensor dimensions.
    *  The dimensions are sorted in decreasing order of the data
@@ -157,9 +159,9 @@ class weights {
   void set_initializer(weights_initializer* initializer);
 
   /** Get weights optimizer. */
-  optimizer* get_optimizer() { return m_optimizer; }
+  optimizer* get_optimizer() { return (m_frozen? nullptr : m_optimizer); }
   /** Get weights optimizer (const). */
-  const optimizer* get_optimizer() const { return m_optimizer; }
+  const optimizer* get_optimizer() const { return (m_frozen? nullptr : m_optimizer); }
   /** Set weights optimizer.
    *  This takes ownership of the optimizer and deallocates it during
    *  destruction.
@@ -167,7 +169,7 @@ class weights {
   void set_optimizer(optimizer* opt);
 
   /** Get the weight matrix. */
-  const AbsDistMat& get_values();
+  AbsDistMat& get_values();
   /** Set the weight matrix. */
   void set_values(const AbsDistMat& values);
 
@@ -184,14 +186,17 @@ class weights {
    */
   void get_values_view(AbsDistMat& values_v);
 
-#ifdef LBANN_HAS_CUDNN
-  /** Get the weight matrix on GPU. */
-  std::vector<DataType*> get_values_gpu();
-#endif // LBANN_HAS_CUDNN
+  void freeze() { m_frozen = true; }
+  void unfreeze() { m_frozen = false; }
+  bool is_frozen() const { return m_frozen; }
 
+  // For checkpointing
   bool save_to_checkpoint_shared(persist& p);
   bool load_from_checkpoint_shared(persist& p);
-  
+  bool load_from_save(std::string ckpt_dir, std::vector<std::string> weight_list);
+  bool save_to_checkpoint_distributed(persist& p);
+  bool load_from_checkpoint_distributed(persist& p);
+
   /** Write weights to proto file */
   virtual void write_proto(lbann_data::WeightsData* proto) const;
  private:
@@ -227,13 +232,8 @@ class weights {
    */
   optimizer* m_optimizer = nullptr;
 
-#ifdef LBANN_HAS_CUDNN
-  /** GPU memory for weights matrix. */
-  std::vector<DataType*> m_values_d;
-#endif // LBANN_HAS_CUDNN
-
-  /** Setup GPU objects for weights. */
-  virtual void setup_gpu();
+  /** Avoid weight update if frozen */
+  bool m_frozen;
 
   /** Get string describing weight tensor dimensions.
    *  height_dims and width_dims are the dimensions of the weight

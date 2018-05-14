@@ -60,7 +60,7 @@ class entrywise_activation_layer : public activation_layer {
   virtual DataType activation_derivative(DataType x) const = 0;
 
   void fp_compute() override {
-    if(this->m_using_gpus) {
+    if(this->using_gpus()) {
       fp_compute_gpu();
     } else {
       fp_compute_cpu();
@@ -68,7 +68,7 @@ class entrywise_activation_layer : public activation_layer {
   }
 
   void bp_compute() override {
-    if(this->m_using_gpus) {
+    if(this->using_gpus()) {
       bp_compute_gpu();
     } else {
       bp_compute_cpu();

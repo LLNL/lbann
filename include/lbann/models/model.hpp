@@ -207,13 +207,18 @@ class model {
   void collect_indices(execution_mode mode);
 
   /** Checkpoint model to given file descriptor, return number of bytes written */
-  virtual bool save_to_checkpoint_shared(persist& p, bool val_end);
+  virtual bool save_to_checkpoint_shared(persist& p);
   /** Restore model by reading checkpoint from given file descriptor, return number of bytes read */
   virtual bool load_from_checkpoint_shared(persist& p);
+
+  virtual bool save_to_checkpoint_distributed(persist& p);
+  virtual bool load_from_checkpoint_distributed(persist& p);
 
   /** Write model to proto file */
   virtual void write_proto(lbann_data::Model* proto);
 
+  /** To make sure copying between host and deivces is complete */
+  void synchronize() const;
 
  protected:
 
@@ -288,6 +293,13 @@ class model {
   virtual void remap_pointers(const std::unordered_map<Layer *,Layer *>& layer_map,
                               const std::unordered_map<weights *,weights *>& weights_map);
 
+  /** In case that a layer is frozen, also freeze layers that precede it if that
+   *  makes senses for the particular model, such as sequential or siamese.
+   *  For othe models, users can manually control the behaivor by indicating
+   *  whether to freeze each layer in the model description prototext.
+   */
+  virtual void freeze_layers_under_frozen_surface();
+
   /** Set up topology of layer graph.
    *  Called in setup function. All layers in connected component of
    *  layer graph are added to the model and all parent/child
@@ -297,7 +309,7 @@ class model {
   /** Set up layer execution order.
    *  Called in setup function.
    */
-  virtual void setup_layer_execution_order() {}
+  virtual void setup_layer_execution_order();
   /** Set up layers.
    *  Called in setup function.
    */

@@ -85,21 +85,26 @@ void lbann::lbann_callback_debug_io::print_fp_start(model *m, generic_input_laye
 
 //  179i @ 300s (=5m*60s) + 1i @ 100s (=5m*45s):offset <- num models
 void lbann::lbann_callback_debug_io::print_phase_start(model *m, execution_mode mode) {
-  const std::vector<Layer *>layers = m->get_layers();
-  auto *input = dynamic_cast<generic_input_layer*>(layers[0]);
-  generic_data_reader *data_reader=input->get_data_reader(mode);
+
+  // Get data reader from first input layer in model
+  generic_data_reader* data_reader = nullptr;
+  for (auto&& l : m->get_layers()) {
+    auto&& input = dynamic_cast<generic_input_layer*>(l);
+    if (input != nullptr) {
+      data_reader = input->get_data_reader(mode);
+      break;
+    }
+  }
+  if (data_reader == nullptr) { return; }
 
   int64_t step;
   switch(mode) {
   case execution_mode::training:
-    step = m->get_cur_step();
-    break;
+    step = m->get_cur_step(); break;
   case execution_mode::validation:
-    step = m->get_cur_validation_step();
-    break;
+    step = m->get_cur_validation_step(); break;
   case execution_mode::testing:
-    step = m->get_cur_testing_step();
-    break;
+    step = m->get_cur_testing_step(); break;
   default:
     throw lbann_exception("Illegal execution mode in evaluate forward prop function");
   }

@@ -28,6 +28,8 @@
 
 #include "lbann/data_readers/data_reader_imagenet_patches.hpp"
 #include "lbann/data_readers/image_utils.hpp"
+#include "lbann/data_store/data_store_imagenet_patches.hpp"
+
 #include <omp.h>
 
 namespace lbann {
@@ -125,15 +127,14 @@ bool imagenet_reader_patches::replicate_processor(const cv_process_patches& pp) 
   return true;
 }
 
-
-std::vector<::Mat> imagenet_reader_patches::create_datum_views(::Mat& X, const int mb_idx) const {
+std::vector<CPUMat> imagenet_reader_patches::create_datum_views(CPUMat& X, const int mb_idx) const {
 /*
   if (X.Height() != get_linearized_data_size()) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " "
                           + get_type() + ": inconsistent number of patches");
   }
 */
-  std::vector<::Mat> X_v(m_num_patches);
+  std::vector<CPUMat> X_v(m_num_patches);
   El::Int h = 0;
   for(int i=0; i < m_num_patches; ++i) {
     El::View(X_v[i], X, El::IR(h, h + m_image_linearized_size), El::IR(mb_idx, mb_idx + 1));
@@ -142,14 +143,20 @@ std::vector<::Mat> imagenet_reader_patches::create_datum_views(::Mat& X, const i
   return X_v;
 }
 
-
-bool imagenet_reader_patches::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+bool imagenet_reader_patches::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
   const std::string imagepath = get_file_dir() + m_image_list[data_id].first;
 
   int width=0, height=0, img_type=0;
-  std::vector<::Mat> X_v = create_datum_views(X, mb_idx);
-
-  const bool ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v);
+  std::vector<CPUMat> X_v = create_datum_views(X, mb_idx);
+  bool ret;
+  if (m_data_store != nullptr) {
+    std::vector<unsigned char> *image_buf;
+    m_data_store->get_data_buf(data_id, image_buf, 0);
+    ret = lbann::image_utils::load_image(*image_buf, width, height, img_type, *(m_pps[tid]), X_v);
+  } else {
+    ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v);
+  }
+    //ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v);
 
   if (m_pps[tid]->is_self_labeling()) {
     m_image_list[data_id].second = m_pps[tid]->get_patch_label();
@@ -167,6 +174,16 @@ bool imagenet_reader_patches::fetch_datum(Mat& X, int data_id, int mb_idx, int t
                           + "x" + std::to_string(CV_MAT_CN(img_type)) + "] != " + std::to_string(m_image_linearized_size));
   }
   return true;
+}
+
+void imagenet_reader_patches::setup_data_store(model *m) {
+  if (m_data_store != nullptr) {
+    delete m_data_store;
+  }
+  m_data_store = new data_store_imagenet_patches(this, m);
+  if (m_data_store != nullptr) {
+    m_data_store->setup();
+  }
 }
 
 }  // namespace lbann

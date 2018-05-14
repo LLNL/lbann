@@ -31,15 +31,17 @@
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/timer.hpp"
 #include <unordered_set>
+#include <omp.h>
 
 namespace lbann {
 
 data_store_pilot2_molecular::data_store_pilot2_molecular(
-  lbann_comm *comm, generic_data_reader *reader, model *m) :
-  generic_data_store(comm, reader, m) { }
+  generic_data_reader *reader, model *m) :
+  generic_data_store(reader, m) {
+  set_name("data_store_pilot2_molecular");
+}
 
 data_store_pilot2_molecular::~data_store_pilot2_molecular() {
-  MPI_Win_free( &m_win );
 }
 
 void data_store_pilot2_molecular::setup() {
@@ -48,8 +50,8 @@ void data_store_pilot2_molecular::setup() {
   m_owner = (int)m_reader->get_compound_rank() == (int)m_rank;
   m_owner_rank = m_reader->get_compound_rank();
 
-  if (m_owner) std::cerr << "starting data_store_pilot2_molecular::setup() for role: " 
-          << m_reader->get_role() << "; owning processor: " << m_owner_rank << std::endl; 
+  if (m_owner) std::cerr << "starting data_store_pilot2_molecular::setup() for role: "
+          << m_reader->get_role() << "; owning processor: " << m_owner_rank << std::endl;
   if (m_owner) std::cerr << "calling generic_data_store::setup()\n";
   generic_data_store::setup();
 
@@ -57,8 +59,8 @@ void data_store_pilot2_molecular::setup() {
     err << __FILE__ << " " << __LINE__ << " :: "
         << "not yet implemented";
     throw lbann_exception(err.str());
-  } 
-  
+  }
+
   else {
     //sanity check
     pilot2_molecular_reader *reader = dynamic_cast<pilot2_molecular_reader*>(m_reader);
@@ -70,19 +72,16 @@ void data_store_pilot2_molecular::setup() {
     m_pilot2_reader = reader;
 
     // get list of indices used in calls to generic_data_reader::fetch_data
-    size_t s2 = 0;
-    for (auto t1 : (*m_minibatch_indices)) {
-      s2 += t1.size();
-    }
-    m_my_minibatch_indices.reserve(s2);
-    for (auto t1 : (*m_minibatch_indices)) {
-      for (auto t2 : t1) {
-        m_my_minibatch_indices.push_back(t2);
-      }
-    }
+    // for this processor
+    get_minibatch_index_vector();
+
+    // get list of indices used in calls to generic_data_reader::fetch_data
+    // for all processors
+    if (m_master) std::cerr << "calling exchange_mb_indices\n";
+    exchange_mb_indices();
 
     // allocate storage for the data that will be passed to the data reader's
-    // fetch_datum method. 
+    // fetch_datum method.
     m_data_buffer.resize(omp_get_max_threads());
     int num_features = m_pilot2_reader->get_num_features();
     int num_neighbors = m_pilot2_reader->get_num_neighbors();
@@ -95,36 +94,20 @@ void data_store_pilot2_molecular::setup() {
       construct_data_store();
     }
 
-    if (m_owner) std::cerr << "calling bcast_offsets()\n";
-    bcast_offsets();
-
     if (m_owner) std::cerr << "calling build_nabor_map()\n";
     build_nabor_map();
-
-#if 0
-    if (m_extended_testing) {
-      if (m_owner) std::cerr << "calling setup_extended_testing\n";
-      setup_extended_testing();
-    }
-#endif
-
-    MPI_Win_create(m_data.data(), m_data.size(), sizeof(double), MPI_INFO_NULL, m_comm->get_model_comm().comm, &m_win);
 
     if (m_owner) std::cerr << "calling exchange_data()\n";
     exchange_data();
   }
 
   if (m_owner) {
-    std::cerr << "data_store_pilot2_molecular::setup time: " << get_time() - tm1 << "\n";
+    std::cerr << "TIME data_store_pilot2_molecular setup: " << get_time() - tm1 << "\n";
   }
 }
 
 void data_store_pilot2_molecular::construct_data_store() {
   std::stringstream err;
-
-  // allocate memory for the data store
-  int num_features = m_pilot2_reader->get_num_features();
-  m_data.resize(m_num_global_indices*num_features, 0.0);
 
   // get the feature and neighbor data from the pilot2_molecular data reader
   if (m_pilot2_reader->get_word_size() == 4) {
@@ -135,110 +118,47 @@ void data_store_pilot2_molecular::construct_data_store() {
   double *features_8 = m_pilot2_reader->get_features_8();
 
   int num_samples_per_frame = m_pilot2_reader->get_num_samples_per_frame();
-  
-  size_t offset = 0;
-  size_t jj = 0;
   for (size_t j=0; j<m_num_global_indices; j++) {
     int data_id = (*m_shuffled_indices)[j];
-    m_offsets[data_id] = offset;
-    offset += num_features;
-    fill_in_data(data_id, jj, num_samples_per_frame, num_features, features_8);
+    int num_features = m_pilot2_reader->get_num_features();
+    fill_in_data(data_id, num_samples_per_frame, num_features, features_8);
   }
 }
 
 
 // replicated code from data_reader_pilot2_molecular::fetch_molecule
 void data_store_pilot2_molecular::fill_in_data(
-    const int data_id, size_t &jj, const int num_samples_per_frame, 
-    const int num_features, double *features) {
+    const int data_id,
+    const int num_samples_per_frame,
+    const int num_features,
+    double *features) {
   const int frame = m_pilot2_reader->get_frame(data_id);
   const int frame_offset = frame * num_features * num_samples_per_frame;
   const int intra_frame_data_id = data_id - frame * num_samples_per_frame;
   double *data = features + frame_offset + intra_frame_data_id * num_features;
+  if (m_data.find(data_id) != m_data.end()) {
+    std::stringstream err;
+    err << __FILE__  << " :: " << __LINE__ << " :: "
+        << " duplicate data_id: " << data_id;
+    throw lbann_exception(err.str());
+  }
+  m_data[data_id].resize(num_features);
   for (int i=0; i<num_features; i++) {
-    m_data[jj++] = m_pilot2_reader->scale_data<double>(i, data[i]);
+    m_data[data_id][i] = m_pilot2_reader->scale_data<double>(i, data[i]);
   }
 }
 
-void data_store_pilot2_molecular:: bcast_offsets() {
-  int n = m_offsets.size();
-  MPI_Bcast(&n, 1, MPI_INT, m_owner_rank, m_comm->get_model_comm().comm);
-  std::vector<int> w(n*2);
 
-  size_t jj = 0;
-  if (m_owner) {
-    for (auto t : m_offsets) {
-      w[jj++] = t.first;
-      w[jj++] = t.second;
-    }
-  }
-  MPI_Bcast(w.data(), n*2, MPI_INT, m_owner_rank, m_comm->get_model_comm().comm);
-
-  if (! m_owner) {
-    for (size_t j=0; j<w.size(); j+= 2) {
-      m_offsets[w[j]] = w[j+1];
-    }
-  }
-}
-
-void data_store_pilot2_molecular::exchange_data() {
-  double tm1 = get_time();
-  std::stringstream err;
-
-  //get set of molecules required for the next epoch
-  std::unordered_set<int> required_molecules;
-  for (auto t : m_my_minibatch_indices) {
-    int data_id = (*m_shuffled_indices)[t];
-    required_molecules.insert(data_id);
-    if (m_neighbors.find(data_id) == m_neighbors.end()) {
-      err << __FILE__  << " :: " << __LINE__ << " :: "
-          << " m_neighbors.find(" << data_id << " failed";
-      throw lbann_exception(err.str());
-    }
-    for (auto t2 : m_neighbors[data_id]) {
-      required_molecules.insert(t2);
-    }
-  }
-
-  //allocate storage
-  m_my_molecules.resize(required_molecules.size());
-  int num_features = m_pilot2_reader->get_num_features();
-  for (size_t j=0; j< m_my_molecules.size(); j++) {
-    m_my_molecules[j].resize(num_features);
-  }
-
-  MPI_Win_fence(MPI_MODE_NOSTORE|MPI_MODE_NOPUT, m_win);
-  m_molecule_hash.clear();
-
-  size_t jj = 0;
-  for (auto idx : required_molecules) {
-    if (idx != -1) {
-      if (m_offsets.find(idx) == m_offsets.end()) {
-        err << __FILE__  << " :: " << __LINE__ << " :: "
-            << " m_offsets.find(" << idx << ") failed";
-        throw lbann_exception(err.str());
-      }
-      int offset = m_offsets[idx];
-      m_molecule_hash[idx] = jj;
-      if (jj >= m_my_molecules.size()) throw lbann_exception("ERROR 1");
-
-      MPI_Get(m_my_molecules[jj].data(), num_features, MPI_DOUBLE,
-                m_owner_rank, offset, num_features, MPI_DOUBLE, m_win);
-      ++jj;
-    }
-  }
-  MPI_Win_fence(MPI_MODE_NOSTORE|MPI_MODE_NOPUT, m_win);
-  if (m_owner) {
-    std::cout << "data_store_pilot2_molecular::exchange_data() time: " << get_time() - tm1 << std::endl;
-  }
-}
 
 
 void data_store_pilot2_molecular::build_nabor_map() {
   //bcast neighbor data
-  int sz;
-  if (m_owner) sz= m_pilot2_reader->get_neighbors_data_size();
-  MPI_Bcast(&sz, 1, MPI_INT, m_owner_rank, m_comm->get_model_comm().comm);
+  size_t sz;
+  if (m_owner) {
+    sz = m_pilot2_reader->get_neighbors_data_size();
+  }
+  m_comm->world_broadcast<size_t>(0, sz);
+
   double *neighbors_8;
   std::vector<double> work;
   if (m_owner) {
@@ -247,7 +167,7 @@ void data_store_pilot2_molecular::build_nabor_map() {
     work.resize(sz);
     neighbors_8 = work.data();
   }
-  MPI_Bcast(neighbors_8, sz, MPI_DOUBLE, m_owner_rank, m_comm->get_model_comm().comm);
+  m_comm->world_broadcast<double>(0, neighbors_8, sz);
 
   //fill in the nabors map
   for (auto data_id : (*m_shuffled_indices)) {
@@ -275,15 +195,15 @@ void data_store_pilot2_molecular::get_data_buf(int data_id, int tid, std::vector
         << data_id << " not found in m_neighbors (primary molecule)";
     throw lbann_exception(err.str());
   }
-  if (m_molecule_hash.find(data_id) == m_molecule_hash.end()) {
+  if (m_my_molecules.find(data_id) == m_my_molecules.end()) {
     err << __FILE__ << " " << __LINE__ << " :: "
-        << data_id << " not found in m_molecule_hash";
+        << data_id << " not found in m_my_molecules";
     throw lbann_exception(err.str());
   }
 
   //fill in data for the primary molecule
   size_t jj = 0;
-  std::vector<double> &d1 = m_my_molecules[m_molecule_hash[data_id]];
+  std::vector<double> &d1 = m_my_molecules[data_id];
   for (size_t j=0; j<d1.size(); j++) {
     v[jj++] = d1[j];
   }
@@ -293,12 +213,12 @@ void data_store_pilot2_molecular::get_data_buf(int data_id, int tid, std::vector
   int num_features = m_pilot2_reader->get_num_features();
   for (size_t h=0; h<nabors.size(); h++) {
     if (nabors[h] != -1) {
-      if (m_molecule_hash.find(data_id) == m_molecule_hash.end()) {
+      if (m_my_molecules.find(data_id) == m_my_molecules.end()) {
         err << __FILE__ << " " << __LINE__ << " :: "
-            << nabors[h] << " not found in m_molecule_hash (neighbor)";
+            << nabors[h] << " not found in m_my_molecules (neighbor)";
         throw lbann_exception(err.str());
       }
-      std::vector<double> &d2 = m_my_molecules[m_molecule_hash[nabors[h]]];
+      std::vector<double> &d2 = m_my_molecules[nabors[h]];
       for (size_t i=0; i<d2.size(); i++) {
         v[jj++] = d2[i];
       }
@@ -306,8 +226,80 @@ void data_store_pilot2_molecular::get_data_buf(int data_id, int tid, std::vector
       jj += num_features;
     }
   }
-
   buf = &v;
+}
+
+void data_store_pilot2_molecular::get_required_molecules(std::unordered_set<int> &required_molecules, int p) {
+  required_molecules.clear();
+  std::vector<int> &v = m_all_minibatch_indices[p];
+  for (auto t : v) {
+    int data_id = (*m_shuffled_indices)[t];
+    required_molecules.insert(data_id);
+    if (m_neighbors.find(data_id) == m_neighbors.end()) {
+      std::stringstream err;
+      err << __FILE__  << " :: " << __LINE__ << " :: "
+          << " m_neighbors.find(" << data_id << " failed";
+      throw lbann_exception(err.str());
+    }
+    for (auto t2 : m_neighbors[data_id]) {
+      if (t2 != -1) {
+        required_molecules.insert(t2);
+      }
+    }
+  }
+}
+
+void data_store_pilot2_molecular::exchange_data() {
+  double tm1 = get_time();
+  std::stringstream err;
+
+  //get set of molecules required for the next epoch for myself
+  std::unordered_set<int> required_molecules;
+  get_required_molecules(required_molecules, m_rank);
+
+  //start receives for my required molecules
+  m_my_molecules.clear();
+  int num_features = m_pilot2_reader->get_num_features();
+
+  std::vector<El::mpi::Request<double>> recv_req(required_molecules.size());
+  size_t jj = 0;
+  for (auto data_id : required_molecules) {
+    m_my_molecules[data_id].resize(num_features);
+    m_comm->nb_tagged_recv<double>(
+          m_my_molecules[data_id].data(), num_features, m_owner_rank, 
+          data_id, recv_req[jj++], m_comm->get_world_comm());
+  }
+
+  //owner starts sends
+  std::vector<std::vector<El::mpi::Request<double>>> send_req;
+  if (m_owner) {
+    send_req.resize(m_np);
+    for (int p = 0; p<m_np; p++) {
+      jj = 0;
+      get_required_molecules(required_molecules, p);
+      send_req[p].resize(required_molecules.size());
+      for (auto data_id : required_molecules) {
+        m_comm->nb_tagged_send<double>(
+           m_data[data_id].data(), num_features, p, 
+           data_id, send_req[p][jj++], m_comm->get_world_comm());
+      }
+    }
+  }
+
+  //wait for sends to finish
+  if (m_owner) {
+    for (size_t i=0; i<send_req.size(); i++) {
+      m_comm->wait_all<double>(send_req[i]);
+    }
+  }
+
+  //wait for recvs to finish
+  m_comm->wait_all<double>(recv_req);
+
+  if (m_owner) {
+    std::cout << "TIME for data_store_pilot2_molecular::exchange_data(): "
+              << get_time() - tm1 << "; role: " << m_reader->get_role() << "\n";
+  }
 }
 
 }  // namespace lbann

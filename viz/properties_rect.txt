@@ -44,7 +44,9 @@ transform    concatenation
 transform    slice
 transform    split
 transform    sum
-transform    noise
 transform    unpooling
 transform    hadamard
+transform    gaussian
+transform    bernoulli
+transform    uniform
 
