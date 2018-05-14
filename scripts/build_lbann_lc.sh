@@ -23,17 +23,20 @@ elif [ "${ARCH}" == "ppc64le" ]; then
 fi
 BUILD_TYPE=Release
 Elemental_DIR=
-if [ "${TOSS}" == "3.10.0" ]; then
-    OpenCV_DIR=""
-    if [ "${ARCH}" == "x86_64" ]; then
-        export VTUNE_DIR=/usr/tce/packages/vtune/default
-    elif [ "${ARCH}" == "ppc64le" ]; then
-        export VTUNE_DIR=
-    fi
-else
-    OpenCV_DIR=/usr/gapps/brain/tools/OpenCV/2.4.13
-    export VTUNE_DIR=/usr/local/tools/vtune
-fi
+case $TOSS in
+	3.10.0|4.11.0)
+		OpenCV_DIR=""
+		if [ "${ARCH}" == "x86_64" ]; then
+			export VTUNE_DIR=/usr/tce/packages/vtune/default
+		elif [ "${ARCH}" == "ppc64le" ]; then
+			export VTUNE_DIR=
+		fi
+		;;
+	*)
+      OpenCV_DIR=/usr/gapps/brain/tools/OpenCV/2.4.13
+      export VTUNE_DIR=/usr/local/tools/vtune
+	  ;;
+esac
 if [ "${ARCH}" == "x86_64" ]; then
     if [ "${CLUSTER}" == "quartz" ]; then
         IPPROOT=/p/lscratchh/brainusr/ippicv_lnx
@@ -265,15 +268,19 @@ done
 
 # Determine whether system uses modules
 USE_MODULES=0
-if [ "${TOSS}" == "3.10.0" ]; then
-    USE_MODULES=1
-elif [ "${TOSS}" == "2.6.32" ]; then
-    USE_MODULES=0
-else
-    # Initialize modules
-    . /usr/share/[mM]odules/init/bash
-    USE_MODULES=1
-fi
+case $TOSS in
+	3.10.0|4.11.0) 
+		USE_MODULES=1
+		;;
+	2.6.32)
+		USE_MODULES=0
+		;;
+	*)
+		# Initialize modules
+		. /usr/share/[mM]odules/init/bash
+		USE_MODULES=1
+		;;
+esac
 
 # Initialize Dotkit if system doesn't use modules
 if [ ${USE_MODULES} -eq 0 ]; then
@@ -294,7 +301,7 @@ else
     fi
 fi
 
-if [ ${CLUSTER} == "ray" ]; then
+if [ ${CLUSTER} == "ray" -o ${CLUSTER} == "sierra" ]; then
     module load cmake
     CMAKE_PATH=$(dirname $(which cmake))
 fi
@@ -354,7 +361,7 @@ elif [ "${COMPILER}" == "intel" ]; then
 elif [ "${COMPILER}" == "clang" ]; then
     # clang
     # clang depends on gnu fortran library. so, find the dependency
-    if [ "${CLUSTER}" == "ray" ]; then
+    if [ "${CLUSTER}" == "ray" -o "{CLUSTER}" == "sierra" ]; then
         #gccdep=`ldd ${COMPILER_BASE}/lib/*.so 2> /dev/null | grep gcc | awk '(NF>2){print $3}' | sort | uniq | head -n 1`
         #GCC_VERSION=`ls -l $gccdep | awk '{print $NF}' | cut -d '-' -f 2 | cut -d '/' -f 1`
         # Forcing to gcc 4.9.3 because of the current way of ray's gcc and various clang installation
@@ -398,6 +405,11 @@ if [ "${BUILD_TYPE}" == "Release" ]; then
             CXX_FLAGS="${CXX_FLAGS} -march=sandybridge -mtune=sandybridge"
             Fortran_FLAGS="${Fortran_FLAGS} -march=sandybridge -mtune=sandybridge"
         elif [ "${CLUSTER}" == "ray" ]; then
+            C_FLAGS="${C_FLAGS} -mcpu=power8 -mtune=power8"
+            CXX_FLAGS="${CXX_FLAGS} -mcpu=power8 -mtune=power8"
+            Fortran_FLAGS="${Fortran_FLAGS} -mcpu=power8 -mtune=power8"
+        elif [ "${CLUSTER}" == "sierra" ]; then
+			# no power9 option shown in the manual
             C_FLAGS="${C_FLAGS} -mcpu=power8 -mtune=power8"
             CXX_FLAGS="${CXX_FLAGS} -mcpu=power8 -mtune=power8"
             Fortran_FLAGS="${Fortran_FLAGS} -mcpu=power8 -mtune=power8"
@@ -536,27 +548,42 @@ fi
 # Initialize GPU libraries
 ################################################################
 
-if [ "${CLUSTER}" == "surface" ] || [ "${CLUSTER}" == "ray" ] ||
-   [ "${CLUSTER}" == "pascal" ]; then
+if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" -o \
+	 "${CLUSTER}" == "pascal" -o "${CLUSTER}" == "sierra" ]; then
     HAS_GPU=1
     WITH_CUDA=${WITH_CUDA:-ON}
     WITH_CUDNN=ON
     WITH_CUB=ON
     ELEMENTAL_USE_CUBLAS=OFF
-    if [ "${CLUSTER}" == "ray" ]; then
-        export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.0.5-3+cuda8.0_ppc64el
-    else
-        export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.1.15-1+cuda9.1_x86_64
-    fi
+	case $CLUSTER in
+		ray)
+			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.0.5-3+cuda8.0_ppc64el
+			;;
+		sierra)
+			# NCCL not available
+			unset NCCL_DIR
+			;;
+		*)
+			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.1.15-1+cuda9.1_x86_64
+			;;
+	esac
 
     # Hack for surface
-	if [ "${CLUSTER}" == "surface" ]; then
-        . /usr/share/[mM]odules/init/bash
-		CUDA_TOOLKIT_MODULE=cudatoolkit/9.1
-	elif [ "${CLUSTER}" == "ray" ]; then
-		module del cuda
-		CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/8.0}
-	fi
+	case $CLUSTER in
+		surface)
+			. /usr/share/[mM]odules/init/bash
+			CUDA_TOOLKIT_MODULE=cudatoolkit/9.1
+			;;
+		ray)
+			module del cuda
+			CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/8.0}
+			;;
+		sierra)
+			module del cuda
+			# cuDNN is not yet available for CUDA 9.2
+			CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/9.1.85}
+			;;
+	esac
 fi
 
 if [ "${WITH_CUDA}" == "ON" ]; then
@@ -598,6 +625,15 @@ else
     ELEMENTAL_USE_CUBLAS=OFF
 fi
 
+################################################################
+# Library options
+################################################################
+if [ "${CLUSTER}" == "sierra" ]; then
+	OPENBLAS_ARCH="TARGET=POWER8"
+else
+	OPENBLAS_ARCH=
+fi
+	
 ################################################################
 # Display parameters
 ################################################################
@@ -722,6 +758,7 @@ ${CMAKE_PATH}/cmake \
 -D LBANN_WITH_CONDUIT=${WITH_CONDUIT} \
 -D LBANN_CONDUIT_DIR=${CONDUIT_DIR} \
 -D LBANN_BUILT_WITH_SPECTRUM=${WITH_SPECTRUM} \
+-D OPENBLAS_ARCH_COMMAND=${OPENBLAS_ARCH} \
 ${SUPERBUILD_DIR}
 EOF
 )
