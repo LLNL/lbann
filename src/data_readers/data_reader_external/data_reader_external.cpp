@@ -94,7 +94,7 @@ int external_reader::fetch_data(Mat& X) {
   if(!position_valid()) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-      + " :: generic data reader load error: !position_valid"
+      + " :: external reader load error: !position_valid"
       + " -- current pos = " + std::to_string(m_current_pos)
       + " and there are " + std::to_string(m_shuffled_indices.size()) + " indices");
   }
@@ -119,15 +119,15 @@ int external_reader::fetch_data(Mat& X) {
 
   m_connection->message_write(request);
   Response response = m_connection->message_read();
-  auto samples = response.fetch_data_response().data().samples();
+  auto data = response.fetch_data_response().data().samples();
 
   for (El::Int s = 0; s < mb_size; s++) {
     int n = m_current_pos + s;
     int index = m_shuffled_indices[n];
     m_indices_fetched_per_mb.Set(s, 0, index);
 
-    auto X_view = El::View(X,   El::IR(0, m_data_size), El::IR(s, s+1));
-    auto float_values = samples[s].float_values();
+    auto X_view = El::View(X, El::IR(0, m_data_size), El::IR(s, s+1));
+    auto float_values = data[s].float_values();
 
     for (El::Int j = 0; j < m_data_size; j++) {
       X_view(j, 0) = float_values.float_samples(j);
@@ -136,7 +136,98 @@ int external_reader::fetch_data(Mat& X) {
 
   return mb_size;
 }
-//int fetch_labels(Mat& Y) override;
-//int fetch_responses(Mat& Y) override;
 
+int external_reader::fetch_labels(Mat& Y) override {
+  if(!position_valid()) {
+    throw lbann_exception(
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__)
+      + " :: external reader load error: !position_valid"
+      + " -- current pos = " + std::to_string(m_current_pos)
+      + " and there are " + std::to_string(m_shuffled_indices.size()) + " indices");
+  }
+
+  int loaded_batch_size = get_loaded_mini_batch_size();
+  const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size),
+                               m_shuffled_indices.size());
+  const int mb_size = std::min(
+    El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
+    Y.Width());
+
+  El::Zeros(Y, Y.Height(), Y.Width());
+  El::Zeros(m_indices_fetched_per_mb, mb_size, 1);
+
+  Request request;
+  auto flrequest = request.mutable_fetch_labels_request();
+  auto indices = flrequest->mutable_indices();
+
+  for (int i = m_current_pos; i < end_pos; i++) {
+    indices->add_value(m_shuffled_indices[i]);
+  }
+
+  m_connection->message_write(request);
+  Response response = m_connection->message_read();
+  auto labels = response.fetch_labels_response().labels().samples();
+
+  for (El::Int s = 0; s < mb_size; s++) {
+    int n = m_current_pos + s;
+    int index = m_shuffled_indices[n];
+    m_indices_fetched_per_mb.Set(s, 0, index);
+
+    auto X_view = El::View(Y, El::IR(0, m_data_size), El::IR(s, s+1));
+    auto bool_values = labels[s].bool_values();
+
+    for (El::Int j = 0; j < m_data_size; j++) {
+      X_view(j, 0) = bool_values.bool_samples(j);
+    }
+  }
+
+  return mb_size;
+}
+
+int external_reader::fetch_responses(Mat& Y) override {
+  if(!position_valid()) {
+    throw lbann_exception(
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__)
+      + " :: external reader load error: !position_valid"
+      + " -- current pos = " + std::to_string(m_current_pos)
+      + " and there are " + std::to_string(m_shuffled_indices.size()) + " indices");
+  }
+
+  int loaded_batch_size = get_loaded_mini_batch_size();
+  const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size),
+                               m_shuffled_indices.size());
+  const int mb_size = std::min(
+    El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
+    Y.Width());
+
+  El::Zeros(Y, Y.Height(), Y.Width());
+  El::Zeros(m_indices_fetched_per_mb, mb_size, 1);
+
+  Request request;
+  auto frrequest = request.mutable_fetch_responses_request();
+  auto indices = frrequest->mutable_indices();
+
+  for (int i = m_current_pos; i < end_pos; i++) {
+    indices->add_value(m_shuffled_indices[i]);
+  }
+
+  m_connection->message_write(request);
+  Response response = m_connection->message_read();
+  auto responses = response.fetch_labels_response().responses().labels();
+
+  for (El::Int s = 0; s < mb_size; s++) {
+    int n = m_current_pos + s;
+    int index = m_shuffled_indices[n];
+    m_indices_fetched_per_mb.Set(s, 0, index);
+
+    auto X_view = El::View(Y, El::IR(0, m_data_size), El::IR(s, s+1));
+    auto bool_values = responses[s].bool_values();
+
+    for (El::Int j = 0; j < m_data_size; j++) {
+      X_view(j, 0) = bool_values.bool_samples(j);
+    }
+  }
+
+  return mb_size;
+}
 }  // namespace lbann
