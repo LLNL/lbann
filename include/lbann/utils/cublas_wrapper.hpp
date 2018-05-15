@@ -60,8 +60,22 @@
       }                                                                 \
     }                                                                   \
   } while (0)
+#define FORCE_CHECK_CUBLAS_SYNC(cuda_call)                                    \
+  do {                                                                        \
+    const cudaError_t cuda_status = cuda_call;                                \
+    if (cuda_status != cudaSuccess) {                                         \
+      std::cerr << "CUDA error: " << cudaGetErrorString(cuda_status) << "\n"; \
+      std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";        \
+      cudaDeviceReset();                                                      \
+      throw lbann::lbann_exception("CUDA error");                             \
+    }                                                                         \
+  } while (0)
 #ifdef LBANN_DEBUG
-#define CHECK_CUBLAS(cublas_call) FORCE_CHECK_CUBLAS(cublas_call)
+#define CHECK_CUBLAS(cublas_call)                       \
+    do {                                                \
+      FORCE_CHECK_CUBLAS(cublas_call);                  \
+      FORCE_CHECK_CUBLAS_SYNC(cudaDeviceSynchronize()); \
+  } while (0)
 #else
 #define CHECK_CUBLAS(cublas_call) (cublas_call)
 #endif // LBANN_DEBUG

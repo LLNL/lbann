@@ -124,24 +124,44 @@ void rmsprop::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
   }
 }
 
-  bool rmsprop::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
-    optimizer::save_to_checkpoint_shared(p, name_prefix);
+bool rmsprop::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
+  optimizer::save_to_checkpoint_shared(p, name_prefix);
 
-    char l_name[512];
-    sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
-    p.write_distmat(persist_type::train, l_name, (DistMat *)m_cache);
-    
-    return true;
-  }
+  char l_name[512];
+  sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
+  p.write_distmat(persist_type::train, l_name, m_cache);
 
-  bool rmsprop::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
-    optimizer::load_from_checkpoint_shared(p, name_prefix);
-    char l_name[512];
-    
-    sprintf(l_name, "%s_optimizer_cache_%lldx%lld.bin", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
-    p.read_distmat(persist_type::train, l_name, (DistMat *)m_cache);
-    
-    return true;
-  }
+  return true;
+}
+
+bool rmsprop::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
+  optimizer::load_from_checkpoint_shared(p, name_prefix);
+  char l_name[512];
+
+  sprintf(l_name, "%s_optimizer_cache_%lldx%lld.bin", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
+  p.read_distmat(persist_type::train, l_name, m_cache);
+
+  return true;
+}
+
+ bool rmsprop::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
+   optimizer::save_to_checkpoint_distributed(p, name_prefix);
+
+   char l_name[512];
+   sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
+   p.write_rank_distmat(persist_type::train, l_name, *m_cache);
+
+   return true;
+ }
+
+ bool rmsprop::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
+   optimizer::load_from_checkpoint_distributed(p, name_prefix);
+   char l_name[512];
+
+   sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
+   p.read_rank_distmat(persist_type::train, l_name, *m_cache);
+
+   return true;
+ }
 
 }  // namespace lbann

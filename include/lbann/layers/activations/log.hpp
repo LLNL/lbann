@@ -34,7 +34,7 @@
 namespace lbann {
 
 /** Logarithm function. */
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class log_layer : public entrywise_activation_layer {
  public:
   log_layer(lbann_comm *comm, DataType base = std::exp(1.0))
@@ -52,6 +52,7 @@ class log_layer : public entrywise_activation_layer {
   log_layer* copy() const override { return new log_layer(*this); }
   std::string get_type() const override { return "log"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
  protected:
   DataType activation(DataType z) const override {

@@ -38,8 +38,8 @@
 namespace lbann {
 
 /// Convolution layer
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
-class convolution_layer : public base_convolution_layer {
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
+class convolution_layer : public base_convolution_layer<Dev> {
  private:
 
   friend class lbann_callback_imcomm;
@@ -67,14 +67,15 @@ class convolution_layer : public base_convolution_layer {
     }
     s << " num_output_channels: " << this->m_neuron_dims[0]
       << " has_bias: " << this->m_bias_scaling_factor
-      << " dataLayout: " << this->get_data_layout_string(get_data_layout());
+      << " dataLayout: " << this->get_data_layout_string(get_data_layout())
+      << " device alloc: " + this->get_device_allocation_string(get_device_allocation());
     return s.str();
   }
 
   std::string get_topo_description() const override {
     std::stringstream s;
     // Get the topo description from any parent class
-    std::string str = base_convolution_layer::get_topo_description();
+    std::string str = base_convolution_layer<Dev>::get_topo_description();
     s << str << " - ";
 
     // Display the topology of the kernel
@@ -122,21 +123,16 @@ class convolution_layer : public base_convolution_layer {
                     std::vector<int> strides,
                     bool has_bias = true,
                     cudnn::cudnn_manager *cudnn = nullptr)
-    : base_convolution_layer(comm,
-                             num_data_dims,
-                             num_output_channels,
-                             conv_dims,
-                             pads,
-                             strides,
-                             has_bias,
-                             cudnn) {
+    : base_convolution_layer<Dev>(comm,
+                                  num_data_dims,
+                                  num_output_channels,
+                                  conv_dims,
+                                  pads,
+                                  strides,
+                                  has_bias,
+                                  cudnn) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "convolution only supports DATA_PARALLEL");
-
-    // Use GPUs if cuDNN manager is available
-    if(this->m_cudnn) {
-      this->m_using_gpus = true;
-    }
 
   }
 
@@ -146,10 +142,12 @@ class convolution_layer : public base_convolution_layer {
 
   data_layout get_data_layout() const override { return T_layout; }
 
+  El::Device get_device_allocation() const override { return Dev; }
+
   void setup_dims() override {
 
     // Initialize previous neuron tensor dimensions
-    base_convolution_layer::setup_dims();
+    base_convolution_layer<Dev>::setup_dims();
 
     // Initialize convolution kernel dimensions
     this->m_kernel_dims.insert(this->m_kernel_dims.begin() + 1,
@@ -177,16 +175,16 @@ class convolution_layer : public base_convolution_layer {
                                           std::multiplies<int>());
 
     // Get size of convolutional kernel
-    this->m_kernel_size = std::accumulate(m_kernel_dims.begin(),
-                                          m_kernel_dims.end(),
+    this->m_kernel_size = std::accumulate(this->m_kernel_dims.begin(),
+                                          this->m_kernel_dims.end(),
                                           1,
                                           std::multiplies<int>());
 
   }
 
   void setup_data() override {
-    base_convolution_layer::setup_data();
-    this->m_weights[0]->setup(m_kernel_dims);
+    base_convolution_layer<Dev>::setup_data();
+    this->m_weights[0]->setup(this->m_kernel_dims, Dev);
     El::Zeros(this->m_kernel_gradient,
               this->m_weights[0]->get_matrix_height(),
               this->m_weights[0]->get_matrix_width());
@@ -195,22 +193,22 @@ class convolution_layer : public base_convolution_layer {
  protected:
 
   void fp_compute() override {
-    if(this->m_using_gpus) {
-      apply_convolution_cudnn(true);
-      apply_bias_cudnn();
+    if(this->using_gpus()) {
+      base_convolution_layer<Dev>::apply_convolution_cudnn(true);
+      base_convolution_layer<Dev>::apply_bias_cudnn();
     } else {
-      apply_convolution_im2col(true);
-      apply_bias_cpu();
+      base_convolution_layer<Dev>::apply_convolution_im2col(true);
+      base_convolution_layer<Dev>::apply_bias_cpu();
     }
   }
 
   void bp_compute() override {
-    if(this->m_using_gpus) {
-      compute_gradients_cudnn(false);
-      apply_transposed_convolution_cudnn(false);
+    if(this->using_gpus()) {
+      base_convolution_layer<Dev>::compute_gradients_cudnn(false);
+      base_convolution_layer<Dev>::apply_transposed_convolution_cudnn(false);
     } else {
-      compute_gradients_im2col(false);
-      apply_transposed_convolution_im2col(false);
+      base_convolution_layer<Dev>::compute_gradients_im2col(false);
+      base_convolution_layer<Dev>::apply_transposed_convolution_im2col(false);
     }
   }
 

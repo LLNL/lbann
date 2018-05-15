@@ -77,10 +77,10 @@ class data_reader_mnist_siamese : public data_reader_multi_images {
   void load() override;
 
   /// Fetch this mini-batch's samples into X by calling the new overloaded fetch_datum()
-  int fetch_data(Mat& X) override;
+  int fetch_data(CPUMat& X) override;
   /// Fetch this mini-batch's labels into Y by calling the new overloaded fetch_label()
-  int fetch_labels(Mat& Y) override;
-  
+  int fetch_labels(CPUMat& Y) override;
+
   /// sets up a data_store.
   void setup_data_store(model *m) override;
 
@@ -95,20 +95,20 @@ class data_reader_mnist_siamese : public data_reader_multi_images {
   // of indices to sample list.
   using data_reader_multi_images::fetch_datum;
   using data_reader_multi_images::fetch_label;
-  bool fetch_datum(::Mat& X, int data_id, int mb_idx, int tid) override;
-  bool fetch_label(::Mat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) override;
 
   /**
    * Fetch two data items identified by the pair of indices to the pre-loaded data list,
    * and put them into the column mb_idx of matrix x.
    */
-  virtual bool fetch_datum(::Mat& X, std::pair<int, int> data_id, int mb_idx, int tid);
+  virtual bool fetch_datum(CPUMat& X, std::pair<int, int> data_id, int mb_idx, int tid);
   /**
    * Take a pair of indices to the preloaded sample list, and compare the labels
    * of the corresponding samples. Store 1 if equal or 0 at the column mb_idx of
    * the given matrix Y.
    */
-  virtual bool fetch_label(::Mat& Y, std::pair<int, int> data_id, int mb_idx, int tid);
+  virtual bool fetch_label(CPUMat& Y, std::pair<int, int> data_id, int mb_idx, int tid);
 
   /**
    * Shuffle the second index list added in this class as well as the one in the

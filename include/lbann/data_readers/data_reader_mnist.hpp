@@ -54,8 +54,8 @@ class mnist_reader : public image_data_reader {
 
  protected:
   void set_defaults() override;
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
-  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) override;
 
  protected:
   std::vector<std::vector<unsigned char>> m_image_data;

@@ -22,38 +22,42 @@ def skeleton_models(cluster, executables, compiler_name):
             if file_name.endswith('.prototext') and "model" in file_name:
                 model_path = subdir + '/' + file_name
                 print('Attempting model setup for: ' + file_name )
-                data_filedir_ray = None
-                data_filedir_train_ray=None
-                data_filename_train_ray=None
-                data_filedir_test_ray=None
-                data_filename_test_ray=None
+                data_filedir_default = None
+                data_filedir_train_default=None
+                data_filename_train_default=None
+                data_filedir_test_default=None
+                data_filename_test_default=None
                 if 'mnist' in file_name:
-                    data_filedir_ray = '/p/gscratchr/brainusr/datasets/MNIST'
+                    data_filedir_default = '/p/lscratchf/brainusr/datasets/MNIST'
                     data_reader_name = 'mnist'
                 elif 'net' in file_name:
-                    data_filedir_train_ray = '/p/gscratchr/brainusr/datasets/ILSVRC2012/original/train/'
-                    data_filename_train_ray = '/p/gscratchr/brainusr/datasets/ILSVRC2012/labels/train.txt'
-                    data_filedir_test_ray = '/p/lscratche/brainusr/datasets/ILSVRC2012/original/val/'
-                    data_filename_test_ray = '/p/lscratche/brainusr/datasets/ILSVRC2012/original/labels/val.txt'
+                    data_filedir_train_default = '/p/lscratche/brainusr/datasets/ILSVRC2012/original/train/'
+                    data_filename_train_default = '/p/lscratche/brainusr/datasets/ILSVRC2012/labels/train.txt'
+                    data_filedir_test_default = '/p/lscratche/brainusr/datasets/ILSVRC2012/original/val/'
+                    data_filename_test_default = '/p/lscratche/brainusr/datasets/ILSVRC2012/original/labels/val.txt'
                     data_reader_name = 'imagenet'
                 elif 'cifar' in file_name:
+                    data_filename_train_default = '/p/lscratchf/brainusr/datasets/cifar10-bin/data_all.bin'
+                    data_filename_test_default = '/p/lscratchf/brainusr/datasets/cifar10-bin/test_batch.bin'
                     data_reader_name = 'cifar10'
                 elif 'char' in file_name:
+                    data_filedir_default = '/p/lscratche/brainusr/datasets/tinyshakespeare/'
                     data_reader_name = 'ascii'
                 else:
                     print("Tell Dylan which data reader this model needs")
                     tell_Dylan.append(file_name)
-                if (cluster == 'ray') and (data_filedir_ray == None) and (data_filedir_train_ray == None):
+                    continue
+                if (cluster == 'ray') and (data_reader_name in ['cifar10', 'ascii']):
                     print('Skipping %s because data is not available on ray' % model_path)
                 else:
                     cmd = tools.get_command(
                         cluster=cluster, executable=executables[compiler_name], num_nodes=1,
                         partition='pdebug', time_limit=1, dir_name=lbann_dir,
-                        data_filedir_ray=data_filedir_ray,
-                        data_filedir_train_ray=data_filedir_train_ray,
-                        data_filename_train_ray=data_filename_train_ray,
-                        data_filedir_test_ray=data_filedir_test_ray,
-                        data_filename_test_ray=data_filename_test_ray,
+                        data_filedir_default=data_filedir_default,
+                        data_filedir_train_default=data_filedir_train_default,
+                        data_filename_train_default=data_filename_train_default,
+                        data_filedir_test_default=data_filedir_test_default,
+                        data_filename_test_default=data_filename_test_default,
                         data_reader_name=data_reader_name, exit_after_setup=True,
                         model_path=model_path, optimizer_name=opt)
                     if os.system(cmd) != 0:

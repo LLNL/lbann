@@ -75,7 +75,7 @@ void lbann_callback_checksmall::on_batch_end(model *m) {
 }
 
 bool lbann_callback_checksmall::is_good(const AbsDistMat& m) {
-  const Mat& local_mat = m.LockedMatrix();
+  const AbsMat& local_mat = m.LockedMatrix();
   const El::Int height = local_mat.Height();
   const El::Int width = local_mat.Width();
   for (El::Int col = 0; col < width; ++col) {

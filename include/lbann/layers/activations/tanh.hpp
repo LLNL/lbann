@@ -37,23 +37,23 @@ namespace tanh_cuda {
   void fp(cudnn::cudnn_manager& cudnn,
           int height,
           int width_per_gpu,
-          const std::vector<DataType*>& input,
+          const DataType* input,
           int input_leading_dim,
-          std::vector<DataType*>& output,
+          DataType* output,
           int output_leading_dim);
   void bp(cudnn::cudnn_manager& cudnn,
           int height, int width_per_gpu,
-          const std::vector<DataType*>& input,
+          const DataType* input,
           int input_leading_dim,
-          const std::vector<DataType*>& gradient_wrt_output,
+          const DataType* gradient_wrt_output,
           int gradient_wrt_output_leading_dim,
-          std::vector<DataType*>& gradient_wrt_input,
+          DataType* gradient_wrt_input,
           int gradient_wrt_input_leading_dim);
 } // namespace tanh_cuda
 #endif // LBANN_HAS_CUDNN
 
 /** Hyperbolic tangent activation function. */
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class tanh_layer : public entrywise_activation_layer {
  public:
   tanh_layer(lbann_comm *comm,
@@ -64,7 +64,6 @@ class tanh_layer : public entrywise_activation_layer {
     // Activate GPU if needed
     if (cudnn != nullptr && T_layout == data_layout::DATA_PARALLEL) {
       this->m_cudnn = cudnn;
-      this->m_using_gpus = true;
     }
   #endif // LBANN_HAS_CUDNN
 
@@ -73,6 +72,7 @@ class tanh_layer : public entrywise_activation_layer {
   tanh_layer* copy() const override { return new tanh_layer(*this); }
   std::string get_type() const override { return "tanh"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
  protected:
 
@@ -92,10 +92,10 @@ class tanh_layer : public entrywise_activation_layer {
     tanh_cuda::fp(*m_cudnn,
                   get_num_neurons(),
                   m_mini_batch_size_per_gpu,
-                  m_prev_activations_d[0].get_locked_data(),
-                  m_prev_activations_d[0].get_leading_dim(),
-                  m_activations_d[0].get_data(),
-                  m_activations_d[0].get_leading_dim());
+                  get_prev_activations().LockedBuffer(),
+                  get_prev_activations().LDim(),
+                  get_activations().Buffer(),
+                  get_activations().LDim());
   #endif // LBANN_HAS_CUDNN
   }
 
@@ -106,12 +106,12 @@ class tanh_layer : public entrywise_activation_layer {
     tanh_cuda::bp(*m_cudnn,
                   get_num_neurons(),
                   m_mini_batch_size_per_gpu,
-                  m_prev_activations_d[0].get_locked_data(),
-                  m_prev_activations_d[0].get_leading_dim(),
-                  m_prev_error_signals_d[0].get_locked_data(),
-                  m_prev_error_signals_d[0].get_leading_dim(),
-                  m_error_signals_d[0].get_data(),
-                  m_error_signals_d[0].get_leading_dim());
+                  get_prev_activations().LockedBuffer(),
+                  get_prev_activations().LDim(),
+                  get_prev_error_signals().LockedBuffer(),
+                  get_prev_error_signals().LDim(),
+                  get_error_signals().Buffer(),
+                  get_error_signals().LDim());
   #endif // LBANN_HAS_CUDNN
   }
 

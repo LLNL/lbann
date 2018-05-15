@@ -1,4 +1,5 @@
-import math, os
+import pytest
+import math, os, re
 
 def check_list(substrings, strings):
     errors = []
@@ -8,25 +9,44 @@ def check_list(substrings, strings):
                errors.append('%s contains %s' % (string, substring))
     return errors
 
-def get_command(cluster, executable, num_nodes=None, partition=None,
-                time_limit=None, num_processes=None, dir_name=None,
-                data_filedir_ray=None, data_filedir_train_ray=None,
-                data_filename_train_ray=None, data_filedir_test_ray=None,
-                data_filename_test_ray=None, data_reader_name=None,
-                data_reader_path=None, data_reader_percent=None,
-                exit_after_setup=False, mini_batch_size=None,
-                model_folder=None, model_name=None, model_path=None,
-                num_epochs=None, optimizer_name=None, optimizer_path=None,
-                processes_per_model=None, output_file_name=None,
-                error_file_name=None, return_tuple=False, check_executable_existance=True):
+def get_command(cluster,
+                executable,
+                num_nodes=None,
+                partition=None,
+                time_limit=None,
+                num_processes=None,
+                dir_name=None,
+                data_filedir_default=None,
+                data_filedir_train_default=None,
+                data_filename_train_default=None,
+                data_filedir_test_default=None,
+                data_filename_test_default=None,
+                data_reader_name=None,
+                data_reader_path=None,
+                data_reader_percent=None,
+                exit_after_setup=False,
+                mini_batch_size=None,
+                model_folder=None,
+                model_name=None,
+                model_path=None,
+                num_epochs=None,
+                optimizer_name=None,
+                optimizer_path=None,
+                processes_per_model=None,
+                ckpt_dir=None,
+                output_file_name=None,
+                error_file_name=None,
+                return_tuple=False,
+                check_executable_existance=True,
+                skip_no_exe=True):
     # Check parameters for black-listed characters like semi-colons that
     # would terminate the command and allow for an extra command
     blacklist = [';', '--']
-    strings = [partition, dir_name, data_filedir_ray, data_filedir_train_ray,
-               data_filename_train_ray, data_filedir_test_ray,
-               data_filename_test_ray, data_reader_name, data_reader_path,
+    strings = [partition, dir_name, data_filedir_default, data_filedir_train_default,
+               data_filename_train_default, data_filedir_test_default,
+               data_filename_test_default, data_reader_name, data_reader_path,
                model_folder, model_name, model_path, optimizer_name,
-               optimizer_path, output_file_name]
+               optimizer_path, output_file_name, error_file_name]
     invalid_character_errors = check_list(blacklist, strings)
     if invalid_character_errors != []:
         raise Exception('Invalid character(s): %s' % ' , '.join(invalid_character_errors))
@@ -35,10 +55,14 @@ def get_command(cluster, executable, num_nodes=None, partition=None,
     if check_executable_existance:
         executable_exists = os.path.exists(executable)
         if not executable_exists:
-            raise Exception('Executable does not exist: %s' % executable)
+            error_string = 'Executable does not exist: %s' % executable
+            if skip_no_exe:
+                pytest.skip(error_string)
+            else:
+                raise Exception(error_string)
 
     # Determine scheduler
-    if cluster in ['catalyst', 'surface']:
+    if cluster in ['catalyst', 'pascal', 'quartz', 'surface']:
         scheduler = 'slurm'
     elif cluster == 'ray':
         scheduler = 'lsf'
@@ -78,7 +102,7 @@ def get_command(cluster, executable, num_nodes=None, partition=None,
             command_allocate = '%s%s%s%s' % (
                 command_allocate, option_num_nodes, option_partition,
                 option_time_limit)
-            
+
         # Create run command
         if command_allocate == '':
             command_run = 'srun'
@@ -90,7 +114,7 @@ def get_command(cluster, executable, num_nodes=None, partition=None,
             # Number of processes to run => MPI Rank
             option_num_processes = ' --ntasks=%d' % num_processes
         command_run = '%s%s' % (command_run, option_num_processes)
-        
+
     elif scheduler == 'lsf':
         # Create allocate command
         command_allocate = ''
@@ -150,11 +174,12 @@ def get_command(cluster, executable, num_nodes=None, partition=None,
                     math.ceil(float(num_processes)/num_nodes))
         command_run = '%s%s%s' % (
             command_run, option_num_processes, option_processes_per_node)
-        
+
     else:
         raise Exception('Unsupported Scheduler %s' % scheduler)
 
     # Create LBANN command
+    option_ckpt_dir = ''
     option_data_filedir = ''
     option_data_filedir_train = ''
     option_data_filename_train = ''
@@ -206,29 +231,53 @@ def get_command(cluster, executable, num_nodes=None, partition=None,
     elif (model_folder != None) or (model_name != None) or (data_reader_name != None) or (optimizer_name != None):
         lbann_errors.append(
             'dir_name is not set but at least one of model_folder, model_name, data_reader_name, optimizer_name is.')
-    ray_parameters = [data_filedir_train_ray,
-                      data_filename_train_ray,
-                      data_filedir_test_ray,
-                      data_filename_test_ray]
+    data_file_parameters = [data_filedir_train_default,
+                            data_filename_train_default,
+                            data_filedir_test_default,
+                            data_filename_test_default]
+    # Determine data file paths
+    # If there is no regex match, then re.sub keeps the original string
+    if data_filedir_default != None:
+        if cluster in ['catalyst', 'pascal', 'surface']:
+            # option_data_filedir = data_filedir_default # lscratche, presumably
+            pass # No need to pass in a parameter
+        elif cluster == 'quartz':
+            option_data_filedir = ' --data_filedir=%s' % re.sub('[a-z]scratch[a-z]', 'lscratchh', data_filedir_default)
+        elif cluster == 'ray':
+            option_data_filedir = ' --data_filedir=%s' % re.sub('[a-z]scratch[a-z]', 'gscratchr', data_filedir_default)
+    elif None not in data_file_parameters:
+        if cluster in ['catalyst', 'pascal', 'surface']:
+            # option_data_filedir_train = data_filedir_train_default
+            # option_data_filename_train = data_filename_train_default
+            # option_data_filedir_test = data_filedir_test_default
+            # option_data_filename_train = data_filename_test_default
+            pass # No need to pass in a parameter
+        elif cluster == 'quartz':
+            option_data_filedir_train  = ' --data_filedir_train=%s'  % re.sub('[a-z]scratch[a-z]', 'lscratchh', data_filedir_train_default)
+            option_data_filename_train = ' --data_filename_train=%s' % re.sub('[a-z]scratch[a-z]', 'lscratchh', data_filename_train_default)
+            option_data_filedir_test   = ' --data_filedir_test=%s'   % re.sub('[a-z]scratch[a-z]', 'lscratchh', data_filedir_test_default)
+            option_data_filename_train = ' --data_filename_test=%s'  % re.sub('[a-z]scratch[a-z]', 'lscratchh', data_filename_test_default)
+        elif cluster == 'ray':
+            option_data_filedir_train  = ' --data_filedir_train=%s'  % re.sub('[a-z]scratch[a-z]', 'gscratchr', data_filedir_train_default)
+            option_data_filename_train = ' --data_filename_train=%s' % re.sub('[a-z]scratch[a-z]', 'gscratchr', data_filename_train_default)
+            option_data_filedir_test   = ' --data_filedir_test=%s'   % re.sub('[a-z]scratch[a-z]', 'gscratchr', data_filedir_test_default)
+            option_data_filename_train = ' --data_filename_test=%s'  % re.sub('[a-z]scratch[a-z]', 'gscratchr', data_filename_test_default)
     if (data_reader_name != None) or (data_reader_path != None):
-        if (cluster == 'ray'):
-            if data_filedir_ray != None:
-                if ray_parameters == [None, None, None, None]:
-                    option_data_filedir = ' --data_filedir=%s' % data_filedir_ray
-                else:
-                    lbann_errors.append('data_fildir_ray set but so is at least one of [data_filedir_train_ray, data_filename_train_ray, data_filedir_test_ray, data_filename_test_ray]')
-            elif None not in ray_parameters:
-                option_data_filedir_train = ' --data_filedir_train=%s' % data_filedir_train_ray
-                option_data_filename_train = ' --data_filename_train=%s' % data_filename_train_ray
-                option_data_filedir_test = ' --data_filedir_test=%s' % data_filedir_test_ray
-                option_data_filename_test = ' --data_filename_test=%s' % data_filename_test_ray
-            else:
-                lbann_errors.append('data_reader_name or data_reader_path is set but not data_filedir_ray. If a data reader is provided, an alternative filedir must be available for Ray. Alternatively, all of [data_filedir_train_ray, data_filename_train_ray, data_filedir_test_ray, data_filename_test_ray] can be set.')
-    elif data_filedir_ray != None:
-        lbann_errors.append(
-            'data_filedir_ray set but neither data_reader_name or data_reader_path are.')
-    elif filter(lambda x: x != None, ray_parameters) != []:
-        lbann_errors.append('At least one of [data_filedir_train_ray, data_filename_train_ray, data_filedir_test_ray, data_filename_test_ray] is set, but neither data_reader_name or data_reader_path are.')
+        if data_filedir_default != None:
+            if data_file_parameters != [None, None, None, None]: # If any are not None
+                lbann_errors.append('data_fildir_default set but so is at least one of [data_filedir_train_default, data_filename_train_default, data_filedir_test_default, data_filename_test_default]')
+            # else: only data_filedir_default is set
+        else:
+            # if None in data_file_parameters: # If any are None
+            if data_file_parameters == [None, None, None, None]: # If all are None
+                lbann_errors.append('data_reader_name or data_reader_path is set but not data_filedir_default. If a data reader is provided, the default filedir must be set. This allows for determining what the filedir should be on each cluster. Alternatively, some or all of [data_filedir_train_default, data_filename_train_default, data_filedir_test_default, data_filename_test_default] can be set.')
+            # else: no data_file parameters are set
+    else:
+        if data_filedir_default != None:
+            lbann_errors.append('data_filedir_default set but neither data_reader_name or data_reader_path are.')
+        elif filter(lambda x: x != None, data_file_parameters) != []: # If the list of non-None data_file parameters is not empty
+            lbann_errors.append('At least one of [data_filedir_train_default, data_filename_train_default, data_filedir_test_default, data_filename_test_default] is set, but neither data_reader_name or data_reader_path are.')
+        # else: no conflicts
     if data_reader_percent != None:
         option_data_reader_percent = ' --data_reader_percent=%f' % data_reader_percent
     if exit_after_setup:
@@ -239,15 +288,18 @@ def get_command(cluster, executable, num_nodes=None, partition=None,
         option_num_epochs = ' --num_epochs=%d' % num_epochs
     if processes_per_model != None:
         option_processes_per_model = ' --procs_per_model=%d' % processes_per_model
+    if ckpt_dir != None:
+        option_ckpt_dir = ' --ckpt_dir=%s' % ckpt_dir
     if lbann_errors != []:
         raise Exception('Invalid Usage: ' + ' , '.join(lbann_errors))
-    command_lbann = '%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (
-        executable, option_data_filedir, option_data_filedir_train,
-        option_data_filename_train, option_data_filedir_test,
-        option_data_filename_test, option_data_reader,
-        option_data_reader_percent, option_exit_after_setup,
-        option_mini_batch_size, option_model, option_num_epochs,
-        option_optimizer, option_processes_per_model)
+    command_lbann = '%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (
+        executable, option_ckpt_dir, option_data_filedir,
+        option_data_filedir_train, option_data_filename_train,
+        option_data_filedir_test, option_data_filename_test,
+        option_data_reader, option_data_reader_percent,
+        option_exit_after_setup, option_mini_batch_size,
+        option_model, option_num_epochs, option_optimizer,
+        option_processes_per_model)
 
     # Create redirect command
     command_output = ''

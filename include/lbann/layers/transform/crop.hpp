@@ -34,7 +34,7 @@
 namespace lbann {
 
 /** Crop layer. */
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class crop_layer : public transform_layer {
  private:
 
@@ -54,6 +54,8 @@ class crop_layer : public transform_layer {
       m_crop_dims(dims),
       m_input_region_v(nullptr),
       m_output_region_v(nullptr) {
+    static_assert(Dev == El::Device::CPU,
+                  "crop layer currently only supports CPU");
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "crop layer currently only supports DATA_PARALLEL");
  
@@ -64,8 +66,7 @@ class crop_layer : public transform_layer {
   //  #ifdef LBANN_HAS_CUDNN
     // Initialize GPU if available
     if(cudnn) {
-      this->m_using_gpus = true;
-       this->m_cudnn = cudnn;
+      this->m_cudnn = cudnn;
     }
   #endif // LBANN_HAS_CUDNN
 
@@ -110,6 +111,7 @@ class crop_layer : public transform_layer {
   crop_layer* copy() const override { return new crop_layer(*this); }
   std::string get_type() const override { return "crop"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   void setup_matrices(const El::Grid& grid) override {
     transform_layer::setup_matrices(grid);
@@ -140,7 +142,7 @@ class crop_layer : public transform_layer {
   protected:
 
   void fp_compute() override {
-    if(this->m_using_gpus) {
+    if (this->m_cudnn != nullptr) {
       fp_compute_gpu();
     } else {
       fp_compute_cpu();
@@ -148,7 +150,7 @@ class crop_layer : public transform_layer {
   }
 
   void bp_compute() override {
-    if(this->m_using_gpus) {
+    if (this->m_cudnn != nullptr) {
       bp_compute_gpu();
     } else {
       bp_compute_cpu();

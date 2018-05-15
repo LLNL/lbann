@@ -201,4 +201,84 @@ void hypergradient_adam::step_compute(AbsDistMat& values,
   }
 }
 
+bool hypergradient_adam::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
+  if(p.get_cb_type() == callback_type::batch)
+    optimizer::save_to_checkpoint_shared(p,name_prefix);
+  if (m_comm->am_model_master()) {
+    pack_scalars(p);
+  }
+ 
+  char l_name[512];
+  sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
+  p.write_distmat(persist_type::train, l_name, m_moment1);
+ 
+  sprintf(l_name, "%s_optimizer_adam_moment2_%lldx%lld", name_prefix.c_str(), m_moment2->Height(), m_moment2->Width());
+  p.write_distmat(persist_type::train, l_name, m_moment2);
+ 
+  sprintf(l_name, "%s_optimizer_adam_old_gradient_%lldx%lld", name_prefix.c_str(), m_old_gradient->Height(), m_old_gradient->Width());
+  p.write_distmat(persist_type::train, l_name, m_old_gradient);
+
+  return true;
+}
+ 
+bool hypergradient_adam::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
+  if(p.get_cb_type() == callback_type::batch)
+    optimizer::load_from_checkpoint_shared(p,name_prefix);
+  struct packing_header header;
+  if (m_comm->am_model_master()) {
+    unpack_scalars(p, &header);
+  }
+ 
+  m_comm->model_broadcast(0, header);
+
+  unpack_header(header);
+
+  char l_name[512];
+  sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld.bin", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
+  p.read_distmat(persist_type::train, l_name, m_moment1);
+
+  sprintf(l_name, "%s_optimizer_adam_moment2_%lldx%lld.bin", name_prefix.c_str(), m_moment2->Height(), m_moment2->Width());
+  p.read_distmat(persist_type::train, l_name, m_moment2);
+ 
+  sprintf(l_name, "%s_optimizer_adam_old_gradient_%lldx%lld.bin", name_prefix.c_str(), m_old_gradient->Height(), m_old_gradient->Width());
+  p.read_distmat(persist_type::train, l_name, m_old_gradient);
+  return true;
+}
+
+bool hypergradient_adam::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
+  if(p.get_cb_type() == callback_type::batch)
+    optimizer::save_to_checkpoint_distributed(p,name_prefix);
+  pack_scalars(p);
+   
+  char l_name[512];
+  sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
+  p.write_rank_distmat(persist_type::train, l_name, *m_moment1);
+ 
+  sprintf(l_name, "%s_optimizer_adam_moment2_%lldx%lld", name_prefix.c_str(), m_moment2->Height(), m_moment2->Width());
+  p.write_rank_distmat(persist_type::train, l_name, *m_moment2);
+  
+  sprintf(l_name, "%s_optimizer_adam_old_gradient_%lldx%lld", name_prefix.c_str(), m_old_gradient->Height(), m_old_gradient->Width());
+  p.write_rank_distmat(persist_type::train, l_name, *m_old_gradient);
+    
+  return true;
+} 
+ 
+bool hypergradient_adam::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
+  if(p.get_cb_type() == callback_type::batch)
+    optimizer::load_from_checkpoint_distributed(p,name_prefix);
+  struct packing_header header;
+  unpack_scalars(p, &header);
+    
+  char l_name[512];
+  sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
+  p.read_rank_distmat(persist_type::train, l_name, *m_moment1);
+  
+  sprintf(l_name, "%s_optimizer_adam_moment2_%lldx%lld", name_prefix.c_str(), m_moment2->Height(), m_moment2->Width());
+  p.read_rank_distmat(persist_type::train, l_name, *m_moment2);
+    
+  sprintf(l_name, "%s_optimizer_adam_old_gradient_%lldx%lld", name_prefix.c_str(), m_old_gradient->Height(), m_old_gradient->Width());
+  p.read_rank_distmat(persist_type::train, l_name, *m_old_gradient);
+  return true;
+}
+
 }  // namespace lbann

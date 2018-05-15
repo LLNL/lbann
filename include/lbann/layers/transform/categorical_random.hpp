@@ -37,19 +37,22 @@ namespace lbann {
  *  vectors. An input entry is the probability that the corresponding
  *  output entry is one.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class categorical_random_layer : public transform_layer {
 
  public:
   categorical_random_layer(lbann_comm *comm,
                            cudnn::cudnn_manager *cudnn = nullptr)
     : transform_layer(comm) {
+    static_assert(Dev == El::Device::CPU,
+                  "categorical random layer currently only supports CPU");
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "categorical random layer currently only supports DATA_PARALLEL");
   }
   categorical_random_layer* copy() const override { return new categorical_random_layer(*this); }
   std::string get_type() const override { return "categorical random"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
  protected:
 
@@ -66,7 +69,7 @@ class categorical_random_layer : public transform_layer {
     // Initialize output and random numbers
     const auto& mode = this->m_model->get_execution_mode();
     El::Zero(local_output);
-    StarVCMat rand_mat(input.Grid(), input.Root());
+    StarVCMat<El::Device::CPU> rand_mat(input.Grid(), input.Root());
     if (mode == execution_mode::training) {
       uniform_fill(rand_mat, 1, width, DataType(0.5), DataType(0.5));
     }

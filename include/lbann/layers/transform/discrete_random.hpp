@@ -36,7 +36,7 @@ namespace lbann {
  *  Inputs are interpreted as the probability of choosing each
  *  distribution value.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class discrete_random_layer : public transform_layer {
  private:
 
@@ -50,6 +50,8 @@ class discrete_random_layer : public transform_layer {
                         cudnn::cudnn_manager *cudnn = nullptr)
     : transform_layer(comm),
       m_values(values) {
+    static_assert(Dev == El::Device::CPU,
+                  "discrete random layer currently only supports CPU");
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "discrete random layer currently only supports DATA_PARALLEL");
     
@@ -61,12 +63,11 @@ class discrete_random_layer : public transform_layer {
                                           1,
                                           std::multiplies<int>());
 
-
-
   }
   discrete_random_layer* copy() const override { return new discrete_random_layer(*this); }
   std::string get_type() const override { return "discrete random"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
  protected:
 

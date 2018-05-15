@@ -39,7 +39,7 @@ namespace lbann {
  *  are not provided, they are all set to one so that this layer
  *  performs a simple sum.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class sum_layer : public transform_layer {
  private:
 
@@ -61,7 +61,6 @@ class sum_layer : public transform_layer {
   #ifdef LBANN_HAS_CUDNN
     // Initialize GPU if available
     if(cudnn) {
-      this->m_using_gpus = true;
       this->m_cudnn = cudnn;
     }
   #endif // LBANN_HAS_CUDNN
@@ -71,6 +70,7 @@ class sum_layer : public transform_layer {
   sum_layer* copy() const override { return new sum_layer(*this); }
   std::string get_type() const override { return "sum"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   /** Returns description of ctor params */
   std::string get_description() const override {
@@ -124,78 +124,23 @@ class sum_layer : public transform_layer {
   }
 
   void fp_compute() override {
-    if(this->m_using_gpus) {
-  #ifndef LBANN_HAS_CUDNN
-      throw lbann_exception("sum_layer: cuDNN not detected");
-  #else
-      const int num_gpus = m_cudnn->get_num_gpus();
-      auto& output_d = this->m_activations_d[0];
-      this->m_cudnn->clear_on_gpus(output_d.get_data(),
-                                   output_d.get_height(),
-                                   this->m_mini_batch_size_per_gpu,
-                                   output_d.get_leading_dim());
-      for (int parent = 0; parent < get_num_parents(); ++parent) {
-        const auto& input_d = this->m_prev_activations_d[parent];
-        for (int gpu = 0; gpu < num_gpus; ++gpu) {
-          CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(gpu)));
-          cublas::geam(this->m_cudnn->get_cublas_handle(gpu),
-                       CUBLAS_OP_N,
-                       CUBLAS_OP_N,
-                       input_d.get_height(),
-                       this->m_mini_batch_size_per_gpu,
-                       m_scaling_factors[parent],
-                       input_d.get_locked_data(gpu),
-                       input_d.get_leading_dim(),
-                       DataType(1),
-                       output_d.get_locked_data(gpu),
-                       output_d.get_leading_dim(),
-                       output_d.get_data(gpu),
-                       output_d.get_leading_dim());
-        }
-      }
-  #endif // LBANN_HAS_CUDNN
-    } else {
-      auto& output = get_activations();
+    auto& output = get_activations();
+    if (get_num_parents() == 0) {
       El::Zero(output);
-      for (int parent = 0; parent < get_num_parents(); ++parent) {
-        const auto& input = get_prev_activations(parent);
-        El::Axpy(m_scaling_factors[parent], input, output);
-      }
+    } else {
+      El::Copy(get_prev_activations(0), output);
+    }
+    for (int parent = 1; parent < get_num_parents(); ++parent) {
+      const auto& input = get_prev_activations(parent);
+      El::Axpy(m_scaling_factors[parent], input, output);
     }
   }
 
   void bp_compute() override {
-    if(this->m_using_gpus) {
-  #ifndef LBANN_HAS_CUDNN
-      throw lbann_exception("sum_layer: cuDNN not detected");
-  #else
-      const int num_gpus = m_cudnn->get_num_gpus();
-      const auto& gradient_wrt_output_d = m_prev_error_signals_d[0];
-      for (int parent = 0; parent < get_num_parents(); ++parent) {
-        auto& gradient_wrt_input_d = this->m_error_signals_d[parent];
-        for (int gpu = 0; gpu < num_gpus; ++gpu) {
-          CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(gpu)));
-          cublas::geam(this->m_cudnn->get_cublas_handle(gpu),
-                       CUBLAS_OP_N, CUBLAS_OP_N,
-                       gradient_wrt_input_d.get_height(),
-                       this->m_mini_batch_size_per_gpu,
-                       m_scaling_factors[parent],
-                       gradient_wrt_output_d.get_locked_data(gpu),
-                       gradient_wrt_output_d.get_leading_dim(),
-                       DataType(1),
-                       gradient_wrt_input_d.get_locked_data(gpu),
-                       gradient_wrt_input_d.get_leading_dim(),
-                       gradient_wrt_input_d.get_data(gpu),
-                       gradient_wrt_input_d.get_leading_dim());
-        }
-      }
-  #endif // LBANN_HAS_CUDNN
-    } else {
-      const auto& gradient_wrt_output = get_prev_error_signals();
-      for (int parent = 0; parent < get_num_parents(); ++parent) {
-        auto& gradient_wrt_input = get_error_signals(parent);
-        El::Axpy(m_scaling_factors[parent], gradient_wrt_output, gradient_wrt_input);
-      }
+    const auto& gradient_wrt_output = get_prev_error_signals();
+    for (int parent = 0; parent < get_num_parents(); ++parent) {
+      auto& gradient_wrt_input = get_error_signals(parent);
+      El::Axpy(m_scaling_factors[parent], gradient_wrt_output, gradient_wrt_input);
     }
   }
 

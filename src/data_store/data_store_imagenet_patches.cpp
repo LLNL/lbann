@@ -34,6 +34,7 @@
 namespace lbann {
 
 void data_store_imagenet_patches::setup() {
+  double tm1 = get_time();
   if (m_rank == 0) {
     std::cerr << "starting data_store_imagenet_patches::setup() for data reader with role: " << m_reader->get_role() << std::endl;
   }
@@ -50,6 +51,10 @@ void data_store_imagenet_patches::setup() {
   }
 
   data_store_imagenet::setup();
+
+  if (m_rank == 0) {
+    std::cerr << "TIME for data_store_imagenet setup: " << get_time() - tm1 << std::endl;
+  }
 }
 
 

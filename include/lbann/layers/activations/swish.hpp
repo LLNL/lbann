@@ -35,13 +35,14 @@ namespace lbann {
  * Swish activation function.
  * See: https://en.wikipedia.org/wiki/Swish_function
  */
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class swish_layer : public entrywise_activation_layer {
  public:
   swish_layer(lbann_comm *comm) : entrywise_activation_layer(comm) {}
   swish_layer* copy() const override { return new swish_layer(*this); }
   std::string get_type() const override { return "swish"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
  protected:
   DataType activation(DataType z) const override {

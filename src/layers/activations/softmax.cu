@@ -42,18 +42,16 @@ __global__ void fp_cutoff_kernel(DataType* activations,
 }
 
 void fp_cutoff(cudnn::cudnn_manager& cudnn,
-               std::vector<DataType*>& activations,
+               DataType* activations,
                El::Int h, El::Int w,
                DataType min_output) {
-  El::Int num_elms = h * w;  
+  El::Int num_elms = h * w;
   int num_gpus = cudnn.get_num_gpus();
   int block_dim = 256;
   int grid_dim = num_gpus / block_dim + ((num_gpus % block_dim) ? 1 : 0);
-  for (int i = 0; i < num_gpus; ++i) {
-    CHECK_CUDA(cudaSetDevice(cudnn.get_gpu(i)));
-    fp_cutoff_kernel<<<grid_dim, block_dim>>>(activations[i], num_elms,
-                                              min_output);
-  }
+  CHECK_CUDA(cudaSetDevice(cudnn.get_gpu()));
+  fp_cutoff_kernel<<<grid_dim, block_dim>>>(activations, num_elms,
+                                            min_output);
 }
 
 __global__ void bp_cutoff_kernel(const DataType* activations,
@@ -63,25 +61,23 @@ __global__ void bp_cutoff_kernel(const DataType* activations,
   El::Int tid = ((El::Int)blockIdx.x) * blockDim.x + threadIdx.x;
   if (tid > num_elms) return;
   DataType a = activations[tid];
-  DataType e = error_signals[tid];  
+  DataType e = error_signals[tid];
   e = a > min_output ? e : DataType(0);
   error_signals[tid] = e;
 }
 
 void bp_cutoff(cudnn::cudnn_manager& cudnn,
-               const std::vector<DataType*>& activations,
-               std::vector<DataType*>& error_signals,               
+               const DataType* activations,
+               DataType* error_signals,
                El::Int h, El::Int w,
                DataType min_output) {
-  El::Int num_elms = h * w;  
+  El::Int num_elms = h * w;
   int num_gpus = cudnn.get_num_gpus();
   int block_dim = 256;
   int grid_dim = num_gpus / block_dim + ((num_gpus % block_dim) ? 1 : 0);
-  for (int i = 0; i < num_gpus; ++i) {
-    CHECK_CUDA(cudaSetDevice(cudnn.get_gpu(i)));
-    bp_cutoff_kernel<<<grid_dim, block_dim>>>(activations[i], error_signals[i],
-                                              num_elms, min_output);
-  }
+  CHECK_CUDA(cudaSetDevice(cudnn.get_gpu()));
+  bp_cutoff_kernel<<<grid_dim, block_dim>>>(activations, error_signals,
+                                            num_elms, min_output);
 }
 
 } // namespace softmax_cuda

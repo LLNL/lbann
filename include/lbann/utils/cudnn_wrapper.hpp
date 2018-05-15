@@ -107,7 +107,7 @@
       /* Check for CUDA errors. */                                      \
       cudaError_t status_FORCE_CHECK_CUDNN = cudaDeviceSynchronize();   \
       if (status_FORCE_CHECK_CUDNN == cudaSuccess)                      \
-          status_FORCE_CHECK_CUDNN = cudaGetLastError();                \
+        status_FORCE_CHECK_CUDNN = cudaGetLastError();                  \
       if (status_FORCE_CHECK_CUDNN != cudaSuccess) {                    \
         cudaDeviceReset();                                              \
         LBANN_ERROR(std::string("CUDA error: ")                         \
@@ -138,7 +138,7 @@ class matrix;
  */
 class matrix {
 #ifdef LBANN_HAS_CUDNN
-  
+
 public:
 
   /** Constructor. */
@@ -242,7 +242,10 @@ class cudnn_manager {
    *  @param max_num_gpus  Maximum Number of available GPUs. If
    *                       negative, then use all available GPUs.
    */
-  cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus = -1, bool nccl_used = false);
+  cudnn_manager(lbann::lbann_comm *_comm,
+                size_t work_space_size = 1 << 9,
+                int max_num_gpus = -1,
+                bool nccl_used = false);
 
   /** Destructor */
   ~cudnn_manager();
@@ -256,43 +259,39 @@ class cudnn_manager {
   /** Get GPUs (const). */
   const std::vector<int>& get_gpus() const;
   /** Get ith GPU. */
-  int get_gpu(int i) const;
+  int get_gpu(int i = 0) const;
   /** Get CUDA streams. */
-  std::vector<cudaStream_t>& get_streams();
-  /** Get CUDA streams (const). */
-  const std::vector<cudaStream_t>& get_streams() const;
-  /** Get ith CUDA stream. */
-  cudaStream_t& get_stream(int i);
-  /** Get ith CUDA stream (const). */
-  const cudaStream_t& get_stream(int i) const;
+  std::vector<cudaStream_t> get_streams() const;
+  /** Get ith CUDA stream.
+   *  Currently only supported for i=0;
+   */
+  cudaStream_t get_stream(int i = 0) const;
   /** Get cuDNN handles. */
   std::vector<cudnnHandle_t>& get_handles();
   /** Get cuDNN handles (const). */
   const std::vector<cudnnHandle_t>& get_handles() const;
   /** Get ith cuDNN handle. */
-  cudnnHandle_t& get_handle(int i);
+  cudnnHandle_t& get_handle(int i = 0);
   /** Get ith cuDNN handle (const). */
-  const cudnnHandle_t& get_handle(int i) const;
+  const cudnnHandle_t& get_handle(int i = 0) const;
   /** Get CUBLAS handles. */
-  std::vector<cublasHandle_t>& get_cublas_handles();
-  /** Get CUBLAS handles (const). */
-  const std::vector<cublasHandle_t>& get_cublas_handles() const;
-  /** Get ith CUBLAS handle. */
-  cublasHandle_t& get_cublas_handle(int i);
-  /** Get ith CUBLAS handle (const). */
-  const cublasHandle_t& get_cublas_handle(int i) const;
+  std::vector<cublasHandle_t> get_cublas_handles() const;
+  /** Get ith CUBLAS handle.
+   *  Currently only supported for i=0;
+   */
+  cublasHandle_t get_cublas_handle(int i = 0) const;
   /** Get GPU work spaces. */
   std::vector<void*> get_work_spaces();
   /** Get ith GPU work space. */
-  void *get_work_space(int i);
+  void *get_work_space(int i = 0);
   /** Get a lower bound on GPU work space sizes (in bytes). */
   size_t get_minimum_work_space_size();
   /** Get GPU work space sizes (in bytes). */
   std::vector<size_t> get_work_space_sizes();
   /** Get ith GPU work space size (in bytes). */
-  size_t get_work_space_size(int i);
-  /** Set ith GPU work space to occupy all available GPU memory. */
-  void set_maximum_work_space_size(int i);
+  size_t get_work_space_size(int i = 0);
+  /** Set ith GPU work space size.. */
+  void set_work_space_size(size_t size, int i = 0);
   /** Free ith GPU work space. */
   void free_work_space(int i);
   /** Free all GPU work spaces. */
@@ -438,12 +437,8 @@ class cudnn_manager {
 
   /** List of GPUs. */
   std::vector<int> m_gpus;
-  /** List of CUDA streams. */
-  std::vector<cudaStream_t> m_streams;
   /** List of cuDNN handles. */
   std::vector<cudnnHandle_t> m_handles;
-  /** List of cuDNN handles. */
-  std::vector<cublasHandle_t> m_cublas_handles;
 
   /** List of GPU work spaces. */
   std::vector<void *> m_work_spaces;
@@ -474,13 +469,20 @@ cudnnDataType_t get_cudnn_data_type();
 
 /** Set cuDNN tensor descriptor.
  *  num_samples is interpreted as the first tensor dimension, followed
- *  by the entries in sample_dims. desc is created or destroyed if
- *  needed.
+ *  by the entries in sample_dims. desc is created if needed.
  */
 void set_tensor_cudnn_desc(cudnnTensorDescriptor_t& desc,
                            int num_samples,
                            const std::vector<int>& sample_dims,
                            int sample_stride = 0);
+
+/** Set cuDNN tensor descriptor for a matrix.
+ *  desc is created if needed.
+ */
+void set_tensor_cudnn_desc(cudnnTensorDescriptor_t& desc,
+                           int height,
+                           int width = 1,
+                           int leading_dim = 0);
 
 /** Copy cuDNN tensor descriptor.
  *  dst is created or destroyed if needed.
@@ -521,6 +523,11 @@ void copy_lrn_cudnn_desc(const cudnnLRNDescriptor_t& src,
 #endif // #ifdef LBANN_HAS_CUDNN
 
 }// namespace cudnn
+
+void set_mat_state_on_host(AbsDistMat* state, const std::vector<DataType*>& state_d, cudnn::cudnn_manager* m_cudnn);
+
+void set_mat_state_on_device(AbsDistMat* state, std::vector<DataType*>& state_d, cudnn::cudnn_manager* m_cudnn);
+
 }// namespace lbann
 
 #endif // CUDNN_WRAPPER_HPP_INCLUDED

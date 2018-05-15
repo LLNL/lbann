@@ -140,7 +140,7 @@ def configure_model(model):
     data_size = functools.reduce(lambda x, y: x*y, data_dims)
     label_size = functools.reduce(lambda x, y: x*y, label_dims)
     slice_points = [0, data_size, data_size + label_size]
-    l = new_layer(model, 'input_concat', '', 'repeated_input')
+    l = new_layer(model, 'input_concat', '', 'repeated_input', 'cpu')
     l.repeated_input.num_steps = model.recurrent.unroll_depth
     l = new_layer(model, 'input', 'input_concat', 'slice')
     l.children = 'data label'
@@ -180,16 +180,16 @@ def configure_model(model):
     crop1_dims = [3, 32, 32]
     crop2_dims = [3, 64, 64]
     crop3_dims = [3, 128, 128]
-    l = new_layer(model, 'glimpse1', 'data scaled_loc', 'crop')
+    l = new_layer(model, 'glimpse1', 'data scaled_loc', 'crop', 'cpu')
     l.crop.dims = str_list(crop1_dims)
-    l = new_layer(model, 'crop2', 'data scaled_loc', 'crop')
+    l = new_layer(model, 'crop2', 'data scaled_loc', 'crop', 'cpu')
     l.crop.dims = str_list(crop2_dims)
     l = new_layer(model, 'glimpse2', 'crop2', 'pooling')
     l.pooling.num_dims = 2
     l.pooling.pool_dims_i = 2
     l.pooling.pool_strides_i = l.pooling.pool_dims_i
     l.pooling.pool_mode = 'average'
-    l = new_layer(model, 'crop3', 'data scaled_loc', 'crop')
+    l = new_layer(model, 'crop3', 'data scaled_loc', 'crop', 'cpu')
     l.crop.dims = str_list(crop3_dims)
     l = new_layer(model, 'glimpse3', 'crop3', 'pooling')
     l.pooling.num_dims = 2
@@ -292,14 +292,14 @@ def configure_model(model):
     l = new_layer(model, 'emission_x_fc', 'lstm2', 'fully_connected')
     l.fully_connected.num_neurons = num_locs
     l.fully_connected.has_bias = False
-    l = new_layer(model, 'emission_y_probs', 'emission_y_fc', 'softmax')
-    l = new_layer(model, 'emission_x_probs', 'emission_x_fc', 'softmax')
-    l = new_layer(model, 'emission_y', 'emission_y_probs', 'categorical_random')
-    l = new_layer(model, 'emission_x', 'emission_x_probs', 'categorical_random')
-    l = new_layer(model, 'locy', 'emission_y', 'discrete_random')
+    l = new_layer(model, 'emission_y_probs', 'emission_y_fc', 'softmax', 'cpu')
+    l = new_layer(model, 'emission_x_probs', 'emission_x_fc', 'softmax', 'cpu')
+    l = new_layer(model, 'emission_y', 'emission_y_probs', 'categorical_random', 'cpu')
+    l = new_layer(model, 'emission_x', 'emission_x_probs', 'categorical_random', 'cpu')
+    l = new_layer(model, 'locy', 'emission_y', 'discrete_random', 'cpu')
     l.discrete_random.values = str_list(locs)
     l.discrete_random.dims = '1'
-    l = new_layer(model, 'locx', 'emission_x', 'discrete_random')
+    l = new_layer(model, 'locx', 'emission_x', 'discrete_random', 'cpu')
     l.discrete_random.values = str_list(locs)
     l.discrete_random.dims = '1'
 
@@ -341,15 +341,15 @@ def configure_model(model):
                   'prob',
                   'classification_prob emission_y_prob emission_x_prob',
                   'hadamard')
-    l = new_layer(model, 'obj', 'prob', 'log')
-    l = new_layer(model, 'obj_eval', 'obj', 'evaluation')
+    l = new_layer(model, 'obj', 'prob', 'log', 'cpu')
+    l = new_layer(model, 'obj_eval', 'obj', 'evaluation', 'cpu')
 
     # Accuracy
     l = new_layer(model, 'prediction', 'classification_probs', 'categorical_random', 'cpu')
     l = new_layer(model, 'accuracy_full', 'label prediction', 'hadamard', 'cpu')
-    l = new_layer(model, 'accuracy', 'accuracy_full', 'reduction')
+    l = new_layer(model, 'accuracy', 'accuracy_full', 'reduction', 'cpu')
     l.reduction.mode = 'sum'
-    l = new_layer(model, 'accuracy_eval', 'accuracy', 'evaluation')
+    l = new_layer(model, 'accuracy_eval', 'accuracy', 'evaluation', 'cpu')
     
 if __name__ == "__main__":
 

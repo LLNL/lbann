@@ -33,31 +33,10 @@
 
 namespace lbann {
 
-#ifdef LBANN_HAS_CUDNN
-namespace hadamard_cuda {
-void fp(cudnn::cudnn_manager& cudnn,
-        int height,
-        int width_per_gpu,
-        const std::vector<std::vector<lbann::DataType*>>& inputs,
-        const std::vector<int>& input_leading_dims,
-        std::vector<lbann::DataType*>& output,
-        int output_leading_dim);
-void bp(cudnn::cudnn_manager& cudnn,
-        int height,
-        int width_per_gpu,
-        const std::vector<std::vector<lbann::DataType*>>& inputs,
-        const std::vector<int>& input_leading_dims,
-        const std::vector<lbann::DataType*>& gradient_wrt_output,
-        int gradient_wrt_output_leading_dim,
-        std::vector<std::vector<lbann::DataType*>>& gradient_wrt_inputs,
-        const std::vector<int>& gradient_wrt_input_leading_dims);
-} // namespace hadamard_cuda
-#endif // LBANN_HAS_CUDNN
-
 /** Hadamard layer.
  *  This layer computes the entrywise product of the input tensors.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class hadamard_layer : public transform_layer {
  public:
 
@@ -70,9 +49,8 @@ class hadamard_layer : public transform_layer {
 
   #ifdef LBANN_HAS_CUDNN
     // Activate GPU if needed
-    if (cudnn != nullptr && T_layout == data_layout::DATA_PARALLEL) {
+    if (cudnn != nullptr) {
       this->m_cudnn = cudnn;
-      this->m_using_gpus = true;
     }
   #endif // LBANN_HAS_CUDNN
 
@@ -81,6 +59,7 @@ class hadamard_layer : public transform_layer {
   hadamard_layer* copy() const override { return new hadamard_layer(*this); }
   std::string get_type() const override { return "Hadamard"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   /** Returns description of ctor params */
   std::string get_description() const override {
@@ -95,159 +74,46 @@ class hadamard_layer : public transform_layer {
 
   protected:
 
-  void setup_pointers() override {
-    transform_layer::setup_pointers();
-    std::stringstream err;
-    if (get_num_parents() <= 0) {
-      err << __FILE__ << " " << __LINE__ << " :: hadamard_layer: "
-          << "Hadamard layer has no parents";
-      throw lbann_exception(err.str());
-    }
-  }
-
   void fp_compute() override {
-    if (this->m_using_gpus) {
-      fp_compute_gpu();
-    } else { 
-      fp_compute_cpu();
+    auto& output = get_activations();
+    switch (get_num_parents()) {
+    case 0: El::Fill(output, DataType(1)); break;
+    case 1: El::LockedView(output, get_prev_activations()); break;
+    default:
+      El::Hadamard(get_prev_activations(0),
+                   get_prev_activations(1),
+                   output);
+      for (int i = 2; i < get_num_parents(); ++i) {
+        El::Hadamard(get_prev_activations(i), output, output);
+      }
     }
   }
 
   void bp_compute() override {
-    if (this->m_using_gpus) {
-      bp_compute_gpu();
-    } else { 
-      bp_compute_cpu();
-    }
-  }
-
- private:
-
-  void fp_compute_cpu() {
-
-    // Return quickly if layer has fewer than two parents
     const int num_parents = get_num_parents();
-    if (num_parents == 0) {
-      El::Fill(get_activations(), DataType(1));
-      return;
-    }
-    if (num_parents == 1) {
-      El::Copy(get_prev_activations(), get_activations());
-      return;
-    }
-
-    // Get local matrices
-    auto& local_input0 = get_local_prev_activations(0);
-    std::vector<const Mat*> local_inputs;
-    for (int i = 1; i < num_parents; ++i) {
-      local_inputs.push_back(&get_local_prev_activations(i));
-    }
-    auto& local_output = get_local_activations();
-
-    // Compute entrywise product
-    const int local_height = local_output.Height();
-    const int local_width = local_output.Width();
-    #pragma omp parallel for collapse(2)
-    for (int col = 0; col < local_width; ++col) {
-      for (int row = 0; row < local_height; ++row) {
-        DataType y = local_input0(row, col);
-        for (const auto& local_input : local_inputs) {
-          y *= (*local_input)(row, col);
-        }
-        local_output(row, col) = y;
-      }
-    }
-    
-  }  
-
-  void bp_compute_cpu() {
-
-    // Return quickly if layer has fewer than two parents
-    const int num_parents = get_num_parents();
-    if (num_parents == 0) { return; }
-    if (num_parents == 1) {
-      El::Axpy(DataType(1), get_prev_error_signals(), get_error_signals());
-      return;
-    }
-
-    // Get local matrices
-    std::vector<const Mat*> local_inputs;
-    for (const auto& input : this->m_prev_activations) {
-      local_inputs.push_back(&input->LockedMatrix());
-    }
-    auto& local_gradient_wrt_output = get_local_prev_error_signals();
-    std::vector<Mat*> local_gradient_wrt_inputs;
-    for (auto& gradient_wrt_input : this->m_error_signals) {
-      local_gradient_wrt_inputs.push_back(&gradient_wrt_input->Matrix());
-    }
-
-    // Compute derivative of entrywise product
-    const int local_height = local_gradient_wrt_output.Height();
-    const int local_width = local_gradient_wrt_output.Width();
-    #pragma omp parallel for collapse(2)
-    for (int col = 0; col < local_width; ++col) {
-      for (int row = 0; row < local_height; ++row) {
-        const DataType dy = local_gradient_wrt_output(row, col);
-        for (int parent = 0; parent < num_parents; ++parent) {
-          DataType dx = dy;
-          for (int i = 0; i < num_parents; ++i) {
-            if (i != parent) {
-              dx *= (*local_inputs[i])(row, col);
-            }
+    const auto& gradient_wrt_output = get_prev_error_signals();
+    switch (num_parents) {
+    case 0: break;
+    case 1:
+      El::LockedView(get_error_signals(), gradient_wrt_output);
+      break;
+    default:
+      for (int i = 0; i < num_parents; ++i) {
+        auto& gradient_wrt_input = get_error_signals(i);
+        int j = 0;
+        if (i == j) { ++j; }
+        El::Hadamard(get_prev_activations(j),
+                     gradient_wrt_output,
+                     gradient_wrt_input);
+        for (++j; j < num_parents; ++j) {
+          if (i != j) {
+            El::Hadamard(get_prev_activations(j),
+                         gradient_wrt_input,
+                         gradient_wrt_input);
           }
-          (*local_gradient_wrt_inputs[parent])(row, col) += dx;
         }
       }
     }
-
-  }
-
-  void fp_compute_gpu() {
-  #ifndef LBANN_HAS_CUDNN
-    LBANN_ERROR("cuDNN not detected");
-  #else
-    std::vector<std::vector<lbann::DataType*>> inputs;
-    std::vector<int> input_leading_dims;
-    for (auto&& input : m_prev_activations_d) {
-      inputs.push_back(input.get_locked_data());
-      input_leading_dims.push_back(input.get_leading_dim());
-    }
-    hadamard_cuda::fp(*m_cudnn,
-                      get_num_neurons(),
-                      m_mini_batch_size_per_gpu,
-                      inputs,
-                      input_leading_dims,
-                      m_activations_d[0].get_data(),
-                      m_activations_d[0].get_leading_dim());
-  #endif // LBANN_HAS_CUDNN
-  }
-
-  void bp_compute_gpu() {
-  #ifndef LBANN_HAS_CUDNN
-    LBANN_ERROR("cuDNN not detected");
-  #else
-    std::vector<std::vector<lbann::DataType*>> inputs;
-    std::vector<int> input_leading_dims;
-    std::vector<std::vector<lbann::DataType*>> gradient_wrt_inputs;
-    std::vector<int> gradient_wrt_input_leading_dims;
-    for (auto&& input : m_prev_activations_d) {
-      inputs.push_back(input.get_locked_data());
-      input_leading_dims.push_back(input.get_leading_dim());
-    }
-    for (auto&& gradient_wrt_input : m_error_signals_d) {
-      gradient_wrt_inputs.push_back(gradient_wrt_input.get_data());
-      gradient_wrt_input_leading_dims.push_back(gradient_wrt_input.get_leading_dim());
-    }
-    hadamard_cuda::bp(*m_cudnn,
-                      get_num_neurons(),
-                      m_mini_batch_size_per_gpu,
-                      inputs,
-                      input_leading_dims,
-                      m_prev_error_signals_d[0].get_locked_data(),
-                      m_prev_error_signals_d[0].get_leading_dim(),
-                      gradient_wrt_inputs,
-                      gradient_wrt_input_leading_dims);
-  #endif // LBANN_HAS_CUDNN
   }
 
 };

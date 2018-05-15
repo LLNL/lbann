@@ -58,8 +58,8 @@ class ascii_reader : public generic_data_reader {
   }
 
  protected:
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
-  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) override;
 
   /** Length of text sequence. */
   int m_sequence_length;

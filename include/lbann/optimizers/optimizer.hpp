@@ -69,10 +69,6 @@ class optimizer {
 
   /** Get gradient matrix. */
   const AbsDistMat& get_gradient();
-#ifdef LBANN_HAS_CUDNN
-  /** Get gradient matrix on GPU. */
-  const cudnn::matrix& get_gradient_gpu();
-#endif // LBANN_HAS_CUDNN
 
   /** Clear gradient matrix. */
   void clear_gradient();
@@ -146,8 +142,8 @@ class optimizer {
    *  The default implementation is to transfer data to CPU and call
    *  step_compute.
    */
-  virtual void step_compute_gpu(cudnn::matrix& values,
-                                const cudnn::matrix& gradient_d);
+  virtual void step_compute_gpu(AbsDistMat& values,
+                                const AbsDistMat& gradient);
 #endif // LBANN_HAS_CUDNN
 
   /** Get the time spent in step(). */
@@ -173,10 +169,6 @@ class optimizer {
 
   /** Gradient matrix. */
   AbsDistMat* m_gradient;
-#ifdef LBANN_HAS_CUDNN
-  /** GPU gradient matrix. */
-  cudnn::matrix m_gradient_d;
-#endif // LBANN_HAS_CUDNN
 
  private:
 
@@ -197,14 +189,6 @@ class optimizer {
    *  added to the gradient matrix.
    */
   AbsDistMat* m_gradient_staging;
-#ifdef LBANN_HAS_CUDNN
-  /** GPU memory for gradient staging matrix.
-   *  When the gradient is needed, an allreduce is applied over the
-   *  GPUs and over the redundant communicator of the staging matrix
-   *  and the result is added to the gradient matrix.
-   */
-  cudnn::matrix m_gradient_staging_d;
-#endif // LBANN_HAS_CUDNN
 
   /** Whether the gradient staging matrix requires an allreduce. */
   bool m_gradient_allreduce_needed;
@@ -226,6 +210,8 @@ class optimizer {
   virtual bool save_to_checkpoint_shared(persist& p, std::string m_name);
   virtual bool load_from_checkpoint_shared(persist& p, std::string m_name);
 
+  virtual bool save_to_checkpoint_distributed(persist& p, std::string m_name);
+  virtual bool load_from_checkpoint_distributed(persist& p, std::string m_name);
 };
 
 } // namespace lbann

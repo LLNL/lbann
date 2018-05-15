@@ -35,7 +35,7 @@ namespace lbann {
  * Smooth Rectified linear unit activation function.
  * This is an approximation to the softplus.
  */
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class smooth_relu_layer : public entrywise_activation_layer {
  public:
   smooth_relu_layer(lbann_comm *comm)
@@ -43,6 +43,7 @@ class smooth_relu_layer : public entrywise_activation_layer {
   smooth_relu_layer* copy() const override { return new smooth_relu_layer(*this); }
   std::string get_type() const override { return "smooth ReLU"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
  protected:
   DataType activation(DataType z) const override {
