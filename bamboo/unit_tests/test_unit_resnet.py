@@ -30,3 +30,10 @@ def test_unit_gradient_check_resnet_gcc7(cluster, exes, dirname):
 
 def test_unit_gradient_check_resnet_intel18(cluster, exes, dirname):
     skeleton_gradient_check_resnet(cluster, exes, dirname, 'intel18')
+
+# Run with python -m pytest -s test_unit_resnet.py -k 'test_unit_gradient_check_resnet_exe' --exe=<executable>
+def test_unit_gradient_check_resnet_exe(cluster, dirname, exe):
+    if exe == None:
+        pytest.skip('Non-local testing')
+    exes = {'exe' : exe}
+    skeleton_gradient_check_resnet(cluster, exes, dirname, 'exe')

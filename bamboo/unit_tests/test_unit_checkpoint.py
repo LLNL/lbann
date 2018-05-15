@@ -121,3 +121,11 @@ def test_unit_checkpoint_lenet_gcc7(cluster, exes, dirname):
 def test_unit_checkpoint_lenet_intel18(cluster, exes, dirname):
     skeleton_checkpoint_lenet_shared(cluster, exes, dirname, 'intel18')
     skeleton_checkpoint_lenet_distributed(cluster, exes, dirname, 'intel18')
+
+# Run with python -m pytest -s test_unit_checkpoint.py -k 'test_unit_checkpoint_lenet_exe' --exe=<executable>                                                  
+def test_unit_checkpoint_lenet_exe(cluster, dirname, exe):
+    if exe == None:
+        pytest.skip('Non-local testing')
+    exes = {'exe' : exe}
+    skeleton_checkpoint_lenet_shared(cluster, exes, dirname, 'exe')
+    skeleton_checkpoint_lenet_distributed(cluster, exes, dirname, 'exe')

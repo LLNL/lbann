@@ -45,6 +45,8 @@ def pytest_addoption(parser):
                      help='--log=1 to keep trimmed accuracy files. Default (--log=0) removes files')
     parser.addoption('--weekly', action='store_true', default=False,
                      help='--weekly specifies that the test should ONLY be run weekly, not nightly')
+    # For local testing only                                                                                                                                            
+    parser.addoption('--exe', action='store', help='--exe=<hand-picked executable>')
 
 @pytest.fixture
 def cluster(request):
@@ -66,3 +68,6 @@ def exes(request):
 def weekly(request):
     return request.config.getoption('--weekly')
 
+@pytest.fixture
+def exe(request):
+    return request.config.getoption('--exe')
