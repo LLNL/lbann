@@ -63,15 +63,15 @@ void data_store_image::setup() {
         << "====================================================================\n"
         << "data_store is running in prestage mode; after writing files to ssd,\n"
         << "a tarball will be created and written to " << prestage_dir << "\n\n";
-      std::string exe = get_tarball_exe();
+      std::pair<std::string, std::string> exe = get_tarball_exe();
       std::cerr 
         << "example system call to create tarball;\n"
-        << "IF THIS DOESN'T LOOK CORRECT, ABORT NOW!\n"
-        << "  " << exe << "\n\nsleeping for five seconds\n"
+        << "IF THIS DOESN'T LOOK CORRECT, ABORT NOW!\n\n"
+        << "  " << exe.first << "\n\nsleeping for five seconds\n"
         << "====================================================================\n"
         << "\n\n\n\n\n\n\n\n\n\n\n\n";
     }
-    sleep(5);
+    //sleep(5);
   }
 
   if (m_master) std::cerr << "starting data_store_image::setup(); calling generic_data_store::setup()\n";
@@ -651,7 +651,7 @@ void data_store_image::write_file_sizes() {
   if (! out.good()) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
-        << "failed to open " << imagepath << " for reading";
+        << "failed to open " << s.str() << " for reading";
     throw lbann_exception(err.str());
   }
   for (auto t : m_file_sizes) {
@@ -660,41 +660,43 @@ void data_store_image::write_file_sizes() {
   out.close();
 }
 
-std::string data_store_image::get_tarball_exe() {
-  std::string local_dir = m_reader->get_local_file_dir();
-
-  // tarball name must be of form: <pathname>/filename_prefix;
-  // the output fn is <pathname>/filename_prefix_rank=<rank>_np=<num procs>
-  std::string prestage_dir = options::get()->get_string("create_tarball");
-  int num_slash = std::count(presage_dir.begin(), presage_dir.end(), '/');
-  if (num_slash < 1 || prestage_dir.back() == '/') {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "error in option --create_tarball=<<string>;
-        << "<string> must be of the form: <pathname>/prefix"
-    throw lbann_exception
-  }
-
-  size_t j = prestage_dir.rfind('/');
-  std::string pathname = j.substr(j);
-  std::string prefix = prestage_dir.substr(j+1);
+std::pair<std::string, std::string>  data_store_image::get_tarball_exe() {
+  std::pair<std::string, std::string> names = get_pathname_and_prefix(
+                           options::get()->get_string("create_tarball"));
   if (m_master) {
-    std::cerr << "tarball dir: " << pathname << "\n"
-              << "tarball prefix: " << prefix << "\n\n";
+    std::cerr << "tarball dir: " << names.second << "\n"
+              << "tarball prefix: " << names.first << "\n\n";
   }
 
-  size_t j = local_dir.rfind
-                        
-  std::stringstream s;
-  s << "tar cvf " << prestage_dir << m_reader->get_role()
-    << "_rank=" << m_rank << "_np=" << m_np << ".tar " << local_dir;
-  return s.str();
+  //This is somewhat fragile. For now I assume the local_dir is
+  //of the form: /l/ssd/train
+  std::string local_dir = m_reader->get_local_file_dir();
+  size_t j = local_dir.rfind('/', local_dir.size()-2);
+  std::string work_dir = local_dir.substr(0, j);
+
+  std::stringstream tarball_name;
+  tarball_name << names.first << "_" << m_reader->get_role()
+      << "_rank=" << m_rank << "_np=" << m_np << ".tar";
+  std::stringstream exe_1;
+  std::stringstream exe_2;
+  exe_1 << "tar cf " << work_dir << '/' << tarball_name.str()
+      << " " << local_dir;
+  exe_2 << "cp -f " << work_dir << '/' << tarball_name.str()
+      << " " << names.second;
+  return std::make_pair(exe_1.str(), exe_2.str());
 }
 
 void data_store_image::create_tarball() {
   write_file_sizes();
-  system(get_tarball_exe().c_str());
-  //std::string e = get_tarball_exe();
+  std::pair<std::string, std::string> cmds = get_tarball_exe();
+  if (m_master)  std::cerr << "\nabout to execute: " << cmds.first << "\n";
+  run_cmd(cmds.first);
+  if (m_master)  std::cerr << "\nabout to execute: " << cmds.second << "\n";
+  run_cmd(cmds.second);
+
+  std::string junk ("this is junk");
+  if (m_master)  std::cerr << "\nabout to execute: junk\n";
+  run_cmd(junk);
 }
 
 }  // namespace lbann

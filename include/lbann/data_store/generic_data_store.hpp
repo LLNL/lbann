@@ -263,6 +263,11 @@ protected :
   /// created the directory structure specified in 's', if it doesn't exist;
   /// 's' may optionally end in '/'
   void create_dirs(std::string s);
+
+  /// runs a system command, and returns the output;
+  /// if exit_on_error=true, and the value returned by the system
+  /// call is other than the empty string, then an exception is thrown
+  std::string run_cmd(std::string s, bool exit_on_error = true);
 };
 
 }  // namespace lbann

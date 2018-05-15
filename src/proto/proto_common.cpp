@@ -202,9 +202,15 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
     }
 
     if (create_tarball) {
-      reader->set_absolute_sample_count( 0. );
-      reader->set_use_percent( 1.0 );
-      reader->set_first_n( 0 );
+      if (opts->has_int("test_tarball")) {
+        reader->set_absolute_sample_count( opts->get_int("test_tarball"));
+        reader->set_use_percent( 0. );
+        reader->set_first_n(0);
+      } else {
+        reader->set_absolute_sample_count( 0. );
+        reader->set_use_percent( 1.0 );
+        reader->set_first_n( 0 );
+      }  
     } else {
       reader->set_absolute_sample_count( readme.absolute_sample_count() );
       reader->set_use_percent( readme.percent_of_data_to_use() );

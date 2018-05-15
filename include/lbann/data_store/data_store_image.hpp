@@ -121,8 +121,9 @@ class data_store_image : public generic_data_store {
   void create_tarball();
 
   /// returns the string that will be passed to a system call to
-  /// create the tarball
-  std::string get_tarball_exe();
+  /// create the tarball on local store (/l/ssd), and string for copying
+  /// to remote store (lscratchX)
+  std::pair<std::string, std::string> get_tarball_exe();
 
   /// called by create_tarball
   void write_file_sizes();
