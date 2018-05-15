@@ -76,6 +76,18 @@ generic_data_store::generic_data_store(generic_data_reader *reader, model *m) :
   if (opts->has_bool("verbose") && opts->get_bool("verbose")) {
     m_verbose = true;
   }
+
+  if (opts->has_string("use_tarball")) {
+    m_dir = m_reader->get_local_file_dir();
+  }
+
+  if (m_comm->get_num_models() != 1) {
+    if (m_master) {
+      std::cerr << "\nFATAL ERROR: data store classes currently assume there is\n"
+                << "a single model; please ask Dave Hysom to fix!\n\n";
+    }
+    exit(9);
+  }
 }
 
 void generic_data_store::get_minibatch_index_vector() {

@@ -70,6 +70,10 @@ class data_store_image : public generic_data_store {
   /// fills in m_file_sizes
   virtual void get_file_sizes() = 0;
 
+  /// fills in m_file_sizes; this is called when we're using files
+  /// from a tarball
+  virtual void read_file_sizes();
+
   /// called by get_file_sizes
   void exchange_file_sizes(
     std::vector<int> &global_indices,
@@ -111,6 +115,9 @@ class data_store_image : public generic_data_store {
   /// to local store, e.g, /l/ssd
   void stage_files();
 
+  /// for out-of-memory mode: unpack files from a previously created tarball
+  void stage_tarball();
+
   /// called by data_reader::fetch_data; supports out-of-memory mode
   void fetch_data() override;
 
@@ -127,6 +134,10 @@ class data_store_image : public generic_data_store {
 
   /// called by create_tarball
   void write_file_sizes();
+
+  /// returns true if option: --create_tarball is in use;
+  /// print info to screen, and performs error checking
+  bool are_we_creating_tarballs();
 };
 
 }  // namespace lbann

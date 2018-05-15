@@ -149,7 +149,8 @@ void data_store_imagenet::read_files(const std::unordered_set<int> &indices) {
     }
     if (m_file_sizes.find(index) == m_file_sizes.end()) {
       err << __FILE__ << " " << __LINE__ << " :: " 
-          << " m_file_sizes.find(index) failed for index: " << index;
+          << " m_file_sizes.find(index) failed for index: " << index
+          << " role: " << m_reader->get_role();
       throw lbann_exception(err.str());
     }
     if (m_data_filepaths.find(index) == m_data_filepaths.end()) {
@@ -211,7 +212,6 @@ void data_store_imagenet::get_file_sizes() {
                 << " files; elapsed time: " << get_time() - tm
                 << "s est. remaining time: " << estimated_remaining_time << "s\n";
     }
-
   }
 
   exchange_file_sizes(global_indices, bytes);
