@@ -24,7 +24,7 @@ BLAS=openblas
 BUILD_TYPE=Release
 COMPILER=gcc@4.9.3
 DTYPE=float
-EL_VER=hydrogen
+EL_VER=develop
 if [ "${CLUSTER}" == "ray" -o "${CLUSTER}" == "sierra" ]; then
   MPI=spectrum-mpi
 else
@@ -196,7 +196,6 @@ if [ "${CLUSTER}" == "ray" ]; then
 fi
 
 SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ^hydrogen@${EL_VER} build_type=${BUILD_TYPE} blas=${BLAS} ^${MPI}"
-#SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ^elemental@${EL_VER} build_type=${BUILD_TYPE} blas=${BLAS} ^${MPI}"
 # Disable the extra compiler flags until spack supports propagating flags properly
 #SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ${SPACK_CFLAGS} ${SPACK_CXXFLAGS} ${SPACK_FFLAGS} ^elemental@${EL_VER} blas=${BLAS} ^${MPI}"
 
