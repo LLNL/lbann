@@ -24,7 +24,7 @@ BLAS=openblas
 BUILD_TYPE=Release
 COMPILER=gcc@4.9.3
 DTYPE=float
-EL_VER=hydrogen-develop
+EL_VER=hydrogen
 if [ "${CLUSTER}" == "ray" -o "${CLUSTER}" == "sierra" ]; then
   MPI=spectrum-mpi
 else
@@ -114,6 +114,8 @@ if [ "${GPU}" == "1" -o "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" -o "$
     FEATURE="_gpu"
   fi
   EL_VER="${EL_VER}+cuda"
+else
+  PLATFORM="~gpu"
 fi
 
 C_FLAGS=
