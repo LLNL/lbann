@@ -116,3 +116,10 @@ def test_integration_io_buffers_gcc7(cluster, dirname, exes, weekly):
 
 def test_integration_io_buffers_intel18(cluster, dirname, exes, weekly):
     skeleton_io_buffers(cluster, dirname, exes, 'intel18', weekly)
+
+# Run with python -m pytest -s test_integration_io_buffers.py -k 'test_integration_io_buffers_exe' --exe=<executable>
+def test_integration_performance_io_buffers_exe(cluster, dirname, exe):
+    if exe == None:
+        pytest.skip('Non-local testing')
+    exes = {'exe' : exe}
+    skeleton_io_buffers(cluster, dirname, exes, 'exe', True)

@@ -99,7 +99,7 @@ def skeleton_performance_alexnet(cluster, dir_name, executables, compiler_name, 
     frequency_str = '_weekly'
   run_tests(actual_performance, model_name, dir_name, should_log, compiler_name, cluster, frequency_str)
 
-def skeleton_performance_full_alexnet(cluster, dir_name, executables, weekly, compiler_name):
+def skeleton_performance_full_alexnet(cluster, dir_name, executables, compiler_name, weekly):
   if not weekly:
     pytest.skip('Not doing weekly testing')
   if compiler_name not in executables:
@@ -156,3 +156,25 @@ def test_integration_performance_alexnet_intel18(cluster, dirname, exes, weekly)
 
 def test_integration_performance_full_alexnet_intel18(cluster, dirname, exes, weekly):
   skeleton_performance_full_alexnet(cluster, dirname, exes, 'intel18', weekly)
+
+
+# Run with python -m pytest -s test_integration_performance.py -k 'test_integration_performance_lenet_mnist_exe' --exe=<executable>
+def test_integration_performance_lenet_mnist_exe(cluster, dirname, exe):
+    if exe == None:
+        pytest.skip('Non-local testing')
+    exes = {'exe' : exe}
+    skeleton_performance_lenet_mnist(cluster, dirname, exes, 'exe')
+
+# Run with python -m pytest -s test_integration_performance.py -k 'test_integration_performance_alexnet_exe' --exe=<executable>
+def test_integration_performance_alexnet_exe(cluster, dirname, exe):
+    if exe == None:
+        pytest.skip('Non-local testing')
+    exes = {'exe' : exe}
+    skeleton_performance_alexnet(cluster, dirname, exes, 'exe', True)
+
+# Run with python -m pytest -s test_integration_performance.py -k 'test_integration_performance_full_alexnet_exe' --exe=<executable>
+def test_integration_performance_full_alexnet_exe(cluster, dirname, exe):
+    if exe == None:
+        pytest.skip('Non-local testing')
+    exes = {'exe' : exe}
+    skeleton_performance_full_alexnet(cluster, dirname, exes, 'exe', True)

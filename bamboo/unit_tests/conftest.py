@@ -29,6 +29,8 @@ def pytest_addoption(parser):
                      help='--dirname specifies the top-level directory')
     parser.addoption('--exes', action='store', default=default_exes,
                      help='--exes={compiler_name: path}')
+    # For local testing only
+    parser.addoption('--exe', action='store', help='--exe=<hand-picked executable>')
     
 @pytest.fixture
 def cluster(request):
@@ -41,3 +43,7 @@ def dirname(request):
 @pytest.fixture
 def exes(request):
     return request.config.getoption('--exes')
+
+@pytest.fixture
+def exe(request):
+    return request.config.getoption('--exe')

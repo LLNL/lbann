@@ -67,7 +67,7 @@ To run a specific test file: `python -m pytest -s <test_file>.py`.
 
 To run a specific test: `python -m pytest -s <test_file>.py -k '<test_name>'`.
 
-Currently, it is not possible to run a test with a different executable. We plan on adding support for this.
+Most integration and unit tests allow for running a test with a different executable. The convention is to have a similarly structured test replacing `_<compiler_name>` with `_exe`. These tests are set to be skipped in Bamboo, but can be run locally. There should be a line above the test that gives the command to run the test locally.
 
 # Helpful Files
 

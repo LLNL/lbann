@@ -4,15 +4,17 @@ import tools
 import pytest
 import os, sys
 
-def test_unit_lbann2_reload(cluster, exes, dirname):
-    lbann2  = exes['gcc4'] + '2'
+def skeleton_lbann2_reload(cluster, executables, dir_name, compiler_name):
+    if compiler_name not in executables:
+      pytest.skip('default_exes[%s] does not exist' % compiler_name)
+    lbann2  = executables[compiler_name] + '2'
     model_path = '{../../model_zoo/models/lenet_mnist/model_lenet_mnist.prototext,../../model_zoo/tests/model_lenet_mnist_lbann2ckpt.prototext}'
     output_file_name = '%s/bamboo/unit_tests/output/lbann2_no_checkpoint_%s_output.txt' % (dir_name, compiler_name)
     error_file_name  = '%s/bamboo/unit_tests/error/lbann2_no_checkpoint_%s_error.txt' % (dir_name, compiler_name)
     command = tools.get_command(
         cluster=cluster, executable=lbann2, data_reader_name='mnist',
         data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
-        dir_name=dirname, 
+        dir_name=dir_name, 
         model_path=model_path,
         optimizer_name='sgd',
         num_epochs=2,
@@ -30,7 +32,7 @@ def test_unit_lbann2_reload(cluster, exes, dirname):
     error_file_name  = '%s/bamboo/unit_tests/error/lbann2_checkpoint_%s_error.txt' % (dir_name, compiler_name)
     command = tools.get_command(
         cluster=cluster, executable=exe, num_nodes=1, num_processes=1,
-        dir_name=dirname,
+        dir_name=dir_name,
         data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
         data_reader_name='mnist', model_folder='tests',
         model_name='lenet_mnist_ckpt', num_epochs=2, optimizer_name='sgd',
@@ -45,7 +47,7 @@ def test_unit_lbann2_reload(cluster, exes, dirname):
     error_file_name  = '%s/bamboo/unit_tests/error/lbann2_restart_%s_error.txt' % (dir_name, compiler_name)
     command = tools.get_command(
         cluster=cluster, executable=lbann2, num_nodes=1, num_processes=1,
-        dir_name=dirname,
+        dir_name=dir_name,
         data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
         data_reader_name='mnist',
         model_path='../../model_zoo/tests/model_lenet_mnist_lbann2ckpt.prototext',
@@ -62,3 +64,22 @@ def test_unit_lbann2_reload(cluster, exes, dirname):
     os.system('rm -rf ckpt')
     os.system('rm -rf lbann2_*')
     assert diff_test == 0
+
+def test_unit_lbann2_reload_clang4(cluster, exes, dirname):
+    skeleton_lbann2_reload(cluster, exes, dirname, 'clang4')
+    
+def test_unit_lbann2_reload_gcc4(cluster, exes, dirname):
+    skeleton_lbann2_reload(cluster, exes, dirname, 'gcc4')
+
+def test_unit_lbann2_reload_gcc7(cluster, exes, dirname):
+    skeleton_lbann2_reload(cluster, exes, dirname, 'gcc7')
+
+def test_unit_lbann2_reload_intel18(cluster, exes, dirname):
+    skeleton_lbann2_reload(cluster, exes, dirname, 'intel18')
+
+# Run with python -m pytest -s test_unit_lbann2_reload.py -k 'test_unit_lbann2_reload_exe' --exe=<executable>
+def test_unit_lbann2_reload_exe(cluster, dirname, exe):
+    if exe == None:
+        pytest.skip('Non-local testing')
+    exes = {'exe' : exe}
+    skeleton_lbann2_reload(cluster, exes, dirname, 'exe')
