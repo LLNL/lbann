@@ -1,6 +1,7 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
   relu.cpp
+  tanh.cpp
   softmax.cpp
   )
 
@@ -9,7 +10,6 @@ if (LBANN_HAS_CUDA)
   set_full_path(THIS_DIR_CU_SOURCES
     sigmoid.cu
     softmax.cu
-    tanh.cu
     )
 endif ()
 

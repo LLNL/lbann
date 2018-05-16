@@ -135,7 +135,7 @@ def add_lstm(model, name, parent, size):
 def configure_model(model):
 
     # Data and labels
-    data_dims = [1, 227, 227]
+    data_dims = [3, 227, 227]
     label_dims = [1000]
     data_size = functools.reduce(lambda x, y: x*y, data_dims)
     label_size = functools.reduce(lambda x, y: x*y, label_dims)

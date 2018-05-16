@@ -32,47 +32,81 @@
 
 namespace lbann {
 
-#ifdef LBANN_HAS_CUDNN
-namespace tanh_cuda {
-  void fp(cudnn::cudnn_manager& cudnn,
-          int height,
-          int width_per_gpu,
-          const DataType* input,
-          int input_leading_dim,
-          DataType* output,
-          int output_leading_dim);
-  void bp(cudnn::cudnn_manager& cudnn,
-          int height, int width_per_gpu,
-          const DataType* input,
-          int input_leading_dim,
-          const DataType* gradient_wrt_output,
-          int gradient_wrt_output_leading_dim,
-          DataType* gradient_wrt_input,
-          int gradient_wrt_input_leading_dim);
-} // namespace tanh_cuda
-#endif // LBANN_HAS_CUDNN
-
 /** Hyperbolic tangent activation function. */
 template <data_layout T_layout, El::Device Dev>
 class tanh_layer : public entrywise_activation_layer {
+
+ private:
+
+#ifdef LBANN_HAS_CUDNN
+  /** Activation descriptor. */
+  cudnnActivationDescriptor_t m_activation_cudnn_desc;
+#endif // LBANN_HAS_CUDNN
+
  public:
   tanh_layer(lbann_comm *comm,
              cudnn::cudnn_manager *cudnn = nullptr)
     : entrywise_activation_layer(comm) {
-
   #ifdef LBANN_HAS_CUDNN
-    // Activate GPU if needed
-    if (cudnn != nullptr && T_layout == data_layout::DATA_PARALLEL) {
-      this->m_cudnn = cudnn;
+    m_activation_cudnn_desc = nullptr;
+    this->m_cudnn = cudnn;
+  #endif // LBANN_HAS_CUDNN
+  }
+
+  tanh_layer(const tanh_layer& other) :
+    entrywise_activation_layer(other) {
+  #ifdef LBANN_HAS_CUDNN
+    m_activation_cudnn_desc = nullptr;
+    cudnn::copy_activation_cudnn_desc(other.m_activation_cudnn_desc,
+                                      m_activation_cudnn_desc);
+  #endif // LBANN_HAS_CUDNN
+  }
+
+  tanh_layer& operator=(const tanh_layer& other) {
+    entrywise_activation_layer::operator=(other);
+  #ifdef LBANN_HAS_CUDNN
+    cudnn::copy_activation_cudnn_desc(other.m_activation_cudnn_desc,
+                                      m_activation_cudnn_desc);
+  #endif // LBANN_HAS_CUDNN
+    return *this;
+  }
+
+  ~tanh_layer() override {
+  #ifdef LBANN_HAS_CUDNN
+    if (m_activation_cudnn_desc != nullptr) {
+      CHECK_CUDNN(cudnnDestroyActivationDescriptor(m_activation_cudnn_desc));
     }
   #endif // LBANN_HAS_CUDNN
-
   }
 
   tanh_layer* copy() const override { return new tanh_layer(*this); }
   std::string get_type() const override { return "tanh"; }
+
+  /** Returns description of ctor params */
+  std::string get_description() const override {
+    return std::string {} +
+     " tanh" + " dataLayout: " + this->get_data_layout_string(get_data_layout());
+  }
+
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+
+  void setup_gpu() override {
+    entrywise_activation_layer::setup_gpu();
+  #ifndef LBANN_HAS_CUDNN
+    LBANN_ERROR("cuDNN not detected");
+  #else
+    if (m_activation_cudnn_desc != nullptr) {
+      CHECK_CUDNN(cudnnDestroyActivationDescriptor(m_activation_cudnn_desc));
+      m_activation_cudnn_desc = nullptr;
+    }
+    CHECK_CUDNN(cudnnCreateActivationDescriptor(&m_activation_cudnn_desc));
+    CHECK_CUDNN(cudnnSetActivationDescriptor(m_activation_cudnn_desc,
+                                             CUDNN_ACTIVATION_TANH,
+                                             CUDNN_PROPAGATE_NAN,
+                                             0.0));
+  #endif // LBANN_HAS_CUDNN
+  }
 
  protected:
 
@@ -85,17 +119,23 @@ class tanh_layer : public entrywise_activation_layer {
     return 1 / (coshx * coshx);
   }
 
+  void fp_compute() override;
+  void bp_compute() override;
+
   void fp_compute_gpu() override {
   #ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
   #else
-    tanh_cuda::fp(*m_cudnn,
-                  get_num_neurons(),
-                  m_mini_batch_size_per_gpu,
-                  get_prev_activations().LockedBuffer(),
-                  get_prev_activations().LDim(),
-                  get_activations().Buffer(),
-                  get_activations().LDim());
+    const DataType one = 1;
+    const DataType zero = 0;
+    CHECK_CUDNN(cudnnActivationForward(this->m_cudnn->get_handle(),
+                                       m_activation_cudnn_desc,
+                                       &one,
+                                       this->m_prev_activations_cudnn_desc,
+                                       get_prev_activations().LockedBuffer(),
+                                       &zero,
+                                       this->m_activations_cudnn_desc,
+                                       get_activations().Buffer()));
   #endif // LBANN_HAS_CUDNN
   }
 
@@ -103,15 +143,19 @@ class tanh_layer : public entrywise_activation_layer {
   #ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
   #else
-    tanh_cuda::bp(*m_cudnn,
-                  get_num_neurons(),
-                  m_mini_batch_size_per_gpu,
-                  get_prev_activations().LockedBuffer(),
-                  get_prev_activations().LDim(),
-                  get_prev_error_signals().LockedBuffer(),
-                  get_prev_error_signals().LDim(),
-                  get_error_signals().Buffer(),
-                  get_error_signals().LDim());
+    const DataType one = 1;
+    CHECK_CUDNN(cudnnActivationBackward(this->m_cudnn->get_handle(),
+                                        m_activation_cudnn_desc,
+                                        &one,
+                                        this->m_activations_cudnn_desc,
+                                        get_activations().LockedBuffer(),
+                                        this->m_prev_error_signals_cudnn_desc,
+                                        get_prev_error_signals().LockedBuffer(),
+                                        this->m_prev_activations_cudnn_desc,
+                                        get_prev_activations().LockedBuffer(),
+                                        &one,
+                                        this->m_error_signals_cudnn_desc,
+                                        get_error_signals().Buffer()));
   #endif // LBANN_HAS_CUDNN
   }
 

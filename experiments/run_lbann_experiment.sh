@@ -1,15 +1,15 @@
 #!/bin/bash
 
 # Experiment parameters
-EXPERIMENT_NAME=lbann_dram
+EXPERIMENT_NAME=lbann_alexnet
 LBANN_DIR=$(git rev-parse --show-toplevel)
-MODEL_PROTO="--model=${LBANN_DIR}/model_zoo/models/vram/dram.prototext --num_epochs=50"
+MODEL_PROTO="--model=${LBANN_DIR}/model_zoo/models/alexnet/model_alexnet.prototext --num_epochs=10"
 READER_PROTO="--reader=${LBANN_DIR}/model_zoo/data_readers/data_reader_imagenet.prototext"
 OPTIMIZER_PROTO="--optimizer=${LBANN_DIR}/model_zoo/optimizers/opt_sgd.prototext"
 IMAGENET_CLASSES=10 # options: 10, 100, 300, 1000 (leave blank to use other dataset)
 
 # Hardware configuration
-NUM_NODES=4      # default: number of allocated nodes (1 if none)
+NUM_NODES=      # default: number of allocated nodes (1 if none)
 PROCS_PER_NODE= # default: GPUs per node (2 if cluster has no GPUs)
 CLUSTER=
 PARTITION=
@@ -22,7 +22,7 @@ USE_GPU=        # default: YES (ignored if built without GPUs)
 CACHE_DATASET=  # default: NO
 USE_VTUNE=      # default: NO
 USE_NVPROF=     # default: NO
-HOME_DIR=${LBANN_DIR}/experiments
+EXPERIMENT_HOME_DIR=${EXPERIMENT_HOME_DIR:-${LBANN_DIR}/experiments}
 TRAIN_DATASET_DIR=
 TRAIN_DATASET_LABELS=
 TEST_DATASET_DIR=
@@ -108,14 +108,6 @@ case ${CLUSTER} in
         CORES_PER_NODE=36
         HAS_GPU=YES
         GPUS_PER_NODE=2
-        ;;
-    "pascal")
-        SCHEDULER=slurm
-        PARTITION=${PARTITION:-pbatch}
-        ACCOUNT=${ACCOUNT:-lc}
-        CACHE_DIR=${CACHE_DIR:-/tmp/${USER}}
-        CORES_PER_NODE=36
-        HAS_GPU=YES
         ;;
     *)
         SCHEDULER=slurm
@@ -235,12 +227,12 @@ case ${USE_GPU} in
     YES|yes|TRUE|true|ON|on|1)
         case ${HAS_GPU} in
             YES|yes|TRUE|true|ON|on|1)
-                MODEL_PROTO="${MODEL_PROTO} --use_cudnn=1"
+                MODEL_PROTO="${MODEL_PROTO} --disable_cuda=0"
                 ;;
         esac
         ;;
     *)
-        MODEL_PROTO="${MODEL_PROTO} --use_cudnn=0"
+        MODEL_PROTO="${MODEL_PROTO} --disable_cuda=1"
         EXPERIMENT_NAME=${EXPERIMENT_NAME}_nogpu
         ;;
 esac
@@ -286,7 +278,7 @@ esac
 EXPERIMENT_NAME=${EXPERIMENT_NAME}_${CLUSTER}_${PARTITION}_N${NUM_NODES}
 
 # Make directories
-EXPERIMENT_DIR=${HOME_DIR}/$(date +%Y%m%d_%H%M%S)_${EXPERIMENT_NAME}
+EXPERIMENT_DIR=${EXPERIMENT_HOME_DIR}/$(date +%Y%m%d_%H%M%S)_${EXPERIMENT_NAME}
 mkdir -p ${EXPERIMENT_DIR}
 case ${USE_VTUNE} in
     YES|yes|TRUE|true|ON|on|1)
@@ -351,7 +343,7 @@ echo "# USE_GPU: ${USE_GPU}"                            >> ${BATCH_SCRIPT}
 echo "# CACHE_DATASET: ${CACHE_DATASET}"                >> ${BATCH_SCRIPT}
 echo "# USE_VTUNE: ${USE_VTUNE}"                        >> ${BATCH_SCRIPT}
 echo "# USE_NVPROF: ${USE_NVPROF}"                      >> ${BATCH_SCRIPT}
-echo "# HOME_DIR: ${HOME_DIR}"                          >> ${BATCH_SCRIPT}
+echo "# EXPERIMENT_HOME_DIR: ${EXPERIMENT_HOME_DIR}"    >> ${BATCH_SCRIPT}
 echo "# CACHE_DIR: ${CACHE_DIR}"                        >> ${BATCH_SCRIPT}
 echo ""                                                 >> ${BATCH_SCRIPT}
 echo "# ======== Useful info and initialization ========" >> ${BATCH_SCRIPT}
@@ -360,7 +352,6 @@ echo "${MPIRUN} hostname > ${NODE_LIST}"                >> ${BATCH_SCRIPT}
 echo "sort --unique --output=${NODE_LIST} ${NODE_LIST}" >> ${BATCH_SCRIPT}
 case ${USE_GPU} in
     YES|yes|TRUE|true|ON|on|1)
-        echo "nvidia-smi > nvidia-smi.out"              >> ${BATCH_SCRIPT}
         echo "export MV2_USE_CUDA=1"                    >> ${BATCH_SCRIPT}
         ;;
 esac

@@ -178,7 +178,10 @@ class crop_layer : public transform_layer {
       for (El::Int d = 0; d < num_dims; ++d) {
         const auto& pos = local_crop_pos(d, s);
         if (pos < DataType(0) || pos >= DataType(1)) {
-          LBANN_ERROR("crop position not in range [0,1)");
+          std::stringstream err;
+          err << "crop position not in range [0,1) "
+              << "(pos[" << d << "] = " << pos << ")";
+          LBANN_ERROR(err.str());
         }
         const auto& num_offsets = m_neuron_dims[d] - m_crop_dims[d] + 1;
         crop_offsets.push_back((int)(pos * num_offsets));

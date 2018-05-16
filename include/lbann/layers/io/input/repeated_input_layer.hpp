@@ -92,7 +92,9 @@ class repeated_input_layer : public input_layer<partitioned_io_buffer, data_layo
   void setup_data() override {
     input_layer<partitioned_io_buffer, data_layout::DATA_PARALLEL>::setup_data();
     const auto& max_mb_size = this->m_model->get_max_mini_batch_size();
+    const auto& data_size = get_linearized_data_size();
     const auto& label_size = get_linearized_label_size();
+    io_buffer->setup_data(data_size, max_mb_size);
     m_label_io_buffer->setup_data(label_size, max_mb_size);
   }
 
@@ -105,20 +107,25 @@ class repeated_input_layer : public input_layer<partitioned_io_buffer, data_layo
     const auto& local_width = local_output.Width();
     const auto& data_size = get_linearized_data_size();
     const auto& label_size = get_linearized_label_size();
-    Mat data(data_size, local_width), labels(label_size, local_width);
-    
-    // Get data and labels
     const auto& mode = this->m_model->get_execution_mode();
     const auto& mini_batch_size = this->m_model->get_current_mini_batch_size();
+    CPUMat data(data_size, local_width), labels(label_size, local_width);
     io_buffer->set_local_matrix_bypass(&data);
     io_buffer->set_std_matrix_view(mini_batch_size);
-    io_buffer->fetch_to_local_matrix(get_data_reader(), mode);
     m_label_io_buffer->set_local_matrix_bypass(&labels);
     m_label_io_buffer->set_std_matrix_view(mini_batch_size);
+
+    /// support for data_store out-of-memory mode; this instructs
+    /// the data_store (via the data_reader) to read in the
+    /// next mb from file, then exchange data as needed
+    get_data_reader()->init_minibatch();
+
+    // Get data and labels
+    io_buffer->fetch_to_local_matrix(get_data_reader(), mode);
     m_label_io_buffer->fetch_to_local_matrix(get_data_reader(), mode);
 
     // Copy data and labels into output
-    Mat output_v;
+    CPUMat output_v;
     for (int i = 0; i < m_num_steps; ++i) {
       const auto& data_start = i * (data_size + label_size);
       const auto& data_end = data_start + data_size;

@@ -41,8 +41,8 @@ class log_layer : public entrywise_activation_layer {
     : entrywise_activation_layer(comm),
       m_base(base),
       m_inv_log_base(1/std::log(base)),
-      m_min_input(std::max(2 * m_inv_log_base * std::numeric_limits<DataType>::min(),
-                           2 * m_inv_log_base / std::numeric_limits<DataType>::max())) {
+      m_min_input(std::max(m_inv_log_base * std::sqrt(std::numeric_limits<DataType>::min()),
+                           m_inv_log_base / std::sqrt(std::numeric_limits<DataType>::max()))) {
     if (m_base <= DataType(0)) {
       std::stringstream err;
       err << "log base (" << m_base << ") is not positive";

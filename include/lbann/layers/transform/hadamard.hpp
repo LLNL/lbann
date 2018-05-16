@@ -100,12 +100,8 @@ class hadamard_layer : public transform_layer {
     default:
       for (int i = 0; i < num_parents; ++i) {
         auto& gradient_wrt_input = get_error_signals(i);
-        int j = 0;
-        if (i == j) { ++j; }
-        El::Hadamard(get_prev_activations(j),
-                     gradient_wrt_output,
-                     gradient_wrt_input);
-        for (++j; j < num_parents; ++j) {
+        El::Copy(gradient_wrt_output, gradient_wrt_input);
+        for (int j = 0; j < num_parents; ++j) {
           if (i != j) {
             El::Hadamard(get_prev_activations(j),
                          gradient_wrt_input,

@@ -35,17 +35,8 @@ void lbann_callback_dump_activations::on_forward_prop_end(model *m, Layer *l) {
   // Skip if we are interested in saving inferences at (a) given layer(s)
   if (!m_layer_names.empty()) { return; }
 
-  // Skip if layer has no activations
-  if (l->get_num_children() == 0) { return; }
-
-  // Create matrix for matrix views
-  const auto& acts = l->get_activations();
-  std::unique_ptr<AbsDistMat> acts_v(acts.Construct(acts.Grid(),
-                                                    acts.Root()));
-
   // Write each activation matrix to file
-  const auto& children = l->get_child_layers();
-  for (size_t i = 0; i < children.size(); ++i) {
+  for (int i = 0; i < l->get_num_children(); ++i) {
 
     // File name
     std::stringstream file;
@@ -55,12 +46,10 @@ void lbann_callback_dump_activations::on_forward_prop_end(model *m, Layer *l) {
          << "step" << m->get_cur_step() << "-"
          << l->get_name() << "-"
          << "Activations";
-    if (children.size() > 1) { file << i; }
+    if (l->get_num_children() > 1) { file << i; }
 
     // Write activations to file
-    // Note: This forces a memory transfer from GPU to CPU
-    l->get_fp_output(*acts_v, children[i]);
-    El::Write(*acts_v, file.str(), El::ASCII);
+    El::Write(l->get_activations(i), file.str(), El::ASCII);
 
   }
 
