@@ -12,6 +12,8 @@ class ElMatLike {
   std::vector<T> m_buf;
 
  public:
+  using Int = long long;
+
   ElMatLike() : m_width(0), m_height(0) {}
 
   int Width() const {
@@ -25,6 +27,8 @@ class ElMatLike {
   void Resize(int w, int h);
   T *Buffer();
   const T *LockedBuffer() const;
+
+  void Set(Int r, Int c, T);
 };
 
 template<typename T>
@@ -56,6 +60,17 @@ inline const T *ElMatLike<T>::LockedBuffer() const {
   return (&(m_buf[0]));
 }
 
+template<typename T>
+inline void ElMatLike<T>::Set(ElMatLike::Int r, ElMatLike::Int c, T d) {
+  if ((r < m_height) && (c < m_width) && (0 <= r) && ( 0 <= c)) {
+    m_buf[m_height*(c - 1) + r] = d;
+  }
+}
+
 using Mat = ElMatLike<lbann::DataType>;
+
+namespace El {
+using Int = ::ElMatLike<lbann::DataType>::Int;
+}
 
 #endif // _TOOLS_MAT_HPP_
