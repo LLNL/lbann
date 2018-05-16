@@ -30,6 +30,7 @@
 #include "lbann/data_readers/data_reader.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/options.hpp"
+#include "lbann/io/file_io.hpp"
 #include <sys/sendfile.h>
 #include <sys/stat.h>
 
@@ -640,7 +641,6 @@ void data_store_image::fetch_data() {
 }
 
 void data_store_image::write_file_sizes() {
-if (m_master) std::cerr << "XXX data_store_image::write_file_sizes; count: " << m_file_sizes.size() << "  role: " << m_reader->get_role() << "\n";
   std::string local_dir = m_reader->get_local_file_dir();
   std::stringstream s;
   s << local_dir << "/file_sizes.txt";
@@ -727,7 +727,6 @@ void data_store_image::read_file_sizes() {
   while (in >> idx >> len) {
     m_file_sizes[idx] = len;
   }
-if (m_master) std::cerr << "XXX data_store_image::read_file_sizes; count: " << m_file_sizes.size() << "  role: " << m_reader->get_role() << "\n";
 }
 
 void data_store_image::stage_tarball() {

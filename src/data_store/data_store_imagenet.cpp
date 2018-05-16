@@ -213,6 +213,10 @@ void data_store_imagenet::get_file_sizes() {
                 << "s est. remaining time: " << estimated_remaining_time << "s\n";
     }
   }
+  if (m_master) {
+    std::cerr << "P_0: got size for " << j << " of " << m_data_filepaths.size()
+                << " files; elapsed time: " << get_time() - tm << "\n";
+  }
 
   exchange_file_sizes(global_indices, bytes);
 }

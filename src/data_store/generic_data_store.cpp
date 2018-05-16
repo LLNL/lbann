@@ -33,6 +33,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <numeric>
+#include <string.h>
 
 namespace lbann {
 
@@ -327,29 +328,37 @@ std::pair<std::string, std::string> generic_data_store::get_pathname_and_prefix(
 }
 
 void generic_data_store::create_dirs(std::string s) {
-  if (s.back() != '/') {
-    s += '/';
-  }
-  size_t i = s.find('/', 1);
-  while (i != std::string::npos) {
-    std::string s2 = s.substr(0, i);
-    const int dir_err = mkdir(s2.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-    if (dir_err == -1 && errno != 17) { // 17: File Exists
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "failed to create directory: " << s2 << "\n"
-          << "error code is: " << errno << " -> " << std::strerror(errno)
-          << "\n" << getenv("SLURMD_NODENAME");
-      throw lbann_exception(err.str());
+  if (m_comm->get_rank_in_node() == 0) {
+    if (s.back() != '/') {
+      s += '/';
     }
-    i = s.find('/', i+1);
+    size_t i = s.find('/', 1);
+    while (i != std::string::npos) {
+      std::string s2 = s.substr(0, i);
+      const int dir_err = mkdir(s2.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+      if (dir_err == -1 && errno != 17) { // 17: File Exists
+        std::stringstream err;
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << "failed to create directory: " << s2 << "\n"
+            << "error code is: " << errno << " -> " << std::strerror(errno)
+            << "\n" << getenv("SLURMD_NODENAME");
+        throw lbann_exception(err.str());
+      }
+      i = s.find('/', i+1);
+    }
   }
+  m_comm->barrier(m_comm->get_node_comm());
 }
 
 std::string generic_data_store::run_cmd(std::string cmd, bool exit_on_error) {
   std::array<char, 128> buffer;
   std::string result;
-  std::shared_ptr<FILE> pipe(popen(cmd.c_str(), "r"), pclose);
+  size_t len = cmd.size();
+  //copy to c-style string; Jay-Seung says this may be needed on ray
+  char *b = new char[len+1];
+  strcpy(b, cmd.data());
+  b[len] = '\0';
+  std::shared_ptr<FILE> pipe(popen(b, "r"), pclose);
   if (!pipe) throw std::runtime_error("popen() failed!");
   while (!feof(pipe.get())) {
       if (fgets(buffer.data(), 128, pipe.get()) != nullptr)
