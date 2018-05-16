@@ -83,16 +83,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       set_up_generic_preprocessor = false;
 #ifdef LBANN_HAS_CONDUIT
     } else if (name == "jag_conduit") {
-      auto* reader_jag = new data_reader_jag_conduit(shuffle);
-      const data_reader_jag_conduit::variable_t independent_type
-             = static_cast<data_reader_jag_conduit::variable_t>(readme.independent());
-      reader_jag->set_independent_variable_type(independent_type);
-      const data_reader_jag_conduit::variable_t dependent_type
-             = static_cast<data_reader_jag_conduit::variable_t>(readme.dependent());
-      reader_jag->set_dependent_variable_type(dependent_type);
-      const lbann_data::ImagePreprocessor& pb_preproc = readme.image_preprocessor();
-      reader_jag->set_image_dims(pb_preproc.raw_width(), pb_preproc.raw_height());
-      reader = reader_jag;
+      init_image_data_reader(readme, master, reader);
       set_up_generic_preprocessor = false;
 #endif // LBANN_HAS_CONDUIT
     } else if (name == "nci") {
