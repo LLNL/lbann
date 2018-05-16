@@ -137,7 +137,7 @@ int external_reader::fetch_data(Mat& X) {
   return mb_size;
 }
 
-int external_reader::fetch_labels(Mat& Y) override {
+int external_reader::fetch_labels(Mat& Y) {
   if(!position_valid()) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__)
@@ -184,7 +184,7 @@ int external_reader::fetch_labels(Mat& Y) override {
   return mb_size;
 }
 
-int external_reader::fetch_responses(Mat& Y) override {
+int external_reader::fetch_responses(Mat& Y) {
   if(!position_valid()) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__)
@@ -213,7 +213,7 @@ int external_reader::fetch_responses(Mat& Y) override {
 
   m_connection->message_write(request);
   Response response = m_connection->message_read();
-  auto responses = response.fetch_labels_response().responses().labels();
+  auto responses = response.fetch_responses_response().responses().samples();
 
   for (El::Int s = 0; s < mb_size; s++) {
     int n = m_current_pos + s;

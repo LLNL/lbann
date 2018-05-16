@@ -58,8 +58,8 @@ class external_reader : public generic_data_reader {
     }
 
     int fetch_data(Mat& X) override;
-    int fetch_labels(Mat& Y) override { throw lbann_exception("don't do that"); }
-    int fetch_responses(Mat& Y) override { throw lbann_exception("don't do that"); }
+    int fetch_labels(Mat& Y) override;
+    int fetch_responses(Mat& Y) override;
 
     int get_linearized_data_size() const override {
       return m_data_size;
