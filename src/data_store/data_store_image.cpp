@@ -30,6 +30,7 @@
 #include "lbann/data_readers/data_reader.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/options.hpp"
+#include "lbann/io/file_io.hpp"
 #include <sys/sendfile.h>
 #include <sys/stat.h>
 
@@ -39,42 +40,74 @@ data_store_image::~data_store_image() {
 }
 
 void data_store_image::setup() {
+  set_name("data_store_image");
+  if (m_master) std::cerr << "starting data_store_image::setup()\n";
 
-  if (m_master) std::cerr << "starting data_store_image::setup(); calling generic_data_store::setup()\n";
+  options *opts = options::get();
+  bool using_tarball = opts->has_string("use_tarball") ? true : false;
+  bool creating_tarball = are_we_creating_tarballs();
+  if (using_tarball && creating_tarball) {
+    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + 
+             " :: you cannot use both --using_tarball and --creating_tarball options");
+  }
+
+  if (using_tarball) {
+    stage_tarball();
+    m_comm->global_barrier();
+  }
+
+  if (m_master) std::cerr << "data_store_image - calling generic_data_store::setup()\n";
   generic_data_store::setup();
 
-  set_name("data_store_image");
-
+  //==========================================================================
+  // block for running in out-of-memory mode
+  //==========================================================================
   if (! m_in_memory) {
-    if (m_master) std::cerr << "data_store_image - calling exchange_partitioned_indices\n";
-    exchange_partitioned_indices();
+    if (!creating_tarball) {
+      if (m_master) std::cerr << "data_store_image - calling exchange_partitioned_indices\n";
+      exchange_partitioned_indices();
+    }
 
     if (m_master) std::cerr << "data_store_image - calling get_my_datastore_indices\n";
-    get_my_datastore_indices();
+    if (creating_tarball) {
+      get_my_tarball_indices();
+    } else {
+      get_my_datastore_indices();
+    }
 
     if (m_master) std::cerr << "data_store_image - calling build_data_filepaths\n";
     build_data_filepaths();
 
     if (m_master) std::cerr << "data_store_image - calling get_file_sizes\n";
-    get_file_sizes();
+    double tm = get_time();
+    if (using_tarball) {
+      read_file_sizes();
+    } else {
+      get_file_sizes();
+    }  
+    if (m_master) std::cerr << "TIME for get_file_sizes: " << get_time() - tm << "\n";
 
-    if (m_master) std::cerr << "data_store_image - calling stage_files\n";
-    stage_files();
+    if (! using_tarball) {
+      if (m_master) std::cerr << "data_store_image - calling stage_files\n";
+      tm = get_time();
+      stage_files();
+      if (m_master) std::cerr << "TIME for stage_files: " << get_time() - tm << "\n";
+    }  
 
-    // Early exit if we're only staging files
-    if (options::get()->has_bool("stage_and_exit") && options::get()->get_bool("stage_and_exit")) {
-      m_comm->global_barrier();
-      if (m_master) {
-        std::cerr << "\nstaging complete; exiting due to option: stage_and_exit\n";
-      }
-      m_comm->global_barrier();
-      finalize(m_comm);
-      exit(0);
+    // create tarball and copy to lscratch (or where ever)
+    if (creating_tarball) {
+      if (m_master) std::cerr << "data_store_image - creating tarball\n";
+      tm = get_time();
+      create_tarball();
+      if (m_master) std::cerr << "TIME for creating tarball: " << get_time() - tm << "\n";
     }
 
     m_is_setup = true;
   } 
   
+  //==========================================================================
+  // block for running in in-memory mode
+  //==========================================================================
   else {
     if (m_master) std::cerr << "data_store_image - calling get_minibatch_index_vector\n";
     get_minibatch_index_vector();
@@ -144,7 +177,8 @@ void data_store_image::load_file(const std::string &dir, const std::string &fn, 
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "failed to read " << sz << " bytes from " << imagepath
-        << " num bytes read: " << in.gcount();
+        << " num bytes read: " << in.gcount()
+        << "\nhostname: " << getenv("SLURMD_NODENAME") << " role: " << m_reader->get_role();
     throw lbann_exception(err.str());
   }
   in.close();
@@ -398,35 +432,6 @@ void data_store_image::report_memory_constraints() {
 //   dir1/[dir2/...]/filename
 //   /dir1/[dir2/...]/filename
 //   /dir1/[dir2/...]/
-void data_store_image::create_dirs(const std::string &s) {
-  if (s.size() == 0) {
-    return;
-  }
-  size_t idx;
-  size_t last = s[0] == '/' ? 1 : 0;
-  while ((idx = s.find('/', last)) != std::string::npos) {
-    last = idx+1;
-    std::string d = s.substr(0, idx);
-    std::ifstream in(d.c_str());
-    if (! in.good()) {
-      const int dir_err = mkdir(d.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-      //note: there can be race conditions where two procs attempt to create the
-      //      same directory, which can cause mkdir to fail with "File Exists"
-      //      error, which is errno=17. Need to guard against this!
-      if (dir_err == -1 && errno != 17) {
-        std::stringstream err;
-        err << __FILE__ << " " << __LINE__ << " :: "
-            << "failed to create directory: " << d << "\n"
-            << "error code is: " << errno << " -> " << std::strerror(errno)
-            << "\n" << getenv("SLURMD_NODENAME");
-        throw lbann_exception(err.str());
-        
-      }
-    } else {
-      in.close();
-    }
-  }
-}
 
 void data_store_image::stage_files() {
   std::stringstream err;
@@ -453,6 +458,7 @@ void data_store_image::stage_files() {
   }
   m_comm->global_barrier();
 
+  // copy files to local store
   size_t j = 0;
   struct stat stat_buf;
   double tm = get_time();
@@ -475,7 +481,6 @@ void data_store_image::stage_files() {
     }
     if (access(s.str().c_str(), F_OK | R_OK) == -1 ) {
       write_fd = open(s.str().c_str(),  O_RDWR | O_CREAT, S_IRWXU);
-      //write_fd = open(s.str().c_str(),  O_RDWR | O_CREAT, stat_buf.st_mode);
       if (write_fd == -1) {
         err << __FILE__ << " " << __LINE__ << " :: "
             << "failed to open " << s.str() << " for writing;\n"
@@ -521,7 +526,6 @@ void data_store_image::fetch_data() {
   std::stringstream err;
   double tm1 = get_time();
   ++m_cur_minibatch;
-  //if (m_cur_minibatch >= m_num_minibatches) {
   if (m_cur_minibatch >= m_all_partitioned_indices[0].size()) {
     m_cur_minibatch = 0;
   }
@@ -634,6 +638,146 @@ void data_store_image::fetch_data() {
               << "  minibatch " << 1+m_cur_minibatch << " of " 
               << m_num_minibatches << "; " << m_reader->get_role() << "\n";
   }
+}
+
+void data_store_image::write_file_sizes() {
+  std::string local_dir = m_reader->get_local_file_dir();
+  std::stringstream s;
+  s << local_dir << "/file_sizes.txt";
+  std::ofstream out(s.str().c_str());
+  if (! out.good()) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "failed to open " << s.str() << " for reading";
+    throw lbann_exception(err.str());
+  }
+  for (auto t : m_file_sizes) {
+    out << t.first << " " << t.second << "\n";
+  }
+  out.close();
+}
+
+std::pair<std::string, std::string>  data_store_image::get_tarball_exe() {
+  std::pair<std::string, std::string> names = get_pathname_and_prefix(
+                           options::get()->get_string("create_tarball"));
+  if (m_master) {
+    std::cerr << "tarball dir: " << names.second << "\n"
+              << "tarball prefix: " << names.first << "\n\n";
+  }
+
+  //This is somewhat fragile. For now I assume the local_dir is
+  //of the form: /l/ssd/train
+  std::string local_dir = m_reader->get_local_file_dir();
+  size_t j = local_dir.rfind('/', local_dir.size()-2);
+  std::string work_dir = local_dir.substr(0, j);
+
+  std::stringstream tarball_name;
+  tarball_name << names.first << "_" << m_reader->get_role()
+      << "_rank=" << m_rank << "_np=" << m_np << ".tar";
+  std::stringstream exe_1;
+  std::stringstream exe_2;
+  exe_1 << "tar cf " << work_dir << '/' << tarball_name.str()
+      << " " << local_dir;
+  exe_2 << "cp -f " << work_dir << '/' << tarball_name.str()
+      << " " << names.second;
+  return std::make_pair(exe_1.str(), exe_2.str());
+}
+
+void data_store_image::create_tarball() {
+  write_file_sizes();
+  std::pair<std::string, std::string> cmds = get_tarball_exe();
+  if (m_master)  std::cerr << "\nabout to execute: " << cmds.first << "\n";
+  run_cmd(cmds.first);
+  if (m_master)  std::cerr << "\nabout to execute: " << cmds.second << "\n";
+  run_cmd(cmds.second);
+}
+
+bool data_store_image::are_we_creating_tarballs() {
+  bool retval = false;
+  options *opts = options::get();
+  if (opts->has_string("create_tarball")) {
+    if (m_comm->get_procs_per_node() != 1) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "--create_tarball=<string> was specified; you have " 
+          << m_comm->get_procs_per_node() << "; you must use a"
+          << "single core per node when creating tarballs";
+      throw lbann_exception(err.str());
+    }
+    retval = true;
+    if (m_reader->get_role() == "validate") {
+      return retval;
+    }
+  }
+  return retval;
+}
+
+void data_store_image::read_file_sizes() {
+  std::stringstream s;
+  s << m_reader->get_local_file_dir() << "/file_sizes.txt";
+  std::ifstream in(s.str().c_str());
+  if (! in.good()) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "failed to open " << s.str() << " for reading";
+    throw lbann_exception(err.str());
+  }
+  size_t idx;
+  size_t len;
+  while (in >> idx >> len) {
+    m_file_sizes[idx] = len;
+  }
+}
+
+void data_store_image::stage_tarball() {
+  if (m_reader->get_role() == "validate") {
+    return;
+  }
+  int procs_per_node = m_comm->get_procs_per_node();
+  int max = m_comm->allreduce(procs_per_node, m_comm->get_world_comm(),El::mpi::MAX);
+  int min = m_comm->allreduce(procs_per_node, m_comm->get_world_comm(),El::mpi::MIN);
+  if (max != min) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "all nodes must contain the same number of active processors";
+    throw lbann_exception(err.str());
+  }
+
+  if (m_comm->get_rank_in_node() == 0) {
+    int fake_rank = m_rank / procs_per_node;
+    std::string raw_name = options::get()->get_string("use_tarball");
+    std::pair<std::string, std::string> names = get_pathname_and_prefix(raw_name);
+  
+    int num_tarballs = m_comm->get_procs_in_world() / procs_per_node;
+  if (m_master) std::cerr << "num tarballs: " << num_tarballs << "\n";
+    std::stringstream tarball_filename(names.first);
+    tarball_filename << names.first << "_" << m_reader->get_role()
+              << "_rank=" << fake_rank << "_np=" << num_tarballs << ".tar";
+  
+    //This is somewhat fragile. For now I assume the local_dir is
+    //of the form: /l/ssd/train
+    std::string local_dir = m_reader->get_local_file_dir();
+    size_t j = local_dir.rfind('/', local_dir.size()-2);
+    std::string ssd = local_dir.substr(0, j);
+  
+    std::stringstream s;
+    s << "cp -f " << names.second << "/" << tarball_filename.str() << " " << ssd;
+    if (m_master)  std::cerr << "\nabout to execute: " << s.str()<< "\n";
+    run_cmd(s.str());
+  
+    s.clear();
+    s.str("");
+    s << "cd " << ssd << "; tar xf " << tarball_filename.str();
+    if (m_master)  std::cerr << "\nabout to execute: " << s.str()<< "\n";
+    run_cmd(s.str());
+  
+    s.clear();
+    s.str("");
+    s << "mv " << ssd  << "/" << local_dir << " " << ssd;
+    if (m_master)  std::cerr << "\nabout to execute: " << s.str()<< "\n";
+    run_cmd(s.str());
+  }  
+  m_comm->global_barrier();
 }
 
 }  // namespace lbann

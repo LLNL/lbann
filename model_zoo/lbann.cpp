@@ -210,6 +210,11 @@ int main(int argc, char *argv[]) {
       }
     }
 
+    if (opts->has_string("create_tarball")) {
+      finalize(comm);
+      return 0;
+    }
+
     // restart model from checkpoint if we have one
     //@todo
 

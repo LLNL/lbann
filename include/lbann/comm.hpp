@@ -1010,6 +1010,11 @@ class lbann_comm {
     return world_comm;
   }
 
+  /** Return the communicator for this node. */
+  const El::mpi::Comm get_node_comm() const {
+    return node_comm;
+  }
+
   /** Return true if rank (in comm) is on the local node. */
   bool is_rank_node_local(int rank, const El::mpi::Comm comm) const {
     // Translating to COMM_WORLD is typically constant time.

@@ -70,6 +70,10 @@ class data_store_image : public generic_data_store {
   /// fills in m_file_sizes
   virtual void get_file_sizes() = 0;
 
+  /// fills in m_file_sizes; this is called when we're using files
+  /// from a tarball
+  virtual void read_file_sizes();
+
   /// called by get_file_sizes
   void exchange_file_sizes(
     std::vector<int> &global_indices,
@@ -111,16 +115,29 @@ class data_store_image : public generic_data_store {
   /// to local store, e.g, /l/ssd
   void stage_files();
 
+  /// for out-of-memory mode: unpack files from a previously created tarball
+  void stage_tarball();
+
   /// called by data_reader::fetch_data; supports out-of-memory mode
   void fetch_data() override;
 
+  /// creates a tarball of files written to local disk, then
+  /// copies the tarball to, e.g, lscratchX. Activated by the cmd line
+  /// options: --create_tarball <name> where <name> is the directory
+  /// to which to copy the tarball. 
+  void create_tarball();
 
-  /// the input string "s" should be one of the forms: 
-  ///   dir1/[dir2/...]/filename
-  ///   /dir1/[dir2/...]/filename
-  ///   /dir1/[dir2/...]/
-  void create_dirs(const std::string &s); 
+  /// returns the string that will be passed to a system call to
+  /// create the tarball on local store (/l/ssd), and string for copying
+  /// to remote store (lscratchX)
+  std::pair<std::string, std::string> get_tarball_exe();
 
+  /// called by create_tarball
+  void write_file_sizes();
+
+  /// returns true if option: --create_tarball is in use;
+  /// print info to screen, and performs error checking
+  bool are_we_creating_tarballs();
 };
 
 }  // namespace lbann

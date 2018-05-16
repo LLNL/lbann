@@ -33,6 +33,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <numeric>
+#include <string.h>
 
 namespace lbann {
 
@@ -76,6 +77,18 @@ generic_data_store::generic_data_store(generic_data_reader *reader, model *m) :
   if (opts->has_bool("verbose") && opts->get_bool("verbose")) {
     m_verbose = true;
   }
+
+  if (opts->has_string("use_tarball")) {
+    m_dir = m_reader->get_local_file_dir();
+  }
+
+  if (m_comm->get_num_models() != 1) {
+    if (m_master) {
+      std::cerr << "\nFATAL ERROR: data store classes currently assume there is\n"
+                << "a single model; please ask Dave Hysom to fix!\n\n";
+    }
+    exit(9);
+  }
 }
 
 void generic_data_store::get_minibatch_index_vector() {
@@ -91,13 +104,18 @@ void generic_data_store::get_minibatch_index_vector() {
   }
 }
 
+void generic_data_store::get_my_tarball_indices() {
+ size_t idx = m_rank;
+ do {
+   m_my_datastore_indices.insert(idx);
+   idx += m_np;
+ } while (idx < m_num_global_indices);
+}
+
 void generic_data_store::get_my_datastore_indices() {
-  m_num_samples.resize(m_np, 0);
-  std::unordered_set<int> mine;
   for (size_t j=0; j<m_shuffled_indices->size(); ++j) {
     int idx = (*m_shuffled_indices)[j];
     int owner = idx % m_np;
-    m_num_samples[owner] += 1;
     if (owner == m_rank) {
       m_my_datastore_indices.insert(idx);
     }
@@ -170,7 +188,8 @@ size_t generic_data_store::get_file_size(std::string dir, std::string fn) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "stat failed for dir: " << dir
-        << " and fn: " << fn;
+        << " and fn: " << fn 
+        << " on node: " << getenv("SLURMD_NODENAME");
     throw lbann_exception(err.str());
   }
   return st.st_size;   
@@ -291,6 +310,67 @@ void generic_data_store::init_minibatch() {
   if (! m_in_memory) {
     fetch_data();
   }
+}
+
+std::pair<std::string, std::string> generic_data_store::get_pathname_and_prefix(std::string s) {
+  int num_slash = std::count(s.begin(), s.end(), '/');
+  if (num_slash < 1 || s.back() == '/') {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "<string> must be of the form: <pathname>/prefix";
+    throw lbann_exception(err.str());
+  }
+
+  size_t j = s.rfind('/');
+  std::string prefix = s.substr(j+1);
+  std::string pathname = s.substr(0, j);
+  return std::make_pair(prefix, pathname);
+}
+
+void generic_data_store::create_dirs(std::string s) {
+  if (m_comm->get_rank_in_node() == 0) {
+    if (s.back() != '/') {
+      s += '/';
+    }
+    size_t i = s.find('/', 1);
+    while (i != std::string::npos) {
+      std::string s2 = s.substr(0, i);
+      const int dir_err = mkdir(s2.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+      if (dir_err == -1 && errno != 17) { // 17: File Exists
+        std::stringstream err;
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << "failed to create directory: " << s2 << "\n"
+            << "error code is: " << errno << " -> " << std::strerror(errno)
+            << "\n" << getenv("SLURMD_NODENAME");
+        throw lbann_exception(err.str());
+      }
+      i = s.find('/', i+1);
+    }
+  }
+  m_comm->barrier(m_comm->get_node_comm());
+}
+
+std::string generic_data_store::run_cmd(std::string cmd, bool exit_on_error) {
+  std::array<char, 128> buffer;
+  std::string result;
+  size_t len = cmd.size();
+  //copy to c-style string; Jay-Seung says this may be needed on ray
+  char *b = new char[len+1];
+  strcpy(b, cmd.data());
+  b[len] = '\0';
+  std::shared_ptr<FILE> pipe(popen(b, "r"), pclose);
+  if (!pipe) throw std::runtime_error("popen() failed!");
+  while (!feof(pipe.get())) {
+      if (fgets(buffer.data(), 128, pipe.get()) != nullptr)
+        result += buffer.data();
+  }
+  if (exit_on_error && result != "") {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "system call returned:\n" << result;
+    throw lbann_exception(err.str());
+  }
+  return result;
 }
 
 }  // namespace lbann
