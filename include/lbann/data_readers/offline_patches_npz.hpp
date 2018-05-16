@@ -81,6 +81,11 @@ class offline_patches_npz {
   /// Return the label of idx-th sample
   label_t get_label(const size_t idx) const;
 
+#ifdef _OFFLINE_PATCHES_NPZ_OFFLINE_TOOL_MODE_
+  std::vector<std::string> get_file_roots() const;
+  size_t count_samples(const size_t num_roots) const;
+#endif // _OFFLINE_PATCHES_NPZ_OFFLINE_TOOL_MODE_
+
  protected:
   /// Check the dimensions of loaded data
   bool check_data() const;

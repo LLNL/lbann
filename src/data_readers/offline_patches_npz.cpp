@@ -208,4 +208,43 @@ offline_patches_npz::label_t offline_patches_npz::get_label(const size_t idx) co
   return m_item_class_list[idx];
 }
 
+
+#ifdef _OFFLINE_PATCHES_NPZ_OFFLINE_TOOL_MODE_
+/// count samples of first n roots
+size_t offline_patches_npz::count_samples(const size_t num_roots) const {
+  if (!m_checked_ok || num_roots > m_file_root_list.size()) {
+    throw lbann_exception("invalid sample index");
+  }
+
+  std::vector<std::string> file_names;
+  size_t num_samples = 0u;
+  const size_t total_samples = get_num_samples();
+
+  for (size_t s = 0u; s < total_samples; ++s) {
+    const size_t root = cnpy_utils::data<size_t>(m_item_root_list, {s, 0});
+    if (root >= m_file_root_list.size()) {
+      throw lbann_exception("invalid file_root_list index");
+    }
+    if (root >= num_roots) break;
+    num_samples ++;
+  }
+  return num_samples;
+}
+
+std::vector<std::string> offline_patches_npz::get_file_roots() const {
+  std::vector<std::string> root_names;
+  const size_t num_samples = get_num_samples();
+  root_names.reserve(num_samples);
+  for (size_t i = 0u; i < num_samples; ++i) {
+    const size_t root = cnpy_utils::data<size_t>(m_item_root_list, {i, 0});
+    if (root >= m_file_root_list.size()) {
+      throw lbann_exception("invalid file_root_list index");
+    }
+    std::string file_name = m_file_root_list.at(root);
+    root_names.push_back(file_name);
+  }
+  return root_names;
+}
+#endif // _OFFLINE_PATCHES_NPZ_OFFLINE_TOOL_MODE_
+
 } // end of namespace lbann
