@@ -217,10 +217,15 @@ protected :
 
   /// returns the processor that owns the data associated
   /// with the index
-  int get_index_owner(int idx) {
-    return idx % m_np;
-  }
+  int get_index_owner(int idx);
 
+  /// maps an index to the processor that owns the associated data
+  std::unordered_map<int, int> m_owner;
+
+  /// fills in m_owner
+  void build_index_owner();
+
+  /// mostly for use during development and debugging
   virtual void extended_testing() {}
 
   MPI_Comm m_mpi_comm;
@@ -228,7 +233,7 @@ protected :
   /// as of now, only applicable to merge_features and merge_samples
   bool m_is_subsidiary_store;
 
-  /// maps and index from m_my_datastore_indices to a filepath
+  /// maps an index from m_my_datastore_indices to a filepath
   /// for use in out-of-memory mode
   std::unordered_map<int, std::string> m_data_filepaths;
   /// fills in m_data_filepaths
