@@ -101,6 +101,9 @@ void lbann_callback_checknan::dump_network(model *m) {
   // Dump only the local matrices because not every rank will necessarily
   // have bad data, and the check is purely local.
   for (const Layer *layer : m->get_layers()) {
+    if (dynamic_cast<const generic_target_layer*>(layer) != nullptr) {
+      continue;  // Skip target layers.
+    }
     const std::string prefix
       = ("model" + std::to_string(m->get_comm()->get_model_rank())
          + "-rank" + std::to_string(m->get_comm()->get_rank_in_model()) +
