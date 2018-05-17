@@ -297,13 +297,9 @@ class batch_normalization : public regularizer_layer {
       DataType* running_var = m_weights[3]->get_values().Buffer();
 
       // Compute sums and sums of squares on the GPUs
-      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
-      const int col_start = std::min(0, local_width);
-      const int col_end = std::min(this->m_mini_batch_size_per_gpu, local_width);
-      const int current_width = col_end - col_start;
       batch_normalization_cuda
         ::channel_sums_and_sqsums(height,
-                                  current_width,
+                                  local_width,
                                   num_channels,
                                   get_prev_activations().LockedBuffer(),
                                   get_prev_activations().LDim(),
@@ -346,13 +342,9 @@ class batch_normalization : public regularizer_layer {
                            m_weights[3]->get_values().LockedBuffer());
 
     // Perform batch normalization with each GPU
-    CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
-    const int col_start = std::min(0, local_width);
-    const int col_end = std::min(this->m_mini_batch_size_per_gpu, local_width);
-    const int current_width = col_end - col_start;
     batch_normalization_cuda
       ::batch_normalization(height,
-                            current_width,
+                            local_width,
                             num_channels,
                             get_prev_activations().LockedBuffer(),
                             get_prev_activations().LDim(),
@@ -394,13 +386,9 @@ class batch_normalization : public regularizer_layer {
     const int num_channels = this->m_neuron_dims[0];
 
     // Compute local gradient contributions
-    CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
-    const int col_start = std::min(0, local_width);
-    const int col_end = std::min(this->m_mini_batch_size_per_gpu, local_width);
-    const int current_width = col_end - col_start;
     batch_normalization_cuda
       ::batch_normalization_backprop1(height,
-                                      current_width,
+                                      local_width,
                                       num_channels,
                                       get_prev_activations().LockedBuffer(),
                                       get_prev_activations().LDim(),
@@ -444,13 +432,9 @@ class batch_normalization : public regularizer_layer {
     }
 
     // Compute error signal
-    CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
-    // const int col_start = std::min(0, local_width);
-    // const int col_end = std::min(this->m_mini_batch_size_per_gpu, local_width);
-    // const int current_width = col_end - col_start;
     batch_normalization_cuda
       ::batch_normalization_backprop2(height,
-                                      current_width,
+                                      local_width,
                                       m_use_global_stats ? width : local_width,
                                       num_channels,
                                       get_prev_activations().LockedBuffer(),

@@ -128,7 +128,7 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
   softmax_cuda::fp_cutoff(*this->m_cudnn,
                           activations.Buffer(),
                           get_num_neurons(),
-                          this->m_mini_batch_size_per_gpu,
+                          activations.LocalWidth(),
                           m_min_output);
 #endif // LBANN_ENABLE_SOFTMAX_CUTOFF
 
@@ -171,7 +171,7 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
                           activations.LockedBuffer(),
                           error_signals.Buffer(),
                           get_num_neurons(),
-                          this->m_mini_batch_size_per_gpu,
+                          error_signals.LocalWidth(),
                           this->m_min_output);
 #endif // LBANN_ENABLE_SOFTMAX_CUTOFF
 

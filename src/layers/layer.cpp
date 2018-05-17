@@ -57,8 +57,6 @@ Layer::Layer(lbann_comm *comm)
   // Initialize GPU information
   m_using_gpus = false;
 #ifdef LBANN_HAS_CUDNN
-  m_mini_batch_size_per_gpu = 0;
-  m_max_mini_batch_size_per_gpu = 0;
   m_prev_activations_cudnn_desc = nullptr;
   m_activations_cudnn_desc = nullptr;
   m_prev_error_signals_cudnn_desc = nullptr;
@@ -86,10 +84,6 @@ Layer::Layer(const Layer& other) :
   m_model(other.m_model),
   m_cudnn(other.m_cudnn),
   m_frozen(other.m_frozen),
-#ifdef LBANN_HAS_CUDNN
-  m_mini_batch_size_per_gpu(other.m_mini_batch_size_per_gpu),
-  m_max_mini_batch_size_per_gpu(other.m_max_mini_batch_size_per_gpu),
-#endif // LBANN_HAS_CUDNN
   m_fp_time(other.m_fp_time),
   m_fp_compute_time(other.m_fp_compute_time),
   m_bp_time(other.m_bp_time),
@@ -143,10 +137,6 @@ Layer& Layer::operator=(const Layer& other) {
   m_using_gpus = other.m_using_gpus;
   m_cudnn = other.m_cudnn;
   m_frozen = other.m_frozen;
-#ifdef LBANN_HAS_CUDNN
-  m_mini_batch_size_per_gpu = other.m_mini_batch_size_per_gpu;
-  m_max_mini_batch_size_per_gpu = other.m_max_mini_batch_size_per_gpu;
-#endif // LBANN_HAS_CUDNN
   m_fp_time = other.m_fp_time;
   m_fp_compute_time = other.m_fp_compute_time;
   m_bp_time = other.m_bp_time;
@@ -459,10 +449,6 @@ const AbsMat& Layer::get_local_error_signals(int parent_index) const {
 void Layer::clear_error_signals(int mini_batch_size) {
   // Note: matrices are cleared (without deallocating memory) in case
   // they are matrix views.
-  for (int i = 0; i < get_num_children(); ++i) {
-    get_prev_error_signals(i).Empty(false);
-    get_prev_error_signals(i).Resize(get_num_neurons(i), mini_batch_size);
-  }
   for (int i = 0; i < get_num_parents(); ++i) {
     get_error_signals(i).Empty(false);
     get_error_signals(i).Resize(get_num_prev_neurons(i), mini_batch_size);
@@ -661,48 +647,48 @@ void Layer::setup_matrices(const El::Grid& grid) {
 }
 
 void Layer::setup_data() {
-
-  // Initialize matrices
   const int mini_batch_size = m_model->get_max_mini_batch_size();
-  if(mini_batch_size <= 0) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "invalid mini-batch size "
-        << "(" << mini_batch_size << ")";
-    throw lbann_exception(err.str());
+
+  for (int i = 0; i < get_num_parents(); ++i) {
+
+    // Initialize previous activations
+    auto& fp_input = get_prev_activations(i);
+    m_parent_layers[i]->get_fp_output(fp_input, this);
+    const int expected_height = get_num_prev_neurons(i);
+    if (fp_input.Height() != expected_height
+        || fp_input.Width() != mini_batch_size) {
+      std::stringstream err;
+      err << "layer \"" << get_name() << "\" expected a "
+          << expected_height << " x " << mini_batch_size << " matrix "
+          << "from layer \"" << m_parent_layers[i]->get_name() << "\" "
+          << "as forward prop input, but got a "
+          << fp_input.Height() << " x " << fp_input.Width() << " matrix";
+      LBANN_ERROR(err.str());
+    }
+
+    // Initialize error signal
+    El::Zeros(get_error_signals(i), get_num_prev_neurons(i), mini_batch_size);
+
   }
 
-  // Initialize matrices
-  for (int i = 0; i < get_num_parents(); ++i) {
-    El::Zeros(*m_prev_activations[i],
-              get_num_prev_neurons(i),
-              mini_batch_size);
-    El::Zeros(*m_error_signals[i],
-              get_num_prev_neurons(i),
-              mini_batch_size);
-  }
   for (int i = 0; i < get_num_children(); ++i) {
-    El::Zeros(*m_activations[i],
-              get_num_neurons(i),
-              mini_batch_size);
-    El::Zeros(*m_prev_error_signals[i],
-              get_num_neurons(i),
-              mini_batch_size);
+
+    // Initialize activations
+    El::Zeros(get_activations(i), get_num_neurons(i), mini_batch_size);
+
+    // Initialize previous error signal
+    // Note: The previous error signals matrix has the same dimensions
+    // as the activations matrix.
+    El::LockedView(get_prev_error_signals(i), get_activations(i));
+
   }
+
 }
 
 void Layer::setup_gpu() {
 #ifndef LBANN_HAS_CUDNN
   LBANN_ERROR("cuDNN not detected");
 #else
-
-  // Split mini-batch amongst GPUs
-  const int num_gpus = m_cudnn->get_num_gpus();
-  const int num_processes = m_comm->get_procs_per_model();
-  const int mini_batch_size = m_model->get_max_mini_batch_size();
-  const int local_mini_batch_size = (mini_batch_size + num_processes - 1) / num_processes;
-  m_max_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
-  m_mini_batch_size_per_gpu = m_max_mini_batch_size_per_gpu;
 
   // Set tensor descriptors
   // Note: If the data layout is data-parallel, then the descriptors
@@ -714,11 +700,11 @@ void Layer::setup_gpu() {
     switch (get_data_layout()) {
     case data_layout::DATA_PARALLEL:
       cudnn::set_tensor_cudnn_desc(m_prev_activations_cudnn_desc,
-                                   m_mini_batch_size_per_gpu,
+                                   input.LocalWidth(),
                                    get_prev_neuron_dims(),
                                    input.LDim());
       cudnn::set_tensor_cudnn_desc(m_error_signals_cudnn_desc,
-                                   m_mini_batch_size_per_gpu,
+                                   gradient_wrt_input.LocalWidth(),
                                    get_prev_neuron_dims(),
                                    gradient_wrt_input.LDim());
       break;
@@ -742,11 +728,11 @@ void Layer::setup_gpu() {
     switch (get_data_layout()) {
     case data_layout::DATA_PARALLEL:
       cudnn::set_tensor_cudnn_desc(m_activations_cudnn_desc,
-                                   m_mini_batch_size_per_gpu,
+                                   output.LocalWidth(),
                                    get_neuron_dims(),
                                    output.LDim());
       cudnn::set_tensor_cudnn_desc(m_prev_error_signals_cudnn_desc,
-                                   m_mini_batch_size_per_gpu,
+                                   gradient_wrt_output.LocalWidth(),
                                    get_neuron_dims(),
                                    gradient_wrt_output.LDim());
       break;
@@ -904,33 +890,11 @@ void Layer::write_proto(lbann_data::Layer* proto) const {
 
 void Layer::fp_setup_data(int mini_batch_size) {
 
-  // Initialize matrices
-  // Note: matrices are cleared (without deallocating memory) in case
-  // they are matrix views.
+  // Initialize previous activations
   for (int i = 0; i < get_num_parents(); ++i) {
-    get_prev_activations(i).Empty(false);
-    get_prev_activations(i).Resize(get_num_prev_neurons(i), mini_batch_size);
-  }
-  for (int i = 0; i < get_num_children(); ++i) {
-    get_activations(i).Empty(false);
-    get_activations(i).Resize(get_num_neurons(i), mini_batch_size);
-  }
-
-  #ifdef LBANN_HAS_CUDNN
-  if(using_gpus()) {
-    // Determine mini-batch size per GPU
-    const int num_gpus = m_cudnn->get_num_gpus();
-    const int local_mini_batch_size = (get_num_parents() > 0 ?
-                                       get_prev_activations().LocalWidth() :
-                                       get_activations().LocalWidth());
-    m_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
-  }
-  #endif // LBANN_HAS_CUDNN
-
-  for (int i = 0; i < get_num_parents(); ++i) {
-    const auto& parent = m_parent_layers[i];
 
     // Get previous activation from parent layer
+    const auto& parent = m_parent_layers[i];
     parent->get_fp_output(get_prev_activations(i), this);
 
     // Check dimensions of previous activations matrix
@@ -939,15 +903,22 @@ void Layer::fp_setup_data(int mini_batch_size) {
     if (input.Height() != expected_height
         || input.Width() != mini_batch_size) {
       std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "layer \"" << get_name() << "\" expected a "
+      err << "layer \"" << get_name() << "\" expected a "
           << expected_height << " x " << mini_batch_size
           << " input matrix from layer \"" << parent->get_name() << "\""
           << " during forward prop, but got a "
           << input.Height() << " x " << input.Width() << " matrix";
-      throw lbann_exception(err.str());
+      LBANN_ERROR(err.str());
     }
 
+  }
+
+  // Initialize activations
+  // Note: matrices are cleared (without deallocating memory) in case
+  // they are matrix views.
+  for (int i = 0; i < get_num_children(); ++i) {
+    get_activations(i).Empty(false);
+    get_activations(i).Resize(get_num_neurons(i), mini_batch_size);
   }
 
   #ifdef LBANN_HAS_CUDNN
@@ -961,7 +932,7 @@ void Layer::fp_setup_data(int mini_batch_size) {
       switch (get_data_layout()) {
       case data_layout::DATA_PARALLEL:
         cudnn::set_tensor_cudnn_desc(m_prev_activations_cudnn_desc,
-                                     m_mini_batch_size_per_gpu,
+                                     input.LocalWidth(),
                                      get_prev_neuron_dims(),
                                      input.LDim());
         break;
@@ -980,7 +951,7 @@ void Layer::fp_setup_data(int mini_batch_size) {
       switch (get_data_layout()) {
       case data_layout::DATA_PARALLEL:
         cudnn::set_tensor_cudnn_desc(m_activations_cudnn_desc,
-                                     m_mini_batch_size_per_gpu,
+                                     output.LocalWidth(),
                                      get_neuron_dims(),
                                      output.LDim());
         break;
@@ -1001,6 +972,7 @@ void Layer::fp_setup_data(int mini_batch_size) {
 
 void Layer::bp_setup_data(int mini_batch_size) {
 
+  // Initialize previous error signals
   for (int i = 0; i < get_num_children(); ++i) {
     const auto& child = m_child_layers[i];
 
@@ -1035,7 +1007,7 @@ void Layer::bp_setup_data(int mini_batch_size) {
       switch (get_data_layout()) {
       case data_layout::DATA_PARALLEL:
         cudnn::set_tensor_cudnn_desc(m_prev_error_signals_cudnn_desc,
-                                     m_mini_batch_size_per_gpu,
+                                     gradient_wrt_output.LocalWidth(),
                                      get_neuron_dims(),
                                      gradient_wrt_output.LDim());
         break;
@@ -1054,7 +1026,7 @@ void Layer::bp_setup_data(int mini_batch_size) {
       switch (get_data_layout()) {
       case data_layout::DATA_PARALLEL:
         cudnn::set_tensor_cudnn_desc(m_error_signals_cudnn_desc,
-                                     m_mini_batch_size_per_gpu,
+                                     gradient_wrt_input.LocalWidth(),
                                      get_prev_neuron_dims(),
                                      gradient_wrt_input.LDim());
         break;
