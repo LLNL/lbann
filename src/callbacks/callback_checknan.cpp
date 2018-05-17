@@ -78,7 +78,8 @@ void lbann_callback_checknan::on_batch_end(model *m) {
 }
 
 bool lbann_callback_checknan::is_good(const AbsDistMat& m) {
-  const AbsMat& lm = m.LockedMatrix();
+  AbsDistMatReadProxy<El::Device::CPU> cpu_m(m);
+  const AbsMat& lm = cpu_m.GetLocked().LockedMatrix();
   const El::Int height = lm.Height();
   const El::Int width = lm.Width();
   for (El::Int col = 0; col < width; ++col) {
