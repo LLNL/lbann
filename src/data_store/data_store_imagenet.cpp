@@ -155,7 +155,9 @@ void data_store_imagenet::read_files(const std::unordered_set<int> &indices) {
     }
     if (m_data_filepaths.find(index) == m_data_filepaths.end()) {
       err << __FILE__ << " " << __LINE__ << " :: " 
-          << " m_data_filepaths.find(index) failed for index: " << index;
+          << " m_data_filepaths.find(index) failed for index: " << index
+          << " m_data_filepaths.size: " << m_data_filepaths.size()
+          << "\nhostname: " << getenv("SLURMD_NODENAME");
       throw lbann_exception(err.str());
     }
     size_t file_len = m_file_sizes[index];

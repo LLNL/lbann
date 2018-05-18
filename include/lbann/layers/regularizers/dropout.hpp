@@ -51,7 +51,7 @@ class dropout : public regularizer_layer {
     : regularizer_layer(comm),
       m_keep_prob(keep_prob) {
 
-  #if defined(LBANN_HAS_CUDNN) && !defined(LBANN_SEQUENTIAL_CONSISTENCY)
+  #if defined(LBANN_HAS_CUDNN)
     // Initialize GPU memory if using GPU
     /// @todo GPU implementation of dropout with sequential consistency
     if (cudnn != nullptr/* && T_layout == data_layout::DATA_PARALLEL*/) {

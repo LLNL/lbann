@@ -28,6 +28,7 @@
 #ifndef _JAG_OFFLINE_TOOL_MODE_
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/utils/file_utils.hpp" // for add_delimiter() in load()
+//#include "lbann/data_store/data_store_jag_conduit.hpp"
 #else
 #include "data_reader_jag_conduit.hpp"
 #endif // _JAG_OFFLINE_TOOL_MODE_
@@ -41,6 +42,8 @@
 #include <type_traits>// is_same
 #include <set>
 #include <map>
+#include "lbann/data_readers/image_utils.hpp"
+#include <omp.h>
 
 
 // This macro may be moved to a global scope
@@ -64,19 +67,103 @@
 
 namespace lbann {
 
-data_reader_jag_conduit::data_reader_jag_conduit(bool shuffle)
-  : generic_data_reader(shuffle),
-    m_independent(Undefined), m_dependent(Undefined),
-    m_linearized_image_size(0u),
-    m_num_views(2u),
-    m_image_width(0u), m_image_height(0u),
-    m_is_data_loaded(false) {
+data_reader_jag_conduit::data_reader_jag_conduit(const std::shared_ptr<cv_process>& pp, bool shuffle)
+  : generic_data_reader(shuffle) {
+  set_defaults();
+
+  if (!pp) {
+    _THROW_LBANN_EXCEPTION_(get_type(), " construction error: no image processor");
+  }
+
+  replicate_processor(*pp);
 }
 
+void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
+  m_independent = rhs.m_independent;
+  m_dependent = rhs.m_dependent;
+  m_image_width = rhs.m_image_width;
+  m_image_height = rhs.m_image_height;
+  m_image_num_channels = rhs.m_image_num_channels;
+  set_linearized_image_size();
+  m_num_img_srcs = rhs.m_num_img_srcs;
+  m_is_data_loaded = rhs.m_is_data_loaded;
+  m_scalar_keys = rhs.m_scalar_keys;
+  m_input_keys = rhs.m_input_keys;
+
+  if (rhs.m_pps.size() == 0u || !rhs.m_pps[0]) {
+    _THROW_LBANN_EXCEPTION_(get_type(), " construction error: no image processor");
+  }
+
+  replicate_processor(*rhs.m_pps[0]);
+
+  m_data = rhs.m_data;
+}
+
+data_reader_jag_conduit::data_reader_jag_conduit(const data_reader_jag_conduit& rhs)
+  : generic_data_reader(rhs) {
+  copy_members(rhs);
+}
+
+data_reader_jag_conduit& data_reader_jag_conduit::operator=(const data_reader_jag_conduit& rhs) {
+  // check for self-assignment
+  if (this == &rhs) {
+    return (*this);
+  }
+
+  generic_data_reader::operator=(rhs);
+
+  copy_members(rhs);
+
+  return (*this);
+}
 
 data_reader_jag_conduit::~data_reader_jag_conduit() {
 }
 
+void data_reader_jag_conduit::set_defaults() {
+  m_independent = Undefined;
+  m_dependent = Undefined;
+  m_image_width = 0;
+  m_image_height = 0;
+  m_image_num_channels = 1;
+  set_linearized_image_size();
+  m_num_img_srcs = 1u;
+  m_is_data_loaded = false;
+  m_scalar_keys.clear();
+  m_input_keys.clear();
+}
+
+/// Replicate image processor for each OpenMP thread
+bool data_reader_jag_conduit::replicate_processor(const cv_process& pp) {
+  const int nthreads = omp_get_max_threads();
+  m_pps.resize(nthreads);
+
+  // Construct thread private preprocessing objects out of a shared pointer
+  #pragma omp parallel for schedule(static, 1)
+  for (int i = 0; i < nthreads; ++i) {
+    //auto ppu = std::make_unique<cv_process>(pp); // c++14
+    std::unique_ptr<cv_process> ppu(new cv_process(pp));
+    m_pps[i] = std::move(ppu);
+  }
+
+  bool ok = true;
+  for (int i = 0; ok && (i < nthreads); ++i) {
+    if (!m_pps[i]) ok = false;
+  }
+
+  if (!ok || (nthreads <= 0)) {
+    _THROW_LBANN_EXCEPTION_(get_type(), " cannot replicate image processor");
+    return false;
+  }
+
+  const std::vector<unsigned int> dims = pp.get_data_dims();
+  if ((dims.size() == 2u) && (dims[0] != 0u) && (dims[1] != 0u)) {
+    m_image_width = static_cast<int>(dims[0]);
+    m_image_height = static_cast<int>(dims[1]);
+  }
+
+  return true;
+}
 
 const conduit::Node& data_reader_jag_conduit::get_conduit_node(const std::string key) const {
   return m_data[key];
@@ -111,13 +198,15 @@ data_reader_jag_conduit::get_dependent_variable_type() const {
   return m_dependent;
 }
 
-void data_reader_jag_conduit::set_image_dims(const int width, const int height) {
+void data_reader_jag_conduit::set_image_dims(const int width, const int height, const int ch) {
   if ((width > 0) && (height > 0)) { // set and valid
     m_image_width = width;
     m_image_height = height;
+    m_image_num_channels = ch;
   } else if (!((width == 0) && (height == 0))) { // set but not valid
     _THROW_LBANN_EXCEPTION_(_CN_, "set_image_dims() : invalid image dims");
   }
+  set_linearized_image_size();
 }
 
 /**
@@ -186,7 +275,7 @@ const std::vector<std::string>& data_reader_jag_conduit::get_input_choices() con
 }
 
 
-void data_reader_jag_conduit::set_num_views() {
+void data_reader_jag_conduit::set_num_img_srcs() {
   if (!check_sample_id(0)) {
     return;
   }
@@ -206,38 +295,42 @@ void data_reader_jag_conduit::set_num_views() {
     views.insert(std::make_pair(c1, c2));
   }
 
-  m_num_views = views.size();
-  if (m_num_views == 0u) {
-    m_num_views = 1u;
+  m_num_img_srcs = views.size();
+  if (m_num_img_srcs == 0u) {
+    m_num_img_srcs = 1u;
   }
 }
 
 void data_reader_jag_conduit::set_linearized_image_size() {
+  m_image_linearized_size = m_image_width * m_image_height;
+  //m_image_linearized_size = m_image_width * m_image_height * m_image_num_channels;
+  // TODO: we do not know how multi-channel image data will be formatted yet.
+}
+
+void data_reader_jag_conduit::check_image_size() {
   if (!check_sample_id(0)) {
-    m_linearized_image_size = 0u;
     return;
   }
   const conduit::Node & n_imageset = get_conduit_node("0/outputs/images");
   if (static_cast<size_t>(n_imageset.number_of_children()) == 0u) {
-    m_linearized_image_size = 0u;
+    //m_image_width = 0;
+    //m_image_height = 0;
+    //set_linearized_image_size();
+    _THROW_LBANN_EXCEPTION_(_CN_, "check_image_size() : no image in data");
     return;
   }
   const conduit::Node & n_image = get_conduit_node("0/outputs/images/0/emi");
   conduit::float64_array emi = n_image.value();
-  m_linearized_image_size = emi.number_of_elements()*get_num_views();
-}
-
-void data_reader_jag_conduit::check_image_size() {
-  if (m_linearized_image_size != static_cast<size_t>(m_image_width*m_image_height*get_num_views())) {
-    if ((m_image_width == 0u) && (m_image_height == 0u)) {
+  if (m_image_linearized_size != static_cast<size_t>(emi.number_of_elements())) {
+    if ((m_image_width == 0) && (m_image_height == 0)) {
       m_image_height = 1;
-      m_image_width = static_cast<int>(m_linearized_image_size/get_num_views());
+      m_image_width = static_cast<int>(emi.number_of_elements());
+      set_linearized_image_size();
     } else {
       _THROW_LBANN_EXCEPTION_(_CN_, "check_image_size() : image size mismatch");
     }
   }
 }
-
 
 void data_reader_jag_conduit::check_scalar_keys() {
   if (!check_sample_id(0)) {
@@ -335,8 +428,7 @@ void data_reader_jag_conduit::load() {
 void data_reader_jag_conduit::load_conduit(const std::string conduit_file_path) {
   conduit::relay::io::load(conduit_file_path, "hdf5", m_data);
 
-  set_num_views();
-  set_linearized_image_size();
+  set_num_img_srcs();
   check_image_size();
 
   if (!m_is_data_loaded) {
@@ -359,12 +451,12 @@ size_t data_reader_jag_conduit::get_num_samples() const {
   return static_cast<size_t>(m_data.number_of_children());
 }
 
-unsigned int data_reader_jag_conduit::get_num_views() const {
-  return m_num_views;
+unsigned int data_reader_jag_conduit::get_num_img_srcs() const {
+  return m_num_img_srcs;
 }
 
 size_t data_reader_jag_conduit::get_linearized_image_size() const {
-  return m_linearized_image_size;
+  return m_image_linearized_size;
 }
 
 size_t data_reader_jag_conduit::get_linearized_scalar_size() const {
@@ -411,7 +503,7 @@ int data_reader_jag_conduit::get_linearized_response_size() const {
 const std::vector<int> data_reader_jag_conduit::get_data_dims() const {
   switch (m_independent) {
     case JAG_Image:
-      return {static_cast<int>(get_num_views()), m_image_height, m_image_width};
+      return {static_cast<int>(get_num_img_srcs()), m_image_height, m_image_width};
       //return {static_cast<int>(get_linearized_image_size())};
     case JAG_Scalar:
       return {static_cast<int>(get_linearized_scalar_size())};
@@ -432,7 +524,7 @@ std::string data_reader_jag_conduit::get_description() const {
   string ret = string("data_reader_jag_conduit:\n")
     + " - independent: " + to_string(static_cast<int>(m_independent)) + "\n"
     + " - dependent: " + to_string(static_cast<int>(m_dependent)) + "\n"
-    + " - images: "   + to_string(m_num_views) + 'x'
+    + " - images: "   + to_string(m_num_img_srcs) + 'x'
                       + to_string(m_image_width) + 'x'
                       + to_string(m_image_height) + "\n"
     + " - scalars: "  + to_string(get_linearized_scalar_size()) + "\n"
@@ -502,22 +594,26 @@ data_reader_jag_conduit::get_image_ptrs(const size_t sample_id) const {
   return image_ptrs;
 }
 
+cv::Mat data_reader_jag_conduit::cast_to_cvMat(const std::pair<size_t, const ch_t*> img, const int height) {
+  const int num_pixels = static_cast<int>(img.first);
+  const ch_t* ptr = img.second;
+
+  // add a zero copying view to data
+  using InputBuf_T = cv_image_type<ch_t>;
+  const cv::Mat image(num_pixels, 1, InputBuf_T::T(1u),
+                      reinterpret_cast<void*>(const_cast<ch_t*>(ptr)));
+  // reshape and clone (deep-copy) the image
+  // to preserve the constness of the original data
+  return (image.reshape(0, height));
+}
+
 std::vector<cv::Mat> data_reader_jag_conduit::get_cv_images(const size_t sample_id) const {
   std::vector< std::pair<size_t, const ch_t*> > img_ptrs(get_image_ptrs(sample_id));
   std::vector<cv::Mat> images;
   images.reserve(img_ptrs.size());
-  using InputBuf_T = cv_image_type<ch_t>;
 
   for (const auto& img: img_ptrs) {
-    const int num_pixels = static_cast<int>(img.first);
-    const ch_t* ptr = img.second;
-
-    // add a zero copying view to data
-    const cv::Mat image(num_pixels, 1, InputBuf_T::T(1u),
-                        reinterpret_cast<void*>(const_cast<ch_t*>(ptr)));
-    // reshape and clone (deep-copy) the image
-    // to preserve the constness of the original data
-    images.emplace_back((image.reshape(0, m_image_height)).clone());
+    images.emplace_back(cast_to_cvMat(img, m_image_height).clone());
   }
   return images;
 }
@@ -577,12 +673,32 @@ int data_reader_jag_conduit::check_exp_success(const size_t sample_id) const {
 }
 
 
-bool data_reader_jag_conduit::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
-  switch (m_independent) {
+std::vector<::Mat> data_reader_jag_conduit::create_datum_views(::Mat& X, const int mb_idx) const {
+  std::vector<::Mat> X_v(m_num_img_srcs);
+  El::Int h = 0;
+  for(unsigned int i=0u; i < m_num_img_srcs; ++i) {
+    El::View(X_v[i], X, El::IR(h, h + get_linearized_image_size()), El::IR(mb_idx, mb_idx + 1));
+    h = h + get_linearized_image_size();
+  }
+  return X_v;
+}
+
+bool data_reader_jag_conduit::fetch(Mat& X, int data_id, int mb_idx, int tid,
+  const data_reader_jag_conduit::variable_t vt, const std::string tag) {
+  switch (vt) {
     case JAG_Image: {
-      // TODO: use get_image_ptrs() and views of matrix X to avoid data copying
-      const std::vector<ch_t> images(get_images(data_id));
-      set_minibatch_item<ch_t>(X, mb_idx, images.data(), get_linearized_image_size());
+      std::vector<::Mat> X_v = create_datum_views(X, mb_idx);
+      std::vector<cv::Mat> images = get_cv_images(data_id);
+
+      if (images.size() != get_num_img_srcs()) {
+        _THROW_LBANN_EXCEPTION2_(_CN_, "fetch_datum() : the number of images is not as expected", \
+          std::to_string(images.size()) + "!=" + std::to_string(get_num_img_srcs()));
+      }
+
+      for(size_t i=0u; i < get_num_img_srcs(); ++i) {
+        int width, height, img_type;
+        image_utils::process_image(images[i], width, height, img_type, *(m_pps[tid]), X_v[i]);
+      }
       break;
     }
     case JAG_Scalar: {
@@ -596,36 +712,33 @@ bool data_reader_jag_conduit::fetch_datum(Mat& X, int data_id, int mb_idx, int t
       break;
     }
     default: { // includes Undefined case
-      _THROW_LBANN_EXCEPTION_(_CN_, "fetch_datum() : unknown or undefined variable type");
+      _THROW_LBANN_EXCEPTION_(_CN_, "fetch_" + tag + "() : unknown or undefined variable type");
     }
   }
   return true;
 }
 
-bool data_reader_jag_conduit::fetch_response(Mat& Y, int data_id, int mb_idx, int tid) {
-  switch (m_dependent) {
-    case JAG_Image: {
-      // TODO: use get_image_ptrs() and views of matrix Y to avoid data copying
-      const std::vector<ch_t> images(get_images(data_id));
-      set_minibatch_item<ch_t>(Y, mb_idx, images.data(), get_linearized_image_size());
-      break;
-    }
-    case JAG_Scalar: {
-      const std::vector<scalar_t> scalars(get_scalars(data_id));
-      set_minibatch_item<scalar_t>(Y, mb_idx, scalars.data(), get_linearized_scalar_size());
-      break;
-    }
-    case JAG_Input: {
-      const std::vector<input_t> inputs(get_inputs(data_id));
-      set_minibatch_item<input_t>(Y, mb_idx, inputs.data(), get_linearized_input_size());
-      break;
-    }
-    default: { // includes Undefined case
-      _THROW_LBANN_EXCEPTION_(_CN_, "fetch_response() : unknown or undefined variable type");
-    }
-  }
-  return true;
+bool data_reader_jag_conduit::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+  return fetch(X, data_id, mb_idx, tid, m_independent, "datum");
 }
+
+bool data_reader_jag_conduit::fetch_response(Mat& X, int data_id, int mb_idx, int tid) {
+  return fetch(X, data_id, mb_idx, tid, m_dependent, "response");
+}
+
+#ifndef _JAG_OFFLINE_TOOL_MODE_
+void data_reader_jag_conduit::setup_data_store(model *m) {
+  if (m_data_store != nullptr) {
+    //delete m_data_store;
+  }
+/*
+  m_data_store = new data_store_jag_conduit(this, m);
+  if (m_data_store != nullptr) {
+    m_data_store->setup();
+  }
+*/
+}
+#endif // _JAG_OFFLINE_TOOL_MODE_
 
 void data_reader_jag_conduit::save_image(Mat& pixels, const std::string filename, bool do_scale) {
 #ifndef _JAG_OFFLINE_TOOL_MODE_
