@@ -6,6 +6,8 @@
 LBANN's Documentation
 =================================
 
+Welcome to the Livermore Big Artifical Neural Network (LBANN) documentaion. This is a proof of concept for how we can build and host our documentation moving forward. Examples for callbacks and layers are rendered as well.
+
 .. toctree::
    :maxdepth: 2
    
