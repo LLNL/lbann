@@ -134,6 +134,16 @@ class data_store_image : public generic_data_store {
 
   /// called by create_tarball
   void write_file_sizes();
+  
+  /// called by create_tarball
+  void write_datastore_indices();
+
+  void read_datastore_indices();
+
+  /// called by create_tarball
+  void write_data_filepaths();
+
+  void read_data_filepaths();
 
   /// returns true if option: --create_tarball is in use;
   /// print info to screen, and performs error checking
