@@ -45,14 +45,14 @@ public :
   El::Device get_device_allocation() const override { return Dev; }
 
  protected:
-  DataType activation(DataType z) const override {
+  DataType activation(DataType x) const override {
     // Warning: Not numerically stable.
-    // Better approach is to determine a threshold so that for large z,
-    // softplus(z) ~= z and for small z, softplus(z) ~= exp(z).
-    return std::log1p(std::exp(z));
+    // Better approach is to determine a threshold so that for large x,
+    // softplus(x) ~= x and for small x, softplus(x) ~= exp(x).
+    return std::log1p(std::exp(x));
   }
-  DataType activation_derivative(DataType z) const override {
-    return 1 / (DataType(1) + std::exp(-z));
+  DataType activation_derivative(DataType x) const override {
+    return 1 / (DataType(1) + std::exp(-x));
   }
 };
 

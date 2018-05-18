@@ -42,11 +42,11 @@ class atan_layer : public entrywise_activation_layer {
   El::Device get_device_allocation() const override { return Dev; }
 
  protected:
-  DataType activation(DataType z) const override {
-    return std::atan(z);
+  DataType activation(DataType x) const override {
+    return std::atan(x);
   }
-  DataType activation_derivative(DataType z) const override {
-    return 1 / (DataType(1) + z * z);
+  DataType activation_derivative(DataType x) const override {
+    return 1 / (DataType(1) + x * x);
   }
 };
 

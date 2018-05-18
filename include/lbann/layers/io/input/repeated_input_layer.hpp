@@ -32,6 +32,8 @@
 namespace lbann {
 
 /** Input layer for visual attention models.
+ *  This layer outputs a data sample and label concatenated
+ *  together. This is duplicated num_steps times.
  *  @todo This is very much a kludge. Deprecate as soon as possible.
  */
 class repeated_input_layer : public input_layer<partitioned_io_buffer, data_layout::DATA_PARALLEL> {

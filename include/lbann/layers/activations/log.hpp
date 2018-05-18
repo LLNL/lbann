@@ -55,25 +55,25 @@ class log_layer : public entrywise_activation_layer {
   El::Device get_device_allocation() const override { return Dev; }
 
  protected:
-  DataType activation(DataType z) const override {
-    if (z < m_min_input) {
+  DataType activation(DataType x) const override {
+    if (x < m_min_input) {
       #ifdef LBANN_ENABLE_LOG_CUTOFF
-      z = m_min_input;
+      x = m_min_input;
       #else
       LBANN_ERROR("invalid input");
       #endif // LBANN_ENABLE_LOG_CUTOFF
     }
-    return std::log(z) * m_inv_log_base;
+    return std::log(x) * m_inv_log_base;
   }
-  DataType activation_derivative(DataType z) const override {
-    if (z < m_min_input) {
+  DataType activation_derivative(DataType x) const override {
+    if (x < m_min_input) {
       #ifdef LBANN_ENABLE_LOG_CUTOFF
       return DataType(0);
       #else
       LBANN_ERROR("invalid input");
       #endif // LBANN_ENABLE_LOG_CUTOFF
     }
-    return m_inv_log_base / z;
+    return m_inv_log_base / x;
   }
 
  private:
