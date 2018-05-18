@@ -28,3 +28,10 @@ def test_unit_gradient_check_gcc7(cluster, exes, dirname):
 
 def test_unit_gradient_check_intel18(cluster, exes, dirname):
     skeleton_gradient_check(cluster, exes, dirname, 'intel18')
+
+# Run with python -m pytest -s test_unit_ridge_regression.py -k 'test_unit_gradient_check_exe' --exe=<executable>
+def test_unit_gradient_check_exe(cluster, dirname, exe):
+    if exe == None:
+        pytest.skip('Non-local testing')
+    exes = {'exe' : exe}
+    skeleton_gradient_check(cluster, exes, dirname, 'exe')
