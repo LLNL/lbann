@@ -451,8 +451,7 @@ void Layer::clear_error_signals(int mini_batch_size) {
   // they are matrix views.
   for (int i = 0; i < get_num_parents(); ++i) {
     get_error_signals(i).Empty(false);
-    get_error_signals(i).Resize(get_num_prev_neurons(i), mini_batch_size);
-    El::Zero(get_error_signals(i));
+    El::Zeros(get_error_signals(i), get_num_prev_neurons(i), mini_batch_size);
   }
 }
 
@@ -649,9 +648,8 @@ void Layer::setup_matrices(const El::Grid& grid) {
 void Layer::setup_data() {
   const int mini_batch_size = m_model->get_max_mini_batch_size();
 
+  // Initialize previous activations
   for (int i = 0; i < get_num_parents(); ++i) {
-
-    // Initialize previous activations
     auto& fp_input = get_prev_activations(i);
     m_parent_layers[i]->get_fp_output(fp_input, this);
     const int expected_height = get_num_prev_neurons(i);
@@ -665,22 +663,17 @@ void Layer::setup_data() {
           << fp_input.Height() << " x " << fp_input.Width() << " matrix";
       LBANN_ERROR(err.str());
     }
-
-    // Initialize error signal
-    El::Zeros(get_error_signals(i), get_num_prev_neurons(i), mini_batch_size);
-
   }
 
+  // Initialize error signals
+  for (int i = 0; i < get_num_parents(); ++i) {
+    get_error_signals(i).Resize(get_num_prev_neurons(i), mini_batch_size);
+  }
+
+
+  // Initialize activations
   for (int i = 0; i < get_num_children(); ++i) {
-
-    // Initialize activations
-    El::Zeros(get_activations(i), get_num_neurons(i), mini_batch_size);
-
-    // Initialize previous error signal
-    // Note: The previous error signals matrix has the same dimensions
-    // as the activations matrix.
-    El::LockedView(get_prev_error_signals(i), get_activations(i));
-
+    get_activations(i).Resize(get_num_neurons(i), mini_batch_size);
   }
 
 }
@@ -724,7 +717,6 @@ void Layer::setup_gpu() {
   }
   if (get_num_children() > 0) {
     const auto& output = get_activations();
-    const auto& gradient_wrt_output = get_prev_error_signals();
     switch (get_data_layout()) {
     case data_layout::DATA_PARALLEL:
       cudnn::set_tensor_cudnn_desc(m_activations_cudnn_desc,
@@ -732,9 +724,9 @@ void Layer::setup_gpu() {
                                    get_neuron_dims(),
                                    output.LDim());
       cudnn::set_tensor_cudnn_desc(m_prev_error_signals_cudnn_desc,
-                                   gradient_wrt_output.LocalWidth(),
+                                   get_activations().LocalWidth(),
                                    get_neuron_dims(),
-                                   gradient_wrt_output.LDim());
+                                   get_activations().LDim());
       break;
     case data_layout::MODEL_PARALLEL:
       cudnn::set_tensor_cudnn_desc(m_activations_cudnn_desc,
@@ -742,9 +734,9 @@ void Layer::setup_gpu() {
                                    output.LocalWidth(),
                                    output.LDim());
       cudnn::set_tensor_cudnn_desc(m_prev_error_signals_cudnn_desc,
-                                   gradient_wrt_output.LocalHeight(),
-                                   gradient_wrt_output.LocalWidth(),
-                                   gradient_wrt_output.LDim());
+                                   get_activations().LocalHeight(),
+                                   get_activations().LocalWidth(),
+                                   get_activations().LDim());
       break;
     default:
       LBANN_ERROR("invalid distributed matrix layout");
@@ -977,20 +969,18 @@ void Layer::bp_setup_data(int mini_batch_size) {
     const auto& child = m_child_layers[i];
 
     // Get previous error signal from child layer
-    child->get_bp_output(get_prev_error_signals(i), this);
-
-    // Check dimensions of previous error signal matrix
-    auto& input = *m_prev_error_signals[i];
+    auto& bp_input = get_prev_error_signals(i);
+    child->get_bp_output(bp_input, this);
     const int expected_height = get_num_neurons(i);
-    if (input.Height() != expected_height
-        || input.Width() != mini_batch_size) {
+    if (bp_input.Height() != expected_height
+        || bp_input.Width() != mini_batch_size) {
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
           << "layer \"" << get_name() << "\" expected a "
           << expected_height << " x " << mini_batch_size
           << " input matrix from layer \"" << child->get_name() << "\""
           << " during backward prop, but got a "
-          << input.Height() << " x " << input.Width() << " matrix";
+          << bp_input.Height() << " x " << bp_input.Width() << " matrix";
       throw lbann_exception(err.str());
     }
 
