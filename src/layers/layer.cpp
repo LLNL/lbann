@@ -376,48 +376,44 @@ AbsDistMat& Layer::get_error_signals(int parent_index) {
 const AbsDistMat& Layer::get_prev_activations(int parent_index) const {
   if (parent_index < 0 || parent_index >= (int) m_prev_activations.size()) {
     std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to access invalid previous activation matrix "
+    err << "attempted to access invalid previous activation matrix "
         << "from " << m_name << " "
         << "(requested index " << parent_index << ", but there are "
         << m_prev_activations.size() << " previous activation matrices)";
-    throw lbann_exception(err.str());
+    LBANN_ERROR(err.str());
   }
   return *m_prev_activations[parent_index];
 }
 const AbsDistMat& Layer::get_activations(int child_index) const {
   if (child_index < 0 || child_index >= (int) m_activations.size()) {
     std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to access invalid activation matrix "
+    err << "attempted to access invalid activation matrix "
         << "from " << m_name << " "
         << "(requested index " << child_index << ", but there are "
         << m_activations.size() << " activation matrices)";
-    throw lbann_exception(err.str());
+    LBANN_ERROR(err.str());
   }
   return *m_activations[child_index];
 }
 const AbsDistMat& Layer::get_prev_error_signals(int child_index) const {
   if (child_index < 0 || child_index >= (int) m_prev_error_signals.size()) {
     std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to access invalid previous error signal matrix "
+    err << "attempted to access invalid previous error signal matrix "
         << "from " << m_name << " "
         << "(requested index " << child_index << ", but there are "
         << m_prev_error_signals.size() << " previous error signal matrices)";
-    throw lbann_exception(err.str());
+    LBANN_ERROR(err.str());
   }
   return *m_prev_error_signals[child_index];
 }
 const AbsDistMat& Layer::get_error_signals(int parent_index) const {
   if (parent_index < 0 || parent_index >= (int) m_error_signals.size()) {
     std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to access invalid error signal matrix "
+    err << "attempted to access invalid error signal matrix "
         << "from " << m_name << " "
         << "(requested index " << parent_index << ", but there are "
         << m_error_signals.size() << " error signal matrices)";
-    throw lbann_exception(err.str());
+    LBANN_ERROR(err.str());
   }
   return *m_error_signals[parent_index];
 }
@@ -447,10 +443,7 @@ const AbsMat& Layer::get_local_error_signals(int parent_index) const {
 }
 
 void Layer::clear_error_signals(int mini_batch_size) {
-  // Note: matrices are cleared (without deallocating memory) in case
-  // they are matrix views.
   for (int i = 0; i < get_num_parents(); ++i) {
-    get_error_signals(i).Empty(false);
     El::Zeros(get_error_signals(i), get_num_prev_neurons(i), mini_batch_size);
   }
 }
@@ -472,7 +465,7 @@ void Layer::unfreeze() {
 bool Layer::is_frozen() const {
   for(auto& w : m_weights) {
     if (w->is_frozen() != m_frozen) {
-      throw lbann_exception("layer and weights of them are inconsistently frozen");
+      LBANN_ERROR("layer and weights of them are inconsistently frozen");
     }
   }
   return m_frozen;
@@ -486,9 +479,8 @@ void Layer::setup() {
   if (using_gpus()) {
     if(m_cudnn == nullptr) {
       std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "layer " << m_name << " is trying to use GPUs but has an invalid pointer to the cudnn object";
-      throw lbann_exception(err.str());
+      err << "layer " << m_name << " is trying to use GPUs but has an invalid pointer to the cudnn object";
+      LBANN_ERROR(err.str());
     }
     setup_gpu();
   }
@@ -500,20 +492,18 @@ void Layer::setup_pointers() {
   if(m_expected_num_parent_layers >= 0
      && get_num_parents() != m_expected_num_parent_layers) {
     std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "layer " << m_name << " has an invalid number of parent layers "
+    err << "layer " << m_name << " has an invalid number of parent layers "
         << "(expected " << m_expected_num_parent_layers << ", "
         << "but found " << m_parent_layers.size() << ")";
-    throw lbann_exception(err.str());
+    LBANN_ERROR(err.str());
   }
   if(m_expected_num_child_layers >= 0
      && get_num_children() != m_expected_num_child_layers) {
     std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "layer " << m_name << " has an invalid number of child layers "
+    err << "layer " << m_name << " has an invalid number of child layers "
         << "(expected " << m_expected_num_child_layers << ", "
         << "but found " << m_child_layers.size() << ")";
-    throw lbann_exception(err.str());
+    LBANN_ERROR(err.str());
   }
 
 }
@@ -615,10 +605,7 @@ void Layer::setup_matrices(const El::Grid& grid) {
       instantiate_matrices<data_layout::MODEL_PARALLEL, El::Device::GPU>(grid); break;
 #endif // LBANN_HAS_GPU
     default:
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "invalid matrix data allocation";
-      throw lbann_exception(err.str());
+      LBANN_ERROR("invalid matrix data allocation");
     }
     break;
   case data_layout::DATA_PARALLEL:
@@ -630,17 +617,11 @@ void Layer::setup_matrices(const El::Grid& grid) {
       instantiate_matrices<data_layout::DATA_PARALLEL, El::Device::GPU>(grid); break;
 #endif // LBANN_HAS_GPU
     default:
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "invalid matrix data allocation";
-      throw lbann_exception(err.str());
+      LBANN_ERROR("invalid matrix data allocation");
     }
     break;
   default:
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "invalid distributed matrix layout";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("invalid distributed matrix layout");
   }
 
 }
@@ -754,72 +735,65 @@ void Layer::check_setup() {
   const int num_children = get_num_children();
   if ((int) m_prev_activations.size() != num_parents
       || (int) m_activations.size() != num_children) {
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "layer " << m_name << " has an invalid number of "
+    err << "layer " << m_name << " has an invalid number of "
         << "forward prop matrices (expected "
         << num_parents << " input and " << num_children << " output, "
         << "but found " << m_prev_activations.size() << " and "
         << m_activations.size() << " respectively) ";
-    throw lbann_exception(err.str());
+    LBANN_ERROR(err.str());
   }
   if ((int) m_prev_error_signals.size() != num_children
       || (int) m_error_signals.size() != num_parents) {
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "layer " << m_name << " has an invalid number of "
+    err << "layer " << m_name << " has an invalid number of "
         << "backward prop matrices (expected "
         << num_children << " input and " << num_parents << " output. "
         << "but found " << m_prev_error_signals.size() << " and "
         << m_error_signals.size() << " respectively) ";
-    throw lbann_exception(err.str());
+    LBANN_ERROR(err.str());
   }
 
   // Check that matrices are initialized
   for (const auto& m : m_prev_activations) {
     if (m == nullptr) {
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "layer " << m_name << " has an uninitialized previous activation matrix";
-      throw lbann_exception(err.str());
+      err << "layer " << m_name << " has an uninitialized previous activation matrix";
+      LBANN_ERROR(err.str());
     }
   }
   for (const auto& m : m_activations) {
     if (m == nullptr) {
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "layer " << m_name << " has an uninitialized activation matrix";
-      throw lbann_exception(err.str());
+      err << "layer " << m_name << " has an uninitialized activation matrix";
+      LBANN_ERROR(err.str());
     }
   }
   for (const auto& m : m_prev_error_signals) {
     if (m == nullptr) {
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "layer " << m_name << " has an uninitialized previous error signal matrix";
-      throw lbann_exception(err.str());
+      err << "layer " << m_name << " has an uninitialized previous error signal matrix";
+      LBANN_ERROR(err.str());
     }
   }
   for (const auto& m : m_error_signals) {
     if (m == nullptr) {
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "layer " << m_name << " has an uninitialized error signal matrix";
-      throw lbann_exception(err.str());
+      err << "layer " << m_name << " has an uninitialized error signal matrix";
+      LBANN_ERROR(err.str());
     }
   }
 
   // Check that number of neurons is greater than zero
   if (m_num_neurons <= 0) {
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "layer " << m_name << " has invalid output dimensions "
+    err << "layer " << m_name << " has invalid output dimensions "
         << "(" << m_neuron_dims[0];
     for (size_t i = 1; i < m_neuron_dims.size(); ++i) {
       err << "x" << m_neuron_dims[i];
     }
     err << ")";
-    throw lbann_exception(err.str());
+    LBANN_ERROR(err.str());
   }
 
 }
 
 void Layer::replace_weights(Layer* other_layer) {
   if (other_layer == nullptr) {
-    throw lbann_exception("Layer::replace_weights: Attempted to add null pointer as a replacement layer.");
+    LBANN_ERROR("attempted to add null pointer as a replacement layer");
   }
 
   const std::vector<weights *> other_layer_weights = other_layer->get_weights();
@@ -906,10 +880,7 @@ void Layer::fp_setup_data(int mini_batch_size) {
   }
 
   // Initialize activations
-  // Note: matrices are cleared (without deallocating memory) in case
-  // they are matrix views.
   for (int i = 0; i < get_num_children(); ++i) {
-    get_activations(i).Empty(false);
     get_activations(i).Resize(get_num_neurons(i), mini_batch_size);
   }
 
@@ -975,13 +946,12 @@ void Layer::bp_setup_data(int mini_batch_size) {
     if (bp_input.Height() != expected_height
         || bp_input.Width() != mini_batch_size) {
       std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "layer \"" << get_name() << "\" expected a "
+      err << "layer \"" << get_name() << "\" expected a "
           << expected_height << " x " << mini_batch_size
           << " input matrix from layer \"" << child->get_name() << "\""
           << " during backward prop, but got a "
           << bp_input.Height() << " x " << bp_input.Width() << " matrix";
-      throw lbann_exception(err.str());
+      LBANN_ERROR(err.str());
     }
 
   }
@@ -1072,10 +1042,9 @@ void Layer::get_fp_output(AbsDistMat& output, const Layer* child) const {
                               - m_child_layers.begin());
   if (child_index >= m_child_layers.size()) {
     std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << get_name() << " has no forward prop output corresponding to "
+    err << get_name() << " has no forward prop output corresponding to "
         << child->get_name();
-    throw lbann_exception(err.str());
+    LBANN_ERROR(err.str());
   }
   auto& activation = const_cast<Layer*>(this)->get_activations(child_index);
 
@@ -1100,10 +1069,9 @@ void Layer::get_bp_output(AbsDistMat& output, const Layer* parent) const {
                                - m_parent_layers.begin());
   if (parent_index >= m_parent_layers.size()) {
     std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << get_name() << " has no backward prop output corresponding to "
+    err << get_name() << " has no backward prop output corresponding to "
         << parent->get_name();
-    throw lbann_exception(err.str());
+    LBANN_ERROR(err.str());
   }
   auto& error_signal = const_cast<Layer*>(this)->get_error_signals(parent_index);
 
@@ -1124,9 +1092,7 @@ std::string Layer::get_data_layout_string(data_layout d) const {
   case data_layout::MODEL_PARALLEL:
     return "model_parallel";
   default:
-    throw lbann_exception(
-      std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
-      "Layer: invalid data layout");
+    LBANN_ERROR("invalid data layout");
   }
 }
 
@@ -1139,9 +1105,7 @@ std::string Layer::get_device_allocation_string(El::Device dev) const {
     return "gpu";
 #endif // LBANN_HAS_GPU
   default:
-    throw lbann_exception(
-      std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
-      "Layer: invalid device allocation");
+    LBANN_ERROR("invalid device allocation");
   }
 }
 
@@ -1154,9 +1118,7 @@ std::string Layer::get_device_allocation_string_short(El::Device dev) const {
     return "G";
 #endif // LBANN_HAS_GPU
   default:
-    throw lbann_exception(
-      std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
-      "Layer: invalid device allocation");
+    LBANN_ERROR("invalid device allocation");
   }
 }
 
@@ -1204,9 +1166,7 @@ std::vector<Layer*> Layer::get_layer_pointers() {
 
 void Layer::set_layer_pointers(std::vector<Layer*> layers) {
   if(layers.size() != m_parent_layers.size() + m_child_layers.size()) {
-    throw lbann_exception(
-      std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
-      "Layer: attempted to set layer pointers with an invalid number of pointers");
+    LBANN_ERROR("attempted to set layer pointers with an invalid number of pointers");
   }
   size_t pos = 0;
   for(const Layer*& parent: m_parent_layers) {

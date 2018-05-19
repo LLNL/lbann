@@ -135,8 +135,7 @@ void weights::setup(std::vector<int> matrix_height_dims,
       return;
     } else {
       std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "attempted to setup " << m_name << " as a "
+      err << "attempted to setup " << m_name << " as a "
           << get_dims_string(matrix_height_dims, matrix_width_dims) << " "
           << "weights matrix with "
           << "col_dist=" << col_dist << ", "
@@ -146,7 +145,7 @@ void weights::setup(std::vector<int> matrix_height_dims,
           << "matrix with "
           << "col_dist=" << dist_data.colDist << ", "
           << "row_dist=" << dist_data.rowDist;
-      throw lbann_exception(err.str());
+      LBANN_ERROR(err.str());
     }
   } else {
     // Check that tensor dimensions are valid
@@ -159,11 +158,10 @@ void weights::setup(std::vector<int> matrix_height_dims,
     }
     if (!dims_are_valid) {
       std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "attempted to setup " << m_name << " as a "
+      err << "attempted to setup " << m_name << " as a "
           << get_dims_string(matrix_height_dims, matrix_width_dims) << " "
           << "weights matrix";
-      throw lbann_exception(err.str());
+      LBANN_ERROR(err.str());
     }
   }
 
@@ -216,15 +214,16 @@ void weights::set_optimizer(optimizer* opt) {
 }
 
 AbsDistMat& weights::get_values() {
-
-  // Check if weights matrix has been setup
   if (m_values == nullptr) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to access values of weights before they are setup";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("attempted to access values of weights before they are setup");
   }
+  return *m_values;
+}
 
+const AbsDistMat& weights::get_values() const {
+  if (m_values == nullptr) {
+    LBANN_ERROR("attempted to access values of weights before they are setup");
+  }
   return *m_values;
 }
 
@@ -232,10 +231,7 @@ void weights::set_values(const AbsDistMat& values) {
 
   // Check if weights matrix has been setup
   if (m_values == nullptr) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to set values of weights before they are setup";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("attempted to set values of weights before they are setup");
   }
 
   // Copy input to weights matrix
@@ -249,10 +245,9 @@ void weights::set_value(DataType value, int index) {
   const auto& size = get_size();
   if (index < 0 || index >= size) {
     std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to set weight value at index " << index << ", "
+    err << "attempted to set weight value at index " << index << ", "
         << "but there are " << size << " values";
-    throw lbann_exception(err.str());
+    LBANN_ERROR(err.str());
   }
 #endif // LBANN_DEBUG
 
@@ -279,8 +274,7 @@ void weights::set_value(DataType value, std::vector<int> pos) {
   }
   if (!pos_is_valid) {
     std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to set weight value at position (";
+    err << "attempted to set weight value at position (";
     for (size_t i = 0 ; i < pos.size(); ++i) {
       err << (i > 0 ? "x" : "") << pos[i];
     }
@@ -288,7 +282,7 @@ void weights::set_value(DataType value, std::vector<int> pos) {
     for (size_t i = 0 ; i < dims.size(); ++i) {
       err << (i > 0 ? "x" : "") << dims[i];
     }
-    throw lbann_exception(err.str());
+    LBANN_ERROR(err.str());
   }
 #endif // LBANN_DEBUG
 
@@ -310,11 +304,10 @@ void weights::set_value(DataType value, int row, int col) {
     const auto& width = get_matrix_width();
     if (row < 0 || row >= height || col < 0 || col > width ) {
       std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "attempted to set weights value at entry "
+      err << "attempted to set weights value at entry "
           << "(" << row << "," << col << ") "
           << "in a " << height << "x" << width << " matrix";
-      throw lbann_exception(err.str());
+      LBANN_ERROR(err.str());
     }
   }
 #endif // LBANN_DEBUG

@@ -54,10 +54,7 @@ class dropout : public regularizer_layer {
   #if defined(LBANN_HAS_CUDNN) && !defined(LBANN_SEQUENTIAL_CONSISTENCY)
     // Initialize GPU memory if using GPU
     /// @todo GPU implementation of dropout with sequential consistency
-    if (cudnn != nullptr/* && T_layout == data_layout::DATA_PARALLEL*/) {
-      // this->m_using_gpus = true;
-      this->m_cudnn = cudnn;
-    }
+    this->m_cudnn = cudnn;
   #endif // LBANN_HAS_CUDNN
 
   }
@@ -135,10 +132,29 @@ class dropout : public regularizer_layer {
     // Initialize cuDNN descriptors
     setup_dropout_cudnn_desc();
 
+  #ifdef HYDROGEN_HAVE_CUB
+    // Set output matrix to use CUB GPU memory pool
+    // Note: Activation matrix owns data during training and is a
+    // matrix view during evaluation. To avoid expensive GPU memory
+    // allocation and deallocation, we use CUB's GPU memory pool.
+    get_local_activations().SetMemoryMode(1);
+  #endif
+
   #endif
   }
 
  protected:
+
+  void fp_setup_data(int mini_batch_size) override {
+    // If needed, reset matrix view without deallocating memory
+    // Note: Activation matrix owns data during training and is a
+    // matrix view during evaluation.
+    const auto& mode = this->m_model->get_execution_mode();
+    if (mode == execution_mode::training && m_keep_prob < EvalType(0)) {
+      get_activations().Empty(false);
+    }
+    regularizer_layer::fp_setup_data(mini_batch_size);
+  }
 
   void fp_compute () override {
     if (using_gpus()) {

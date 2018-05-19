@@ -52,9 +52,7 @@ class split_layer : public transform_layer {
 
   #ifdef LBANN_HAS_CUDNN
     // Initialize GPU if available
-    if(cudnn) {
-      this->m_cudnn = cudnn;
-    }
+    this->m_cudnn = cudnn;
   #endif // LBANN_HAS_CUDNN
 
   }
@@ -77,12 +75,21 @@ class split_layer : public transform_layer {
 
   protected:
 
-  void fp_compute() override {
-    if(this->using_gpus()) {
-  #ifndef LBANN_HAS_CUDNN
-      throw lbann_exception("split_layer: cuDNN not detected");
-  #endif
+  void setup_gpu() override {
+    transform_layer::setup_gpu();
+#ifdef HYDROGEN_HAVE_CUB
+    // Set output matrices to use CUB GPU memory pool
+    // Note: During each forward prop, the output matrices are resized
+    // to the mini-batch size and cleared to obtain matrix views. To
+    // avoid expensive GPU memory allocation and deallocation, we use
+    // CUB's GPU memory pool.
+    for (int i = 0; i < get_num_children(); ++i) {
+      get_local_activations(i).SetMemoryMode(1);
     }
+#endif
+  }
+
+  void fp_compute() override {
     const auto& input = get_prev_activations();
     for (auto& output : this->m_activations) {
       El::LockedView(*output, input);
