@@ -43,18 +43,18 @@ class power_layer : public entrywise_activation_layer {
   El::Device get_device_allocation() const override { return Dev; }
 
  protected:
-  DataType activation(DataType z) const override {
+  DataType activation(DataType x) const override {
     if (m_exponent == EvalType(2)) {
-      return z * z;
+      return x * x;
     } else {
-      return std::pow(z, m_exponent);
+      return std::pow(x, m_exponent);
     }
   }
-  DataType activation_derivative(DataType z) const override {
+  DataType activation_derivative(DataType x) const override {
     if (m_exponent == EvalType(2)) {
-      return 2 * z;
+      return 2 * x;
     } else {
-      return m_exponent * std::pow(z, m_exponent - EvalType(1));
+      return m_exponent * std::pow(x, m_exponent - EvalType(1));
     }
   }
 

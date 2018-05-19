@@ -29,6 +29,7 @@
 #include "lbann/comm.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/cudnn_wrapper.hpp"
 #include "mpi.h"
 #include "omp.h"
 #include <sstream>
@@ -161,6 +162,7 @@ void lbann_comm::allreduce(AbsDistMat& m,
   /// @todo MPI-CUDA backend
 #ifdef LBANN_HAS_NCCL2
   if (t == std::type_index(typeid(::Al::NCCLBackend))) {
+    CHECK_CUDA(cudaStreamSynchronize(El::GPUManager::Stream()));
     ::Al::Allreduce<::Al::NCCLBackend>(
       m.Buffer(),
       local_size,
@@ -198,6 +200,7 @@ void lbann_comm::nb_allreduce(AbsDistMat& m,
   /// @todo MPI-CUDA backend
 #ifdef LBANN_HAS_NCCL2
   if (t == std::type_index(typeid(::Al::NCCLBackend))) {
+    CHECK_CUDA(cudaStreamSynchronize(El::GPUManager::Stream()));
     ::Al::NonblockingAllreduce<::Al::NCCLBackend>(
       m.Buffer(),
       local_size,

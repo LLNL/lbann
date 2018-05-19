@@ -506,6 +506,8 @@ void Layer::setup() {
       throw lbann_exception(err.str());
     }
     setup_gpu();
+  } else {
+    m_cudnn = nullptr;
   }
 }
 
@@ -689,6 +691,7 @@ void Layer::setup_data() {
               get_num_neurons(i),
               mini_batch_size);
   }
+
 }
 
 void Layer::setup_gpu() {
@@ -852,6 +855,7 @@ void Layer::replace_weights(Layer* other_layer) {
 }
 
 void Layer::deallocate_matrices() {
+
   // Deallocate matrices
   for (const auto& m : m_prev_activations) {
     if (m != nullptr) delete m;

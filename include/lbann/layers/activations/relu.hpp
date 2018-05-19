@@ -96,8 +96,12 @@ class relu_layer : public entrywise_activation_layer {
   void setup_gpu() override {
     entrywise_activation_layer::setup_gpu();
   #ifndef LBANN_HAS_CUDNN
-    throw lbann_exception("relu_layer: cuDNN not detected");
+    LBANN_ERROR("cuDNN not detected");
   #else
+    if (m_activation_cudnn_desc != nullptr) {
+      CHECK_CUDNN(cudnnDestroyActivationDescriptor(m_activation_cudnn_desc));
+      m_activation_cudnn_desc = nullptr;
+    }
     CHECK_CUDNN(cudnnCreateActivationDescriptor(&m_activation_cudnn_desc));
     CHECK_CUDNN(cudnnSetActivationDescriptor(m_activation_cudnn_desc,
                                              CUDNN_ACTIVATION_RELU,
@@ -121,54 +125,38 @@ class relu_layer : public entrywise_activation_layer {
 
   void fp_compute_gpu() override {
   #ifndef LBANN_HAS_CUDNN
-    throw lbann_exception("relu_layer: cuDNN not detected");
+    LBANN_ERROR("cuDNN not detected");
   #else
-
-    // Useful constants
     const DataType one = 1;
     const DataType zero = 0;
-
-    // Apply activation on the GPU
-    CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(0)));
-    CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(0),
-                               this->m_cudnn->get_stream(0)));
-    CHECK_CUDNN(cudnnActivationForward(this->m_cudnn->get_handle(0),
+    CHECK_CUDNN(cudnnActivationForward(this->m_cudnn->get_handle(),
                                        m_activation_cudnn_desc,
                                        &one,
                                        this->m_prev_activations_cudnn_desc,
-                                       this->m_prev_activations[0]->LockedBuffer(),
+                                       get_prev_activations().LockedBuffer(),
                                        &zero,
                                        this->m_activations_cudnn_desc,
-                                       this->m_activations[0]->Buffer()));
-
+                                       get_activations().Buffer()));
   #endif // LBANN_HAS_CUDNN
   }
 
   void bp_compute_gpu() override {
   #ifndef LBANN_HAS_CUDNN
-    throw lbann_exception("relu_layer: cuDNN not detected");
+    LBANN_ERROR("cuDNN not detected");
   #else
-
-    // Useful constants
     const DataType one = 1;
-
-    // Apply activation derivative on the GPU
-    CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(0)));
-    CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(0),
-                               this->m_cudnn->get_stream(0)));
-    CHECK_CUDNN(cudnnActivationBackward(this->m_cudnn->get_handle(0),
+    CHECK_CUDNN(cudnnActivationBackward(this->m_cudnn->get_handle(),
                                         m_activation_cudnn_desc,
                                         &one,
-                                        this->m_prev_activations_cudnn_desc,
-                                        this->m_prev_activations[0]->LockedBuffer(),
-                                        this->m_prev_error_signals_cudnn_desc,
-                                        this->m_prev_error_signals[0]->LockedBuffer(),
                                         this->m_activations_cudnn_desc,
-                                        this->m_activations[0]->LockedBuffer(),
+                                        get_activations().LockedBuffer(),
+                                        this->m_prev_error_signals_cudnn_desc,
+                                        get_prev_error_signals().LockedBuffer(),
+                                        this->m_prev_activations_cudnn_desc,
+                                        get_prev_activations().LockedBuffer(),
                                         &one,
                                         this->m_error_signals_cudnn_desc,
-                                        this->m_error_signals[0]->Buffer()));
-
+                                        get_error_signals().Buffer()));
   #endif // LBANN_HAS_CUDNN
   }
 

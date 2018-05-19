@@ -46,12 +46,12 @@ class smooth_relu_layer : public entrywise_activation_layer {
   El::Device get_device_allocation() const override { return Dev; }
 
  protected:
-  DataType activation(DataType z) const override {
-    return z / (DataType(1) + std::exp(-z));
+  DataType activation(DataType x) const override {
+    return x / (DataType(1) + std::exp(-x));
   }
-  DataType activation_derivative(DataType z) const override {
-    const DataType sigz = 1 / (DataType(1) + std::exp(-z));
-    return sigz + z * sigz - z * sigz * sigz;
+  DataType activation_derivative(DataType x) const override {
+    const DataType sigx = 1 / (DataType(1) + std::exp(-x));
+    return sigx + x * sigx - x * sigx * sigx;
   }
 };
 

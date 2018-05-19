@@ -56,6 +56,16 @@ Layer* construct_layer(lbann_comm* comm,
                                                                  params.for_regression());
     }
   }
+  if (proto_layer.has_repeated_input()) {
+    /// @todo Remove when possible
+    const auto& params = proto_layer.repeated_input();
+    return new repeated_input_layer(comm,
+                                    num_parallel_readers,
+                                    data_readers,
+                                    params.num_steps(),
+                                    !params.data_set_per_model(),
+                                    params.for_regression());
+  }
 
   // Target layers
   if (proto_layer.has_target()) {
@@ -166,7 +176,7 @@ Layer* construct_layer(lbann_comm* comm,
       }
       dims.push_back(data_readers[execution_mode::training]->get_linearized_data_size());
     }
-    return new reshape_layer<layout, Dev>(comm, dims.size(), dims.data());
+    return new reshape_layer<layout, Dev>(comm, dims.size(), dims.data(), cudnn);
   }
   if (proto_layer.has_sum()) {
     const auto& scaling_factors = parse_list<DataType>(proto_layer.sum().scaling_factors());
@@ -271,6 +281,30 @@ Layer* construct_layer(lbann_comm* comm,
   if (proto_layer.has_evaluation()) {
     return new evaluation_layer<layout>(comm, cudnn);
   }
+  if (proto_layer.has_crop()) {
+    const auto& params = proto_layer.crop();
+    const auto& dims = parse_list<int>(params.dims());
+    if (layout == data_layout::DATA_PARALLEL
+        && Dev == El::Device::CPU) {
+      return new crop_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(comm, dims, cudnn);
+    }
+  }
+  if (proto_layer.has_categorical_random()) {
+    if (layout == data_layout::DATA_PARALLEL
+        && Dev == El::Device::CPU) {
+      return new categorical_random_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(comm, cudnn);
+    }
+  }
+  if (proto_layer.has_discrete_random()) {
+    const auto& params = proto_layer.discrete_random();
+    const auto& values = parse_list<DataType>(params.values());
+    const auto& dims = parse_list<int>(params.dims());
+    if (layout == data_layout::DATA_PARALLEL
+        && Dev == El::Device::CPU) {
+      return new discrete_random_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(
+                   comm, values, dims, cudnn);
+    }
+  }
 
   // Regularizer layers
   if (proto_layer.has_batch_normalization()) {
@@ -321,7 +355,7 @@ Layer* construct_layer(lbann_comm* comm,
     return new sigmoid_layer<layout, Dev>(comm, cudnn);
   }
   if (proto_layer.has_tanh()) {
-    return new tanh_layer<layout, Dev>(comm);
+    return new tanh_layer<layout, Dev>(comm, cudnn);
   }
   if (proto_layer.has_atan()) {
     return new atan_layer<layout, Dev>(comm);
@@ -364,6 +398,15 @@ Layer* construct_layer(lbann_comm* comm,
   if (proto_layer.has_power()) {
     const auto& params = proto_layer.power();
     return new power_layer<layout, Dev>(comm, params.exponent());
+  }
+  if (proto_layer.has_log()) {
+    const auto& params = proto_layer.log();
+    const auto& base = params.base();
+    if (base != 0.0) {
+      return new log_layer<layout, Dev>(comm, base);
+    } else {
+      return new log_layer<layout, Dev>(comm);
+    }
   }
 
   // Throw exception if layer has not been constructed
