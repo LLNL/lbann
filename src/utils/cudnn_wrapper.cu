@@ -38,28 +38,23 @@ namespace {
 
 __global__ void constant_kernel(DataType *data,
                                 DataType val,
-                                El::Int len) {
-  int offset = blockIdx.x * blockDim.x + threadIdx.x;
-  if (offset >= len) return;
-  data[offset] = val;
+                                int len) {
+  const int offset = blockIdx.x * blockDim.x + threadIdx.x;
+  if (offset < len) { data[offset] = val; }
 }
 
 __global__ void reduce_kernel(DataType *dst, const DataType *src,
-                              El::Int len) {
-  int offset = blockIdx.x * blockDim.x + threadIdx.x;
-  if (offset >= len) return;
-  dst[offset] += src[offset];
+                              int len) {
+  const int offset = blockIdx.x * blockDim.x + threadIdx.x;
+  if (offset < len) { dst[offset] += src[offset]; }
 }
 
 #ifdef LBANN_HAS_NCCL2
 __global__ void scale_kernel(DataType *data,
                              const DataType scale,
                              El::Int len) {
-
-  int offset = blockIdx.x * blockDim.x + threadIdx.x;
-  if (offset >= len) return;
-  data[offset] *= scale;
-
+  const int offset = blockIdx.x * blockDim.x + threadIdx.x;
+  if (offset < len) { data[offset] *= scale; }
 }
 #endif // LBANN_HAS_NCCL2
 }
@@ -70,10 +65,10 @@ void cudnn_manager::set_on_gpu(int i,
                                int height,
                                int width) {
   CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-  const El::Int len = height * width;
+  const int len = height * width;
   const int tb_dim = 256;
-  const int grid_dim = len/tb_dim + (len % tb_dim ? 1 : 0);
-  constant_kernel<<<grid_dim, tb_dim>>>(gpu_data, val, len);
+  const int grid_dim = len / tb_dim + (len % tb_dim ? 1 : 0);
+  constant_kernel<<<grid_dim, tb_dim, 0, get_stream(i)>>>(gpu_data, val, len);
 }
 
 void cudnn_manager::allreduce_on_gpus(std::vector<DataType*>& gpu_data,

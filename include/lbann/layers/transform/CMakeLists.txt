@@ -17,6 +17,9 @@ set_full_path(THIS_DIR_HEADERS
   gaussian.hpp
   bernoulli.hpp
   uniform.hpp
+  crop.hpp
+  categorical_random.hpp
+  discrete_random.hpp
   )
 
 # Propagate the files up the tree

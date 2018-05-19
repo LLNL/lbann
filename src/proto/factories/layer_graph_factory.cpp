@@ -218,13 +218,15 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
     if (layout_str == "data_parallel")  { layout = data_layout::DATA_PARALLEL; }
     if (layout_str == "model_parallel") { layout = data_layout::MODEL_PARALLEL; }
     const auto& num_parallel_readers = proto_model.num_parallel_readers();
-
     const auto& device_allocation_str = proto_layer.device_allocation();
-    El::Device default_device_allocation = El::Device::CPU;
+    El::Device device_allocation = El::Device::CPU;
 #ifdef LBANN_HAS_GPU
-    if (cudnn != nullptr) { default_device_allocation = El::Device::GPU; }
+    if (cudnn != nullptr) { device_allocation = El::Device::GPU; }
 #endif // LBANN_HAS_GPU
-    El::Device device_allocation = default_device_allocation;
+    if (device_allocation_str == "cpu") { device_allocation = El::Device::CPU; }
+#ifdef LBANN_HAS_GPU
+    if (device_allocation_str == "gpu") { device_allocation = El::Device::GPU; }
+#endif // LBANN_HAS_GPU
     if (device_allocation_str.empty()
         && (proto_layer.has_input() || proto_layer.has_target()
             || proto_layer.has_reconstruction() || proto_layer.has_softmax())) {
@@ -232,76 +234,31 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
       // allowed on the GPUs force the default to be the CPU
       device_allocation = El::Device::CPU;
     }
-    if (device_allocation_str == "cpu") { device_allocation = El::Device::CPU; }
-#ifdef LBANN_HAS_GPU
-    if (device_allocation_str == "gpu") { device_allocation = El::Device::GPU; }
-#endif // LBANN_HAS_GPU
+    cudnn::cudnn_manager* layer_cudnn = cudnn;
+    if (device_allocation == El::Device::CPU) {
+      layer_cudnn = nullptr;
+    }
 
     // Construct layer
     Layer* l = nullptr;
-    switch (layout) {
-    case data_layout::DATA_PARALLEL:
-      switch (device_allocation) {
-      case El::Device::CPU:
-        l = construct_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(
-              comm,
-              data_readers,
-              num_parallel_readers,
-              nullptr,
-              proto_layer
-            );
-        break;
+#define TEMPLATE_INSTANTIATION(T_layout, T_device)                      \
+    do {                                                                \
+      if (layout == T_layout && device_allocation == T_device) {        \
+        l = construct_layer<T_layout, T_device>(                        \
+              comm,                                                     \
+              data_readers,                                             \
+              num_parallel_readers,                                     \
+              layer_cudnn,                                              \
+              proto_layer);                                             \
+      }                                                                 \
+    } while (0)
+    TEMPLATE_INSTANTIATION(data_layout::DATA_PARALLEL, El::Device::CPU);
+    TEMPLATE_INSTANTIATION(data_layout::MODEL_PARALLEL, El::Device::CPU);
 #ifdef LBANN_HAS_GPU
-      case El::Device::GPU:
-        l = construct_layer<data_layout::DATA_PARALLEL, El::Device::GPU>(
-              comm,
-              data_readers,
-              num_parallel_readers,
-              cudnn,
-              proto_layer
-            );
-        break;
+    TEMPLATE_INSTANTIATION(data_layout::DATA_PARALLEL, El::Device::GPU);
+    TEMPLATE_INSTANTIATION(data_layout::MODEL_PARALLEL, El::Device::GPU);
 #endif // LBANN_HAS_GPU
-      default:
-        err << "layer " << name << " has an invalid device allocation "
-            << "(" << device_allocation_str << ")";
-        LBANN_ERROR(err.str());
-      }
-      break;
-    case data_layout::MODEL_PARALLEL:
-      switch (device_allocation) {
-      case El::Device::CPU:
-        l = construct_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>(
-              comm,
-              data_readers,
-              num_parallel_readers,
-              nullptr,
-              proto_layer
-            );
-        break;
-#ifdef LBANN_HAS_GPU
-      case El::Device::GPU:
-        l = construct_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>(
-              comm,
-              data_readers,
-              num_parallel_readers,
-              cudnn,
-              proto_layer
-            );
-        break;
-#endif // LBANN_HAS_GPU
-      default:
-        err << "layer " << name << " has an invalid device allocation "
-            << "(" << device_allocation_str << ")";
-        LBANN_ERROR(err.str());
-      }
-      break;
-    case data_layout::invalid:
-    default:
-      err << "layer " << name << " has an invalid data layout "
-          << "(" << layout_str << ")";
-      LBANN_ERROR(err.str());
-    }
+#undef TEMPLATE_INSTANTIATION
 
     // Check that layer has been constructed
     if (l == nullptr) {
