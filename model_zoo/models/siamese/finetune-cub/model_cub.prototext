@@ -545,7 +545,7 @@ model {
     fully_connected {
       # The number of outputs specific to the dataset used.
       # E.g., 200 for CUB, and 431 for CompCars.
-      num_neurons: 200
+      num_neurons_is_num_labels: true
       has_bias: false
     }
     weights: "fc8_new_linearity fc8_new_bias"

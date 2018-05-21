@@ -43,5 +43,4 @@ void write_prototext_file(
   std::string fn,
   lbann_data::LbannPB& pb);
 
-
 #endif

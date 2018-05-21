@@ -321,7 +321,7 @@ model {
     data_layout: "data_parallel"
     weights: "dis_fc3_weights"
     fully_connected {
-      num_neurons: 2
+      num_neurons_is_num_labels: true
       #weight_initialization: "he_normal"
       has_bias: true
     }
