@@ -186,6 +186,7 @@ message Model {
   int64 mini_batch_size = 12;
   int64 num_epochs = 4;
   int64 super_steps = 121; //multiple steps/epochs currently use in GAN 
+  int64 num_batches = 122; //multiple batches/sub epoch
   int64 block_size = 50;
   int64 procs_per_model = 51;
   int64 num_gpus = 53;
@@ -755,6 +756,8 @@ message Layer {
    Exponential exponential = 41;
    Swish swish = 42;
    Power power = 43;
+   Abs   abs = 44;
+   L2Loss l2_loss = 45;
 }
 ///////////////////////
 // MotifLayer //
@@ -818,6 +821,11 @@ message Power {
   double exponent = 1;
 }
 
+message Abs {
+}
+
+message L2Loss {
+}
 ///////////////////////////
 // Regularization Layers //
 ///////////////////////////

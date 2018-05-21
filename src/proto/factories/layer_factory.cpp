@@ -373,6 +373,12 @@ Layer* construct_layer(lbann_comm* comm,
     const auto& params = proto_layer.power();
     return new power_layer<layout>(comm, params.exponent());
   }
+  if (proto_layer.has_abs()) {
+    return new abs_layer<layout>(comm);
+  }
+  if (proto_layer.has_l2_loss()) {
+    return new l2_loss_layer<layout>(comm);
+  }
 
   // Throw exception if layer has not been constructed
   err << "could not construct layer " << proto_layer.name();
