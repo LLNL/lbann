@@ -60,6 +60,40 @@ void setup_parents_and_children(lbann_comm* comm,
   }
 }
 
+void setup_fc_num_neurons(
+  std::vector<Layer*>& layers,
+  std::map<execution_mode, generic_data_reader *>& data_readers,
+  const lbann_data::Model& proto_model) {
+  std::stringstream err;
+  for (int i=0; i<proto_model.layer_size(); ++i) {
+    const auto& proto_layer = proto_model.layer(i);
+    Layer* l = layers[i];
+    if (proto_layer.has_fully_connected()) {
+      bool set_num_neurons = proto_layer.fully_connected().num_neurons_is_num_labels();
+      if (set_num_neurons) {
+        int num_neurons = 0;
+        for (auto t : data_readers) {
+          if (t.second->get_role() == "train") {
+            num_neurons = t.second->get_num_labels();
+            auto&& fc_dp_cpu = dynamic_cast<fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>*>(l);
+            auto&& fc_mp_cpu = dynamic_cast<fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>*>(l);
+#ifdef LBANN_HAS_GPU
+            auto&& fc_dp_gpu = dynamic_cast<fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>*>(l);
+            auto&& fc_mp_gpu = dynamic_cast<fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>*>(l);
+#endif // LBANN_HAS_GPU
+            if (fc_dp_cpu != nullptr) { fc_dp_cpu->set_num_neurons(num_neurons); }
+            if (fc_mp_cpu != nullptr) { fc_mp_cpu->set_num_neurons(num_neurons); }
+#ifdef LBANN_HAS_GPU
+            if (fc_dp_gpu != nullptr) { fc_dp_gpu->set_num_neurons(num_neurons); }
+            if (fc_mp_gpu != nullptr) { fc_mp_gpu->set_num_neurons(num_neurons); }
+#endif // LBANN_HAS_GPU
+          }
+        }
+      }
+    }
+  }
+}
+
 /** Setup paired input layers for target layers. */
 void setup_target_pointers(lbann_comm* comm,
                            std::vector<Layer*>& layers,
@@ -294,10 +328,14 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
   setup_reconstruction_pointers(comm, layers, names_to_layers, proto_model);
   setup_unpooling_pointers(comm, layers, names_to_layers, proto_model);
 
+  // Optionally Set num_neurons = num_labels
+  setup_fc_num_neurons(layers, data_readers, proto_model);
+
   // Return layer list
   return layers;
 
 }
+
 
 } // namespace proto
 } // namespace lbann

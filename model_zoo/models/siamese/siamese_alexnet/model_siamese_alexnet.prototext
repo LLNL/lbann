@@ -358,7 +358,7 @@ model {
     children: "prob"
     data_layout: "model_parallel"
     fully_connected {
-      num_neurons: 8
+      num_neurons_is_num_labels: true
       has_bias: false
     }
   }

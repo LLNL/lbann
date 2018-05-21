@@ -226,7 +226,7 @@ model {
     parents: "lstm1_output"
     name: "fc"
     fully_connected {
-      num_neurons: 128
+      num_neurons_is_num_labels: true
       has_bias: false
     }
     data_layout: "data_parallel"

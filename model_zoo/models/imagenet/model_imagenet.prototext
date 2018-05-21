@@ -65,7 +65,7 @@ model {
   #############################################
   layer {
     fully_connected {
-      num_neurons: 1000
+      num_neurons_is_num_labels: true
     }
     name: "5"
     parents: "4"
