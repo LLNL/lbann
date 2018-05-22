@@ -45,12 +45,14 @@ size_t compute_cnpy_array_offset(const cnpy::NpyArray& na, std::vector<size_t> i
 
 /**
  * If the type T of the numpy array element is something larger than 1 byte in
- * size, the word_size of the numpy array must be the same as sizeof(T),
+ * size, the word_size of the numpy array must be the same as sizeof(T).
  * In such a case, offset to add to a type T pointer is computed as the number
  * of elements up to the position pointed by the indices.
  * If sizeof(T) is 1 byte, then the array may be of char string, or the pointer
  * may be cast to a byte-long type. In such a case, the offset is computed as
  * the number of elements scaled by the word_size of the array.
+ * cnpy treats an array of strings as a 1D array, for which the word_size is
+ * equal to the length of the largest string.
  */
 template<typename T>
 inline size_t ptr_offset(const cnpy::NpyArray& na, std::vector<size_t> indices) {
