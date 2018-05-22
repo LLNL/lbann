@@ -19,9 +19,9 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'lbann'
-copyright = '2018, Dylan'
-author = 'Dylan'
+project = 'LBANN'
+copyright = '2018, LLNL'
+author = 'LBANN Dev Team'
 
 # The short X.Y version
 version = ''
@@ -38,8 +38,6 @@ release = ''
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = [
-]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -81,9 +79,18 @@ html_theme_options = {
 }
 
 breathe_projects_source = {
-  "callback" : ( "../include/lbann/callbacks/", [""]),
-  "layer"    : ( "../include/lbann/layers/", [""]),
-  "regularizers"    : ( "../include/lbann/layers/regularizers", [""])
+  "callback"        : ( "../include/lbann/callbacks/", [""]),
+  "layer"           : ( "../include/lbann/layers/", [""]),
+  "activations"     : ( "../include/lbann/layers/activations", [""]),
+  "io"              : ( "../include/lbann/layers/io", [""]),
+  "learning"        : ( "../include/lbann/layers/learning", [""]),
+  "regularizers"    : ( "../include/lbann/layers/regularizers", [""]),
+  "transform"       : ( "../include/lbann/layers/transform", [""]),
+  "metrics"         : ( "../include/lbann/metrics", [""]),
+  "obj_functions"   : ( "../include/lbann/objective_functions", [""]),
+  "loss_functions"  : ( "../include/lbann/objective_functions/loss_functions", [""]),
+  "weight_reg"      : ( "../include/lbann/objective_functions/weight_regularization", [""]),
+  "optimizers"      : ( "../include/lbann/optimizers", [""])
 }
 
 # Theme options are theme-specific and customize the look and feel of a theme
@@ -138,8 +145,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'lbann.tex', 'lbann Documentation',
-     'Dylan', 'manual'),
+    (master_doc, 'lbann.tex', 'LBANN Documentation',
+     'LBANN Dev Team', 'manual'),
 ]
 
 
@@ -148,7 +155,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'lbann', 'lbann Documentation',
+    (master_doc, 'LBANN', 'LBANN Documentation',
      [author], 1)
 ]
 
@@ -159,14 +166,14 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'lbann', 'lbann Documentation',
-     author, 'lbann', 'One line description of project.',
+    (master_doc, 'LBANN', 'LBANN Documentation',
+     author, 'LBANN', 'One line description of project.',
      'Miscellaneous'),
 ]
 
 breathe_projects = {
     "lbann":"test/xml/",
     }
-extensions = [ "breathe" ]
+extensions = [ "breathe", 'sphinx.ext.mathjax' ]
 
 
