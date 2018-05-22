@@ -254,7 +254,11 @@ class fully_connected_layer : public learning_layer {
       this->m_weights[1]->freeze();
     } else {
       if (this->m_weights[0]->is_frozen() || this->m_weights[1]->is_frozen()) {
-        LBANN_ERROR("layer is not frozen, but weights are frozen");
+        std::stringstream err;
+        err << "layer " << get_name() << " is not frozen, but its weights "
+            << "(" << this->m_weights[0]->get_name() << ", "
+            << this->m_weights[1]->get_name() << ") are frozen";
+        LBANN_ERROR(err.str());
       }
     }
   }
