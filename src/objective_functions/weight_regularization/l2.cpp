@@ -67,8 +67,11 @@ namespace lbann {
 l2_weight_regularization::l2_weight_regularization(EvalType scale_factor)
   : objective_function_term(scale_factor),
     m_sqsum(0),
-    m_allreduce_started(false),
-    m_cudnn(nullptr) {}
+    m_allreduce_started(false)
+#ifdef LBANN_HAS_CUDNN
+    , m_cudnn(nullptr)
+#endif  // LBANN_HAS_CUDNN
+    {}
 
 void l2_weight_regularization::setup(model& m) {
   objective_function_term::setup(m);
