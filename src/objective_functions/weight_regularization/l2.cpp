@@ -107,32 +107,18 @@ void l2_weight_regularization::start_evaluation() {
 #ifdef LBANN_HAS_CUDNN
   // Compute terms for GPU weights
   if (m_cudnn != nullptr) {
-    const auto& num_gpus = m_cudnn->get_num_gpus();
-    const auto& weights_per_gpu = (num_weights + num_gpus - 1) / num_gpus;
-    cudnn::matrix sqsums_d(m_cudnn);
-    sqsums_d.attach_to_work_spaces(1, weights_per_gpu);
-    sqsums_d.zero();
-    for (int gpu = 0; gpu < num_gpus; ++gpu) {
-      CHECK_CUDA(cudaSetDevice(m_cudnn->get_gpu(gpu)));
-      auto&& handle = m_cudnn->get_cublas_handle(gpu);
-      CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE));
-      const auto& weights_start = std::min(gpu * weights_per_gpu, num_weights);
-      const auto& weights_end   = std::min((gpu+1) * weights_per_gpu, num_weights);
-      for (int i = weights_start; i < weights_end; ++i) {
-        const auto& w = m_weights[i];
-        if (w->get_cudnn_manager() != nullptr) {
-          const auto& values_d = w->get_values_gpu()[gpu];
-          auto&& sqsum_d = sqsums_d.get_data(gpu) + i - weights_start;
-          cublas::dot(handle, w->get_size(), values_d, 1, values_d, 1, sqsum_d);
-        }
-      }
-      CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_HOST));
-    }
-    Mat sqsums(1, num_weights);
-    m_cudnn->gather_from_gpus(sqsums, sqsums_d.get_locked_data(), weights_per_gpu);
-    m_cudnn->synchronize();
+    CHECK_CUDA(cudaSetDevice(m_cudnn->get_gpu()));
+    auto&& handle = m_cudnn->get_cublas_handle();
     for (int i = 0; i < num_weights; ++i) {
-      m_sqsums[i] = EvalType(sqsums(0, i));
+      const auto& w = m_weights[i];
+      if (w->get_cudnn_manager() != nullptr) {
+        const auto& values = w->get_values();
+        // Use a local Dot on each GPU and non-blocking reductions to aggregate results later
+        m_sqsums[i] = cublas::dot(handle, values.LocalHeight() * values.LocalWidth(), values.LockedBuffer(), 1, values.LockedBuffer(), 1);
+        get_comm().nb_allreduce(&(m_sqsums[i]), 1, values.DistComm(),
+                                m_allreduce_reqs[i], El::mpi::SUM);
+        m_allreduce_started[i] = true;
+      }
     }
   }
 #endif // LBANN_HAS_CUDNN
@@ -168,22 +154,9 @@ EvalType l2_weight_regularization::finish_evaluation() {
 void l2_weight_regularization::compute_weight_regularization() {
   if (m_scale_factor == EvalType(0)) { return; }
 
-#ifdef LBANN_HAS_CUDNN
-  // Compute gradient of L2 regularization term for GPU weights
+  // Compute gradient of L2 regularization term for weights
   for (auto&& w : m_weights) {
-    if (w->get_cudnn_manager() != nullptr) {
-      cudnn::matrix values_d(m_cudnn);
-      values_d.locked_attach(w->get_values_gpu(), w->get_size());
-      w->get_optimizer()->add_to_gradient(values_d, m_scale_factor);
-    }
-  }
-#endif // LBANN_HAS_CUDNN
-
-  // Compute gradient of L2 regularization term for CPU weights
-  for (auto&& w : m_weights) {
-    if (w->get_cudnn_manager() == nullptr) {
-      w->get_optimizer()->add_to_gradient(w->get_values(), m_scale_factor);
-    }
+    w->get_optimizer()->add_to_gradient(w->get_values(), m_scale_factor);
   }
 
 }

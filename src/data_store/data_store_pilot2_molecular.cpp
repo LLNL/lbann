@@ -31,6 +31,7 @@
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/timer.hpp"
 #include <unordered_set>
+#include <omp.h>
 
 namespace lbann {
 
@@ -41,7 +42,6 @@ data_store_pilot2_molecular::data_store_pilot2_molecular(
 }
 
 data_store_pilot2_molecular::~data_store_pilot2_molecular() {
-  //MPI_Win_free( &m_win );
 }
 
 void data_store_pilot2_molecular::setup() {
@@ -50,8 +50,8 @@ void data_store_pilot2_molecular::setup() {
   m_owner = (int)m_reader->get_compound_rank() == (int)m_rank;
   m_owner_rank = m_reader->get_compound_rank();
 
-  if (m_owner) std::cerr << "starting data_store_pilot2_molecular::setup() for role: " 
-          << m_reader->get_role() << "; owning processor: " << m_owner_rank << std::endl; 
+  if (m_owner) std::cerr << "starting data_store_pilot2_molecular::setup() for role: "
+          << m_reader->get_role() << "; owning processor: " << m_owner_rank << std::endl;
   if (m_owner) std::cerr << "calling generic_data_store::setup()\n";
   generic_data_store::setup();
 
@@ -59,8 +59,8 @@ void data_store_pilot2_molecular::setup() {
     err << __FILE__ << " " << __LINE__ << " :: "
         << "not yet implemented";
     throw lbann_exception(err.str());
-  } 
-  
+  }
+
   else {
     //sanity check
     pilot2_molecular_reader *reader = dynamic_cast<pilot2_molecular_reader*>(m_reader);
@@ -71,17 +71,17 @@ void data_store_pilot2_molecular::setup() {
     }
     m_pilot2_reader = reader;
 
-    // get list of indices used in calls to generic_data_reader::fetch_data 
+    // get list of indices used in calls to generic_data_reader::fetch_data
     // for this processor
     get_minibatch_index_vector();
 
-    // get list of indices used in calls to generic_data_reader::fetch_data 
+    // get list of indices used in calls to generic_data_reader::fetch_data
     // for all processors
     if (m_master) std::cerr << "calling exchange_mb_indices\n";
     exchange_mb_indices();
 
     // allocate storage for the data that will be passed to the data reader's
-    // fetch_datum method. 
+    // fetch_datum method.
     m_data_buffer.resize(omp_get_max_threads());
     int num_features = m_pilot2_reader->get_num_features();
     int num_neighbors = m_pilot2_reader->get_num_neighbors();
@@ -102,7 +102,7 @@ void data_store_pilot2_molecular::setup() {
   }
 
   if (m_owner) {
-    std::cerr << "data_store_pilot2_molecular::setup time: " << get_time() - tm1 << "\n";
+    std::cerr << "TIME data_store_pilot2_molecular setup: " << get_time() - tm1 << "\n";
   }
 }
 
@@ -118,7 +118,6 @@ void data_store_pilot2_molecular::construct_data_store() {
   double *features_8 = m_pilot2_reader->get_features_8();
 
   int num_samples_per_frame = m_pilot2_reader->get_num_samples_per_frame();
-  
   for (size_t j=0; j<m_num_global_indices; j++) {
     int data_id = (*m_shuffled_indices)[j];
     int num_features = m_pilot2_reader->get_num_features();
@@ -129,9 +128,9 @@ void data_store_pilot2_molecular::construct_data_store() {
 
 // replicated code from data_reader_pilot2_molecular::fetch_molecule
 void data_store_pilot2_molecular::fill_in_data(
-    const int data_id, 
-    const int num_samples_per_frame, 
-    const int num_features, 
+    const int data_id,
+    const int num_samples_per_frame,
+    const int num_features,
     double *features) {
   const int frame = m_pilot2_reader->get_frame(data_id);
   const int frame_offset = frame * num_features * num_samples_per_frame;
@@ -154,9 +153,12 @@ void data_store_pilot2_molecular::fill_in_data(
 
 void data_store_pilot2_molecular::build_nabor_map() {
   //bcast neighbor data
-  int sz;
-  if (m_owner) sz= m_pilot2_reader->get_neighbors_data_size();
-  MPI_Bcast(&sz, 1, MPI_INT, m_owner_rank, m_mpi_comm);
+  size_t sz;
+  if (m_owner) {
+    sz = m_pilot2_reader->get_neighbors_data_size();
+  }
+  m_comm->world_broadcast<size_t>(0, sz);
+
   double *neighbors_8;
   std::vector<double> work;
   if (m_owner) {
@@ -165,7 +167,7 @@ void data_store_pilot2_molecular::build_nabor_map() {
     work.resize(sz);
     neighbors_8 = work.data();
   }
-  MPI_Bcast(neighbors_8, sz, MPI_DOUBLE, m_owner_rank, m_mpi_comm);
+  m_comm->world_broadcast<double>(0, neighbors_8, sz);
 
   //fill in the nabors map
   for (auto data_id : (*m_shuffled_indices)) {
@@ -224,7 +226,6 @@ void data_store_pilot2_molecular::get_data_buf(int data_id, int tid, std::vector
       jj += num_features;
     }
   }
-
   buf = &v;
 }
 
@@ -259,27 +260,28 @@ void data_store_pilot2_molecular::exchange_data() {
   //start receives for my required molecules
   m_my_molecules.clear();
   int num_features = m_pilot2_reader->get_num_features();
-  std::vector<MPI_Request> recv_req(required_molecules.size());
-  std::vector<MPI_Status> recv_status(required_molecules.size());
+
+  std::vector<El::mpi::Request<double>> recv_req(required_molecules.size());
   size_t jj = 0;
-  for (auto t : required_molecules) {
-    m_my_molecules[t].resize(num_features);
-    MPI_Irecv(m_my_molecules[t].data(), num_features, MPI_DOUBLE, m_owner_rank, t, m_mpi_comm, &(recv_req[jj++]));
+  for (auto data_id : required_molecules) {
+    m_my_molecules[data_id].resize(num_features);
+    m_comm->nb_tagged_recv<double>(
+          m_my_molecules[data_id].data(), num_features, m_owner_rank, 
+          data_id, recv_req[jj++], m_comm->get_world_comm());
   }
 
   //owner starts sends
-  std::vector<std::vector<MPI_Request>> send_req;
-  std::vector<std::vector<MPI_Status>> send_status;
+  std::vector<std::vector<El::mpi::Request<double>>> send_req;
   if (m_owner) {
     send_req.resize(m_np);
-    send_status.resize(m_np);
     for (int p = 0; p<m_np; p++) {
       jj = 0;
       get_required_molecules(required_molecules, p);
       send_req[p].resize(required_molecules.size());
-      send_status[p].resize(required_molecules.size());
-      for (auto t : required_molecules) {
-        MPI_Isend(m_data[t].data(), num_features, MPI_DOUBLE, p, t, m_mpi_comm, &(send_req[p][jj++]));
+      for (auto data_id : required_molecules) {
+        m_comm->nb_tagged_send<double>(
+           m_data[data_id].data(), num_features, p, 
+           data_id, send_req[p][jj++], m_comm->get_world_comm());
       }
     }
   }
@@ -287,15 +289,16 @@ void data_store_pilot2_molecular::exchange_data() {
   //wait for sends to finish
   if (m_owner) {
     for (size_t i=0; i<send_req.size(); i++) {
-      MPI_Waitall(send_req[i].size(), send_req[i].data(), send_status[i].data());
+      m_comm->wait_all<double>(send_req[i]);
     }
   }
 
   //wait for recvs to finish
-  MPI_Waitall(recv_req.size(), recv_req.data(), recv_status.data());
+  m_comm->wait_all<double>(recv_req);
 
   if (m_owner) {
-    std::cout << "role: " << m_reader->get_role() << " data_store_pilot2_molecular::exchange_data() time: " << get_time() - tm1 << std::endl;
+    std::cout << "TIME for data_store_pilot2_molecular::exchange_data(): "
+              << get_time() - tm1 << "; role: " << m_reader->get_role() << "\n";
   }
 }
 

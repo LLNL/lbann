@@ -63,7 +63,7 @@ class data_reader_synthetic : public generic_data_reader {
   }
 
  protected:
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
 
  private:
   int  m_num_samples; //rows

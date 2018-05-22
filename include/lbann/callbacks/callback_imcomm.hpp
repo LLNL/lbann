@@ -98,7 +98,7 @@ class lbann_callback_imcomm : public lbann_callback {
     /** Type of communication done. */
     comm_type ct = NONE;
     /** Accumulated error (e.g. from quantization). */
-    Mat error;
+    CPUMat error;
     /** If >0, reshape (local) gradients to these dimensions. */
     El::Int reshape_height = 0;
     El::Int reshape_width = 0;
@@ -131,7 +131,7 @@ class lbann_callback_imcomm : public lbann_callback {
    * Get a matrix that reinterprets mat as being height x width.
    * Assumes that mat.Height()*mat.Width() == height*width.
    */
-  void reshape_mat(Mat& mat, Mat& reshaped, El::Int height, El::Int width) {
+  void reshape_mat(AbsMat& mat, Mat& reshaped, El::Int height, El::Int width) {
     reshaped.Attach(height, width, mat.Buffer(), height);
   }
 

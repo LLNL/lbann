@@ -10,7 +10,7 @@ IMAGENET_CLASSES=10 # options: 10, 100, 300, 1000 (leave blank to use other data
 
 # Hardware configuration
 NUM_NODES=      # default: number of allocated nodes (1 if none)
-PROCS_PER_NODE= # default: 2 (1 if NUM_NODES=1)
+PROCS_PER_NODE= # default: GPUs per node (2 if cluster has no GPUs)
 CLUSTER=
 PARTITION=
 ACCOUNT=
@@ -22,7 +22,7 @@ USE_GPU=        # default: YES (ignored if built without GPUs)
 CACHE_DATASET=  # default: NO
 USE_VTUNE=      # default: NO
 USE_NVPROF=     # default: NO
-HOME_DIR=${LBANN_DIR}/experiments
+EXPERIMENT_HOME_DIR=${EXPERIMENT_HOME_DIR:-${LBANN_DIR}/experiments}
 TRAIN_DATASET_DIR=
 TRAIN_DATASET_LABELS=
 TEST_DATASET_DIR=
@@ -42,14 +42,6 @@ if [ -z "${NUM_NODES}" ]; then
         NUM_NODES=1
     fi
 fi
-if [ -z "${PROCS_PER_NODE}" ]; then
-    if [ "${NUM_NODES}" -eq 1 ]; then
-        PROCS_PER_NODE=1
-    else
-        PROCS_PER_NODE=2
-    fi
-fi
-NUM_PROCS=$((${NUM_NODES}*${PROCS_PER_NODE}))
 TIME_LIMIT=${TIME_LIMIT:-1:00}
 SUBMIT_JOB=${SUBMIT_JOB:-YES}
 USE_GPU=${USE_GPU:-YES}
@@ -68,6 +60,13 @@ case ${CLUSTER} in
         CORES_PER_NODE=24
         HAS_GPU=NO
         ;;
+    "flash")
+        SCHEDULER=slurm
+        PARTITION=${PARTITION:-pbatch}
+        CACHE_DIR=${CACHE_DIR:-/l/ssd}
+        CORES_PER_NODE=20
+        HAS_GPU=NO
+        ;;
     "quartz")
         SCHEDULER=slurm
         PARTITION=${PARTITION:-pbatch}
@@ -83,6 +82,14 @@ case ${CLUSTER} in
         CACHE_DIR=${CACHE_DIR:-/tmp/${USER}}
         CORES_PER_NODE=16
         HAS_GPU=YES
+        case ${PARTITION} in
+            "pbatch")
+                GPUS_PER_NODE=2
+                ;;
+            "gpgpu")
+                GPUS_PER_NODE=4
+                ;;
+        esac
         ;;
     "ray")
         SCHEDULER=lsf
@@ -91,6 +98,16 @@ case ${CLUSTER} in
         CACHE_DIR=${CACHE_DIR:-/tmp}
         CORES_PER_NODE=20
         HAS_GPU=YES
+        GPUS_PER_NODE=4
+        ;;
+    "pascal")
+        SCHEDULER=slurm
+        PARTITION=${PARTITION:-pbatch}
+        ACCOUNT=${ACCOUNT:-lc}
+        CACHE_DIR=${CACHE_DIR:-/tmp/${USER}}
+        CORES_PER_NODE=36
+        HAS_GPU=YES
+        GPUS_PER_NODE=2
         ;;
     *)
         SCHEDULER=slurm
@@ -103,6 +120,17 @@ case ${CLUSTER} in
         exit 1
         ;;
 esac
+if [ -z "${PROCS_PER_NODE}" ]; then
+    case ${USE_GPU} in
+        YES|yes|TRUE|true|ON|on|1)
+            PROCS_PER_NODE=${GPUS_PER_NODE}
+            ;;
+        *)
+            PROCS_PER_NODE=2
+            ;;
+    esac
+fi
+NUM_PROCS=$((${NUM_NODES}*${PROCS_PER_NODE}))
 CORES_PER_PROC=$((${CORES_PER_NODE}/${PROCS_PER_NODE}))
 
 # Initialize dataset
@@ -118,7 +146,7 @@ if [ -n "${IMAGENET_CLASSES}" ]; then
     esac
     EXPERIMENT_NAME=${EXPERIMENT_NAME}_imagenet${IMAGENET_CLASSES}
     case ${CLUSTER} in
-        catalyst|quartz|surface)
+        catalyst|flash|quartz|surface|pascal)
             case ${IMAGENET_CLASSES} in
                 10|100|300|1000)
                     IMAGENET_DIR=/p/lscratchf/brainusr/datasets/ILSVRC2012
@@ -194,17 +222,17 @@ if [ -n "${TEST_DATASET_LABELS}" ]; then
 fi
 
 # Initialize experiment command
-LBANN_EXE="${LBANN_DIR}/build/gnu.${CLUSTER}.llnl.gov/lbann/build/model_zoo/lbann"
+LBANN_EXE="${LBANN_DIR}/build/gnu.Release.${CLUSTER}.llnl.gov/lbann/build/model_zoo/lbann"
 case ${USE_GPU} in
     YES|yes|TRUE|true|ON|on|1)
         case ${HAS_GPU} in
             YES|yes|TRUE|true|ON|on|1)
-                MODEL_PROTO="${MODEL_PROTO} --use_cudnn=1"
+                MODEL_PROTO="${MODEL_PROTO} --disable_cuda=0"
                 ;;
         esac
         ;;
     *)
-        MODEL_PROTO="${MODEL_PROTO} --use_cudnn=0"
+        MODEL_PROTO="${MODEL_PROTO} --disable_cuda=1"
         EXPERIMENT_NAME=${EXPERIMENT_NAME}_nogpu
         ;;
 esac
@@ -230,8 +258,11 @@ case ${SCHEDULER} in
         MPIRUN="srun --nodes=${NUM_NODES} --ntasks=${NUM_PROCS}"
         case ${HAS_GPU} in
             YES|yes|TRUE|true|ON|on|1)
-                MPIRUN="${MPIRUN} --nvidia_compute_mode=default"
-                ;;
+                case ${CLUSTER} in
+                    surface|ray)
+                        MPIRUN="${MPIRUN} --nvidia_compute_mode=default"
+                        ;;
+                esac
         esac
         MPIRUN1="srun --nodes=${NUM_NODES} --ntasks=${NUM_NODES}"
         MPIRUN2="srun --nodes=${NUM_NODES} --ntasks=$((2*${NUM_NODES}))"
@@ -247,7 +278,7 @@ esac
 EXPERIMENT_NAME=${EXPERIMENT_NAME}_${CLUSTER}_${PARTITION}_N${NUM_NODES}
 
 # Make directories
-EXPERIMENT_DIR=${HOME_DIR}/$(date +%Y%m%d_%H%M%S)_${EXPERIMENT_NAME}
+EXPERIMENT_DIR=${EXPERIMENT_HOME_DIR}/$(date +%Y%m%d_%H%M%S)_${EXPERIMENT_NAME}
 mkdir -p ${EXPERIMENT_DIR}
 case ${USE_VTUNE} in
     YES|yes|TRUE|true|ON|on|1)
@@ -272,7 +303,9 @@ case ${SCHEDULER} in
         echo "#SBATCH --job-name=${EXPERIMENT_NAME}"    >> ${BATCH_SCRIPT}
         echo "#SBATCH --nodes=${NUM_NODES}"             >> ${BATCH_SCRIPT}
         echo "#SBATCH --partition=${PARTITION}"         >> ${BATCH_SCRIPT}
-        echo "#SBATCH --account=${ACCOUNT}"             >> ${BATCH_SCRIPT}
+        if [ "${CLUSTER}" != "flash" ]; then
+            echo "#SBATCH --account=${ACCOUNT}"         >> ${BATCH_SCRIPT}
+        fi
         echo "#SBATCH --workdir=${EXPERIMENT_DIR}"      >> ${BATCH_SCRIPT}
         echo "#SBATCH --output=${LOG_FILE}"             >> ${BATCH_SCRIPT}
         echo "#SBATCH --error=${LOG_FILE}"              >> ${BATCH_SCRIPT}
@@ -310,13 +343,19 @@ echo "# USE_GPU: ${USE_GPU}"                            >> ${BATCH_SCRIPT}
 echo "# CACHE_DATASET: ${CACHE_DATASET}"                >> ${BATCH_SCRIPT}
 echo "# USE_VTUNE: ${USE_VTUNE}"                        >> ${BATCH_SCRIPT}
 echo "# USE_NVPROF: ${USE_NVPROF}"                      >> ${BATCH_SCRIPT}
-echo "# HOME_DIR: ${HOME_DIR}"                          >> ${BATCH_SCRIPT}
+echo "# EXPERIMENT_HOME_DIR: ${EXPERIMENT_HOME_DIR}"    >> ${BATCH_SCRIPT}
 echo "# CACHE_DIR: ${CACHE_DIR}"                        >> ${BATCH_SCRIPT}
 echo ""                                                 >> ${BATCH_SCRIPT}
 echo "# ======== Useful info and initialization ========" >> ${BATCH_SCRIPT}
 echo "date"                                             >> ${BATCH_SCRIPT}
 echo "${MPIRUN} hostname > ${NODE_LIST}"                >> ${BATCH_SCRIPT}
 echo "sort --unique --output=${NODE_LIST} ${NODE_LIST}" >> ${BATCH_SCRIPT}
+case ${USE_GPU} in
+    YES|yes|TRUE|true|ON|on|1)
+        echo "export MV2_USE_CUDA=1"                    >> ${BATCH_SCRIPT}
+        ;;
+esac
+echo ""
 echo ""                                                 >> ${BATCH_SCRIPT}
 
 # Cache dataset in node-local memory

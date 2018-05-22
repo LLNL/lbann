@@ -28,25 +28,9 @@
 
 #include "math.h"
 #include <iostream>
+#include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/layers/regularizers/batch_normalization_cuda.hpp"
 #include "lbann/utils/exception.hpp"
-
-// Macros to check CUDA calls
-#define FORCE_CHECK_CUDA(cuda_call)                                     \
-  do {                                                                  \
-    const cudaError_t status = cuda_call;                               \
-    if (status != cudaSuccess) {                                        \
-      std::cerr << "CUDA error: " << cudaGetErrorString(status) << "\n"; \
-      std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";  \
-      cudaDeviceReset();                                                \
-      throw lbann::lbann_exception("CUDA error");                       \
-    }                                                                   \
-  } while (0)
-#ifdef LBANN_DEBUG
-#define CHECK_CUDA(cuda_call) FORCE_CHECK_CUDA(cuda_call)
-#else
-#define CHECK_CUDA(cuda_call) cuda_call
-#endif // #ifdef LBANN_DEBUG
 
 // Atomic add functions
 #if __CUDA_ARCH__ >= 530

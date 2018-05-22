@@ -32,21 +32,24 @@
 namespace lbann {
 
 /** Reshape layer */
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class reshape_layer : public transform_layer {
  public:
   reshape_layer(lbann_comm *comm,
                 int num_dims,
-                const int *dims) :
-    transform_layer(comm) {
+                const int *dims,
+                cudnn::cudnn_manager* cudnn = nullptr)
+    : transform_layer(comm) {
     this->m_num_neuron_dims = num_dims;
     this->m_neuron_dims.assign(dims, dims+num_dims);
     this->m_num_neurons = std::accumulate(dims, dims+num_dims, 1,
                                           std::multiplies<int>());
+    this->m_cudnn = cudnn;
   }
   reshape_layer* copy() const override { return new reshape_layer(*this); }
   std::string get_type() const override { return "reshape"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   void setup_dims() override {
     // Store neuron tensor dimensions

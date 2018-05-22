@@ -46,7 +46,7 @@ data_store_merge_features::~data_store_merge_features() {
 void data_store_merge_features::exchange_data() {
   for (auto s : m_subsidiary_stores) {
     data_store_csv *store = dynamic_cast<data_store_csv*>(s);
-    store->set_shuffled_indices(m_shuffled_indices);
+    store->set_shuffled_indices(m_shuffled_indices, false);
     store->exchange_data();
   }
 }
@@ -98,13 +98,13 @@ void data_store_merge_features::setup() {
       store->set_minibatch_indices_v(get_minibatch_indices_v());
       store->set_datastore_indices(get_datastore_indices());
       store->setup();
-      store->set_shuffled_indices(m_shuffled_indices);
+      store->set_shuffled_indices(m_shuffled_indices, false);
       store->populate_datastore();
       store->exchange_data();
     }
   }
   if (m_master) {
-    std::cerr << "data_store_merge_features::setup() time: " << get_time() - tm1 << "\n";
+    std::cerr << "TIME for data_store_merge_features setup: " << get_time() - tm1 << "\n";
   }
 }
 

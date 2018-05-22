@@ -74,8 +74,8 @@ class mesh_reader : public generic_data_reader {
         m_data_width};
   }
  protected:
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
-  bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) override;
 
   /**
    * Load filename into mat.
@@ -87,9 +87,9 @@ class mesh_reader : public generic_data_reader {
   std::string construct_filename(std::string channel, int data_id);
 
   /// Flip mat horizontally (i.e. about its vertical axis).
-  void horizontal_flip(Mat& mat);
+  void horizontal_flip(CPUMat& mat);
   /// Flip mat vertically (i.e. about its horizontal axis).
-  void vertical_flip(Mat& mat);
+  void vertical_flip(CPUMat& mat);
 
   /// A suffix to append to each channel directory (e.g. "128").
   std::string m_suffix = "128";

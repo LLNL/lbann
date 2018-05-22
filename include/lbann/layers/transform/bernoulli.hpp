@@ -35,7 +35,7 @@ namespace lbann {
 /** Activations are drawn from Bernoulli distribution.
  *  During validation and testing, the layer outputs 0.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class bernoulli_layer : public transform_layer {
  private:
   /** Probability of outputting 1. */
@@ -63,6 +63,7 @@ class bernoulli_layer : public transform_layer {
   bernoulli_layer* copy() const override { return new bernoulli_layer(*this); }
   std::string get_type() const override { return "Bernoulli"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   /** Returns description of ctor params */
   std::string get_description() const override {

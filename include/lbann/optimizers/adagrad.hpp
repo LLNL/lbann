@@ -71,6 +71,9 @@ class adagrad : public optimizer {
 
   bool save_to_checkpoint_shared(persist& p, std::string m_name) override;
   bool load_from_checkpoint_shared(persist& p, std::string m_name) override;
+
+  bool save_to_checkpoint_distributed(persist& p, std::string m_name) override;
+  bool load_from_checkpoint_distributed(persist& p, std::string m_name) override;
   
   /** Small factor to avoid division by zero. */
   DataType m_eps;

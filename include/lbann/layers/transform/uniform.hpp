@@ -36,7 +36,7 @@ namespace lbann {
  *  During validation and testing, the layer outputs the distribution
  *  mean.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class uniform_layer : public transform_layer {
  private:
   /** Uniform distribution mean. */
@@ -67,6 +67,7 @@ class uniform_layer : public transform_layer {
   uniform_layer* copy() const override { return new uniform_layer(*this); }
   std::string get_type() const override { return "uniform"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   /** Returns description of ctor params */
   std::string get_description() const override {

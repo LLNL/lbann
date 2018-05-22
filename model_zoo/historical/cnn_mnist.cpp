@@ -227,8 +227,8 @@ int main(int argc, char *argv[]) {
                                   cudnn);
       dnn.add_layer(layer);
 
-      Layer *relu = new relu_layer<data_layout::DATA_PARALLEL>(comm,
-                                                               cudnn);
+      Layer *relu = new relu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(comm,
+                                                                                cudnn);
       dnn.add_layer(relu);
     }
 
@@ -251,8 +251,8 @@ int main(int argc, char *argv[]) {
                                   cudnn);
       dnn.add_layer(layer);
 
-      Layer *relu = new relu_layer<data_layout::DATA_PARALLEL>(comm,
-                                                               cudnn);
+      Layer *relu = new relu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(comm,
+                                                                                cudnn);
       dnn.add_layer(relu);
     }
 
@@ -276,28 +276,29 @@ int main(int argc, char *argv[]) {
 
     // First fully connected layer
     {
-      Layer *fc = new fully_connected_layer<data_layout::MODEL_PARALLEL>(comm,
-                                                                         128);
+      Layer *fc = new fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>(comm,
+                                                                                          128);
       dnn.add_layer(fc);
-      Layer *relu = new relu_layer<data_layout::MODEL_PARALLEL>(comm,
-                                                                nullptr);
+      Layer *relu = new relu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>(comm,
+                                                                                 nullptr);
       dnn.add_layer(relu);
-      Layer *dropout1 = new dropout<data_layout::MODEL_PARALLEL>(comm,
-                                                                 0.5);
+      Layer *dropout1 = new dropout<data_layout::MODEL_PARALLEL, El::Device::CPU>(comm,
+                                                                                  0.5);
       dnn.add_layer(dropout1);
     }
 
     // Second fully connected layer
     {
-      Layer *fc = new fully_connected_layer<data_layout::MODEL_PARALLEL>(comm,
-                                                                         10,
-                                                                         nullptr,
-                                                                         false);
+      Layer *fc = new fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>(comm,
+                                                                                          10,
+                                                                                          false,
+                                                                                          nullptr,
+                                                                                          false);
       dnn.add_layer(fc);
     }
 
     // Softmax layer
-    Layer *sl = new softmax_layer<data_layout::MODEL_PARALLEL>(comm);
+    Layer *sl = new softmax_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>(comm);
     dnn.add_layer(sl);
 
     // Target layer

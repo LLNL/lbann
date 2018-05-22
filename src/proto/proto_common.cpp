@@ -43,6 +43,9 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
   bool master = comm->am_world_master();
   std::stringstream err;
 
+  options *opts = options::get();
+  bool create_tarball = opts->has_string("create_tarball") ? true : false;
+
   const lbann_data::DataReader & d_reader = p.data_reader();
   int size = d_reader.reader_size();
 
@@ -67,12 +70,22 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       set_up_generic_preprocessor = false;
     } else if (name == "jag") {
       auto* reader_jag = new data_reader_jag(shuffle);
-      reader_jag->set_model_mode(static_cast<data_reader_jag::model_mode_t>(readme.modeling_mode()));
+      const data_reader_jag::variable_t independent_type
+             = static_cast<data_reader_jag::variable_t>(readme.independent());
+      reader_jag->set_independent_variable_type(independent_type);
+      const data_reader_jag::variable_t dependent_type
+             = static_cast<data_reader_jag::variable_t>(readme.dependent());
+      reader_jag->set_dependent_variable_type(dependent_type);
       const lbann_data::ImagePreprocessor& pb_preproc = readme.image_preprocessor();
       reader_jag->set_image_dims(pb_preproc.raw_width(), pb_preproc.raw_height());
       reader_jag->set_normalization_mode(pb_preproc.early_normalization());
       reader = reader_jag;
       set_up_generic_preprocessor = false;
+#ifdef LBANN_HAS_CONDUIT
+    } else if (name == "jag_conduit") {
+      init_image_data_reader(readme, master, reader);
+      set_up_generic_preprocessor = false;
+#endif // LBANN_HAS_CONDUIT
     } else if (name == "nci") {
       reader = new data_reader_nci(shuffle);
     } else if (name == "csv") {
@@ -125,6 +138,9 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
           reader_csv->set_skip_cols(readme.skip_cols());
           reader_csv->set_skip_rows(readme.skip_rows());
           reader_csv->set_has_header(readme.has_header());
+          reader_csv->set_absolute_sample_count( readme.absolute_sample_count() );
+          reader_csv->set_use_percent( readme.percent_of_data_to_use() );
+          reader_csv->set_first_n( readme.first_n() );
           npy_readers.push_back(reader_csv);
         } else {
           err << __FILE__ << " " << __LINE__ << " :: unknown format for merged data reader: "
@@ -172,13 +188,31 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
     if (readme.data_filedir() != "") {
       reader->set_file_dir( readme.data_filedir() );
     }
+    if (readme.data_local_filedir() != "") {
+      reader->set_local_file_dir( readme.data_local_filedir() );
+    }
 
-    reader->set_absolute_sample_count( readme.absolute_sample_count() );
-    reader->set_use_percent( readme.percent_of_data_to_use() );
-    reader->set_first_n( readme.first_n() );
+    if (create_tarball) {
+      if (opts->has_int("test_tarball")) {
+        reader->set_absolute_sample_count( opts->get_int("test_tarball"));
+        reader->set_use_percent( 0. );
+        reader->set_first_n(0);
+      } else {
+        reader->set_absolute_sample_count( 0. );
+        reader->set_use_percent( 1.0 );
+        reader->set_first_n( 0 );
+      }  
+    } else {
+      reader->set_absolute_sample_count( readme.absolute_sample_count() );
+      reader->set_use_percent( readme.percent_of_data_to_use() );
+      reader->set_first_n( readme.first_n() );
 
-    if (set_up_generic_preprocessor) {
-      init_generic_preprocessor(readme, master, reader);
+      reader->set_gan_labelling(readme.gan_labelling());
+      reader->set_gan_label_value(readme.gan_label_value());
+
+      if (set_up_generic_preprocessor) {
+        init_generic_preprocessor(readme, master, reader);
+      }
     }
 
     if (readme.role() == "train") {
@@ -189,7 +223,11 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       reader->set_role("error");
     }
     if (readme.role() == "train") {
-      reader->set_validation_percent( readme.validation_percent() );
+      if (create_tarball) {
+        reader->set_validation_percent( 0. );
+      } else {
+        reader->set_validation_percent( readme.validation_percent() );
+      }  
     }
 
     reader->set_master(master);
@@ -203,7 +241,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       data_readers[execution_mode::testing] = reader;
     }
 
-    if (readme.role() == "train" && readme.validation_percent() > 0.) {
+    if (readme.role() == "train" && readme.validation_percent() > 0. && !create_tarball) {
       if (name == "mnist") {
         reader_validation = new mnist_reader(shuffle);
         (*(mnist_reader *)reader_validation) = (*(mnist_reader *)reader);

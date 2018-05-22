@@ -37,12 +37,18 @@ namespace lbann {
 enum class persist_type {
   train, // data should be saved in file with train data
   model, // data should be saved in file with model data
-  validate, 
+  validate 
+};
+
+enum class callback_type {
+  batch,
+  epoch,
+  validation,
+  invalid
 };
 
 class persist {
  protected:
-  int m_rank;
   uint64_t m_bytes;
   int m_model_fd;
   int m_train_fd;
@@ -50,28 +56,41 @@ class persist {
   char m_model_filename[1024];
   char m_train_filename[1024];
   char m_validate_filename[1024];
+  callback_type ckpt_type; 
  public:
   char m_checkpoint_dir[1024];
-
+  
  public:
   persist();
   ~persist() {};
 
-  int get_rank() const {
-    return m_rank;
+  callback_type get_cb_type() const {
+    return ckpt_type;
   }
-  void open_checkpoint(const char *dir, bool per_rank, bool val_end);
+
+  void set_cb_type(callback_type type){
+    ckpt_type = type;
+  }
+
+  void open_checkpoint(const char *dir);
   void close_checkpoint();
 
-  void open_restart(const char *dir, bool per_rank);
+  void open_restart(const char *dir);
   void close_restart();
 
   uint64_t get_bytes() const {
     return m_bytes;
   }
 
-  bool write_distmat(persist_type type, const char *name, DistMat *M);
-  bool read_distmat (persist_type type, const char *name, DistMat *M);
+  void reset_bytes() {
+    m_bytes = 0;
+  }
+
+  bool write_rank_distmat(persist_type type, const char *name, const AbsDistMat& M);
+  bool read_rank_distmat(persist_type type, const char *name, AbsDistMat& M);
+
+  bool write_distmat(persist_type type, const char *name, AbsDistMat *M);
+  bool read_distmat (persist_type type, const char *name, AbsDistMat *M);
 
   bool write_bytes(persist_type type, const char *name, const void *buf, size_t size);
   bool read_bytes(persist_type type, const char *name, void *buf, size_t size);
@@ -100,9 +119,6 @@ class persist {
  private:
   int get_fd(persist_type type) const;
 };
-
-bool writeDist(int fd, const char *filename, const DistMat& M, uint64_t *bytes);
-bool readDist(int fd, const char *filename, DistMat& M, uint64_t *bytes);
 
 bool write_distmat(int fd, const char *name, DistMat *M, uint64_t *bytes);
 bool read_distmat (int fd, const char *name, DistMat *M, uint64_t *bytes);

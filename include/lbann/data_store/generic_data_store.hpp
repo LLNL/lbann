@@ -33,6 +33,7 @@
 #include "lbann/comm.hpp"
 #include <vector>
 #include <unordered_set>
+#include <unordered_map>
 
 namespace lbann {
 
@@ -66,7 +67,7 @@ class generic_data_store {
 
   /// called by generic_data_reader::update;
   /// this method call exchange_data if m_epoch > 1
-  virtual void set_shuffled_indices(const std::vector<int> *indices);
+  virtual void set_shuffled_indices(const std::vector<int> *indices, bool exchange_indices = true);
 
   /// called by various image data readers 
   virtual void get_data_buf(int data_id, std::vector<unsigned char> *&buf, int multi_idx = 0) {}
@@ -131,6 +132,11 @@ class generic_data_store {
     m_all_minibatch_indices = indices;
   }
 
+  /// supports out-of-memory-mode
+  virtual void fetch_data() {}
+
+  void init_minibatch();
+
 protected :
 
   virtual void exchange_data() = 0;
@@ -177,14 +183,13 @@ protected :
   /// fills in m_all_minibatch_indices
   void  exchange_mb_indices();
 
-  /// m_num_samples[j] contains the number of samples 
-  /// (datastore indices) that are owned by P_j
-  std::vector<int> m_num_samples;
-
   /// the indices that this processor owns;
   std::unordered_set<int> m_my_datastore_indices;
-  /// fills in m_my_datastore_indices and m_num_samples
+  /// fills in m_my_datastore_indices 
   void get_my_datastore_indices();
+  /// fills in m_my_datastore_indices; this call is used when creating tarballs
+  /// for pre-staging data
+  void get_my_tarball_indices();
 
   size_t m_num_readers;
 
@@ -212,16 +217,62 @@ protected :
 
   /// returns the processor that owns the data associated
   /// with the index
-  int get_index_owner(int idx) {
-    return idx % m_np;
-  }
+  int get_index_owner(int idx);
 
+  /// maps an index to the processor that owns the associated data
+  std::unordered_map<int, int> m_owner;
+
+  /// fills in m_owner
+  void build_index_owner();
+
+  /// mostly for use during development and debugging
   virtual void extended_testing() {}
 
   MPI_Comm m_mpi_comm;
 
   /// as of now, only applicable to merge_features and merge_samples
   bool m_is_subsidiary_store;
+
+  /// maps an index from m_my_datastore_indices to a filepath
+  /// for use in out-of-memory mode
+  std::unordered_map<int, std::string> m_data_filepaths;
+  /// fills in m_data_filepaths
+  virtual void build_data_filepaths() {std::cerr << "shouldn't be here!\n";}
+
+  /// outer vector size is m_np; m_all_partitioned_indices[i]
+  /// contains m_my_minibatch_indices from P_i
+  std::vector<std::vector<std::vector<int>>> m_all_partitioned_indices;
+  /// supports out-of-memory-mode;
+  /// all-to-all exchange of m_my_minibatch_indices;
+  /// fills in m_all_partitioned_indices
+  void exchange_partitioned_indices();
+  /// size of the largest middle vector in m_all_partitioned_indices;
+  /// this should be the number of minibatches in an epoch
+  size_t m_num_minibatches;
+
+  /// for debugging during development
+  void print_partitioned_indices();
+
+  /// supports out-of-memory mode; this is the current
+  /// minibatch that is read into memory
+  size_t m_cur_minibatch;
+
+  bool m_is_setup;
+  bool m_verbose;
+
+  /// given a pathname: someplace/[someplace_else/...]/prefix
+  /// returns <prefix,pathname>' throws exception if 's' does not contain
+  /// at least one directory name, or 's' end with //'
+  std::pair<std::string, std::string> get_pathname_and_prefix(std::string s);
+
+  /// created the directory structure specified in 's', if it doesn't exist;
+  /// 's' may optionally end in '/'
+  void create_dirs(std::string s);
+
+  /// runs a system command, and returns the output;
+  /// if exit_on_error=true, and the value returned by the system
+  /// call is other than the empty string, then an exception is thrown
+  std::string run_cmd(std::string s, bool exit_on_error = true);
 };
 
 }  // namespace lbann

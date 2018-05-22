@@ -339,16 +339,16 @@ void rowwise_mean_and_stdev(const AbsDistMat& data,
                             AbsDistMat& means,
                             AbsDistMat& stdevs) {
 
-  
+
   const El::Int width = data.Width();
   const El::Int local_height = data.LocalHeight();
 
   rowwise_sums_and_sqsums(data, means, stdevs);
-  
+
   // Local matrices
   Mat& local_means = means.Matrix();
   Mat& local_stdevs = stdevs.Matrix();
-  
+
   // Compute mean and standard deviation of each matrix row
   #pragma omp parallel for
   for(El::Int row = 0; row < local_height; ++row) {
@@ -392,11 +392,11 @@ void columnwise_covariance(const AbsDistMat& data1,
   covs.Resize(1, width);
 
   // Local matrices
-  const Mat& local_data1 = data1.LockedMatrix();
-  const Mat& local_data2 = data2.LockedMatrix();
-  const Mat& local_means1 = means1.LockedMatrix();
-  const Mat& local_means2 = means2.LockedMatrix();
-  Mat& local_covs = covs.Matrix();
+  const AbsMat& local_data1 = data1.LockedMatrix();
+  const AbsMat& local_data2 = data2.LockedMatrix();
+  const AbsMat& local_means1 = means1.LockedMatrix();
+  const AbsMat& local_means2 = means2.LockedMatrix();
+  CPUMat& local_covs = static_cast<CPUMat&>(covs.Matrix());
 
   // Accumulate sum and divide to get covariance
   #pragma omp parallel for

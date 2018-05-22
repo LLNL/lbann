@@ -59,7 +59,7 @@ __global__ void fp_kernel(int height, int width,
     const int row = tid % height;
     const int col = tid / height;
     lbann::DataType x = input[row + col * input_leading_dim];
-    
+
     // Compute output value
   #ifdef LBANN_ENABLE_SIGMOID_CUTOFF
     if (x < -cutoff) { x = -cutoff; }
@@ -114,48 +114,44 @@ namespace sigmoid_cuda {
 void fp(cudnn::cudnn_manager& cudnn,
         int height,
         int width_per_gpu,
-        const std::vector<lbann::DataType*>& input,
+        const lbann::DataType* input,
         int input_leading_dim,
-        std::vector<lbann::DataType*>& output,
+        lbann::DataType* output,
         int output_leading_dim,
         lbann::DataType cutoff) {
   const int size = height * width_per_gpu;
   const int num_gpus = cudnn.get_num_gpus();
   const int block_dim = 256;
   const int grid_dim = size / block_dim + ((size % block_dim) ? 1 : 0);
-  for (int i = 0; i < num_gpus; ++i) {
-    CHECK_CUDA(cudaSetDevice(cudnn.get_gpu(i)));
-    fp_kernel<<<grid_dim, block_dim, 0, cudnn.get_stream(i)>>>(
-      height, width_per_gpu,
-      input[i], input_leading_dim,
-      output[i], output_leading_dim,
-      cutoff);
-  }
+  CHECK_CUDA(cudaSetDevice(cudnn.get_gpu()));
+  fp_kernel<<<grid_dim, block_dim, 0, cudnn.get_stream()>>>(
+    height, width_per_gpu,
+    input, input_leading_dim,
+    output, output_leading_dim,
+    cutoff);
 }
 
 void bp(cudnn::cudnn_manager& cudnn,
         int height,
         int width_per_gpu,
-        const std::vector<lbann::DataType*>& input,
+        const lbann::DataType* input,
         int input_leading_dim,
-        const std::vector<lbann::DataType*>& gradient_wrt_output,
+        const lbann::DataType* gradient_wrt_output,
         int gradient_wrt_output_leading_dim,
-        std::vector<lbann::DataType*>& gradient_wrt_input,
+        lbann::DataType* gradient_wrt_input,
         int gradient_wrt_input_leading_dim,
         lbann::DataType cutoff) {
   const int size = height * width_per_gpu;
   const int num_gpus = cudnn.get_num_gpus();
   const int block_dim = 256;
   const int grid_dim = size / block_dim + ((size % block_dim) ? 1 : 0);
-  for (int i = 0; i < num_gpus; ++i) {
-    CHECK_CUDA(cudaSetDevice(cudnn.get_gpu(i)));
-    bp_kernel<<<grid_dim, block_dim, 0, cudnn.get_stream(i)>>>(
-      height, width_per_gpu,
-      input[i], input_leading_dim,
-      gradient_wrt_output[i], gradient_wrt_output_leading_dim,
-      gradient_wrt_input[i], gradient_wrt_input_leading_dim,
-      cutoff);
-  }
+  CHECK_CUDA(cudaSetDevice(cudnn.get_gpu()));
+  bp_kernel<<<grid_dim, block_dim, 0, cudnn.get_stream()>>>(
+    height, width_per_gpu,
+    input, input_leading_dim,
+    gradient_wrt_output, gradient_wrt_output_leading_dim,
+    gradient_wrt_input, gradient_wrt_input_leading_dim,
+    cutoff);
 }
 
 } // namespace sigmoid_cuda

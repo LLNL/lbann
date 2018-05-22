@@ -87,7 +87,7 @@ void data_reader_mnist_siamese::set_input_params(
  * Fill the input minibatch matrix with the samples of image pairs by using
  * the overloaded fetch_datum()
  */
-int data_reader_mnist_siamese::fetch_data(Mat& X) {
+int data_reader_mnist_siamese::fetch_data(CPUMat& X) {
   int nthreads = omp_get_max_threads();
   if(!position_valid()) {
     throw lbann_exception(
@@ -149,7 +149,7 @@ int data_reader_mnist_siamese::fetch_data(Mat& X) {
 /**
  * Fill the ground truth table by using the overloaded fetch_label()
  */
-int data_reader_mnist_siamese::fetch_labels(Mat& Y) {
+int data_reader_mnist_siamese::fetch_labels(CPUMat& Y) {
   if(!position_valid()) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
@@ -195,7 +195,7 @@ int data_reader_mnist_siamese::fetch_labels(Mat& Y) {
 }
 
 
-bool data_reader_mnist_siamese::fetch_datum(Mat& X, std::pair<int, int> data_id, int mb_idx, int tid) {
+bool data_reader_mnist_siamese::fetch_datum(CPUMat& X, std::pair<int, int> data_id, int mb_idx, int tid) {
 
   std::vector<::Mat> X_v = create_datum_views(X, mb_idx);
 
@@ -234,7 +234,7 @@ bool data_reader_mnist_siamese::fetch_datum(Mat& X, std::pair<int, int> data_id,
 }
 
 
-bool data_reader_mnist_siamese::fetch_label(Mat& Y, std::pair<int, int> data_id, int mb_idx, int tid) {
+bool data_reader_mnist_siamese::fetch_label(CPUMat& Y, std::pair<int, int> data_id, int mb_idx, int tid) {
   const label_t label_1 = m_image_data[data_id.first][0];
   const label_t label_2 = m_image_data[data_id.second][0];
   const label_t label = static_cast<label_t>(label_1 == label_2);
@@ -243,14 +243,14 @@ bool data_reader_mnist_siamese::fetch_label(Mat& Y, std::pair<int, int> data_id,
 }
 
 
-bool data_reader_mnist_siamese::fetch_datum(::Mat& X, int data_id, int mb_idx, int tid) {
+bool data_reader_mnist_siamese::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
   throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " "
                         + get_type() + ": unused interface is called");
   return false;
 }
 
 
-bool data_reader_mnist_siamese::fetch_label(::Mat& Y, int data_id, int mb_idx, int tid) {
+bool data_reader_mnist_siamese::fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) {
   throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " "
                         + get_type() + ": unused interface is called");
   return false;

@@ -270,7 +270,7 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
 
   std::shared_ptr<cv_process> pp;
   // set up the image preprocessor
-  if ((name == "imagenet") || (name == "imagenet_single") ||
+  if ((name == "imagenet") || (name == "imagenet_single") || (name == "jag_conduit") ||
       (name == "triplet") || (name == "mnist_siamese") || (name == "multi_images")) {
     pp = std::make_shared<cv_process>();
   } else if (name == "imagenet_patches") {
@@ -304,6 +304,24 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
     reader = new data_reader_multi_images(pp, shuffle);
   } else if (name == "imagenet_single") { // imagenet_single
     reader = new imagenet_reader_single(pp, shuffle);
+#ifdef LBANN_HAS_CONDUIT
+  } else if (name =="jag_conduit") {
+    data_reader_jag_conduit* reader_jag = new data_reader_jag_conduit(pp, shuffle);
+
+    reader_jag->set_image_dims(width, height);
+
+    const data_reader_jag_conduit::variable_t independent_type
+           = static_cast<data_reader_jag_conduit::variable_t>(pb_readme.independent());
+    reader_jag->set_independent_variable_type(independent_type);
+
+    const data_reader_jag_conduit::variable_t dependent_type
+           = static_cast<data_reader_jag_conduit::variable_t>(pb_readme.dependent());
+    reader_jag->set_dependent_variable_type(dependent_type);
+
+    reader = reader_jag;
+    if (master) std::cout << reader->get_type() << " is set" << std::endl;
+    return;
+#endif // LBANN_HAS_CONDUIT
   }
 
   auto* image_data_reader_ptr = dynamic_cast<image_data_reader*>(reader);

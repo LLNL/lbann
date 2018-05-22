@@ -32,20 +32,21 @@
 namespace lbann {
 
 /** Exponential activation function. */
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class exponential_layer : public entrywise_activation_layer {
  public:
   exponential_layer(lbann_comm *comm) : entrywise_activation_layer(comm) {}
   exponential_layer* copy() const override { return new exponential_layer(*this); }
   std::string get_type() const override { return "exponential"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
  protected:
-  DataType activation(DataType z) const override {
-    return std::exp(z);
+  DataType activation(DataType x) const override {
+    return std::exp(x);
   }
-  DataType activation_derivative(DataType z) const override {
-    return std::exp(z);
+  DataType activation_derivative(DataType x) const override {
+    return std::exp(x);
   }
 };
 

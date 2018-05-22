@@ -182,10 +182,38 @@ void greedy_layerwise_autoencoder::set_phase(int phase) {
   Layer* original_layer = m_layers[encoder_start-1];
   switch (encoder_parents[0]->get_data_layout()) {
   case data_layout::MODEL_PARALLEL:
-    m_reconstruction = new reconstruction_layer<data_layout::MODEL_PARALLEL>(m_comm, original_layer);
+    switch(encoder_parents[0]->get_device_allocation()) {
+    case El::Device::CPU:
+      m_reconstruction = new reconstruction_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>(m_comm, original_layer);
+      break;
+#ifdef LBANN_HAS_GPU
+    case El::Device::GPU:
+      m_reconstruction = new reconstruction_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>(m_comm, original_layer);
+      break;
+#endif // LBANN_HAS_GPU
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid matrix data allocation";
+      throw lbann_exception(err.str());
+    }
     break;
   case data_layout::DATA_PARALLEL:
-    m_reconstruction = new reconstruction_layer<data_layout::DATA_PARALLEL>(m_comm, original_layer);
+    switch(encoder_parents[0]->get_device_allocation()) {
+    case El::Device::CPU:
+      m_reconstruction = new reconstruction_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(m_comm, original_layer);
+      break;
+#ifdef LBANN_HAS_GPU
+    case El::Device::GPU:
+      m_reconstruction = new reconstruction_layer<data_layout::DATA_PARALLEL, El::Device::GPU>(m_comm, original_layer);
+      break;
+#endif // LBANN_HAS_GPU
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid matrix data allocation";
+      throw lbann_exception(err.str());
+    }
     break;
   default:
     std::stringstream err;

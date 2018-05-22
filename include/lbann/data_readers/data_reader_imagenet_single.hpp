@@ -51,7 +51,7 @@ class imagenet_reader_single : public imagenet_reader {
   void load() override;
 
  protected:
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
   bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
 
  private:

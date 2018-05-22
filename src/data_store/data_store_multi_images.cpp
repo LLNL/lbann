@@ -60,31 +60,32 @@ void data_store_multi_images::setup() {
 
   m_num_img_srcs = reader->get_num_img_srcs();
 
-  //@todo needs to be designed and implemented!
-  if (! m_in_memory) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "not yet implemented";
-    throw lbann_exception(err.str());
-  } 
-  
-  else {
-    data_store_imagenet::setup();
+  data_store_imagenet::setup();
 
-    if (m_rank == 0) {
-      std::cerr << "data_store_multi_images setup time: " << get_time() - tm1 << std::endl;
-    }
+  if (m_rank == 0) {
+    std::cerr << "TIME for data_store_multi_images setup: " << get_time() - tm1 << std::endl;
   }
 }
 
 void data_store_multi_images::get_file_sizes() {
-  std::vector<Triple> my_file_sizes(m_my_datastore_indices.size()*m_num_img_srcs);
-  if (m_master) std::cerr << "STARTING " << get_name() << "::get_file_sizes for " << my_file_sizes.size() << " files\n";
+  std::vector<int> global_indices(m_my_datastore_indices.size()*m_num_img_srcs);
+  std::vector<int> bytes(m_my_datastore_indices.size()*m_num_img_srcs);
 
-  size_t cur_offset = 0;
   std::unordered_map<std::string, size_t> names;
   size_t jj = 0;
+  size_t j = 0;
+  double tm = get_time();
   for (auto base_index : m_my_datastore_indices) {
+    ++j;
+    if (j % 100 == 0 and m_master) {
+      double e = get_time() - tm;
+      double time_per_file = e / j;
+      int remaining_files = (m_my_datastore_indices.size()-j)*m_num_img_srcs;
+      double estimated_remaining_time = time_per_file * remaining_files;
+      std::cerr << "P_0: got size for " << j*m_num_img_srcs << " of " << m_data_filepaths.size() 
+                << " files; elapsed time: " << get_time() - tm 
+                << "s est. remaining time: " << estimated_remaining_time << "s\n";
+    }
     const std::vector<std::string> sample(get_sample(base_index));
     for (size_t k=0; k<sample.size(); k++) {
       size_t index = base_index*m_num_img_srcs + k; 
@@ -96,23 +97,53 @@ void data_store_multi_images::get_file_sizes() {
         names[sample[k]] = file_len;
       }
 
-      my_file_sizes[jj].global_index = index;
-      my_file_sizes[jj].num_bytes = file_len;
-      my_file_sizes[jj].offset = cur_offset;
-      my_file_sizes[jj].rank = m_rank;
-      cur_offset += my_file_sizes[jj].num_bytes;
-
-      if (my_file_sizes[jj].num_bytes == 0) {
-        std::stringstream err;
-        err << __FILE__ << " " << __LINE__ << " :: "
-          << " file size is 0";
-        throw lbann_exception(err.str());
-      }
+      global_indices[jj] = index;
+      bytes[jj] = file_len;
       ++jj;
     }
   }
 
-  exchange_file_sizes(my_file_sizes, m_num_global_indices*m_num_img_srcs);
+  exchange_file_sizes(global_indices, bytes);
+}
+
+void data_store_multi_images::read_files(const std::unordered_set<int> &indices) {
+  std::stringstream err;
+  std::string local_dir = m_reader->get_local_file_dir();
+  std::stringstream fp;
+  double tm = get_time();
+  int n = 0;
+  for (auto base_index : indices) {
+    ++n;
+    if (n % 100 == 0 && m_master) {
+      double time_per_file = (get_time() - tm) / n;
+      int remaining_files = indices.size() - n;
+      double estimated_remaining_time = time_per_file * remaining_files;
+      std::cerr << "P_0, " << m_reader->get_role() << "; read " << n 
+                << " of " << indices.size() << " files; elapsed time " 
+                << (get_time() - tm)
+                << "s; est. remaining time: " << estimated_remaining_time << "\n";
+    }
+    const std::vector<std::string> sample(get_sample(base_index));
+    for (size_t k=0; k<sample.size(); k++) {
+      size_t index = base_index * m_num_img_srcs + k;
+      if (m_file_sizes.find(index) == m_file_sizes.end()) {
+        err << __FILE__ << " " << __LINE__ << " :: " 
+            << " m_file_sizes.find(index) failed for index: " << index;
+        throw lbann_exception(err.str());
+      }
+      if (m_data_filepaths.find(index) == m_data_filepaths.end()) {
+        err << __FILE__ << " " << __LINE__ << " :: " 
+            << " m_data_filepaths.find(index) failed for index: " << index;
+        throw lbann_exception(err.str());
+      }
+      size_t file_len = m_file_sizes[index];
+      fp.clear();
+      fp.str("");
+      fp << local_dir << "/" << m_data_filepaths[index];
+      m_data[index].resize(file_len);
+      load_file("", fp.str(), m_data[index].data(), file_len);
+    }
+  }
 }
 
 void data_store_multi_images::read_files() {
@@ -121,31 +152,14 @@ void data_store_multi_images::read_files() {
     const std::vector<std::string> sample(get_sample(base_index));
     for (size_t k=0; k<sample.size(); k++) {
       size_t index = base_index * m_num_img_srcs + k;
-
-      if (m_offsets.find(index) == m_offsets.end()) {
-        err << __FILE__ << " " << __LINE__ << " :: " 
-            << " m_offsets.find(index) failed for index: " << index;
-        throw lbann_exception(err.str());
-      }
-      size_t offset = m_offsets[index];
-
       if (m_file_sizes.find(index) == m_file_sizes.end()) {
         err << __FILE__ << " " << __LINE__ << " :: " 
             << " m_file_sizes.find(index) failed for index: " << index;
         throw lbann_exception(err.str());
       }
       size_t file_len = m_file_sizes[index];
-
-      if (offset + file_len > m_data.size()) {
-        err << __FILE__ << " " << __LINE__ << " :: " 
-          << " of " << m_my_datastore_indices.size() << " offset: " << offset
-          << " file_len: " << file_len << " offset+file_len: "
-          << offset+file_len << " m_data.size(): " << m_data.size()
-          << "\noffset+file_len must be <= m_data.size()";
-        throw lbann_exception(err.str());
-      }  
-
-      load_file(m_dir, sample[k], m_data.data()+offset, file_len);
+      m_data[index].resize(file_len);
+      load_file(m_dir, sample[k], m_data[index].data(), file_len);
     }
   }
 }
@@ -187,4 +201,18 @@ void data_store_multi_images::extended_testing() {
   std::cerr << "rank: " << m_rank << " data_store_multi_images::extended_testing, PASSED!\n";
 }
 
-}  // namespace lbann
+
+void data_store_multi_images::build_data_filepaths() {
+  m_data_filepaths.clear();
+  std::unordered_set<std::string> names;
+  for (auto base_index : m_my_datastore_indices) {
+    const std::vector<std::string> sample(get_sample(base_index));
+    for (size_t k=0; k<sample.size(); k++) {
+      size_t index = base_index*m_num_img_srcs + k; 
+      m_data_filepaths[index] = sample[k];
+    }
+  }
+}
+
+} //namespace lbann
+

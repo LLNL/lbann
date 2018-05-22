@@ -29,6 +29,7 @@
 #include <unordered_set>
 #include "lbann/data_readers/data_reader_csv.hpp"
 #include "lbann/data_store/data_store_csv.hpp"
+#include "lbann/utils/options.hpp"
 #include <omp.h>
 
 namespace lbann {
@@ -105,15 +106,13 @@ void csv_reader::load() {
   // Skip rows if needed.
   if (master) {
     skip_rows(ifs, m_skip_rows);
-    m_comm->broadcast<int>(0, m_skip_rows, world_comm);
-  } else {
-    m_skip_rows = m_comm->broadcast<int>(0, world_comm);
   }
+  m_comm->broadcast<int>(0, m_skip_rows, world_comm);
 
   //This will be broadcast from root to other procs, and will
   //then be converted to std::vector<int> m_labels; this is because
   //El::mpi::Broadcast<std::streampos> doesn't work
-  std::vector<int> index;
+  std::vector<long long> index;
 
   if (master) {
     std::string line;
@@ -168,10 +167,18 @@ void csv_reader::load() {
     // Used to count the number of label classes.
     std::unordered_set<int> label_classes;
     index.push_back(ifs.tellg());
+
+    int num_samples_to_use = get_absolute_sample_count();
     int line_num = 0;
+    if (num_samples_to_use == 0) {
+      num_samples_to_use = -1;
+    }
     while (std::getline(ifs, line)) {
+      if (line_num == num_samples_to_use) {
+        break;
+      }
       ++line_num;
-      //if (line_num == 100000) break;
+
       // Verify the line has the right number of columns.
       if (std::count(line.begin(), line.end(), m_separator) + 1 != m_num_cols) {
         throw lbann_exception(
@@ -209,7 +216,7 @@ void csv_reader::load() {
       }
     }
 
-    if (!ifs.eof()) {
+    if (!ifs.eof() && num_samples_to_use == 0) {
        //If we didn't get to EOF, something went wrong.
       throw lbann_exception(
         "csv_reader: did not reach EOF");
@@ -231,16 +238,14 @@ void csv_reader::load() {
     ifs.clear();
   } // if (master)
 
-  if (master) {
-    m_comm->broadcast<int>(0, m_num_cols, world_comm);
-  } else {
-    m_num_cols = m_comm->broadcast<int>(0, world_comm);
-  }
+  m_comm->broadcast<int>(0, m_num_cols, world_comm);
   m_label_col = m_num_cols - 1;
 
   //bcast the index vector
-  m_comm->world_broadcast<int>(0, index);
+  m_comm->world_broadcast<long long>(0, index);
   m_num_samples = index.size() - 1;
+  if (m_master) std::cerr << "num samples: " << m_num_samples << "\n";
+
   m_index.reserve(index.size());
   for (auto t : index) {
     m_index.push_back(t);
@@ -264,7 +269,7 @@ void csv_reader::load() {
   select_subset_of_data();
 }
 
-bool csv_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+bool csv_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
   if (m_data_store != nullptr) {
     std::vector<DataType> *buf;
     m_data_store->get_data_buf_DataType(data_id, buf);
@@ -281,12 +286,12 @@ bool csv_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   return true;
 }
 
-bool csv_reader::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
+bool csv_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) {
   Y(m_labels[data_id], mb_idx) = 1;
   return true;
 }
 
-bool csv_reader::fetch_response(Mat& Y, int data_id, int mb_idx, int tid) {
+bool csv_reader::fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) {
   Y(0, mb_idx) = m_responses[data_id];
   return true;
 }
@@ -356,6 +361,7 @@ std::vector<DataType> csv_reader::fetch_line_label_response(
 }
 
 std::string csv_reader::fetch_raw_line(int data_id) {
+static int n = 0;
   std::ifstream& ifs = *m_ifstreams[omp_get_thread_num()];
   // Seek to the start of this datum's line.
   ifs.seekg(m_index[data_id], std::ios::beg);
@@ -369,11 +375,12 @@ std::string csv_reader::fetch_raw_line(int data_id) {
     err << __FILE__ << " " << __LINE__ << " :: "
         << "csv_reader: error on reading data_id: " << data_id << "\n"
         <<"index.size(): " << m_index.size() << "  m_index["<< data_id
-        << ")=" <<m_index[data_id] << "; index[" << data_id+1 
+        << ")=" <<m_index[data_id] << "; index[" << data_id+1
         << ")= " << m_index[data_id+1] << "\ncnt: " << cnt << " role: "
-        << get_role() << " gcount: " << ifs.gcount();
+        << get_role() << " gcount: " << ifs.gcount() << " n: " << n;
     throw lbann_exception(err.str());
   }
+++n;
   return line;
 }
 

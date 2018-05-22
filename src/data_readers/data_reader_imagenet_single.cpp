@@ -122,7 +122,7 @@ void imagenet_reader_single::load() {
 }
 
 
-bool imagenet_reader_single::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+bool imagenet_reader_single::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
   std::stringstream err;
 
   if (static_cast<size_t>(data_id+1) >= m_offsets.size()) {
@@ -165,7 +165,7 @@ bool imagenet_reader_single::fetch_datum(Mat& X, int data_id, int mb_idx, int ti
   return true;
 }
 
-bool imagenet_reader_single::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
+bool imagenet_reader_single::fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) {
   const int label = m_offsets[data_id+1].second;
   Y.Set(label, mb_idx, 1);
   return true;

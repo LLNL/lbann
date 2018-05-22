@@ -68,8 +68,7 @@ class adam : public optimizer {
   void step_compute(AbsDistMat& values, const AbsDistMat& gradient) override;
 #ifdef LBANN_HAS_CUDNN
   /** Perform the computation in an optimization step on GPU. */
-  void step_compute_gpu(cudnn::matrix& values_d,
-                        const cudnn::matrix& gradient_d) override;
+  void step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) override;
 #endif // LBANN_HAS_CUDNN
 
  private:
@@ -88,13 +87,6 @@ class adam : public optimizer {
   AbsDistMat *m_moment1;
   /** Second moment estimates. */
   AbsDistMat *m_moment2;
-
-#ifdef LBANN_HAS_CUDNN
-  /** GPU memory for first moment estimates. */
-  std::vector<DataType*> m_moment1_d;
-  /** GPU memory for second moment estimates. */
-  std::vector<DataType*> m_moment2_d;
-#endif // LBANN_HAS_CUDNN
 
 //************************************************************************
 // Checkpointing
@@ -145,7 +137,8 @@ class adam : public optimizer {
 
   bool save_to_checkpoint_shared(persist& p, std::string m_name) override;
   bool load_from_checkpoint_shared(persist& p, std::string m_name) override;
-
+  bool save_to_checkpoint_distributed(persist& p, std::string m_name) override;
+  bool load_from_checkpoint_distributed(persist& p, std::string m_name) override;
 };
 
 } // namespace lbann

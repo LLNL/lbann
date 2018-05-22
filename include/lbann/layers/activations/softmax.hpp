@@ -48,20 +48,20 @@ namespace softmax_cuda {
  *  A minimum output value helps avoid denormalized floats.
  */
 void fp_cutoff(cudnn::cudnn_manager& cudnn,
-               std::vector<DataType*>& activations,
+               DataType* activations,
                El::Int h, El::Int w,
                DataType min_output);
 /** Error signal correction if activations have minimum cutoff. */
 void bp_cutoff(cudnn::cudnn_manager& cudnn,
-               const std::vector<DataType*>& activations,
-               std::vector<DataType*>& error_signals,               
+               const DataType* activations,
+               DataType* error_signals,
                El::Int h, El::Int w,
                DataType min_output);
 } // namespace softmax
 #endif // LBANN_HAS_CUDNN
 
 /** Softmax layer. */
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class softmax_layer : public activation_layer {
 
  private:
@@ -83,11 +83,6 @@ class softmax_layer : public activation_layer {
       m_workspace(nullptr),
       m_min_output(std::sqrt(std::numeric_limits<DataType>::min())) {
     this->m_cudnn = cudnn;
-  #ifdef LBANN_HAS_CUDNN
-    if (this->m_cudnn && T_layout == data_layout::DATA_PARALLEL) {
-      this->m_using_gpus = true;
-    }
-  #endif // LBANN_HAS_CUDNN
   }
 
   softmax_layer(const softmax_layer& other)
@@ -100,7 +95,6 @@ class softmax_layer : public activation_layer {
 
     // Copy GPU objects
     this->m_cudnn = other.m_cudnn;
-    this->m_using_gpus = other.m_using_gpus;
 
   }
 
@@ -133,6 +127,8 @@ class softmax_layer : public activation_layer {
 
   data_layout get_data_layout() const override { return T_layout; }
 
+  El::Device get_device_allocation() const override { return Dev; }
+
   void setup_matrices(const El::Grid& grid) override;
 
   void setup_data() override {
@@ -146,29 +142,16 @@ class softmax_layer : public activation_layer {
     m_workspace->Resize(1, mini_batch_size);
   }
 
-  void fp_compute() override {
-    if(this->m_using_gpus) {
-      fp_compute_cudnn();
-    } else {
-      fp_compute_cpu();
-    }
-  }
+  void fp_compute() override;
+  void bp_compute() override;
 
-  void bp_compute() override {
-    if(this->m_using_gpus) {
-      bp_compute_cudnn();
-    } else {
-      bp_compute_cpu();
-    }
-  }
-  
   virtual void fp_compute_cpu() {
 
     // Local matrices
     const auto& local_input = get_local_prev_activations();
     auto& local_output = get_local_activations();
     auto& local_workspace = m_workspace->Matrix();
-    
+
     // Matrix parameters
     const El::Int local_height = local_input.Height();
     const El::Int local_width = local_input.Width();
@@ -222,11 +205,11 @@ class softmax_layer : public activation_layer {
   virtual void bp_compute_cpu() {
 
     // Local matrices
-    const auto& local_output = get_local_activations();
-    const auto& local_gradient_wrt_output = get_local_prev_error_signals();
-    auto& local_gradient_wrt_input = get_local_error_signals();
-    auto& local_workspace = m_workspace->Matrix();
-    
+    const DMat<Dev>& local_output = get_local_activations();
+    const DMat<Dev>& local_gradient_wrt_output = get_local_prev_error_signals();
+    DMat<Dev>& local_gradient_wrt_input = get_local_error_signals();
+    DMat<Dev>& local_workspace = m_workspace->Matrix();
+
     // Matrix parameters
     const El::Int local_height = local_output.Height();
     const El::Int local_width = local_output.Width();
@@ -253,94 +236,7 @@ class softmax_layer : public activation_layer {
         local_gradient_wrt_input(row, col) += dx;
       }
     }
-  
-  }
 
-  void fp_compute_cudnn() {
-  #ifndef LBANN_HAS_CUDNN
-    throw lbann_exception("softmax_layer: cuDNN not detected");
-  #else
-    
-    // Useful constants
-    const DataType one = 1;
-    const DataType zero = 0;
-
-    // Matrices
-    const auto& prev_activations_d = this->m_prev_activations_d[0];
-    auto& activations_d = this->m_activations_d[0];
-
-    // Apply softmax on each GPU
-    const int num_gpus = this->m_cudnn->get_num_gpus();
-    for(int i = 0; i < num_gpus; ++i) {
-      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-      CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
-                                 this->m_cudnn->get_stream(i)));
-      CHECK_CUDNN(cudnnSoftmaxForward(this->m_cudnn->get_handle(i),
-                                      CUDNN_SOFTMAX_ACCURATE,
-                                      CUDNN_SOFTMAX_MODE_INSTANCE,
-                                      &one,
-                                      this->m_prev_activations_cudnn_desc,
-                                      prev_activations_d.get_locked_data(i),
-                                      &zero,
-                                      this->m_activations_cudnn_desc,
-                                      activations_d.get_data(i)));
-    }
-
-  #ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
-    // Round to minimum value to avoid denormalized floats
-    softmax_cuda::fp_cutoff(*this->m_cudnn,
-                            activations_d.get_data(),
-                            get_num_neurons(),
-                            this->m_mini_batch_size_per_gpu,
-                            m_min_output);
-  #endif // LBANN_ENABLE_SOFTMAX_CUTOFF
-    
-  #endif // LBANN_HAS_CUDNN
-  }
-
-  void bp_compute_cudnn() {
-  #ifndef LBANN_HAS_CUDNN
-    throw lbann_exception("softmax_layer: cuDNN not detected");
-  #else
-    
-    // Useful constants
-    const DataType one = 1;
-
-    // Matrices
-    const auto& activations_d = this->m_activations_d[0];
-    const auto& prev_error_signals_d = this->m_prev_error_signals_d[0];
-    auto& error_signals_d = this->m_error_signals_d[0];
-
-    // Apply softmax on each GPU
-    const int num_gpus = this->m_cudnn->get_num_gpus();
-    for(int i = 0; i < num_gpus; ++i) {
-      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-      CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
-                                 this->m_cudnn->get_stream(i)));
-      CHECK_CUDNN(cudnnSoftmaxBackward(this->m_cudnn->get_handle(i),
-                                       CUDNN_SOFTMAX_ACCURATE,
-                                       CUDNN_SOFTMAX_MODE_INSTANCE,
-                                       &one,
-                                       this->m_activations_cudnn_desc,
-                                       activations_d.get_locked_data(i),
-                                       this->m_prev_error_signals_cudnn_desc,
-                                       prev_error_signals_d.get_locked_data(i),
-                                       &one,
-                                       this->m_error_signals_cudnn_desc,
-                                       error_signals_d.get_data(i)));
-    }
-
-  #ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
-    // Round to minimum value to avoid denormalized floats
-    softmax_cuda::bp_cutoff(*this->m_cudnn,
-                            activations_d.get_locked_data(),
-                            error_signals_d.get_data(),
-                            get_num_neurons(),
-                            this->m_mini_batch_size_per_gpu,
-                            this->m_min_output);
-  #endif // LBANN_ENABLE_SOFTMAX_CUTOFF
-    
-  #endif // LBANN_HAS_CUDNN
   }
 
 };

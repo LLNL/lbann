@@ -23,6 +23,7 @@ learning     deconvolution           shape=octogon
 io           input
 io           target
 io           reconstruction
+io           repeated_input
 activations  softmax
 activations  elu
 activations  identity
@@ -35,6 +36,7 @@ activations  selu
 activations  tanh
 activations  exponential
 activations  power
+activations  log
 regularizers batch_normalization
 regularizers local_response_normalization
 regularizers dropout
@@ -47,6 +49,8 @@ transform    split arrow=red
 transform    sum
 transform    unpooling
 transform    hadamard
+transform    zero
+transform    transform
 transform    constant
 transform    reduction
 transform    evaluation
@@ -55,4 +59,7 @@ transform    bernoulli
 transform    uniform
 transform    zero
 transform    noise
+transform    crop
+transform    categorical_random
+transform    discrete_random
 
