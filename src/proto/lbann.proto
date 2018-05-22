@@ -710,6 +710,7 @@ message Layer {
 
    // input Layers
    Input input = 2;
+   RepeatedInput repeated_input = 6; // @todo Remove when possible
 
    // transform Layers
    Reshape reshape = 306;
@@ -727,6 +728,9 @@ message Layer {
    Gaussian gaussian = 312;
    Bernoulli bernoulli = 313;
    Uniform uniform = 314;
+   Crop crop = 318;
+   CategoricalRandom categorical_random = 316;
+   DiscreteRandom discrete_random = 317;
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -759,6 +763,7 @@ message Layer {
    Exponential exponential = 41;
    Swish swish = 42;
    Power power = 43;
+   Log log = 44;
 }
 ///////////////////////
 // MotifLayer //
@@ -822,6 +827,10 @@ message Power {
   double exponent = 1;
 }
 
+message Log {
+  double base = 1;
+}
+
 ///////////////////////////
 // Regularization Layers //
 ///////////////////////////
@@ -857,6 +866,13 @@ message Input {
   bool data_set_per_model = 1;  //default: false
   string io_buffer = 2;
   bool for_regression = 3; //default: false
+}
+
+/// @todo Remove when possible
+message RepeatedInput {
+  bool data_set_per_model = 1;  //default: false
+  bool for_regression = 2; //default: false
+  int64 num_steps = 3;
 }
 
 //////////////////////
@@ -947,6 +963,18 @@ message Uniform {
   double min = 1;
   double max = 2;
   string neuron_dims = 3;
+}
+
+message Crop {
+  string dims = 3;
+}
+
+message CategoricalRandom {
+}
+
+message DiscreteRandom {
+  string values = 1;
+  string dims = 2;
 }
 
 /////////////////////
