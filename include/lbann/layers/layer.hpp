@@ -484,11 +484,6 @@ class Layer {
 
 #ifdef LBANN_HAS_CUDNN
 
-  /** Number of mini-batch samples per GPU. */
-  int m_mini_batch_size_per_gpu;
-  /** Maximum number of mini-batch samples per GPU. */
-  int m_max_mini_batch_size_per_gpu;
-
   /** cuDNN descriptor for first previous activation tensor. */
   cudnnTensorDescriptor_t m_prev_activations_cudnn_desc;
   /** cuDNN descriptor for first activations tensor. */

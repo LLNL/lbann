@@ -84,13 +84,31 @@ class reshape_layer : public transform_layer {
                                               this->m_neuron_dims.end(),
                                               1,
                                               std::multiplies<int>())) {
-      std::string num_neurons = " {";
-      for(int n: m_neuron_dims) num_neurons += " " + std::to_string(n);
-      num_neurons += " }";
-      throw lbann_exception("reshape_layer: invalid neuron dimensions, " +
-                             std::to_string(m_num_neurons) + " != " + num_neurons);
+      std::stringstream err;
+      err << "input neuron dimensions (";
+      for (size_t i = 0; i < this->m_prev_neuron_dims.size(); ++i) {
+        err << (i > 0 ? "x" : "") << this->m_prev_neuron_dims[i];
+      }
+      err << ") do not match output neuron dimensions (";
+      for (size_t i = 0; i < this->m_neuron_dims.size(); ++i) {
+        err << (i > 0 ? "x" : "") << this->m_neuron_dims[i];
+      }
+      err << ")";
+      LBANN_ERROR(err.str());
     }
 
+  }
+
+  void setup_gpu() override {
+    transform_layer::setup_gpu();
+#ifdef HYDROGEN_HAVE_CUB
+    // Set output matrix to use CUB GPU memory pool
+    // Note: During each forward prop, the output matrix is resized to
+    // the mini-batch size and cleared to obtain a matrix view. To
+    // avoid expensive GPU memory allocation and deallocation, we use
+    // CUB's GPU memory pool.
+    get_local_activations().SetMemoryMode(1);
+#endif
   }
 
   void fp_compute() override {
