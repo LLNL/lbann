@@ -1,4 +1,0 @@
-<map id="set_num_parallel_readers" name="set_num_parallel_readers">
-<area shape="rect" id="node2" href="$classlbann_1_1lbann__comm.html#a1ef526486183a29feadca9bef096a534" title="lbann::lbann_comm::\lam_world_master" alt="" coords="231,5,377,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1lbann__comm.html#a5755dfdfc6377b4cae5ef8f7819e17de" title="lbann::lbann_comm::\lget_procs_per_model" alt="" coords="229,68,379,107"/>
-</map>

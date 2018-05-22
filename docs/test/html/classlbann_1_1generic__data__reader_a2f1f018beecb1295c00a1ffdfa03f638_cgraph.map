@@ -1,5 +1,0 @@
-<map id="lbann::generic_data_reader::get_data_store" name="lbann::generic_data_reader::get_data_store">
-<area shape="rect" id="node2" href="$classlbann_1_1generic__data__reader.html#a8b2a09d38512fc11f1b9d572c89100a7" title="sets up a data_store. " alt="" coords="224,5,402,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1generic__data__reader.html#a19fd7c4dc234fa09ac7619e47fe18454" title="lbann::generic_data\l_reader::set_save_minibatch\l_entries" alt="" coords="217,68,410,120"/>
-<area shape="rect" id="node4" href="$classlbann_1_1generic__data__reader.html#a06fb58d1c0b84b8c76f5b4d160751f34" title="Get the number of iterations in each epoch. " alt="" coords="458,68,646,120"/>
-</map>

@@ -1,4 +1,0 @@
-<map id="lbann::model::set_current_mini_batch_size" name="lbann::model::set_current_mini_batch_size">
-<area shape="rect" id="node2" href="$classlbann_1_1generic__input__layer.html#ad0b8ea79bc508bd227e08124359531c8" title="lbann::generic_input\l_layer::fp_setup_data" alt="" coords="225,5,375,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1generic__input__layer.html#ae74c8c5a7e14b4fdd4902554bbc7bcef" title="lbann::generic_input\l_layer::fp_compute" alt="" coords="229,68,371,107"/>
-</map>

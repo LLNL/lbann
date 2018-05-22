@@ -1,6 +1,0 @@
-<map id="lbann::lbann_callback_checknan::name" name="lbann::lbann_callback_checknan::name">
-<area shape="rect" id="node2" href="$classlbann_1_1lbann__callback__checknan.html#a09388ae76566a6a93c957ab76cd54dcd" title="lbann::lbann_callback\l_checknan::on_forward\l_prop_end" alt="" coords="212,5,372,57"/>
-<area shape="rect" id="node4" href="$classlbann_1_1lbann__callback__checknan.html#a40d9a9fcc5849746570b99321e1c5488" title="lbann::lbann_callback\l_checknan::on_backward\l_prop_end" alt="" coords="206,81,378,133"/>
-<area shape="rect" id="node5" href="$classlbann_1_1lbann__callback__checknan.html#a1d1b3b082aa49016e7b80e0f267575da" title="lbann::lbann_callback\l_checknan::on_batch_end" alt="" coords="203,157,381,196"/>
-<area shape="rect" id="node3" href="$classlbann_1_1lbann__callback__checknan.html#ad7156df3cd81c493584ebd4a0c9d96b4" title="lbann::lbann_callback\l_checknan::copy" alt="" coords="429,88,578,127"/>
-</map>

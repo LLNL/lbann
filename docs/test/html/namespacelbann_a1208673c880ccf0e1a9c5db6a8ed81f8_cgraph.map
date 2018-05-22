@@ -1,5 +1,0 @@
-<map id="lbann::create_dir" name="lbann::create_dir">
-<area shape="rect" id="node2" href="$structlbann_1_1path__delimiter.html#adb3d520b3e7b9f9aa8327245ea943bdf" title="lbann::path_delimiter\l::check" alt="" coords="174,5,319,44"/>
-<area shape="rect" id="node3" href="$namespacelbann.html#a4fac6c6483965395fa79d31061485f9f" title="Return true if a file with the given name exists. " alt="" coords="179,68,314,107"/>
-<area shape="rect" id="node4" href="$namespacelbann.html#a3ee4a1fa7a82c30999de9eb626c68311" title="lbann::check_if_dir\l_exists" alt="" coords="367,68,500,107"/>
-</map>

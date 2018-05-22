@@ -1,7 +1,0 @@
-<map id="lbann::regularizer_layer" name="lbann::regularizer_layer">
-<area shape="rect" id="node3" href="$classlbann_1_1batch__normalization.html" title="lbann::batch_normalization\l\&lt; T_layout \&gt;" alt="" coords="320,5,501,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1dropout.html" title="lbann::dropout\&lt; T_layout \&gt;" alt="" coords="321,68,501,93"/>
-<area shape="rect" id="node5" href="$classlbann_1_1local__response__normalization__layer.html" title="lbann::local_response\l_normalization_layer\l\&lt; T_layout \&gt;" alt="" coords="335,117,486,169"/>
-<area shape="rect" id="node6" href="$classlbann_1_1selu__dropout.html" title="lbann::selu_dropout\l\&lt; T_layout \&gt;" alt="" coords="342,193,480,232"/>
-<area shape="rect" id="node2" href="$classlbann_1_1Layer.html" title="lbann::Layer" alt="" coords="5,100,100,125"/>
-</map>

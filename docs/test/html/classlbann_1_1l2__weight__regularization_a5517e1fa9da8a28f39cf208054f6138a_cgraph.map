@@ -1,4 +1,0 @@
-<map id="lbann::l2_weight_regularization::finish_evaluation" name="lbann::l2_weight_regularization::finish_evaluation">
-<area shape="rect" id="node2" href="$classlbann_1_1objective__function__term.html#a5f89b676a26a6b76ddc26563ac87beb9" title="lbann::objective_function\l_term::get_comm" alt="" coords="259,5,427,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1lbann__comm.html#a30439f28cf615e1406090799c5499321" title="lbann::lbann_comm::wait" alt="" coords="258,68,427,93"/>
-</map>

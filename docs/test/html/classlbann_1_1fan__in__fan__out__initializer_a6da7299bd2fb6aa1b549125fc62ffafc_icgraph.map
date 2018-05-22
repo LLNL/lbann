@@ -1,6 +1,0 @@
-<map id="lbann::fan_in_fan_out_initializer::set_fan_in" name="lbann::fan_in_fan_out_initializer::set_fan_in">
-<area shape="rect" id="node2" href="$classlbann_1_1base__convolution__layer.html#a9f850c1bdf4ae3cd986411d3cb3a524c" title="lbann::base_convolution\l_layer::setup_data" alt="" coords="203,36,368,75"/>
-<area shape="rect" id="node5" href="$classlbann_1_1fully__connected__layer.html#aec4298146845489597126503177d3127" title="lbann::fully_connected\l_layer::setup_data" alt="" coords="208,99,363,137"/>
-<area shape="rect" id="node3" href="$classlbann_1_1convolution__layer.html#ab20636b44d2b17abdb5424df54cb9c6d" title="lbann::convolution\l_layer::setup_data" alt="" coords="422,5,553,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1deconvolution__layer.html#a6d891396ea1c91030cd647cc111c8c5f" title="lbann::deconvolution\l_layer::setup_data" alt="" coords="416,68,560,107"/>
-</map>

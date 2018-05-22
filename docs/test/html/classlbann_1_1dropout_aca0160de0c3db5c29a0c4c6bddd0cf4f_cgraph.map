@@ -1,5 +1,0 @@
-<map id="lbann::dropout::bp_compute_cpu" name="lbann::dropout::bp_compute_cpu">
-<area shape="rect" id="node2" href="$classlbann_1_1Layer.html#a7ac4579d3c1671dfaf86e3b618d6938a" title="lbann::Layer::get_prev\l_error_signals" alt="" coords="220,29,374,68"/>
-<area shape="rect" id="node3" href="$classlbann_1_1Layer.html#adb561e140e0bb601f3c5a8ee053a71d2" title="lbann::Layer::get_error\l_signals" alt="" coords="218,116,375,155"/>
-<area shape="rect" id="node4" href="$classlbann_1_1model.html#addb40597cf29aa6d31b6a7d09ef48608" title="lbann::model::get_execution_mode" alt="" coords="182,179,411,204"/>
-</map>

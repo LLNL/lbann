@@ -1,6 +1,0 @@
-<map id="lbann::sgd::sgd" name="lbann::sgd::sgd">
-<area shape="rect" id="node2" href="$classlbann_1_1weights.html#ad36676b9b43bced1cc7e332e3745411f" title="lbann::weights::get\l_matrix_height" alt="" coords="533,5,665,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1weights.html#abc3cf3a5b992302b1eaaea1fdf3b377d" title="lbann::weights::get\l_matrix_width" alt="" coords="165,33,298,72"/>
-<area shape="rect" id="node3" href="$classlbann_1_1weights.html#a2971f04c57d90fbb09631b1de3dad336" title="lbann::weights::get\l_matrix_height_dims" alt="" coords="713,5,858,44"/>
-<area shape="rect" id="node5" href="$classlbann_1_1weights.html#a783ce38ed0b75c0264dd7e28911d5ec0" title="lbann::weights::get\l_matrix_width_dims" alt="" coords="346,33,485,72"/>
-</map>

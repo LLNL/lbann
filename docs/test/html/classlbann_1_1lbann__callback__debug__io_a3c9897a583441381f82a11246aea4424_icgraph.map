@@ -1,5 +1,0 @@
-<map id="lbann::lbann_callback_debug_io::print_fp_start" name="lbann::lbann_callback_debug_io::print_fp_start">
-<area shape="rect" id="node2" href="$classlbann_1_1lbann__callback__debug__io.html#a91fb292d9dff96dbf72ecc16855c4092" title="lbann::lbann_callback\l_debug_io::copy" alt="" coords="434,33,583,71"/>
-<area shape="rect" id="node3" href="$classlbann_1_1lbann__callback__debug__io.html#aa31ee265d40edff982ebf38054394927" title="lbann::lbann_callback\l_debug_io::on_forward\l_prop_begin" alt="" coords="225,26,383,78"/>
-<area shape="rect" id="node4" href="$classlbann_1_1lbann__callback__debug__io.html#ac9b36fc36ab6faa9de44db026addf02a" title="lbann::lbann_callback\l_debug_io::on_evaluate\l_forward_prop_begin" alt="" coords="222,102,386,154"/>
-</map>

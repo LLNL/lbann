@@ -1,6 +1,0 @@
-<map id="lbann::Layer::get_parent_names" name="lbann::Layer::get_parent_names">
-<area shape="rect" id="node2" href="$classlbann_1_1Layer.html#af4a093d91552cf079217eb346bbb847f" title="lbann::Layer::get_layer\l_names" alt="" coords="226,5,383,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1Layer.html#a326668ce624a9bcc719a463820b2e3a4" title="lbann::Layer::add_parent\l_layer" alt="" coords="219,68,389,107"/>
-<area shape="rect" id="node5" href="$classlbann_1_1Layer.html#ace0346ac56fd7ce7b6b44f27f224f35e" title="lbann::Layer::add_child\l_layer" alt="" coords="224,131,384,169"/>
-<area shape="rect" id="node3" href="$classlbann_1_1Layer.html#a80027550202fa7dbb1dd55fa8a66c84b" title="lbann::Layer::get_name" alt="" coords="437,12,598,37"/>
-</map>

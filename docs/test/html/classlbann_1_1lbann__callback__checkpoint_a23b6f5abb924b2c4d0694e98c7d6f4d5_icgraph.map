@@ -1,7 +1,0 @@
-<map id="lbann::lbann_callback_checkpoint::checkpointShared" name="lbann::lbann_callback_checkpoint::checkpointShared">
-<area shape="rect" id="node2" href="$classlbann_1_1lbann__callback__checkpoint.html#ac3a0bb250a679b28924910c0dc617809" title="lbann::lbann_callback\l_checkpoint::set_checkpoint\l_per_rank" alt="" coords="270,5,458,57"/>
-<area shape="rect" id="node3" href="$classlbann_1_1lbann__callback__checkpoint.html#a406bfba673e503e94ae6eb57aff6a78e" title="lbann::lbann_callback\l_checkpoint::on_epoch_end" alt="" coords="270,81,458,120"/>
-<area shape="rect" id="node5" href="$classlbann_1_1lbann__callback__checkpoint.html#a5fb4288c03b1ce14681b72562e9471b2" title="lbann::lbann_callback\l_checkpoint::on_validation_end" alt="" coords="260,144,468,183"/>
-<area shape="rect" id="node6" href="$classlbann_1_1lbann__callback__checkpoint.html#a476527e2b7b44dd3623e01f63ddb5f78" title="lbann::lbann_callback\l_checkpoint::on_batch_end" alt="" coords="272,207,456,245"/>
-<area shape="rect" id="node4" href="$classlbann_1_1lbann__callback__checkpoint.html#a63dc49f38f063f9b85d9abdf8b2855aa" title="lbann::lbann_callback\l_checkpoint::copy" alt="" coords="516,144,666,183"/>
-</map>

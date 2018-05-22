@@ -1,5 +1,0 @@
-<map id="options::get_double" name="options::get_double">
-<area shape="rect" id="node2" href="$classoptions.html#a31607533d0c6d2fa331f4e7f52d34bc8" title="options::get_float" alt="" coords="191,31,314,56"/>
-<area shape="rect" id="node3" href="$proto__common_8cpp.html#a900e005e45b3debc2444ded1c3ff6e1f" title="set_data_readers_percent" alt="" coords="362,5,539,31"/>
-<area shape="rect" id="node4" href="$proto__common_8hpp.html#a46fd41f635ff8f352065adc85eb3d1df" title="adjusts the values in p by querying the options db " alt="" coords="587,31,742,56"/>
-</map>

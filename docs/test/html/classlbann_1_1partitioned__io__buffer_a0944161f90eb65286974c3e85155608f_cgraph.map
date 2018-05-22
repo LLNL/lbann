@@ -1,4 +1,0 @@
-<map id="lbann::partitioned_io_buffer::is_data_set_processed" name="lbann::partitioned_io_buffer::is_data_set_processed">
-<area shape="rect" id="node2" href="$classlbann_1_1generic__data__reader.html#a06fb58d1c0b84b8c76f5b4d160751f34" title="Get the number of iterations in each epoch. " alt="" coords="184,5,372,57"/>
-<area shape="rect" id="node3" href="$classlbann_1_1generic__data__reader.html#a7c884d3646396a05d9e01e3b7a260419" title="Return the index of the current iteration step in the epoch (also the mini&#45;batch index) ..." alt="" coords="207,81,349,133"/>
-</map>

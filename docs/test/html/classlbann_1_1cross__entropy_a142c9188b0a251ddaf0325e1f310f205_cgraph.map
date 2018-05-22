@@ -1,9 +1,0 @@
-<map id="lbann::cross_entropy::name" name="lbann::cross_entropy::name">
-<area shape="rect" id="node2" href="$classlbann_1_1cross__entropy.html#a5167b7709499516c6a4dbebfc561f6a7" title="lbann::cross_entropy\l::start_evaluate_compute" alt="" coords="201,33,372,72"/>
-<area shape="rect" id="node6" href="$classlbann_1_1cross__entropy.html#a85d6937dc70217062f7b45cb678ea1f9" title="lbann::cross_entropy\l::finish_evaluate_compute" alt="" coords="198,96,375,135"/>
-<area shape="rect" id="node8" href="$classlbann_1_1cross__entropy.html#a5a91b6dac7d27980c47f6fd818963d1b" title="lbann::cross_entropy\l::differentiate_compute" alt="" coords="208,159,365,197"/>
-<area shape="rect" id="node3" href="$classlbann_1_1objective__function__term.html#a5f89b676a26a6b76ddc26563ac87beb9" title="lbann::objective_function\l_term::get_comm" alt="" coords="423,68,591,107"/>
-<area shape="rect" id="node4" href="$classlbann_1_1lbann__comm.html#a2a7bb6cf3707366fc0671d8894ca30ea" title="lbann::lbann_comm::\lnb_allreduce" alt="" coords="435,5,580,44"/>
-<area shape="rect" id="node5" href="$classlbann_1_1lbann__comm.html#af5631e5f0f54e4df4958eba9df2599ef" title="lbann::lbann_comm::\lallreduce" alt="" coords="640,5,785,44"/>
-<area shape="rect" id="node7" href="$classlbann_1_1lbann__comm.html#a30439f28cf615e1406090799c5499321" title="lbann::lbann_comm::wait" alt="" coords="423,131,592,156"/>
-</map>

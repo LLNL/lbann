@@ -1,8 +1,0 @@
-<map id="lbann::adam::save_to_checkpoint_shared" name="lbann::adam::save_to_checkpoint_shared">
-<area shape="rect" id="node2" href="$classlbann_1_1optimizer.html#afed10c6d8c5bd922f95075abeff711ce" title="lbann::optimizer::save\l_to_checkpoint_shared" alt="" coords="213,5,372,44"/>
-<area shape="rect" id="node5" href="$classlbann_1_1persist.html#a34eb918a890ab49dcbeedddf27ec1616" title="lbann::persist::get_rank" alt="" coords="212,68,372,93"/>
-<area shape="rect" id="node6" href="$classlbann_1_1adam.html#a43e941b596c5d1cc68b795b0399398c4" title="lbann::adam::pack_scalars" alt="" coords="202,117,382,143"/>
-<area shape="rect" id="node7" href="$classlbann_1_1persist.html#a9170de652405d86d9ba9b3793f8781c6" title="lbann::persist::write\l_distmat" alt="" coords="224,167,360,205"/>
-<area shape="rect" id="node3" href="$classlbann_1_1persist.html#a5edc3f9cc3540b50d417993da2a6b5ce" title="lbann::persist::write\l_datatype" alt="" coords="430,59,566,97"/>
-<area shape="rect" id="node4" href="$namespacelbann.html#aed95061796f19fa1648dcc99dc335abd" title="lbann::write_bytes" alt="" coords="614,65,743,91"/>
-</map>

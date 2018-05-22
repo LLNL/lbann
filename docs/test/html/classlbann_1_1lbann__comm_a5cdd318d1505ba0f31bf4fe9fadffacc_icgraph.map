@@ -1,7 +1,0 @@
-<map id="lbann::lbann_comm::is_rank_node_local" name="lbann::lbann_comm::is_rank_node_local">
-<area shape="rect" id="node2" href="$classlbann_1_1lbann__comm.html#a99bc2f8128f0b0e2ebdf876a3a343635" title="lbann::lbann_comm::\lrecursive_doubling_allreduce_pow2" alt="" coords="198,5,433,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1lbann__comm.html#ac294fe5fa47f283aba31fa1abfa99438" title="lbann::lbann_comm::\lpe_ring_allreduce" alt="" coords="243,68,388,107"/>
-<area shape="rect" id="node5" href="$classlbann_1_1lbann__comm.html#a88162511dc2733dccd9c245e6c7ba53b" title="lbann::lbann_comm::\lring_allreduce" alt="" coords="243,131,388,169"/>
-<area shape="rect" id="node6" href="$classlbann_1_1lbann__comm.html#a925fcf1c15cb8ff10daed1dc1faed9ac" title="lbann::lbann_comm::\lrabenseifner_allreduce" alt="" coords="237,193,394,232"/>
-<area shape="rect" id="node3" href="$classlbann_1_1lbann__comm.html#a34d5414f1ac4749e6f0937b638bb5cc6" title="lbann::lbann_comm::\lintermodel_allreduce" alt="" coords="481,100,626,139"/>
-</map>

@@ -1,5 +1,0 @@
-<map id="lbann::model::get_num_iterations_per_epoch" name="lbann::model::get_num_iterations_per_epoch">
-<area shape="rect" id="node2" href="$classlbann_1_1model.html#aa64829cba8a84928a396893172a1d116" title="lbann::model::set_effective\l_mini_batch_size" alt="" coords="210,5,390,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1lbann__callback__poly__learning__rate.html#a47d3d2a94157f1992bf4a964620208f3" title="lbann::lbann_callback\l_poly_learning_rate::setup" alt="" coords="211,68,389,107"/>
-<area shape="rect" id="node3" href="$classlbann_1_1generic__input__layer.html#ad0b8ea79bc508bd227e08124359531c8" title="lbann::generic_input\l_layer::fp_setup_data" alt="" coords="438,5,588,44"/>
-</map>

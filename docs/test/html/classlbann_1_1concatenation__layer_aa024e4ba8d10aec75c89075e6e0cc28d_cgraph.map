@@ -1,4 +1,0 @@
-<map id="lbann::concatenation_layer::bp_compute_gpu" name="lbann::concatenation_layer::bp_compute_gpu">
-<area shape="rect" id="node2" href="$classlbann_1_1Layer.html#ac9290d4a6453ccda5f6b4d8b57b49ba3" title="lbann::Layer::get_num\l_parents" alt="" coords="221,5,375,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1Layer.html#a898e72b93752abf52d35b06459cd360e" title="lbann::Layer::get_parent\l_layers" alt="" coords="423,5,589,44"/>
-</map>

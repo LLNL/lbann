@@ -1,6 +1,0 @@
-<map id="lbann::lbann_callback_step_minibatch::schedule" name="lbann::lbann_callback_step_minibatch::schedule">
-<area shape="rect" id="node2" href="$classlbann_1_1model.html#a1cf70e098524cc5013bce56edd96dfe7" title="lbann::model::get_cur\l_epoch" alt="" coords="245,5,394,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1lbann__callback__variable__minibatch.html#a9de892c44231eadbbc7d27cfcc340ce2" title="Get the current learning rate (assumes every layer has the same one). " alt="" coords="233,68,407,120"/>
-<area shape="rect" id="node4" href="$classlbann_1_1model.html#ac0a89794f1f51e7c502fff2745c973e6" title="lbann::model::get_weights" alt="" coords="455,53,631,79"/>
-<area shape="rect" id="node5" href="$classlbann_1_1optimizer.html#ac52867427b0d28ec6888b6344104791d" title="lbann::optimizer::get\l_learning_rate" alt="" coords="472,103,613,141"/>
-</map>

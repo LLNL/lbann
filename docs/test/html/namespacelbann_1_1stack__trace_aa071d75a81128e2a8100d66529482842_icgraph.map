@@ -1,6 +1,0 @@
-<map id="lbann::stack_trace::open_output_file" name="lbann::stack_trace::open_output_file">
-<area shape="rect" id="node2" href="$namespacelbann_1_1stack__trace.html#ae7396b3b0ee5d087a045f04ce690cae4" title="lbann::stack_trace\l::print_lbann_exception\l_stack_trace" alt="" coords="183,5,342,57"/>
-<area shape="rect" id="node4" href="$namespacelbann_1_1stack__trace.html#a4bf58556b9c42ac8930c273a921172de" title="lbann::stack_trace\l::lbann_signal_handler" alt="" coords="185,81,340,120"/>
-<area shape="rect" id="node3" href="$classlbann_1_1lbann__exception.html#adbbe5260b3e3bd951ed2cb9363040f4a" title="lbann::lbann_exception\l::lbann_exception" alt="" coords="390,12,549,51"/>
-<area shape="rect" id="node5" href="$namespacelbann_1_1stack__trace.html#a12c3aa60ec15015b925249fc61352f07" title="lbann::stack_trace\l::register_handler" alt="" coords="405,81,534,120"/>
-</map>

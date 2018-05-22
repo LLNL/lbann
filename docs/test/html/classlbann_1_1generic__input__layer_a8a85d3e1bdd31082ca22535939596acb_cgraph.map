@@ -1,5 +1,0 @@
-<map id="lbann::generic_input_layer::get_num_parallel_readers" name="lbann::generic_input_layer::get_num_parallel_readers">
-<area shape="rect" id="node2" href="$classlbann_1_1generic__input__layer.html#aba732becdb02627e3ad4493ac19e8fb6" title="lbann::generic_input\l_layer::get_data_reader" alt="" coords="228,5,391,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1generic__data__reader.html#ad15887cc31657d03925835aab0d4b675" title="Return the number of parallel readers per model. " alt="" coords="221,68,398,120"/>
-<area shape="rect" id="node3" href="$classlbann_1_1model.html#addb40597cf29aa6d31b6a7d09ef48608" title="lbann::model::get_execution_mode" alt="" coords="446,12,675,37"/>
-</map>

@@ -1,5 +1,0 @@
-<map id="lbann::pilot2_molecular_reader::get_num_neighbors" name="lbann::pilot2_molecular_reader::get_num_neighbors">
-<area shape="rect" id="node2" href="$classlbann_1_1data__store__pilot2__molecular.html#af70726cfb8377832ce457d9b874bf34e" title="fills in m_neighbors " alt="" coords="246,5,443,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1data__store__pilot2__molecular.html#a975d7907053a8b2e92ea5f77ca4ae7a3" title="called by generic_data_reader::setup_data_store " alt="" coords="491,5,655,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1data__store__pilot2__molecular.html#a1a59e48a8c7ca8efe86509e0d9cd1307" title="lbann::data_store_pilot2\l_molecular::copy" alt="" coords="703,5,866,44"/>
-</map>

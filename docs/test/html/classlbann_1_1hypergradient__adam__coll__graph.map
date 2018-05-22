@@ -1,8 +1,0 @@
-<map id="lbann::hypergradient_adam" name="lbann::hypergradient_adam">
-<area shape="rect" id="node2" href="$classlbann_1_1optimizer.html" title="lbann::optimizer" alt="" coords="172,105,287,131"/>
-<area shape="rect" id="node6" href="$classlbann_1_1weights.html" title="lbann::weights" alt="" coords="295,192,401,217"/>
-<area shape="rect" id="node3" href="$classlbann_1_1lbann__comm.html" title="lbann::lbann_comm" alt="" coords="437,12,574,37"/>
-<area shape="rect" id="node7" href="$classlbann_1_1weights__initializer.html" title="lbann::weights_initializer" alt="" coords="369,105,535,131"/>
-<area shape="rect" id="node4" href="$classlbann_1_1cudnn_1_1cudnn__manager.html" title="lbann::cudnn::cudnn\l_manager" alt="" coords="5,5,147,44"/>
-<area shape="rect" id="node5" href="$structlbann_1_1Al_1_1request.html" title="lbann::Al::request" alt="" coords="171,12,296,37"/>
-</map>

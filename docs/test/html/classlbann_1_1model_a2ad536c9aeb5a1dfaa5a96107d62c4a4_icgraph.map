@@ -1,6 +1,0 @@
-<map id="lbann::model::add_metric" name="lbann::model::add_metric">
-<area shape="rect" id="node2" href="$classlbann_1_1model.html#a38c71a455870e087c4c07acb78e4477c" title="lbann::model::get_callbacks" alt="" coords="224,44,410,69"/>
-<area shape="rect" id="node3" href="$classlbann_1_1generic__input__layer.html#ad0b8ea79bc508bd227e08124359531c8" title="lbann::generic_input\l_layer::fp_setup_data" alt="" coords="458,5,608,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1lbann__callback__ltfb.html#a7548166d170eda00e4e0cba6626a1a78" title="lbann::lbann_callback\l_ltfb::setup" alt="" coords="458,68,608,107"/>
-<area shape="rect" id="node5" href="$classlbann_1_1lbann__callback__ltfb.html#aaf259b187e956282807d4daa03beb502" title="lbann::lbann_callback\l_ltfb::name" alt="" coords="656,68,805,107"/>
-</map>

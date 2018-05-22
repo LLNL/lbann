@@ -1,5 +1,0 @@
-<map id="lbann::imagenet_reader_org::set_input_params" name="lbann::imagenet_reader_org::set_input_params">
-<area shape="rect" id="node2" href="$classlbann_1_1image__data__reader.html#a6ed9b8b12ad3ffa93ad458d872f8c044" title="lbann::image_data_reader\l::set_input_params" alt="" coords="216,5,393,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1imagenet__reader__org.html#acbe8ed442b64a7391ffa63b0658641c0" title="lbann::imagenet_reader\l_org::allocate_pixel_bufs" alt="" coords="220,68,388,107"/>
-<area shape="rect" id="node3" href="$classlbann_1_1image__data__reader.html#a0164b0e3abbe92daef73b36fb925403e" title="lbann::image_data_reader\l::set_linearized_image_size" alt="" coords="441,5,626,44"/>
-</map>

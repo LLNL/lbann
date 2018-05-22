@@ -1,6 +1,0 @@
-<map id="lbann::cross_entropy_with_uncertainty::start_evaluate_compute" name="lbann::cross_entropy_with_uncertainty::start_evaluate_compute">
-<area shape="rect" id="node2" href="$classlbann_1_1cross__entropy__with__uncertainty.html#abb9b240766b395dab052e3225a0888f6" title="lbann::cross_entropy\l_with_uncertainty::finish\l_evaluate_compute" alt="" coords="231,29,395,81"/>
-<area shape="rect" id="node5" href="$classlbann_1_1cross__entropy__with__uncertainty.html#a48ebe2b7a2193c124df0cd15813835d0" title="lbann::cross_entropy\l_with_uncertainty::differentiate\l_compute" alt="" coords="212,105,414,157"/>
-<area shape="rect" id="node3" href="$classlbann_1_1objective__function__term.html#a5f89b676a26a6b76ddc26563ac87beb9" title="lbann::objective_function\l_term::get_comm" alt="" coords="462,5,630,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1lbann__comm.html#af5631e5f0f54e4df4958eba9df2599ef" title="lbann::lbann_comm::\lallreduce" alt="" coords="473,68,618,107"/>
-</map>

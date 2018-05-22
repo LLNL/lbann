@@ -1,9 +1,0 @@
-<?xml version='1.0' encoding='UTF-8' standalone='no'?>
-<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.8.13">
-  <compounddef id="developer_guide" kind="page">
-    <compoundname>developer_guide</compoundname>
-    <title>Developer Guide</title>
-    <detaileddescription>
-<para>This section of the guide is intended to help developers design new neural network models for training in the LBANN toolkit. It is assumed that you&apos;ve read the <ref refid="getting_started" kindref="compound">Getting Started</ref> sections, and are familiar with basic compiling and running. </para>    </detaileddescription>
-  </compounddef>
-</doxygen>

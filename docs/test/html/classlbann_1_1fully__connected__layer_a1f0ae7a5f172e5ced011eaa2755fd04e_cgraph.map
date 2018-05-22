@@ -1,6 +1,0 @@
-<map id="lbann::fully_connected_layer::setup_matrices" name="lbann::fully_connected_layer::setup_matrices">
-<area shape="rect" id="node2" href="$classlbann_1_1Layer.html#a57bbe21131dc00ab5cf9ea5e3656808e" title="lbann::Layer::setup\l_matrices" alt="" coords="219,36,354,75"/>
-<area shape="rect" id="node5" href="$classlbann_1_1fully__connected__layer.html#a4f26e5923a82f11c2c7658a27903f83b" title="lbann::fully_connected\l_layer::setup_matrices" alt="" coords="209,99,364,137"/>
-<area shape="rect" id="node3" href="$classlbann_1_1Layer.html#a888392d6ac6906093a8125c6a37de075" title="lbann::Layer::deallocate\l_matrices" alt="" coords="412,5,575,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1Layer.html#a5dfb66e81fc085997402a5e2241316bd" title="lbann::Layer::get_data\l_layout" alt="" coords="417,68,571,107"/>
-</map>

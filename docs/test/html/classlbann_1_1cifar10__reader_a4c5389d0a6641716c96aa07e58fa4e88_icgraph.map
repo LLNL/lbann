@@ -1,5 +1,0 @@
-<map id="lbann::cifar10_reader::set_defaults" name="lbann::cifar10_reader::set_defaults">
-<area shape="rect" id="node2" href="$classlbann_1_1cifar10__reader.html#a3915005f1278a840869b8519c30c808b" title="lbann::cifar10_reader\l::set_input_params" alt="" coords="201,5,348,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1cifar10__reader.html#a3e4fca66c9bd38798e56379d4a2cd6c0" title="constructor " alt="" coords="201,68,348,107"/>
-<area shape="rect" id="node4" href="$classlbann_1_1cifar10__reader.html#a32206d0f0f7baf2471ed589ec4db356b" title="lbann::cifar10_reader\l::copy" alt="" coords="396,68,543,107"/>
-</map>

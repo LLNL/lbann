@@ -1,5 +1,0 @@
-<map id="lbann::generic_data_reader::unpack_scalars" name="lbann::generic_data_reader::unpack_scalars">
-<area shape="rect" id="node2" href="$classlbann_1_1persist.html#aa6d996db3714a7ae055adac0d8e8ac63" title="lbann::persist::read\l_uint64" alt="" coords="221,5,355,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1persist.html#a2944c32f6634223c0902b38a697a0957" title="lbann::persist::read\l_int32_contig" alt="" coords="221,68,355,107"/>
-<area shape="rect" id="node3" href="$namespacelbann.html#a85385e2a9e058b6720300b4cbdd2b1d0" title="lbann::read_bytes" alt="" coords="403,44,531,69"/>
-</map>

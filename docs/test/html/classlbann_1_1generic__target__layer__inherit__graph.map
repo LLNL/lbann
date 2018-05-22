@@ -1,6 +1,0 @@
-<map id="lbann::generic_target_layer" name="lbann::generic_target_layer">
-<area shape="rect" id="node4" href="$classlbann_1_1reconstruction__layer.html" title="lbann::reconstruction\l_layer\&lt; T_layout \&gt;" alt="" coords="511,5,656,44"/>
-<area shape="rect" id="node5" href="$classlbann_1_1target__layer.html" title="lbann::target_layer\l\&lt; T_io_buffer, T_layout \&gt;" alt="" coords="499,68,668,107"/>
-<area shape="rect" id="node2" href="$classlbann_1_1io__layer.html" title="lbann::io_layer" alt="" coords="148,44,256,69"/>
-<area shape="rect" id="node3" href="$classlbann_1_1Layer.html" title="lbann::Layer" alt="" coords="5,44,100,69"/>
-</map>

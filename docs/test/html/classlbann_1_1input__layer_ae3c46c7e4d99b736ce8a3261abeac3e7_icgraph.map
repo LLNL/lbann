@@ -1,5 +1,0 @@
-<map id="lbann::input_layer::validate_data_layout" name="lbann::input_layer::validate_data_layout">
-<area shape="rect" id="node2" href="$classlbann_1_1input__layer.html#aad8b042899d86f5b7904d9d2653b5181" title="lbann::input_layer\l::input_layer" alt="" coords="204,5,331,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1input__layer.html#af596126d1b2d1604743906d04d32419b" title="lbann::input_layer\l::get_type" alt="" coords="204,68,331,107"/>
-<area shape="rect" id="node3" href="$classlbann_1_1input__layer.html#a02eb5e9b97c1da48997995cb89d297ec" title="lbann::input_layer\l::copy" alt="" coords="379,5,506,44"/>
-</map>

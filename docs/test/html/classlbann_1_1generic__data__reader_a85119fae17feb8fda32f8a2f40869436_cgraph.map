@@ -1,8 +1,0 @@
-<map id="lbann::generic_data_reader::load_from_checkpoint_shared" name="lbann::generic_data_reader::load_from_checkpoint_shared">
-<area shape="rect" id="node2" href="$classlbann_1_1persist.html#a34eb918a890ab49dcbeedddf27ec1616" title="lbann::persist::get_rank" alt="" coords="262,5,422,31"/>
-<area shape="rect" id="node3" href="$classlbann_1_1generic__data__reader.html#a8de5c2e24d4cc2211145ed5dc37cf228" title="lbann::generic_data\l_reader::unpack_scalars" alt="" coords="258,55,426,93"/>
-<area shape="rect" id="node7" href="$classlbann_1_1generic__data__reader.html#a3e1c13778c04ca9fa5136ee7ee3893fb" title="lbann::generic_data\l_reader::unpack_header" alt="" coords="259,117,425,156"/>
-<area shape="rect" id="node4" href="$classlbann_1_1persist.html#aa6d996db3714a7ae055adac0d8e8ac63" title="lbann::persist::read\l_uint64" alt="" coords="474,24,609,63"/>
-<area shape="rect" id="node6" href="$classlbann_1_1persist.html#a2944c32f6634223c0902b38a697a0957" title="lbann::persist::read\l_int32_contig" alt="" coords="474,87,609,125"/>
-<area shape="rect" id="node5" href="$namespacelbann.html#a85385e2a9e058b6720300b4cbdd2b1d0" title="lbann::read_bytes" alt="" coords="657,63,784,88"/>
-</map>

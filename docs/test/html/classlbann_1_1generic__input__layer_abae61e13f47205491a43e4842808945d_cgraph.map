@@ -1,7 +1,0 @@
-<map id="lbann::generic_input_layer::save_to_checkpoint_shared" name="lbann::generic_input_layer::save_to_checkpoint_shared">
-<area shape="rect" id="node2" href="$classlbann_1_1persist.html#a34eb918a890ab49dcbeedddf27ec1616" title="lbann::persist::get_rank" alt="" coords="247,5,407,31"/>
-<area shape="rect" id="node3" href="$classlbann_1_1persist.html#aced95e3bc711276b072af97b65ef9fc1" title="lbann::persist::write\l_uint64" alt="" coords="258,55,395,93"/>
-<area shape="rect" id="node5" href="$classlbann_1_1dataset.html#a73496347a477a5ebb0dbf30140295026" title="lbann::dataset::get\l_num_samples_processed" alt="" coords="236,117,417,156"/>
-<area shape="rect" id="node6" href="$classlbann_1_1dataset.html#ad314847b347d413162a9d9eab759641f" title="lbann::dataset::get\l_total_samples" alt="" coords="261,180,392,219"/>
-<area shape="rect" id="node4" href="$namespacelbann.html#aed95061796f19fa1648dcc99dc335abd" title="lbann::write_bytes" alt="" coords="465,61,594,87"/>
-</map>

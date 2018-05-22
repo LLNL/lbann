@@ -1,5 +1,0 @@
-<map id="lbann::generic_data_reader::setup" name="lbann::generic_data_reader::setup">
-<area shape="rect" id="node2" href="$classlbann_1_1generic__data__reader.html#ac6d4a5ba1d4e1134620cddcac343bf59" title="Set the current position based on the base and model offsets. " alt="" coords="204,5,342,57"/>
-<area shape="rect" id="node3" href="$classlbann_1_1generic__data__reader.html#af1aaa4d1a693974c1b1f1318b6ed60b8" title="Shuffle indices. " alt="" coords="192,81,355,120"/>
-<area shape="rect" id="node4" href="$namespacelbann.html#aba9d11cb3a739cd84e7234ceeb32d098" title="lbann::get_data_seq\l_generator" alt="" coords="403,81,545,120"/>
-</map>

@@ -1,6 +1,0 @@
-<map id="lbann::r2_metric::name" name="lbann::r2_metric::name">
-<area shape="rect" id="node2" href="$classlbann_1_1r2__metric.html#a06c84d7944d1d5be896de6b98950e05e" title="lbann::r2_metric::evaluate\l_compute" alt="" coords="211,5,386,44"/>
-<area shape="rect" id="node3" href="$namespacelbann.html#a604ae9da0173b8be2bfb6877997d6d5c" title="Compute mean and standard deviation over matrix entries. " alt="" coords="434,5,592,44"/>
-<area shape="rect" id="node4" href="$namespacelbann_1_1cnpy__utils.html#a9ac86d96ccb1f8b4b2ea16441738781f" title="lbann::cnpy_utils::data" alt="" coords="640,12,794,37"/>
-<area shape="rect" id="node5" href="$namespacelbann_1_1cnpy__utils.html#a39fd207d94d1333e6379c53423b6f1a1" title="lbann::cnpy_utils::\lcompute_cnpy_array_offset" alt="" coords="842,5,1028,44"/>
-</map>

@@ -1,6 +1,0 @@
-<map id="lbann::generic_io_buffer::get_type" name="lbann::generic_io_buffer::get_type">
-<area shape="rect" id="node2" href="$classlbann_1_1generic__input__layer.html#a8ffe91a3d5b6f37d2dc17e657898dcc8" title="lbann::generic_input\l_layer::get_description" alt="" coords="217,5,373,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1input__layer.html#af596126d1b2d1604743906d04d32419b" title="lbann::input_layer\l::get_type" alt="" coords="232,68,359,107"/>
-<area shape="rect" id="node4" href="$classlbann_1_1generic__target__layer.html#aa2db5ccc0bbd40f081c8ff4501f3fc29" title="lbann::generic_target\l_layer::get_description" alt="" coords="217,131,373,169"/>
-<area shape="rect" id="node5" href="$classlbann_1_1target__layer.html#a6b5dad32cf3b771d6db1f99914ab63c4" title="lbann::target_layer\l::get_type" alt="" coords="229,193,361,232"/>
-</map>

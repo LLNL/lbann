@@ -1,7 +1,0 @@
-<map id="lbann::data_reader_multi_images::get_sample" name="lbann::data_reader_multi_images::get_sample">
-<area shape="rect" id="node2" href="$classlbann_1_1data__store__multi__images.html#a39108690484fe407efafefe6a4b0947b" title="lbann::data_store_multi\l_images::get_sample" alt="" coords="237,63,397,102"/>
-<area shape="rect" id="node3" href="$classlbann_1_1data__store__multi__images.html#addafae542acaa1ef218759030719b6d3" title="dtor " alt="" coords="674,57,859,109"/>
-<area shape="rect" id="node4" href="$classlbann_1_1data__store__multi__images.html#a25963dfa7d6de983e7b250f8ef7e2a0e" title="fills in m_file_sizes " alt="" coords="455,31,615,70"/>
-<area shape="rect" id="node5" href="$classlbann_1_1data__store__multi__images.html#a8ce8ccf3c7b0d19adfb838108bec075b" title="reads all files assigned to this processor into memory (m_data) " alt="" coords="455,94,615,133"/>
-<area shape="rect" id="node6" href="$classlbann_1_1data__store__multi__images.html#abe17bbf485f6da9d7dfa568e9e74a693" title="for use during development and testing " alt="" coords="445,157,626,195"/>
-</map>

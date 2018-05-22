@@ -1,8 +1,0 @@
-<map id="lbann::lbann_callback_dump_activations::on_forward_prop_end" name="lbann::lbann_callback_dump_activations::on_forward_prop_end">
-<area shape="rect" id="node2" href="$classlbann_1_1model.html#a9e1cfe449d2f4858a32994f6be0042fb" title="lbann::model::get_comm" alt="" coords="220,5,387,31"/>
-<area shape="rect" id="node3" href="$classlbann_1_1lbann__comm.html#a6422f70c92bed0b78179facc52b066f7" title="lbann::lbann_comm::\lget_model_rank" alt="" coords="231,55,376,93"/>
-<area shape="rect" id="node4" href="$classlbann_1_1model.html#a1cf70e098524cc5013bce56edd96dfe7" title="lbann::model::get_cur\l_epoch" alt="" coords="229,117,378,156"/>
-<area shape="rect" id="node5" href="$classlbann_1_1model.html#ad0cdcba177434b52dc9c4a97be183a92" title="lbann::model::get_cur_step" alt="" coords="213,180,395,205"/>
-<area shape="rect" id="node6" href="$classlbann_1_1Layer.html#a80027550202fa7dbb1dd55fa8a66c84b" title="lbann::Layer::get_name" alt="" coords="223,229,384,255"/>
-<area shape="rect" id="node7" href="$classlbann_1_1Layer.html#a1134b1a4385af199d7272c5aa827fa99" title="lbann::Layer::get_activations" alt="" coords="208,303,399,328"/>
-</map>

@@ -1,4 +1,0 @@
-<map id="lbann::generic_input_layer::is_execution_mode_valid" name="lbann::generic_input_layer::is_execution_mode_valid">
-<area shape="rect" id="node2" href="$classlbann_1_1generic__input__layer.html#af5699540797c22d8846028e578a6fc59" title="lbann::generic_input\l_layer::get_dataset" alt="" coords="195,5,336,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1dataset.html#ad314847b347d413162a9d9eab759641f" title="lbann::dataset::get\l_total_samples" alt="" coords="200,68,331,107"/>
-</map>

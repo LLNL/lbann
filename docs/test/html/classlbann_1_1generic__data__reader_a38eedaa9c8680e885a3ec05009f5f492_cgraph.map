@@ -1,6 +1,0 @@
-<map id="lbann::generic_data_reader::get_shuffled_indices" name="lbann::generic_data_reader::get_shuffled_indices">
-<area shape="rect" id="node2" href="$classlbann_1_1generic__data__reader.html#aca4e6c31df0a1579079274bc48fbbf26" title="lbann::generic_data\l_reader::set_first_n" alt="" coords="218,5,357,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1generic__data__reader.html#aa2d83c4ffc58534e0c193b6b9f9fb925" title="lbann::generic_data\l_reader::set_absolute\l_sample_count" alt="" coords="212,68,362,120"/>
-<area shape="rect" id="node4" href="$classlbann_1_1generic__data__reader.html#ae6929a8bd2e59da72a8c2e537f0b2b37" title="lbann::generic_data\l_reader::set_use_percent" alt="" coords="201,144,374,183"/>
-<area shape="rect" id="node5" href="$classlbann_1_1generic__data__reader.html#a18b67bfa426eb4d2c8195d115c4df49f" title="lbann::generic_data\l_reader::set_validation\l_percent" alt="" coords="209,207,365,259"/>
-</map>

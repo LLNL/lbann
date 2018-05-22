@@ -1,6 +1,0 @@
-<map id="lbann::weights::save_to_checkpoint_shared" name="lbann::weights::save_to_checkpoint_shared">
-<area shape="rect" id="node2" href="$classlbann_1_1persist.html#a9170de652405d86d9ba9b3793f8781c6" title="lbann::persist::write\l_distmat" alt="" coords="224,5,360,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1optimizer.html#afed10c6d8c5bd922f95075abeff711ce" title="lbann::optimizer::save\l_to_checkpoint_shared" alt="" coords="213,68,372,107"/>
-<area shape="rect" id="node4" href="$classlbann_1_1persist.html#a5edc3f9cc3540b50d417993da2a6b5ce" title="lbann::persist::write\l_datatype" alt="" coords="420,68,556,107"/>
-<area shape="rect" id="node5" href="$namespacelbann.html#aed95061796f19fa1648dcc99dc335abd" title="lbann::write_bytes" alt="" coords="604,75,733,100"/>
-</map>

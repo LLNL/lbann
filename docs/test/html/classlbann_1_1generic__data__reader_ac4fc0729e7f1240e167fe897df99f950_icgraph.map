@@ -1,6 +1,0 @@
-<map id="lbann::generic_data_reader::get_compound_rank" name="lbann::generic_data_reader::get_compound_rank">
-<area shape="rect" id="node2" href="$classlbann_1_1pilot2__molecular__reader.html#a1b5160021a532f5f19897bd2250e3a46" title="lbann::pilot2_molecular\l_reader::load" alt="" coords="252,5,411,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1data__store__pilot2__molecular.html#a975d7907053a8b2e92ea5f77ca4ae7a3" title="called by generic_data_reader::setup_data_store " alt="" coords="250,68,413,107"/>
-<area shape="rect" id="node3" href="$classlbann_1_1pilot2__molecular__reader.html#a8548d10554c6e1ef921cf5d113530e72" title="lbann::pilot2_molecular\l_reader::get_type" alt="" coords="464,5,622,44"/>
-<area shape="rect" id="node5" href="$classlbann_1_1data__store__pilot2__molecular.html#a1a59e48a8c7ca8efe86509e0d9cd1307" title="lbann::data_store_pilot2\l_molecular::copy" alt="" coords="461,68,625,107"/>
-</map>

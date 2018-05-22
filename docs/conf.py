@@ -17,6 +17,14 @@
 # sys.path.insert(0, os.path.abspath('.'))
 
 
+import subprocess, os
+
+read_the_docs_build = os.environ.get('READTHEDOCS', None) == 'True'
+
+if read_the_docs_build:
+
+    subprocess.call('doxygen Doxyfile.in', shell=True)
+
 # -- Project information -----------------------------------------------------
 
 project = 'LBANN'
@@ -172,7 +180,7 @@ texinfo_documents = [
 ]
 
 breathe_projects = {
-    "lbann":"test/xml/",
+    "lbann":"doxy_out/xml/",
     }
 extensions = [ "breathe", 'sphinx.ext.mathjax' ]
 

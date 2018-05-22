@@ -1,9 +1,0 @@
-<map id="lbann::model::write_proto" name="lbann::model::write_proto">
-<area shape="rect" id="node2" href="$classlbann_1_1model.html#a5bafc4e84671490c6118959becb22e16" title="lbann::model::set_terminate\l_training" alt="" coords="192,5,378,44"/>
-<area shape="rect" id="node5" href="$classlbann_1_1lbann__callback__save__model.html#ae047ee35b65e9bda4080a83833612699" title="lbann::lbann_callback\l_save_model::on_epoch_end" alt="" coords="187,68,383,107"/>
-<area shape="rect" id="node7" href="$classlbann_1_1sequential__model.html#a53a83327a1115a53affa78c93344e641" title="lbann::sequential_model\l::write_proto" alt="" coords="202,131,368,169"/>
-<area shape="rect" id="node3" href="$classlbann_1_1lbann__callback__early__stopping.html#a32eb9c5e763c97ab1162cfebea7ad049" title="lbann::lbann_callback\l_early_stopping::on_validation_end" alt="" coords="431,5,662,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1lbann__callback__early__stopping.html#aa8e7bd4e9dde8e57dbc416dc75e25cc6" title="lbann::lbann_callback\l_early_stopping::copy" alt="" coords="710,5,861,44"/>
-<area shape="rect" id="node6" href="$classlbann_1_1lbann__callback__save__model.html#adaebfea30dcc1c32a8ae25a3307abb7f" title="lbann::lbann_callback\l_save_model::copy" alt="" coords="472,68,621,107"/>
-<area shape="rect" id="node8" href="$classlbann_1_1sequential__model.html#abf2b69dacb5ee3165289377e1d961cd5" title="lbann::sequential_model\l::name" alt="" coords="463,131,629,169"/>
-</map>

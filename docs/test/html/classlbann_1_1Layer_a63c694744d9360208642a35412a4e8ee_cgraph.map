@@ -1,5 +1,0 @@
-<map id="lbann::Layer::get_cudnn_manager" name="lbann::Layer::get_cudnn_manager">
-<area shape="rect" id="node2" href="$classlbann_1_1Layer.html#ad55c455dbae0d082cedfa68511709aae" title="lbann::Layer::freeze" alt="" coords="226,5,365,31"/>
-<area shape="rect" id="node3" href="$classlbann_1_1Layer.html#aa43ecf9fc67eb1d596c1a69cf35d1245" title="lbann::Layer::unfreeze" alt="" coords="219,55,373,80"/>
-<area shape="rect" id="node4" href="$classlbann_1_1Layer.html#af3c0f9f32eb631f4fdf34ad040ef8637" title="lbann::Layer::is_frozen" alt="" coords="218,104,374,129"/>
-</map>

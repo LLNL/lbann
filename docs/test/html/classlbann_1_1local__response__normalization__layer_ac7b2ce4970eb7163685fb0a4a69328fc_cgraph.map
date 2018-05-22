@@ -1,8 +1,0 @@
-<map id="lbann::local_response_normalization_layer::fp_compute" name="lbann::local_response_normalization_layer::fp_compute">
-<area shape="rect" id="node2" href="$classlbann_1_1local__response__normalization__layer.html#a715b08cfc4bfed730a066f6d9cedef86" title="GPU implementation of forward propagation. " alt="" coords="204,5,355,57"/>
-<area shape="rect" id="node3" href="$classlbann_1_1local__response__normalization__layer.html#a79c72491b5b74b64d2b10ac2636cddce" title="CPU implementation of forward propagation. " alt="" coords="204,81,355,133"/>
-<area shape="rect" id="node4" href="$classlbann_1_1Layer.html#a35397843bb0c84030000c7d872229acb" title="lbann::Layer::get_local\l_prev_activations" alt="" coords="403,52,559,91"/>
-<area shape="rect" id="node6" href="$classlbann_1_1Layer.html#a4248f27acebf72b7b7b3ee39c8bcb62a" title="lbann::Layer::get_local\l_activations" alt="" coords="403,119,559,157"/>
-<area shape="rect" id="node5" href="$classlbann_1_1Layer.html#a45853df73a2e72bfaa774665a0f37ed7" title="lbann::Layer::get_prev\l_activations" alt="" coords="625,47,779,85"/>
-<area shape="rect" id="node7" href="$classlbann_1_1Layer.html#a1134b1a4385af199d7272c5aa827fa99" title="lbann::Layer::get_activations" alt="" coords="607,133,798,159"/>
-</map>

@@ -1,6 +1,0 @@
-<map id="lbann::Layer::get_layer_pointers" name="lbann::Layer::get_layer_pointers">
-<area shape="rect" id="node2" href="$classlbann_1_1generic__target__layer.html#a0325a9703238ac0120893214fd0983b5" title="lbann::generic_target\l_layer::get_layer_pointers" alt="" coords="210,5,385,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1Layer.html#a040bf53e261b1ef796739c09b3362a3a" title="lbann::Layer::clear\l_child_layers" alt="" coords="232,68,363,107"/>
-<area shape="rect" id="node5" href="$classlbann_1_1unpooling__layer.html#a33e17164da27e3370fb3f362dd2e6c13" title="lbann::unpooling_layer\l::get_layer_pointers" alt="" coords="220,131,375,169"/>
-<area shape="rect" id="node3" href="$classlbann_1_1reconstruction__layer.html#a52f5ebe2f2716b8cab5e768b1b82c3d0" title="lbann::reconstruction\l_layer::get_layer_pointers" alt="" coords="433,5,608,44"/>
-</map>

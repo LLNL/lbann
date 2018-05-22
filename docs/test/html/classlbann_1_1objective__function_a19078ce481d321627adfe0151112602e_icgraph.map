@@ -1,9 +1,0 @@
-<map id="lbann::objective_function::get_statistics_num_samples" name="lbann::objective_function::get_statistics_num_samples">
-<area shape="rect" id="node2" href="$classlbann_1_1objective__function.html#a3c564d26d6c75007ae95153cef3b8c02" title="lbann::objective_function\l::reset_statistics" alt="" coords="250,37,418,76"/>
-<area shape="rect" id="node3" href="$classlbann_1_1lbann__callback__print.html#a50117faa3edb961ddd87c5c5806820b2" title="lbann::lbann_callback\l_print::report_results" alt="" coords="259,100,408,139"/>
-<area shape="rect" id="node4" href="$classlbann_1_1lbann__callback__print.html#a212640539d73eec3317572150a11b71b" title="lbann::lbann_callback\l_print::name" alt="" coords="476,5,626,44"/>
-<area shape="rect" id="node5" href="$classlbann_1_1lbann__callback__print.html#a28f2b022193c62f3af40364d2c5b14b2" title="lbann::lbann_callback\l_print::on_epoch_end" alt="" coords="476,68,626,107"/>
-<area shape="rect" id="node7" href="$classlbann_1_1lbann__callback__print.html#a7090572e2f89e7994872b5fdb612dd3f" title="lbann::lbann_callback\l_print::on_validation_end" alt="" coords="466,131,636,169"/>
-<area shape="rect" id="node8" href="$classlbann_1_1lbann__callback__print.html#a1f72a486004af859823f75c311dcff42" title="lbann::lbann_callback\l_print::on_test_end" alt="" coords="476,193,626,232"/>
-<area shape="rect" id="node6" href="$classlbann_1_1lbann__callback__print.html#aa75e076c3d840a2186825be2e8dbac8c" title="lbann::lbann_callback\l_print::copy" alt="" coords="684,131,834,169"/>
-</map>

@@ -1,6 +1,0 @@
-<map id="lbann::path_delimiter::preferred" name="lbann::path_delimiter::preferred">
-<area shape="rect" id="node2" href="$namespacelbann.html#a1b8b05bbf2e59808a51ead80c47a9359" title="lbann::add_delimiter" alt="" coords="198,44,340,69"/>
-<area shape="rect" id="node3" href="$structlbann_1_1path__delimiter.html#a89e287e7a7c4b4fc2863da116f199a71" title="lbann::path_delimiter\l::operator()" alt="" coords="388,5,533,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1data__reader__jag.html#a1a5c6cbbaba03f9826cbbd7657427351" title="Load data and do data reader&#39;s chores. " alt="" coords="394,68,527,107"/>
-<area shape="rect" id="node5" href="$classlbann_1_1data__reader__jag.html#ae3f45a65894cb60343676d75a8b7f99c" title="lbann::data_reader\l_jag::get_type" alt="" coords="581,68,714,107"/>
-</map>

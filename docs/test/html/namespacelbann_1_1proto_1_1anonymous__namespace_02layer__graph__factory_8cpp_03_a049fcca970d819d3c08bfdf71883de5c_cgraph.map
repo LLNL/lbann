@@ -1,5 +1,0 @@
-<map id="lbann::proto::anonymous_namespace{layer_graph_factory::cpp}::setup_target_pointers" name="lbann::proto::anonymous_namespace{layer_graph_factory::cpp}::setup_target_pointers">
-<area shape="rect" id="node2" href="$classlbann_1_1Layer.html#a80027550202fa7dbb1dd55fa8a66c84b" title="lbann::Layer::get_name" alt="" coords="256,5,418,31"/>
-<area shape="rect" id="node3" href="$classlbann_1_1io__layer.html#a61f2e00334c820235795154492876476" title="lbann::io_layer::is\l_for_regression" alt="" coords="274,55,400,93"/>
-<area shape="rect" id="node4" href="$classlbann_1_1generic__target__layer.html#ab1bf1a639db82f2dd6ef3994f2269ec2" title="lbann::generic_target\l_layer::set_paired_input_layer" alt="" coords="237,117,437,156"/>
-</map>

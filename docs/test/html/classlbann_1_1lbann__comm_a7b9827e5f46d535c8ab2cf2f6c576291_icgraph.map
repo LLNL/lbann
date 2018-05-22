@@ -1,7 +1,0 @@
-<map id="lbann::lbann_comm::get_ar_rs_bytes_sent" name="lbann::lbann_comm::get_ar_rs_bytes_sent">
-<area shape="rect" id="node2" href="$classlbann_1_1lbann__callback__imcomm.html#ad45c39a7a85fb8e1d99eca97aa4d9d09" title="lbann::lbann_callback\l_imcomm::do_summary" alt="" coords="203,47,366,85"/>
-<area shape="rect" id="node3" href="$classlbann_1_1lbann__callback__imcomm.html#a13fe710b841f72e28daf8de029f6c2f9" title="lbann::lbann_callback\l_imcomm::reshape_mat" alt="" coords="414,17,579,56"/>
-<area shape="rect" id="node6" href="$classlbann_1_1lbann__callback__imcomm.html#a0a425ba562f7637b25cd6ba094e7885b" title="lbann::lbann_callback\l_imcomm::on_backward\l_prop_end" alt="" coords="631,68,797,120"/>
-<area shape="rect" id="node4" href="$classlbann_1_1lbann__callback__imcomm.html#a3160dbf536def4f930e0ea0aabdebc11" title="lbann::lbann_callback\l_imcomm::on_epoch_end" alt="" coords="627,5,802,44"/>
-<area shape="rect" id="node5" href="$classlbann_1_1lbann__callback__imcomm.html#a9d59535b4789389a8c3c9e406cd1e2d3" title="lbann::lbann_callback\l_imcomm::copy" alt="" coords="850,40,999,79"/>
-</map>

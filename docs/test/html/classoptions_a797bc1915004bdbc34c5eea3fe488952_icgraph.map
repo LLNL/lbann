@@ -1,6 +1,0 @@
-<map id="options::get_int" name="options::get_int">
-<area shape="rect" id="node2" href="$classoptions.html#ae6f1f714c9ad1dc01cb5509df0c4c838" title="options::has_float" alt="" coords="362,5,487,31"/>
-<area shape="rect" id="node3" href="$proto__common_8hpp.html#a46fd41f635ff8f352065adc85eb3d1df" title="adjusts the values in p by querying the options db " alt="" coords="561,81,716,107"/>
-<area shape="rect" id="node4" href="$classoptions.html#a31607533d0c6d2fa331f4e7f52d34bc8" title="options::get_float" alt="" coords="165,107,288,132"/>
-<area shape="rect" id="node5" href="$proto__common_8cpp.html#a900e005e45b3debc2444ded1c3ff6e1f" title="set_data_readers_percent" alt="" coords="336,157,513,183"/>
-</map>

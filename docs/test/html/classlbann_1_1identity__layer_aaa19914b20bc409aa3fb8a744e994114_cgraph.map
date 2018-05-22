@@ -1,4 +1,0 @@
-<map id="lbann::identity_layer::fp_compute" name="lbann::identity_layer::fp_compute">
-<area shape="rect" id="node2" href="$classlbann_1_1Layer.html#a1134b1a4385af199d7272c5aa827fa99" title="lbann::Layer::get_activations" alt="" coords="193,29,384,55"/>
-<area shape="rect" id="node3" href="$classlbann_1_1Layer.html#a45853df73a2e72bfaa774665a0f37ed7" title="lbann::Layer::get_prev\l_activations" alt="" coords="212,103,366,141"/>
-</map>

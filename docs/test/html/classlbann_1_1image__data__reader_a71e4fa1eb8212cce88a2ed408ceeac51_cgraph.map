@@ -1,5 +1,0 @@
-<map id="lbann::image_data_reader::save_image" name="lbann::image_data_reader::save_image">
-<area shape="rect" id="node2" href="$classlbann_1_1lbann__image__preprocessor.html#a3c4f4cc5c90233696566a35a62a1708c" title="lbann::lbann_image\l_preprocessor::internal\l_save_image" alt="" coords="256,5,413,57"/>
-<area shape="rect" id="node4" href="$classlbann_1_1image__data__reader.html#a9624d37e076cf71154b65910dd7e1195" title="Return the sample list of current minibatch. " alt="" coords="230,81,438,120"/>
-<area shape="rect" id="node3" href="$classlbann_1_1lbann__image__preprocessor.html#a7dc609e33febdc7fc29bdc9270594bea" title="lbann::lbann_image\l_preprocessor::cv_pixels" alt="" coords="486,12,655,51"/>
-</map>

@@ -1,8 +1,0 @@
-<map id="lbann::slice_layer::fp_compute_cpu" name="lbann::slice_layer::fp_compute_cpu">
-<area shape="rect" id="node2" href="$classlbann_1_1Layer.html#a45853df73a2e72bfaa774665a0f37ed7" title="lbann::Layer::get_prev\l_activations" alt="" coords="199,29,353,68"/>
-<area shape="rect" id="node3" href="$classlbann_1_1Layer.html#a1409a117c31a7ea4f2c7a4d22a3e86c3" title="lbann::Layer::get_num\l_children" alt="" coords="199,92,353,131"/>
-<area shape="rect" id="node7" href="$classlbann_1_1Layer.html#a1134b1a4385af199d7272c5aa827fa99" title="lbann::Layer::get_activations" alt="" coords="181,179,372,204"/>
-<area shape="rect" id="node4" href="$classlbann_1_1Layer.html#aa0058c8ec4913efc3e4de5d6f61eb8db" title="lbann::Layer::get_child\l_layers" alt="" coords="420,61,576,100"/>
-<area shape="rect" id="node5" href="$classlbann_1_1Layer.html#af4a093d91552cf079217eb346bbb847f" title="lbann::Layer::get_layer\l_names" alt="" coords="420,124,577,163"/>
-<area shape="rect" id="node6" href="$classlbann_1_1Layer.html#a80027550202fa7dbb1dd55fa8a66c84b" title="lbann::Layer::get_name" alt="" coords="625,131,786,156"/>
-</map>

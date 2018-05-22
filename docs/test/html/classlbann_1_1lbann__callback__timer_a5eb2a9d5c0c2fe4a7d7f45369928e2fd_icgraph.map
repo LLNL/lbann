@@ -1,5 +1,0 @@
-<map id="lbann::lbann_callback_timer::timing_begin" name="lbann::lbann_callback_timer::timing_begin">
-<area shape="rect" id="node2" href="$classlbann_1_1lbann__callback__timer.html#aceecdd208aa8d75a49a41a33bf48314b" title="lbann::lbann_callback\l_timer::on_epoch_begin" alt="" coords="213,5,377,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1lbann__callback__timer.html#aa86c0ae1b6fbc878b6ba9a4551b803b8" title="lbann::lbann_callback\l_timer::on_validation_begin" alt="" coords="203,68,387,107"/>
-<area shape="rect" id="node4" href="$classlbann_1_1lbann__callback__timer.html#a9fb5327fa629c23e51c9c3b065d6d8c5" title="lbann::lbann_callback\l_timer::on_test_begin" alt="" coords="220,131,370,169"/>
-</map>

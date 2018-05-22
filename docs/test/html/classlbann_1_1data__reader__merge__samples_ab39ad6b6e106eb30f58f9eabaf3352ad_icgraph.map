@@ -1,5 +1,0 @@
-<map id="lbann::data_reader_merge_samples::fetch_response" name="lbann::data_reader_merge_samples::fetch_response">
-<area shape="rect" id="node2" href="$classlbann_1_1data__reader__merge__samples.html#a43dc3d7861f0231d96a9baa77916dff5" title="support for data store functionality " alt="" coords="213,5,365,57"/>
-<area shape="rect" id="node3" href="$classlbann_1_1data__store__merge__samples.html#a9f7f027eab6bfb65dd8001939769f476" title="called by generic_data_reader::setup_data_store " alt="" coords="413,12,583,51"/>
-<area shape="rect" id="node4" href="$classlbann_1_1data__store__merge__samples.html#a8b81d947c1f05c38b7f979ce7e3cef97" title="called by various image data readers " alt="" coords="631,12,800,51"/>
-</map>

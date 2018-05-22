@@ -1,5 +1,0 @@
-<map id="lbann::generic_input_layer::calculate_num_iterations_per_epoch_training_spans_models" name="lbann::generic_input_layer::calculate_num_iterations_per_epoch_training_spans_models">
-<area shape="rect" id="node2" href="$classlbann_1_1generic__input__layer.html#a8ca316b0369689949f3f4106920ec28f" title="lbann::generic_input\l_layer::setup_data" alt="" coords="223,5,365,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1lbann__callback__variable__minibatch.html#a4f5d8ab04ab3e1cc3aa66327d3712f51" title="Set the initial mini&#45;batch size. " alt="" coords="219,68,369,120"/>
-<area shape="rect" id="node4" href="$classlbann_1_1lbann__callback__variable__minibatch.html#a091e7563b5a7a90638e2521fe39cbf8f" title="Potentially change the mini&#45;batch size. " alt="" coords="219,144,369,196"/>
-</map>

@@ -1,5 +1,0 @@
-<map id="lbann::boolean_false_positives_metric::get_unit" name="lbann::boolean_false_positives_metric::get_unit">
-<area shape="rect" id="node2" href="$classlbann_1_1boolean__false__positives__metric.html#abb6573a4e32e97316c69ce9fc24214f0" title="lbann::boolean_false\l_positives_metric::evaluate\l_compute" alt="" coords="233,20,415,72"/>
-<area shape="rect" id="node3" href="$classlbann_1_1metric.html#a464120720df6bfdf91bffe353e562964" title="lbann::metric::get_comm" alt="" coords="463,5,630,31"/>
-<area shape="rect" id="node4" href="$classlbann_1_1lbann__comm.html#af5631e5f0f54e4df4958eba9df2599ef" title="lbann::lbann_comm::\lallreduce" alt="" coords="474,55,619,93"/>
-</map>

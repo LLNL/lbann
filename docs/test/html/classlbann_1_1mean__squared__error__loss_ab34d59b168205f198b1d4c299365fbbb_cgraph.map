@@ -1,9 +1,0 @@
-<map id="lbann::mean_squared_error_loss::name" name="lbann::mean_squared_error_loss::name">
-<area shape="rect" id="node2" href="$classlbann_1_1mean__squared__error__loss.html#a5cfc9b54a4161015f63e5445e34f49f4" title="lbann::mean_squared\l_error_loss::start_evaluate\l_compute" alt="" coords="204,20,383,72"/>
-<area shape="rect" id="node6" href="$classlbann_1_1mean__squared__error__loss.html#a5486b4e6d6b6fbfdd6fdd381f7cbd7eb" title="lbann::mean_squared\l_error_loss::finish\l_evaluate_compute" alt="" coords="218,96,368,148"/>
-<area shape="rect" id="node8" href="$classlbann_1_1mean__squared__error__loss.html#aef698469d2e70a5d42e402eeca50efa3" title="lbann::mean_squared\l_error_loss::differentiate\l_compute" alt="" coords="211,172,376,224"/>
-<area shape="rect" id="node3" href="$classlbann_1_1objective__function__term.html#a5f89b676a26a6b76ddc26563ac87beb9" title="lbann::objective_function\l_term::get_comm" alt="" coords="431,68,599,107"/>
-<area shape="rect" id="node4" href="$classlbann_1_1lbann__comm.html#a2a7bb6cf3707366fc0671d8894ca30ea" title="lbann::lbann_comm::\lnb_allreduce" alt="" coords="443,5,588,44"/>
-<area shape="rect" id="node5" href="$classlbann_1_1lbann__comm.html#af5631e5f0f54e4df4958eba9df2599ef" title="lbann::lbann_comm::\lallreduce" alt="" coords="648,5,793,44"/>
-<area shape="rect" id="node7" href="$classlbann_1_1lbann__comm.html#a30439f28cf615e1406090799c5499321" title="lbann::lbann_comm::wait" alt="" coords="431,131,600,156"/>
-</map>

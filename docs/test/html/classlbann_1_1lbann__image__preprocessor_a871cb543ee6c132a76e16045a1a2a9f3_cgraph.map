@@ -1,8 +1,0 @@
-<map id="lbann::lbann_image_preprocessor::disable_augmentation" name="lbann::lbann_image_preprocessor::disable_augmentation">
-<area shape="rect" id="node2" href="$classlbann_1_1lbann__image__preprocessor.html#a4ba2de0a781dfa0a2652ad4d777a241f" title="lbann::lbann_image\l_preprocessor::horizontal_flip" alt="" coords="213,5,410,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1lbann__image__preprocessor.html#aeb7d75e4d3361ae2836afabc14510d74" title="lbann::lbann_image\l_preprocessor::vertical_flip" alt="" coords="221,68,402,107"/>
-<area shape="rect" id="node4" href="$classlbann_1_1lbann__image__preprocessor.html#a1a293733368dd9eceba3e99cf9e5ae24" title="lbann::lbann_image\l_preprocessor::rotation" alt="" coords="232,131,391,169"/>
-<area shape="rect" id="node5" href="$classlbann_1_1lbann__image__preprocessor.html#ae62596b4af5d1940aa0499cde2bdd005" title="lbann::lbann_image\l_preprocessor::horizontal_shift" alt="" coords="210,193,413,232"/>
-<area shape="rect" id="node6" href="$classlbann_1_1lbann__image__preprocessor.html#a50ac63e1f6b1b9806cbf6c06f53f4aca" title="lbann::lbann_image\l_preprocessor::vertical_shift" alt="" coords="217,256,405,295"/>
-<area shape="rect" id="node7" href="$classlbann_1_1lbann__image__preprocessor.html#aef1e2375fd518e69df800b0dcbcb37d0" title="lbann::lbann_image\l_preprocessor::shear_range" alt="" coords="217,319,406,357"/>
-</map>

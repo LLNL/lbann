@@ -1,4 +1,0 @@
-<map id="lbann::generic_input_layer::get_global_mini_batch_size" name="lbann::generic_input_layer::get_global_mini_batch_size">
-<area shape="rect" id="node2" href="$classlbann_1_1lbann__callback__print.html#ae3c99d7c56ac33ab7e09880134b43cad" title="lbann::lbann_callback\l_print::on_epoch_begin" alt="" coords="212,12,372,51"/>
-<area shape="rect" id="node3" href="$classlbann_1_1lbann__callback__print.html#aa75e076c3d840a2186825be2e8dbac8c" title="lbann::lbann_callback\l_print::copy" alt="" coords="420,12,570,51"/>
-</map>

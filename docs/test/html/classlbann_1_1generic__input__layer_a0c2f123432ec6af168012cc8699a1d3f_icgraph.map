@@ -1,5 +1,0 @@
-<map id="lbann::generic_input_layer::update_num_samples_processed" name="lbann::generic_input_layer::update_num_samples_processed">
-<area shape="rect" id="node2" href="$classlbann_1_1generic__input__layer.html#ae74c8c5a7e14b4fdd4902554bbc7bcef" title="lbann::generic_input\l_layer::fp_compute" alt="" coords="277,5,418,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1generic__target__layer.html#a0dbe5fc5203e15ddcf8348daf2f697c5" title="lbann::generic_target\l_layer::update_num_samples\l_processed" alt="" coords="250,68,446,120"/>
-<area shape="rect" id="node4" href="$classlbann_1_1generic__target__layer.html#a57a60f5a28c9fb78d5151801123d4dba" title="lbann::generic_target\l_layer::fp_compute" alt="" coords="494,75,640,113"/>
-</map>

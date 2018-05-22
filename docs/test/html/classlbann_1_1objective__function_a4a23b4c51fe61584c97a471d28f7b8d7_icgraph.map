@@ -1,8 +1,0 @@
-<map id="lbann::objective_function::get_evaluation_time" name="lbann::objective_function::get_evaluation_time">
-<area shape="rect" id="node2" href="$classlbann_1_1model.html#a1eb5efcc8f73ba9478b2ce1efb9f2d8c" title="lbann::model::summarize\l_stats" alt="" coords="221,37,392,76"/>
-<area shape="rect" id="node3" href="$classlbann_1_1model.html#afd569027be9b7a6adb08f486331384ac" title="lbann::model::get_current\l_phase" alt="" coords="441,5,614,44"/>
-<area shape="rect" id="node6" href="$classlbann_1_1lbann__callback__summary.html#a89b18186fdaa7b6a7a0e9ab8ee334d88" title="lbann::lbann_callback\l_summary::on_batch_end" alt="" coords="440,68,615,107"/>
-<area shape="rect" id="node4" href="$classlbann_1_1lbann__callback__save__images.html#a4591438de0b52467988e2bd34b55c0dd" title="lbann::lbann_callback\l_save_images::on_phase_end" alt="" coords="663,5,866,44"/>
-<area shape="rect" id="node5" href="$classlbann_1_1lbann__callback__save__images.html#a6abba6b6a94080c09f52f1aac8773461" title="lbann::lbann_callback\l_save_images::copy" alt="" coords="914,5,1064,44"/>
-<area shape="rect" id="node7" href="$classlbann_1_1lbann__callback__summary.html#ae6f1ba60d92f4599361ce5bd5f70caa7" title="lbann::lbann_callback\l_summary::copy" alt="" coords="690,68,839,107"/>
-</map>

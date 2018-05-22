@@ -1,5 +1,0 @@
-<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classlbann_1_1generic__io__buffer.html" title="lbann::generic_io_buffer" alt="" coords="5,44,169,69"/>
-<area shape="rect" id="node2" href="$classlbann_1_1distributed__io__buffer.html" title="lbann::distributed\l_io_buffer" alt="" coords="218,5,341,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1partitioned__io__buffer.html" title="lbann::partitioned\l_io_buffer" alt="" coords="217,68,341,107"/>
-</map>

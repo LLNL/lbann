@@ -1,6 +1,0 @@
-<map id="options::m_test_double" name="options::m_test_double">
-<area shape="rect" id="node2" href="$classoptions.html#aa78e7d95dc59a2d25987546cdbab7872" title="options::get_double" alt="" coords="214,5,352,31"/>
-<area shape="rect" id="node3" href="$classoptions.html#ab66aae6c79cdde8dd38d0d3fc8aa3de5" title="options::has_double" alt="" coords="213,55,353,80"/>
-<area shape="rect" id="node4" href="$classoptions.html#ae6f1f714c9ad1dc01cb5509df0c4c838" title="options::has_float" alt="" coords="401,55,527,80"/>
-<area shape="rect" id="node5" href="$proto__common_8hpp.html#a46fd41f635ff8f352065adc85eb3d1df" title="adjusts the values in p by querying the options db " alt="" coords="575,55,731,80"/>
-</map>

@@ -1,6 +1,0 @@
-<map id="lbann::generic_input_layer::get_current_global_mini_batch_size" name="lbann::generic_input_layer::get_current_global_mini_batch_size">
-<area shape="rect" id="node2" href="$classlbann_1_1lbann__callback__debug__io.html#a3c9897a583441381f82a11246aea4424" title="lbann::lbann_callback\l_debug_io::print_fp_start" alt="" coords="229,33,398,71"/>
-<area shape="rect" id="node3" href="$classlbann_1_1lbann__callback__debug__io.html#a91fb292d9dff96dbf72ecc16855c4092" title="lbann::lbann_callback\l_debug_io::copy" alt="" coords="657,33,807,71"/>
-<area shape="rect" id="node4" href="$classlbann_1_1lbann__callback__debug__io.html#aa31ee265d40edff982ebf38054394927" title="lbann::lbann_callback\l_debug_io::on_forward\l_prop_begin" alt="" coords="449,26,606,78"/>
-<area shape="rect" id="node5" href="$classlbann_1_1lbann__callback__debug__io.html#ac9b36fc36ab6faa9de44db026addf02a" title="lbann::lbann_callback\l_debug_io::on_evaluate\l_forward_prop_begin" alt="" coords="446,102,609,154"/>
-</map>

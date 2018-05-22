@@ -1,5 +1,0 @@
-<map id="lbann::lbann_comm::recursive_doubling_allreduce_pow2" name="lbann::lbann_comm::recursive_doubling_allreduce_pow2">
-<area shape="rect" id="node2" href="$namespacelbann.html#a478d36031ff0659893c4322cd856157f" title="lbann::get_time" alt="" coords="304,5,416,31"/>
-<area shape="rect" id="node3" href="$classlbann_1_1lbann__comm.html#ae925ac5eaf2895717c709b252961b3bf" title="lbann::lbann_comm::\lget_collective_buffer" alt="" coords="287,55,433,93"/>
-<area shape="rect" id="node4" href="$classlbann_1_1lbann__comm.html#a5cdd318d1505ba0f31bf4fe9fadffacc" title="lbann::lbann_comm::\lis_rank_node_local" alt="" coords="287,117,433,156"/>
-</map>

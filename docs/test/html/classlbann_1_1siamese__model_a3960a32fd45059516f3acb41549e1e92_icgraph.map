@@ -1,4 +1,0 @@
-<map id="lbann::siamese_model::freeze_layers_under_frozen_surface" name="lbann::siamese_model::freeze_layers_under_frozen_surface">
-<area shape="rect" id="node2" href="$classlbann_1_1siamese__model.html#ad745961977aa395e11543d263103126e" title="lbann::siamese_model\l::name" alt="" coords="412,12,566,51"/>
-<area shape="rect" id="node3" href="$classlbann_1_1siamese__model.html#a7ff41cffb060500605124959f1a2a6cf" title="lbann::siamese_model\l::setup_layer_topology" alt="" coords="208,40,364,79"/>
-</map>

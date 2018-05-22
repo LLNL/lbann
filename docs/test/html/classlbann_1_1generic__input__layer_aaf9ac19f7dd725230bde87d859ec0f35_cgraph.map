@@ -1,5 +1,0 @@
-<map id="lbann::generic_input_layer::update_compute" name="lbann::generic_input_layer::update_compute">
-<area shape="rect" id="node2" href="$classlbann_1_1generic__io__buffer.html#a9a038d40aec50dbc24c0abe21ad0c0a9" title="lbann::generic_io_buffer\l::is_data_set_processed" alt="" coords="218,5,384,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1generic__input__layer.html#aba732becdb02627e3ad4493ac19e8fb6" title="lbann::generic_input\l_layer::get_data_reader" alt="" coords="219,68,382,107"/>
-<area shape="rect" id="node4" href="$classlbann_1_1model.html#addb40597cf29aa6d31b6a7d09ef48608" title="lbann::model::get_execution_mode" alt="" coords="432,104,660,129"/>
-</map>

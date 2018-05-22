@@ -1,7 +1,0 @@
-<map id="lbann::data_reader_triplet" name="lbann::data_reader_triplet">
-<area shape="rect" id="node2" href="$classlbann_1_1data__reader__multi__images.html" title="lbann::data_reader\l_multi_images" alt="" coords="27,325,160,364"/>
-<area shape="rect" id="node3" href="$classlbann_1_1imagenet__reader.html" title="lbann::imagenet_reader" alt="" coords="13,252,175,277"/>
-<area shape="rect" id="node4" href="$classlbann_1_1image__data__reader.html" title="lbann::image_data_reader" alt="" coords="5,179,182,204"/>
-<area shape="rect" id="node5" href="$classlbann_1_1generic__data__reader.html" title="lbann::generic_data\l_reader" alt="" coords="25,92,163,131"/>
-<area shape="rect" id="node6" href="$classlbann_1_1lbann__image__preprocessor.html" title="lbann::lbann_image\l_preprocessor" alt="" coords="25,5,163,44"/>
-</map>

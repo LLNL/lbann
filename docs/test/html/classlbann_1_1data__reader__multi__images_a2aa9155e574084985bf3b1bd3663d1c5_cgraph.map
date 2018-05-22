@@ -1,4 +1,0 @@
-<map id="lbann::data_reader_multi_images::data_reader_multi_images" name="lbann::data_reader_multi_images::data_reader_multi_images">
-<area shape="rect" id="node2" href="$classlbann_1_1data__reader__multi__images.html#a5abe6981d750bc145e50f6141772805c" title="Set the default values for the width, the height, the number of channels, and the number of labels of..." alt="" coords="207,12,393,51"/>
-<area shape="rect" id="node3" href="$classlbann_1_1image__data__reader.html#a0164b0e3abbe92daef73b36fb925403e" title="lbann::image_data_reader\l::set_linearized_image_size" alt="" coords="441,12,627,51"/>
-</map>

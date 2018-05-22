@@ -1,3 +1,0 @@
-<map id="lbann::convolution_layer::get_topo_description" name="lbann::convolution_layer::get_topo_description">
-<area shape="rect" id="node2" href="$classlbann_1_1convolution__layer.html#abce67d7e977d148093798936aff8ee5e" title="kernel tensor is output channels, input channels, conv dimension (w x h) " alt="" coords="242,5,398,44"/>
-</map>

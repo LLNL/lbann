@@ -1,9 +1,0 @@
-<map id="lbann::lbann_image_preprocessor::normalize" name="lbann::lbann_image_preprocessor::normalize">
-<area shape="rect" id="node2" href="$classlbann_1_1lbann__image__preprocessor.html#a02cfd4d8c26a317540b587eb52cef0d5" title="lbann::lbann_image\l_preprocessor::z_score" alt="" coords="232,5,392,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1lbann__image__preprocessor.html#aa7a8926d0544100f7d3caa9289d94826" title="lbann::lbann_image\l_preprocessor::unit_scale" alt="" coords="225,68,399,107"/>
-<area shape="rect" id="node4" href="$classlbann_1_1lbann__image__preprocessor.html#ab499dd9f11d98998b5902d639f70fa8e" title="lbann::lbann_image\l_preprocessor::mean\l_subtraction" alt="" coords="238,131,386,183"/>
-<area shape="rect" id="node8" href="$classlbann_1_1lbann__image__preprocessor.html#a05c4cb5cb842df5d46eebe15c6ea9de3" title="lbann::lbann_image\l_preprocessor::unit\l_variance" alt="" coords="243,207,381,259"/>
-<area shape="rect" id="node5" href="$namespacelbann.html#a604ae9da0173b8be2bfb6877997d6d5c" title="Compute mean and standard deviation over matrix entries. " alt="" coords="447,137,606,176"/>
-<area shape="rect" id="node6" href="$namespacelbann_1_1cnpy__utils.html#a9ac86d96ccb1f8b4b2ea16441738781f" title="lbann::cnpy_utils::data" alt="" coords="654,144,808,169"/>
-<area shape="rect" id="node7" href="$namespacelbann_1_1cnpy__utils.html#a39fd207d94d1333e6379c53423b6f1a1" title="lbann::cnpy_utils::\lcompute_cnpy_array_offset" alt="" coords="856,137,1041,176"/>
-</map>

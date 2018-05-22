@@ -1,7 +1,0 @@
-<map id="lbann::metric::evaluate" name="lbann::metric::evaluate">
-<area shape="rect" id="node2" href="$namespacelbann.html#a478d36031ff0659893c4322cd856157f" title="lbann::get_time" alt="" coords="236,5,348,31"/>
-<area shape="rect" id="node3" href="$classlbann_1_1metric.html#aab79147ff480675db2e01d7a889a4296" title="lbann::metric::evaluate\l_compute" alt="" coords="214,55,370,93"/>
-<area shape="rect" id="node4" href="$classlbann_1_1generic__target__layer.html#ac0b88a705256ab06bbba6bbffbc7ebc1" title="lbann::generic_target\l_layer::get_prediction" alt="" coords="218,117,367,156"/>
-<area shape="rect" id="node6" href="$classlbann_1_1generic__target__layer.html#a9cbe476f3e447bc91e2834921ca7da9f" title="lbann::generic_target\l_layer::get_ground_truth" alt="" coords="209,180,375,219"/>
-<area shape="rect" id="node5" href="$classlbann_1_1Layer.html#a45853df73a2e72bfaa774665a0f37ed7" title="lbann::Layer::get_prev\l_activations" alt="" coords="423,117,577,156"/>
-</map>

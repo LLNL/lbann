@@ -1,8 +1,0 @@
-<map id="lbann::instantiate_matrices&lt; data_layout::DATA_PARALLEL &gt;" name="lbann::instantiate_matrices&lt; data_layout::DATA_PARALLEL &gt;">
-<area shape="rect" id="node2" href="$classlbann_1_1Layer.html#ac9290d4a6453ccda5f6b4d8b57b49ba3" title="lbann::Layer::get_num\l_parents" alt="" coords="213,5,367,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1Layer.html#a1409a117c31a7ea4f2c7a4d22a3e86c3" title="lbann::Layer::get_num\l_children" alt="" coords="213,68,367,107"/>
-<area shape="rect" id="node3" href="$classlbann_1_1Layer.html#a898e72b93752abf52d35b06459cd360e" title="lbann::Layer::get_parent\l_layers" alt="" coords="415,5,581,44"/>
-<area shape="rect" id="node5" href="$classlbann_1_1Layer.html#aa0058c8ec4913efc3e4de5d6f61eb8db" title="lbann::Layer::get_child\l_layers" alt="" coords="420,68,576,107"/>
-<area shape="rect" id="node6" href="$classlbann_1_1Layer.html#af4a093d91552cf079217eb346bbb847f" title="lbann::Layer::get_layer\l_names" alt="" coords="419,131,576,169"/>
-<area shape="rect" id="node7" href="$classlbann_1_1Layer.html#a80027550202fa7dbb1dd55fa8a66c84b" title="lbann::Layer::get_name" alt="" coords="629,137,790,163"/>
-</map>

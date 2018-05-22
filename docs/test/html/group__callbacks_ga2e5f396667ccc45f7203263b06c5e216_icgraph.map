@@ -1,7 +1,0 @@
-<map id="lbann::lbann_callback_checkpoint::need_checkpoint" name="lbann::lbann_callback_checkpoint::need_checkpoint">
-<area shape="rect" id="node2" href="$group__callbacks.html#gac3a0bb250a679b28924910c0dc617809" title="lbann::lbann_callback\l_checkpoint::set_checkpoint\l_per_rank" alt="" coords="264,5,453,57"/>
-<area shape="rect" id="node3" href="$group__callbacks.html#ga406bfba673e503e94ae6eb57aff6a78e" title="lbann::lbann_callback\l_checkpoint::on_epoch_end" alt="" coords="264,81,452,120"/>
-<area shape="rect" id="node5" href="$group__callbacks.html#ga5fb4288c03b1ce14681b72562e9471b2" title="lbann::lbann_callback\l_checkpoint::on_validation_end" alt="" coords="254,144,462,183"/>
-<area shape="rect" id="node6" href="$group__callbacks.html#ga476527e2b7b44dd3623e01f63ddb5f78" title="lbann::lbann_callback\l_checkpoint::on_batch_end" alt="" coords="266,207,450,245"/>
-<area shape="rect" id="node4" href="$group__callbacks.html#ga63dc49f38f063f9b85d9abdf8b2855aa" title="lbann::lbann_callback\l_checkpoint::copy" alt="" coords="510,144,660,183"/>
-</map>

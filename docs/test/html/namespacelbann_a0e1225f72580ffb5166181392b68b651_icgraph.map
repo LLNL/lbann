@@ -1,9 +1,0 @@
-<map id="lbann::col2im" name="lbann::col2im">
-<area shape="rect" id="node2" href="$classlbann_1_1base__convolution__layer.html#a87fb2bf066a98052938e48a82dcd4fd2" title="lbann::base_convolution\l_layer::apply_transposed\l_convolution_im2col" alt="" coords="153,57,324,109"/>
-<area shape="rect" id="node5" href="$classlbann_1_1pooling__layer.html#a704aca0e1e5bba7d27b7755133e6d50b" title="Pooling forward propagation with im2col. " alt="" coords="164,133,312,172"/>
-<area shape="rect" id="node7" href="$classlbann_1_1unpooling__layer.html#ab4a0b7cc4711426434983c41cd7dbc63" title="Unpooling forward propagation with im2col. " alt="" coords="161,196,316,235"/>
-<area shape="rect" id="node3" href="$classlbann_1_1convolution__layer.html#a610f24f98b548434cd4d22419f47c7f0" title="lbann::convolution\l_layer::bp_compute" alt="" coords="380,5,519,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1deconvolution__layer.html#a6ebbb96c605a96b41fdbbc848dcaa877" title="lbann::deconvolution\l_layer::fp_compute" alt="" coords="377,68,521,107"/>
-<area shape="rect" id="node6" href="$classlbann_1_1pooling__layer.html#ab58fe97e976f60df37f958e79fd56ff9" title="lbann::pooling_layer\l::bp_compute" alt="" coords="379,133,520,172"/>
-<area shape="rect" id="node8" href="$classlbann_1_1unpooling__layer.html#aad98d442d6f5ad1feb5f1d71bdb1df49" title="lbann::unpooling_layer\l::fp_compute" alt="" coords="372,196,527,235"/>
-</map>

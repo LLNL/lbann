@@ -1,5 +1,0 @@
-<map id="lbann::lbann_callback_checkpoint::restartShared" name="lbann::lbann_callback_checkpoint::restartShared">
-<area shape="rect" id="node2" href="$group__callbacks.html#gac3a0bb250a679b28924910c0dc617809" title="lbann::lbann_callback\l_checkpoint::set_checkpoint\l_per_rank" alt="" coords="234,5,423,57"/>
-<area shape="rect" id="node3" href="$group__callbacks.html#ga383654a7bb70672dfc9fef679f4b509f" title="lbann::lbann_callback\l_checkpoint::setup" alt="" coords="254,81,403,120"/>
-<area shape="rect" id="node4" href="$group__callbacks.html#ga63dc49f38f063f9b85d9abdf8b2855aa" title="lbann::lbann_callback\l_checkpoint::copy" alt="" coords="471,81,620,120"/>
-</map>

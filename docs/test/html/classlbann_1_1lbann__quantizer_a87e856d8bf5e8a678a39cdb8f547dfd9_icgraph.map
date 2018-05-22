@@ -1,5 +1,0 @@
-<map id="lbann::lbann_quantizer::intermodel_sum_adaptive_quantized" name="lbann::lbann_quantizer::intermodel_sum_adaptive_quantized">
-<area shape="rect" id="node2" href="$classlbann_1_1lbann__callback__imcomm.html#a0a425ba562f7637b25cd6ba094e7885b" title="lbann::lbann_callback\l_imcomm::on_backward\l_prop_end" alt="" coords="243,5,408,57"/>
-<area shape="rect" id="node4" href="$classlbann_1_1lbann__quantizer.html#aa2d4e5b9bc90f8feaaa32f3fc4183d10" title="lbann::lbann_quantizer\l::intermodel_sum_adaptive\l_quantized" alt="" coords="235,81,416,133"/>
-<area shape="rect" id="node3" href="$classlbann_1_1lbann__callback__imcomm.html#a9d59535b4789389a8c3c9e406cd1e2d3" title="lbann::lbann_callback\l_imcomm::copy" alt="" coords="464,12,614,51"/>
-</map>

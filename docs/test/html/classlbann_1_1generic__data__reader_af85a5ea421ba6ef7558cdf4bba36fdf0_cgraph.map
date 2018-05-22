@@ -1,6 +1,0 @@
-<map id="lbann::generic_data_reader::get_mini_batch_size" name="lbann::generic_data_reader::get_mini_batch_size">
-<area shape="rect" id="node2" href="$classlbann_1_1generic__data__reader.html#a850e99110dd1e9df2985f09ea196fea8" title="Get the loaded mini&#45;batch size. " alt="" coords="270,5,410,57"/>
-<area shape="rect" id="node3" href="$classlbann_1_1generic__data__reader.html#aec4624f295e1e3c6c5053838624441a5" title="Get the current mini&#45;batch size. " alt="" coords="269,81,411,133"/>
-<area shape="rect" id="node4" href="$classlbann_1_1generic__data__reader.html#a3f7114448c6b43a5aac30c002e4bade3" title="Get the current global mini&#45;batch size. " alt="" coords="256,157,424,209"/>
-<area shape="rect" id="node5" href="$classlbann_1_1generic__data__reader.html#af80711baa226f8bc370e8e276c49f3c1" title="Get the current mini&#45;batch size. " alt="" coords="250,233,430,299"/>
-</map>

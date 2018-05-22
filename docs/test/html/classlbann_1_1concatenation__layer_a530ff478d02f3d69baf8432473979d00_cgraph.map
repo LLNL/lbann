@@ -1,6 +1,0 @@
-<map id="lbann::concatenation_layer::bp_compute_cpu" name="lbann::concatenation_layer::bp_compute_cpu">
-<area shape="rect" id="node2" href="$classlbann_1_1Layer.html#a7ac4579d3c1671dfaf86e3b618d6938a" title="lbann::Layer::get_prev\l_error_signals" alt="" coords="222,29,376,68"/>
-<area shape="rect" id="node3" href="$classlbann_1_1Layer.html#ac9290d4a6453ccda5f6b4d8b57b49ba3" title="lbann::Layer::get_num\l_parents" alt="" coords="222,92,376,131"/>
-<area shape="rect" id="node5" href="$classlbann_1_1Layer.html#adb561e140e0bb601f3c5a8ee053a71d2" title="lbann::Layer::get_error\l_signals" alt="" coords="221,179,377,217"/>
-<area shape="rect" id="node4" href="$classlbann_1_1Layer.html#a898e72b93752abf52d35b06459cd360e" title="lbann::Layer::get_parent\l_layers" alt="" coords="425,92,591,131"/>
-</map>

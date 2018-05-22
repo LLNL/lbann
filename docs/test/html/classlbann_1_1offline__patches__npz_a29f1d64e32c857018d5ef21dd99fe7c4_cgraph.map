@@ -1,6 +1,0 @@
-<map id="lbann::offline_patches_npz::load" name="lbann::offline_patches_npz::load">
-<area shape="rect" id="node2" href="$namespacelbann.html#a4fac6c6483965395fa79d31061485f9f" title="Return true if a file with the given name exists. " alt="" coords="213,5,347,44"/>
-<area shape="rect" id="node4" href="$namespacelbann_1_1cnpy__utils.html#ab19ad0a361570b7e78e203c02d6ba13a" title="lbann::cnpy_utils::\lshrink_to_fit" alt="" coords="216,68,344,107"/>
-<area shape="rect" id="node5" href="$classlbann_1_1offline__patches__npz.html#a44d8cad35ff9ad245856c5408965e53b" title="Check the dimensions of loaded data. " alt="" coords="204,131,355,169"/>
-<area shape="rect" id="node3" href="$namespacelbann.html#a3ee4a1fa7a82c30999de9eb626c68311" title="lbann::check_if_dir\l_exists" alt="" coords="403,5,536,44"/>
-</map>

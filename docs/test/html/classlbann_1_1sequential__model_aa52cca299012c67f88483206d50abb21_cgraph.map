@@ -1,8 +1,0 @@
-<map id="lbann::sequential_model::load_from_checkpoint_shared" name="lbann::sequential_model::load_from_checkpoint_shared">
-<area shape="rect" id="node2" href="$classlbann_1_1model.html#a2e02dda11636e015ea0c892ffa541881" title="lbann::model::load\l_from_checkpoint_shared" alt="" coords="219,103,394,141"/>
-<area shape="rect" id="node3" href="$classlbann_1_1persist.html#a34eb918a890ab49dcbeedddf27ec1616" title="lbann::persist::get_rank" alt="" coords="442,5,602,31"/>
-<area shape="rect" id="node4" href="$classlbann_1_1persist.html#ace1ebb58e2570693cdce0ebd2817113b" title="lbann::persist::read\l_uint32" alt="" coords="455,180,589,219"/>
-<area shape="rect" id="node6" href="$classlbann_1_1persist.html#aa6d996db3714a7ae055adac0d8e8ac63" title="lbann::persist::read\l_uint64" alt="" coords="455,55,589,93"/>
-<area shape="rect" id="node7" href="$namespacelbann.html#ab76114a0e8cc90c28bcb9e7d01eec89a" title="lbann::load_rng_from\l_checkpoint_shared" alt="" coords="448,117,596,156"/>
-<area shape="rect" id="node5" href="$namespacelbann.html#a85385e2a9e058b6720300b4cbdd2b1d0" title="lbann::read_bytes" alt="" coords="650,124,777,149"/>
-</map>

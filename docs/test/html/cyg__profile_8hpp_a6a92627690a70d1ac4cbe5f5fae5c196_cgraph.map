@@ -1,6 +1,0 @@
-<map id="__cyg_profile_func_enter" name="__cyg_profile_func_enter">
-<area shape="rect" id="node2" href="$cyg__profile_8hpp.html#a0324b893ce3ef55f7b9ade478e27cdc2" title="c_hash_insert_or_update" alt="" coords="187,31,358,56"/>
-<area shape="rect" id="node3" href="$cyg__profile_8hpp.html#a180ca8d5835108eae791ba3ce34484f0" title="c_hash_lookup" alt="" coords="406,5,517,31"/>
-<area shape="rect" id="node5" href="$cyg__profile_8hpp.html#ab51b5864ac189a74ae78a87749f2d85b" title="c_hash_insert" alt="" coords="410,55,514,80"/>
-<area shape="rect" id="node4" href="$cyg__profile_8hpp.html#aedbd6097fb83d8aeb4f59fa458297e55" title="well known hash function (google it) Hashes a string to an integer " alt="" coords="565,31,648,56"/>
-</map>

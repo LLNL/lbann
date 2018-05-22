@@ -1,4 +1,0 @@
-<map id="lbann::data_store_imagenet::read_files" name="lbann::data_store_imagenet::read_files">
-<area shape="rect" id="node2" href="$classlbann_1_1image__data__reader.html#aa03599a5f66d498d4bb90c50ae70c82a" title="Allow read&#45;only access to the entire sample list. " alt="" coords="240,5,417,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1data__store__image.html#a8a53bab58d75554821f90c38d14078aa" title="loads file from disk into *p; checks that bytes read = sz " alt="" coords="244,68,413,107"/>
-</map>

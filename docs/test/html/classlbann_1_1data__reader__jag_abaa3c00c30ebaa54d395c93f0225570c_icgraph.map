@@ -1,6 +1,0 @@
-<map id="lbann::data_reader_jag::get_scalar_ptr" name="lbann::data_reader_jag::get_scalar_ptr">
-<area shape="rect" id="node2" href="$classlbann_1_1data__reader__jag.html#ae3f45a65894cb60343676d75a8b7f99c" title="lbann::data_reader\l_jag::get_type" alt="" coords="385,62,518,101"/>
-<area shape="rect" id="node3" href="$classlbann_1_1data__reader__jag.html#ad99fffc2f11cb6f3fc42ef1138a3f925" title="Return the scalar values of the i&#45;th sample. " alt="" coords="198,30,331,69"/>
-<area shape="rect" id="node4" href="$classlbann_1_1data__reader__jag.html#a3b22313694b8ff258486491775100d89" title="lbann::data_reader\l_jag::fetch_datum" alt="" coords="198,93,331,131"/>
-<area shape="rect" id="node5" href="$classlbann_1_1data__reader__jag.html#ad9b4259f23a9744ec1c86c688a67f583" title="lbann::data_reader\l_jag::fetch_response" alt="" coords="192,155,337,194"/>
-</map>

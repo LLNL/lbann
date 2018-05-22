@@ -1,6 +1,0 @@
-<map id="lbann::model::freeze_layers_under_frozen_surface" name="lbann::model::freeze_layers_under_frozen_surface">
-<area shape="rect" id="node2" href="$classlbann_1_1sequential__model.html#a3801a58530388fb6a8cb3e1c018e827d" title="lbann::sequential_model\l::setup_layer_topology" alt="" coords="204,40,370,79"/>
-<area shape="rect" id="node3" href="$classlbann_1_1sequential__model.html#abf2b69dacb5ee3165289377e1d961cd5" title="lbann::sequential_model\l::name" alt="" coords="424,5,590,44"/>
-<area shape="rect" id="node5" href="$classlbann_1_1greedy__layerwise__autoencoder.html#a115607e435ae4685531a81852ce01fe7" title="lbann::greedy_layerwise\l_autoencoder::setup_layer\l_topology" alt="" coords="418,68,597,120"/>
-<area shape="rect" id="node4" href="$classlbann_1_1sequential__model.html#a53a83327a1115a53affa78c93344e641" title="lbann::sequential_model\l::write_proto" alt="" coords="645,5,811,44"/>
-</map>

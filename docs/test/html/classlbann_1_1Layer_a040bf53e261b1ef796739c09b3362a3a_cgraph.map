@@ -1,5 +1,0 @@
-<map id="lbann::Layer::clear_child_layers" name="lbann::Layer::clear_child_layers">
-<area shape="rect" id="node2" href="$classlbann_1_1Layer.html#aa0058c8ec4913efc3e4de5d6f61eb8db" title="lbann::Layer::get_child\l_layers" alt="" coords="185,5,341,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1Layer.html#a9f94210cbb973f1df89ef649899094a1" title="lbann::Layer::get_layer\l_pointers" alt="" coords="184,68,341,107"/>
-<area shape="rect" id="node4" href="$classlbann_1_1Layer.html#a001ea76cdd05e2d0d475f408f24702ee" title="lbann::Layer::set_layer\l_pointers" alt="" coords="185,131,341,169"/>
-</map>

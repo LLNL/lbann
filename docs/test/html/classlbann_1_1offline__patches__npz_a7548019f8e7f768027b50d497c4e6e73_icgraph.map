@@ -1,7 +1,0 @@
-<map id="lbann::offline_patches_npz::get_label" name="lbann::offline_patches_npz::get_label">
-<area shape="rect" id="node2" href="$classlbann_1_1offline__patches__npz.html#a153f67de70844a6820aa472f91a6245e" title="Return the number of patches per sample (the number of image data sources) " alt="" coords="204,5,368,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1data__reader__triplet.html#a69dc790a54edde4d123fd7e62df6e5b8" title="lbann::data_reader\l_triplet::fetch_label" alt="" coords="220,68,353,107"/>
-<area shape="rect" id="node4" href="$classlbann_1_1data__reader__triplet.html#a6ed35c191d890569db4865424b8b0e82" title="lbann::data_reader\l_triplet::get_sample" alt="" coords="416,68,554,107"/>
-<area shape="rect" id="node5" href="$classlbann_1_1data__store__triplet.html#ade5d2290c85e7916e828553f4ab4f379" title="lbann::data_store_triplet\l::get_sample" alt="" coords="602,68,766,107"/>
-<area shape="rect" id="node6" href="$classlbann_1_1data__store__triplet.html#a4051f8b3236f06554c2f35e71d3fdf70" title="dtor " alt="" coords="814,68,979,107"/>
-</map>

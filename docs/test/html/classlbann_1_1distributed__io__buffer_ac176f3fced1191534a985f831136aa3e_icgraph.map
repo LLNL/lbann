@@ -1,7 +1,0 @@
-<map id="lbann::distributed_io_buffer::get_data_buffer" name="lbann::distributed_io_buffer::get_data_buffer">
-<area shape="rect" id="node2" href="$classlbann_1_1distributed__io__buffer.html#abfeb87d4dc402b482db60926ca9b3ec1" title="lbann::distributed\l_io_buffer::fetch_to\l_local_matrix" alt="" coords="196,5,332,57"/>
-<area shape="rect" id="node3" href="$classlbann_1_1distributed__io__buffer.html#a3a770ec2314313761d6f0eccdb9dc09b" title="lbann::distributed\l_io_buffer::distribute\l_from_local_matrix" alt="" coords="193,81,335,133"/>
-<area shape="rect" id="node6" href="$classlbann_1_1distributed__io__buffer.html#a2e214f6542d9b12c8a29bf41d0ee220e" title="lbann::distributed\l_io_buffer::is_data\l_set_processed" alt="" coords="199,157,329,209"/>
-<area shape="rect" id="node4" href="$classlbann_1_1generic__input__layer.html#ae74c8c5a7e14b4fdd4902554bbc7bcef" title="lbann::generic_input\l_layer::fp_compute" alt="" coords="386,57,527,96"/>
-<area shape="rect" id="node5" href="$classlbann_1_1generic__target__layer.html#a57a60f5a28c9fb78d5151801123d4dba" title="lbann::generic_target\l_layer::fp_compute" alt="" coords="383,120,530,159"/>
-</map>

@@ -1,4 +1,0 @@
-<map id="lbann::hadamard_layer::fp_compute" name="lbann::hadamard_layer::fp_compute">
-<area shape="rect" id="node2" href="$classlbann_1_1Layer.html#a4248f27acebf72b7b7b3ee39c8bcb62a" title="lbann::Layer::get_local\l_activations" alt="" coords="211,23,367,61"/>
-<area shape="rect" id="node3" href="$classlbann_1_1Layer.html#a1134b1a4385af199d7272c5aa827fa99" title="lbann::Layer::get_activations" alt="" coords="415,29,606,55"/>
-</map>

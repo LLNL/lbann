@@ -1,5 +1,0 @@
-<map id="lbann::cifar10_reader::copy" name="lbann::cifar10_reader::copy">
-<area shape="rect" id="node2" href="$classlbann_1_1cifar10__reader.html#a3e4fca66c9bd38798e56379d4a2cd6c0" title="constructor " alt="" coords="201,5,348,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1cifar10__reader.html#a4c5389d0a6641716c96aa07e58fa4e88" title="Set the default values for the width, the height, the number of channels, and the number of labels of..." alt="" coords="396,5,543,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1image__data__reader.html#a0164b0e3abbe92daef73b36fb925403e" title="lbann::image_data_reader\l::set_linearized_image_size" alt="" coords="591,5,777,44"/>
-</map>

@@ -1,6 +1,0 @@
-<map id="lbann::sum_layer::fp_compute" name="lbann::sum_layer::fp_compute">
-<area shape="rect" id="node2" href="$classlbann_1_1Layer.html#ac9290d4a6453ccda5f6b4d8b57b49ba3" title="lbann::Layer::get_num\l_parents" alt="" coords="213,5,367,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1Layer.html#a1134b1a4385af199d7272c5aa827fa99" title="lbann::Layer::get_activations" alt="" coords="195,92,386,117"/>
-<area shape="rect" id="node5" href="$classlbann_1_1Layer.html#a45853df73a2e72bfaa774665a0f37ed7" title="lbann::Layer::get_prev\l_activations" alt="" coords="213,165,367,204"/>
-<area shape="rect" id="node3" href="$classlbann_1_1Layer.html#a898e72b93752abf52d35b06459cd360e" title="lbann::Layer::get_parent\l_layers" alt="" coords="434,5,600,44"/>
-</map>

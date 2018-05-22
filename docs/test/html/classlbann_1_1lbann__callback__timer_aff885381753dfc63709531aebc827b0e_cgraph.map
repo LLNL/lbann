@@ -1,6 +1,0 @@
-<map id="lbann::lbann_callback_timer::on_batch_end" name="lbann::lbann_callback_timer::on_batch_end">
-<area shape="rect" id="node2" href="$classlbann_1_1lbann__callback__timer.html#afbf58bd4e1b4c1bcae2e50f78c9507f0" title="lbann::lbann_callback\l_timer::batch_timing_end" alt="" coords="204,55,375,93"/>
-<area shape="rect" id="node3" href="$namespacelbann.html#a478d36031ff0659893c4322cd856157f" title="lbann::get_time" alt="" coords="458,5,570,31"/>
-<area shape="rect" id="node4" href="$classlbann_1_1lbann__summary.html#a3e0b9aae1f80403a195567fd25ea2525" title="lbann::lbann_summary\l::reduce_scalar" alt="" coords="436,55,592,93"/>
-<area shape="rect" id="node5" href="$classlbann_1_1model.html#ad0cdcba177434b52dc9c4a97be183a92" title="lbann::model::get_cur_step" alt="" coords="423,117,605,143"/>
-</map>

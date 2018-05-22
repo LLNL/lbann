@@ -1,5 +1,0 @@
-<map id="lbann::generic_input_layer::calculate_num_iterations_per_epoch_training_unique_per_models" name="lbann::generic_input_layer::calculate_num_iterations_per_epoch_training_unique_per_models">
-<area shape="rect" id="node2" href="$classlbann_1_1generic__io__buffer.html#a4c71135fada7f0da0b315d538d327e59" title="lbann::generic_io_buffer\l::calculate_num_iterations\l_per_epoch_single_model" alt="" coords="250,5,428,57"/>
-<area shape="rect" id="node3" href="$classlbann_1_1generic__input__layer.html#aba732becdb02627e3ad4493ac19e8fb6" title="lbann::generic_input\l_layer::get_data_reader" alt="" coords="258,81,421,120"/>
-<area shape="rect" id="node4" href="$classlbann_1_1model.html#addb40597cf29aa6d31b6a7d09ef48608" title="lbann::model::get_execution_mode" alt="" coords="476,88,705,113"/>
-</map>

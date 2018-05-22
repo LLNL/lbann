@@ -1,7 +1,0 @@
-<map id="lbann::fan_in_fan_out_initializer" name="lbann::fan_in_fan_out_initializer">
-<area shape="rect" id="node3" href="$classlbann_1_1glorot__normal__initializer.html" title="lbann::glorot_normal\l_initializer" alt="" coords="439,5,582,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1glorot__uniform__initializer.html" title="lbann::glorot_uniform\l_initializer" alt="" coords="437,68,584,107"/>
-<area shape="rect" id="node5" href="$classlbann_1_1he__normal__initializer.html" title="lbann::he_normal_initializer" alt="" coords="419,131,602,156"/>
-<area shape="rect" id="node6" href="$classlbann_1_1he__uniform__initializer.html" title="lbann::he_uniform_initializer" alt="" coords="417,180,604,205"/>
-<area shape="rect" id="node2" href="$classlbann_1_1weights__initializer.html" title="lbann::weights_initializer" alt="" coords="5,103,171,128"/>
-</map>

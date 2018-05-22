@@ -1,8 +1,0 @@
-<map id="lbann::data_reader_multi_images" name="lbann::data_reader_multi_images">
-<area shape="rect" id="node6" href="$classlbann_1_1data__reader__mnist__siamese.html" title="lbann::data_reader\l_mnist_siamese" alt="" coords="5,412,139,451"/>
-<area shape="rect" id="node7" href="$classlbann_1_1data__reader__triplet.html" title="lbann::data_reader\l_triplet" alt="" coords="163,412,296,451"/>
-<area shape="rect" id="node2" href="$classlbann_1_1imagenet__reader.html" title="lbann::imagenet_reader" alt="" coords="70,252,232,277"/>
-<area shape="rect" id="node3" href="$classlbann_1_1image__data__reader.html" title="lbann::image_data_reader" alt="" coords="62,179,239,204"/>
-<area shape="rect" id="node4" href="$classlbann_1_1generic__data__reader.html" title="lbann::generic_data\l_reader" alt="" coords="81,92,220,131"/>
-<area shape="rect" id="node5" href="$classlbann_1_1lbann__image__preprocessor.html" title="lbann::lbann_image\l_preprocessor" alt="" coords="82,5,219,44"/>
-</map>

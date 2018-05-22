@@ -1,6 +1,0 @@
-<map id="lbann::loss_function::setup" name="lbann::loss_function::setup">
-<area shape="rect" id="node2" href="$classlbann_1_1cross__entropy__with__uncertainty.html#a44a47468f1d04734068d085417eeab93" title="lbann::cross_entropy\l_with_uncertainty::setup" alt="" coords="193,5,358,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1polya__negloglike.html#a4a7ae8eef1ef216f60b158acb1853355" title="lbann::polya_negloglike\l::setup" alt="" coords="195,68,355,107"/>
-<area shape="rect" id="node3" href="$classlbann_1_1cross__entropy__with__uncertainty.html#a56d734c6665ac1752d8ef821edf2f464" title="lbann::cross_entropy\l_with_uncertainty::name" alt="" coords="406,5,572,44"/>
-<area shape="rect" id="node5" href="$classlbann_1_1polya__negloglike.html#ab787129d7caa79b04b91a9660b31d3b8" title="lbann::polya_negloglike\l::name" alt="" coords="408,68,569,107"/>
-</map>

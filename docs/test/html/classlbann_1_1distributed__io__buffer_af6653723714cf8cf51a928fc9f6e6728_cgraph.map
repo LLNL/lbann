@@ -1,6 +1,0 @@
-<map id="lbann::distributed_io_buffer::compute_max_num_parallel_readers" name="lbann::distributed_io_buffer::compute_max_num_parallel_readers">
-<area shape="rect" id="node2" href="$classlbann_1_1lbann__comm.html#a483bf8a72d44a0e83da45f3d47bd20d4" title="lbann::lbann_comm::\lget_model_grid" alt="" coords="244,5,389,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1lbann__comm.html#ad8a5790dfa9191d4b4f889e8707e57f1" title="lbann::lbann_comm::\lam_model_master" alt="" coords="244,68,389,107"/>
-<area shape="rect" id="node4" href="$classlbann_1_1lbann__comm.html#aeb8ef8f13bbb324e3e1f656998198f3f" title="lbann::lbann_comm::\lget_num_models" alt="" coords="244,131,389,169"/>
-<area shape="rect" id="node5" href="$classlbann_1_1lbann__comm.html#a1ef526486183a29feadca9bef096a534" title="lbann::lbann_comm::\lam_world_master" alt="" coords="244,193,389,232"/>
-</map>

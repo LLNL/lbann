@@ -1,4 +1,0 @@
-<map id="lbann::partitioned_io_buffer::fetch_to_local_matrix" name="lbann::partitioned_io_buffer::fetch_to_local_matrix">
-<area shape="rect" id="node2" href="$classlbann_1_1generic__data__reader.html#ad15887cc31657d03925835aab0d4b675" title="Return the number of parallel readers per model. " alt="" coords="189,5,366,57"/>
-<area shape="rect" id="node3" href="$classlbann_1_1lbann__comm.html#a789453454468a3b70de768537c50ca52" title="lbann::lbann_comm::\lget_rank_in_model" alt="" coords="205,81,350,120"/>
-</map>

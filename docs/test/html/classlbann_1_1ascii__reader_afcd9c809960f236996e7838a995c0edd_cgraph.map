@@ -1,6 +1,0 @@
-<map id="lbann::ascii_reader::get_data_dims" name="lbann::ascii_reader::get_data_dims">
-<area shape="rect" id="node2" href="$classlbann_1_1ascii__reader.html#a5b56d66d5f2c175d580ef213c901fef0" title="lbann::ascii_reader\l::fetch_datum" alt="" coords="187,5,321,44"/>
-<area shape="rect" id="node5" href="$classlbann_1_1ascii__reader.html#a361f883c71236c37dd2bc2dda5f00ef3" title="lbann::ascii_reader\l::fetch_label" alt="" coords="187,68,321,107"/>
-<area shape="rect" id="node3" href="$classlbann_1_1generic__data__reader.html#ab4c6c2d4ba40ece809ce896828c8ff03" title="lbann::generic_data\l_reader::get_file_dir" alt="" coords="392,5,531,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1generic__data__reader.html#a56664e1b43f3fe923cf6d652f14b40a9" title="lbann::generic_data\l_reader::get_data_filename" alt="" coords="369,68,554,107"/>
-</map>

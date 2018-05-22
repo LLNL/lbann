@@ -1,8 +1,0 @@
-<map id="lbann::openread" name="lbann::openread">
-<area shape="rect" id="node2" href="$namespacelbann.html#abebab8298e56db6a455a9ed08ab42bb4" title="Reads the &quot;latest&quot; file and returns the epoch number and sample offset for most recent checkpoint..." alt="" coords="176,25,304,51"/>
-<area shape="rect" id="node7" href="$classlbann_1_1persist.html#a123cbc1d2b693640c784a45cbc6d2d97" title="lbann::persist::open\l_restart" alt="" coords="171,75,309,113"/>
-<area shape="rect" id="node3" href="$classlbann_1_1lbann__callback__checkpoint.html#a40d369278bc5963ba2f3cca1750ba004" title="lbann::lbann_callback\l_checkpoint::restartShared" alt="" coords="357,47,537,85"/>
-<area shape="rect" id="node4" href="$classlbann_1_1lbann__callback__checkpoint.html#ac3a0bb250a679b28924910c0dc617809" title="lbann::lbann_callback\l_checkpoint::set_checkpoint\l_per_rank" alt="" coords="585,5,774,57"/>
-<area shape="rect" id="node5" href="$classlbann_1_1lbann__callback__checkpoint.html#a383654a7bb70672dfc9fef679f4b509f" title="lbann::lbann_callback\l_checkpoint::setup" alt="" coords="605,81,755,120"/>
-<area shape="rect" id="node6" href="$classlbann_1_1lbann__callback__checkpoint.html#a63dc49f38f063f9b85d9abdf8b2855aa" title="lbann::lbann_callback\l_checkpoint::copy" alt="" coords="822,81,972,120"/>
-</map>

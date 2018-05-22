@@ -1,7 +1,0 @@
-<map id="lbann::numpy_reader::get_data_dims" name="lbann::numpy_reader::get_data_dims">
-<area shape="rect" id="node2" href="$classlbann_1_1numpy__reader.html#ab08dc207eaae7c7f5a70e602da3c1be0" title="lbann::numpy_reader\l::fetch_datum" alt="" coords="201,5,348,44"/>
-<area shape="rect" id="node5" href="$classlbann_1_1numpy__reader.html#a67691517fc4da98ca95dfc934e847067" title="lbann::numpy_reader\l::fetch_label" alt="" coords="201,68,348,107"/>
-<area shape="rect" id="node6" href="$classlbann_1_1numpy__reader.html#ad7c3a680426ffcf467d74ba3a5e6eb20" title="lbann::numpy_reader\l::fetch_response" alt="" coords="201,131,348,169"/>
-<area shape="rect" id="node3" href="$namespacelbann_1_1cnpy__utils.html#a9ac86d96ccb1f8b4b2ea16441738781f" title="lbann::cnpy_utils::data" alt="" coords="396,75,550,100"/>
-<area shape="rect" id="node4" href="$namespacelbann_1_1cnpy__utils.html#a39fd207d94d1333e6379c53423b6f1a1" title="lbann::cnpy_utils::\lcompute_cnpy_array_offset" alt="" coords="598,68,784,107"/>
-</map>

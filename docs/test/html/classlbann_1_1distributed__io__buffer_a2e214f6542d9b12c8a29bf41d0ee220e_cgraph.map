@@ -1,9 +1,0 @@
-<map id="lbann::distributed_io_buffer::is_data_set_processed" name="lbann::distributed_io_buffer::is_data_set_processed">
-<area shape="rect" id="node2" href="$classlbann_1_1generic__data__reader.html#ad15887cc31657d03925835aab0d4b675" title="Return the number of parallel readers per model. " alt="" coords="190,5,367,57"/>
-<area shape="rect" id="node3" href="$classlbann_1_1generic__data__reader.html#a06fb58d1c0b84b8c76f5b4d160751f34" title="Get the number of iterations in each epoch. " alt="" coords="184,81,372,133"/>
-<area shape="rect" id="node4" href="$classlbann_1_1generic__data__reader.html#a7c884d3646396a05d9e01e3b7a260419" title="Return the index of the current iteration step in the epoch (also the mini&#45;batch index) ..." alt="" coords="207,157,349,209"/>
-<area shape="rect" id="node5" href="$classlbann_1_1distributed__io__buffer.html#ac176f3fced1191534a985f831136aa3e" title="lbann::distributed\l_io_buffer::get_data\l_buffer" alt="" coords="208,233,348,285"/>
-<area shape="rect" id="node8" href="$classlbann_1_1lbann__comm.html#a789453454468a3b70de768537c50ca52" title="lbann::lbann_comm::\lget_rank_in_model" alt="" coords="206,309,351,348"/>
-<area shape="rect" id="node6" href="$classlbann_1_1data__buffer.html#ad03198df8b35ac6349180d5b2bc036d5" title="lbann::data_buffer\l::data_buffer" alt="" coords="420,240,549,279"/>
-<area shape="rect" id="node7" href="$classlbann_1_1data__buffer.html#a364283f9ce3d811ec73fc3c2513f11a6" title="lbann::data_buffer\l::operator=" alt="" coords="597,240,725,279"/>
-</map>

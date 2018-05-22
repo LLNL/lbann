@@ -1,7 +1,0 @@
-<map id="lbann::optimizer::operator=" name="lbann::optimizer::operator=">
-<area shape="rect" id="node2" href="$classlbann_1_1adagrad.html#a9c9b59e0dfdfa32a3a9596a38fd95af6" title="lbann::adagrad::operator=" alt="" coords="234,5,409,31"/>
-<area shape="rect" id="node3" href="$classlbann_1_1adam.html#a00051b788b2bb34102a6bad5a380fc85" title="lbann::adam::operator=" alt="" coords="241,55,401,80"/>
-<area shape="rect" id="node4" href="$classlbann_1_1hypergradient__adam.html#aab8df6bbd256c9731dc1e5b8eac286ec" title="lbann::hypergradient\l_adam::operator=" alt="" coords="250,104,393,143"/>
-<area shape="rect" id="node5" href="$classlbann_1_1rmsprop.html#a3c7eb1fb105c7be762b97e4f947a2b94" title="lbann::rmsprop::operator=" alt="" coords="234,167,409,192"/>
-<area shape="rect" id="node6" href="$classlbann_1_1sgd.html#ad3949e74505cd25b267dbdd5b510a83f" title="lbann::sgd::operator=" alt="" coords="247,216,395,241"/>
-</map>

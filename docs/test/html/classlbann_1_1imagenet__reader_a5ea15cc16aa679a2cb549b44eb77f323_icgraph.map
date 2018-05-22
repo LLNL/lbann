@@ -1,6 +1,0 @@
-<map id="lbann::imagenet_reader::operator=" name="lbann::imagenet_reader::operator=">
-<area shape="rect" id="node2" href="$classlbann_1_1imagenet__reader__single.html#af38327f44f1de2dd191cd2d1dc193900" title="lbann::imagenet_reader\l_single::operator=" alt="" coords="220,5,383,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1data__reader__multi__images.html#a8d9eae4dde10654c1f1bf7c1fe685e99" title="lbann::data_reader\l_multi_images::operator=" alt="" coords="216,68,388,107"/>
-<area shape="rect" id="node4" href="$classlbann_1_1data__reader__mnist__siamese.html#ad41517c9c789bbf8d7e0696832e52d98" title="lbann::data_reader\l_mnist_siamese::operator=" alt="" coords="436,36,618,75"/>
-<area shape="rect" id="node5" href="$classlbann_1_1data__reader__triplet.html#a096c73a8b3d163faadfee3b9d14fc842" title="lbann::data_reader\l_triplet::operator=" alt="" coords="460,99,594,137"/>
-</map>

@@ -1,4 +1,0 @@
-<map id="lbann::proto::anonymous_namespace{layer_graph_factory::cpp}::setup_unpooling_pointers" name="lbann::proto::anonymous_namespace{layer_graph_factory::cpp}::setup_unpooling_pointers">
-<area shape="rect" id="node2" href="$classlbann_1_1Layer.html#a80027550202fa7dbb1dd55fa8a66c84b" title="lbann::Layer::get_name" alt="" coords="261,5,422,31"/>
-<area shape="rect" id="node3" href="$classlbann_1_1unpooling__layer.html#a5269d1939056430c0d8033629a770b38" title="lbann::unpooling_layer\l::set_pooling_layer" alt="" coords="264,55,419,93"/>
-</map>

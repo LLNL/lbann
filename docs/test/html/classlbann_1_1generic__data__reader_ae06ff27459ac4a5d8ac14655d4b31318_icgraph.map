@@ -1,5 +1,0 @@
-<map id="lbann::generic_data_reader::get_data_dims" name="lbann::generic_data_reader::get_data_dims">
-<area shape="rect" id="node2" href="$classlbann_1_1generic__input__layer.html#a6008b13521d27d6139201fa374b088eb" title="lbann::generic_input\l_layer::get_data_dims" alt="" coords="216,37,368,76"/>
-<area shape="rect" id="node3" href="$classlbann_1_1generic__input__layer.html#ad117da4e6155159439826bba6657cf05" title="lbann::generic_input\l_layer::setup_dims" alt="" coords="422,5,563,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1generic__target__layer.html#abc0a5ec9761f3cebd34d3549d4681108" title="lbann::generic_target\l_layer::get_data_dims" alt="" coords="416,68,569,107"/>
-</map>

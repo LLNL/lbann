@@ -1,4 +1,0 @@
-<map id="lbann::base_convolution_layer::apply_bias_cpu" name="lbann::base_convolution_layer::apply_bias_cpu">
-<area shape="rect" id="node2" href="$classlbann_1_1convolution__layer.html#aaca2c840fe41d8025efce91d6e9211b9" title="lbann::convolution\l_layer::fp_compute" alt="" coords="223,5,358,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1deconvolution__layer.html#a6ebbb96c605a96b41fdbbc848dcaa877" title="lbann::deconvolution\l_layer::fp_compute" alt="" coords="218,68,362,107"/>
-</map>

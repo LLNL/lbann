@@ -1,8 +1,0 @@
-<map id="lbann::mesh_reader::fetch_datum" name="lbann::mesh_reader::fetch_datum">
-<area shape="rect" id="node2" href="$namespacelbann.html#ae6ce9c2fdec6f81803f6b1a6555c31c5" title="lbann::get_fast_generator" alt="" coords="193,19,367,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1mesh__reader.html#a8cbffa6676c89c44174a7085ea3baeca" title="lbann::mesh_reader\l::load_file" alt="" coords="210,68,350,107"/>
-<area shape="rect" id="node4" href="$classlbann_1_1mesh__reader.html#a61fd5f3231815ec79eb3cf17070509f9" title="Return the full path to the data file for datum data_id&#39;s channel. " alt="" coords="415,5,555,44"/>
-<area shape="rect" id="node6" href="$classlbann_1_1mesh__reader.html#a8cff71603c2d652f8b000a5dc4c75431" title="Flip mat horizontally (i.e. about its vertical axis). " alt="" coords="415,68,555,107"/>
-<area shape="rect" id="node7" href="$classlbann_1_1mesh__reader.html#a4b578dc1ba067a07748de0977d97b6bc" title="Flip mat vertically (i.e. about its horizontal axis). " alt="" coords="415,131,555,169"/>
-<area shape="rect" id="node5" href="$classlbann_1_1generic__data__reader.html#ab4c6c2d4ba40ece809ce896828c8ff03" title="lbann::generic_data\l_reader::get_file_dir" alt="" coords="603,5,743,44"/>
-</map>

@@ -1,8 +1,0 @@
-<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classlbann_1_1optimizer.html" title="lbann::optimizer" alt="" coords="5,104,121,129"/>
-<area shape="rect" id="node2" href="$classlbann_1_1adagrad.html" title="lbann::adagrad" alt="" coords="205,5,316,31"/>
-<area shape="rect" id="node3" href="$classlbann_1_1adam.html" title="lbann::adam" alt="" coords="213,55,308,80"/>
-<area shape="rect" id="node4" href="$classlbann_1_1hypergradient__adam.html" title="lbann::hypergradient_adam" alt="" coords="169,104,352,129"/>
-<area shape="rect" id="node5" href="$classlbann_1_1rmsprop.html" title="lbann::rmsprop" alt="" coords="205,153,316,179"/>
-<area shape="rect" id="node6" href="$classlbann_1_1sgd.html" title="lbann::sgd" alt="" coords="219,203,302,228"/>
-</map>

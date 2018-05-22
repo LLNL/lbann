@@ -1,5 +1,0 @@
-<map id="lbann::metric_statistics::unpack_scalars" name="lbann::metric_statistics::unpack_scalars">
-<area shape="rect" id="node2" href="$classlbann_1_1persist.html#ae3a0b96ece72901bb0a05d26a4eb4791" title="lbann::persist::read\l_double" alt="" coords="210,5,344,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1persist.html#aa6d996db3714a7ae055adac0d8e8ac63" title="lbann::persist::read\l_uint64" alt="" coords="210,68,344,107"/>
-<area shape="rect" id="node3" href="$namespacelbann.html#a85385e2a9e058b6720300b4cbdd2b1d0" title="lbann::read_bytes" alt="" coords="392,44,520,69"/>
-</map>

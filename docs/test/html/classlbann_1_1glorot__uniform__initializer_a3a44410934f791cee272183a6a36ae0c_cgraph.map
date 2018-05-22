@@ -1,5 +1,0 @@
-<map id="lbann::glorot_uniform_initializer::initialize_entries" name="lbann::glorot_uniform_initializer::initialize_entries">
-<area shape="rect" id="node2" href="$namespacelbann.html#abd116f95f55d0e29d9a0cc386139c4b4" title="lbann::gaussian_fill" alt="" coords="200,19,335,44"/>
-<area shape="rect" id="node3" href="$namespacelbann.html#a2f40602f0503f9737325bb267e5c4dcc" title="lbann::gaussian_fill\l_procdet" alt="" coords="383,12,517,51"/>
-<area shape="rect" id="node4" href="$namespacelbann.html#a4fea7ba21017b49d1e34394b4c20c764" title="lbann::get_generator" alt="" coords="565,19,710,44"/>
-</map>

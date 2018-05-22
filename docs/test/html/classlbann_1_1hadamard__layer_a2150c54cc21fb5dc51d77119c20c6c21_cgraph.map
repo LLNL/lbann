@@ -1,6 +1,0 @@
-<map id="lbann::hadamard_layer::bp_compute" name="lbann::hadamard_layer::bp_compute">
-<area shape="rect" id="node2" href="$classlbann_1_1Layer.html#a82827edc5e869960144f3ccb2172bfcd" title="lbann::Layer::get_local\l_prev_error_signals" alt="" coords="211,29,367,68"/>
-<area shape="rect" id="node4" href="$classlbann_1_1Layer.html#ac9290d4a6453ccda5f6b4d8b57b49ba3" title="lbann::Layer::get_num\l_parents" alt="" coords="212,92,366,131"/>
-<area shape="rect" id="node3" href="$classlbann_1_1Layer.html#a7ac4579d3c1671dfaf86e3b618d6938a" title="lbann::Layer::get_prev\l_error_signals" alt="" coords="420,29,575,68"/>
-<area shape="rect" id="node5" href="$classlbann_1_1Layer.html#a898e72b93752abf52d35b06459cd360e" title="lbann::Layer::get_parent\l_layers" alt="" coords="415,92,580,131"/>
-</map>

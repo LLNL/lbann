@@ -1,5 +1,0 @@
-<map id="lbann::adam::pack_scalars" name="lbann::adam::pack_scalars">
-<area shape="rect" id="node2" href="$classlbann_1_1adam.html#a8070db0a451bdbc6e86200eaa14f6ac7" title="lbann::adam::save_to\l_checkpoint_shared" alt="" coords="233,5,382,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1adam.html#ae5b6108946e6a09b4e13e4285350aa05" title="lbann::adam::unpack\l_header" alt="" coords="430,5,575,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1adam.html#aca07e925a4751fc5c10a62fb9c72c896" title="lbann::adam::load_from\l_checkpoint_shared" alt="" coords="623,5,785,44"/>
-</map>

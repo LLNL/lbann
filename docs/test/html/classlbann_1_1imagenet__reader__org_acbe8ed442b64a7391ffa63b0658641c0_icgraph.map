@@ -1,7 +1,0 @@
-<map id="lbann::imagenet_reader_org::allocate_pixel_bufs" name="lbann::imagenet_reader_org::allocate_pixel_bufs">
-<area shape="rect" id="node2" href="$classlbann_1_1imagenet__reader__org.html#ade6e7e9bc1a3f9562c0f274a3d665e0a" title="lbann::imagenet_reader\l_org::get_type" alt="" coords="453,5,615,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1imagenet__reader__org.html#a77d88b53b26f903855da22e5d77ef06a" title="lbann::imagenet_reader\l_org::imagenet_reader_org" alt="" coords="222,96,405,135"/>
-<area shape="rect" id="node6" href="$classlbann_1_1imagenet__reader__org.html#afb843084789c6a12e01a5d4a687003cf" title="Set up imagenet specific input parameters. " alt="" coords="233,33,395,72"/>
-<area shape="rect" id="node3" href="$classlbann_1_1imagenet__reader__org.html#ad4c47413e16c1c53000b7d7be757ff6e" title="lbann::imagenet_reader\l_org::fetch_datum" alt="" coords="663,5,825,44"/>
-<area shape="rect" id="node5" href="$classlbann_1_1imagenet__reader__org.html#ab13b41829be269110dfe74082918c349" title="lbann::imagenet_reader\l_org::copy" alt="" coords="453,96,615,135"/>
-</map>

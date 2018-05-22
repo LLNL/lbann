@@ -1,4 +1,0 @@
-<map id="lbann::lbann_comm::model_gather" name="lbann::lbann_comm::model_gather">
-<area shape="rect" id="node2" href="$classlbann_1_1lbann__callback__check__dataset.html#a8cbc105d8bd9d3b493ef34de7c387929" title="lbann::lbann_callback\l_check_dataset::on_epoch_end" alt="" coords="198,5,409,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1lbann__callback__check__dataset.html#a8be592f1687aea003986c874dc5f7516" title="lbann::lbann_callback\l_check_dataset::copy" alt="" coords="457,5,607,44"/>
-</map>

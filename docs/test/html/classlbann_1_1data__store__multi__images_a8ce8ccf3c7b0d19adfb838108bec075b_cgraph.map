@@ -1,5 +1,0 @@
-<map id="lbann::data_store_multi_images::read_files" name="lbann::data_store_multi_images::read_files">
-<area shape="rect" id="node2" href="$classlbann_1_1data__store__multi__images.html#a39108690484fe407efafefe6a4b0947b" title="lbann::data_store_multi\l_images::get_sample" alt="" coords="217,5,377,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1data__store__image.html#a8a53bab58d75554821f90c38d14078aa" title="loads file from disk into *p; checks that bytes read = sz " alt="" coords="213,68,381,107"/>
-<area shape="rect" id="node3" href="$classlbann_1_1data__reader__multi__images.html#ab940ea9e62d5fac6d6c1b209404abe83" title="lbann::data_reader\l_multi_images::get_sample" alt="" coords="429,5,613,44"/>
-</map>

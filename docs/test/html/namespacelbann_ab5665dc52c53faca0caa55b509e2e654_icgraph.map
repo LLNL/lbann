@@ -1,6 +1,0 @@
-<map id="lbann::get_comm_type_name" name="lbann::get_comm_type_name">
-<area shape="rect" id="node2" href="$classlbann_1_1lbann__callback__imcomm.html#a13fe710b841f72e28daf8de029f6c2f9" title="lbann::lbann_callback\l_imcomm::reshape_mat" alt="" coords="250,40,415,79"/>
-<area shape="rect" id="node3" href="$classlbann_1_1lbann__callback__imcomm.html#a3160dbf536def4f930e0ea0aabdebc11" title="lbann::lbann_callback\l_imcomm::on_epoch_end" alt="" coords="463,5,637,44"/>
-<area shape="rect" id="node5" href="$classlbann_1_1lbann__callback__imcomm.html#a0a425ba562f7637b25cd6ba094e7885b" title="lbann::lbann_callback\l_imcomm::on_backward\l_prop_end" alt="" coords="467,68,633,120"/>
-<area shape="rect" id="node4" href="$classlbann_1_1lbann__callback__imcomm.html#a9d59535b4789389a8c3c9e406cd1e2d3" title="lbann::lbann_callback\l_imcomm::copy" alt="" coords="685,40,835,79"/>
-</map>

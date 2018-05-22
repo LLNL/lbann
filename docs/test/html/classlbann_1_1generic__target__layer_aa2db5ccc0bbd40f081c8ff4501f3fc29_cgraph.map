@@ -1,7 +1,0 @@
-<map id="lbann::generic_target_layer::get_description" name="lbann::generic_target_layer::get_description">
-<area shape="rect" id="node2" href="$classlbann_1_1generic__target__layer.html#ad6ea9a43254664c75aa06e8e5c1d7e8c" title="lbann::generic_target\l_layer::get_topo_description" alt="" coords="209,5,398,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1generic__io__buffer.html#adc77c0a280f8a200a8d8495c3a371ebb" title="lbann::generic_io_buffer\l::get_type" alt="" coords="221,68,385,107"/>
-<area shape="rect" id="node5" href="$classlbann_1_1Layer.html#ae3f4a5602df821f4221614b1e3782dc1" title="lbann::Layer::get_data\l_layout_string" alt="" coords="226,131,380,169"/>
-<area shape="rect" id="node6" href="$classlbann_1_1Layer.html#a5dfb66e81fc085997402a5e2241316bd" title="lbann::Layer::get_data\l_layout" alt="" coords="226,193,380,232"/>
-<area shape="rect" id="node3" href="$classlbann_1_1generic__input__layer.html#a36d9962105ca89889e3f38f1c1801560" title="lbann::generic_input\l_layer::get_topo_description" alt="" coords="446,5,635,44"/>
-</map>

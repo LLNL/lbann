@@ -1,6 +1,0 @@
-<map id="lbann::persist::open_restart" name="lbann::persist::open_restart">
-<area shape="rect" id="node2" href="$classlbann_1_1lbann__callback__checkpoint.html#a40d369278bc5963ba2f3cca1750ba004" title="lbann::lbann_callback\l_checkpoint::restartShared" alt="" coords="191,47,372,85"/>
-<area shape="rect" id="node3" href="$classlbann_1_1lbann__callback__checkpoint.html#ac3a0bb250a679b28924910c0dc617809" title="lbann::lbann_callback\l_checkpoint::set_checkpoint\l_per_rank" alt="" coords="420,5,609,57"/>
-<area shape="rect" id="node4" href="$classlbann_1_1lbann__callback__checkpoint.html#a383654a7bb70672dfc9fef679f4b509f" title="lbann::lbann_callback\l_checkpoint::setup" alt="" coords="439,81,589,120"/>
-<area shape="rect" id="node5" href="$classlbann_1_1lbann__callback__checkpoint.html#a63dc49f38f063f9b85d9abdf8b2855aa" title="lbann::lbann_callback\l_checkpoint::copy" alt="" coords="657,81,806,120"/>
-</map>

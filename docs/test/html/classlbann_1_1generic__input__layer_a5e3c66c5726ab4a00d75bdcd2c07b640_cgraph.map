@@ -1,5 +1,0 @@
-<map id="lbann::generic_input_layer::get_last_mini_batch_size" name="lbann::generic_input_layer::get_last_mini_batch_size">
-<area shape="rect" id="node2" href="$classlbann_1_1generic__input__layer.html#aba732becdb02627e3ad4493ac19e8fb6" title="lbann::generic_input\l_layer::get_data_reader" alt="" coords="197,5,360,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1generic__data__reader.html#a79cb3bee4e0d19006ef9213763dc8af2" title="Return the last mini batch size. " alt="" coords="202,68,355,120"/>
-<area shape="rect" id="node3" href="$classlbann_1_1model.html#addb40597cf29aa6d31b6a7d09ef48608" title="lbann::model::get_execution_mode" alt="" coords="408,12,637,37"/>
-</map>

@@ -1,7 +1,0 @@
-<map id="lbann::lbann_quantizer::onebit_quantize" name="lbann::lbann_quantizer::onebit_quantize">
-<area shape="rect" id="node2" href="$classlbann_1_1lbann__quantizer.html#a9eeb89150026bf4b7bea15bffdba10d3" title="lbann::lbann_quantizer\l::onebit_quantize" alt="" coords="215,5,371,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1lbann__quantizer.html#a4b326de1ca5b7eba6415b6f42f83335b" title="lbann::lbann_quantizer\l::intermodel_sum_onebit\l_quantized" alt="" coords="210,68,377,120"/>
-<area shape="rect" id="node4" href="$classlbann_1_1lbann__callback__imcomm.html#a0a425ba562f7637b25cd6ba094e7885b" title="lbann::lbann_callback\l_imcomm::on_backward\l_prop_end" alt="" coords="426,29,592,81"/>
-<area shape="rect" id="node6" href="$classlbann_1_1lbann__quantizer.html#af24e00e26e157f102f3cef547de40ae1" title="lbann::lbann_quantizer\l::intermodel_sum_onebit\l_quantized" alt="" coords="425,105,592,157"/>
-<area shape="rect" id="node5" href="$classlbann_1_1lbann__callback__imcomm.html#a9d59535b4789389a8c3c9e406cd1e2d3" title="lbann::lbann_callback\l_imcomm::copy" alt="" coords="640,36,790,75"/>
-</map>

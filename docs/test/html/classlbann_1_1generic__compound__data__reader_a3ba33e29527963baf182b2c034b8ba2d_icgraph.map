@@ -1,6 +1,0 @@
-<map id="lbann::generic_compound_data_reader::get_data_readers" name="lbann::generic_compound_data_reader::get_data_readers">
-<area shape="rect" id="node2" href="$classlbann_1_1data__store__merge__features.html#ade3b7b138376880121d16f40255e5f54" title="dtor " alt="" coords="228,5,398,57"/>
-<area shape="rect" id="node4" href="$classlbann_1_1data__store__merge__samples.html#a9f7f027eab6bfb65dd8001939769f476" title="called by generic_data_reader::setup_data_store " alt="" coords="228,81,398,120"/>
-<area shape="rect" id="node3" href="$classlbann_1_1data__store__merge__features.html#a00a6f7e1f07b5bc65d98c835925d1e08" title="lbann::data_store_merge\l_features::copy" alt="" coords="446,12,615,51"/>
-<area shape="rect" id="node5" href="$classlbann_1_1data__store__merge__samples.html#a8b81d947c1f05c38b7f979ce7e3cef97" title="called by various image data readers " alt="" coords="446,81,615,120"/>
-</map>

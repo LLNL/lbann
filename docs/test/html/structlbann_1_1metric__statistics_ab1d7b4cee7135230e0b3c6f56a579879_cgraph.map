@@ -1,7 +1,0 @@
-<map id="lbann::metric_statistics::metric_statistics" name="lbann::metric_statistics::metric_statistics">
-<area shape="rect" id="node2" href="$structlbann_1_1metric__statistics.html#a3ab2a4cd36c154e495bc8f18c4295907" title="lbann::metric_statistics\l::reset" alt="" coords="210,5,366,44"/>
-<area shape="rect" id="node3" href="$structlbann_1_1metric__statistics.html#a4d9ae608667c58eda58be3f4a237122d" title="lbann::metric_statistics\l::operator=" alt="" coords="210,68,366,107"/>
-<area shape="rect" id="node4" href="$structlbann_1_1metric__statistics.html#aa25840fdf7ef1ea78523047cb904d2c3" title="lbann::metric_statistics\l::~metric_statistics" alt="" coords="210,131,366,169"/>
-<area shape="rect" id="node5" href="$structlbann_1_1metric__statistics.html#a1933a2417f08d99b1ddfa2b883dae68a" title="lbann::metric_statistics\l::add_value" alt="" coords="210,193,366,232"/>
-<area shape="rect" id="node6" href="$structlbann_1_1metric__statistics.html#ac3cb1abfc32b090fa2a08bda6afa5c09" title="lbann::metric_statistics\l::get_mean" alt="" coords="210,256,366,295"/>
-</map>

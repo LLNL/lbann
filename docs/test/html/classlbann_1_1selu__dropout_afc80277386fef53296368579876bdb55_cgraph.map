@@ -1,7 +1,0 @@
-<map id="lbann::selu_dropout::bp_compute" name="lbann::selu_dropout::bp_compute">
-<area shape="rect" id="node2" href="$classlbann_1_1model.html#addb40597cf29aa6d31b6a7d09ef48608" title="lbann::model::get_execution_mode" alt="" coords="192,5,421,31"/>
-<area shape="rect" id="node3" href="$classlbann_1_1Layer.html#adb561e140e0bb601f3c5a8ee053a71d2" title="lbann::Layer::get_error\l_signals" alt="" coords="469,85,625,124"/>
-<area shape="rect" id="node4" href="$classlbann_1_1Layer.html#a7ac4579d3c1671dfaf86e3b618d6938a" title="lbann::Layer::get_prev\l_error_signals" alt="" coords="470,185,624,224"/>
-<area shape="rect" id="node5" href="$classlbann_1_1Layer.html#a82827edc5e869960144f3ccb2172bfcd" title="lbann::Layer::get_local\l_prev_error_signals" alt="" coords="228,221,384,260"/>
-<area shape="rect" id="node6" href="$classlbann_1_1Layer.html#af178d00b9d878aa7d87754bff2a91f3a" title="lbann::Layer::get_local\l_error_signals" alt="" coords="228,107,384,145"/>
-</map>

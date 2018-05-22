@@ -1,9 +1,0 @@
-<map id="lbann::lbann_callback_check_reconstruction_error::copy" name="lbann::lbann_callback_check_reconstruction_error::copy">
-<area shape="rect" id="node2" href="$classlbann_1_1lbann__callback__check__reconstruction__error.html#aaed51def6fe5ba7093e3d2cc41637a2a" title="lbann::lbann_callback\l_check_reconstruction\l_error::lbann_callback\l_check_reconstruction_error" alt="" coords="208,28,398,93"/>
-<area shape="rect" id="node3" href="$classlbann_1_1lbann__callback__check__reconstruction__error.html#a8a6a72b8016d3ba3ad11b5e7e2f3f5df" title="lbann::lbann_callback\l_check_reconstruction\l_error::on_epoch_end" alt="" coords="226,117,381,169"/>
-<area shape="rect" id="node4" href="$classlbann_1_1model.html#aee5530467523924a662dec891b9a7993" title="lbann::model::get_objective\l_function" alt="" coords="469,5,653,44"/>
-<area shape="rect" id="node5" href="$classlbann_1_1objective__function.html#a0aa271e497363e97ba3741292961d47d" title="lbann::objective_function\l::get_mean_value" alt="" coords="477,68,645,107"/>
-<area shape="rect" id="node6" href="$classlbann_1_1model.html#addb40597cf29aa6d31b6a7d09ef48608" title="lbann::model::get_execution_mode" alt="" coords="446,131,675,156"/>
-<area shape="rect" id="node7" href="$classlbann_1_1model.html#a9e1cfe449d2f4858a32994f6be0042fb" title="lbann::model::get_comm" alt="" coords="477,180,644,205"/>
-<area shape="rect" id="node8" href="$classlbann_1_1lbann__comm.html#ad8a5790dfa9191d4b4f889e8707e57f1" title="lbann::lbann_comm::\lam_model_master" alt="" coords="488,229,633,268"/>
-</map>

@@ -1,7 +1,0 @@
-<map id="lbann::adagrad::load_from_checkpoint_shared" name="lbann::adagrad::load_from_checkpoint_shared">
-<area shape="rect" id="node2" href="$classlbann_1_1optimizer.html#a42a52aab9a682fda57c1e639968a44b9" title="lbann::optimizer::load\l_from_checkpoint_shared" alt="" coords="228,5,403,44"/>
-<area shape="rect" id="node5" href="$classlbann_1_1persist.html#aa98be93f33b510e5b506b61de6bd79bd" title="lbann::persist::read\l_distmat" alt="" coords="248,68,383,107"/>
-<area shape="rect" id="node3" href="$classlbann_1_1persist.html#a1e84eff891affad6001f3c5fa803cae2" title="lbann::persist::read\l_datatype" alt="" coords="451,5,586,44"/>
-<area shape="rect" id="node4" href="$namespacelbann.html#a85385e2a9e058b6720300b4cbdd2b1d0" title="lbann::read_bytes" alt="" coords="634,12,761,37"/>
-<area shape="rect" id="node6" href="$namespacelbann.html#aefae2a9fc9d742ece0fa8ca7ed9ee137" title="lbann::exists" alt="" coords="470,75,566,100"/>
-</map>

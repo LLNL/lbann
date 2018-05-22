@@ -1,4 +1,0 @@
-<map id="lbann::imagenet_reader_patches::replicate_processor" name="lbann::imagenet_reader_patches::replicate_processor">
-<area shape="rect" id="node2" href="$classlbann_1_1imagenet__reader__patches.html#adc6363b20f058260c674d92af2a6ef80" title="lbann::imagenet_reader\l_patches::get_type" alt="" coords="264,5,427,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1image__data__reader.html#a0164b0e3abbe92daef73b36fb925403e" title="lbann::image_data_reader\l::set_linearized_image_size" alt="" coords="253,68,438,107"/>
-</map>

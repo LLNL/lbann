@@ -1,8 +1,0 @@
-<map id="lbann::csv_reader::fetch_line_label_response" name="lbann::csv_reader::fetch_line_label_response">
-<area shape="rect" id="node2" href="$classlbann_1_1csv__reader.html#a6fab46f562936d43d19e0eaacf8b72c0" title="Get the dimensions of the data. " alt="" coords="448,5,582,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1csv__reader.html#a1fbac4ff1c24ec7f41f55fc8a43515c6" title="lbann::csv_reader::\lfetch_datum" alt="" coords="238,33,373,72"/>
-<area shape="rect" id="node4" href="$classlbann_1_1data__store__csv.html#a184c7e6f27c5e07255b9c889ace02407" title="called by generic_data_reader::setup_data_store " alt="" coords="439,143,591,181"/>
-<area shape="rect" id="node6" href="$classlbann_1_1data__store__csv.html#a3125cf637d40e8908c68bb74690f06da" title="lbann::data_store_csv\l::get_data_buf_DataType" alt="" coords="429,205,600,244"/>
-<area shape="rect" id="node7" href="$classlbann_1_1data__store__csv.html#a6184c48ec096372899e127235bb741da" title="fills in m_data (the data store) " alt="" coords="230,148,381,187"/>
-<area shape="rect" id="node5" href="$classlbann_1_1data__store__csv.html#a2e95f53f539a838e6c6484b9f4de5a45" title="lbann::data_store_csv\l::copy" alt="" coords="648,175,800,213"/>
-</map>

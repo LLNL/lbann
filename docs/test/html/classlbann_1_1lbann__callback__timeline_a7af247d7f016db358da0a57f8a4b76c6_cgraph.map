@@ -1,5 +1,0 @@
-<map id="lbann::lbann_callback_timeline::on_train_end" name="lbann::lbann_callback_timeline::on_train_end">
-<area shape="rect" id="node2" href="$classlbann_1_1model.html#a9e1cfe449d2f4858a32994f6be0042fb" title="lbann::model::get_comm" alt="" coords="213,5,381,31"/>
-<area shape="rect" id="node3" href="$classlbann_1_1lbann__comm.html#a6422f70c92bed0b78179facc52b066f7" title="lbann::lbann_comm::\lget_model_rank" alt="" coords="224,55,370,93"/>
-<area shape="rect" id="node4" href="$classlbann_1_1lbann__comm.html#a789453454468a3b70de768537c50ca52" title="lbann::lbann_comm::\lget_rank_in_model" alt="" coords="224,117,370,156"/>
-</map>

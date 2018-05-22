@@ -1,6 +1,0 @@
-<map id="lbann::model::add_weights" name="lbann::model::add_weights">
-<area shape="rect" id="node2" href="$classlbann_1_1base__convolution__layer.html#a9f850c1bdf4ae3cd986411d3cb3a524c" title="lbann::base_convolution\l_layer::setup_data" alt="" coords="241,36,406,75"/>
-<area shape="rect" id="node5" href="$classlbann_1_1batch__normalization.html#ac046a5ab567cc01f9a36c6b0fc4e3b55" title="lbann::batch_normalization\l::setup_data" alt="" coords="233,99,414,137"/>
-<area shape="rect" id="node3" href="$classlbann_1_1convolution__layer.html#ab20636b44d2b17abdb5424df54cb9c6d" title="lbann::convolution\l_layer::setup_data" alt="" coords="468,5,599,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1deconvolution__layer.html#a6d891396ea1c91030cd647cc111c8c5f" title="lbann::deconvolution\l_layer::setup_data" alt="" coords="462,68,606,107"/>
-</map>

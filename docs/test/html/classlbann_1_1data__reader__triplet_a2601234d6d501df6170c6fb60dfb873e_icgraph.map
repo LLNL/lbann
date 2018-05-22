@@ -1,7 +1,0 @@
-<map id="lbann::data_reader_triplet::load" name="lbann::data_reader_triplet::load">
-<area shape="rect" id="node2" href="$classlbann_1_1data__reader__triplet.html#a7ff627eed9a4671129cbf7fb9ca11871" title="lbann::data_reader\l_triplet::get_type" alt="" coords="187,5,320,44"/>
-<area shape="rect" id="node3" href="$classlbann_1_1data__reader__triplet.html#af3f41e46bef2fbd3e19d545fa27f11ce" title="lbann::data_reader\l_triplet::fetch_datum" alt="" coords="368,5,510,44"/>
-<area shape="rect" id="node4" href="$classlbann_1_1data__reader__triplet.html#a6ed35c191d890569db4865424b8b0e82" title="lbann::data_reader\l_triplet::get_sample" alt="" coords="558,5,696,44"/>
-<area shape="rect" id="node5" href="$classlbann_1_1data__store__triplet.html#ade5d2290c85e7916e828553f4ab4f379" title="lbann::data_store_triplet\l::get_sample" alt="" coords="744,5,908,44"/>
-<area shape="rect" id="node6" href="$classlbann_1_1data__store__triplet.html#a4051f8b3236f06554c2f35e71d3fdf70" title="dtor " alt="" coords="956,5,1121,44"/>
-</map>

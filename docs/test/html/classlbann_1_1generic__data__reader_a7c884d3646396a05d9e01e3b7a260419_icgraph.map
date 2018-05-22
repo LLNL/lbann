@@ -1,6 +1,0 @@
-<map id="lbann::generic_data_reader::get_current_step_in_epoch" name="lbann::generic_data_reader::get_current_step_in_epoch">
-<area shape="rect" id="node2" href="$classlbann_1_1generic__input__layer.html#abad654f945f62d4610f8afa597777713" title="lbann::generic_input\l_layer::get_current_step\l_in_epoch" alt="" coords="195,5,361,57"/>
-<area shape="rect" id="node3" href="$classlbann_1_1distributed__io__buffer.html#a2e214f6542d9b12c8a29bf41d0ee220e" title="lbann::distributed\l_io_buffer::is_data\l_set_processed" alt="" coords="213,81,343,133"/>
-<area shape="rect" id="node4" href="$classlbann_1_1partitioned__io__buffer.html#a0944161f90eb65286974c3e85155608f" title="lbann::partitioned\l_io_buffer::is_data\l_set_processed" alt="" coords="213,157,343,209"/>
-<area shape="rect" id="node5" href="$classlbann_1_1partitioned__io__buffer.html#a06a204fbf82f092b0225ab10c1bec98e" title="lbann::partitioned\l_io_buffer::setup_data" alt="" coords="409,164,562,203"/>
-</map>

@@ -1,8 +1,0 @@
-<map id="lbann::dropout::bp_compute" name="lbann::dropout::bp_compute">
-<area shape="rect" id="node2" href="$classlbann_1_1dropout.html#aeafadecbcfc81734d0c1850b4004dcc3" title="lbann::dropout::bp\l_compute_gpu" alt="" coords="182,48,311,87"/>
-<area shape="rect" id="node5" href="$classlbann_1_1dropout.html#aca0160de0c3db5c29a0c4c6bddd0cf4f" title="lbann::dropout::bp\l_compute_cpu" alt="" coords="182,119,311,157"/>
-<area shape="rect" id="node3" href="$classlbann_1_1model.html#addb40597cf29aa6d31b6a7d09ef48608" title="lbann::model::get_execution_mode" alt="" coords="359,55,588,80"/>
-<area shape="rect" id="node4" href="$namespacelbann.html#a4fea7ba21017b49d1e34394b4c20c764" title="lbann::get_generator" alt="" coords="401,5,546,31"/>
-<area shape="rect" id="node6" href="$classlbann_1_1Layer.html#a7ac4579d3c1671dfaf86e3b618d6938a" title="lbann::Layer::get_prev\l_error_signals" alt="" coords="396,128,550,167"/>
-<area shape="rect" id="node7" href="$classlbann_1_1Layer.html#adb561e140e0bb601f3c5a8ee053a71d2" title="lbann::Layer::get_error\l_signals" alt="" coords="395,215,552,253"/>
-</map>

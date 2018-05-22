@@ -1,9 +1,0 @@
-<map id="lbann::dataset::get_total_samples" name="lbann::dataset::get_total_samples">
-<area shape="rect" id="node2" href="$classlbann_1_1generic__input__layer.html#a5fc757d16e26739cd10e5eabafa6a32b" title="lbann::generic_input\l_layer::get_total_num\l_training_samples" alt="" coords="201,5,351,57"/>
-<area shape="rect" id="node4" href="$classlbann_1_1generic__input__layer.html#ab5b5318cf000fbdaf35a3545335b60b2" title="lbann::generic_input\l_layer::get_total_num\l_testing_samples" alt="" coords="201,81,351,133"/>
-<area shape="rect" id="node6" href="$classlbann_1_1generic__input__layer.html#a31082076a8aad937eef3cadc0b5e1b27" title="lbann::generic_input\l_layer::is_execution\l_mode_valid" alt="" coords="205,157,347,209"/>
-<area shape="rect" id="node8" href="$classlbann_1_1generic__input__layer.html#abae61e13f47205491a43e4842808945d" title="lbann::generic_input\l_layer::save_to_checkpoint\l_shared" alt="" coords="184,233,367,285"/>
-<area shape="rect" id="node3" href="$classlbann_1_1generic__target__layer.html#a857306496e1c55cb15cd81301edb010f" title="lbann::generic_target\l_layer::get_total_num\l_training_samples" alt="" coords="415,5,565,57"/>
-<area shape="rect" id="node5" href="$classlbann_1_1generic__target__layer.html#af41c92981e0a1731d3dee9b1b49201db" title="lbann::generic_target\l_layer::get_total_num\l_testing_samples" alt="" coords="415,81,565,133"/>
-<area shape="rect" id="node7" href="$classlbann_1_1generic__target__layer.html#a0ae18b3b410c3b6c1a5b34a3547ba4c5" title="lbann::generic_target\l_layer::is_execution\l_mode_valid" alt="" coords="417,157,563,209"/>
-</map>
