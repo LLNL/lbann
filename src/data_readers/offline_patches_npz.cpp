@@ -310,23 +310,39 @@ bool offline_patches_npz::select(const std::string out_file, const size_t sample
   std::pair<size_t, size_t> file_variant_range;
 
   { // write item_root_list
-    std::vector<size_t> out_shape = m_item_root_list.shape;
-    out_shape[0] = sample_end - sample_start;
     const size_t* data_ptr = cnpy_utils::data_ptr<size_t>(m_item_root_list, {sample_start});
+    size_t* out_ptr        = cnpy_utils::data_ptr<size_t>(m_item_root_list, {sample_start});
     const size_t* data_ptr_end = cnpy_utils::data_ptr<size_t>(m_item_root_list, {sample_end});
-    cnpy::npz_save(out_file, "item_root_list", data_ptr, out_shape, "w");
+
+    // compute the min-max range of indieces reference
     auto result = std::minmax_element(data_ptr, data_ptr_end);
     file_root_range = std::make_pair(*result.first, *result.second + 1);
+
+    // adjust indices by subtracting file_root_range.first from each
+    std::transform(data_ptr, data_ptr_end, out_ptr, [&](size_t id) -> size_t { return (id - file_root_range.first); });
+
+    // write the updated array into the output file
+    std::vector<size_t> out_shape = m_item_root_list.shape;
+    out_shape[0] = sample_end - sample_start;
+    cnpy::npz_save(out_file, "item_root_list", data_ptr, out_shape, "w");
   }
 
   { // write item_variant_list
-    std::vector<size_t> out_shape = m_item_variant_list.shape;
-    out_shape[0] = sample_end - sample_start;
     const size_t* data_ptr = cnpy_utils::data_ptr<size_t>(m_item_variant_list, {sample_start});
+    size_t* out_ptr        = cnpy_utils::data_ptr<size_t>(m_item_variant_list, {sample_start});
     const size_t* data_ptr_end = cnpy_utils::data_ptr<size_t>(m_item_variant_list, {sample_end});
-    cnpy::npz_save(out_file, "item_variant_list", data_ptr, out_shape, "a");
+
+    // compute the min-max range of indieces reference
     auto result = std::minmax_element(data_ptr, data_ptr_end);
     file_variant_range = std::make_pair(*result.first, *result.second + 1);
+
+    // adjust indices by subtracting file_variant_range.first from each
+    std::transform(data_ptr, data_ptr_end, out_ptr, [&](size_t id) -> size_t { return (id - file_variant_range.first); });
+
+    // write the updated array into the output file
+    std::vector<size_t> out_shape = m_item_variant_list.shape;
+    out_shape[0] = sample_end - sample_start;
+    cnpy::npz_save(out_file, "item_variant_list", data_ptr, out_shape, "a");
   }
 
   { // write item_class_list
