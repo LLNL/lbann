@@ -51,11 +51,15 @@ class dropout : public regularizer_layer {
     : regularizer_layer(comm),
       m_keep_prob(keep_prob) {
 
-  #if defined(LBANN_HAS_CUDNN) && !defined(LBANN_SEQUENTIAL_CONSISTENCY)
     // Initialize GPU memory if using GPU
-    /// @todo GPU implementation of dropout with sequential consistency
     this->m_cudnn = cudnn;
-  #endif // LBANN_HAS_CUDNN
+  #if defined(LBANN_HAS_CUDNN) && defined(LBANN_SEQUENTIAL_CONSISTENCY)
+    /// @todo GPU implementation of dropout with sequential consistency
+    if (Dev == El::Device::GPU && get_comm()->am_model_master()) {
+      std::err << "Warning: GPU dropout currently does not guarantee "
+               << "sequential consistency" << std::endl;
+    }
+  #endif
 
   }
 
