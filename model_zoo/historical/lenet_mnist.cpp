@@ -207,7 +207,7 @@ int main(int argc, char *argv[]) {
     }
     {
       auto* l = new lbann::fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(
-                  comm, 500, nullptr, true, cudnn);
+                  comm, 500, false, nullptr, true, cudnn);
       l->set_name("ip1");
       m->add_layer(l);
     }
@@ -218,7 +218,7 @@ int main(int argc, char *argv[]) {
     }
     {
       auto* l = new lbann::fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(
-                  comm, 10, nullptr, true, cudnn);
+                  comm, 10, false, nullptr, true, cudnn);
       l->set_name("ip2");
       m->add_layer(l);
     }

@@ -987,6 +987,7 @@ message FullyConnected {
   double bias_initial_value = 4;       //default: 0
   double l2_regularization_factor = 5; //default: 0
   double group_lasso_regularization_factor = 6; //default: 0
+  bool transpose = 7;
 }
 
 message Convolution {

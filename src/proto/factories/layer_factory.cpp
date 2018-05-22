@@ -101,6 +101,7 @@ Layer* construct_layer(lbann_comm* comm,
     }
     return new fully_connected_layer<layout, Dev>(comm,
                                                   num_neurons,
+                                                  params.transpose(),
                                                   nullptr,
                                                   params.has_bias(),
                                                   cudnn);

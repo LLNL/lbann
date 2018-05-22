@@ -291,6 +291,7 @@ int main(int argc, char *argv[]) {
     {
       Layer *fc = new fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>(comm,
                                                                                           10,
+                                                                                          false,
                                                                                           nullptr,
                                                                                           false);
       dnn.add_layer(fc);
