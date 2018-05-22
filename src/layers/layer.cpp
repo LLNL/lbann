@@ -483,6 +483,8 @@ void Layer::setup() {
       LBANN_ERROR(err.str());
     }
     setup_gpu();
+  } else {
+    m_cudnn = nullptr;
   }
 }
 
@@ -804,6 +806,7 @@ void Layer::replace_weights(Layer* other_layer) {
 }
 
 void Layer::deallocate_matrices() {
+
   // Deallocate matrices
   for (const auto& m : m_prev_activations) {
     if (m != nullptr) delete m;

@@ -59,6 +59,8 @@ void data_store_image::setup() {
   if (m_master) std::cerr << "data_store_image - calling generic_data_store::setup()\n";
   generic_data_store::setup();
 
+  double tm;
+
   //==========================================================================
   // block for running in out-of-memory mode
   //==========================================================================
@@ -76,16 +78,26 @@ void data_store_image::setup() {
     }
 
     if (m_master) std::cerr << "data_store_image - calling build_data_filepaths\n";
-    build_data_filepaths();
+    if (using_tarball) {
+      read_data_filepaths();
+    } else {
+      build_data_filepaths();
+    }
 
     if (m_master) std::cerr << "data_store_image - calling get_file_sizes\n";
-    double tm = get_time();
+    tm = get_time();
     if (using_tarball) {
       read_file_sizes();
+      read_datastore_indices();
     } else {
       get_file_sizes();
     }  
     if (m_master) std::cerr << "TIME for get_file_sizes: " << get_time() - tm << "\n";
+
+    if (m_master) std::cerr << "data_store_image - calling build_index_owner\n";
+    tm = get_time();
+    build_index_owner();
+    if (m_master) std::cerr << "TIME for build_index_owner: " << get_time() - tm << "\n";
 
     if (! using_tarball) {
       if (m_master) std::cerr << "data_store_image - calling stage_files\n";
@@ -525,6 +537,7 @@ void data_store_image::fetch_data() {
   }
   std::stringstream err;
   double tm1 = get_time();
+
   ++m_cur_minibatch;
   if (m_cur_minibatch >= m_all_partitioned_indices[0].size()) {
     m_cur_minibatch = 0;
@@ -640,6 +653,42 @@ void data_store_image::fetch_data() {
   }
 }
 
+void data_store_image::write_data_filepaths() {
+  std::string local_dir = m_reader->get_local_file_dir();
+  std::stringstream s;
+  s << local_dir << "/data_filepaths.txt";
+  std::ofstream out(s.str().c_str());
+  if (! out.good()) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "failed to open " << s.str() << " for reading";
+    throw lbann_exception(err.str());
+  }
+  for (auto t : m_data_filepaths) {
+    out << t.first << " " << t.second << "\n";
+  }
+  out.close();
+}
+
+void data_store_image::read_data_filepaths() {
+  std::string local_dir = m_reader->get_local_file_dir();
+  std::stringstream s;
+  s << local_dir << "/data_filepaths.txt";
+  std::ifstream in(s.str().c_str());
+  //note: file_sizes.txt may not exist on all processors;
+  //      this is the case where we're using tarballed data, and
+  //      running with more processors than were used to create
+  //      the tarball
+  if (in.good()) {
+    std::string path;
+    int idx;
+    while (in >> idx >> path) {
+      m_data_filepaths[idx] = path;
+    }
+    in.close();
+  }
+}
+
 void data_store_image::write_file_sizes() {
   std::string local_dir = m_reader->get_local_file_dir();
   std::stringstream s;
@@ -685,6 +734,8 @@ std::pair<std::string, std::string>  data_store_image::get_tarball_exe() {
 
 void data_store_image::create_tarball() {
   write_file_sizes();
+  write_datastore_indices();
+  write_data_filepaths();
   std::pair<std::string, std::string> cmds = get_tarball_exe();
   if (m_master)  std::cerr << "\nabout to execute: " << cmds.first << "\n";
   run_cmd(cmds.first);
@@ -715,17 +766,70 @@ bool data_store_image::are_we_creating_tarballs() {
 void data_store_image::read_file_sizes() {
   std::stringstream s;
   s << m_reader->get_local_file_dir() << "/file_sizes.txt";
+  //note: file_sizes.txt may not exist on all processors;
+  //      this is the case where we're using tarballed data, and
+  //      running with more processors than were used to create
+  //      the tarball
   std::ifstream in(s.str().c_str());
-  if (! in.good()) {
+  if (in.good()) {
+    size_t idx;
+    size_t len;
+    while (in >> idx >> len) {
+      m_file_sizes[idx] = len;
+    }
+  }
+  m_comm->global_barrier();
+  int n = m_file_sizes.size();
+  m_comm->broadcast<int>(0, n, m_comm->get_world_comm());
+  std::vector<int> s2(n*2);
+  if (m_rank == 0) {
+    size_t j = 0;
+    for (auto t : m_file_sizes) {
+      s2[j++] = t.first;
+      s2[j++] = t.second;
+    }
+  }
+
+  m_comm->broadcast(0, s2.data(), s2.size(), m_comm->get_model_comm());
+  for (size_t j=0; j<s2.size(); j+=2) {
+    m_file_sizes[s2[j]] = s2[j+1];
+  }
+}
+
+void data_store_image::write_datastore_indices() {
+  std::string local_dir = m_reader->get_local_file_dir();
+  std::stringstream s;
+  s << local_dir << "/datastore_indices.txt";
+  std::ofstream out(s.str().c_str());
+  if (! out.good()) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "failed to open " << s.str() << " for reading";
     throw lbann_exception(err.str());
   }
-  size_t idx;
-  size_t len;
-  while (in >> idx >> len) {
-    m_file_sizes[idx] = len;
+  for (auto t: m_my_datastore_indices) {
+    out << t << "\n";
+  }
+}
+
+void data_store_image::read_datastore_indices() {
+  m_my_datastore_indices.clear();
+  if (m_comm->get_rank_in_node() == 0) {
+    std::stringstream s;
+    s << m_reader->get_local_file_dir() << "/datastore_indices.txt";
+    std::ifstream in(s.str().c_str());
+  
+    //note: datastore_indices.txt may not exist on all processors;
+    //      this is the case where we're using tarballed data, and
+    //      running with more processors than were used to create
+    //      the tarball
+    if (in.good()) {
+      int idx;
+      while (in >> idx) {
+        m_my_datastore_indices.insert(idx);
+      }
+      in.close();
+    }
   }
 }
 
@@ -733,22 +837,38 @@ void data_store_image::stage_tarball() {
   if (m_reader->get_role() == "validate") {
     return;
   }
+  std::stringstream err;
   int procs_per_node = m_comm->get_procs_per_node();
   int max = m_comm->allreduce(procs_per_node, m_comm->get_world_comm(),El::mpi::MAX);
   int min = m_comm->allreduce(procs_per_node, m_comm->get_world_comm(),El::mpi::MIN);
   if (max != min) {
-    std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "all nodes must contain the same number of active processors";
     throw lbann_exception(err.str());
   }
 
-  if (m_comm->get_rank_in_node() == 0) {
-    int fake_rank = m_rank / procs_per_node;
+/*
+  for (int j=0; j<m_np; j++) {
+    m_comm->global_barrier();
+    if (m_rank == j) {
+      std::cerr << "rank: " << m_rank << " rank in node: " << m_comm->get_rank_in_node() << " procs_per_node: " << procs_per_node << " 
+    }
+  }
+*/
+  
+  options *opts = options::get();
+  if (!opts->has_int("num_tarballs")) {
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "you must specify --num_tarballs=<int>";
+    throw lbann_exception(err.str());
+  }
+  int num_tarballs = opts->get_int("num_tarballs");
+
+  int fake_rank = m_rank / procs_per_node;
+  if (m_comm->get_rank_in_node() == 0 && fake_rank < num_tarballs) {
     std::string raw_name = options::get()->get_string("use_tarball");
     std::pair<std::string, std::string> names = get_pathname_and_prefix(raw_name);
-  
-    int num_tarballs = m_comm->get_procs_in_world() / procs_per_node;
+
   if (m_master) std::cerr << "num tarballs: " << num_tarballs << "\n";
     std::stringstream tarball_filename(names.first);
     tarball_filename << names.first << "_" << m_reader->get_role()

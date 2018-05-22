@@ -51,11 +51,11 @@ class leaky_relu_layer : public entrywise_activation_layer {
   El::Device get_device_allocation() const override { return Dev; }
 
  protected:
-  DataType activation(DataType z) const override {
-    return std::max(m_leak * z, z);
+  DataType activation(DataType x) const override {
+    return std::max(m_leak * x, x);
   }
-  DataType activation_derivative(DataType z) const override {
-    return (z > DataType(0)) ? DataType(1) : m_leak;
+  DataType activation_derivative(DataType x) const override {
+    return (x > DataType(0)) ? DataType(1) : m_leak;
   }
  private:
   DataType m_leak;

@@ -373,4 +373,50 @@ std::string generic_data_store::run_cmd(std::string cmd, bool exit_on_error) {
   return result;
 }
 
+int generic_data_store::get_index_owner(int idx) {
+  if (m_owner.find(idx) == m_owner.end()) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << " idx: " << idx << " was not found in the m_owner map;"
+        << " map size: " << m_owner.size();
+    throw lbann_exception(err.str());
+  }
+  return m_owner[idx];
+}
+
+void generic_data_store::build_index_owner() {
+  m_owner.clear();
+  int num_indices = m_my_datastore_indices.size();
+  if (num_indices == 0) {
+    num_indices = 1;
+  }
+  std::vector<int>counts(m_np);
+  m_comm->model_all_gather<int>(num_indices, counts);
+
+  std::vector<int> disp(m_np);
+  disp[0] = 0;
+  for (int h=1; h<m_np; h++) {
+    disp[h] = disp[h-1] + counts[h-1];
+  }  
+  int num_global_indices = std::accumulate(counts.begin(), counts.end(), 0);
+  std::vector<int> my_indices;
+  my_indices.reserve(num_indices);
+  if (m_my_datastore_indices.empty()) {
+    my_indices.push_back(-1);
+  }
+  for (auto t : m_my_datastore_indices) {
+    my_indices.push_back(t);
+  }
+
+  std::vector<int> all_indices(num_global_indices);
+  m_comm->all_gather<int>(my_indices, all_indices, counts, disp, m_comm->get_world_comm());
+  for (size_t rank=0; rank<counts.size(); rank++) {
+    for (int j = disp[rank]; j<disp[rank] + counts[rank]; j++) {
+      if (all_indices[j] != -1) {
+        m_owner[all_indices[j]] = rank;
+      }
+    }
+  }
+}
+
 }  // namespace lbann

@@ -47,6 +47,13 @@ class hadamard_layer : public transform_layer {
     // Hadamard layer has no limit on parents
     m_expected_num_parent_layers = -1;
 
+  #ifdef LBANN_HAS_CUDNN
+    // Activate GPU if needed
+    if (cudnn != nullptr) {
+      this->m_cudnn = cudnn;
+    }
+  #endif // LBANN_HAS_CUDNN
+
   }
 
   hadamard_layer* copy() const override { return new hadamard_layer(*this); }
@@ -67,89 +74,41 @@ class hadamard_layer : public transform_layer {
 
   protected:
 
-  void setup_pointers() override {
-    transform_layer::setup_pointers();
-    std::stringstream err;
-    if (get_num_parents() <= 0) {
-      err << __FILE__ << " " << __LINE__ << " :: hadamard_layer: "
-          << "Hadamard layer has no parents";
-      throw lbann_exception(err.str());
-    }
-  }
-
   void fp_compute() override {
-    if(this->using_gpus()) {
-  #ifndef LBANN_HAS_CUDNN
-      throw lbann_exception("hadamard_layer: cuDNN not detected");
-  #else
-      throw lbann_exception("hadamard_layer: no GPU implementation");
-  #endif // LBANN_HAS_CUDNN
-    } else {
-
-      // Get local matrices
-      std::vector<const AbsMat*> local_inputs;
-      for (const auto& input : this->m_prev_activations) {
-        local_inputs.push_back(&input->LockedMatrix());
+    auto& output = get_activations();
+    switch (get_num_parents()) {
+    case 0: El::Fill(output, DataType(1)); break;
+    case 1: El::LockedView(output, get_prev_activations()); break;
+    default:
+      El::Hadamard(get_prev_activations(0),
+                   get_prev_activations(1),
+                   output);
+      for (int i = 2; i < get_num_parents(); ++i) {
+        El::Hadamard(get_prev_activations(i), output, output);
       }
-      auto& local_output = get_local_activations();
-
-      // Compute entrywise product
-      const int local_height = local_output.Height();
-      const int local_width = local_output.Width();
-      #pragma omp parallel for collapse(2)
-      for (int col = 0; col < local_width; ++col) {
-        for (int row = 0; row < local_height; ++row) {
-          DataType y = DataType(1);
-          for (const auto& local_input : local_inputs) {
-            y *= (*local_input)(row, col);
-          }
-          local_output(row, col) = y;
-        }
-      }
-
     }
   }
 
   void bp_compute() override {
-    if(this->using_gpus()) {
-  #ifndef LBANN_HAS_CUDNN
-      throw lbann_exception("hadamard_layer: cuDNN not detected");
-  #else
-      throw lbann_exception("hadamard_layer: no GPU implementation");
-  #endif // LBANN_HAS_CUDNN
-    } else {
-
-      // Get local matrices
-      std::vector<const AbsMat*> local_inputs;
-      for (const auto& input : this->m_prev_activations) {
-        local_inputs.push_back(&input->LockedMatrix());
-      }
-      auto& local_gradient_wrt_output = get_local_prev_error_signals();
-      std::vector<AbsMat*> local_gradient_wrt_inputs;
-      for (auto& gradient_wrt_input : this->m_error_signals) {
-        local_gradient_wrt_inputs.push_back(&gradient_wrt_input->Matrix());
-      }
-
-      // Compute derivative of entrywise product
-      const int local_height = local_gradient_wrt_output.Height();
-      const int local_width = local_gradient_wrt_output.Width();
-      const int num_parents = get_num_parents();
-      #pragma omp parallel for collapse(2)
-      for (int col = 0; col < local_width; ++col) {
-        for (int row = 0; row < local_height; ++row) {
-          const DataType dy = local_gradient_wrt_output(row, col);
-          for (int parent = 0; parent < num_parents; ++parent) {
-            DataType dx = dy;
-            for (int i = 0; i < num_parents; ++i) {
-              if (i != parent) {
-                dx *= (*local_inputs[i])(row, col);
-              }
-            }
-            (*local_gradient_wrt_inputs[parent])(row, col) += dx;
+    const int num_parents = get_num_parents();
+    const auto& gradient_wrt_output = get_prev_error_signals();
+    switch (num_parents) {
+    case 0: break;
+    case 1:
+      El::LockedView(get_error_signals(), gradient_wrt_output);
+      break;
+    default:
+      for (int i = 0; i < num_parents; ++i) {
+        auto& gradient_wrt_input = get_error_signals(i);
+        El::Copy(gradient_wrt_output, gradient_wrt_input);
+        for (int j = 0; j < num_parents; ++j) {
+          if (i != j) {
+            El::Hadamard(get_prev_activations(j),
+                         gradient_wrt_input,
+                         gradient_wrt_input);
           }
         }
       }
-
     }
   }
 

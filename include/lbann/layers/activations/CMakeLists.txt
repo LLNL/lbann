@@ -16,6 +16,7 @@ set_full_path(THIS_DIR_HEADERS
   swish.hpp
   tanh.hpp
   power.hpp
+  log.hpp
   )
 
 # Propagate the files up the tree

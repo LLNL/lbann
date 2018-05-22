@@ -40,6 +40,8 @@ class layer_term : public objective_function_term {
 
   void set_evaluation_layer(Layer* l);
 
+  Layer* get_evaluation_layer();
+
   void setup(model& m) override;
 
   void start_evaluation() override;
