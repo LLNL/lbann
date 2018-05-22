@@ -63,8 +63,12 @@ class offline_patches_npz {
   /**
    * Load the data in the compressed numpy format file.
    * Use only first_n available samples if specified.
+   * keep_file_lists indicates whether to remove file lists loaded
+   * once converting them to vector of strings.
+   * Need to keep it for selecting a range of samples afterwards.
    */
-  bool load(const std::string filename, size_t first_n = 0u);
+  bool load(const std::string filename, size_t first_n = 0u,
+            bool keep_file_lists = false);
   /// Show the description
   std::string get_description() const;
 
@@ -84,6 +88,7 @@ class offline_patches_npz {
 #ifdef _OFFLINE_PATCHES_NPZ_OFFLINE_TOOL_MODE_
   std::vector<std::string> get_file_roots() const;
   size_t count_samples(const size_t num_roots) const;
+  bool select(const std::string out_file, const size_t sample_start, size_t& sample_end);
 #endif // _OFFLINE_PATCHES_NPZ_OFFLINE_TOOL_MODE_
 
  protected:
@@ -109,7 +114,7 @@ class offline_patches_npz {
   std::vector<label_t> m_item_class_list;
   /// The list of common substrings that a file path starts with (dimension is, for example 1000 in case of imagenet data)
   std::vector<std::string> m_file_root_list;
-  
+  /// The list of common substrings for file path variants
   std::vector<std::string> m_file_variant_list;
   /// The text file name of file_root_list
   std::string m_file_root_list_name;
@@ -119,6 +124,28 @@ class offline_patches_npz {
   std::string m_variant_divider;
   /// control how the text dictionary files are loaded: whether to load all at once and parse or to stream in
   bool m_fetch_text_dict_at_once;
+  /**
+   * indicate if the numpy file is reformatted to
+   * - treat an array of character strings as a 2-D character array, of which
+   *   the second dimension is the length of the largest string. This is
+   *   relevant to file_{root,variant}_list.
+   * - convert item_class_list to a list of label_t(uint8_t) instead of a
+   *   list of a charater sequence (two digits).
+   * The reformatting is get around the inability of cnpy library for writing
+   * an array of character strings.
+   */
+  bool m_lbann_format;
+
+  /**
+   * The original data structure for m_file_root_list. It is used by select()
+   * if keep_file_lists was on when loading.
+   */
+  cnpy::NpyArray m_file_root_list_org;
+  /**
+   * The original data structure for m_file_variant_list. It is used by select()
+   * if keep_file_lists was on when loading.
+   */
+  cnpy::NpyArray m_file_variant_list_org;
 };
 
 } // end of namespace lbann
