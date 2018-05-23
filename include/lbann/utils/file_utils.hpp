@@ -60,6 +60,7 @@ std::string add_delimiter(const std::string dir);
 std::string modify_file_name(const std::string file_name, const std::string tag, const std::string new_ext="");
 
 bool check_if_file_exists(const std::string& filename);
+bool check_if_dir_exists(const std::string& dirname);
 bool create_dir(const std::string output_dir);
 
 

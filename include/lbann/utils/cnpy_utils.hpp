@@ -43,6 +43,27 @@ namespace cnpy_utils {
  */
 size_t compute_cnpy_array_offset(const cnpy::NpyArray& na, std::vector<size_t> indices);
 
+/**
+ * If the type T of the numpy array element is something larger than 1 byte in
+ * size, the word_size of the numpy array must be the same as sizeof(T).
+ * In such a case, offset to add to a type T pointer is computed as the number
+ * of elements up to the position pointed by the indices.
+ * If sizeof(T) is 1 byte, then the array may be of char string, or the pointer
+ * may be cast to a byte-long type. In such a case, the offset is computed as
+ * the number of elements scaled by the word_size of the array.
+ * cnpy treats an array of strings as a 1D array, for which the word_size is
+ * equal to the length of the largest string.
+ */
+template<typename T>
+inline size_t ptr_offset(const cnpy::NpyArray& na, std::vector<size_t> indices) {
+  if ((sizeof(T) != na.word_size) && (sizeof(T) != 1u)) {
+    throw lbann_exception(std::string("cnpy_utils::ptr_offset() :") +
+           "The data type is not consistent with the word size of the array.");
+  }
+  return (compute_cnpy_array_offset(na, indices)
+           * ((sizeof(T) == 1u)? na.word_size : 1u));
+}
+
 
 /**
  * Allow the access to the data element identified by the indices and the
@@ -50,12 +71,7 @@ size_t compute_cnpy_array_offset(const cnpy::NpyArray& na, std::vector<size_t> i
  */
 template<typename T>
 inline T& data(const cnpy::NpyArray& na, const std::vector<size_t> indices) {
-  if ((sizeof(T) != na.word_size) && (sizeof(T) != 1u)) {
-    throw lbann_exception("cnpy_utils::data() : The data type is not consistent with the word size of the array.");
-  }
-  const size_t offset = compute_cnpy_array_offset(na, indices)
-                        * ((sizeof(T) == 1u)? na.word_size : 1u);
-  return *(reinterpret_cast<T*>(&(* na.data_holder)[0]) + offset);
+  return *(reinterpret_cast<T*>(&(* na.data_holder)[0]) + ptr_offset<T>(na, indices));
 }
 
 
@@ -65,12 +81,7 @@ inline T& data(const cnpy::NpyArray& na, const std::vector<size_t> indices) {
  */
 template<typename T>
 inline T* data_ptr(const cnpy::NpyArray& na, const std::vector<size_t> indices) {
-  if ((sizeof(T) != na.word_size) && (sizeof(T) != 1u)) {
-    throw lbann_exception("cnpy_utils::data_ptr() : The data type is not consistent with the word size of the array.");
-  }
-  const size_t offset = compute_cnpy_array_offset(na, indices)
-                        * ((sizeof(T) == 1u)? na.word_size : 1u);
-  return (reinterpret_cast<T*>(&(* na.data_holder)[0]) + offset);
+  return (reinterpret_cast<T*>(&(* na.data_holder)[0]) + ptr_offset<T>(na, indices));
 }
 
 template<>
