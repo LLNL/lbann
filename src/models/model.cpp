@@ -246,14 +246,17 @@ void model::replace_weights(std::vector<weights*>& new_weights) {
 
 }
 
-void model::replace_weights_by_name(std::vector<weights*>& new_weights) {
+void model::copy_trained_weights_from(std::vector<weights*>& new_weights) {
   if (new_weights.empty()) {
     throw lbann_exception("Model::replace_weights_by name failed : because new_weight vector is empty.");
   }
   for(size_t i = 0; i < new_weights.size(); ++i) {
      for (size_t j = 0; j < m_weights.size(); ++j) {
-       if(m_weights[j]->get_name() == new_weights[i]->get_name())
+       //copy only trained weights (that is unfrozen layer)
+       if(m_weights[j]->get_name() == new_weights[i]->get_name() && !new_weights[i]->is_frozen()) {
+         std::cout << " Replacing " << m_weights[j]->get_name() << " with " << new_weights[i]->get_name() << std::endl;
          m_weights[j]->set_values(new_weights[i]->get_values());
+       }
      }
    }
 }
