@@ -89,7 +89,7 @@ option(${UPPER_PROJECT_NAME}_WITH_NVPROF
 option(${UPPER_PROJECT_NAME}_WITH_TOPO_AWARE
   "Enable topology-aware profiling (HWLOC)" ON)
 
-option(${UPPER_PROJECT_NAME}_WITH_ALUMINUM 
+option(${UPPER_PROJECT_NAME}_WITH_ALUMINUM
   "Enable Aluminum all-reduce library" OFF)
 
 option(${UPPER_PROJECT_NAME}_VERBOSE "Enable verbose output" OFF)
@@ -245,7 +245,7 @@ endif (LBANN_TOPO_AWARE)
 
 if (LBANN_WITH_ALUMINUM)
   find_package(ALUMINUM)
-  set(LBANN_HAS_ALUMINUM ${ALUMINUM_FOUND}) 
+  set(LBANN_HAS_ALUMINUM ${ALUMINUM_FOUND})
   if (NOT LBANN_HAS_ALUMINUM)
     message(FATAL_ERROR
       "Requested LBANN_WITH_ALUMINUM but Aluminum not found. "
@@ -253,7 +253,7 @@ if (LBANN_WITH_ALUMINUM)
       "Try specifying ALUMINUM_DIR as the root of an ALUMINUM install. "
       "Alternatively, build with LBANN_WITH_ALUMINUM=OFF.")
     set(LBANN_WITH_ALUMINUM OFF)
-  endif(NOT LBANN_HAS_ALUMINUM)      
+  endif(NOT LBANN_HAS_ALUMINUM)
   option(LBANN_BUILT_WITH_SPECTRUM "LBANN was built with Spectrum MPI" OFF)
   if (LBANN_BUILT_WITH_SPECTRUM)
     set(LBANN_ALUMINUM_MPI_PASSTHROUGH ON)
@@ -261,7 +261,7 @@ if (LBANN_WITH_ALUMINUM)
 endif (LBANN_WITH_ALUMINUM)
 
 # Handle the documentation
-add_subdirectory(doc)
+add_subdirectory(docs)
 
 ################################################################
 # Build LBANN
