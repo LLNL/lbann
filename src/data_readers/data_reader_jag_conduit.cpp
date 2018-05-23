@@ -121,8 +121,8 @@ data_reader_jag_conduit::~data_reader_jag_conduit() {
 }
 
 void data_reader_jag_conduit::set_defaults() {
-  m_independent = Undefined;
-  m_dependent = Undefined;
+  m_independent.assign(1u, Undefined);
+  m_dependent.assign(1u, Undefined);
   m_image_width = 0;
   m_image_height = 0;
   m_image_num_channels = 1;
@@ -171,29 +171,49 @@ const conduit::Node& data_reader_jag_conduit::get_conduit_node(const std::string
 
 
 void data_reader_jag_conduit::set_independent_variable_type(
+  const std::vector<data_reader_jag_conduit::variable_t> independent) {
+  if (!independent.empty() && !m_independent.empty() && (m_independent[0] == Undefined)) {
+    m_independent.clear();
+  }
+  for (const auto t: independent) {
+    add_independent_variable_type(t);
+  }
+}
+
+void data_reader_jag_conduit::add_independent_variable_type(
   const data_reader_jag_conduit::variable_t independent) {
   if (!(independent == JAG_Image || independent == JAG_Scalar ||
         independent == JAG_Input || independent == Undefined)) {
     _THROW_LBANN_EXCEPTION_(_CN_, "unrecognized independent variable type ");
   }
-  m_independent = independent;
+  m_independent.push_back(independent);
 }
 
 void data_reader_jag_conduit::set_dependent_variable_type(
+  const std::vector<data_reader_jag_conduit::variable_t> dependent) {
+  if (!dependent.empty() && !m_dependent.empty() && (m_dependent[0] == Undefined)) {
+    m_dependent.clear();
+  }
+  for (const auto t: dependent) {
+    add_dependent_variable_type(t);
+  }
+}
+
+void data_reader_jag_conduit::add_dependent_variable_type(
   const data_reader_jag_conduit::variable_t dependent) {
   if (!(dependent == JAG_Image || dependent == JAG_Scalar ||
         dependent == JAG_Input || dependent == Undefined)) {
     _THROW_LBANN_EXCEPTION_(_CN_, "unrecognized dependent variable type ");
   }
-  m_dependent = dependent;
+  m_dependent.push_back(dependent);
 }
 
-data_reader_jag_conduit::variable_t
+std::vector<data_reader_jag_conduit::variable_t>
 data_reader_jag_conduit::get_independent_variable_type() const {
   return m_independent;
 }
 
-data_reader_jag_conduit::variable_t
+std::vector<data_reader_jag_conduit::variable_t>
 data_reader_jag_conduit::get_dependent_variable_type() const {
   return m_dependent;
 }
@@ -468,40 +488,46 @@ size_t data_reader_jag_conduit::get_linearized_input_size() const {
 }
 
 
-int data_reader_jag_conduit::get_linearized_data_size() const {
-  switch (m_independent) {
+size_t data_reader_jag_conduit::get_linearized_size(const data_reader_jag_conduit::variable_t t) const {
+  switch (t) {
     case JAG_Image:
-      return static_cast<int>(get_linearized_image_size());
+      return get_linearized_image_size();
     case JAG_Scalar:
-      return static_cast<int>(get_linearized_scalar_size());
+      return get_linearized_scalar_size();
     case JAG_Input:
-      return static_cast<int>(get_linearized_input_size());
+      return get_linearized_input_size();
     default: { // includes Unefined case
-      _THROW_LBANN_EXCEPTION2_(_CN_, "get_linearized_data_size() : ", \
+      _THROW_LBANN_EXCEPTION2_(_CN_, "get_linearized_size() : ", \
                                      "unknown or undefined variable type");
     }
   }
   return 0;
+}
+
+int data_reader_jag_conduit::get_linearized_data_size() const {
+  size_t sz = 0u;
+  for (const auto t: m_independent) {
+    if (t == Undefined) {
+      continue;
+    }
+    sz += get_linearized_size(t);
+  }
+  return static_cast<int>(sz);
 }
 
 int data_reader_jag_conduit::get_linearized_response_size() const {
-  switch (m_dependent) {
-    case JAG_Image:
-      return static_cast<int>(get_linearized_image_size());
-    case JAG_Scalar:
-      return static_cast<int>(get_linearized_scalar_size());
-    case JAG_Input:
-      return static_cast<int>(get_linearized_input_size());
-    default: { // includes Undefined case
-      _THROW_LBANN_EXCEPTION2_(_CN_, "get_linearized_response_size() : ", \
-                                     "unknown or undefined variable type");
+  size_t sz = 0u;
+  for (const auto t: m_dependent) {
+    if (t == Undefined) {
+      continue;
     }
+    sz += get_linearized_size(t);
   }
-  return 0;
+  return static_cast<int>(sz);
 }
 
-const std::vector<int> data_reader_jag_conduit::get_data_dims() const {
-  switch (m_independent) {
+const std::vector<int> data_reader_jag_conduit::get_dims(const data_reader_jag_conduit::variable_t t) const {
+  switch (t) {
     case JAG_Image:
       return {static_cast<int>(get_num_img_srcs()), m_image_height, m_image_width};
       //return {static_cast<int>(get_linearized_image_size())};
@@ -510,25 +536,53 @@ const std::vector<int> data_reader_jag_conduit::get_data_dims() const {
     case JAG_Input:
       return {static_cast<int>(get_linearized_input_size())};
     default: { // includes Undefined case
-      _THROW_LBANN_EXCEPTION2_(_CN_, "get_data_dims() : ", \
+      _THROW_LBANN_EXCEPTION2_(_CN_, "get_dims() : ", \
                                      "unknown or undefined variable type");
     }
   }
   return {};
 }
 
+const std::vector<int> data_reader_jag_conduit::get_data_dims() const {
+  std::vector<int> all_dim;
+  for (const auto t: m_independent) {
+    if (t == Undefined) {
+      continue;
+    }
+    const std::vector<int> ld = get_dims(t);
+    all_dim.insert(all_dim.end(), ld.begin(), ld.end());
+  }
+  return all_dim;
+}
+
+std::string data_reader_jag_conduit::to_string(const variable_t t) {
+  switch (t) {
+    case Undefined:  return "Undefined";
+    case JAG_Image:  return "JAG_Image";
+    case JAG_Scalar: return "JAG_Scalar";
+    case JAG_Input:  return "JAG_Input";
+  }
+  return "Undefined";
+}
+
+std::string data_reader_jag_conduit::to_string(const std::vector<data_reader_jag_conduit::variable_t>& vec) {
+  std::string str("[");
+  for (const auto& el: vec) {
+    str += ' ' + data_reader_jag_conduit::to_string(el);
+  }
+  str += " ]";
+  return str;
+}
 
 std::string data_reader_jag_conduit::get_description() const {
-  using std::string;
-  using std::to_string;
-  string ret = string("data_reader_jag_conduit:\n")
-    + " - independent: " + to_string(static_cast<int>(m_independent)) + "\n"
-    + " - dependent: " + to_string(static_cast<int>(m_dependent)) + "\n"
-    + " - images: "   + to_string(m_num_img_srcs) + 'x'
-                      + to_string(m_image_width) + 'x'
-                      + to_string(m_image_height) + "\n"
-    + " - scalars: "  + to_string(get_linearized_scalar_size()) + "\n"
-    + " - inputs: "   + to_string(get_linearized_input_size()) + "\n";
+  std::string ret = std::string("data_reader_jag_conduit:\n")
+    + " - independent: " + data_reader_jag_conduit::to_string(m_independent) + "\n"
+    + " - dependent: " + data_reader_jag_conduit::to_string(m_dependent) + "\n"
+    + " - images: "   + std::to_string(m_num_img_srcs) + 'x'
+                      + std::to_string(m_image_width) + 'x'
+                      + std::to_string(m_image_height) + "\n"
+    + " - scalars: "  + std::to_string(get_linearized_scalar_size()) + "\n"
+    + " - inputs: "   + std::to_string(get_linearized_input_size()) + "\n";
   return ret;
 }
 
@@ -602,7 +656,7 @@ cv::Mat data_reader_jag_conduit::cast_to_cvMat(const std::pair<size_t, const ch_
   using InputBuf_T = cv_image_type<ch_t>;
   const cv::Mat image(num_pixels, 1, InputBuf_T::T(1u),
                       reinterpret_cast<void*>(const_cast<ch_t*>(ptr)));
-  // reshape and clone (deep-copy) the image
+  // reshape the image. Furter need to clone (deep-copy) the image
   // to preserve the constness of the original data
   return (image.reshape(0, height));
 }
@@ -719,11 +773,13 @@ bool data_reader_jag_conduit::fetch(Mat& X, int data_id, int mb_idx, int tid,
 }
 
 bool data_reader_jag_conduit::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
-  return fetch(X, data_id, mb_idx, tid, m_independent, "datum");
+  // TODO: need to create view of V for each variable type and call fetch()
+  return fetch(X, data_id, mb_idx, tid, m_independent[0], "datum");
 }
 
 bool data_reader_jag_conduit::fetch_response(Mat& X, int data_id, int mb_idx, int tid) {
-  return fetch(X, data_id, mb_idx, tid, m_dependent, "response");
+  // TODO: need to create view of V for each variable type and call fetch()
+  return fetch(X, data_id, mb_idx, tid, m_dependent[0], "response");
 }
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_

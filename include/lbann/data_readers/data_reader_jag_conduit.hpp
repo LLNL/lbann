@@ -54,7 +54,7 @@ class data_reader_jag_conduit : public generic_data_reader {
    * - JAG_Input: simulation input parameters
    * - Undefined: the default
    */
-  enum variable_t {JAG_Image, JAG_Scalar, JAG_Input, Undefined};
+  enum variable_t {Undefined=0, JAG_Image, JAG_Scalar, JAG_Input};
 
   data_reader_jag_conduit(bool shuffle = true) = delete;
   data_reader_jag_conduit(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
@@ -68,14 +68,14 @@ class data_reader_jag_conduit : public generic_data_reader {
   }
 
   /// Choose which data to use for independent variable
-  void set_independent_variable_type(const variable_t independent);
+  void set_independent_variable_type(const std::vector<variable_t> independent);
   /// Choose which data to use for dependent variable
-  void set_dependent_variable_type(const variable_t dependent);
+  void set_dependent_variable_type(const std::vector<variable_t> dependent);
 
   /// Tell which data to use for independent variable
-  variable_t get_independent_variable_type() const;
+  std::vector<variable_t> get_independent_variable_type() const;
   /// Tell which data to use for dependent variable
-  variable_t get_dependent_variable_type() const;
+  std::vector<variable_t> get_dependent_variable_type() const;
 
   /// Set the image dimension
   void set_image_dims(const int width, const int height, const int ch = 1);
@@ -148,12 +148,28 @@ class data_reader_jag_conduit : public generic_data_reader {
   void setup_data_store(model *m) override;
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
+  /// A untiliy function to convert the pointer to image data into an opencv image
   static cv::Mat cast_to_cvMat(const std::pair<size_t, const ch_t*> img, const int height);
+  /// A utility function to convert a JAG variable type to name string
+  static std::string to_string(const variable_t t);
 
  protected:
   virtual void set_defaults();
   virtual bool replicate_processor(const cv_process& pp);
   virtual void copy_members(const data_reader_jag_conduit& rhs);
+
+  /// add data type for independent variable
+  void add_independent_variable_type(const variable_t independent);
+  /// add data type for dependent variable
+  void add_dependent_variable_type(const variable_t dependent);
+
+  /// Return the linearized size of a particular JAG variable type
+  size_t get_linearized_size(const variable_t t) const;
+  /// Return the dimension of a particular JAG variable type
+  const std::vector<int> get_dims(const variable_t t) const;
+  /// A utility function to make a string to show all the variable types in a vector
+  static std::string to_string(const std::vector<variable_t>& vec);
+
 
   virtual std::vector<::Mat> create_datum_views(::Mat& X, const int mb_idx) const;
 
@@ -192,9 +208,9 @@ class data_reader_jag_conduit : public generic_data_reader {
 
  protected:
   /// independent variable type
-  variable_t m_independent;
+  std::vector<variable_t> m_independent;
   /// dependent variable type
-  variable_t m_dependent;
+  std::vector<variable_t> m_dependent;
 
   int m_image_width; ///< image width
   int m_image_height; ///< image height
