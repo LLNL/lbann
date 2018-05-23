@@ -157,6 +157,11 @@ class fully_connected_layer : public learning_layer {
 
   std::string get_type() const override { return "fully connected"; }
 
+  void set_num_neurons(int n) { 
+    m_num_neurons = n; 
+    this->m_neuron_dims.assign(1, this->m_num_neurons);
+  }
+
   data_layout get_data_layout() const override { return T_layout; }
 
   El::Device get_device_allocation() const override { return Dev; }
