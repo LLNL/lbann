@@ -327,7 +327,7 @@ class model {
   /** Evaluate model on a mini-batch */
   virtual bool evaluate_mini_batch(execution_mode mode);
   /** Train model on a mini-batch. */
-  virtual bool train_mini_batch(int num_batches=0);
+  virtual bool train_mini_batch();
 
   /** Forward propagation step. */
   virtual void forward_prop(execution_mode mode);

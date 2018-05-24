@@ -702,9 +702,14 @@ void model::train(int num_epochs, int num_batches) {
     // Setup epoch
     reset_mode_and_model(execution_mode::training);
 
-    // Train on mini-batches
     do_epoch_begin_cbs();
-    while (!train_mini_batch(num_batches)) {}
+    // Train on num_batches (subepoch) if specified
+    if(num_batches) {
+      for(int i = 0; i < num_batches; i++)
+        train_mini_batch();
+    } else { //train full epoch
+      while (!train_mini_batch()) {}
+    }
     // Once the epoch is complete, Increase the count
     ++m_current_epoch;
     do_epoch_end_cbs();
@@ -757,7 +762,7 @@ bool model::evaluate_mini_batch(execution_mode mode) {
   return finished;
 }
 
-bool model::train_mini_batch(int num_batches) {
+bool model::train_mini_batch() {
   reset_mode_and_model(execution_mode::training);
   do_batch_begin_cbs(execution_mode::training);
 
@@ -788,8 +793,6 @@ bool model::train_mini_batch(int num_batches) {
 
   ++m_current_step;
   do_batch_end_cbs(execution_mode::training);
-  if(num_batches && m_current_step % num_batches == 0) return true; 
-
   return finished;
 }
 
