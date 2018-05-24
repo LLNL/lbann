@@ -47,7 +47,9 @@ class abs_layer : public entrywise_activation_layer {
   }
 
   DataType activation_derivative(DataType x) const override {
-    return DataType(1);
+    if(x < DataType(0)) return DataType(-1);
+    else return DataType(1);
+    
   }
 };
 
