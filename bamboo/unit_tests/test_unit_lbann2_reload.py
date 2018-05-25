@@ -31,7 +31,7 @@ def skeleton_lbann2_reload(cluster, executables, dir_name, compiler_name):
     output_file_name = '%s/bamboo/unit_tests/output/lbann2_checkpoint_%s_output.txt' % (dir_name, compiler_name)
     error_file_name  = '%s/bamboo/unit_tests/error/lbann2_checkpoint_%s_error.txt' % (dir_name, compiler_name)
     command = tools.get_command(
-        cluster=cluster, executable=exe, num_nodes=1, num_processes=1,
+        cluster=cluster, executable=lbann2, num_nodes=1, num_processes=1,
         dir_name=dir_name,
         data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
         data_reader_name='mnist', model_folder='tests',
