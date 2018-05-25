@@ -65,23 +65,37 @@ def skeleton_autoencoder_imagenet(cluster, dir_name, executables, compiler_name,
 def test_integration_autoencoder_mnist_clang4(cluster, dirname, exes):
   skeleton_autoencoder_mnist(cluster, dirname, exes, 'clang4')
 
+def test_integration_autoencoder_imagenet_clang4(cluster, dirname, exes, weekly):
+  skeleton_autoencoder_imagenet(cluster, dirname, exes, 'clang4', weekly)
+  
 def test_integration_autoencoder_mnist_gcc4(cluster, dirname, exes):
   skeleton_autoencoder_mnist(cluster, dirname, exes, 'gcc4')
 
+def test_integration_autoencoder_imagenet_gcc4(cluster, dirname, exes, weekly):
+  skeleton_autoencoder_imagenet(cluster, dirname, exes, 'gcc4', weekly)
+  
 def test_integration_autoencoder_mnist_gcc7(cluster, dirname, exes):
   skeleton_autoencoder_mnist(cluster, dirname, exes, 'gcc7')
 
+def test_integration_autoencoder_imagenet_gcc7(cluster, dirname, exes, weekly):
+  skeleton_autoencoder_imagenet(cluster, dirname, exes, 'gcc7', weekly)
+  
 def test_integration_autoencoder_mnist_intel18(cluster, dirname, exes):
   skeleton_autoencoder_mnist(cluster, dirname, exes, 'intel18')
 
-def test_integration_autoencoder_imagenet_clang4(cluster, dirname, exes, weekly):
-  skeleton_autoencoder_imagenet(cluster, dirname, exes, 'clang4', weekly)
-
-def test_integration_autoencoder_imagenet_gcc4(cluster, dirname, exes, weekly):
-  skeleton_autoencoder_imagenet(cluster, dirname, exes, 'gcc4', weekly)
-
-def test_integration_autoencoder_imagenet_gcc7(cluster, dirname, exes, weekly):
-  skeleton_autoencoder_imagenet(cluster, dirname, exes, 'gcc7', weekly)
-
 def test_integration_autoencoder_imagenet_intel18(cluster, dirname, exes, weekly):
   skeleton_autoencoder_imagenet(cluster, dirname, exes, 'intel18', weekly)
+
+# Run with python -m pytest -s test_integration_autoencoder.py -k 'test_integration_autoencoder_mnist_exe' --exe=<executable>
+def test_integration_autoencoder_mnist_exe(cluster, dirname, exe):
+    if exe == None:
+        pytest.skip('Non-local testing')
+    exes = {'exe' : exe}
+    skeleton_autoencoder_mnist(cluster, dirname, exes, 'exe', True)
+
+# Run with python -m pytest -s test_integration_autoencoder.py -k 'test_integration_autoencoder_imagenet_exe' --exe=<executable>
+def test_integration_autoencoder_imagenet_exe(cluster, dirname, exe):
+    if exe == None:
+        pytest.skip('Non-local testing')
+    exes = {'exe' : exe}
+    skeleton_autoencoder_imagenet(cluster, dirname, exes, 'exe', True)

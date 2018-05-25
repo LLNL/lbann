@@ -59,6 +59,8 @@
 #include "lbann/layers/activations/sigmoid_bce_with_logits.hpp"
 #include "lbann/layers/activations/abs.hpp"
 #include "lbann/layers/activations/l2_loss.hpp"
+#include "lbann/layers/activations/log.hpp"
+
 
 /// Learning Layers
 #include "lbann/layers/learning/fully_connected.hpp"
@@ -83,6 +85,9 @@
 #include "lbann/layers/transform/gaussian.hpp"
 #include "lbann/layers/transform/bernoulli.hpp"
 #include "lbann/layers/transform/uniform.hpp"
+#include "lbann/layers/transform/crop.hpp"
+#include "lbann/layers/transform/categorical_random.hpp"
+#include "lbann/layers/transform/discrete_random.hpp"
 
 /// Regularization layers.
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
@@ -93,6 +98,7 @@
 /// I/O Layers
 #include "lbann/layers/io/input/input_layer.hpp"
 #include "lbann/layers/io/target/target_layer.hpp"
+#include "lbann/layers/io/input/repeated_input_layer.hpp"
 
 /// Reconstruction Layer
 #include "lbann/layers/io/target/reconstruction.hpp"
@@ -109,6 +115,7 @@
 #include "lbann/data_readers/data_reader_triplet.hpp"
 #include "lbann/data_readers/data_reader_synthetic.hpp"
 #include "lbann/data_readers/data_reader_jag.hpp"
+#include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/data_readers/data_reader_nci.hpp"
 #include "lbann/data_readers/data_reader_numpy.hpp"
 #include "lbann/data_readers/data_reader_csv.hpp"

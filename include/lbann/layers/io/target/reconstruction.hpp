@@ -34,7 +34,7 @@
 #include "lbann/utils/random.hpp"
 
 namespace lbann {
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class reconstruction_layer : public generic_target_layer {
  private:
 
@@ -61,6 +61,8 @@ class reconstruction_layer : public generic_target_layer {
   }
 
   data_layout get_data_layout() const override { return T_layout; }
+
+  El::Device get_device_allocation() const override { return Dev; }
 
   /** Set original layer. */
   void set_original_layer(Layer *original_layer) {

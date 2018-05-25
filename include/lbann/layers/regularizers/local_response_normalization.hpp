@@ -35,7 +35,7 @@
 namespace lbann {
 
 /** Local Response Normalization layer. */
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class local_response_normalization_layer : public regularizer_layer {
  private:
 
@@ -70,7 +70,6 @@ class local_response_normalization_layer : public regularizer_layer {
     // Initialize cuDNN objects
     m_lrn_cudnn_desc = nullptr;
     if (cudnn) {
-      this->m_using_gpus = true;
       this->m_cudnn = cudnn;
     }
   #endif // LBANN_HAS_CUDNN
@@ -123,6 +122,7 @@ class local_response_normalization_layer : public regularizer_layer {
   }
 
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   /// Initialize GPU objects
   void setup_gpu() override {
@@ -140,7 +140,7 @@ class local_response_normalization_layer : public regularizer_layer {
   }
 
   void fp_compute() override {
-    if (this->m_using_gpus) {
+    if (this->using_gpus()) {
       fp_compute_cudnn();
     } else {
       fp_compute_cpu();
@@ -148,7 +148,7 @@ class local_response_normalization_layer : public regularizer_layer {
   }
 
   void bp_compute() override {
-    if (this->m_using_gpus) {
+    if (this->using_gpus()) {
       bp_compute_cudnn();
     } else {
       bp_compute_cpu();
@@ -167,21 +167,18 @@ class local_response_normalization_layer : public regularizer_layer {
     const DataType zero = 0;
 
     // Perform local response normalization with each GPU
-    const int num_gpus = this->m_cudnn->get_num_gpus();
-    for (int i=0; i<num_gpus; ++i) {
-      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-      CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
-                                 this->m_cudnn->get_stream(i)));
-      CHECK_CUDNN(cudnnLRNCrossChannelForward(this->m_cudnn->get_handle(i),
-                                              m_lrn_cudnn_desc,
-                                              CUDNN_LRN_CROSS_CHANNEL_DIM1,
-                                              &one,
-                                              this->m_prev_activations_cudnn_desc,
-                                              this->m_prev_activations_d[0].get_locked_data(i),
-                                              &zero,
-                                              this->m_activations_cudnn_desc,
-                                              this->m_activations_d[0].get_data(i)));
-    }
+    CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
+    CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(),
+                               this->m_cudnn->get_stream()));
+    CHECK_CUDNN(cudnnLRNCrossChannelForward(this->m_cudnn->get_handle(),
+                                            m_lrn_cudnn_desc,
+                                            CUDNN_LRN_CROSS_CHANNEL_DIM1,
+                                            &one,
+                                            this->m_prev_activations_cudnn_desc,
+                                            get_prev_activations().LockedBuffer(),
+                                            &zero,
+                                            this->m_activations_cudnn_desc,
+                                            get_activations().Buffer()));
 
   #endif // #ifndef LBANN_HAS_CUDNN
   }
@@ -196,25 +193,22 @@ class local_response_normalization_layer : public regularizer_layer {
     const DataType one = 1;
 
     // Perform back propagation on each GPU
-    const int num_gpus = this->m_cudnn->get_num_gpus();
-    for (int i=0; i<num_gpus; ++i) {
-      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-      CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
-                                 this->m_cudnn->get_stream(i)));
-      CHECK_CUDNN(cudnnLRNCrossChannelBackward(this->m_cudnn->get_handle(i),
-                                               m_lrn_cudnn_desc,
-                                               CUDNN_LRN_CROSS_CHANNEL_DIM1,
-                                               &one,
-                                               this->m_activations_cudnn_desc,
-                                               this->m_activations_d[0].get_locked_data(i),
-                                               this->m_prev_error_signals_cudnn_desc,
-                                               this->m_prev_error_signals_d[0].get_locked_data(i),
-                                               this->m_prev_activations_cudnn_desc,
-                                               this->m_prev_activations_d[0].get_locked_data(i),
-                                               &one,
-                                               this->m_error_signals_cudnn_desc,
-                                               this->m_error_signals_d[0].get_data(i)));
-    }
+    CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
+    CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(),
+                               this->m_cudnn->get_stream()));
+    CHECK_CUDNN(cudnnLRNCrossChannelBackward(this->m_cudnn->get_handle(),
+                                             m_lrn_cudnn_desc,
+                                             CUDNN_LRN_CROSS_CHANNEL_DIM1,
+                                             &one,
+                                             this->m_activations_cudnn_desc,
+                                             get_activations().LockedBuffer(),
+                                             this->m_prev_error_signals_cudnn_desc,
+                                             get_prev_error_signals().LockedBuffer(),
+                                             this->m_prev_activations_cudnn_desc,
+                                             get_prev_activations().LockedBuffer(),
+                                             &one,
+                                             this->m_error_signals_cudnn_desc,
+                                             get_error_signals().Buffer()));
 
   #endif // #ifndef LBANN_HAS_CUDNN
   }

@@ -78,7 +78,8 @@ void lbann_callback_checknan::on_batch_end(model *m) {
 }
 
 bool lbann_callback_checknan::is_good(const AbsDistMat& m) {
-  const Mat& lm = m.LockedMatrix();
+  AbsDistMatReadProxy<El::Device::CPU> cpu_m(m);
+  const AbsMat& lm = cpu_m.GetLocked().LockedMatrix();
   const El::Int height = lm.Height();
   const El::Int width = lm.Width();
   for (El::Int col = 0; col < width; ++col) {
@@ -100,6 +101,9 @@ void lbann_callback_checknan::dump_network(model *m) {
   // Dump only the local matrices because not every rank will necessarily
   // have bad data, and the check is purely local.
   for (const Layer *layer : m->get_layers()) {
+    if (dynamic_cast<const generic_target_layer*>(layer) != nullptr) {
+      continue;  // Skip target layers.
+    }
     const std::string prefix
       = ("model" + std::to_string(m->get_comm()->get_model_rank())
          + "-rank" + std::to_string(m->get_comm()->get_rank_in_model()) +

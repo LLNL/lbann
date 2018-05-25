@@ -46,7 +46,7 @@ namespace lbann {
  *  time. See:
  *    https://cthorey.github.io/backpropagation/
  */
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class batch_normalization : public regularizer_layer {
 
  private:
@@ -70,21 +70,6 @@ class batch_normalization : public regularizer_layer {
   AbsDistMat *m_scale_gradient;
   /** Gradient w.r.t. bias terms. */
   AbsDistMat *m_bias_gradient;
-
-#ifdef LBANN_HAS_CUDNN
-  /** GPU memory for current minibatch means. */
-  cudnn::matrix m_mean_d;
-  /** GPU memory for current minibatch variances. */
-  cudnn::matrix m_var_d;
-  /** GPU memory for mean gradient. */
-  cudnn::matrix m_mean_gradient_d;
-  /** GPU memory for variance gradient. */
-  cudnn::matrix m_var_gradient_d;
-  /** GPU memory for scaling term gradient. */
-  cudnn::matrix m_scale_gradient_d;
-  /** GPU memory for bias term gradient. */
-  cudnn::matrix m_bias_gradient_d;
-#endif // LBANN_HAS_CUDNN
 
  public:
   /**
@@ -120,7 +105,6 @@ class batch_normalization : public regularizer_layer {
   #ifdef LBANN_HAS_CUDNN
     // Initialize GPU memory if using GPU
     if (cudnn != nullptr) {
-      this->m_using_gpus = true;
       this->m_cudnn = cudnn;
     }
   #endif // LBANN_HAS_CUDNN
@@ -146,16 +130,6 @@ class batch_normalization : public regularizer_layer {
     if (m_var_gradient != nullptr)   { m_var_gradient = m_var_gradient->Copy(); }
     if (m_scale_gradient != nullptr) { m_scale_gradient = m_scale_gradient->Copy(); }
     if (m_bias_gradient != nullptr)  { m_bias_gradient = m_bias_gradient->Copy(); }
-
-  #ifdef LBANN_HAS_CUDNN
-    // Copy GPU data
-    m_mean_d = other.m_mean_d;
-    m_var_d = other.m_var_d;
-    m_mean_gradient_d = other.m_mean_gradient_d;
-    m_var_gradient_d = other.m_var_gradient_d;
-    m_scale_gradient_d = other.m_scale_gradient_d;
-    m_bias_gradient_d = other.m_bias_gradient_d;
-  #endif // LBANN_HAS_CUDNN
   }
 
   batch_normalization& operator=(const batch_normalization& other) {
@@ -181,16 +155,6 @@ class batch_normalization : public regularizer_layer {
     if (m_scale_gradient != nullptr) { m_scale_gradient = m_scale_gradient->Copy(); }
     if (m_bias_gradient != nullptr)  { m_bias_gradient = m_bias_gradient->Copy(); }
 
-  #ifdef LBANN_HAS_CUDNN
-    // Copy GPU data
-    m_mean_d = other.m_mean_d;
-    m_var_d = other.m_var_d;
-    m_mean_gradient_d = other.m_mean_gradient_d;
-    m_var_gradient_d = other.m_var_gradient_d;
-    m_scale_gradient_d = other.m_scale_gradient_d;
-    m_bias_gradient_d = other.m_bias_gradient_d;
-  #endif // LBANN_HAS_CUDNN
-
     return *this;
   }
 
@@ -215,15 +179,17 @@ class batch_normalization : public regularizer_layer {
   void setup_matrices(const El::Grid& grid) override {
     regularizer_layer::setup_matrices(grid);
     deallocate_matrices();
-    m_mean = new StarMat(grid);
-    m_var = new StarMat(grid);
-    m_mean_gradient = new StarMat(grid);
-    m_var_gradient = new StarMat(grid);
-    m_scale_gradient = new StarMat(grid);
-    m_bias_gradient = new StarMat(grid);
+    m_mean = new StarMat<Dev>(grid);
+    m_var = new StarMat<Dev>(grid);
+    m_mean_gradient = new StarMat<Dev>(grid);
+    m_var_gradient = new StarMat<Dev>(grid);
+    m_scale_gradient = new StarMat<Dev>(grid);
+    m_bias_gradient = new StarMat<Dev>(grid);
   }
 
   data_layout get_data_layout() const override { return T_layout; }
+
+  El::Device get_device_allocation() const override { return Dev; }
 
   void setup_data() override {
     regularizer_layer::setup_data();
@@ -264,10 +230,10 @@ class batch_normalization : public regularizer_layer {
     }
 
     // Setup weights
-    this->m_weights[0]->setup(this->m_neuron_dims[0]);
-    this->m_weights[1]->setup(this->m_neuron_dims[0]);
-    this->m_weights[2]->setup(this->m_neuron_dims[0]);
-    this->m_weights[3]->setup(this->m_neuron_dims[0]);
+    this->m_weights[0]->setup(this->m_neuron_dims[0], Dev);
+    this->m_weights[1]->setup(this->m_neuron_dims[0], Dev);
+    this->m_weights[2]->setup(this->m_neuron_dims[0], Dev);
+    this->m_weights[3]->setup(this->m_neuron_dims[0], Dev);
 
     if (m_frozen) {
       this->m_weights[0]->freeze();
@@ -291,30 +257,8 @@ class batch_normalization : public regularizer_layer {
 
   }
 
-  void setup_gpu() override {
-    regularizer_layer::setup_gpu();
-  #ifndef LBANN_HAS_CUDNN
-    throw lbann_exception("convolution_layer: cuDNN not detected");
-  #else
-    m_mean_d = cudnn::matrix(m_cudnn, m_mean->Height(), m_mean->Width());
-    m_var_d = cudnn::matrix(m_cudnn, m_var->Height(), m_var->Width());
-    m_mean_gradient_d = cudnn::matrix(m_cudnn,
-                                      m_mean_gradient->Height(),
-                                      m_mean_gradient->Width());
-    m_var_gradient_d = cudnn::matrix(m_cudnn,
-                                      m_var_gradient->Height(),
-                                      m_var_gradient->Width());
-    m_scale_gradient_d = cudnn::matrix(m_cudnn,
-                                       m_scale_gradient->Height(),
-                                       m_scale_gradient->Width());
-    m_bias_gradient_d = cudnn::matrix(m_cudnn,
-                                      m_bias_gradient->Height(),
-                                      m_bias_gradient->Width());
-  #endif // LBANN_HAS_CUDNN
-  }
-
   void fp_compute() override {
-    if (this->m_using_gpus) {
+    if (this->using_gpus()) {
       fp_compute_gpu();
     } else {
       fp_compute_cpu();
@@ -322,7 +266,7 @@ class batch_normalization : public regularizer_layer {
   }
 
   void bp_compute() override {
-    if (this->m_using_gpus) {
+    if (this->using_gpus()) {
       bp_compute_gpu();
     } else {
       bp_compute_cpu();
@@ -339,7 +283,6 @@ class batch_normalization : public regularizer_layer {
 
     // Matrix parameters
     const auto& input = get_prev_activations();
-    const int num_gpus = this->m_cudnn->get_num_gpus();
     const int height = input.Height();
     const int width = input.Width();
     const int local_width = input.LocalWidth();
@@ -350,91 +293,69 @@ class batch_normalization : public regularizer_layer {
     if (is_training) {
 
       // Get GPU objects
-      std::vector<DataType*> running_mean_d = m_weights[2]->get_values_gpu();
-      std::vector<DataType*> running_var_d = m_weights[3]->get_values_gpu();
+      DataType* running_mean = m_weights[2]->get_values().Buffer();
+      DataType* running_var = m_weights[3]->get_values().Buffer();
 
-      // Compute sums and sums of squares on GPUs
-      for (int i=0; i<num_gpus; ++i) {
-        CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-        const int col_start = std::min(i * this->m_mini_batch_size_per_gpu, local_width);
-        const int col_end = std::min((i+1) * this->m_mini_batch_size_per_gpu, local_width);
-        const int current_width = col_end - col_start;
-        batch_normalization_cuda
-          ::channel_sums_and_sqsums(height,
-                                    current_width,
-                                    num_channels,
-                                    this->m_prev_activations_d[0].get_locked_data(i),
-                                    this->m_prev_activations_d[0].get_leading_dim(),
-                                    m_mean_d.get_data(i),
-                                    m_var_d.get_data(i),
-                                    this->m_cudnn->get_stream(i));
-      }
+      // Compute sums and sums of squares on the GPUs
+      batch_normalization_cuda
+        ::channel_sums_and_sqsums(height,
+                                  local_width,
+                                  num_channels,
+                                  get_prev_activations().LockedBuffer(),
+                                  get_prev_activations().LDim(),
+                                  m_mean->Buffer(),
+                                  m_var->Buffer(),
+                                  this->m_cudnn->get_stream());
 
       // Accumulate sums and sums of squares
       int samples_per_sum;
       if (m_use_global_stats) {
-        this->m_cudnn->global_allreduce_on_gpus(m_mean_d.get_data(),
-                                                num_channels,
-                                                1,
-                                                m_mean->RedundantComm());
-        this->m_cudnn->global_allreduce_on_gpus(m_var_d.get_data(),
-                                                num_channels,
-                                                1,
-                                                m_var->RedundantComm());
+        m_comm->allreduce(*m_mean, m_mean->RedundantComm(), El::mpi::SUM);
+        m_comm->allreduce(*m_var, m_var->RedundantComm(), El::mpi::SUM);
         samples_per_sum = channel_size * width;
       } else {
-        this->m_cudnn->allreduce_on_gpus(m_mean_d.get_data(), num_channels, 1);
-        this->m_cudnn->allreduce_on_gpus(m_var_d.get_data(), num_channels, 1);
         samples_per_sum = channel_size * local_width;
       }
 
       // Compute minibatch statistics and running statistics
-      for (int i=0; i<num_gpus; ++i) {
-        CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-        batch_normalization_cuda
-          ::sums_to_statistics(num_channels,
-                               samples_per_sum,
-                               m_decay,
-                               m_mean_d.get_data(i),
-                               m_var_d.get_data(i),
-                               running_mean_d[i],
-                               running_var_d[i],
-                               this->m_cudnn->get_stream(i));
-      }
+      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
+      batch_normalization_cuda
+        ::sums_to_statistics(num_channels,
+                             samples_per_sum,
+                             m_decay,
+                             m_mean->Buffer(),
+                             m_var->Buffer(),
+                             running_mean,
+                             running_var,
+                             this->m_cudnn->get_stream());
 
     }
 
     // Get GPU objects
-    const std::vector<DataType*> scale_d = m_weights[0]->get_values_gpu();
-    const std::vector<DataType*> bias_d = m_weights[1]->get_values_gpu();
-    const std::vector<DataType*> mean_d = (is_training ?
-                                           m_mean_d.get_locked_data() :
-                                           m_weights[2]->get_values_gpu());
-    const std::vector<DataType*> var_d = (is_training ?
-                                          m_var_d.get_locked_data() :
-                                          m_weights[3]->get_values_gpu());
+    const DataType* scale = m_weights[0]->get_values().LockedBuffer();
+    const DataType* bias = m_weights[1]->get_values().LockedBuffer();
+    const DataType* mean = (is_training ?
+                            m_mean->LockedBuffer() :
+                            m_weights[2]->get_values().LockedBuffer());
+    const DataType* var = (is_training ?
+                           m_var->LockedBuffer() :
+                           m_weights[3]->get_values().LockedBuffer());
 
     // Perform batch normalization with each GPU
-    for (int i=0; i<num_gpus; ++i) {
-      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-      const int col_start = std::min(i * this->m_mini_batch_size_per_gpu, local_width);
-      const int col_end = std::min((i+1) * this->m_mini_batch_size_per_gpu, local_width);
-      const int current_width = col_end - col_start;
-      batch_normalization_cuda
-        ::batch_normalization(height,
-                              current_width,
-                              num_channels,
-                              this->m_prev_activations_d[0].get_locked_data(i),
-                              this->m_prev_activations_d[0].get_leading_dim(),
-                              mean_d[i],
-                              var_d[i],
-                              m_epsilon,
-                              scale_d[i],
-                              bias_d[i],
-                              this->m_activations_d[0].get_data(i),
-                              this->m_activations_d[0].get_leading_dim(),
-                              this->m_cudnn->get_stream(i));
-    }
+    batch_normalization_cuda
+      ::batch_normalization(height,
+                            local_width,
+                            num_channels,
+                            get_prev_activations().LockedBuffer(),
+                            get_prev_activations().LDim(),
+                            mean,
+                            var,
+                            m_epsilon,
+                            scale,
+                            bias,
+                            get_activations().Buffer(),
+                            get_activations().LDim(),
+                            this->m_cudnn->get_stream());
 
   #endif // LBANN_HAS_CUDNN
   }
@@ -448,14 +369,13 @@ class batch_normalization : public regularizer_layer {
     const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
 
     // GPU objects
-    const int num_gpus = this->m_cudnn->get_num_gpus();
-    const std::vector<DataType*> scale_d = m_weights[0]->get_values_gpu();
-    const std::vector<DataType*> mean_d = (is_training ?
-                                           m_mean_d.get_locked_data() :
-                                           m_weights[2]->get_values_gpu());
-    const std::vector<DataType*> var_d = (is_training ?
-                                          m_var_d.get_locked_data() :
-                                          m_weights[3]->get_values_gpu());
+    const DataType* scale = m_weights[0]->get_values().LockedBuffer();
+    const DataType* mean = (is_training ?
+                            m_mean->LockedBuffer() :
+                            m_weights[2]->get_values().LockedBuffer());
+    const DataType* var = (is_training ?
+                           m_var->LockedBuffer() :
+                           m_weights[3]->get_values().LockedBuffer());
 
     // Matrix parameters
     const int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
@@ -466,91 +386,70 @@ class batch_normalization : public regularizer_layer {
     const int num_channels = this->m_neuron_dims[0];
 
     // Compute local gradient contributions
-    for (int i=0; i<num_gpus; ++i) {
-      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-      const int col_start = std::min(i * this->m_mini_batch_size_per_gpu, local_width);
-      const int col_end = std::min((i+1) * this->m_mini_batch_size_per_gpu, local_width);
-      const int current_width = col_end - col_start;
-      batch_normalization_cuda
-        ::batch_normalization_backprop1(height,
-                                        current_width,
-                                        num_channels,
-                                        this->m_prev_activations_d[0].get_locked_data(i),
-                                        this->m_prev_activations_d[0].get_leading_dim(),
-                                        this->m_prev_error_signals_d[0].get_locked_data(i),
-                                        this->m_prev_error_signals_d[0].get_leading_dim(),
-                                        mean_d[i],
-                                        var_d[i],
-                                        m_epsilon,
-                                        scale_d[i],
-                                        m_scale_gradient_d.get_data(i),
-                                        m_bias_gradient_d.get_data(i),
-                                        m_mean_gradient_d.get_data(i),
-                                        m_var_gradient_d.get_data(i),
-                                        this->m_cudnn->get_stream(i));
-    }
+    batch_normalization_cuda
+      ::batch_normalization_backprop1(height,
+                                      local_width,
+                                      num_channels,
+                                      get_prev_activations().LockedBuffer(),
+                                      get_prev_activations().LDim(),
+                                      get_prev_error_signals().LockedBuffer(),
+                                      get_prev_error_signals().LDim(),
+                                      mean,
+                                      var,
+                                      m_epsilon,
+                                      scale,
+                                      m_scale_gradient->Buffer(),
+                                      m_bias_gradient->Buffer(),
+                                      m_mean_gradient->Buffer(),
+                                      m_var_gradient->Buffer(),
+                                      this->m_cudnn->get_stream());
 
     // Accumulate gradients
     if (is_training) {
       if (m_use_global_stats) {
-        this->m_cudnn->global_allreduce_on_gpus(m_mean_gradient_d.get_data(),
-                                                num_channels,
-                                                1,
-                                                m_mean_gradient->RedundantComm());
-        this->m_cudnn->global_allreduce_on_gpus(m_var_gradient_d.get_data(),
-                                                num_channels,
-                                                1,
-                                                m_var_gradient->RedundantComm());
-      } else {
-        this->m_cudnn->allreduce_on_gpus(m_mean_gradient_d.get_data(),
-                                         num_channels,
-                                         1);
-        this->m_cudnn->allreduce_on_gpus(m_var_gradient_d.get_data(),
-                                         num_channels,
-                                         1);
+        m_comm->allreduce(*m_mean_gradient,
+                          m_mean_gradient->RedundantComm(),
+                          El::mpi::SUM);
+        m_comm->allreduce(*m_var_gradient,
+                          m_var_gradient->RedundantComm(),
+                          El::mpi::SUM);
       }
     } else {
-      m_mean_gradient_d.zero();
-      m_var_gradient_d.zero();
+      Zero(*m_mean_gradient);
+      Zero(*m_var_gradient);
     }
     optimizer* scale_optimizer = m_weights[0]->get_optimizer();
     if (scale_optimizer != nullptr) {
       scale_optimizer->add_to_gradient_staging(
-        m_scale_gradient_d,
+        *m_scale_gradient,
         DataType(1) / effective_mini_batch_size);
     }
     optimizer* bias_optimizer = m_weights[1]->get_optimizer();
     if (bias_optimizer != nullptr) {
       bias_optimizer->add_to_gradient_staging(
-        m_bias_gradient_d,
+        *m_bias_gradient,
         DataType(1) / effective_mini_batch_size);
     }
 
     // Compute error signal
-    for (int i=0; i<num_gpus; ++i) {
-      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-      const int col_start = std::min(i * this->m_mini_batch_size_per_gpu, local_width);
-      const int col_end = std::min((i+1) * this->m_mini_batch_size_per_gpu, local_width);
-      const int current_width = col_end - col_start;
-      batch_normalization_cuda
-        ::batch_normalization_backprop2(height,
-                                        current_width,
-                                        m_use_global_stats ? width : local_width,
-                                        num_channels,
-                                        this->m_prev_activations_d[0].get_locked_data(i),
-                                        this->m_prev_activations_d[0].get_leading_dim(),
-                                        this->m_prev_error_signals_d[0].get_locked_data(i),
-                                        this->m_prev_error_signals_d[0].get_leading_dim(),
-                                        mean_d[i],
-                                        var_d[i],
-                                        m_epsilon,
-                                        scale_d[i],
-                                        m_mean_gradient_d.get_locked_data(i),
-                                        m_var_gradient_d.get_locked_data(i),
-                                        this->m_error_signals_d[0].get_data(i),
-                                        this->m_error_signals_d[0].get_leading_dim(),
-                                        this->m_cudnn->get_stream(i));
-    }
+    batch_normalization_cuda
+      ::batch_normalization_backprop2(height,
+                                      local_width,
+                                      m_use_global_stats ? width : local_width,
+                                      num_channels,
+                                      get_prev_activations().LockedBuffer(),
+                                      get_prev_activations().LDim(),
+                                      get_prev_error_signals().LockedBuffer(),
+                                      get_prev_error_signals().LDim(),
+                                      mean,
+                                      var,
+                                      m_epsilon,
+                                      scale,
+                                      m_mean_gradient->LockedBuffer(),
+                                      m_var_gradient->LockedBuffer(),
+                                      get_error_signals().Buffer(),
+                                      get_error_signals().LDim(),
+                                      this->m_cudnn->get_stream());
 
   #endif // LBANN_HAS_CUDNN
   }
@@ -641,7 +540,7 @@ class batch_normalization : public regularizer_layer {
     const auto& local_var = (is_training ?
                              m_var->LockedMatrix() :
                              this->m_weights[3]->get_values().LockedMatrix());
- 
+
     // Iterate through channels
     #pragma omp parallel for
     for (int channel = 0; channel < num_channels; ++channel) {
@@ -690,7 +589,7 @@ class batch_normalization : public regularizer_layer {
     auto& local_var_gradient = m_var_gradient->Matrix();
     auto& local_scale_gradient = m_scale_gradient->Matrix();
     auto& local_bias_gradient = m_bias_gradient->Matrix();
-    
+
     // Matrix parameters
     const int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
     const int width = input.Width();

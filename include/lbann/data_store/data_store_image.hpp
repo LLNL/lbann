@@ -67,18 +67,17 @@ class data_store_image : public generic_data_store {
 
   /// maps a global index (wrt image_list) to number of bytes in the file
   std::unordered_map<size_t, size_t> m_file_sizes;
-
-  /// maps a global index (wrt image_list) to the file's data location 
-  /// wrt m_data
-  std::unordered_map<size_t, size_t> m_offsets;
   /// fills in m_file_sizes
   virtual void get_file_sizes() = 0;
+
+  /// fills in m_file_sizes; this is called when we're using files
+  /// from a tarball
+  virtual void read_file_sizes();
 
   /// called by get_file_sizes
   void exchange_file_sizes(
     std::vector<int> &global_indices,
-    std::vector<int> &num_bytes,
-    int num_global_indices);
+    std::vector<int> &num_bytes);
 
   /// buffers that will be passed to reader::fetch_datum
   std::unordered_map<int, std::vector<unsigned char> > m_my_minibatch_data;
@@ -87,7 +86,10 @@ class data_store_image : public generic_data_store {
   void load_file(const std::string &dir, const std::string &fn, unsigned char *p, size_t sz); 
 
   /// reads all files assigned to this processor into memory (m_data)
+  /// version for in-memory mode
   virtual void read_files() = 0; 
+  /// version for out-of-memory mode
+  virtual void read_files(const std::unordered_set<int> &indices) = 0; 
 
   /// in multi-image scenarios, the number of images in each sample
   unsigned int m_num_img_srcs;
@@ -108,6 +110,44 @@ class data_store_image : public generic_data_store {
   /// attempts to determine if there is sufficient RAM for
   /// in-memory data store; may call MPI_Abort
   void report_memory_constraints();
+
+  /// for out-of-memory mode: read files from, e.g, lscratchX, and write
+  /// to local store, e.g, /l/ssd
+  void stage_files();
+
+  /// for out-of-memory mode: unpack files from a previously created tarball
+  void stage_tarball();
+
+  /// called by data_reader::fetch_data; supports out-of-memory mode
+  void fetch_data() override;
+
+  /// creates a tarball of files written to local disk, then
+  /// copies the tarball to, e.g, lscratchX. Activated by the cmd line
+  /// options: --create_tarball <name> where <name> is the directory
+  /// to which to copy the tarball. 
+  void create_tarball();
+
+  /// returns the string that will be passed to a system call to
+  /// create the tarball on local store (/l/ssd), and string for copying
+  /// to remote store (lscratchX)
+  std::pair<std::string, std::string> get_tarball_exe();
+
+  /// called by create_tarball
+  void write_file_sizes();
+  
+  /// called by create_tarball
+  void write_datastore_indices();
+
+  void read_datastore_indices();
+
+  /// called by create_tarball
+  void write_data_filepaths();
+
+  void read_data_filepaths();
+
+  /// returns true if option: --create_tarball is in use;
+  /// print info to screen, and performs error checking
+  bool are_we_creating_tarballs();
 };
 
 }  // namespace lbann

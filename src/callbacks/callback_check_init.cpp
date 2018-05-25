@@ -50,8 +50,8 @@ void lbann_callback_check_init::on_train_begin(model *m) {
     }
     // Model 0 holds the master copy, it gathers the values from other models
     // and compares them.
-    const Mat& local_matrix = w->get_values().LockedMatrix();
-    Mat remote_matrix(local_matrix.Height(), local_matrix.Width());
+    const AbsMat& local_matrix = w->get_values().LockedMatrix();
+    CPUMat remote_matrix(local_matrix.Height(), local_matrix.Width());
     for (int model = 1; model < comm->get_num_models(); ++model) {
       comm->global_barrier();
       if (comm->get_model_rank() == 0) {
@@ -71,7 +71,7 @@ void lbann_callback_check_init::on_train_begin(model *m) {
   }
 }
 
-bool lbann_callback_check_init::check_equal(const Mat& x, const Mat& y) const {
+bool lbann_callback_check_init::check_equal(const AbsMat& x, const AbsMat& y) const {
   const El::Int height = x.Height();
   const El::Int width = x.Width();
   if (height != y.Height() || width != y.Width() || x.LDim() != y.LDim()) {

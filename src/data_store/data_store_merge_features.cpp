@@ -104,7 +104,7 @@ void data_store_merge_features::setup() {
     }
   }
   if (m_master) {
-    std::cerr << "data_store_merge_features::setup() time: " << get_time() - tm1 << "\n";
+    std::cerr << "TIME for data_store_merge_features setup: " << get_time() - tm1 << "\n";
   }
 }
 

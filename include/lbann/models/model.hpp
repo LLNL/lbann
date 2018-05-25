@@ -211,13 +211,18 @@ class model {
   void collect_indices(execution_mode mode);
 
   /** Checkpoint model to given file descriptor, return number of bytes written */
-  virtual bool save_to_checkpoint_shared(persist& p, bool val_end);
+  virtual bool save_to_checkpoint_shared(persist& p);
   /** Restore model by reading checkpoint from given file descriptor, return number of bytes read */
   virtual bool load_from_checkpoint_shared(persist& p);
+
+  virtual bool save_to_checkpoint_distributed(persist& p);
+  virtual bool load_from_checkpoint_distributed(persist& p);
 
   /** Write model to proto file */
   virtual void write_proto(lbann_data::Model* proto);
 
+  /** To make sure copying between host and deivces is complete */
+  void synchronize() const;
 
  protected:
 

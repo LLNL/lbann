@@ -35,7 +35,7 @@ namespace lbann {
  *  Computes the average value across a mini-batch. If the input
  *  tensor has multiple neurons, their values are added together.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class evaluation_layer : public transform_layer {
 
  public:
@@ -43,6 +43,8 @@ class evaluation_layer : public transform_layer {
   evaluation_layer(lbann_comm *comm,
               cudnn::cudnn_manager *cudnn = nullptr)
     : transform_layer(comm), m_scale(0), m_value(0) {
+    static_assert(Dev == El::Device::CPU,
+                  "evaluation layer currently only supports CPU");
 
     // Evaluation layer has no children
     m_expected_num_child_layers = 0;
@@ -52,6 +54,7 @@ class evaluation_layer : public transform_layer {
   evaluation_layer* copy() const override { return new evaluation_layer(*this); }
   std::string get_type() const override { return "evaluation"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   /** Returns description. */
   std::string get_description() const override {
@@ -64,7 +67,7 @@ class evaluation_layer : public transform_layer {
   EvalType get_scale() const { return m_scale; }
   /** Set scaling factor. */
   void set_scale(EvalType scale) { m_scale = scale; }
-  
+
   /** Get evaluated value. */
   EvalType get_value(bool unscaled = false) {
     this->m_comm->wait(m_allreduce_req);
@@ -96,7 +99,7 @@ class evaluation_layer : public transform_layer {
     this->m_comm->nb_allreduce(&m_value, 1, input.DistComm(), m_allreduce_req);
 
   }
-  
+
   virtual void bp_compute() override {
     auto& error_signal = get_error_signals();
     if (m_scale == EvalType(0)) {

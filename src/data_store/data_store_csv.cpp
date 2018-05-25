@@ -53,6 +53,7 @@ void data_store_csv::setup() {
               << "calling generic_data_store::setup()\n";
   }
   generic_data_store::setup();
+  build_index_owner();
 
   if (! m_in_memory) {
     err << __FILE__ << " " << __LINE__ << " :: "
@@ -107,7 +108,7 @@ void data_store_csv::setup() {
   }
 
   if (m_master) {
-    std::cerr << "data_store_csv::setup time: " << get_time() - tm1 << "\n";
+    std::cerr << "TIME for data_store_csv setup: " << get_time() - tm1 << "\n";
   }
 }
 
@@ -202,7 +203,8 @@ void data_store_csv::exchange_data() {
   m_comm->wait_all(recv_req);
 
   if (m_master) {
-    std::cerr << "role: " << m_reader->get_role() << " data_store_csv::exchange_data() time: " << get_time() - tm1 << std::endl;
+    std::cerr << "TIME for data_store_csv::exchange_data(): " 
+             << get_time() - tm1 << "; role: " << m_reader->get_role() << "\n";
   }
 }
 

@@ -273,7 +273,10 @@ const DataType* matrix::get_locked_data(int i) const {
 }
 
 /// It is assumed the number of processes and the number of GPUs on a compute node are equal
-cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nccl_used)
+cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm,
+                             size_t work_space_size,
+                             int max_num_gpus,
+                             bool nccl_used)
     : comm(_comm) {
 
     // Indicate whether NCCL is used
@@ -287,11 +290,12 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nc
 #endif
 
     // Determine number of MPI ranks on current compute node
-    const int rank_in_node = comm->get_rank_in_node();
+    // const int rank_in_node = comm->get_rank_in_node();
     const int procs_per_node = comm->get_procs_per_node();
 
     // Determine number of visible GPUs
-    CHECK_CUDA(cudaGetDeviceCount(&m_num_visible_gpus));
+    //    CHECK_CUDA(cudaGetDeviceCount(&m_num_visible_gpus));
+    m_num_visible_gpus = El::GPUManager::NumDevices();
     if(max_num_gpus >= 0 && max_num_gpus < m_num_visible_gpus) {
         m_num_visible_gpus = max_num_gpus;
     }
@@ -299,60 +303,21 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nc
         throw lbann::lbann_exception("cudnn_wrapper: no GPUs found");
     }
     /// It is assumed that the number of processes on this node is equal to the total number of GPUs available
-/*
-  if(procs_per_node != m_num_visible_gpus){
-  throw lbann::lbann_exception("cudnn_wrapper: the number of MPI ranks is different from than the number of GPUs available on this node");
-  }
-*/
 
-    // Assign GPUs to process
-    int gpu_start, gpu_end;
-    const char* visible_devices = getenv("CUDA_VISIBLE_DEVICES");
-    if(visible_devices != nullptr && strlen(visible_devices) > 0) {
-        // Use all visible GPUs if specified with an environment variable
-        gpu_start = 0;
-        gpu_end = m_num_visible_gpus;
-    }
-    else if(m_num_visible_gpus >= procs_per_node) {
-        // Case where compute node has more GPUs than MPI ranks
-        const int gpus_per_proc = m_num_visible_gpus / procs_per_node;
-        const int num_leftover_gpus = m_num_visible_gpus % procs_per_node;
-        gpu_start = rank_in_node * gpus_per_proc;
-        gpu_end = (rank_in_node + 1) * gpus_per_proc;
-        if(rank_in_node < num_leftover_gpus) {
-            gpu_start += rank_in_node;
-            gpu_end += rank_in_node + 1;
-        }
-        else {
-            gpu_start += num_leftover_gpus;
-            gpu_end += num_leftover_gpus;
-        }
-    }
-    else {
-        // Case where compute node has fewer GPUs than MPI ranks
-        // TODO: Support case where MPI ranks have to share GPUs
-        std::stringstream err;
-        err << "cudnn_wrapper: cannot have " << procs_per_node << " processes "
-            << "on a node with " << m_num_visible_gpus << " GPUs";
-        throw lbann_exception(err.str());
-        gpu_start = rank_in_node % m_num_visible_gpus;
-        gpu_end = gpu_start + 1;
+    if(procs_per_node != m_num_visible_gpus){
+      std::cout << "cudnn_wrapper: the number of MPI ranks "
+                << procs_per_node
+                << " is different from than the number of GPUs "
+                << m_num_visible_gpus
+                << "  available on this node" << std::endl;
     }
 
     // Construct GPU objects
-    for(int gpu = gpu_start; gpu < gpu_end; ++gpu) {
-        FORCE_CHECK_CUDA(cudaSetDevice(gpu));
-        m_gpus.push_back(gpu);
-        m_streams.push_back(nullptr);
-        m_handles.push_back(nullptr);
-        m_cublas_handles.push_back(nullptr);
-        FORCE_CHECK_CUDA(cudaStreamCreate(&m_streams.back()));
-        FORCE_CHECK_CUDNN(cudnnCreate(&m_handles.back()));
-        FORCE_CHECK_CUDNN(cudnnSetStream(m_handles.back(), m_streams.back()));
-        FORCE_CHECK_CUBLAS(cublasCreate(&m_cublas_handles.back()));
-        FORCE_CHECK_CUBLAS(cublasSetStream(m_cublas_handles.back(), m_streams.back()));
-        FORCE_CHECK_CUBLAS(cublasSetPointerMode(m_cublas_handles.back(), CUBLAS_POINTER_MODE_HOST));
-    }
+    m_gpus.push_back(El::GPUManager::Device());
+    cudnnHandle_t handle = nullptr;
+    FORCE_CHECK_CUDNN(cudnnCreate(&handle));
+    FORCE_CHECK_CUDNN(cudnnSetStream(handle, El::GPUManager::Stream()));
+    m_handles.assign(1, handle);
 
     // Get number of GPUs for current MPI rank
     m_num_gpus = m_gpus.size();
@@ -362,12 +327,15 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nc
      *   refactor the cuDNN manager and make the LBANN communicator
      *   responsible for GPU management.
      */
-    comm->get_gpus() = m_gpus;
-    comm->get_cuda_streams() = m_streams;
+    comm->get_gpus() = get_gpus();
+    comm->get_cuda_streams() = get_streams();
 
     // Initialize work spaces
     m_work_spaces = std::vector<void *>(m_num_gpus, nullptr);
     m_work_space_sizes = std::vector<size_t>(m_num_gpus, 0);
+    for (int i = 0; i < m_num_gpus; ++i) {
+      set_work_space_size(work_space_size);
+    }
 
     /// Setting up for NCCL collective calls
     /// NOTE: For whoever makes changes in this file, please make sure following if statement comes last.
@@ -377,6 +345,7 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm, int max_num_gpus, bool nc
 }
 
 cudnn_manager::~cudnn_manager() {
+
   // Free work spaces
   free_work_spaces();
 
@@ -386,16 +355,9 @@ cudnn_manager::~cudnn_manager() {
   // considered to be noexcept by default
   try
   {
-    for(size_t i=0u; i<m_gpus.size(); ++i) {
-      FORCE_CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-      if(m_streams[i]) {
-        FORCE_CHECK_CUDA(cudaStreamDestroy(m_streams[i]));
-      }
-      if(m_handles[i]) {
+    for (size_t i=0; i<m_gpus.size(); ++i) {
+      if(m_handles[i] != nullptr) {
         FORCE_CHECK_CUDNN(cudnnDestroy(m_handles[i]));
-      }
-      if(m_cublas_handles[i]) {
-        FORCE_CHECK_CUBLAS(cublasDestroy(m_cublas_handles[i]));
       }
     }
   }
@@ -415,7 +377,7 @@ cudnn_manager::~cudnn_manager() {
 void cudnn_manager::cudnn_manager::allocate_on_gpus(std::vector<DataType *>& gpu_data,
                                                     int height,
                                                     int width_per_gpu) {
-  
+
   // Check that list of pointers is valid
   if(!gpu_data.empty()) {
     if((int) gpu_data.size() != m_num_gpus) {
@@ -501,7 +463,7 @@ void cudnn_manager::cudnn_manager::clear_on_gpu(int i,
     CHECK_CUDA(cudaMemsetAsync(gpu_data,
                                0,
                                height * width * sizeof(DataType),
-                               m_streams[i]));
+                               get_stream(i)));
   }
   else {
     CHECK_CUDA(cudaMemset2DAsync(gpu_data,
@@ -509,7 +471,7 @@ void cudnn_manager::cudnn_manager::clear_on_gpu(int i,
                                  0,
                                  height * sizeof(DataType),
                                  width,
-                                 m_streams[i]));
+                                 get_stream(i)));
   }
 }
 
@@ -529,7 +491,7 @@ void cudnn_manager::cudnn_manager::copy_to_gpu(int i,
                                    cpu_data.LockedBuffer(),
                                    height * width * sizeof(DataType),
                                    cudaMemcpyHostToDevice,
-                                   m_streams[i]));
+                                   get_stream(i)));
     }
     else {
         CHECK_CUDA(cudaMemcpy2DAsync(gpu_data,
@@ -539,7 +501,7 @@ void cudnn_manager::cudnn_manager::copy_to_gpu(int i,
                                      height * sizeof(DataType),
                                      width,
                                      cudaMemcpyHostToDevice,
-                                     m_streams[i]));
+                                     get_stream(i)));
     }
 }
 
@@ -560,7 +522,7 @@ void cudnn_manager::cudnn_manager::copy_from_gpu(int i,
                                gpu_data,
                                height * width * sizeof(DataType),
                                cudaMemcpyDeviceToHost,
-                               m_streams[i]));
+                               get_stream(i)));
   }
   else {
     CHECK_CUDA(cudaMemcpy2DAsync(cpu_data.Buffer(),
@@ -570,7 +532,7 @@ void cudnn_manager::cudnn_manager::copy_from_gpu(int i,
                                  height * sizeof(DataType),
                                  width,
                                  cudaMemcpyDeviceToHost,
-                                 m_streams[i]));
+                                 get_stream(i)));
   }
 }
 
@@ -642,7 +604,7 @@ void cudnn_manager::cudnn_manager::copy_on_gpus(std::vector<DataType *>& gpu_dst
                                      height*sizeof(DataType),
                                      width_per_gpu,
                                      cudaMemcpyDeviceToDevice,
-                                     m_streams[i]));
+                                     get_stream(i)));
     }
 
 }
@@ -739,7 +701,7 @@ void cudnn_manager::cudnn_manager::reduce_from_gpus(Mat& cpu_data,
 void cudnn_manager::cudnn_manager::synchronize() {
     for(int i=0; i<m_num_gpus; ++i) {
         CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-        CHECK_CUDA(cudaStreamSynchronize(m_streams[i]));
+        CHECK_CUDA(cudaStreamSynchronize(get_stream(i)));
     }
 }
 
@@ -770,20 +732,13 @@ int cudnn_manager::get_gpu(int i) const {
     return m_gpus[i];
 }
 
-std::vector<cudaStream_t>& cudnn_manager::get_streams() {
-    return m_streams;
+std::vector<cudaStream_t> cudnn_manager::get_streams() const {
+    return std::vector<cudaStream_t>(1, El::GPUManager::Stream());
 }
 
-const std::vector<cudaStream_t>& cudnn_manager::get_streams() const {
-    return m_streams;
-}
-
-cudaStream_t& cudnn_manager::get_stream(int i) {
-    return m_streams[i];
-}
-
-const cudaStream_t& cudnn_manager::get_stream(int i) const {
-    return m_streams[i];
+cudaStream_t cudnn_manager::get_stream(int i) const {
+    if (i != 0) { LBANN_ERROR("Attempted to access invalid GPU."); }
+    return El::GPUManager::Stream();
 }
 
 std::vector<cudnnHandle_t>& cudnn_manager::get_handles() {
@@ -802,20 +757,13 @@ const cudnnHandle_t& cudnn_manager::get_handle(int i) const {
     return m_handles[i];
 }
 
-std::vector<cublasHandle_t>& cudnn_manager::get_cublas_handles() {
-    return m_cublas_handles;
+std::vector<cublasHandle_t> cudnn_manager::get_cublas_handles() const {
+    return std::vector<cublasHandle_t>(1, El::GPUManager::cuBLASHandle());
 }
 
-const std::vector<cublasHandle_t>& cudnn_manager::get_cublas_handles() const {
-    return m_cublas_handles;
-}
-
-cublasHandle_t& cudnn_manager::get_cublas_handle(int i) {
-    return m_cublas_handles[i];
-}
-
-const cublasHandle_t& cudnn_manager::get_cublas_handle(int i) const {
-    return m_cublas_handles[i];
+cublasHandle_t cudnn_manager::get_cublas_handle(int i) const {
+    if (i != 0) { LBANN_ERROR("Attempted to access invalid GPU."); }
+    return El::GPUManager::cuBLASHandle();
 }
 
 std::vector<void *> cudnn_manager::get_work_spaces() {
@@ -857,37 +805,14 @@ size_t cudnn_manager::get_work_space_size(int i) {
     throw lbann_exception("cudnn_wrapper: tried to access invalid work space size");
   }
   m_work_space_sizes.resize(m_num_gpus, 0);
-  if(m_work_space_sizes[i] <= 0) {
-    set_maximum_work_space_size(i);
-  }
   return m_work_space_sizes[i];
 }
 
-void cudnn_manager::set_maximum_work_space_size(int i) {
-    CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-
-    // Search parameters for work space size
-    const double decay_factor = 0.8;
-    size_t free_memory, total_memory;
-    CHECK_CUDA(cudaSetDevice(m_gpus[i]));  
-    CHECK_CUDA(cudaMemGetInfo(&free_memory, &total_memory));
-
-    // Clear work space
-    free_work_space(i);
-
-    // Try allocating work spaces until we find a valid size
-    auto& work_space = m_work_spaces[i];
-    auto& work_space_size = m_work_space_sizes[i];
-    work_space = nullptr;
-    work_space_size = free_memory * decay_factor;
-    while(work_space_size > 0 && work_space == nullptr) {
-        const cudaError_t status = cudaMalloc(&work_space, work_space_size);
-        if(status != cudaErrorMemoryAllocation) {
-            FORCE_CHECK_CUDA(status);
-        } else {
-            work_space = nullptr;
-        }
-    }
+void cudnn_manager::set_work_space_size(size_t size, int i) {
+  free_work_space(i);
+  CHECK_CUDA(cudaSetDevice(m_gpus[i]));
+  FORCE_CHECK_CUDA(cudaMalloc(&m_work_spaces[i], size));
+  m_work_space_sizes[i] = size;
 }
 
 void cudnn_manager::free_work_space(int i) {
@@ -925,7 +850,7 @@ std::vector<DataType*> cudnn_manager::copy(const std::vector<DataType*>& gpu_dat
 void cudnn_manager::pin_matrix(AbsDistMat& mat) {
 
     // Get local matrix
-    Mat& mat_local = mat.Matrix();
+    Mat& mat_local = static_cast<CPUMat&>(mat.Matrix());
     const El::Int local_height = mat.LocalHeight();
     const El::Int local_width = mat.LocalWidth();
     const El::Int height = mat.Height();
@@ -980,7 +905,6 @@ void cudnn_manager::pin_matrix(AbsDistMat& mat) {
     } else {
         throw lbann::lbann_exception("cudnn_manager: could not cast AbsDistMat to ElMat or BlockMat");
     }
-
 }
 
 void cudnn_manager::unpin_matrix(AbsDistMat& mat) {
@@ -1005,7 +929,7 @@ void cudnn_manager::unpin_matrix(AbsDistMat& mat) {
     }
 
     // Copy data to unpinned memory
-    const Mat mat_local_copy(mat.LockedMatrix());
+    const GPUMat mat_local_copy(static_cast<const GPUMat&>(mat.LockedMatrix()));
 
     // Allocate new memory owned by matrix
     mat.Empty();
@@ -1140,6 +1064,34 @@ void set_tensor_cudnn_desc(cudnnTensorDescriptor_t& desc,
         strides[i-1] = strides[i] * dims[i];
     }
     strides.front() = std::max(strides.front(), sample_stride);
+
+    // Set cuDNN tensor descriptor
+    CHECK_CUDNN(cudnnSetTensorNdDescriptor(desc,
+                                           get_cudnn_data_type(),
+                                           dims.size(),
+                                           dims.data(),
+                                           strides.data()));
+
+}
+
+void set_tensor_cudnn_desc(cudnnTensorDescriptor_t& desc,
+                           int height,
+                           int width,
+                           int leading_dim) {
+
+    // Create tensor descriptor if needed
+    if (desc == nullptr) {
+        CHECK_CUDNN(cudnnCreateTensorDescriptor(&desc));
+    }
+
+    // Determine tensor dimensions and strides
+    // Note: cuDNN tensors should have at least 4 dimension
+    leading_dim = std::max(height, leading_dim);
+    const std::vector<int> dims = {1, 1, width, height};
+    const std::vector<int> strides = {width * leading_dim,
+                                      width * leading_dim,
+                                      leading_dim,
+                                      1};
 
     // Set cuDNN tensor descriptor
     CHECK_CUDNN(cudnnSetTensorNdDescriptor(desc,
@@ -1369,5 +1321,62 @@ void copy_lrn_cudnn_desc(const cudnnLRNDescriptor_t& src,
 }
 
 }// namespace cudnn
+
+/**
+ * Copies state from GPU to host only if the data is on GPU, which is done
+ * asynchronously. Thus, needs synchronization before accessing them.
+ * state is the AbsDistMat type pointer on host, and state_d is the DataType
+ * pointer on device
+ */
+void set_mat_state_on_host(AbsDistMat* state, const std::vector<DataType*>& state_d, cudnn::cudnn_manager* m_cudnn) {
+  // Check if states have been setup
+  if (state == nullptr) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to set states before they are setup";
+    throw lbann_exception(err.str());
+  }
+
+  #ifdef LBANN_HAS_CUDNN
+  if (m_cudnn != nullptr) {
+    if (state_d.empty() || state_d[0] == nullptr) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "attempted to access state on device before they are setup";
+      throw lbann_exception(err.str());
+    }
+    m_cudnn->copy_from_gpu(0, state->Matrix(), state_d[0]);
+  }
+  #endif // LBANN_HAS_CUDNN
+}
+
+/**
+ * Copies state from host to GPU if the data has to be on GPU. This is done
+ * asynchronously. Thus, needs synchronization before accessing them.
+ * state is the AbsDistMat type pointer on host, and state_d is the DataType
+ * pointer on device
+ */
+void set_mat_state_on_device(AbsDistMat* state, std::vector<DataType*>& state_d, cudnn::cudnn_manager* m_cudnn) {
+  // Check if states have been setup
+  if (state == nullptr) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "attempted to access states before they are setup";
+    throw lbann_exception(err.str());
+  }
+
+  #ifdef LBANN_HAS_CUDNN
+  if (m_cudnn != nullptr) {
+    if (state_d.empty() || state_d[0] == nullptr) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "attempted to set state on device before they are setup";
+      throw lbann_exception(err.str());
+    }
+    m_cudnn->broadcast_to_gpus(state_d, state->Matrix());
+  }
+  #endif // LBANN_HAS_CUDNN
+}
+
 }// namespace lbann
 #endif // #ifdef LBANN_HAS_CUDNN

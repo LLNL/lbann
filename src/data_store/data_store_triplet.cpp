@@ -56,20 +56,10 @@ void data_store_triplet::setup() {
     throw lbann_exception(err.str());
   }
 
-  //@todo needs to be designed and implemented!
-  if (! m_in_memory) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "not yet implemented";
-    throw lbann_exception(err.str());
-  } 
-  
-  else {
-    data_store_multi_images::setup();
+  data_store_multi_images::setup();
 
-    if (m_rank == 0) {
-      std::cerr << "data_store_triplet setup time: " << get_time() - tm1 << std::endl;
-    }
+  if (m_rank == 0) {
+    std::cerr << "TIME for data_store_triplet setup: " << get_time() - tm1 << std::endl;
   }
 }
 

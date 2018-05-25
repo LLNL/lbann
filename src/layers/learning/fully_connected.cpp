@@ -29,25 +29,46 @@
 namespace lbann {
 
 template <>
-void fully_connected_layer<data_layout::MODEL_PARALLEL>
+void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
   ::setup_matrices(const El::Grid& grid) {
   learning_layer::setup_matrices(grid);
   deallocate_matrices();
-  m_linearity_gradient = new MCMRMat(grid);
-  m_bias_gradient = new MCStarMat(grid);
+  m_linearity_gradient = new MCMRMat<El::Device::CPU>(grid);
+  m_bias_gradient = new MCStarMat<El::Device::CPU>(grid);
 }
 
 template <>
-void fully_connected_layer<data_layout::DATA_PARALLEL>
+void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
   ::setup_matrices(const El::Grid& grid) {
   learning_layer::setup_matrices(grid);
   deallocate_matrices();
-  m_linearity_gradient = new StarMat(grid);
-  m_bias_gradient = new StarMat(grid);
+  m_linearity_gradient = new StarMat<El::Device::CPU>(grid);
+  m_bias_gradient = new StarMat<El::Device::CPU>(grid);
+}
+
+#ifdef LBANN_HAS_GPU
+template <>
+void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
+  ::setup_matrices(const El::Grid& grid) {
+  learning_layer::setup_matrices(grid);
+  deallocate_matrices();
+  m_linearity_gradient = new MCMRMat<El::Device::GPU>(grid);
+  m_bias_gradient = new MCStarMat<El::Device::GPU>(grid);
 }
 
 template <>
-void fully_connected_layer<data_layout::MODEL_PARALLEL>::fp_compute_cpu() {
+void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
+  ::setup_matrices(const El::Grid& grid) {
+  learning_layer::setup_matrices(grid);
+  deallocate_matrices();
+  m_linearity_gradient = new StarMat<El::Device::GPU>(grid);
+  m_bias_gradient = new StarMat<El::Device::GPU>(grid);
+}
+#endif // LBANN_HAS_GPU
+
+/** CPU implementation of forward prop computation. */
+template <>
+void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::fp_compute() {
 
   // Matrices
   const auto& input = get_prev_activations();
@@ -57,11 +78,13 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL>::fp_compute_cpu() {
   // Note: Perform GEMMs independently if possible
   const auto& linearity = m_weights[0]->get_values();
   if (linearity.DistSize() == 1) {
-    El::Gemm(El::NORMAL, El::NORMAL,
+    El::Gemm(m_transpose ? El::TRANSPOSE : El::NORMAL,
+             El::NORMAL,
              DataType(1), linearity.LockedMatrix(), input.LockedMatrix(),
              DataType(0), output.Matrix());
   } else {
-    El::Gemm(El::NORMAL, El::NORMAL,
+    El::Gemm(m_transpose ? El::TRANSPOSE : El::NORMAL,
+             El::NORMAL,
              DataType(1), linearity, input,
              DataType(0), output);
   }
@@ -80,8 +103,9 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL>::fp_compute_cpu() {
 
 }
 
+/** CPU implementation of backward prop computation. */
 template <>
-void fully_connected_layer<data_layout::MODEL_PARALLEL>::bp_compute_cpu() {
+void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_compute() {
 
   // Effective mini-batch size
   const int mini_batch_size = this->m_model->get_effective_mini_batch_size();
@@ -112,16 +136,28 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL>::bp_compute_cpu() {
   optimizer* linearity_optimizer = this->m_weights[0]->get_optimizer();
   if (linearity_optimizer != nullptr) {
     if (linearity.DistSize() == 1) {
-      El::Gemm(El::NORMAL, El::TRANSPOSE,
-               DataType(1), local_gradient_wrt_output, local_input,
-               DataType(0), m_linearity_gradient->Matrix());
+      if (m_transpose) {
+        El::Gemm(El::NORMAL, El::TRANSPOSE,
+                 DataType(1), local_input, local_gradient_wrt_output,
+                 DataType(0), m_linearity_gradient->Matrix());
+      } else {
+        El::Gemm(El::NORMAL, El::TRANSPOSE,
+                 DataType(1), local_gradient_wrt_output, local_input,
+                 DataType(0), m_linearity_gradient->Matrix());
+      }
       linearity_optimizer->add_to_gradient_staging(
         *m_linearity_gradient,
         DataType(1) / mini_batch_size);
     } else {
-      El::Gemm(El::NORMAL, El::TRANSPOSE,
-               DataType(1), gradient_wrt_output, input,
-               DataType(0), *m_linearity_gradient);
+      if (m_transpose) {
+        El::Gemm(El::NORMAL, El::TRANSPOSE,
+                 DataType(1), input, gradient_wrt_output,
+                 DataType(0), *m_linearity_gradient);
+      } else {
+        El::Gemm(El::NORMAL, El::TRANSPOSE,
+                 DataType(1), gradient_wrt_output, input,
+                 DataType(0), *m_linearity_gradient);
+      }
       linearity_optimizer->add_to_gradient(
         *m_linearity_gradient,
         DataType(1) / mini_batch_size);
@@ -131,19 +167,22 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL>::bp_compute_cpu() {
   // Compute gradient w.r.t. input
   // Note: Perform GEMMs independently if possible
   if (linearity.DistSize() == 1) {
-    El::Gemm(El::TRANSPOSE, El::NORMAL,
+    El::Gemm(m_transpose ? El::NORMAL : El::TRANSPOSE,
+             El::NORMAL,
              DataType(1), local_linearity, local_gradient_wrt_output,
              DataType(1), local_gradient_wrt_input);
   } else {
-    El::Gemm(El::TRANSPOSE, El::NORMAL,
+    El::Gemm(m_transpose ? El::NORMAL : El::TRANSPOSE,
+             El::NORMAL,
              DataType(1), linearity, gradient_wrt_output,
              DataType(1), gradient_wrt_input);
   }
 
 }
 
+/** CPU implementation of forward prop computation. */
 template <>
-void fully_connected_layer<data_layout::DATA_PARALLEL>::fp_compute_cpu() {
+void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_compute() {
 
   // Matrices
   const auto& local_input = get_local_prev_activations();
@@ -151,7 +190,8 @@ void fully_connected_layer<data_layout::DATA_PARALLEL>::fp_compute_cpu() {
 
   // Apply linearity
   const auto& local_linearity = m_weights[0]->get_values().LockedMatrix();
-  El::Gemm(El::NORMAL, El::NORMAL,
+  El::Gemm(m_transpose ? El::TRANSPOSE : El::NORMAL,
+           El::NORMAL,
            DataType(1), local_linearity, local_input,
            DataType(0), local_output);
 
@@ -168,9 +208,9 @@ void fully_connected_layer<data_layout::DATA_PARALLEL>::fp_compute_cpu() {
 
 }
 
-
+/** CPU implementation of backward prop computation. */
 template <>
-void fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_cpu() {
+void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
 
   // Effective mini-batch size
   const int mini_batch_size = this->m_model->get_effective_mini_batch_size();
@@ -195,19 +235,237 @@ void fully_connected_layer<data_layout::DATA_PARALLEL>::bp_compute_cpu() {
   // Compute gradient w.r.t. linearity if needed
   optimizer* linearity_optimizer = this->m_weights[0]->get_optimizer();
   if (linearity_optimizer != nullptr) {
-    El::Gemm(El::NORMAL, El::TRANSPOSE,
-             DataType(1), local_gradient_wrt_output, local_input,
-             DataType(0), m_linearity_gradient->Matrix());
+    if (m_transpose) {
+      El::Gemm(El::NORMAL, El::TRANSPOSE,
+               DataType(1), local_input, local_gradient_wrt_output, 
+               DataType(0), m_linearity_gradient->Matrix());
+    } else {
+      El::Gemm(El::NORMAL, El::TRANSPOSE,
+               DataType(1), local_gradient_wrt_output, local_input,
+               DataType(0), m_linearity_gradient->Matrix());
+    }
     linearity_optimizer->add_to_gradient_staging(
       *m_linearity_gradient,
       DataType(1) / mini_batch_size);
   }
 
   // Compute gradient w.r.t. input
-  El::Gemm(El::TRANSPOSE, El::NORMAL,
+  El::Gemm(m_transpose ? El::NORMAL : El::TRANSPOSE,
+           El::NORMAL,
            DataType(1), local_linearity, local_gradient_wrt_output,
            DataType(1), local_gradient_wrt_input);
 
 }
+
+#ifdef LBANN_HAS_GPU
+/** GPU implementation of forward prop computation. */
+template <>
+void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
+#ifndef LBANN_HAS_CUDNN
+  throw lbann_exception("fully_connected: CUDA not detected");
+#else
+
+  // Matrices
+  const auto& local_input = get_local_prev_activations();
+  auto& local_output = get_local_activations();
+
+  // Apply linearity
+  const auto& local_linearity = m_weights[0]->get_values().LockedMatrix();
+  El::Gemm(m_transpose ? El::TRANSPOSE : El::NORMAL,
+           El::NORMAL,
+           DataType(1), local_linearity, local_input,
+           DataType(0), local_output);
+
+  // Apply bias if needed
+  if(m_bias_scaling_factor != DataType(0)) {
+    const auto& local_bias = m_weights[1]->get_values().LockedMatrix();
+    m_ones.Resize(local_input.Width(), 1);
+    El::Fill(m_ones, DataType(1));
+    El::Gemm(El::NORMAL, El::TRANSPOSE,
+             m_bias_scaling_factor, local_bias, m_ones,
+             DataType(1), local_output);
+  }
+  
+#endif // LBANN_HAS_CUDNN
+}
+
+/** GPU implementation of backward prop computation. */
+template <>
+void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
+#ifndef LBANN_HAS_CUDNN
+  throw lbann_exception("fully_connected: CUDA not detected");
+#else
+
+  // Effective mini-batch size
+  const int mini_batch_size = this->m_model->get_effective_mini_batch_size();
+
+  // Matrices
+  const auto& local_linearity = m_weights[0]->get_values().LockedMatrix();
+  const auto& local_input = get_local_prev_activations();
+  const auto& local_gradient_wrt_output = get_local_prev_error_signals();
+  auto& local_gradient_wrt_input = get_local_error_signals();
+
+  // Compute gradient w.r.t. bias if needed
+  optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
+  if (m_bias_scaling_factor != DataType(0)
+      && bias_optimizer != nullptr) {
+    m_ones.Resize(local_input.Width(), 1);
+    El::Fill(m_ones, DataType(1));
+    El::Gemv(El::NORMAL,
+             m_bias_scaling_factor, local_gradient_wrt_output, m_ones,
+             DataType(0), m_bias_gradient->Matrix());
+    bias_optimizer->add_to_gradient_staging(
+      *m_bias_gradient,
+      m_bias_scaling_factor / mini_batch_size);
+  }
+
+  // Compute gradient w.r.t. linearity if needed
+  optimizer* linearity_optimizer = this->m_weights[0]->get_optimizer();
+  if (linearity_optimizer != nullptr) {
+    if (m_transpose) {
+      El::Gemm(El::NORMAL, El::TRANSPOSE,
+               DataType(1), local_input, local_gradient_wrt_output, 
+               DataType(0), m_linearity_gradient->Matrix());
+    } else {
+      El::Gemm(El::NORMAL, El::TRANSPOSE,
+               DataType(1), local_gradient_wrt_output, local_input,
+               DataType(0), m_linearity_gradient->Matrix());
+    }
+    linearity_optimizer->add_to_gradient_staging(
+      *m_linearity_gradient,
+      DataType(1) / mini_batch_size);
+  }
+
+  // Compute gradient w.r.t. input
+  El::Gemm(m_transpose ? El::NORMAL : El::TRANSPOSE,
+           El::NORMAL,
+           DataType(1), local_linearity, local_gradient_wrt_output,
+           DataType(1), local_gradient_wrt_input);
+
+#endif // LBANN_HAS_CUDNN
+}
+
+template <>
+void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
+#ifndef LBANN_HAS_CUDNN
+  throw lbann_exception("fully_connected: CUDA not detected");
+#else
+  // Matrices
+  const auto& input = get_prev_activations();
+  auto& output = get_activations();
+
+  // Apply linearity
+  // Note: Perform GEMMs independently if possible
+  const auto& linearity = m_weights[0]->get_values();
+  if (linearity.DistSize() == 1) {
+    El::Gemm(m_transpose ? El::TRANSPOSE : El::NORMAL,
+             El::NORMAL,
+             DataType(1), linearity.LockedMatrix(), input.LockedMatrix(),
+             DataType(0), output.Matrix());
+  } else {
+    El::Gemm(m_transpose ? El::TRANSPOSE : El::NORMAL,
+             El::NORMAL,
+             DataType(1), linearity, input,
+             DataType(0), output);
+  }
+
+  // Apply bias if needed
+  // Note: local outer product is sufficient, no need for global GEMM
+  if(m_bias_scaling_factor != DataType(0)) {
+    const auto& bias = m_weights[1]->get_values();
+    m_ones.Resize(input.LocalWidth(), 1);
+    El::Fill(m_ones, DataType(1));
+    El::Gemm(El::NORMAL, El::TRANSPOSE,
+             m_bias_scaling_factor, bias.LockedMatrix(), m_ones,
+             DataType(1), output.Matrix());
+  }
+  
+#endif // LBANN_HAS_CUDNN
+}
+
+template <>
+void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
+#ifndef LBANN_HAS_CUDNN
+  throw lbann_exception("fully_connected: CUDA not detected");
+#else
+
+  // Effective mini-batch size
+  const int mini_batch_size = this->m_model->get_effective_mini_batch_size();
+
+  // Matrices
+  const auto& linearity = m_weights[0]->get_values();
+  const auto& input = get_prev_activations();
+  const auto& gradient_wrt_output = get_prev_error_signals();
+  auto& gradient_wrt_input = get_error_signals();
+  const auto& local_linearity = linearity.LockedMatrix();
+  const auto& local_input = input.LockedMatrix();
+  const auto& local_gradient_wrt_output = gradient_wrt_output.LockedMatrix();
+  auto& local_gradient_wrt_input = gradient_wrt_input.Matrix();
+
+  // Compute gradient w.r.t. bias if needed
+  // Note: local GEMV is sufficient, no need for global row sum
+  optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
+  if (m_bias_scaling_factor != DataType(0)
+      && bias_optimizer != nullptr) {
+    m_ones.Resize(input.LocalWidth(), 1);
+    El::Fill(m_ones, DataType(1));
+    El::Gemv(El::NORMAL,
+             m_bias_scaling_factor, local_gradient_wrt_output, m_ones,
+             DataType(0), m_bias_gradient->Matrix());
+    bias_optimizer->add_to_gradient_staging(
+      *m_bias_gradient,
+      m_bias_scaling_factor / mini_batch_size);
+  }
+
+  // Compute gradient w.r.t. linearity if needed
+  // Note: Perform GEMMs independently if possible
+  optimizer* linearity_optimizer = this->m_weights[0]->get_optimizer();
+  if (linearity_optimizer != nullptr) {
+    if (linearity.DistSize() == 1) {
+      if (m_transpose) {
+        El::Gemm(El::NORMAL, El::TRANSPOSE,
+                 DataType(1), local_input, local_gradient_wrt_output,
+                 DataType(0), m_linearity_gradient->Matrix());
+      } else {
+        El::Gemm(El::NORMAL, El::TRANSPOSE,
+                 DataType(1), local_gradient_wrt_output, local_input,
+                 DataType(0), m_linearity_gradient->Matrix());
+      }
+      linearity_optimizer->add_to_gradient_staging(
+        *m_linearity_gradient,
+        DataType(1) / mini_batch_size);
+    } else {
+      if (m_transpose) {
+        El::Gemm(El::NORMAL, El::TRANSPOSE,
+                 DataType(1), input, gradient_wrt_output,
+                 DataType(0), *m_linearity_gradient);
+      } else {
+        El::Gemm(El::NORMAL, El::TRANSPOSE,
+                 DataType(1), gradient_wrt_output, input,
+                 DataType(0), *m_linearity_gradient);
+      }
+      linearity_optimizer->add_to_gradient(
+        *m_linearity_gradient,
+        DataType(1) / mini_batch_size);
+    }
+  }
+
+  // Compute gradient w.r.t. input
+  // Note: Perform GEMMs independently if possible
+  if (linearity.DistSize() == 1) {
+    El::Gemm(m_transpose ? El::NORMAL : El::TRANSPOSE,
+             El::NORMAL,
+             DataType(1), local_linearity, local_gradient_wrt_output,
+             DataType(1), local_gradient_wrt_input);
+  } else {
+    El::Gemm(m_transpose ? El::NORMAL : El::TRANSPOSE,
+             El::NORMAL,
+             DataType(1), linearity, gradient_wrt_output,
+             DataType(1), gradient_wrt_input);
+  }
+  
+#endif // LBANN_HAS_CUDNN
+}
+#endif // LBANN_HAS_GPU
 
 } // namespace lbann

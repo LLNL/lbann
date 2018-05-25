@@ -3,15 +3,6 @@ find_package(Doxygen)
 if (DOXYGEN_FOUND)
   set(DOXYGEN_SOURCES
     Doxyfile.in
-    callbacks.dox
-    developer_guide.dox
-    getting_started.dox
-    layers.dox
-    mainpage.dox
-    metrics.dox
-    objective_functions.dox
-    optimizers.dox
-    using_tensorboard.dox
     )
 
   # Setup Dot support

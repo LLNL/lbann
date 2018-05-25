@@ -7,7 +7,7 @@ model {
   num_parallel_readers: 0
   procs_per_model: 0
   num_gpus: -1
-
+  disable_cuda: true
   ###################################################
   # Objective function
   ###################################################
@@ -44,19 +44,9 @@ model {
     checkpoint {
       checkpoint_dir: "ckpt"
       checkpoint_epochs: 1
+      checkpoint_steps: 845 
     }
   }
-  # callback {
-  #   debug {
-  #     phase: "test"
-  #   }
-  # }
-  # callback {
-  #   debug_io {
-  #     phase: "test"
-  #     lvl: 1
-  #   }
-  # }
   callback {
     adaptive_learning_rate {
       patience: 4
@@ -69,23 +59,6 @@ model {
       all_optimizers: true
     }
   }
-  # callback {
-  #   dump_mb_indices {
-  #     basename: "debug_alexnet/"
-  #     interval: 1
-  #   }
-  # }
-  # callback {
-  #   disp_io_stats {
-  #     layers: "data"
-  #   }
-  # }
-  # callback {
-  #   gradient_check {
-  #     verbose: false
-  #     fail_on_error: false
-  #   }
-  # }
 
   ###################################################
   # Layers

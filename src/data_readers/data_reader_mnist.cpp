@@ -48,10 +48,10 @@ void mnist_reader::set_defaults() {
   m_num_labels=10;
 }
 
-bool mnist_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+bool mnist_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
   int pixelcount = m_image_width * m_image_height;
   std::vector<unsigned char>& tmp = m_image_data[data_id];
-  
+
   for (int p = 0; p < pixelcount; p++) {
     X.Set(p, mb_idx, tmp[p+1]);
   }
@@ -63,7 +63,7 @@ bool mnist_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   return true;
 }
 
-bool mnist_reader::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
+bool mnist_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) {
   if(!m_gan_labelling) { //default
     unsigned char label = m_image_data[data_id][0];
     Y.Set(label, mb_idx, 1);
@@ -73,8 +73,7 @@ bool mnist_reader::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
       //mb_idx < (m_mb_size/2) ? Y.Set(1,mb_idx,1) : Y.Set(m_gan_label_value,mb_idx,1);
       mb_idx < (get_current_mini_batch_size()/2) ? Y.Set(1,mb_idx,1) : Y.Set(m_gan_label_value,mb_idx,1);
     }
-    //Y.Set(m_gan_label_value, mb_idx, 1);
-  } 
+  }
   return true;
 }
 
@@ -145,7 +144,7 @@ void mnist_reader::load() {
   m_image_data.clear();
 
   if(m_gan_labelling) m_num_labels=2;
-  std::cout << "MNIST load GAN m_gan_labelling : label_value " 
+  std::cout << "MNIST load GAN m_gan_labelling : label_value "
             << m_gan_labelling <<" : " << m_gan_label_value << std::endl;
 
   const std::string FileDir = get_file_dir();

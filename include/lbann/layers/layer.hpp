@@ -154,8 +154,19 @@ class Layer {
    *  should override this function to return its template parameter.
    */
   virtual data_layout get_data_layout() const = 0;
+  /** Get the device allocation for the data tensors.
+   *  We assume that the decice allocation of the previous activations,
+   *  activations, previous error signals, and error signals are the
+   *  same. Each concrete layer that is templated on its device allocation
+   *  should override this function to return its template parameter.
+   */
+  virtual El::Device get_device_allocation() const = 0;
   /** Get a human-readable description of the data_layout */
   std::string get_data_layout_string(data_layout d) const;
+  /** Get a human-readable description of the device allocation */
+  std::string get_device_allocation_string(El::Device dev) const;
+  /** Get a short human-readable description of the device allocation */
+  std::string get_device_allocation_string_short(El::Device dev) const;
 
   /** Get the dimensions of a previous activations tensor. */
   virtual std::vector<int> get_prev_neuron_dims(int parent_index = 0) const {
@@ -188,6 +199,9 @@ class Layer {
   /** Whether the layer is using a GPU implementation. */
   inline bool using_gpus() const { return m_using_gpus; }
 
+  /** To make sure copying between host and devices is complete */
+  void synchronize() const;
+
   /** Get expected number of parent layers.
    *  A negative value indicates no limit.
    */
@@ -204,15 +218,12 @@ class Layer {
 
   virtual El::Matrix<El::Int>* get_sample_indices_per_mb() { return nullptr; };
 
-  virtual bool saveToFile(int fd, const char *filename) const { return true; };
-  virtual bool loadFromFile(int fd, const char *filename) { return true; };
-
-  virtual bool saveToCheckpoint(int fd, const char *filename, size_t *bytes) const;
-  virtual bool loadFromCheckpoint(int fd, const char *filename, size_t *bytes);
-
-  virtual bool save_to_checkpoint_shared(persist& p,bool val_end) const;
+  virtual bool save_to_checkpoint_shared(persist& p) const;
   virtual bool load_from_checkpoint_shared(persist& p);
-  
+
+  virtual bool save_to_checkpoint_distributed(persist& p) const;
+  virtual bool load_from_checkpoint_distributed(persist& p);
+
   /** Write layer to proto file */
   virtual void write_proto(lbann_data::Layer* proto) const;
 
@@ -226,24 +237,7 @@ class Layer {
    *  appropriate error signal tensor.
    */
   virtual void get_bp_output(AbsDistMat& bp_output, const Layer* parent) const;
-#ifdef LBANN_HAS_CUDNN
-  /** Send forward propagation output to a child layer on GPUs.
-   *  On output, fp_output_d is either a GPU matrix view or copy of
-   *  the appropriate activation tensor. workspace should be a matrix
-   *  in Star,VC format.
-   */
-  virtual void get_gpu_fp_output(cudnn::matrix& fp_output_d,
-                                 AbsDistMat& workspace,
-                                 const Layer* child) const;
-  /** Send backward propagation output to a parent layer on GPUs.
-   *  On output, bp_output_d is either a GPU matrix view or copy of
-   *  the appropriate error signal tensor. workspace should be a
-   *  matrix in Star,VC format.
-   */
-  virtual void get_gpu_bp_output(cudnn::matrix& bp_output_d,
-                                 AbsDistMat& workspace,
-                                 const Layer* parent) const;
-#endif // LBANN_HAS_CUDNN
+
   /** Get dimensions of forward propagation output to a child layer.
    *  Returns the dimensions of the appropriate activations tensor.
    */
@@ -326,21 +320,21 @@ class Layer {
   /** Get error signal tensor. (const) */
   const AbsDistMat& get_error_signals(int parent_index = 0) const;
   /** Get local portion of previous activation tensor. */
-  Mat& get_local_prev_activations(int parent_index = 0);
+  AbsMat& get_local_prev_activations(int parent_index = 0);
   /** Get local portion of activation tensor. */
-  Mat& get_local_activations(int child_index = 0);
+  AbsMat& get_local_activations(int child_index = 0);
   /** Get local portion of previous error signal tensor. */
-  Mat& get_local_prev_error_signals(int child_index = 0);
+  AbsMat& get_local_prev_error_signals(int child_index = 0);
   /** Get local portion of error signal tensor. */
-  Mat& get_local_error_signals(int parent_index = 0);
+  AbsMat& get_local_error_signals(int parent_index = 0);
   /** Get local portion of previous activation tensor. (const) */
-  const Mat& get_local_prev_activations(int parent_index = 0) const;
+  const AbsMat& get_local_prev_activations(int parent_index = 0) const;
   /** Get local portion of activation tensor. (const) */
-  const Mat& get_local_activations(int child_index = 0) const;
+  const AbsMat& get_local_activations(int child_index = 0) const;
   /** Get local portion of previous error signal tensor. (const) */
-  const Mat& get_local_prev_error_signals(int child_index = 0) const;
+  const AbsMat& get_local_prev_error_signals(int child_index = 0) const;
   /** Get local portion of error signal tensor. (const) */
-  const Mat& get_local_error_signals(int parent_index = 0) const;
+  const AbsMat& get_local_error_signals(int parent_index = 0) const;
 
   /** Get reference to LBANN communicator. */
   lbann_comm* get_comm() const { return m_comm; }
@@ -482,9 +476,6 @@ class Layer {
    */
   virtual bool update_compute() { return true; }
 
-  /** Whether current layer is using a GPU implementation. */
-  bool m_using_gpus;
-
   /** Reference to cuDNN manager. */
   cudnn::cudnn_manager *m_cudnn;
 
@@ -492,20 +483,6 @@ class Layer {
   bool m_frozen;
 
 #ifdef LBANN_HAS_CUDNN
-
-  /** Number of mini-batch samples per GPU. */
-  int m_mini_batch_size_per_gpu;
-  /** Maximum number of mini-batch samples per GPU. */
-  int m_max_mini_batch_size_per_gpu;
-
-  /** Previous activation matrices on GPUs. */
-  std::vector<cudnn::matrix> m_prev_activations_d;
-  /** Activation matrices on GPUs. */
-  std::vector<cudnn::matrix> m_activations_d;
-  /** Previous error signal matrices on GPUs. */
-  std::vector<cudnn::matrix> m_prev_error_signals_d;
-  /** Error signal matrices on GPUs. */
-  std::vector<cudnn::matrix> m_error_signals_d;
 
   /** cuDNN descriptor for first previous activation tensor. */
   cudnnTensorDescriptor_t m_prev_activations_cudnn_desc;
@@ -537,8 +514,11 @@ class Layer {
 
  private:
 
+  /** Whether current layer is using a GPU implementation. */
+  bool m_using_gpus;
+
   /** Instantiate distributed matrices. */
-  template <data_layout T>
+  template <data_layout T, El::Device Dev>
   void instantiate_matrices(const El::Grid& grid);
 
   /** Deallocate distributed matrices. */
