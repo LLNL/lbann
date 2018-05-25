@@ -461,9 +461,16 @@ class base_convolution_layer : public learning_layer {
 
     // Perform transposed convolution on the GPU
     // Determine transposed convolution algorithm
+    const size_t work_space_size = this->m_cudnn->get_work_space_size();
+    #ifndef LBANN_DETERMINISTIC_CUDNN
     cudnnConvolutionBwdDataAlgo_t transposed_convolution_cudnn_algorithm
       = CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
     CHECK_CUDNN(cudnnGetConvolutionBackwardDataAlgorithm(cudnn::get_handle(),
+    #else
+    cudnnConvolutionBwdDataAlgo_t transposed_convolution_cudnn_algorithm
+      = CUDNN_CONVOLUTION_BWD_DATA_ALGO_1;
+    #endif
+    CHECK_CUDNN(cudnnGetConvolutionBackwardDataAlgorithm(this->m_cudnn->get_handle(),
                                                          m_kernel_cudnn_desc,
                                                          input_desc,
                                                          m_convolution_cudnn_desc,
