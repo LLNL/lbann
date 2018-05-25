@@ -8,14 +8,6 @@ model {
       scale_factor: 0.05
       layer: "g_adv1_eval"
     }
-    #layer_term {
-    #  scale_factor: 1.0
-    #  layer: "L_cyc_y_eval"
-    #}
-    #layer_term {
-    #  scale_factor: 1.0
-    #  layer: "L_cyc_x_eval"
-    #}
     layer_term {
       scale_factor: 0.05
       layer: "l_l2_y_eval"
@@ -518,12 +510,12 @@ model {
       interval: 1
     }
   }
-  callback {
-    dump_activations {
-      basename: "/usr/workspace/wsa/jacobs32/github.saj.lbann/jagsv2/cycgan_m2/"
-      layer_names: "image_data_dummy gen1fc4_1 gen1fc4_2"
-    }
-  }
+ # callback {
+ #   dump_activations {
+ #     basename: "/dir/to/dump_y_activations/"
+ #     layer_names: "image_data_dummy gen1fc4_1"
+ #   }
+ # }
   block_size: 256
   num_gpus: -1
   super_steps: 10000

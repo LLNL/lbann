@@ -525,12 +525,6 @@ model {
       interval: 1
     }
   }
-  #callback {
-  #  dump_activations {
-  #    basename: "/usr/workspace/wsa/jacobs32/github.saj.lbann/jagsv2/cycgan_m1/"
-  #    layer_names: "image_data_dummy"
-  #  }
-  #}
   block_size: 256
   num_gpus: -1
   super_steps: 10000
