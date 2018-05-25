@@ -116,6 +116,10 @@ class model {
   /** Replace the model's weights. */
   void replace_weights(std::vector<weights *>& w);
 
+  /** Copy trained weights from input parameter w. 
+ *  Only weight values are placed, pointers and layer structure are in place*/
+  void copy_trained_weights_from(std::vector<weights *>& w);
+
   /** Return the model's weights. */
   const std::vector<weights *>& get_weights() const { return m_weights; }
 
@@ -197,7 +201,7 @@ class model {
   }
 
   /** Train model. */
-  virtual void train(int num_epochs);
+  virtual void train(int num_epochs, int num_batches=0);
   /** Evaluate model. */
   virtual void evaluate(execution_mode mode);
 

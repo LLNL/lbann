@@ -148,6 +148,13 @@ class data_reader_jag : public generic_data_reader {
   /// Return the linearized size of inputs
   void set_linearized_input_size();
 
+  int get_num_labels() const override {
+    return m_num_labels;
+  }
+
+  int get_linearized_label_size() const override {
+    return m_num_labels;
+  }
   /// Return the maximum element of all the images
   data_t get_image_max() const;
   /// Return the minimum element of all the images
@@ -179,6 +186,7 @@ class data_reader_jag : public generic_data_reader {
   int m_image_normalization;
   int m_image_width; ///< image width
   int m_image_height; ///< image height
+  
 
   /// List of jag output images
   cnpy::NpyArray m_images;
@@ -191,6 +199,7 @@ class data_reader_jag : public generic_data_reader {
   data_t m_img_min;
   /// The largest pixel value in image data (useful for normalization or visualization)
   data_t m_img_max;
+  int m_num_labels; ///< number of labels
 };
 
 } // end of namespace lbann

@@ -213,6 +213,9 @@ const std::vector<int> data_reader_jag::get_data_dims() const {
 
 
 void data_reader_jag::load() {
+  if(m_gan_labelling) m_num_labels=2;
+  std::cout << "JAG load GAN m_gan_labelling : label_value " 
+            << m_gan_labelling <<" : " << m_gan_label_value << std::endl;
   const std::string data_dir = add_delimiter(get_file_dir());
   const std::string namestr = get_data_filename();
   std::vector<std::string> file_names = get_tokens(namestr);
@@ -553,6 +556,15 @@ bool data_reader_jag::fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid
   return true;
 }
 
+bool data_reader_jag::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
+  if(m_gan_label_value) Y.Set(m_gan_label_value,mb_idx,1); //fake sample is set to 1; adversarial model
+  else { //fake sample (second half of minibatch is set to 0;discriminator model
+    //mb_idx < (m_mb_size/2) ? Y.Set(1,mb_idx,1) : Y.Set(m_gan_label_value,mb_idx,1);
+    mb_idx < (get_current_mini_batch_size()/2) ? Y.Set(1,mb_idx,1) : Y.Set(m_gan_label_value,mb_idx,1);
+  }
+  //Y.Set(m_gan_label_value, mb_idx, 1);
+  return true;
+}
 void data_reader_jag::save_image(Mat& pixels, const std::string filename, bool do_scale) {
   internal_save_image(pixels, filename, m_image_height, m_image_width, 1, do_scale);
 }

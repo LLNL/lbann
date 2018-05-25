@@ -56,7 +56,11 @@
 #include "lbann/layers/activations/swish.hpp"
 #include "lbann/layers/activations/tanh.hpp"
 #include "lbann/layers/activations/power.hpp"
+#include "lbann/layers/activations/sigmoid_bce_with_logits.hpp"
+#include "lbann/layers/activations/abs.hpp"
+#include "lbann/layers/activations/l2_loss.hpp"
 #include "lbann/layers/activations/log.hpp"
+
 
 /// Learning Layers
 #include "lbann/layers/learning/fully_connected.hpp"

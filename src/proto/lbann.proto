@@ -188,6 +188,7 @@ message Model {
   int64 mini_batch_size = 12;
   int64 num_epochs = 4;
   int64 super_steps = 121; //multiple steps/epochs currently use in GAN 
+  int64 num_batches = 122; //multiple batches/sub epoch
   int64 block_size = 50;
   int64 procs_per_model = 51;
   int64 num_gpus = 53;
@@ -728,6 +729,7 @@ message Layer {
    Gaussian gaussian = 312;
    Bernoulli bernoulli = 313;
    Uniform uniform = 314;
+   Sigmoid_Binary_Cross_Entropy_With_Logits bce_with_logits = 316;
    Crop crop = 318;
    CategoricalRandom categorical_random = 316;
    DiscreteRandom discrete_random = 317;
@@ -763,6 +765,8 @@ message Layer {
    Exponential exponential = 41;
    Swish swish = 42;
    Power power = 43;
+   Abs   abs = 44;
+   L2Loss l2_loss = 45;
    Log log = 44;
 }
 ///////////////////////
@@ -827,6 +831,12 @@ message Power {
   double exponent = 1;
 }
 
+message Abs {
+}
+
+message L2Loss {
+}
+=======
 message Log {
   double base = 1;
 }
@@ -965,6 +975,10 @@ message Uniform {
   string neuron_dims = 3;
 }
 
+message Sigmoid_Binary_Cross_Entropy_With_Logits {
+  int32 true_label = 1;
+}
+=======
 message Crop {
   string dims = 3;
 }

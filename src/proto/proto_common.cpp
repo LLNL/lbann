@@ -129,6 +129,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
           npy_readers.push_back(reader_pilot2_molecular);
         } else if (readme.format() == "csv") {
           auto* reader_csv = new csv_reader(shuffle);
+          if(master) { std::cout << "Set data filename: " << path << std::endl; }
           reader_csv->set_data_filename(path);
           reader_csv->set_label_col(readme.label_col());
           reader_csv->set_response_col(readme.response_col());
@@ -153,15 +154,33 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
         reader = merged_samples;
       }else {
         //create label file
-        auto* label_csv = new csv_reader(shuffle);
-        label_csv->set_data_filename(readme.label_filename());
-        label_csv->disable_labels(readme.disable_labels());
-        label_csv->enable_responses(readme.disable_responses());
-        label_csv->set_has_header(readme.has_header()); //use same as parent file
-        label_csv->set_comm(comm);
-        label_csv->set_label_col(0); //assume there is only one label file and the column and is label column
-        label_csv->set_response_col(0);
-        data_reader_merge_features* merged_features = new data_reader_merge_features(npy_readers,label_csv, shuffle);
+        //we can use merge_features without label
+        generic_data_reader* label_reader = nullptr;
+        if(readme.label_filename() != "") {
+          if(master) { std::cout << "Set label filename: " << readme.label_filename() << std::endl; }
+          if (readme.format() == "numpy") {
+             auto* label_numpy  = new numpy_reader(false);
+             label_numpy->set_label_filename(readme.label_filename());
+             label_reader = label_numpy;
+           } else if (readme.format() == "csv") { //if format is csv and label_filename is not empty
+             auto* label_csv = new csv_reader(shuffle);
+             if(master) { std::cout << "Set label filename: " << readme.label_filename() << std::endl; }
+             label_csv->set_label_filename(readme.label_filename());
+             label_csv->disable_labels(readme.disable_labels());
+             label_csv->enable_responses(readme.disable_responses());
+             label_csv->set_has_header(readme.has_header()); //use same as parent file
+             label_csv->set_comm(comm);
+             label_csv->set_label_col(0); //assume there is only one label file and the column and is label column
+             label_csv->set_response_col(0);
+             label_reader = label_csv;
+           } else {
+             err << __FILE__ << " " << __LINE__ << " :: unknown format for merged features label: "
+                << readme.format();
+             throw lbann_exception(err.str());
+           } 
+         } 
+        //data_reader_merge_features* merged_features = new data_reader_merge_features(npy_readers,label_csv, shuffle);
+        data_reader_merge_features* merged_features = new data_reader_merge_features(npy_readers,label_reader, shuffle);
         reader = merged_features;
       }
 
