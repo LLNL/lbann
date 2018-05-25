@@ -836,7 +836,7 @@ message Abs {
 
 message L2Loss {
 }
-=======
+
 message Log {
   double base = 1;
 }
@@ -978,7 +978,7 @@ message Uniform {
 message Sigmoid_Binary_Cross_Entropy_With_Logits {
   int32 true_label = 1;
 }
-=======
+
 message Crop {
   string dims = 3;
 }
