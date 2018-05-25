@@ -556,7 +556,7 @@ bool data_reader_jag::fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid
   return true;
 }
 
-bool data_reader_jag::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
+bool data_reader_jag::fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) {
   if(m_gan_label_value) Y.Set(m_gan_label_value,mb_idx,1); //fake sample is set to 1; adversarial model
   else { //fake sample (second half of minibatch is set to 0;discriminator model
     //mb_idx < (m_mb_size/2) ? Y.Set(1,mb_idx,1) : Y.Set(m_gan_label_value,mb_idx,1);
@@ -565,6 +565,7 @@ bool data_reader_jag::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
   //Y.Set(m_gan_label_value, mb_idx, 1);
   return true;
 }
+
 void data_reader_jag::save_image(Mat& pixels, const std::string filename, bool do_scale) {
   internal_save_image(pixels, filename, m_image_height, m_image_width, 1, do_scale);
 }
