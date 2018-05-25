@@ -730,9 +730,9 @@ message Layer {
    Bernoulli bernoulli = 313;
    Uniform uniform = 314;
    Sigmoid_Binary_Cross_Entropy_With_Logits bce_with_logits = 316;
-   Crop crop = 318;
-   CategoricalRandom categorical_random = 316;
-   DiscreteRandom discrete_random = 317;
+   Crop crop = 317;
+   CategoricalRandom categorical_random = 318;
+   DiscreteRandom discrete_random = 319;
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -767,7 +767,7 @@ message Layer {
    Power power = 43;
    Abs   abs = 44;
    L2Loss l2_loss = 45;
-   Log log = 44;
+   Log log = 46;
 }
 ///////////////////////
 // MotifLayer //
