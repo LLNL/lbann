@@ -85,22 +85,22 @@ int main(int argc, char *argv[]) {
 
       if(master) std::cout << " Copy all trained weights from model1 to model2 and train/freeze as appropriate " << std::endl;
       auto model1_weights = model_1->get_weights();
-      model_2->copy_trained_weights(model1_weights);
+      model_2->copy_trained_weights_from(model1_weights);
       if (master) std::cerr << "\n STARTING train - G1 solver model at step " << super_step << " \n\n";
       model_2->train( super_step*pb_model_2.num_epochs(),pb_model_2.num_batches());
       //@todo: remove the dependencies
       if(master) std::cout << " Copy all trained weights from model1 to model3 and train/freeze as appropriate " << std::endl;
       //auto model2_weights = model_2->get_weights();
-      model_3->copy_trained_weights(model1_weights);
+      model_3->copy_trained_weights_from(model1_weights);
       if (master) std::cerr << "\n STARTING train - G2 solver model at step " << super_step << " \n\n";
       model_3->train( super_step*pb_model_3.num_epochs(),pb_model_3.num_batches());
 
       if(master) std::cout << " Update generator1 weights " << std::endl;
       auto model2_weights = model_2->get_weights();
-      model_1->copy_trained_weights(model2_weights);
+      model_1->copy_trained_weights_from(model2_weights);
       if(master) std::cout << " Update generator2 weights " << std::endl;
       auto model3_weights = model_3->get_weights();
-      model_1->copy_trained_weights(model3_weights);
+      model_1->copy_trained_weights_from(model3_weights);
       super_step++;          
     }
 
