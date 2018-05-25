@@ -41,12 +41,12 @@ namespace lbann {
 cv_subtractor::cv_subtractor(const cv_subtractor& rhs)
   : cv_transform(rhs),
     m_img_to_sub(rhs.m_img_to_sub),
-    m_subtracted(rhs.m_subtracted) {}
+    m_applied(rhs.m_applied) {}
 
 cv_subtractor& cv_subtractor::operator=(const cv_subtractor& rhs) {
   cv_transform::operator=(rhs);
   m_img_to_sub = rhs.m_img_to_sub;
-  m_subtracted = rhs.m_subtracted;
+  m_applied = rhs.m_applied;
   return *this;
 }
 
@@ -106,7 +106,7 @@ cv::Mat cv_subtractor::read_binary_image_file(const std::string filename) {
   return image;
 }
 
-void cv_subtractor::set(const std::string name_of_img_to_sub, const int depth_code) {
+void cv_subtractor::set_mean(const std::string name_of_img_to_sub, const int depth_code) {
   cv::Mat img_to_sub;
   std::string ext = get_ext_name(name_of_img_to_sub);
   std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
@@ -121,10 +121,24 @@ void cv_subtractor::set(const std::string name_of_img_to_sub, const int depth_co
         << name_of_img_to_sub << " to subtract.";
     throw lbann_exception(err.str());
   }
-  set(img_to_sub, depth_code);
+  set_mean(img_to_sub, depth_code);
 }
 
-void cv_subtractor::set(const cv::Mat& image, const int depth_code) {
+void cv_subtractor::set_mean(int width, int height, const std::vector<lbann::DataType> ch_mean) {
+  if (ch_mean.size() > cv::Scalar::channels) {
+    throw lbann_exception(std::string("cv_subtractor::set_mean() : ") +
+      "provide the mean image if the number of channels are larger than " +
+      std::to_string(cv::Scalar::channels) + '.');
+  }
+  cv::Scalar px = cv::Scalar::all(0.0);
+  for (size_t i = 0u; i < ch_mean.size() ; ++i) {
+    px[static_cast<int>(i)] = ch_mean[i];
+  }
+  cv::Mat img_to_sub(height, width, cv_image_type<lbann::DataType>::T(ch_mean.size()), px);
+  set_mean(img_to_sub);
+}
+
+void cv_subtractor::set_mean(const cv::Mat& image, const int depth_code) {
   reset();
 
   const double f = get_depth_normalizing_factor(image.depth());
@@ -145,35 +159,117 @@ void cv_subtractor::set(const cv::Mat& image, const int depth_code) {
   } else {
     image.convertTo(m_img_to_sub, depth_code, f, 0.0);
   }
+
+  if (!m_img_to_div.empty() && !check_if_cv_Mat_has_same_shape(m_img_to_div, m_img_to_sub)) {
+    throw lbann_exception("cv_subtractor::set_mean() : mean and vairnce images have different shapes");
+  }
+}
+
+void cv_subtractor::set_stddev(const std::string name_of_img_to_div, const int depth_code) {
+  cv::Mat img_to_div;
+  std::string ext = get_ext_name(name_of_img_to_div);
+  std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+  if (ext == "bin") {
+    img_to_div = read_binary_image_file(name_of_img_to_div);
+  } else { // let OpenCV handle
+    img_to_div = cv::imread(name_of_img_to_div);
+  }
+  if (img_to_div.empty()) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: cv_subtractor: cannot load the image "
+        << name_of_img_to_div << " to normalize.";
+    throw lbann_exception(err.str());
+  }
+  set_stddev(img_to_div, depth_code);
+}
+
+void cv_subtractor::set_stddev(int width, int height, const std::vector<lbann::DataType> ch_stddev) {
+  if (ch_stddev.size() > cv::Scalar::channels) {
+    throw lbann_exception(std::string("cv_subtractor::set_stddev() : ") +
+      "provide the stddev image if the number of channels are larger than " +
+      std::to_string(cv::Scalar::channels) + '.');
+  }
+  cv::Scalar px = cv::Scalar::all(0.0);
+  for (size_t i = 0u; i < ch_stddev.size() ; ++i) {
+    px[static_cast<int>(i)] = ch_stddev[i];
+  }
+  cv::Mat img_to_div(height, width, cv_image_type<lbann::DataType>::T(ch_stddev.size()), px);
+  set_stddev(img_to_div);
+}
+
+void cv_subtractor::set_stddev(const cv::Mat& image, const int depth_code) {
+  reset();
+
+  const double f = get_depth_normalizing_factor(image.depth());
+
+  if ((depth_code != CV_32F) && (depth_code != CV_64F)) {
+    if (check_if_cv_Mat_is_float_type(image)) {
+      image.convertTo(m_img_to_div, image.depth(), f, 0.0);
+    } else {
+      image.convertTo(m_img_to_div, cv_image_type<lbann::DataType>::T(), f, 0.0);
+    }
+  } else {
+    image.convertTo(m_img_to_div, depth_code, f, 0.0);
+  }
+
+  if (!m_img_to_sub.empty() && !check_if_cv_Mat_has_same_shape(m_img_to_sub, m_img_to_div)) {
+    throw lbann_exception("cv_subtractor::set_stddev() : mean and vairnce images have different shapes.");
+  }
 }
 
 bool cv_subtractor::determine_transform(const cv::Mat& image) {
   //reset(); // redundant here
   // enable if the given image has the same size and the same number of
   // channels as the image to subtract.
-  m_subtracted = false;
-  m_enabled = check_if_cv_Mat_has_same_shape(image, m_img_to_sub);
+  m_applied = false;
+  m_enabled = (!m_img_to_sub.empty() && check_if_cv_Mat_has_same_shape(image, m_img_to_sub)) ||
+              (!m_img_to_div.empty() && check_if_cv_Mat_has_same_shape(image, m_img_to_div));
   return m_enabled;
 }
 
 bool cv_subtractor::determine_inverse_transform() {
-  return (m_enabled = m_subtracted);
+  return (m_enabled = m_applied);
 }
 
 bool cv_subtractor::apply(cv::Mat& image) {
   m_enabled = false; // turn off as the transform is applied once
-  if (m_subtracted) { // inverse if applied already
-    const double f = get_depth_denormalizing_factor(CV_8U);
-    cv::Mat image_sub;
-    cv::addWeighted(m_img_to_sub, f, image, 1.0, 0.0, image_sub, CV_8U);
-    image = image_sub;
-    m_subtracted = false;
+  if (m_applied) { // inverse if applied already
+    double f = get_depth_denormalizing_factor(CV_8U);
+
+    cv::Mat image_new;
+
+    if (!m_img_to_div.empty()) {
+      double ff = 1.0;
+      if (m_img_to_sub.empty()) {
+        ff = f;
+        f = 1.0;
+      }
+      cv::multiply(image, m_img_to_div, image_new, ff, m_img_to_div.depth());
+      image = image_new;
+    }
+
+    if (!m_img_to_sub.empty()) {
+      cv::addWeighted(m_img_to_sub, f, image, f, 0.0, image_new, CV_8U);
+      image = image_new;
+    }
+
+    m_applied = false;
   } else {
-    const double f = get_depth_normalizing_factor(image.depth());
-    cv::Mat image_sub;
-    cv::addWeighted(m_img_to_sub, -1.0, image, f, 0.0, image_sub, m_img_to_sub.depth());
-    image = image_sub;
-    m_subtracted = true;
+    double f = get_depth_normalizing_factor(image.depth());
+
+    cv::Mat image_new;
+    if (!m_img_to_sub.empty()) {
+      cv::addWeighted(m_img_to_sub, -1.0, image, f, 0.0, image_new, m_img_to_sub.depth());
+      f = 1.0; // to avoid redundant depth normalization
+      image = image_new;
+    }
+
+    if (!m_img_to_div.empty()) {
+      cv::divide(image, m_img_to_div, image_new, f, m_img_to_div.depth());
+      image = image_new;
+    }
+
+    m_applied = true;
   }
 
   return true;
