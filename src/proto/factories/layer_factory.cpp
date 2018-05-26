@@ -236,12 +236,6 @@ Layer* construct_layer(lbann_comm* comm,
     const auto& params = proto_layer.zero();
     return new zero_layer<layout>(comm, params.first_half(), params.second_half(), cudnn);
   }
-/*
-  if (proto_layer.has_bce_with_logits()) {
-    const auto& params = proto_layer.bce_with_logits();
-    return new sigmoid_bce_with_logits_layer<layout>(comm, params.true_label());
-  }
-*/
   if (proto_layer.has_pooling()) {
     const auto& params = proto_layer.pooling();
     const auto& mode_str = params.pool_mode();
@@ -415,14 +409,18 @@ Layer* construct_layer(lbann_comm* comm,
       return new log_layer<layout, Dev>(comm);
     }
   }
-/*
+
   if (proto_layer.has_abs()) {
-    return new abs_layer<layout>(comm);
+    return new abs_layer<layout, Dev>(comm);
   }
   if (proto_layer.has_l2_loss()) {
-    return new l2_loss_layer<layout>(comm);
+    return new l2_loss_layer<layout, Dev>(comm);
   }
-*/
+
+  if (proto_layer.has_bce_with_logits()) {
+    const auto& params = proto_layer.bce_with_logits();
+    return new sigmoid_bce_with_logits_layer<layout, Dev>(comm, params.true_label());
+  }
 
   // Throw exception if layer has not been constructed
   err << "could not construct layer " << proto_layer.name();

@@ -36,7 +36,7 @@ namespace lbann {
  * sigmoid_cross_entropy_with_logits (https://www.tensorflow.org/api_docs/python/tf/nn/sigmoid_cross_entropy_with_logits)
  * @check that m_true_label is zero or 1
  */
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class sigmoid_bce_with_logits_layer : public entrywise_activation_layer {
  private:
   int  m_ground_truth_label;
@@ -46,6 +46,12 @@ class sigmoid_bce_with_logits_layer : public entrywise_activation_layer {
   sigmoid_bce_with_logits_layer* copy() const override { return new sigmoid_bce_with_logits_layer(*this); }
   std::string get_type() const override { return "sigmoid_bce_with_logits"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
+  std::string get_description() const override {
+    return std::string {}
+      + "sigmod_bce_with_logits " + " gt_label: " + std::to_string(m_ground_truth_label) 
+      + " dataLayout: " + this->get_data_layout_string(get_data_layout());
+  }
 
  protected:
   DataType activation(DataType x) const override {

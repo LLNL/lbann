@@ -33,13 +33,19 @@ namespace lbann {
 
 /** Abs(x)
  */
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class abs_layer : public entrywise_activation_layer {
  public:
   abs_layer(lbann_comm *comm) : entrywise_activation_layer(comm) { }
   abs_layer* copy() const override { return new abs_layer(*this); }
   std::string get_type() const override { return "abs"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
+  std::string get_description() const override {
+    return std::string {}
+      + " abs" + " dataLayout: "
+      + this->get_data_layout_string(get_data_layout());
+  }
 
  protected:
   DataType activation(DataType x) const override {

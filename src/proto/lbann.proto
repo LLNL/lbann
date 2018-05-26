@@ -729,10 +729,9 @@ message Layer {
    Gaussian gaussian = 312;
    Bernoulli bernoulli = 313;
    Uniform uniform = 314;
-   Sigmoid_Binary_Cross_Entropy_With_Logits bce_with_logits = 316;
-   Crop crop = 317;
-   CategoricalRandom categorical_random = 318;
-   DiscreteRandom discrete_random = 319;
+   Crop crop = 316;
+   CategoricalRandom categorical_random = 317;
+   DiscreteRandom discrete_random = 318;
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -768,6 +767,7 @@ message Layer {
    Abs   abs = 44;
    L2Loss l2_loss = 45;
    Log log = 46;
+   Sigmoid_Binary_Cross_Entropy_With_Logits bce_with_logits = 47;
 }
 ///////////////////////
 // MotifLayer //
@@ -839,6 +839,10 @@ message L2Loss {
 
 message Log {
   double base = 1;
+}
+
+message Sigmoid_Binary_Cross_Entropy_With_Logits {
+  int32 true_label = 1;
 }
 
 ///////////////////////////
@@ -975,9 +979,6 @@ message Uniform {
   string neuron_dims = 3;
 }
 
-message Sigmoid_Binary_Cross_Entropy_With_Logits {
-  int32 true_label = 1;
-}
 
 message Crop {
   string dims = 3;

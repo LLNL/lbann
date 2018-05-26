@@ -35,13 +35,19 @@ namespace lbann {
  * (x^2)/2
  * @todo relocate to loss layer as part of github issue 154
  */
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class l2_loss_layer : public entrywise_activation_layer {
  public:
   l2_loss_layer(lbann_comm *comm) : entrywise_activation_layer(comm) { }
   l2_loss_layer* copy() const override { return new l2_loss_layer(*this); }
   std::string get_type() const override { return "l2_loss"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
+  std::string get_description() const override {
+    return std::string {}
+      + " l2_loss" + " dataLayout: "
+      + this->get_data_layout_string(get_data_layout());
+  }
 
  protected:
   DataType activation(DataType x) const override {
