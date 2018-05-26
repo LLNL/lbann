@@ -114,7 +114,7 @@ void l2_weight_regularization::start_evaluation() {
 
     // Set cuBLAS to device pointer mode to allow pipelined calls
     auto&& handle = m_cudnn->get_cublas_handle();
-    CHECK_CUDA(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE));
+    CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE));
 
     // Compute local contributions on GPU
     // Note: Only compute local contribution on one process in each
@@ -142,7 +142,7 @@ void l2_weight_regularization::start_evaluation() {
     }
 
     // Reset cuBLAS mode and copy results to CPU
-    CHECK_CUDA(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_HOST));
+    CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_HOST));
     El::Copy(sqsums_d, sqsums);
 
   }

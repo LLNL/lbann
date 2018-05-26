@@ -57,8 +57,8 @@ class dropout : public regularizer_layer {
   #ifdef LBANN_SEQUENTIAL_CONSISTENCY
     /// @todo GPU implementation of dropout with sequential consistency
     if (Dev == El::Device::GPU && get_comm()->am_model_master()) {
-      std::err << "Warning: GPU dropout currently does not guarantee "
-               << "sequential consistency" << std::endl;
+      std::cerr << "Warning: GPU dropout currently does not guarantee "
+                << "sequential consistency" << std::endl;
     }
   #endif // LBANN_SEQUENTIAL_CONSISTENCY
   #endif // LBANN_HAS_CUDNN
