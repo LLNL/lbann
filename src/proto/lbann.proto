@@ -432,6 +432,7 @@ message Callback {
    CallbackCheckpoint checkpoint = 28;
    CallbackSaveModel save_model = 29;
    CallbackPolyLearningRate poly_learning_rate = 30;
+   CallbackGPUMemoryUsage gpu_memory_usage = 31;
 }
 
 message CallbackLTFB {
@@ -592,6 +593,9 @@ message CallbackCheckpoint {
 message CallbackSaveModel {
   string dir = 1;
   string extension = 2;
+}
+
+message CallbackGPUMemoryUsage {
 }
 
 //========================================================================

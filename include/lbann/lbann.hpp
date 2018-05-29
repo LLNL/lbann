@@ -161,6 +161,7 @@
 #include "lbann/callbacks/callback_timeline.hpp"
 #include "lbann/callbacks/callback_checkpoint.hpp"
 #include "lbann/callbacks/callback_save_model.hpp"
+#include "lbann/callbacks/callback_gpu_memory_usage.hpp"
 
 /// Weights and weight initializers
 #include "lbann/weights/weights.hpp"
