@@ -44,12 +44,14 @@ class identity_layer : public activation_layer {
   void setup_gpu() override {
     activation_layer::setup_gpu();
 #ifdef HYDROGEN_HAVE_CUB
-    // Set output matrix to use CUB GPU memory pool
+    // Set GPU output matrix to use CUB GPU memory pool
     // Note: During each forward prop, the output matrix is resized to
     // the mini-batch size and cleared to obtain a matrix view. To
     // avoid expensive GPU memory allocations and deallocations, we
     // use CUB's GPU memory pool.
-    get_local_activations().SetMemoryMode(1);
+    if (Dev == El::Device::GPU) {
+      get_local_activations().SetMemoryMode(1);
+    }
 #endif
   }
 
