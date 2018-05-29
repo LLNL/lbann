@@ -1,0 +1,55 @@
+////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+// the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+//
+// LLNL-CODE-697807.
+// All rights reserved.
+//
+// This file is part of LBANN: Livermore Big Artificial Neural Network
+// Toolkit. For details, see http://software.llnl.gov/LBANN or
+// https://github.com/LLNL/LBANN.
+//
+// Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+// may not use this file except in compliance with the License.  You may
+// obtain a copy of the License at:
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the license.
+//
+// lbann_callback .hpp - Base class for LBANN callbacks
+////////////////////////////////////////////////////////////////////////////////
+
+#ifndef __LBANN_CALLBACKS_CALLBACK_GPU_MEMORY_USAGE_HPP_INCLUDED
+#define __LBANN_CALLBACKS_CALLBACK_GPU_MEMORY_USAGE_HPP_INCLUDED
+
+#include "lbann/callbacks/callback.hpp"
+
+#ifdef LBANN_HAS_CUDA
+
+namespace lbann {
+/** Callback hooks for gradient check. */
+class lbann_callback_gpu_memory_usage : public lbann_callback {
+ public:
+  
+  /** Constructor.
+   */
+  lbann_callback_gpu_memory_usage() = default;
+  lbann_callback_gpu_memory_usage(const lbann_callback_gpu_memory_usage&) = default;
+  lbann_callback_gpu_memory_usage& operator=(const lbann_callback_gpu_memory_usage&) = default;
+  lbann_callback_gpu_memory_usage* copy() const override { return new lbann_callback_gpu_memory_usage(*this); }
+  void on_epoch_begin(model *m) override;
+  std::string name() const override { return "GPU memory usage"; }
+};
+
+}  // namespace lbann
+
+#endif // LBANN_HAS_CUDA
+
+#endif  // __LBANN_CALLBACKS_CALLBACK_GPU_MEMORY_USAGE_HPP_INCLUDED
