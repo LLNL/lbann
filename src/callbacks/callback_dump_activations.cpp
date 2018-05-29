@@ -56,8 +56,9 @@ void lbann_callback_dump_activations::on_forward_prop_end(model *m, Layer *l) {
 }
 
 void lbann_callback_dump_activations::on_epoch_end(model *m) {
-  auto tag = "epoch" + std::to_string(m->get_cur_epoch());
-  dump_activations(*m,tag);
+  auto cur_epoch = m->get_cur_epoch();
+  auto tag = "epoch" + std::to_string(cur_epoch);
+  if(cur_epoch % m_batch_interval == 0) dump_activations(*m,tag);
 }
 
 void lbann_callback_dump_activations::on_test_end(model *m) {
