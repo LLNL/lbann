@@ -884,7 +884,13 @@ void Layer::fp_setup_data(int mini_batch_size) {
 
   // Initialize activations
   for (int i = 0; i < get_num_children(); ++i) {
-    get_activations(i).Resize(get_num_neurons(i), mini_batch_size);
+    auto& activations = get_activations(i);
+    const auto num_neurons = get_num_neurons(i);
+    if (activations.Height() != num_neurons
+        || activations.Width() != mini_batch_size) {
+      activations.Empty(false); // Reset matrix views (without deallocating memory)
+      activations.Resize(num_neurons, mini_batch_size);
+    }
   }
 
   #ifdef LBANN_HAS_CUDNN
