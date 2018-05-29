@@ -461,16 +461,10 @@ class base_convolution_layer : public learning_layer {
 
     // Perform transposed convolution on the GPU
     // Determine transposed convolution algorithm
-    const size_t work_space_size = this->m_cudnn->get_work_space_size();
     #ifndef LBANN_DETERMINISTIC_CUDNN
     cudnnConvolutionBwdDataAlgo_t transposed_convolution_cudnn_algorithm
       = CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
     CHECK_CUDNN(cudnnGetConvolutionBackwardDataAlgorithm(cudnn::get_handle(),
-    #else
-    cudnnConvolutionBwdDataAlgo_t transposed_convolution_cudnn_algorithm
-      = CUDNN_CONVOLUTION_BWD_DATA_ALGO_1;
-    #endif
-    CHECK_CUDNN(cudnnGetConvolutionBackwardDataAlgorithm(this->m_cudnn->get_handle(),
                                                          m_kernel_cudnn_desc,
                                                          input_desc,
                                                          m_convolution_cudnn_desc,
@@ -478,7 +472,10 @@ class base_convolution_layer : public learning_layer {
                                                          CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT,
                                                          workspace_size,
                                                          &transposed_convolution_cudnn_algorithm));
-
+    #else
+    cudnnConvolutionBwdDataAlgo_t transposed_convolution_cudnn_algorithm
+      = CUDNN_CONVOLUTION_BWD_DATA_ALGO_1;
+    #endif
     // Perform transposed convolution
     CHECK_CUDNN(cudnnConvolutionBackwardData(cudnn::get_handle(),
                                              &one,
@@ -576,9 +573,15 @@ class base_convolution_layer : public learning_layer {
         auto&& gradient_wrt_output_desc = m_tensors_cudnn_desc.get_prev_error_signals();
 
         // Determine algorithm and compute kernel gradient
+        #ifndef LBANN_DETERMINISTIC_CUDNN
         cudnnConvolutionBwdFilterAlgo_t kernel_gradient_cudnn_algorithm
           = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
+        #else
+        cudnnConvolutionBwdFilterAlgo_t kernel_gradient_cudnn_algorithm
+          = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1;
+        #endif
         if (using_transposed_convolution) {
+          #ifndef LBANN_DETERMINISTIC_CUDNN 
           CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithm(cudnn::get_handle(),
                                                                  gradient_wrt_output_desc,
                                                                  input_desc,
@@ -587,6 +590,7 @@ class base_convolution_layer : public learning_layer {
                                                                  CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT,
                                                                  workspace_size,
                                                                  &kernel_gradient_cudnn_algorithm));
+          #endif
           CHECK_CUDNN(cudnnConvolutionBackwardFilter(cudnn::get_handle(),
                                                      &one,
                                                      gradient_wrt_output_desc,
@@ -602,6 +606,7 @@ class base_convolution_layer : public learning_layer {
                                                      m_kernel_gradient.Buffer()));
         }
         else {
+          #ifndef LBANN_DETERMINISTIC_CUDNN 
           CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithm(cudnn::get_handle(),
                                                                  input_desc,
                                                                  gradient_wrt_output_desc,
@@ -610,6 +615,7 @@ class base_convolution_layer : public learning_layer {
                                                                  CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT,
                                                                  workspace_size,
                                                                  &kernel_gradient_cudnn_algorithm));
+          #endif
           CHECK_CUDNN(cudnnConvolutionBackwardFilter(cudnn::get_handle(),
                                                      &one,
                                                      input_desc,
