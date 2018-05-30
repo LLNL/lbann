@@ -255,8 +255,8 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
     } else {
       reader->set_role("error");
     }
-    if (readme.role() == "train" && !separate_validation) {
-      if (create_tarball) {
+    if (readme.role() == "train") {
+      if (create_tarball || separate_validation) {
         reader->set_validation_percent( 0. );
       } else {
         reader->set_validation_percent( readme.validation_percent() );
