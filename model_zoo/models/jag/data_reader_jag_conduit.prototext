@@ -1,0 +1,98 @@
+data_reader {
+  reader {
+    name: "jag_conduit"
+    role: "train"
+    shuffle: true
+    data_filedir: "/p/lscratchh/brainusr/datasets/jag/bundle_100_10/"
+    data_filename: "samples100-200.bundle"
+    validation_percent: 0.01
+    absolute_sample_count: 0
+    percent_of_data_to_use: 1.0
+
+    # Currently, JAG input has 111 parameters, scalar has 22 parameters, and
+    # there are two 64x64 images selected out of 10 images per sample.
+
+    # 0: JAG_Image,  1: JAG_Scalar,  2: JAG_Input
+    independent: [0, 1]
+    dependent: 2
+
+    num_labels: 111
+
+    image_preprocessor {
+      # assume fixed size of input images if cropper is not used
+      raw_width: 64
+      raw_height: 64
+
+      normalizer {
+        disable: false
+        scale: false
+        subtract_mean: false
+        unit_variance: false
+        z_score: true
+      }
+
+      subtractor {
+        disable: true
+      }
+
+      cropper {
+        disable: true
+      }
+
+      colorizer {
+        disable: true
+      }
+
+      augmenter {
+        disable: true
+      }
+    }
+  }
+
+  reader {
+    name: "jag_conduit"
+    role: "test"
+    shuffle: true
+    data_filedir: "/p/lscratchh/brainusr/datasets/jag/bundle_100_10/"
+    data_filename: "samples200-300.bundle"
+    validation_percent: 1.0
+    absolute_sample_count: 0
+    percent_of_data_to_use: 1.0
+
+    # 0: JAG_Image,  1: JAG_Scalar,  2: JAG_Input
+    independent: [0, 1]
+    dependent: 2
+
+    num_labels: 111
+
+    image_preprocessor {
+      # assume fixed size of input images if cropper is not used
+      raw_width: 64
+      raw_height: 64
+
+      normalizer {
+        disable: false
+        scale: false
+        subtract_mean: false
+        unit_variance: false
+        z_score: true
+      }
+
+      subtractor {
+        disable: true
+      }
+
+      cropper {
+        disable: true
+      }
+
+      colorizer {
+        disable: true
+      }
+
+      augmenter {
+        disable: true
+      }
+    }
+  }
+}
