@@ -20,6 +20,7 @@ set_full_path(THIS_DIR_HEADERS
   crop.hpp
   categorical_random.hpp
   discrete_random.hpp
+  stop_gradient.hpp
   )
 
 # Propagate the files up the tree

@@ -306,6 +306,9 @@ Layer* construct_layer(lbann_comm* comm,
                    comm, values, dims, cudnn);
     }
   }
+  if (proto_layer.has_stop_gradient()) {
+    return new stop_gradient_layer<layout, Dev>(comm, cudnn);
+  }
 
   // Regularizer layers
   if (proto_layer.has_batch_normalization()) {
