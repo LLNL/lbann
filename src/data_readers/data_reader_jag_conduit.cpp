@@ -501,7 +501,7 @@ size_t data_reader_jag_conduit::get_linearized_size(const data_reader_jag_condui
                                      "unknown or undefined variable type");
     }
   }
-  return 0;
+  return 0u;
 }
 
 int data_reader_jag_conduit::get_linearized_data_size() const {
@@ -524,6 +524,30 @@ int data_reader_jag_conduit::get_linearized_response_size() const {
     sz += get_linearized_size(t);
   }
   return static_cast<int>(sz);
+}
+
+std::vector<size_t> data_reader_jag_conduit::get_linearized_data_sizes() const {
+  std::vector<size_t> all_dim;
+  all_dim.reserve(m_independent.size());
+  for (const auto t: m_independent) {
+    if (t == Undefined) {
+      continue;
+    }
+    all_dim.push_back(get_linearized_size(t));
+  }
+  return all_dim;
+}
+
+std::vector<size_t> data_reader_jag_conduit::get_linearized_response_sizes() const {
+  std::vector<size_t> all_dim;
+  all_dim.reserve(m_dependent.size());
+  for (const auto t: m_dependent) {
+    if (t == Undefined) {
+      continue;
+    }
+    all_dim.push_back(get_linearized_size(t));
+  }
+  return all_dim;
 }
 
 const std::vector<int> data_reader_jag_conduit::get_dims(const data_reader_jag_conduit::variable_t t) const {
@@ -727,12 +751,14 @@ int data_reader_jag_conduit::check_exp_success(const size_t sample_id) const {
 }
 
 
-std::vector<::Mat> data_reader_jag_conduit::create_datum_views(::Mat& X, const int mb_idx) const {
-  std::vector<::Mat> X_v(m_num_img_srcs);
+std::vector<::Mat>
+data_reader_jag_conduit::create_datum_views(::Mat& X, const std::vector<size_t>& sizes, const int mb_idx) const {
+  std::vector<::Mat> X_v(sizes.size());
   El::Int h = 0;
-  for(unsigned int i=0u; i < m_num_img_srcs; ++i) {
-    El::View(X_v[i], X, El::IR(h, h + get_linearized_image_size()), El::IR(mb_idx, mb_idx + 1));
-    h = h + get_linearized_image_size();
+  for(size_t i=0u; i < sizes.size(); ++i) {
+    const El::Int h_end =  h + static_cast<El::Int>(sizes[i]);
+    El::View(X_v[i], X, El::IR(h, h_end), El::IR(mb_idx, mb_idx + 1));
+    h = h_end;
   }
   return X_v;
 }
@@ -741,7 +767,8 @@ bool data_reader_jag_conduit::fetch(Mat& X, int data_id, int mb_idx, int tid,
   const data_reader_jag_conduit::variable_t vt, const std::string tag) {
   switch (vt) {
     case JAG_Image: {
-      std::vector<::Mat> X_v = create_datum_views(X, mb_idx);
+      const std::vector<size_t> sizes(get_num_img_srcs(), get_linearized_image_size());
+      std::vector<::Mat> X_v = create_datum_views(X, sizes, mb_idx);
       std::vector<cv::Mat> images = get_cv_images(data_id);
 
       if (images.size() != get_num_img_srcs()) {
@@ -773,13 +800,23 @@ bool data_reader_jag_conduit::fetch(Mat& X, int data_id, int mb_idx, int tid,
 }
 
 bool data_reader_jag_conduit::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
-  // TODO: need to create view of V for each variable type and call fetch()
-  return fetch(X, data_id, mb_idx, tid, m_independent[0], "datum");
+  std::vector<size_t> sizes = get_linearized_data_sizes();
+  std::vector<::Mat> X_v = create_datum_views(X, sizes, mb_idx);
+  bool ok = true;
+  for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
+    ok = fetch(X_v[i], data_id, mb_idx, tid, m_independent[i], "datum");
+  }
+  return ok;
 }
 
 bool data_reader_jag_conduit::fetch_response(Mat& X, int data_id, int mb_idx, int tid) {
-  // TODO: need to create view of V for each variable type and call fetch()
-  return fetch(X, data_id, mb_idx, tid, m_dependent[0], "response");
+  std::vector<size_t> sizes = get_linearized_response_sizes();
+  std::vector<::Mat> X_v = create_datum_views(X, sizes, mb_idx);
+  bool ok = true;
+  for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
+    ok = fetch(X_v[i], data_id, mb_idx, tid, m_dependent[i], "response");
+  }
+  return ok;
 }
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
