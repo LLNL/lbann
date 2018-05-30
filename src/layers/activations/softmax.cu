@@ -50,8 +50,9 @@ void fp_cutoff(cudnn::cudnn_manager& cudnn,
   int block_dim = 256;
   int grid_dim = num_gpus / block_dim + ((num_gpus % block_dim) ? 1 : 0);
   CHECK_CUDA(cudaSetDevice(cudnn.get_gpu()));
-  fp_cutoff_kernel<<<grid_dim, block_dim>>>(activations, num_elms,
-                                            min_output);
+  cudaStream_t stream = cudnn.get_stream();
+  fp_cutoff_kernel<<<grid_dim, block_dim, 0, stream>>>
+    (activations, num_elms, min_output);
 }
 
 __global__ void bp_cutoff_kernel(const DataType* activations,
@@ -76,8 +77,9 @@ void bp_cutoff(cudnn::cudnn_manager& cudnn,
   int block_dim = 256;
   int grid_dim = num_gpus / block_dim + ((num_gpus % block_dim) ? 1 : 0);
   CHECK_CUDA(cudaSetDevice(cudnn.get_gpu()));
-  bp_cutoff_kernel<<<grid_dim, block_dim>>>(activations, error_signals,
-                                            num_elms, min_output);
+  cudaStream_t stream = cudnn.get_stream();
+  bp_cutoff_kernel<<<grid_dim, block_dim, 0, stream>>>
+    (activations, error_signals, num_elms, min_output);
 }
 
 } // namespace softmax_cuda
