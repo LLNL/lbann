@@ -49,6 +49,18 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
   const lbann_data::DataReader & d_reader = p.data_reader();
   int size = d_reader.reader_size();
 
+  // A separate explicit validation set is created only if a reader with role "validate"
+  // is found in the list of data readers. Otherwise, a validation set is created as a
+  // percentage of data from the train set.
+  bool separate_validation = false;
+  for (int j=0; j<size; j++) {
+    const lbann_data::Reader& readme = d_reader.reader(j);
+    if (readme.role() == "validate") {
+        separate_validation = true;
+        break;
+    }
+  }
+
   for (int j=0; j<size; j++) {
     const lbann_data::Reader& readme = d_reader.reader(j);
     // This is a temporary measure until we individually setup data reader specific preprocessors
@@ -238,10 +250,12 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       reader->set_role("train");
     } else if (readme.role() == "test") {
       reader->set_role("test");
+    } else if (readme.role() == "validate") {
+      reader->set_role("validate");
     } else {
       reader->set_role("error");
     }
-    if (readme.role() == "train") {
+    if (readme.role() == "train" && !separate_validation) {
       if (create_tarball) {
         reader->set_validation_percent( 0. );
       } else {
@@ -258,9 +272,11 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       data_readers[execution_mode::training] = reader;
     } else if (readme.role() == "test") {
       data_readers[execution_mode::testing] = reader;
+    } else if (readme.role() == "validate") {
+      data_readers[execution_mode::validation] = reader;
     }
 
-    if (readme.role() == "train" && readme.validation_percent() > 0. && !create_tarball) {
+    if (readme.role() == "train" && readme.validation_percent() > 0. && !create_tarball && !separate_validation) {
       if (name == "mnist") {
         reader_validation = new mnist_reader(shuffle);
         (*(mnist_reader *)reader_validation) = (*(mnist_reader *)reader);
