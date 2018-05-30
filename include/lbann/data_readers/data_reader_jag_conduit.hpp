@@ -125,6 +125,9 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Return the dimension of data
   const std::vector<int> get_data_dims() const override;
 
+  int get_num_labels() const override;
+  int get_linearized_label_size() const override;
+
   /// Show the description
   std::string get_description() const;
 
@@ -183,6 +186,7 @@ class data_reader_jag_conduit : public generic_data_reader {
              const variable_t vt, const std::string tag);
   bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
   bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_label(Mat& X, int data_id, int mb_idx, int tid) override;
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
   /// Load a conduit-packed hdf5 data file
@@ -226,6 +230,8 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   /// Whether data have been loaded
   bool m_is_data_loaded;
+
+  int m_num_labels; ///< number of labels
 
   /// Keys to select a set of scalar simulation outputs to use. By default, use all.
   std::vector<std::string> m_scalar_keys;

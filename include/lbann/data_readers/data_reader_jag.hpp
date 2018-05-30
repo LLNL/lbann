@@ -211,7 +211,6 @@ class data_reader_jag : public generic_data_reader {
   int m_image_normalization;
   int m_image_width; ///< image width
   int m_image_height; ///< image height
-  
 
   /// List of jag output images
   cnpy::NpyArray m_images;

@@ -129,6 +129,7 @@ void data_reader_jag_conduit::set_defaults() {
   set_linearized_image_size();
   m_num_img_srcs = 1u;
   m_is_data_loaded = false;
+  m_num_labels = 0;
   m_scalar_keys.clear();
   m_input_keys.clear();
 }
@@ -428,6 +429,10 @@ void data_reader_jag_conduit::check_input_keys() {
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
 void data_reader_jag_conduit::load() {
+  if(m_gan_labelling) m_num_labels=2;
+  std::cout << "JAG load GAN m_gan_labelling : label_value "
+            << m_gan_labelling <<" : " << m_gan_label_value << std::endl;
+
   const std::string data_dir = add_delimiter(get_file_dir());
   const std::string conduit_file_name = get_data_filename();
 
@@ -578,6 +583,15 @@ const std::vector<int> data_reader_jag_conduit::get_data_dims() const {
   }
   return all_dim;
 }
+
+int data_reader_jag_conduit::get_num_labels() const {
+  return m_num_labels;
+}
+
+int data_reader_jag_conduit::get_linearized_label_size() const {
+  return m_num_labels;
+}
+
 
 std::string data_reader_jag_conduit::to_string(const variable_t t) {
   switch (t) {
@@ -817,6 +831,16 @@ bool data_reader_jag_conduit::fetch_response(Mat& X, int data_id, int mb_idx, in
     ok = fetch(X_v[i], data_id, mb_idx, tid, m_dependent[i], "response");
   }
   return ok;
+}
+
+bool data_reader_jag_conduit::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
+  if(m_gan_label_value) Y.Set(m_gan_label_value,mb_idx,1); //fake sample is set to 1; adversarial model
+  else { //fake sample (second half of minibatch is set to 0;discriminator model
+    //mb_idx < (m_mb_size/2) ? Y.Set(1,mb_idx,1) : Y.Set(m_gan_label_value,mb_idx,1);
+    mb_idx < (get_current_mini_batch_size()/2) ? Y.Set(1,mb_idx,1) : Y.Set(m_gan_label_value,mb_idx,1);
+  }
+  //Y.Set(m_gan_label_value, mb_idx, 1);
+  return true;
 }
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_

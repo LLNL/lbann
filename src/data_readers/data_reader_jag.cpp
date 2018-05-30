@@ -297,7 +297,7 @@ const std::vector<int> data_reader_jag::get_data_dims() const {
 
 void data_reader_jag::load() {
   if(m_gan_labelling) m_num_labels=2;
-  std::cout << "JAG load GAN m_gan_labelling : label_value " 
+  std::cout << "JAG load GAN m_gan_labelling : label_value "
             << m_gan_labelling <<" : " << m_gan_label_value << std::endl;
   const std::string data_dir = add_delimiter(get_file_dir());
   const std::string namestr = get_data_filename();
