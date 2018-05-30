@@ -58,15 +58,23 @@ class cv_subtractor : public cv_transform {
   /**
    * The image to subtract from an input image.
    * It has channel values of a floating point type, in the scale from 0 to 1.
-   * An input image will be mapped into the scale before subtraction.
+   * An input image will be mapped into the scale before subtraction by linearly
+   * mapping the smallest representative value to 0 and the largest representative
+   * value to 1.
    */
   cv::Mat m_img_to_sub;
+  /**
+   * The image to divide an input image.
+   * It has channel values of a floating point type, in the scale from 0 to 1.
+   * An input image will be mapped into the scale before division.
+   */
+  cv::Mat m_img_to_div;
 
   // --- state variables ---
-  bool m_subtracted; ///< has been subtracted
+  bool m_applied; ///< has been subtracted
 
  public:
-  cv_subtractor() : cv_transform(), m_subtracted(false) {}
+  cv_subtractor() : cv_transform(), m_applied(false) {}
   cv_subtractor(const cv_subtractor& rhs);
   cv_subtractor& operator=(const cv_subtractor& rhs);
   cv_subtractor *clone() const override;
@@ -76,18 +84,44 @@ class cv_subtractor : public cv_transform {
   static cv::Mat read_binary_image_file(const std::string filename);
 
   /**
-   * Set the image to subtract from every input image.
+   * Set the dataset-wise mean image to subtract from each input image.
+   * The image represents the pre-computed pixel-wise mean of the dataset.
    * In case that this image is not in a floating point type, it is converted to
    * one with the depth specified by depth_code.
    */
-  void set(const cv::Mat& img, const int depth_code = cv_image_type<lbann::DataType>::T());
+  void set_mean(const cv::Mat& img, const int depth_code = cv_image_type<lbann::DataType>::T());
+
+  /**
+   * Set the mean fixed per channel for mean-subtracting each input image.
+   * This supports an alternative method for mean subtraction given that the
+   * mean per channel is uniform.
+   */
+  void set_mean(int width, int height, const std::vector<lbann::DataType> channel_mean);
 
   /// Load and set the image to subtract from every input image.
-  void set(const std::string name_of_img, const int depth_code = cv_image_type<lbann::DataType>::T());
+  void set_mean(const std::string name_of_img, const int depth_code = cv_image_type<lbann::DataType>::T());
+
+  /**
+   * Set the dataset-wise standard deviation to normalize each input image.
+   * In case that this image is not in a floating point type, it is converted to
+   * one with the depth specified by depth_code.
+   */
+  void set_stddev(const cv::Mat& img, const int depth_code = cv_image_type<lbann::DataType>::T());
+
+  /**
+   * Set the dataset-wise standard deviation fixed per channel for normalizing
+   * each input image.
+   * This supports an alternative method for normalizing with stddev given that
+   * it is uniform per channel.
+   */
+  void set_stddev(int width, int height, const std::vector<lbann::DataType> channel_stddev);
+
+  /// Load and set the image to normalize the pixels of every input image.
+  void set_stddev(const std::string name_of_img, const int depth_code = cv_image_type<lbann::DataType>::T());
 
   void reset() override {
     m_enabled = false;
-    m_subtracted = false;
+    m_applied = false;
   }
 
   /**
