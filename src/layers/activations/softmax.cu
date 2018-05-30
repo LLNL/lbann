@@ -28,56 +28,77 @@
 
 #include "lbann/layers/activations/softmax.hpp"
 
+namespace {
+
+__global__ void fp_cutoff_kernel(int height, int width,
+                                 lbann::DataType* output,
+                                 int output_leading_dim,
+                                 lbann::DataType cutoff) {
+  const auto tid = threadIdx.x + blockIdx.x * blockDim.x;
+  const auto size = height * width;
+  const auto num_threads = blockDim.x * gridDim.x;
+  for (int pos = tid; pos < size; pos += num_threads) {
+    const int row = pos % height;
+    const int col = pos / height;
+    auto& y = output[row + col * output_leading_dim];
+    if (y < cutoff) { y = cutoff; }
+  }
+}
+
+__global__ void bp_cutoff_kernel(int height, int width,
+                                 const lbann::DataType* __restrict__ output,
+                                 int output_leading_dim,
+                                 lbann::DataType* __restrict__ gradient_wrt_input,
+                                 int gradient_wrt_input_leading_dim,
+                                 lbann::DataType cutoff) {
+  const auto tid = threadIdx.x + blockIdx.x * blockDim.x;
+  const auto size = height * width;
+  const auto num_threads = blockDim.x * gridDim.x;
+  for (int pos = tid; pos < size; pos += num_threads) {
+    const int row = pos % height;
+    const int col = pos / height;
+    const auto& y = output[row + col * output_leading_dim];
+    if (y < cutoff) { 
+      auto& dx = gradient_wrt_input[row + col * gradient_wrt_input_leading_dim];
+      dx = lbann::DataType(0);
+    }
+  }
+}
+  
+}
+
 namespace lbann {
 namespace softmax_cuda {
 
-__global__ void fp_cutoff_kernel(DataType* activations,
-                                 El::Int num_elms,
-                                 DataType min_output) {
-  El::Int tid = ((El::Int)blockIdx.x) * blockDim.x + threadIdx.x;
-  if (tid > num_elms) return;
-  DataType x = activations[tid];
-  x = x > min_output ? x : min_output;
-  activations[tid] = x;
-}
-
 void fp_cutoff(cudnn::cudnn_manager& cudnn,
-               DataType* activations,
-               El::Int h, El::Int w,
-               DataType min_output) {
-  El::Int num_elms = h * w;
-  int num_gpus = cudnn.get_num_gpus();
-  int block_dim = 256;
-  int grid_dim = num_gpus / block_dim + ((num_gpus % block_dim) ? 1 : 0);
+               int height, int width,
+               DataType* output,
+               int output_leading_dim,
+               DataType cutoff) {
+  const int size = height * width;
+  const int block_dim = 256;
+  const int grid_dim = (size + block_dim - 1) / block_dim;
   CHECK_CUDA(cudaSetDevice(cudnn.get_gpu()));
-  fp_cutoff_kernel<<<grid_dim, block_dim>>>(activations, num_elms,
-                                            min_output);
-}
-
-__global__ void bp_cutoff_kernel(const DataType* activations,
-                                 DataType* error_signals,
-                                 El::Int num_elms,
-                                 DataType min_output) {
-  El::Int tid = ((El::Int)blockIdx.x) * blockDim.x + threadIdx.x;
-  if (tid > num_elms) return;
-  DataType a = activations[tid];
-  DataType e = error_signals[tid];
-  e = a > min_output ? e : DataType(0);
-  error_signals[tid] = e;
+  fp_cutoff_kernel<<<grid_dim, block_dim, 0, cudnn.get_stream()>>>(
+    height, width, output, output_leading_dim, cutoff);
 }
 
 void bp_cutoff(cudnn::cudnn_manager& cudnn,
-               const DataType* activations,
-               DataType* error_signals,
-               El::Int h, El::Int w,
-               DataType min_output) {
-  El::Int num_elms = h * w;
-  int num_gpus = cudnn.get_num_gpus();
-  int block_dim = 256;
-  int grid_dim = num_gpus / block_dim + ((num_gpus % block_dim) ? 1 : 0);
+               int height, int width,
+               const DataType* output,
+               int output_leading_dim,
+               DataType* gradient_wrt_input,
+               int gradient_wrt_input_leading_dim,
+               DataType cutoff) {
+  const int size = height * width;
+  const int block_dim = 256;
+  const int grid_dim = (size + block_dim - 1) / block_dim;
   CHECK_CUDA(cudaSetDevice(cudnn.get_gpu()));
-  bp_cutoff_kernel<<<grid_dim, block_dim>>>(activations, error_signals,
-                                            num_elms, min_output);
+  bp_cutoff_kernel<<<grid_dim, block_dim, 0, cudnn.get_stream()>>>(
+    height, width,
+    output, output_leading_dim,
+    gradient_wrt_input, gradient_wrt_input_leading_dim,
+    cutoff);
 }
 
 } // namespace softmax_cuda
