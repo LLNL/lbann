@@ -251,6 +251,6 @@ if [ ! -z ${PATH_TO_SRC} -a -d ${PATH_TO_SRC}/src ]; then
 fi
 
 # Deal with the fact that spack should not install a package when doing setup"
-FIX="spack uninstall -y lbann %${COMPILER} build_type=${BUILD_TYPE}"
+FIX="spack uninstall --all -y lbann %${COMPILER} build_type=${BUILD_TYPE}"
 echo $FIX
 eval $FIX
