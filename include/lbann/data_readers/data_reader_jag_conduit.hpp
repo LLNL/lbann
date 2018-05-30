@@ -179,14 +179,14 @@ class data_reader_jag_conduit : public generic_data_reader {
   static std::string to_string(const std::vector<variable_t>& vec);
 
 
-  virtual std::vector<::Mat>
-    create_datum_views(::Mat& X, const std::vector<size_t>& sizes, const int mb_idx) const;
+  virtual std::vector<CPUMat>
+    create_datum_views(CPUMat& X, const std::vector<size_t>& sizes, const int mb_idx) const;
 
-  bool fetch(Mat& X, int data_id, int mb_idx, int tid,
+  bool fetch(CPUMat& X, int data_id, int mb_idx, int tid,
              const variable_t vt, const std::string tag);
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
-  bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid) override;
-  bool fetch_label(Mat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_label(CPUMat& X, int data_id, int mb_idx, int tid) override;
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
   /// Load a conduit-packed hdf5 data file

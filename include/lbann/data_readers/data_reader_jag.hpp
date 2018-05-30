@@ -139,8 +139,8 @@ class data_reader_jag : public generic_data_reader {
   /// Return the dimension of a particular JAG variable type
   const std::vector<int> get_dims(const variable_t t) const;
 
-  virtual std::vector<::Mat>
-    create_datum_views(::Mat& X, const std::vector<size_t>& sizes, const int mb_idx) const;
+  virtual std::vector<CPUMat>
+    create_datum_views(CPUMat& X, const std::vector<size_t>& sizes, const int mb_idx) const;
 
   bool fetch(CPUMat& X, int data_id, int mb_idx, int tid,
              const data_reader_jag::variable_t vt, const std::string tag);
