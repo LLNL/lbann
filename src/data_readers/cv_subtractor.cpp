@@ -286,7 +286,23 @@ std::ostream& cv_subtractor::print(std::ostream& os) const {
      << " - configuration of the image to subtract: "
      << m_img_to_sub.cols << 'x' << m_img_to_sub.rows
      << 'x' << m_img_to_sub.channels()
-     << '-' << m_img_to_sub.depth() << std::endl;
+     << '-' << m_img_to_sub.depth() << std::endl
+     << " - configuration of the image to divide: "
+     << m_img_to_div.cols << 'x' << m_img_to_div.rows
+     << 'x' << m_img_to_div.channels()
+     << '-' << m_img_to_div.depth() << std::endl;
+#if 0
+  if (!m_img_to_sub.empty()) {
+    cv::Mat img_sub;
+    m_img_to_sub.convertTo(img_sub, CV_8U, f, 0.0);
+    cv::imwrite("img_sub.png", img_sub);
+  }
+  if (!m_img_to_div.empty()) {
+    cv::Mat img_div;
+    m_img_to_div.convertTo(img_div, CV_8U, f, 0.0);
+    cv::imwrite("img_div.png", img_div);
+  }
+#endif
   return os;
 }
 
