@@ -33,6 +33,8 @@ message Reader {
   bool gan_labelling = 201;
   int32 gan_label_value = 202;
   ImagePreprocessor image_preprocessor = 13;
+  repeated string jag_scalar_keys = 95; // only for jag
+  repeated string jag_input_keys = 96; // only for jag
   repeated int32 independent = 97; // only for jag
   repeated int32 dependent = 98; // only for jag
   int32 num_labels = 99; //for imagenet
