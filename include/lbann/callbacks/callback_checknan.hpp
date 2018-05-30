@@ -51,6 +51,8 @@ class lbann_callback_checknan : public lbann_callback {
   }
   /** Check that activations are good. */
   void on_forward_prop_end(model *m, Layer *l) override;
+  /** Check that error signals are good. */
+  void on_backward_prop_end(model *m, Layer *l) override;
   /** Check that gradients are good. */
   void on_backward_prop_end(model *m) override;
   /** Check that weights are good. */
