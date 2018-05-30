@@ -52,7 +52,7 @@ class data_reader_jag : public generic_data_reader {
    * - JAG_Input: simulation input parameters
    * - Undefined: the default
    */
-  enum variable_t {JAG_Image, JAG_Scalar, JAG_Input, Undefined};
+  enum variable_t {Undefined = 0, JAG_Image, JAG_Scalar, JAG_Input};
 
   data_reader_jag(bool shuffle = true);
   // TODO: copy constructor and assignment operator for deep-copying if needed
@@ -67,14 +67,14 @@ class data_reader_jag : public generic_data_reader {
   }
 
   /// Choose which data to use for independent variable
-  void set_independent_variable_type(const variable_t independent);
+  void set_independent_variable_type(const std::vector<variable_t> independent);
   /// Choose which data to use for dependent variable
-  void set_dependent_variable_type(const variable_t dependent);
+  void set_dependent_variable_type(const std::vector<variable_t> dependent);
 
   /// Tell which data to use for independent variable
-  variable_t get_independent_variable_type() const;
+  std::vector<variable_t> get_independent_variable_type() const;
   /// Tell which data to use for dependent variable
-  variable_t get_dependent_variable_type() const;
+  std::vector<variable_t> get_dependent_variable_type() const;
 
   /// Set normalization mode: 0 = none, 1 = dataset-wise, 2 = image-wise
   void set_normalization_mode(int mode);
@@ -100,6 +100,8 @@ class data_reader_jag : public generic_data_reader {
 
   int get_linearized_data_size() const override;
   int get_linearized_response_size() const override;
+  std::vector<size_t> get_linearized_data_sizes() const;
+  std::vector<size_t> get_linearized_response_sizes() const;
   const std::vector<int> get_data_dims() const override;
 
   /// Return the pointer to the raw image data
@@ -120,6 +122,28 @@ class data_reader_jag : public generic_data_reader {
   void save_image(Mat& pixels, const std::string filename, bool do_scale = true) override;
 
  protected:
+  /// add data type for independent variable
+  void add_independent_variable_type(const variable_t independent);
+  /// add data type for dependent variable
+  void add_dependent_variable_type(const variable_t dependent);
+
+  /// check if type t is used in the independent variable
+  bool is_independent(const variable_t t) const;
+  /// check if type t is used in the dependent variable
+  bool is_dependent(const variable_t t) const;
+  /// check if type t is used in either the indepedent or the dependent variable
+  bool is_used(const variable_t t) const;
+
+  /// Return the linearized size of a particular JAG variable type
+  size_t get_linearized_size(const variable_t t) const;
+  /// Return the dimension of a particular JAG variable type
+  const std::vector<int> get_dims(const variable_t t) const;
+
+  virtual std::vector<::Mat>
+    create_datum_views(::Mat& X, const std::vector<size_t>& sizes, const int mb_idx) const;
+
+  bool fetch(CPUMat& X, int data_id, int mb_idx, int tid,
+             const data_reader_jag::variable_t vt, const std::string tag);
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
   bool fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) override;
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) override;
@@ -163,9 +187,9 @@ class data_reader_jag : public generic_data_reader {
 
  protected:
   /// independent variable type
-  variable_t m_independent;
+  std::vector<variable_t> m_independent;
   /// dependent variable type
-  variable_t m_dependent;
+  std::vector<variable_t> m_dependent;
 
   /// Whether image output data have been loaded
   bool m_image_loaded;
