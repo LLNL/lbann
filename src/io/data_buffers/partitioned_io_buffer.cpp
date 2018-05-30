@@ -29,7 +29,7 @@
 
 lbann::partitioned_io_buffer::partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
   : generic_io_buffer(comm, num_parallel_readers, data_readers),
-    M_local(nullptr) {}
+    M_local(2, nullptr) {}
 
 int lbann::partitioned_io_buffer::fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) {
   int num_parallel_readers = data_reader->get_num_parallel_readers();
@@ -38,12 +38,13 @@ int lbann::partitioned_io_buffer::fetch_to_local_matrix(generic_data_reader *dat
 
   /// Coordinate all available readers so that the perform I/O in the same step
   /// Check to make sure that the local matrix has space for data
-  if (m_comm->get_rank_in_model() < num_parallel_readers && (M_local->Height() != 0 && M_local->Width() != 0)) {
-    Zero(*M_local);
+  if (m_comm->get_rank_in_model() < num_parallel_readers && (M_local[0]->Height() != 0 && M_local[0]->Width() != 0)) {
+    Zero(*M_local[0]);
+    Zero(*M_local[1]);
 
     /// Each data reader needs to either have independent / split
     /// data, or take an offset / stride
-    num_samples_fetched = (*fetch_data_fn)(*M_local, data_reader);
+    num_samples_fetched = (*fetch_data_fn)(*M_local[0], *M_local[1], data_reader);
     bool data_valid = (num_samples_fetched > 0);
     if(data_valid) {
       //      m_num_data_per_epoch+=num_samples_fetched; /// BVE FIXME need to change how this is shared
@@ -52,7 +53,7 @@ int lbann::partitioned_io_buffer::fetch_to_local_matrix(generic_data_reader *dat
   return num_samples_fetched;
 }
 
-void lbann::partitioned_io_buffer::distribute_from_local_matrix(AbsDistMat& Ms, generic_data_reader *data_reader, execution_mode mode) {
+void lbann::partitioned_io_buffer::distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample, AbsDistMat& response) {
 
   /// Nothing to do here, it is already done
   return;

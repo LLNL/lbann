@@ -41,6 +41,11 @@ model {
   }
   callback { print {} }
   callback { timer {} }
+  # callback {
+  #   debug {
+  #     phase: "train"
+  #   }
+  # }
   callback {
     drop_fixed_learning_rate {
       drop_epoch: 20
@@ -56,6 +61,7 @@ model {
 
   layer {
     name: "data"
+    children: "conv1 target"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
@@ -271,6 +277,8 @@ model {
   }
 
   layer {
+#    parents: "prob"
+#    parents: "prob data"
     name: "target"
     data_layout: "data_parallel"
     target {

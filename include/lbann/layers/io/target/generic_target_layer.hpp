@@ -53,6 +53,9 @@ class generic_target_layer : public io_layer {
       m_paired_input_layer(input_layer),
       io_buffer(nullptr),
       m_ground_truth(nullptr) {
+    // Target layers have two parents, the layer that it will feed
+    // back the response to, and the input layer where it gets the response
+    m_expected_num_parent_layers = 2;
     // Target layers have no children
     m_expected_num_child_layers = 0;
   }
@@ -146,58 +149,17 @@ class generic_target_layer : public io_layer {
 
   void fp_setup_data(int mini_batch_size) override {
     io_layer::fp_setup_data(mini_batch_size);
-    if(io_buffer != nullptr) {  /// Note that reconstruction layers do not have io_buffers
-      m_ground_truth->Resize(get_num_prev_neurons(), mini_batch_size);
-      io_buffer->set_local_matrix_bypass(static_cast<CPUMat*>(&m_ground_truth->Matrix()));
-      io_buffer->set_std_matrix_view(mini_batch_size);
-    }
   }
 
   void fp_compute() override {
-    execution_mode mode = this->m_model->get_execution_mode();
-    int num_samples_in_batch = io_buffer->fetch_to_local_matrix(m_paired_input_layer->get_data_reader(), mode);
-
-    if(dynamic_cast<partitioned_io_buffer*>(io_buffer) != nullptr) {
-      update_num_samples_processed(num_samples_in_batch);
-    }else if(dynamic_cast<distributed_io_buffer*>(io_buffer) != nullptr) {
-      if(((distributed_io_buffer*) io_buffer)->is_current_root(mode)) {
-        /// Only update the number of samples processed by this parallel reader, when it is the current root
-        update_num_samples_processed(num_samples_in_batch);
-      }
-
-      int curr_mini_batch_size = this->m_model->get_current_mini_batch_size();
-      if(((distributed_io_buffer*) io_buffer)->is_current_root(mode) && num_samples_in_batch != curr_mini_batch_size) {
-        throw lbann_exception("lbann_target_layer_distributed_minibatch: number of labels ("
-                              + std::to_string(num_samples_in_batch) + ") does not match the current mini-batch size ("
-                              + std::to_string(curr_mini_batch_size) + ")."
-                              );
-      }
-      /// @todo should this distribute the entire matrix even if there is only a partial mini-batch
-      io_buffer->distribute_from_local_matrix(*m_ground_truth, m_paired_input_layer->get_data_reader(), mode);
-    }else {
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "could not fp_compute for I/O layers : encoutered generic_io_buffer type";
-      throw lbann_exception(err.str());
-    }
+    Copy(get_prev_activations(1), *m_ground_truth);
   }
 
   void bp_compute() override {}
 
   bool update_compute() override {
-    if (io_buffer != nullptr) {
-      return io_buffer->is_data_set_processed(m_paired_input_layer->get_data_reader(), this->m_model->get_execution_mode());
-    } else {
-      return true;
-    }
+    return true;
   }
-  // lbann::generic_data_reader *set_training_data_reader(generic_data_reader *data_reader, bool shared_data_reader) {
-  //   return io_layer::set_training_data_reader(data_reader);
-  // }
-
-  // lbann::generic_data_reader *set_testing_data_reader(generic_data_reader *data_reader, bool shared_data_reader) {
-  //   return io_layer::set_testing_data_reader(data_reader);
-  // }
 
   //************************************************************************
   // Helper functions to access the data readers
@@ -248,7 +210,7 @@ class generic_target_layer : public io_layer {
   /**
    * Get the dimensions of the underlying data.
    */
-  const std::vector<int> get_data_dims() const override {
+  const std::vector<int> get_data_dims(int child_index = 0) const override {
     return m_paired_input_layer->get_data_dims();
   }
 

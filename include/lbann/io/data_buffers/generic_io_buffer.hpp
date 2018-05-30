@@ -37,16 +37,18 @@ class fetch_data_functor {
  public:
   fetch_data_functor (bool is_input_layer, bool is_for_regression) :
     _is_input_layer(is_input_layer), _is_for_regression(is_for_regression) {}
-  int operator() (CPUMat& M_local, generic_data_reader* data_reader) const {
-    if (_is_input_layer) {
-      return data_reader->fetch_data(M_local);
+  int operator() (CPUMat& samples, CPUMat& response, generic_data_reader* data_reader) const {
+    int num_samples_fetched = data_reader->fetch_data(samples);
+    int num_responses_fetched;
+    if (_is_for_regression) {
+      num_responses_fetched = data_reader->fetch_responses(response);
     } else {
-      if (_is_for_regression) {
-        return data_reader->fetch_responses(M_local);
-      } else {
-        return data_reader->fetch_labels(M_local);
-      }
+      num_responses_fetched = data_reader->fetch_labels(response);
     }
+    if(num_samples_fetched != num_responses_fetched) {
+      throw lbann_exception("Number of samples does not match the number of responses");
+    }
+    return num_samples_fetched;
   }
  private:
   const bool _is_input_layer;
@@ -87,12 +89,12 @@ public:
 
   /** Return this buffer's type, e.g: "partitioned_io_buffer," "distributed_io_buffer," etc. */
   virtual std::string get_type() const = 0;
-  virtual void set_local_matrix_bypass(CPUMat *M_local) = 0;
-  virtual void set_std_matrix_view(El::Int cur_mini_batch_size) = 0;
+  virtual void set_local_matrix_bypass(CPUMat *M_local, int idx) = 0;
+  virtual void set_std_matrix_view(El::Int cur_mini_batch_size, int idx) = 0;
   virtual void setup_data(El::Int num_neurons, El::Int max_minibatch_size) = 0;
 
   virtual int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) = 0;
-  virtual void distribute_from_local_matrix(AbsDistMat& Ms, generic_data_reader *data_reader, execution_mode mode) {}
+  virtual void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample, AbsDistMat& response) {}
   virtual bool is_data_set_processed(generic_data_reader *data_reader, execution_mode mode) = 0;
 
   virtual void calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader) = 0;
