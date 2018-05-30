@@ -310,14 +310,22 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
 
     reader_jag->set_image_dims(width, height);
 
-    // TODO: parse the list
-    const data_reader_jag_conduit::variable_t independent_type
-           = static_cast<data_reader_jag_conduit::variable_t>(pb_readme.independent());
-    reader_jag->set_independent_variable_type({independent_type});
+    using var_t = data_reader_jag_conduit::variable_t;
+    std::vector<var_t> independent_type(pb_readme.independent_size());
 
-    const data_reader_jag_conduit::variable_t dependent_type
-           = static_cast<data_reader_jag_conduit::variable_t>(pb_readme.dependent());
-    reader_jag->set_dependent_variable_type({dependent_type});
+    for (int i=0; i < pb_readme.independent_size(); ++i) {
+      independent_type[i] = static_cast<var_t>(pb_readme.independent(i));
+    }
+
+    reader_jag->set_independent_variable_type(independent_type);
+
+    std::vector<var_t> dependent_type(pb_readme.dependent_size());
+
+    for (int i=0; i < pb_readme.dependent_size(); ++i) {
+      dependent_type[i] = static_cast<var_t>(pb_readme.dependent(i));
+    }
+
+    reader_jag->set_dependent_variable_type(dependent_type);
 
     reader = reader_jag;
     if (master) std::cout << reader->get_type() << " is set" << std::endl;
