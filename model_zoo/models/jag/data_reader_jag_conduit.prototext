@@ -12,11 +12,39 @@ data_reader {
     # Currently, JAG input has 111 parameters, scalar has 22 parameters, and
     # there are two 64x64 images selected out of 10 images per sample.
 
-    # 0: JAG_Image,  1: JAG_Scalar,  2: JAG_Input
-    independent: [0, 1]
-    dependent: 2
+    # 1: JAG_Image,  2: JAG_Scalar,  3: JAG_Input
+    independent: [1, 2]
+    dependent: [3]
 
-    num_labels: 111
+    # An empty list indicates to use all
+    jag_scalar_keys:
+      [ "BWx",
+        "BT",
+#        "tMAXt",
+        "BWn",
+        "MAXpressure",
+        "BAte",
+        "MAXtion",
+        "tMAXpressure",
+#        "BAt",
+        "Yn",
+        "Ye",
+        "Yx",
+#        "tMAXte",
+        "BAtion",
+        "MAXte",
+#        "tMAXtion",
+        "BTx",
+#        "MAXt",
+        "BTn",
+        "BApressure",
+        "tMINradius"
+#        "MINradius"
+      ]
+
+    #jag_input_keys:
+
+    num_labels: 256
 
     image_preprocessor {
       # assume fixed size of input images if cropper is not used
@@ -59,11 +87,39 @@ data_reader {
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
 
-    # 0: JAG_Image,  1: JAG_Scalar,  2: JAG_Input
-    independent: [0, 1]
-    dependent: 2
+    # 1: JAG_Image,  2: JAG_Scalar,  3: JAG_Input
+    independent: [1, 2]
+    dependent: [3]
 
-    num_labels: 111
+    # An empty list indicates to use all
+    jag_scalar_keys:
+      [ "BWx",
+        "BT",
+#        "tMAXt",
+        "BWn",
+        "MAXpressure",
+        "BAte",
+        "MAXtion",
+        "tMAXpressure",
+#        "BAt",
+        "Yn",
+        "Ye",
+        "Yx",
+#        "tMAXte",
+        "BAtion",
+        "MAXte",
+#        "tMAXtion",
+        "BTx",
+#        "MAXt",
+        "BTn",
+        "BApressure",
+        "tMINradius"
+#        "MINradius"
+      ]
+
+    #jag_input_keys:
+
+    num_labels: 256
 
     image_preprocessor {
       # assume fixed size of input images if cropper is not used
