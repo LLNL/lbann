@@ -309,6 +309,16 @@ Layer* construct_layer(lbann_comm* comm,
   if (proto_layer.has_stop_gradient()) {
     return new stop_gradient_layer<layout, Dev>(comm, cudnn);
   }
+  if (proto_layer.has_max()) {
+    if (Dev == El::Device::CPU) {
+      return new max_layer<layout, El::Device::CPU>(comm, cudnn);
+    }
+  }
+  if (proto_layer.has_min()) {
+    if (Dev == El::Device::CPU) {
+      return new min_layer<layout, El::Device::CPU>(comm, cudnn);
+    }
+  }
 
   // Regularizer layers
   if (proto_layer.has_batch_normalization()) {

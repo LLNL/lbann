@@ -733,6 +733,8 @@ message Layer {
    CategoricalRandom categorical_random = 317;
    DiscreteRandom discrete_random = 318;
    StopGradient stop_gradient = 319;
+   Max max = 320;
+   Min min = 321;
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -994,6 +996,12 @@ message DiscreteRandom {
 }
 
 message StopGradient {
+}
+
+message Max {
+}
+
+message Min {
 }
 
 /////////////////////

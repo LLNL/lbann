@@ -21,6 +21,8 @@ set_full_path(THIS_DIR_HEADERS
   categorical_random.hpp
   discrete_random.hpp
   stop_gradient.hpp
+  max.hpp
+  min.hpp
   )
 
 # Propagate the files up the tree

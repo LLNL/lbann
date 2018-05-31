@@ -89,6 +89,8 @@
 #include "lbann/layers/transform/categorical_random.hpp"
 #include "lbann/layers/transform/discrete_random.hpp"
 #include "lbann/layers/transform/stop_gradient.hpp"
+#include "lbann/layers/transform/max.hpp"
+#include "lbann/layers/transform/min.hpp"
 
 /// Regularization layers.
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
