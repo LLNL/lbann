@@ -3,21 +3,21 @@ import struct
 import select
 import socket
 import fcntl
+import sys
 
 
 class Server(object):
     'A server that accepts connecitions and passes them off to a runner'
     def __init__(self, runner):
         '''
-        Create server
-        runner: a class
-            should be constructable with (connection, address) and have a
-            run() method that uses the connection socket
+        Create a server to run in the background
+
+        runner: a subclass of Connection
         '''
         # open socket
         self.s_fd = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM, 0)
 
-        # set cloexec
+        # set cloexec, so
         flags = fcntl.fcntl(self.s_fd, fcntl.F_GETFD)
         fcntl.fcntl(self.s_fd, fcntl.F_SETFD, flags | fcntl.FD_CLOEXEC)
 
@@ -34,6 +34,11 @@ class Server(object):
         self.poller.register(self.s_fd, select.EPOLLIN)
 
         self.runner = runner
+
+        # done init, fork into the background
+        pid = os.fork()
+        if pid != 0:
+            sys.exit(0)
 
     def run(self):
         'Spin, waiting for a connection that is passed off to a new runner'
