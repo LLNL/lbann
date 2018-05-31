@@ -44,7 +44,7 @@ class reconstruction_layer : public generic_target_layer {
  public:
   reconstruction_layer(lbann_comm *comm,
                        Layer *original_layer)
-    :  generic_target_layer(comm, dynamic_cast<generic_input_layer*>(original_layer), {}, false),
+    :  generic_target_layer(comm),
        m_original_layer(original_layer) {}
 
   reconstruction_layer* copy() const override {
@@ -98,7 +98,7 @@ class reconstruction_layer : public generic_target_layer {
     execution_mode mode = this->m_model->get_execution_mode();
     summarizer.reduce_scalar(tag, this->m_model->get_objective_function()->get_mean_value(mode), step);
     // Skip target layer (for now).
-    io_layer::summarize_stats(summarizer, step);
+    //    io_layer::summarize_stats(summarizer, step);
   }
 
   std::vector<Layer*> get_layer_pointers() override {
