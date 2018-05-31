@@ -429,9 +429,14 @@ void data_reader_jag_conduit::check_input_keys() {
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
 void data_reader_jag_conduit::load() {
-  if(m_gan_labelling) m_num_labels=2;
-  std::cout << "JAG load GAN m_gan_labelling : label_value "
-            << m_gan_labelling <<" : " << m_gan_label_value << std::endl;
+  if(m_gan_labelling) {
+    m_num_labels=2;
+  }
+
+  if (is_master()) {
+    std::cout << "JAG load GAN m_gan_labelling : label_value "
+              << m_gan_labelling <<" : " << m_gan_label_value << std::endl;
+  }
 
   const std::string data_dir = add_delimiter(get_file_dir());
   const std::string conduit_file_name = get_data_filename();
