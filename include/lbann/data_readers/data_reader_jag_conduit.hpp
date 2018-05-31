@@ -113,12 +113,20 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Return the linearized size of inputs
   size_t get_linearized_input_size() const;
 
-  /// Return the linearized size of data of the current modeling mode
+  /// Return the total linearized size of data
   int get_linearized_data_size() const override;
-  /// Return the linearized size of response of the current modeling mode
+  /// Return the total linearized size of response
   int get_linearized_response_size() const override;
-  /// Return the data dimension of the current modeling mode
+  /// Return the per-source linearized sizes of composite data
+  std::vector<size_t> get_linearized_data_sizes() const;
+  /// Return the per-source linearized sizes of composite response
+  std::vector<size_t> get_linearized_response_sizes() const;
+
+  /// Return the dimension of data
   const std::vector<int> get_data_dims() const override;
+
+  int get_num_labels() const override;
+  int get_linearized_label_size() const override;
 
   /// Show the description
   std::string get_description() const;
@@ -171,12 +179,14 @@ class data_reader_jag_conduit : public generic_data_reader {
   static std::string to_string(const std::vector<variable_t>& vec);
 
 
-  virtual std::vector<::Mat> create_datum_views(::Mat& X, const int mb_idx) const;
+  virtual std::vector<CPUMat>
+    create_datum_views(CPUMat& X, const std::vector<size_t>& sizes, const int mb_idx) const;
 
-  bool fetch(Mat& X, int data_id, int mb_idx, int tid,
+  bool fetch(CPUMat& X, int data_id, int mb_idx, int tid,
              const variable_t vt, const std::string tag);
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
-  bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_label(CPUMat& X, int data_id, int mb_idx, int tid) override;
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
   /// Load a conduit-packed hdf5 data file
@@ -220,6 +230,8 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   /// Whether data have been loaded
   bool m_is_data_loaded;
+
+  int m_num_labels; ///< number of labels
 
   /// Keys to select a set of scalar simulation outputs to use. By default, use all.
   std::vector<std::string> m_scalar_keys;
