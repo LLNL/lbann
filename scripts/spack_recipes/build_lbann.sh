@@ -253,4 +253,10 @@ fi
 # Deal with the fact that spack should not install a package when doing setup"
 FIX="spack uninstall --all -y lbann %${COMPILER} build_type=${BUILD_TYPE}"
 echo $FIX
-eval $FIX
+if [ ! -z "$bamboo_SPACK_ROOT" ]; then
+    eval $FIX &> /dev/null
+else
+    eval $FIX
+fi
+
+
