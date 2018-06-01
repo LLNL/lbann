@@ -79,7 +79,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_num_iterations_per_epoch(0), m_global_mini_batch_size(0),
     m_global_last_mini_batch_size(0),
     m_world_master_mini_batch_adjustment(0),
-    m_num_parallel_readers(0), m_model_rank(0),
+    m_num_parallel_readers(0), m_rank_in_model(0),
     m_file_dir(""), m_data_fn(""), m_label_fn(""),
     m_shuffle(shuffle), m_absolute_sample_count(0), m_validation_percent(0.0),
     m_use_percent(1.0),
@@ -489,12 +489,12 @@ class generic_data_reader : public lbann_image_preprocessor {
 
   /// Allow the reader to know where it is in the model hierarchy
   virtual void set_rank(int rank) {
-    m_model_rank = rank;
+    m_rank_in_model = rank;
   }
 
   /// Allow the reader to know where it is in the model hierarchy
   int get_rank() const {
-    return m_model_rank;
+    return m_rank_in_model;
   }
 
   /**
@@ -762,7 +762,7 @@ class generic_data_reader : public lbann_image_preprocessor {
 
   int m_num_parallel_readers; /// How many parallel readers are being used
 
-  int m_model_rank;  /// What is the rank of the data reader within a given model
+  int m_rank_in_model;  /// What is the rank of the data reader within a given model
   std::string m_file_dir;
   std::string m_local_file_dir;
   std::string m_data_fn;
