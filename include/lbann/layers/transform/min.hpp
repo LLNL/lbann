@@ -63,6 +63,16 @@ class min_layer : public transform_layer {
 
  protected:
 
+  void setup_pointers() override {
+    transform_layer::setup_pointers();
+    if (get_num_parents() < 1) {
+      std::stringstream err;
+      err << "layer \"" << get_name() << "\" has no parents, "
+          << "but min layers expect at least one parent";
+      LBANN_ERROR(err.str());
+    }
+  }
+
   void setup_dims() override {
     transform_layer::setup_dims();
     for (const auto& parent : this->m_parent_layers) {
@@ -85,58 +95,63 @@ class min_layer : public transform_layer {
   }
 
   void fp_compute() override {
+
+    // Handle case with one parent
+    // Note: Case with no parents is handled in setup_pointers
     const int num_parents = get_num_parents();
-    auto& output = get_activations();
-    switch (num_parents) {
-    case 0: El::Zero(output); break;
-    case 1: El::LockedView(output, get_prev_activations()); break;
-    default:
+    if (num_parents == 1) {
+      El::LockedView(get_activations(), get_prev_activations());
+      return;
+    }
+    
+    // Local matrices
+    const auto& local_input0 = get_local_prev_activations(0);
+    const auto& local_input1 = get_local_prev_activations(1);
+    auto& local_output = get_local_activations();
+    const int local_height = local_output.Height();
+    const int local_width = local_output.Width();
 
-      // Local matrices
-      const auto& local_input0 = get_local_prev_activations(0);
-      const auto& local_input1 = get_local_prev_activations(1);
-      auto& local_output = output.Matrix();
-      const int local_height = local_output.Height();
-      const int local_width = local_output.Width();
+    // Minimum of first two inputs
+    #pragma omp parallel for collapse(2)
+    for (int col = 0; col < local_width; ++col) {
+      for (int row = 0; row < local_height; ++row) {
+        local_output(row, col) = std::min(local_input0(row, col),
+                                          local_input1(row, col));
+      }
+    }
 
-      // Minimum of first two inputs
+    // Handle case with more than two parents
+    for (int i = 2; i < num_parents; ++i) {
+      const auto& local_input = get_local_prev_activations(i);
       #pragma omp parallel for collapse(2)
       for (int col = 0; col < local_width; ++col) {
         for (int row = 0; row < local_height; ++row) {
-          local_output(row, col) = std::min(local_input0(row, col),
-                                            local_input1(row, col));
+          const auto& x = local_input(row, col);
+          auto& y = local_output(row, col);
+          if (x < y) { y = x; }
         }
       }
-
-      // Case with more than 2 parents
-      for (int i = 2; i < num_parents; ++i) {
-        const auto& local_input = get_local_prev_activations(i);
-        #pragma omp parallel for collapse(2)
-        for (int col = 0; col < local_width; ++col) {
-          for (int row = 0; row < local_height; ++row) {
-            const auto& x = local_input(row, col);
-            auto& y = local_output(row, col);
-            if (x < y) { y = x; }
-          }
-        }
-      }
-
     }
+
   }
 
   void bp_compute() override {
 
-    const int num_parents = get_num_parents();
+    // Useful constants
+    const DataType zero = DataType(0);
 
-    const auto& gradient_wrt_output = get_prev_error_signals();
-    const auto& local_gradient_wrt_output = gradient_wrt_output.LockedMatrix();
+    // Local matrices
+    const auto& local_gradient_wrt_output = get_local_prev_error_signals();
     const int local_height = local_gradient_wrt_output.Height();
     const int local_width = local_gradient_wrt_output.Width();
 
+    // Handle cases for different number of parents
+    // Note: Case with no parents is handled in setup_pointers
+    const int num_parents = get_num_parents();
     switch (num_parents) {
-    case 0: break;
     case 1:
-      El::LockedView(get_error_signals(), gradient_wrt_output);
+      // El::LockedView(get_error_signals(), get_prev_error_signals());
+      El::Axpy(DataType(1), get_prev_error_signals(), get_error_signals());
       break;
     case 2:
       {
@@ -147,13 +162,20 @@ class min_layer : public transform_layer {
         #pragma omp parallel for collapse(2)
         for (int col = 0; col < local_width; ++col) {
           for (int row = 0; row < local_height; ++row) {
+            const auto& x0 = local_input0(row, col);
+            const auto& x1 = local_input1(row, col);
             const auto& dy = local_gradient_wrt_output(row, col);
-            if (local_input0(row, col) <= local_input1(row, col)) {
-              local_gradient_wrt_input0(row, col) += dy;
-              local_gradient_wrt_input1(row, col) += DataType(0);
+            auto& dx0 = local_gradient_wrt_input0(row, col);
+            auto& dx1 = local_gradient_wrt_input1(row, col);
+            if (x0 < x1) {
+              dx0 += dy;
+              dx1 += zero;
+            } else if (x0 > x1) {
+              dx0 += zero;
+              dx1 += dy;
             } else {
-              local_gradient_wrt_input0(row, col) += DataType(0);
-              local_gradient_wrt_input1(row, col) += dy;
+              dx0 += dy / 2;
+              dx1 += dy / 2;
             }
           }
         }
@@ -163,6 +185,7 @@ class min_layer : public transform_layer {
       #pragma omp parallel for collapse(2)
       for (int col = 0; col < local_width; ++col) {
         for (int row = 0; row < local_height; ++row) {
+          const auto& dy = local_gradient_wrt_output(row, col);
 
           // Find minimum input
           int min_index = 0;
@@ -177,10 +200,8 @@ class min_layer : public transform_layer {
 
           // Output error signal to minimum input
           for (int i = 0; i < num_parents; ++i) {
-            get_local_error_signals(i)(row, col)
-              += (i == min_index ?
-                  local_gradient_wrt_output(row, col) :
-                  DataType(0));
+            auto& dx = get_local_error_signals(i)(row, col);
+            dx += (i == min_index) ? dy : zero;
           }
 
         }
@@ -193,4 +214,4 @@ class min_layer : public transform_layer {
 
 } // namespace lbann
 
-#endif // LBANN_LAYER_MAX_HPP_INCLUDED
+#endif // LBANN_LAYER_MIN_HPP_INCLUDED
