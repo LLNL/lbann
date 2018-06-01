@@ -227,7 +227,7 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
         std::cout << "  GPUs on node                 : " << cudnn->get_num_visible_gpus() << std::endl
                   << "  GPUs per process             : " << cudnn->get_num_gpus() << std::endl;
 
-        const char* mv2_ptr = getenv("MV2_USE_CUDA");
+        const char* mv2_ptr = std::getenv("MV2_USE_CUDA");
         const std::string mv2_str = (mv2_ptr == nullptr)? "" : std::string(mv2_ptr);
         std::cout << "  MV2_USE_CUDA                 : " << mv2_str << std::endl;
       }
