@@ -31,6 +31,7 @@
 #include "lbann/utils/protobuf_utils.hpp"
 #include "lbann/utils/stack_profiler.hpp"
 #include "lbann/data_store/generic_data_store.hpp"
+#include <cstdlib>
 
 
 using namespace lbann;
@@ -174,6 +175,10 @@ int main(int argc, char *argv[]) {
       if (cudnn != nullptr) {
         std::cout << "  GPUs on node                 : " << cudnn->get_num_visible_gpus() << std::endl
                   << "  GPUs per process             : " << cudnn->get_num_gpus() << std::endl;
+
+        const char* mv2_ptr = getenv("MV2_USE_CUDA");
+        const std::string mv2_str = (mv2_ptr == nullptr)? "" : std::string(mv2_ptr);
+        std::cout << "  MV2_USE_CUDA                 : " << mv2_str << std::endl;
       }
       #endif // LBANN_HAS_CUDNN
       std::cout << std::endl;
