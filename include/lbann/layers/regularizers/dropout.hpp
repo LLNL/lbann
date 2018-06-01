@@ -139,11 +139,13 @@ class dropout : public regularizer_layer {
     setup_dropout_cudnn_desc();
 
   #ifdef HYDROGEN_HAVE_CUB
-    // Set output matrix to use CUB GPU memory pool
+    // Set GPU output matrix to use CUB GPU memory pool
     // Note: Activation matrix owns data during training and is a
     // matrix view during evaluation. To avoid expensive GPU memory
     // allocation and deallocation, we use CUB's GPU memory pool.
-    get_local_activations().SetMemoryMode(1);
+    if (Dev == El::Device::GPU) {
+      get_local_activations().SetMemoryMode(1);
+    }
   #endif
 
   #endif
