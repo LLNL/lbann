@@ -87,6 +87,7 @@ class generic_target_layer : public Layer {
   void setup_matrices(const El::Grid& grid) override {
     Layer::setup_matrices(grid);
     if (m_ground_truth != nullptr) delete m_ground_truth;
+    // Inherit the data layout of the input layer
     m_ground_truth = get_prev_activations(1).Copy();
   }
 

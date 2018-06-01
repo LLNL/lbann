@@ -44,6 +44,7 @@ model {
   # data
   layer {
     name: "data"
+    children: "res1_conv target"
     input { io_buffer: "partitioned" }
     data_layout: "data_parallel"
   }
@@ -222,7 +223,7 @@ model {
     data_layout: "data_parallel"
   }
 
-  # prob  
+  # prob
   layer {
     parents: "res2"
     name: "prob_pool"
@@ -255,11 +256,8 @@ model {
   layer {
     parents: "prob"
     name: "target"
-    target {
-      io_buffer: "partitioned"
-      shared_data_reader: true
-    }
     data_layout: "data_parallel"
+    target {}
   }
 
 }

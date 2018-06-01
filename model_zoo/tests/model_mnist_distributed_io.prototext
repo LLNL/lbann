@@ -91,6 +91,7 @@ model {
   layer {
     name: "1"
     parents: "1"
+    children: "2 13"
     data_layout: "model_parallel"
     input {
       io_buffer: "distributed"
@@ -228,9 +229,6 @@ model {
     name: "13"
     parents: "12"
     data_layout: "model_parallel"
-    target {
-      io_buffer: "distributed"
-      shared_data_reader: true
-    }
+    target {}
   }
 }

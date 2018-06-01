@@ -49,6 +49,7 @@ model {
   # conv1
   layer {
     name: "data"
+    children: "conv1 target"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
@@ -1859,10 +1860,7 @@ model {
     parents: "prob"
     name: "target"
     data_layout: "data_parallel"
-    target {
-      io_buffer: "partitioned"
-      shared_data_reader: true
-    }
+    target {}
   }
 
 }

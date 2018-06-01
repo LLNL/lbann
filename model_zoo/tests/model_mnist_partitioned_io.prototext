@@ -102,6 +102,7 @@ model {
   ######################
   layer {
     name: "1"
+    children: "2 13"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
@@ -227,9 +228,6 @@ model {
   layer {
     name: "13"
     data_layout: "data_parallel"
-    target {
-      io_buffer: "partitioned"
-      shared_data_reader: true
-    }
+    target {}
   }
 }

@@ -57,7 +57,7 @@ model {
 
   layer {
     name: "data"
-    children: "slice"
+    children: "slice target"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
@@ -376,10 +376,7 @@ model {
     name: "target"
     children: ""
     data_layout: "data_parallel"
-    target {
-      io_buffer: "partitioned"
-      shared_data_reader: true
-    }
+    target {}
   }
 
 }

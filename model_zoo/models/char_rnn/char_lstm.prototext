@@ -35,6 +35,7 @@ model {
   # Data
   layer {
     name: "data"
+    children: "lstm1_forgetgate_input eval"
     input {
       io_buffer: "partitioned"
     }
@@ -197,7 +198,7 @@ model {
     }
     data_layout: "data_parallel"
   }
-  
+
   # lstm1 output
   layer {
     parents: "lstm1_cell"
@@ -240,10 +241,7 @@ model {
   layer {
     parents: "prob"
     name: "eval"
-    target {
-      io_buffer: "partitioned"
-      shared_data_reader: true
-    }
+    target {}
     data_layout: "data_parallel"
   }
 

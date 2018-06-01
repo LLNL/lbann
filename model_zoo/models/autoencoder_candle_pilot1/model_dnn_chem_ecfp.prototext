@@ -65,6 +65,7 @@ model {
   #######
   layer {
     name: "finetunedata"
+    children: "encode target"
     data_layout: "model_parallel"
     input {
       io_buffer: "distributed"
@@ -205,10 +206,7 @@ model {
   layer {
     name: "target"
     data_layout: "model_parallel"
-    target {
-      io_buffer: "distributed"
-      #shared_data_reader: true
-    }
+    target {}
   }
   ###################################################
   # end of layers

@@ -42,8 +42,6 @@ class target_layer : public generic_target_layer {
  public:
   target_layer(lbann_comm *comm)
     : generic_target_layer(comm) {
-
-    validate_data_layout();
   }
 
   target_layer(const target_layer&) = default;
@@ -57,25 +55,9 @@ class target_layer : public generic_target_layer {
     + "target:";
   }
 
-  inline void validate_data_layout();
-
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 };
-
-template<>
-inline void target_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::validate_data_layout() {}
-
-template<>
-inline void target_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::validate_data_layout() {}
-
-#ifdef LBANN_HAS_GPU
-template<>
-inline void target_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::validate_data_layout() {}
-
-template<>
-inline void target_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::validate_data_layout() {}
-#endif // LBANN_HAS_GPU
 
 }  // namespace lbann
 

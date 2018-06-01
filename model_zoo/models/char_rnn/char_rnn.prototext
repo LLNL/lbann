@@ -42,6 +42,7 @@ model {
   # Data
   layer {
     name: "data"
+    children: "rnn1_input eval"
     input {
       io_buffer: "partitioned"
     }
@@ -109,10 +110,7 @@ model {
   layer {
     parents: "prob"
     name: "eval"
-    target {
-      io_buffer: "partitioned"
-      shared_data_reader: true
-    }
+    target {}
     data_layout: "data_parallel"
   }
 
