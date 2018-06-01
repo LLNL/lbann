@@ -255,6 +255,7 @@ FIX="spack uninstall --all -y lbann %${COMPILER} build_type=${BUILD_TYPE}"
 echo $FIX
 if [ ! -z "$bamboo_SPACK_ROOT" ]; then
     eval $FIX &> /dev/null
+    exit 0
 else
     eval $FIX
 fi
