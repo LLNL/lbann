@@ -186,11 +186,6 @@ public:
                      int width_per_gpu = 1,
                      int leading_dim = 0);
 
-  /** Attach matrix to GPU workspace. */
-  void attach_to_work_spaces(int height,
-                             int width_per_gpu = 1,
-                             int leading_dim = 0);
-
   /** Get matrix height. */
   inline int get_height() const { return m_height; }
   /** Get matrix width per GPU. */
@@ -238,12 +233,14 @@ class cudnn_manager {
 
  public:
   /** Constructor
-   *  @param _comm         Pointer to LBANN communicator
-   *  @param max_num_gpus  Maximum Number of available GPUs. If
-   *                       negative, then use all available GPUs.
+   *  @param _comm           Pointer to LBANN communicator
+   *  @param workspace_size  Recommendation for workspace size.
+   *  @param max_num_gpus    Maximum Number of available GPUs. If
+   *                         negative, then use all available GPUs.
+   *  @param nccl_used       Whether to enable NCCL support.
    */
   cudnn_manager(lbann::lbann_comm *_comm,
-                size_t work_space_size = 1 << 9,
+                size_t workspace_size = 1 << 9,
                 int max_num_gpus = -1,
                 bool nccl_used = false);
 
@@ -280,22 +277,11 @@ class cudnn_manager {
    *  Currently only supported for i=0;
    */
   cublasHandle_t get_cublas_handle(int i = 0) const;
-  /** Get GPU work spaces. */
-  std::vector<void*> get_work_spaces();
-  /** Get ith GPU work space. */
-  void *get_work_space(int i = 0);
-  /** Get a lower bound on GPU work space sizes (in bytes). */
-  size_t get_minimum_work_space_size();
-  /** Get GPU work space sizes (in bytes). */
-  std::vector<size_t> get_work_space_sizes();
-  /** Get ith GPU work space size (in bytes). */
-  size_t get_work_space_size(int i = 0);
-  /** Set ith GPU work space size.. */
-  void set_work_space_size(size_t size, int i = 0);
-  /** Free ith GPU work space. */
-  void free_work_space(int i);
-  /** Free all GPU work spaces. */
-  void free_work_spaces();
+
+  /** Get a recommended GPU workspace size (in bytes). */
+  size_t get_workspace_size() const { return m_workspace_size; }
+  /** Set a recommended GPU workspace size (in bytes). */
+  void set_workspace_size(size_t size) { m_workspace_size = size; }
 
   /** Allocate memory on GPUs. */
   void allocate_on_gpus(std::vector<DataType*>& gpu_data,
@@ -440,10 +426,8 @@ class cudnn_manager {
   /** List of cuDNN handles. */
   std::vector<cudnnHandle_t> m_handles;
 
-  /** List of GPU work spaces. */
-  std::vector<void *> m_work_spaces;
-  /** List of GPU work space sizes. */
-  std::vector<size_t> m_work_space_sizes;
+  /** Recommendation for workspace size (in bytes). */
+  size_t m_workspace_size;
 
   bool m_nccl_used;
   void nccl_setup();

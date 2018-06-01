@@ -74,10 +74,10 @@ void cudnn_manager::set_on_gpu(int i,
 void cudnn_manager::allreduce_on_gpus(std::vector<DataType*>& gpu_data,
                                       El::Int height,
                                       El::Int width) {
-  if (m_num_gpus < 2) {
-    return;
-  }
+  if (m_num_gpus < 2) { return; }
+  LBANN_ERROR("LBANN no longer supports more than one GPU per process");
 
+#if 0
   // Determine work space size
   const El::Int work_space_size = get_minimum_work_space_size();
   const El::Int min_work_space_size = 1024;
@@ -133,6 +133,7 @@ void cudnn_manager::allreduce_on_gpus(std::vector<DataType*>& gpu_data,
     }
     offset += len;
   } while (offset < total_len);
+#endif // 0
 }
 
 /// @todo Efficient implementation

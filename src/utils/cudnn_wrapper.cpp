@@ -206,36 +206,6 @@ void matrix::locked_attach(const std::vector<DataType*>& data,
   m_is_locked = true;
 }
 
-void matrix::attach_to_work_spaces(int height,
-                                   int width_per_gpu,
-                                   int leading_dim) {
-  if (m_cudnn == nullptr) {
-    throw lbann::lbann_exception("cudnn::matrix: attempted to attach matrix without cuDNN manager");
-  }
-  clear();
-
-  // Check if work space size is valid
-  leading_dim = std::max(leading_dim, height);
-  const size_t required_size = leading_dim * width_per_gpu * sizeof(DataType);
-  const size_t work_space_size = m_cudnn->get_minimum_work_space_size();
-  if (work_space_size < required_size) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "insufficient GPU work space "
-        << "(requires " << required_size << " bytes on each GPU, "
-        << "but only have " << work_space_size << " bytes)";
-    throw lbann_exception(err.str());
-  }
-
-  // Attach matrix to work spaces
-  std::vector<DataType*> work_spaces;
-  for (auto&& ptr : m_cudnn->get_work_spaces()) {
-    work_spaces.push_back(static_cast<DataType*>(ptr));
-  }
-  attach(work_spaces, height, width_per_gpu, leading_dim);
-
-}
-
 std::vector<DataType*>& matrix::get_data() {
   if (m_cudnn == nullptr) {
     throw lbann::lbann_exception("cudnn::matrix: attempted access data of matrix without cuDNN manager");
@@ -274,20 +244,27 @@ const DataType* matrix::get_locked_data(int i) const {
 
 /// It is assumed the number of processes and the number of GPUs on a compute node are equal
 cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm,
-                             size_t work_space_size,
+                             size_t workspace_size,
                              int max_num_gpus,
                              bool nccl_used)
-    : comm(_comm) {
+    : comm(_comm), m_workspace_size(workspace_size) {
 
     // Indicate whether NCCL is used
 #ifdef LBANN_HAS_NCCL2
     m_nccl_used = nccl_used;
 #else
-    if (nccl_used) {
-        throw lbann::lbann_exception("cudnn_wrapper: NCCL is requested, but not enabled");
-    }
+    if (nccl_used) { LBANN_ERROR("NCCL is requested, but not enabled"); }
     m_nccl_used = false;
 #endif
+
+#ifdef HYDROGEN_HAVE_CUB
+    // Expand CUB GPU memory pool to contain workspace
+    if (m_workspace_size > 0) {
+      GPUMat workspace;
+      workspace.SetMemoryMode(1);
+      workspace.Resize((m_workspace_size + sizeof(DataType) - 1) / sizeof(DataType), 1);
+    }
+#endif // HYDROGEN_HAVE_CUB
 
     // Determine number of MPI ranks on current compute node
     // const int rank_in_node = comm->get_rank_in_node();
@@ -330,13 +307,6 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm,
     comm->get_gpus() = get_gpus();
     comm->get_cuda_streams() = get_streams();
 
-    // Initialize work spaces
-    m_work_spaces = std::vector<void *>(m_num_gpus, nullptr);
-    m_work_space_sizes = std::vector<size_t>(m_num_gpus, 0);
-    for (int i = 0; i < m_num_gpus; ++i) {
-      set_work_space_size(work_space_size);
-    }
-
     /// Setting up for NCCL collective calls
     /// NOTE: For whoever makes changes in this file, please make sure following if statement comes last.
     if(m_nccl_used){
@@ -345,9 +315,6 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm,
 }
 
 cudnn_manager::~cudnn_manager() {
-
-  // Free work spaces
-  free_work_spaces();
 
   // Destroy cuDNN handles
   // Use a try-catch block for FORCE_CHECK_{CUDA |CUDNN | CUBLAS} in the
@@ -394,9 +361,6 @@ void cudnn_manager::cudnn_manager::allocate_on_gpus(std::vector<DataType *>& gpu
   gpu_data.assign(m_num_gpus, nullptr);
   if(height > 0 && width_per_gpu > 0) {
 
-    // Free work spaces
-    free_work_spaces();
-
     // Allocate memory on GPUs
     const size_t size = height * width_per_gpu * sizeof(DataType);
     for(int i=0; i<m_num_gpus; ++i) {
@@ -438,9 +402,6 @@ void cudnn_manager::cudnn_manager::deallocate_on_gpus(std::vector<DataType *>& g
     gpu_data.clear();
     return;
   }
-
-  // Free work spaces
-  free_work_spaces();
 
   // Deallocate GPU memory
   for(int i=0; i<m_num_gpus; ++i) {
@@ -764,73 +725,6 @@ std::vector<cublasHandle_t> cudnn_manager::get_cublas_handles() const {
 cublasHandle_t cudnn_manager::get_cublas_handle(int i) const {
     if (i != 0) { LBANN_ERROR("Attempted to access invalid GPU."); }
     return El::GPUManager::cuBLASHandle();
-}
-
-std::vector<void *> cudnn_manager::get_work_spaces() {
-  std::vector<void *> work_spaces;
-  for(int i=0; i<m_num_gpus; ++i) {
-    work_spaces.push_back(get_work_space(i));
-  }
-  return work_spaces;
-}
-
-void *cudnn_manager::get_work_space(int i) {
-  if(i >= m_num_gpus) {
-    throw lbann_exception("cudnn_wrapper: tried to access invalid work space");
-  }
-  m_work_spaces.resize(m_num_gpus, nullptr);
-  get_work_space_size(i); // Reallocate work space if needed
-  return m_work_spaces[i];
-}
-
-size_t cudnn_manager::get_minimum_work_space_size() {
-  if (m_num_gpus <= 0) { return 0; }
-  size_t size = get_work_space_size(0);
-  for(int i=1; i<m_num_gpus; ++i) {
-    size = std::min(size, get_work_space_size(i));
-  }
-  return size;
-}
-
-std::vector<size_t> cudnn_manager::get_work_space_sizes() {
-  std::vector<size_t> work_space_sizes;
-  for(int i=0; i<m_num_gpus; ++i) {
-    work_space_sizes.push_back(get_work_space_size(i));
-  }
-  return work_space_sizes;
-};
-
-size_t cudnn_manager::get_work_space_size(int i) {
-  if(i >= m_num_gpus) {
-    throw lbann_exception("cudnn_wrapper: tried to access invalid work space size");
-  }
-  m_work_space_sizes.resize(m_num_gpus, 0);
-  return m_work_space_sizes[i];
-}
-
-void cudnn_manager::set_work_space_size(size_t size, int i) {
-  free_work_space(i);
-  CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-  FORCE_CHECK_CUDA(cudaMalloc(&m_work_spaces[i], size));
-  m_work_space_sizes[i] = size;
-}
-
-void cudnn_manager::free_work_space(int i) {
-  if(i < 0 || i >= m_num_gpus) {
-    throw lbann_exception("cudnn_wrapper: tried to access size of invalid work space");
-  }
-  if (m_work_spaces[i] != nullptr) {
-    CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-    CHECK_CUDA(cudaFree(m_work_spaces[i]));
-  }
-  m_work_spaces[i] = nullptr;
-  m_work_space_sizes[i] = 0;
-}
-
-void cudnn_manager::free_work_spaces() {
-    for(int i=0; i<m_num_gpus; ++i) {
-        free_work_space(i);
-    }
 }
 
 std::vector<DataType*> cudnn_manager::copy(const std::vector<DataType*>& gpu_data,
