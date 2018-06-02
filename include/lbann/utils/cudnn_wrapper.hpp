@@ -188,15 +188,6 @@ class cudnn_manager {
   /** Set a recommended GPU workspace size (in bytes). */
   void set_workspace_size(size_t size) { m_workspace_size = size; }
 
-  /** Allreduce within all GPUs in MPI communicator. */
-  void global_allreduce_on_gpus(GPUMat& data,
-                                El::mpi::Comm comm);
-
-#ifdef LBANN_HAS_NCCL2
-  /** Allreduce within local GPUs using NCCL. */
-  void global_allreduce_on_gpus_nccl(GPUMat& data);
-#endif // LBANN_HAS_NCCL2
-
   /** Synchronize the default stream. */
   void synchronize();
 
