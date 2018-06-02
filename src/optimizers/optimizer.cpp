@@ -172,9 +172,24 @@ void optimizer::add_to_gradient(const AbsDistMat& gradient,
   if (!is_initialized()) {
     LBANN_ERROR("attempted to access gradients before they are set up");
   }
-  if (scale != DataType(0)) {
+  if (scale == DataType(0)) { return; } 
+
+  // Add to gradient
+  const auto dist_data = m_gradient->DistData();
+  if (gradient.DistData() == dist_data) {
     El::Axpy(scale, gradient, *m_gradient);
+  } else {
+    std::unique_ptr<AbsDistMat> workspace(m_gradient->Construct(*dist_data.grid,
+                                                                dist_data.root));
+#ifdef HYDROGEN_HAVE_CUB
+    if (workspace->GetLocalDevice() == El::Device::GPU) {
+      workspace->Matrix().SetMemoryMode(1); // CUB GPU memory pool
+    }
+#endif // HYDROGEN_HAVE_CUB
+    El::Copy(gradient, *workspace);
+    El::Axpy(scale, *workspace, *m_gradient);
   }
+
 }
 
 void optimizer::add_to_gradient_staging(const AbsDistMat& gradient,
@@ -185,18 +200,30 @@ void optimizer::add_to_gradient_staging(const AbsDistMat& gradient,
   if (m_gradient_allreduce_started) {
     LBANN_ERROR("attempted to add to staging matrix after gradient accumulation has started");
   }
-  if (scale != DataType(0)) {
+  if (scale == DataType(0)) { return; } 
 
-    // Clear staging matrix if needed
-    if (!m_gradient_allreduce_needed) {
-      El::Zero(*m_gradient_staging);
-    }
-    m_gradient_allreduce_needed = true;
-
-    // Add to staging matrix
-    El::Axpy(scale, gradient, *m_gradient_staging);
-
+  // Clear staging matrix if needed
+  if (!m_gradient_allreduce_needed) {
+    El::Zero(*m_gradient_staging);
   }
+  m_gradient_allreduce_needed = true;
+
+  // Add to staging matrix
+  const auto dist_data = m_gradient_staging->DistData();
+  if (gradient.DistData() == dist_data) {
+    El::Axpy(scale, gradient, *m_gradient_staging);
+  } else {
+    std::unique_ptr<AbsDistMat> workspace(m_gradient_staging->Construct(*dist_data.grid,
+                                                                        dist_data.root));
+#ifdef HYDROGEN_HAVE_CUB
+    if (workspace->GetLocalDevice() == El::Device::GPU) {
+      workspace->Matrix().SetMemoryMode(1); // CUB GPU memory pool
+    }
+#endif // HYDROGEN_HAVE_CUB
+    El::Copy(gradient, *workspace);
+    El::Axpy(scale, *workspace, *m_gradient_staging);
+  }
+
 }
 
 void optimizer::add_gradient_source(const void* source) {

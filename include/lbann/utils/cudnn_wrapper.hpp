@@ -131,101 +131,6 @@ namespace cudnn
 
 // Forward declaration
 class cudnn_manager;
-class matrix;
-
-/** GPU matrix class.
- *  This will soon be deprecated by native GPU support in Hydrogen.
- */
-class matrix {
-#ifdef LBANN_HAS_CUDNN
-
-public:
-
-  /** Constructor. */
-  matrix(cudnn_manager *cudnn = nullptr,
-         int height = 0,
-         int width_per_gpu = 0);
-  /** Copy constructor. */
-  matrix(const matrix& other);
-  /** Copy assignment operator. */
-  matrix& operator=(const matrix& other);
-  /** Move constructor. */
-  matrix(matrix&& other);
-  /** Move assignment operator. */
-  matrix& operator=(matrix&& other);
-  /** Destructor. */
-  virtual ~matrix();
-
-  /** Clear data. */
-  void clear();
-  /** Resize matrix. */
-  void resize(int height, int width_per_gpu = 1);
-  /** Copy matrix entries.
-   *  The matrix is resized if needed.
-   */
-  void copy(const matrix& other);
-  /** Make a view of another matrix.
-   *  There is no check whether the original matrix is still valid.
-   */
-  void view(matrix& other);
-  /** Make a view of another matrix.
-   *  There is no check whether the original matrix is still valid.
-   */
-  void locked_view(const matrix& other);
-  /** Set matrix entries to zero. */
-  void zero();
-
-  /** Attach matrix to GPU data. */
-  void attach(std::vector<DataType*>& data,
-              int height,
-              int width_per_gpu = 1,
-              int leading_dim = 0);
-  /** Attach matrix to GPU data. */
-  void locked_attach(const std::vector<DataType*>& data,
-                     int height,
-                     int width_per_gpu = 1,
-                     int leading_dim = 0);
-
-  /** Get matrix height. */
-  inline int get_height() const { return m_height; }
-  /** Get matrix width per GPU. */
-  inline int get_width_per_gpu() const { return m_width_per_gpu; }
-  /** Get matrix leading dimension. */
-  inline int get_leading_dim() const { return m_leading_dim; }
-  /** Whether the matrix is responsible for managing its memory. */
-  inline bool is_view() const { return m_is_view; }
-  /** Whether the matrix can modify its entries. */
-  inline bool is_locked() const { return m_is_locked; }
-  /** Get GPU data pointers. */
-  std::vector<DataType*>& get_data();
-  /** Get GPU data pointers (const). */
-  const std::vector<DataType*>& get_locked_data() const;
-  /** Get GPU data pointer on ith GPU. */
-  DataType* get_data(int i);
-  /** Get GPU data pointer on ith GPU (const). */
-  const DataType* get_locked_data(int i) const;
-  /** Get pointer to cuDNN manager. */
-  cudnn_manager* get_cudnn_manager() const { return m_cudnn; }
-
-private:
-
-  /** cuDNN manager. */
-  cudnn_manager *m_cudnn;
-  /** GPU data pointers. */
-  std::vector<DataType*> m_data;
-  /** Matrix height. */
-  int m_height;
-  /** Matrix width per GPU. */
-  int m_width_per_gpu;
-  /** Matrix leading dimension. */
-  int m_leading_dim;
-  /** Whether the matrix is responsible for managing its memory. */
-  bool m_is_view;
-  /** Whether the matrix can modify its entries. */
-  bool m_is_locked;
-
-#endif
-};
 
 /** cuDNN manager class */
 class cudnn_manager {
@@ -283,101 +188,14 @@ class cudnn_manager {
   /** Set a recommended GPU workspace size (in bytes). */
   void set_workspace_size(size_t size) { m_workspace_size = size; }
 
-  /** Allocate memory on GPUs. */
-  void allocate_on_gpus(std::vector<DataType*>& gpu_data,
-                        int height,
-                        int width_per_gpu);
-  /** Deallocate memory on GPUs. */
-  void deallocate_on_gpus(std::vector<DataType*>& gpu_data);
-
-  /** Zero out memory on ith GPU. */
-  void clear_on_gpu(int i,
-                    DataType* gpu_data,
-                    int height,
-                    int width,
-                    int leading_dim = 0);
-  /** Copy data from CPU to ith GPU. */
-  void copy_to_gpu(int i,
-                   DataType* gpu_data,
-                   const Mat& cpu_data,
-                   int gpu_data_leading_dim = 0);
-  /** Copy data from ith GPU to CPU. */
-  void copy_from_gpu(int i,
-                     Mat& cpu_data,
-                     const DataType* gpu_data,
-                     int gpu_data_leading_dim = 0);
-
-  /** Zero out memory on GPUs. */
-  void clear_on_gpus(std::vector<DataType*>& gpu_data,
-                     int height,
-                     int width_per_gpu,
-                     int leading_dim = 0);
-  /** Zero out memory corresponding to unused columns on GPUs. */
-  void clear_unused_columns_on_gpus(std::vector<DataType*>& gpu_data,
-                                    int height,
-                                    int width,
-                                    int width_per_gpu,
-                                    int leading_dim = 0);
-
-  /** Set memory on ith GPU to a constant. */
-  void set_on_gpu(int i,
-                  DataType* gpu_data,
-                  DataType val,
-                  int height,
-                  int width = 1);
-  /** Set memory on GPU to a constant. */
-  void set_on_gpus(std::vector<DataType*>& gpu_data,
-                   DataType val,
-                   int height,
-                   int width_per_gpu = 1);
-
-  /** Copy data on GPUs. */
-  void copy_on_gpus(std::vector<DataType*>& gpu_dst_data,
-                    const std::vector<DataType*>& gpu_src_data,
-                    int height,
-                    int width_per_gpu,
-                    int src_leading_dim = 0,
-                    int dst_leading_dim = 0);
-  /** Copy data from CPU to GPUs.
-   *  Matrix columns are scattered amongst GPUs.
-   */
-  void scatter_to_gpus(std::vector<DataType*>& gpu_data,
-                       const Mat& cpu_data,
-                       int width_per_gpu,
-                       int gpu_data_leading_dim = 0);
-  /** Copy data from GPUs to CPU.
-   *  Matrix columns are gathered from GPUs.
-   */
-  void gather_from_gpus(Mat& cpu_data,
-                        const std::vector<DataType*>& gpu_data,
-                        int width_per_gpu,
-                        int gpu_data_leading_dim = 0);
-  /** Copy data from CPU to GPUs.
-   *  Data is duplicated across GPUs.
-   */
-  void broadcast_to_gpus(std::vector<DataType*>& gpu_data,
-                         const Mat& cpu_data,
-                         int gpu_data_leading_dim = 0);
-  /** Copy data from GPUs to CPU and reduce. */
-  void reduce_from_gpus(Mat& cpu_data,
-                        const std::vector<DataType*>& gpu_data,
-                        int gpu_data_leading_dim = 0);
-  /** Allreduce within local GPUs. */
-  void allreduce_on_gpus(std::vector<DataType*>& gpu_data,
-                         El::Int height,
-                         El::Int width);
-
   /** Allreduce within all GPUs in MPI communicator. */
-  void global_allreduce_on_gpus(std::vector<DataType*>& gpu_data,
-                                El::Int height,
-                                El::Int width,
+  void global_allreduce_on_gpus(GPUMat& data,
                                 El::mpi::Comm comm);
 
+#ifdef LBANN_HAS_NCCL2
   /** Allreduce within local GPUs using NCCL. */
-  void global_allreduce_on_gpus_nccl(std::vector<DataType*>& gpu_data,
-                 El::Int height,
-                 El::Int width,
-                 DataType scale = DataType(1));
+  void global_allreduce_on_gpus_nccl(GPUMat& data);
+#endif // LBANN_HAS_NCCL2
 
   /** Synchronize the default stream. */
   void synchronize();
@@ -385,30 +203,10 @@ class cudnn_manager {
   /** Synchronize all streams. */
   void synchronize_all();
 
-  /** Create copy of GPU data.
-   *  The GPU memory allocated in this function must be deallocated
-   *  elsewhere.
-   */
-  std::vector<DataType*> copy(const std::vector<DataType*>& gpu_data,
-                              int height,
-                              int width_per_gpu,
-                              int leading_dim = 0);
-
-  /** Pin matrix memory.
-   *  Pinned memory accelerates memory transfers with GPU, but may
-   *  degrade system performance. This function assumes that the
-   *  matrix memory was previously allocated within Elemental.
-   */
-  void pin_matrix(AbsDistMat& mat);
-
-  /** Unpin matrix memory.
-   *  Pinned memory accelerates memory transfers with GPU, but may
-   *  degrade system performance.
-   */
-  void unpin_matrix(AbsDistMat& mat);
-
+  /** Check for errors from asynchronous CUDA kernels. */
   void check_error();
 
+  /** Whether NCCL support is enabled. */
   bool is_nccl_used() { return m_nccl_used; }
 
  private:
@@ -429,6 +227,7 @@ class cudnn_manager {
   /** Recommendation for workspace size (in bytes). */
   size_t m_workspace_size;
 
+  /** Whether NCCL support is enabled. */
   bool m_nccl_used;
   void nccl_setup();
   void nccl_destroy();
@@ -437,7 +236,6 @@ class cudnn_manager {
 #ifdef LBANN_HAS_NCCL2
   // One GPU per single thread of one MPI rank is assumed
   std::vector<ncclComm_t> m_nccl_comm;
-  ncclDataType_t nccl_datatype();
 #endif // LBANN_HAS_NCCL2
 
 #endif // #ifdef LBANN_HAS_CUDNN
@@ -507,11 +305,6 @@ void copy_lrn_cudnn_desc(const cudnnLRNDescriptor_t& src,
 #endif // #ifdef LBANN_HAS_CUDNN
 
 }// namespace cudnn
-
-void set_mat_state_on_host(AbsDistMat* state, const std::vector<DataType*>& state_d, cudnn::cudnn_manager* m_cudnn);
-
-void set_mat_state_on_device(AbsDistMat* state, std::vector<DataType*>& state_d, cudnn::cudnn_manager* m_cudnn);
-
 }// namespace lbann
 
 #endif // CUDNN_WRAPPER_HPP_INCLUDED

@@ -429,10 +429,6 @@ class Layer {
    *  clear_error_signals function.
    */
   virtual void bp_setup_data(int mini_batch_size);
-#ifdef LBANN_HAS_CUDNN
-  /** Pin host memory if needed for GPU memory transfers. */
-  virtual void pin_data();
-#endif // LBANN_HAS_CUDNN
 
   /** Setup pointers to parent and child layers.
    *  Called by the setup function. The base method checks that the

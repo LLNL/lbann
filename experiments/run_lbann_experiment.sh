@@ -9,7 +9,7 @@ OPTIMIZER_PROTO="--optimizer=${LBANN_DIR}/model_zoo/optimizers/opt_sgd.prototext
 IMAGENET_CLASSES=10 # options: 10, 100, 300, 1000 (leave blank to use other dataset)
 
 # Hardware configuration
-NUM_NODES=      # default: number of allocated nodes (1 if none)
+NUM_NODES=4      # default: number of allocated nodes (1 if none)
 PROCS_PER_NODE= # default: GPUs per node (2 if cluster has no GPUs)
 CLUSTER=
 PARTITION=

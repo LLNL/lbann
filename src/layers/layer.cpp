@@ -1014,32 +1014,6 @@ void Layer::bp_setup_data(int mini_batch_size) {
 
 }
 
-
-#ifdef LBANN_HAS_CUDNN
-void Layer::pin_data() {
-  for (int i = 0; i < get_num_parents(); ++i) {
-    const auto& parent = *m_parent_layers[i];
-    if (using_gpus() && !parent.using_gpus()) {
-      m_cudnn->pin_matrix(get_error_signals(i));
-      if (get_prev_activations().DistData()
-          != parent.get_activations().DistData()) {
-        m_cudnn->pin_matrix(get_prev_activations(i));
-      }
-    }
-  }
-  for (int i = 0; i < get_num_children(); ++i) {
-    const auto& child = *m_child_layers[i];
-    if (using_gpus() && !child.using_gpus()) {
-      m_cudnn->pin_matrix(get_activations(i));
-      if (get_data_layout() != child.get_data_layout()) {
-        m_cudnn->pin_matrix(get_prev_error_signals(i));
-      }
-    }
-  }
-}
-
-#endif // LBANN_HAS_CUDNN
-
 void Layer::get_fp_output(AbsDistMat& output, const Layer* child) const {
 
   // Get activation matrix corresponding to child layer
