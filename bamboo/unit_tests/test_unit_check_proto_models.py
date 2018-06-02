@@ -100,8 +100,8 @@ def test_unit_models_intel18(cluster, dirname, exes):
     skeleton_models(cluster, dirname, exes, 'intel18')
 
 # Run with python -m pytest -s test_unit_check_proto_models.py -k 'test_unit_models_exe' --exe=<executable>
-def test_unit_lbann2_reload_exe(cluster, dirname, exe):
+def test_unit_models_exe(cluster, dirname, exe):
     if exe == None:
         pytest.skip('Non-local testing')
     exes = {'exe' : exe}
-    skeleton_models(cluster, exes, dirname, 'exe')
+    skeleton_models(cluster, dirname, exes, 'exe')
