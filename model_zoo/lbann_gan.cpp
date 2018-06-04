@@ -199,16 +199,12 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
     // Check for cudnn, with user feedback
     cudnn::cudnn_manager *cudnn = nullptr;
 #ifdef LBANN_HAS_CUDNN
+    const size_t workspace_size = 1 << 9; // 1 GB
     if (! pb_model->disable_cuda()) {
       if (master) {
         std::cerr << "code was compiled with LBANN_HAS_CUDNN, and we are using cudnn\n";
       }
-      if(pb_model->use_nccl()) {
-        cudnn = new cudnn::cudnn_manager(comm, pb_model->num_gpus(), true);
-      }
-      else{
-        cudnn = new cudnn::cudnn_manager(comm, pb_model->num_gpus(), false);
-      }
+      cudnn = new cudnn::cudnn_manager(comm, workspace_size);
     } else {
       if (master) {
         std::cerr << "code was compiled with LBANN_HAS_CUDNN, but we are NOT USING cudnn\n";

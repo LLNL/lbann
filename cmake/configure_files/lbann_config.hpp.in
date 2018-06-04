@@ -32,7 +32,6 @@
 
 #cmakedefine LBANN_HAS_CUDA
 #cmakedefine LBANN_HAS_CUDNN
-#cmakedefine LBANN_HAS_NCCL2
 
 #cmakedefine LBANN_NVPROF
 

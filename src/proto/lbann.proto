@@ -198,12 +198,10 @@ message Model {
   int64 num_batches = 122; //multiple batches/sub epoch
   int64 block_size = 50;
   int64 procs_per_model = 51;
-  int64 num_gpus = 53;
   int64 evaluation_frequency = 54;
   int64 num_parallel_readers = 100;
 
   bool disable_cuda = 8;
-  bool use_nccl = 107;
 
   repeated Layer layer = 10;
 

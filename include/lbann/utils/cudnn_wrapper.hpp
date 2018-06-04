@@ -22,8 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// cudnn_wrapper .hpp .cpp - cuDNN support - wrapper classes, utility functions
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef CUDNN_WRAPPER_HPP_INCLUDED
@@ -32,33 +30,11 @@
 #include <vector>
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
-#include "lbann/utils/exception.hpp"
 
 #ifdef LBANN_HAS_CUDNN
 #include <cuda.h>
 #include <cudnn.h>
 #include <cublas_v2.h>
-
-#ifdef LBANN_HAS_NCCL2
-#include "nccl.h"
-
-#define NCCLCHECK(cmd)                                                  \
-    {                                                                   \
-        ncclResult_t result__ = cmd;                                    \
-        if (result__ != ncclSuccess)                                    \
-        {                                                               \
-            std::ostringstream oss;                                     \
-            oss << "NCCL failure in " << __FILE__ << " at line "        \
-                << __LINE__ << ": " << ncclGetErrorString(result__)     \
-                << std::endl;                                           \
-            throw lbann::lbann_exception(oss.str());                    \
-        }                                                               \
-    }
-
-//#include "nccl1_compat.h"
-//#include "common.h"
-#endif // #ifdef LBANN_HAS_NCCL2
-
 #endif // #ifdef LBANN_HAS_CUDNN
 
 // Error utility macros
@@ -140,14 +116,9 @@ class cudnn_manager {
   /** Constructor
    *  @param _comm           Pointer to LBANN communicator
    *  @param workspace_size  Recommendation for workspace size.
-   *  @param max_num_gpus    Maximum Number of available GPUs. If
-   *                         negative, then use all available GPUs.
-   *  @param nccl_used       Whether to enable NCCL support.
    */
   cudnn_manager(lbann::lbann_comm *_comm,
-                size_t workspace_size = 1 << 9,
-                int max_num_gpus = -1,
-                bool nccl_used = false);
+                size_t workspace_size = 1 << 9);
 
   /** Destructor */
   ~cudnn_manager();
@@ -170,9 +141,6 @@ class cudnn_manager {
   /** Check for errors from asynchronous CUDA kernels. */
   void check_error();
 
-  /** Whether NCCL support is enabled. */
-  bool is_nccl_used() { return m_nccl_used; }
-
  private:
 
   /** LBANN communicator. */
@@ -183,17 +151,6 @@ class cudnn_manager {
 
   /** Recommendation for workspace size (in bytes). */
   size_t m_workspace_size;
-
-  /** Whether NCCL support is enabled. */
-  bool m_nccl_used;
-  void nccl_setup();
-  void nccl_destroy();
-
-  /** List of NCCL 2 related variables. */
-#ifdef LBANN_HAS_NCCL2
-  // One GPU per single thread of one MPI rank is assumed
-  std::vector<ncclComm_t> m_nccl_comm;
-#endif // LBANN_HAS_NCCL2
 
 #endif // #ifdef LBANN_HAS_CUDNN
 };

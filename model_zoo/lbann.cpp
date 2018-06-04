@@ -146,15 +146,12 @@ int main(int argc, char *argv[]) {
     // Check for cudnn, with user feedback
     cudnn::cudnn_manager *cudnn = nullptr;
 #ifdef LBANN_HAS_CUDNN
-    const size_t work_space_size = 1 << 9; // 1 GB
+    const size_t workspace_size = 1 << 9; // 1 GB
     if (! pb_model->disable_cuda()) {
       if (master) {
         std::cerr << "code was compiled with LBANN_HAS_CUDNN, and we are using cudnn\n";
       }
-      cudnn = new cudnn::cudnn_manager(comm,
-                                       work_space_size,
-                                       pb_model->num_gpus(),
-                                       pb_model->use_nccl());
+      cudnn = new cudnn::cudnn_manager(comm, workspace_size);
     } else {
       if (master) {
         std::cerr << "code was compiled with LBANN_HAS_CUDNN, but we are NOT USING cudnn\n";

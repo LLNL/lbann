@@ -586,7 +586,6 @@ model {
     }
   }
   block_size: 256
-  num_gpus: -1
   super_steps: 10000
   num_batches: 1
 }

@@ -8,7 +8,6 @@ model {
   num_epochs: 1
   num_parallel_readers: 0
   procs_per_model: 0
-  num_gpus: -1
 
   ###################################################
   # Objective function

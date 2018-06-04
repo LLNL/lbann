@@ -160,7 +160,7 @@ void lbann_comm::allreduce(AbsDistMat& m,
       *comm);
   }
   /// @todo MPI-CUDA backend
-#ifdef LBANN_HAS_NCCL2
+#ifdef AL_HAS_NCCL
   if (t == std::type_index(typeid(::Al::NCCLBackend))) {
     CHECK_CUDA(cudaStreamSynchronize(El::GPUManager::Stream()));
     ::Al::Allreduce<::Al::NCCLBackend>(
@@ -169,7 +169,7 @@ void lbann_comm::allreduce(AbsDistMat& m,
       mpi_op_to_al_op(op),
       *static_cast<::Al::NCCLCommunicator*>(comm));
   }
-#endif // LBANN_HAS_NCCL2
+#endif // AL_HAS_NCCL
 #else
   El::AllReduce(m, c, op);
 #endif
@@ -198,7 +198,7 @@ void lbann_comm::nb_allreduce(AbsDistMat& m,
       req.mpi_req);
   }
   /// @todo MPI-CUDA backend
-#ifdef LBANN_HAS_NCCL2
+#ifdef AL_HAS_NCCL
   if (t == std::type_index(typeid(::Al::NCCLBackend))) {
     CHECK_CUDA(cudaStreamSynchronize(El::GPUManager::Stream()));
     ::Al::NonblockingAllreduce<::Al::NCCLBackend>(
@@ -208,7 +208,7 @@ void lbann_comm::nb_allreduce(AbsDistMat& m,
       *static_cast<::Al::NCCLCommunicator*>(comm),
       req.nccl_req);
   }
-#endif // LBANN_HAS_NCCL2
+#endif // AL_HAS_NCCL
   bytes_received += sizeof(DataType) * local_size * (El::mpi::Size(c) - 1);
 #else
   allreduce(m, c, op);
@@ -221,11 +221,11 @@ void lbann_comm::wait(Al::request& req) {
     ::Al::Wait<::Al::MPIBackend>(req.mpi_req);
   }
   /// @todo MPI-CUDA backend
-#ifdef LBANN_HAS_NCCL2
+#ifdef AL_HAS_NCCL
   if (req.nccl_req != Al::nccl_backend::null_req) {
     ::Al::Wait<::Al::NCCLBackend>(req.nccl_req);
   }
-#endif // LBANN_HAS_NCCL2
+#endif // AL_HAS_NCCL
 #endif // LBANN_HAS_ALUMINUM
 }
 
@@ -236,11 +236,11 @@ bool lbann_comm::test(Al::request& req) {
     req_test = req_test && ::Al::Test<::Al::MPIBackend>(req.mpi_req);
   }
   /// @todo MPI-CUDA backend
-#ifdef LBANN_HAS_NCCL2
+#ifdef AL_HAS_NCCL
   if (req.nccl_req != Al::nccl_backend::null_req) {
     req_test = req_test && ::Al::Test<::Al::NCCLBackend>(req.nccl_req);
   }
-#endif // LBANN_HAS_NCCL2
+#endif // AL_HAS_NCCL
 #endif // LBANN_HAS_ALUMINUM
   return req_test;
 }
@@ -1107,12 +1107,12 @@ uint8_t *lbann_comm::get_collective_buffer(size_t size, size_t idx) {
       m_al_comms[key] = al_comms_val_type(new ::Al::MPICommunicator(c.comm));
     }
     /// @todo MPI-CUDA backend
-    #ifdef LBANN_HAS_NCCL2
+    #ifdef AL_HAS_NCCL
     if (t == std::type_index(typeid(::Al::NCCLBackend))) {
       auto&& val = new ::Al::NCCLCommunicator(c.comm, get_gpus());
       m_al_comms[key] = al_comms_val_type(val);
     }
-    #endif // LBANN_HAS_NCCL2
+    #endif // AL_HAS_NCCL
   }
 
   // Return Aluminum communicator

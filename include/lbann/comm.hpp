@@ -22,8 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_comm .hpp .cpp - LBANN communication utilities
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_COMM_HPP_INCLUDED
@@ -37,9 +35,6 @@
 #include <cuda_runtime.h>
 #endif // LBANN_HAS_CUDA
 #ifdef LBANN_HAS_ALUMINUM
-#ifdef LBANN_HAS_NCCL2
-#define AL_HAS_NCCL
-#endif // LBANN_HAS_ALUMINUM
 #include <Al.hpp>
 #endif // LBANN_HAS_ALUMINUM
 #include "detect_El_mpi.hpp"
@@ -48,7 +43,7 @@ namespace lbann {
 
 namespace Al {
 
-// Dummy Aluminum backend
+/** Dummy Aluminum backend. */
 class dummy_backend {
 public:
   using req_type = int;
@@ -62,19 +57,17 @@ using mpi_backend = ::Al::MPIBackend;
 using mpi_backend = lbann::Al::dummy_backend;
 #endif // LBANN_HAS_ALUMINUM
 /// @todo MPI-CUDA backend
-#if defined(LBANN_HAS_ALUMINUM) && defined(LBANN_HAS_NCCL2)
+#if defined(LBANN_HAS_ALUMINUM) && defined(AL_HAS_NCCL)
 using nccl_backend = ::Al::NCCLBackend;
 #else
 using nccl_backend = lbann::Al::dummy_backend;
-#endif // defined(LBANN_HAS_ALUMINUM) && defined(LBANN_HAS_NCCL2)
+#endif // defined(LBANN_HAS_ALUMINUM) && defined(AL_HAS_NCCL)
 
-// Wrapper for Aluminum non-blocking routine requests
+/** Wrapper for Aluminum non-blocking routine requests. */
 struct request {
   mpi_backend::req_type mpi_req = mpi_backend::null_req;
   /// @todo MPI-CUDA backend
-#ifdef LBANN_HAS_NCCL2
   nccl_backend::req_type nccl_req = nccl_backend::null_req;
-#endif // LBANN_HAS_NCCL2
 };
 
 } // namespace Al

@@ -43,13 +43,10 @@ namespace cudnn
 {
 
 cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm,
-                             size_t workspace_size,
-                             int max_num_gpus,
-                             bool nccl_used)
+                             size_t workspace_size)
   : comm(_comm),
     m_handle(nullptr),
-    m_workspace_size(workspace_size),
-    m_nccl_used(nccl_used) {
+    m_workspace_size(workspace_size) {
 
   // Check that Hydrogen has detected GPUs
   if (El::GPUManager::NumDevices() < 1)  {
@@ -81,23 +78,9 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm,
   comm->get_gpus() = { El::GPUManager::Device() };
   comm->get_cuda_streams() = { El::GPUManager::Stream() };
 
-  // Set up for NCCL collective calls
-  // Indicate whether NCCL is used
-  /** NOTE: For whoever makes changes in this file, please make sure
-   *  following if statement comes last.
-   */
-  if (m_nccl_used) {
-#ifdef LBANN_HAS_NCCL2
-    nccl_setup();
-#else
-    LBANN_ERROR("NCCL is not detected");
-#endif // LBANN_HAS_NCCL2
-  }
-
 }
 
 cudnn_manager::~cudnn_manager() {
-
   // Destroy cuDNN handles
   // Use a try-catch block for FORCE_CHECK_{CUDA |CUDNN | CUBLAS} in the
   // destructor -- these could thrown an exception and destructors are
@@ -110,9 +93,6 @@ cudnn_manager::~cudnn_manager() {
     std::cerr << "~cudnn_manager: try ... catch " << e.what() << std::endl;
     std::terminate();
   }
-
-  /// NCCL clear
-  if (m_nccl_used) { nccl_destroy(); }
 }
 
 void cudnn_manager::cudnn_manager::synchronize() {
@@ -141,66 +121,6 @@ void cudnn_manager::check_error() {
     err << "CUDA error: " << cudaGetErrorString(status);
     LBANN_ERROR(err.str());
   }
-}
-
-void cudnn_manager::nccl_setup() {
-
-#ifdef LBANN_HAS_NCCL2
-    if(m_num_gpus != 1){
-        char line[1024];
-        sprintf(line, "cudnn_manager: the number of GPUs assigned to process is %d; should be 1", m_num_gpus);
-        throw lbann::lbann_exception(line);
-    }
-
-    /// Create nccl communicators
-    int num_gpus_assigned = m_gpus.size();
-    m_nccl_comm.resize(num_gpus_assigned);
-
-
-    int nProcs = comm->get_procs_per_model();
-    int myid = comm->get_rank_in_model();
-    int total_num_comms = nProcs*num_gpus_assigned;
-
-    ncclUniqueId ncclId;
-    if (myid == 0) {
-        NCCLCHECK(ncclGetUniqueId(&ncclId));
-    }
-    El::mpi::Comm model_comm = comm->get_model_comm();
-    MPI_Comm mpicomm = model_comm.comm;
-
-    /**
-       Not sure if we can use Elemental's broadcast for new date type 'ncclUniqeId'.
-       For that reason, raw MPI_Bcast is used instead.
-
-       El::mpi::Broadcast(&ncclId, 1, 0, model_comm); */
-
-    /// todo@ check if we can use Elemental's broadcast
-    MPI_Bcast(&ncclId, sizeof(ncclId), MPI_BYTE, 0, mpicomm);
-
-    if (nProcs == 1) {
-        int gpuArray = 0;
-        NCCLCHECK(ncclCommInitAll(&(m_nccl_comm[0]), 1, &gpuArray));
-    }
-    else {
-        if(num_gpus_assigned > 1) NCCLCHECK(ncclGroupStart());
-        for(int i=0; i<num_gpus_assigned; i++){
-            FORCE_CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-            NCCLCHECK(ncclCommInitRank(&(m_nccl_comm[i]), total_num_comms, ncclId, num_gpus_assigned*myid+i));
-        }
-        if(num_gpus_assigned > 1) NCCLCHECK(ncclGroupEnd());
-
-    }
-
-#endif // #ifdef LBANN_HAS_NCCL2
-}
-
-void cudnn_manager::nccl_destroy() {
-#ifdef LBANN_HAS_NCCL2
-    int num_gpus_assigned = m_gpus.size();
-    for(int i=0; i<num_gpus_assigned; i++){
-        ncclCommDestroy(m_nccl_comm[i]);
-    }
-#endif // #ifdef LBANN_HAS_NCCL2
 }
 
 void print_version() {
