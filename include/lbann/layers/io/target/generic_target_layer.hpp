@@ -81,15 +81,6 @@ class generic_target_layer : public Layer {
   virtual const AbsDistMat& get_prediction() const { return get_prev_activations(0); }
   virtual AbsDistMat& get_ground_truth() { return get_prev_activations(1); }
   virtual const AbsDistMat& get_ground_truth() const { return get_prev_activations(1); }
-
-  std::vector<Layer*> get_layer_pointers() override {
-    std::vector<Layer*> layers = Layer::get_layer_pointers();
-    return layers;
-  }
-
-  void set_layer_pointers(std::vector<Layer*> layers) override {
-    Layer::set_layer_pointers(layers);
-  }
 };
 
 }  // namespace lbann
