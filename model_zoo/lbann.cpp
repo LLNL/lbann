@@ -31,6 +31,7 @@
 #include "lbann/utils/protobuf_utils.hpp"
 #include "lbann/utils/stack_profiler.hpp"
 #include "lbann/data_store/generic_data_store.hpp"
+#include <cstdlib>
 
 
 using namespace lbann;
@@ -169,7 +170,8 @@ int main(int argc, char *argv[]) {
                 << "  OpenMP threads per process   : " << omp_get_max_threads() << std::endl;
       #ifdef LBANN_HAS_CUDNN
       if (cudnn != nullptr) {
-        std::cout << "  GPUs on node                 : " << El::GPUManager::NumDevices() << std::endl;
+        std::cout << "  GPUs on node                 : " << El::GPUManager::NumDevices() << std::endl
+                  << "  MV2_USE_CUDA                 : " << std::getenv("MV2_USE_CUDA") << std::endl;
       }
       #endif // LBANN_HAS_CUDNN
       std::cout << std::endl;

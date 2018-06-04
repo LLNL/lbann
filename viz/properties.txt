@@ -62,4 +62,7 @@ transform    noise
 transform    crop
 transform    categorical_random
 transform    discrete_random
+transform    stop_gradient
+transform    max
+transform    min
 
