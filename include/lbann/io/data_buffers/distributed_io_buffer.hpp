@@ -102,7 +102,7 @@ class distributed_io_buffer : public generic_io_buffer {
   }
   distributed_io_buffer* copy() const override { return new distributed_io_buffer(*this); }
 
-  std::string get_type() const override { return "distributed_io_buffer"; }
+  std::string get_type() const override { return "distributed"; }
 
   void set_local_matrix_bypass(CPUMat *M_local, int idx) override {}
 

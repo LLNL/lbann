@@ -44,7 +44,7 @@ class partitioned_io_buffer : public generic_io_buffer {
   ~partitioned_io_buffer() override {}
   partitioned_io_buffer* copy() const override { return new partitioned_io_buffer(*this); }
 
-  std::string get_type() const override { return "partitioned_io_buffer"; }
+  std::string get_type() const override { return "partitioned"; }
   /** Setup a bypass from to the activations matrices */
   void set_local_matrix_bypass(CPUMat *m, int idx) override { M_local[idx] = m; }
   void set_std_matrix_view(El::Int cur_mini_batch_size, int idx) override {}

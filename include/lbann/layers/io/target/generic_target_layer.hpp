@@ -39,14 +39,9 @@
 
 namespace lbann {
 class generic_target_layer : public Layer {
- protected:
-  /** Ground truth matrix. */
-  AbsDistMat* m_ground_truth;
-
  public:
   generic_target_layer(lbann_comm *comm)
-    : Layer(comm),
-      m_ground_truth(nullptr) {
+    : Layer(comm) {
     // Target layers have two parents, the layer that it will feed
     // back the response to, and the input layer where it gets the response
     m_expected_num_parent_layers = 2;
@@ -55,26 +50,16 @@ class generic_target_layer : public Layer {
   }
 
   generic_target_layer(const generic_target_layer& other)
-    : Layer(other),
-      m_ground_truth(other.m_ground_truth) {
-    if (m_ground_truth != nullptr) { m_ground_truth = m_ground_truth->Copy(); }
-  }
+    : Layer(other) {}
 
   generic_target_layer& operator=(const generic_target_layer& other) {
     Layer::operator=(other);
-
-    // Deep copy matrix
-    if (m_ground_truth != nullptr) { delete m_ground_truth; }
-    m_ground_truth = other.m_ground_truth;
-    if (m_ground_truth != nullptr) { m_ground_truth = m_ground_truth->Copy(); }
 
     return *this;
   }
 
 
-  ~generic_target_layer() override {
-    if (m_ground_truth != nullptr) { delete m_ground_truth; }
-  };
+  ~generic_target_layer() override {};
 
   /** Returns description of ctor params */
   std::string get_description() const override {
@@ -84,20 +69,7 @@ class generic_target_layer : public Layer {
            + " (" + s + ")";
   }
 
-  void setup_matrices(const El::Grid& grid) override {
-    Layer::setup_matrices(grid);
-    if (m_ground_truth != nullptr) delete m_ground_truth;
-    // Inherit the data layout of the input layer
-    m_ground_truth = get_prev_activations(1).Copy();
-  }
-
-  void fp_setup_data(int mini_batch_size) override {
-    Layer::fp_setup_data(mini_batch_size);
-  }
-
-  void fp_compute() override {
-    Copy(get_prev_activations(1), *m_ground_truth);
-  }
+  void fp_compute() override {}
 
   void bp_compute() override {}
 
@@ -105,10 +77,10 @@ class generic_target_layer : public Layer {
     return true;
   }
 
-  virtual AbsDistMat& get_prediction() { return get_prev_activations(); }
-  virtual const AbsDistMat& get_prediction() const { return get_prev_activations(); }
-  virtual AbsDistMat& get_ground_truth() { return *m_ground_truth; }
-  virtual const AbsDistMat& get_ground_truth() const { return *m_ground_truth; }
+  virtual AbsDistMat& get_prediction() { return get_prev_activations(0); }
+  virtual const AbsDistMat& get_prediction() const { return get_prev_activations(0); }
+  virtual AbsDistMat& get_ground_truth() { return get_prev_activations(1); }
+  virtual const AbsDistMat& get_ground_truth() const { return get_prev_activations(1); }
 
   std::vector<Layer*> get_layer_pointers() override {
     std::vector<Layer*> layers = Layer::get_layer_pointers();

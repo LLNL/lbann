@@ -85,13 +85,14 @@ class reconstruction_layer : public generic_target_layer {
 
  protected:
 
-  void fp_compute() override {
-    El::Copy(m_original_layer->get_activations(), *m_ground_truth);
-  }
+  void fp_compute() override {}
 
   void bp_compute() override {}
 
- public:
+  virtual AbsDistMat& get_ground_truth() { return m_original_layer->get_activations(); }
+  virtual const AbsDistMat& get_ground_truth() const { return m_original_layer->get_activations(); }
+
+public:
 
   void summarize_stats(lbann_summary& summarizer, int step) override {
     std::string tag = this->m_name + "/ReconstructionCost";
