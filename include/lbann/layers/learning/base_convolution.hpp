@@ -384,9 +384,6 @@ class base_convolution_layer : public learning_layer {
                                                     &convolution_cudnn_algorithm));
 
     // Apply convolution
-    CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
-    CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(),
-                               this->m_cudnn->get_stream()));
     CHECK_CUDNN(cudnnConvolutionForward(this->m_cudnn->get_handle(),
                                         &one,
                                         input_cudnn_desc,
@@ -460,9 +457,6 @@ class base_convolution_layer : public learning_layer {
                                                          &transposed_convolution_cudnn_algorithm));
 
     // Perform transposed convolution
-    CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
-    CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(),
-                               this->m_cudnn->get_stream()));
     CHECK_CUDNN(cudnnConvolutionBackwardData(this->m_cudnn->get_handle(),
                                              &one,
                                              m_kernel_cudnn_desc,
@@ -489,9 +483,6 @@ class base_convolution_layer : public learning_layer {
       const DataType one = 1;
       const auto& bias = m_weights[1]->get_values();
       auto& output = get_activations();
-      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
-      CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(),
-                                 this->m_cudnn->get_stream()));
       CHECK_CUDNN(cudnnAddTensor(this->m_cudnn->get_handle(),
                                  &m_bias_scaling_factor,
                                  m_bias_cudnn_desc,
@@ -528,9 +519,6 @@ class base_convolution_layer : public learning_layer {
     // Compute bias gradient
     optimizer* bias_optimizer = m_weights[1]->get_optimizer();
     if (bias_optimizer != nullptr && m_bias_scaling_factor != DataType(0)) {
-      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
-      CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(),
-                                 this->m_cudnn->get_stream()));
       CHECK_CUDNN(cudnnConvolutionBackwardBias(this->m_cudnn->get_handle(),
                                                &one,
                                                this->m_prev_error_signals_cudnn_desc,
@@ -546,9 +534,6 @@ class base_convolution_layer : public learning_layer {
     // Compute kernel gradient
     optimizer* kernel_optimizer = m_weights[0]->get_optimizer();
     if (kernel_optimizer != nullptr) {
-      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
-      CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(),
-                                 this->m_cudnn->get_stream()));
 
       // Determine algorithm and compute kernel gradient
       cudnnConvolutionBwdFilterAlgo_t kernel_gradient_cudnn_algorithm

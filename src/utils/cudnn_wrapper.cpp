@@ -42,76 +42,58 @@ namespace lbann
 namespace cudnn
 {
 
-/// It is assumed the number of processes and the number of GPUs on a compute node are equal
 cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm,
                              size_t workspace_size,
                              int max_num_gpus,
                              bool nccl_used)
-    : comm(_comm), m_workspace_size(workspace_size) {
+  : comm(_comm),
+    m_handle(nullptr),
+    m_workspace_size(workspace_size),
+    m_nccl_used(nccl_used) {
 
-    // Indicate whether NCCL is used
-#ifdef LBANN_HAS_NCCL2
-    m_nccl_used = nccl_used;
-#else
-    if (nccl_used) { LBANN_ERROR("NCCL is requested, but not enabled"); }
-    m_nccl_used = false;
-#endif
+  // Check that Hydrogen has detected GPUs
+  if (El::GPUManager::NumDevices() < 1)  {
+    LBANN_ERROR("no GPUs detected");
+  }
+  CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
 
 #ifdef HYDROGEN_HAVE_CUB
-    // Expand CUB GPU memory pool to contain workspace
-    if (m_workspace_size > 0) {
-      GPUMat workspace;
-      workspace.SetMemoryMode(1);
-      workspace.Resize((m_workspace_size + sizeof(DataType) - 1) / sizeof(DataType), 1);
-    }
+  // Expand CUB GPU memory pool to contain workspace
+  if (m_workspace_size > 0) {
+    GPUMat workspace;
+    workspace.SetMemoryMode(1);
+    workspace.Resize((m_workspace_size + sizeof(DataType) - 1) / sizeof(DataType), 1);
+  }
 #endif // HYDROGEN_HAVE_CUB
 
-    // Determine number of MPI ranks on current compute node
-    // const int rank_in_node = comm->get_rank_in_node();
-    const int procs_per_node = comm->get_procs_per_node();
+  // Initialize cuDNN handle
+  FORCE_CHECK_CUDNN(cudnnCreate(&m_handle));
+  if (m_handle == nullptr) {
+    LBANN_ERROR("failed to create cuDNN handle");
+  }
+  CHECK_CUDNN(cudnnSetStream(m_handle, El::GPUManager::Stream()));
 
-    // Determine number of visible GPUs
-    //    CHECK_CUDA(cudaGetDeviceCount(&m_num_visible_gpus));
-    m_num_visible_gpus = El::GPUManager::NumDevices();
-    if(max_num_gpus >= 0 && max_num_gpus < m_num_visible_gpus) {
-        m_num_visible_gpus = max_num_gpus;
-    }
-    if(m_num_visible_gpus < 1) {
-        throw lbann::lbann_exception("cudnn_wrapper: no GPUs found");
-    }
-    /// It is assumed that the number of processes on this node is equal to the total number of GPUs available
+  // Make sure LBANN communicator knows GPUs and CUDA streams
+  /**  @todo This is a kludge. A better solution would be to
+   *   refactor the cuDNN manager and make the LBANN communicator
+   *   responsible for GPU management.
+   */
+  comm->get_gpus() = { El::GPUManager::Device() };
+  comm->get_cuda_streams() = { El::GPUManager::Stream() };
 
-    if(procs_per_node != m_num_visible_gpus){
-      std::cout << "cudnn_wrapper: the number of MPI ranks "
-                << procs_per_node
-                << " is different from than the number of GPUs "
-                << m_num_visible_gpus
-                << "  available on this node" << std::endl;
-    }
+  // Set up for NCCL collective calls
+  // Indicate whether NCCL is used
+  /** NOTE: For whoever makes changes in this file, please make sure
+   *  following if statement comes last.
+   */
+  if (m_nccl_used) {
+#ifdef LBANN_HAS_NCCL2
+    nccl_setup();
+#else
+    LBANN_ERROR("NCCL is not detected");
+#endif // LBANN_HAS_NCCL2
+  }
 
-    // Construct GPU objects
-    m_gpus.push_back(El::GPUManager::Device());
-    cudnnHandle_t handle = nullptr;
-    FORCE_CHECK_CUDNN(cudnnCreate(&handle));
-    FORCE_CHECK_CUDNN(cudnnSetStream(handle, El::GPUManager::Stream()));
-    m_handles.assign(1, handle);
-
-    // Get number of GPUs for current MPI rank
-    m_num_gpus = m_gpus.size();
-
-    // Make sure LBANN communicator knows GPUs and CUDA streams
-    /**  @todo This is a kludge. A better solution would be to
-     *   refactor the cuDNN manager and make the LBANN communicator
-     *   responsible for GPU management.
-     */
-    comm->get_gpus() = get_gpus();
-    comm->get_cuda_streams() = get_streams();
-
-    /// Setting up for NCCL collective calls
-    /// NOTE: For whoever makes changes in this file, please make sure following if statement comes last.
-    if(m_nccl_used){
-        nccl_setup();
-    }
 }
 
 cudnn_manager::~cudnn_manager() {
@@ -120,108 +102,45 @@ cudnn_manager::~cudnn_manager() {
   // Use a try-catch block for FORCE_CHECK_{CUDA |CUDNN | CUBLAS} in the
   // destructor -- these could thrown an exception and destructors are
   // considered to be noexcept by default
-  try
-  {
-    for (size_t i=0; i<m_gpus.size(); ++i) {
-      if(m_handles[i] != nullptr) {
-        FORCE_CHECK_CUDNN(cudnnDestroy(m_handles[i]));
-      }
+  try {
+    if (m_handle != nullptr) {
+      FORCE_CHECK_CUDNN(cudnnDestroy(m_handle));
     }
-  }
-  catch(const std::exception& e)
-  {
+  } catch (const std::exception& e) {
     std::cerr << "~cudnn_manager: try ... catch " << e.what() << std::endl;
     std::terminate();
   }
 
   /// NCCL clear
-  if(m_nccl_used)
-  {
-      nccl_destroy();
-  }
+  if (m_nccl_used) { nccl_destroy(); }
 }
 
 void cudnn_manager::cudnn_manager::synchronize() {
-    for(int i=0; i<m_num_gpus; ++i) {
-        CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-        CHECK_CUDA(cudaStreamSynchronize(get_stream(i)));
-    }
+  CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+  CHECK_CUDA(cudaStreamSynchronize(El::GPUManager::Stream()));
 }
 
 void cudnn_manager::cudnn_manager::synchronize_all() {
-    for(int i=0; i<m_num_gpus; ++i) {
-        CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-        CHECK_CUDA(cudaDeviceSynchronize());
-    }
+  CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+  CHECK_CUDA(cudaDeviceSynchronize());
 }
 
-int cudnn_manager::get_num_gpus() const {
-    return m_num_gpus;
-}
-
-int cudnn_manager::get_num_visible_gpus() const {
-    return m_num_visible_gpus;
-}
-
-std::vector<int>& cudnn_manager::get_gpus() {
-    return m_gpus;
-}
-
-const std::vector<int>& cudnn_manager::get_gpus() const {
-    return m_gpus;
-}
-
-int cudnn_manager::get_gpu(int i) const {
-    return m_gpus[i];
-}
-
-std::vector<cudaStream_t> cudnn_manager::get_streams() const {
-    return std::vector<cudaStream_t>(1, El::GPUManager::Stream());
-}
-
-cudaStream_t cudnn_manager::get_stream(int i) const {
-    if (i != 0) { LBANN_ERROR("Attempted to access invalid GPU."); }
-    return El::GPUManager::Stream();
-}
-
-std::vector<cudnnHandle_t>& cudnn_manager::get_handles() {
-    return m_handles;
-}
-
-const std::vector<cudnnHandle_t>& cudnn_manager::get_handles() const {
-    return m_handles;
-}
-
-cudnnHandle_t& cudnn_manager::get_handle(int i) {
-    return m_handles[i];
-}
-
-const cudnnHandle_t& cudnn_manager::get_handle(int i) const {
-    return m_handles[i];
-}
-
-std::vector<cublasHandle_t> cudnn_manager::get_cublas_handles() const {
-    return std::vector<cublasHandle_t>(1, El::GPUManager::cuBLASHandle());
-}
-
-cublasHandle_t cudnn_manager::get_cublas_handle(int i) const {
-    if (i != 0) { LBANN_ERROR("Attempted to access invalid GPU."); }
-    return El::GPUManager::cuBLASHandle();
+cudnnHandle_t& cudnn_manager::get_handle() {
+  CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+  CHECK_CUDNN(cudnnSetStream(m_handle, El::GPUManager::Stream()));
+  return m_handle;
 }
 
 void cudnn_manager::check_error() {
-    synchronize();
-    for(int i=0; i<m_num_gpus; ++i) {
-        CHECK_CUDA(cudaSetDevice(m_gpus[i]));
-        cudaError_t status = cudaGetLastError();
-        if (status != cudaSuccess) {
-            cudaDeviceReset();
-            std::stringstream err;
-            err << __FILE__ << " " << __LINE__ << ":: "
-                << "CUDA error; err string: " << cudaGetErrorString(status);
-            throw lbann::lbann_exception(err.str());
-        }
-    }
+  synchronize_all();
+  CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+  const auto status = cudaGetLastError();
+  if (status != cudaSuccess) {
+    cudaDeviceReset();
+    std::stringstream err;
+    err << "CUDA error: " << cudaGetErrorString(status);
+    LBANN_ERROR(err.str());
+  }
 }
 
 void cudnn_manager::nccl_setup() {
@@ -285,22 +204,19 @@ void cudnn_manager::nccl_destroy() {
 }
 
 void print_version() {
-    std::cout << "cudnnGetVersion() : " << (int)cudnnGetVersion() << " , "
-              << "CUDNN_VERSION from cudnn.h : " << CUDNN_VERSION
-              << std::endl;
+  std::cout << "cudnnGetVersion() : " << (int)cudnnGetVersion() << " , "
+            << "CUDNN_VERSION from cudnn.h : " << CUDNN_VERSION
+            << std::endl;
 }
 
 cudnnDataType_t get_cudnn_data_type() {
-    switch(sizeof(DataType)) {
-    case 2:
-        return CUDNN_DATA_HALF;
-    case 4:
-        return CUDNN_DATA_FLOAT;
-    case 8:
-        return CUDNN_DATA_DOUBLE;
-    default:
-        throw lbann::lbann_exception("cudnn_wrapper: invalid data type for cuDNN");
-    }
+  switch (sizeof(DataType)) {
+  case 2: return CUDNN_DATA_HALF;
+  case 4: return CUDNN_DATA_FLOAT;
+  case 8: return CUDNN_DATA_DOUBLE;
+  default: LBANN_ERROR("invalid data type for cuDNN");
+  }
+  return CUDNN_DATA_FLOAT;
 }
 
 void set_tensor_cudnn_desc(cudnnTensorDescriptor_t& desc,

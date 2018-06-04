@@ -479,7 +479,7 @@ void Layer::setup() {
   if (using_gpus()) {
     if(m_cudnn == nullptr) {
       std::stringstream err;
-      err << "layer " << m_name << " is trying to use GPUs but has an invalid pointer to the cudnn object";
+      err << "layer \"" << m_name << "\" is trying to use GPUs but has an invalid pointer to the cudnn object";
       LBANN_ERROR(err.str());
     }
     setup_gpu();

@@ -167,9 +167,6 @@ class local_response_normalization_layer : public regularizer_layer {
     const DataType zero = 0;
 
     // Perform local response normalization with each GPU
-    CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
-    CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(),
-                               this->m_cudnn->get_stream()));
     CHECK_CUDNN(cudnnLRNCrossChannelForward(this->m_cudnn->get_handle(),
                                             m_lrn_cudnn_desc,
                                             CUDNN_LRN_CROSS_CHANNEL_DIM1,
@@ -193,9 +190,6 @@ class local_response_normalization_layer : public regularizer_layer {
     const DataType one = 1;
 
     // Perform back propagation on each GPU
-    CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
-    CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(),
-                               this->m_cudnn->get_stream()));
     CHECK_CUDNN(cudnnLRNCrossChannelBackward(this->m_cudnn->get_handle(),
                                              m_lrn_cudnn_desc,
                                              CUDNN_LRN_CROSS_CHANNEL_DIM1,

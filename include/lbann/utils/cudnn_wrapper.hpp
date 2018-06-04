@@ -152,46 +152,19 @@ class cudnn_manager {
   /** Destructor */
   ~cudnn_manager();
 
-  /** Get number of GPUs assigned to current process. */
-  int get_num_gpus() const;
-  /** Get number of visible GPUs on current node. */
-  int get_num_visible_gpus() const;
-  /** Get GPUs. */
-  std::vector<int>& get_gpus();
-  /** Get GPUs (const). */
-  const std::vector<int>& get_gpus() const;
-  /** Get ith GPU. */
-  int get_gpu(int i = 0) const;
-  /** Get CUDA streams. */
-  std::vector<cudaStream_t> get_streams() const;
-  /** Get ith CUDA stream.
-   *  Currently only supported for i=0;
+  /** Get cuDNN handle.
+   *  This sets the CUDA device and stream to those used by Hydrogen.
    */
-  cudaStream_t get_stream(int i = 0) const;
-  /** Get cuDNN handles. */
-  std::vector<cudnnHandle_t>& get_handles();
-  /** Get cuDNN handles (const). */
-  const std::vector<cudnnHandle_t>& get_handles() const;
-  /** Get ith cuDNN handle. */
-  cudnnHandle_t& get_handle(int i = 0);
-  /** Get ith cuDNN handle (const). */
-  const cudnnHandle_t& get_handle(int i = 0) const;
-  /** Get CUBLAS handles. */
-  std::vector<cublasHandle_t> get_cublas_handles() const;
-  /** Get ith CUBLAS handle.
-   *  Currently only supported for i=0;
-   */
-  cublasHandle_t get_cublas_handle(int i = 0) const;
+  cudnnHandle_t& get_handle();
 
   /** Get a recommended GPU workspace size (in bytes). */
   size_t get_workspace_size() const { return m_workspace_size; }
   /** Set a recommended GPU workspace size (in bytes). */
   void set_workspace_size(size_t size) { m_workspace_size = size; }
 
-  /** Synchronize the default stream. */
+  /** Synchronize the primary Hydrogen CUDA stream. */
   void synchronize();
-
-  /** Synchronize all streams. */
+  /** Synchronize GPU. */
   void synchronize_all();
 
   /** Check for errors from asynchronous CUDA kernels. */
@@ -205,15 +178,8 @@ class cudnn_manager {
   /** LBANN communicator. */
   lbann::lbann_comm *comm;
 
-  /** Number of GPUs for current process. */
-  int m_num_gpus;
-  /** Number of visible GPUs. */
-  int m_num_visible_gpus;
-
-  /** List of GPUs. */
-  std::vector<int> m_gpus;
-  /** List of cuDNN handles. */
-  std::vector<cudnnHandle_t> m_handles;
+  /** cuDNN handle. */
+  cudnnHandle_t m_handle;
 
   /** Recommendation for workspace size (in bytes). */
   size_t m_workspace_size;

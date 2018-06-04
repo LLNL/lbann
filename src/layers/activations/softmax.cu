@@ -70,31 +70,29 @@ __global__ void bp_cutoff_kernel(int height, int width,
 namespace lbann {
 namespace softmax_cuda {
 
-void fp_cutoff(cudnn::cudnn_manager& cudnn,
-               int height, int width,
+void fp_cutoff(int height, int width,
                DataType* output,
                int output_leading_dim,
-               DataType cutoff) {
+               DataType cutoff,
+               cudaStream_t stream) {
   const int size = height * width;
   const int block_dim = 256;
   const int grid_dim = (size + block_dim - 1) / block_dim;
-  CHECK_CUDA(cudaSetDevice(cudnn.get_gpu()));
-  fp_cutoff_kernel<<<grid_dim, block_dim, 0, cudnn.get_stream()>>>(
+  fp_cutoff_kernel<<<grid_dim, block_dim, 0, stream>>>(
     height, width, output, output_leading_dim, cutoff);
 }
 
-void bp_cutoff(cudnn::cudnn_manager& cudnn,
-               int height, int width,
+void bp_cutoff(int height, int width,
                const DataType* output,
                int output_leading_dim,
                DataType* gradient_wrt_input,
                int gradient_wrt_input_leading_dim,
-               DataType cutoff) {
+               DataType cutoff,
+               cudaStream_t stream) {
   const int size = height * width;
   const int block_dim = 256;
   const int grid_dim = (size + block_dim - 1) / block_dim;
-  CHECK_CUDA(cudaSetDevice(cudnn.get_gpu()));
-  bp_cutoff_kernel<<<grid_dim, block_dim, 0, cudnn.get_stream()>>>(
+  bp_cutoff_kernel<<<grid_dim, block_dim, 0, stream>>>(
     height, width,
     output, output_leading_dim,
     gradient_wrt_input, gradient_wrt_input_leading_dim,
