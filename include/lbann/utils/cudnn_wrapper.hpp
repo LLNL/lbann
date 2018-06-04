@@ -113,18 +113,12 @@ class cudnn_manager {
 #ifdef LBANN_HAS_CUDNN
 
  public:
-  /** Constructor
-   *  @param _comm           Pointer to LBANN communicator
-   *  @param workspace_size  Recommendation for workspace size.
-   */
-  cudnn_manager(lbann::lbann_comm *_comm,
-                size_t workspace_size = 1 << 9);
-
-  /** Destructor */
+  cudnn_manager(size_t workspace_size = 1 << 9);
   ~cudnn_manager();
 
   /** Get cuDNN handle.
-   *  This sets the CUDA device and stream to those used by Hydrogen.
+   *  This resets the active CUDA device and stream to the Hydrogen
+   *  defaults.
    */
   cudnnHandle_t& get_handle();
 
@@ -133,18 +127,7 @@ class cudnn_manager {
   /** Set a recommended GPU workspace size (in bytes). */
   void set_workspace_size(size_t size) { m_workspace_size = size; }
 
-  /** Synchronize the primary Hydrogen CUDA stream. */
-  void synchronize();
-  /** Synchronize GPU. */
-  void synchronize_all();
-
-  /** Check for errors from asynchronous CUDA kernels. */
-  void check_error();
-
  private:
-
-  /** LBANN communicator. */
-  lbann::lbann_comm *comm;
 
   /** cuDNN handle. */
   cudnnHandle_t m_handle;

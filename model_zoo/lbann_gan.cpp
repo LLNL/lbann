@@ -204,7 +204,7 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
       if (master) {
         std::cerr << "code was compiled with LBANN_HAS_CUDNN, and we are using cudnn\n";
       }
-      cudnn = new cudnn::cudnn_manager(comm, workspace_size);
+      cudnn = new cudnn::cudnn_manager(workspace_size);
     } else {
       if (master) {
         std::cerr << "code was compiled with LBANN_HAS_CUDNN, but we are NOT USING cudnn\n";

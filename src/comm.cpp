@@ -162,7 +162,7 @@ void lbann_comm::allreduce(AbsDistMat& m,
   /// @todo MPI-CUDA backend
 #ifdef AL_HAS_NCCL
   if (t == std::type_index(typeid(::Al::NCCLBackend))) {
-    CHECK_CUDA(cudaStreamSynchronize(El::GPUManager::Stream()));
+    El::GPUManager::SynchronizeStream();
     ::Al::Allreduce<::Al::NCCLBackend>(
       m.Buffer(),
       local_size,
@@ -200,7 +200,7 @@ void lbann_comm::nb_allreduce(AbsDistMat& m,
   /// @todo MPI-CUDA backend
 #ifdef AL_HAS_NCCL
   if (t == std::type_index(typeid(::Al::NCCLBackend))) {
-    CHECK_CUDA(cudaStreamSynchronize(El::GPUManager::Stream()));
+    El::GPUManager::SynchronizeStream();
     ::Al::NonblockingAllreduce<::Al::NCCLBackend>(
       m.Buffer(),
       local_size,
@@ -1109,7 +1109,7 @@ uint8_t *lbann_comm::get_collective_buffer(size_t size, size_t idx) {
     /// @todo MPI-CUDA backend
     #ifdef AL_HAS_NCCL
     if (t == std::type_index(typeid(::Al::NCCLBackend))) {
-      auto&& val = new ::Al::NCCLCommunicator(c.comm, get_gpus());
+      auto&& val = new ::Al::NCCLCommunicator(c.comm, { El::GPUManager::Device() });
       m_al_comms[key] = al_comms_val_type(val);
     }
     #endif // AL_HAS_NCCL

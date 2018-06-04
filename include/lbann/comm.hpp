@@ -1015,27 +1015,6 @@ class lbann_comm {
     return is_world_rank_on_node(world_rank);
   }
 
-  #ifdef LBANN_HAS_CUDA
-  /** Get list of GPUs.
-   *  @todo This is a kludge. A better solution would be to refactor
-   *  the cuDNN manager and make the LBANN communicator responsible
-   *  for GPU management.
-   */
-  std::vector<int>& get_gpus() {
-    static std::vector<int> gpus;
-    return gpus;
-  }
-  /** Get list of CUDA streams.
-   *  @todo This is a kludge. A better solution would be to refactor
-   *  the cuDNN manager and make the LBANN communicator responsible
-   *  for GPU management.
-   */
-  std::vector<cudaStream_t>& get_cuda_streams() {
-    static std::vector<cudaStream_t> streams;
-    return streams;
-  }
-  #endif // LBANN_HAS_CUDA
-
   /** throws an lbann_exception **/
   void lbann_comm_abort(std::string msg);
 

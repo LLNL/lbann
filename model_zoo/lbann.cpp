@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
       if (master) {
         std::cerr << "code was compiled with LBANN_HAS_CUDNN, and we are using cudnn\n";
       }
-      cudnn = new cudnn::cudnn_manager(comm, workspace_size);
+      cudnn = new cudnn::cudnn_manager(workspace_size);
     } else {
       if (master) {
         std::cerr << "code was compiled with LBANN_HAS_CUDNN, but we are NOT USING cudnn\n";

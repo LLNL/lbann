@@ -22,8 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// cudnn_wrapper .hpp .cpp - cuDNN support - wrapper classes, utility functions
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/cudnn_wrapper.hpp"
@@ -42,10 +40,8 @@ namespace lbann
 namespace cudnn
 {
 
-cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm,
-                             size_t workspace_size)
-  : comm(_comm),
-    m_handle(nullptr),
+cudnn_manager::cudnn_manager(size_t workspace_size)
+  : m_handle(nullptr),
     m_workspace_size(workspace_size) {
 
   // Check that Hydrogen has detected GPUs
@@ -70,57 +66,16 @@ cudnn_manager::cudnn_manager(lbann::lbann_comm *_comm,
   }
   CHECK_CUDNN(cudnnSetStream(m_handle, El::GPUManager::Stream()));
 
-  // Make sure LBANN communicator knows GPUs and CUDA streams
-  /**  @todo This is a kludge. A better solution would be to
-   *   refactor the cuDNN manager and make the LBANN communicator
-   *   responsible for GPU management.
-   */
-  comm->get_gpus() = { El::GPUManager::Device() };
-  comm->get_cuda_streams() = { El::GPUManager::Stream() };
-
 }
 
 cudnn_manager::~cudnn_manager() {
-  // Destroy cuDNN handles
-  // Use a try-catch block for FORCE_CHECK_{CUDA |CUDNN | CUBLAS} in the
-  // destructor -- these could thrown an exception and destructors are
-  // considered to be noexcept by default
-  try {
-    if (m_handle != nullptr) {
-      FORCE_CHECK_CUDNN(cudnnDestroy(m_handle));
-    }
-  } catch (const std::exception& e) {
-    std::cerr << "~cudnn_manager: try ... catch " << e.what() << std::endl;
-    std::terminate();
-  }
-}
-
-void cudnn_manager::cudnn_manager::synchronize() {
-  CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-  CHECK_CUDA(cudaStreamSynchronize(El::GPUManager::Stream()));
-}
-
-void cudnn_manager::cudnn_manager::synchronize_all() {
-  CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-  CHECK_CUDA(cudaDeviceSynchronize());
+  if (m_handle != nullptr) { cudnnDestroy(m_handle); }
 }
 
 cudnnHandle_t& cudnn_manager::get_handle() {
   CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
   CHECK_CUDNN(cudnnSetStream(m_handle, El::GPUManager::Stream()));
   return m_handle;
-}
-
-void cudnn_manager::check_error() {
-  synchronize_all();
-  CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-  const auto status = cudaGetLastError();
-  if (status != cudaSuccess) {
-    cudaDeviceReset();
-    std::stringstream err;
-    err << "CUDA error: " << cudaGetErrorString(status);
-    LBANN_ERROR(err.str());
-  }
 }
 
 void print_version() {

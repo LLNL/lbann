@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
     // Initialize network
 #ifdef LBANN_HAS_CUDNN
     const size_t workspace_size = 1 << 9; // 1 GB
-    cudnn::cudnn_manager *cudnn = new cudnn::cudnn_manager(comm, workspace_size);
+    cudnn::cudnn_manager *cudnn = new cudnn::cudnn_manager(workspace_size);
 #else // LBANN_HAS_CUDNN
     cudnn::cudnn_manager *cudnn = nullptr;
 #endif // LBANN_HAS_CUDNN

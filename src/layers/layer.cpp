@@ -233,7 +233,7 @@ void Layer::forward_prop() {
 
   #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
-  if (using_gpus()) { this->m_cudnn->check_error(); }
+  if (using_gpus()) { El::GPUManager::SynchronizeDevice(true); }
   #endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
 
   // Apply layer's compute function
@@ -249,7 +249,7 @@ void Layer::forward_prop() {
 
   #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
-  if (using_gpus()) { this->m_cudnn->check_error(); }
+  if (using_gpus()) { El::GPUManager::SynchronizeDevice(true); }
   #endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
 
   m_fp_time += get_time() - fp_start;
@@ -300,14 +300,6 @@ void Layer::reset_counters() {
   m_bp_time         = EvalType(0);
   m_bp_compute_time = EvalType(0);
   m_update_time     = EvalType(0);
-}
-
-void Layer::synchronize() const {
-  #ifdef LBANN_HAS_CUDNN
-  if (this->m_cudnn != nullptr) {
-    this->m_cudnn->synchronize();
-  }
-  #endif // LBANN_HAS_CUDNN
 }
 
 void Layer::summarize_stats(lbann_summary& summarizer, int step) {

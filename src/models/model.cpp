@@ -1301,7 +1301,7 @@ bool model::load_from_checkpoint_shared(persist& p) {
       m->load_from_checkpoint_shared(p);
     }
   }
-  synchronize();
+  El::GPUManager::SynchronizeStream();
   return true;
 }
 
@@ -1402,16 +1402,6 @@ void model::write_proto(lbann_data::Model* proto) {
   proto->Clear();
   if (m_comm->am_world_master())
     proto->set_mini_batch_size(m_max_mini_batch_size);
-}
-
-void model::synchronize() const {
-  for(const auto l : m_layers) {
-    if (l->using_gpus()) {
-      // find the layer using GPUs and synchronize via cudnn manager
-      l->synchronize();
-      break;
-    }
-  }
 }
 
 }  // namespace lbann

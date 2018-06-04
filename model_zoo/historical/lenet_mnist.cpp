@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
     if (using_gpus) {
 #ifdef LBANN_HAS_CUDNN
       const size_t workspace_size = 1 << 9; // 1 GB
-      cudnn = new cudnn::cudnn_manager(comm, workspace_size);
+      cudnn = new cudnn::cudnn_manager(workspace_size);
 #endif // LBANN_HAS_CUDNN
     }
     if (is_world_master) {
