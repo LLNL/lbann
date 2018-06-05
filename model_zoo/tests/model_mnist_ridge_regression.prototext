@@ -60,6 +60,7 @@ model {
   # INPUT
   #######
   layer {
+    name: "data"
     data_layout: "data_parallel"
     children: "fc target"
     input {
@@ -83,6 +84,7 @@ model {
   # Target
   ########
   layer {
+    parents: "fc data"
     name: "target"
     data_layout: "data_parallel"
     target {}

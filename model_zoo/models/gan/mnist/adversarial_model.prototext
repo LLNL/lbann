@@ -345,7 +345,7 @@ model {
   }
 
   layer {
-    parents: "prob"
+    parents: "prob data"
     name: "target"
     data_layout: "data_parallel"
     target {}

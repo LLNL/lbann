@@ -2046,7 +2046,7 @@ model {
   }
   layer {
     name: "184"
-    parents: "183"
+    parents: "183 0"
     children: ""
     data_layout: "data_parallel"
     target {}

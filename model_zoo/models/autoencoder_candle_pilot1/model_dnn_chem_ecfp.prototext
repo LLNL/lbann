@@ -205,6 +205,7 @@ model {
 
   layer {
     name: "target"
+    parents: "prob finetunedata"
     data_layout: "model_parallel"
     target {}
   }

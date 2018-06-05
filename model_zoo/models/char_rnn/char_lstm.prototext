@@ -239,7 +239,7 @@ model {
     data_layout: "data_parallel"
   }
   layer {
-    parents: "prob"
+    parents: "prob data"
     name: "eval"
     target {}
     data_layout: "data_parallel"

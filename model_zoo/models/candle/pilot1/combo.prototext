@@ -483,7 +483,7 @@ model {
 
   #TARGET
   layer {
-    parents: "fc"
+    parents: "fc data"
     name: "target"
     target {}
     data_layout: "model_parallel"

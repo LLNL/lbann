@@ -227,7 +227,7 @@ model {
   ######################
   layer {
     name: "13"
-    parents: "12"
+    parents: "12 1"
     data_layout: "model_parallel"
     target {}
   }

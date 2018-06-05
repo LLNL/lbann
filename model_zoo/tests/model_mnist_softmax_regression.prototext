@@ -59,6 +59,7 @@ model {
   # INPUT
   #######
   layer {
+    name: "data"
     children: "fc target"
     data_layout: "data_parallel"
     input {
@@ -83,6 +84,7 @@ model {
   # SOFTMAX
   #########
   layer {
+    name: "prob"
     data_layout: "model_parallel"
     softmax {}
   }
@@ -91,6 +93,7 @@ model {
   # TARGET
   ########
   layer {
+    parents: "prob data"
     name: "target"
     data_layout: "data_parallel"
     target {}

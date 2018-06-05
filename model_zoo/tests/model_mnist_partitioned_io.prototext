@@ -226,6 +226,7 @@ model {
   # TARGET 13
   ######################
   layer {
+    parents: "12 1"
     name: "13"
     data_layout: "data_parallel"
     target {}
