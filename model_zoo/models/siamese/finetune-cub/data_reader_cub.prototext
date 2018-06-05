@@ -15,12 +15,6 @@ data_reader {
       raw_width: 256
       raw_height: 256
 
-      subtractor {
-        disable: false
-#        image_to_sub: "../../../../tools/compute_mean/sample/imagenet-trainset/mean-256x256x3-6.bin"
-        image_to_sub: "mean-256x256x3-6.bin"
-      }
-
       cropper {
         disable: false
         crop_width: 224
@@ -36,6 +30,11 @@ data_reader {
 
       augmenter {
         disable: true
+      }
+
+      subtractor {
+        disable: false
+        channel_mean: [0.40625, 0.45703, 0.48047]
       }
 
       normalizer {
@@ -60,12 +59,6 @@ data_reader {
       raw_width: 256
       raw_height: 256
 
-      subtractor {
-        disable: false
-#        image_to_sub: "../../../../tools/compute_mean/sample/imagenet-trainset/mean-256x256x3-6.bin"
-        image_to_sub: "mean-256x256x3-6.bin"
-      }
-
       cropper {
         disable: false
         crop_width: 224
@@ -81,6 +74,11 @@ data_reader {
 
       augmenter {
         disable: true
+      }
+
+      subtractor {
+        disable: false
+        channel_mean: [0.40625, 0.45703, 0.48047]
       }
 
       normalizer {
