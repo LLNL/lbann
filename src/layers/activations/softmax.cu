@@ -76,6 +76,7 @@ void fp_cutoff(cudnn::cudnn_manager& cudnn,
                int output_leading_dim,
                DataType cutoff) {
   const int size = height * width;
+  if (size == 0) return;
   const int block_dim = 256;
   const int grid_dim = (size + block_dim - 1) / block_dim;
   CHECK_CUDA(cudaSetDevice(cudnn.get_gpu()));
@@ -91,6 +92,7 @@ void bp_cutoff(cudnn::cudnn_manager& cudnn,
                int gradient_wrt_input_leading_dim,
                DataType cutoff) {
   const int size = height * width;
+  if (size == 0) return;  
   const int block_dim = 256;
   const int grid_dim = (size + block_dim - 1) / block_dim;
   CHECK_CUDA(cudaSetDevice(cudnn.get_gpu()));
