@@ -78,13 +78,15 @@ class split_layer : public transform_layer {
   void setup_gpu() override {
     transform_layer::setup_gpu();
 #ifdef HYDROGEN_HAVE_CUB
-    // Set output matrices to use CUB GPU memory pool
+    // Set GPU output matrices to use CUB GPU memory pool
     // Note: During each forward prop, the output matrices are resized
     // to the mini-batch size and cleared to obtain matrix views. To
     // avoid expensive GPU memory allocation and deallocation, we use
     // CUB's GPU memory pool.
-    for (int i = 0; i < get_num_children(); ++i) {
-      get_local_activations(i).SetMemoryMode(1);
+    if (Dev == El::Device::GPU) {
+      for (int i = 0; i < get_num_children(); ++i) {
+        get_local_activations(i).SetMemoryMode(1);
+      }
     }
 #endif
   }

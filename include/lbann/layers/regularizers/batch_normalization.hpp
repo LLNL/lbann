@@ -163,8 +163,8 @@ class batch_normalization : public regularizer_layer {
     std::stringstream ss;
     ss << " batch_normalization; "
        << "decay: " << m_decay
-       << "epsilon : " << m_epsilon
-       << "data_layout: " << get_data_layout_string(get_data_layout());
+       << " epsilon : " << m_epsilon
+       << " data_layout: " << get_data_layout_string(get_data_layout());
     return ss.str();
   }
 

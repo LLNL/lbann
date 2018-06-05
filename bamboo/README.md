@@ -39,7 +39,9 @@ From the [LBANN Project Summary](https://lc.llnl.gov/bamboo/browse/LBANN "https:
 
 From the build's page, you can also click on individual	jobs, which have the same tabs. The "Tests" tabs of the individual jobs have two sub-tabs, "Failed tests" and "Successful tests". They do not display skipped tests. The Bamboo agent that ran the job can be found by looking at the "Agent" field under the "Job Summary" tab. Alternatively, you can determine the agent from one of the first lines in the build logs: `Build working directory is /usr/workspace/wsb/lbannusr/bamboo/<bamboo-agent-name>/xml-data/build-dir/<build-plan-and-job>`.
 
-Some build logs can be very large (e.g. over 100,000 lines). Beyond about 5,000 lines it is a good idea to download a log instead of viewing it in the browser. Beyond about 10,000 lines, some text editors may experience slowness. At this point it is good to split up the files with `split -l 10000 <log-file>`, which creates files of the form `x*` and of length 10,000. You can then run a command such as `grep -i "errors for:" x*` to find which files have reported errors. After you are done, you can remove the files with `rm x*`. Note that the original log file is not modified by any of these steps.
+Some build logs can be very large (e.g. over 100,000 lines). Beyond about 5,000 lines it is a good idea to download a log instead of viewing it in the browser. Beyond about 10,000 lines, some text editors may experience slowness. At this point it is good to split up the files with `split -l 10000 <log-file>`, which creates files of the form `x*` and of length 10,000. You can then run a command such as `grep -in "Errors for:" x*` to find which files have reported errors. After you are done, you can remove the files with `rm x*`. Note that the original log file is not modified by any of these steps.
+
+As an alternative to splitting the file, errors can be searched for with `grep -in -A <expected-number-of-errors> "Errors for:" <log-file>`.
 
 ## Bamboo Agent Properties
 
@@ -67,7 +69,9 @@ To run a specific test file: `python -m pytest -s <test_file>.py`.
 
 To run a specific test: `python -m pytest -s <test_file>.py -k '<test_name>'`.
 
-Most integration and unit tests allow for running a test with a different executable. The convention is to have a similarly structured test replacing `_<compiler_name>` with `_exe`. These tests are set to be skipped in Bamboo, but can be run locally. There should be a line above the test that gives the command to run the test locally.
+Most integration and unit tests allow for running a test with a different executable. The convention is to have a similarly structured test replacing `_<compiler_name>` with `_exe`. These tests are set to be skipped in Bamboo, but can be run locally. There should be a line above the test that gives the command to run the test locally, likely in the following form: `python -m pytest -s <test_file>.py -k '<test_name>' --exe=<executable>`.
+
+At this time, there is no way to run all the `_exe` tests in a subdirectory and only those.
 
 # Helpful Files
 

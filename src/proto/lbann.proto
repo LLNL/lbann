@@ -33,8 +33,10 @@ message Reader {
   bool gan_labelling = 201;
   int32 gan_label_value = 202;
   ImagePreprocessor image_preprocessor = 13;
-  int32 independent = 97; // only for jag
-  int32 dependent = 98; // only for jag
+  repeated string jag_scalar_keys = 95; // only for jag
+  repeated string jag_input_keys = 96; // only for jag
+  repeated int32 independent = 97; // only for jag
+  repeated int32 dependent = 98; // only for jag
   int32 num_labels = 99; //for imagenet
   int64 num_samples = 100; //only for synthetic
   int64 num_features = 101; //only for synthetic
@@ -106,6 +108,11 @@ message ImagePreprocessor {
     string name = 1;
     bool disable = 2;
     string image_to_sub = 3;
+    string image_to_div = 4;
+    repeated float channel_mean = 5 [packed = true];
+    repeated float channel_stddev = 6 [packed = true];
+    int32 width = 7;
+    int32 height = 8;
   }
 
   message PatchExtractor {
@@ -732,6 +739,9 @@ message Layer {
    Crop crop = 316;
    CategoricalRandom categorical_random = 317;
    DiscreteRandom discrete_random = 318;
+   StopGradient stop_gradient = 319;
+   Max max = 320;
+   Min min = 321;
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -990,6 +1000,15 @@ message CategoricalRandom {
 message DiscreteRandom {
   string values = 1;
   string dims = 2;
+}
+
+message StopGradient {
+}
+
+message Max {
+}
+
+message Min {
 }
 
 /////////////////////

@@ -24,31 +24,41 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef IDENTITY_HPP_INCLUDED
-#define IDENTITY_HPP_INCLUDED
+#ifndef STOP_GRADIENT_HPP_INCLUDED
+#define STOP_GRADIENT_HPP_INCLUDED
 
-#include "lbann/layers/activations/activation.hpp"
+#include "lbann/layers/transform/transform.hpp"
 
 namespace lbann {
 
-/** Identity activation function. */
+/** Layer that blocks back propagation.
+ *  This layer's output is identical to its input, but its back
+ *  propagation output (i.e. its error signal) is always zero. Compare
+ *  with the stop_gradient operation in TensorFlow and Keras. Note
+ *  that this means that computed gradients in preceeding layers are
+ *  not exact gradients of the objective function.
+ */
 template <data_layout T_layout, El::Device Dev>
-class identity_layer : public activation_layer {
+class stop_gradient_layer : public transform_layer {
  public:
-  identity_layer(lbann_comm *comm) : activation_layer(comm) {}
-  identity_layer* copy() const override { return new identity_layer(*this); }
-  std::string get_type() const override { return "identity"; }
+  stop_gradient_layer(lbann_comm *comm,
+                      cudnn::cudnn_manager* cudnn = nullptr)
+    : transform_layer(comm) {
+    this->m_cudnn = cudnn;
+  }
+  stop_gradient_layer* copy() const override { return new stop_gradient_layer(*this); }
+  std::string get_type() const override { return "stop_gradient"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
   void setup_gpu() override {
-    activation_layer::setup_gpu();
+    transform_layer::setup_gpu();
 #ifdef HYDROGEN_HAVE_CUB
-    // Set GPU output matrix to use CUB GPU memory pool
+    // Set output matrix to use CUB GPU memory pool
     // Note: During each forward prop, the output matrix is resized to
     // the mini-batch size and cleared to obtain a matrix view. To
-    // avoid expensive GPU memory allocations and deallocations, we
-    // use CUB's GPU memory pool.
+    // avoid expensive GPU memory allocation and deallocation, we use
+    // CUB's GPU memory pool.
     if (Dev == El::Device::GPU) {
       get_local_activations().SetMemoryMode(1);
     }
@@ -60,11 +70,11 @@ class identity_layer : public activation_layer {
   }
 
   void bp_compute() override {
-    El::Axpy(DataType(1), get_prev_error_signals(), get_error_signals());
+    // El::Zero(get_error_signals());
   }
 
 };
 
 } // namespace lbann
 
-#endif // IDENTITY_HPP_INCLUDED
+#endif // STOP_GRADIENT_HPP_INCLUDED

@@ -48,6 +48,19 @@ void lbann_callback_checknan::on_forward_prop_end(model *m, Layer *l) {
   }
 }
 
+void lbann_callback_checknan::on_backward_prop_end(model *m, Layer *l) {
+  const AbsDistMat& errs = l->get_error_signals();
+  if (!is_good(errs)) {
+    dump_network(m);
+    std::stringstream ss;
+    ss << name() << ": "
+       << "[" << std::to_string(m->get_comm()->get_rank_in_world()) << "]: "
+       << "error in error signal of " << l->get_name() << " "
+       << "(step=" << std::to_string(m->get_cur_step()) << ")";
+    throw lbann_exception(ss.str());
+  }
+}
+
 void lbann_callback_checknan::on_backward_prop_end(model *m) {
   for (weights *w : m->get_weights()) {
     optimizer *opt = w->get_optimizer();
@@ -113,6 +126,9 @@ void lbann_callback_checknan::dump_network(model *m) {
          + "-");
     El::Write(layer->get_activations().LockedMatrix(),
               prefix + "Activations",
+              El::ASCII);
+    El::Write(layer->get_error_signals().LockedMatrix(),
+              prefix + "ErrorSignal",
               El::ASCII);
   }
   for (weights *w : m->get_weights()) {

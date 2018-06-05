@@ -30,6 +30,7 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf_utils.hpp"
 #include <dirent.h>
+#include <cstdlib>
 using namespace lbann;
 
 const int lbann_default_random_seed = 42;
@@ -225,6 +226,10 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
       if (cudnn != nullptr) {
         std::cout << "  GPUs on node                 : " << cudnn->get_num_visible_gpus() << std::endl
                   << "  GPUs per process             : " << cudnn->get_num_gpus() << std::endl;
+
+        const char* mv2_ptr = std::getenv("MV2_USE_CUDA");
+        const std::string mv2_str = (mv2_ptr == nullptr)? "" : std::string(mv2_ptr);
+        std::cout << "  MV2_USE_CUDA                 : " << mv2_str << std::endl;
       }
       #endif // LBANN_HAS_CUDNN
       std::cout << std::endl;

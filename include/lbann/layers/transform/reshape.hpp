@@ -107,7 +107,9 @@ class reshape_layer : public transform_layer {
     // the mini-batch size and cleared to obtain a matrix view. To
     // avoid expensive GPU memory allocation and deallocation, we use
     // CUB's GPU memory pool.
-    get_local_activations().SetMemoryMode(1);
+    if (Dev == El::Device::GPU) {
+      get_local_activations().SetMemoryMode(1);
+    }
 #endif
   }
 

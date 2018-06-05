@@ -82,12 +82,24 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       set_up_generic_preprocessor = false;
     } else if (name == "jag") {
       auto* reader_jag = new data_reader_jag(shuffle);
-      const data_reader_jag::variable_t independent_type
-             = static_cast<data_reader_jag::variable_t>(readme.independent());
+
+      using var_t = data_reader_jag::variable_t;
+      std::vector<var_t> independent_type(readme.independent_size());
+
+      for (int i=0; i < readme.independent_size(); ++i) {
+        independent_type[i] = static_cast<var_t>(readme.independent(i));
+      }
+
       reader_jag->set_independent_variable_type(independent_type);
-      const data_reader_jag::variable_t dependent_type
-             = static_cast<data_reader_jag::variable_t>(readme.dependent());
+
+      std::vector<var_t> dependent_type(readme.dependent_size());
+
+      for (int i=0; i < readme.dependent_size(); ++i) {
+        dependent_type[i] = static_cast<var_t>(readme.dependent(i));
+      }
+
       reader_jag->set_dependent_variable_type(dependent_type);
+
       const lbann_data::ImagePreprocessor& pb_preproc = readme.image_preprocessor();
       reader_jag->set_image_dims(pb_preproc.raw_width(), pb_preproc.raw_height());
       reader_jag->set_normalization_mode(pb_preproc.early_normalization());
