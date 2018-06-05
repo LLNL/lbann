@@ -72,35 +72,17 @@ class optimizer {
 
   /** Clear gradient matrix. */
   void clear_gradient();
-  /** Add to the gradient matrix.
-   *  If the optimizer has a cuDNN manager, the data is copied to GPUs
-   *  and added to the GPU gradient matrix.
-   */
+  /** Add to the gradient matrix. */
   void add_to_gradient(const AbsDistMat& gradient,
                        DataType scale = DataType(1));
-#ifdef LBANN_HAS_CUDNN
-  /** Add to the GPU gradient matrix. */
-  void add_to_gradient(const cudnn::matrix& gradient,
-                       DataType scale = DataType(1));
-#endif // LBANN_HAS_CUDNN
 
   /** Add to the gradient staging matrix.
    *  When the gradient is needed, an allreduce is applied over the
    *  redundant communicator of the staging matrix and the result is
-   *  added to the gradient. If the optimizer has a cuDNN manager, the
-   *  data is copied to GPUs and added to the GPU staging matrix.
+   *  added to the gradient.
    */
   void add_to_gradient_staging(const AbsDistMat& gradient,
                                DataType scale = DataType(1));
-#ifdef LBANN_HAS_CUDNN
-  /** Add to the GPU gradient staging matrix.
-   *  When the gradient is needed, an allreduce is applied over all
-   *  the GPUs in the redundant communicator of the staging matrix and
-   *  the result is added to the gradient.
-   */
-  void add_to_gradient_staging(const cudnn::matrix& gradient,
-                               DataType scale = DataType(1));
-#endif // LBANN_HAS_CUDNN
   /** Start allreduce on the gradient staging matrix.
    *  If an allreduce is not needed or if it has already started, this
    *  function does nothing. This may call a non-blocking allreduce.

@@ -233,7 +233,7 @@ void Layer::forward_prop() {
 
   #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
-  if (using_gpus()) { this->m_cudnn->check_error(); }
+  if (using_gpus()) { El::GPUManager::SynchronizeDevice(true); }
   #endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
 
   // Apply layer's compute function
@@ -249,7 +249,7 @@ void Layer::forward_prop() {
 
   #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
-  if (using_gpus()) { this->m_cudnn->check_error(); }
+  if (using_gpus()) { El::GPUManager::SynchronizeDevice(true); }
   #endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
 
   m_fp_time += get_time() - fp_start;
@@ -300,14 +300,6 @@ void Layer::reset_counters() {
   m_bp_time         = EvalType(0);
   m_bp_compute_time = EvalType(0);
   m_update_time     = EvalType(0);
-}
-
-void Layer::synchronize() const {
-  #ifdef LBANN_HAS_CUDNN
-  if (this->m_cudnn != nullptr) {
-    this->m_cudnn->synchronize();
-  }
-  #endif // LBANN_HAS_CUDNN
 }
 
 void Layer::summarize_stats(lbann_summary& summarizer, int step) {
@@ -479,7 +471,7 @@ void Layer::setup() {
   if (using_gpus()) {
     if(m_cudnn == nullptr) {
       std::stringstream err;
-      err << "layer " << m_name << " is trying to use GPUs but has an invalid pointer to the cudnn object";
+      err << "layer \"" << m_name << "\" is trying to use GPUs but has an invalid pointer to the cudnn object";
       LBANN_ERROR(err.str());
     }
     setup_gpu();
@@ -1013,32 +1005,6 @@ void Layer::bp_setup_data(int mini_batch_size) {
   #endif // LBANN_HAS_CUDNN
 
 }
-
-
-#ifdef LBANN_HAS_CUDNN
-void Layer::pin_data() {
-  for (int i = 0; i < get_num_parents(); ++i) {
-    const auto& parent = *m_parent_layers[i];
-    if (using_gpus() && !parent.using_gpus()) {
-      m_cudnn->pin_matrix(get_error_signals(i));
-      if (get_prev_activations().DistData()
-          != parent.get_activations().DistData()) {
-        m_cudnn->pin_matrix(get_prev_activations(i));
-      }
-    }
-  }
-  for (int i = 0; i < get_num_children(); ++i) {
-    const auto& child = *m_child_layers[i];
-    if (using_gpus() && !child.using_gpus()) {
-      m_cudnn->pin_matrix(get_activations(i));
-      if (get_data_layout() != child.get_data_layout()) {
-        m_cudnn->pin_matrix(get_prev_error_signals(i));
-      }
-    }
-  }
-}
-
-#endif // LBANN_HAS_CUDNN
 
 void Layer::get_fp_output(AbsDistMat& output, const Layer* child) const {
 

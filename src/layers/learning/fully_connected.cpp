@@ -279,10 +279,14 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_comp
   // Apply bias if needed
   if(m_bias_scaling_factor != DataType(0)) {
     const auto& local_bias = m_weights[1]->get_values().LockedMatrix();
-    m_ones.Resize(local_input.Width(), 1);
-    El::Fill(m_ones, DataType(1));
+    GPUMat ones;
+#ifdef HYDROGEN_HAVE_CUB
+    ones.SetMemoryMode(1); // Use CUB GPU memory pool if possible
+#endif // HYDROGEN_HAVE_CUB
+    ones.Resize(local_input.Width(), 1);
+    El::Fill(ones, DataType(1));
     El::Gemm(El::NORMAL, El::TRANSPOSE,
-             m_bias_scaling_factor, local_bias, m_ones,
+             m_bias_scaling_factor, local_bias, ones,
              DataType(1), local_output);
   }
   
@@ -309,10 +313,14 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_comp
   optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
   if (m_bias_scaling_factor != DataType(0)
       && bias_optimizer != nullptr) {
-    m_ones.Resize(local_input.Width(), 1);
-    El::Fill(m_ones, DataType(1));
+    GPUMat ones;
+#ifdef HYDROGEN_HAVE_CUB
+    ones.SetMemoryMode(1); // Use CUB GPU memory pool if possible
+#endif // HYDROGEN_HAVE_CUB
+    ones.Resize(local_input.Width(), 1);
+    El::Fill(ones, DataType(1));
     El::Gemv(El::NORMAL,
-             m_bias_scaling_factor, local_gradient_wrt_output, m_ones,
+             m_bias_scaling_factor, local_gradient_wrt_output, ones,
              DataType(0), m_bias_gradient->Matrix());
     bias_optimizer->add_to_gradient_staging(
       *m_bias_gradient,
@@ -373,10 +381,14 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_com
   // Note: local outer product is sufficient, no need for global GEMM
   if(m_bias_scaling_factor != DataType(0)) {
     const auto& bias = m_weights[1]->get_values();
-    m_ones.Resize(input.LocalWidth(), 1);
-    El::Fill(m_ones, DataType(1));
+    GPUMat ones;
+#ifdef HYDROGEN_HAVE_CUB
+    ones.SetMemoryMode(1); // Use CUB GPU memory pool if possible
+#endif // HYDROGEN_HAVE_CUB
+    ones.Resize(input.LocalWidth(), 1);
+    El::Fill(ones, DataType(1));
     El::Gemm(El::NORMAL, El::TRANSPOSE,
-             m_bias_scaling_factor, bias.LockedMatrix(), m_ones,
+             m_bias_scaling_factor, bias.LockedMatrix(), ones,
              DataType(1), output.Matrix());
   }
   
@@ -407,10 +419,14 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_com
   optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
   if (m_bias_scaling_factor != DataType(0)
       && bias_optimizer != nullptr) {
-    m_ones.Resize(input.LocalWidth(), 1);
-    El::Fill(m_ones, DataType(1));
+    GPUMat ones;
+#ifdef HYDROGEN_HAVE_CUB
+    ones.SetMemoryMode(1); // Use CUB GPU memory pool if possible
+#endif // HYDROGEN_HAVE_CUB
+    ones.Resize(input.LocalWidth(), 1);
+    El::Fill(ones, DataType(1));
     El::Gemv(El::NORMAL,
-             m_bias_scaling_factor, local_gradient_wrt_output, m_ones,
+             m_bias_scaling_factor, local_gradient_wrt_output, ones,
              DataType(0), m_bias_gradient->Matrix());
     bias_optimizer->add_to_gradient_staging(
       *m_bias_gradient,

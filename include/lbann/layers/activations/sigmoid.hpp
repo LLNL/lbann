@@ -38,15 +38,14 @@ namespace lbann {
 #ifdef LBANN_HAS_CUDNN
 namespace sigmoid_cuda {
   void fp(cudnn::cudnn_manager& cudnn,
-          int height,
-          int width_per_gpu,
+          int height, int width,
           const DataType* input,
           int input_leading_dim,
           DataType* output,
           int output_leading_dim,
           DataType cutoff);
   void bp(cudnn::cudnn_manager& cudnn,
-          int height, int width_per_gpu,
+          int height, int width,
           const DataType* input,
           int input_leading_dim,
           const DataType* gradient_wrt_output,

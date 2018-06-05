@@ -113,7 +113,7 @@ void l2_weight_regularization::start_evaluation() {
   if (m_cudnn != nullptr) {
 
     // Set cuBLAS to device pointer mode to allow pipelined calls
-    auto&& handle = m_cudnn->get_cublas_handle();
+    auto&& handle = El::GPUManager::cuBLASHandle();
     CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE));
 
     // Compute local contributions on GPU

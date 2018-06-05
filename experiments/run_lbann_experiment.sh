@@ -121,12 +121,14 @@ case ${CLUSTER} in
         ;;
 esac
 if [ -z "${PROCS_PER_NODE}" ]; then
-    case ${USE_GPU} in
+    PROCS_PER_NODE=2
+    case ${HAS_GPU} in
         YES|yes|TRUE|true|ON|on|1)
-            PROCS_PER_NODE=${GPUS_PER_NODE}
-            ;;
-        *)
-            PROCS_PER_NODE=2
+            case ${USE_GPU} in
+                YES|yes|TRUE|true|ON|on|1)
+                    PROCS_PER_NODE=${GPUS_PER_NODE}
+                    ;;
+            esac
             ;;
     esac
 fi
