@@ -1301,7 +1301,9 @@ bool model::load_from_checkpoint_shared(persist& p) {
       m->load_from_checkpoint_shared(p);
     }
   }
-  El::GPUManager::SynchronizeStream();
+#ifdef LBANN_HAS_GPU
+  El::GPUManager::SynchronizeDevice();
+#endif // LBANN_HAS_GPU
   return true;
 }
 
