@@ -229,19 +229,19 @@ bool test_image_io(const std::string filename,
         pp.add_normalizer(std::move(normalizer));
       } else {
         std::unique_ptr<lbann::cv_subtractor> normalizer(new(lbann::cv_subtractor));
-#if 1
+#if 0
         cv::Mat img_to_sub = cv::imread(mp.m_mean_image_name);
         if (img_to_sub.empty()) {
           std::cout << mp.m_mean_image_name << " does not exist" << std::endl;
           return false;
         }
-#else
-        cv::Scalar px = {0.40625, 0.45703, 0.48047};
-        cv::Mat img_to_sub(rp.m_crop_sz.second, rp.m_crop_sz.first,
-                           lbann::cv_image_type<lbann::DataType>::T(3), px);
-        normalizer->set_stddev(img_to_sub.cols, img_to_sub.rows, {0.3, 0.5, 0.3});
-#endif
         normalizer->set_mean(img_to_sub);
+#else
+        std::vector<lbann::DataType> mean = {0.40625, 0.45703, 0.48047};
+        normalizer->set_mean(mean);
+        std::vector<lbann::DataType> stddev = {0.3, 0.5, 0.3};
+        normalizer->set_stddev(stddev);
+#endif
         pp.add_normalizer(std::move(normalizer));
       }
       transform_idx ++;
@@ -276,9 +276,9 @@ bool test_image_io(const std::string filename,
     if (num_bytes == 0) {
       ok = lbann::image_utils::import_image(inbuf, width, height, type, pp, Images);
       num_bytes = Images.Height();
-      El::View(Image_v, Images, 0, 0, num_bytes, 1);
+      El::View(Image_v, Images, El::IR(0, num_bytes), El::IR(0, 1));
     } else {
-      El::View(Image_v, Images, 0, 0, num_bytes, 1);
+      El::View(Image_v, Images, El::IR(0, num_bytes), El::IR(0, 1));
       //ok = lbann::image_utils::import_image(buf, width, height, type, pp, Image_v);
       ok = lbann::image_utils::import_image(inbuf, width, height, type, pp, Image_v);
     }
