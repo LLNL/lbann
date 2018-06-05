@@ -112,10 +112,12 @@ class distributed_io_buffer : public generic_io_buffer {
     }
   }
 
-  void setup_data(El::Int num_neurons, El::Int max_minibatch_size) override {
+  void setup_data(El::Int num_neurons, El::Int num_targets, El::Int max_minibatch_size) override {
     for (auto& buf : m_data_buffers) {
       buf.second->M_local[0]->Resize(num_neurons, max_minibatch_size);
       buf.second->Ms[0]->Resize(num_neurons, max_minibatch_size);
+      buf.second->M_local[1]->Resize(num_targets, max_minibatch_size);
+      buf.second->Ms[1]->Resize(num_targets, max_minibatch_size);
     }
   }
 

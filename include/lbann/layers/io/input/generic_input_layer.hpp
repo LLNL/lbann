@@ -185,7 +185,7 @@ class generic_input_layer : public io_layer {
       calculate_num_iterations_per_epoch_training_unique_per_models(max_mb_size);
     }
 
-    io_buffer->setup_data(this->m_num_neurons, max_mb_size);
+    io_buffer->setup_data(this->m_num_neurons, get_linearized_label_size(), max_mb_size);
   }
 
   /** Define the standard view of the matrix -- and set it for the model

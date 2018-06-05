@@ -48,7 +48,7 @@ class partitioned_io_buffer : public generic_io_buffer {
   /** Setup a bypass from to the activations matrices */
   void set_local_matrix_bypass(CPUMat *m, int idx) override { M_local[idx] = m; }
   void set_std_matrix_view(El::Int cur_mini_batch_size, int idx) override {}
-  void setup_data(El::Int num_neurons, El::Int max_minibatch_size) override {}
+  void setup_data(El::Int num_neurons, El::Int num_targets, El::Int max_minibatch_size) override {}
 
   int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) override;
   void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample, AbsDistMat& response) override;
