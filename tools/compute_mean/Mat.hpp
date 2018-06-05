@@ -71,6 +71,18 @@ using Mat = ElMatLike<lbann::DataType>;
 
 namespace El {
 using Int = ::ElMatLike<lbann::DataType>::Int;
+
+struct IR {
+  Int start;
+  Int end;
+  IR(Int s, Int e) : start(s), end(e) {}
+};
+
+// fake view
+inline void View(Mat& V, const Mat& X, IR r, IR c) {
+  V.Resize(c.end - c.start, r.end - r.start);
+}
+
 }
 
 #endif // _TOOLS_MAT_HPP_
