@@ -111,8 +111,6 @@ message ImagePreprocessor {
     string image_to_div = 4;
     repeated float channel_mean = 5 [packed = true];
     repeated float channel_stddev = 6 [packed = true];
-    int32 width = 7;
-    int32 height = 8;
   }
 
   message PatchExtractor {
