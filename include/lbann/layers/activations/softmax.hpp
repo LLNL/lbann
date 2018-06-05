@@ -45,18 +45,24 @@ namespace lbann {
 #ifdef LBANN_HAS_CUDNN
 namespace softmax_cuda {
 /** Apply minimum cutoff to activation entries.
- *  A minimum output value helps avoid denormalized floats.
+ *  A minimum output value helps avoid denormalized floats. Data is
+ *  assumed to be on GPU.
  */
 void fp_cutoff(cudnn::cudnn_manager& cudnn,
-               DataType* activations,
-               El::Int h, El::Int w,
-               DataType min_output);
-/** Error signal correction if activations have minimum cutoff. */
+               int height, int width,
+               DataType* output,
+               int output_leading_dim,
+               DataType cutoff);
+/** Error signal correction if activations have minimum cutoff.
+ *  Data is assumed to be on GPU.
+ */
 void bp_cutoff(cudnn::cudnn_manager& cudnn,
-               const DataType* activations,
-               DataType* error_signals,
-               El::Int h, El::Int w,
-               DataType min_output);
+               int height, int width,
+               const DataType* output,
+               int output_leading_dim,
+               DataType* gradient_wrt_input,
+               int gradient_wrt_input_leading_dim,
+               DataType cutoff);
 } // namespace softmax
 #endif // LBANN_HAS_CUDNN
 

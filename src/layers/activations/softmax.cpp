@@ -98,7 +98,7 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
 template <>
 void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
 #ifndef LBANN_HAS_CUDNN
-  throw lbann_exception("softmax_layer: cuDNN not detected");
+  LBANN_ERROR("cuDNN not detected");
 #else
 
   // Useful constants
@@ -106,8 +106,8 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
   const DataType zero = 0;
 
   // Matrices
-  const auto& prev_activations = get_prev_activations();
-  auto& activations = get_activations();
+  const auto& local_input = get_local_prev_activations();
+  auto& local_output = get_local_activations();
 
   // Apply softmax on the GPU
   CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
@@ -118,17 +118,18 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
                                   CUDNN_SOFTMAX_MODE_INSTANCE,
                                   &one,
                                   this->m_prev_activations_cudnn_desc,
-                                  prev_activations.LockedBuffer(),
+                                  local_input.LockedBuffer(),
                                   &zero,
                                   this->m_activations_cudnn_desc,
-                                  activations.Buffer()));
+                                  local_output.Buffer()));
 
 #ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
   // Round to minimum value to avoid denormalized floats
   softmax_cuda::fp_cutoff(*this->m_cudnn,
-                          activations.Buffer(),
-                          get_num_neurons(),
-                          this->m_mini_batch_size_per_gpu,
+                          local_output.Height(),
+                          local_output.Width(),
+                          local_output.Buffer(),
+                          local_output.LDim(),
                           m_min_output);
 #endif // LBANN_ENABLE_SOFTMAX_CUTOFF
 
@@ -138,16 +139,16 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
 template <>
 void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
 #ifndef LBANN_HAS_CUDNN
-  throw lbann_exception("softmax_layer: cuDNN not detected");
+  LBANN_ERROR("cuDNN not detected");
 #else
 
   // Useful constants
   const DataType one = 1;
 
   // Matrices
-  const auto& activations = get_activations();
-  const auto& prev_error_signals = get_prev_error_signals();
-  auto& error_signals = get_error_signals();
+  const auto& local_output = get_local_activations();
+  const auto& local_gradient_wrt_output = get_local_prev_error_signals();
+  auto& local_gradient_wrt_input = get_local_error_signals();
 
   // Apply softmax on each GPU
   CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
@@ -158,21 +159,23 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
                                    CUDNN_SOFTMAX_MODE_INSTANCE,
                                    &one,
                                    this->m_activations_cudnn_desc,
-                                   activations.LockedBuffer(),
+                                   local_output.LockedBuffer(),
                                    this->m_prev_error_signals_cudnn_desc,
-                                   prev_error_signals.LockedBuffer(),
+                                   local_gradient_wrt_output.LockedBuffer(),
                                    &one,
                                    this->m_error_signals_cudnn_desc,
-                                   error_signals.Buffer()));
+                                   local_gradient_wrt_input.Buffer()));
 
 #ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
   // Round to minimum value to avoid denormalized floats
   softmax_cuda::bp_cutoff(*this->m_cudnn,
-                          activations.LockedBuffer(),
-                          error_signals.Buffer(),
-                          get_num_neurons(),
-                          this->m_mini_batch_size_per_gpu,
-                          this->m_min_output);
+                          local_output.Height(),
+                          local_output.Width(),
+                          local_output.LockedBuffer(),
+                          local_output.LDim(),
+                          local_gradient_wrt_input.Buffer(),
+                          local_gradient_wrt_input.LDim(),
+                          m_min_output);
 #endif // LBANN_ENABLE_SOFTMAX_CUTOFF
 
 #endif // LBANN_HAS_CUDNN

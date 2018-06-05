@@ -37,12 +37,14 @@ class reshape_layer : public transform_layer {
  public:
   reshape_layer(lbann_comm *comm,
                 int num_dims,
-                const int *dims) :
-    transform_layer(comm) {
+                const int *dims,
+                cudnn::cudnn_manager* cudnn = nullptr)
+    : transform_layer(comm) {
     this->m_num_neuron_dims = num_dims;
     this->m_neuron_dims.assign(dims, dims+num_dims);
     this->m_num_neurons = std::accumulate(dims, dims+num_dims, 1,
                                           std::multiplies<int>());
+    this->m_cudnn = cudnn;
   }
   reshape_layer* copy() const override { return new reshape_layer(*this); }
   std::string get_type() const override { return "reshape"; }
@@ -82,13 +84,33 @@ class reshape_layer : public transform_layer {
                                               this->m_neuron_dims.end(),
                                               1,
                                               std::multiplies<int>())) {
-      std::string num_neurons = " {";
-      for(int n: m_neuron_dims) num_neurons += " " + std::to_string(n);
-      num_neurons += " }";
-      throw lbann_exception("reshape_layer: invalid neuron dimensions, " +
-                             std::to_string(m_num_neurons) + " != " + num_neurons);
+      std::stringstream err;
+      err << "input neuron dimensions (";
+      for (size_t i = 0; i < this->m_prev_neuron_dims.size(); ++i) {
+        err << (i > 0 ? "x" : "") << this->m_prev_neuron_dims[i];
+      }
+      err << ") do not match output neuron dimensions (";
+      for (size_t i = 0; i < this->m_neuron_dims.size(); ++i) {
+        err << (i > 0 ? "x" : "") << this->m_neuron_dims[i];
+      }
+      err << ")";
+      LBANN_ERROR(err.str());
     }
 
+  }
+
+  void setup_gpu() override {
+    transform_layer::setup_gpu();
+#ifdef HYDROGEN_HAVE_CUB
+    // Set output matrix to use CUB GPU memory pool
+    // Note: During each forward prop, the output matrix is resized to
+    // the mini-batch size and cleared to obtain a matrix view. To
+    // avoid expensive GPU memory allocation and deallocation, we use
+    // CUB's GPU memory pool.
+    if (Dev == El::Device::GPU) {
+      get_local_activations().SetMemoryMode(1);
+    }
+#endif
   }
 
   void fp_compute() override {

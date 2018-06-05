@@ -276,7 +276,7 @@ if (LBANN_WITH_CONDUIT)
 endif (LBANN_WITH_CONDUIT)
 
 # Handle the documentation
-add_subdirectory(doc)
+add_subdirectory(docs)
 
 ################################################################
 # Build LBANN

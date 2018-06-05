@@ -170,6 +170,8 @@ class weights {
 
   /** Get the weight matrix. */
   AbsDistMat& get_values();
+  /** Get the weight matrix (const). */
+  const AbsDistMat& get_values() const;
   /** Set the weight matrix. */
   void set_values(const AbsDistMat& values);
 

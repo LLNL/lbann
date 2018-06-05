@@ -57,7 +57,7 @@ class greedy_layerwise_autoencoder : public sequential_model {
   std::string name() const override { return "greedy layerwise autoencoder"; }
 
   /** Train greedy layerwise autoencoder. */
-  void train(int num_epochs) override;
+  void train(int num_epochs, int num_batches=0) override;
 
  protected:
 

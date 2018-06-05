@@ -65,6 +65,9 @@ class fully_connected_layer : public learning_layer {
    */
   AbsDistMat* m_bias_gradient;
 
+  /** Whether the transpose of the linearity matrix is applied. */
+  bool m_transpose;
+
   #ifdef LBANN_HAS_CUDNN
   /** Vector composed of ones. */
   GPUMat m_ones;
@@ -74,12 +77,14 @@ class fully_connected_layer : public learning_layer {
 
   fully_connected_layer(lbann_comm *comm,
                         int num_neurons,  // TODO: accept a vector for neuron dims
+                        bool transpose = false,
                         weights* weight = nullptr,
                         bool has_bias = true,
                         cudnn::cudnn_manager *cudnn = nullptr)
     : learning_layer(comm),
       m_linearity_gradient(nullptr),
-      m_bias_gradient(nullptr) {
+      m_bias_gradient(nullptr),
+      m_transpose(transpose) {
 
     // Initialize neuron tensor dimensions
     this->m_num_neurons = num_neurons;
@@ -108,7 +113,8 @@ class fully_connected_layer : public learning_layer {
 
   fully_connected_layer(const fully_connected_layer& other) :
     learning_layer(other),
-    m_bias_scaling_factor(other.m_bias_scaling_factor) {
+    m_bias_scaling_factor(other.m_bias_scaling_factor),
+    m_transpose(other.m_transpose) {
 
     // Deep matrix copies
     m_linearity_gradient = other.m_linearity_gradient;
@@ -125,6 +131,7 @@ class fully_connected_layer : public learning_layer {
   fully_connected_layer& operator=(const fully_connected_layer& other) {
     learning_layer::operator=(other);
     m_bias_scaling_factor = other.m_bias_scaling_factor;
+    m_transpose = other.m_transpose;
 
     // Deep matrix copies
     deallocate_matrices();
@@ -149,6 +156,11 @@ class fully_connected_layer : public learning_layer {
   }
 
   std::string get_type() const override { return "fully connected"; }
+
+  void set_num_neurons(int n) { 
+    m_num_neurons = n; 
+    this->m_neuron_dims.assign(1, this->m_num_neurons);
+  }
 
   data_layout get_data_layout() const override { return T_layout; }
 
@@ -207,16 +219,29 @@ class fully_connected_layer : public learning_layer {
     // Setup weights
     // Note: linearity matrix is duplicated across processes unless
     // the data layout is model-parallel.
-    El::Distribution col_dist = El::STAR;
-    El::Distribution row_dist = El::STAR;
-    if (get_data_layout() == data_layout::MODEL_PARALLEL) {
+    El::Distribution col_dist, row_dist;
+    switch (get_data_layout()) {
+    case data_layout::DATA_PARALLEL:
+      col_dist = El::STAR;
+      row_dist = El::STAR;
+      break;
+    case data_layout::MODEL_PARALLEL:
       col_dist = El::MC;
       row_dist = El::MR;
+      break;
+    default:
+      LBANN_ERROR("invalid data layout");
     }
-    this->m_weights[0]->setup(this->m_num_neurons,
-                              this->m_num_prev_neurons,
-                              col_dist, row_dist, Dev);
-    this->m_weights[1]->setup(this->m_num_neurons,
+    if (m_transpose) {
+      this->m_weights[0]->setup(get_num_prev_neurons(),
+                                get_num_neurons(),
+                                col_dist, row_dist, Dev);
+    } else {
+      this->m_weights[0]->setup(get_num_neurons(),
+                                get_num_prev_neurons(),
+                                col_dist, row_dist, Dev);
+    }
+    this->m_weights[1]->setup(get_num_neurons(),
                               1,
                               get_activations().DistData().colDist,
                               El::STAR, Dev);
@@ -234,7 +259,11 @@ class fully_connected_layer : public learning_layer {
       this->m_weights[1]->freeze();
     } else {
       if (this->m_weights[0]->is_frozen() || this->m_weights[1]->is_frozen()) {
-        throw lbann_exception("fully_connected_layer: layer is not frozen but weights are");
+        std::stringstream err;
+        err << "layer " << get_name() << " is not frozen, but its weights "
+            << "(" << this->m_weights[0]->get_name() << ", "
+            << this->m_weights[1]->get_name() << ") are frozen";
+        LBANN_ERROR(err.str());
       }
     }
   }

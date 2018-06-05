@@ -246,6 +246,22 @@ void model::replace_weights(std::vector<weights*>& new_weights) {
 
 }
 
+void model::copy_trained_weights_from(std::vector<weights*>& new_weights) {
+  if (new_weights.empty()) {
+    if(m_comm->am_world_master()) std::cout << "No trained weights to copy " << std::endl;
+    return;
+  }
+  for(size_t i = 0; i < new_weights.size(); ++i) {
+     for (size_t j = 0; j < m_weights.size(); ++j) {
+       //copy only trained weights (that is unfrozen layer)
+       if(m_weights[j]->get_name() == new_weights[i]->get_name() && !new_weights[i]->is_frozen()) {
+         if(m_comm->am_world_master()) std::cout << " Replacing " << m_weights[j]->get_name() << " with " << new_weights[i]->get_name() << std::endl;
+         m_weights[j]->set_values(new_weights[i]->get_values());
+       }
+     }
+   }
+}
+
 optimizer* model::create_optimizer() const {
   if (m_default_optimizer != nullptr) {
     return m_default_optimizer->copy();
@@ -706,7 +722,7 @@ void model::collect_indices(execution_mode mode) {
 }
 
 
-void model::train(int num_epochs) {
+void model::train(int num_epochs, int num_batches) {
   do_train_begin_cbs();
   for (int epoch = m_current_epoch; epoch < num_epochs; ++epoch) {
 
@@ -716,9 +732,14 @@ void model::train(int num_epochs) {
     // Setup epoch
     reset_mode_and_model(execution_mode::training);
 
-    // Train on mini-batches
     do_epoch_begin_cbs();
-    while (!train_mini_batch()) {}
+    // Train on num_batches (subepoch) if specified
+    if(num_batches) {
+      for(int i = 0; i < num_batches; i++)
+        train_mini_batch();
+    } else { //train full epoch
+      while (!train_mini_batch()) {}
+    }
     // Once the epoch is complete, Increase the count
     ++m_current_epoch;
     do_epoch_end_cbs();

@@ -45,13 +45,13 @@ class bent_identity_layer : public entrywise_activation_layer {
   El::Device get_device_allocation() const override { return Dev; }
 
  protected:
-  DataType activation(DataType z) const override {
+  DataType activation(DataType x) const override {
     const DataType one = DataType(1);
-    return (std::sqrt(z*z + one) - one) / 2 + z;
+    return (std::sqrt(x*x + one) - one) / 2 + x;
   }
-  DataType activation_derivative(DataType z) const override {
+  DataType activation_derivative(DataType x) const override {
     const DataType one = DataType(1);
-    return z / (2 * std::sqrt(z*z + one)) + one;
+    return x / (2 * std::sqrt(x*x + one)) + one;
   }
 };
 

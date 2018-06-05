@@ -56,6 +56,11 @@
 #include "lbann/layers/activations/swish.hpp"
 #include "lbann/layers/activations/tanh.hpp"
 #include "lbann/layers/activations/power.hpp"
+#include "lbann/layers/activations/sigmoid_bce_with_logits.hpp"
+#include "lbann/layers/activations/abs.hpp"
+#include "lbann/layers/activations/l2_loss.hpp"
+#include "lbann/layers/activations/log.hpp"
+
 
 /// Learning Layers
 #include "lbann/layers/learning/fully_connected.hpp"
@@ -80,6 +85,12 @@
 #include "lbann/layers/transform/gaussian.hpp"
 #include "lbann/layers/transform/bernoulli.hpp"
 #include "lbann/layers/transform/uniform.hpp"
+#include "lbann/layers/transform/crop.hpp"
+#include "lbann/layers/transform/categorical_random.hpp"
+#include "lbann/layers/transform/discrete_random.hpp"
+#include "lbann/layers/transform/stop_gradient.hpp"
+#include "lbann/layers/transform/max.hpp"
+#include "lbann/layers/transform/min.hpp"
 
 /// Regularization layers.
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
@@ -90,6 +101,7 @@
 /// I/O Layers
 #include "lbann/layers/io/input/input_layer.hpp"
 #include "lbann/layers/io/target/target_layer.hpp"
+#include "lbann/layers/io/input/repeated_input_layer.hpp"
 
 /// Reconstruction Layer
 #include "lbann/layers/io/target/reconstruction.hpp"

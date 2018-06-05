@@ -72,9 +72,52 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
       // If every image in the dataset is a color image, this is not needed
       std::unique_ptr<lbann::cv_subtractor> subtractor(new(lbann::cv_subtractor));
       subtractor->set_name(subtractor_name);
-      subtractor->set(pb_subtractor.image_to_sub());
-      pp->add_normalizer(std::move(subtractor));
-      if (master) std::cout << "image processor: " << subtractor_name << " subtractor is set" << std::endl;
+
+      bool is_set = false;
+
+      if (!pb_subtractor.image_to_sub().empty()) {
+        subtractor->set_mean(pb_subtractor.image_to_sub());
+        is_set = true;
+      }
+      else if (pb_subtractor.channel_mean_size() > 0) {
+        const int _width = pb_subtractor.width()? pb_subtractor.width() : width;
+        const int _height = pb_subtractor.height()? pb_subtractor.height() : height;
+
+        const size_t n = pb_subtractor.channel_mean_size();
+        std::vector<lbann::DataType> ch_mean(n);
+        for(size_t i = 0u; i < n; ++i) {
+          ch_mean[i] = static_cast<lbann::DataType>(pb_subtractor.channel_mean(i));
+        }
+
+        subtractor->set_mean(_width, _height, ch_mean);
+        is_set = true;
+      }
+
+      if (! pb_subtractor.image_to_div().empty()) {
+        subtractor->set_stddev(pb_subtractor.image_to_div());
+        is_set = true;
+      }
+      else if (pb_subtractor.channel_stddev_size() > 0) {
+        const int _width = pb_subtractor.width()? pb_subtractor.width() : width;
+        const int _height = pb_subtractor.height()? pb_subtractor.height() : height;
+
+        const size_t n = pb_subtractor.channel_stddev_size();
+        std::vector<lbann::DataType> ch_stddev(n);
+        for(size_t i = 0u; i < n; ++i) {
+          ch_stddev[i] = static_cast<lbann::DataType>(pb_subtractor.channel_stddev(i));
+        }
+
+        subtractor->set_stddev(_width, _height, ch_stddev);
+        is_set = true;
+      }
+
+      if (is_set) {
+        pp->add_normalizer(std::move(subtractor));
+        if (master) std::cout << "image processor: " << subtractor_name << " subtractor is set" << std::endl;
+      } else {
+        if (master) std::cout << "image processor: " << subtractor_name
+                              << " subtractor needs at least either of 'image_to_sub' or 'image_to_div'." << std::endl;
+      }
     }
   }
 
@@ -310,13 +353,46 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
 
     reader_jag->set_image_dims(width, height);
 
-    const data_reader_jag_conduit::variable_t independent_type
-           = static_cast<data_reader_jag_conduit::variable_t>(pb_readme.independent());
+    using var_t = data_reader_jag_conduit::variable_t;
+    // composite independent variable
+    std::vector<var_t> independent_type(pb_readme.independent_size());
+
+    for (int i=0; i < pb_readme.independent_size(); ++i) {
+      independent_type[i] = static_cast<var_t>(pb_readme.independent(i));
+    }
+
     reader_jag->set_independent_variable_type(independent_type);
 
-    const data_reader_jag_conduit::variable_t dependent_type
-           = static_cast<data_reader_jag_conduit::variable_t>(pb_readme.dependent());
+    // composite dependent variable
+    std::vector<var_t> dependent_type(pb_readme.dependent_size());
+
+    for (int i=0; i < pb_readme.dependent_size(); ++i) {
+      dependent_type[i] = static_cast<var_t>(pb_readme.dependent(i));
+    }
+
     reader_jag->set_dependent_variable_type(dependent_type);
+
+    // keys of chosen scalar values in jag simulation output
+    std::vector<std::string> scalar_keys(pb_readme.jag_scalar_keys_size());
+
+    for (int i=0; i < pb_readme.jag_scalar_keys_size(); ++i) {
+      scalar_keys[i] = pb_readme.jag_scalar_keys(i);
+    }
+
+    if (scalar_keys.size() > 0u) {
+      reader_jag->set_scalar_choices(scalar_keys);
+    }
+
+    // keys of chosen values in jag simulation parameters
+    std::vector<std::string> input_keys(pb_readme.jag_input_keys_size());
+
+    for (int i=0; i < pb_readme.jag_input_keys_size(); ++i) {
+      input_keys[i] = pb_readme.jag_input_keys(i);
+    }
+
+    if (input_keys.size() > 0u) {
+      reader_jag->set_input_choices(input_keys);
+    }
 
     reader = reader_jag;
     if (master) std::cout << reader->get_type() << " is set" << std::endl;

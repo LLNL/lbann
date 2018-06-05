@@ -96,11 +96,11 @@ def skeleton_io_buffers(cluster, dir_name, executables, compiler_name, weekly):
     else:
         print('os.environ["LOGNAME"]=%s' % os.environ['LOGNAME'])
 
-    print('Errors for: partitioned_and_distributed (%d)' % len(errors))
+    print('Errors for: partitioned_and_distributed %s (%d)' % (compiler_name, len(errors)))
     for error in errors:
         print(error)
     if should_log:
-        print('All values: (%d)' % len(all_values))
+        print('All values for: partitioned_and_distributed %s (%d)' % (compiler_name, len(all_values)))
         for value in all_values:
             print(value)
     assert errors == []

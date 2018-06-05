@@ -3,9 +3,10 @@ cmake_minimum_required(VERSION 3.8)
 cmake_policy(SET CMP0015 NEW)
 
 set(COMPILER "gnu")
-set(CLUSTER "surface")
+#set(CLUSTER "surface")
+set(CLUSTER "catalyst")
 set(LBANN_DIR ../..)
-set(LBANN_BUILD_DIR ${LBANN_DIR}/build/${COMPILER}.${CLUSTER}.llnl.gov/install)
+set(LBANN_BUILD_DIR ${LBANN_DIR}/build/${COMPILER}.Release.${CLUSTER}.llnl.gov/install)
 include(${LBANN_DIR}/cmake/modules/SetupMPI.cmake)
 include(${LBANN_DIR}/cmake/modules/SetupOpenMP.cmake)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
@@ -53,7 +54,7 @@ file(GLOB COMPUTE_MEAN_DEPEND_SRCS
      mean_image.cpp
      process_images.cpp
      lbann/utils/random.cpp
-     lbann/utils/file_utils.cpp
+     ${LBANN_DIR}/src//utils/file_utils.cpp
      ${LBANN_DIR}/src/data_readers/cv_augmenter.cpp
      ${LBANN_DIR}/src/data_readers/cv_colorizer.cpp
      ${LBANN_DIR}/src/data_readers/cv_cropper.cpp
@@ -70,11 +71,11 @@ file(GLOB COMPUTE_MEAN_DEPEND_SRCS
      ${LBANN_DIR}/src/data_readers/patchworks/patchworks_stats.cpp)
 
 file(GLOB UNIFORM_MEAN_DEPEND_SRCS
-     lbann/utils/file_utils.cpp
+     ${LBANN_DIR}/src//utils/file_utils.cpp
      ${LBANN_DIR}/src/data_readers/cv_transform.cpp
      ${LBANN_DIR}/src/data_readers/cv_subtractor.cpp)
 
 add_executable(${COMPUTE_MEAN_EXE} ${COMPUTE_MEAN_SRCS} ${COMPUTE_MEAN_DEPEND_SRCS})
-target_link_libraries(${COMPUTE_MEAN_EXE} ${OpenCV_LIBS} ${Elemental_LIBS} ${MPI_CXX_LIBRARIES})
+target_link_libraries(${COMPUTE_MEAN_EXE} ${OpenCV_LIBS} ${Elemental_LIBS} ${MPI_CXX_LIBRARIES} ${OpenMP_CXX_LIBRARIES})
 add_executable(${UNIFORM_MEAN_EXE} ${UNIFORM_MEAN_SRCS} ${UNIFORM_MEAN_DEPEND_SRCS})
-target_link_libraries(${UNIFORM_MEAN_EXE} ${OpenCV_LIBS})
+target_link_libraries(${UNIFORM_MEAN_EXE} ${OpenCV_LIBS} ${OpenMP_CXX_LIBRARIES})

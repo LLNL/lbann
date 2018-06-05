@@ -33,8 +33,10 @@ message Reader {
   bool gan_labelling = 201;
   int32 gan_label_value = 202;
   ImagePreprocessor image_preprocessor = 13;
-  int32 independent = 97; // only for jag
-  int32 dependent = 98; // only for jag
+  repeated string jag_scalar_keys = 95; // only for jag
+  repeated string jag_input_keys = 96; // only for jag
+  repeated int32 independent = 97; // only for jag
+  repeated int32 dependent = 98; // only for jag
   int32 num_labels = 99; //for imagenet
   int64 num_samples = 100; //only for synthetic
   int64 num_features = 101; //only for synthetic
@@ -106,6 +108,11 @@ message ImagePreprocessor {
     string name = 1;
     bool disable = 2;
     string image_to_sub = 3;
+    string image_to_div = 4;
+    repeated float channel_mean = 5 [packed = true];
+    repeated float channel_stddev = 6 [packed = true];
+    int32 width = 7;
+    int32 height = 8;
   }
 
   message PatchExtractor {
@@ -188,6 +195,7 @@ message Model {
   int64 mini_batch_size = 12;
   int64 num_epochs = 4;
   int64 super_steps = 121; //multiple steps/epochs currently use in GAN 
+  int64 num_batches = 122; //multiple batches/sub epoch
   int64 block_size = 50;
   int64 procs_per_model = 51;
   int64 num_gpus = 53;
@@ -710,6 +718,7 @@ message Layer {
 
    // input Layers
    Input input = 2;
+   RepeatedInput repeated_input = 6; // @todo Remove when possible
 
    // transform Layers
    Reshape reshape = 306;
@@ -727,6 +736,12 @@ message Layer {
    Gaussian gaussian = 312;
    Bernoulli bernoulli = 313;
    Uniform uniform = 314;
+   Crop crop = 316;
+   CategoricalRandom categorical_random = 317;
+   DiscreteRandom discrete_random = 318;
+   StopGradient stop_gradient = 319;
+   Max max = 320;
+   Min min = 321;
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -759,6 +774,10 @@ message Layer {
    Exponential exponential = 41;
    Swish swish = 42;
    Power power = 43;
+   Abs   abs = 44;
+   L2Loss l2_loss = 45;
+   Log log = 46;
+   Sigmoid_Binary_Cross_Entropy_With_Logits bce_with_logits = 47;
 }
 ///////////////////////
 // MotifLayer //
@@ -822,6 +841,20 @@ message Power {
   double exponent = 1;
 }
 
+message Abs {
+}
+
+message L2Loss {
+}
+
+message Log {
+  double base = 1;
+}
+
+message Sigmoid_Binary_Cross_Entropy_With_Logits {
+  int32 true_label = 1;
+}
+
 ///////////////////////////
 // Regularization Layers //
 ///////////////////////////
@@ -857,6 +890,13 @@ message Input {
   bool data_set_per_model = 1;  //default: false
   string io_buffer = 2;
   bool for_regression = 3; //default: false
+}
+
+/// @todo Remove when possible
+message RepeatedInput {
+  bool data_set_per_model = 1;  //default: false
+  bool for_regression = 2; //default: false
+  int64 num_steps = 3;
 }
 
 //////////////////////
@@ -949,6 +989,28 @@ message Uniform {
   string neuron_dims = 3;
 }
 
+
+message Crop {
+  string dims = 3;
+}
+
+message CategoricalRandom {
+}
+
+message DiscreteRandom {
+  string values = 1;
+  string dims = 2;
+}
+
+message StopGradient {
+}
+
+message Max {
+}
+
+message Min {
+}
+
 /////////////////////
 // learning Layers //
 /////////////////////
@@ -959,6 +1021,8 @@ message FullyConnected {
   double bias_initial_value = 4;       //default: 0
   double l2_regularization_factor = 5; //default: 0
   double group_lasso_regularization_factor = 6; //default: 0
+  bool transpose = 7;
+  bool num_neurons_is_num_labels = 8;
 }
 
 message Convolution {

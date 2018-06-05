@@ -137,11 +137,8 @@ class slice_layer : public transform_layer {
 
   void setup_pointers() override {
     transform_layer::setup_pointers();
-    std::stringstream err;
     if (get_num_children() <= 0) {
-      err << __FILE__ << " " << __LINE__ << " :: slice_layer: "
-          << "slice layer has no children";
-      throw lbann_exception(err.str());
+      LBANN_ERROR("slice layer has no children");
     }
   }
 
@@ -155,7 +152,6 @@ class slice_layer : public transform_layer {
   }
 
   void setup_dims() override {
-    std::stringstream err;
 
     // Initialize previous neuron tensor dimensions
     transform_layer::setup_dims();
@@ -167,17 +163,15 @@ class slice_layer : public transform_layer {
     }
 
     // Check that slice points are valid
-    if(m_slice_points.size() != m_child_layers.size() + 1
-       || !std::is_sorted(m_slice_points.begin(), m_slice_points.end())) {
-      err << __FILE__ << " " << __LINE__ << " :: slice_layer: ";
-      if (!std::is_sorted(m_slice_points.begin(), m_slice_points.end())) {
-        err << "slice points not sorted";
-      } else {
-        err << "number of slice points (" << m_slice_points.size()
-            << ") != number of children (" << m_child_layers.size() << ") + 1"
-            << " {" << get_layer_names(m_child_layers) << "}";
-      }
-      throw lbann_exception(err.str());
+    if (!std::is_sorted(m_slice_points.begin(), m_slice_points.end())) {
+      LBANN_ERROR("slice points are not sorted");
+    }
+    if (m_slice_points.size() != m_child_layers.size() + 1) {
+      std::stringstream err;
+      err << "number of slice points (" << m_slice_points.size() << ") "
+          << "!= number of children (" << m_child_layers.size() << ") + 1"
+          << " {" << get_layer_names(m_child_layers) << "}";
+      LBANN_ERROR(err.str());
     }
 
   }
@@ -224,25 +218,18 @@ class slice_layer : public transform_layer {
 
       // Populate current output tensor
       output.Resize(num_regions * output_region_stride, width);
-      if (num_regions == 1) {
-        El::LockedView(output,
+      for (int region = 0; region < num_regions; ++region) {
+        El::LockedView(*m_input_region_v,
                        input,
-                       El::IR(input_region_start, input_region_end),
+                       El::IR(input_region_start + region * input_region_stride,
+                              input_region_end + region * input_region_stride),
                        El::ALL);
-      } else {
-        for (int region = 0; region < num_regions; ++region) {
-          El::LockedView(*m_input_region_v,
-                         input,
-                         El::IR(input_region_start + region * input_region_stride,
-                                input_region_end + region * input_region_stride),
-                         El::ALL);
-          El::View(*m_output_region_v,
-                   output,
-                   El::IR(region * output_region_stride,
-                          (region+1) * output_region_stride),
-                   El::ALL);
-          El::Copy(*m_input_region_v, *m_output_region_v);
-        }
+        El::View(*m_output_region_v,
+                 output,
+                 El::IR(region * output_region_stride,
+                        (region+1) * output_region_stride),
+                 El::ALL);
+        El::Copy(*m_input_region_v, *m_output_region_v);
       }
     }
 

@@ -2,10 +2,10 @@
 model {
   name: "directed_acyclic_graph_model"
   data_layout: "model_parallel"
-  mini_batch_size: 128
+  mini_batch_size: 32
   block_size: 256
-  super_steps: 100
-  num_epochs: 16
+  super_steps: 100000
+  num_epochs: 1
   num_parallel_readers: 0
   procs_per_model: 0
   num_gpus: -1
@@ -15,7 +15,7 @@ model {
   ###################################################
 
   objective_function {
-    cross_entropy {}
+    binary_cross_entropy {}
     l2_weight_regularization {
       scale_factor: 1e-4
     }
@@ -38,6 +38,22 @@ model {
     }
   }
   callback { timer {} }
+
+  callback {
+      dump_activations{
+      basename: "/usr/workspace/wsa/jacobs32/github.saj.lbann/fcgan_dump_acts_32mb/"
+      layer_names: "fc4_tanh sum"
+      #layer_names: "fc4_tanh data sum"
+      #interval: 844
+    }
+  }
+  callback {
+    save_images {
+      image_dir: "/usr/workspace/wsa/jacobs32/github.saj.lbann/fcgan_dump_images_32mb/"
+      layer_names: "fc4_tanh sum"
+      extension: "png"
+    }
+  }
 
   ###################################################
   # start of layers
@@ -201,7 +217,7 @@ model {
     parents: "fc4"
     name: "fc4_tanh"
     data_layout: "data_parallel"
-    tanh {
+    tanh{
     }
   }
 

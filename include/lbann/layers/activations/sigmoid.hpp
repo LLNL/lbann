@@ -121,7 +121,7 @@ class sigmoid_layer : public entrywise_activation_layer {
   #else
     sigmoid_cuda::fp(*m_cudnn,
                      get_num_neurons(),
-                     m_mini_batch_size_per_gpu,
+                     get_prev_activations().LocalWidth(),
                      get_prev_activations().LockedBuffer(),
                      get_prev_activations().LDim(),
                      get_activations().Buffer(),
@@ -136,7 +136,7 @@ class sigmoid_layer : public entrywise_activation_layer {
   #else
     sigmoid_cuda::bp(*m_cudnn,
                      get_num_neurons(),
-                     m_mini_batch_size_per_gpu,
+                     get_prev_activations().LocalWidth(),
                      get_prev_activations().LockedBuffer(),
                      get_prev_activations().LDim(),
                      get_prev_error_signals().LockedBuffer(),

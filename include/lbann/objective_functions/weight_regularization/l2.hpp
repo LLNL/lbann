@@ -42,8 +42,7 @@ namespace lbann {
 class l2_weight_regularization : public objective_function_term {
  public:
 
-  l2_weight_regularization(EvalType scale_factor = EvalType(1))
-    : objective_function_term(scale_factor) {}
+  l2_weight_regularization(EvalType scale_factor = EvalType(1));
   l2_weight_regularization* copy() const override { return new l2_weight_regularization(*this); }
   std::string name() const override { return "L2 weight regularization"; }
   void setup(model& m) override;
@@ -65,16 +64,16 @@ class l2_weight_regularization : public objective_function_term {
 
  private:
 
-  /** Holds intermediate terms for each weights. */
-  std::vector<EvalType> m_sqsums;
-  /** Holds an allreduce request for each weights. */
-  std::vector<Al::request> m_allreduce_reqs;
-  /** Whether an allreduce is needed for each weights. */
-  std::vector<bool> m_allreduce_started;
+  /** Holds intermediate term for local contributions. */
+  EvalType m_sqsum;
+  /** Aluminum request for local contribution aggregation. */
+  Al::request m_allreduce_req;
+  /** Whether local contribution aggregation has started. */
+  bool m_allreduce_started;
 
 #ifdef LBANN_HAS_CUDNN
   /** Reference to cuDNN manager. */
-  cudnn::cudnn_manager* m_cudnn = nullptr;
+  cudnn::cudnn_manager* m_cudnn;
 #endif // LBANN_HAS_CUDNN
 
 };

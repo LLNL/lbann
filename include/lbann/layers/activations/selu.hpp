@@ -59,15 +59,15 @@ class selu_layer : public entrywise_activation_layer {
   }
 
  protected:
-  DataType activation(DataType z) const override {
-    return (z >= DataType(0) ?
-            m_scale * z :
-            m_scale * (m_alpha * std::expm1(z)));
+  DataType activation(DataType x) const override {
+    return (x >= DataType(0) ?
+            m_scale * x :
+            m_scale * (m_alpha * std::expm1(x)));
   }
-  DataType activation_derivative(DataType z) const override {
-    return (z >= DataType(0) ?
+  DataType activation_derivative(DataType x) const override {
+    return (x >= DataType(0) ?
             m_scale :
-            m_scale * m_alpha * std::exp(z));
+            m_scale * m_alpha * std::exp(x));
   }
  private:
   /** Alpha parameter for the ELU. */

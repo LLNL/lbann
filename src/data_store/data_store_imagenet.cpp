@@ -155,7 +155,9 @@ void data_store_imagenet::read_files(const std::unordered_set<int> &indices) {
     }
     if (m_data_filepaths.find(index) == m_data_filepaths.end()) {
       err << __FILE__ << " " << __LINE__ << " :: " 
-          << " m_data_filepaths.find(index) failed for index: " << index;
+          << " m_data_filepaths.find(index) failed for index: " << index
+          << " m_data_filepaths.size: " << m_data_filepaths.size()
+          << "\nhostname: " << getenv("SLURMD_NODENAME");
       throw lbann_exception(err.str());
     }
     size_t file_len = m_file_sizes[index];
@@ -208,13 +210,13 @@ void data_store_imagenet::get_file_sizes() {
       double time_per_file = e / j;
       int remaining_files = m_my_datastore_indices.size()-j;
       double estimated_remaining_time = time_per_file * remaining_files;
-      std::cerr << "P_0: got size for " << j << " of " << m_data_filepaths.size()
+      std::cerr << "P_0: got size for " << j << " of " << m_my_datastore_indices.size()
                 << " files; elapsed time: " << get_time() - tm
                 << "s est. remaining time: " << estimated_remaining_time << "s\n";
     }
   }
   if (m_master) {
-    std::cerr << "P_0: got size for " << j << " of " << m_data_filepaths.size()
+    std::cerr << "P_0: got size for " << j << " of " << m_my_datastore_indices.size()
                 << " files; elapsed time: " << get_time() - tm << "\n";
   }
 
