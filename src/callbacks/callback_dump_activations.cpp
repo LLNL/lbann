@@ -57,12 +57,20 @@ void lbann_callback_dump_activations::on_forward_prop_end(model *m, Layer *l) {
 
 void lbann_callback_dump_activations::on_epoch_end(model *m) {
   auto cur_epoch = m->get_cur_epoch();
-  auto tag = "epoch" + std::to_string(cur_epoch);
+  auto tag = "train_epoch" + std::to_string(cur_epoch);
+  if(cur_epoch % m_batch_interval == 0) dump_activations(*m,tag);
+}
+
+void lbann_callback_dump_activations::on_validation_end(model *m) {
+  auto cur_epoch = m->get_cur_epoch();
+  auto tag = "val_epoch" + std::to_string(cur_epoch);
   if(cur_epoch % m_batch_interval == 0) dump_activations(*m,tag);
 }
 
 void lbann_callback_dump_activations::on_test_end(model *m) {
-  dump_activations(*m,"test");
+  auto cur_epoch = m->get_cur_epoch();
+  auto tag = "test_epoch" + std::to_string(cur_epoch);
+  if(cur_epoch % m_batch_interval == 0) dump_activations(*m,tag);
 }
 
 void lbann_callback_dump_activations::dump_activations(model& m,

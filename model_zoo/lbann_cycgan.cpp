@@ -88,12 +88,15 @@ int main(int argc, char *argv[]) {
       model_2->copy_trained_weights_from(model1_weights);
       if (master) std::cerr << "\n STARTING train - G1 solver model at step " << super_step << " \n\n";
       model_2->train( super_step*pb_model_2.num_epochs(),pb_model_2.num_batches());
-      //@todo: remove the dependencies
+      // Evaluate model on test set
+      model_2->evaluate(execution_mode::testing);
+
       if(master) std::cout << " Copy all trained weights from model1 to model3 and train/freeze as appropriate " << std::endl;
-      //auto model2_weights = model_2->get_weights();
       model_3->copy_trained_weights_from(model1_weights);
       if (master) std::cerr << "\n STARTING train - G2 solver model at step " << super_step << " \n\n";
       model_3->train( super_step*pb_model_3.num_epochs(),pb_model_3.num_batches());
+      // Evaluate model on test set
+      model_3->evaluate(execution_mode::testing);
 
       if(master) std::cout << " Update generator1 weights " << std::endl;
       auto model2_weights = model_2->get_weights();

@@ -4,7 +4,7 @@
 EXPERIMENT_NAME=lbann_cycgan_jag
 LBANN_DIR=$(git rev-parse --show-toplevel)
 MODEL_PROTO="--model={${LBANN_DIR}/model_zoo/models/jag/cycle_gan/cycgan_m1.prototext,${LBANN_DIR}/model_zoo/models/jag/cycle_gan/cycgan_m2.prototext,${LBANN_DIR}/model_zoo/models/jag/cycle_gan/cycgan_m3.prototext}"
-READER_PROTO="--reader=${LBANN_DIR}/model_zoo/models/jag/cycle_gan/data.prototext"
+READER_PROTO="--reader=${LBANN_DIR}/model_zoo/models/jag/cycle_gan/jag_data.prototext"
 OPTIMIZER_PROTO="--optimizer=${LBANN_DIR}/model_zoo/optimizers/opt_adam.prototext"
 IMAGENET_CLASSES= # options: 10, 100, 300, 1000 (leave blank to use other dataset)
 
@@ -202,7 +202,7 @@ if [ -n "${TEST_DATASET_LABELS}" ]; then
 fi
 
 # Initialize experiment command
-LBANN_EXE="${LBANN_DIR}/build/gnu.${CLUSTER}.llnl.gov/lbann/build/model_zoo/lbann_cycgan"
+LBANN_EXE="${LBANN_DIR}/build/gnu.Release.${CLUSTER}.llnl.gov/lbann/build/model_zoo/lbann_cycgan"
 case ${USE_GPU} in
     YES|yes|TRUE|true|ON|on|1)
         case ${HAS_GPU} in
