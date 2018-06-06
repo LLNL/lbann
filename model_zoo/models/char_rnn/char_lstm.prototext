@@ -6,7 +6,6 @@ model {
   num_epochs: 20
   num_parallel_readers: 0
   procs_per_model: 0
-  num_gpus: -1
   recurrent {
     unroll_depth : 5
   }

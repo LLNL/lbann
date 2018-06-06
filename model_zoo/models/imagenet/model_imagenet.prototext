@@ -114,7 +114,6 @@ model {
     }
   }
   block_size: 256
-  num_gpus: -1
   num_parallel_readers: 12
 }
 optimizer {

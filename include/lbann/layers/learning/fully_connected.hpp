@@ -68,11 +68,6 @@ class fully_connected_layer : public learning_layer {
   /** Whether the transpose of the linearity matrix is applied. */
   bool m_transpose;
 
-  #ifdef LBANN_HAS_CUDNN
-  /** Vector composed of ones. */
-  GPUMat m_ones;
-  #endif // LBANN_HAS_CUDNN
-
  public:
 
   fully_connected_layer(lbann_comm *comm,

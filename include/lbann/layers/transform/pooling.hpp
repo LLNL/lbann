@@ -210,21 +210,29 @@ class pooling_layer : public transform_layer {
   /// Initialize GPU objects
   void setup_gpu() override {
     transform_layer::setup_gpu();
-  #ifndef LBANN_HAS_CUDNN
-    throw lbann_exception("lbann_layer_pooling: cuDNN not detected");
-  #else
+#ifndef LBANN_HAS_CUDNN
+    LBANN_ERROR("cuDNN not detected");
+#else
 
     // Set pooling descriptor
     cudnnPoolingMode_t cudnn_pool_mode;
     switch(m_pool_mode) {
     case pool_mode::max:
-      cudnn_pool_mode = CUDNN_POOLING_MAX; break;
+#ifdef LBANN_SEQUENTIAL_CONSISTENCY
+      cudnn_pool_mode = CUDNN_POOLING_MAX_DETERMINISTIC;
+#else
+      cudnn_pool_mode = CUDNN_POOLING_MAX;
+#endif // LBANN_SEQUENTIAL_CONSISTENCY
+      break;
     case pool_mode::average:
       cudnn_pool_mode = CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING; break;
     case pool_mode::average_no_pad:
       cudnn_pool_mode = CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING; break;
     default:
-      throw lbann_exception("pooling_layer: no GPU implementation for pooling mode");
+      std::stringstream err;
+      err << "no GPU implementation for pooling mode " << static_cast<int>(m_pool_mode);
+      LBANN_ERROR(err.str());
+      cudnn_pool_mode = CUDNN_POOLING_MAX;
     }
     CHECK_CUDNN(cudnnCreatePoolingDescriptor(&m_pooling_cudnn_desc));
     CHECK_CUDNN(cudnnSetPoolingNdDescriptor(m_pooling_cudnn_desc,
@@ -235,7 +243,7 @@ class pooling_layer : public transform_layer {
                                             m_pads.data(),
                                             m_strides.data()));
 
-  #endif // #ifndef LBANN_HAS_CUDNN
+#endif // #ifndef LBANN_HAS_CUDNN
   }
 
   protected:
@@ -260,74 +268,47 @@ class pooling_layer : public transform_layer {
 
   /// Pooling forward propagation with cuDNN
   void fp_compute_cudnn() {
-  #ifndef LBANN_HAS_CUDNN
-    throw lbann_exception("pooling_layer: cuDNN not detected");
-  #else
-
-    // Useful constants
-    const DataType one = 1;
-    const DataType zero = 0;
-
-    // Perform pooling with each GPU
-    const int num_gpus = this->m_cudnn->get_num_gpus();
-    for(int i=0; i<num_gpus; ++i) {
-      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-      CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
-                                 this->m_cudnn->get_stream(i)));
-      CHECK_CUDNN(cudnnPoolingForward(this->m_cudnn->get_handle(i),
-                                      m_pooling_cudnn_desc,
-                                      &one,
-                                      this->m_prev_activations_cudnn_desc,
-                                      get_prev_activations().LockedBuffer(),
-                                      &zero,
-                                      this->m_activations_cudnn_desc,
-                                      get_activations().Buffer()));
-    }
-
-  #endif // #ifndef LBANN_HAS_CUDNN
+#ifndef LBANN_HAS_CUDNN
+    LBANN_ERROR("cuDNN not detected");
+#else
+    const DataType one = DataType(1);
+    const DataType zero = DataType(0);
+    CHECK_CUDNN(cudnnPoolingForward(this->m_cudnn->get_handle(),
+                                    m_pooling_cudnn_desc,
+                                    &one,
+                                    this->m_prev_activations_cudnn_desc,
+                                    get_prev_activations().LockedBuffer(),
+                                    &zero,
+                                    this->m_activations_cudnn_desc,
+                                    get_activations().Buffer()));
+#endif // #ifndef LBANN_HAS_CUDNN
   }
 
   /// Pooling backward propagation with cuDNN
   void bp_compute_cudnn() {
-  #ifndef LBANN_HAS_CUDNN
-    throw lbann_exception("pooling_layer: cuDNN not detected");
-  #else
-
-    // Useful constants
+#ifndef LBANN_HAS_CUDNN
+    LBANN_ERROR("cuDNN not detected");
+#else
     const DataType one = DataType(1);
-
-    // Get number of GPUs
-    const int num_gpus = this->m_cudnn->get_num_gpus();
-
-    // Perform back propagation on each GPU
-    for(int i=0; i<num_gpus; ++i) {
-      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-      CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
-                                 this->m_cudnn->get_stream(i)));
-      CHECK_CUDNN(cudnnPoolingBackward(this->m_cudnn->get_handle(i),
-                                       m_pooling_cudnn_desc,
-                                       &one,
-                                       this->m_activations_cudnn_desc,
-                                       get_activations().LockedBuffer(),
-                                       this->m_prev_error_signals_cudnn_desc,
-                                       get_prev_error_signals().LockedBuffer(),
-                                       this->m_prev_activations_cudnn_desc,
-                                       get_prev_activations().LockedBuffer(),
-                                       &one,
-                                       this->m_error_signals_cudnn_desc,
-                                       get_error_signals().Buffer()));
-    }
-
-  #endif // #ifndef LBANN_HAS_CUDNN
+    CHECK_CUDNN(cudnnPoolingBackward(this->m_cudnn->get_handle(),
+                                     m_pooling_cudnn_desc,
+                                     &one,
+                                     this->m_activations_cudnn_desc,
+                                     get_activations().LockedBuffer(),
+                                     this->m_prev_error_signals_cudnn_desc,
+                                     get_prev_error_signals().LockedBuffer(),
+                                     this->m_prev_activations_cudnn_desc,
+                                     get_prev_activations().LockedBuffer(),
+                                     &one,
+                                     this->m_error_signals_cudnn_desc,
+                                     get_error_signals().Buffer()));
+#endif // #ifndef LBANN_HAS_CUDNN
   }
 
   /// Pooling forward propagation with im2col
   void fp_compute_im2col() {
-
-    // Throw exception if pooling mode is not max or average pooling
-    if(m_pool_mode != pool_mode::max
-       && m_pool_mode != pool_mode::average) {
-      throw lbann_exception("pooling_layer: CPU pooling layer only implements max and average pooling");
+    if(m_pool_mode != pool_mode::max && m_pool_mode != pool_mode::average) {
+      LBANN_ERROR("CPU pooling layer only supports max and average pooling");
     }
 
     // Local matrices
@@ -412,11 +393,8 @@ class pooling_layer : public transform_layer {
 
   /// Pooling forward propagation with im2col
   void bp_compute_im2col() {
-
-    // Throw exception if pooling mode is not max or average pooling
-    if(m_pool_mode != pool_mode::max
-        && m_pool_mode != pool_mode::average) {
-      throw lbann_exception("pooling_layer: CPU pooling layer only implements max and average pooling");
+    if(m_pool_mode != pool_mode::max && m_pool_mode != pool_mode::average) {
+      LBANN_ERROR("CPU pooling layer only supports max and average pooling");
     }
 
     // Local matrices
