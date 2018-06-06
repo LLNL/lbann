@@ -263,7 +263,7 @@ void Layer::back_prop() {
 
   #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
-  if (using_gpus()) { this->m_cudnn->check_error(); }
+  if (using_gpus()) { El::GPUManager::SynchronizeDevice(true); }
   #endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
 
   // Backprop the compute function.
@@ -279,7 +279,7 @@ void Layer::back_prop() {
 
   #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
-  if (using_gpus()) { this->m_cudnn->check_error(); }
+  if (using_gpus()) { El::GPUManager::SynchronizeDevice(true); }
   #endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
 
   m_bp_time += get_time() - bp_start;
