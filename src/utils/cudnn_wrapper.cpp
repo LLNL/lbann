@@ -99,18 +99,25 @@ void set_tensor_cudnn_desc(cudnnTensorDescriptor_t& desc,
                            const std::vector<int>& sample_dims,
                            int sample_stride) {
 
-    // Create tensor descriptor if needed
-    if (desc == nullptr) {
-        CHECK_CUDNN(cudnnCreateTensorDescriptor(&desc));
-    }
-
     // Determine tensor dimensions
-    // Note: cuDNN tensors should have at least 4 dimension
+    // Note: cuDNN tensors should be non-empty and have at least 4
+    // dimensions
     std::vector<int> dims = sample_dims;
-    while (dims.size() < 3) {
-        dims.insert(dims.begin(), 1);
-    }
     dims.insert(dims.begin(), num_samples);
+    while (dims.size() < 4) { dims.insert(dims.begin() + 1, 1); }
+
+    // Check that tensor dimensions are valid
+    if (std::any_of(dims.begin(), dims.end(),
+                    [] (int d) { return d <= 0; })) {
+      std::stringstream err;
+      err << "attempted to set cuDNN tensor descriptor "
+          << "with invalid dimensions (";
+      for (size_t i = 0; i < dims.size(); ++i) {
+        err << (i == 0 ? "" : " x ") << dims[i];
+      }
+      err << ")";
+      LBANN_ERROR(err.str());
+    }
 
     // Determine tensor strides
     std::vector<int> strides(dims.size());
@@ -121,6 +128,9 @@ void set_tensor_cudnn_desc(cudnnTensorDescriptor_t& desc,
     strides.front() = std::max(strides.front(), sample_stride);
 
     // Set cuDNN tensor descriptor
+    if (desc == nullptr) {
+        CHECK_CUDNN(cudnnCreateTensorDescriptor(&desc));
+    }
     CHECK_CUDNN(cudnnSetTensorNdDescriptor(desc,
                                            get_cudnn_data_type(),
                                            dims.size(),
@@ -134,21 +144,31 @@ void set_tensor_cudnn_desc(cudnnTensorDescriptor_t& desc,
                            int width,
                            int leading_dim) {
 
-    // Create tensor descriptor if needed
-    if (desc == nullptr) {
-        CHECK_CUDNN(cudnnCreateTensorDescriptor(&desc));
-    }
-
     // Determine tensor dimensions and strides
     // Note: cuDNN tensors should have at least 4 dimension
     leading_dim = std::max(height, leading_dim);
     const std::vector<int> dims = {1, 1, width, height};
     const std::vector<int> strides = {width * leading_dim,
                                       width * leading_dim,
-                                      leading_dim,
-                                      1};
+                                      leading_dim, 1};
+
+    // Check that tensor dimensions are valid
+    if (std::any_of(dims.begin(), dims.end(),
+                    [] (int d) { return d <= 0; })) {
+      std::stringstream err;
+      err << "attempted to set cuDNN tensor descriptor "
+          << "with invalid dimensions (";
+      for (size_t i = 0; i < dims.size(); ++i) {
+        err << (i == 0 ? "" : " x ") << dims[i];
+      }
+      err << ")";
+      LBANN_ERROR(err.str());
+    }
 
     // Set cuDNN tensor descriptor
+    if (desc == nullptr) {
+        CHECK_CUDNN(cudnnCreateTensorDescriptor(&desc));
+    }
     CHECK_CUDNN(cudnnSetTensorNdDescriptor(desc,
                                            get_cudnn_data_type(),
                                            dims.size(),
