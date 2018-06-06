@@ -47,8 +47,10 @@ class input_layer : public generic_input_layer {
     : generic_input_layer(comm, num_parallel_readers, data_readers, data_set_spans_models, for_regression) {
     validate_data_layout();
     initialize_io_buffer(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), data_readers);
-    io_buffer->fetch_data_fn = new fetch_data_functor(true, false);
-    io_buffer->update_data_reader_fn = new update_data_reader_functor(true);
+    for (auto io_buffer : m_io_buffers) {
+      io_buffer->fetch_data_fn = new fetch_data_functor(true, false);
+      io_buffer->update_data_reader_fn = new update_data_reader_functor(true);
+    }
   }
   input_layer(const input_layer&) = default;
   input_layer& operator=(const input_layer&) = default;
@@ -59,7 +61,7 @@ class input_layer : public generic_input_layer {
   std::string get_type() const override {
     return std::string {}
       + "input:"
-      + io_buffer->get_type();
+      + m_io_buffers[0]->get_type();
   }
 
   inline void validate_data_layout();

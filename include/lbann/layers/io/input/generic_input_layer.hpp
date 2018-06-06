@@ -39,7 +39,6 @@ namespace lbann {
 class generic_input_layer : public io_layer {
  public:
   using data_reader_map_t = std::map<execution_mode, generic_data_reader *>;
-  generic_io_buffer *io_buffer;
 
  public:
   generic_input_layer(lbann_comm *comm,
@@ -47,7 +46,8 @@ class generic_input_layer : public io_layer {
               std::map<execution_mode, generic_data_reader *> data_readers,
               bool data_set_spans_models = true, bool for_regression = false)
     : io_layer(comm, data_set_spans_models, for_regression),
-      io_buffer(nullptr),
+      m_io_buffers(),
+      m_active_buffer(0),
       m_training_dataset(),
       m_testing_dataset(),
       m_validation_dataset(),
@@ -73,7 +73,7 @@ class generic_input_layer : public io_layer {
   }
 
   ~generic_input_layer() override {
-    if(io_buffer != nullptr) {
+    for (auto& io_buffer : m_io_buffers) {
       delete io_buffer;
     }
     // Input layer always frees data readers.
@@ -85,11 +85,14 @@ class generic_input_layer : public io_layer {
   // Input layers copy their datareaders.
   generic_input_layer(const generic_input_layer& other)
     : io_layer(other),
-      io_buffer(other.io_buffer),
+      m_io_buffers(other.m_io_buffers),
       m_training_dataset(other.m_training_dataset),
       m_testing_dataset(other.m_testing_dataset),
       m_validation_dataset(other.m_validation_dataset),
       m_data_readers(other.m_data_readers) {
+    for (auto& io_buffer : m_io_buffers) {
+      io_buffer = io_buffer->copy();;
+    }
     for (auto& dr : m_data_readers) {
       dr.second = dr.second->copy();
     }
@@ -97,7 +100,9 @@ class generic_input_layer : public io_layer {
 
   generic_input_layer& operator=(const generic_input_layer& other) {
     io_layer::operator=(other);
-    io_buffer = other.io_buffer->copy();
+    for (auto& io_buffer : m_io_buffers) {
+      io_buffer = io_buffer->copy();;
+    }
     for (auto& dr : m_data_readers) {
       dr.second = dr.second->copy();
     }
@@ -112,7 +117,7 @@ class generic_input_layer : public io_layer {
   /** Returns description of ctor params */
   std::string get_description() const override {
     std::string s = get_topo_description();
-    return std::string {} + " input_layer " + io_buffer->get_type()
+    return std::string {} + " input_layer " + m_io_buffers[0]->get_type()
            + " dataLayout: " + this->get_data_layout_string(get_data_layout())
            + " (" + s + ")";
   }
@@ -185,7 +190,9 @@ class generic_input_layer : public io_layer {
       calculate_num_iterations_per_epoch_training_unique_per_models(max_mb_size);
     }
 
-    io_buffer->setup_data(this->m_num_neurons, get_linearized_label_size(), max_mb_size);
+    for (auto& io_buffer : m_io_buffers) {
+      io_buffer->setup_data(this->m_num_neurons, get_linearized_label_size(), max_mb_size);
+    }
   }
 
   /** Define the standard view of the matrix -- and set it for the model
@@ -214,9 +221,11 @@ class generic_input_layer : public io_layer {
     io_layer::fp_setup_data(mini_batch_size);
 
     // Once the current mini-batch size is defined, set the standard view for activations only
-    for (int i = 0; i < get_num_children(); ++i) {
-      io_buffer->set_local_matrix_bypass(static_cast<CPUMat*>(&get_local_activations(i)), i);
-      io_buffer->set_std_matrix_view(mini_batch_size, i);
+    for (auto& io_buffer : m_io_buffers) {
+      for (int i = 0; i < get_num_children(); ++i) {
+        io_buffer->set_local_matrix_bypass(static_cast<CPUMat*>(&get_local_activations(i)), i);
+        io_buffer->set_std_matrix_view(mini_batch_size, i);
+      }
     }
   }
 
@@ -227,6 +236,8 @@ class generic_input_layer : public io_layer {
     /// the data_store (via the data_reader) to read in the
     /// next mb from file, then exchange data as needed
     get_data_reader()->init_minibatch();
+
+    generic_io_buffer* io_buffer = m_io_buffers[m_active_buffer];
 
     int num_samples_in_batch = io_buffer->fetch_to_local_matrix(get_data_reader(), mode);
 
@@ -277,6 +288,7 @@ class generic_input_layer : public io_layer {
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
   bool update_compute() override {
+    generic_io_buffer* io_buffer = m_io_buffers[m_active_buffer];
     return io_buffer->is_data_set_processed(get_data_reader(), this->m_model->get_execution_mode());
   }
 
@@ -403,13 +415,13 @@ class generic_input_layer : public io_layer {
   void calculate_num_iterations_per_epoch_training_spans_models(int mini_batch_size) {
 
     /// Setup the training data set so that it spans all models
-    io_buffer->calculate_num_iterations_per_epoch_spanning_models(mini_batch_size,
+    m_io_buffers[0]->calculate_num_iterations_per_epoch_spanning_models(mini_batch_size,
                                                                   get_data_reader(execution_mode::training));
 
     /// Each model uses the entire validation and testing data sets
-    io_buffer->calculate_num_iterations_per_epoch_single_model(mini_batch_size,
+    m_io_buffers[0]->calculate_num_iterations_per_epoch_single_model(mini_batch_size,
                                                                get_data_reader(execution_mode::validation));
-    io_buffer->calculate_num_iterations_per_epoch_single_model(mini_batch_size,
+    m_io_buffers[0]->calculate_num_iterations_per_epoch_single_model(mini_batch_size,
                                                                get_data_reader(execution_mode::testing));
 
   }
@@ -417,13 +429,13 @@ class generic_input_layer : public io_layer {
   void calculate_num_iterations_per_epoch_training_unique_per_models(int mini_batch_size) {
 
     /// Setup the training data set so that it spans all models
-    io_buffer->calculate_num_iterations_per_epoch_single_model(mini_batch_size,
+    m_io_buffers[0]->calculate_num_iterations_per_epoch_single_model(mini_batch_size,
                                                                get_data_reader(execution_mode::training));
 
     /// Each model uses the entire validation and testing data sets
-    io_buffer->calculate_num_iterations_per_epoch_single_model(mini_batch_size,
+    m_io_buffers[0]->calculate_num_iterations_per_epoch_single_model(mini_batch_size,
                                                                get_data_reader(execution_mode::validation));
-    io_buffer->calculate_num_iterations_per_epoch_single_model(mini_batch_size,
+    m_io_buffers[0]->calculate_num_iterations_per_epoch_single_model(mini_batch_size,
                                                                get_data_reader(execution_mode::testing));
 
   }
@@ -849,6 +861,9 @@ class generic_input_layer : public io_layer {
   }
 
  protected:
+  std::vector<generic_io_buffer*> m_io_buffers;
+  int m_active_buffer;
+
   dataset m_training_dataset;
   dataset m_testing_dataset;
   dataset m_validation_dataset;
@@ -859,11 +874,11 @@ class generic_input_layer : public io_layer {
 };
 
 template<> inline void generic_input_layer::initialize_io_buffer<partitioned_io_buffer>(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers) {
-  io_buffer = new partitioned_io_buffer(comm, num_parallel_readers, data_readers);
+  m_io_buffers.push_back(new partitioned_io_buffer(comm, num_parallel_readers, data_readers));
 }
 
 template<> inline void generic_input_layer::initialize_io_buffer<distributed_io_buffer>(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers) {
-  io_buffer = new distributed_io_buffer(comm, num_parallel_readers, data_readers);
+  m_io_buffers.push_back(new distributed_io_buffer(comm, num_parallel_readers, data_readers));
 }
 
 }  // namespace lbann
