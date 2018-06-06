@@ -26,6 +26,7 @@
 
 #include "math.h"
 #include "lbann/base.hpp"
+#include "lbann/utils/exception.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
 
 namespace {
@@ -366,9 +367,9 @@ void channel_sums(int num_channels,
   if (data.Height() % num_channels != 0) {
     LBANN_ERROR("number of channels does not divide input matrix height"); 
   }
-  if (data.Device() != El::Device::GPU
-      || sums.Device() != El::Device::GPU
-      || sqsums.Device() != El::Device::GPU) {
+  if (data.GetDevice() != El::Device::GPU
+      || sums.GetDevice() != El::Device::GPU
+      || sqsums.GetDevice() != El::Device::GPU) {
     LBANN_ERROR("matrices do not reside on GPU");
   }
 #endif // LBANN_DEBUG  
@@ -411,10 +412,10 @@ void compute_statistics(int num_per_sum,
   if (num_per_sum < 1) {
     LBANN_ERROR("computing statistics requires a sum over at least one sample");
   }
-  if (mean.Device() != El::Device::GPU
-      || var.Device() != El::Device::GPU
-      || running_mean.Device() != El::Device::GPU
-      || running_var.Device() != El::Device::GPU) {
+  if (mean.GetDevice() != El::Device::GPU
+      || var.GetDevice() != El::Device::GPU
+      || running_mean.GetDevice() != El::Device::GPU
+      || running_var.GetDevice() != El::Device::GPU) {
     LBANN_ERROR("matrices do not reside on GPU");
   }
 #endif // LBANN_DEBUG  
@@ -456,12 +457,12 @@ void batch_normalization(const AbsMat& input,
       || input.Width() != output.Width()) {
     LBANN_ERROR("invalid matrix dimensions");
   }
-  if (input.Device() != El::Device::GPU
-      || mean.Device() != El::Device::GPU
-      || var.Device() != El::Device::GPU
-      || scale.Device() != El::Device::GPU
-      || bias.Device() != El::Device::GPU
-      || output.Device() != El::Device::GPU) {
+  if (input.GetDevice() != El::Device::GPU
+      || mean.GetDevice() != El::Device::GPU
+      || var.GetDevice() != El::Device::GPU
+      || scale.GetDevice() != El::Device::GPU
+      || bias.GetDevice() != El::Device::GPU
+      || output.GetDevice() != El::Device::GPU) {
     LBANN_ERROR("matrices do not reside on GPU");
   }
 #endif // LBANN_DEBUG  
@@ -511,15 +512,15 @@ void backprop1(const AbsMat& input,
       || input.Width() != gradient_wrt_output.Width()) {
     LBANN_ERROR("invalid matrix dimensions");
   }
-  if (input.Device() != El::Device::GPU
-      || gradient_wrt_output.Device() != El::Device::GPU
-      || mean.Device() != El::Device::GPU
-      || var.Device() != El::Device::GPU
-      || scale.Device() != El::Device::GPU
-      || dscale.Device() != El::Device::GPU
-      || dbias.Device() != El::Device::GPU
-      || dmean.Device() != El::Device::GPU
-      || dvar.Device() != El::Device::GPU) {
+  if (input.GetDevice() != El::Device::GPU
+      || gradient_wrt_output.GetDevice() != El::Device::GPU
+      || mean.GetDevice() != El::Device::GPU
+      || var.GetDevice() != El::Device::GPU
+      || scale.GetDevice() != El::Device::GPU
+      || dscale.GetDevice() != El::Device::GPU
+      || dbias.GetDevice() != El::Device::GPU
+      || dmean.GetDevice() != El::Device::GPU
+      || dvar.GetDevice() != El::Device::GPU) {
     LBANN_ERROR("matrices do not reside on GPU");
   }
 #endif // LBANN_DEBUG  
@@ -578,14 +579,14 @@ void backprop2(int global_width,
       || input.Width() != gradient_wrt_input.Width()) {
     LBANN_ERROR("invalid matrix dimensions");
   }
-  if (input.Device() != El::Device::GPU
-      || gradient_wrt_output.Device() != El::Device::GPU
-      || mean.Device() != El::Device::GPU
-      || var.Device() != El::Device::GPU
-      || scale.Device() != El::Device::GPU
-      || dmean.Device() != El::Device::GPU
-      || dvar.Device() != El::Device::GPU
-      || gradient_wrt_input.Device() != El::Device::GPU) {
+  if (input.GetDevice() != El::Device::GPU
+      || gradient_wrt_output.GetDevice() != El::Device::GPU
+      || mean.GetDevice() != El::Device::GPU
+      || var.GetDevice() != El::Device::GPU
+      || scale.GetDevice() != El::Device::GPU
+      || dmean.GetDevice() != El::Device::GPU
+      || dvar.GetDevice() != El::Device::GPU
+      || gradient_wrt_input.GetDevice() != El::Device::GPU) {
     LBANN_ERROR("matrices do not reside on GPU");
   }
 #endif // LBANN_DEBUG  
