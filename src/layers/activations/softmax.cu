@@ -34,10 +34,10 @@ __global__ void fp_cutoff_kernel(int height, int width,
                                  lbann::DataType* output,
                                  int output_leading_dim,
                                  lbann::DataType cutoff) {
-  const auto tid = threadIdx.x + blockIdx.x * blockDim.x;
+  const auto gid = threadIdx.x + blockIdx.x * blockDim.x;
   const auto size = height * width;
   const auto num_threads = blockDim.x * gridDim.x;
-  for (int pos = tid; pos < size; pos += num_threads) {
+  for (int pos = gid; pos < size; pos += num_threads) {
     const int row = pos % height;
     const int col = pos / height;
     auto& y = output[row + col * output_leading_dim];
@@ -51,10 +51,10 @@ __global__ void bp_cutoff_kernel(int height, int width,
                                  lbann::DataType* __restrict__ gradient_wrt_input,
                                  int gradient_wrt_input_leading_dim,
                                  lbann::DataType cutoff) {
-  const auto tid = threadIdx.x + blockIdx.x * blockDim.x;
+  const auto gid = threadIdx.x + blockIdx.x * blockDim.x;
   const auto size = height * width;
   const auto num_threads = blockDim.x * gridDim.x;
-  for (int pos = tid; pos < size; pos += num_threads) {
+  for (int pos = gid; pos < size; pos += num_threads) {
     const int row = pos % height;
     const int col = pos / height;
     const auto& y = output[row + col * output_leading_dim];

@@ -28,11 +28,61 @@
 #define LBANN_LAYER_REGULARIZER_BATCH_NORMALIZATION_HPP_INCLUDED
 
 #include "lbann/layers/regularizers/regularizer.hpp"
-#ifdef LBANN_HAS_CUDNN
-#include "lbann/layers/regularizers/batch_normalization_cuda.hpp"
-#endif // LBANN_HAS_CUDNN
+#include "lbann/utils/cudnn_wrapper.hpp"
 
 namespace lbann {
+
+#ifdef LBANN_HAS_CUDNN
+namespace batch_normalization_cuda {
+/** Compute channel sums.
+ *  Sums and squares of sums are used to compute mean and variance.
+ */
+void channel_sums(int num_channels,
+                  const AbsMat& data,
+                  AbsMat& sums,
+                  AbsMat& sqsums);
+/** Compute statistics from sums.
+ *  On input, mean and var are assumed to contain sums and squares
+ *  of sums, respectively.
+ */
+void compute_statistics(int num_per_sum,
+                        DataType decay,
+                        AbsMat& mean,
+                        AbsMat& var,
+                        AbsMat& running_mean,
+                        AbsMat& running_var);  
+/** Apply batch normalization. */
+void batch_normalization(const AbsMat& input,
+                         const AbsMat& mean,
+                         const AbsMat& var,
+                         DataType epsilon,
+                         const AbsMat& scale,
+                         const AbsMat& bias,
+                         AbsMat& output);
+/** Compute gradients w.r.t. batch norm parameters. */
+void backprop1(const AbsMat& input,
+               const AbsMat& gradient_wrt_output,
+               const AbsMat& mean,
+               const AbsMat& var,
+               DataType epsilon,
+               const AbsMat& scale,
+               AbsMat& dscale,
+               AbsMat& dbias,
+               AbsMat& dmean,
+               AbsMat& dvar);
+/** Compute gradients w.r.t. inputs. */
+void backprop2(int global_width,
+               const AbsMat& input,
+               const AbsMat& gradient_wrt_output,
+               const AbsMat& mean,
+               const AbsMat& var,
+               DataType epsilon,
+               const AbsMat& scale,
+               const AbsMat& dmean,
+               const AbsMat& dvar,
+               AbsMat& gradient_wrt_input);
+}
+#endif // LBANN_HAS_CUDNN
 
 /** Batch normalization layer.
  *  Each input channel is normalized across the mini-batch to have
@@ -98,17 +148,13 @@ class batch_normalization : public regularizer_layer {
       m_bias_gradient(nullptr) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "batch normalization only supports DATA_PARALLEL");
-  #ifdef LBANN_SEQUENTIAL_CONSISTENCY
+#ifdef LBANN_SEQUENTIAL_CONSISTENCY
     // Force global computation.
     m_use_global_stats = true;
-  #endif
-  #ifdef LBANN_HAS_CUDNN
-    // Initialize GPU memory if using GPU
-    if (cudnn != nullptr) {
-      this->m_cudnn = cudnn;
-    }
-  #endif // LBANN_HAS_CUDNN
-
+#endif
+#ifdef LBANN_HAS_CUDNN
+    this->m_cudnn = cudnn;
+#endif // LBANN_HAS_CUDNN
   }
 
   batch_normalization(const batch_normalization& other) :
@@ -197,9 +243,9 @@ class batch_normalization : public regularizer_layer {
     // Initialize default weights if none are provided
     if (this->m_weights.size() > 4) {
       std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "attempted to setup " << m_name << " with an invalid number of weights";
-      throw lbann_exception(err.str());
+      err << "attempted to setup layer \"" << m_name << "\" "
+          << "with an invalid number of weights";
+      LBANN_ERROR(err.str());
     }
     this->m_weights.resize(4, nullptr);
     if (this->m_weights[0] == nullptr) {
@@ -243,7 +289,7 @@ class batch_normalization : public regularizer_layer {
     } else {
       if (this->m_weights[0]->is_frozen() || this->m_weights[1]->is_frozen() ||
           this->m_weights[2]->is_frozen() || this->m_weights[3]->is_frozen()) {
-        throw lbann_exception("batch_normalization: layer is not frozen but weights are");
+        LBANN_ERROR("layer is not frozen but weights are");
       }
     }
 
@@ -274,134 +320,83 @@ class batch_normalization : public regularizer_layer {
   }
 
   void fp_compute_gpu() {
-  #ifndef LBANN_HAS_CUDNN
+#ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
-  #else
+#else
 
-    // Check execution mode
-    const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
-
-    // Matrix parameters
+    // Matrices
     const auto& input = get_prev_activations();
-    const int height = input.Height();
-    const int width = input.Width();
-    const int local_width = input.LocalWidth();
-    const int num_channels = this->m_neuron_dims[0];
-    const int channel_size = this->m_num_neurons / num_channels;
+    const auto& local_input = input.LockedMatrix();
+    auto& local_output = get_local_activations();
 
-    // Compute statistics
+    // Compute statistics during training
+    const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
     if (is_training) {
-
-      // Get GPU objects
-      DataType* running_mean = m_weights[2]->get_values().Buffer();
-      DataType* running_var = m_weights[3]->get_values().Buffer();
-
-      // Compute sums and sums of squares on the GPUs
-      batch_normalization_cuda
-        ::channel_sums_and_sqsums(height,
-                                  local_width,
-                                  num_channels,
-                                  get_prev_activations().LockedBuffer(),
-                                  get_prev_activations().LDim(),
-                                  m_mean->Buffer(),
-                                  m_var->Buffer(),
-                                  El::GPUManager::Stream());
-
-      // Accumulate sums and sums of squares
-      int samples_per_sum;
+      const int num_channels = this->m_neuron_dims[0];
+      const int channel_size = this->m_num_neurons / num_channels;
+      batch_normalization_cuda::channel_sums(num_channels,
+                                             local_input,
+                                             m_mean->Matrix(),
+                                             m_var->Matrix());
+      int num_per_sum = channel_size * input.LocalWidth();
       if (m_use_global_stats) {
         m_comm->allreduce(*m_mean, m_mean->RedundantComm(), El::mpi::SUM);
         m_comm->allreduce(*m_var, m_var->RedundantComm(), El::mpi::SUM);
-        samples_per_sum = channel_size * width;
-      } else {
-        samples_per_sum = channel_size * local_width;
+        num_per_sum = channel_size * input.Width();
       }
-
-      // Compute minibatch statistics and running statistics
-      batch_normalization_cuda
-        ::sums_to_statistics(num_channels,
-                             samples_per_sum,
-                             m_decay,
-                             m_mean->Buffer(),
-                             m_var->Buffer(),
-                             running_mean,
-                             running_var,
-                             El::GPUManager::Stream());
-
+      batch_normalization_cuda::compute_statistics(num_per_sum,
+                                                   m_decay,
+                                                   m_mean->Matrix(),
+                                                   m_var->Matrix(),
+                                                   m_weights[2]->get_values().Matrix(),
+                                                   m_weights[3]->get_values().Matrix());
     }
 
-    // Get GPU objects
-    const DataType* scale = m_weights[0]->get_values().LockedBuffer();
-    const DataType* bias = m_weights[1]->get_values().LockedBuffer();
-    const DataType* mean = (is_training ?
-                            m_mean->LockedBuffer() :
-                            m_weights[2]->get_values().LockedBuffer());
-    const DataType* var = (is_training ?
-                           m_var->LockedBuffer() :
-                           m_weights[3]->get_values().LockedBuffer());
+    // Perform batch normalization
+    const auto& mean = (is_training ?
+                        m_mean->LockedMatrix() :
+                        m_weights[2]->get_values().Matrix());
+    const auto& var = (is_training ?
+                       m_var->LockedMatrix() :
+                       m_weights[3]->get_values().Matrix());
+    batch_normalization_cuda::batch_normalization(
+      local_input,
+      mean, var, m_epsilon,
+      m_weights[0]->get_values().Matrix(),
+      m_weights[1]->get_values().Matrix(),
+      local_output);
 
-    // Perform batch normalization with each GPU
-    batch_normalization_cuda
-      ::batch_normalization(height,
-                            local_width,
-                            num_channels,
-                            get_prev_activations().LockedBuffer(),
-                            get_prev_activations().LDim(),
-                            mean,
-                            var,
-                            m_epsilon,
-                            scale,
-                            bias,
-                            get_activations().Buffer(),
-                            get_activations().LDim(),
-                            El::GPUManager::Stream());
-
-  #endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_CUDNN
   }
 
   void bp_compute_gpu() {
-  #ifndef LBANN_HAS_CUDNN
+#ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
-  #else
-
-    // Check execution mode
+#else
     const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
-
-    // GPU objects
-    const DataType* scale = m_weights[0]->get_values().LockedBuffer();
-    const DataType* mean = (is_training ?
-                            m_mean->LockedBuffer() :
-                            m_weights[2]->get_values().LockedBuffer());
-    const DataType* var = (is_training ?
-                           m_var->LockedBuffer() :
-                           m_weights[3]->get_values().LockedBuffer());
-
-    // Matrix parameters
     const int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
-    const auto& input = get_prev_activations();
-    const int height = input.Height();
-    const int width = input.Width();
-    const int local_width = input.LocalWidth();
-    const int num_channels = this->m_neuron_dims[0];
 
-    // Compute local gradient contributions
-    batch_normalization_cuda
-      ::batch_normalization_backprop1(height,
-                                      local_width,
-                                      num_channels,
-                                      get_prev_activations().LockedBuffer(),
-                                      get_prev_activations().LDim(),
-                                      get_prev_error_signals().LockedBuffer(),
-                                      get_prev_error_signals().LDim(),
-                                      mean,
-                                      var,
-                                      m_epsilon,
-                                      scale,
-                                      m_scale_gradient->Buffer(),
-                                      m_bias_gradient->Buffer(),
-                                      m_mean_gradient->Buffer(),
-                                      m_var_gradient->Buffer(),
-                                      El::GPUManager::Stream());
+    // GPU matrices
+    const auto& input = get_prev_activations();
+    const auto& local_input = input.LockedMatrix();
+    const auto& local_gradient_wrt_output = get_local_prev_error_signals();
+    auto& local_gradient_wrt_input = get_local_error_signals();
+    const auto& mean = (is_training ?
+                        m_mean->LockedMatrix() :
+                        m_weights[2]->get_values().Matrix());
+    const auto& var = (is_training ?
+                       m_var->LockedMatrix() :
+                       m_weights[3]->get_values().Matrix());
+
+    // Compute gradients w.r.t. batch norm parameters
+    batch_normalization_cuda::backprop1(local_input,
+                                        local_gradient_wrt_output,
+                                        mean, var, m_epsilon,
+                                        m_weights[0]->get_values().Matrix(),
+                                        m_scale_gradient->Matrix(),
+                                        m_bias_gradient->Matrix(),
+                                        m_mean_gradient->Matrix(),
+                                        m_var_gradient->Matrix());
 
     // Accumulate gradients
     if (is_training) {
@@ -414,43 +409,33 @@ class batch_normalization : public regularizer_layer {
                           El::mpi::SUM);
       }
     } else {
-      Zero(*m_mean_gradient);
-      Zero(*m_var_gradient);
+      El::Zero(*m_mean_gradient);
+      El::Zero(*m_var_gradient);
     }
-    optimizer* scale_optimizer = m_weights[0]->get_optimizer();
+    auto* scale_optimizer = m_weights[0]->get_optimizer();
     if (scale_optimizer != nullptr) {
       scale_optimizer->add_to_gradient_staging(
         *m_scale_gradient,
         DataType(1) / effective_mini_batch_size);
     }
-    optimizer* bias_optimizer = m_weights[1]->get_optimizer();
+    auto* bias_optimizer = m_weights[1]->get_optimizer();
     if (bias_optimizer != nullptr) {
       bias_optimizer->add_to_gradient_staging(
         *m_bias_gradient,
         DataType(1) / effective_mini_batch_size);
     }
 
-    // Compute error signal
-    batch_normalization_cuda
-      ::batch_normalization_backprop2(height,
-                                      local_width,
-                                      m_use_global_stats ? width : local_width,
-                                      num_channels,
-                                      get_prev_activations().LockedBuffer(),
-                                      get_prev_activations().LDim(),
-                                      get_prev_error_signals().LockedBuffer(),
-                                      get_prev_error_signals().LDim(),
-                                      mean,
-                                      var,
-                                      m_epsilon,
-                                      scale,
-                                      m_mean_gradient->LockedBuffer(),
-                                      m_var_gradient->LockedBuffer(),
-                                      get_error_signals().Buffer(),
-                                      get_error_signals().LDim(),
-                                      El::GPUManager::Stream());
+    // Compute gradient w.r.t. input
+    batch_normalization_cuda::backprop2(m_use_global_stats ? input.Width() : input.LocalWidth(),
+                                        local_input,
+                                        local_gradient_wrt_output,
+                                        mean, var, m_epsilon,
+                                        m_weights[0]->get_values().Matrix(),
+                                        m_mean_gradient->LockedMatrix(),
+                                        m_var_gradient->LockedMatrix(),
+                                        local_gradient_wrt_input);
 
-  #endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_CUDNN
   }
 
   void fp_compute_cpu() {
