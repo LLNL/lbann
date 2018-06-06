@@ -69,24 +69,7 @@ Layer* construct_layer(lbann_comm* comm,
 
   // Target layers
   if (proto_layer.has_target()) {
-    const auto& params = proto_layer.target();
-    const auto& io_buffer = params.io_buffer();
-    if (io_buffer == "distributed") {
-      return new target_layer<distributed_io_buffer, layout, Dev>(comm,
-                                                                  nullptr,
-                                                                  num_parallel_readers,
-                                                                  data_readers,
-                                                                  params.shared_data_reader(),
-                                                                  params.for_regression());
-    }
-    if (io_buffer == "partitioned") {
-      return new target_layer<partitioned_io_buffer, layout, Dev>(comm,
-                                                                  nullptr,
-                                                                  num_parallel_readers,
-                                                                  data_readers,
-                                                                  params.shared_data_reader(),
-                                                                  params.for_regression());
-    }
+    return new target_layer<layout, Dev>(comm);
   }
   if (proto_layer.has_reconstruction()) {
     return new reconstruction_layer<layout, Dev>(comm, nullptr);

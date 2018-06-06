@@ -58,7 +58,9 @@ model {
   # INPUT
   #######
   layer {
+    name: "data"
     data_layout: "data_parallel"
+    children: "fc target"
     input {
       io_buffer: "partitioned"
     }
@@ -68,6 +70,7 @@ model {
   # FULLY_CONNECTED
   #################
   layer {
+    name: "fc"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 10
@@ -79,11 +82,10 @@ model {
   # Target
   ########
   layer {
+    parents: "fc data"
+    name: "target"
     data_layout: "data_parallel"
-    target {
-      io_buffer: "partitioned"
-      shared_data_reader: true
-    }
+    target {}
   }
 
   ###################################################

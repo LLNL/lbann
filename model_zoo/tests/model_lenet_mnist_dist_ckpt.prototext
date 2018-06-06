@@ -43,8 +43,8 @@ model {
     checkpoint {
       checkpoint_dir: "ckpt"
       ckpt_dist_epochs: 1
-      ckpt_dist_steps: 845 
-      per_rank_dir: "." 
+      ckpt_dist_steps: 845
+      per_rank_dir: "."
     }
   }
   callback {
@@ -67,6 +67,7 @@ model {
 
   layer {
     name: "data"
+    children: "conv1 target"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
@@ -120,8 +121,8 @@ model {
       pool_pads_i: 0
       pool_strides_i: 2
       pool_mode: "max"
-    } 
-  } 
+    }
+  }
 
   layer {
     name: "ip1"
@@ -137,7 +138,7 @@ model {
     data_layout: "model_parallel"
     relu {}
   }
-  
+
   layer {
     name: "ip2"
     data_layout: "model_parallel"
@@ -154,13 +155,10 @@ model {
   }
 
   layer {
+    parents: "prob data"
     name: "target"
     data_layout: "data_parallel"
-    target {
-      io_buffer: "partitioned"
-      shared_data_reader: true
-    }
+    target {}
   }
 
 }
-
