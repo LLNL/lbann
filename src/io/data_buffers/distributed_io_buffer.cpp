@@ -67,20 +67,22 @@ void lbann::distributed_io_buffer::distribute_from_local_matrix(generic_data_rea
 
   m_comm->model_barrier();
 
-  for (int i = 0; i < 2; i++) {
-    if (m_comm->get_rank_in_model() == buf->m_root) {
-      if(!buf->m_local_data_valid) {
-        std::stringstream err;
-        err << __FILE__ << " " << __LINE__
-            << " :: lbann_distributed_io_buffer: No valid data for this step -- local data was invalid";
-        lbann_exception(err.str());
-      }
+  if (m_comm->get_rank_in_model() == buf->m_root) {
+    if(!buf->m_local_data_valid) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__
+          << " :: lbann_distributed_io_buffer: No valid data for this step -- local data was invalid";
+      lbann_exception(err.str());
+    }
+    for (int i = 0; i < 2; i++) {
       El::Int width = sample.Width();
       if(i == 1) { width = response.Width(); }
       CopyFromRoot((*buf->M_local[i])(El::ALL, El::IR(0, width)), *buf->Ms[i]);
-      buf->m_local_data_valid = false;
-      buf->m_num_samples_in_batch = 0;
-    } else {
+    }
+    buf->m_local_data_valid = false;
+    buf->m_num_samples_in_batch = 0;
+  } else {
+    for (int i = 0; i < 2; i++) {
       CopyFromNonRoot(*buf->Ms[i]);
     }
   }
