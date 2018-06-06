@@ -225,12 +225,13 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
       std::cout << "Hardware settings (for master process)" << std::endl
                 << "  Processes on node            : " << comm->get_procs_per_node() << std::endl
                 << "  OpenMP threads per process   : " << omp_get_max_threads() << std::endl;
-      #ifdef LBANN_HAS_CUDNN
+      #ifdef LBANN_HAS_GPU
       if (cudnn != nullptr) {
-        std::cout << "  GPUs on node                 : " << El::GPUManager::NumDevices() << std::endl
-                  << "  MV2_USE_CUDA                 : " << std::getenv("MV2_USE_CUDA") << std::endl;
+        std::cout << "  GPUs on node                 : " << El::GPUManager::NumDevices() << std::endl;
+        const auto* env = std::getenv("MV2_USE_CUDA");
+        std::cout << "  MV2_USE_CUDA                 : " << (env != nullptr ? env : "") << std::endl;
       }
-      #endif // LBANN_HAS_CUDNN
+      #endif // LBANN_HAS_GPU
       std::cout << std::endl;
     }
     // Display how the OpenMP threads are provisioned

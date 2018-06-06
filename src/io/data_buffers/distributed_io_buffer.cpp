@@ -43,11 +43,12 @@ int lbann::distributed_io_buffer::fetch_to_local_matrix(generic_data_reader *dat
   data_buffer *buf = get_data_buffer(mode);
   if (buf->m_root == 0) {
     if (m_comm->get_rank_in_model() < num_parallel_readers && !buf->m_local_reader_done) {
-      Zero(buf->M_local);
+      Zero(*buf->M_local[0]);
+      Zero(*buf->M_local[1]);
 
       /// Each data reader needs to either have independent / split
       /// data, or take an offset / stride
-      buf->m_num_samples_in_batch = (*fetch_data_fn)(buf->M_local, data_reader);
+      buf->m_num_samples_in_batch = (*fetch_data_fn)(*buf->M_local[0], *buf->M_local[1], data_reader);
       bool data_valid = (buf->m_num_samples_in_batch > 0);
       if(data_valid) {
         buf->m_num_data_per_epoch+=buf->m_num_samples_in_batch;
@@ -58,10 +59,11 @@ int lbann::distributed_io_buffer::fetch_to_local_matrix(generic_data_reader *dat
   return buf->m_num_samples_in_batch;
 }
 
-void lbann::distributed_io_buffer::distribute_from_local_matrix(AbsDistMat& Ms, generic_data_reader *data_reader, execution_mode mode) {
+void lbann::distributed_io_buffer::distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample, AbsDistMat& response) {
   int num_parallel_readers = data_reader->get_num_parallel_readers();
   data_buffer *buf = get_data_buffer(mode);
-  buf->Ms.SetRoot(buf->m_root);
+  buf->Ms[0]->SetRoot(buf->m_root);
+  buf->Ms[1]->SetRoot(buf->m_root);
 
   m_comm->model_barrier();
 
@@ -72,18 +74,26 @@ void lbann::distributed_io_buffer::distribute_from_local_matrix(AbsDistMat& Ms, 
           << " :: lbann_distributed_io_buffer: No valid data for this step -- local data was invalid";
       lbann_exception(err.str());
     }
-    CopyFromRoot(buf->M_local(El::ALL, El::IR(0, Ms.Width())), buf->Ms);
+    for (int i = 0; i < 2; i++) {
+      El::Int width = sample.Width();
+      if(i == 1) { width = response.Width(); }
+      CopyFromRoot((*buf->M_local[i])(El::ALL, El::IR(0, width)), *buf->Ms[i]);
+    }
     buf->m_local_data_valid = false;
     buf->m_num_samples_in_batch = 0;
   } else {
-    CopyFromNonRoot(buf->Ms);
+    for (int i = 0; i < 2; i++) {
+      CopyFromNonRoot(*buf->Ms[i]);
+    }
   }
 
   m_comm->model_barrier();
 
   buf->m_root = (buf->m_root + 1) % num_parallel_readers;
 
-  Copy(buf->Ms, Ms);
+  Copy(*buf->Ms[0], sample);
+  Copy(*buf->Ms[1], response);
+
   return;
 }
 

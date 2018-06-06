@@ -118,13 +118,6 @@ void setup_target_pointers(lbann_comm* comm,
             << "to pair with target layer " << target->get_name();
         LBANN_ERROR(err.str());
       }
-      if (input->is_for_regression() != target->is_for_regression()) {
-        err << "target layer " << target->get_name() << " "
-            << "and its paired input layer " << input->get_name()
-            << "are not consistent regarding regression/classification";
-        LBANN_ERROR(err.str());
-      }
-      target->set_paired_input_layer(input);
     }
   }
 }

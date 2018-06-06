@@ -44,7 +44,7 @@ class reconstruction_layer : public generic_target_layer {
  public:
   reconstruction_layer(lbann_comm *comm,
                        Layer *original_layer)
-    :  generic_target_layer(comm, dynamic_cast<generic_input_layer*>(original_layer), {}, false),
+    :  generic_target_layer(comm),
        m_original_layer(original_layer) {}
 
   reconstruction_layer* copy() const override {
@@ -85,20 +85,21 @@ class reconstruction_layer : public generic_target_layer {
 
  protected:
 
-  void fp_compute() override {
-    El::Copy(m_original_layer->get_activations(), *m_ground_truth);
-  }
+  void fp_compute() override {}
 
   void bp_compute() override {}
 
- public:
+  virtual AbsDistMat& get_ground_truth() { return m_original_layer->get_activations(); }
+  virtual const AbsDistMat& get_ground_truth() const { return m_original_layer->get_activations(); }
+
+public:
 
   void summarize_stats(lbann_summary& summarizer, int step) override {
     std::string tag = this->m_name + "/ReconstructionCost";
     execution_mode mode = this->m_model->get_execution_mode();
     summarizer.reduce_scalar(tag, this->m_model->get_objective_function()->get_mean_value(mode), step);
     // Skip target layer (for now).
-    io_layer::summarize_stats(summarizer, step);
+    //    io_layer::summarize_stats(summarizer, step);
   }
 
   std::vector<Layer*> get_layer_pointers() override {

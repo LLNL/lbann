@@ -54,7 +54,7 @@ model {
 
   callback {
     dump_weights {
-      basename: "lbann2_ckpt/"  
+      basename: "lbann2_ckpt/"
     }
   }
 
@@ -64,6 +64,7 @@ model {
 
   layer {
     name: "data"
+    children: "conv1 target"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
@@ -117,8 +118,8 @@ model {
       pool_pads_i: 0
       pool_strides_i: 2
       pool_mode: "max"
-    } 
-  } 
+    }
+  }
 
   layer {
     name: "ip1"
@@ -151,13 +152,10 @@ model {
   }
 
   layer {
+    parents: "prob data"
     name: "target"
     data_layout: "data_parallel"
-    target {
-      io_buffer: "partitioned"
-      shared_data_reader: true
-    }
+    target {}
   }
 
 }
-
