@@ -275,7 +275,11 @@ class dropout : public regularizer_layer {
     /// @todo This is technically incorrect since it overwrites the error signal
     const auto& mode = this->m_model->get_execution_mode();
     if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
-      El::LockedView(gradient_wrt_input, gradient_wrt_output);
+      El::Axpy(DataType(1), gradient_wrt_output, gradient_wrt_input);
+      /// @todo - Note that a future optimization may switch this to
+      //      use a locked view, but it requires special handling in
+      //      how the gradients are cleared.
+      //      El::LockedView(gradient_wrt_input, gradient_wrt_output);
       return;
     }
 
