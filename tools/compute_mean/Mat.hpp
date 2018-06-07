@@ -68,6 +68,7 @@ inline void ElMatLike<T>::Set(ElMatLike::Int r, ElMatLike::Int c, T d) {
 }
 
 using Mat = ElMatLike<lbann::DataType>;
+using CPUMat = Mat;
 
 namespace El {
 using Int = ::ElMatLike<lbann::DataType>::Int;
