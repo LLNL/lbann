@@ -28,56 +28,151 @@
 
 namespace lbann {
 
-/** CPU implementation of forward prop computation. */
+namespace {
+#ifdef LBANN_HAS_CUDNN
+
+/** Forward prop on GPU. */
+void fp_gpu(cudnnHandle_t& handle,
+            cudnnActivationDescriptor_t& activation_desc,
+            cudnnTensorDescriptor_t& input_desc,
+            const AbsMat& input,
+            cudnnTensorDescriptor_t& output_desc,
+            AbsMat& output) {
+  if (input.GetDevice() != El::Device::GPU
+      || output.GetDevice() != El::Device::GPU) {
+    LBANN_ERROR("matrices are not resident on GPU");
+  }
+  const DataType zero = DataType(0);
+  const DataType one = DataType(1);
+  if (input.Height() > 0 && input.Width() > 0) {
+      cudnn::set_tensor_desc(input_desc, input);
+      cudnn::set_tensor_desc(output_desc, output);
+      CHECK_CUDNN(cudnnActivationForward(handle,
+                                         activation_desc,
+                                         &one,
+                                         input_desc,
+                                         input.LockedBuffer(),
+                                         &zero,
+                                         output_desc,
+                                         output.Buffer()));
+  }
+}
+
+/** Backward prop on GPU. */
+void bp_gpu(cudnnHandle_t& handle,
+            cudnnActivationDescriptor_t& activation_desc,
+            cudnnTensorDescriptor_t& input_desc,
+            const AbsMat& input,
+            cudnnTensorDescriptor_t& output_desc,
+            const AbsMat& output,
+            cudnnTensorDescriptor_t& gradient_wrt_output_desc,
+            const AbsMat& gradient_wrt_output,
+            cudnnTensorDescriptor_t& gradient_wrt_input_desc,
+            AbsMat& gradient_wrt_input) {
+  if (input.GetDevice() != El::Device::GPU
+      || output.GetDevice() != El::Device::GPU
+      || gradient_wrt_output.GetDevice() != El::Device::GPU
+      || gradient_wrt_input.GetDevice() != El::Device::GPU) {
+    LBANN_ERROR("matrices are not resident on GPU");
+  }
+  const DataType one = DataType(1);
+  if (input.Height() > 0 && input.Width() > 0) {
+      cudnn::set_tensor_desc(input_desc, input);
+      cudnn::set_tensor_desc(output_desc, output);
+      cudnn::set_tensor_desc(gradient_wrt_output_desc, gradient_wrt_output);
+      cudnn::set_tensor_desc(gradient_wrt_input_desc, gradient_wrt_input);
+      CHECK_CUDNN(cudnnActivationBackward(handle,
+                                          activation_desc,
+                                          &one,
+                                          output_desc,
+                                          output.LockedBuffer(),
+                                          gradient_wrt_output_desc,
+                                          gradient_wrt_output.LockedBuffer(),
+                                          input_desc,
+                                          input.LockedBuffer(),
+                                          &one,
+                                          gradient_wrt_input_desc,
+                                          gradient_wrt_input.Buffer()));
+  }
+}
+
+#endif // LBANN_HAS_CUDNN
+} // namespace
+
+// Model-parallel CPU forward/backward prop
 template <>
 void relu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::fp_compute() {
   entrywise_activation_layer::fp_compute_cpu();
 }
-
-/** CPU implementation of forward prop computation. */
-template <>
-void relu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_compute() {
-  entrywise_activation_layer::fp_compute_cpu();
-}
-
-#ifdef LBANN_HAS_GPU
-/** GPU implementation of forward prop computation. */
-template <>
-void relu_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
-  fp_compute_gpu();
-}
-
-/** GPU implementation of forward prop computation. */
-template <>
-void relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
-  fp_compute_gpu();
-}
-#endif // LBANN_HAS_GPU
-
-/** CPU implementation of backward prop computation. */
 template <>
 void relu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_compute() {
   entrywise_activation_layer::bp_compute_cpu();
 }
 
-/** CPU implementation of backward prop computation. */
+// Data-parallel CPU forward/backward prop
+template <>
+void relu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_compute() {
+  entrywise_activation_layer::fp_compute_cpu();
+}
 template <>
 void relu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
   entrywise_activation_layer::bp_compute_cpu();
 }
 
 #ifdef LBANN_HAS_GPU
-/** GPU implementation of backward prop computation. */
+
+// Model-parallel GPU forward/backward prop
+template <>
+void relu_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
+#ifndef LBANN_HAS_CUDNN
+  LBANN_ERROR("cuDNN not detected");
+#else
+  fp_gpu(this->m_cudnn->get_handle(),
+         m_activation_cudnn_desc,
+         m_input_cudnn_desc, get_local_prev_activations(),
+         m_output_cudnn_desc, get_local_activations());
+#endif // LBANN_HAS_CUDNN
+}
 template <>
 void relu_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
-  bp_compute_gpu();
+#ifndef LBANN_HAS_CUDNN
+  LBANN_ERROR("cuDNN not detected");
+#else
+  bp_gpu(this->m_cudnn->get_handle(),
+         m_activation_cudnn_desc,
+         m_input_cudnn_desc, get_local_prev_activations(),
+         m_output_cudnn_desc, get_local_activations(),
+         m_gradient_wrt_output_cudnn_desc, get_local_prev_error_signals(),
+         m_gradient_wrt_input_cudnn_desc, get_local_error_signals());
+#endif // LBANN_HAS_CUDNN
 }
 
-/** GPU implementation of backward prop computation. */
+// Data-parallel GPU forward/backward prop
+template <>
+void relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
+#ifndef LBANN_HAS_CUDNN
+  LBANN_ERROR("cuDNN not detected");
+#else
+  fp_gpu(this->m_cudnn->get_handle(),
+         m_activation_cudnn_desc,
+         m_input_cudnn_desc, get_local_prev_activations(),
+         m_output_cudnn_desc, get_local_activations());
+#endif // LBANN_HAS_CUDNN
+}
 template <>
 void relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
-  bp_compute_gpu();
+#ifndef LBANN_HAS_CUDNN
+  LBANN_ERROR("cuDNN not detected");
+#else
+  bp_gpu(this->m_cudnn->get_handle(),
+         m_activation_cudnn_desc,
+         m_input_cudnn_desc, get_local_prev_activations(),
+         m_output_cudnn_desc, get_local_activations(),
+         m_gradient_wrt_output_cudnn_desc, get_local_prev_error_signals(),
+         m_gradient_wrt_input_cudnn_desc, get_local_error_signals());
+#endif // LBANN_HAS_CUDNN
 }
+
 #endif // LBANN_HAS_GPU
 
 } // namespace lbann

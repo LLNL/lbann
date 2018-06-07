@@ -32,51 +32,94 @@
 
 namespace lbann {
 
-/** Hyperbolic tangent activation function. */
+/** Hyperbolic tangent. */
 template <data_layout T_layout, El::Device Dev>
 class tanh_layer : public entrywise_activation_layer {
 
  private:
-
 #ifdef LBANN_HAS_CUDNN
   /** Activation descriptor. */
   cudnnActivationDescriptor_t m_activation_cudnn_desc;
+  /** Input tensor cuDNN descriptor. */
+  cudnnTensorDescriptor_t m_input_cudnn_desc;
+  /** Output tensor cuDNN descriptor. */
+  cudnnTensorDescriptor_t m_output_cudnn_desc;
+  /** Gradient w.r.t. output tensor cuDNN descriptor. */
+  cudnnTensorDescriptor_t m_gradient_wrt_output_cudnn_desc;
+  /** Gradient w.r.t. input tensor cuDNN descriptor. */
+  cudnnTensorDescriptor_t m_gradient_wrt_input_cudnn_desc;
 #endif // LBANN_HAS_CUDNN
 
  public:
   tanh_layer(lbann_comm *comm,
              cudnn::cudnn_manager *cudnn = nullptr)
-    : entrywise_activation_layer(comm) {
-  #ifdef LBANN_HAS_CUDNN
-    m_activation_cudnn_desc = nullptr;
+    : entrywise_activation_layer(comm)
+#ifdef LBANN_HAS_CUDNN
+    , m_activation_cudnn_desc(nullptr),
+      m_input_cudnn_desc(nullptr),
+      m_output_cudnn_desc(nullptr),
+      m_gradient_wrt_output_cudnn_desc(nullptr),
+      m_gradient_wrt_input_cudnn_desc(nullptr) 
+#endif // LBANN_HAS_CUDNN
+  {
     this->m_cudnn = cudnn;
-  #endif // LBANN_HAS_CUDNN
   }
 
-  tanh_layer(const tanh_layer& other) :
-    entrywise_activation_layer(other) {
-  #ifdef LBANN_HAS_CUDNN
-    m_activation_cudnn_desc = nullptr;
-    cudnn::copy_activation_cudnn_desc(other.m_activation_cudnn_desc,
-                                      m_activation_cudnn_desc);
-  #endif // LBANN_HAS_CUDNN
+  tanh_layer(const tanh_layer& other)
+    : entrywise_activation_layer(other)
+#ifdef LBANN_HAS_CUDNN
+    , m_activation_cudnn_desc(nullptr),
+      m_input_cudnn_desc(nullptr),
+      m_output_cudnn_desc(nullptr),
+      m_gradient_wrt_output_cudnn_desc(nullptr),
+      m_gradient_wrt_input_cudnn_desc(nullptr) 
+#endif // LBANN_HAS_CUDNN
+  {
+#ifdef LBANN_HAS_CUDNN
+    cudnn::copy_activation_desc(other.m_activation_cudnn_desc,
+                                m_activation_cudnn_desc);
+    cudnn::copy_tensor_desc(other.m_input_cudnn_desc, m_input_cudnn_desc);
+    cudnn::copy_tensor_desc(other.m_output_cudnn_desc, m_output_cudnn_desc);
+    cudnn::copy_tensor_desc(other.m_gradient_wrt_output_cudnn_desc,
+                            m_gradient_wrt_output_cudnn_desc);
+    cudnn::copy_tensor_desc(other.m_gradient_wrt_input_cudnn_desc,
+                            m_gradient_wrt_input_cudnn_desc);
+#endif // LBANN_HAS_CUDNN
   }
 
   tanh_layer& operator=(const tanh_layer& other) {
     entrywise_activation_layer::operator=(other);
-  #ifdef LBANN_HAS_CUDNN
-    cudnn::copy_activation_cudnn_desc(other.m_activation_cudnn_desc,
-                                      m_activation_cudnn_desc);
-  #endif // LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_CUDNN
+    cudnn::copy_activation_desc(other.m_activation_cudnn_desc,
+                                m_activation_cudnn_desc);
+    cudnn::copy_tensor_desc(other.m_input_cudnn_desc, m_input_cudnn_desc);
+    cudnn::copy_tensor_desc(other.m_output_cudnn_desc, m_output_cudnn_desc);
+    cudnn::copy_tensor_desc(other.m_gradient_wrt_output_cudnn_desc,
+                            m_gradient_wrt_output_cudnn_desc);
+    cudnn::copy_tensor_desc(other.m_gradient_wrt_input_cudnn_desc,
+                            m_gradient_wrt_input_cudnn_desc);
+#endif // LBANN_HAS_CUDNN
     return *this;
   }
 
   ~tanh_layer() override {
-  #ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_CUDNN
     if (m_activation_cudnn_desc != nullptr) {
-      CHECK_CUDNN(cudnnDestroyActivationDescriptor(m_activation_cudnn_desc));
+      cudnnDestroyActivationDescriptor(m_activation_cudnn_desc);
     }
-  #endif // LBANN_HAS_CUDNN
+    if (m_input_cudnn_desc != nullptr) {
+      cudnnDestroyTensorDescriptor(m_input_cudnn_desc);
+    }
+    if (m_output_cudnn_desc != nullptr) {
+      cudnnDestroyTensorDescriptor(m_output_cudnn_desc);
+    }
+    if (m_gradient_wrt_output_cudnn_desc != nullptr) {
+      cudnnDestroyTensorDescriptor(m_gradient_wrt_output_cudnn_desc);
+    }
+    if (m_gradient_wrt_input_cudnn_desc != nullptr) {
+      cudnnDestroyTensorDescriptor(m_gradient_wrt_input_cudnn_desc);
+    }
+#endif // LBANN_HAS_CUDNN
   }
 
   tanh_layer* copy() const override { return new tanh_layer(*this); }
@@ -121,43 +164,6 @@ class tanh_layer : public entrywise_activation_layer {
 
   void fp_compute() override;
   void bp_compute() override;
-
-  void fp_compute_gpu() override {
-  #ifndef LBANN_HAS_CUDNN
-    LBANN_ERROR("cuDNN not detected");
-  #else
-    const DataType one = 1;
-    const DataType zero = 0;
-    CHECK_CUDNN(cudnnActivationForward(this->m_cudnn->get_handle(),
-                                       m_activation_cudnn_desc,
-                                       &one,
-                                       this->m_prev_activations_cudnn_desc,
-                                       get_prev_activations().LockedBuffer(),
-                                       &zero,
-                                       this->m_activations_cudnn_desc,
-                                       get_activations().Buffer()));
-  #endif // LBANN_HAS_CUDNN
-  }
-
-  void bp_compute_gpu() override {
-  #ifndef LBANN_HAS_CUDNN
-    LBANN_ERROR("cuDNN not detected");
-  #else
-    const DataType one = 1;
-    CHECK_CUDNN(cudnnActivationBackward(this->m_cudnn->get_handle(),
-                                        m_activation_cudnn_desc,
-                                        &one,
-                                        this->m_activations_cudnn_desc,
-                                        get_activations().LockedBuffer(),
-                                        this->m_prev_error_signals_cudnn_desc,
-                                        get_prev_error_signals().LockedBuffer(),
-                                        this->m_prev_activations_cudnn_desc,
-                                        get_prev_activations().LockedBuffer(),
-                                        &one,
-                                        this->m_error_signals_cudnn_desc,
-                                        get_error_signals().Buffer()));
-  #endif // LBANN_HAS_CUDNN
-  }
 
 };
 

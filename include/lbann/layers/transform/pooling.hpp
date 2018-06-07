@@ -45,16 +45,16 @@ template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El
 class pooling_layer : public transform_layer {
  private:
 
-  /// Pooling mode
+  /** Pooling mode. */
   const pool_mode m_pool_mode;
 
-  /// Pooling window dimensions
+  /** Pooling window dimensions. */
   std::vector<int> m_pool_dims;
-  /// Size of pooling window
+  /** Size of pooling window. */
   int m_pool_size;
-  /// Pooling padding
+  /** Pooling padding. */
   std::vector<int> m_pads;
-  /// Pooling strides
+  /** Pooling strides. */
   std::vector<int> m_strides;
 
   /** Input indices for max pooling.
@@ -65,13 +65,21 @@ class pooling_layer : public transform_layer {
   std::vector<int> m_max_pool_indices;
 
 #ifdef LBANN_HAS_CUDNN
-  /// Pooling descriptor
+  /** Pooling descriptor. */
   cudnnPoolingDescriptor_t m_pooling_cudnn_desc;
+  /** Input tensor cuDNN descriptor. */
+  cudnnTensorDescriptor_t m_input_cudnn_desc;
+  /** Output tensor cuDNN descriptor. */
+  cudnnTensorDescriptor_t m_output_cudnn_desc;
+  /** Gradient w.r.t. output tensor cuDNN descriptor. */
+  cudnnTensorDescriptor_t m_gradient_wrt_output_cudnn_desc;
+  /** Gradient w.r.t. input tensor cuDNN descriptor. */
+  cudnnTensorDescriptor_t m_gradient_wrt_input_cudnn_desc;
 #endif // LBANN_HAS_CUDNN
 
   friend class unpooling_layer<T_layout, Dev>;
 
- public:
+public:
 
   pooling_layer(lbann_comm *comm,
                 int num_data_dims,
@@ -99,7 +107,15 @@ class pooling_layer : public transform_layer {
       m_pool_mode(mode),
       m_pool_dims(pool_dims),
       m_pads(pads),
-      m_strides(strides) {
+      m_strides(strides)
+#ifdef LBANN_HAS_CUDNN
+    , m_pooling_cudnn_desc(nullptr),
+      m_input_cudnn_desc(nullptr),
+      m_output_cudnn_desc(nullptr),
+      m_gradient_wrt_output_cudnn_desc(nullptr),
+      m_gradient_wrt_input_cudnn_desc(nullptr)
+#endif // LBANN_HAS_CUDNN
+  {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "pooling only supports DATA_PARALLEL");
 
@@ -109,31 +125,37 @@ class pooling_layer : public transform_layer {
                                   1,
                                   std::multiplies<int>());
 
-  #ifdef LBANN_HAS_CUDNN
-
-    // Initialize cuDNN objects
-    m_pooling_cudnn_desc = nullptr;
-
-    // Initialize GPU memory if using GPU
-    if (cudnn) {
-      this->m_cudnn = cudnn;
-    }
-  #endif // LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_CUDNN
+    this->m_cudnn = cudnn;
+#endif // LBANN_HAS_CUDNN
 
   }
 
-  pooling_layer(const pooling_layer& other) :
-    transform_layer(other),
-    m_pool_mode(other.m_pool_mode),
-    m_pool_dims(other.m_pool_dims),
-    m_pool_size(other.m_pool_size),
-    m_pads(other.m_pads),
-    m_strides(other.m_strides),
-    m_max_pool_indices(other.m_max_pool_indices) {
-  #ifdef LBANN_HAS_CUDNN
-    m_pooling_cudnn_desc = nullptr;
-    cudnn::copy_pooling_cudnn_desc(other.m_pooling_cudnn_desc, m_pooling_cudnn_desc);
-  #endif // LBANN_HAS_CUDNN
+  pooling_layer(const pooling_layer& other)
+    : transform_layer(other),
+      m_pool_mode(other.m_pool_mode),
+      m_pool_dims(other.m_pool_dims),
+      m_pool_size(other.m_pool_size),
+      m_pads(other.m_pads),
+      m_strides(other.m_strides),
+      m_max_pool_indices(other.m_max_pool_indices)
+#ifdef LBANN_HAS_CUDNN
+    , m_pooling_cudnn_desc(nullptr),
+      m_input_cudnn_desc(nullptr),
+      m_output_cudnn_desc(nullptr),
+      m_gradient_wrt_output_cudnn_desc(nullptr),
+      m_gradient_wrt_input_cudnn_desc(nullptr)
+#endif // LBANN_HAS_CUDNN
+  {
+#ifdef LBANN_HAS_CUDNN
+    copy_pooling_cudnn_desc(other.m_pooling_cudnn_desc, m_pooling_cudnn_desc);
+    cudnn::copy_tensor_desc(other.m_input_cudnn_desc, m_input_cudnn_desc);
+    cudnn::copy_tensor_desc(other.m_output_cudnn_desc, m_output_cudnn_desc);
+    cudnn::copy_tensor_desc(other.m_gradient_wrt_output_cudnn_desc,
+                            m_gradient_wrt_output_cudnn_desc);
+    cudnn::copy_tensor_desc(other.m_gradient_wrt_input_cudnn_desc,
+                            m_gradient_wrt_input_cudnn_desc);
+#endif // LBANN_HAS_CUDNN
   }
 
   pooling_layer& operator=(const pooling_layer& other){
@@ -144,9 +166,15 @@ class pooling_layer : public transform_layer {
     m_pads = other.m_pads;
     m_strides = other.m_strides;
     m_max_pool_indices = other.m_max_pool_indices;
-  #ifdef LBANN_HAS_CUDNN
-    cudnn::copy_pooling_cudnn_desc(other.m_pooling_cudnn_desc, m_pooling_cudnn_desc);
-  #endif // LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_CUDNN
+    copy_pooling_cudnn_desc(other.m_pooling_cudnn_desc, m_pooling_cudnn_desc);
+    cudnn::copy_tensor_desc(other.m_input_cudnn_desc, m_input_cudnn_desc);
+    cudnn::copy_tensor_desc(other.m_output_cudnn_desc, m_output_cudnn_desc);
+    cudnn::copy_tensor_desc(other.m_gradient_wrt_output_cudnn_desc,
+                            m_gradient_wrt_output_cudnn_desc);
+    cudnn::copy_tensor_desc(other.m_gradient_wrt_input_cudnn_desc,
+                            m_gradient_wrt_input_cudnn_desc);
+#endif // LBANN_HAS_CUDNN
     return *this;
   }
 
@@ -178,14 +206,24 @@ class pooling_layer : public transform_layer {
     return s.str();
   }
 
-  /// Destructor
-  ~pooling_layer() override {
-  #ifdef LBANN_HAS_CUDNN
-    // Destroy cuDNN objects
+  ~pooling_layer() {
+#ifdef LBANN_HAS_CUDNN
     if (m_pooling_cudnn_desc) {
       CHECK_CUDNN(cudnnDestroyPoolingDescriptor(m_pooling_cudnn_desc));
     }
-  #endif // LBANN_HAS_CUDNN
+    if (m_input_cudnn_desc != nullptr) {
+      cudnnDestroyTensorDescriptor(m_input_cudnn_desc);
+    }
+    if (m_output_cudnn_desc != nullptr) {
+      cudnnDestroyTensorDescriptor(m_output_cudnn_desc);
+    }
+    if (m_gradient_wrt_output_cudnn_desc != nullptr) {
+      cudnnDestroyTensorDescriptor(m_gradient_wrt_output_cudnn_desc);
+    }
+    if (m_gradient_wrt_input_cudnn_desc != nullptr) {
+      cudnnDestroyTensorDescriptor(m_gradient_wrt_input_cudnn_desc);
+    }
+#endif // LBANN_HAS_CUDNN
   }
 
   void setup_dims() override {
@@ -271,16 +309,28 @@ class pooling_layer : public transform_layer {
 #ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
 #else
-    const DataType one = DataType(1);
-    const DataType zero = DataType(0);
-    CHECK_CUDNN(cudnnPoolingForward(this->m_cudnn->get_handle(),
-                                    m_pooling_cudnn_desc,
-                                    &one,
-                                    this->m_prev_activations_cudnn_desc,
-                                    get_prev_activations().LockedBuffer(),
-                                    &zero,
-                                    this->m_activations_cudnn_desc,
-                                    get_activations().Buffer()));
+    const auto& local_input = get_local_prev_activations();
+    auto& local_output = get_local_activations();
+    if (local_input.Height() > 0 && local_input.Width() > 0) {
+      const DataType zero = DataType(0);
+      const DataType one = DataType(1);
+      cudnn::set_tensor_desc(m_input_cudnn_desc,
+                             local_input.Width(),
+                             get_prev_neuron_dims(),
+                             local_input.LDim());
+      cudnn::set_tensor_desc(m_output_cudnn_desc,
+                             local_output.Width(),
+                             get_neuron_dims(),
+                             local_output.LDim());
+      CHECK_CUDNN(cudnnPoolingForward(this->m_cudnn->get_handle(),
+                                      m_pooling_cudnn_desc,
+                                      &one,
+                                      m_input_cudnn_desc,
+                                      local_input.LockedBuffer(),
+                                      &zero,
+                                      m_output_cudnn_desc,
+                                      local_output.Buffer()));
+    }
 #endif // #ifndef LBANN_HAS_CUDNN
   }
 
@@ -289,19 +339,48 @@ class pooling_layer : public transform_layer {
 #ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
 #else
-    const DataType one = DataType(1);
-    CHECK_CUDNN(cudnnPoolingBackward(this->m_cudnn->get_handle(),
-                                     m_pooling_cudnn_desc,
-                                     &one,
-                                     this->m_activations_cudnn_desc,
-                                     get_activations().LockedBuffer(),
-                                     this->m_prev_error_signals_cudnn_desc,
-                                     get_prev_error_signals().LockedBuffer(),
-                                     this->m_prev_activations_cudnn_desc,
-                                     get_prev_activations().LockedBuffer(),
-                                     &one,
-                                     this->m_error_signals_cudnn_desc,
-                                     get_error_signals().Buffer()));
+    const auto& local_input = get_local_prev_activations();
+    const auto& local_output = get_local_activations();
+    const auto& local_gradient_wrt_output = get_local_prev_error_signals();
+    auto& local_gradient_wrt_input = get_local_error_signals();
+    if (local_input.Height() > 0 && local_input.Width() > 0) {
+
+      // Useful constants
+      const DataType one = 1;
+
+      // Initialize cuDNN tensor descriptors
+      cudnn::set_tensor_desc(m_input_cudnn_desc,
+                             local_input.Width(),
+                             get_prev_neuron_dims(),
+                             local_input.LDim());
+      cudnn::set_tensor_desc(m_output_cudnn_desc,
+                             local_output.Width(),
+                             get_neuron_dims(),
+                             local_output.LDim());
+      cudnn::set_tensor_desc(m_gradient_wrt_output_cudnn_desc,
+                             local_gradient_wrt_output.Width(),
+                             get_neuron_dims(),
+                             local_gradient_wrt_output.LDim());
+      cudnn::set_tensor_desc(m_gradient_wrt_input_cudnn_desc,
+                             local_gradient_wrt_input.Width(),
+                             get_prev_neuron_dims(),
+                             local_gradient_wrt_input.LDim());
+
+      // Perform backprop on GPU
+      CHECK_CUDNN(cudnnPoolingBackward(this->m_cudnn->get_handle(),
+                                       m_pooling_cudnn_desc,
+                                       &one,
+                                       m_output_cudnn_desc,
+                                       local_output.LockedBuffer(),
+                                       m_gradient_wrt_output_cudnn_desc,
+                                       local_gradient_wrt_output.LockedBuffer(),
+                                       m_input_cudnn_desc,
+                                       local_input.LockedBuffer(),
+                                       &one,
+                                       m_gradient_wrt_input_cudnn_desc,
+                                       local_gradient_wrt_input.Buffer()));
+
+    }
 #endif // #ifndef LBANN_HAS_CUDNN
   }
 
@@ -472,6 +551,54 @@ class pooling_layer : public transform_layer {
     }
 
   }
+
+#ifdef LBANN_HAS_CUDNN
+  /** Copy pooling cuDNN descriptor. */
+  static void copy_pooling_cudnn_desc(const cudnnPoolingDescriptor_t& src,
+                                      cudnnPoolingDescriptor_t& dst) {
+
+    // Create or destroy descriptor if needed
+    if(src != nullptr && dst == nullptr) {
+        CHECK_CUDNN(cudnnCreatePoolingDescriptor(&dst));
+    }
+    else if(src == nullptr && dst != nullptr) {
+        CHECK_CUDNN(cudnnDestroyPoolingDescriptor(dst));
+        dst = nullptr;
+    }
+
+    // Copy descriptor data if needed
+    if(src != nullptr) {
+        cudnnPoolingMode_t mode;
+        cudnnNanPropagation_t nan_propagation;
+        int num_dims;
+        CHECK_CUDNN(cudnnGetPoolingNdDescriptor(src,
+                                                0,
+                                                &mode,
+                                                &nan_propagation,
+                                                &num_dims,
+                                                nullptr,
+                                                nullptr,
+                                                nullptr));
+        std::vector<int> dims(num_dims), pads(num_dims), strides(num_dims);
+        CHECK_CUDNN(cudnnGetPoolingNdDescriptor(src,
+                                                0,
+                                                &mode,
+                                                &nan_propagation,
+                                                &num_dims,
+                                                dims.data(),
+                                                pads.data(),
+                                                strides.data()));
+        CHECK_CUDNN(cudnnSetPoolingNdDescriptor(dst,
+                                                mode,
+                                                nan_propagation,
+                                                num_dims,
+                                                dims.data(),
+                                                pads.data(),
+                                                strides.data()));
+    }
+
+  }
+#endif // LBANN_HAS_CUDNN
 
 };
 

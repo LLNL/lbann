@@ -143,61 +143,33 @@ class cudnn_manager {
 /** Print cuDNN version information to standard output. */
 void print_version();
 
-/** Get cuDNN data type associated with C++ data type. */
-cudnnDataType_t get_cudnn_data_type();
+/** Get cuDNN data type associated with DataType. */
+cudnnDataType_t get_data_type();
 
 /** Set cuDNN tensor descriptor.
  *  num_samples is interpreted as the first tensor dimension, followed
  *  by the entries in sample_dims. desc is created if needed.
  */
-void set_tensor_cudnn_desc(cudnnTensorDescriptor_t& desc,
-                           int num_samples,
-                           const std::vector<int>& sample_dims,
-                           int sample_stride = 0);
-
-/** Set cuDNN tensor descriptor for a matrix.
- *  desc is created if needed.
+void set_tensor_desc(cudnnTensorDescriptor_t& desc,
+                     int num_samples,
+                     const std::vector<int> sample_dims,
+                     int sample_stride = 0);
+/** Set cuDNN tensor descriptor to match matrix.
+ *  desc is created if needed. matrix should be a GPU matrix.
  */
-void set_tensor_cudnn_desc(cudnnTensorDescriptor_t& desc,
-                           int height,
-                           int width = 1,
-                           int leading_dim = 0);
-
+void set_tensor_desc(cudnnTensorDescriptor_t& desc,
+                     const AbsMat& matrix);
 /** Copy cuDNN tensor descriptor.
  *  dst is created or destroyed if needed.
  */
-void copy_tensor_cudnn_desc(const cudnnTensorDescriptor_t& src,
-                            cudnnTensorDescriptor_t& dst);
-
-/** Copy cuDNN convolution kernel descriptor.
- *  dst is created or destroyed if needed.
- */
-void copy_kernel_cudnn_desc(const cudnnFilterDescriptor_t& src,
-                            cudnnFilterDescriptor_t& dst);
-
-/** Copy cuDNN convolution descriptor.
- *  dst is created or destroyed if needed.
- */
-void copy_convolution_cudnn_desc(const cudnnConvolutionDescriptor_t& src,
-                                 cudnnConvolutionDescriptor_t& dst);
-
-/** Copy cuDNN pooling descriptor.
- *  dst is created or destroyed if needed.
- */
-void copy_pooling_cudnn_desc(const cudnnPoolingDescriptor_t& src,
-                             cudnnPoolingDescriptor_t& dst);
+void copy_tensor_desc(const cudnnTensorDescriptor_t& src,
+                      cudnnTensorDescriptor_t& dst);
 
 /** Copy cuDNN activation descriptor.
  *  dst is created or destroyed if needed.
  */
-void copy_activation_cudnn_desc(const cudnnActivationDescriptor_t& src,
-                                cudnnActivationDescriptor_t& dst);
-
-/** Copy cuDNN local response normalization descriptor.
- *  dst is created or destroyed if needed.
- */
-void copy_lrn_cudnn_desc(const cudnnLRNDescriptor_t& src,
-                         cudnnLRNDescriptor_t& dst);
+void copy_activation_desc(const cudnnActivationDescriptor_t& src,
+                          cudnnActivationDescriptor_t& dst);
 
 #endif // #ifdef LBANN_HAS_CUDNN
 

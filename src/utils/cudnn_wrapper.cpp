@@ -84,7 +84,7 @@ void print_version() {
             << std::endl;
 }
 
-cudnnDataType_t get_cudnn_data_type() {
+cudnnDataType_t get_data_type() {
   switch (sizeof(DataType)) {
   case 2: return CUDNN_DATA_HALF;
   case 4: return CUDNN_DATA_FLOAT;
@@ -94,10 +94,10 @@ cudnnDataType_t get_cudnn_data_type() {
   return CUDNN_DATA_FLOAT;
 }
 
-void set_tensor_cudnn_desc(cudnnTensorDescriptor_t& desc,
-                           int num_samples,
-                           const std::vector<int>& sample_dims,
-                           int sample_stride) {
+void set_tensor_desc(cudnnTensorDescriptor_t& desc,
+                     int num_samples,
+                     const std::vector<int> sample_dims,
+                     int sample_stride) {
 
     // Determine tensor dimensions
     // Note: cuDNN tensors should be non-empty and have at least 4
@@ -132,21 +132,24 @@ void set_tensor_cudnn_desc(cudnnTensorDescriptor_t& desc,
         CHECK_CUDNN(cudnnCreateTensorDescriptor(&desc));
     }
     CHECK_CUDNN(cudnnSetTensorNdDescriptor(desc,
-                                           get_cudnn_data_type(),
+                                           get_data_type(),
                                            dims.size(),
                                            dims.data(),
                                            strides.data()));
 
 }
 
-void set_tensor_cudnn_desc(cudnnTensorDescriptor_t& desc,
-                           int height,
-                           int width,
-                           int leading_dim) {
+void set_tensor_desc(cudnnTensorDescriptor_t& desc,
+                     const AbsMat& matrix) {
+    if (matrix.GetDevice() != El::Device::GPU) {
+        LBANN_ERROR("cuDNN tensors must reside on GPU");
+    }
 
     // Determine tensor dimensions and strides
     // Note: cuDNN tensors should have at least 4 dimension
-    leading_dim = std::max(height, leading_dim);
+    const int height = matrix.Height();
+    const int width = matrix.Width();
+    const int leading_dim = matrix.LDim();
     const std::vector<int> dims = {1, 1, width, height};
     const std::vector<int> strides = {width * leading_dim,
                                       width * leading_dim,
@@ -170,15 +173,15 @@ void set_tensor_cudnn_desc(cudnnTensorDescriptor_t& desc,
         CHECK_CUDNN(cudnnCreateTensorDescriptor(&desc));
     }
     CHECK_CUDNN(cudnnSetTensorNdDescriptor(desc,
-                                           get_cudnn_data_type(),
+                                           get_data_type(),
                                            dims.size(),
                                            dims.data(),
                                            strides.data()));
 
 }
 
-void copy_tensor_cudnn_desc(const cudnnTensorDescriptor_t& src,
-                            cudnnTensorDescriptor_t& dst) {
+void copy_tensor_desc(const cudnnTensorDescriptor_t& src,
+                      cudnnTensorDescriptor_t& dst) {
 
     // Create or destroy descriptor if needed
     if(src != nullptr && dst == nullptr) {
@@ -215,137 +218,8 @@ void copy_tensor_cudnn_desc(const cudnnTensorDescriptor_t& src,
 
 }
 
-void copy_kernel_cudnn_desc(const cudnnFilterDescriptor_t& src,
-                            cudnnFilterDescriptor_t& dst) {
-
-    // Create or destroy descriptor if needed
-    if(src != nullptr && dst == nullptr) {
-        CHECK_CUDNN(cudnnCreateFilterDescriptor(&dst));
-    }
-    else if(src == nullptr && dst != nullptr) {
-        CHECK_CUDNN(cudnnDestroyFilterDescriptor(dst));
-        dst = nullptr;
-    }
-
-    // Copy descriptor data if needed
-    if(src != nullptr) {
-        cudnnDataType_t data_type;
-        cudnnTensorFormat_t format;
-        int num_dims;
-        CHECK_CUDNN(cudnnGetFilterNdDescriptor(src,
-                                               0,
-                                               &data_type,
-                                               &format,
-                                               &num_dims,
-                                               nullptr));
-        std::vector<int> dims(num_dims);
-        CHECK_CUDNN(cudnnGetFilterNdDescriptor(src,
-                                               num_dims,
-                                               &data_type,
-                                               &format,
-                                               &num_dims,
-                                               dims.data()));
-        CHECK_CUDNN(cudnnSetFilterNdDescriptor(dst,
-                                               data_type,
-                                               format,
-                                               num_dims,
-                                               dims.data()));
-    }
-
-}
-
-void copy_convolution_cudnn_desc(const cudnnConvolutionDescriptor_t& src,
-                                 cudnnConvolutionDescriptor_t& dst) {
-
-    // Create or destroy descriptor if needed
-    if(src != nullptr && dst == nullptr) {
-        CHECK_CUDNN(cudnnCreateConvolutionDescriptor(&dst));
-    }
-    else if(src == nullptr && dst != nullptr) {
-        CHECK_CUDNN(cudnnDestroyConvolutionDescriptor(dst));
-        dst = nullptr;
-    }
-
-    // Copy descriptor data if needed
-    if(src != nullptr) {
-        cudnnConvolutionMode_t mode;
-        cudnnDataType_t data_type;
-        int num_dims;
-        CHECK_CUDNN(cudnnGetConvolutionNdDescriptor(src,
-                                                    0,
-                                                    &num_dims,
-                                                    nullptr,
-                                                    nullptr,
-                                                    nullptr,
-                                                    &mode,
-                                                    &data_type));
-        std::vector<int> pads(num_dims), strides(num_dims), upscales(num_dims);
-        CHECK_CUDNN(cudnnGetConvolutionNdDescriptor(src,
-                                                    num_dims,
-                                                    &num_dims,
-                                                    pads.data(),
-                                                    strides.data(),
-                                                    upscales.data(),
-                                                    &mode,
-                                                    &data_type));
-        CHECK_CUDNN(cudnnSetConvolutionNdDescriptor(dst,
-                                                    num_dims,
-                                                    pads.data(),
-                                                    strides.data(),
-                                                    upscales.data(),
-                                                    mode,
-                                                    data_type));
-    }
-
-}
-
-void copy_pooling_cudnn_desc(const cudnnPoolingDescriptor_t& src,
-                             cudnnPoolingDescriptor_t& dst) {
-
-    // Create or destroy descriptor if needed
-    if(src != nullptr && dst == nullptr) {
-        CHECK_CUDNN(cudnnCreatePoolingDescriptor(&dst));
-    }
-    else if(src == nullptr && dst != nullptr) {
-        CHECK_CUDNN(cudnnDestroyPoolingDescriptor(dst));
-        dst = nullptr;
-    }
-
-    // Copy descriptor data if needed
-    if(src != nullptr) {
-        cudnnPoolingMode_t mode;
-        cudnnNanPropagation_t nan_propagation;
-        int num_dims;
-        CHECK_CUDNN(cudnnGetPoolingNdDescriptor(src,
-                                                0,
-                                                &mode,
-                                                &nan_propagation,
-                                                &num_dims,
-                                                nullptr,
-                                                nullptr,
-                                                nullptr));
-        std::vector<int> dims(num_dims), pads(num_dims), strides(num_dims);
-        CHECK_CUDNN(cudnnGetPoolingNdDescriptor(src,
-                                                0,
-                                                &mode,
-                                                &nan_propagation,
-                                                &num_dims,
-                                                dims.data(),
-                                                pads.data(),
-                                                strides.data()));
-        CHECK_CUDNN(cudnnSetPoolingNdDescriptor(dst,
-                                                mode,
-                                                nan_propagation,
-                                                num_dims,
-                                                dims.data(),
-                                                pads.data(),
-                                                strides.data()));
-    }
-
-}
-
-void copy_activation_cudnn_desc(const cudnnActivationDescriptor_t& src,
-                                cudnnActivationDescriptor_t& dst) {
+void copy_activation_desc(const cudnnActivationDescriptor_t& src,
+                          cudnnActivationDescriptor_t& dst) {
 
     // Create or destroy descriptor if needed
     if(src != nullptr && dst == nullptr) {
@@ -373,29 +247,7 @@ void copy_activation_cudnn_desc(const cudnnActivationDescriptor_t& src,
 
 }
 
-void copy_lrn_cudnn_desc(const cudnnLRNDescriptor_t& src,
-                         cudnnLRNDescriptor_t& dst) {
+} // namespace cudnn
 
-    // Create or destroy descriptor if needed
-    if(src != nullptr && dst == nullptr) {
-        CHECK_CUDNN(cudnnCreateLRNDescriptor(&dst));
-    }
-    else if(src == nullptr && dst != nullptr) {
-        CHECK_CUDNN(cudnnDestroyLRNDescriptor(dst));
-        dst = nullptr;
-    }
-
-    // Copy descriptor data if needed
-    if(src != nullptr) {
-        unsigned n;
-        double alpha, beta, k;
-        CHECK_CUDNN(cudnnGetLRNDescriptor(src, &n, &alpha, &beta, &k));
-        CHECK_CUDNN(cudnnSetLRNDescriptor(dst, n, alpha, beta, k));
-    }
-
-}
-
-}// namespace cudnn
-
-}// namespace lbann
-#endif // #ifdef LBANN_HAS_CUDNN
+} // namespace lbann
+#endif // LBANN_HAS_CUDNN

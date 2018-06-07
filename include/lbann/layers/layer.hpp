@@ -458,7 +458,7 @@ class Layer {
    *  activations, previous error signals, and error signals. It also
    *  initializes cuDNN tensor descriptors.
    */
-  virtual void setup_gpu();
+  virtual void setup_gpu() {}
 
   /** Perform the computation for the forward propagation step. */
   virtual void fp_compute() = 0;
@@ -474,19 +474,6 @@ class Layer {
 
   /** Avoid back prop if frozen */
   bool m_frozen;
-
-#ifdef LBANN_HAS_CUDNN
-
-  /** cuDNN descriptor for first previous activation tensor. */
-  cudnnTensorDescriptor_t m_prev_activations_cudnn_desc;
-  /** cuDNN descriptor for first activations tensor. */
-  cudnnTensorDescriptor_t m_activations_cudnn_desc;
-  /** cuDNN descriptor for first previous error signal tensor. */
-  cudnnTensorDescriptor_t m_prev_error_signals_cudnn_desc;
-  /** cuDNN descriptor for first error signal tensor. */
-  cudnnTensorDescriptor_t m_error_signals_cudnn_desc;
-
-#endif // LBANN_HAS_CUDNN
 
   /** Time spent in forward propagation. */
   EvalType m_fp_time;

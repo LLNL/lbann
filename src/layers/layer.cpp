@@ -56,12 +56,6 @@ Layer::Layer(lbann_comm *comm)
 
   // Initialize GPU information
   m_using_gpus = false;
-#ifdef LBANN_HAS_CUDNN
-  m_prev_activations_cudnn_desc = nullptr;
-  m_activations_cudnn_desc = nullptr;
-  m_prev_error_signals_cudnn_desc = nullptr;
-  m_error_signals_cudnn_desc = nullptr;
-#endif // LBANN_HAS_CUDNN
 
   // Reset timing counters
   reset_counters();
@@ -102,20 +96,6 @@ Layer::Layer(const Layer& other) :
   for (auto& m : m_prev_error_signals) { m = m->Copy(); }
   for (auto& m : m_error_signals)      { m = m->Copy(); }
 
-#ifdef LBANN_HAS_CUDNN
-  m_prev_activations_cudnn_desc = nullptr;
-  m_activations_cudnn_desc = nullptr;
-  m_prev_error_signals_cudnn_desc = nullptr;
-  m_error_signals_cudnn_desc = nullptr;
-  cudnn::copy_tensor_cudnn_desc(other.m_prev_activations_cudnn_desc,
-                                m_prev_activations_cudnn_desc);
-  cudnn::copy_tensor_cudnn_desc(other.m_activations_cudnn_desc,
-                                m_activations_cudnn_desc);
-  cudnn::copy_tensor_cudnn_desc(other.m_prev_error_signals_cudnn_desc,
-                                m_prev_error_signals_cudnn_desc);
-  cudnn::copy_tensor_cudnn_desc(other.m_error_signals_cudnn_desc,
-                                m_error_signals_cudnn_desc);
-#endif // LBANN_HAS_CUDNN
 }
 
 Layer& Layer::operator=(const Layer& other) {
@@ -155,35 +135,10 @@ Layer& Layer::operator=(const Layer& other) {
   for (auto& m : m_prev_error_signals) { m = m->Copy(); }
   for (auto& m : m_error_signals)      { m = m->Copy(); }
 
-#ifdef LBANN_HAS_CUDNN
-  cudnn::copy_tensor_cudnn_desc(other.m_prev_activations_cudnn_desc,
-                                m_prev_activations_cudnn_desc);
-  cudnn::copy_tensor_cudnn_desc(other.m_activations_cudnn_desc,
-                                m_activations_cudnn_desc);
-  cudnn::copy_tensor_cudnn_desc(other.m_prev_error_signals_cudnn_desc,
-                                m_prev_error_signals_cudnn_desc);
-  cudnn::copy_tensor_cudnn_desc(other.m_error_signals_cudnn_desc,
-                                m_error_signals_cudnn_desc);
-#endif // LBANN_HAS_CUDNN
-
   return *this;
 }
 
 Layer::~Layer() {
-#ifdef LBANN_HAS_CUDNN
-  if(m_prev_activations_cudnn_desc != nullptr) {
-    CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_prev_activations_cudnn_desc));
-  }
-  if(m_activations_cudnn_desc != nullptr) {
-    CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_activations_cudnn_desc));
-  }
-  if(m_prev_error_signals_cudnn_desc != nullptr) {
-    CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_prev_error_signals_cudnn_desc));
-  }
-  if(m_error_signals_cudnn_desc != nullptr) {
-    CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_error_signals_cudnn_desc));
-  }
-#endif // LBANN_HAS_CUDNN
   deallocate_matrices();
 }
 
@@ -654,79 +609,6 @@ void Layer::setup_data() {
 
 }
 
-void Layer::setup_gpu() {
-#ifndef LBANN_HAS_CUDNN
-  LBANN_ERROR("cuDNN not detected");
-#else
-
-  // Set tensor descriptors
-  // Note: If the data layout is data-parallel, then the descriptors
-  // describe the corresponding neuron tensors. If the data layout is
-  // model-parallel, the descriptors describe the local matrix.
-  if (get_num_parents() > 0) {
-    const auto& local_input = get_local_prev_activations();
-    const auto& local_gradient_wrt_input = get_local_error_signals();
-    if (local_gradient_wrt_input.Height() > 0
-        && local_gradient_wrt_input.Width() > 0) {
-      switch (get_data_layout()) {
-      case data_layout::DATA_PARALLEL:
-        cudnn::set_tensor_cudnn_desc(m_prev_activations_cudnn_desc,
-                                     local_input.Width(),
-                                     get_prev_neuron_dims(),
-                                     local_input.LDim());
-        cudnn::set_tensor_cudnn_desc(m_error_signals_cudnn_desc,
-                                     local_gradient_wrt_input.Width(),
-                                     get_prev_neuron_dims(),
-                                     local_gradient_wrt_input.LDim());
-        break;
-      case data_layout::MODEL_PARALLEL:
-        cudnn::set_tensor_cudnn_desc(m_prev_activations_cudnn_desc,
-                                     local_input.Height(),
-                                     local_input.Width(),
-                                     local_input.LDim());
-        cudnn::set_tensor_cudnn_desc(m_error_signals_cudnn_desc,
-                                     local_gradient_wrt_input.Height(),
-                                     local_gradient_wrt_input.Width(),
-                                     local_gradient_wrt_input.LDim());
-        break;
-      default:
-        LBANN_ERROR("invalid distributed matrix layout");
-      }
-    }
-  }
-  if (get_num_children() > 0) {
-    const auto& local_output = get_local_activations();
-    if (local_output.Height() > 0 && local_output.Width() > 0) {
-      switch (get_data_layout()) {
-      case data_layout::DATA_PARALLEL:
-        cudnn::set_tensor_cudnn_desc(m_activations_cudnn_desc,
-                                     local_output.Width(),
-                                     get_neuron_dims(),
-                                     local_output.LDim());
-        cudnn::set_tensor_cudnn_desc(m_prev_error_signals_cudnn_desc,
-                                     get_local_activations().Width(),
-                                     get_neuron_dims(),
-                                     get_local_activations().LDim());
-        break;
-      case data_layout::MODEL_PARALLEL:
-        cudnn::set_tensor_cudnn_desc(m_activations_cudnn_desc,
-                                     local_output.Height(),
-                                     local_output.Width(),
-                                     local_output.LDim());
-        cudnn::set_tensor_cudnn_desc(m_prev_error_signals_cudnn_desc,
-                                     get_local_activations().Height(),
-                                     get_local_activations().Width(),
-                                     get_local_activations().LDim());
-        break;
-      default:
-        LBANN_ERROR("invalid distributed matrix layout");
-      }
-    }
-  }
-
-#endif // LBANN_HAS_CUDNN
-}
-
 void Layer::check_setup() {
   std::stringstream err;
 
@@ -809,6 +691,7 @@ void Layer::deallocate_matrices() {
   for (const auto& m : m_prev_activations) {
     if (m != nullptr) delete m;
   }
+
   for (const auto& m : m_activations) {
     if (m != nullptr) delete m;
   }
@@ -891,57 +774,6 @@ void Layer::fp_setup_data(int mini_batch_size) {
     }
   }
 
-  #ifdef LBANN_HAS_CUDNN
-  // Set cuDNN tensor descriptors if needed
-  // Note: If the data layout is data-parallel, then the descriptors
-  // describe the corresponding neuron tensors. If the data layout is
-  // model-parallel, the descriptors describe the local matrix.
-  if (using_gpus()) {
-    if (get_num_parents() > 0) {
-      const auto& local_input = get_local_prev_activations();
-      if (local_input.Height() > 0 && local_input.Width() > 0) {
-        switch (get_data_layout()) {
-        case data_layout::DATA_PARALLEL:
-          cudnn::set_tensor_cudnn_desc(m_prev_activations_cudnn_desc,
-                                       local_input.Width(),
-                                       get_prev_neuron_dims(),
-                                       local_input.LDim());
-          break;
-        case data_layout::MODEL_PARALLEL:
-          cudnn::set_tensor_cudnn_desc(m_prev_activations_cudnn_desc,
-                                       local_input.Height(),
-                                       local_input.Width(),
-                                       local_input.LDim());
-          break;
-        default:
-          LBANN_ERROR("invalid distributed matrix layout");
-        }
-      }
-    }
-    if (get_num_children() > 0) {
-      const auto& local_output = get_local_activations();
-      if (local_output.Height() > 0 && local_output.Width() > 0) {
-        switch (get_data_layout()) {
-        case data_layout::DATA_PARALLEL:
-          cudnn::set_tensor_cudnn_desc(m_activations_cudnn_desc,
-                                       local_output.Width(),
-                                       get_neuron_dims(),
-                                       local_output.LDim());
-          break;
-        case data_layout::MODEL_PARALLEL:
-          cudnn::set_tensor_cudnn_desc(m_activations_cudnn_desc,
-                                       local_output.Height(),
-                                       local_output.Width(),
-                                       local_output.LDim());
-          break;
-        default:
-          LBANN_ERROR("invalid distributed matrix layout");
-        }
-      }
-    }
-  }
-  #endif // LBANN_HAS_CUDNN
-
 }
 
 void Layer::bp_setup_data(int mini_batch_size) {
@@ -966,59 +798,6 @@ void Layer::bp_setup_data(int mini_batch_size) {
     }
 
   }
-
-  #ifdef LBANN_HAS_CUDNN
-  // Set cuDNN tensor descriptors if needed
-  // Note: If the data layout is data-parallel, then the descriptors
-  // describe the corresponding neuron tensors. If the data layout is
-  // model-parallel, the descriptors describe the local matrix.
-  if (using_gpus()) {
-    if (get_num_children() > 0) {
-      const auto& local_gradient_wrt_output = get_local_prev_error_signals();
-      if (local_gradient_wrt_output.Height() > 0
-          && local_gradient_wrt_output.Width() > 0) {
-        switch (get_data_layout()) {
-        case data_layout::DATA_PARALLEL:
-          cudnn::set_tensor_cudnn_desc(m_prev_error_signals_cudnn_desc,
-                                       local_gradient_wrt_output.Width(),
-                                       get_neuron_dims(),
-                                       local_gradient_wrt_output.LDim());
-          break;
-        case data_layout::MODEL_PARALLEL:
-          cudnn::set_tensor_cudnn_desc(m_prev_error_signals_cudnn_desc,
-                                       local_gradient_wrt_output.Height(),
-                                       local_gradient_wrt_output.Width(),
-                                       local_gradient_wrt_output.LDim());
-          break;
-        default:
-          LBANN_ERROR("invalid distributed matrix layout");
-        }
-      }
-    }
-    if (get_num_parents() > 0) {
-      const auto& local_gradient_wrt_input = get_local_error_signals();
-      if (local_gradient_wrt_input.Height() > 0
-          && local_gradient_wrt_input.Width() > 0) {
-        switch (get_data_layout()) {
-        case data_layout::DATA_PARALLEL:
-          cudnn::set_tensor_cudnn_desc(m_error_signals_cudnn_desc,
-                                       local_gradient_wrt_input.Width(),
-                                       get_prev_neuron_dims(),
-                                       local_gradient_wrt_input.LDim());
-          break;
-        case data_layout::MODEL_PARALLEL:
-          cudnn::set_tensor_cudnn_desc(m_error_signals_cudnn_desc,
-                                       local_gradient_wrt_input.Height(),
-                                       local_gradient_wrt_input.Width(),
-                                       local_gradient_wrt_input.LDim());
-          break;
-        default:
-          LBANN_ERROR("invalid distributed matrix layout");
-        }
-      }
-    }
-  }
-  #endif // LBANN_HAS_CUDNN
 
 }
 
