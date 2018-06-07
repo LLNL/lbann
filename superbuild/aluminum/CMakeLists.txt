@@ -1,34 +1,46 @@
-message(FATAL_ERROR "Aluminum not yet available in superbuild.")
-set(ALUMINUM_URL https://github.com/ndryden/Aluminum
+set(Aluminum_URL https://github.com/ndryden/Aluminum
   CACHE STRING "The URL from which to clone Aluminum")
 
-set(ALUMINUM_TAG "master" 
+set(Aluminum_TAG "master"
   CACHE STRING "The git tag to checkout for Aluminum")
 
-# Where to install LIBALUMINUM
-set (ALUMINUM_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
+# Where to install Aluminum
+set (Aluminum_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
   CACHE PATH "The installation location of Aluminum.")
 
-set(ALUMINUM_MAKE_JOBS "8"
-  CACHE INTERNAL "The number of make jobs to run. Max by default.")
+# Configuration options explicitly exposed
+option(ALUMINUM_ENABLE_CUDA "Enable CUDA support." OFF)
+option(ALUMINUM_ENABLE_MPI_CUDA "Enable MPI-CUDA support." OFF)
+option(ALUMINUM_ENABLE_NCCL "Enable NCCL support." OFF)
 
+# Get the list of ALUMINUM variables
+get_property(ALUMINUM_VARIABLES DIRECTORY PROPERTY VARIABLES)
+list(FILTER ALUMINUM_VARIABLES INCLUDE REGEX
+  "^ALUMINUM_.*\|^Aluminum_.*\|^LBANN_SB_FWD_ALUMINUM_.*\|^LBANN_SB_FWD_Aluminum_.*\|CMAKE_\(CXX\|CUDA\)_COMPILER")
+list(FILTER ALUMINUM_VARIABLES EXCLUDE REGEX "Aluminum_URL\|Aluminum_TAG")
 
-find_program(GNU_MAKE_PROGRAM make)
+create_cmake_arguments(
+  OUTPUT_VARIABLE ALUMINUM_CMAKE_ARGS
+  PACKAGE_NAME Aluminum
+  SKIP_VARS_WITH_PREFIXES "LBANN_SB"
+  EXTRA_REMOVE_PREFIXES "LBANN_SB_FWD_ALUMINUM" "LBANN_SB_FWD_Aluminum"
+  VARIABLES ${ALUMINUM_VARIABLES})
 
-# Handle the install of 
 include(ExternalProject)
-ExternalProject_Add(ALUMINUM
+ExternalProject_Add(Aluminum
   PREFIX ${CMAKE_CURRENT_BINARY_DIR}
   TMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/tmp
   STAMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/stamp
-  GIT_REPOSITORY ${ALUMINUM_URL}
-  GIT_TAG ${ALUMINUM_TAG}
+  GIT_REPOSITORY ${Aluminum_URL}
+  GIT_TAG ${Aluminum_TAG}
   SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/src
   BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/build
-  INSTALL_DIR ${ALUMINUM_CMAKE_INSTALL_PREFIX}
-  BUILD_COMMAND  ${GNU_MAKE_PROGRAM} -j${ALUMINUM_MAKE_JOBS} 
-  
+  INSTALL_DIR ${Aluminum_CMAKE_INSTALL_PREFIX}
+  USES_TERMINAL_BUILD 1
+  LIST_SEPARATOR |
+  CMAKE_ARGS
+  ${ALUMINUM_CMAKE_ARGS}
   )
 
-  set(ALUMINUM_DIR ${ALUMINUM_CMAKE_INSTALL_PREFIX}
-    CACHE INTERNAL "The install prefix of Aluminum.")
+set(ALUMINUM_DIR ${Aluminum_CMAKE_INSTALL_PREFIX}
+  CACHE INTERNAL "The install prefix of Aluminum.")
