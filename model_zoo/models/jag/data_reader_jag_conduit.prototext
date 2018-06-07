@@ -9,14 +9,12 @@ data_reader {
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
 
-    # Currently, JAG input has 111 parameters, scalar has 22 parameters, and
-    # there are two 64x64 images selected out of 10 images per sample.
-
     # 1: JAG_Image,  2: JAG_Scalar,  3: JAG_Input
     independent: [1, 2]
     dependent: [3]
 
     # An empty list indicates to use all
+    # The commented out variables are not on the Jim's original list but used in the numpy-based format
     jag_scalar_keys:
       [ "BWx",
         "BT",
@@ -42,9 +40,16 @@ data_reader {
 #        "MINradius"
       ]
 
-    #jag_input_keys:
+    # The parameter "shape_model_initial_velocities" is used in numpy-based format but empty in conduit-based format
+    jag_input_keys: ["stopping_mult",
+                     "radiation_mult",
+                     "ablation_cv",
+                     "Vi",
+                     "conduction_mult",
+                     "shape_model_initial_velocity_amplitude"
+                    ];
 
-    num_labels: 256
+    num_labels: 6
 
     image_preprocessor {
       # assume fixed size of input images if cropper is not used
@@ -117,9 +122,15 @@ data_reader {
 #        "MINradius"
       ]
 
-    #jag_input_keys:
+    jag_input_keys: ["stopping_mult",
+                     "radiation_mult",
+                     "ablation_cv",
+                     "Vi",
+                     "conduction_mult",
+                     "shape_model_initial_velocity_amplitude"
+                    ];
 
-    num_labels: 256
+    num_labels: 6
 
     image_preprocessor {
       # assume fixed size of input images if cropper is not used
