@@ -43,7 +43,9 @@ data_reader_merge_features::data_reader_merge_features(
   const data_reader_merge_features& other) :
   generic_compound_data_reader(other),
   m_data_size(other.m_data_size) {
-  m_label_reader = other.m_label_reader->copy();
+  if(other.m_label_reader != nullptr) 
+    m_label_reader = other.m_label_reader->copy();
+  else m_label_reader = nullptr;
 }
 
 data_reader_merge_features& data_reader_merge_features::operator=(
@@ -53,7 +55,9 @@ data_reader_merge_features& data_reader_merge_features::operator=(
   if (m_label_reader) {
     delete m_label_reader;
   }
-  m_label_reader = other.m_label_reader->copy();
+  if(other.m_label_reader != nullptr) 
+    m_label_reader = other.m_label_reader->copy();
+  else m_label_reader = nullptr;
   return *this;
 }
 
