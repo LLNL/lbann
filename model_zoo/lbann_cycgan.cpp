@@ -89,12 +89,15 @@ int main(int argc, char *argv[]) {
       model_2->copy_trained_weights_from(model1_weights);
       if (master) std::cerr << "\n STARTING train - G1 solver model at step " << super_step << " \n\n";
       model_2->train( super_step*pb_model_2.num_epochs(),pb_model_2.num_batches());
-      //@todo: remove the dependencies
+      // Evaluate model on test set
+      model_2->evaluate(execution_mode::testing);
+
       if(master) std::cout << " Copy all trained weights from model1 to model3 and train/freeze as appropriate " << std::endl;
-      //auto model2_weights = model_2->get_weights();
       model_3->copy_trained_weights_from(model1_weights);
       if (master) std::cerr << "\n STARTING train - G2 solver model at step " << super_step << " \n\n";
       model_3->train( super_step*pb_model_3.num_epochs(),pb_model_3.num_batches());
+      // Evaluate model on test set
+      model_3->evaluate(execution_mode::testing);
 
       if(master) std::cout << " Update generator1 weights " << std::endl;
       auto model2_weights = model_2->get_weights();
@@ -204,16 +207,12 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
     // Check for cudnn, with user feedback
     cudnn::cudnn_manager *cudnn = nullptr;
 #ifdef LBANN_HAS_CUDNN
+    const size_t workspace_size = 1 << 9; // 1 GB
     if (! pb_model->disable_cuda()) {
       if (master) {
         std::cerr << "code was compiled with LBANN_HAS_CUDNN, and we are using cudnn\n";
       }
-      if(pb_model->use_nccl()) {
-        cudnn = new cudnn::cudnn_manager(comm, pb_model->num_gpus(), true);
-      }
-      else{
-        cudnn = new cudnn::cudnn_manager(comm, pb_model->num_gpus(), false);
-      }
+      cudnn = new cudnn::cudnn_manager(workspace_size);
     } else {
       if (master) {
         std::cerr << "code was compiled with LBANN_HAS_CUDNN, but we are NOT USING cudnn\n";
@@ -229,16 +228,13 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
       std::cout << "Hardware settings (for master process)" << std::endl
                 << "  Processes on node            : " << comm->get_procs_per_node() << std::endl
                 << "  OpenMP threads per process   : " << omp_get_max_threads() << std::endl;
-      #ifdef LBANN_HAS_CUDNN
+      #ifdef LBANN_HAS_GPU
       if (cudnn != nullptr) {
-        std::cout << "  GPUs on node                 : " << cudnn->get_num_visible_gpus() << std::endl
-                  << "  GPUs per process             : " << cudnn->get_num_gpus() << std::endl;
-
-        const char* mv2_ptr = std::getenv("MV2_USE_CUDA");
-        const std::string mv2_str = (mv2_ptr == nullptr)? "" : std::string(mv2_ptr);
-        std::cout << "  MV2_USE_CUDA                 : " << mv2_str << std::endl;
+        std::cout << "  GPUs on node                 : " << El::GPUManager::NumDevices() << std::endl;
+        const auto* env = std::getenv("MV2_USE_CUDA");
+        std::cout << "  MV2_USE_CUDA                 : " << (env != nullptr ? env : "") << std::endl;
       }
-      #endif // LBANN_HAS_CUDNN
+      #endif // LBANN_HAS_GPU
       std::cout << std::endl;
     }
     // Display how the OpenMP threads are provisioned

@@ -9,7 +9,6 @@ model {
   num_epochs: 20
   num_parallel_readers: 0
   procs_per_model: 0
-  num_gpus: -1
 
   ###################################################
   # Objective function
@@ -52,8 +51,8 @@ model {
 #  callback {
 #    checkpoint {
 #      checkpoint_dir: "pretrain"
-#      checkpoint_epochs: 1
-##      checkpoint_steps: 50000
+##      checkpoint_epochs: 1
+#      checkpoint_steps: 5000
 #    }
 #  }
 
@@ -348,7 +347,7 @@ model {
 
   layer {
     name: "data"
-    children: "slice"
+    children: "slice target"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
@@ -671,14 +670,11 @@ model {
   }
 
   layer {
-    parents: "prob"
+    parents: "prob data"
     name: "target"
     children: ""
     data_layout: "data_parallel"
-    target {
-      io_buffer: "partitioned"
-      shared_data_reader: true
-    }
+    target {}
   }
 
 }

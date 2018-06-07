@@ -2,13 +2,12 @@
 model {
   name: "directed_acyclic_graph_model"
   data_layout: "model_parallel"
-  mini_batch_size: 32 
+  mini_batch_size: 32
   block_size: 256
   super_steps: 100000
   num_epochs: 1
   num_parallel_readers: 0
   procs_per_model: 0
-  num_gpus: -1
 
   ###################################################
   # Objective function
@@ -38,13 +37,13 @@ model {
     }
   }
   callback { timer {} }
-  
+
   callback {
       dump_activations{
       basename: "/usr/workspace/wsa/jacobs32/github.saj.lbann/fcgan_dismodel_dump_acts/"
       #layer_names: "fc4_tanh data sum sigmoid2"
       layer_names: "fc4_tanh"
-      #interval: 844 
+      #interval: 844
     }
   }
 
@@ -56,6 +55,7 @@ model {
   # INPUT real data
   layer {
     name: "data"
+    children: "zero_data target"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
@@ -73,10 +73,10 @@ model {
       second_half: true
     }
   }
-  
+
 
   #Generator Path
-  
+
   #NOISE
   layer {
     name: "noise"
@@ -101,7 +101,7 @@ model {
     data_layout: "data_parallel"
     weights: "gen_fc1_weights"
     fully_connected {
-      num_neurons: 256 
+      num_neurons: 256
      # weight_initialization: "glorot_normal"
       has_bias: true
     }
@@ -128,7 +128,7 @@ model {
   #############
   # FC 2
   #############
-  
+
   weights {
      name: "gen_fc2_weights"
      optimizer { }
@@ -140,7 +140,7 @@ model {
     data_layout: "data_parallel"
     weights: "gen_fc2_weights"
     fully_connected {
-      num_neurons: 512 
+      num_neurons: 512
       #weight_initialization: "glorot_normal"
       has_bias: true
     }
@@ -167,7 +167,7 @@ model {
   #############
   # FC 3
   #############
-  
+
   weights {
      name: "gen_fc3_weights"
      optimizer { }
@@ -179,7 +179,7 @@ model {
     data_layout: "data_parallel"
     weights: "gen_fc3_weights"
     fully_connected {
-      num_neurons: 1024 
+      num_neurons: 1024
      # weight_initialization: "glorot_normal"
       has_bias: true
     }
@@ -206,7 +206,7 @@ model {
   #############
   # FC 4
   #############
-  
+
   weights {
      name: "gen_fc4_weights"
      optimizer { }
@@ -218,7 +218,7 @@ model {
     data_layout: "data_parallel"
     weights: "gen_fc4_weights"
     fully_connected {
-      num_neurons: 784 
+      num_neurons: 784
       #weight_initialization: "glorot_normal"
       has_bias: true
     }
@@ -232,7 +232,7 @@ model {
   }
 
   #######
-  # Reshape for discrimnator 
+  # Reshape for discrimnator
   ######
   layer {
     name: "reshape1"
@@ -255,7 +255,7 @@ model {
       second_half: false
     }
   }
-  
+
   #SUM
   layer {
     name: "sum"
@@ -264,10 +264,10 @@ model {
     sum {
     }
   }
-    
+
 
 #DISCRIMINATOR MODEL
-  
+
  # FULLY_CONNECTED dis_flatten
   layer {
     parents: "sum"
@@ -286,7 +286,7 @@ model {
     data_layout: "data_parallel"
     #weights: "gen_fc_weights"
     fully_connected {
-      num_neurons: 512 
+      num_neurons: 512
       weight_initialization: "glorot_normal"
       has_bias: true
     }
@@ -306,7 +306,7 @@ model {
     data_layout: "data_parallel"
     #weights: "gen_fc_weights"
     fully_connected {
-      num_neurons: 256 
+      num_neurons: 256
       weight_initialization: "glorot_normal"
       has_bias: true
     }
@@ -349,13 +349,10 @@ model {
   }
 
   layer {
-    parents: "prob"
+    parents: "prob data"
     name: "target"
     data_layout: "data_parallel"
-    target {
-      io_buffer: "partitioned"
-      shared_data_reader: true
-    }
+    target {}
   }
- 
+
 }

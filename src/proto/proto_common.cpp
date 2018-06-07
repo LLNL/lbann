@@ -550,9 +550,6 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   if (opts->has_int("procs_per_model")) {
     model->set_procs_per_model(opts->get_int("procs_per_model"));
   }
-  if (opts->has_int("num_gpus")) {
-    model->set_num_gpus(opts->get_int("num_gpus"));
-  }
   if (opts->has_int("num_parallel_readers")) {
     model->set_num_parallel_readers(opts->get_int("num_parallel_readers"));
   }
@@ -640,7 +637,6 @@ void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
             << "  num_epochs:           " << m.num_epochs()  << std::endl
             << "  block_size:           " << m.block_size()  << std::endl
             << "  procs_per_model:      " << m.procs_per_model()  << std::endl
-            << "  num_gpus:             " << m.num_gpus()  << std::endl
             << "  num_parallel_readers: " << m.num_parallel_readers()  << std::endl
             << "  disable_cuda:         " << m.disable_cuda()  << std::endl
             << "  random_seed:          " << m.random_seed() << std::endl

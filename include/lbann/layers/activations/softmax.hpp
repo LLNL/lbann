@@ -48,21 +48,21 @@ namespace softmax_cuda {
  *  A minimum output value helps avoid denormalized floats. Data is
  *  assumed to be on GPU.
  */
-void fp_cutoff(cudnn::cudnn_manager& cudnn,
-               int height, int width,
+void fp_cutoff(int height, int width,
                DataType* output,
                int output_leading_dim,
-               DataType cutoff);
+               DataType cutoff,
+               cudaStream_t stream);
 /** Error signal correction if activations have minimum cutoff.
  *  Data is assumed to be on GPU.
  */
-void bp_cutoff(cudnn::cudnn_manager& cudnn,
-               int height, int width,
+void bp_cutoff(int height, int width,
                const DataType* output,
                int output_leading_dim,
                DataType* gradient_wrt_input,
                int gradient_wrt_input_leading_dim,
-               DataType cutoff);
+               DataType cutoff,
+               cudaStream_t stream);
 } // namespace softmax
 #endif // LBANN_HAS_CUDNN
 

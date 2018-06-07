@@ -6,7 +6,6 @@ model {
   num_epochs: 72
   num_parallel_readers: 0
   procs_per_model: 0
-  num_gpus: -1
 
   ###################################################
   # Objective function
@@ -41,6 +40,11 @@ model {
   }
   callback { print {} }
   callback { timer {} }
+  # callback {
+  #   debug {
+  #     phase: "train"
+  #   }
+  # }
   callback {
     drop_fixed_learning_rate {
       drop_epoch: 20
@@ -56,6 +60,7 @@ model {
 
   layer {
     name: "data"
+    children: "conv1 target"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
@@ -272,11 +277,9 @@ model {
 
   layer {
     name: "target"
+    parents: "prob data"
     data_layout: "data_parallel"
-    target {
-      io_buffer: "partitioned"
-      shared_data_reader: true
-    }
+    target {}
   }
 
 }

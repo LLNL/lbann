@@ -31,6 +31,7 @@ model {
     }
     name: "1"
     parents: "1"
+    children: "2 7"
     children: ""
     data_layout: "data_parallel"
   }
@@ -83,13 +84,10 @@ model {
   #############################################
   layer {
     name: "7"
-    parents: "6"
+    parents: "6 1"
     children: ""
     data_layout: "data_parallel"
-    target {
-      io_buffer: "partitioned"
-      shared_data_reader: true
-    }
+    target {}
   }
   #############################################
   mini_batch_size: 256
@@ -116,7 +114,6 @@ model {
     }
   }
   block_size: 256
-  num_gpus: -1
   num_parallel_readers: 12
 }
 optimizer {

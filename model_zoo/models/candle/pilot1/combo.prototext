@@ -1,28 +1,27 @@
-#Example taken from:https://github.com/ECP-CANDLE/Benchmarks/tree/frameworks/Pilot1/Combo 
+#Example taken from:https://github.com/ECP-CANDLE/Benchmarks/tree/frameworks/Pilot1/Combo
 #Timestamp 03/07/2018 8:30PM
 model {
   name: "directed_acyclic_graph_model"
   data_layout: "model_parallel"
-  mini_batch_size: 256 
+  mini_batch_size: 256
   block_size: 256
-  num_epochs: 10 
+  num_epochs: 10
   num_parallel_readers: 0
   procs_per_model: 0
-  num_gpus: -1
 
   ###################################################
   # Objective function
   ###################################################
 
   objective_function {
-    mean_squared_error {} 
+    mean_squared_error {}
   }
 
   ###################################################
   # Metrics
   ###################################################
 
-  metric { 
+  metric {
     mean_squared_error {}
   }
   metric {
@@ -46,6 +45,7 @@ model {
   # INPUT (Merged Features)
   layer {
     name: "data"
+    children: "slice_data target"
     data_layout: "model_parallel"
     input {
       io_buffer: "distributed"
@@ -87,7 +87,7 @@ model {
     }
   }
 
-  #DROPOUT gene_dropout1 
+  #DROPOUT gene_dropout1
   layer {
     parents: "gene_relu1"
     name: "gene_dropout1"
@@ -118,7 +118,7 @@ model {
     }
   }
 
-  #DROPOUT gene_dropout2 
+  #DROPOUT gene_dropout2
   layer {
     parents: "gene_relu2"
     name: "gene_dropout2"
@@ -127,7 +127,7 @@ model {
       keep_prob: 0.95
     }
   }
-  
+
   #FULLY_CONNECTED gene_fc3
   layer {
     parents: "gene_dropout2"
@@ -149,7 +149,7 @@ model {
     }
   }
 
-  #DROPOUT gene_dropout3 
+  #DROPOUT gene_dropout3
   layer {
     parents: "gene_relu3"
     name: "gene_dropout3"
@@ -198,7 +198,7 @@ model {
     }
   }
 
-  #DROPOUT drug1_dropout1 
+  #DROPOUT drug1_dropout1
   layer {
     parents: "drug1_relu1"
     name: "drug1_dropout1"
@@ -229,7 +229,7 @@ model {
     }
   }
 
-  #DROPOUT drug1_dropout2 
+  #DROPOUT drug1_dropout2
   layer {
     parents: "drug1_relu2"
     name: "drug1_dropout2"
@@ -238,7 +238,7 @@ model {
       keep_prob: 0.95
     }
   }
-  
+
   #FULLY_CONNECTED drug1_fc3
   layer {
     parents: "drug1_dropout2"
@@ -260,7 +260,7 @@ model {
     }
   }
 
-  #DROPOUT drug1_dropout3 
+  #DROPOUT drug1_dropout3
   layer {
     parents: "drug1_relu3"
     name: "drug1_dropout3"
@@ -293,7 +293,7 @@ model {
     }
   }
 
-  #DROPOUT drug2_dropout1 
+  #DROPOUT drug2_dropout1
   layer {
     parents: "drug2_relu1"
     name: "drug2_dropout1"
@@ -324,7 +324,7 @@ model {
     }
   }
 
-  #DROPOUT drug2_dropout2 
+  #DROPOUT drug2_dropout2
   layer {
     parents: "drug2_relu2"
     name: "drug2_dropout2"
@@ -333,7 +333,7 @@ model {
       keep_prob: 0.95
     }
   }
-  
+
   #FULLY_CONNECTED drug2_fc3
   layer {
     parents: "drug2_dropout2"
@@ -355,7 +355,7 @@ model {
     }
   }
 
-  #DROPOUT drug2_dropout3 
+  #DROPOUT drug2_dropout3
   layer {
     parents: "drug2_relu3"
     name: "drug2_dropout3"
@@ -373,7 +373,7 @@ model {
     concatenation {}
     data_layout: "model_parallel"
   }
-  
+
 #Combined Track
   #FULLY_CONNECTED combined_fc1
   layer {
@@ -396,7 +396,7 @@ model {
     }
   }
 
-  #DROPOUT combined_dropout1 
+  #DROPOUT combined_dropout1
   layer {
     parents: "combined_relu1"
     name: "combined_dropout1"
@@ -427,7 +427,7 @@ model {
     }
   }
 
-  #DROPOUT combined_dropout2 
+  #DROPOUT combined_dropout2
   layer {
     parents: "combined_relu2"
     name: "combined_dropout2"
@@ -436,7 +436,7 @@ model {
       keep_prob: 0.95
     }
   }
-  
+
   #FULLY_CONNECTED combined_fc3
   layer {
     parents: "combined_dropout2"
@@ -458,7 +458,7 @@ model {
     }
   }
 
-  #DROPOUT combined_dropout3 
+  #DROPOUT combined_dropout3
   layer {
     parents: "combined_relu3"
     name: "combined_dropout3"
@@ -482,13 +482,9 @@ model {
 
   #TARGET
   layer {
-    parents: "fc"
+    parents: "fc data"
     name: "target"
-    target {
-      io_buffer: "distributed"
-      shared_data_reader: true
-      for_regression: true
-    }
+    target {}
     data_layout: "model_parallel"
   }
 
