@@ -45,6 +45,7 @@ data_reader_merge_features::data_reader_merge_features(
   m_data_size(other.m_data_size) {
   if(other.m_label_reader != nullptr) 
     m_label_reader = other.m_label_reader->copy();
+  else m_label_reader = nullptr;
 }
 
 data_reader_merge_features& data_reader_merge_features::operator=(
@@ -56,6 +57,7 @@ data_reader_merge_features& data_reader_merge_features::operator=(
   }
   if(other.m_label_reader != nullptr) 
     m_label_reader = other.m_label_reader->copy();
+  else m_label_reader = nullptr;
   return *this;
 }
 
