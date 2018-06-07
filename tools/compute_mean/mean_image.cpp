@@ -64,7 +64,7 @@ cv::Mat reduce_mean_images(const cv::Mat mean_image, const mpi_states& ms) {
   cv::Mat global_sum(local_data.rows, local_data.cols, local_data.type());
 
   int mc = MPI_SUCCESS;
-  mc = MPI_Allreduce(_ConstVoidP(local_data.data), _VoidP(global_sum.data), num_values,
+  mc = MPI_Allreduce(const_cast<void*>(_ConstVoidP(local_data.data)), _VoidP(global_sum.data), num_values,
                      ((local_data.depth() == CV_32F)? MPI_FLOAT : MPI_DOUBLE), MPI_SUM, ms.get_comm());
   ms.check_mpi(mc);
   return global_sum;

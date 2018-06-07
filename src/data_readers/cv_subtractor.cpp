@@ -41,11 +41,18 @@ namespace lbann {
 cv_subtractor::cv_subtractor(const cv_subtractor& rhs)
   : cv_transform(rhs),
     m_img_to_sub(rhs.m_img_to_sub),
-    m_applied(rhs.m_applied) {}
+    m_img_to_div(rhs.m_img_to_div),
+    m_channel_mean(rhs.m_channel_mean),
+    m_channel_stddev(rhs.m_channel_stddev),
+    m_applied(rhs.m_applied)
+{}
 
 cv_subtractor& cv_subtractor::operator=(const cv_subtractor& rhs) {
   cv_transform::operator=(rhs);
   m_img_to_sub = rhs.m_img_to_sub;
+  m_img_to_div = rhs.m_img_to_div;
+  m_channel_mean = rhs.m_channel_mean;
+  m_channel_stddev = rhs.m_channel_stddev;
   m_applied = rhs.m_applied;
   return *this;
 }
@@ -122,20 +129,36 @@ void cv_subtractor::set_mean(const std::string name_of_img_to_sub, const int dep
     throw lbann_exception(err.str());
   }
   set_mean(img_to_sub, depth_code);
+  m_channel_mean.clear();
+
+  if (m_channel_stddev.empty() && !m_img_to_div.empty() &&
+      !check_if_cv_Mat_has_same_shape(m_img_to_div, m_img_to_sub)) {
+    throw lbann_exception("cv_subtractor::set_mean() : mean and variance images have different shapes");
+  }
 }
 
-void cv_subtractor::set_mean(int width, int height, const std::vector<lbann::DataType> ch_mean) {
+void cv_subtractor::set_mean(const std::vector<lbann::DataType> ch_mean) {
   if (ch_mean.size() > cv::Scalar::channels) {
     throw lbann_exception(std::string("cv_subtractor::set_mean() : ") +
       "provide the mean image if the number of channels are larger than " +
       std::to_string(cv::Scalar::channels) + '.');
   }
+  m_channel_mean = ch_mean;
+}
+
+bool cv_subtractor::create_img_to_sub(int width, int height, int n_channels) {
+  if ((n_channels == 0) || (static_cast<size_t>(n_channels) != m_channel_mean.size()) ||
+      (width == 0) || (height == 0)) {
+    return false;
+  }
+  const std::vector<lbann::DataType>& ch_mean = m_channel_mean;
   cv::Scalar px = cv::Scalar::all(0.0);
-  for (size_t i = 0u; i < ch_mean.size() ; ++i) {
+  for (size_t i = 0u; i < ch_mean.size(); ++i) {
     px[static_cast<int>(i)] = ch_mean[i];
   }
-  cv::Mat img_to_sub(height, width, cv_image_type<lbann::DataType>::T(ch_mean.size()), px);
+  cv::Mat img_to_sub(height, width, cv_image_type<lbann::DataType>::T(n_channels), px);
   set_mean(img_to_sub);
+  return true;
 }
 
 void cv_subtractor::set_mean(const cv::Mat& image, const int depth_code) {
@@ -159,10 +182,6 @@ void cv_subtractor::set_mean(const cv::Mat& image, const int depth_code) {
   } else {
     image.convertTo(m_img_to_sub, depth_code, f, 0.0);
   }
-
-  if (!m_img_to_div.empty() && !check_if_cv_Mat_has_same_shape(m_img_to_div, m_img_to_sub)) {
-    throw lbann_exception("cv_subtractor::set_mean() : mean and vairnce images have different shapes");
-  }
 }
 
 void cv_subtractor::set_stddev(const std::string name_of_img_to_div, const int depth_code) {
@@ -181,20 +200,36 @@ void cv_subtractor::set_stddev(const std::string name_of_img_to_div, const int d
     throw lbann_exception(err.str());
   }
   set_stddev(img_to_div, depth_code);
+  m_channel_stddev.clear();
+
+  if (m_channel_mean.empty() && !m_img_to_sub.empty() &&
+      !check_if_cv_Mat_has_same_shape(m_img_to_sub, m_img_to_div)) {
+    throw lbann_exception("cv_subtractor::set_stddev() : mean and variance images have different shapes.");
+  }
 }
 
-void cv_subtractor::set_stddev(int width, int height, const std::vector<lbann::DataType> ch_stddev) {
+void cv_subtractor::set_stddev(const std::vector<lbann::DataType> ch_stddev) {
   if (ch_stddev.size() > cv::Scalar::channels) {
     throw lbann_exception(std::string("cv_subtractor::set_stddev() : ") +
       "provide the stddev image if the number of channels are larger than " +
       std::to_string(cv::Scalar::channels) + '.');
   }
+  m_channel_stddev = ch_stddev;
+}
+
+bool cv_subtractor::create_img_to_div(int width, int height, int n_channels) {
+  if ((n_channels == 0) || (static_cast<size_t>(n_channels) != m_channel_stddev.size()) ||
+      (width == 0) || (height == 0)) {
+    return false;
+  }
+  const std::vector<lbann::DataType>& ch_stddev = m_channel_stddev;
   cv::Scalar px = cv::Scalar::all(0.0);
-  for (size_t i = 0u; i < ch_stddev.size() ; ++i) {
+  for (size_t i = 0u; i < ch_stddev.size(); ++i) {
     px[static_cast<int>(i)] = ch_stddev[i];
   }
-  cv::Mat img_to_div(height, width, cv_image_type<lbann::DataType>::T(ch_stddev.size()), px);
+  cv::Mat img_to_div(height, width, cv_image_type<lbann::DataType>::T(n_channels), px);
   set_stddev(img_to_div);
+  return true;
 }
 
 void cv_subtractor::set_stddev(const cv::Mat& image, const int depth_code) {
@@ -211,19 +246,42 @@ void cv_subtractor::set_stddev(const cv::Mat& image, const int depth_code) {
   } else {
     image.convertTo(m_img_to_div, depth_code, f, 0.0);
   }
-
-  if (!m_img_to_sub.empty() && !check_if_cv_Mat_has_same_shape(m_img_to_sub, m_img_to_div)) {
-    throw lbann_exception("cv_subtractor::set_stddev() : mean and vairnce images have different shapes.");
-  }
 }
 
 bool cv_subtractor::determine_transform(const cv::Mat& image) {
-  //reset(); // redundant here
-  // enable if the given image has the same size and the same number of
-  // channels as the image to subtract.
-  m_applied = false;
-  m_enabled = (!m_img_to_sub.empty() && check_if_cv_Mat_has_same_shape(image, m_img_to_sub)) ||
-              (!m_img_to_div.empty() && check_if_cv_Mat_has_same_shape(image, m_img_to_div));
+  reset();
+  if (m_channel_mean.empty()) {
+    if (!m_img_to_sub.empty()) { // pixel-wise
+      if (!check_if_cv_Mat_has_same_shape(image, m_img_to_sub)) {
+        throw lbann_exception(std::string("cv_subtactor::determine_transform(): ") +
+                              "input and mean images have different sizes.");
+      }
+      m_enabled = true;
+    }
+  } else { // channel-wise
+    if (!check_if_cv_Mat_has_same_shape(image, m_img_to_sub) &&
+        !create_img_to_sub(image.cols, image.rows, image.channels())) {
+      throw lbann_exception(std::string("cv_subtactor::determine_transform(): ") +
+                            "failed to create mean image.");
+    }
+    m_enabled = true;
+  }
+  if (m_channel_stddev.empty()) {
+    if (!m_img_to_div.empty()) { // pixel-wise
+      if (!check_if_cv_Mat_has_same_shape(image, m_img_to_div)) {
+        throw lbann_exception(std::string("cv_subtactor::determine_transform(): ") +
+                              "input and stddev images have different sizes.");
+      }
+      m_enabled = true;
+    }
+  } else { // channel-wise
+    if (!check_if_cv_Mat_has_same_shape(image, m_img_to_div) &&
+        !create_img_to_div(image.cols, image.rows, image.channels())) {
+      throw lbann_exception(std::string("cv_subtactor::determine_transform(): ") +
+                            "failed to create stddev image.");
+    }
+    m_enabled = true;
+  }
   return m_enabled;
 }
 
@@ -231,6 +289,13 @@ bool cv_subtractor::determine_inverse_transform() {
   return (m_enabled = m_applied);
 }
 
+/**
+ * Currently only supports mean-subtraction and z-score.
+ * TODO: Unit variance is not supported. It can be implemented by adding
+ * 'm_img_to_sub' to the result of z-score. Both z-score and unit variance
+ * requires both mean and stddev. Thus, we would need an additional flag to
+ * distinguish which method is being set up.
+ */
 bool cv_subtractor::apply(cv::Mat& image) {
   m_enabled = false; // turn off as the transform is applied once
   if (m_applied) { // inverse if applied already
@@ -275,6 +340,10 @@ bool cv_subtractor::apply(cv::Mat& image) {
   return true;
 }
 
+bool cv_subtractor::check_if_channel_wise() const {
+  return !(m_channel_mean.empty() || m_channel_stddev.empty());
+}
+
 std::string cv_subtractor::get_description() const {
   std::stringstream os;
   os << get_type() + ":" << std::endl;
@@ -283,15 +352,29 @@ std::string cv_subtractor::get_description() const {
 
 std::ostream& cv_subtractor::print(std::ostream& os) const {
   os << get_description()
-     << " - configuration of the image to subtract: "
+     << " - image shape to subtract: "
      << m_img_to_sub.cols << 'x' << m_img_to_sub.rows
      << 'x' << m_img_to_sub.channels()
      << '-' << m_img_to_sub.depth() << std::endl
-     << " - configuration of the image to divide: "
+     << " - image shape to divide: "
      << m_img_to_div.cols << 'x' << m_img_to_div.rows
      << 'x' << m_img_to_div.channels()
      << '-' << m_img_to_div.depth() << std::endl;
+
+  os << " - mean per channel to subtract:";
+  for (const auto v: m_channel_mean) {
+    os << ' ' << v;
+  }
+  os << std::endl;
+
+  os << " - stddev per channel to divide:";
+  for (const auto v: m_channel_stddev) {
+    os << ' ' << v;
+  }
+  os << std::endl;
+
 #if 0
+  double f = get_depth_denormalizing_factor(CV_8U);
   if (!m_img_to_sub.empty()) {
     cv::Mat img_sub;
     m_img_to_sub.convertTo(img_sub, CV_8U, f, 0.0);
