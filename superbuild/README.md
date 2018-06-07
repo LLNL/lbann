@@ -22,8 +22,8 @@ Subpackages](#passing-options-to-superbuild-subpackages)).
 Arguments that are processed by the SuperBuild are prefixed with
 `LBANN_SB_`. The notable options are:
 
-- `LBANN_SB_BUILD_<PKG>`, where `<PKG>` is one of `ALUMINUM, CNPY, CUB,
-  ELEMENTAL, HYDROGEN, JPEG_TURBO, LBANN, OPENBLAS, OPENCV,
+- `LBANN_SB_BUILD_<PKG>`, where `<PKG>` is one of `ALUMINUM, CNPY,
+  CUB, ELEMENTAL, HYDROGEN, JPEG_TURBO, LBANN, OPENBLAS, OPENCV,
   PROTOBUF`. Enables the build of `<PKG>` as a subproject.
 
 - `LBANN_SB_FWD_*`. See [Passing options to SuperBuild

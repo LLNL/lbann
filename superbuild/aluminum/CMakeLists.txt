@@ -4,6 +4,9 @@ set(Aluminum_URL https://github.com/ndryden/Aluminum
 set(Aluminum_TAG "master"
   CACHE STRING "The git tag to checkout for Aluminum")
 
+set(Aluminum_CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}"
+  CACHE STRING "The build type for Aluminum.")
+
 # Where to install Aluminum
 set (Aluminum_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
   CACHE PATH "The installation location of Aluminum.")
@@ -16,7 +19,7 @@ option(ALUMINUM_ENABLE_NCCL "Enable NCCL support." OFF)
 # Get the list of ALUMINUM variables
 get_property(ALUMINUM_VARIABLES DIRECTORY PROPERTY VARIABLES)
 list(FILTER ALUMINUM_VARIABLES INCLUDE REGEX
-  "^ALUMINUM_.*\|^Aluminum_.*\|^LBANN_SB_FWD_ALUMINUM_.*\|^LBANN_SB_FWD_Aluminum_.*\|CMAKE_\(CXX\|CUDA\)_COMPILER")
+  "^ALUMINUM_.*\|^Aluminum_.*\|^LBANN_SB_FWD_ALUMINUM_.*\|^LBANN_SB_FWD_Aluminum_.*\|CMAKE_\(CXX\|CUDA\)_COMPILER\|CMAKE_BUILD_TYPE")
 list(FILTER ALUMINUM_VARIABLES EXCLUDE REGEX "Aluminum_URL\|Aluminum_TAG")
 
 create_cmake_arguments(
