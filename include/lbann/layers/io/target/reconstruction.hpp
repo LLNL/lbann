@@ -92,8 +92,8 @@ class reconstruction_layer : public generic_target_layer {
 
   void bp_compute() override {}
 
-  virtual AbsDistMat& get_ground_truth() { return m_original_layer->get_activations(); }
-  virtual const AbsDistMat& get_ground_truth() const { return m_original_layer->get_activations(); }
+  AbsDistMat& get_ground_truth() override { return m_original_layer->get_activations(); }
+  const AbsDistMat& get_ground_truth() const override { return m_original_layer->get_activations(); }
 
 public:
 
