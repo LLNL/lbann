@@ -953,6 +953,9 @@ class base_convolution_layer : public learning_layer {
 
  private:
 
+#ifdef LBANN_HAS_CUDNN
+
+  /** Copy convolution kernel cuDNN descriptor. */
   static void copy_kernel_cudnn_desc(const cudnnFilterDescriptor_t& src,
                                      cudnnFilterDescriptor_t& dst) {
 
@@ -992,6 +995,7 @@ class base_convolution_layer : public learning_layer {
 
   }
 
+  /** Copy convolution cuDNN descriptor. */
   static void copy_convolution_cudnn_desc(const cudnnConvolutionDescriptor_t& src,
                                           cudnnConvolutionDescriptor_t& dst) {
 
@@ -1036,6 +1040,8 @@ class base_convolution_layer : public learning_layer {
     }
 
   }
+
+#endif // LBANN_HAS_CUDNN
 
 };
 
