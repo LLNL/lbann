@@ -29,6 +29,8 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/cudnn_wrapper.hpp"
 
+namespace lbann {
+
 namespace {
 
 // Atomic add functions
@@ -93,9 +95,9 @@ template <int block_size>
 __global__ void channel_sums_kernel(
   int channel_height,
   int width,
-  const lbann::DataType * __restrict__ data, int data_ldim,
-        lbann::DataType * __restrict__ sums,
-        lbann::DataType * __restrict__ sqsums) {
+  const DataType * __restrict__ data, int data_ldim,
+        DataType * __restrict__ sums,
+        DataType * __restrict__ sqsums) {
 
   // Indices
   const int tid = threadIdx.x;
@@ -103,12 +105,12 @@ __global__ void channel_sums_kernel(
   const int bidy = blockIdx.y;
 
   // Initialize shared memory
-  __shared__ lbann::DataType shared_sums[block_size];
-  __shared__ lbann::DataType shared_sqsums[block_size];
+  __shared__ DataType shared_sums[block_size];
+  __shared__ DataType shared_sqsums[block_size];
 
   // Compute row sums in shared memory
-  lbann::DataType private_sum = lbann::DataType(0);
-  lbann::DataType private_sqsum = lbann::DataType(0);
+  DataType private_sum = DataType(0);
+  DataType private_sqsum = DataType(0);
   if (gidx < channel_height) {
     const int row = gidx + bidy * channel_height;
     for (int col = 0; col < width; ++col) {
@@ -145,25 +147,22 @@ __global__ void channel_sums_kernel(
 __global__ void compute_statistics_kernel(
   int num_sums,
   int num_per_sum,
-  lbann::DataType decay,
-  lbann::DataType * __restrict__ global_mean,
-  lbann::DataType * __restrict__ global_var,
-  lbann::DataType * __restrict__ global_running_mean,
-  lbann::DataType * __restrict__ global_running_var) {
-  const lbann::DataType zero = lbann::DataType(0);
-  const lbann::DataType one = lbann::DataType(1);
+  DataType epsilon,
+  DataType decay,
+  DataType * __restrict__ global_mean,
+  DataType * __restrict__ global_var,
+  DataType * __restrict__ global_running_mean,
+  DataType * __restrict__ global_running_var) {
+  const DataType one = DataType(1);
   const int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const int num_threads = blockDim.x * gridDim.x;
   for (int i = gid; i < num_sums; i += num_threads) {
 
-    // Compute statistics
+    // Compute mean and variance
     const auto& mean = global_mean[i] / num_per_sum;
     const auto& sqmean = global_var[i] / num_per_sum;
-    auto var = zero;
-    if (num_per_sum > 1) {
-      var = num_per_sum * (sqmean - mean * mean) / (num_per_sum - 1);
-      var = var > zero ? var : zero;
-    }
+    auto var = num_per_sum * (sqmean - mean * mean) / (num_per_sum - 1);
+    var = var > epsilon ? var : epsilon;
     global_mean[gid] = mean;
     global_var[gid] = var;
 
@@ -182,13 +181,13 @@ template <int block_size>
 __global__ void batch_normalization_kernel(
   int channel_height,
   int width,
-  const lbann::DataType * __restrict__ global_input, int input_ldim,
-  const lbann::DataType * __restrict__ global_mean,
-  const lbann::DataType * __restrict__ global_var,
-  lbann::DataType epsilon,
-  const lbann::DataType * __restrict__ global_scale,
-  const lbann::DataType * __restrict__ global_bias,
-        lbann::DataType * __restrict__ global_output, int output_ldim) {
+  const DataType * __restrict__ global_input, int input_ldim,
+  const DataType * __restrict__ global_mean,
+  const DataType * __restrict__ global_var,
+  DataType epsilon,
+  const DataType * __restrict__ global_scale,
+  const DataType * __restrict__ global_bias,
+        DataType * __restrict__ global_output, int output_ldim) {
 
   // Indices
   const int gidx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -221,18 +220,18 @@ template <int block_size>
 __global__ void backprop1_kernel(
   int channel_height,
   int width,
-  const lbann::DataType * __restrict__ global_input,
+  const DataType * __restrict__ global_input,
   int input_ldim,
-  const lbann::DataType * __restrict__ global_gradient_wrt_output,
+  const DataType * __restrict__ global_gradient_wrt_output,
   int gradient_wrt_output_ldim,
-  const lbann::DataType * __restrict__ global_mean,
-  const lbann::DataType * __restrict__ global_var,
-  lbann::DataType epsilon,
-  const lbann::DataType * __restrict__ global_scale,
-        lbann::DataType * __restrict__ global_dscale,
-        lbann::DataType * __restrict__ global_dbias,
-        lbann::DataType * __restrict__ global_dmean,
-        lbann::DataType * __restrict__ global_dvar) {
+  const DataType * __restrict__ global_mean,
+  const DataType * __restrict__ global_var,
+  DataType epsilon,
+  const DataType * __restrict__ global_scale,
+        DataType * __restrict__ global_dscale,
+        DataType * __restrict__ global_dbias,
+        DataType * __restrict__ global_dmean,
+        DataType * __restrict__ global_dvar) {
 
   // Indices
   const int tid = threadIdx.x;
@@ -240,10 +239,10 @@ __global__ void backprop1_kernel(
   const int bidy = blockIdx.y;
 
   // Initialize shared memory
-  __shared__ lbann::DataType shared_dscale[block_size];
-  __shared__ lbann::DataType shared_dbias[block_size];
-  __shared__ lbann::DataType shared_dmean[block_size];
-  __shared__ lbann::DataType shared_dvar[block_size];
+  __shared__ DataType shared_dscale[block_size];
+  __shared__ DataType shared_dbias[block_size];
+  __shared__ DataType shared_dmean[block_size];
+  __shared__ DataType shared_dvar[block_size];
 
   // Copy batch normalization parameters to private memory
   const auto& mean = global_mean[bidy];
@@ -251,7 +250,7 @@ __global__ void backprop1_kernel(
   const auto& scale = global_scale[bidy];
 
   // Compute useful constants
-  const lbann::DataType zero = lbann::DataType(0);
+  const DataType zero = DataType(0);
   const auto& inv_stdev = rsqrt_(var + epsilon);
   const auto& dvar_factor = inv_stdev * inv_stdev * inv_stdev / 2;
 
@@ -306,17 +305,17 @@ __global__ void backprop2_kernel(
   int channel_height,
   int local_width,
   int global_width,
-  const lbann::DataType * __restrict__ global_input,
+  const DataType * __restrict__ global_input,
   int input_ldim,
-  const lbann::DataType * __restrict__ global_gradient_wrt_output,
+  const DataType * __restrict__ global_gradient_wrt_output,
   int gradient_wrt_output_ldim,
-  const lbann::DataType * __restrict__ global_mean,
-  const lbann::DataType * __restrict__ global_var,
-  lbann::DataType epsilon,
-  const lbann::DataType * __restrict__ global_scale,
-  const lbann::DataType * __restrict__ global_dmean,
-  const lbann::DataType * __restrict__ global_dvar,
-        lbann::DataType * __restrict__ global_gradient_wrt_input,
+  const DataType * __restrict__ global_mean,
+  const DataType * __restrict__ global_var,
+  DataType epsilon,
+  const DataType * __restrict__ global_scale,
+  const DataType * __restrict__ global_dmean,
+  const DataType * __restrict__ global_dvar,
+        DataType * __restrict__ global_gradient_wrt_input,
   int gradient_wrt_input_ldim) {
 
   // Indices
@@ -353,7 +352,6 @@ __global__ void backprop2_kernel(
 
 } // namespace
 
-namespace lbann {
 namespace batch_normalization_cuda {
 
 void channel_sums(int num_channels,
@@ -394,6 +392,7 @@ void channel_sums(int num_channels,
 }
 
 void compute_statistics(int num_per_sum,
+                        DataType epsilon,
                         DataType decay,
                         AbsMat& mean,
                         AbsMat& var,
@@ -409,9 +408,6 @@ void compute_statistics(int num_per_sum,
       || running_mean.Width() != 1 || running_var.Width() != 1) {
     LBANN_ERROR("invalid matrix dimensions");
   }
-  if (num_per_sum < 1) {
-    LBANN_ERROR("computing statistics requires a sum over at least one sample");
-  }
   if (mean.GetDevice() != El::Device::GPU
       || var.GetDevice() != El::Device::GPU
       || running_mean.GetDevice() != El::Device::GPU
@@ -423,13 +419,17 @@ void compute_statistics(int num_per_sum,
   // Compute statistics from sums
   const int block_dim = 256;
   const int grid_dim = (mean.Height() + block_dim - 1) / block_dim;
-  if (grid_dim > 0) {
-    CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-    compute_statistics_kernel
-      <<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
-        mean.Height(), num_per_sum, decay,
-        mean.Buffer(), var.Buffer(),
-        running_mean.Buffer(), running_var.Buffer());
+  if (num_per_sum > 1) {
+    if (grid_dim > 0) {
+      CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+      compute_statistics_kernel
+        <<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
+          mean.Height(), num_per_sum, epsilon, decay,
+          mean.Buffer(), var.Buffer(),
+          running_mean.Buffer(), running_var.Buffer());
+    }
+  } else {
+    El::Fill(var, DataType(1));
   }
 
 }
@@ -592,22 +592,26 @@ void backprop2(int global_width,
 #endif // LBANN_DEBUG  
 
   // Compute gradient w.r.t. input
-  if (input.Height() > 0 && input.Width() > 0) {
-    const int channel_height = input.Height() / num_channels;
-    const int block_size = 256;
-    dim3 block_dims, grid_dims;
-    block_dims.x = block_size;
-    grid_dims.x = (channel_height + block_size - 1) / block_size;
-    grid_dims.y = num_channels;
-    CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-    backprop2_kernel<block_size>
-      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
-        channel_height, input.Width(), global_width,
-        input.LockedBuffer(), input.LDim(),
-        gradient_wrt_output.LockedBuffer(), gradient_wrt_output.LDim(),
-        mean.LockedBuffer(), var.LockedBuffer(), epsilon,
-        scale.LockedBuffer(), dmean.LockedBuffer(), dvar.LockedBuffer(),
-        gradient_wrt_input.Buffer(), gradient_wrt_input.LDim());
+  const int channel_height = input.Height() / num_channels;
+  if (channel_height * global_width <= 1) {
+    // El::Zero(gradient_wrt_input);
+  } else {
+    if (input.Height() > 0 && input.Width() > 0) {
+      const int block_size = 256;
+      dim3 block_dims, grid_dims;
+      block_dims.x = block_size;
+      grid_dims.x = (channel_height + block_size - 1) / block_size;
+      grid_dims.y = num_channels;
+      CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+      backprop2_kernel<block_size>
+        <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+          channel_height, input.Width(), global_width,
+          input.LockedBuffer(), input.LDim(),
+          gradient_wrt_output.LockedBuffer(), gradient_wrt_output.LDim(),
+          mean.LockedBuffer(), var.LockedBuffer(), epsilon,
+          scale.LockedBuffer(), dmean.LockedBuffer(), dvar.LockedBuffer(),
+          gradient_wrt_input.Buffer(), gradient_wrt_input.LDim());
+    }
   }
 
 }

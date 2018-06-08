@@ -46,6 +46,7 @@ void channel_sums(int num_channels,
  *  of sums, respectively.
  */
 void compute_statistics(int num_per_sum,
+                        DataType epsilon,
                         DataType decay,
                         AbsMat& mean,
                         AbsMat& var,
@@ -344,12 +345,14 @@ class batch_normalization : public regularizer_layer {
         m_comm->allreduce(*m_var, m_var->RedundantComm(), El::mpi::SUM);
         num_per_sum = channel_size * input.Width();
       }
-      batch_normalization_cuda::compute_statistics(num_per_sum,
-                                                   m_decay,
-                                                   m_mean->Matrix(),
-                                                   m_var->Matrix(),
-                                                   m_weights[2]->get_values().Matrix(),
-                                                   m_weights[3]->get_values().Matrix());
+      batch_normalization_cuda::compute_statistics(
+        num_per_sum,
+        m_epsilon,
+        m_decay,
+        m_mean->Matrix(),
+        m_var->Matrix(),
+        m_weights[2]->get_values().Matrix(),
+        m_weights[3]->get_values().Matrix());
     }
 
     // Perform batch normalization
@@ -439,6 +442,8 @@ class batch_normalization : public regularizer_layer {
   }
 
   void fp_compute_cpu() {
+    const DataType zero = DataType(0);
+    const DataType one = DataType(1);
 
     // Check execution mode
     const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
@@ -470,8 +475,8 @@ class batch_normalization : public regularizer_layer {
       // Compute sums and sums of squares
       #pragma omp parallel for
       for (int channel = 0; channel < num_channels; ++channel) {
-        DataType sum = DataType(0);
-        DataType sqsum = DataType(0);
+        DataType sum = zero;
+        DataType sqsum = zero;
         const El::Int row_start = channel * channel_size;
         const El::Int row_end = (channel+1) * channel_size;
         for (El::Int col = 0; col < local_width; ++col) {
@@ -484,34 +489,38 @@ class batch_normalization : public regularizer_layer {
         local_mean(channel, 0) = sum;
         local_var(channel, 0) = sqsum;
       }
-      DataType num_samples;
+      DataType num_per_sum;
       if (m_use_global_stats) {
         m_comm->allreduce(*m_mean, m_mean->RedundantComm(), El::mpi::SUM);
         m_comm->allreduce(*m_var, m_var->RedundantComm(), El::mpi::SUM);
-        num_samples = channel_size * width;
+        num_per_sum = channel_size * width;
       } else {
-        num_samples = channel_size * local_width;
+        num_per_sum = channel_size * local_width;
       }
 
       // Compute minibatch statistics
       // Note: local_new_running_mean and local_new_running_var are
       // stored in m_mean_gradient and m_var_gradient.
-      #pragma omp parallel for
-      for (int channel = 0; channel < num_channels; ++channel) {
-        const DataType mean = local_mean(channel, 0) / num_samples;
-        const DataType sqmean = local_var(channel, 0) / num_samples;
-        const DataType var = num_samples / (num_samples - DataType(1)) * std::max(sqmean - mean * mean, DataType(0));
-        const DataType old_running_mean = local_running_mean(channel, 0);
-        const DataType old_running_var = local_running_var(channel, 0);
-        const DataType new_running_mean = m_decay * old_running_mean + (DataType(1) - m_decay) * mean;
-        const DataType new_running_var = m_decay * old_running_var + (DataType(1) - m_decay) * var;
-        local_mean(channel, 0) = mean;
-        local_var(channel, 0) = var;
-        local_new_running_mean(channel, 0) = new_running_mean;
-        local_new_running_var(channel, 0) = new_running_var;
+      if (num_per_sum <= 1) {
+        El::Fill(local_var, one);
+      } else {
+        #pragma omp parallel for
+        for (int channel = 0; channel < num_channels; ++channel) {
+          const DataType mean = local_mean(channel, 0) / num_per_sum;
+          const DataType sqmean = local_var(channel, 0) / num_per_sum;
+          const DataType var = num_per_sum / (num_per_sum - one) * std::max(sqmean - mean * mean, m_epsilon);
+          const DataType old_running_mean = local_running_mean(channel, 0);
+          const DataType old_running_var = local_running_var(channel, 0);
+          const DataType new_running_mean = m_decay * old_running_mean + (one - m_decay) * mean;
+          const DataType new_running_var = m_decay * old_running_var + (one - m_decay) * var;
+          local_mean(channel, 0) = mean;
+          local_var(channel, 0) = var;
+          local_new_running_mean(channel, 0) = new_running_mean;
+          local_new_running_var(channel, 0) = new_running_var;
+        }
+        m_weights[2]->set_values(*m_mean_gradient);
+        m_weights[3]->set_values(*m_var_gradient);
       }
-      m_weights[2]->set_values(*m_mean_gradient);
-      m_weights[3]->set_values(*m_var_gradient);
 
     }
 
@@ -646,39 +655,43 @@ class batch_normalization : public regularizer_layer {
     }
 
     // Compute error signal
-    #pragma omp parallel for
-    for (int channel = 0; channel < num_channels; ++channel) {
+    const int num_per_sum = (m_use_global_stats ?
+                             width * channel_size :
+                             local_width * channel_size);
+    if (num_per_sum <= 1) {
+      El::Zero(local_gradient_wrt_input);
+    } else {
+      #pragma omp parallel for
+      for (int channel = 0; channel < num_channels; ++channel) {
 
-      // Initialize channel parameters and gradients
-      const DataType mean = local_mean(channel, 0);
-      const DataType var = local_var(channel, 0);
-      const DataType scale = local_scale(channel, 0);
-      const DataType dmean = local_mean_gradient(channel, 0);
-      const DataType dvar = local_var_gradient(channel, 0);
+        // Initialize channel parameters and gradients
+        const auto& mean = local_mean(channel, 0);
+        const auto& var = local_var(channel, 0);
+        const auto& scale = local_scale(channel, 0);
+        const auto& dmean = local_mean_gradient(channel, 0);
+        const auto& dvar = local_var_gradient(channel, 0);
 
-      // Compute useful constants
-      const DataType num_samples = (m_use_global_stats ?
-                                    width * channel_size :
-                                    local_width * channel_size);
-      const DataType inv_stdev = 1 / std::sqrt(var + m_epsilon);
-      const DataType dmean_term = dmean / num_samples;
-      const DataType dvar_term = dvar * 2 / (num_samples - DataType(1));
+        // Compute useful constants
+        const DataType inv_stdev = 1 / std::sqrt(var + m_epsilon);
+        const auto& dmean_term = dmean / num_per_sum;
+        const auto& dvar_term = dvar * 2 / (num_per_sum - 1);
 
-      // Compute error signal for current channel
-      const El::Int row_start = channel * channel_size;
-      const El::Int row_end = (channel+1) * channel_size;
-      for (El::Int col = 0; col < local_width; ++col) {
-        for (El::Int row = row_start; row < row_end; ++row) {
-          const DataType x = local_input(row, col);
-          const DataType dy = local_gradient_wrt_output(row, col);
-          const DataType dxhat = dy * scale;
-          DataType dx = dxhat * inv_stdev;
-          dx += dmean_term;
-          dx += dvar_term * (x - mean);
-          local_gradient_wrt_input(row, col) += dx;
+        // Compute error signal for current channel
+        const El::Int row_start = channel * channel_size;
+        const El::Int row_end = (channel+1) * channel_size;
+        for (El::Int col = 0; col < local_width; ++col) {
+          for (El::Int row = row_start; row < row_end; ++row) {
+            const auto& x = local_input(row, col);
+            const auto& dy = local_gradient_wrt_output(row, col);
+            const auto& dxhat = dy * scale;
+            auto dx = dxhat * inv_stdev;
+            dx += dmean_term;
+            dx += dvar_term * (x - mean);
+            local_gradient_wrt_input(row, col) += dx;
+          }
         }
-      }
 
+      }
     }
 
   }
