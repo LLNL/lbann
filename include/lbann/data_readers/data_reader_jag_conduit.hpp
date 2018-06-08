@@ -35,6 +35,8 @@
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
 #include "lbann/data_readers/cv_process.hpp"
+#include <string>
+#include <set>
 
 namespace lbann {
 
@@ -55,6 +57,7 @@ class data_reader_jag_conduit : public generic_data_reader {
    * - Undefined: the default
    */
   enum variable_t {Undefined=0, JAG_Image, JAG_Scalar, JAG_Input};
+  using TypeID = conduit::DataType::TypeID;
 
   data_reader_jag_conduit(bool shuffle = true) = delete;
   data_reader_jag_conduit(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
@@ -146,6 +149,9 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Return the simulation input parameters of the i-th sample
   std::vector<input_t> get_inputs(const size_t i) const;
 
+  template<typename S>
+  static size_t add_val(const std::string key, const conduit::Node& n, std::vector<S>& vals);
+
   /// Check if the simulation was successful
   int check_exp_success(const size_t sample_id) const;
 
@@ -207,6 +213,12 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Check if the given sample id is valid
   bool check_sample_id(const size_t i) const;
 
+  /**
+   * Check if the key is associated with non-numeric value, that is not and
+   * cannot be converted to a numertic.
+   */
+  static bool check_non_numeric(const std::string key);
+
   /// Choose the image closest to the bang time among those associated with the i-th sample
   std::vector<int> choose_image_near_bang_time(const size_t i) const;
 
@@ -243,7 +255,88 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   /// data wrapped in a conduit structure
   conduit::Node m_data;
+
+  /**
+   * Set of keys that are associated with non_numerical values.
+   * Such a variable requires a specific method for mapping to a numeric value.
+   * When a key is found in the set, the variable is ignored. Therefore,
+   * when a conversion is defined for such a key, remove it from the set.
+   */
+  static const std::set<std::string> non_numeric_vars;
 };
+
+
+template<typename S>
+size_t data_reader_jag_conduit::add_val(const std::string key, const conduit::Node& n, std::vector<S>& vals) {
+  size_t cnt = 0u;
+
+  switch (n.dtype().id()) {
+    case TypeID::OBJECT_ID: {
+        std::cout << "O " << n.path() << std::endl;
+        if (check_non_numeric(key)) {
+          return 0u;
+        }
+        conduit::NodeConstIterator itr = n.children();
+        while (itr.has_next()) {
+          const conduit::Node& n_child = itr.next();
+          cnt += add_val(itr.name(), n_child, vals);
+        }
+      }
+      break;
+    case TypeID::LIST_ID: {
+        std::cout << "L " << n.path() << std::endl;
+        if (check_non_numeric(key)) {
+          return 0u;
+        }
+        conduit::NodeConstIterator itr = n.children();
+        while (itr.has_next()) {
+          const conduit::Node& n_child = itr.next();
+          cnt += add_val(itr.name(), n_child, vals);
+        }
+      }
+      break;
+    case TypeID::INT8_ID:
+    case TypeID::INT16_ID:
+    case TypeID::INT32_ID:
+    case TypeID::INT64_ID:
+    case TypeID::UINT8_ID:
+    case TypeID::UINT16_ID:
+    case TypeID::UINT32_ID:
+    case TypeID::UINT64_ID:
+    case TypeID::FLOAT32_ID:
+    case TypeID::FLOAT64_ID:
+      cnt = 1u;
+      std::cout << "N " << n.path() << ": " << static_cast<S>(n.to_value()) << std::endl;
+      vals.push_back(static_cast<S>(n.to_value()));
+      break;
+    case TypeID::CHAR8_STR_ID: {
+        // In case of a charater string, the method to convert it to a float number is specific to each key
+        if (check_non_numeric(key)) {
+          return 0u;
+        }
+        const char* c_str = n.as_char8_str();
+        // make sure that the std::string does not contain null character
+        const std::string str
+          = ((c_str == nullptr)? std::string() : std::string(c_str, n.dtype().number_of_elements())).c_str();
+
+        cnt = 1u;
+        const S v = static_cast<S>(atof(str.c_str()));
+        vals.push_back(v);
+      std::cout << "S " << n.path() << ": " << str << " => " << vals.back() << std::endl;
+      }
+      break;
+    case TypeID::EMPTY_ID:
+    default:
+      std::string err = std::string("data_reader_jag_conduit::add_val() : invalid dtype (")
+                      + n.dtype().name() + ") for " + n.path();
+     #if 1
+      std::cerr << err << std::endl;
+     #else
+      throw lbann_exception(err);
+     #endif
+  }
+  return cnt;
+}
 
 } // end of namespace lbann
 #endif // LBANN_HAS_CONDUIT

@@ -67,6 +67,30 @@
 
 namespace lbann {
 
+const std::set<std::string> data_reader_jag_conduit::non_numeric_vars = {
+  "fusion_reaction",
+  "fusion_model_reaction",
+  "radial_profile",
+  "postp_timeseries_vars",
+  "name",
+  "solver",
+  "mesh_def",
+  "hs_volume_integral",
+  "fusion_model_sv",
+  "shell_model",
+  "shape_model",
+  "ablation_cv_model",
+  "infalling_model",
+  "radiation_model",
+  "hotspot_model",
+  "shape_model_initial_velocity_amplitude",
+  "stopping_model",
+  "energy_balance_model_ablation_cv_model",
+  "solver_method",
+  "conduction_model_conductivity",
+  "solver_mode"
+};
+
 data_reader_jag_conduit::data_reader_jag_conduit(const std::shared_ptr<cv_process>& pp, bool shuffle)
   : generic_data_reader(shuffle) {
   set_defaults();
@@ -634,6 +658,21 @@ bool data_reader_jag_conduit::check_sample_id(const size_t sample_id) const {
   return (static_cast<conduit_index_t>(sample_id) < m_data.number_of_children());
 }
 
+bool data_reader_jag_conduit::check_non_numeric(const std::string key) {
+  std::set<std::string>::const_iterator kit = non_numeric_vars.find(key);
+  if (kit != non_numeric_vars.end()) {
+    std::string err = "data_reader_jag_conduit::add_val() : non-numeric '" + key
+                    + "' requires a conversion method.";
+   #if 1
+    std::cerr << err << " Skipping for now." << std::endl;
+   #else
+    throw lbann_exception(err);
+   #endif
+    return true;
+  }
+  return false;
+}
+
 
 std::vector<int> data_reader_jag_conduit::choose_image_near_bang_time(const size_t sample_id) const {
   using view_map = std::map<std::pair<float, float>, std::pair<int, double> >;
@@ -740,6 +779,7 @@ std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scal
   for(const auto key: m_scalar_keys) {
     std::string scalar_key = std::to_string(sample_id) + "/outputs/scalars/" + key;
     const conduit::Node & n_scalar = get_conduit_node(scalar_key);
+    //add_val(key, n_scalar, scalars);
     scalars.push_back(n_scalar.value());
   }
   return scalars;
@@ -756,7 +796,9 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
   for(const auto key: m_input_keys) {
     std::string input_key = std::to_string(sample_id) + "/inputs/" + key;
     const conduit::Node & n_input = get_conduit_node(input_key);
-    inputs.push_back(n_input.value());
+    // TODO: automatically determine which method to use based on if all the variables are float64 type
+    add_val(key, n_input, inputs);
+    //inputs.push_back(n_input.value());
   }
   return inputs;
 }
