@@ -73,6 +73,14 @@ message ImagePreprocessor {
     bool adaptive_interpolation = 8;
   }
 
+  message Resizer {
+    string name = 1;
+    bool disable = 2;
+    int32 resized_width = 3;
+    int32 resized_height = 4;
+    bool adaptive_interpolation = 5;
+  }
+
   message Augmenter {
     string name = 1;
     bool disable = 2;
@@ -131,6 +139,7 @@ message ImagePreprocessor {
   }
 
   Cropper cropper = 5;
+  Resizer resizer = 34;
   Augmenter augmenter = 6;
   Decolorizer decolorizer = 7;
   Colorizer colorizer = 8;
