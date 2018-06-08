@@ -8,6 +8,7 @@ set_full_path(THIS_DIR_SOURCES
   cv_normalizer.cpp
   cv_process.cpp
   cv_process_patches.cpp
+  cv_resizer.cpp
   cv_subtractor.cpp
   cv_transform.cpp
   cv_utils.cpp
