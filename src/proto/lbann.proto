@@ -194,7 +194,7 @@ message Model {
 
   int64 mini_batch_size = 12;
   int64 num_epochs = 4;
-  int64 super_steps = 121; //multiple steps/epochs currently use in GAN 
+  int64 super_steps = 121; //multiple steps/epochs currently use in GAN
   int64 num_batches = 122; //multiple batches/sub epoch
   int64 block_size = 50;
   int64 procs_per_model = 51;
@@ -729,7 +729,7 @@ message Layer {
    Unpooling unpooling = 304;
    Hadamard hadamard = 308;
    Constant constant = 309;
-   Zero zero = 315; 
+   Zero zero = 315;
    Reduction reduction = 310;
    Evaluation evaluation = 311;
    Gaussian gaussian = 312;
@@ -888,14 +888,14 @@ message Dropout {
 message Input {
   bool data_set_per_model = 1;  //default: false
   string io_buffer = 2;
-  bool for_regression = 3; //default: false
+  string target_mode = 3;
 }
 
 /// @todo Remove when possible
 message RepeatedInput {
   bool data_set_per_model = 1;  //default: false
-  bool for_regression = 2; //default: false
-  int64 num_steps = 3;
+  int64 num_steps = 2;
+  string target_mode = 3;
 }
 
 //////////////////////
@@ -1079,5 +1079,4 @@ message Target {
 }
 
 message TargetReconstruction {
-  string original_layer = 1;
 }
