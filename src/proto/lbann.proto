@@ -438,6 +438,7 @@ message Callback {
    CallbackCheckpoint checkpoint = 28;
    CallbackSaveModel save_model = 29;
    CallbackPolyLearningRate poly_learning_rate = 30;
+   CallbackSyncLayers sync_layers = 31;
 }
 
 message CallbackLTFB {
@@ -598,6 +599,12 @@ message CallbackCheckpoint {
 message CallbackSaveModel {
   string dir = 1;
   string extension = 2;
+}
+
+message CallbackSyncLayers {
+  bool sync_gpus = 1;
+  bool sync_mpi = 2;
+  bool only_input = 3;
 }
 
 //========================================================================

@@ -43,6 +43,7 @@ namespace lbann {
 
 // Forward declaration
 class model;
+class lbann_callback_sync_layers;
 
 /** Abstract base class for neural network layers.
  *  A layer takes input tensors ("previous activations") and applies a
@@ -60,6 +61,8 @@ class model;
  *  optimization methods to the weights.
  */
 class Layer {
+  friend class lbann_callback_sync_layers;
+
  public:
   Layer(lbann_comm *comm);
   Layer(const Layer& other);
