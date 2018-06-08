@@ -51,8 +51,8 @@ model {
 #  callback {
 #    checkpoint {
 #      checkpoint_dir: "pretrain"
-#      checkpoint_epochs: 1
-##      checkpoint_steps: 5000
+##      checkpoint_epochs: 1
+#      checkpoint_steps: 5000
 #    }
 #  }
 

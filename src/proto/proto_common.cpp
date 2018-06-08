@@ -294,6 +294,10 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       } else if (name == "jag") {
         reader_validation = new data_reader_jag(shuffle);
         *dynamic_cast<data_reader_jag*>(reader_validation) = *dynamic_cast<const data_reader_jag*>(reader);
+#ifdef LBANN_HAS_CONDUIT
+      } else if (name == "jag_conduit") {
+        reader_validation = new data_reader_jag_conduit(*dynamic_cast<const data_reader_jag_conduit*>(reader));
+#endif // LBANN_HAS_CONDUIT
       } else if (name == "nci") {
         reader_validation = new data_reader_nci(shuffle);
         (*(data_reader_nci *)reader_validation) = (*(data_reader_nci *)reader);

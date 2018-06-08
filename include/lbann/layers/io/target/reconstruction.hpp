@@ -45,7 +45,10 @@ class reconstruction_layer : public generic_target_layer {
   reconstruction_layer(lbann_comm *comm,
                        Layer *original_layer)
     :  generic_target_layer(comm),
-       m_original_layer(original_layer) {}
+       m_original_layer(original_layer) {
+    // Override the target layer's expected number of parents.
+    m_expected_num_parent_layers = 1;
+  }
 
   reconstruction_layer* copy() const override {
     throw lbann_exception("reconstruction_layer can't be copied");
