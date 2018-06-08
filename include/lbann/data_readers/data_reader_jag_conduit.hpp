@@ -272,7 +272,7 @@ inline size_t data_reader_jag_conduit::add_val(const std::string key, const cond
 
   switch (n.dtype().id()) {
     case TypeID::OBJECT_ID: {
-        std::cout << "O " << n.path() << std::endl;
+        //std::cout << "O " << n.path() << std::endl;
         if (check_non_numeric(key)) {
           return 0u;
         }
@@ -284,7 +284,7 @@ inline size_t data_reader_jag_conduit::add_val(const std::string key, const cond
       }
       break;
     case TypeID::LIST_ID: {
-        std::cout << "L " << n.path() << std::endl;
+        //std::cout << "L " << n.path() << std::endl;
         if (check_non_numeric(key)) {
           return 0u;
         }
@@ -306,7 +306,7 @@ inline size_t data_reader_jag_conduit::add_val(const std::string key, const cond
     case TypeID::FLOAT32_ID:
     case TypeID::FLOAT64_ID:
       cnt = 1u;
-      std::cout << "N " << n.path() << ": " << static_cast<S>(n.to_value()) << std::endl;
+      //std::cout << "N " << n.path() << ": " << static_cast<S>(n.to_value()) << std::endl;
       vals.push_back(static_cast<S>(n.to_value()));
       break;
     case TypeID::CHAR8_STR_ID: {
@@ -322,15 +322,15 @@ inline size_t data_reader_jag_conduit::add_val(const std::string key, const cond
         cnt = 1u;
         const S v = static_cast<S>(atof(str.c_str()));
         vals.push_back(v);
-      std::cout << "S " << n.path() << ": " << str << " => " << vals.back() << std::endl;
+        //std::cout << "S " << n.path() << ": " << str << " => " << vals.back() << std::endl;
       }
       break;
     case TypeID::EMPTY_ID:
     default:
       std::string err = std::string("data_reader_jag_conduit::add_val() : invalid dtype (")
-                      + n.dtype().name() + ") for " + n.path();
+                      + n.dtype().name() + ") for " + n.path() + '.';
      #if 1
-      std::cerr << err << std::endl;
+      std::cerr << err << " Skipping for now." << std::endl;
      #else
       throw lbann_exception(err);
      #endif
