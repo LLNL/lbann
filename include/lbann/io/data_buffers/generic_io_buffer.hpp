@@ -38,6 +38,7 @@ class fetch_data_functor {
   fetch_data_functor (bool is_input_layer, bool is_for_regression) :
     _is_input_layer(is_input_layer), _is_for_regression(is_for_regression) {}
   int operator() (CPUMat& samples, CPUMat& response, generic_data_reader* data_reader) const {
+    (void) _is_input_layer;
     int num_samples_fetched = data_reader->fetch_data(samples);
     int num_responses_fetched;
     if (_is_for_regression) {
@@ -60,6 +61,7 @@ class update_data_reader_functor {
   update_data_reader_functor (bool is_input_layer) :
     _is_input_layer(is_input_layer) {}
   int operator() (bool is_active_reader, generic_data_reader* data_reader) const {
+    (void) _is_input_layer;
     if (_is_input_layer) {
       return data_reader->update(is_active_reader);
     } else {
