@@ -115,9 +115,9 @@ class repeated_input_layer : public input_layer<partitioned_io_buffer, data_layo
     CPUMat data(data_size, local_width), labels(label_size, local_width);
     for (auto& io_buffer : m_io_buffers) {
       io_buffer->set_local_matrix_bypass(&data, 0);
-      io_buffer->set_std_matrix_view(mini_batch_size, 0);
+      io_buffer->fp_setup_data(mini_batch_size, 0);
       io_buffer->set_local_matrix_bypass(&labels, 1);
-      io_buffer->set_std_matrix_view(mini_batch_size, 1);
+      io_buffer->fp_setup_data(mini_batch_size, 1);
     }
 
     /// support for data_store out-of-memory mode; this instructs

@@ -90,7 +90,7 @@ public:
   /** Return this buffer's type, e.g: "partitioned_io_buffer," "distributed_io_buffer," etc. */
   virtual std::string get_type() const = 0;
   virtual void set_local_matrix_bypass(CPUMat *M_local, int idx) = 0;
-  virtual void set_std_matrix_view(El::Int cur_mini_batch_size, int idx) = 0;
+  virtual void fp_setup_data(El::Int cur_mini_batch_size, int idx) = 0;
   virtual void setup_data(El::Int num_neurons, El::Int num_targets, El::Int max_minibatch_size) = 0;
 
   virtual int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) = 0;

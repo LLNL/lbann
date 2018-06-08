@@ -221,10 +221,14 @@ class generic_input_layer : public io_layer {
     io_layer::fp_setup_data(mini_batch_size);
 
     // Once the current mini-batch size is defined, set the standard view for activations only
+    if(m_io_buffers.size() == 1) {
+      for (int i = 0; i < get_num_children(); ++i) {
+        m_io_buffers[0]->set_local_matrix_bypass(static_cast<CPUMat*>(&get_local_activations(i)), i);
+      }
+    }
     for (auto& io_buffer : m_io_buffers) {
       for (int i = 0; i < get_num_children(); ++i) {
-        io_buffer->set_local_matrix_bypass(static_cast<CPUMat*>(&get_local_activations(i)), i);
-        io_buffer->set_std_matrix_view(mini_batch_size, i);
+        io_buffer->fp_setup_data(mini_batch_size, i);
       }
     }
   }
@@ -247,6 +251,7 @@ class generic_input_layer : public io_layer {
       num_samples_in_batch = get_current_mini_batch_size();
 
       update_num_samples_processed(num_samples_in_batch);
+      io_buffer->distribute_from_local_matrix(get_data_reader(), mode, get_activations(0), get_activations(1));
     }else if(dynamic_cast<distributed_io_buffer*>(io_buffer) != nullptr) {
       if(((distributed_io_buffer*) io_buffer)->is_current_root(mode)) {
         /// Only update the number of samples processed by this parallel reader, when it is the current root
@@ -289,6 +294,8 @@ class generic_input_layer : public io_layer {
    */
   bool update_compute() override {
     generic_io_buffer* io_buffer = m_io_buffers[m_active_buffer];
+    /// Only update the active buffer index once the entire FP, BP,  update phases are completed
+    m_active_buffer = (m_active_buffer + 1) % m_io_buffers.size();
     return io_buffer->is_data_set_processed(get_data_reader(), this->m_model->get_execution_mode());
   }
 

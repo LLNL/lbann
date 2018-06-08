@@ -29,7 +29,10 @@
 
 lbann::partitioned_io_buffer::partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
   : generic_io_buffer(comm, num_parallel_readers, data_readers),
-    M_local(2, nullptr) {}
+    M_local(2, nullptr) {
+  M_local[0] = new CPUMat();
+  M_local[1] = new CPUMat();
+}
 
 int lbann::partitioned_io_buffer::fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) {
   int num_parallel_readers = data_reader->get_num_parallel_readers();
@@ -54,8 +57,13 @@ int lbann::partitioned_io_buffer::fetch_to_local_matrix(generic_data_reader *dat
 }
 
 void lbann::partitioned_io_buffer::distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample, AbsDistMat& response) {
-
-  /// Nothing to do here, it is already done
+  /// Check to see if the local matrices are actually pointing to the sample and response local matrices, if not copy the data over
+  if(M_local[0] != &(sample.Matrix())) {
+    Copy(*M_local[0], sample.Matrix());
+  }
+  if(M_local[1] != &(response.Matrix())) {
+    Copy(*M_local[1], response.Matrix());
+  }
   return;
 }
 

@@ -41,14 +41,30 @@ class partitioned_io_buffer : public generic_io_buffer {
     const partitioned_io_buffer&) = default;
   partitioned_io_buffer& operator=(
     const partitioned_io_buffer&) = default;
-  ~partitioned_io_buffer() override {}
+  ~partitioned_io_buffer() override {
+    for (auto& m : M_local) {
+      if(m != nullptr) {
+        delete m;
+      }
+    }
+  }
   partitioned_io_buffer* copy() const override { return new partitioned_io_buffer(*this); }
 
   std::string get_type() const override { return "partitioned"; }
   /** Setup a bypass from to the activations matrices */
-  void set_local_matrix_bypass(CPUMat *m, int idx) override { M_local[idx] = m; }
-  void set_std_matrix_view(El::Int cur_mini_batch_size, int idx) override {}
-  void setup_data(El::Int num_neurons, El::Int num_targets, El::Int max_minibatch_size) override {}
+  void set_local_matrix_bypass(CPUMat *m, int idx) override {
+    if(M_local[idx] != nullptr && M_local[idx] != m) {
+      delete M_local[idx];
+    }
+    M_local[idx] = m;
+  }
+  void fp_setup_data(El::Int cur_mini_batch_size, int idx) override {
+    M_local[idx]->Resize(M_local[idx]->Height(), cur_mini_batch_size);
+  }
+  void setup_data(El::Int num_neurons, El::Int num_targets, El::Int max_minibatch_size) override {
+    M_local[0]->Resize(num_neurons, max_minibatch_size);
+    M_local[1]->Resize(num_targets, max_minibatch_size);
+  }
 
   int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) override;
   void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample, AbsDistMat& response) override;
