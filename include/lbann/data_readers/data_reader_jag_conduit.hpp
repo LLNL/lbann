@@ -313,16 +313,18 @@ inline size_t data_reader_jag_conduit::add_val(const std::string key, const cond
         // In case of a charater string, the method to convert it to a float number is specific to each key
         if (check_non_numeric(key)) {
           return 0u;
-        }
-        const char* c_str = n.as_char8_str();
-        // make sure that the std::string does not contain null character
-        const std::string str
-          = ((c_str == nullptr)? std::string() : std::string(c_str, n.dtype().number_of_elements())).c_str();
+        //} else if (key == "some_key_with_non_numeric_values_that_can_be_converted_to_numerics_in_a_specific_way") {
+        } else {
+          const char* c_str = n.as_char8_str();
+          // make sure that the std::string does not contain null character
+          const std::string str
+            = ((c_str == nullptr)? std::string() : std::string(c_str, n.dtype().number_of_elements())).c_str();
 
-        cnt = 1u;
-        const S v = static_cast<S>(atof(str.c_str()));
-        vals.push_back(v);
-        //std::cout << "S " << n.path() << ": " << str << " => " << vals.back() << std::endl;
+          cnt = 1u;
+          const S v = static_cast<S>(atof(str.c_str()));
+          vals.push_back(v);
+          //std::cout << "S " << n.path() << ": " << str << " => " << vals.back() << std::endl;
+        }
       }
       break;
     case TypeID::EMPTY_ID:
