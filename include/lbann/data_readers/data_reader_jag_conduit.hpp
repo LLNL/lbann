@@ -267,7 +267,7 @@ class data_reader_jag_conduit : public generic_data_reader {
 
 
 template<typename S>
-size_t data_reader_jag_conduit::add_val(const std::string key, const conduit::Node& n, std::vector<S>& vals) {
+inline size_t data_reader_jag_conduit::add_val(const std::string key, const conduit::Node& n, std::vector<S>& vals) {
   size_t cnt = 0u;
 
   switch (n.dtype().id()) {
