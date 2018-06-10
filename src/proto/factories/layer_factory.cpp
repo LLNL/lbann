@@ -306,6 +306,9 @@ Layer* construct_layer(lbann_comm* comm,
                    comm, values, dims, cudnn);
     }
   }
+  if (proto_layer.has_dummy()) {
+    return new dummy_layer<layout>(comm, cudnn);
+  }
 
   // Regularizer layers
   if (proto_layer.has_batch_normalization()) {

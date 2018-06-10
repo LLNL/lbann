@@ -739,6 +739,7 @@ message Layer {
    Crop crop = 316;
    CategoricalRandom categorical_random = 317;
    DiscreteRandom discrete_random = 318;
+   Dummy dummy = 319;
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -999,6 +1000,8 @@ message DiscreteRandom {
   string dims = 2;
 }
 
+message Dummy {
+}
 /////////////////////
 // learning Layers //
 /////////////////////
