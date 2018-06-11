@@ -49,7 +49,7 @@ model {
     data_layout: "model_parallel"
     input {
       io_buffer: "distributed"
-      for_regression: true
+      target_mode: "regression"
     }
   }
 
