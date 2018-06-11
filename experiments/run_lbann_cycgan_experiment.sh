@@ -14,7 +14,7 @@ PROCS_PER_NODE= # default: 2 (1 if NUM_NODES=1)
 CLUSTER=
 PARTITION=
 ACCOUNT=
-TIME_LIMIT=24:00     # default: 1:00 (format is hours:minutes)
+TIME_LIMIT=4:00     # default: 1:00 (format is hours:minutes)
 
 # Additional parameters
 SUBMIT_JOB=     # default: YES
@@ -100,6 +100,15 @@ case ${CLUSTER} in
         CORES_PER_NODE=20
         HAS_GPU=YES
         ;;
+    "pascal")
+        SCHEDULER=slurm
+        PARTITION=${PARTITION:-pbatch}
+        ACCOUNT=${ACCOUNT:-hpcdl}
+        CACHE_DIR=${CACHE_DIR:-/tmp/${USER}}
+        CORES_PER_NODE=36
+        HAS_GPU=YES
+        GPUS_PER_NODE=2
+        ;;
     *)
         SCHEDULER=slurm
         PARTITION=${PARTITION:-pbatch}
@@ -126,7 +135,7 @@ if [ -n "${IMAGENET_CLASSES}" ]; then
     esac
     EXPERIMENT_NAME=${EXPERIMENT_NAME}_imagenet${IMAGENET_CLASSES}
     case ${CLUSTER} in
-        catalyst|flash|quartz|surface)
+        catalyst|flash|quartz|surface|pascal)
             case ${IMAGENET_CLASSES} in
                 10|100|300|1000)
                     IMAGENET_DIR=/p/lscratchf/brainusr/datasets/ILSVRC2012
@@ -207,12 +216,12 @@ case ${USE_GPU} in
     YES|yes|TRUE|true|ON|on|1)
         case ${HAS_GPU} in
             YES|yes|TRUE|true|ON|on|1)
-                MODEL_PROTO="${MODEL_PROTO} --use_cudnn=1"
+                MODEL_PROTO="${MODEL_PROTO} --disable_cuda=0"
                 ;;
         esac
         ;;
     *)
-        MODEL_PROTO="${MODEL_PROTO} --use_cudnn=0"
+        MODEL_PROTO="${MODEL_PROTO} --disable_cuda=1"
         EXPERIMENT_NAME=${EXPERIMENT_NAME}_nogpu
         ;;
 esac
@@ -238,8 +247,11 @@ case ${SCHEDULER} in
         MPIRUN="srun --nodes=${NUM_NODES} --ntasks=${NUM_PROCS}"
         case ${HAS_GPU} in
             YES|yes|TRUE|true|ON|on|1)
-                MPIRUN="${MPIRUN} --nvidia_compute_mode=default"
-                ;;
+                case ${CLUSTER} in
+                    surface|ray)
+                        MPIRUN="${MPIRUN} --nvidia_compute_mode=default"
+                        ;;
+                esac
         esac
         MPIRUN1="srun --nodes=${NUM_NODES} --ntasks=${NUM_NODES}"
         MPIRUN2="srun --nodes=${NUM_NODES} --ntasks=$((2*${NUM_NODES}))"
@@ -327,6 +339,12 @@ echo "# ======== Useful info and initialization ========" >> ${BATCH_SCRIPT}
 echo "date"                                             >> ${BATCH_SCRIPT}
 echo "${MPIRUN} hostname > ${NODE_LIST}"                >> ${BATCH_SCRIPT}
 echo "sort --unique --output=${NODE_LIST} ${NODE_LIST}" >> ${BATCH_SCRIPT}
+case ${USE_GPU} in
+    YES|yes|TRUE|true|ON|on|1)
+        echo "export MV2_USE_CUDA=1"                    >> ${BATCH_SCRIPT}
+        ;;
+esac
+echo ""
 echo ""                                                 >> ${BATCH_SCRIPT}
 
 # Cache dataset in node-local memory
