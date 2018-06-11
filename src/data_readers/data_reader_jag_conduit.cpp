@@ -910,6 +910,15 @@ void data_reader_jag_conduit::save_image(Mat& pixels, const std::string filename
 #endif // _JAG_OFFLINE_TOOL_MODE_
 }
 
+void data_reader_jag_conduit::print_schema() const {
+  m_data.schema().print();
+}
+
+void data_reader_jag_conduit::print_schema(const size_t sample_id) const {
+  const conduit::Node & n = get_conduit_node(std::to_string(sample_id));
+  n.schema().print();
+}
+
 } // end of namespace lbann
 
 #undef _CN_
