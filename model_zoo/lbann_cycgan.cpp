@@ -202,7 +202,7 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
 
     // Save info to file; this includes the complete prototext (with any over-rides
     // from the cmd line) and various other info
-    //save_session(comm, argc, argv, pb);
+    save_session(comm, argc, argv, pb);
 
     // Check for cudnn, with user feedback
     cudnn::cudnn_manager *cudnn = nullptr;

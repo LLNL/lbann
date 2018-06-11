@@ -231,16 +231,20 @@ lbann_callback* construct_callback(lbann_comm* comm,
   // Debugging
   //////////////////////////////////////////////////////////////////
   if (proto_cb.has_debug()) {
-    const auto& phase = proto_cb.debug().phase();
-    if (phase == "train" || phase == "training") {
-      return new lbann_callback_debug(execution_mode::training, summarizer);
-    } else if (phase == "validate" || phase == "validation") {
-      return new lbann_callback_debug(execution_mode::validation, summarizer);
-    } else if (phase == "test" || phase == "testing") {
-      return new lbann_callback_debug(execution_mode::testing, summarizer);
-    } else {
-      return new lbann_callback_debug();
+    const auto& params = proto_cb.debug();
+    std::set<execution_mode> modes;
+    for (const auto& mode : parse_list<>(params.phase())) {
+      if (mode == "train" || mode == "training") {
+        modes.insert(execution_mode::training);
+      } else if (mode == "validate" || mode == "validation") {
+        modes.insert(execution_mode::validation);
+      } else if (mode == "test" || mode == "testing") {
+        modes.insert(execution_mode::testing);
+      } else {
+        LBANN_ERROR("invalid execution mode (" + mode + ")");
+      }
     }
+    return new lbann_callback_debug(modes, summarizer);
   }
   if (proto_cb.has_debug_io()) {
     const auto& params = proto_cb.debug_io();
