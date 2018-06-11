@@ -299,6 +299,8 @@ Layer* construct_layer(lbann_comm* comm,
                    comm, values, dims, cudnn);
     }
   }
+  if (proto_layer.has_dummy()) {
+    return new dummy_layer<layout>(comm, cudnn);
   if (proto_layer.has_stop_gradient()) {
     return new stop_gradient_layer<layout, Dev>(comm, cudnn);
   }
