@@ -66,7 +66,7 @@ def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name, compil
          dir_name=dir_name,
          data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
          data_reader_name='mnist', model_folder='tests',
-         model_name='lenet_mnist_ckpt_dist', num_epochs=2, optimizer_name='sgd',
+         model_name='lenet_mnist_dist_ckpt', num_epochs=2, optimizer_name='sgd',
         output_file_name=output_file_name, error_file_name=error_file_name)
      return_code_nockpt = os.system(command)
      if return_code_nockpt != 0:
@@ -81,7 +81,7 @@ def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name, compil
          dir_name=dir_name,
          data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
          data_reader_name='mnist', model_folder='tests',
-         model_name='lenet_mnist_ckpt_dist', num_epochs=1, optimizer_name='sgd',
+         model_name='lenet_mnist_dist_ckpt', num_epochs=1, optimizer_name='sgd',
         output_file_name=output_file_name, error_file_name=error_file_name)
      return_code_ckpt_1 = os.system(command)
      if return_code_ckpt_1 != 0:
@@ -95,7 +95,7 @@ def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name, compil
          dir_name=dir_name,
          data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
          data_reader_name='mnist', model_folder='tests',
-         model_name='lenet_mnist_ckpt_dist', num_epochs=2, optimizer_name='sgd',
+         model_name='lenet_mnist_dist_ckpt', num_epochs=2, optimizer_name='sgd',
         output_file_name=output_file_name, error_file_name=error_file_name)
      return_code_ckpt_2 = os.system(command)
      if return_code_ckpt_2 != 0:
@@ -109,7 +109,7 @@ def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name, compil
 def test_unit_checkpoint_lenet_clang4(cluster, exes, dirname):
     if cluster in ['catalyst', 'quartz']:
         pytest.skip('FIXME')
-        # Catalyst Errors:                                                                                                                                          
+        # Catalyst Errors:
         # assert 256 == 0
     skeleton_checkpoint_lenet_shared(cluster, exes, dirname, 'clang4')
     skeleton_checkpoint_lenet_distributed(cluster, exes, dirname, 'clang4')
@@ -136,7 +136,7 @@ def test_unit_checkpoint_lenet_intel18(cluster, exes, dirname):
     skeleton_checkpoint_lenet_shared(cluster, exes, dirname, 'intel18')
     skeleton_checkpoint_lenet_distributed(cluster, exes, dirname, 'intel18')
 
-# Run with python -m pytest -s test_unit_checkpoint.py -k 'test_unit_checkpoint_lenet_exe' --exe=<executable>                                                  
+# Run with python -m pytest -s test_unit_checkpoint.py -k 'test_unit_checkpoint_lenet_exe' --exe=<executable>
 def test_unit_checkpoint_lenet_exe(cluster, dirname, exe):
     if exe == None:
         pytest.skip('Non-local testing')
