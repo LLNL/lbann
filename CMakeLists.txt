@@ -360,7 +360,6 @@ target_link_libraries(lbann PUBLIC ${DL_LIBRARY})
 # Add the rest of the things
 add_subdirectory(model_zoo)
 add_subdirectory(model_zoo/tests)
-add_subdirectory(model_zoo/historical)
 add_subdirectory(tests)
 
 ################################################################

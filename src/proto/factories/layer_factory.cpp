@@ -41,55 +41,48 @@ Layer* construct_layer(lbann_comm* comm,
   if (proto_layer.has_input()) {
     const auto& params = proto_layer.input();
     const auto& io_buffer = params.io_buffer();
+    const auto& mode_str = params.target_mode();
+    data_reader_target_mode target_mode = data_reader_target_mode::CLASSIFICATION;
+    if (mode_str.empty() || mode_str == "classification") { target_mode = data_reader_target_mode::CLASSIFICATION; }
+    if (mode_str == "regression")                         { target_mode = data_reader_target_mode::REGRESSION; }
+    if (mode_str == "reconstruction")                     { target_mode = data_reader_target_mode::RECONSTRUCTION; }
     if (io_buffer == "distributed") {
       return new input_layer<distributed_io_buffer, layout, Dev>(comm,
                                                                  num_parallel_readers,
                                                                  data_readers,
                                                                  !params.data_set_per_model(),
-                                                                 params.for_regression());
+                                                                 target_mode);
     }
     if (io_buffer == "partitioned") {
       return new input_layer<partitioned_io_buffer, layout, Dev>(comm,
                                                                  num_parallel_readers,
                                                                  data_readers,
                                                                  !params.data_set_per_model(),
-                                                                 params.for_regression());
+                                                                 target_mode);
     }
   }
   if (proto_layer.has_repeated_input()) {
     /// @todo Remove when possible
     const auto& params = proto_layer.repeated_input();
+    const auto& mode_str = params.target_mode();
+    data_reader_target_mode target_mode = data_reader_target_mode::CLASSIFICATION;
+    if (mode_str.empty() || mode_str == "classification") { target_mode = data_reader_target_mode::CLASSIFICATION; }
+    if (mode_str == "regression")                         { target_mode = data_reader_target_mode::REGRESSION; }
+    if (mode_str == "reconstruction")                     { target_mode = data_reader_target_mode::RECONSTRUCTION; }
     return new repeated_input_layer(comm,
                                     num_parallel_readers,
                                     data_readers,
                                     params.num_steps(),
                                     !params.data_set_per_model(),
-                                    params.for_regression());
+                                    target_mode);
   }
 
   // Target layers
   if (proto_layer.has_target()) {
-    const auto& params = proto_layer.target();
-    const auto& io_buffer = params.io_buffer();
-    if (io_buffer == "distributed") {
-      return new target_layer<distributed_io_buffer, layout, Dev>(comm,
-                                                                  nullptr,
-                                                                  num_parallel_readers,
-                                                                  data_readers,
-                                                                  params.shared_data_reader(),
-                                                                  params.for_regression());
-    }
-    if (io_buffer == "partitioned") {
-      return new target_layer<partitioned_io_buffer, layout, Dev>(comm,
-                                                                  nullptr,
-                                                                  num_parallel_readers,
-                                                                  data_readers,
-                                                                  params.shared_data_reader(),
-                                                                  params.for_regression());
-    }
+    return new target_layer<layout, Dev>(comm);
   }
   if (proto_layer.has_reconstruction()) {
-    return new reconstruction_layer<layout, Dev>(comm, nullptr);
+    return new reconstruction_layer<layout, Dev>(comm);
   }
 
   // Fully connected layer
@@ -308,6 +301,18 @@ Layer* construct_layer(lbann_comm* comm,
   }
   if (proto_layer.has_dummy()) {
     return new dummy_layer<layout>(comm, cudnn);
+  if (proto_layer.has_stop_gradient()) {
+    return new stop_gradient_layer<layout, Dev>(comm, cudnn);
+  }
+  if (proto_layer.has_max()) {
+    if (Dev == El::Device::CPU) {
+      return new max_layer<layout, El::Device::CPU>(comm, cudnn);
+    }
+  }
+  if (proto_layer.has_min()) {
+    if (Dev == El::Device::CPU) {
+      return new min_layer<layout, El::Device::CPU>(comm, cudnn);
+    }
   }
 
   // Regularizer layers

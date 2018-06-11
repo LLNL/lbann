@@ -98,8 +98,7 @@ void sgd::step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) {
   dim3 block_dims, grid_dims;
   block_dims.x = block_size;
   grid_dims.x = (size + block_size - 1) / block_size;
-  CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
-  cudaStream_t stream = this->m_cudnn->get_stream();
+  cudaStream_t stream = El::GPUManager::Stream();
   if (m_nesterov) {
     nesterov_kernel<<<grid_dims, block_dims, 0, stream>>>
       (local_height, local_width, m_learning_rate, m_momentum,

@@ -130,7 +130,7 @@ class dropout : public regularizer_layer {
 
     // Allocate work spaces
     size_t size;
-    CHECK_CUDNN(cudnnDropoutGetStatesSize(this->m_cudnn->get_handle(0), &size));
+    CHECK_CUDNN(cudnnDropoutGetStatesSize(this->m_cudnn->get_handle(), &size));
     El::Zeros(m_states, (size + sizeof(DataType) - 1) / sizeof(DataType), 1);
     CHECK_CUDNN(cudnnDropoutGetReserveSpaceSize(this->m_prev_activations_cudnn_desc, &size));
     El::Zeros(m_reserve_space, (size + sizeof(DataType) - 1) / sizeof(DataType), 1);
@@ -253,9 +253,6 @@ class dropout : public regularizer_layer {
     }
 
     // Apply dropout on the GPU
-    CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
-    CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(),
-                               this->m_cudnn->get_stream()));
     CHECK_CUDNN(cudnnDropoutForward(this->m_cudnn->get_handle(),
                                     m_dropout_cudnn_desc,
                                     this->m_prev_activations_cudnn_desc,
@@ -278,15 +275,16 @@ class dropout : public regularizer_layer {
     /// @todo This is technically incorrect since it overwrites the error signal
     const auto& mode = this->m_model->get_execution_mode();
     if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
-      El::LockedView(gradient_wrt_input, gradient_wrt_output);
+      El::Axpy(DataType(1), gradient_wrt_output, gradient_wrt_input);
+      /// @todo - Note that a future optimization may switch this to
+      //      use a locked view, but it requires special handling in
+      //      how the gradients are cleared.
+      //      El::LockedView(gradient_wrt_input, gradient_wrt_output);
       return;
     }
 
     // Apply dropout backprop on each GPU
     /// @todo This is technically incorrect since it overwrites the error signal
-    CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
-    CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(),
-                               this->m_cudnn->get_stream()));
     CHECK_CUDNN(cudnnDropoutBackward(this->m_cudnn->get_handle(),
                                      m_dropout_cudnn_desc,
                                      this->m_prev_error_signals_cudnn_desc,
@@ -304,9 +302,6 @@ class dropout : public regularizer_layer {
    *  It is assumed that m_states has already been initialized.
    */
   void setup_dropout_cudnn_desc() {
-    CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
-    CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(),
-                               this->m_cudnn->get_stream()));
     CHECK_CUDNN(cudnnCreateDropoutDescriptor(&m_dropout_cudnn_desc));
     CHECK_CUDNN(cudnnSetDropoutDescriptor(m_dropout_cudnn_desc,
                                           this->m_cudnn->get_handle(),

@@ -111,8 +111,6 @@ message ImagePreprocessor {
     string image_to_div = 4;
     repeated float channel_mean = 5 [packed = true];
     repeated float channel_stddev = 6 [packed = true];
-    int32 width = 7;
-    int32 height = 8;
   }
 
   message PatchExtractor {
@@ -194,16 +192,15 @@ message Model {
 
   int64 mini_batch_size = 12;
   int64 num_epochs = 4;
-  int64 super_steps = 121; //multiple steps/epochs currently use in GAN 
+  int64 super_steps = 121; //multiple steps/epochs currently use in GAN
   int64 num_batches = 122; //multiple batches/sub epoch
   int64 block_size = 50;
   int64 procs_per_model = 51;
-  int64 num_gpus = 53;
+  int64 num_gpus = 53; //has no effect
   int64 evaluation_frequency = 54;
   int64 num_parallel_readers = 100;
 
   bool disable_cuda = 8;
-  bool use_nccl = 107;
 
   repeated Layer layer = 10;
 
@@ -730,7 +727,7 @@ message Layer {
    Unpooling unpooling = 304;
    Hadamard hadamard = 308;
    Constant constant = 309;
-   Zero zero = 315; 
+   Zero zero = 315;
    Reduction reduction = 310;
    Evaluation evaluation = 311;
    Gaussian gaussian = 312;
@@ -740,6 +737,9 @@ message Layer {
    CategoricalRandom categorical_random = 317;
    DiscreteRandom discrete_random = 318;
    Dummy dummy = 319;
+   StopGradient stop_gradient = 320;
+   Max max = 321;
+   Min min = 322;
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -887,14 +887,14 @@ message Dropout {
 message Input {
   bool data_set_per_model = 1;  //default: false
   string io_buffer = 2;
-  bool for_regression = 3; //default: false
+  string target_mode = 3;
 }
 
 /// @todo Remove when possible
 message RepeatedInput {
   bool data_set_per_model = 1;  //default: false
-  bool for_regression = 2; //default: false
-  int64 num_steps = 3;
+  int64 num_steps = 2;
+  string target_mode = 3;
 }
 
 //////////////////////
@@ -1002,6 +1002,16 @@ message DiscreteRandom {
 
 message Dummy {
 }
+
+message StopGradient {
+}
+
+message Max {
+}
+
+message Min {
+}
+
 /////////////////////
 // learning Layers //
 /////////////////////
@@ -1071,5 +1081,4 @@ message Target {
 }
 
 message TargetReconstruction {
-  string original_layer = 1;
 }

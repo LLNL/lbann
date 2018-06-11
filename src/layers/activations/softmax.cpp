@@ -110,9 +110,6 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
   auto& local_output = get_local_activations();
 
   // Apply softmax on the GPU
-  CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
-  CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(),
-                             this->m_cudnn->get_stream()));
   CHECK_CUDNN(cudnnSoftmaxForward(this->m_cudnn->get_handle(),
                                   CUDNN_SOFTMAX_ACCURATE,
                                   CUDNN_SOFTMAX_MODE_INSTANCE,
@@ -125,12 +122,12 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
 
 #ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
   // Round to minimum value to avoid denormalized floats
-  softmax_cuda::fp_cutoff(*this->m_cudnn,
-                          local_output.Height(),
+  softmax_cuda::fp_cutoff(local_output.Height(),
                           local_output.Width(),
                           local_output.Buffer(),
                           local_output.LDim(),
-                          m_min_output);
+                          m_min_output,
+                          El::GPUManager::Stream());
 #endif // LBANN_ENABLE_SOFTMAX_CUTOFF
 
 #endif // LBANN_HAS_CUDNN
@@ -151,9 +148,6 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
   auto& local_gradient_wrt_input = get_local_error_signals();
 
   // Apply softmax on each GPU
-  CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
-  CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(),
-                             this->m_cudnn->get_stream()));
   CHECK_CUDNN(cudnnSoftmaxBackward(this->m_cudnn->get_handle(),
                                    CUDNN_SOFTMAX_ACCURATE,
                                    CUDNN_SOFTMAX_MODE_INSTANCE,
@@ -168,14 +162,14 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
 
 #ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
   // Round to minimum value to avoid denormalized floats
-  softmax_cuda::bp_cutoff(*this->m_cudnn,
-                          local_output.Height(),
+  softmax_cuda::bp_cutoff(local_output.Height(),
                           local_output.Width(),
                           local_output.LockedBuffer(),
                           local_output.LDim(),
                           local_gradient_wrt_input.Buffer(),
                           local_gradient_wrt_input.LDim(),
-                          m_min_output);
+                          m_min_output,
+                          El::GPUManager::Stream());
 #endif // LBANN_ENABLE_SOFTMAX_CUTOFF
 
 #endif // LBANN_HAS_CUDNN

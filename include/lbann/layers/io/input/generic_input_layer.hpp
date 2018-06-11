@@ -45,8 +45,9 @@ class generic_input_layer : public io_layer {
   generic_input_layer(lbann_comm *comm,
               int num_parallel_readers,
               std::map<execution_mode, generic_data_reader *> data_readers,
-              bool data_set_spans_models = true, bool for_regression = false)
-    : io_layer(comm, data_set_spans_models, for_regression),
+              bool data_set_spans_models = true,
+              data_reader_target_mode dr_mode = data_reader_target_mode::CLASSIFICATION)
+    : io_layer(comm, data_set_spans_models, dr_mode),
       io_buffer(nullptr),
       m_training_dataset(),
       m_testing_dataset(),
@@ -55,6 +56,9 @@ class generic_input_layer : public io_layer {
       //m_data_sets_span_models(data_sets_span_models) {
     // Input layers have no parents
     m_expected_num_parent_layers = 0;
+    // Input layers output a sample and target, which could be the
+    // original value, categorical label, or regression value
+    m_expected_num_child_layers = 2;
 
     if(m_data_readers[execution_mode::training] != nullptr) {
       m_training_dataset.total_samples() = m_data_readers[execution_mode::training]->get_num_data();
@@ -114,17 +118,38 @@ class generic_input_layer : public io_layer {
            + " (" + s + ")";
   }
 
-  //data_layout get_data_layout() const override { return T_layout; }
-  // std::string get_description() const {
-  //   std::stringstream s;
-  //   for (size_t i = 0; i < this->m_neuron_dims.size(); i++) {
-  //     s << this->m_neuron_dims[i];
-  //     if ( i != this->m_neuron_dims.size()-1) {
-  //       s << " x ";
-  //     }
-  //   }
-  //   return s.str();;
-  // }
+  std::vector<int> get_neuron_dims(int child_index = 0) const override {
+    return get_data_dims(child_index);
+  }
+
+  int get_num_neurons(int child_index = 0) const override {
+    auto&& neuron_dims = get_neuron_dims(child_index);
+    return std::accumulate(neuron_dims.begin(),
+                           neuron_dims.end(),
+                           1,
+                           std::multiplies<int>());
+  }
+
+  std::vector<int> fp_output_dims(const Layer* next_layer) const override {
+
+    // Return all neurons if input is null
+    if(next_layer == nullptr) {
+      return m_neuron_dims;
+    }
+
+    // Check if input is in the list of child layers
+    const int child_index = (std::find(this->m_child_layers.begin(),
+                                       this->m_child_layers.end(),
+                                       next_layer)
+                             - this->m_child_layers.begin());
+    if(child_index >= (int) this->m_child_layers.size()) {
+      return m_neuron_dims;
+    }
+
+    // Return slice dimensions
+    return get_neuron_dims(child_index);
+
+  }
 
   void setup_dims() override {
     io_layer::setup_dims();
@@ -161,7 +186,7 @@ class generic_input_layer : public io_layer {
       calculate_num_iterations_per_epoch_training_unique_per_models(max_mb_size);
     }
 
-    io_buffer->setup_data(this->m_num_neurons, max_mb_size);
+    io_buffer->setup_data(this->m_num_neurons, get_linearized_label_size(), max_mb_size);
   }
 
   /** Define the standard view of the matrix -- and set it for the model
@@ -190,9 +215,10 @@ class generic_input_layer : public io_layer {
     io_layer::fp_setup_data(mini_batch_size);
 
     // Once the current mini-batch size is defined, set the standard view for activations only
-    io_buffer->set_local_matrix_bypass(static_cast<CPUMat*>(&get_local_activations()));
-    io_buffer->set_std_matrix_view(mini_batch_size);
-
+    for (int i = 0; i < get_num_children(); ++i) {
+      io_buffer->set_local_matrix_bypass(static_cast<CPUMat*>(&get_local_activations(i)), i);
+      io_buffer->set_std_matrix_view(mini_batch_size, i);
+    }
   }
 
   void fp_compute() override {
@@ -225,7 +251,7 @@ class generic_input_layer : public io_layer {
       this->m_model->set_current_mini_batch_size(num_samples_in_batch
                                                  + get_current_world_master_mini_batch_adjustment(m_comm->get_model_rank()));
 
-      io_buffer->distribute_from_local_matrix(get_activations(), get_data_reader(), mode);
+      io_buffer->distribute_from_local_matrix(get_data_reader(), mode, get_activations(0), get_activations(1));
 
       if(num_samples_in_batch !=
          (expected_num_samples_in_batch - get_current_world_master_mini_batch_adjustment(m_comm->get_model_rank()))) {
@@ -487,24 +513,48 @@ class generic_input_layer : public io_layer {
   /**
    * Get the dimensions of the underlying data.
    */
-  const std::vector<int> get_data_dims() const override {
+  const std::vector<int> get_data_dims(int child_index = 0) const override {
     const generic_data_reader *dr = get_data_reader();
     //    dataset* ds = select_first_valid_dataset();
     if (dr) {
-      return dr->get_data_dims();
+      if(child_index == 0) {
+        return dr->get_data_dims();
+      }else if(child_index == 1) {
+        switch(m_data_reader_mode) {
+        case data_reader_target_mode::REGRESSION:
+          return std::vector<int>(1, dr->get_num_responses());
+        case data_reader_target_mode::RECONSTRUCTION:
+          return dr->get_data_dims();
+        case data_reader_target_mode::CLASSIFICATION:
+        default:
+          return std::vector<int>(1, dr->get_num_labels());
+        }
+        //        the correct value based on initialization
+      }else {
+        LBANN_ERROR("get_data_dims: Invalid child index");
+      }
     }
     return std::vector<int>(1, 0);
   }
 
   std::string get_topo_description() const override {
-    std::stringstream s;
-    for (size_t i = 0; i < this->m_neuron_dims.size(); i++) {
-      s << this->m_neuron_dims[i];
-      if ( i != this->m_neuron_dims.size()-1) {
-        s << " x ";
+    std::stringstream ss;
+    const size_t num_children = get_num_children();
+    for (size_t i = 0; i < num_children; ++i) {
+      const auto& dims = get_neuron_dims(i);
+      if (i > 0) { ss << ", "; }
+      ss << "activations";
+      if (num_children > 1) { ss << "[" << i << "]"; }
+      ss << " = [";
+      for (size_t j = 0; j < dims.size(); j++) {
+        ss << dims[j];
+        if ( j != dims.size()-1) {
+          ss << " x ";
+        }
       }
+      ss << ", " << get_activations(i).Width() << "s]";
     }
-    return s.str();;
+    return ss.str();;
   }
 
   /**

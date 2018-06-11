@@ -294,6 +294,10 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       } else if (name == "jag") {
         reader_validation = new data_reader_jag(shuffle);
         *dynamic_cast<data_reader_jag*>(reader_validation) = *dynamic_cast<const data_reader_jag*>(reader);
+#ifdef LBANN_HAS_CONDUIT
+      } else if (name == "jag_conduit") {
+        reader_validation = new data_reader_jag_conduit(*dynamic_cast<const data_reader_jag_conduit*>(reader));
+#endif // LBANN_HAS_CONDUIT
       } else if (name == "nci") {
         reader_validation = new data_reader_nci(shuffle);
         (*(data_reader_nci *)reader_validation) = (*(data_reader_nci *)reader);
@@ -534,9 +538,6 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   if (opts->has_int("procs_per_model")) {
     model->set_procs_per_model(opts->get_int("procs_per_model"));
   }
-  if (opts->has_int("num_gpus")) {
-    model->set_num_gpus(opts->get_int("num_gpus"));
-  }
   if (opts->has_int("num_parallel_readers")) {
     model->set_num_parallel_readers(opts->get_int("num_parallel_readers"));
   }
@@ -624,7 +625,6 @@ void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
             << "  num_epochs:           " << m.num_epochs()  << std::endl
             << "  block_size:           " << m.block_size()  << std::endl
             << "  procs_per_model:      " << m.procs_per_model()  << std::endl
-            << "  num_gpus:             " << m.num_gpus()  << std::endl
             << "  num_parallel_readers: " << m.num_parallel_readers()  << std::endl
             << "  disable_cuda:         " << m.disable_cuda()  << std::endl
             << "  random_seed:          " << m.random_seed() << std::endl

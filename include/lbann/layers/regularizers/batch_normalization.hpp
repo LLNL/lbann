@@ -275,7 +275,7 @@ class batch_normalization : public regularizer_layer {
 
   void fp_compute_gpu() {
   #ifndef LBANN_HAS_CUDNN
-    throw lbann_exception("batch_normalization_layer: cuDNN not detected");
+    LBANN_ERROR("cuDNN not detected");
   #else
 
     // Check execution mode
@@ -305,7 +305,7 @@ class batch_normalization : public regularizer_layer {
                                   get_prev_activations().LDim(),
                                   m_mean->Buffer(),
                                   m_var->Buffer(),
-                                  this->m_cudnn->get_stream());
+                                  El::GPUManager::Stream());
 
       // Accumulate sums and sums of squares
       int samples_per_sum;
@@ -318,7 +318,6 @@ class batch_normalization : public regularizer_layer {
       }
 
       // Compute minibatch statistics and running statistics
-      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
       batch_normalization_cuda
         ::sums_to_statistics(num_channels,
                              samples_per_sum,
@@ -327,7 +326,7 @@ class batch_normalization : public regularizer_layer {
                              m_var->Buffer(),
                              running_mean,
                              running_var,
-                             this->m_cudnn->get_stream());
+                             El::GPUManager::Stream());
 
     }
 
@@ -355,14 +354,14 @@ class batch_normalization : public regularizer_layer {
                             bias,
                             get_activations().Buffer(),
                             get_activations().LDim(),
-                            this->m_cudnn->get_stream());
+                            El::GPUManager::Stream());
 
   #endif // LBANN_HAS_CUDNN
   }
 
   void bp_compute_gpu() {
   #ifndef LBANN_HAS_CUDNN
-    throw lbann_exception("batch_normalization_layer: cuDNN not detected");
+    LBANN_ERROR("cuDNN not detected");
   #else
 
     // Check execution mode
@@ -402,7 +401,7 @@ class batch_normalization : public regularizer_layer {
                                       m_bias_gradient->Buffer(),
                                       m_mean_gradient->Buffer(),
                                       m_var_gradient->Buffer(),
-                                      this->m_cudnn->get_stream());
+                                      El::GPUManager::Stream());
 
     // Accumulate gradients
     if (is_training) {
@@ -449,7 +448,7 @@ class batch_normalization : public regularizer_layer {
                                       m_var_gradient->LockedBuffer(),
                                       get_error_signals().Buffer(),
                                       get_error_signals().LDim(),
-                                      this->m_cudnn->get_stream());
+                                      El::GPUManager::Stream());
 
   #endif // LBANN_HAS_CUDNN
   }

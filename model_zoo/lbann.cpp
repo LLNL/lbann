@@ -31,6 +31,7 @@
 #include "lbann/utils/protobuf_utils.hpp"
 #include "lbann/utils/stack_profiler.hpp"
 #include "lbann/data_store/generic_data_store.hpp"
+#include <cstdlib>
 
 
 using namespace lbann;
@@ -146,15 +147,12 @@ int main(int argc, char *argv[]) {
     // Check for cudnn, with user feedback
     cudnn::cudnn_manager *cudnn = nullptr;
 #ifdef LBANN_HAS_CUDNN
-    const size_t work_space_size = 1 << 9; // 1 GB
+    const size_t workspace_size = 1 << 9; // 1 GB
     if (! pb_model->disable_cuda()) {
       if (master) {
         std::cerr << "code was compiled with LBANN_HAS_CUDNN, and we are using cudnn\n";
       }
-      cudnn = new cudnn::cudnn_manager(comm,
-                                       work_space_size,
-                                       pb_model->num_gpus(),
-                                       pb_model->use_nccl());
+      cudnn = new cudnn::cudnn_manager(workspace_size);
     } else {
       if (master) {
         std::cerr << "code was compiled with LBANN_HAS_CUDNN, but we are NOT USING cudnn\n";
@@ -170,12 +168,13 @@ int main(int argc, char *argv[]) {
       std::cout << "Hardware settings (for master process)" << std::endl
                 << "  Processes on node            : " << comm->get_procs_per_node() << std::endl
                 << "  OpenMP threads per process   : " << omp_get_max_threads() << std::endl;
-      #ifdef LBANN_HAS_CUDNN
+      #ifdef LBANN_HAS_GPU
       if (cudnn != nullptr) {
-        std::cout << "  GPUs on node                 : " << cudnn->get_num_visible_gpus() << std::endl
-                  << "  GPUs per process             : " << cudnn->get_num_gpus() << std::endl;
+        std::cout << "  GPUs on node                 : " << El::GPUManager::NumDevices() << std::endl;
+        const auto* env = std::getenv("MV2_USE_CUDA");
+        std::cout << "  MV2_USE_CUDA                 : " << (env != nullptr ? env : "") << std::endl;
       }
-      #endif // LBANN_HAS_CUDNN
+      #endif // LBANN_HAS_GPU
       std::cout << std::endl;
     }
 
