@@ -35,16 +35,22 @@ namespace lbann
 {
 class fetch_data_functor {
  public:
-  fetch_data_functor (bool is_input_layer, bool is_for_regression) :
-    _is_input_layer(is_input_layer), _is_for_regression(is_for_regression) {}
-  int operator() (CPUMat& samples, CPUMat& response, generic_data_reader* data_reader) const {
-    (void) _is_input_layer;
+  fetch_data_functor (data_reader_target_mode target_mode) :
+    _target_mode(target_mode) {}
+  int operator() (CPUMat& samples, CPUMat& responses, generic_data_reader* data_reader) const {
     int num_samples_fetched = data_reader->fetch_data(samples);
     int num_responses_fetched;
-    if (_is_for_regression) {
-      num_responses_fetched = data_reader->fetch_responses(response);
-    } else {
-      num_responses_fetched = data_reader->fetch_labels(response);
+    switch(_target_mode) {
+    case data_reader_target_mode::REGRESSION:
+      num_responses_fetched = data_reader->fetch_responses(responses);
+      break;
+    case data_reader_target_mode::RECONSTRUCTION:
+      El::Copy(samples, responses);
+      num_responses_fetched = num_samples_fetched;
+      break;
+    case data_reader_target_mode::CLASSIFICATION:
+    default:
+      num_responses_fetched = data_reader->fetch_labels(responses);
     }
     if(num_samples_fetched != num_responses_fetched) {
       throw lbann_exception("Number of samples does not match the number of responses");
@@ -52,24 +58,15 @@ class fetch_data_functor {
     return num_samples_fetched;
   }
  private:
-  const bool _is_input_layer;
-  const bool _is_for_regression;
+  const data_reader_target_mode _target_mode;
 };
 
 class update_data_reader_functor {
  public:
-  update_data_reader_functor (bool is_input_layer) :
-    _is_input_layer(is_input_layer) {}
+  update_data_reader_functor () {}
   int operator() (bool is_active_reader, generic_data_reader* data_reader) const {
-    (void) _is_input_layer;
-    if (_is_input_layer) {
-      return data_reader->update(is_active_reader);
-    } else {
-      return (data_reader->is_data_reader_done(is_active_reader));
-    }
+    return data_reader->update(is_active_reader);
   }
- private:
-  const bool _is_input_layer;
 };
 
 class generic_io_buffer {

@@ -45,9 +45,11 @@ model {
   #######
   layer {
     name: "data"
+    children: "encode1 reconstruction"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
+      target_mode: "reconstruction"
     }
   }
 
@@ -102,10 +104,9 @@ model {
   #################
   layer {
     name: "reconstruction"
+    parents: "decode_relu10 data"
     data_layout: "data_parallel"
-    reconstruction {
-      original_layer: "data"
-    }
+    reconstruction {}
   }
 
   ###################################################
