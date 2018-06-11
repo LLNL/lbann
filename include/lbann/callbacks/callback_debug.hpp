@@ -22,66 +22,64 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_callback_debug .hpp .cpp - Callback hooks to debug LBANN
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_CALLBACKS_CALLBACK_DEBUG_HPP_INCLUDED
 #define LBANN_CALLBACKS_CALLBACK_DEBUG_HPP_INCLUDED
 
-#include <chrono>
-#include <vector>
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
 
-/**
- * Print status updates on where training is.
+/** Print verbose status updates to standard error stream.
+ *  This callback is useful for "printf debugging."
  */
 class lbann_callback_debug : public lbann_callback {
  public:
-  using lbann_callback::on_forward_prop_begin;
-  using lbann_callback::on_forward_prop_end;
-  using lbann_callback::on_backward_prop_begin;
-  using lbann_callback::on_backward_prop_end;
-  using lbann_callback::on_evaluate_forward_prop_begin;
-  using lbann_callback::on_evaluate_forward_prop_end;
 
-  /**
-   * Debug a particular phase; use invalid to debug every phase.
+  /** Constructor.
+   *  If modes is empty, status updates will be printed for all
+   *  execution modes.
    */
-  lbann_callback_debug(execution_mode phase = execution_mode::invalid,
+  lbann_callback_debug(const std::set<execution_mode>& modes,
                        lbann_summary *summarizer = nullptr) :
-    lbann_callback(1, summarizer), m_debug_phase(phase) {}
+    lbann_callback(1, summarizer), m_modes(modes) {}
   lbann_callback_debug(const lbann_callback_debug&) = default;
-  lbann_callback_debug& operator=(
-    const lbann_callback_debug&) = default;
+  lbann_callback_debug& operator=(const lbann_callback_debug&) = default;
   lbann_callback_debug* copy() const override { return new lbann_callback_debug(*this); }
-  /** Print that a batch is being started. */
-  void on_batch_begin(model *m) override;
-  /** Print that forward prop for a layer is beginning. */
-  void on_forward_prop_begin(model *m, Layer *l) override;
-  /** Print that forward prop for a layer has completed. */
-  void on_forward_prop_end(model *m, Layer *l) override;
-  /** Print that backward prop for a layer is beginning. */
-  void on_backward_prop_begin(model *m, Layer *l) override;
-  /** Print that backward prop for a layer has completed. */
-  void on_backward_prop_end(model *m, Layer *l) override;
-
-  /** Print that an evaluation batch is being started. */
-  void on_batch_evaluate_begin(model *m) override;
-  /** Print that an evaluation batch has completed. */
-  void on_batch_evaluate_end(model *m) override;
-  /** Print that an evaluation forward prop is beginning. */
-  void on_evaluate_forward_prop_begin(model *m, Layer *l) override;
-  /** Print that an evaluation forward prop has completed. */
-  void on_evaluate_forward_prop_end(model *m, Layer *l) override;
   std::string name() const override { return "debug"; }
+
+  /** Print that a batch is beginning. */
+  void on_batch_begin(model *m) override;
+  /** Print that a batch is ending. */
+  void on_batch_end(model *m) override;
+  /** Print that a layer's forward prop is beginning. */
+  void on_batch_evaluate_begin(model *m) override;
+  /** Print that a layer's forward prop is ending. */
+  void on_batch_evaluate_end(model *m) override;
+
+  /** Print that a layer's forward prop is beginning. */
+  void on_forward_prop_begin(model *m, Layer *l) override;
+  /** Print that a layer's forward prop is ending. */
+  void on_forward_prop_end(model *m, Layer *l) override;
+  /** Print that a layer's backward prop is beginning. */
+  void on_backward_prop_begin(model *m, Layer *l) override;
+  /** Print that a layer's backward prop is ending. */
+  void on_backward_prop_end(model *m, Layer *l) override;
+  /** Print that a layer's backward prop is beginning. */
+  void on_evaluate_forward_prop_begin(model *m, Layer *l) override;
+  /** Print that a layer's backward prop is ending. */
+  void on_evaluate_forward_prop_end(model *m, Layer *l) override;
+
  private:
-  /** The phase to debug. */
-  execution_mode m_debug_phase;
+
+  /** Execution modes for which status updates will be printed.
+   *  If empty, status updates are printed for all execution modes.
+   */
+  std::set<execution_mode> m_modes;
+
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_DEBUG_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_CALLBACK_DEBUG_HPP_INCLUDED
