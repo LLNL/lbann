@@ -844,21 +844,21 @@ class generic_input_layer : public io_layer {
       if ((it != this->m_data_readers.end()) && it->second) {
         (it->second)->save_to_checkpoint_distributed(p, "data_reader_testing");
       }
-      p.write_long(persist_type::train, "reader_train_processed",
+      p.write_parameter(persist_type::train, "reader_train_processed",
         m_training_dataset.get_num_samples_processed());
-      p.write_long(persist_type::train, "reader_train_total",
+      p.write_parameter(persist_type::train, "reader_train_total",
         m_training_dataset.get_total_samples());
 
-      p.write_long(persist_type::train, "reader_test_processed",
+      p.write_parameter(persist_type::train, "reader_test_processed",
         m_testing_dataset.get_num_samples_processed());
-      p.write_long(persist_type::train, "reader_test_total",
+      p.write_parameter(persist_type::train, "reader_test_total",
         m_testing_dataset.get_total_samples());
 
     }
     if(p.get_cb_type() == callback_type::validation || p.get_cb_type() == callback_type::batch){
-      p.write_long(persist_type::validate, "reader_validate_processed",
+      p.write_parameter(persist_type::validate, "reader_validate_processed",
                      m_validation_dataset.get_num_samples_processed());
-      p.write_long(persist_type::validate, "reader_validate_total",
+      p.write_parameter(persist_type::validate, "reader_validate_total",
                       m_validation_dataset.get_total_samples());
       it = this->m_data_readers.find(execution_mode::validation);
       if ((it != this->m_data_readers.end()) && it->second) {

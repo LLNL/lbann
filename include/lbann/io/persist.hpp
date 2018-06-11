@@ -109,26 +109,13 @@ class persist {
     return read_bytes(type, name, val, sizeof(T));
   }
 
-  bool write_int(persist_type type, const char *name, int val);
-  bool read_int(persist_type type, const char *name, int *val);
-
-  bool write_long(persist_type type, const char *name, long  val);
-  bool read_long(persist_type type, const char *name, long *val);
-
   bool write_int32_contig(persist_type type, const char *name, const int32_t *buf, uint64_t count);
   bool read_int32_contig (persist_type type, const char *name, int32_t *buf, uint64_t count);
-
-  bool write_float(persist_type type, const char *name, float  val);
-  bool read_float (persist_type type, const char *name, float *val);
 
   bool write_string(persist_type type, const char *name, const char *val, int str_length);
   bool read_string (persist_type type, const char *name, char *val, int str_length);
 
-  bool write_double(persist_type type, const char *name, double  val);
-  bool read_double (persist_type type, const char *name, double *val);
-
-  bool write_datatype(persist_type type, const char *name, DataType  val);
-  bool read_datatype (persist_type type, const char *name, DataType *val);
+  
 #ifdef LBANN_HAS_HDF5   
   template<typename T>
   bool write_hdf5_parameter(H5::Group group_name, const char *name, T *val, H5::PredType hdf5_type) {

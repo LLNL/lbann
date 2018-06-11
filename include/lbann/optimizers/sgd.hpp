@@ -92,7 +92,7 @@ class sgd : public optimizer {
     H5::Group optimizer_group = p.checkpoint_file->openGroup(group_name);
     p.write_hdf5_parameter(optimizer_group, "momentum", &m_momentum, H5::PredType::NATIVE_FLOAT); 
     #else
-    p.write_datatype(persist_type::train, "momentum", m_momentum);
+    p.write_parameter(persist_type::train, "momentum", m_momentum);
     #endif
     return true;
   }
@@ -103,7 +103,7 @@ class sgd : public optimizer {
     H5::Group optimizer_group = p.checkpoint_file->openGroup(group_name);
     p.read_hdf5_parameter(optimizer_group,"momentum", &m_momentum);
     #else
-    p.read_datatype(persist_type::train, "momentum",  &m_momentum);
+    p.read_parameter(persist_type::train, "momentum",  &m_momentum);
     #endif
     if(header != nullptr){
       header->momentum = m_momentum;

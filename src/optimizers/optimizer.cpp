@@ -301,7 +301,7 @@ bool optimizer::save_to_checkpoint_shared(persist& p, std::string m_name) {
     H5::Group optimizer_group = p.checkpoint_file->createGroup(group_name);
     p.write_hdf5_parameter(optimizer_group, "learning_rate", &m_learning_rate, H5::PredType::NATIVE_FLOAT);
     #else
-    p.write_datatype(persist_type::train, "learning_rate", m_learning_rate);
+    p.write_parameter(persist_type::train, "learning_rate", m_learning_rate);
     #endif
   }
   return true;
@@ -314,7 +314,7 @@ bool optimizer::load_from_checkpoint_shared(persist& p, std::string m_name) {
     H5::Group optimizer_group = p.checkpoint_file->openGroup(group_name);
     p.read_hdf5_parameter(optimizer_group,"learning_rate", &m_learning_rate);
     #else
-    p.read_datatype(persist_type::train, "learning_rate", &m_learning_rate);
+    p.read_parameter(persist_type::train, "learning_rate", &m_learning_rate);
     #endif
   }
   m_comm->model_broadcast(0, m_learning_rate);
@@ -322,12 +322,12 @@ bool optimizer::load_from_checkpoint_shared(persist& p, std::string m_name) {
 }
 
 bool optimizer::save_to_checkpoint_distributed(persist& p, std::string m_name) {
-  p.write_datatype(persist_type::train, "learning_rate", m_learning_rate);
+  p.write_parameter(persist_type::train, "learning_rate", m_learning_rate);
   return true;
 }
 
 bool optimizer::load_from_checkpoint_distributed(persist& p, std::string m_name) {
-  p.read_datatype(persist_type::train, "learning_rate", &m_learning_rate);
+  p.read_parameter(persist_type::train, "learning_rate", &m_learning_rate);
   return true;
 }
 }  // namespace lbann

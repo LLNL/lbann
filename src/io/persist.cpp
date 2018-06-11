@@ -375,7 +375,6 @@ bool lbann::persist::read_distmat(persist_type type, const char *name, AbsDistMa
     return false;
   }
   El::Read(*M, filename, El::BINARY, true);
-  //Read_MPI(M, filename, BINARY, 1);
 
   uint64_t bytes = 2 * sizeof(El::Int) + M->Height() * M->Width() * sizeof(DataType);
   m_bytes += bytes;
@@ -401,6 +400,7 @@ bool lbann::persist::read_hdf5_distmat(H5::Group group_name, const char *name, A
     return true;
 }
 #endif
+
 bool lbann::persist::write_bytes(persist_type type, const char *name, const void *buf, size_t size) {
   int fd = get_fd(type);
   if (fd >= 0) {
@@ -430,22 +430,6 @@ bool lbann::persist::read_bytes(persist_type type, const char *name, void *buf, 
   return true;
 }
 
-bool lbann::persist::write_int(persist_type type, const char *name, int val) {
-  return write_bytes(type, name, &val, sizeof(int));
-}
-
-bool lbann::persist::read_int(persist_type type, const char *name, int *val) {
-  return read_bytes(type, name, val, sizeof(int));
-}
-
-bool lbann::persist::write_long(persist_type type, const char *name, long val) {
-  return write_bytes(type, name, &val, sizeof(long));
-}
-
-bool lbann::persist::read_long(persist_type type, const char *name, long *val) {
-  return read_bytes(type, name, val, sizeof(long));
-}
-
 bool lbann::persist::write_int32_contig(persist_type type, const char *name, const int32_t *buf, uint64_t count) {
   size_t bytes = count * sizeof(int32_t);
   return write_bytes(type, name, buf, bytes);
@@ -454,30 +438,6 @@ bool lbann::persist::write_int32_contig(persist_type type, const char *name, con
 bool lbann::persist::read_int32_contig(persist_type type, const char *name, int32_t *buf, uint64_t count) {
   size_t bytes = count * sizeof(int32_t);
   return read_bytes(type, name, buf, bytes);
-}
-
-bool lbann::persist::write_float(persist_type type, const char *name, float val) {
-  return write_bytes(type, name, &val, sizeof(float));
-}
-
-bool lbann::persist::read_float(persist_type type, const char *name, float *val) {
-  return read_bytes(type, name, val, sizeof(float));
-}
-
-bool lbann::persist::write_double(persist_type type, const char *name, double val) {
-  return write_bytes(type, name, &val, sizeof(double));
-}
-
-bool lbann::persist::read_double(persist_type type, const char *name, double *val) {
-  return read_bytes(type, name, val, sizeof(double));
-}
-
-bool lbann::persist::write_datatype(persist_type type, const char *name, DataType val) {
-  return write_bytes(type, name, &val, sizeof(DataType));
-}
-
-bool lbann::persist::read_datatype(persist_type type, const char *name, DataType *val) {
-  return read_bytes(type, name, val, sizeof(DataType));
 }
 
 bool lbann::persist::write_string(persist_type type, const char *name, const char *val, int str_length) {
@@ -553,22 +513,6 @@ bool lbann::read_bytes(int fd, const char *name, void *buf, size_t size) {
   return true;
 }
 
-bool lbann::write_uint32(int fd, const char *name, uint32_t val) {
-  return lbann::write_bytes(fd, name, &val, sizeof(uint32_t));
-}
-
-bool lbann::read_uint32(int fd, const char *name, uint32_t *val) {
-  return lbann::read_bytes(fd, name, val, sizeof(uint32_t));
-}
-
-bool lbann::write_uint64(int fd, const char *name, uint64_t val) {
-  return lbann::write_bytes(fd, name, &val, sizeof(uint64_t));
-}
-
-bool lbann::read_uint64(int fd, const char *name, uint64_t *val) {
-  return lbann::read_bytes(fd, name, val, sizeof(uint64_t));
-}
-
 bool lbann::write_int32_contig(int fd, const char *name, const int32_t *buf, uint64_t count) {
   size_t bytes = count * sizeof(int32_t);
   return lbann::write_bytes(fd, name, buf, bytes);
@@ -577,22 +521,6 @@ bool lbann::write_int32_contig(int fd, const char *name, const int32_t *buf, uin
 bool lbann::read_int32_contig(int fd, const char *name, int32_t *buf, uint64_t count) {
   size_t bytes = count * sizeof(int32_t);
   return lbann::read_bytes(fd, name, buf, bytes);
-}
-
-bool lbann::write_float(int fd, const char *name, float val) {
-  return lbann::write_bytes(fd, name, &val, sizeof(float));
-}
-
-bool lbann::read_float(int fd, const char *name, float *val) {
-  return lbann::read_bytes(fd, name, val, sizeof(float));
-}
-
-bool lbann::write_double(int fd, const char *name, double val) {
-  return lbann::write_bytes(fd, name, &val, sizeof(double));
-}
-
-bool lbann::read_double(int fd, const char *name, double *val) {
-  return lbann::read_bytes(fd, name, val, sizeof(double));
 }
 
 bool lbann::write_string(int fd, const char *name, const char *buf, size_t size) {

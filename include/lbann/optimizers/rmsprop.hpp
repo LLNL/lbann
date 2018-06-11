@@ -81,12 +81,12 @@ class rmsprop : public optimizer {
   };
 
   bool pack_scalars(persist& p) {
-    p.write_datatype(persist_type::train, "decay_rate", m_decay_rate);
+    p.write_parameter(persist_type::train, "decay_rate", m_decay_rate);
     return true;
   }
 
   bool unpack_scalars(persist& p, struct packing_header *header){
-    p.read_datatype(persist_type::train, "momentum",  &m_decay_rate);
+    p.read_parameter(persist_type::train, "momentum",  &m_decay_rate);
     
     if(header != nullptr){
       header->decay_rate = m_decay_rate;

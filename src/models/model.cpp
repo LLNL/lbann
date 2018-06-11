@@ -1238,7 +1238,7 @@ bool model::save_to_checkpoint_shared(persist& p) {
       H5::Group model_group_val = p.checkpoint_file->openGroup("/model");
       p.write_hdf5_parameter(model_group_val,"current_validation_step", &m_current_validation_step, H5::PredType::NATIVE_INT);
       #else
-      p.write_int(persist_type::validate, "current_validataion_step",  m_current_validation_step);
+      p.write_parameter(persist_type::validate, "current_validataion_step",  m_current_validation_step);
       #endif
     }
     save_rng_to_checkpoint_shared(p, m_comm);
@@ -1328,17 +1328,17 @@ bool model::load_from_checkpoint_shared(persist& p) {
 bool model::save_to_checkpoint_distributed(persist& p){
   // write out fields we need to save for model
   if (p.get_cb_type() != callback_type::validation) {
-    p.write_int(persist_type::train, "execution_mode",     (int) m_execution_mode);
-    p.write_int(persist_type::train, "terminate_training", (int) m_terminate_training);
-    p.write_int(persist_type::train, "current_epoch",      m_current_epoch);
-    p.write_int(persist_type::train, "current_step",       m_current_step);
-    p.write_int(persist_type::train, "current_testing_step", m_current_testing_step);
-    p.write_int(persist_type::train, "max_mini_batch_size", m_max_mini_batch_size);
-    p.write_int(persist_type::train, "current_mini_batch_size", m_current_mini_batch_size);
-    p.write_int(persist_type::train, "current_phase",      (int) m_current_phase);
-    p.write_int(persist_type::train, "persist_callback_type",      (int) p.get_cb_type());
+    p.write_parameter(persist_type::train, "execution_mode",     (int) m_execution_mode);
+    p.write_parameter(persist_type::train, "terminate_training", (int) m_terminate_training);
+    p.write_parameter(persist_type::train, "current_epoch",      m_current_epoch);
+    p.write_parameter(persist_type::train, "current_step",       m_current_step);
+    p.write_parameter(persist_type::train, "current_testing_step", m_current_testing_step);
+    p.write_parameter(persist_type::train, "max_mini_batch_size", m_max_mini_batch_size);
+    p.write_parameter(persist_type::train, "current_mini_batch_size", m_current_mini_batch_size);
+    p.write_parameter(persist_type::train, "current_phase",      (int) m_current_phase);
+    p.write_parameter(persist_type::train, "persist_callback_type",      (int) p.get_cb_type());
     if(p.get_cb_type() == callback_type::batch)
-      p.write_int(persist_type::validate, "current_validataion_step",     m_current_validation_step);
+      p.write_parameter(persist_type::validate, "current_validataion_step",     m_current_validation_step);
 
     for (weights *w : m_weights) {
       w->save_to_checkpoint_distributed(p);
@@ -1358,7 +1358,7 @@ bool model::save_to_checkpoint_distributed(persist& p){
   }
 
   else {
-    p.write_int(persist_type::validate, "current_validataion_step",       (int) m_current_validation_step);
+    p.write_parameter(persist_type::validate, "current_validataion_step",       (int) m_current_validation_step);
     save_rng_to_checkpoint_shared(p, m_comm);
 
     for (size_t l = 0; l < m_layers.size(); l++) {
@@ -1374,37 +1374,31 @@ bool model::save_to_checkpoint_distributed(persist& p){
 }
 
 bool model::load_from_checkpoint_distributed(persist& p){
-  //struct lbann_model_header header;
-  //p.read_uint32(persist_type::train, "execution_mode",     &header.execution_mode);
-  //p.read_uint32(persist_type::train, "terminate_training", &header.terminate_training);
-  //p.read_uint64(persist_type::train, "current_epoch",      &header.current_epoch);
-  //p.read_uint64(persist_type::train, "current_step",       &header.current_step);
-  //if(get_num_iterations_per_epoch(execution_mode::validation) != 0)
-  //  p.read_uint64(persist_type::validate, "current_validation_step",       &header.current_validation_step);
-  //p.read_uint64(persist_type::train, "current_testing_step",       &header.current_testing_step);
-  //p.read_uint32(persist_type::train, "max_mini_batch_size",      &header.max_mini_batch_size);
-  //p.read_uint32(persist_type::train, "current_mini_batch_size",      &header.current_mini_batch_size);
-  //p.read_uint32(persist_type::train, "current_phase",      &header.current_phase);
-  //p.read_uint32(persist_type::train, "persist_callback_type",     &header.callback_type);
-  
-  /*m_execution_mode     = (execution_mode) header.execution_mode;
->>>>>>> ac86f54... Broken first steps.
-  m_terminate_training = (bool)           header.terminate_training;
-  m_current_epoch      = (int)            header.current_epoch;
-  m_current_step       = (int)            header.current_step;
+  struct lbann_model_header header;
+  p.read_parameter(persist_type::train, "execution_mode",     &header.execution_mode);
+  p.read_parameter(persist_type::train, "terminate_training", &header.terminate_training);
+  p.read_parameter(persist_type::train, "current_epoch",      &header.current_epoch);
+  p.read_parameter(persist_type::train, "current_step",       &header.current_step);
   if(get_num_iterations_per_epoch(execution_mode::validation) != 0)
-    m_current_validation_step = (int)       header.current_validation_step;
-  m_current_testing_step = (int)          header.current_testing_step;
-  m_max_mini_batch_size = (int)           header.max_mini_batch_size;
-  m_current_mini_batch_size = (int)       header.current_mini_batch_size;
-<<<<<<< HEAD
+    p.read_parameter(persist_type::validate, "current_validation_step",       &header.current_validation_step);
+  p.read_parameter(persist_type::train, "current_testing_step",       &header.current_testing_step);
+  p.read_parameter(persist_type::train, "max_mini_batch_size",      &header.max_mini_batch_size);
+  p.read_parameter(persist_type::train, "current_mini_batch_size",      &header.current_mini_batch_size);
+  p.read_parameter(persist_type::train, "current_phase",      &header.current_phase);
+  p.read_parameter(persist_type::train, "persist_callback_type",     &header.callback_type);
+  
+  m_execution_mode     = (execution_mode) header.execution_mode;
+  m_terminate_training = (bool)           header.terminate_training;
+  m_current_epoch      =                  header.current_epoch;
+  m_current_step       =                  header.current_step;
+  if(get_num_iterations_per_epoch(execution_mode::validation) != 0)
+    m_current_validation_step =           header.current_validation_step;
+  m_current_testing_step =                header.current_testing_step;
+  m_max_mini_batch_size =                 header.max_mini_batch_size;
+  m_current_mini_batch_size =             header.current_mini_batch_size;
   m_current_phase      =                  header.current_phase;
 
   p.set_cb_type((callback_type) header.callback_type);
-=======
-  m_current_phase      =                  header.current_phase; 
-  */
-  //p.set_cb_type((callback_type) header.callback_type);
   load_rng_from_checkpoint_shared(p, m_comm);
 
   for (weights *w : m_weights) {

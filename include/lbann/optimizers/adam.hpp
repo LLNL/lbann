@@ -101,20 +101,20 @@ class adam : public optimizer {
   };
 
   bool pack_scalars(persist& p) {
-    p.write_datatype(persist_type::train, "beta1", m_beta1);
-    p.write_datatype(persist_type::train, "beta2", m_beta2);
-    p.write_datatype(persist_type::train, "eps",   m_eps);
-    p.write_datatype(persist_type::train, "current_beta1", m_current_beta1);
-    p.write_datatype(persist_type::train, "current_beta2", m_current_beta2);
+    p.write_parameter(persist_type::train, "beta1", m_beta1);
+    p.write_parameter(persist_type::train, "beta2", m_beta2);
+    p.write_parameter(persist_type::train, "eps",   m_eps);
+    p.write_parameter(persist_type::train, "current_beta1", m_current_beta1);
+    p.write_parameter(persist_type::train, "current_beta2", m_current_beta2);
     return true;
   }
 
   bool unpack_scalars(persist& p, struct packing_header *header) {
-    p.read_datatype(persist_type::train, "beta1", &m_beta1);
-    p.read_datatype(persist_type::train, "beta2", &m_beta2);
-    p.read_datatype(persist_type::train, "eps",   &m_eps);
-    p.read_datatype(persist_type::train, "current_beta1", &m_current_beta1);
-    p.read_datatype(persist_type::train, "current_beta2", &m_current_beta2);
+    p.read_parameter(persist_type::train, "beta1", &m_beta1);
+    p.read_parameter(persist_type::train, "beta2", &m_beta2);
+    p.read_parameter(persist_type::train, "eps",   &m_eps);
+    p.read_parameter(persist_type::train, "current_beta1", &m_current_beta1);
+    p.read_parameter(persist_type::train, "current_beta2", &m_current_beta2);
 
     if(header != nullptr) {
       header->beta1 = m_beta1;
