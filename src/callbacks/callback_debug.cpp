@@ -34,7 +34,7 @@ namespace {
 /** Get human-readable string describing process rank. */
 std::string rank_string(const lbann_comm& comm) {
   std::stringstream msg;
-  msg << "Rank " << comm.get_rank_in_world();
+  msg << "rank " << comm.get_rank_in_world();
   if (comm.get_num_models() > 1) {
     msg << " (rank " << comm.get_rank_in_model()
         << " of model " << comm.get_model_rank() << ")";
@@ -45,6 +45,17 @@ std::string rank_string(const lbann_comm& comm) {
 /** Get human-readable string describing layer. */
 std::string layer_string(const Layer& l) {
   return l.get_type() + " layer \"" + l.get_name() + "\"";
+}
+
+/** Get human-readable string describing weights and optimizer. */
+std::string weights_string(const weights& w) {
+  std::stringstream msg;
+  msg << "weights \"" << w.get_name() << "\" (";
+  const auto* opt = w.get_optimizer();
+  if (opt == nullptr) { msg << "no"; }
+  else { msg << opt->get_type(); }
+  msg << " optimizer)";
+  return msg.str();
 }
 
 /** Get human-readable string describing current batch step. */
@@ -133,6 +144,22 @@ void lbann_callback_debug::on_evaluate_forward_prop_begin(model *m, Layer *l) {
 }
 void lbann_callback_debug::on_evaluate_forward_prop_end(model *m, Layer *l) {
   on_backward_prop_end(m, l);
+}
+
+// Status updates for optimization step
+void lbann_callback_debug::on_optimize_begin(model *m, weights *w) {
+  std::stringstream msg;
+  msg << rank_string(*m->get_comm()) << ": " << weights_string(*w)
+      << " is starting optimization step for " << batch_step_string(*m)
+      << std::endl;
+  std::cerr << msg.str();
+}
+void lbann_callback_debug::on_optimize_end(model *m, weights *w) {
+  std::stringstream msg;
+  msg << rank_string(*m->get_comm()) << ": " << weights_string(*w)
+      << " is   ending optimization step for " << batch_step_string(*m)
+      << std::endl;
+  std::cerr << msg.str();
 }
 
 } // namespace lbann
