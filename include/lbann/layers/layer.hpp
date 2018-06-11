@@ -41,8 +41,12 @@
 
 namespace lbann {
 
-// Forward declaration
+// Forward declarations
 class model;
+class weights;
+namespace cudnn {
+class cudnn_manager;
+} // namespace cudnn
 
 /** Abstract base class for neural network layers.
  *  A layer takes input tensors ("previous activations") and applies a

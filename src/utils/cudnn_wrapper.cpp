@@ -40,44 +40,6 @@ namespace lbann
 namespace cudnn
 {
 
-cudnn_manager::cudnn_manager(size_t workspace_size)
-  : m_handle(nullptr),
-    m_workspace_size(workspace_size) {
-
-  // Check that Hydrogen has detected GPUs
-  if (El::GPUManager::NumDevices() < 1)  {
-    LBANN_ERROR("no GPUs detected");
-  }
-  CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-
-#ifdef HYDROGEN_HAVE_CUB
-  // Expand CUB GPU memory pool to contain workspace
-  if (m_workspace_size > 0) {
-    GPUMat workspace;
-    workspace.SetMemoryMode(1);
-    workspace.Resize((m_workspace_size + sizeof(DataType) - 1) / sizeof(DataType), 1);
-  }
-#endif // HYDROGEN_HAVE_CUB
-
-  // Initialize cuDNN handle
-  FORCE_CHECK_CUDNN(cudnnCreate(&m_handle));
-  if (m_handle == nullptr) {
-    LBANN_ERROR("failed to create cuDNN handle");
-  }
-  CHECK_CUDNN(cudnnSetStream(m_handle, El::GPUManager::Stream()));
-
-}
-
-cudnn_manager::~cudnn_manager() {
-  if (m_handle != nullptr) { cudnnDestroy(m_handle); }
-}
-
-cudnnHandle_t& cudnn_manager::get_handle() {
-  CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-  CHECK_CUDNN(cudnnSetStream(m_handle, El::GPUManager::Stream()));
-  return m_handle;
-}
-
 void print_version() {
   std::cout << "cudnnGetVersion() : " << (int)cudnnGetVersion() << " , "
             << "CUDNN_VERSION from cudnn.h : " << CUDNN_VERSION
@@ -95,88 +57,77 @@ cudnnDataType_t get_data_type() {
 }
 
 void set_tensor_desc(cudnnTensorDescriptor_t& desc,
-                     int num_samples,
-                     const std::vector<int> sample_dims,
-                     int sample_stride) {
+                     std::vector<int> dims,
+                     std::vector<int> strides) {
+  std::stringstream err;
+  if (dims.empty()) {
+    LBANN_ERROR("attempted to set cuDNN tensor descriptor with no dimensions");
+  }
 
-    // Determine tensor dimensions
-    // Note: cuDNN tensors should be non-empty and have at least 4
-    // dimensions
-    std::vector<int> dims = sample_dims;
-    dims.insert(dims.begin(), num_samples);
-    while (dims.size() < 4) { dims.insert(dims.begin() + 1, 1); }
-
-    // Check that tensor dimensions are valid
-    if (std::any_of(dims.begin(), dims.end(),
-                    [] (int d) { return d <= 0; })) {
-      std::stringstream err;
-      err << "attempted to set cuDNN tensor descriptor "
-          << "with invalid dimensions (";
-      for (size_t i = 0; i < dims.size(); ++i) {
-        err << (i == 0 ? "" : " x ") << dims[i];
-      }
-      err << ")";
-      LBANN_ERROR(err.str());
-    }
-
-    // Determine tensor strides
-    std::vector<int> strides(dims.size());
+  // Assume data is contiguous if no strides are provided
+  if (strides.empty()) {
+    strides.resize(dims.size());
     strides.back() = 1;
-    for(int i = dims.size() - 1; i > 0; --i) {
+    for(int i = strides.size() - 1; i > 0; --i) {
         strides[i-1] = strides[i] * dims[i];
     }
-    strides.front() = std::max(strides.front(), sample_stride);
+  }
 
-    // Set cuDNN tensor descriptor
-    if (desc == nullptr) {
-        CHECK_CUDNN(cudnnCreateTensorDescriptor(&desc));
-    }
-    CHECK_CUDNN(cudnnSetTensorNdDescriptor(desc,
-                                           get_data_type(),
-                                           dims.size(),
-                                           dims.data(),
-                                           strides.data()));
-
-}
-
-void set_tensor_desc(cudnnTensorDescriptor_t& desc,
-                     const AbsMat& matrix) {
-    if (matrix.GetDevice() != El::Device::GPU) {
-        LBANN_ERROR("cuDNN tensors must reside on GPU");
-    }
-
-    // Determine tensor dimensions and strides
-    // Note: cuDNN tensors should have at least 4 dimension
-    const int height = matrix.Height();
-    const int width = matrix.Width();
-    const int leading_dim = matrix.LDim();
-    const std::vector<int> dims = {1, 1, width, height};
-    const std::vector<int> strides = {width * leading_dim,
-                                      width * leading_dim,
-                                      leading_dim, 1};
-
-    // Check that tensor dimensions are valid
-    if (std::any_of(dims.begin(), dims.end(),
-                    [] (int d) { return d <= 0; })) {
-      std::stringstream err;
+#ifdef LBANN_DEBUG
+  // Check that dimensions and strides are valid
+  if (strides.size() != dims.size()) {
+    err << "attempted to set cuDNN tensor descriptor "
+        << "with invalid strides ("
+      for (size_t i = 0; i < strides.size(); ++i) {
+        err << (i == 0 ? "" : ",") << strides[i];
+      }
+    err << ") for dimensions ("
+      for (size_t i = 0; i < dims.size(); ++i) {
+        err << (i == 0 ? "" : "x") << dims[i];
+      }
+    err << ")";
+    LBANN_ERROR(err.str());
+  }
+  for (size_t j = 0; j < dims.size(); ++j) {
+    if (dims[j] <= 0) {
       err << "attempted to set cuDNN tensor descriptor "
           << "with invalid dimensions (";
       for (size_t i = 0; i < dims.size(); ++i) {
-        err << (i == 0 ? "" : " x ") << dims[i];
+        err << (i == 0 ? "" : "x") << dims[i];
       }
       err << ")";
       LBANN_ERROR(err.str());
     }
-
-    // Set cuDNN tensor descriptor
-    if (desc == nullptr) {
-        CHECK_CUDNN(cudnnCreateTensorDescriptor(&desc));
+    if (j > 0 && strides[j-1] < dims[j] * strides[j]) {
+      err << "attempted to set cuDNN tensor descriptor "
+          << "with invalid strides ("
+      for (size_t i = 0; i < strides.size(); ++i) {
+        err << (i == 0 ? "" : ",") << strides[i];
+      }
+      err << ") for dimensions ("
+      for (size_t i = 0; i < dims.size(); ++i) {
+        err << (i == 0 ? "" : "x") << dims[i];
+      }
+      err << ")";
+      LBANN_ERROR(err.str());
     }
-    CHECK_CUDNN(cudnnSetTensorNdDescriptor(desc,
-                                           get_data_type(),
-                                           dims.size(),
-                                           dims.data(),
-                                           strides.data()));
+  }
+#endif // LBANN_DEBUG
+  
+  // Set cuDNN tensor descriptor
+  // Note: cuDNN tensors should have at least 4 dimensions
+  while (dims.size() < 4) {
+    dims.insert(dims.begin(), 1);
+    strides.insert(strides.begin(), strides.front());
+  }
+  if (desc == nullptr) {
+    CHECK_CUDNN(cudnnCreateTensorDescriptor(&desc));
+  }
+  CHECK_CUDNN(cudnnSetTensorNdDescriptor(desc,
+                                         get_data_type(),
+                                         dims.size(),
+                                         dims.data(),
+                                         strides.data()));
 
 }
 
@@ -245,6 +196,301 @@ void copy_activation_desc(const cudnnActivationDescriptor_t& src,
                                                  relu_ceiling));
     }
 
+}
+
+////////////////////////////////////////////////////////////
+// cuDNN manager
+////////////////////////////////////////////////////////////
+
+cudnn_manager::cudnn_manager(size_t workspace_size)
+  : m_handle(nullptr),
+    m_workspace_size(workspace_size) {
+
+  // Check that Hydrogen has detected GPUs
+  if (El::GPUManager::NumDevices() < 1)  {
+    LBANN_ERROR("no GPUs detected");
+  }
+  CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+
+#ifdef HYDROGEN_HAVE_CUB
+  // Expand CUB GPU memory pool to contain workspace
+  if (m_workspace_size > 0) {
+    GPUMat workspace;
+    workspace.SetMemoryMode(1);
+    workspace.Resize((m_workspace_size + sizeof(DataType) - 1) / sizeof(DataType), 1);
+  }
+#endif // HYDROGEN_HAVE_CUB
+
+  // Initialize cuDNN handle
+  FORCE_CHECK_CUDNN(cudnnCreate(&m_handle));
+  if (m_handle == nullptr) {
+    LBANN_ERROR("failed to create cuDNN handle");
+  }
+  CHECK_CUDNN(cudnnSetStream(m_handle, El::GPUManager::Stream()));
+
+}
+
+cudnn_manager::~cudnn_manager() {
+  if (m_handle != nullptr) { cudnnDestroy(m_handle); }
+}
+
+cudnnHandle_t& cudnn_manager::get_handle() {
+  CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+  CHECK_CUDNN(cudnnSetStream(m_handle, El::GPUManager::Stream()));
+  return m_handle;
+}
+
+////////////////////////////////////////////////////////////
+// Base cuDNN tensor manager
+////////////////////////////////////////////////////////////
+
+layer_tensor_manager::layer_tensor_manager(const Layer* l)
+  : m_layer(nullptr) {
+  set_layer(l);
+}
+
+layer_tensor_manager::layer_tensor_manager(const layer_tensor_manager& other)
+  : m_layer(nullptr) {
+  set_layer(other.m_layer);
+  for (size_t i = 0; i < m_prev_activations.size(); ++i) {
+    copy_tensor_desc(other.m_prev_activations[i], m_prev_activations[i]);
+  }
+  for (size_t i = 0; i < m_activations.size(); ++i) {
+    copy_tensor_desc(other.m_activations[i], m_activations[i]);
+  }
+  for (size_t i = 0; i < m_prev_error_signals.size(); ++i) {
+    copy_tensor_desc(other.m_prev_error_signals[i], m_prev_error_signals[i]);
+  }
+  for (size_t i = 0; i < m_error_signals.size(); ++i) {
+    copy_tensor_desc(other.m_error_signals[i], m_error_signals[i]);
+  }
+}
+
+layer_tensor_manager& layer_tensor_manager::operator=(const layer_tensor_manager& other) {
+  set_layer(other.m_layer);
+  for (size_t i = 0; i < m_prev_activations.size(); ++i) {
+    copy_tensor_desc(other.m_prev_activations[i], m_prev_activations[i]);
+  }
+  for (size_t i = 0; i < m_activations.size(); ++i) {
+    copy_tensor_desc(other.m_activations[i], m_activations[i]);
+  }
+  for (size_t i = 0; i < m_prev_error_signals.size(); ++i) {
+    copy_tensor_desc(other.m_prev_error_signals[i], m_prev_error_signals[i]);
+  }
+  for (size_t i = 0; i < m_error_signals.size(); ++i) {
+    copy_tensor_desc(other.m_error_signals[i], m_error_signals[i]);
+  }
+  return *this;
+}
+
+layer_tensor_manager::~layer_tensor_manager() {
+  for (auto&& desc : m_prev_activations) {
+    if (desc != nullptr) { cudnnDestroyTensorDescriptor(desc); }
+  }
+  for (auto&& desc : m_activations) {
+    if (desc != nullptr) { cudnnDestroyTensorDescriptor(desc); }
+  }
+  for (auto&& desc : m_prev_error_signals) {
+    if (desc != nullptr) { cudnnDestroyTensorDescriptor(desc); }
+  }
+  for (auto&& desc : m_error_signals) {
+    if (desc != nullptr) { cudnnDestroyTensorDescriptor(desc); }
+  }
+}
+
+void layer_tensor_manager::set_layer(const Layer* new_layer) {
+
+  // Resize vectors for inputs and gradients w.r.t. inputs
+  const int old_num_parents = (m_layer == nullptr ?
+                               0 : m_layer->get_num_parents());
+  const int new_num_parents = (new_layer == nullptr ?
+                               0 : new_layer->get_num_parents());
+  for (int i = new_num_parents; i < old_num_parents; ++i) {
+    if (m_prev_activations[i] != nullptr) {
+      CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_prev_activations[i]));
+      m_prev_activations[i] = nullptr;
+    }
+    if (m_error_signals[i] != nullptr) {
+      CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_error_signals[i]));
+      m_error_signals[i] = nullptr;
+    }
+  }
+  m_prev_activations.resize(new_num_parents, nullptr);
+  m_error_signals.resize(new_num_parents, nullptr);
+
+  // Resize vectors for outputs and gradients w.r.t. outputs
+  const int old_num_children = (m_layer == nullptr ?
+                                0 : m_layer->get_num_children());
+  const int new_num_children = (new_layer == nullptr ?
+                                0 : new_layer->get_num_children());
+  for (int i = new_num_children; i < old_num_children; ++i) {
+    if (m_activations[i] != nullptr) {
+      CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_activations[i]));
+      m_activations[i] = nullptr;
+    }
+    if (m_prev_error_signals[i] != nullptr) {
+      CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_prev_error_signals[i]));
+      m_prev_error_signals[i] = nullptr;
+    }
+  }
+  m_activations.resize(new_num_children, nullptr);
+  m_prev_error_signals.resize(new_num_children, nullptr);
+
+  // Set layer pointer
+  m_layer = new_layer;
+
+}
+
+////////////////////////////////////////////////////////////
+// Data-parallel cuDNN tensor manager
+////////////////////////////////////////////////////////////
+
+data_parallel_layer_tensor_manager
+::data_parallel_layer_tensor_manager(const Layer* l)
+  : layer_tensor_manager(l) {}
+
+namespace {
+
+/** Set a cuDNN tensor descriptor for a data-parallel data layout.
+ */
+void set_data_parallel_tensor_desc(cudnnTensorDescriptor_t& desc,
+                                   std::vector<int> dims,
+                                   const AbsMat& local_data) {
+#ifdef LBANN_DEBUG
+  if (local_data.GetDevice() != El::Device::GPU) {
+    LBANN_ERROR("attempted to setup cuDNN tensor with non-GPU data");
+  }
+#endif // LBANN_DEBUG
+  if (local_data.Height() > 0 && local_data.Width() > 0) {
+    std::vector<int> strides(dims.size(), 1);
+    for(int i = strides.size() - 1; i > 0; --i) {
+      strides[i-1] = strides[i] * dims[i];
+    }
+    while (dims.size() < 3) {
+      dims.insert(dims.begin(), 1);
+      strides.insert(strides.begin(), strides.front());
+    }
+    dims.insert(dims.begin(), local_data.Width());
+    strides.insert(strides.begin(), local_data.LDim());
+    set_tensor_desc(desc, dims, strides);
+  }
+}
+
+} // namespace
+
+cudnnTensorDescriptor_t& data_parallel_layer_tensor_manager::get_prev_activations(int parent_index) {
+  if (m_layer == nullptr) {
+    LBANN_ERROR("tensor manager is not managing a layer");
+  }
+  const auto& local_data = m_layer->get_local_prev_activations(parent_index);
+  const auto& dims = m_layer->get_prev_neuron_dims(parent_index);
+  auto& desc = m_prev_activations[parent_index];
+  set_data_parallel_tensor_desc(desc, dims, local_data);
+  return desc;
+}
+
+cudnnTensorDescriptor_t& data_parallel_layer_tensor_manager::get_activations(int child_index) {
+  if (m_layer == nullptr) {
+    LBANN_ERROR("tensor manager is not managing a layer");
+  }
+  const auto& local_data = m_layer->get_local_activations(child_index);
+  const auto& dims = m_layer->get_neuron_dims(child_index);
+  auto& desc = m_activations[child_index];
+  set_data_parallel_tensor_desc(desc, dims, local_data);
+  return desc;
+}
+
+cudnnTensorDescriptor_t& data_parallel_layer_tensor_manager::get_prev_error_signals(int child_index) {
+  if (m_layer == nullptr) {
+    LBANN_ERROR("tensor manager is not managing a layer");
+  }
+  const auto& local_data = m_layer->get_local_prev_error_signals(child_index);
+  const auto& dims = m_layer->get_neuron_dims(child_index);
+  auto& desc = m_prev_error_signals[child_index];
+  set_data_parallel_tensor_desc(desc, dims, local_data);
+  return desc;
+}
+
+cudnnTensorDescriptor_t& data_parallel_layer_tensor_manager::get_error_signals(int parent_index) {
+  if (m_layer == nullptr) {
+    LBANN_ERROR("tensor manager is not managing a layer");
+  }
+  const auto& local_data = m_layer->get_local_error_signals(parent_index);
+  const auto& dims = m_layer->get_prev_neuron_dims(parent_index);
+  auto& desc = m_error_signals[parent_index];
+  set_data_parallel_tensor_desc(desc, dims, local_data);
+  return desc;
+}
+
+////////////////////////////////////////////////////////////
+// Entry-wise cuDNN tensor manager
+////////////////////////////////////////////////////////////
+
+entrywise_layer_tensor_manager
+::entrywise_layer_tensor_manager(const Layer* l)
+  : layer_tensor_manager(l) {}
+
+namespace {
+
+/** Set a cuDNN tensor descriptor for a data-parallel data layout.
+ */
+void set_entrywise_tensor_desc(cudnnTensorDescriptor_t& desc,
+                               const AbsMat& local_data) {
+#ifdef LBANN_DEBUG
+  if (local_data.GetDevice() != El::Device::GPU) {
+    LBANN_ERROR("attempted to setup cuDNN tensor with non-GPU data");
+  }
+#endif // LBANN_DEBUG
+  if (local_data.Height() > 0 && local_data.Width() > 0) {
+    std::vector<int> dims(2), strides(2);
+    dims[0] = local_data.Width();
+    dims[1] = local_data.Height();
+    strides[0] = local_data.LDim();
+    strides[1] = 1;
+    set_tensor_desc(desc, dims, strides);
+  }
+}
+
+} // namespace
+
+cudnnTensorDescriptor_t& entrywise_layer_tensor_manager::get_prev_activations(int parent_index) {
+  if (m_layer == nullptr) {
+    LBANN_ERROR("tensor manager is not managing a layer");
+  }
+  const auto& local_data = m_layer->get_local_prev_activations(parent_index);
+  auto& desc = m_prev_activations[parent_index];
+  set_entrywise_tensor_desc(desc, local_data);
+  return desc;
+}
+
+cudnnTensorDescriptor_t& entrywise_layer_tensor_manager::get_activations(int child_index) {
+  if (m_layer == nullptr) {
+    LBANN_ERROR("tensor manager is not managing a layer");
+  }
+  const auto& local_data = m_layer->get_local_activations(child_index);
+  auto& desc = m_activations[child_index];
+  set_entrywise_tensor_desc(desc, local_data);
+  return desc;
+}
+
+cudnnTensorDescriptor_t& entrywise_layer_tensor_manager::get_prev_error_signals(int child_index) {
+  if (m_layer == nullptr) {
+    LBANN_ERROR("tensor manager is not managing a layer");
+  }
+  const auto& local_data = m_layer->get_local_prev_error_signals(child_index);
+  auto& desc = m_prev_error_signals[child_index];
+  set_entrywise_tensor_desc(desc, local_data);
+  return desc;
+}
+
+cudnnTensorDescriptor_t& entrywise_layer_tensor_manager::get_error_signals(int parent_index) {
+  if (m_layer == nullptr) {
+    LBANN_ERROR("tensor manager is not managing a layer");
+  }
+  const auto& local_data = m_layer->get_local_error_signals(parent_index);
+  auto& desc = m_error_signals[parent_index];
+  set_entrywise_tensor_desc(desc, local_data);
+  return desc;
 }
 
 } // namespace cudnn

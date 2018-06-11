@@ -82,14 +82,8 @@ class softmax_layer : public activation_layer {
   DataType m_min_output;
 
 #ifdef LBANN_HAS_CUDNN
-  /** Input tensor cuDNN descriptor. */
-  cudnnTensorDescriptor_t m_input_cudnn_desc;
-  /** Output tensor cuDNN descriptor. */
-  cudnnTensorDescriptor_t m_output_cudnn_desc;
-  /** Gradient w.r.t. output tensor cuDNN descriptor. */
-  cudnnTensorDescriptor_t m_gradient_wrt_output_cudnn_desc;
-  /** Gradient w.r.t. input tensor cuDNN descriptor. */
-  cudnnTensorDescriptor_t m_gradient_wrt_input_cudnn_desc;
+  /** Tensor cuDNN descriptors. */
+  cudnn::data_parallel_layer_tensor_manager m_tensors_cudnn_desc;
 #endif // LBANN_HAS_CUDNN
 
  public:
@@ -100,10 +94,7 @@ class softmax_layer : public activation_layer {
       m_workspace(nullptr),
       m_min_output(std::sqrt(std::numeric_limits<DataType>::min()))
 #ifdef LBANN_HAS_CUDNN
-    , m_input_cudnn_desc(nullptr),
-      m_output_cudnn_desc(nullptr),
-      m_gradient_wrt_output_cudnn_desc(nullptr),
-      m_gradient_wrt_input_cudnn_desc(nullptr)
+    , m_tensors_cudnn_desc(this)
 #endif // LBANN_HAS_CUDNN
   {
     this->m_cudnn = cudnn;
@@ -113,10 +104,7 @@ class softmax_layer : public activation_layer {
     : activation_layer(other),
       m_min_output(other.m_min_output)
 #ifdef LBANN_HAS_CUDNN
-    , m_input_cudnn_desc(nullptr),
-      m_output_cudnn_desc(nullptr),
-      m_gradient_wrt_output_cudnn_desc(nullptr),
-      m_gradient_wrt_input_cudnn_desc(nullptr)
+    , m_tensors_cudnn_desc(other.m_tensors_cudnn_desc)
 #endif // LBANN_HAS_CUDNN
   {
 
@@ -125,13 +113,7 @@ class softmax_layer : public activation_layer {
     if (m_workspace != nullptr) { m_workspace = m_workspace->Copy(); }
 
 #ifdef LBANN_HAS_CUDNN
-    // Copy cuDNN objects
-    cudnn::copy_tensor_desc(other.m_input_cudnn_desc, m_input_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_output_cudnn_desc, m_output_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_gradient_wrt_output_cudnn_desc,
-                            m_gradient_wrt_output_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_gradient_wrt_input_cudnn_desc,
-                            m_gradient_wrt_input_cudnn_desc);
+    m_tensors_cudnn_desc.set_layer(this);
 #endif // LBANN_HAS_CUDNN
 
   }
@@ -147,32 +129,14 @@ class softmax_layer : public activation_layer {
 
 #ifdef LBANN_HAS_CUDNN
     // Copy cuDNN objects
-    cudnn::copy_tensor_desc(other.m_input_cudnn_desc, m_input_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_output_cudnn_desc, m_output_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_gradient_wrt_output_cudnn_desc,
-                            m_gradient_wrt_output_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_gradient_wrt_input_cudnn_desc,
-                            m_gradient_wrt_input_cudnn_desc);
+    m_tensors_cudnn_desc = other.m_tensors_cudnn_desc;
+    m_tensors_cudnn_desc.set_layer(this);
 #endif // LBANN_HAS_CUDNN
 
   }
 
   ~softmax_layer() {
     if (m_workspace != nullptr) { delete m_workspace; }
-#ifdef LBANN_HAS_CUDNN
-    if (m_input_cudnn_desc != nullptr) {
-      cudnnDestroyTensorDescriptor(m_input_cudnn_desc);
-    }
-    if (m_output_cudnn_desc != nullptr) {
-      cudnnDestroyTensorDescriptor(m_output_cudnn_desc);
-    }
-    if (m_gradient_wrt_output_cudnn_desc != nullptr) {
-      cudnnDestroyTensorDescriptor(m_gradient_wrt_output_cudnn_desc);
-    }
-    if (m_gradient_wrt_input_cudnn_desc != nullptr) {
-      cudnnDestroyTensorDescriptor(m_gradient_wrt_input_cudnn_desc);
-    }
-#endif // LBANN_HAS_CUDNN
   }
 
   softmax_layer* copy() const override { return new softmax_layer(*this); }

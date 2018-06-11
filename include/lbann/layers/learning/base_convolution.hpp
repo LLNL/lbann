@@ -76,23 +76,14 @@ class base_convolution_layer : public learning_layer {
   StarMat<Dev> m_bias_gradient;
 
 #ifdef LBANN_HAS_CUDNN
-
   /** Convolution kernel cuDNN descriptor. */
   cudnnFilterDescriptor_t m_kernel_cudnn_desc;
   /** Convolution cuDNN descriptor. */
   cudnnConvolutionDescriptor_t m_convolution_cudnn_desc;
-
   /** Bias tensor cuDNN descriptor. */
   cudnnTensorDescriptor_t m_bias_cudnn_desc;
-  /** Input tensor cuDNN descriptor. */
-  cudnnTensorDescriptor_t m_input_cudnn_desc;
-  /** Output tensor cuDNN descriptor. */
-  cudnnTensorDescriptor_t m_output_cudnn_desc;
-  /** Gradient w.r.t. output tensor cuDNN descriptor. */
-  cudnnTensorDescriptor_t m_gradient_wrt_output_cudnn_desc;
-  /** Gradient w.r.t. input tensor cuDNN descriptor. */
-  cudnnTensorDescriptor_t m_gradient_wrt_input_cudnn_desc;
-
+  /** Tensor cuDNN descriptors. */
+  cudnn::data_parallel_layer_tensor_manager m_tensors_cudnn_desc;
 #endif // LBANN_HAS_CUDNN
 
   public:
@@ -117,10 +108,7 @@ class base_convolution_layer : public learning_layer {
     , m_kernel_cudnn_desc(nullptr),
       m_convolution_cudnn_desc(nullptr),
       m_bias_cudnn_desc(nullptr),
-      m_input_cudnn_desc(nullptr),
-      m_output_cudnn_desc(nullptr),
-      m_gradient_wrt_output_cudnn_desc(nullptr),
-      m_gradient_wrt_input_cudnn_desc(nullptr)
+      m_tensors_cudnn_desc(this)
 #endif // LBANN_HAS_CUDNN
   {
 
@@ -160,10 +148,7 @@ class base_convolution_layer : public learning_layer {
     , m_kernel_cudnn_desc(nullptr),
       m_convolution_cudnn_desc(nullptr),
       m_bias_cudnn_desc(nullptr),
-      m_input_cudnn_desc(nullptr),
-      m_output_cudnn_desc(nullptr),
-      m_gradient_wrt_output_cudnn_desc(nullptr),
-      m_gradient_wrt_input_cudnn_desc(nullptr)
+      m_tensors_cudnn_desc(other.m_tensors_cudnn_desc)
 #endif // LBANN_HAS_CUDNN
   {
 #ifdef LBANN_HAS_CUDNN
@@ -173,12 +158,7 @@ class base_convolution_layer : public learning_layer {
                                 m_convolution_cudnn_desc);
     cudnn::copy_tensor_desc(other.m_bias_cudnn_desc,
                             m_bias_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_input_cudnn_desc, m_input_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_output_cudnn_desc, m_output_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_gradient_wrt_output_cudnn_desc,
-                            m_gradient_wrt_output_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_gradient_wrt_input_cudnn_desc,
-                            m_gradient_wrt_input_cudnn_desc);
+    m_tensors_cudnn_desc.set_layer(this);
 #endif // LBANN_HAS_CUDNN
   }
 
@@ -200,12 +180,8 @@ class base_convolution_layer : public learning_layer {
                                 m_convolution_cudnn_desc);
     cudnn::copy_tensor_desc(other.m_bias_cudnn_desc,
                             m_bias_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_input_cudnn_desc, m_input_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_output_cudnn_desc, m_output_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_gradient_wrt_output_cudnn_desc,
-                            m_gradient_wrt_output_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_gradient_wrt_input_cudnn_desc,
-                            m_gradient_wrt_input_cudnn_desc);
+    m_tensors_cudnn_desc = other.m_tensors_cudnn_desc;
+    m_tensors_cudnn_desc.set_layer(this);
 #endif // LBANN_HAS_CUDNN
 
     return *this;
@@ -221,18 +197,6 @@ class base_convolution_layer : public learning_layer {
     }
     if (m_bias_cudnn_desc != nullptr) {
       CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_bias_cudnn_desc));
-    }
-    if (m_input_cudnn_desc != nullptr) {
-      cudnnDestroyTensorDescriptor(m_input_cudnn_desc);
-    }
-    if (m_output_cudnn_desc != nullptr) {
-      cudnnDestroyTensorDescriptor(m_output_cudnn_desc);
-    }
-    if (m_gradient_wrt_output_cudnn_desc != nullptr) {
-      cudnnDestroyTensorDescriptor(m_gradient_wrt_output_cudnn_desc);
-    }
-    if (m_gradient_wrt_input_cudnn_desc != nullptr) {
-      cudnnDestroyTensorDescriptor(m_gradient_wrt_input_cudnn_desc);
     }
 #endif // LBANN_HAS_CUDNN
   }
@@ -329,9 +293,9 @@ class base_convolution_layer : public learning_layer {
                                                 cudnn::get_data_type()));
 
     // Set bias tensor descriptor
-    std::vector<int> bias_dims(this->m_num_neuron_dims, 1);
-    bias_dims[0] = this->m_neuron_dims[0];
-    cudnn::set_tensor_desc(m_bias_cudnn_desc, 1, bias_dims);
+    std::vector<int> bias_dims(get_num_neuron_dims(), 1);
+    bias_dims[0] = get_neuron_dims()[0];
+    cudnn::set_tensor_desc(m_bias_cudnn_desc, bias_dims);
 
   #endif // LBANN_HAS_CUDNN
   }
@@ -404,34 +368,31 @@ class base_convolution_layer : public learning_layer {
     // Convolution parameters
     DataType mixing_factor;
     std::vector<int> input_dims, output_dims;
+    cudnnTensorDescriptor_t input_desc, output_desc;
     if (during_forward_prop) {
       mixing_factor = zero;
       input_dims = get_prev_neuron_dims();
       output_dims = get_neuron_dims();
+      input_desc = m_tensors_cudnn_desc.get_prev_activations();
+      output_desc = m_tensors_cudnn_desc.get_activations();
     }
     else {
       mixing_factor = one;
       input_dims = get_neuron_dims();
       output_dims = get_prev_neuron_dims();
+      input_desc = m_tensors_cudnn_desc.get_prev_error_signals();
+      output_desc = m_tensors_cudnn_desc.get_error_signals();
     }
-    cudnn::set_tensor_desc(m_input_cudnn_desc,
-                           input.Width(),
-                           input_dims,
-                           input.LDim());
-    cudnn::set_tensor_desc(m_output_cudnn_desc,
-                           output.Width(),
-                           output_dims,
-                           output.LDim());
 
     // Perform convolution on the GPU
     // Determine convolution algorithm
     cudnnConvolutionFwdAlgo_t convolution_cudnn_algorithm
       = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
     CHECK_CUDNN(cudnnGetConvolutionForwardAlgorithm(this->m_cudnn->get_handle(),
-                                                    m_input_cudnn_desc,
+                                                    input_desc,
                                                     m_kernel_cudnn_desc,
                                                     m_convolution_cudnn_desc,
-                                                    m_output_cudnn_desc,
+                                                    output_desc,
                                                     CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT,
                                                     workspace_size,
                                                     &convolution_cudnn_algorithm));
@@ -439,7 +400,7 @@ class base_convolution_layer : public learning_layer {
     // Apply convolution
     CHECK_CUDNN(cudnnConvolutionForward(this->m_cudnn->get_handle(),
                                         &one,
-                                        m_input_cudnn_desc,
+                                        input_desc,
                                         input.LockedBuffer(),
                                         m_kernel_cudnn_desc,
                                         kernel.LockedBuffer(),
@@ -448,7 +409,7 @@ class base_convolution_layer : public learning_layer {
                                         workspace.Buffer(),
                                         workspace_size,
                                         &mixing_factor,
-                                        m_output_cudnn_desc,
+                                        output_desc,
                                         output.Buffer()));
 
 #endif // LBANN_HAS_CUDNN
@@ -491,24 +452,21 @@ class base_convolution_layer : public learning_layer {
     // Convolution transpose parameters
     DataType mixing_factor;
     std::vector<int> input_dims, output_dims;
+    cudnnTensorDescriptor_t input_desc, output_desc;
     if (during_forward_prop) {
       mixing_factor = zero;
       input_dims = get_prev_neuron_dims();
       output_dims = get_neuron_dims();
+      input_desc = m_tensors_cudnn_desc.get_prev_activations();
+      output_desc = m_tensors_cudnn_desc.get_activations();
     }
     else {
       mixing_factor = one;
       input_dims = get_neuron_dims();
       output_dims = get_prev_neuron_dims();
+      input_desc = m_tensors_cudnn_desc.get_prev_error_signals();
+      output_desc = m_tensors_cudnn_desc.get_error_signals();
     }
-    cudnn::set_tensor_desc(m_input_cudnn_desc,
-                           input.Width(),
-                           input_dims,
-                           input.LDim());
-    cudnn::set_tensor_desc(m_output_cudnn_desc,
-                           output.Width(),
-                           output_dims,
-                           output.LDim());
 
     // Perform transposed convolution on the GPU
     // Determine transposed convolution algorithm
@@ -516,9 +474,9 @@ class base_convolution_layer : public learning_layer {
       = CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
     CHECK_CUDNN(cudnnGetConvolutionBackwardDataAlgorithm(this->m_cudnn->get_handle(),
                                                          m_kernel_cudnn_desc,
-                                                         m_input_cudnn_desc,
+                                                         input_desc,
                                                          m_convolution_cudnn_desc,
-                                                         m_output_cudnn_desc,
+                                                         output_desc,
                                                          CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT,
                                                          workspace_size,
                                                          &transposed_convolution_cudnn_algorithm));
@@ -528,14 +486,14 @@ class base_convolution_layer : public learning_layer {
                                              &one,
                                              m_kernel_cudnn_desc,
                                              kernel.LockedBuffer(),
-                                             m_input_cudnn_desc,
+                                             input_desc,
                                              input.LockedBuffer(),
                                              m_convolution_cudnn_desc,
                                              transposed_convolution_cudnn_algorithm,
                                              workspace.Buffer(),
                                              workspace_size,
                                              &mixing_factor,
-                                             m_output_cudnn_desc,
+                                             output_desc,
                                              output.Buffer()));
 
 
@@ -552,16 +510,12 @@ class base_convolution_layer : public learning_layer {
         && local_output.Width() > 0) {
       const DataType one = 1;
       const auto& bias = m_weights[1]->get_values();
-      cudnn::set_tensor_desc(m_output_cudnn_desc,
-                             local_output.Width(),
-                             get_neuron_dims(),
-                             local_output.LDim());
       CHECK_CUDNN(cudnnAddTensor(this->m_cudnn->get_handle(),
                                  &m_bias_scaling_factor,
                                  m_bias_cudnn_desc,
                                  bias.LockedBuffer(),
                                  &one,
-                                 m_output_cudnn_desc,
+                                 m_tensors_cudnn_desc.get_activations(),
                                  local_output.Buffer()));
     }
   #endif // LBANN_HAS_CUDNN
@@ -591,13 +545,9 @@ class base_convolution_layer : public learning_layer {
       if (!has_local_data) {
         El::Zero(m_bias_gradient);
       } else {
-        cudnn::set_tensor_desc(m_output_cudnn_desc,
-                               local_gradient_wrt_output.Width(),
-                               get_neuron_dims(),
-                               local_gradient_wrt_output.LDim());
         CHECK_CUDNN(cudnnConvolutionBackwardBias(this->m_cudnn->get_handle(),
                                                  &one,
-                                                 m_output_cudnn_desc,
+                                                 m_tensors_cudnn_desc.get_prev_error_signals(),
                                                  local_gradient_wrt_output.LockedBuffer(),
                                                  &zero,
                                                  m_bias_cudnn_desc,
@@ -623,22 +573,16 @@ class base_convolution_layer : public learning_layer {
         const size_t workspace_size = workspace.Height() * sizeof(DataType);
 
         // Initialize cuDNN objects
-        cudnn::set_tensor_desc(m_input_cudnn_desc,
-                               local_input.Width(),
-                               get_prev_neuron_dims(),
-                               local_input.LDim());
-        cudnn::set_tensor_desc(m_output_cudnn_desc,
-                               local_gradient_wrt_output.Width(),
-                               get_neuron_dims(),
-                               local_gradient_wrt_output.LDim());
+        auto&& input_desc = m_tensors_cudnn_desc.get_prev_activations();
+        auto&& gradient_wrt_output_desc = m_tensors_cudnn_desc.get_prev_error_signals();
 
         // Determine algorithm and compute kernel gradient
         cudnnConvolutionBwdFilterAlgo_t kernel_gradient_cudnn_algorithm
           = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
         if (using_transposed_convolution) {
           CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithm(this->m_cudnn->get_handle(),
-                                                                 m_output_cudnn_desc,
-                                                                 m_input_cudnn_desc,
+                                                                 gradient_wrt_output_desc,
+                                                                 input_desc,
                                                                  m_convolution_cudnn_desc,
                                                                  m_kernel_cudnn_desc,
                                                                  CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT,
@@ -646,9 +590,9 @@ class base_convolution_layer : public learning_layer {
                                                                  &kernel_gradient_cudnn_algorithm));
           CHECK_CUDNN(cudnnConvolutionBackwardFilter(this->m_cudnn->get_handle(),
                                                      &one,
-                                                     m_output_cudnn_desc,
+                                                     gradient_wrt_output_desc,
                                                      local_gradient_wrt_output.LockedBuffer(),
-                                                     m_input_cudnn_desc,
+                                                     input_desc,
                                                      local_input.LockedBuffer(),
                                                      m_convolution_cudnn_desc,
                                                      kernel_gradient_cudnn_algorithm,
@@ -660,8 +604,8 @@ class base_convolution_layer : public learning_layer {
         }
         else {
           CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithm(this->m_cudnn->get_handle(),
-                                                                 m_input_cudnn_desc,
-                                                                 m_output_cudnn_desc,
+                                                                 input_desc,
+                                                                 gradient_wrt_output_desc,
                                                                  m_convolution_cudnn_desc,
                                                                  m_kernel_cudnn_desc,
                                                                  CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT,
@@ -669,9 +613,9 @@ class base_convolution_layer : public learning_layer {
                                                                  &kernel_gradient_cudnn_algorithm));
           CHECK_CUDNN(cudnnConvolutionBackwardFilter(this->m_cudnn->get_handle(),
                                                      &one,
-                                                     m_input_cudnn_desc,
+                                                     input_desc,
                                                      local_input.LockedBuffer(),
-                                                     m_output_cudnn_desc,
+                                                     gradient_wrt_output_desc,
                                                      local_gradient_wrt_output.LockedBuffer(),
                                                      m_convolution_cudnn_desc,
                                                      kernel_gradient_cudnn_algorithm,

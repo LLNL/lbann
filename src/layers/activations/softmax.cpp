@@ -108,25 +108,15 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
     const DataType zero = DataType(0);
     const DataType one = DataType(1);
 
-    // Initialize cuDNN objects
-    cudnn::set_tensor_desc(m_input_cudnn_desc,
-                           local_input.Width(),
-                           get_prev_neuron_dims(),
-                           local_input.LDim());
-    cudnn::set_tensor_desc(m_output_cudnn_desc,
-                           local_output.Width(),
-                           get_neuron_dims(),
-                           local_output.LDim());
-
     // Apply softmax
     CHECK_CUDNN(cudnnSoftmaxForward(this->m_cudnn->get_handle(),
                                     CUDNN_SOFTMAX_ACCURATE,
                                     CUDNN_SOFTMAX_MODE_INSTANCE,
                                     &one,
-                                    m_input_cudnn_desc,
+                                    m_tensors_cudnn_desc.get_prev_activations(),
                                     local_input.LockedBuffer(),
                                     &zero,
-                                    m_output_cudnn_desc,
+                                    m_tensors_cudnn_desc.get_activations(),
                                     local_output.Buffer()));
 
 #ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
@@ -155,32 +145,18 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
 
       // Useful constants
       const DataType one = 1;
-
-      // Initialize cuDNN tensor descriptors
-      cudnn::set_tensor_desc(m_output_cudnn_desc,
-                             local_output.Width(),
-                             get_neuron_dims(),
-                             local_output.LDim());
-      cudnn::set_tensor_desc(m_gradient_wrt_output_cudnn_desc,
-                             local_gradient_wrt_output.Width(),
-                             get_neuron_dims(),
-                             local_gradient_wrt_output.LDim());
-      cudnn::set_tensor_desc(m_gradient_wrt_input_cudnn_desc,
-                             local_gradient_wrt_input.Width(),
-                             get_prev_neuron_dims(),
-                             local_gradient_wrt_input.LDim());
     
       // Perform backprop
       CHECK_CUDNN(cudnnSoftmaxBackward(this->m_cudnn->get_handle(),
                                        CUDNN_SOFTMAX_ACCURATE,
                                        CUDNN_SOFTMAX_MODE_INSTANCE,
                                        &one,
-                                       m_output_cudnn_desc,
+                                       m_tensors_cudnn_desc.get_activations(),
                                        local_output.LockedBuffer(),
-                                       m_gradient_wrt_output_cudnn_desc,
+                                       m_tensors_cudnn_desc.get_prev_error_signals(),
                                        local_gradient_wrt_output.LockedBuffer(),
                                        &one,
-                                       m_gradient_wrt_input_cudnn_desc,
+                                       m_tensors_cudnn_desc.get_error_signals(),
                                        local_gradient_wrt_input.Buffer()));
 
 #ifdef LBANN_ENABLE_SOFTMAX_CUTOFF

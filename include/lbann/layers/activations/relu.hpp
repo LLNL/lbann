@@ -43,14 +43,8 @@ class relu_layer : public entrywise_activation_layer {
 #ifdef LBANN_HAS_CUDNN
   /** Activation cuDNN descriptor. */
   cudnnActivationDescriptor_t m_activation_cudnn_desc;
-  /** Input tensor cuDNN descriptor. */
-  cudnnTensorDescriptor_t m_input_cudnn_desc;
-  /** Output tensor cuDNN descriptor. */
-  cudnnTensorDescriptor_t m_output_cudnn_desc;
-  /** Gradient w.r.t. output tensor cuDNN descriptor. */
-  cudnnTensorDescriptor_t m_gradient_wrt_output_cudnn_desc;
-  /** Gradient w.r.t. input tensor cuDNN descriptor. */
-  cudnnTensorDescriptor_t m_gradient_wrt_input_cudnn_desc;
+  /** Tensor cuDNN descriptors. */
+  cudnn::entrywise_layer_tensor_manager m_tensors_cudnn_desc;
 #endif // LBANN_HAS_CUDNN
 
  public:
@@ -60,10 +54,7 @@ class relu_layer : public entrywise_activation_layer {
     : entrywise_activation_layer(comm)
 #ifdef LBANN_HAS_CUDNN
     , m_activation_cudnn_desc(nullptr),
-      m_input_cudnn_desc(nullptr),
-      m_output_cudnn_desc(nullptr),
-      m_gradient_wrt_output_cudnn_desc(nullptr),
-      m_gradient_wrt_input_cudnn_desc(nullptr) 
+      m_tensors_cudnn_desc(this)
 #endif // LBANN_HAS_CUDNN
   {
     this->m_cudnn = cudnn;
@@ -73,21 +64,13 @@ class relu_layer : public entrywise_activation_layer {
     : entrywise_activation_layer(other)
 #ifdef LBANN_HAS_CUDNN
     , m_activation_cudnn_desc(nullptr),
-      m_input_cudnn_desc(nullptr),
-      m_output_cudnn_desc(nullptr),
-      m_gradient_wrt_output_cudnn_desc(nullptr),
-      m_gradient_wrt_input_cudnn_desc(nullptr) 
+      m_tensors_cudnn_desc(other.m_tensors_cudnn_desc)
 #endif // LBANN_HAS_CUDNN
   {
 #ifdef LBANN_HAS_CUDNN
     cudnn::copy_activation_desc(other.m_activation_cudnn_desc,
                                 m_activation_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_input_cudnn_desc, m_input_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_output_cudnn_desc, m_output_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_gradient_wrt_output_cudnn_desc,
-                            m_gradient_wrt_output_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_gradient_wrt_input_cudnn_desc,
-                            m_gradient_wrt_input_cudnn_desc);
+    m_tensors_cudnn_desc.set_layer(this);
 #endif // LBANN_HAS_CUDNN
   }
 
@@ -96,12 +79,8 @@ class relu_layer : public entrywise_activation_layer {
 #ifdef LBANN_HAS_CUDNN
     cudnn::copy_activation_desc(other.m_activation_cudnn_desc,
                                 m_activation_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_input_cudnn_desc, m_input_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_output_cudnn_desc, m_output_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_gradient_wrt_output_cudnn_desc,
-                            m_gradient_wrt_output_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_gradient_wrt_input_cudnn_desc,
-                            m_gradient_wrt_input_cudnn_desc);
+    m_tensors_cudnn_desc = other.m_tensors_cudnn_desc;
+    m_tensors_cudnn_desc.set_layer(this);
 #endif // LBANN_HAS_CUDNN
     return *this;
   }
@@ -110,18 +89,6 @@ class relu_layer : public entrywise_activation_layer {
 #ifdef LBANN_HAS_CUDNN
     if (m_activation_cudnn_desc != nullptr) {
       cudnnDestroyActivationDescriptor(m_activation_cudnn_desc);
-    }
-    if (m_input_cudnn_desc != nullptr) {
-      cudnnDestroyTensorDescriptor(m_input_cudnn_desc);
-    }
-    if (m_output_cudnn_desc != nullptr) {
-      cudnnDestroyTensorDescriptor(m_output_cudnn_desc);
-    }
-    if (m_gradient_wrt_output_cudnn_desc != nullptr) {
-      cudnnDestroyTensorDescriptor(m_gradient_wrt_output_cudnn_desc);
-    }
-    if (m_gradient_wrt_input_cudnn_desc != nullptr) {
-      cudnnDestroyTensorDescriptor(m_gradient_wrt_input_cudnn_desc);
     }
 #endif // LBANN_HAS_CUDNN
   }

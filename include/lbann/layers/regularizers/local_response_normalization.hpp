@@ -51,14 +51,8 @@ class local_response_normalization_layer : public regularizer_layer {
 #ifdef LBANN_HAS_CUDNN
   /** LRN cuDNN descriptor. */
   cudnnLRNDescriptor_t m_lrn_cudnn_desc;
-  /** Input tensor cuDNN descriptor. */
-  cudnnTensorDescriptor_t m_input_cudnn_desc;
-  /** Output tensor cuDNN descriptor. */
-  cudnnTensorDescriptor_t m_output_cudnn_desc;
-  /** Gradient w.r.t. output tensor cuDNN descriptor. */
-  cudnnTensorDescriptor_t m_gradient_wrt_output_cudnn_desc;
-  /** Gradient w.r.t. input tensor cuDNN descriptor. */
-  cudnnTensorDescriptor_t m_gradient_wrt_input_cudnn_desc;
+  /** Tensor cuDNN descriptors. */
+  cudnn::data_parallel_layer_tensor_manager m_tensors_cudnn_desc;
 #endif // LBANN_HAS_CUDNN
 
  public:
@@ -72,10 +66,7 @@ class local_response_normalization_layer : public regularizer_layer {
       m_window_width(window_width), m_alpha(alpha), m_beta(beta), m_k(k)
 #ifdef LBANN_HAS_CUDNN
     , m_lrn_cudnn_desc(nullptr),
-      m_input_cudnn_desc(nullptr),
-      m_output_cudnn_desc(nullptr),
-      m_gradient_wrt_output_cudnn_desc(nullptr),
-      m_gradient_wrt_input_cudnn_desc(nullptr)
+      m_tensors_cudnn_desc(this)
 #endif // LBANN_HAS_CUDNN
   {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
@@ -93,10 +84,7 @@ class local_response_normalization_layer : public regularizer_layer {
       m_k(other.m_k)
 #ifdef LBANN_HAS_CUDNN
     , m_lrn_cudnn_desc(nullptr),
-      m_input_cudnn_desc(nullptr),
-      m_output_cudnn_desc(nullptr),
-      m_gradient_wrt_output_cudnn_desc(nullptr),
-      m_gradient_wrt_input_cudnn_desc(nullptr)
+      m_tensors_cudnn_desc(other.m_tensors_cudnn_desc)
 #endif // LBANN_HAS_CUDNN
   {
 #ifdef LBANN_HAS_CUDNN
@@ -107,12 +95,7 @@ class local_response_normalization_layer : public regularizer_layer {
       CHECK_CUDNN(cudnnGetLRNDescriptor(other.m_lrn_cudnn_desc, &n, &alpha, &beta, &k));
       CHECK_CUDNN(cudnnSetLRNDescriptor(m_lrn_cudnn_desc, n, alpha, beta, k));
     }
-    cudnn::copy_tensor_desc(other.m_input_cudnn_desc, m_input_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_output_cudnn_desc, m_output_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_gradient_wrt_output_cudnn_desc,
-                            m_gradient_wrt_output_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_gradient_wrt_input_cudnn_desc,
-                            m_gradient_wrt_input_cudnn_desc);
+    m_tensors_cudnn_desc.set_layer(this);
 #endif // LBANN_HAS_CUDNN
   }
 
@@ -137,32 +120,15 @@ class local_response_normalization_layer : public regularizer_layer {
       CHECK_CUDNN(cudnnGetLRNDescriptor(other.m_lrn_cudnn_desc, &n, &alpha, &beta, &k));
       CHECK_CUDNN(cudnnSetLRNDescriptor(m_lrn_cudnn_desc, n, alpha, beta, k));
     }
-    cudnn::copy_tensor_desc(other.m_input_cudnn_desc, m_input_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_output_cudnn_desc, m_output_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_gradient_wrt_output_cudnn_desc,
-                            m_gradient_wrt_output_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_gradient_wrt_input_cudnn_desc,
-                            m_gradient_wrt_input_cudnn_desc);
+    m_tensors_cudnn_desc = other.m_tensors_cudnn_desc;
+    m_tensors_cudnn_desc.set_layer(this);
 #endif // LBANN_HAS_CUDNN
   }
 
   ~local_response_normalization_layer() override {
 #ifdef LBANN_HAS_CUDNN
-    // Destroy cuDNN objects
     if (m_lrn_cudnn_desc != nullptr) {
       cudnnDestroyLRNDescriptor(m_lrn_cudnn_desc);
-    }
-    if (m_input_cudnn_desc != nullptr) {
-      cudnnDestroyTensorDescriptor(m_input_cudnn_desc);
-    }
-    if (m_output_cudnn_desc != nullptr) {
-      cudnnDestroyTensorDescriptor(m_output_cudnn_desc);
-    }
-    if (m_gradient_wrt_output_cudnn_desc != nullptr) {
-      cudnnDestroyTensorDescriptor(m_gradient_wrt_output_cudnn_desc);
-    }
-    if (m_gradient_wrt_input_cudnn_desc != nullptr) {
-      cudnnDestroyTensorDescriptor(m_gradient_wrt_input_cudnn_desc);
     }
 #endif // LBANN_HAS_CUDNN
   }
@@ -226,22 +192,14 @@ class local_response_normalization_layer : public regularizer_layer {
     if (local_input.Height() > 0 && local_input.Width() > 0) {
       const DataType zero = DataType(0);
       const DataType one = DataType(1);
-      cudnn::set_tensor_desc(m_input_cudnn_desc,
-                             local_input.Width(),
-                             get_prev_neuron_dims(),
-                             local_input.LDim());
-      cudnn::set_tensor_desc(m_output_cudnn_desc,
-                             local_output.Width(),
-                             get_neuron_dims(),
-                             local_output.LDim());
       CHECK_CUDNN(cudnnLRNCrossChannelForward(this->m_cudnn->get_handle(),
                                               m_lrn_cudnn_desc,
                                               CUDNN_LRN_CROSS_CHANNEL_DIM1,
                                               &one,
-                                              m_input_cudnn_desc,
+                                              m_tensors_cudnn_desc.get_prev_activations(),
                                               local_input.LockedBuffer(),
                                               &zero,
-                                              m_output_cudnn_desc,
+                                              m_tensors_cudnn_desc.get_activations(),
                                               local_output.Buffer()));
     }
 #endif // LBANN_HAS_CUDNN
@@ -257,43 +215,20 @@ class local_response_normalization_layer : public regularizer_layer {
     const auto& local_gradient_wrt_output = get_local_prev_error_signals();
     auto& local_gradient_wrt_input = get_local_error_signals();
     if (local_input.Height() > 0 && local_input.Width() > 0) {
-
-      // Useful constants
       const DataType one = 1;
-
-      // Initialize cuDNN tensor descriptors
-      cudnn::set_tensor_desc(m_input_cudnn_desc,
-                             local_input.Width(),
-                             get_prev_neuron_dims(),
-                             local_input.LDim());
-      cudnn::set_tensor_desc(m_output_cudnn_desc,
-                             local_output.Width(),
-                             get_neuron_dims(),
-                             local_output.LDim());
-      cudnn::set_tensor_desc(m_gradient_wrt_output_cudnn_desc,
-                             local_gradient_wrt_output.Width(),
-                             get_neuron_dims(),
-                             local_gradient_wrt_output.LDim());
-      cudnn::set_tensor_desc(m_gradient_wrt_input_cudnn_desc,
-                             local_gradient_wrt_input.Width(),
-                             get_prev_neuron_dims(),
-                             local_gradient_wrt_input.LDim());
-
-      // Perform backprop on GPU
       CHECK_CUDNN(cudnnLRNCrossChannelBackward(this->m_cudnn->get_handle(),
                                                m_lrn_cudnn_desc,
                                                CUDNN_LRN_CROSS_CHANNEL_DIM1,
                                                &one,
-                                               m_input_cudnn_desc,
+                                               m_tensors_cudnn_desc.get_prev_activations(),
                                                local_input.LockedBuffer(),
-                                               m_gradient_wrt_output_cudnn_desc,
+                                               m_tensors_cudnn_desc.get_prev_error_signals(),
                                                local_gradient_wrt_output.LockedBuffer(),
-                                               m_output_cudnn_desc,
+                                               m_tensors_cudnn_desc.get_activations(),
                                                local_output.LockedBuffer(),
                                                &one,
-                                               m_gradient_wrt_input_cudnn_desc,
+                                               m_tensors_cudnn_desc.get_error_signals(),
                                                local_gradient_wrt_input.Buffer()));
-
     }
 #endif // LBANN_HAS_CUDNN
   }
