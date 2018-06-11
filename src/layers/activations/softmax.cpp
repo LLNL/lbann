@@ -90,19 +90,27 @@ void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
   const El::Int local_width = local_input.Width();
 
   // Find the maximum entry in each local column.
-  softmax_cuda::max_local_col_entry(
-    local_height, local_width, local_input.LockedBuffer(),
-    local_input.LDim(), local_workspace.Buffer(), El::GPUManager::Stream());
+  if (local_width > 0 && local_height == 0) {
+    El::Fill(local_workspace, std::numeric_limits<DataType>::min());
+  } else {
+    softmax_cuda::max_local_col_entry(
+      local_height, local_width, local_input.LockedBuffer(),
+      local_input.LDim(), local_workspace.Buffer(), El::GPUManager::Stream());
+  }
   // Find the global max entry in each column.
   m_comm->allreduce(*m_workspace, m_workspace->RedundantComm(), El::mpi::MAX,
                     std::type_index(typeid(Al::nccl_backend)));
 
   // Exponentiate activations and compute column sums.
   // This subtracts by the column max for stability.
-  softmax_cuda::exp_and_col_sum(
-    local_height, local_width, local_input.LockedBuffer(),
-    local_input.LDim(), local_output.Buffer(), local_output.LDim(),
-    local_workspace.Buffer(), El::GPUManager::Stream());
+  if (local_width > 0 && local_height == 0) {
+    El::Fill(local_workspace, std::numeric_limits<DataType>::min());
+  } else {
+    softmax_cuda::exp_and_col_sum(
+      local_height, local_width, local_input.LockedBuffer(),
+      local_input.LDim(), local_output.Buffer(), local_output.LDim(),
+      local_workspace.Buffer(), El::GPUManager::Stream());
+  }
   // Compute the global sums for each column.
   m_comm->allreduce(*m_workspace, m_workspace->RedundantComm(), El::mpi::SUM,
                     std::type_index(typeid(Al::nccl_backend)));
