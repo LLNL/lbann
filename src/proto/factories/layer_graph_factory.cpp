@@ -256,10 +256,9 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
 #endif // LBANN_HAS_GPU
     if (device_allocation_str.empty()
         && (proto_layer.has_input() || proto_layer.has_target()
-            || proto_layer.has_reconstruction()
-            || (proto_layer.has_softmax() && layout == data_layout::MODEL_PARALLEL))) {
-      // Input, Target, Reconstruction, and model-parallel Softmax layers are not
-      // allowed on the GPUs force the default to be the CPU
+            || proto_layer.has_reconstruction())) {
+      // Input, Target, and Reconstruction layers are not allowed on the GPUs:
+      // force the default to be the CPU
       device_allocation = El::Device::CPU;
     }
     cudnn::cudnn_manager* layer_cudnn = cudnn;
