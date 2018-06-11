@@ -44,8 +44,9 @@ class generic_input_layer : public io_layer {
   generic_input_layer(lbann_comm *comm,
               int num_parallel_readers,
               std::map<execution_mode, generic_data_reader *> data_readers,
-              bool data_set_spans_models = true, bool for_regression = false)
-    : io_layer(comm, data_set_spans_models, for_regression),
+              bool data_set_spans_models = true,
+              data_reader_target_mode dr_mode = data_reader_target_mode::CLASSIFICATION)
+    : io_layer(comm, data_set_spans_models, dr_mode),
       m_io_buffers(),
       m_active_buffer(0),
       m_training_dataset(),
@@ -538,9 +539,13 @@ class generic_input_layer : public io_layer {
       if(child_index == 0) {
         return dr->get_data_dims();
       }else if(child_index == 1) {
-        if(is_for_regression()) {
+        switch(m_data_reader_mode) {
+        case data_reader_target_mode::REGRESSION:
           return std::vector<int>(1, dr->get_num_responses());
-        }else {
+        case data_reader_target_mode::RECONSTRUCTION:
+          return dr->get_data_dims();
+        case data_reader_target_mode::CLASSIFICATION:
+        default:
           return std::vector<int>(1, dr->get_num_labels());
         }
         //        the correct value based on initialization

@@ -122,47 +122,6 @@ void setup_target_pointers(lbann_comm* comm,
   }
 }
 
-/** Setup original layers for reconstruction layers. */
-void setup_reconstruction_pointers(lbann_comm* comm,
-                                   std::vector<Layer*>& layers,
-                                   std::unordered_map<std::string, Layer*>& names_to_layers,
-                                   const lbann_data::Model& proto_model) {
-  std::stringstream err;
-  for (int i=0; i<proto_model.layer_size(); ++i) {
-    const auto& proto_layer = proto_model.layer(i);
-    Layer* l = layers[i];
-    if (proto_layer.has_reconstruction()) {
-      Layer* original = nullptr;
-      const auto& original_name = proto_layer.reconstruction().original_layer();
-      if (!original_name.empty()) {
-        original = names_to_layers[original_name];
-      } else {
-        for (auto&& other : layers) {
-          original = dynamic_cast<generic_input_layer*>(other);
-          if (original != nullptr) { break; }
-        }
-      }
-      if (original == nullptr) {
-        err << "could not find original layer " << original_name << " "
-            << "for reconstruction layer " << l->get_name();
-        LBANN_ERROR(err.str());
-      }
-      auto&& recon_dp_cpu = dynamic_cast<reconstruction_layer<data_layout::DATA_PARALLEL, El::Device::CPU>*>(l);
-      auto&& recon_mp_cpu = dynamic_cast<reconstruction_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>*>(l);
-#ifdef LBANN_HAS_GPU
-      auto&& recon_dp_gpu = dynamic_cast<reconstruction_layer<data_layout::DATA_PARALLEL, El::Device::GPU>*>(l);
-      auto&& recon_mp_gpu = dynamic_cast<reconstruction_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>*>(l);
-#endif // LBANN_HAS_GPU
-      if (recon_dp_cpu != nullptr) { recon_dp_cpu->set_original_layer(original); }
-      if (recon_mp_cpu != nullptr) { recon_mp_cpu->set_original_layer(original); }
-#ifdef LBANN_HAS_GPU
-      if (recon_dp_gpu != nullptr) { recon_dp_gpu->set_original_layer(original); }
-      if (recon_mp_gpu != nullptr) { recon_mp_gpu->set_original_layer(original); }
-#endif // LBANN_HAS_GPU
-    }
-  }
-}
-
 /** Setup paired pooling layers for unpooling layers. */
 void setup_unpooling_pointers(lbann_comm* comm,
                               std::vector<Layer*>& layers,
@@ -319,7 +278,6 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
   // Setup pointers between layers
   setup_parents_and_children(comm, layers, names_to_layers, proto_model);
   setup_target_pointers(comm, layers, names_to_layers, proto_model);
-  setup_reconstruction_pointers(comm, layers, names_to_layers, proto_model);
   setup_unpooling_pointers(comm, layers, names_to_layers, proto_model);
 
   // Optionally Set num_neurons = num_labels

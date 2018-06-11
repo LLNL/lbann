@@ -46,9 +46,11 @@ model {
   #######
   layer {
     name: "data"
+    children: "reshape1 reconstruction"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
+      target_mode: "reconstruction"
     }
   }
 
@@ -305,10 +307,9 @@ model {
   #################
   layer {
     name: "reconstruction"
+    parents: "elu20 data"
     data_layout: "data_parallel"
-    reconstruction {
-      original_layer: "data"
-    }
+    reconstruction {}
   }
 
   ###################################################

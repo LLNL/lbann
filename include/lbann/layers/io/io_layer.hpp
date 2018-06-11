@@ -44,17 +44,15 @@ namespace lbann {
 class io_layer : public Layer {
  protected:
   bool m_data_set_spans_models;
-
- private:
-  bool m_for_regression;
+  data_reader_target_mode m_data_reader_mode;
 
  public:
   io_layer(lbann_comm *comm,
            bool data_set_spans_models = true,
-           bool for_regression = false)
+           data_reader_target_mode data_reader_mode = data_reader_target_mode::CLASSIFICATION)
     : Layer(comm),
       m_data_set_spans_models(data_set_spans_models),
-      m_for_regression(for_regression) {
+      m_data_reader_mode(data_reader_mode) {
   }
 
   /**
@@ -178,7 +176,7 @@ class io_layer : public Layer {
   }
 #endif
   bool is_for_regression() const {
-    return m_for_regression;
+    return (m_data_reader_mode == data_reader_target_mode::REGRESSION);
   }
 };
 

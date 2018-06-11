@@ -34,94 +34,10 @@
 
 using namespace lbann;
 
-void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool master,
-                             std::shared_ptr<cv_process>& pp, int& width, int& height, int& channels) {
-// Currently we set width and height for image_data_reader here considering the transform
-// pipeline. image_data_reader reports the final dimension of data to the child layer based
-// on these information.
-// TODO: However, for composible pipeline, this needs to be automatically determined by each
-// cv_process at the setup finalization stage.
-  if (!pb_readme.has_image_preprocessor()) return;
-
-  const lbann_data::ImagePreprocessor& pb_preprocessor = pb_readme.image_preprocessor();
-  if (pb_preprocessor.disable()) return;
-
-  // data reader name
-  const std::string& name = pb_readme.name();
-  // final size of image
-  width = pb_preprocessor.raw_width();
-  height = pb_preprocessor.raw_height();
-
-  // set up a subtractor
-  if (pb_preprocessor.has_subtractor()) {
-    if (pb_preprocessor.has_colorizer()) {
-      const lbann_data::ImagePreprocessor::Colorizer& pb_colorizer = pb_preprocessor.colorizer();
-      if  (!pb_colorizer.disable()) {
-        const std::string colorizer_name = ((pb_colorizer.name() == "")? "default_colorizer" : pb_colorizer.name());
-        // If every image in the dataset is a color image, this is not needed
-        std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
-        colorizer->set_name(colorizer_name);
-        pp->add_transform(std::move(colorizer));
-        channels = 3;
-        if (master) std::cout << "image processor: " << colorizer_name << " colorizer is set" << std::endl;
-      }
-    }
-    const lbann_data::ImagePreprocessor::Subtractor& pb_subtractor = pb_preprocessor.subtractor();
-    if  (!pb_subtractor.disable()) {
-      const std::string subtractor_name = ((pb_subtractor.name() == "")? "default_subtractor" : pb_subtractor.name());
-      // If every image in the dataset is a color image, this is not needed
-      std::unique_ptr<lbann::cv_subtractor> subtractor(new(lbann::cv_subtractor));
-      subtractor->set_name(subtractor_name);
-
-      bool is_set = false;
-
-      if (!pb_subtractor.image_to_sub().empty()) {
-        subtractor->set_mean(pb_subtractor.image_to_sub());
-        is_set = true;
-      }
-      else if (pb_subtractor.channel_mean_size() > 0) {
-        const int _width = pb_subtractor.width()? pb_subtractor.width() : width;
-        const int _height = pb_subtractor.height()? pb_subtractor.height() : height;
-
-        const size_t n = pb_subtractor.channel_mean_size();
-        std::vector<lbann::DataType> ch_mean(n);
-        for(size_t i = 0u; i < n; ++i) {
-          ch_mean[i] = static_cast<lbann::DataType>(pb_subtractor.channel_mean(i));
-        }
-
-        subtractor->set_mean(_width, _height, ch_mean);
-        is_set = true;
-      }
-
-      if (! pb_subtractor.image_to_div().empty()) {
-        subtractor->set_stddev(pb_subtractor.image_to_div());
-        is_set = true;
-      }
-      else if (pb_subtractor.channel_stddev_size() > 0) {
-        const int _width = pb_subtractor.width()? pb_subtractor.width() : width;
-        const int _height = pb_subtractor.height()? pb_subtractor.height() : height;
-
-        const size_t n = pb_subtractor.channel_stddev_size();
-        std::vector<lbann::DataType> ch_stddev(n);
-        for(size_t i = 0u; i < n; ++i) {
-          ch_stddev[i] = static_cast<lbann::DataType>(pb_subtractor.channel_stddev(i));
-        }
-
-        subtractor->set_stddev(_width, _height, ch_stddev);
-        is_set = true;
-      }
-
-      if (is_set) {
-        pp->add_normalizer(std::move(subtractor));
-        if (master) std::cout << "image processor: " << subtractor_name << " subtractor is set" << std::endl;
-      } else {
-        if (master) std::cout << "image processor: " << subtractor_name
-                              << " subtractor needs at least either of 'image_to_sub' or 'image_to_div'." << std::endl;
-      }
-    }
-  }
-
-  // set up a cropper
+/// set up a cropper
+static void set_cropper(const lbann_data::ImagePreprocessor& pb_preprocessor,
+                        const bool master, std::shared_ptr<cv_process>& pp,
+                        int& width, int& height) {
   if (pb_preprocessor.has_cropper()) {
     const lbann_data::ImagePreprocessor::Cropper& pb_cropper = pb_preprocessor.cropper();
     if (!pb_cropper.disable()) {
@@ -139,21 +55,12 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
       height = pb_cropper.crop_height();
       if (master) std::cout << "image processor: " << cropper_name << " cropper is set" << std::endl;
     }
-  } else { // For backward compatibility. TODO: will be deprecated
-    if(pb_preprocessor.crop_first()) {
-      std::unique_ptr<lbann::cv_cropper> cropper(new(lbann::cv_cropper));
-      cropper->set(pb_preprocessor.crop_width(),
-                   pb_preprocessor.crop_height(),
-                   pb_preprocessor.crop_randomly(),
-                   std::make_pair<int,int>(pb_preprocessor.resized_width(),
-                                           pb_preprocessor.resized_height()),
-                   pb_preprocessor.adaptive_interpolation());
-      pp->add_transform(std::move(cropper));
-      if (master) std::cout << "image processor: cropper is set (deprecated syntax)" << std::endl;
-    }
   }
+}
 
-  // set up an augmenter
+/// set up an augmenter
+static void set_augmenter(const lbann_data::ImagePreprocessor& pb_preprocessor,
+                          const bool master, std::shared_ptr<cv_process>& pp) {
   if (pb_preprocessor.has_augmenter()) {
     const lbann_data::ImagePreprocessor::Augmenter& pb_augmenter = pb_preprocessor.augmenter();
     if (!pb_augmenter.disable() &&
@@ -176,26 +83,16 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
       pp->add_transform(std::move(augmenter));
       if (master) std::cout << "image processor: " << augmenter_name << " augmenter is set" << std::endl;
     }
-  } else { // For backward compatibility. TODO: will be deprecated
-    if (!pb_preprocessor.disable_augmentation()) {
-      std::unique_ptr<lbann::cv_augmenter> augmenter(new(lbann::cv_augmenter));
-      augmenter->set(pb_preprocessor.horizontal_flip(),
-                   pb_preprocessor.vertical_flip(),
-                   pb_preprocessor.rotation(),
-                   pb_preprocessor.horizontal_shift(),
-                   pb_preprocessor.vertical_shift(),
-                   pb_preprocessor.shear_range());
-      pp->add_transform(std::move(augmenter));
-      if (master) std::cout << "image processor: augmenter is set (deprecated syntax)" << std::endl;
-    }
   }
+}
 
-  // set up a decolorizer
+/// set up a decolorizer
+static void set_decolorizer(const lbann_data::ImagePreprocessor& pb_preprocessor,
+                     const bool master, std::shared_ptr<cv_process>& pp, int& channels) {
   if (pb_preprocessor.has_decolorizer()) {
     const lbann_data::ImagePreprocessor::Decolorizer& pb_decolorizer = pb_preprocessor.decolorizer();
     if  (!pb_decolorizer.disable()) {
       const std::string decolorizer_name = ((pb_decolorizer.name() == "")? "default_decolorizer" : pb_decolorizer.name());
-      // If every image in the dataset is a color image, this is not needed
       std::unique_ptr<lbann::cv_decolorizer> decolorizer(new(lbann::cv_decolorizer));
       decolorizer->set_name(decolorizer_name);
       decolorizer->set(pb_decolorizer.pick_1ch());
@@ -204,31 +101,101 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
       if (master) std::cout << "image processor: " << decolorizer_name << " decolorizer is set" << std::endl;
     }
   }
+}
 
-  // set up a colorizer
+/// set up a colorizer
+static void set_colorizer(const lbann_data::ImagePreprocessor& pb_preprocessor,
+                          const bool master, std::shared_ptr<cv_process>& pp, int& channels) {
   if (pb_preprocessor.has_colorizer()) {
     const lbann_data::ImagePreprocessor::Colorizer& pb_colorizer = pb_preprocessor.colorizer();
-    if  (!pb_colorizer.disable()) {
-     if (!pb_preprocessor.has_subtractor()) {
+    if (!pb_colorizer.disable()) {
       const std::string colorizer_name = ((pb_colorizer.name() == "")? "default_colorizer" : pb_colorizer.name());
-      // If every image in the dataset is a color image, this is not needed
       std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
       colorizer->set_name(colorizer_name);
       pp->add_transform(std::move(colorizer));
       channels = 3;
       if (master) std::cout << "image processor: " << colorizer_name << " colorizer is set" << std::endl;
-     }
-    }
-  } else { // For backward compatibility. TODO: will be deprecated
-    if (!pb_preprocessor.no_colorize()) {
-      std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
-      pp->add_transform(std::move(colorizer));
-      channels = 3;
-      if (master) std::cout << "image processor: colorizer is set (deprecated syntax)" << std::endl;
     }
   }
+}
 
-  // set up a normalizer
+static bool has_channel_wise_subtractor(const lbann_data::ImagePreprocessor& pb_preprocessor) {
+  if (!pb_preprocessor.has_subtractor()) {
+    return false;
+  }
+  const lbann_data::ImagePreprocessor::Subtractor& pb_subtractor = pb_preprocessor.subtractor();
+  return ((pb_subtractor.channel_mean_size() > 0) || (pb_subtractor.channel_stddev_size() > 0))
+         && pb_subtractor.image_to_sub().empty() && pb_subtractor.image_to_div().empty();
+}
+
+/// set up a subtractor
+static void set_subtractor(const lbann_data::ImagePreprocessor& pb_preprocessor,
+                           const bool master, std::shared_ptr<cv_process>& pp,
+                           const int channels) {
+  if (pb_preprocessor.has_subtractor()) {
+    const lbann_data::ImagePreprocessor::Subtractor& pb_subtractor = pb_preprocessor.subtractor();
+    if  (!pb_subtractor.disable()) {
+      const std::string subtractor_name = ((pb_subtractor.name() == "")? "default_subtractor" : pb_subtractor.name());
+      std::unique_ptr<lbann::cv_subtractor> subtractor(new(lbann::cv_subtractor));
+      subtractor->set_name(subtractor_name);
+
+      bool is_mean_set = false;
+
+      if (!pb_subtractor.image_to_sub().empty()) {
+        subtractor->set_mean(pb_subtractor.image_to_sub());
+        is_mean_set = true;
+      }
+      else if (pb_subtractor.channel_mean_size() > 0) {
+        const size_t n = pb_subtractor.channel_mean_size();
+        if (n != static_cast<const size_t>(channels)) {
+          throw lbann_exception("Failed to setup subtractor due to inconsistent number of channels.");
+        }
+        std::vector<lbann::DataType> ch_mean(n);
+        for(size_t i = 0u; i < n; ++i) {
+          ch_mean[i] = static_cast<lbann::DataType>(pb_subtractor.channel_mean(i));
+        }
+
+        subtractor->set_mean(ch_mean);
+        is_mean_set = true;
+      }
+
+      if (!is_mean_set && master) {
+        std::cout << "image processor: " << subtractor_name << " assumes zero mean." << std::endl
+                  << "  If this is not the case, provide mean." << std::endl;
+      }
+
+      bool is_stddev_set = false;
+      if (!pb_subtractor.image_to_div().empty()) {
+        subtractor->set_stddev(pb_subtractor.image_to_div());
+        is_stddev_set = true;
+      }
+      else if (pb_subtractor.channel_stddev_size() > 0) {
+        const size_t n = pb_subtractor.channel_stddev_size();
+        if (n != static_cast<const size_t>(channels)) {
+          throw lbann_exception("Failed to setup subtractor due to inconsistent number of channels.");
+        }
+        std::vector<lbann::DataType> ch_stddev(n);
+        for(size_t i = 0u; i < n; ++i) {
+          ch_stddev[i] = static_cast<lbann::DataType>(pb_subtractor.channel_stddev(i));
+        }
+
+        subtractor->set_stddev(ch_stddev);
+        is_stddev_set = true;
+      }
+
+      pp->add_normalizer(std::move(subtractor));
+      if (master) {
+        std::cout << "image processor: " << subtractor_name << " subtractor is set for "
+                  << (has_channel_wise_subtractor(pb_preprocessor)? "channel-wise" : "pixel-wise")
+                  << ' ' << (is_stddev_set? "z-score" : "mean-subtraction") << std::endl;
+      }
+    }
+  }
+}
+
+/// set up a sample-wide normalizer
+static void set_normalizer(const lbann_data::ImagePreprocessor& pb_preprocessor,
+                           const bool master, std::shared_ptr<cv_process>& pp) {
   if (pb_preprocessor.has_normalizer()) {
     const lbann_data::ImagePreprocessor::Normalizer& pb_normalizer = pb_preprocessor.normalizer();
     if (!pb_normalizer.disable()) {
@@ -239,41 +206,54 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
       normalizer->subtract_mean(pb_normalizer.subtract_mean());
       normalizer->unit_variance(pb_normalizer.unit_variance());
       normalizer->z_score(pb_normalizer.z_score());
-      pp->add_normalizer(std::move(normalizer));
-      if (master) std::cout << "image processor: " << normalizer_name << " normalizer is set" << std::endl;
+      bool ok = pp->add_normalizer(std::move(normalizer));
+      if (master && ok) std::cout << "image processor: " << normalizer_name << " normalizer is set" << std::endl;
     }
-  } else { // For backward compatibility. TODO: will be deprecated
-    std::unique_ptr<lbann::cv_normalizer> normalizer(new(lbann::cv_normalizer));
-    normalizer->unit_scale(pb_preprocessor.scale());
-    normalizer->subtract_mean(pb_preprocessor.subtract_mean());
-    normalizer->unit_variance(pb_preprocessor.unit_variance());
-    normalizer->z_score(pb_preprocessor.z_score());
-    pp->add_normalizer(std::move(normalizer));
-    if (master) std::cout << "image processor: normalizer is set (deprecated syntax)" << std::endl;
+  }
+}
+
+
+void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool master,
+                             std::shared_ptr<cv_process>& pp, int& width, int& height, int& channels) {
+// Currently we set width and height for image_data_reader here considering the transform
+// pipeline. image_data_reader reports the final dimension of data to the child layer based
+// on these information.
+// TODO: However, for composible pipeline, this needs to be automatically determined by each
+// cv_process at the setup finalization stage.
+  if (!pb_readme.has_image_preprocessor()) return;
+
+  const lbann_data::ImagePreprocessor& pb_preprocessor = pb_readme.image_preprocessor();
+  if (pb_preprocessor.disable()) return;
+
+  // data reader name
+  const std::string& name = pb_readme.name();
+  // final size of image
+  width = pb_preprocessor.raw_width();
+  height = pb_preprocessor.raw_height();
+
+  if (pb_preprocessor.has_subtractor() && !has_channel_wise_subtractor(pb_preprocessor)) {
+    // decolorizer and colorizer are exclusive
+    set_decolorizer(pb_preprocessor, master, pp, channels);
+    set_colorizer(pb_preprocessor, master, pp, channels);
+    // set up a pixel-wise subtractor
+    set_subtractor(pb_preprocessor, master, pp, channels);
   }
 
-  // set up a noiser
-  if (pb_preprocessor.has_noiser()) {
-    const lbann_data::ImagePreprocessor::Noiser& pb_noiser = pb_preprocessor.noiser();
-    if (!pb_noiser.disable()) {
-      const std::string noiser_name = ((pb_noiser.name() == "")? "default_noiser" : pb_noiser.name());
-/* TODO: implement noiser in opencv
-      std::unique_ptr<lbann::cv_noiser> noiser(new(lbann::cv_noiser));
-      noiser->set_name(noiser_name);
-      noiser->set(pb_noiser.factor());
-      pp->add_transform(std::move(noiser));
-*/
-      if (master) std::cout << "image processor: " << noiser_name << " noiser is not supported yet" << std::endl;
-    }
-  } else { // For backward compatibility. TODO: will be deprecated
-/* TODO: implement noiser in opencv
-    std::unique_ptr<lbann::cv_noiser> noiser(new(lbann::cv_noiser));
-    noiser->set(pb_preprocessor.noise_factor());
-    pp->add_transform(std::move(noiser));
-*/
-    if (master && (pb_preprocessor.noise_factor() > 0.0))
-        std::cout << "image processor: noiser is not supported yet (deprecated syntax)" << std::endl;
+  set_cropper(pb_preprocessor, master, pp, width, height);
+  set_augmenter(pb_preprocessor, master, pp);
+  if (has_channel_wise_subtractor(pb_preprocessor)) {
+    // decolorizer and colorizer are exclusive
+    set_decolorizer(pb_preprocessor, master, pp, channels);
+    set_colorizer(pb_preprocessor, master, pp, channels);
+    // set up a channel-wise subtractor
+    set_subtractor(pb_preprocessor, master, pp, channels);
+  } else if (!pb_preprocessor.has_subtractor()) {
+    // decolorizer/colorizer would have already been applied in the pixel-wise subtractor
+    // decolorizer and colorizer are exclusive
+    set_decolorizer(pb_preprocessor, master, pp, channels);
+    set_colorizer(pb_preprocessor, master, pp, channels);
   }
+  set_normalizer(pb_preprocessor, master, pp);
 
   // create a data reader
   if (name == "imagenet_patches") {

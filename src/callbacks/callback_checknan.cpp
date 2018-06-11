@@ -32,121 +32,191 @@
 
 namespace lbann {
 
-void lbann_callback_checknan::on_forward_prop_end(model *m, Layer *l) {
-  if (dynamic_cast<generic_target_layer*>(l) != nullptr) {
-    return;
+namespace {
+
+/** Check whether a matrix contains a NaN. 
+ *  If a NaN entry is detected, return true and output the local entry
+ *  position in row and col. mat is assumed to be a CPU matrix.
+ */
+bool has_nan(const AbsDistMat& mat, El::Int& row, El::Int& col) {
+  row = -1;
+  col = -1;
+  const auto& local_mat = mat.LockedMatrix();
+  for (El::Int j = 0; j < local_mat.Width(); ++j) {
+    for (El::Int i = 0; i < local_mat.Height(); ++i) {
+      if (std::isnan(local_mat(i,j))) {
+        row = i;
+        col = j;
+        return true;
+      }
+    }
   }
-  const AbsDistMat& acts = l->get_activations();
-  if (!is_good(acts)) {
-    dump_network(m);
+  return false;
+}
+
+/** Check whether a matrix contains an inf. 
+ *  If an inf entry is detected, return true and output the entry
+ *  position in row and col. mat is assumed to be a CPU matrix.
+ */
+bool has_inf(const AbsDistMat& mat, El::Int& row, El::Int& col) {
+  row = -1;
+  col = -1;
+  const auto& local_mat = mat.LockedMatrix();
+  for (El::Int j = 0; j < local_mat.Width(); ++j) {
+    for (El::Int i = 0; i < local_mat.Height(); ++i) {
+      if (std::isinf(local_mat(i,j))) {
+        row = i;
+        col = j;
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/** Dump the local network matrices for debugging.
+ *  Dump only the local matrices because not every rank will
+ *  necessarily have bad data, and the check is purely local.
+ */
+void dump_network(model *m) {
+  for (const auto* l : m->get_layers()) {
     std::stringstream ss;
-    ss << name() << ": "
-       << "[" << std::to_string(m->get_comm()->get_rank_in_world()) << "]: "
-       << "error in activations of " << l->get_name() << " "
-       << "(step=" << std::to_string(m->get_cur_step()) << ")";
-    throw lbann_exception(ss.str());
+    ss << "model" << m->get_comm()->get_model_rank()
+       << "-rank" << m->get_comm()->get_rank_in_model()
+       << "-epoch" << m->get_cur_epoch()
+       << "-step" << m->get_cur_step()
+       << "-" << l->get_name() << "-";
+    const std::string prefix = ss.str();
+    for (int i = 0; i < l->get_num_children(); ++i) {
+      El::Write(l->get_local_activations(i),
+                prefix + "Activations" + std::to_string(i),
+                El::ASCII);
+    }
+    for (int i = 0; i < l->get_num_parents(); ++i) {
+      El::Write(l->get_local_error_signals(i),
+                prefix + "ErrorSignal" + std::to_string(i),
+                El::ASCII);
+    }
+  }
+  for (auto* w : m->get_weights()) {
+    std::stringstream ss;
+    ss << "model" << m->get_comm()->get_model_rank()
+       << "-rank" << m->get_comm()->get_rank_in_model()
+       << "-epoch" << m->get_cur_epoch()
+       << "-step" << m->get_cur_step()
+       << "-" << w->get_name() << "-";
+    const std::string prefix = ss.str();
+    El::Write(w->get_values().LockedMatrix(),
+              prefix + "Weights",
+              El::ASCII);
+    auto* opt = w->get_optimizer();
+    if (opt != nullptr) {
+      El::Write(opt->get_gradient().LockedMatrix(),
+                prefix + "Gradient",
+                El::ASCII);
+    }
+  }
+}
+
+} // namespace
+
+void lbann_callback_checknan::on_forward_prop_end(model *m, Layer *l) {
+  std::stringstream err;
+  const auto& num_outputs = l->get_num_children();
+  for (int i = 0; i < num_outputs; ++i) {
+    El::Int row, col;
+    AbsDistMatReadProxy<El::Device::CPU> mat_proxy(l->get_activations(i));
+    if (has_nan(mat_proxy.GetLocked(), row, col)) {
+      dump_network(m);
+      err << "rank " << m->get_comm()->get_rank_in_world() << ": "
+          << "local entry (" << row << "," << col << ") is NaN "
+          << "in activations ";
+      if (num_outputs > 1) { err << i << " "; }
+      err << "of layer \"" << l->get_name() << "\"";
+      LBANN_ERROR(err.str());
+    }
+    if (has_inf(mat_proxy.GetLocked(), row, col)) {
+      dump_network(m);
+      err << "rank " << m->get_comm()->get_rank_in_world() << ": "
+          << "local entry (" << row << "," << col << ") is inf "
+          << "in activations ";
+      if (num_outputs > 1) { err << i << " "; }
+      err << "of layer \"" << l->get_name() << "\"";
+      LBANN_ERROR(err.str());
+    }
   }
 }
 
 void lbann_callback_checknan::on_backward_prop_end(model *m, Layer *l) {
-  const AbsDistMat& errs = l->get_error_signals();
-  if (!is_good(errs)) {
-    dump_network(m);
-    std::stringstream ss;
-    ss << name() << ": "
-       << "[" << std::to_string(m->get_comm()->get_rank_in_world()) << "]: "
-       << "error in error signal of " << l->get_name() << " "
-       << "(step=" << std::to_string(m->get_cur_step()) << ")";
-    throw lbann_exception(ss.str());
+  std::stringstream err;
+  const auto& num_inputs = l->get_num_parents();
+  for (int i = 0; i < num_inputs; ++i) {
+    El::Int row, col;
+    AbsDistMatReadProxy<El::Device::CPU> mat_proxy(l->get_error_signals(i));
+    if (has_nan(mat_proxy.GetLocked(), row, col)) {
+      dump_network(m);
+      err << "rank " << m->get_comm()->get_rank_in_world() << ": "
+          << "local entry (" << row << "," << col << ") is NaN "
+          << "in error signals ";
+      if (num_inputs > 1) { err << i << " "; }
+      err << "of layer \"" << l->get_name() << "\"";
+      LBANN_ERROR(err.str());
+    }
+    if (has_inf(mat_proxy.GetLocked(), row, col)) {
+      dump_network(m);
+      err << "rank " << m->get_comm()->get_rank_in_world() << ": "
+          << "local entry (" << row << "," << col << ") is inf "
+          << "in error signals ";
+      if (num_inputs > 1) { err << i << " "; }
+      err << "of layer \"" << l->get_name() << "\"";
+      LBANN_ERROR(err.str());
+    }
   }
 }
 
 void lbann_callback_checknan::on_backward_prop_end(model *m) {
+  std::stringstream err;
   for (weights *w : m->get_weights()) {
-    optimizer *opt = w->get_optimizer();
-    if (opt != nullptr && !is_good(opt->get_gradient())) {
-      dump_network(m);
-      std::stringstream ss;
-      ss << name() << ": "
-         << "[" << std::to_string(m->get_comm()->get_rank_in_world()) << "]: "
-         << "error in weights gradient of " << w->get_name() << " "
-         << "(step=" << std::to_string(m->get_cur_step()) << ")";
-      throw lbann_exception(ss.str());
+    auto* opt = w->get_optimizer();
+    if (opt != nullptr) {
+      El::Int row, col;
+      AbsDistMatReadProxy<El::Device::CPU> mat_proxy(opt->get_gradient());
+      if (has_nan(mat_proxy.GetLocked(), row, col)) {
+        dump_network(m);
+        err << "rank " << m->get_comm()->get_rank_in_world() << ": "
+            << "local entry (" << row << "," << col << ") is NaN "
+            << "in gradient w.r.t. weights \"" << w->get_name() << "\"";
+        LBANN_ERROR(err.str());
+      }
+      if (has_inf(mat_proxy.GetLocked(), row, col)) {
+        dump_network(m);
+        err << "rank " << m->get_comm()->get_rank_in_world() << ": "
+            << "local entry (" << row << "," << col << ") is inf "
+            << "in gradient w.r.t. weights \"" << w->get_name() << "\"";
+        LBANN_ERROR(err.str());
+      }
     }
   }
 }
 
 void lbann_callback_checknan::on_batch_end(model *m) {
+  std::stringstream err;
   for (weights *w : m->get_weights()) {
-    if (!is_good(w->get_values())) {
+    El::Int row, col;
+    AbsDistMatReadProxy<El::Device::CPU> mat_proxy(w->get_values());
+    if (has_nan(mat_proxy.GetLocked(), row, col)) {
       dump_network(m);
-      std::stringstream ss;
-      ss << name() << ": "
-         << "[" << std::to_string(m->get_comm()->get_rank_in_world()) << "]: "
-         << "error in weights of " << w->get_name() << " "
-         << "(step=" << std::to_string(m->get_cur_step()-1) << ")";
-      throw lbann_exception(ss.str());
+      err << "rank " << m->get_comm()->get_rank_in_world() << ": "
+          << "local entry (" << row << "," << col << ") is NaN "
+          << "in weights \"" << w->get_name() << "\"";
+      LBANN_ERROR(err.str());
     }
-  }
-}
-
-bool lbann_callback_checknan::is_good(const AbsDistMat& m) {
-  AbsDistMatReadProxy<El::Device::CPU> cpu_m(m);
-  const AbsMat& lm = cpu_m.GetLocked().LockedMatrix();
-  const El::Int height = lm.Height();
-  const El::Int width = lm.Width();
-  for (El::Int col = 0; col < width; ++col) {
-    for (El::Int row = 0; row < height; ++row) {
-      const DataType val = lm(row, col);
-      if (std::isnan(val)) {
-        std::cout << "Found NaN at (" << row << ", " << col << ")!" << std::endl;
-        return false;
-      } else if (std::isinf(val)) {
-        std::cout << "Found inf (" << row << ", " << col << ")!" << std::endl;
-        return false;
-      }
-    }
-  }
-  return true;
-}
-
-void lbann_callback_checknan::dump_network(model *m) {
-  // Dump only the local matrices because not every rank will necessarily
-  // have bad data, and the check is purely local.
-  for (const Layer *layer : m->get_layers()) {
-    if (dynamic_cast<const generic_target_layer*>(layer) != nullptr) {
-      continue;  // Skip target layers.
-    }
-    const std::string prefix
-      = ("model" + std::to_string(m->get_comm()->get_model_rank())
-         + "-rank" + std::to_string(m->get_comm()->get_rank_in_model()) +
-         + "-epoch" + std::to_string(m->get_cur_epoch())
-         + "-step" + std::to_string(m->get_cur_step())
-         + "-" + layer->get_name()
-         + "-");
-    El::Write(layer->get_activations().LockedMatrix(),
-              prefix + "Activations",
-              El::ASCII);
-    El::Write(layer->get_error_signals().LockedMatrix(),
-              prefix + "ErrorSignal",
-              El::ASCII);
-  }
-  for (weights *w : m->get_weights()) {
-    const std::string prefix
-      = ("model" + std::to_string(m->get_comm()->get_model_rank())
-         + "-rank" + std::to_string(m->get_comm()->get_rank_in_model()) +
-         + "-epoch" + std::to_string(m->get_cur_epoch())
-         + "-step" + std::to_string(m->get_cur_step())
-         + "-" + w->get_name()
-         + "-");
-    El::Write(w->get_values().LockedMatrix(),
-              prefix + "Weights",
-              El::ASCII);
-    optimizer *opt = w->get_optimizer();
-    if (opt != nullptr) {
-      El::Write(opt->get_gradient().LockedMatrix(),
-                prefix + "Gradient",
-                El::ASCII);
+    if (has_inf(mat_proxy.GetLocked(), row, col)) {
+      dump_network(m);
+      err << "rank " << m->get_comm()->get_rank_in_world() << ": "
+          << "local entry (" << row << "," << col << ") is inf "
+          << "in weights \"" << w->get_name() << "\"";
+      LBANN_ERROR(err.str());
     }
   }
 }
