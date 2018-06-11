@@ -72,8 +72,6 @@ option(${UPPER_PROJECT_NAME}_WARNINGS_AS_ERRORS
 
 option(${UPPER_PROJECT_NAME}_WITH_CUDA "Include Nvidia CUDA" OFF)
 
-option(${UPPER_PROJECT_NAME}_WITH_NCCL "Include Nvidia NCCL2" OFF)
-
 option(${UPPER_PROJECT_NAME}_WITH_CUDNN "Include Nvidia cuDNN" ON)
 
 option(${UPPER_PROJECT_NAME}_WITH_CNPY "Include cnpy" ON)
