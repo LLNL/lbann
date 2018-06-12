@@ -14,6 +14,8 @@ project(LBANN_SuperBuild NONE)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 
+option(LBANN_SB_BUILD_ALUMINUM "Pull and build Aluminum from Github" OFF)
+
 option(LBANN_SB_BUILD_CNPY "Pull and build CNPY from Github" OFF)
 
 option(LBANN_SB_BUILD_CUB "Pull CUB from Github" OFF)
@@ -35,6 +37,11 @@ option(LBANN_SB_BUILD_LBANN "Pull and build LBANN from Github" OFF)
 # Add the TPL subdirectories
 #
 include(LBANNSuperBuildCreateCMakeArguments)
+
+if (LBANN_SB_BUILD_ALUMINUM)
+  add_subdirectory(aluminum)
+  list(APPEND _BUILD_PKGS Aluminum)
+endif ()
 
 if (LBANN_SB_BUILD_CNPY)
   add_subdirectory(cnpy)
@@ -67,11 +74,6 @@ endif ()
 if (LBANN_SB_BUILD_JPEG_TURBO)
   add_subdirectory(jpeg-turbo)
   list(APPEND _BUILD_PKGS jpeg-turbo)
-endif ()
-
-if (LBANN_SB_BUILD_ALUMINUM)
-  add_subdirectory(aluminum)
-  list(APPEND _BUILD_PKGS aluminum)
 endif ()
 
 if (LBANN_SB_BUILD_OPENCV)
