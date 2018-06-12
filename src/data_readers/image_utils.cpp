@@ -39,20 +39,37 @@
 #define _LBANN_REPLACE_IMREAD_WITH_IMDECODE_
 //------------------------------------------------------------------------------------------------
 #if defined(_LBANN_REPLACE_IMREAD_WITH_IMDECODE_)
-#define LBANN_IMREAD_T(_IMGFILE_, _FLAG_, _T1_, _T2_) \
-        lbann::cv_utils::load_decode((_IMGFILE_), (_FLAG_), (_T1_), (_T2_))
-
+/**
+ * _IMGFILE_ is the same as the first argument of cv::imread(), which is the
+ * path to the image file in std::string type.
+ * _FLAG_ is the sane as the second argument of cv::imread().
+ * The return type is cv::Mat same as that of cv::imread().
+ */
 #define LBANN_IMREAD(_IMGFILE_, _FLAG_) \
         lbann::cv_utils::load_decode((_IMGFILE_), (_FLAG_))
-#else // -----------------------------------------------------------------------------------------
-#define LBANN_IMREAD_T(_IMGFILE_, _FLAG_, _T1_, _T2_) (\
-        const double t1 = get_time(); \
-        cv::Mat imgret = cv::imread((_IMGFILE_), (_FLAG_)); \
-        _T1_ += get_time() - t1; \
-        img_ret)
 
+/** Same as LBANN_IMREAD but with timing instrumentation
+ *  _T1_ and _T2_ should be openmp thread private double type variables.
+ *  _T1_ is the accumulated time to load the image file from the filesystem to the memory
+ *  _T2_ is the accumulated time to execute cv::imdcode()
+ */
+#define LBANN_IMREAD_T(_IMGFILE_, _FLAG_, _T1_, _T2_) \
+        lbann::cv_utils::load_decode((_IMGFILE_), (_FLAG_), (_T1_), (_T2_))
+#else // -----------------------------------------------------------------------------------------
+#include "lbann/utils/timer.hpp"
 #define LBANN_IMREAD(_IMGFILE_, _FLAG_) \
         cv::imread((_IMGFILE_), (_FLAG_))
+
+/** Same as LBANN_IMREAD but with timing instrumentation
+ *  _T1_ should be a openmp thread private double type variable
+ *  _T1_ is the accumulated time to load the image file from the filesystem to the memory and decode it.
+ *  _T2_ is not really used other than to make the interface consistent. Thus can be anything.
+ */
+#define LBANN_IMREAD_T(_IMGFILE_, _FLAG_, _T1_, _T2_) ({\
+        const double t1 = lbann::get_time(); \
+        cv::Mat imgret = cv::imread((_IMGFILE_), (_FLAG_)); \
+        _T1_ += lbann::get_time() - t1; \
+        imgret; })
 #endif // defined(_LBANN_REPLACE_IMREAD_WITH_IMDECODE_)
 //------------------------------------------------------------------------------------------------
 
