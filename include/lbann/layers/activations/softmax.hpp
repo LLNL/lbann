@@ -204,13 +204,19 @@ class softmax_layer : public activation_layer {
     const El::Int local_width = local_input.Width();
 
     // Find maximum entry in each column
-    #pragma omp parallel for
-    for(El::Int col = 0; col < local_width; ++col) {
-      DataType max_entry = local_input(0, col);
-      for(El::Int row = 1; row < local_height; ++row) {
-        max_entry = std::max(max_entry, local_input(row, col));
+    if (local_height == 0) {
+      // When there's no local data, fill the workspace with a small value so
+      // the maximum across processors is still computed correctly.
+      El::Fill(local_workspace, std::numeric_limits<DataType>::lowest());
+    } else {
+      #pragma omp parallel for
+      for (El::Int col = 0; col < local_width; ++col) {
+        DataType max_entry = local_input(0, col);
+        for (El::Int row = 1; row < local_height; ++row) {
+          max_entry = std::max(max_entry, local_input(row, col));
+        }
+        local_workspace(0, col) = max_entry;
       }
-      local_workspace(0, col) = max_entry;
     }
     m_comm->allreduce(*m_workspace, m_workspace->RedundantComm(),
                       El::mpi::MAX);
