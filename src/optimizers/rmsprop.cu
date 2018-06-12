@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/optimizers/adagrad.hpp"
+#include "lbann/optimizers/rmsprop.hpp"
 
 namespace lbann {
 
@@ -43,9 +43,10 @@ __device__ inline double sqrt_(double x) {
   return sqrt(x);
 }
 
-__global__ void adagrad_kernel(int height,
+__global__ void rmsprop_kernel(int height,
                                int width,
                                DataType learning_rate,
+                               DataType decay_rate,
                                DataType eps,
                                DataType * __restrict__ values,
                                int values_ldim,
@@ -53,34 +54,34 @@ __global__ void adagrad_kernel(int height,
                                int gradient_ldim,
                                DataType * __restrict__ cache,
                                int cache_ldim) {
-  const int gid = blockIdx.x * blockDim.x + threadIdx.x;
+  const int tid = blockIdx.x * blockDim.x + threadIdx.x;
   const int num_threads = gridDim.x * blockDim.x;
-  for (int pos = gid; pos < height * width; pos += num_threads) {
+  for (int pos = tid; pos < height * width; pos += num_threads) {
     const auto& i = pos % height;
     const auto& j = pos / height;
     auto& x = values[i + j * values_ldim];
     const auto& g = gradient[i + j * gradient_ldim];
     auto& c = cache[i + j * cache_ldim];
-    c += g * g;
+    c = decay_rate * c + (DataType(1) - decay_rate) * g * g;
     x -= learning_rate * g / (sqrt_(c) + eps);
   }
 }
 
 } // namespace
 
-void adagrad::step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) {
+void rmsprop::step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) {
   const int local_height = values.LocalHeight();
   const int local_width = values.LocalWidth();
   const int size = local_height * local_width;
   const int block_dim = 256;
   const int grid_dim = (size + block_dim - 1) / block_dim;
   if (grid_dim > 0) {
-    adagrad_kernel<<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
-      local_height, local_width, m_learning_rate, m_eps,
+    rmsprop_kernel<<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
+      local_height, local_width, m_learning_rate, m_decay_rate, m_eps,
       values.Buffer(), values.LDim(),
       gradient.LockedBuffer(), gradient.LDim(),
       m_cache->Buffer(), m_cache->LDim());
   }
 }
 
-} // namespace lbann
+}  // namespace lbann
