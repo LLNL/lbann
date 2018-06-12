@@ -76,7 +76,7 @@ __global__ void max_local_col_entry_kernel(
     const int col_offset = col*input_ldim;
     lbann::DataType max_entry = input[col_offset];
     for (int row = 1; row < height; ++row) {
-      max_entry = max(max_entry, input[row + col_offset]);
+      max_entry = fmax(max_entry, input[row + col_offset]);
     }
     workspace[col] = max_entry;
   }
@@ -96,7 +96,7 @@ __global__ void exp_and_col_sum_kernel(
     const int output_col_offset = col*output_ldim;
     // Shift by the pre-computed maximum value for the column.
     const lbann::DataType shift = workspace[col];
-    lbann::DataType sum = 0.0;
+    lbann::DataType sum = lbann::DataType(0);
     for (int row = 0; row < height; ++row) {
       const lbann::DataType y = exp(input[row + input_col_offset] - shift);
       output[row + output_col_offset] = y;
@@ -119,7 +119,7 @@ __global__ void div_by_col_sums_and_cutoff_kernel(
     const lbann::DataType scale = lbann::DataType(1) / workspace[col];
     for (int row = 0; row < height; ++row) {
 #ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
-      output[row + col_offset] = max(scale*output[row + col_offset], cutoff);
+      output[row + col_offset] = fmax(scale*output[row + col_offset], cutoff);
 #else
       output[row + col_offset] *= scale;
 #endif

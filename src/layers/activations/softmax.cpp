@@ -90,8 +90,10 @@ void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
   const El::Int local_width = local_input.Width();
 
   // Find the maximum entry in each local column.
-  if (local_width > 0 && local_height == 0) {
-    El::Fill(local_workspace, std::numeric_limits<DataType>::min());
+  if (local_height == 0) {
+    // When there's no local data, fill the workspace with a small value so the
+    // maximum across processors is still computed correctly.
+    El::Fill(local_workspace, std::numeric_limits<DataType>::lowest());
   } else {
     softmax_cuda::max_local_col_entry(
       local_height, local_width, local_input.LockedBuffer(),
@@ -103,8 +105,9 @@ void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
 
   // Exponentiate activations and compute column sums.
   // This subtracts by the column max for stability.
-  if (local_width > 0 && local_height == 0) {
-    El::Fill(local_workspace, std::numeric_limits<DataType>::min());
+  if (local_height == 0) {
+    // Zero out so that we contribute nothing to the sum.
+    El::Zero(local_workspace);
   } else {
     softmax_cuda::exp_and_col_sum(
       local_height, local_width, local_input.LockedBuffer(),
@@ -119,7 +122,7 @@ void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
   // This rounds small values to avoid denormalization.
   softmax_cuda::div_by_col_sums_and_cutoff(
     local_height, local_width, local_output.Buffer(),
-    local_output.LDim(), local_workspace.Buffer(), m_min_output,
+    local_output.LDim(), local_workspace.LockedBuffer(), m_min_output,
     El::GPUManager::Stream());
 #endif  // LBANN_HAS_CUDNN
 }
