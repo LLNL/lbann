@@ -513,7 +513,7 @@ message CallbackImComm {
 }
 
 message CallbackDebug {
-  string phase = 1;
+  string phase = 1; //should be called "modes"
 }
 
 message CallbackDebugIO {
