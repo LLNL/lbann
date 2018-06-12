@@ -266,9 +266,65 @@ class data_reader_jag_conduit : public generic_data_reader {
    * when a conversion is defined for such a key, remove it from the set.
    */
   static const std::set<std::string> non_numeric_vars;
+
+  /**
+   * indicate if all the input variables are of the input_t type, in which case
+   * we can rely on a data extraction method with lower overhead.
+   */
+  bool m_uniform_input_type;
 };
 
 
+/**
+ * To faciliate the type comparison between a c++ native type and a conduit type id.
+ * By deafult, each pair of a native type TN and a conduit type TC is not the same.
+ * Those that are the same require explicit instantication to say otherwise.
+ */
+template<typename TN, conduit::DataType::TypeID TC>
+struct is_same : std::false_type {};
+
+#define _LBANN_CONDUIT_DTYPE_INSTANTIATION_(TN, TC) \
+  template<> struct is_same<TN, TC> : std::true_type {}
+
+_LBANN_CONDUIT_DTYPE_INSTANTIATION_(int8_t,   conduit::DataType::INT8_ID);
+_LBANN_CONDUIT_DTYPE_INSTANTIATION_(int16_t,  conduit::DataType::INT16_ID);
+_LBANN_CONDUIT_DTYPE_INSTANTIATION_(int32_t,  conduit::DataType::INT32_ID);
+_LBANN_CONDUIT_DTYPE_INSTANTIATION_(int64_t,  conduit::DataType::INT64_ID);
+_LBANN_CONDUIT_DTYPE_INSTANTIATION_(uint8_t,  conduit::DataType::UINT8_ID);
+_LBANN_CONDUIT_DTYPE_INSTANTIATION_(uint16_t, conduit::DataType::UINT16_ID);
+_LBANN_CONDUIT_DTYPE_INSTANTIATION_(uint32_t, conduit::DataType::UINT32_ID);
+_LBANN_CONDUIT_DTYPE_INSTANTIATION_(uint64_t, conduit::DataType::UINT64_ID);
+_LBANN_CONDUIT_DTYPE_INSTANTIATION_(float,    conduit::DataType::FLOAT32_ID);
+_LBANN_CONDUIT_DTYPE_INSTANTIATION_(double,   conduit::DataType::FLOAT64_ID);
+_LBANN_CONDUIT_DTYPE_INSTANTIATION_(char*,    conduit::DataType::CHAR8_STR_ID);
+
+#undef _LBANN_CONDUIT_DTYPE_INSTANTIATION_
+
+/// Check if type identified by the conduit dtype id is the same type as the type given as the template parameter
+template<typename TN>
+inline bool is_same_type(const conduit::DataType::TypeID dt) {
+  switch(dt) {
+    case conduit::DataType::INT8_ID:    return is_same<TN, conduit::DataType::INT8_ID>::value;
+    case conduit::DataType::INT16_ID:   return is_same<TN, conduit::DataType::INT16_ID>::value;
+    case conduit::DataType::INT32_ID:   return is_same<TN, conduit::DataType::INT32_ID>::value;
+    case conduit::DataType::INT64_ID:   return is_same<TN, conduit::DataType::INT64_ID>::value;
+    case conduit::DataType::UINT8_ID:   return is_same<TN, conduit::DataType::UINT8_ID>::value;
+    case conduit::DataType::UINT16_ID:  return is_same<TN, conduit::DataType::UINT16_ID>::value;
+    case conduit::DataType::UINT32_ID:  return is_same<TN, conduit::DataType::UINT32_ID>::value;
+    case conduit::DataType::UINT64_ID:  return is_same<TN, conduit::DataType::UINT64_ID>::value;
+    case conduit::DataType::FLOAT32_ID: return is_same<TN, conduit::DataType::FLOAT32_ID>::value;
+    case conduit::DataType::FLOAT64_ID: return is_same<TN, conduit::DataType::FLOAT64_ID>::value;
+    case conduit::DataType::CHAR8_STR_ID: return is_same<TN, conduit::DataType::CHAR8_STR_ID>::value;
+    default: return false;
+  }
+  return false;
+}
+
+/**
+ * Retrieve a value from the given node n, and add it to the vector of type S, vals.
+ * The first argument key is the name of the current node (i.e. the name reported by
+ * the node iterator to the node).
+ */
 template<typename S>
 inline size_t data_reader_jag_conduit::add_val(const std::string key, const conduit::Node& n, std::vector<S>& vals) {
   size_t cnt = 0u;

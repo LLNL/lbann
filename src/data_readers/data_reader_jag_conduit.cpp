@@ -121,6 +121,7 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
   replicate_processor(*rhs.m_pps[0]);
 
   m_data = rhs.m_data;
+  m_uniform_input_type = rhs.m_uniform_input_type;
 }
 
 data_reader_jag_conduit::data_reader_jag_conduit(const data_reader_jag_conduit& rhs)
@@ -156,6 +157,7 @@ void data_reader_jag_conduit::set_defaults() {
   m_num_labels = 0;
   m_scalar_keys.clear();
   m_input_keys.clear();
+  m_uniform_input_type = false;
 }
 
 /// Replicate image processor for each OpenMP thread
@@ -424,18 +426,21 @@ void data_reader_jag_conduit::check_input_keys() {
   conduit::NodeConstIterator itr = n_input.children();
   size_t num_found = 0u;
   std::vector<bool> found(m_input_keys.size(), false);
-  std::set<std::string> keys_conduit;
+  std::map<std::string, TypeID> keys_conduit;
 
   while (itr.has_next()) {
-    itr.next();
-    keys_conduit.insert(itr.name());
+    const conduit::Node & n = itr.next();
+    keys_conduit.insert(std::pair<std::string, TypeID>(itr.name(), static_cast<TypeID>(n.dtype().id())));
   }
 
+  bool is_input_t = true;
+
   for (size_t i=0u; i < m_input_keys.size(); ++i) {
-    std::set<std::string>::const_iterator it = keys_conduit.find(m_input_keys[i]);
+    std::map<std::string, TypeID>::const_iterator it = keys_conduit.find(m_input_keys[i]);
     if (it != keys_conduit.end()) {
       num_found ++;
       found[i] = true;
+      is_input_t = is_input_t && is_same_type<input_t>(it->second);
     }
   }
 
@@ -448,6 +453,8 @@ void data_reader_jag_conduit::check_input_keys() {
     }
     _THROW_LBANN_EXCEPTION_(_CN_, "check_input_keys() : " + msg);
   }
+
+  m_uniform_input_type = (m_input_keys.size() == 0u)? false : is_input_t;
 }
 
 
@@ -649,7 +656,8 @@ std::string data_reader_jag_conduit::get_description() const {
                       + std::to_string(m_image_width) + 'x'
                       + std::to_string(m_image_height) + "\n"
     + " - scalars: "  + std::to_string(get_linearized_scalar_size()) + "\n"
-    + " - inputs: "   + std::to_string(get_linearized_input_size()) + "\n";
+    + " - inputs: "   + std::to_string(get_linearized_input_size()) + "\n"
+    + " - uniform_input_type: " + (m_uniform_input_type? "true" : "false") + '\n';
   return ret;
 }
 
@@ -779,6 +787,7 @@ std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scal
   for(const auto key: m_scalar_keys) {
     std::string scalar_key = std::to_string(sample_id) + "/outputs/scalars/" + key;
     const conduit::Node & n_scalar = get_conduit_node(scalar_key);
+    // All the scalar output currently seems to be scalar_t
     //add_val(key, n_scalar, scalars);
     scalars.push_back(n_scalar.value());
   }
@@ -793,12 +802,19 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
   std::vector<input_t> inputs;
   inputs.reserve(m_input_keys.size());
 
-  for(const auto key: m_input_keys) {
-    std::string input_key = std::to_string(sample_id) + "/inputs/" + key;
-    const conduit::Node & n_input = get_conduit_node(input_key);
-    // TODO: automatically determine which method to use based on if all the variables are float64 type
-    add_val(key, n_input, inputs);
-    //inputs.push_back(n_input.value());
+  // automatically determine which method to use based on if all the variables are of input_t
+  if (m_uniform_input_type) {
+    for(const auto key: m_input_keys) {
+      std::string input_key = std::to_string(sample_id) + "/inputs/" + key;
+      const conduit::Node & n_input = get_conduit_node(input_key);
+      inputs.push_back(n_input.value()); // less overhead
+    }
+  } else {
+    for(const auto key: m_input_keys) {
+      std::string input_key = std::to_string(sample_id) + "/inputs/" + key;
+      const conduit::Node & n_input = get_conduit_node(input_key);
+      add_val(key, n_input, inputs); // more overhead but general
+    }
   }
   return inputs;
 }
