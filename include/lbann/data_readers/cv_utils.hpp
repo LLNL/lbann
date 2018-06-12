@@ -102,6 +102,21 @@ class cv_utils {
    *  otherwise.
    */
   static cv::Mat copy_buf_to_cvMat(const ::Mat& buf, const int Width, const int Height, const int Type, const cv_process& pp);
+
+  /**
+   *  Use cv::imdecode() to load an image data instead of relying on cv::imread().
+   *  This avoids reading the image header to determine the decoder directly from
+   *  the file but allow doing so from the memory.
+   *  The arguments are the same as the ones with cv::imread() as well as the
+   *  return type. Avoiding the extra access to the underlying filesystem may
+   *  result in a better performance.
+   */
+  static cv::Mat load_decode(const std::string& img_file_path, int flags);
+  /**
+   * Additionally, this measures the time to load the image data from a file to
+   * memory, and the time to decode it.
+   */
+  static cv::Mat load_decode(const std::string& img_file_path, int flags, double& t_load, double& t_decode);
 };
 
 

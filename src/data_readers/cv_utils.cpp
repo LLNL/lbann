@@ -28,6 +28,8 @@
 
 #include "lbann/data_readers/cv_utils.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/timer.hpp"
+#include "lbann/utils/file_utils.hpp"
 //#include <iostream>
 
 #ifdef LBANN_HAS_OPENCV
@@ -86,6 +88,51 @@ cv::Mat cv_utils::copy_buf_to_cvMat(const ::Mat& buf,
 std::ostream& operator<<(std::ostream& os, const cv_transform& tr) {
   tr.print(os);
   return os;
+}
+
+
+cv::Mat cv_utils::load_decode(const std::string& img_file_path, int flags, double& t_load, double& t_decode) {
+  const double t1 = get_time();
+
+  std::vector<unsigned char> buf;
+  // Load an image bytestream into memory
+  bool ok = lbann::load_file(img_file_path, buf);
+  if (!ok) {
+    throw lbann_exception("load_decode() : failed to load " + img_file_path);
+  }
+
+  const double t2 = get_time();
+
+  // create a zero-copying view on a block of bytes
+  using InputBuf_T = lbann::cv_image_type<uint8_t>;
+  const cv::Mat inbuf(1, buf.size(), InputBuf_T::T(1), &(buf[0]));
+
+  // decode the image data in the memory buffer
+  cv::Mat image = cv::imdecode(inbuf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+
+  t_load += t2 - t1;
+  t_decode += get_time() - t2;
+
+  return image;
+}
+
+
+cv::Mat cv_utils::load_decode(const std::string& img_file_path, int flags) {
+  std::vector<unsigned char> buf;
+  // Load an image bytestream into memory
+  bool ok = lbann::load_file(img_file_path, buf);
+  if (!ok) {
+    throw lbann_exception("load_decode() : failed to load " + img_file_path);
+  }
+
+  // create a zero-copying view on a block of bytes
+  using InputBuf_T = lbann::cv_image_type<uint8_t>;
+  const cv::Mat inbuf(1, buf.size(), InputBuf_T::T(1), &(buf[0]));
+
+  // decode the image data in the memory buffer
+  cv::Mat image = cv::imdecode(inbuf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+
+  return image;
 }
 
 
