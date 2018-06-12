@@ -30,10 +30,10 @@ def skeleton_models(cluster, dir_name, executables, compiler_name):
                     data_filedir_default = '/p/lscratchf/brainusr/datasets/MNIST'
                     data_reader_name = 'mnist'
                 elif 'adversarial' in file_name:
-		    data_filedir_default = '/p/lscratchf/brainusr/datasets/MNIST'
+                    data_filedir_default = '/p/lscratchf/brainusr/datasets/MNIST'
                     data_reader_path = '%s/model_zoo/models/gan/mnist/adversarial_data.prototext' % (dir_name)
-		    data_reader_name = None
-		elif 'discriminator' in file_name:
+                    data_reader_name = None
+                elif 'discriminator' in file_name:
                     data_filedir_default = '/p/lscratchf/brainusr/datasets/MNIST'
                     data_reader_path = '%s/model_zoo/models/gan/mnist/discriminator_data.prototext' % (dir_name)
                     data_reader_name = None
@@ -105,15 +105,11 @@ def skeleton_models(cluster, dir_name, executables, compiler_name):
 def test_unit_models_clang4(cluster, dirname, exes):
     if cluster in ['quartz']:
         pytest.skip('FIXME')
-        # Catalyst Errors:
-        # assert 5 == 0
     skeleton_models(cluster, dirname, exes, 'clang4')
 
 def test_unit_models_gcc4(cluster, dirname, exes):
     if cluster in ['quartz', 'surface']:
         pytest.skip('FIXME')
-        # Catalyst Errors:
-        # assert 4 == 0
         # Surface Errors:
         # assert 8 == 0
     skeleton_models(cluster, dirname, exes, 'gcc4')
