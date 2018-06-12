@@ -77,14 +77,14 @@ void set_tensor_desc(cudnnTensorDescriptor_t& desc,
   // Check that dimensions and strides are valid
   if (strides.size() != dims.size()) {
     err << "attempted to set cuDNN tensor descriptor "
-        << "with invalid strides ("
-      for (size_t i = 0; i < strides.size(); ++i) {
-        err << (i == 0 ? "" : ",") << strides[i];
-      }
-    err << ") for dimensions ("
-      for (size_t i = 0; i < dims.size(); ++i) {
-        err << (i == 0 ? "" : "x") << dims[i];
-      }
+        << "with invalid strides (";
+    for (size_t i = 0; i < strides.size(); ++i) {
+      err << (i == 0 ? "" : ",") << strides[i];
+    }
+    err << ") for dimensions (";
+    for (size_t i = 0; i < dims.size(); ++i) {
+      err << (i == 0 ? "" : "x") << dims[i];
+    }
     err << ")";
     LBANN_ERROR(err.str());
   }
@@ -100,11 +100,11 @@ void set_tensor_desc(cudnnTensorDescriptor_t& desc,
     }
     if (j > 0 && strides[j-1] < dims[j] * strides[j]) {
       err << "attempted to set cuDNN tensor descriptor "
-          << "with invalid strides ("
+          << "with invalid strides (";
       for (size_t i = 0; i < strides.size(); ++i) {
         err << (i == 0 ? "" : ",") << strides[i];
       }
-      err << ") for dimensions ("
+      err << ") for dimensions (";
       for (size_t i = 0; i < dims.size(); ++i) {
         err << (i == 0 ? "" : "x") << dims[i];
       }
@@ -116,6 +116,7 @@ void set_tensor_desc(cudnnTensorDescriptor_t& desc,
   
   // Set cuDNN tensor descriptor
   // Note: cuDNN tensors should have at least 4 dimensions
+  /// @todo Think about 1D convolution
   while (dims.size() < 4) {
     dims.insert(dims.begin(), 1);
     strides.insert(strides.begin(), strides.front());
@@ -300,44 +301,44 @@ layer_tensor_manager::~layer_tensor_manager() {
 
 void layer_tensor_manager::set_layer(const Layer* new_layer) {
 
-  // Resize vectors for inputs and gradients w.r.t. inputs
-  const int old_num_parents = (m_layer == nullptr ?
-                               0 : m_layer->get_num_parents());
-  const int new_num_parents = (new_layer == nullptr ?
-                               0 : new_layer->get_num_parents());
-  for (int i = new_num_parents; i < old_num_parents; ++i) {
+  // Set layer pointer
+  m_layer = new_layer;
+
+  // Destroy excess descriptors
+  const int num_parents = (m_layer == nullptr ?
+                           0 : m_layer->get_num_parents());
+  const int num_children = (m_layer == nullptr ?
+                            0 : m_layer->get_num_children());
+  for (size_t i = num_parents; i < m_prev_activations.size(); ++i) {
     if (m_prev_activations[i] != nullptr) {
       CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_prev_activations[i]));
       m_prev_activations[i] = nullptr;
     }
+  }
+  for (size_t i = num_parents; i < m_error_signals.size(); ++i) {
     if (m_error_signals[i] != nullptr) {
       CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_error_signals[i]));
       m_error_signals[i] = nullptr;
     }
   }
-  m_prev_activations.resize(new_num_parents, nullptr);
-  m_error_signals.resize(new_num_parents, nullptr);
-
-  // Resize vectors for outputs and gradients w.r.t. outputs
-  const int old_num_children = (m_layer == nullptr ?
-                                0 : m_layer->get_num_children());
-  const int new_num_children = (new_layer == nullptr ?
-                                0 : new_layer->get_num_children());
-  for (int i = new_num_children; i < old_num_children; ++i) {
+  for (size_t i = num_children; i < m_activations.size(); ++i) {
     if (m_activations[i] != nullptr) {
       CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_activations[i]));
       m_activations[i] = nullptr;
     }
+  }
+  for (size_t i = num_children; i < m_prev_error_signals.size(); ++i) {
     if (m_prev_error_signals[i] != nullptr) {
       CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_prev_error_signals[i]));
       m_prev_error_signals[i] = nullptr;
     }
   }
-  m_activations.resize(new_num_children, nullptr);
-  m_prev_error_signals.resize(new_num_children, nullptr);
 
-  // Set layer pointer
-  m_layer = new_layer;
+  // Resize vectors to get correct number of descriptors
+  m_prev_activations.resize(num_parents, nullptr);
+  m_activations.resize(num_children, nullptr);
+  m_prev_error_signals.resize(num_children, nullptr);
+  m_error_signals.resize(num_parents, nullptr);
 
 }
 
@@ -382,6 +383,7 @@ cudnnTensorDescriptor_t& data_parallel_layer_tensor_manager::get_prev_activation
   if (m_layer == nullptr) {
     LBANN_ERROR("tensor manager is not managing a layer");
   }
+  set_layer(m_layer);
   const auto& local_data = m_layer->get_local_prev_activations(parent_index);
   const auto& dims = m_layer->get_prev_neuron_dims(parent_index);
   auto& desc = m_prev_activations[parent_index];
@@ -393,6 +395,7 @@ cudnnTensorDescriptor_t& data_parallel_layer_tensor_manager::get_activations(int
   if (m_layer == nullptr) {
     LBANN_ERROR("tensor manager is not managing a layer");
   }
+  set_layer(m_layer);
   const auto& local_data = m_layer->get_local_activations(child_index);
   const auto& dims = m_layer->get_neuron_dims(child_index);
   auto& desc = m_activations[child_index];
@@ -404,6 +407,7 @@ cudnnTensorDescriptor_t& data_parallel_layer_tensor_manager::get_prev_error_sign
   if (m_layer == nullptr) {
     LBANN_ERROR("tensor manager is not managing a layer");
   }
+  set_layer(m_layer);
   const auto& local_data = m_layer->get_local_prev_error_signals(child_index);
   const auto& dims = m_layer->get_neuron_dims(child_index);
   auto& desc = m_prev_error_signals[child_index];
@@ -415,6 +419,7 @@ cudnnTensorDescriptor_t& data_parallel_layer_tensor_manager::get_error_signals(i
   if (m_layer == nullptr) {
     LBANN_ERROR("tensor manager is not managing a layer");
   }
+  set_layer(m_layer);
   const auto& local_data = m_layer->get_local_error_signals(parent_index);
   const auto& dims = m_layer->get_prev_neuron_dims(parent_index);
   auto& desc = m_error_signals[parent_index];
@@ -457,6 +462,7 @@ cudnnTensorDescriptor_t& entrywise_layer_tensor_manager::get_prev_activations(in
   if (m_layer == nullptr) {
     LBANN_ERROR("tensor manager is not managing a layer");
   }
+  set_layer(m_layer);
   const auto& local_data = m_layer->get_local_prev_activations(parent_index);
   auto& desc = m_prev_activations[parent_index];
   set_entrywise_tensor_desc(desc, local_data);
@@ -467,6 +473,7 @@ cudnnTensorDescriptor_t& entrywise_layer_tensor_manager::get_activations(int chi
   if (m_layer == nullptr) {
     LBANN_ERROR("tensor manager is not managing a layer");
   }
+  set_layer(m_layer);
   const auto& local_data = m_layer->get_local_activations(child_index);
   auto& desc = m_activations[child_index];
   set_entrywise_tensor_desc(desc, local_data);
@@ -477,6 +484,7 @@ cudnnTensorDescriptor_t& entrywise_layer_tensor_manager::get_prev_error_signals(
   if (m_layer == nullptr) {
     LBANN_ERROR("tensor manager is not managing a layer");
   }
+  set_layer(m_layer);
   const auto& local_data = m_layer->get_local_prev_error_signals(child_index);
   auto& desc = m_prev_error_signals[child_index];
   set_entrywise_tensor_desc(desc, local_data);
@@ -487,6 +495,7 @@ cudnnTensorDescriptor_t& entrywise_layer_tensor_manager::get_error_signals(int p
   if (m_layer == nullptr) {
     LBANN_ERROR("tensor manager is not managing a layer");
   }
+  set_layer(m_layer);
   const auto& local_data = m_layer->get_local_error_signals(parent_index);
   auto& desc = m_error_signals[parent_index];
   set_entrywise_tensor_desc(desc, local_data);
