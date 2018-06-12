@@ -36,11 +36,32 @@
   throw lbann_exception(err.str()); \
 }
 
+#define _LBANN_REPLACE_IMREAD_WITH_IMDECODE_
+//------------------------------------------------------------------------------------------------
+#if defined(_LBANN_REPLACE_IMREAD_WITH_IMDECODE_)
+#define LBANN_IMREAD_T(_IMGFILE_, _FLAG_, _T1_, _T2_) \
+        lbann::cv_utils::load_decode((_IMGFILE_), (_FLAG_), (_T1_), (_T2_))
+
+#define LBANN_IMREAD(_IMGFILE_, _FLAG_) \
+        lbann::cv_utils::load_decode((_IMGFILE_), (_FLAG_))
+#else // -----------------------------------------------------------------------------------------
+#define LBANN_IMREAD_T(_IMGFILE_, _FLAG_, _T1_, _T2_) (\
+        const double t1 = get_time(); \
+        cv::Mat imgret = cv::imread((_IMGFILE_), (_FLAG_)); \
+        _T1_ += get_time() - t1; \
+        img_ret)
+
+#define LBANN_IMREAD(_IMGFILE_, _FLAG_) \
+        cv::imread((_IMGFILE_), (_FLAG_))
+#endif // defined(_LBANN_REPLACE_IMREAD_WITH_IMDECODE_)
+//------------------------------------------------------------------------------------------------
+
+
 namespace lbann {
 
 bool image_utils::loadIMG(const std::string& Imagefile, int& Width, int& Height, bool Flip, unsigned char *&Pixels) {
 #ifdef LBANN_HAS_OPENCV
-  cv::Mat image = cv::imread(Imagefile, _LBANN_CV_COLOR_);
+  cv::Mat image = LBANN_IMREAD(Imagefile, _LBANN_CV_COLOR_);
   if (image.empty()) {
     return false;
   }
@@ -192,7 +213,7 @@ bool image_utils::process_image(cv::Mat& image, int& Width, int& Height, int& Ty
 bool image_utils::load_image(const std::string& filename,
                                     int& Width, int& Height, int& Type, cv_process& pp, std::vector<uint8_t>& buf) {
 #ifdef LBANN_HAS_OPENCV
-  cv::Mat image = cv::imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+  cv::Mat image = LBANN_IMREAD(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
 
   return process_image(image, Width, Height, Type, pp, buf);
 #else
@@ -228,7 +249,7 @@ bool image_utils::save_image(const std::string& filename,
 bool image_utils::load_image(const std::string& filename,
                                     int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data) {
 #ifdef LBANN_HAS_OPENCV
-  cv::Mat image = cv::imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+  cv::Mat image = LBANN_IMREAD(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
 
   return process_image(image, Width, Height, Type, pp, data);
 #else
@@ -248,7 +269,7 @@ bool image_utils::load_image(const std::string& filename,
 bool image_utils::load_image(const std::string& filename,
                                     int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<::Mat>& data) {
 #ifdef LBANN_HAS_OPENCV
-  cv::Mat image = cv::imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+  cv::Mat image = LBANN_IMREAD(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
 
   return process_image(image, Width, Height, Type, pp, data);
 #else
