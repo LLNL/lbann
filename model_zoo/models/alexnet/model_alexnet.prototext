@@ -40,11 +40,7 @@ model {
   }
   callback { print {} }
   callback { timer {} }
-  # callback {
-  #   debug {
-  #     phase: "train"
-  #   }
-  # }
+  # callback { debug {} }
   callback {
     drop_fixed_learning_rate {
       drop_epoch: 20

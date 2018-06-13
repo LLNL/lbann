@@ -16,7 +16,10 @@ find_package(Hydrogen NO_MODULE)
 
 if (Hydrogen_FOUND)
   message(STATUS "Found Hydrogen: ${Hydrogen_DIR}")
+  set(LBANN_HAS_HYDROGEN TRUE)
 else ()
+  set(LBANN_HAS_HYDROGEN FALSE)
+
   find_package(Elemental NO_MODULE
     PATH_SUFFIXES lib/cmake/elemental)
 
@@ -28,8 +31,16 @@ else ()
       set_property(TARGET El PROPERTY
         INTERFACE_INCLUDE_DIRECTORIES ${Elemental_INCLUDE_DIRS})
     endif ()
+
+    set(LBANN_HAS_ELEMENTAL TRUE)
   else ()
     message(FATAL_ERROR "Neither Hydrogen nor Elemental was found! "
       "Try setting Hydrogen_DIR or Elemental_DIR and try again!")
+
+    set(LBANN_HAS_ELEMENTAL FALSE)
   endif (Elemental_FOUND)
 endif (Hydrogen_FOUND)
+
+if (NOT LBANN_HAS_HYDROGEN AND NOT LBANN_HAS_ELEMENTAL)
+  message(FATAL_ERROR "LBANN requires Hydrogen or Elemental.")
+endif ()

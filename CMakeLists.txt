@@ -72,8 +72,6 @@ option(${UPPER_PROJECT_NAME}_WARNINGS_AS_ERRORS
 
 option(${UPPER_PROJECT_NAME}_WITH_CUDA "Include Nvidia CUDA" OFF)
 
-option(${UPPER_PROJECT_NAME}_WITH_NCCL "Include Nvidia NCCL2" OFF)
-
 option(${UPPER_PROJECT_NAME}_WITH_CUDNN "Include Nvidia cuDNN" ON)
 
 option(${UPPER_PROJECT_NAME}_WITH_CNPY "Include cnpy" ON)
@@ -170,6 +168,29 @@ include(SetupElemental)
 find_package(OpenCV REQUIRED)
 set(LBANN_HAS_OPENCV ${OpenCV_FOUND})
 
+if (LBANN_WITH_ALUMINUM)
+  find_package(Aluminum)
+  set(LBANN_HAS_ALUMINUM ${Aluminum_FOUND})
+  if (NOT LBANN_HAS_ALUMINUM)
+    message(FATAL_ERROR
+      "Requested LBANN_WITH_ALUMINUM but Aluminum not found. "
+      "Aluminum is now disabled. "
+      "Try specifying ALUMINUM_DIR as the root of an ALUMINUM install. "
+      "Alternatively, build with LBANN_WITH_ALUMINUM=OFF.")
+    set(LBANN_WITH_ALUMINUM OFF)
+  endif(NOT LBANN_HAS_ALUMINUM)
+
+  if (AL_HAS_CUDA AND NOT LBANN_WITH_CUDA)
+    message(WARNING
+      "Aluminum has CUDA but LBANN is configured with LBANN_WITH_CUDA=OFF")
+  endif ()
+
+  option(LBANN_BUILT_WITH_SPECTRUM "LBANN was built with Spectrum MPI" OFF)
+  if (LBANN_BUILT_WITH_SPECTRUM)
+    set(LBANN_ALUMINUM_MPI_PASSTHROUGH ON)
+  endif (LBANN_BUILT_WITH_SPECTRUM)
+endif (LBANN_WITH_ALUMINUM)
+
 # Setup some additional CUDA-y things
 if (LBANN_HAS_CUDA)
   if (NOT LBANN_WITH_CUDNN)
@@ -184,18 +205,12 @@ if (LBANN_HAS_CUDA)
 
   set(LBANN_HAS_CUDNN ${CUDNN_FOUND})
 
-  if (LBANN_WITH_NCCL)
-    find_package(NCCL 2.0.0 REQUIRED)
-    set(LBANN_HAS_NCCL2 ${NCCL_FOUND})
-    if (NOT LBANN_HAS_NCCL2)
-      message(FATAL_ERROR
-        "Requested LBANN_WITH_NCCL but NCCL not found. "
-        "NCCL is now disabled. "
-        "Try specifying NCCL_DIR as the root of a NCCL install. "
-        "Alternatively, build with LBANN_WITH_NCCL=OFF.")
-      set(LBANN_WITH_NCCL OFF)
-    endif (NOT LBANN_HAS_NCCL2)
-  endif (LBANN_WITH_NCCL)
+  if (LBANN_HAS_ALUMINUM AND AL_HAS_NCCL)
+    set(LBANN_HAS_NCCL2 TRUE)
+  else ()
+    set(LBANN_HAS_NCCL2 FALSE)
+  endif ()
+
 endif (LBANN_HAS_CUDA)
 
 # This shouldn't be here, but is ok for now. This will occasionally be
@@ -245,23 +260,6 @@ if (LBANN_TOPO_AWARE)
     set(LBANN_TOPO_AWARE OFF)
   endif (NOT HWLOC_FOUND)
 endif (LBANN_TOPO_AWARE)
-
-if (LBANN_WITH_ALUMINUM)
-  find_package(ALUMINUM)
-  set(LBANN_HAS_ALUMINUM ${ALUMINUM_FOUND})
-  if (NOT LBANN_HAS_ALUMINUM)
-    message(FATAL_ERROR
-      "Requested LBANN_WITH_ALUMINUM but Aluminum not found. "
-      "Aluminum is now disabled. "
-      "Try specifying ALUMINUM_DIR as the root of an ALUMINUM install. "
-      "Alternatively, build with LBANN_WITH_ALUMINUM=OFF.")
-    set(LBANN_WITH_ALUMINUM OFF)
-  endif(NOT LBANN_HAS_ALUMINUM)
-  option(LBANN_BUILT_WITH_SPECTRUM "LBANN was built with Spectrum MPI" OFF)
-  if (LBANN_BUILT_WITH_SPECTRUM)
-    set(LBANN_ALUMINUM_MPI_PASSTHROUGH ON)
-  endif (LBANN_BUILT_WITH_SPECTRUM)
-endif (LBANN_WITH_ALUMINUM)
 
 if (LBANN_WITH_CONDUIT)
   find_package(CONDUIT)
@@ -322,7 +320,7 @@ if (LBANN_TOPO_AWARE)
 endif ()
 
 if (LBANN_HAS_ALUMINUM)
-  target_link_libraries(lbann PUBLIC ALUMINUM::ALUMINUM)
+  target_link_libraries(lbann PUBLIC ${Aluminum_LIBRARIES})
 endif ()
 
 if (LBANN_HAS_CONDUIT)
