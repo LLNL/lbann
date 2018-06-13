@@ -241,7 +241,7 @@ while :; do
         --with-aluminum)
             WITH_ALUMINUM=ON
             ;;
-        --aluminum-with-mpi-cda)
+        --aluminum-with-mpi-cuda)
             ALUMINUM_WITH_MPI_CUDA=ON
             ;;
         --aluminum-with-nccl)
