@@ -167,7 +167,9 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// A utility function to convert a JAG variable type to name string
   static std::string to_string(const variable_t t);
 
+  /// print the schema of the all the samples
   void print_schema() const;
+  /// print the schema of the specific sample identified by a given id
   void print_schema(const size_t i) const;
 
  protected:
