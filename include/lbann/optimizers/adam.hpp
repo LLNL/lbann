@@ -57,7 +57,7 @@ class adam : public optimizer {
   adam* copy() const override { return new adam(*this); }
 
   /** Returns the optimizer name. */
-  std::string get_type() const override { return "adam"; }
+  std::string get_type() const override { return "Adam"; }
   /** Get a human-readable description of the optimizer. */
   std::string get_description() const override;
 

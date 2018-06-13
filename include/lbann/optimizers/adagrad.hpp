@@ -50,7 +50,7 @@ class adagrad : public optimizer {
   adagrad* copy() const override { return new adagrad(*this); }
 
   /** Get the optimizer name. */
-  std::string get_type() const override { return "adagrad"; }
+  std::string get_type() const override { return "Adagrad"; }
   /** Get a human-readable description of the optimizer. */
   std::string get_description() const override;
 

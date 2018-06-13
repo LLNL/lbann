@@ -52,7 +52,7 @@ class rmsprop : public optimizer {
   rmsprop* copy() const override { return new rmsprop(*this); }
   
   /** Get the optimizer name. */
-  std::string get_type() const override { return "rmsprop"; }
+  std::string get_type() const override { return "RMSprop"; }
   /** Get a human-readable description of the optimizer. */
   std::string get_description() const override;
 

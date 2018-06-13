@@ -47,14 +47,17 @@ model {
   # data
   layer {
     name: "data"
+    children: "fc1 reconstruction"
     data_layout: "model_parallel"
     input {
       io_buffer: "distributed"
+      target_mode: "reconstruction"
     }
   }
 
   # encode1
   layer {
+    name: "fc1:
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 100
@@ -101,12 +104,15 @@ model {
     }
   }
   layer {
+    name: "sigmoid"
     data_layout: "model_parallel"
     sigmoid {}
   }
 
   # reconstruction
   layer {
+    name: "reconstruction"
+    parents: "sigmoid data"
     data_layout: "model_parallel"
     reconstruction {
       original_layer: "data"

@@ -3,7 +3,7 @@
 model {
   name: "directed_acyclic_graph_model"
   data_layout: "data_parallel"
-  mini_batch_size: 100 
+  mini_batch_size: 100
   block_size: 256
   num_epochs: 50
   num_parallel_readers: 0
@@ -61,9 +61,11 @@ model {
   ######################
   layer {
     name: "data"
+    children: "encode1 reconstruction"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
+      target_mode: "reconstruction"
     }
   }
 
@@ -188,17 +190,17 @@ model {
     data_layout: "data_parallel"
     reduction {
       mode: "sum"
-    }    
+    }
   }
   layer {
     parents: "kldiv"
     name: "klloss"
     data_layout: "data_parallel"
-    evaluation {}    
+    evaluation {}
   }
 
   ######################
-  # Generate sample  
+  # Generate sample
   ######################
 
   layer {
@@ -294,11 +296,10 @@ model {
   }
   layer {
     parents: "loss_sigmoid"
+    parents: "decode1 data"
     name: "reconstruction"
     data_layout: "data_parallel"
-    reconstruction {
-      original_layer: "data"
-    }
+    reconstruction {}
   }
 
   ###################################################
