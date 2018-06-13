@@ -933,7 +933,7 @@ message Unpooling {
 
 
 message Concatenation {
-  string parents = 1; //should be space-separated list of indices, e.g, "2 6 7"
+  string parents = 1; //TODO: this doesn't do anything and should be removed
   int64 concatenation_axis = 2;
 }
 
