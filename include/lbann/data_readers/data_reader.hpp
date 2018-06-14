@@ -536,7 +536,8 @@ class generic_data_reader : public lbann_image_preprocessor {
 
     p.write_hdf5_parameter(dr_group, "data_position", &m_current_pos, H5::PredType::NATIVE_FLOAT);
     
-    p.write_hdf5_array(dr_group, "data_indices", &m_shuffled_indices, H5::PredType::NATIVE_INT);
+    p.write_hdf5_array(dr_group, "data_indices", m_shuffled_indices, H5::PredType::NATIVE_INT);
+    
     #else
     lbann::persist_type persist_value;
     std::string s_name(name);
@@ -555,7 +556,8 @@ class generic_data_reader : public lbann_image_preprocessor {
     p.write_parameter(persist_value, fieldname,  m_current_pos);
 
     snprintf(fieldname, sizeof(fieldname), "%s_data_indices", name);
-    p.write_int32_contig(persist_value, fieldname, &m_shuffled_indices[0], (uint64_t) size);
+    p.write_parameter_vector(persist_value, fieldname, m_shuffled_indices, size);
+
     #endif
     
     return true;
@@ -579,7 +581,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_shuffled_indices.resize(size);
 
      //read list of indices
-    p.read_hdf5_array(dr_group, "data_indices", &m_shuffled_indices);
+    p.read_hdf5_array(dr_group, "data_indices", m_shuffled_indices);
     
     #else
     lbann::persist_type persist_value;
@@ -604,8 +606,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_shuffled_indices.resize(size);
 
     snprintf(fieldname, sizeof(fieldname), "%s_data_indices", name);
-    p.read_int32_contig(persist_value, fieldname, &m_shuffled_indices[0], (uint64_t) size);    
-
+    p.read_parameter_vector(persist_value, fieldname, m_shuffled_indices, size);    
     #endif
 
     if(header != nullptr){

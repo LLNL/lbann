@@ -430,16 +430,6 @@ bool lbann::persist::read_bytes(persist_type type, const char *name, void *buf, 
   return true;
 }
 
-bool lbann::persist::write_int32_contig(persist_type type, const char *name, const int32_t *buf, uint64_t count) {
-  size_t bytes = count * sizeof(int32_t);
-  return write_bytes(type, name, buf, bytes);
-}
-
-bool lbann::persist::read_int32_contig(persist_type type, const char *name, int32_t *buf, uint64_t count) {
-  size_t bytes = count * sizeof(int32_t);
-  return read_bytes(type, name, buf, bytes);
-}
-
 bool lbann::persist::write_string(persist_type type, const char *name, const char *val, int str_length) {
   return write_bytes(type, name, val, sizeof(char) * str_length);
 }

@@ -109,6 +109,17 @@ class persist {
     return read_bytes(type, name, val, sizeof(T));
   }
 
+
+  template<typename T>
+  bool write_parameter_vector(persist_type type, const char *name, std::vector<T> val, int array_size) {
+    return write_bytes(type, name, val.data(), array_size * sizeof(T));
+  }
+  
+  template<typename T>
+  bool read_parameter_vector(persist_type type, const char *name, std::vector<T> &val, int array_size) {
+    return read_bytes(type, name, val.data(), array_size * sizeof(T));
+  }
+
   bool write_int32_contig(persist_type type, const char *name, const int32_t *buf, uint64_t count);
   bool read_int32_contig (persist_type type, const char *name, int32_t *buf, uint64_t count);
 
@@ -135,20 +146,20 @@ class persist {
   }
 
   template<typename T>
-  bool write_hdf5_array(H5::Group group_name, const char *name, std::vector<T> *val, H5::PredType hdf5_type) {
-    const hsize_t arr_size = val->size();
+  bool write_hdf5_array(H5::Group group_name, const char *name, std::vector<T> val, H5::PredType hdf5_type) {
+    const hsize_t arr_size = val.size();
     H5::DataSpace dataspace = H5::DataSpace(1,&arr_size);
     H5::DataSet dataset = group_name.createDataSet(name, hdf5_type, dataspace);
-    dataset.write(val->data(), hdf5_type);
+    dataset.write(val.data(), hdf5_type);
     return true;
   }
  
  
   template<typename T>
-  bool read_hdf5_array(H5::Group group_name, const char *name, T *val) {
+  bool read_hdf5_array(H5::Group group_name, const char *name, std::vector<T> &val) {
     H5::DataSet ds = group_name.openDataSet(name);
     H5::DataSpace dataspace= ds.getSpace();
-    ds.read(val->data(), H5::PredType::NATIVE_INT, dataspace);
+    ds.read(val.data(), H5::PredType::NATIVE_INT, dataspace);
     return true;
   }
    
