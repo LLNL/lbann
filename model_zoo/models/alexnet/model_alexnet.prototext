@@ -49,7 +49,6 @@ model {
       amt: 0.1
     }
   }
-  callback { gpu_memory_usage {} }
 
   ###################################################
   # start of layers
