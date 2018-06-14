@@ -69,7 +69,15 @@ class generic_target_layer : public Layer {
            + " (" + s + ")";
   }
 
-  void fp_compute() override {}
+  void fp_compute() override {
+    // Differentiating objective function loss functions requires that
+    // target layer error signal matrices are zero
+    for (int i = 0; i < get_num_parents(); ++i) {
+      const auto& input = get_prev_activations(i);
+      auto& gradient_wrt_input = get_error_signals(i);
+      El::Zeros(gradient_wrt_input, input.Height(), input.Width());
+    }
+  }
 
   void bp_compute() override {}
 

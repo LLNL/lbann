@@ -434,12 +434,6 @@ const AbsMat& Layer::get_local_error_signals(int parent_index) const {
   return get_error_signals(parent_index).LockedMatrix();
 }
 
-void Layer::clear_error_signals(int mini_batch_size) {
-  for (int i = 0; i < get_num_parents(); ++i) {
-    El::Zeros(get_error_signals(i), get_num_prev_neurons(i), mini_batch_size);
-  }
-}
-
 void Layer::freeze() {
   m_frozen = true;
   for(auto& w : m_weights) {
@@ -938,23 +932,36 @@ void Layer::bp_setup_data(int mini_batch_size) {
 
   // Initialize previous error signals
   for (int i = 0; i < get_num_children(); ++i) {
-    const auto& child = m_child_layers[i];
 
-    // Get previous error signal from child layer
-    auto& bp_input = get_prev_error_signals(i);
-    child->get_bp_output(bp_input, this);
+    const auto& child = m_child_layers[i];
+    child->get_bp_output(get_prev_error_signals(i), this);
+
+    // Check dimensions of previous error signal matrix
     const int expected_height = get_num_neurons(i);
-    if (bp_input.Height() != expected_height
-        || bp_input.Width() != mini_batch_size) {
+    const auto& gradient_wrt_output = get_prev_error_signals(i);
+    if (gradient_wrt_output.Height() != expected_height
+        || gradient_wrt_output.Width() != mini_batch_size) {
       std::stringstream err;
       err << "layer \"" << get_name() << "\" expected a "
           << expected_height << " x " << mini_batch_size
-          << " input matrix from layer \"" << child->get_name() << "\""
+          << " error signal matrix from layer \"" << child->get_name() << "\""
           << " during backward prop, but got a "
-          << bp_input.Height() << " x " << bp_input.Width() << " matrix";
+          << gradient_wrt_output.Height() << " x "
+          << gradient_wrt_output.Width() << " matrix";
       LBANN_ERROR(err.str());
     }
 
+  }
+
+  // Initialize error signals
+  for (int i = 0; i < get_num_parents(); ++i) {
+    auto& error_signals = get_error_signals(i);
+    const auto num_prev_neurons = get_num_prev_neurons(i);
+    if (error_signals.Height() != num_prev_neurons
+        || error_signals.Width() != mini_batch_size) {
+      error_signals.Empty(false); // Reset matrix views (without deallocating memory)
+      error_signals.Resize(num_prev_neurons, mini_batch_size);
+    }
   }
 
   #ifdef LBANN_HAS_CUDNN
