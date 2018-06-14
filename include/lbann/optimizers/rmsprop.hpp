@@ -61,6 +61,10 @@ class rmsprop : public optimizer {
 
   /** Perform the computation in an optimization step. */
   void step_compute(AbsDistMat& values, const AbsDistMat& gradient) override;
+#ifdef LBANN_HAS_CUDNN
+  /** Perform the computation in an optimization step on GPU. */
+  void step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) override;
+#endif // LBANN_HAS_CUDNN
 
  private:
 
