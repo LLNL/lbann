@@ -25,6 +25,7 @@ set_full_path(THIS_DIR_HEADERS
   callback_timer.hpp
   callback_variable_minibatch.hpp
   profiler.hpp
+  callback_gpu_memory_usage.hpp
   )
 
 # Propagate the files up the tree
