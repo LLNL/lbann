@@ -142,8 +142,7 @@ void lbann_comm::intermodel_sum_matrix(AbsDistMat& mat) {
 
 void lbann_comm::allreduce(AbsDistMat& m,
                            const El::mpi::Comm c,
-                           El::mpi::Op op,
-                           std::type_index t) {
+                           El::mpi::Op op) {
   const int local_size = m.LocalHeight() * m.LocalWidth();
   bytes_sent += sizeof(DataType) * local_size;
 #ifdef LBANN_HAS_ALUMINUM
@@ -151,6 +150,18 @@ void lbann_comm::allreduce(AbsDistMat& m,
     throw lbann_exception("Aluminum does not support allreduces on"
                           " non-contiguous matrices");
   }
+  std::type_index t = std::type_index(typeid(::Al::MPIBackend));
+#ifdef LBANN_HAS_GPU
+  if (m.GetLocalDevice() == El::Device::GPU) {
+#ifdef AL_HAS_NCCL
+    // Force GPU matrices to use NCCL.
+    t = std::type_index(typeid(::Al::NCCLBackend));
+#else
+    throw lbann_exception("Allreduce on GPU matrix requires NCCL support in"
+                          " Aluminum");
+#endif  // AL_HAS_NCCL
+  }
+#endif  // LBANN_HAS_GPU
   auto&& comm = get_al_comm(c, t);
   if (t == std::type_index(typeid(::Al::MPIBackend))) {
     ::Al::Allreduce<::Al::MPIBackend>(
@@ -179,8 +190,7 @@ void lbann_comm::allreduce(AbsDistMat& m,
 void lbann_comm::nb_allreduce(AbsDistMat& m,
                               const El::mpi::Comm c,
                               Al::request& req,
-                              El::mpi::Op op,
-                              std::type_index t) {
+                              El::mpi::Op op) {
 #ifdef LBANN_HAS_ALUMINUM
   const int local_size = m.LocalHeight() * m.LocalWidth();
   bytes_sent += sizeof(DataType) * local_size;
@@ -188,6 +198,18 @@ void lbann_comm::nb_allreduce(AbsDistMat& m,
     throw lbann_exception("Aluminum does not support allreduces on"
                           " non-contiguous matrices");
   }
+  std::type_index t = std::type_index(typeid(::Al::MPIBackend));
+#ifdef LBANN_HAS_GPU
+  if (m.GetLocalDevice() == El::Device::GPU) {
+#ifdef AL_HAS_NCCL
+    // Force GPU matrices to use NCCL.
+    t = std::type_index(typeid(::Al::NCCLBackend));
+#else
+    throw lbann_exception("Allreduce on GPU matrix requires NCCL support in"
+                          " Aluminum");
+#endif  // AL_HAS_NCCL
+  }
+#endif  // LBANN_HAS_GPU
   auto&& comm = get_al_comm(c, t);
   if (t == std::type_index(typeid(::Al::MPIBackend))) {
     ::Al::NonblockingAllreduce<::Al::MPIBackend>(
