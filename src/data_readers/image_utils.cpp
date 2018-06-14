@@ -36,49 +36,12 @@
   throw lbann_exception(err.str()); \
 }
 
-#define _LBANN_REPLACE_IMREAD_WITH_IMDECODE_
-//------------------------------------------------------------------------------------------------
-#if defined(_LBANN_REPLACE_IMREAD_WITH_IMDECODE_)
-/**
- * _IMGFILE_ is the same as the first argument of cv::imread(), which is the
- * path to the image file in std::string type.
- * _FLAG_ is the sane as the second argument of cv::imread().
- * The return type is cv::Mat same as that of cv::imread().
- */
-#define LBANN_IMREAD(_IMGFILE_, _FLAG_) \
-        lbann::cv_utils::load_decode((_IMGFILE_), (_FLAG_))
-
-/** Same as LBANN_IMREAD but with timing instrumentation
- *  _T1_ and _T2_ should be openmp thread private double type variables.
- *  _T1_ is the accumulated time to load the image file from the filesystem to the memory
- *  _T2_ is the accumulated time to execute cv::imdcode()
- */
-#define LBANN_IMREAD_T(_IMGFILE_, _FLAG_, _T1_, _T2_) \
-        lbann::cv_utils::load_decode((_IMGFILE_), (_FLAG_), (_T1_), (_T2_))
-#else // -----------------------------------------------------------------------------------------
-#include "lbann/utils/timer.hpp"
-#define LBANN_IMREAD(_IMGFILE_, _FLAG_) \
-        cv::imread((_IMGFILE_), (_FLAG_))
-
-/** Same as LBANN_IMREAD but with timing instrumentation
- *  _T1_ should be a openmp thread private double type variable
- *  _T1_ is the accumulated time to load the image file from the filesystem to the memory and decode it.
- *  _T2_ is not really used other than to make the interface consistent. Thus can be anything.
- */
-#define LBANN_IMREAD_T(_IMGFILE_, _FLAG_, _T1_, _T2_) ({\
-        const double t1 = lbann::get_time(); \
-        cv::Mat imgret = cv::imread((_IMGFILE_), (_FLAG_)); \
-        _T1_ += lbann::get_time() - t1; \
-        imgret; })
-#endif // defined(_LBANN_REPLACE_IMREAD_WITH_IMDECODE_)
-//------------------------------------------------------------------------------------------------
-
 
 namespace lbann {
 
 bool image_utils::loadIMG(const std::string& Imagefile, int& Width, int& Height, bool Flip, unsigned char *&Pixels) {
 #ifdef LBANN_HAS_OPENCV
-  cv::Mat image = LBANN_IMREAD(Imagefile, _LBANN_CV_COLOR_);
+  cv::Mat image = cv_utils::lbann_imread(Imagefile, _LBANN_CV_COLOR_);
   if (image.empty()) {
     return false;
   }
@@ -230,7 +193,7 @@ bool image_utils::process_image(cv::Mat& image, int& Width, int& Height, int& Ty
 bool image_utils::load_image(const std::string& filename,
                                     int& Width, int& Height, int& Type, cv_process& pp, std::vector<uint8_t>& buf) {
 #ifdef LBANN_HAS_OPENCV
-  cv::Mat image = LBANN_IMREAD(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+  cv::Mat image = cv_utils::lbann_imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
 
   return process_image(image, Width, Height, Type, pp, buf);
 #else
@@ -266,7 +229,7 @@ bool image_utils::save_image(const std::string& filename,
 bool image_utils::load_image(const std::string& filename,
                                     int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data) {
 #ifdef LBANN_HAS_OPENCV
-  cv::Mat image = LBANN_IMREAD(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+  cv::Mat image = cv_utils::lbann_imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
 
   return process_image(image, Width, Height, Type, pp, data);
 #else
@@ -286,7 +249,7 @@ bool image_utils::load_image(const std::string& filename,
 bool image_utils::load_image(const std::string& filename,
                                     int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<::Mat>& data) {
 #ifdef LBANN_HAS_OPENCV
-  cv::Mat image = LBANN_IMREAD(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+  cv::Mat image = cv_utils::lbann_imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
 
   return process_image(image, Width, Height, Type, pp, data);
 #else
