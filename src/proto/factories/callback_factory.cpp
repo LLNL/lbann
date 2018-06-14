@@ -314,14 +314,8 @@ lbann_callback* construct_callback(lbann_comm* comm,
                                              params.fail_on_error());
   }
 
-  //////////////////////////////////////////////////////////////////
-  // GPU memory profiling
-  //////////////////////////////////////////////////////////////////
-  if (proto_cb.has_gpu_memory_usage()) {
-    return new lbann_callback_gpu_memory_usage();
-  }
-  
   return nullptr;
+
 }
 
 lbann_summary* construct_summarizer(lbann_comm* comm,
