@@ -193,6 +193,12 @@ public:
   virtual cudnnTensorDescriptor_t& get_error_signals(int parent_index = 0) = 0;
 
 protected:
+
+  /** Set number of tensor descriptors corresponding to layer inputs. */
+  void set_num_parents(int num_parents);
+  /** Set number of tensor descriptors corresponding to layer outputs. */
+  void set_num_children(int num_children);
+
   /** Layer being managed. */
   const Layer* m_layer;
   /** cuDNN tensor descriptors for layer inputs. */
