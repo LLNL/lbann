@@ -26,7 +26,10 @@ def skeleton_models(cluster, dir_name, executables, compiler_name):
                 data_filedir_test_default=None
                 data_filename_test_default=None
                 data_reader_path=None
-                if 'mnist' in file_name:
+                if 'motif' in file_name:
+                    print('Skipping %s because motifs are deprecated' % model_path)
+                    continue
+                elif 'mnist' in file_name:
                     data_filedir_default = '/p/lscratchf/brainusr/datasets/MNIST'
                     data_reader_name = 'mnist'
                 elif 'adversarial' in file_name:
