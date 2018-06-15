@@ -44,7 +44,7 @@ if (FALSE AND TARGET Aluminum)
     set(_hydrogen_depends_tag DEPENDS)
     list(APPEND _HYDROGEN_DEPENDS Aluminum)
   endif (Hydrogen_USE_Aluminum)
-endif (TARGET Aluminum)
+endif (FALSE AND TARGET Aluminum)
 
 # Get the list of HYDROGEN variables
 get_property(HYDROGEN_VARIABLES DIRECTORY PROPERTY VARIABLES)

@@ -32,7 +32,6 @@ model {
     name: "1"
     parents: "1"
     children: "2 7"
-    children: ""
     data_layout: "data_parallel"
   }
   #############################################
