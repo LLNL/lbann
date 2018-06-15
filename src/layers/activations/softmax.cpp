@@ -141,6 +141,7 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
 
   // Useful constants
   const DataType one = 1;
+  const DataType zero = 0;
 
   // Matrices
   const auto& local_output = get_local_activations();
@@ -156,7 +157,7 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
                                    local_output.LockedBuffer(),
                                    this->m_prev_error_signals_cudnn_desc,
                                    local_gradient_wrt_output.LockedBuffer(),
-                                   &one,
+                                   &zero,
                                    this->m_error_signals_cudnn_desc,
                                    local_gradient_wrt_input.Buffer()));
 

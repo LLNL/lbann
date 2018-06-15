@@ -139,12 +139,14 @@ class dropout : public regularizer_layer {
     setup_dropout_cudnn_desc();
 
   #ifdef HYDROGEN_HAVE_CUB
-    // Set GPU output matrix to use CUB GPU memory pool
-    // Note: Activation matrix owns data during training and is a
-    // matrix view during evaluation. To avoid expensive GPU memory
-    // allocation and deallocation, we use CUB's GPU memory pool.
+    // Set matrices to use CUB GPU memory pool
+    // Note: Activation matrix and error signal matrix own data during
+    // training and are matrix views during evaluation. To avoid
+    // expensive GPU memory allocation and deallocation, we use CUB's
+    // GPU memory pool.
     if (Dev == El::Device::GPU) {
       get_local_activations().SetMemoryMode(1);
+      get_local_error_signals().SetMemoryMode(1);
     }
   #endif
 
@@ -224,10 +226,9 @@ class dropout : public regularizer_layer {
     auto& gradient_wrt_input = get_error_signals();
     const auto& mode = this->m_model->get_execution_mode();
     if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
-      El::Axpy(DataType(1), gradient_wrt_output, gradient_wrt_input);
+      El::LockedView(gradient_wrt_input, gradient_wrt_output);
     } else {
-      El::Hadamard(gradient_wrt_output, *m_mask, *m_mask);
-      El::Axpy(DataType(1), *m_mask, gradient_wrt_input);
+      El::Hadamard(gradient_wrt_output, *m_mask, gradient_wrt_input);
     }
   }
 
@@ -270,30 +271,19 @@ class dropout : public regularizer_layer {
   #else
     const auto& gradient_wrt_output = get_prev_error_signals();
     auto& gradient_wrt_input = get_error_signals();
-
-    // Copy error signal if dropout is disabled
-    /// @todo This is technically incorrect since it overwrites the error signal
     const auto& mode = this->m_model->get_execution_mode();
     if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
-      El::Axpy(DataType(1), gradient_wrt_output, gradient_wrt_input);
-      /// @todo - Note that a future optimization may switch this to
-      //      use a locked view, but it requires special handling in
-      //      how the gradients are cleared.
-      //      El::LockedView(gradient_wrt_input, gradient_wrt_output);
-      return;
+      El::LockedView(gradient_wrt_input, gradient_wrt_output);
+    } else {
+      CHECK_CUDNN(cudnnDropoutBackward(this->m_cudnn->get_handle(),
+                                       m_dropout_cudnn_desc,
+                                       this->m_prev_error_signals_cudnn_desc,
+                                       gradient_wrt_output.LockedBuffer(),
+                                       this->m_error_signals_cudnn_desc,
+                                       gradient_wrt_input.Buffer(),
+                                       m_reserve_space.Buffer(),
+                                       m_reserve_space.Height() * sizeof(DataType)));
     }
-
-    // Apply dropout backprop on each GPU
-    /// @todo This is technically incorrect since it overwrites the error signal
-    CHECK_CUDNN(cudnnDropoutBackward(this->m_cudnn->get_handle(),
-                                     m_dropout_cudnn_desc,
-                                     this->m_prev_error_signals_cudnn_desc,
-                                     gradient_wrt_output.LockedBuffer(),
-                                     this->m_error_signals_cudnn_desc,
-                                     gradient_wrt_input.Buffer(),
-                                     m_reserve_space.Buffer(),
-                                     m_reserve_space.Height() * sizeof(DataType)));
-
   #endif // LBANN_HAS_CUDNN
   }
 

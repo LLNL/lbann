@@ -188,6 +188,7 @@ class local_response_normalization_layer : public regularizer_layer {
 
     // Useful constants
     const DataType one = 1;
+    const DataType zero = 0;
 
     // Perform back propagation on each GPU
     CHECK_CUDNN(cudnnLRNCrossChannelBackward(this->m_cudnn->get_handle(),
@@ -200,7 +201,7 @@ class local_response_normalization_layer : public regularizer_layer {
                                              get_prev_error_signals().LockedBuffer(),
                                              this->m_prev_activations_cudnn_desc,
                                              get_prev_activations().LockedBuffer(),
-                                             &one,
+                                             &zero,
                                              this->m_error_signals_cudnn_desc,
                                              get_error_signals().Buffer()));
 
@@ -369,11 +370,11 @@ class local_response_normalization_layer : public regularizer_layer {
               = gradient_wrt_input_buffer[index + sample * gradient_wrt_input_ldim];
             if (default_beta) { // Special case when beta = 0.75
               gradient_wrt_input_entry
-                += gradient_wrt_output_entry * std::sqrt(scale_factor * std::sqrt(scale_factor));
+                = gradient_wrt_output_entry * std::sqrt(scale_factor * std::sqrt(scale_factor));
             }
             else {
               gradient_wrt_input_entry
-                += gradient_wrt_output_entry * std::pow(scale_factor, m_lrn_beta);
+                = gradient_wrt_output_entry * std::pow(scale_factor, m_lrn_beta);
             }
           }
 

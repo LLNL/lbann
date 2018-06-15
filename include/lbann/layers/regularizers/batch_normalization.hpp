@@ -690,7 +690,7 @@ class batch_normalization : public regularizer_layer {
           DataType dx = dxhat * inv_stdev;
           dx += dmean_term;
           dx += dvar_term * (x - mean);
-          local_gradient_wrt_input(row, col) += dx;
+          local_gradient_wrt_input(row, col) = dx;
         }
       }
 

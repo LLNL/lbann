@@ -290,6 +290,7 @@ class pooling_layer : public transform_layer {
     LBANN_ERROR("cuDNN not detected");
 #else
     const DataType one = DataType(1);
+    const DataType zero = DataType(0);
     CHECK_CUDNN(cudnnPoolingBackward(this->m_cudnn->get_handle(),
                                      m_pooling_cudnn_desc,
                                      &one,
@@ -299,7 +300,7 @@ class pooling_layer : public transform_layer {
                                      get_prev_error_signals().LockedBuffer(),
                                      this->m_prev_activations_cudnn_desc,
                                      get_prev_activations().LockedBuffer(),
-                                     &one,
+                                     &zero,
                                      this->m_error_signals_cudnn_desc,
                                      get_error_signals().Buffer()));
 #endif // #ifndef LBANN_HAS_CUDNN
@@ -402,14 +403,13 @@ class pooling_layer : public transform_layer {
     auto& local_gradient_wrt_input = get_local_error_signals();
 
     // Pool parameters
-    const int input_size = local_gradient_wrt_input.Height();
     const int local_width = local_gradient_wrt_output.Width();
     const int num_channels = this->m_prev_neuron_dims[0];
     const int num_per_input_channel = this->m_num_neurons / num_channels;
 
     // Initialize matrices
-    DMat<Dev> im2col_mat(m_pool_size * num_channels, num_per_input_channel);
-    DMat<Dev> gradient_wrt_input_col(input_size, 1);
+    CPUMat im2col_mat(m_pool_size * num_channels, num_per_input_channel);
+    CPUMat gradient_wrt_input_col;
 
     // Iterate through data samples
     for(int sample = 0; sample < local_width; ++sample) {
@@ -459,6 +459,8 @@ class pooling_layer : public transform_layer {
       }
 
       // Compute error signal (i.e. gradient w.r.t. input)
+      El::View(gradient_wrt_input_col, local_gradient_wrt_input,
+               El::ALL, El::IR(sample));
       col2im(im2col_mat,
              gradient_wrt_input_col,
              num_channels,
@@ -467,7 +469,6 @@ class pooling_layer : public transform_layer {
              m_pads.data(),
              m_pool_dims.data(),
              m_strides.data());
-      static_cast<DMat<Dev>&>(local_gradient_wrt_input)(El::ALL, El::IR(sample)) += gradient_wrt_input_col;
 
     }
 

@@ -144,6 +144,7 @@ class tanh_layer : public entrywise_activation_layer {
     LBANN_ERROR("cuDNN not detected");
   #else
     const DataType one = 1;
+    const DataType zero = 0;
     CHECK_CUDNN(cudnnActivationBackward(this->m_cudnn->get_handle(),
                                         m_activation_cudnn_desc,
                                         &one,
@@ -153,7 +154,7 @@ class tanh_layer : public entrywise_activation_layer {
                                         get_prev_error_signals().LockedBuffer(),
                                         this->m_prev_activations_cudnn_desc,
                                         get_prev_activations().LockedBuffer(),
-                                        &one,
+                                        &zero,
                                         this->m_error_signals_cudnn_desc,
                                         get_error_signals().Buffer()));
   #endif // LBANN_HAS_CUDNN

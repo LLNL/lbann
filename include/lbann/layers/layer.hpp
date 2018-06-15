@@ -452,8 +452,10 @@ class Layer {
 
   /** Perform the computation for the forward propagation step. */
   virtual void fp_compute() = 0;
-  /** Perform the computation for the backward propagation step. */
-  virtual void bp_compute() = 0;
+  /** Perform the computation for the backward propagation step.
+   *  The base implementation sets all error signals to zero.
+   */
+  virtual void bp_compute();
   /** Perform the computation for the update step.
    *  Returns false if the layer must reset for a new training epoch.
    */

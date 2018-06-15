@@ -715,6 +715,12 @@ void Layer::setup_gpu() {
 #endif // LBANN_HAS_CUDNN
 }
 
+void Layer::bp_compute() {
+  for (int i = 0; i < get_num_parents(); ++i) {
+    El::Zero(get_error_signals(i));
+  }
+}
+
 void Layer::check_setup() {
   std::stringstream err;
 

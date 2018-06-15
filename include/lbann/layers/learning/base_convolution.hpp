@@ -337,6 +337,7 @@ class base_convolution_layer : public learning_layer {
 
     // Useful constants
     const DataType one = 1;
+    const DataType zero = 0;
 
     // Matrices
     const auto& kernel = m_weights[0]->get_values();
@@ -357,15 +358,12 @@ class base_convolution_layer : public learning_layer {
     const size_t workspace_size = workspace.Height() * sizeof(DataType);
 
     // Convolution parameters
-    DataType mixing_factor;
     cudnnTensorDescriptor_t input_cudnn_desc, output_cudnn_desc;
     if (during_forward_prop) {
-      mixing_factor = DataType(0);
       input_cudnn_desc = this->m_prev_activations_cudnn_desc;
       output_cudnn_desc = this->m_activations_cudnn_desc;
     }
     else {
-      mixing_factor = DataType(1);
       input_cudnn_desc = this->m_prev_error_signals_cudnn_desc;
       output_cudnn_desc = this->m_error_signals_cudnn_desc;
     }
@@ -394,7 +392,7 @@ class base_convolution_layer : public learning_layer {
                                         convolution_cudnn_algorithm,
                                         workspace.Buffer(),
                                         workspace_size,
-                                        &mixing_factor,
+                                        &zero,
                                         output_cudnn_desc,
                                         output.Buffer()));
 
@@ -410,6 +408,7 @@ class base_convolution_layer : public learning_layer {
 
     // Useful constants
     const DataType one = 1;
+    const DataType zero = 0;
 
     // GPU data
     const auto& kernel = m_weights[0]->get_values();
@@ -430,15 +429,12 @@ class base_convolution_layer : public learning_layer {
     const size_t workspace_size = workspace.Height() * sizeof(DataType);
 
     // Convolution transpose parameters
-    DataType mixing_factor;
     cudnnTensorDescriptor_t input_cudnn_desc, output_cudnn_desc;
     if (during_forward_prop) {
-      mixing_factor = DataType(0);
       input_cudnn_desc = this->m_prev_activations_cudnn_desc;
       output_cudnn_desc = this->m_activations_cudnn_desc;
     }
     else {
-      mixing_factor = DataType(1);
       input_cudnn_desc = this->m_prev_error_signals_cudnn_desc;
       output_cudnn_desc = this->m_error_signals_cudnn_desc;
     }
@@ -467,7 +463,7 @@ class base_convolution_layer : public learning_layer {
                                              transposed_convolution_cudnn_algorithm,
                                              workspace.Buffer(),
                                              workspace_size,
-                                             &mixing_factor,
+                                             &zero,
                                              output_cudnn_desc,
                                              output.Buffer()));
 
@@ -610,15 +606,12 @@ class base_convolution_layer : public learning_layer {
     // Matrix parameters
     const int output_size = local_output.Height();
     const El::Int local_width = local_input.Width();
-    DataType mixing_factor;
     std::vector<int> input_dims, output_dims;
     if (during_forward_prop) {
-      mixing_factor = DataType(0);
       input_dims = this->m_prev_neuron_dims;
       output_dims = this->m_neuron_dims;
     }
     else {
-      mixing_factor = DataType(1);
       input_dims = this->m_neuron_dims;
       output_dims = this->m_prev_neuron_dims;
     }
@@ -649,7 +642,7 @@ class base_convolution_layer : public learning_layer {
       output_col.Attach(m, n, local_output.Buffer(0, col), m);
       El::Gemm(El::TRANSPOSE, El::NORMAL,
                DataType(1), im2col_matrix, kernel_matrix,
-               mixing_factor, output_col);
+               DataType(0), output_col);
 
     }
 
@@ -669,7 +662,6 @@ class base_convolution_layer : public learning_layer {
 
     // Matrix parameters
     const int input_size = local_input.Height();
-    const int output_size = local_output.Height();
     const El::Int local_width = local_input.Width();
     std::vector<int> input_dims, output_dims;
     if (during_forward_prop) {
@@ -700,11 +692,7 @@ class base_convolution_layer : public learning_layer {
 
       // Perform col2im to accumulate contributions from each kernel
       // position
-      if (during_forward_prop) {
-        El::View(output_col, local_output, El::ALL, El::IR(col));
-      } else {
-        output_col.Resize(output_size, 1);
-      }
+      El::View(output_col, local_output, El::ALL, El::IR(col));
       col2im(im2col_matrix,
              output_col,
              output_dims[0],
@@ -713,9 +701,6 @@ class base_convolution_layer : public learning_layer {
              m_pads.data(),
              &m_kernel_dims[2],
              m_strides.data());
-      if (!during_forward_prop) {
-        local_output(El::ALL, El::IR(col)) += output_col;
-      }
 
     }
 

@@ -107,8 +107,6 @@ class constant_layer : public transform_layer {
 
   }
 
-  void bp_compute() override {}
-
  private:
 
   /** Constant value. */
