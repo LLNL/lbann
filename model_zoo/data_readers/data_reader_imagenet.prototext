@@ -19,8 +19,8 @@ data_reader {
 
       cropper {
         disable: false
-        crop_width: 227
-        crop_height: 227
+        crop_width: 224
+        crop_height: 224
         crop_randomly: true
         resized_width: 256
         resized_height: 256
@@ -69,8 +69,8 @@ data_reader {
 
       cropper {
         disable: false
-        crop_width: 227
-        crop_height: 227
+        crop_width: 224
+        crop_height: 224
         crop_randomly: false
         resized_width: 256
         resized_height: 256
