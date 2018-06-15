@@ -51,18 +51,20 @@ def skeleton_models(cluster, dir_name, executables, compiler_name):
                     data_filedir_train_default = '/p/lscratche/brainusr/datasets/ILSVRC2012/original/train/'
                     data_filename_train_default = '/p/lscratche/brainusr/datasets/ILSVRC2012/labels/train.txt'
                     data_filedir_test_default = '/p/lscratche/brainusr/datasets/ILSVRC2012/original/val/'
-                    data_filename_test_default = '/p/lscratche/brainusr/datasets/ILSVRC2012/original/labels/val.txt'
+                    data_filename_test_default = '/p/lscratche/brainusr/datasets/ILSVRC2012/labels/val.txt'
                     data_reader_path = '%s/model_zoo/models/siamese/siamese_alexnet/data_reader_imagenet_patches.prototext' % (dir_name)
                     data_reader_name = None
                 elif 'net' in file_name:
                     data_filedir_train_default = '/p/lscratche/brainusr/datasets/ILSVRC2012/original/train/'
                     data_filename_train_default = '/p/lscratche/brainusr/datasets/ILSVRC2012/labels/train.txt'
                     data_filedir_test_default = '/p/lscratche/brainusr/datasets/ILSVRC2012/original/val/'
-                    data_filename_test_default = '/p/lscratche/brainusr/datasets/ILSVRC2012/original/labels/val.txt'
+                    data_filename_test_default = '/p/lscratche/brainusr/datasets/ILSVRC2012/labels/val.txt'
                     data_reader_name = 'imagenet'
                     node_count = 2
                     if(cluster == 'ray'):
-                        time_limit=3
+                        time_limit = 3
+                    if 'resnet50' in file_name:
+                        node_count = 8
                 elif 'cifar' in file_name:
                     data_filename_train_default = '/p/lscratchf/brainusr/datasets/cifar10-bin/data_all.bin'
                     data_filename_test_default = '/p/lscratchf/brainusr/datasets/cifar10-bin/test_batch.bin'
@@ -75,8 +77,8 @@ def skeleton_models(cluster, dir_name, executables, compiler_name):
                     continue
                 if (cluster == 'ray') and (data_reader_name in ['cifar10', 'ascii']):
                     print('Skipping %s because data is not available on ray' % model_path)
-                elif (cluster == 'ray') and ('conv_autoencoder_imagenet' in file_name):
-                    print('Skipping %s because unpooling is not implemented on gpu' % model_path)
+                elif (cluster == 'ray') or (cluster == 'pascal')  and ('conv_autoencoder' in file_name) or ('gan' in subdir):
+                    print('Skipping %s because unpooling/noise is not implemented on gpu' % model_path)
                 else:
                     output_file_name = '%s/bamboo/unit_tests/output/check_proto_models_%s_%s_output.txt' % (dir_name, file_name, compiler_name)
                     error_file_name = '%s/bamboo/unit_tests/error/check_proto_models_%s_%s_error.txt' % (dir_name, file_name, compiler_name)
@@ -106,12 +108,10 @@ def skeleton_models(cluster, dir_name, executables, compiler_name):
     assert num_defective == 0
 
 def test_unit_models_clang4(cluster, dirname, exes):
-    if cluster in ['quartz']:
-        pytest.skip('FIXME')
     skeleton_models(cluster, dirname, exes, 'clang4')
 
 def test_unit_models_gcc4(cluster, dirname, exes):
-    if cluster in ['quartz', 'surface']:
+    if cluster in ['surface']:
         pytest.skip('FIXME')
         # Surface Errors:
         # assert 8 == 0
