@@ -25,6 +25,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/activations/softmax.hpp"
+#ifdef LBANN_HAS_CUDNN
+#include "lbann/utils/cublas_wrapper.hpp"
+#endif  // LBANN_HAS_CUDNN
 
 namespace lbann {
 
@@ -75,12 +78,91 @@ void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_compute() {
 #ifdef LBANN_HAS_GPU
 template <>
 void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
-  throw new lbann_exception("Unimplemented method");
+#ifndef LBANN_HAS_CUDNN
+  LBANN_ERROR("cuDNN not detected");
+#else
+  // Local matrices.
+  const auto& local_input = get_local_prev_activations();
+  auto& local_output = get_local_activations();
+  auto& local_workspace = m_workspace->Matrix();
+
+  const El::Int local_height = local_input.Height();
+  const El::Int local_width = local_input.Width();
+
+  // Find the maximum entry in each local column.
+  if (local_height == 0) {
+    // When there's no local data, fill the workspace with a small value so the
+    // maximum across processors is still computed correctly.
+    El::Fill(local_workspace, std::numeric_limits<DataType>::lowest());
+  } else {
+    softmax_cuda::max_local_col_entry(
+      local_height, local_width, local_input.LockedBuffer(),
+      local_input.LDim(), local_workspace.Buffer(), El::GPUManager::Stream());
+  }
+  // Find the global max entry in each column.
+  m_comm->allreduce(*m_workspace, m_workspace->RedundantComm(), El::mpi::MAX,
+                    std::type_index(typeid(Al::nccl_backend)));
+
+  // Exponentiate activations and compute column sums.
+  // This subtracts by the column max for stability.
+  if (local_height == 0) {
+    // Zero out so that we contribute nothing to the sum.
+    El::Zero(local_workspace);
+  } else {
+    softmax_cuda::exp_and_col_sum(
+      local_height, local_width, local_input.LockedBuffer(),
+      local_input.LDim(), local_output.Buffer(), local_output.LDim(),
+      local_workspace.Buffer(), El::GPUManager::Stream());
+  }
+  // Compute the global sums for each column.
+  m_comm->allreduce(*m_workspace, m_workspace->RedundantComm(), El::mpi::SUM,
+                    std::type_index(typeid(Al::nccl_backend)));
+
+  // Divide activations by the column sums.
+  // This rounds small values to avoid denormalization.
+  softmax_cuda::div_by_col_sums_and_cutoff(
+    local_height, local_width, local_output.Buffer(),
+    local_output.LDim(), local_workspace.LockedBuffer(), m_min_output,
+    El::GPUManager::Stream());
+#endif  // LBANN_HAS_CUDNN
 }
 
 template <>
 void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
-  throw new lbann_exception("Unimplemented method");
+#ifndef LBANN_HAS_CUDNN
+  LBANN_ERROR("cuDNN not detected");
+#else
+  // Local matrices.
+  const auto& local_output = get_local_activations();
+  const auto& local_grad_wrt_output = get_local_prev_error_signals();
+  auto& local_grad_wrt_input = get_local_error_signals();
+  auto& local_workspace = m_workspace->Matrix();
+
+  const El::Int local_height = local_output.Height();
+  const El::Int local_width = local_output.Width();
+
+  // Compute dot products between output and gradient w.r.t. output.
+  auto&& handle = El::GPUManager::cuBLASHandle();
+  CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE));
+  for (El::Int col = 0; col < local_width; ++col) {
+    cublas::dot(handle, local_height,
+                local_output.LockedBuffer(0, col), 1,
+                local_grad_wrt_output.LockedBuffer(0, col), 1,
+                local_workspace.Buffer(0, col));
+  }
+  CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_HOST));
+  m_comm->allreduce(*m_workspace, m_workspace->RedundantComm(), El::mpi::SUM,
+                    std::type_index(typeid(Al::nccl_backend)));
+
+  // Compute gradient w.r.t. input.
+  // Applies a cutoff if needed to avoid denormalized floats.
+  softmax_cuda::grad_wrt_input_and_cutoff(
+    local_height, local_width, local_output.LockedBuffer(),
+    local_output.LDim(), local_workspace.LockedBuffer(),
+    local_grad_wrt_output.LockedBuffer(), local_grad_wrt_output.LDim(),
+    local_grad_wrt_input.Buffer(), local_grad_wrt_input.LDim(),
+    m_min_output, El::GPUManager::Stream());
+#endif  // LBANN_HAS_CUDNN
 }
 #endif // LBANN_HAS_GPU
 
