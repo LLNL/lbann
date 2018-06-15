@@ -122,26 +122,40 @@ class softmax_layer : public activation_layer {
    */
   DataType m_min_output;
 
+#ifdef LBANN_HAS_CUDNN
+  /** Tensor cuDNN descriptors. */
+  cudnn::data_parallel_layer_tensor_manager m_tensors_cudnn_desc;
+#endif // LBANN_HAS_CUDNN
+
  public:
 
   softmax_layer(lbann_comm *comm,
                 cudnn::cudnn_manager *cudnn=nullptr)
     : activation_layer(comm),
       m_workspace(nullptr),
-      m_min_output(std::sqrt(std::numeric_limits<DataType>::min())) {
+      m_min_output(std::sqrt(std::numeric_limits<DataType>::min()))
+#ifdef LBANN_HAS_CUDNN
+    , m_tensors_cudnn_desc(this)
+#endif // LBANN_HAS_CUDNN
+  {
     this->m_cudnn = cudnn;
   }
 
   softmax_layer(const softmax_layer& other)
     : activation_layer(other),
-      m_min_output(other.m_min_output) {
+      m_min_output(other.m_min_output)
+#ifdef LBANN_HAS_CUDNN
+    , m_tensors_cudnn_desc(other.m_tensors_cudnn_desc)
+#endif // LBANN_HAS_CUDNN
+  {
 
     // Matrix deep copy
     m_workspace = other.m_workspace;
     if (m_workspace != nullptr) { m_workspace = m_workspace->Copy(); }
 
-    // Copy GPU objects
-    this->m_cudnn = other.m_cudnn;
+#ifdef LBANN_HAS_CUDNN
+    m_tensors_cudnn_desc.set_layer(this);
+#endif // LBANN_HAS_CUDNN
 
   }
 
@@ -154,13 +168,15 @@ class softmax_layer : public activation_layer {
     m_workspace = other.m_workspace;
     if (m_workspace != nullptr) { m_workspace = m_workspace->Copy(); }
 
-    // Copy GPU objects
-    this->m_cudnn = other.m_cudnn;
-    this->m_using_gpus = other.m_using_gpus;
+#ifdef LBANN_HAS_CUDNN
+    // Copy cuDNN objects
+    m_tensors_cudnn_desc = other.m_tensors_cudnn_desc;
+    m_tensors_cudnn_desc.set_layer(this);
+#endif // LBANN_HAS_CUDNN
 
   }
 
-  ~softmax_layer() override {
+  ~softmax_layer() {
     if (m_workspace != nullptr) { delete m_workspace; }
   }
 

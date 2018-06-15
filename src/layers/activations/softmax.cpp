@@ -100,8 +100,7 @@ void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
       local_input.LDim(), local_workspace.Buffer(), El::GPUManager::Stream());
   }
   // Find the global max entry in each column.
-  m_comm->allreduce(*m_workspace, m_workspace->RedundantComm(), El::mpi::MAX,
-                    std::type_index(typeid(Al::nccl_backend)));
+  m_comm->allreduce(*m_workspace, m_workspace->RedundantComm(), El::mpi::MAX);
 
   // Exponentiate activations and compute column sums.
   // This subtracts by the column max for stability.
@@ -115,8 +114,7 @@ void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
       local_workspace.Buffer(), El::GPUManager::Stream());
   }
   // Compute the global sums for each column.
-  m_comm->allreduce(*m_workspace, m_workspace->RedundantComm(), El::mpi::SUM,
-                    std::type_index(typeid(Al::nccl_backend)));
+  m_comm->allreduce(*m_workspace, m_workspace->RedundantComm(), El::mpi::SUM);
 
   // Divide activations by the column sums.
   // This rounds small values to avoid denormalization.
@@ -151,8 +149,7 @@ void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
                 local_workspace.Buffer(0, col));
   }
   CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_HOST));
-  m_comm->allreduce(*m_workspace, m_workspace->RedundantComm(), El::mpi::SUM,
-                    std::type_index(typeid(Al::nccl_backend)));
+  m_comm->allreduce(*m_workspace, m_workspace->RedundantComm(), El::mpi::SUM);
 
   // Compute gradient w.r.t. input.
   // Applies a cutoff if needed to avoid denormalized floats.
@@ -182,36 +179,36 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
 #ifndef LBANN_HAS_CUDNN
   LBANN_ERROR("cuDNN not detected");
 #else
-
-  // Useful constants
-  const DataType one = 1;
-  const DataType zero = 0;
-
-  // Matrices
   const auto& local_input = get_local_prev_activations();
   auto& local_output = get_local_activations();
+  if (local_input.Height() > 0 && local_input.Width() > 0) {
 
-  // Apply softmax on the GPU
-  CHECK_CUDNN(cudnnSoftmaxForward(this->m_cudnn->get_handle(),
-                                  CUDNN_SOFTMAX_ACCURATE,
-                                  CUDNN_SOFTMAX_MODE_INSTANCE,
-                                  &one,
-                                  this->m_prev_activations_cudnn_desc,
-                                  local_input.LockedBuffer(),
-                                  &zero,
-                                  this->m_activations_cudnn_desc,
-                                  local_output.Buffer()));
+    // Useful constants
+    const DataType zero = DataType(0);
+    const DataType one = DataType(1);
+
+    // Apply softmax
+    CHECK_CUDNN(cudnnSoftmaxForward(this->m_cudnn->get_handle(),
+                                    CUDNN_SOFTMAX_ACCURATE,
+                                    CUDNN_SOFTMAX_MODE_INSTANCE,
+                                    &one,
+                                    m_tensors_cudnn_desc.get_prev_activations(),
+                                    local_input.LockedBuffer(),
+                                    &zero,
+                                    m_tensors_cudnn_desc.get_activations(),
+                                    local_output.Buffer()));
 
 #ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
-  // Round to minimum value to avoid denormalized floats
-  softmax_cuda::fp_cutoff(local_output.Height(),
-                          local_output.Width(),
-                          local_output.Buffer(),
-                          local_output.LDim(),
-                          m_min_output,
-                          El::GPUManager::Stream());
+    // Round to minimum value to avoid denormalized floats
+    softmax_cuda::fp_cutoff(local_output.Height(),
+                            local_output.Width(),
+                            local_output.Buffer(),
+                            local_output.LDim(),
+                            m_min_output,
+                            El::GPUManager::Stream());
 #endif // LBANN_ENABLE_SOFTMAX_CUTOFF
 
+  }
 #endif // LBANN_HAS_CUDNN
 }
 
@@ -220,40 +217,40 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
 #ifndef LBANN_HAS_CUDNN
   LBANN_ERROR("cuDNN not detected");
 #else
-
-  // Useful constants
-  const DataType one = 1;
-
-  // Matrices
   const auto& local_output = get_local_activations();
   const auto& local_gradient_wrt_output = get_local_prev_error_signals();
   auto& local_gradient_wrt_input = get_local_error_signals();
+  if (local_output.Height() > 0 && local_output.Width() > 0) {
 
-  // Apply softmax on each GPU
-  CHECK_CUDNN(cudnnSoftmaxBackward(this->m_cudnn->get_handle(),
-                                   CUDNN_SOFTMAX_ACCURATE,
-                                   CUDNN_SOFTMAX_MODE_INSTANCE,
-                                   &one,
-                                   this->m_activations_cudnn_desc,
-                                   local_output.LockedBuffer(),
-                                   this->m_prev_error_signals_cudnn_desc,
-                                   local_gradient_wrt_output.LockedBuffer(),
-                                   &one,
-                                   this->m_error_signals_cudnn_desc,
-                                   local_gradient_wrt_input.Buffer()));
+      // Useful constants
+      const DataType one = 1;
+    
+      // Perform backprop
+      CHECK_CUDNN(cudnnSoftmaxBackward(this->m_cudnn->get_handle(),
+                                       CUDNN_SOFTMAX_ACCURATE,
+                                       CUDNN_SOFTMAX_MODE_INSTANCE,
+                                       &one,
+                                       m_tensors_cudnn_desc.get_activations(),
+                                       local_output.LockedBuffer(),
+                                       m_tensors_cudnn_desc.get_prev_error_signals(),
+                                       local_gradient_wrt_output.LockedBuffer(),
+                                       &one,
+                                       m_tensors_cudnn_desc.get_error_signals(),
+                                       local_gradient_wrt_input.Buffer()));
 
 #ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
-  // Round to minimum value to avoid denormalized floats
-  softmax_cuda::bp_cutoff(local_output.Height(),
-                          local_output.Width(),
-                          local_output.LockedBuffer(),
-                          local_output.LDim(),
-                          local_gradient_wrt_input.Buffer(),
-                          local_gradient_wrt_input.LDim(),
-                          m_min_output,
-                          El::GPUManager::Stream());
+      // Round to minimum value to avoid denormalized floats
+      softmax_cuda::bp_cutoff(local_output.Height(),
+                              local_output.Width(),
+                              local_output.LockedBuffer(),
+                              local_output.LDim(),
+                              local_gradient_wrt_input.Buffer(),
+                              local_gradient_wrt_input.LDim(),
+                              m_min_output,
+                              El::GPUManager::Stream());
 #endif // LBANN_ENABLE_SOFTMAX_CUTOFF
 
+  }
 #endif // LBANN_HAS_CUDNN
 }
 #endif // LBANN_HAS_GPU

@@ -32,14 +32,17 @@
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/weights/initializer.hpp"
 #include "lbann/io/persist.hpp"
 #include <lbann.pb.h>
 namespace lbann {
 
 // Forward declaration
+class weights_initializer;
 class optimizer;
+namespace cudnn {
+class cudnn_manager;
+} // namespace cudnn
 
 /** Neural network weights.
  *  Weights are tensors that act as trainable parameters for a neural
