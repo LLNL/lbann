@@ -63,7 +63,48 @@ void bp_cutoff(int height, int width,
                int gradient_wrt_input_leading_dim,
                DataType cutoff,
                cudaStream_t stream);
-} // namespace softmax
+/** Compute the maximum entry in input for each column.
+ * Data is assumed to be on the GPU.
+ */
+void max_local_col_entry(int height, int width,
+                         const DataType * __restrict__ input,
+                         int input_ldim,
+                         DataType * __restrict__ workspace,
+                         cudaStream_t stream);
+/** Exponentiate the (shifted) input, and compute its sum.
+ * Data is assumed to be on the GPU.
+ */
+void exp_and_col_sum(int height, int width,
+                     const DataType * __restrict__ input,
+                     int intput_ldim,
+                     DataType * __restrict__ output,
+                     int output_ldim,
+                     DataType * __restrict__ workspace,
+                     cudaStream_t stream);
+/** Divide each entry in a column by the pre-computed sum of the column.
+ * Apply a minimum cutoff to the entries if needed.
+ * Data is assumed to be on the GPU.
+ */
+void div_by_col_sums_and_cutoff(int height, int width,
+                                DataType * __restrict__ output,
+                                int output_ldim,
+                                const DataType * __restrict__ workspace,
+                                const DataType cutoff,
+                                cudaStream_t stream);
+/** Compute the gradient w.r.t. the input and apply a cutoff if needed.
+ * Data is assumed to be on the GPU.
+ */
+void grad_wrt_input_and_cutoff(int height, int width,
+                               const DataType * __restrict__ output,
+                               int output_ldim,
+                               const DataType * __restrict__ workspace,
+                               const DataType * __restrict__ grad_wrt_output,
+                               int grad_wrt_output_ldim,
+                               DataType * __restrict__ grad_wrt_input,
+                               int grad_wrt_input_ldim,
+                               const DataType cutoff,
+                               cudaStream_t stream);
+}  // namespace softmax_cuda
 #endif // LBANN_HAS_CUDNN
 
 /** Softmax layer. */
@@ -179,13 +220,19 @@ class softmax_layer : public activation_layer {
     const El::Int local_width = local_input.Width();
 
     // Find maximum entry in each column
-    #pragma omp parallel for
-    for(El::Int col = 0; col < local_width; ++col) {
-      DataType max_entry = local_input(0, col);
-      for(El::Int row = 1; row < local_height; ++row) {
-        max_entry = std::max(max_entry, local_input(row, col));
+    if (local_height == 0) {
+      // When there's no local data, fill the workspace with a small value so
+      // the maximum across processors is still computed correctly.
+      El::Fill(local_workspace, std::numeric_limits<DataType>::lowest());
+    } else {
+      #pragma omp parallel for
+      for (El::Int col = 0; col < local_width; ++col) {
+        DataType max_entry = local_input(0, col);
+        for (El::Int row = 1; row < local_height; ++row) {
+          max_entry = std::max(max_entry, local_input(row, col));
+        }
+        local_workspace(0, col) = max_entry;
       }
-      local_workspace(0, col) = max_entry;
     }
     m_comm->allreduce(*m_workspace, m_workspace->RedundantComm(),
                       El::mpi::MAX);

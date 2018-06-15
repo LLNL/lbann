@@ -143,7 +143,7 @@ class cudnn_manager {
 #ifdef LBANN_HAS_CUDNN
 
  public:
-  cudnn_manager(size_t workspace_size = 1 << 9);
+  cudnn_manager(size_t workspace_size = 1 << 30);
   ~cudnn_manager();
 
   /** Get cuDNN handle.

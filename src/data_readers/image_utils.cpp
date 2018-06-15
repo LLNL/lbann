@@ -36,11 +36,12 @@
   throw lbann_exception(err.str()); \
 }
 
+
 namespace lbann {
 
 bool image_utils::loadIMG(const std::string& Imagefile, int& Width, int& Height, bool Flip, unsigned char *&Pixels) {
 #ifdef LBANN_HAS_OPENCV
-  cv::Mat image = cv::imread(Imagefile, _LBANN_CV_COLOR_);
+  cv::Mat image = cv_utils::lbann_imread(Imagefile, _LBANN_CV_COLOR_);
   if (image.empty()) {
     return false;
   }
@@ -192,7 +193,7 @@ bool image_utils::process_image(cv::Mat& image, int& Width, int& Height, int& Ty
 bool image_utils::load_image(const std::string& filename,
                                     int& Width, int& Height, int& Type, cv_process& pp, std::vector<uint8_t>& buf) {
 #ifdef LBANN_HAS_OPENCV
-  cv::Mat image = cv::imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+  cv::Mat image = cv_utils::lbann_imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
 
   return process_image(image, Width, Height, Type, pp, buf);
 #else
@@ -228,7 +229,7 @@ bool image_utils::save_image(const std::string& filename,
 bool image_utils::load_image(const std::string& filename,
                                     int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data) {
 #ifdef LBANN_HAS_OPENCV
-  cv::Mat image = cv::imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+  cv::Mat image = cv_utils::lbann_imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
 
   return process_image(image, Width, Height, Type, pp, data);
 #else
@@ -248,7 +249,7 @@ bool image_utils::load_image(const std::string& filename,
 bool image_utils::load_image(const std::string& filename,
                                     int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<::Mat>& data) {
 #ifdef LBANN_HAS_OPENCV
-  cv::Mat image = cv::imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+  cv::Mat image = cv_utils::lbann_imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
 
   return process_image(image, Width, Height, Type, pp, data);
 #else

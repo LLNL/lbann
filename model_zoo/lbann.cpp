@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
     // Check for cudnn, with user feedback
     cudnn::cudnn_manager *cudnn = nullptr;
 #ifdef LBANN_HAS_CUDNN
-    const size_t workspace_size = 1 << 9; // 1 GB
+    const size_t workspace_size = 1 << 30; // 1 GB
     if (! pb_model->disable_cuda()) {
       if (master) {
         std::cerr << "code was compiled with LBANN_HAS_CUDNN, and we are using cudnn\n";
