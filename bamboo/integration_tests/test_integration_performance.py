@@ -122,11 +122,6 @@ def skeleton_performance_full_alexnet(cluster, dir_name, executables, compiler_n
   run_tests(actual_performance, model_name, dirname, should_log, compiler_name, cluster)
 
 def test_integration_performance_lenet_mnist_clang4(cluster, dirname, exes):
-  if cluster in ['catalyst', 'quartz']:
-    pytest.skip('FIXME')
-    # Catalyst Errors:
-    # 0.104416 > 0.090000 lenet_mnist Model 0 Epoch 0 training_max
-    # 98.770000 < 98.960000 lenet_mnist Model 0 Epoch overall test_accuracy
   skeleton_performance_lenet_mnist(cluster, dirname, exes, 'clang4')
     
 def test_integration_performance_alexnet_clang4(cluster, dirname, exes, weekly):
@@ -136,41 +131,18 @@ def test_integration_performance_full_alexnet_clang4(cluster, dirname, exes, wee
   skeleton_performance_full_alexnet(cluster, dirname, exes, 'clang4', weekly)
                                         
 def test_integration_performance_lenet_mnist_gcc4(cluster, dirname, exes):
-  if cluster in ['catalyst', 'quartz', 'surface']:
-    pytest.skip('FIXME')
-    # Catalyst Errors:
-    # 15.634300 > 15.610000 lenet_mnist Model 0 Epoch 3 training_run_time
-    # 15.655200 > 15.610000 lenet_mnist Model 0 Epoch 4 training_run_time
-    # 98.770000 < 98.960000 lenet_mnist Model 0 Epoch overall test_accuracy
-    # Surface Errors:
-    # [surface145:mpi_rank_0][error_sighandler] Caught error: Segmentation fault (signal 11)
-    # srun: error: surface145: task 0: Segmentation fault (core dumped)
   skeleton_performance_lenet_mnist(cluster, dirname, exes, 'gcc4')
 
 def test_integration_performance_alexnet_gcc4(cluster, dirname, exes, weekly):
-  if cluster in ['surface']:
-    pytest.skip('FIXME')
-    # Surface Errors:
-    # [surface59:mpi_rank_0][error_sighandler] Caught error: Segmentation fault (signal 11)
-    # srun: error: surface59: task 0: Segmentation fault (core dumped)
   skeleton_performance_alexnet(cluster, dirname, exes, 'gcc4', weekly)
 
 def test_integration_performance_full_alexnet_gcc4(cluster, dirname, exes, weekly):
   skeleton_performance_full_alexnet(cluster, dirname, exes, 'gcc4', weekly)
 
 def test_integration_performance_lenet_mnist_gcc7(cluster, dirname, exes):
-  if cluster in ['catalyst', 'quartz']:
-    pytest.skip('FIXME')
-    # Catalyst Errors:
-    # 15.522700 > 15.510000 lenet_mnist Model 0 Epoch 4 training_run_time
-    # 98.950000 < 99.000000 lenet_mnist Model 0 Epoch overall test_accuracy
   skeleton_performance_lenet_mnist(cluster, dirname, exes, 'gcc7')
 
 def test_integration_performance_alexnet_gcc7(cluster, dirname, exes, weekly):
-  if cluster in ['catalyst', 'quartz']:
-    pytest.skip('FIXME')
-    # Catalyst Errors:
-    # 0.546884 > 0.510000 alexnet Model 0 Epoch 17 training_stdev
   skeleton_performance_alexnet(cluster, dirname, exes, 'gcc7', weekly)
 
 def test_integration_performance_full_alexnet_gcc7(cluster, dirname, exes, weekly):
