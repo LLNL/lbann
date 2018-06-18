@@ -244,7 +244,6 @@ message ObjectiveFunction {
   repeated L1WeightRegularization l1_weight_regularization = 20;
   repeated L2WeightRegularization l2_weight_regularization = 21;
   repeated GroupLassoWeightRegularization group_lasso_weight_regularization = 22;
-  repeated KLDivergence kl_divergence = 23;
   repeated LayerTerm layer_term = 25;
 }
 
@@ -295,11 +294,6 @@ message L2WeightRegularization {
 
 message GroupLassoWeightRegularization {
   double scale_factor = 1;
-}
-
-message KLDivergence {
-  string layer1 = 1;
-  string layer2 = 2;
 }
 
 message LayerTerm {

@@ -56,4 +56,4 @@ class layer_term : public objective_function_term {
 
 } // namespace lbann
 
-#endif // LBANN_OBJECTIVE_FUNCTION_WEIGHT_REGULARIZATION_KL_DIVERGENCE_HPP_INCLUDED
+#endif // LBANN_OBJECTIVE_FUNCTION_LAYER_TERM_HPP_INCLUDED
