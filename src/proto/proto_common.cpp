@@ -283,8 +283,11 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
     if (readme.role() == "train") {
       data_readers[execution_mode::training] = reader;
     } else if (readme.role() == "test") {
+      // While the default validation_percent is 0.0, this line is added to be consistent with the case of "train"
+      reader->set_validation_percent( 0. );
       data_readers[execution_mode::testing] = reader;
     } else if (readme.role() == "validate") {
+      reader->set_validation_percent( 0. );
       data_readers[execution_mode::validation] = reader;
     }
 
@@ -356,6 +359,20 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
 
       data_readers[execution_mode::validation] = reader_validation;
     }
+  }
+
+  if (master) {
+    if (separate_validation) {
+      const generic_data_reader* r_train = data_readers[execution_mode::training];
+      const generic_data_reader* r_validate = data_readers[execution_mode::validation];
+      const size_t num_train = (r_train == nullptr)? 0u : r_train->get_num_data();
+      const size_t num_validate = (r_validate == nullptr)? 0u : r_validate->get_num_data();
+      std::cout << "Training using " << num_train << " samples." << std::endl
+                << "Validating using " << num_validate << " samples." << std::endl;
+    }
+    const generic_data_reader* r_test = data_readers[execution_mode::testing];
+    const size_t num_test = (r_test == nullptr)? 0u : r_test->get_num_data();
+    std::cout << "Testing using " << num_test << " samples." << std::endl;
   }
 }
 
