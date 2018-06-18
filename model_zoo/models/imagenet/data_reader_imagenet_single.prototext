@@ -43,7 +43,6 @@ data_reader {
     shuffle: true
     data_filedir: "/p/lscratchf/brainusr/datasets/ILSVRC2012"
     data_filename: "Single_val_c0-9_01"
-    validation_percent: 1.0
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
     num_labels: 1000

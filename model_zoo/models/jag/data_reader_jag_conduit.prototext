@@ -88,7 +88,6 @@ data_reader {
     shuffle: true
     data_filedir: "/p/lscratchh/brainusr/datasets/jag/bundle_100_10/"
     data_filename: "samples200-300.bundle"
-    validation_percent: 1.0
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
 
