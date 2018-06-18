@@ -6,7 +6,7 @@ model {
   data_layout: "data_parallel"
   mini_batch_size: 128
   block_size: 256
-  num_epochs: 20
+  num_epochs: 1
   num_parallel_readers: 0
   procs_per_model: 0
 
@@ -720,7 +720,7 @@ model {
     children: "prob"
     data_layout: "data_parallel"
     fully_connected {
-      num_neurons: 20
+      num_neurons_is_num_labels: true
       has_bias: false
     }
     weights: "fc9_linearity fc9_bias"
