@@ -1,5 +1,5 @@
 #
-# shapes: http://www.graphviz.org/content/node-shapes
+# shapes: https://graphviz.gitlab.io/_pages/doc/info/shapes.html
 # color names: http://www.graphviz.org/doc/info/colors.html
 #
 # I found this tutorial useful: http://tonyballantyne.com/graphs.html
@@ -65,4 +65,3 @@ transform    discrete_random
 transform    stop_gradient
 transform    max
 transform    min
-
