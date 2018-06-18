@@ -340,7 +340,7 @@ model {
 
   layer {
     name: "data_new"
-    children: "conv1_head0 target"
+    children: "conv1_head0 target_new"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
