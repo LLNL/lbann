@@ -29,7 +29,7 @@
 
 lbann::partitioned_io_buffer::partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, int num_child_layers)
   : generic_io_buffer(comm, num_parallel_readers, data_readers),
-    M_local(num_child_layers, nullptr) {}
+    M_local(num_child_layers, nullptr) {
   M_local[0] = new CPUMat();
   M_local[1] = new CPUMat();
 }
