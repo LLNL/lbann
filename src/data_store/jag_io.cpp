@@ -16,10 +16,9 @@
 namespace lbann {
 
 jag_io::~jag_io() {
-  for (size_t i=0; i<m_data_streams.size(); i++) {
-    if (m_data_streams[i].is_open()) {
-      m_data_streams[i].close();
-    }  
+  if (m_data_stream->is_open()) {
+    m_data_stream->close();
+    delete m_data_stream;
   }
 }
 
@@ -202,15 +201,12 @@ void jag_io::load(std::string base_dir) {
   std::string key;
 
   // open the binary data file
-  m_data_streams.resize(omp_get_max_threads());
   fn = base_dir + "/data.bin";
-  for (size_t i=0; i<m_data_streams.size(); i++) {
-    m_data_streams[i].open(fn.c_str());
-    if (!m_data_streams[i].good()) {
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "failed to open " << fn << " for reading";
-      throw lbann_exception(err.str());
-    }  
+  m_data_stream = new std::ifstream(fn.c_str(), std::ios::in | std::ios::binary);
+  if (! m_data_stream->good()) {
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "failed to open " << fn << " for reading";
+    throw lbann_exception(err.str());
   }
 
   // fill in parent_to_child map
@@ -334,12 +330,12 @@ void jag_io::key_exists(std::string key) const {
   }
 }
 
-void jag_io::get_data(std::string node_name, int tid, char * data_out, size_t num_bytes) {
+void jag_io::get_data(std::string node_name, char * data_out, size_t num_bytes) {
   std::string key = get_metadata_key(node_name);
   size_t sample_id = get_sample_id(node_name);
   size_t offset = m_sample_offset * sample_id + m_metadata[key].offset;
-  m_data_streams[tid].seekg(offset);
-  m_data_streams[tid].read(data_out, num_bytes);
+  m_data_stream->seekg(offset);
+  m_data_stream->read(data_out, num_bytes);
 }
 
 const std::vector<std::string>& jag_io::get_input_choices() const {

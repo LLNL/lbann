@@ -134,7 +134,6 @@ void test(std::string bundle_fn, std::string dir) {
   size_t bytes_per_elt;
   size_t total_bytes;
   std::string type;
-  size_t tid = 0;
   std::vector<char> data;
   size_t pass = 0;
   size_t skipped = 0;
@@ -158,7 +157,7 @@ void test(std::string bundle_fn, std::string dir) {
     }
     data.resize(total_bytes);
     std::string key2 = std::to_string(sample_id) + '/' + key;
-    jag.get_data(key2, tid, data.data(), total_bytes);
+    jag.get_data(key2, data.data(), total_bytes);
 
     // get data directly from conduit
     conduit::Node truth = head[key2];
