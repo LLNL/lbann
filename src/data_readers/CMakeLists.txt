@@ -17,7 +17,6 @@ set_full_path(THIS_DIR_SOURCES
   data_reader_csv.cpp
   data_reader_image.cpp
   data_reader_imagenet.cpp
-  data_reader_imagenet_org.cpp
   data_reader_imagenet_patches.cpp
   data_reader_imagenet_single.cpp
   data_reader_jag.cpp

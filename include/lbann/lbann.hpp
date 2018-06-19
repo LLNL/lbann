@@ -107,7 +107,6 @@
 #include "lbann/layers/io/target/reconstruction.hpp"
 
 /// Data Readers
-#include "lbann/data_readers/data_reader_imagenet_org.hpp"
 #include "lbann/data_readers/data_reader_imagenet.hpp"
 #include "lbann/data_readers/data_reader_imagenet_single.hpp"
 #include "lbann/data_readers/data_reader_imagenet_patches.hpp"

@@ -474,14 +474,7 @@ void init_org_image_data_reader(const lbann_data::Reader& pb_readme, const bool 
   // number of labels
   const int n_labels = pb_readme.num_labels();
 
-  // TODO: as imagenet_org phases out, and mnist and cifar10 convert to use new
-  // imagenet data reader, this function will disappear
-  // create data reader
-  if (name == "imagenet_org") {
-    reader = new imagenet_reader_org(shuffle);
-    dynamic_cast<imagenet_reader_org*>(reader)->set_input_params(width, height, 3, n_labels);
-    if (master) std::cout << "imagenet_reader_org is set" << std::endl;
-  } else if (name == "mnist") {
+  if (name == "mnist") {
     reader = new mnist_reader(shuffle);
     if (master) std::cout << "mnist_reader is set" << std::endl;
   } else if (name == "cifar10") {
