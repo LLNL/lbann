@@ -42,6 +42,8 @@ namespace lbann {
 class jag_io {
  public:
 
+ using TypeID = conduit::DataType::TypeID;
+
  /**
   * NOTE: some methods below take variables "string node_name" while others
   *       take "string key." My convention is that "node_name" indicated
@@ -69,8 +71,7 @@ using input_t = double; ///< jag input parameter type
   //! operator=
   jag_io& operator=(const jag_io&) = default;
 
-  //@todo: this causes a compile error ... why?
-  //jag_io * copy() const { return new jag_io(*this); }
+  jag_io * copy() const { return new jag_io(*this); }
 
   //! dtor
   ~jag_io();
@@ -89,13 +90,13 @@ using input_t = double; ///< jag input parameter type
 
   /// Returns size and data type information for the requested node. 
   /// 'total_bytes_out' is num_elts_out * bytes_per_elt_out; 
-  void get_metadata(std::string node_name, size_t &num_elts_out, size_t &bytes_per_elt_out, size_t &total_bytes_out, std::string &type_out);
+  void get_metadata(std::string node_name, size_t &num_elts_out, size_t &bytes_per_elt_out, size_t &total_bytes_out, conduit::DataType::TypeID &type_out);
 
   /// Reads the requested data from file and returns it in 'data_out.'
   /// The caller is responsible for allocating sufficient memory,
   /// i.e, they should previously have called get_metadata(...), then
   /// allocated memory, i.e, std::vector<char> d(total_bytes_out);
-  void get_data(std::string node_name, int tid, char * data_out, size_t num_bytes);
+  void get_data(std::string node_name, char * data_out, size_t num_bytes);
 
   /// returns true if the key exists in the metadata map
   bool has_key(std::string key) const;
@@ -123,10 +124,10 @@ protected :
 
   struct MetaData {
     MetaData() {}
-    MetaData(std::string tp, int elts, int bytes, size_t _offset = 0)
+    MetaData(TypeID tp, int elts, int bytes, size_t _offset = 0)
       : dType(tp), num_elts(elts), num_bytes(bytes), offset(_offset) {}
 
-    std::string dType; //float64, int64, etc.
+    conduit::DataType::TypeID dType;
     int         num_elts;  //number of elements in this field
     int         num_bytes; //number of bytes for a single element
     size_t      offset;  //offset wrt m_data: where this resides on disk
@@ -135,8 +136,7 @@ protected :
   size_t m_num_samples;
 
   /// used when reading converted data from file; 
-  /// each thread gets a separate stream
-  std::vector<std::ifstream> m_data_streams;
+  std::ifstream *m_data_stream;
 
   /// recursive function invoked by convert();
   /// fills in m_keys and m_parent_to_children

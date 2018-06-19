@@ -5,6 +5,7 @@
 #include "lbann/data_store/jag_io.hpp"
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/timer.hpp"
 #include "lbann/utils/file_utils.hpp"
 #include "lbann_config.hpp" 
 #include <unordered_map>
@@ -16,14 +17,13 @@
 namespace lbann {
 
 jag_io::~jag_io() {
-  for (size_t i=0; i<m_data_streams.size(); i++) {
-    if (m_data_streams[i].is_open()) {
-      m_data_streams[i].close();
-    }  
+  if (m_data_stream != nullptr && m_data_stream->is_open()) {
+    m_data_stream->close();
+    delete m_data_stream;
   }
 }
 
-jag_io::jag_io() {}
+jag_io::jag_io() : m_data_stream(nullptr) {}
 
 void jag_io::get_hierarchy(conduit::Node &nd, std::string parent) {
   std::string parent_2 = parent;
@@ -36,7 +36,7 @@ void jag_io::get_hierarchy(conduit::Node &nd, std::string parent) {
       m_keys.push_back( parent.substr(2));
     }  
   } 
-  conduit::Node nd2 = nd[parent.c_str()];
+  conduit::Node nd2 = nd[parent];
   const std::vector<std::string> &children_names = nd2.child_names();
   for (auto t : children_names) {
     m_parent_to_children[parent_2].insert(t);
@@ -53,8 +53,10 @@ void jag_io::convert(std::string conduit_pathname, std::string base_dir) {
 
   // load the conduit bundle
   std::cerr << "Loading conduit file ...\n";
+  double tm1 = get_time();
   conduit::Node head;
   conduit::relay::io::load(conduit_pathname, "hdf5", head);
+  std::cerr << "time to load: " << get_time() - tm1 << "\n";
   m_num_samples = head.number_of_children();
   std::cerr << "\nconversion in progress for " << m_num_samples << " samples\n";
 
@@ -67,7 +69,7 @@ void jag_io::convert(std::string conduit_pathname, std::string base_dir) {
   for (auto t : m_keys) {
     conduit::Node nd = head["0/" + t];
     conduit::DataType m = nd.dtype();
-    m_metadata[t] = MetaData(m.name(), m.number_of_elements(), m.element_bytes(), m_sample_offset);
+    m_metadata[t] = MetaData((TypeID)m.id(), m.number_of_elements(), m.element_bytes(), m_sample_offset);
     m_sample_offset += (m.number_of_elements() * m.element_bytes());
   }
 
@@ -103,8 +105,8 @@ void jag_io::convert(std::string conduit_pathname, std::string base_dir) {
   // write binary data
   for (size_t j=0; j<m_num_samples; j++) {
     for (auto t2 : m_keys) {
-      conduit::Node d = head[std::to_string(j) + '/' + t2];
-      conduit::DataType t = d.dtype();
+      const conduit::Node d = head[std::to_string(j) + '/' + t2];
+      const TypeID t = (TypeID)d.dtype().id();
       if (m_metadata.find(t2) == m_metadata.end()) {
         err << __FILE__ << " " << __LINE__ << " :: "
             << "key is missing from metadata map: " << t2;
@@ -116,20 +118,24 @@ void jag_io::convert(std::string conduit_pathname, std::string base_dir) {
         //as of now I'm only coding for the dataTypes that are in our
         //current *.bundle files; we may need to add additional later,
         //if the schema changes
-        if (t.name() == "char8_str") {
-           bin_writer.write((char*)d.as_char8_str(), total_bytes);
-        } else if (t.name() == "float64") {
-           bin_writer.write((char*)d.as_float64_ptr(), total_bytes);
-        } else if (t.name() == "uint64") {
-           bin_writer.write((char*)d.as_uint64_ptr(), total_bytes);
-        } else if (t.name() == "int64") {
-           bin_writer.write((char*)d.as_int64_ptr(), total_bytes);
-        } else {
-          std::cerr << t2 << " " << m_metadata[t2].num_elts * m_metadata[t2].num_bytes << "\n";
-          err << __FILE__ << " " << __LINE__ << " :: "
-              << "get_value() failed; dType: " << t.name()
-              << " " << (std::to_string(j) + '/' + t2);
-          throw lbann_exception(err.str());
+        switch (t) {
+          case TypeID::CHAR8_STR_ID :
+            bin_writer.write((char*)d.as_char8_str(), total_bytes);
+            break;
+          case TypeID::FLOAT64_ID :
+            bin_writer.write((char*)d.as_float64_ptr(), total_bytes);
+            break;
+          case TypeID::UINT64_ID :
+            bin_writer.write((char*)d.as_uint64_ptr(), total_bytes);
+            break;
+          case TypeID::INT64_ID :
+            bin_writer.write((char*)d.as_int64_ptr(), total_bytes);
+            break;
+          default:
+            err << __FILE__ << " " << __LINE__ << " :: "
+                << "get_value() failed; dType: " << d.dtype().name()
+                << " " << (std::to_string(j) + '/' + t2);
+            throw lbann_exception(err.str());
         }
       }
     }
@@ -202,15 +208,12 @@ void jag_io::load(std::string base_dir) {
   std::string key;
 
   // open the binary data file
-  m_data_streams.resize(omp_get_max_threads());
   fn = base_dir + "/data.bin";
-  for (size_t i=0; i<m_data_streams.size(); i++) {
-    m_data_streams[i].open(fn.c_str());
-    if (!m_data_streams[i].good()) {
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "failed to open " << fn << " for reading";
-      throw lbann_exception(err.str());
-    }  
+  m_data_stream = new std::ifstream(fn.c_str(), std::ios::in | std::ios::binary);
+  if (! m_data_stream->good()) {
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "failed to open " << fn << " for reading";
+    throw lbann_exception(err.str());
   }
 
   // fill in parent_to_child map
@@ -242,12 +245,12 @@ void jag_io::load(std::string base_dir) {
   in >> m_sample_offset;
 
   // fill in the metadata map
-  std::string dType;
+  uint64 dType;
   int num_elts;
   int bytes_per_elt;
   size_t offset;
   while (in >> dType >> num_elts >> bytes_per_elt >> offset >> key) {
-    m_metadata[key] = MetaData(dType, num_elts, bytes_per_elt, offset);
+    m_metadata[key] = MetaData((TypeID)dType, num_elts, bytes_per_elt, offset);
     m_keys.push_back(key);
   }
   in.close();
@@ -334,12 +337,12 @@ void jag_io::key_exists(std::string key) const {
   }
 }
 
-void jag_io::get_data(std::string node_name, int tid, char * data_out, size_t num_bytes) {
+void jag_io::get_data(std::string node_name, char * data_out, size_t num_bytes) {
   std::string key = get_metadata_key(node_name);
   size_t sample_id = get_sample_id(node_name);
   size_t offset = m_sample_offset * sample_id + m_metadata[key].offset;
-  m_data_streams[tid].seekg(offset);
-  m_data_streams[tid].read(data_out, num_bytes);
+  m_data_stream->seekg(offset);
+  m_data_stream->read(data_out, num_bytes);
 }
 
 const std::vector<std::string>& jag_io::get_input_choices() const {
@@ -353,7 +356,7 @@ const std::vector<std::string>& jag_io::get_scalar_choices() const {
 */
 
 
-void jag_io::get_metadata(std::string key, size_t &num_elts_out, size_t &bytes_per_elt_out, size_t &total_bytes_out, std::string &type_out) {
+void jag_io::get_metadata(std::string key, size_t &num_elts_out, size_t &bytes_per_elt_out, size_t &total_bytes_out, conduit::DataType::TypeID &type_out) {
   num_elts_out = m_metadata[key].num_elts;
   bytes_per_elt_out = m_metadata[key].num_bytes;
   total_bytes_out = num_elts_out*bytes_per_elt_out;

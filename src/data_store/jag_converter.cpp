@@ -115,10 +115,14 @@ void convert(std::string bundle_fn, std::string dir) {
 }
 
 void test(std::string bundle_fn, std::string dir) {
+  using TypeID = conduit::DataType::TypeID;
+
   std::cerr << "\nstarting test ...\n";
   std::cerr << "loading conduit node...\n";
+  double tm = get_time();
   conduit::Node head;
   conduit::relay::io::load(bundle_fn, "hdf5", head);
+  std::cerr << "time to load node: " << get_time() - tm << "\n";
 
   std::cerr << "calling jag.load("<<dir<<")\n";
   jag_io jag;
@@ -133,8 +137,7 @@ void test(std::string bundle_fn, std::string dir) {
   size_t num_elts;
   size_t bytes_per_elt;
   size_t total_bytes;
-  std::string type;
-  size_t tid = 0;
+  TypeID type;
   std::vector<char> data;
   size_t pass = 0;
   size_t skipped = 0;
@@ -147,6 +150,8 @@ void test(std::string bundle_fn, std::string dir) {
   //   to what we get directly from the conduit node
   //
   //=========================================================================\n;
+  double tm2 = get_time();
+  for (size_t s=0; s<num_samples; s++) {
   for (auto key : keys) {
     ++total;
 
@@ -157,28 +162,38 @@ void test(std::string bundle_fn, std::string dir) {
       continue;
     }
     data.resize(total_bytes);
-    std::string key2 = std::to_string(sample_id) + '/' + key;
-    jag.get_data(key2, tid, data.data(), total_bytes);
+    //std::string key2 = std::to_string(sample_id) + '/' + key;
+    std::string key2 = std::to_string(s) + '/' + key;
+    jag.get_data(key2, data.data(), total_bytes);
 
     // get data directly from conduit
     conduit::Node truth = head[key2];
 
     char *f2 = 0;
-    if (type == "int64") {
-      long *f = truth.as_int64_ptr();
-      f2 = (char*)f;
-    } else if (type == "float64") {
-      double *f = truth.as_float64_ptr();
-      f2 = (char*)f;
-    } else if (type == "uint64") {
-      uint64 *f = truth.as_uint64_ptr();
-      f2 = (char*)f;
-    } else if (type == "char8_str") {
-      char *f = truth.as_char8_str();
-      f2 = (char*)f;
-    } else {
-      std::cerr << "WARNING: unhandled type: " << type << "\n";
-      ++warnings;
+    switch (type) {
+      case TypeID::INT64_ID : {
+        long *f = truth.as_int64_ptr();
+        f2 = (char*)f;
+        break;
+      }
+      case TypeID::FLOAT64_ID : {
+        double *f = truth.as_float64_ptr();
+        f2 = (char*)f;
+        break;
+      }
+      case TypeID::UINT64_ID : {
+        uint64 *f = truth.as_uint64_ptr();
+        f2 = (char*)f;
+        break;
+      }
+      case TypeID::CHAR8_STR_ID : {
+        char *f = truth.as_char8_str();
+        f2 = (char*)f;
+        break;
+      }
+      default :
+        std::cerr << "WARNING: unhandled type: " << type << "\n";
+        ++warnings;
     }
     if (f2) {
       for (size_t i=0; i<total_bytes; i++) {
@@ -191,6 +206,8 @@ void test(std::string bundle_fn, std::string dir) {
       ++pass;
     }
   }
+  }
+  std::cerr << "testing time: " << get_time() - tm2 << "\n";
   size_t sanity = skipped + warnings + pass;
   std::cerr << "\n\n"
             << "total keys tested:  " << total << "\n"
@@ -217,7 +234,7 @@ void test(std::string bundle_fn, std::string dir) {
         std::cerr << "ERROR 2!\n";
         exit(9);
       }
-      if (type != dType.name()) {
+      if (type != dType.id()) {
         std::cerr << "ERROR 3!\n";
         exit(9);
       }
