@@ -458,19 +458,10 @@ void init_generic_preprocessor(const lbann_data::Reader& pb_readme, const bool m
 
 
 void init_org_image_data_reader(const lbann_data::Reader& pb_readme, const bool master, generic_data_reader* &reader) {
-  const lbann_data::ImagePreprocessor& pb_preprocessor = pb_readme.image_preprocessor();
-
   // data reader name
   const std::string& name = pb_readme.name();
   // whether to shuffle data
   const bool shuffle = pb_readme.shuffle();
-  // final size of image. If image_preprocessor is not set, the type-default value
-  // (i,e., 0) is used. Then,set_input_params() will not modify the current member value.
-  const int width = pb_preprocessor.raw_width();
-  const int height = pb_preprocessor.raw_height();
-
-  // number of labels
-  const int n_labels = pb_readme.num_labels();
 
   if (name == "mnist") {
     reader = new mnist_reader(shuffle);
