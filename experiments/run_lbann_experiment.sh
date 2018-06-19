@@ -7,6 +7,7 @@ MODEL_PROTO="--model=${LBANN_DIR}/model_zoo/models/alexnet/model_alexnet.protote
 READER_PROTO="--reader=${LBANN_DIR}/model_zoo/data_readers/data_reader_imagenet.prototext"
 OPTIMIZER_PROTO="--optimizer=${LBANN_DIR}/model_zoo/optimizers/opt_sgd.prototext"
 IMAGENET_CLASSES=10 # options: 10, 100, 300, 1000 (leave blank to use other dataset)
+BUILD=          # default: Release
 
 # Hardware configuration
 NUM_NODES=      # default: number of allocated nodes (1 if none)
@@ -35,6 +36,7 @@ NVPROF_EXE="nvprof --profile-child-processes --unified-memory-profiling off"
 
 # Set defaults
 EXPERIMENT_NAME=${EXPERIMENT_NAME:-lbann}
+BUILD=${BUILD:-Release}
 if [ -z "${NUM_NODES}" ]; then
     if [ -n "${SLURM_JOB_NUM_NODES}" ]; then
         NUM_NODES=${SLURM_JOB_NUM_NODES}
@@ -224,7 +226,7 @@ if [ -n "${TEST_DATASET_LABELS}" ]; then
 fi
 
 # Initialize experiment command
-LBANN_EXE="${LBANN_DIR}/build/gnu.Release.${CLUSTER}.llnl.gov/lbann/build/model_zoo/lbann"
+LBANN_EXE="${LBANN_DIR}/build/gnu.${BUILD}.${CLUSTER}.llnl.gov/lbann/build/model_zoo/lbann"
 case ${USE_GPU} in
     YES|yes|TRUE|true|ON|on|1)
         case ${HAS_GPU} in

@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
 
     // When using checkpoint states, skip training as those could be the result
     // of checkpointing by steps.
-    if (!opts->has_string("ckpt_dir")){
+    if (!opts->has_string("no_model1_train")){
       model_1->train( pb_model.num_epochs() );
     }
     // Evaluate model 1 unless it is set to skip
@@ -198,7 +198,7 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
     // Check for cudnn, with user feedback
     cudnn::cudnn_manager *cudnn = nullptr;
 #ifdef LBANN_HAS_CUDNN
-    const size_t workspace_size = 1 << 9; // 1 GB
+    const size_t workspace_size = 1 << 30; // 1 GB
     if (! pb_model->disable_cuda()) {
       if (master) {
         std::cerr << "code was compiled with LBANN_HAS_CUDNN, and we are using cudnn\n";
@@ -298,13 +298,16 @@ bool load_model_weights(std::string ckpt_dir, model * m){
   sprintf(latest, "%s/last.shared.checkpoint", ckpt_dir.c_str());
   // get last epoch and step saved.
   int fd = openread(latest);
+  lbann_comm *temp_comm = m->get_comm();
   if (fd != -1) {
     char field[256];
     read_string(fd, "shared.last", field, sizeof(field));
     int ret = sscanf(field, "epoch=%d step=%d\n", &epochLast, &stepLast);
     if(ret != 2) { return false; }
     closeread(fd, latest);
-    sprintf(latest, "%s/shared.epoch.%d.step.%d/", ckpt_dir.c_str() ,epochLast, stepLast);
+    if(temp_comm->am_model_master())
+      sprintf(latest, "%s/shared.model.%d.epoch.%d.step.%d/", ckpt_dir.c_str(), temp_comm->get_model_rank(), epochLast, stepLast);
+    temp_comm->model_broadcast(0, &(latest[0]), sizeof(latest));
   }
 
   DIR *weight_dir;

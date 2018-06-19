@@ -36,7 +36,7 @@ namespace lbann {
  */
 class partitioned_io_buffer : public generic_io_buffer {
  public:
-  partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers);
+  partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, int num_child_layers);
   partitioned_io_buffer(
     const partitioned_io_buffer&) = default;
   partitioned_io_buffer& operator=(

@@ -47,13 +47,13 @@ class data_buffer {
   std::vector<CPUMat*> M_local_v; /** View of local matrix that holds data from data reader */
   std::vector<CircMat<El::Device::CPU>*> Ms; /** Distributed matrix used to stage local data to layer output */
 
-  data_buffer(lbann_comm *comm) :
+  data_buffer(lbann_comm *comm, int num_child_layers) :
     m_root(0),
     m_local_reader_done(false),
     m_num_samples_in_batch(0),
     m_local_data_valid(false) {
 
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < num_child_layers; i++) {
       M_local.push_back(new CPUMat());
       M_local_v.push_back(new CPUMat());
       Ms.push_back(new CircMat<El::Device::CPU>(comm->get_model_grid()));
@@ -76,7 +76,7 @@ class distributed_io_buffer : public generic_io_buffer {
   /** Requested maximum number of parallel readers (I/O streams) */
   int m_requested_max_num_parallel_readers;
  public:
-  distributed_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers);
+  distributed_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, int num_child_layers);
   distributed_io_buffer(const distributed_io_buffer& other) :
     generic_io_buffer(other) {
     m_requested_max_num_parallel_readers = other.m_requested_max_num_parallel_readers;
@@ -116,8 +116,10 @@ class distributed_io_buffer : public generic_io_buffer {
     for (auto& buf : m_data_buffers) {
       buf.second->M_local[0]->Resize(num_neurons, max_minibatch_size);
       buf.second->Ms[0]->Resize(num_neurons, max_minibatch_size);
-      buf.second->M_local[1]->Resize(num_targets, max_minibatch_size);
-      buf.second->Ms[1]->Resize(num_targets, max_minibatch_size);
+      if(m_num_child_layers > 1) {
+        buf.second->M_local[1]->Resize(num_targets, max_minibatch_size);
+        buf.second->Ms[1]->Resize(num_targets, max_minibatch_size);
+      }
     }
   }
 
@@ -170,6 +172,7 @@ class distributed_io_buffer : public generic_io_buffer {
 
   // protected:
   data_buffer_map_t m_data_buffers;
+  int m_num_child_layers;
 };
 
 }  // namespace lbann

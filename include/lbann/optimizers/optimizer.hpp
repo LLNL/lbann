@@ -38,6 +38,13 @@
 
 namespace lbann {
 
+// Forward declarations
+class weights;
+class persist;
+namespace cudnn {
+class cudnn_manager;
+} // namespace cudnn
+
 /** Abstract optimizer. */
 class optimizer {
  public:
