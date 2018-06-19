@@ -433,22 +433,6 @@ void init_generic_preprocessor(const lbann_data::Reader& pb_readme, const bool m
     } else {
       reader->disable_augmentation();
     }
-  } else { // For backward compatibility. TODO: will be deprecated
-    if (!pb_preprocessor.disable_augmentation() &&
-        (pb_preprocessor.horizontal_flip() ||
-         pb_preprocessor.vertical_flip() ||
-         pb_preprocessor.rotation() != 0.0 ||
-         pb_preprocessor.horizontal_shift() != 0.0 ||
-         pb_preprocessor.vertical_shift() != 0.0 ||
-         pb_preprocessor.shear_range() != 0.0)) {
-      reader->horizontal_flip( pb_preprocessor.horizontal_flip() );
-      reader->vertical_flip( pb_preprocessor.vertical_flip() );
-      reader->rotation( pb_preprocessor.rotation() );
-      reader->horizontal_shift( pb_preprocessor.horizontal_shift() );
-      reader->vertical_shift( pb_preprocessor.vertical_shift() );
-      reader->shear_range( pb_preprocessor.shear_range() );
-      if (master) std::cout << "image processor: deprecated syntax for augmenter" << std::endl;
-    }
   }
 
   // set up the normalizer
@@ -462,12 +446,6 @@ void init_generic_preprocessor(const lbann_data::Reader& pb_readme, const bool m
       reader->z_score( pb_normalizer.z_score() );
       if (master) std::cout << "image processor: normalizer is set" << std::endl;
     }
-  } else { // For backward compatibility. TODO: will be deprecated
-      reader->subtract_mean( pb_preprocessor.subtract_mean() );
-      reader->unit_variance( pb_preprocessor.unit_variance() );
-      reader->scale( pb_preprocessor.scale() );
-      reader->z_score( pb_preprocessor.z_score() );
-      if (master) std::cout << "image processor: deprecated syntax for normalizer" << std::endl;
   }
 
   if (pb_preprocessor.has_noiser()) {
@@ -477,9 +455,6 @@ void init_generic_preprocessor(const lbann_data::Reader& pb_readme, const bool m
       reader->add_noise( pb_noiser.factor() );
       if (master) std::cout << "image processor: noiser is set" << std::endl;
     }
-  } else { // For backward compatibility. TODO: will be deprecated
-    reader->add_noise( pb_preprocessor.noise_factor() );
-    if (master && (pb_preprocessor.noise_factor()>0.0)) std::cout << "image processor: deprecated syntax for noiser" << std::endl;
   }
 }
 
