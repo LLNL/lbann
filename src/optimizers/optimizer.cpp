@@ -141,17 +141,10 @@ void optimizer::start_gradient_staging_allreduce() {
   }
 
   m_gradient_allreduce_started = true;
-  std::type_index t = std::type_index(typeid(Al::mpi_backend));
-#ifdef LBANN_HAS_GPU
-  if (m_gradient_staging->GetLocalDevice() == El::Device::GPU) {
-    t = std::type_index(typeid(Al::nccl_backend));
-  }
-#endif
   m_comm->nb_allreduce(*m_gradient_staging,
                        m_gradient_staging->RedundantComm(),
                        m_gradient_allreduce_req,
-                       El::mpi::SUM,
-                       t);
+                       El::mpi::SUM);
   m_gradient_allreduce_finished = false;
 }
 

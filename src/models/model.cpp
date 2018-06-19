@@ -255,7 +255,9 @@ void model::copy_trained_weights_from(std::vector<weights*>& new_weights) {
      for (size_t j = 0; j < m_weights.size(); ++j) {
        //copy only trained weights (that is unfrozen layer)
        if(m_weights[j]->get_name() == new_weights[i]->get_name() && !new_weights[i]->is_frozen()) {
+         #ifdef LBANN_DEBUG
          if(m_comm->am_world_master()) std::cout << " Replacing " << m_weights[j]->get_name() << " with " << new_weights[i]->get_name() << std::endl;
+         #endif
          m_weights[j]->set_values(new_weights[i]->get_values());
        }
      }

@@ -67,6 +67,30 @@
 
 namespace lbann {
 
+const std::set<std::string> data_reader_jag_conduit::non_numeric_vars = {
+  "fusion_reaction",
+  "fusion_model_reaction",
+  "radial_profile",
+  "postp_timeseries_vars",
+  "name",
+  "solver",
+  "mesh_def",
+  "hs_volume_integral",
+  "fusion_model_sv",
+  "shell_model",
+  "shape_model",
+  "ablation_cv_model",
+  "infalling_model",
+  "radiation_model",
+  "hotspot_model",
+  "shape_model_initial_velocity_amplitude",
+  "stopping_model",
+  "energy_balance_model_ablation_cv_model",
+  "solver_method",
+  "conduction_model_conductivity",
+  "solver_mode"
+};
+
 data_reader_jag_conduit::data_reader_jag_conduit(const std::shared_ptr<cv_process>& pp, bool shuffle)
   : generic_data_reader(shuffle) {
   set_defaults();
@@ -97,6 +121,7 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
   replicate_processor(*rhs.m_pps[0]);
 
   m_data = rhs.m_data;
+  m_uniform_input_type = rhs.m_uniform_input_type;
 }
 
 data_reader_jag_conduit::data_reader_jag_conduit(const data_reader_jag_conduit& rhs)
@@ -132,6 +157,7 @@ void data_reader_jag_conduit::set_defaults() {
   m_num_labels = 0;
   m_scalar_keys.clear();
   m_input_keys.clear();
+  m_uniform_input_type = false;
 }
 
 /// Replicate image processor for each OpenMP thread
@@ -400,18 +426,21 @@ void data_reader_jag_conduit::check_input_keys() {
   conduit::NodeConstIterator itr = n_input.children();
   size_t num_found = 0u;
   std::vector<bool> found(m_input_keys.size(), false);
-  std::set<std::string> keys_conduit;
+  std::map<std::string, TypeID> keys_conduit;
 
   while (itr.has_next()) {
-    itr.next();
-    keys_conduit.insert(itr.name());
+    const conduit::Node & n = itr.next();
+    keys_conduit.insert(std::pair<std::string, TypeID>(itr.name(), static_cast<TypeID>(n.dtype().id())));
   }
 
+  bool is_input_t = true;
+
   for (size_t i=0u; i < m_input_keys.size(); ++i) {
-    std::set<std::string>::const_iterator it = keys_conduit.find(m_input_keys[i]);
+    std::map<std::string, TypeID>::const_iterator it = keys_conduit.find(m_input_keys[i]);
     if (it != keys_conduit.end()) {
       num_found ++;
       found[i] = true;
+      is_input_t = is_input_t && is_same_type<input_t>(it->second);
     }
   }
 
@@ -424,6 +453,8 @@ void data_reader_jag_conduit::check_input_keys() {
     }
     _THROW_LBANN_EXCEPTION_(_CN_, "check_input_keys() : " + msg);
   }
+
+  m_uniform_input_type = (m_input_keys.size() == 0u)? false : is_input_t;
 }
 
 
@@ -625,13 +656,29 @@ std::string data_reader_jag_conduit::get_description() const {
                       + std::to_string(m_image_width) + 'x'
                       + std::to_string(m_image_height) + "\n"
     + " - scalars: "  + std::to_string(get_linearized_scalar_size()) + "\n"
-    + " - inputs: "   + std::to_string(get_linearized_input_size()) + "\n";
+    + " - inputs: "   + std::to_string(get_linearized_input_size()) + "\n"
+    + " - uniform_input_type: " + (m_uniform_input_type? "true" : "false") + '\n';
   return ret;
 }
 
 
 bool data_reader_jag_conduit::check_sample_id(const size_t sample_id) const {
   return (static_cast<conduit_index_t>(sample_id) < m_data.number_of_children());
+}
+
+bool data_reader_jag_conduit::check_non_numeric(const std::string key) {
+  std::set<std::string>::const_iterator kit = non_numeric_vars.find(key);
+  if (kit != non_numeric_vars.end()) {
+    std::string err = "data_reader_jag_conduit::add_val() : non-numeric '" + key
+                    + "' requires a conversion method.";
+   #if 1
+    std::cerr << err << " Skipping for now." << std::endl;
+   #else
+    throw lbann_exception(err);
+   #endif
+    return true;
+  }
+  return false;
 }
 
 
@@ -740,6 +787,8 @@ std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scal
   for(const auto key: m_scalar_keys) {
     std::string scalar_key = std::to_string(sample_id) + "/outputs/scalars/" + key;
     const conduit::Node & n_scalar = get_conduit_node(scalar_key);
+    // All the scalar output currently seems to be scalar_t
+    //add_val(key, n_scalar, scalars);
     scalars.push_back(n_scalar.value());
   }
   return scalars;
@@ -753,10 +802,19 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
   std::vector<input_t> inputs;
   inputs.reserve(m_input_keys.size());
 
-  for(const auto key: m_input_keys) {
-    std::string input_key = std::to_string(sample_id) + "/inputs/" + key;
-    const conduit::Node & n_input = get_conduit_node(input_key);
-    inputs.push_back(n_input.value());
+  // automatically determine which method to use based on if all the variables are of input_t
+  if (m_uniform_input_type) {
+    for(const auto key: m_input_keys) {
+      std::string input_key = std::to_string(sample_id) + "/inputs/" + key;
+      const conduit::Node & n_input = get_conduit_node(input_key);
+      inputs.push_back(n_input.value()); // less overhead
+    }
+  } else {
+    for(const auto key: m_input_keys) {
+      std::string input_key = std::to_string(sample_id) + "/inputs/" + key;
+      const conduit::Node & n_input = get_conduit_node(input_key);
+      add_val(key, n_input, inputs); // more overhead but general
+    }
   }
   return inputs;
 }
@@ -866,6 +924,15 @@ void data_reader_jag_conduit::save_image(Mat& pixels, const std::string filename
 #ifndef _JAG_OFFLINE_TOOL_MODE_
   internal_save_image(pixels, filename, m_image_height, m_image_width, 1, do_scale);
 #endif // _JAG_OFFLINE_TOOL_MODE_
+}
+
+void data_reader_jag_conduit::print_schema() const {
+  m_data.schema().print();
+}
+
+void data_reader_jag_conduit::print_schema(const size_t sample_id) const {
+  const conduit::Node & n = get_conduit_node(std::to_string(sample_id));
+  n.schema().print();
 }
 
 } // end of namespace lbann

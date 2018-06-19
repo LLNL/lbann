@@ -548,8 +548,7 @@ class lbann_comm {
   /** Matrix allreduce. */
   void allreduce(AbsDistMat& m,
                  const El::mpi::Comm c,
-                 El::mpi::Op op = El::mpi::SUM,
-                 std::type_index t = std::type_index(typeid(Al::mpi_backend)));
+                 El::mpi::Op op = El::mpi::SUM);
   /** Non-blocking matrix allreduce.
    *  If LBANN has not been built with Aluminum, then this calls a
    *  blocking matrix allreduce.
@@ -557,8 +556,7 @@ class lbann_comm {
   void nb_allreduce(AbsDistMat& m,
                     const El::mpi::Comm c,
                     Al::request& req,
-                    El::mpi::Op op = El::mpi::SUM,
-                    std::type_index t = std::type_index(typeid(Al::mpi_backend)));
+                    El::mpi::Op op = El::mpi::SUM);
   /** Non-blocking in-place scalar-array allreduce.
    *  If LBANN has not been built with Aluminum, then this calls a blocking
    *  allreduce.
