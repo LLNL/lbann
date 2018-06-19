@@ -35,7 +35,7 @@ void jag_io::get_hierarchy(conduit::Node &nd, std::string parent) {
       m_keys.push_back( parent.substr(2));
     }  
   } 
-  conduit::Node nd2 = nd[parent.c_str()];
+  conduit::Node nd2 = nd[parent];
   const std::vector<std::string> &children_names = nd2.child_names();
   for (auto t : children_names) {
     m_parent_to_children[parent_2].insert(t);
