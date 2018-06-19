@@ -18,7 +18,6 @@ set_full_path(THIS_DIR_HEADERS
   data_reader_image.hpp
   data_reader_imagenet.hpp
   data_reader_imagenet_patches.hpp
-  data_reader_imagenet_single.hpp
   data_reader_merge_features.hpp
   data_reader_merge_samples.hpp
   data_reader_mnist.hpp
