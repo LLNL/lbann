@@ -10,7 +10,13 @@ set_full_path(THIS_DIR_SOURCES
   data_store_merge_features.cpp
   data_store_pilot2_molecular.cpp
   data_store_triplet.cpp
+  jag_io.cpp
 )
+
+add_executable( jag_converter-bin jag_converter.cpp )
+target_link_libraries(jag_converter-bin lbann )
+set_target_properties(jag_converter-bin PROPERTIES OUTPUT_NAME jag_converter)
+
 
 set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)
 
