@@ -145,17 +145,18 @@ __global__ void grad_wrt_input_and_cutoff_kernel(
     const int grad_wrt_output_offset = col * grad_wrt_output_ldim;
     const int grad_wrt_input_offset = col * grad_wrt_input_ldim;
     for (int row = 0; row < height; ++row) {
+      const auto& y = output[row + output_col_offset];
+      auto& dx = grad_wrt_input[row + grad_wrt_input_offset];
 #ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
-      const lbann::DataType y = output[row + output_col_offset];
-      if (y > cutoff) {
-        grad_wrt_input[row + grad_wrt_input_offset] += y
-          * (grad_wrt_output[row + grad_wrt_output_offset] - y_dot_dy);
+      if (y <= cutoff) {
+        dx = lbann::DataType(0);
       }
-#else
-      grad_wrt_input[row + grad_wrt_input_offset] +=
-        output[row + output_col_offset]
-        * (grad_wrt_output[row + grad_wrt_output_offset] - y_dot_dy);
-#endif
+      else
+#endif // LBANN_ENABLE_SOFTMAX_CUTOFF
+      {
+        const auto& dy = grad_wrt_output[row + grad_wrt_output_offset];
+        dx = y * (dy - y_dot_dy);
+      }
     }
   }
 }

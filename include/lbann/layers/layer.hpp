@@ -114,11 +114,7 @@ class Layer {
    *  (the previous error signals), compute the gradients w.r.t. the
    *  previous activations (the error signals) and w.r.t. the
    *  weights. This is essentially an application of the chain
-   *  rule. Note that the objective function may have terms that are
-   *  independent of the activations, so we add to the gradients
-   *  rather than overwriting them. This means the error signals and
-   *  weight gradients must be cleared before performing backward
-   *  propagation (see the clear_error_signals function).
+   *  rule.
    */
   virtual void back_prop();
   /** Update step.
@@ -126,11 +122,6 @@ class Layer {
    *  step for the weights happens elsewhere.
    */
   virtual bool update();
-
-  /** Set the error signal tensors to zero.
-   *  The error signals are resized for the current mini-batch size.
-   */
-  virtual void clear_error_signals(int mini_batch_size);
 
   virtual void summarize_stats(lbann_summary& summarizer, int step);
   virtual void summarize_matrices(lbann_summary& summarizer, int step);
@@ -425,9 +416,8 @@ class Layer {
    */
   virtual void fp_setup_data(int mini_batch_size);
   /** Setup data for forward propagation.
-   *  Base method gets previous error signals from child layers. The
-   *  error signals are resized for the current mini-batch size in the
-   *  clear_error_signals function.
+   *  Base method gets previous error signals from child layers and
+   *  resizes error signals for the current mini-batch size.
    */
   virtual void bp_setup_data(int mini_batch_size);
 
@@ -466,8 +456,10 @@ class Layer {
 
   /** Perform the computation for the forward propagation step. */
   virtual void fp_compute() = 0;
-  /** Perform the computation for the backward propagation step. */
-  virtual void bp_compute() = 0;
+  /** Perform the computation for the backward propagation step.
+   *  The base implementation sets all error signals to zero.
+   */
+  virtual void bp_compute();
   /** Perform the computation for the update step.
    *  Returns false if the layer must reset for a new training epoch.
    */

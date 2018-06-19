@@ -305,7 +305,8 @@ public:
     if (local_input.Height() > 0 && local_input.Width() > 0) {
 
       // Useful constants
-      const DataType one = 1;
+      const DataType one = DataType(1);
+      const DataType zero = DataType(0);
 
       // Perform backprop on GPU
       CHECK_CUDNN(cudnnPoolingBackward(this->m_cudnn->get_handle(),
@@ -317,7 +318,7 @@ public:
                                        local_gradient_wrt_output.LockedBuffer(),
                                        m_tensors_cudnn_desc.get_prev_activations(),
                                        local_input.LockedBuffer(),
-                                       &one,
+                                       &zero,
                                        m_tensors_cudnn_desc.get_error_signals(),
                                        local_gradient_wrt_input.Buffer()));
 
@@ -422,14 +423,13 @@ public:
     auto& local_gradient_wrt_input = get_local_error_signals();
 
     // Pool parameters
-    const int input_size = local_gradient_wrt_input.Height();
     const int local_width = local_gradient_wrt_output.Width();
     const int num_channels = this->m_prev_neuron_dims[0];
     const int num_per_input_channel = this->m_num_neurons / num_channels;
 
     // Initialize matrices
-    DMat<Dev> im2col_mat(m_pool_size * num_channels, num_per_input_channel);
-    DMat<Dev> gradient_wrt_input_col(input_size, 1);
+    CPUMat im2col_mat(m_pool_size * num_channels, num_per_input_channel);
+    CPUMat gradient_wrt_input_col;
 
     // Iterate through data samples
     for(int sample = 0; sample < local_width; ++sample) {
@@ -479,6 +479,8 @@ public:
       }
 
       // Compute error signal (i.e. gradient w.r.t. input)
+      El::View(gradient_wrt_input_col, local_gradient_wrt_input,
+               El::ALL, El::IR(sample));
       col2im(im2col_mat,
              gradient_wrt_input_col,
              num_channels,
@@ -487,7 +489,6 @@ public:
              m_pads.data(),
              m_pool_dims.data(),
              m_strides.data());
-      static_cast<DMat<Dev>&>(local_gradient_wrt_input)(El::ALL, El::IR(sample)) += gradient_wrt_input_col;
 
     }
 

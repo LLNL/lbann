@@ -141,14 +141,17 @@ class dropout : public regularizer_layer {
     // Note: Activation matrix owns data during training and is a
     // matrix view during evaluation. To avoid expensive GPU memory
     // allocation and deallocation, we use CUB's GPU memory pool.
-    get_local_activations().SetMemoryMode(1);
-    m_reserve_space.SetMemoryMode(1);
-#endif
+    if (Dev == El::Device::GPU) {
+      get_local_activations().SetMemoryMode(1);
+      get_local_error_signals().SetMemoryMode(1);
+      m_reserve_space.SetMemoryMode(1);
+    }
+#endif // HYDROGEN_HAVE_CUB
 
     // Initialize cuDNN objects
     setup_dropout_cudnn_desc();
 
-#endif
+#endif // LBANN_HAVE_CUDNN
   }
 
  protected:
@@ -162,6 +165,17 @@ class dropout : public regularizer_layer {
       get_activations().Empty(false);
     }
     regularizer_layer::fp_setup_data(mini_batch_size);
+  }
+
+  void bp_setup_data(int mini_batch_size) override {
+    // If needed, reset matrix view without deallocating memory
+    // Note: Activation matrix owns data during training and is a
+    // matrix view during evaluation.
+    const auto& mode = this->m_model->get_execution_mode();
+    if (mode == execution_mode::training && m_keep_prob < EvalType(0)) {
+      get_error_signals().Empty(false);
+    }
+    regularizer_layer::bp_setup_data(mini_batch_size);
   }
 
   void fp_compute () override {
@@ -224,10 +238,9 @@ class dropout : public regularizer_layer {
     auto& gradient_wrt_input = get_error_signals();
     const auto& mode = this->m_model->get_execution_mode();
     if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
-      El::Axpy(DataType(1), gradient_wrt_output, gradient_wrt_input);
+      El::LockedView(gradient_wrt_input, gradient_wrt_output);
     } else {
-      El::Hadamard(gradient_wrt_output, *m_mask, *m_mask);
-      El::Axpy(DataType(1), *m_mask, gradient_wrt_input);
+      El::Hadamard(gradient_wrt_output, *m_mask, gradient_wrt_input);
     }
   }
 
@@ -284,28 +297,20 @@ class dropout : public regularizer_layer {
     // Copy error signal if dropout is disabled
     const auto& mode = this->m_model->get_execution_mode();
     if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
-      El::Axpy(DataType(1), gradient_wrt_output, gradient_wrt_input);
-      /// @todo - Note that a future optimization may switch this to
-      //      use a locked view, but it requires special handling in
-      //      how the gradients are cleared.
-      //      El::LockedView(gradient_wrt_input, gradient_wrt_output);
-      return;
+      El::LockedView(gradient_wrt_input, gradient_wrt_output);
+    } else {
+      if (local_gradient_wrt_input.Height() > 0
+          && local_gradient_wrt_input.Width() > 0) {
+        CHECK_CUDNN(cudnnDropoutBackward(this->m_cudnn->get_handle(),
+                                         m_dropout_cudnn_desc,
+                                         m_tensors_cudnn_desc.get_prev_error_signals(),
+                                         local_gradient_wrt_output.LockedBuffer(),
+                                         m_tensors_cudnn_desc.get_error_signals(),
+                                         local_gradient_wrt_input.Buffer(),
+                                         m_reserve_space.Buffer(),
+                                         m_reserve_space.Height() * sizeof(DataType)));
+      }
     }
-
-    // Apply dropout backprop on each GPU
-    /// @todo This is technically incorrect since it overwrites the error signal
-    if (local_gradient_wrt_input.Height() > 0
-        && local_gradient_wrt_input.Width() > 0) {
-      CHECK_CUDNN(cudnnDropoutBackward(this->m_cudnn->get_handle(),
-                                       m_dropout_cudnn_desc,
-                                       m_tensors_cudnn_desc.get_prev_error_signals(),
-                                       local_gradient_wrt_output.LockedBuffer(),
-                                       m_tensors_cudnn_desc.get_error_signals(),
-                                       local_gradient_wrt_input.Buffer(),
-                                       m_reserve_space.Buffer(),
-                                       m_reserve_space.Height() * sizeof(DataType)));
-    }
-
 #endif // LBANN_HAS_CUDNN
   }
 

@@ -77,6 +77,7 @@ void tanh_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
 #ifndef LBANN_HAS_CUDNN
   LBANN_ERROR("cuDNN not detected");
 #else
+  const DataType zero = DataType(0);
   const DataType one = DataType(1);
   const auto& local_input = get_local_prev_activations();
   const auto& local_output = get_local_activations();
@@ -92,7 +93,7 @@ void tanh_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
                                           local_gradient_wrt_output.LockedBuffer(),
                                           m_tensors_cudnn_desc.get_prev_activations(),
                                           local_input.LockedBuffer(),
-                                          &one,
+                                          &zero,
                                           m_tensors_cudnn_desc.get_error_signals(),
                                           local_gradient_wrt_input.Buffer()));
   }
@@ -126,6 +127,7 @@ void tanh_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
 #ifndef LBANN_HAS_CUDNN
   LBANN_ERROR("cuDNN not detected");
 #else
+  const DataType zero = DataType(0);
   const DataType one = DataType(1);
   const auto& local_input = get_local_prev_activations();
   const auto& local_output = get_local_activations();
@@ -141,7 +143,7 @@ void tanh_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
                                           local_gradient_wrt_output.LockedBuffer(),
                                           m_tensors_cudnn_desc.get_prev_activations(),
                                           local_input.LockedBuffer(),
-                                          &one,
+                                          &zero,
                                           m_tensors_cudnn_desc.get_error_signals(),
                                           local_gradient_wrt_input.Buffer()));
   }
