@@ -42,6 +42,8 @@ namespace lbann {
 class jag_io {
  public:
 
+ using TypeID = conduit::DataType::TypeID;
+
  /**
   * NOTE: some methods below take variables "string node_name" while others
   *       take "string key." My convention is that "node_name" indicated
@@ -88,7 +90,7 @@ using input_t = double; ///< jag input parameter type
 
   /// Returns size and data type information for the requested node. 
   /// 'total_bytes_out' is num_elts_out * bytes_per_elt_out; 
-  void get_metadata(std::string node_name, size_t &num_elts_out, size_t &bytes_per_elt_out, size_t &total_bytes_out, std::string &type_out);
+  void get_metadata(std::string node_name, size_t &num_elts_out, size_t &bytes_per_elt_out, size_t &total_bytes_out, conduit::DataType::TypeID &type_out);
 
   /// Reads the requested data from file and returns it in 'data_out.'
   /// The caller is responsible for allocating sufficient memory,
@@ -122,10 +124,10 @@ protected :
 
   struct MetaData {
     MetaData() {}
-    MetaData(std::string tp, int elts, int bytes, size_t _offset = 0)
+    MetaData(TypeID tp, int elts, int bytes, size_t _offset = 0)
       : dType(tp), num_elts(elts), num_bytes(bytes), offset(_offset) {}
 
-    std::string dType; //float64, int64, etc.
+    conduit::DataType::TypeID dType;
     int         num_elts;  //number of elements in this field
     int         num_bytes; //number of bytes for a single element
     size_t      offset;  //offset wrt m_data: where this resides on disk
