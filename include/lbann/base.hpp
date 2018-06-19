@@ -122,7 +122,8 @@ enum class pool_mode {invalid, max, average, average_no_pad};
 /** returns a string representation of the pool_mode */
 std::string get_pool_mode_name(pool_mode m);
 
-enum class data_reader_target_mode {CLASSIFICATION, REGRESSION, RECONSTRUCTION};
+// NA - Not applicable, used for input layers that don't produce a second output
+enum class data_reader_target_mode {CLASSIFICATION, REGRESSION, RECONSTRUCTION, NA};
 
 namespace lbann {
 
