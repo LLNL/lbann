@@ -101,7 +101,10 @@ inline ElMatLike<T> ElMatLike<T>::operator()(const IR& rr, const IR& cr) const {
   ElMatLike view = *this;
   if ((rr.IsInitialized() && (rr.End() > Height())) ||
       (cr.IsInitialized() && (cr.End() > Width()))) {
-    throw lbann::lbann_exception("Invalid range");
+    using std::to_string;
+    throw lbann::lbann_exception("Invalid range: " + ((rr.End() > Height())?
+      ("(rows End " + to_string(rr.End()) + " < Height " + to_string(Height()) + ")") :
+      ("(cols End " + to_string(cr.End()) + " < Width " + to_string(Width()) + ")")));
   }
 
   Int r_beg = row_range.IsInitialized()? row_range.Beg() : 0;
