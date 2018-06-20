@@ -128,6 +128,12 @@ void lbann_summary::sum_reduce_scalar(const std::string tag,
   m_pending_sum_scalars.emplace_back(tag, step, s);
 }
 
+void lbann_summary::reduce_scalar_all(const std::string tag,
+                                      DataType s,
+                                      int step) {
+  m_pending_scalar_alls.emplace_back(tag, step, s);
+}
+
 void lbann_summary::reduce_histogram(const std::string tag,
                                      const AbsDistMat& mat,
                                      int step) {
@@ -186,6 +192,7 @@ void lbann_summary::flush() {
   flush_stdevs();
   flush_scalars();
   flush_sum_scalars();
+  flush_scalar_alls();
   flush_histograms();
   if (m_sw != nullptr) {
     m_sw->flush();
@@ -327,6 +334,36 @@ void lbann_summary::flush_sum_scalars() {
                          m_comm->get_model_master());
   }
   m_pending_sum_scalars.clear();
+}
+
+void lbann_summary::flush_scalar_alls() {
+  if (m_pending_scalar_alls.empty()) {
+    return;
+  }
+  // Gather from every process to world master.
+  std::vector<DataType> local_scalars;
+  for (const auto& op : m_pending_scalar_alls) {
+    local_scalars.push_back(op.local);
+  }
+  if (m_comm->am_world_master()) {
+    std::vector<DataType> scalars(
+      m_comm->get_procs_in_world()*local_scalars.size());
+    m_comm->gather(local_scalars.data(), local_scalars.size(),
+                   scalars.data(), m_comm->get_world_comm());
+    for (size_t i = 0; i < scalars.size(); ++i) {
+      int rank = i / local_scalars.size();
+      int model = rank / m_comm->get_procs_per_model();
+      int pos = i % local_scalars.size();
+      m_sw->add_scalar(
+        prepend_model("rank" + std::to_string(rank) + "/" +
+                      m_pending_scalar_alls[pos].tag, model),
+        scalars[i], m_pending_scalar_alls[pos].step);
+    }
+  } else {
+    m_comm->gather(local_scalars.data(), local_scalars.size(),
+                   m_comm->get_world_master(), m_comm->get_world_comm());
+  }
+  m_pending_scalar_alls.clear();
 }
 
 void lbann_summary::flush_histograms() {
