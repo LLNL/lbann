@@ -168,8 +168,8 @@ class persist {
     return true;
   }
    
-  bool write_hdf5_distmat(H5::Group group_name, const char *name, AbsDistMat *M);
-  bool read_hdf5_distmat(H5::Group group_name, const char *name, AbsDistMat *M);
+  bool write_hdf5_distmat(std::string group_name, const char *name, AbsDistMat *M, lbann_comm *comm);
+  bool read_hdf5_distmat(std::string group_name, const char *name, AbsDistMat *M, lbann_comm *comm);
   #endif
 
  private:

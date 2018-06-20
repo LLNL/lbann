@@ -161,19 +161,8 @@ bool sgd::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
     pack_scalars(p, name_prefix);
   }
   #ifdef LBANN_HAS_HDF5
-  std::string l_name = name_prefix + "_optimizer";
-  if( m_velocity->ColStride() == 1 && m_velocity->RowStride() == 1 ){
-    if (m_comm->am_model_master()){
-      H5::Group velocity = p.checkpoint_file->createGroup(l_name);
-      p.write_hdf5_distmat(velocity, "velocity", m_velocity);
-    }
-  } else {
-      CircMat<El::Device::CPU> temp = *m_velocity;
-      if (m_comm->am_world_master()){
-        H5::Group velocity = p.checkpoint_file->createGroup(l_name);
-        p.write_hdf5_distmat(velocity,"velocity" , &temp);
-      }
-  }
+  std::string group_name = name_prefix + "_optimizer";
+  p.write_hdf5_distmat(group_name, "velocity", m_velocity ,m_comm);
   #else
   char l_name[512];
   sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->Height(), m_velocity->Width());
@@ -193,15 +182,7 @@ bool sgd::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
   unpack_header(header);
   #ifdef LBANN_HAS_HDF5
   std::string l_name = name_prefix + "_optimizer";
-  CircMat<El::Device::CPU> temp(m_velocity->Grid());
-  temp.Resize(m_velocity->Height(),m_velocity->Width());
-  if (m_comm->am_world_master()){
-    H5::Group weights_group = p.checkpoint_file->openGroup(l_name);
-    p.read_hdf5_distmat(weights_group, "velocity", &temp);
-    temp.Resize(m_velocity->Height(),m_velocity->Width());
-  } 
-  temp.MakeSizeConsistent();
-  El::Copy(temp, *m_velocity);
+  p.read_hdf5_distmat(l_name, "velocity", m_velocity, m_comm);
   #else
   char l_name[512];
   sprintf(l_name, "%s_optimizer_velocity_%lldx%lld.bin", name_prefix.c_str(), m_velocity->Height(), m_velocity->Width());

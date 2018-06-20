@@ -377,20 +377,41 @@ bool lbann::persist::read_distmat(persist_type type, const char *name, AbsDistMa
 }
 
 #ifdef LBANN_HAS_HDF5
-bool lbann::persist::write_hdf5_distmat(H5::Group group_name, const char *name, AbsDistMat *M) {
+bool lbann::persist::write_hdf5_distmat(std::string group_name, const char *name, AbsDistMat *M, lbann_comm *comm) {
   const hsize_t row_count = M->Height();
   const hsize_t col_count = M->Width();
   const hsize_t dims[2]= {row_count,col_count};
   H5::DataSpace dataspace = H5::DataSpace(2, dims);
-  H5::DataSet dataset = group_name.createDataSet(name, H5::PredType::NATIVE_FLOAT, dataspace);
-  dataset.write(M->LockedBuffer(), H5::PredType::NATIVE_FLOAT);
+
+  if( M->ColStride() == 1 && M->RowStride() == 1 ){
+    if (comm->am_model_master()){
+      H5::Group weight_group = checkpoint_file->createGroup(group_name);
+      H5::DataSet dataset = weight_group.createDataSet(name, H5::PredType::NATIVE_FLOAT, dataspace);
+      dataset.write(M->LockedBuffer(), H5::PredType::NATIVE_FLOAT); 
+    }
+  } else {
+    CircMat<El::Device::CPU> temp = *M;
+    if (comm->am_world_master()){
+      H5::Group weight_group = checkpoint_file->createGroup(group_name);
+      H5::DataSet dataset = weight_group.createDataSet(name, H5::PredType::NATIVE_FLOAT, dataspace);
+      dataset.write(temp.LockedBuffer(), H5::PredType::NATIVE_FLOAT);
+    }
+  }  
   return true;
 }
 
-bool lbann::persist::read_hdf5_distmat(H5::Group group_name, const char *name, AbsDistMat *M) {
-    H5::DataSet ds = group_name.openDataSet(name);
-    H5::DataSpace dataspace= ds.getSpace();
-    ds.read(M->Buffer(), H5::PredType::NATIVE_FLOAT, dataspace);
+bool lbann::persist::read_hdf5_distmat(std::string group_name, const char *name, AbsDistMat *M, lbann_comm *comm) {
+    CircMat<El::Device::CPU> temp(M->Grid());
+    temp.Resize(M->Height(),M->Width());
+    if (comm->am_world_master()){
+      H5::Group weight_group = checkpoint_file->openGroup(group_name);
+      H5::DataSet ds = weight_group.openDataSet(name);
+      H5::DataSpace dataspace= ds.getSpace();
+      ds.read(temp.Buffer(), H5::PredType::NATIVE_FLOAT, dataspace);     
+      temp.Resize(M->Height(),M->Width());
+    } 
+    temp.MakeSizeConsistent();
+    El::Copy(temp, *M);    
     return true;
 }
 #endif

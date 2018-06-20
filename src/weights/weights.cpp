@@ -345,20 +345,9 @@ bool weights::save_to_checkpoint_shared(lbann::persist& p)
 {
   // define name to store weight values
   #ifdef LBANN_HAS_HDF5
+  // define hdf5 group name
   std::string l_name = m_name + "_weights";
-  // Snag some optimization logic from elemental, only copy to CircMat if necessary. 
-  if( m_values->ColStride() == 1 && m_values->RowStride() == 1 ){
-    if (m_comm->am_model_master()){
-        H5::Group weights_group = p.checkpoint_file->createGroup(l_name);
-        p.write_hdf5_distmat(weights_group, m_name.c_str(), m_values);
-    }
-  } else {
-    CircMat<El::Device::CPU> temp = *m_values;
-    if (m_comm->am_world_master()){
-      H5::Group weights_group = p.checkpoint_file->createGroup(l_name);
-      p.write_hdf5_distmat(weights_group, m_name.c_str(), &temp);
-    }  
-  }
+  p.write_hdf5_distmat(l_name, m_name.c_str(), m_values, m_comm);
   #else  
   char l_name[512];
   sprintf(l_name, "weights_%s_%lldx%lld", m_name.c_str(), m_values->Height(), m_values->Width());
@@ -413,15 +402,7 @@ bool weights::load_from_checkpoint_shared(lbann::persist& p)
   // define filename containing saved weight values
   #ifdef LBANN_HAS_HDF5
   std::string l_name = m_name + "_weights";
-  CircMat<El::Device::CPU> temp(m_values->Grid());
-  temp.Resize(m_values->Height(),m_values->Width());
-  if (m_comm->am_world_master()){
-    H5::Group weights_group = p.checkpoint_file->openGroup(l_name);
-    p.read_hdf5_distmat(weights_group, m_name.c_str(), &temp);
-    temp.Resize(m_values->Height(),m_values->Width());
-  }
-  temp.MakeSizeConsistent();
-  El::Copy(temp, *m_values);
+  p.read_hdf5_distmat(l_name, m_name.c_str(), m_values, m_comm);
   #else
   char l_name[512], f_name[512]; 
   sprintf(l_name, "weights_%s_%lldx%lld", m_name.c_str(), m_values->Height(), m_values->Width());
