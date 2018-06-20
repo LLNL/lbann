@@ -1131,7 +1131,7 @@ uint8_t *lbann_comm::get_collective_buffer(size_t size, size_t idx) {
     /// @todo MPI-CUDA backend
     #ifdef AL_HAS_NCCL
     if (t == std::type_index(typeid(::Al::NCCLBackend))) {
-      auto&& val = new ::Al::NCCLCommunicator(c.comm, { El::GPUManager::Device() });
+      auto&& val = new ::Al::NCCLCommunicator(c.comm);
       m_al_comms[key] = al_comms_val_type(val);
     }
     #endif // AL_HAS_NCCL
