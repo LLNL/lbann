@@ -239,9 +239,6 @@ int main(int argc, char *argv[]) {
       return 0;
     }
 
-    // restart model from checkpoint if we have one
-    //@todo
-
     if (comm->am_world_master()) {
       std::cout << std::endl;
       std::cout << "Callbacks:" << std::endl;

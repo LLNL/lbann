@@ -1185,18 +1185,18 @@ bool model::save_to_checkpoint_shared(persist& p) {
     if (m_comm->am_model_master()) {
       #ifdef LBANN_HAS_HDF5
       H5::Group model_group = p.checkpoint_file->createGroup("/model");
-      p.write_hdf5_parameter(model_group,"current_epoch", &m_current_epoch, H5::PredType::NATIVE_INT);
-      p.write_hdf5_parameter(model_group,"current_step", &m_current_step, H5::PredType::NATIVE_INT);
+      p.write_hdf5_parameter(model_group,"current_epoch", &m_current_epoch);
+      p.write_hdf5_parameter(model_group,"current_step", &m_current_step);
       int temp = (int) m_execution_mode;
-      p.write_hdf5_parameter(model_group,"execution_mode", &temp, H5::PredType::NATIVE_INT);
-      p.write_hdf5_parameter(model_group,"terminate_training", &m_terminate_training, H5::PredType::NATIVE_INT); 
-      p.write_hdf5_parameter(model_group,"current_testing_step", &m_current_testing_step, H5::PredType::NATIVE_INT); 
-      p.write_hdf5_parameter(model_group,"max_mb_size", &m_max_mini_batch_size, H5::PredType::NATIVE_INT);
-      p.write_hdf5_parameter(model_group,"cur_mb_size", &m_current_mini_batch_size, H5::PredType::NATIVE_INT);
+      p.write_hdf5_parameter(model_group,"execution_mode", &temp);
+      p.write_hdf5_parameter(model_group,"terminate_training", &m_terminate_training); 
+      p.write_hdf5_parameter(model_group,"current_testing_step", &m_current_testing_step); 
+      p.write_hdf5_parameter(model_group,"max_mb_size", &m_max_mini_batch_size);
+      p.write_hdf5_parameter(model_group,"cur_mb_size", &m_current_mini_batch_size);
       temp = (int) m_current_phase;
-      p.write_hdf5_parameter(model_group,"current_phase", &temp, H5::PredType::NATIVE_INT);
+      p.write_hdf5_parameter(model_group,"current_phase", &temp);
       temp = (int) p.get_cb_type();
-      p.write_hdf5_parameter(model_group,"callback_type", &temp, H5::PredType::NATIVE_INT); 
+      p.write_hdf5_parameter(model_group,"callback_type", &temp); 
       #else
       p.write_parameter(persist_type::train, "execution_mode",         (int) m_execution_mode);
       p.write_parameter(persist_type::train, "terminate_training",     (int) m_terminate_training);
@@ -1210,7 +1210,7 @@ bool model::save_to_checkpoint_shared(persist& p) {
       #endif
       if(p.get_cb_type() == callback_type::batch) {
         #ifdef LBANN_HAS_HDF5
-        p.write_hdf5_parameter(model_group,"current_validation_step", &m_current_validation_step, H5::PredType::NATIVE_INT);
+        p.write_hdf5_parameter(model_group,"current_validation_step", &m_current_validation_step);
         #else
         p.write_parameter(persist_type::validate, "current_validataion_step",       m_current_validation_step);
         #endif
@@ -1236,7 +1236,7 @@ bool model::save_to_checkpoint_shared(persist& p) {
     if (m_comm->am_model_master()) {
       #ifdef LBANN_HAS_HDF5
       H5::Group model_group_val = p.checkpoint_file->openGroup("/model");
-      p.write_hdf5_parameter(model_group_val,"current_validation_step", &m_current_validation_step, H5::PredType::NATIVE_INT);
+      p.write_hdf5_parameter(model_group_val,"current_validation_step", &m_current_validation_step);
       #else
       p.write_parameter(persist_type::validate, "current_validataion_step",  m_current_validation_step);
       #endif

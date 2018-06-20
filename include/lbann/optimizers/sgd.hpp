@@ -90,7 +90,7 @@ class sgd : public optimizer {
     #ifdef LBANN_HAS_HDF5
     std::string group_name = "/optimizer" + m_name;
     H5::Group optimizer_group = p.checkpoint_file->openGroup(group_name);
-    p.write_hdf5_parameter(optimizer_group, "momentum", &m_momentum, H5::PredType::NATIVE_FLOAT); 
+    p.write_hdf5_parameter(optimizer_group, "momentum", &m_momentum); 
     #else
     p.write_parameter(persist_type::train, "momentum", m_momentum);
     #endif

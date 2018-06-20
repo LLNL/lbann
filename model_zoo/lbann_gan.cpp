@@ -277,10 +277,6 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
                                    pb.model());
     model->setup();
 
-    // restart model from checkpoint if we have one
-    //@todo
-    //model->restartShared();
-
     if (comm->am_world_master()) {
       std::cout << std::endl;
       std::cout << "Callbacks:" << std::endl;

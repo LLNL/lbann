@@ -62,7 +62,6 @@ bool metric_statistics::unpack_scalars(persist& p, struct packing_header *header
   p.read_parameter(persist_type::validate, "sum", &sum);
   p.read_parameter(persist_type::validate, "num_samples", &m_num_samples);
   m_sum = sum;
-  //m_num_samples = num_samples;
   if (header != nullptr) {
     header->sum = sum;
     header->num_samples = m_num_samples;

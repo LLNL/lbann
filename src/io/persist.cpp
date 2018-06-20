@@ -226,11 +226,6 @@ void lbann::persist::open_checkpoint(const char *dir) {
   // copy checkpoint directory
   strcpy(m_checkpoint_dir, dir);
 
-  // open the file for writing
-  // temp moved to inside check
-  //sprintf(m_model_filename, "%s/model", dir);
-  // define filename for train state
-    
   if(ckpt_type != callback_type::validation){
     #ifdef LBANN_HAS_HDF5
     sprintf(m_model_filename, "%s/model.h5", dir);
@@ -261,7 +256,6 @@ void lbann::persist::open_checkpoint(const char *dir) {
     }
     #endif
   }
-  //}
 }
 
 void lbann::persist::close_checkpoint() {

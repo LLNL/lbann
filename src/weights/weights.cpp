@@ -346,8 +346,7 @@ bool weights::save_to_checkpoint_shared(lbann::persist& p)
   // define name to store weight values
   #ifdef LBANN_HAS_HDF5
   std::string l_name = m_name + "_weights";
-  // write weights using persist call -- uses Elemental's write function.
-  //p.write_distmat(persist_type::model, l_name, m_values);
+  // Snag some optimization logic from elemental, only copy to CircMat if necessary. 
   if( m_values->ColStride() == 1 && m_values->RowStride() == 1 ){
     if (m_comm->am_model_master()){
         H5::Group weights_group = p.checkpoint_file->createGroup(l_name);

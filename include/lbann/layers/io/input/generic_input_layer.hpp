@@ -716,15 +716,15 @@ class generic_input_layer : public io_layer {
         H5::Group input_layer = p.checkpoint_file->createGroup("/input_layer");
         
         long temp = m_training_dataset.get_num_samples_processed();
-        p.write_hdf5_parameter(input_layer,"reader_train_processed", &temp, H5::PredType::NATIVE_LONG);
+        p.write_hdf5_parameter(input_layer,"reader_train_processed", &temp);
         temp = m_training_dataset.get_total_samples();
-        p.write_hdf5_parameter(input_layer,"reader_train_total", &temp, H5::PredType::NATIVE_LONG);
+        p.write_hdf5_parameter(input_layer,"reader_train_total", &temp);
 
         temp = m_testing_dataset.get_num_samples_processed();
-        p.write_hdf5_parameter(input_layer,"reader_test_processed", &temp, H5::PredType::NATIVE_LONG);
+        p.write_hdf5_parameter(input_layer,"reader_test_processed", &temp);
 
         temp = m_testing_dataset.get_total_samples();
-        p.write_hdf5_parameter(input_layer,"reader_test_total", &temp, H5::PredType::NATIVE_LONG);
+        p.write_hdf5_parameter(input_layer,"reader_test_total", &temp);
         #else
         p.write_parameter(persist_type::train, "reader_train_processed",
           m_training_dataset.get_num_samples_processed());
@@ -745,10 +745,10 @@ class generic_input_layer : public io_layer {
         #ifdef LBANN_HAS_HDF5
         H5::Group input_layer_val = p.checkpoint_file->openGroup("/input_layer");
         long temp =  m_validation_dataset.get_num_samples_processed();  
-        p.write_hdf5_parameter(input_layer_val,"reader_validate_processed", &temp, H5::PredType::NATIVE_LONG);
+        p.write_hdf5_parameter(input_layer_val,"reader_validate_processed", &temp);
 
         temp =  m_validation_dataset.get_total_samples();
-        p.write_hdf5_parameter(input_layer_val,"reader_validate_total", &temp, H5::PredType::NATIVE_LONG);
+        p.write_hdf5_parameter(input_layer_val,"reader_validate_total", &temp);
         #else
         p.write_parameter(persist_type::validate, "reader_validate_processed",
           m_validation_dataset.get_num_samples_processed());
@@ -882,14 +882,14 @@ class generic_input_layer : public io_layer {
     }
     // save our own state
     // rank 0 reads the file
-    //dataset_header header;
-    //p.read_uint64(persist_type::train, "reader_train_processed",    &header.train_proc);
-    //p.read_uint64(persist_type::train, "reader_train_total",        &header.train_total);
-    //p.read_uint64(persist_type::train, "reader_test_processed",     &header.test_proc);
-    //p.read_uint64(persist_type::train, "reader_test_total",         &header.test_total);
+    dataset_header header;
+    p.read_parameter(persist_type::train, "reader_train_processed",    &header.train_proc);
+    p.read_parameter(persist_type::train, "reader_train_total",        &header.train_total);
+    p.read_parameter(persist_type::train, "reader_test_processed",     &header.test_proc);
+    p.read_parameter(persist_type::train, "reader_test_total",         &header.test_total);
     if(m_data_readers[execution_mode::validation] != nullptr){
-      //p.read_uint64(persist_type::validate, "reader_validate_processed", &header.validate_proc);
-      //p.read_uint64(persist_type::validate, "reader_validate_total",     &header.validate_total);
+      p.read_parameter(persist_type::validate, "reader_validate_processed", &header.validate_proc);
+      p.read_parameter(persist_type::validate, "reader_validate_total",     &header.validate_total);
     }
     it = this->m_data_readers.find(execution_mode::validation);
     if ((it != this->m_data_readers.end()) && it->second) {
@@ -897,13 +897,13 @@ class generic_input_layer : public io_layer {
     }
 
     // set our fields
-    //m_training_dataset.num_samples_processed()   = (long) header.train_proc;
-    //m_training_dataset.total_samples()           = (long) header.train_total;
-    //m_testing_dataset.num_samples_processed()    = (long) header.test_proc;
-    //m_testing_dataset.total_samples()            = (long) header.test_total;
+    m_training_dataset.num_samples_processed()   =  header.train_proc;
+    m_training_dataset.total_samples()           =  header.train_total;
+    m_testing_dataset.num_samples_processed()    =  header.test_proc;
+    m_testing_dataset.total_samples()            =  header.test_total;
     if(m_data_readers[execution_mode::validation] != nullptr){
-      //m_validation_dataset.num_samples_processed() = (long) header.validate_proc;
-      //m_validation_dataset.total_samples()         = (long) header.validate_total;
+      m_validation_dataset.num_samples_processed() =  header.validate_proc;
+      m_validation_dataset.total_samples()         =  header.validate_total;
     }
     return true;
   }

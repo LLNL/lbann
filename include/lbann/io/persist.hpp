@@ -120,17 +120,21 @@ class persist {
     return read_bytes(type, name, val.data(), array_size * sizeof(T));
   }
 
-  bool write_int32_contig(persist_type type, const char *name, const int32_t *buf, uint64_t count);
-  bool read_int32_contig (persist_type type, const char *name, int32_t *buf, uint64_t count);
-
   bool write_string(persist_type type, const char *name, const char *val, int str_length);
   bool read_string (persist_type type, const char *name, char *val, int str_length);
 
   
-#ifdef LBANN_HAS_HDF5   
+  #ifdef LBANN_HAS_HDF5   
+  
+  H5::PredType cpp_to_hdf5(int val) { return H5::PredType::NATIVE_INT; } 
+  H5::PredType cpp_to_hdf5(double val) { return H5::PredType::NATIVE_DOUBLE; }
+  H5::PredType cpp_to_hdf5(float val) { return H5::PredType::NATIVE_FLOAT; }
+  H5::PredType cpp_to_hdf5(long val) { return H5::PredType::NATIVE_LONG; }
+  
   template<typename T>
-  bool write_hdf5_parameter(H5::Group group_name, const char *name, T *val, H5::PredType hdf5_type) {
+  bool write_hdf5_parameter(H5::Group group_name, const char *name, T *val) {
     H5::DataSpace dataspace = H5::DataSpace();
+    H5::PredType hdf5_type = cpp_to_hdf5(*val);
     H5::Attribute attribute = group_name.createAttribute(name, hdf5_type, dataspace);
     attribute.write(hdf5_type, static_cast<void*>(val));
     return true;
@@ -146,8 +150,9 @@ class persist {
   }
 
   template<typename T>
-  bool write_hdf5_array(H5::Group group_name, const char *name, std::vector<T> val, H5::PredType hdf5_type) {
+  bool write_hdf5_array(H5::Group group_name, const char *name, std::vector<T> val) {
     const hsize_t arr_size = val.size();
+    H5::PredType hdf5_type = cpp_to_hdf5(val[0]);
     H5::DataSpace dataspace = H5::DataSpace(1,&arr_size);
     H5::DataSet dataset = group_name.createDataSet(name, hdf5_type, dataspace);
     dataset.write(val.data(), hdf5_type);
@@ -165,7 +170,7 @@ class persist {
    
   bool write_hdf5_distmat(H5::Group group_name, const char *name, AbsDistMat *M);
   bool read_hdf5_distmat(H5::Group group_name, const char *name, AbsDistMat *M);
-#endif
+  #endif
 
  private:
   int get_fd(persist_type type) const;

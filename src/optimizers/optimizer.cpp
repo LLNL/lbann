@@ -299,7 +299,7 @@ bool optimizer::save_to_checkpoint_shared(persist& p, std::string m_name) {
     #ifdef LBANN_HAS_HDF5
     std::string group_name = "/optimizer" + m_name;
     H5::Group optimizer_group = p.checkpoint_file->createGroup(group_name);
-    p.write_hdf5_parameter(optimizer_group, "learning_rate", &m_learning_rate, H5::PredType::NATIVE_FLOAT);
+    p.write_hdf5_parameter(optimizer_group, "learning_rate", &m_learning_rate);
     #else
     p.write_parameter(persist_type::train, "learning_rate", m_learning_rate);
     #endif

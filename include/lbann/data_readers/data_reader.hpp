@@ -530,13 +530,13 @@ class generic_data_reader : public lbann_image_preprocessor {
     #ifdef LBANN_HAS_HDF5
     snprintf(fieldname, sizeof(fieldname), "%s_data_reader", name);  
     H5::Group dr_group = p.checkpoint_file->createGroup(fieldname);
-    p.write_hdf5_parameter(dr_group,"current_mini_batch_idx", &m_current_mini_batch_idx, H5::PredType::NATIVE_FLOAT);
+    p.write_hdf5_parameter(dr_group,"current_mini_batch_idx", &m_current_mini_batch_idx);
     
-    p.write_hdf5_parameter(dr_group,"data_size", &size, H5::PredType::NATIVE_INT);
+    p.write_hdf5_parameter(dr_group,"data_size", &size);
 
-    p.write_hdf5_parameter(dr_group, "data_position", &m_current_pos, H5::PredType::NATIVE_FLOAT);
+    p.write_hdf5_parameter(dr_group, "data_position", &m_current_pos);
     
-    p.write_hdf5_array(dr_group, "data_indices", m_shuffled_indices, H5::PredType::NATIVE_INT);
+    p.write_hdf5_array(dr_group, "data_indices", m_shuffled_indices);
     
     #else
     lbann::persist_type persist_value;
@@ -566,7 +566,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   bool unpack_scalars(persist& p, struct packing_header *header, const char *name){
     char fieldname[1024];
     int size; 
-    // Closest to non checkpoint run only loads m_current_pos
+    
     #ifdef LBANN_HAS_HDF5
     snprintf(fieldname, sizeof(fieldname), "%s_data_reader", name);
     H5::Group dr_group = p.checkpoint_file->openGroup(fieldname); 
