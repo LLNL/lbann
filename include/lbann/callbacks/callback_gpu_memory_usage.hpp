@@ -31,8 +31,6 @@
 
 #include "lbann/callbacks/callback.hpp"
 
-#ifdef LBANN_HAS_CUDA
-
 namespace lbann {
 /** Callback hooks for printing GPU memory usage. */
 class lbann_callback_gpu_memory_usage : public lbann_callback {
@@ -49,7 +47,5 @@ class lbann_callback_gpu_memory_usage : public lbann_callback {
 };
 
 }  // namespace lbann
-
-#endif // LBANN_HAS_CUDA
 
 #endif  // __LBANN_CALLBACKS_CALLBACK_GPU_MEMORY_USAGE_HPP_INCLUDED
