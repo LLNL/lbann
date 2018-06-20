@@ -222,21 +222,22 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
   auto& local_gradient_wrt_input = get_local_error_signals();
   if (local_output.Height() > 0 && local_output.Width() > 0) {
 
-      // Useful constants
-      const DataType one = 1;
+    // Useful constants
+    const DataType zero = DataType(0);
+    const DataType one = DataType(1);
     
-      // Perform backprop
-      CHECK_CUDNN(cudnnSoftmaxBackward(this->m_cudnn->get_handle(),
-                                       CUDNN_SOFTMAX_ACCURATE,
-                                       CUDNN_SOFTMAX_MODE_INSTANCE,
-                                       &one,
-                                       m_tensors_cudnn_desc.get_activations(),
-                                       local_output.LockedBuffer(),
-                                       m_tensors_cudnn_desc.get_prev_error_signals(),
-                                       local_gradient_wrt_output.LockedBuffer(),
-                                       &one,
-                                       m_tensors_cudnn_desc.get_error_signals(),
-                                       local_gradient_wrt_input.Buffer()));
+    // Perform backprop
+    CHECK_CUDNN(cudnnSoftmaxBackward(this->m_cudnn->get_handle(),
+                                     CUDNN_SOFTMAX_ACCURATE,
+                                     CUDNN_SOFTMAX_MODE_INSTANCE,
+                                     &one,
+                                     m_tensors_cudnn_desc.get_activations(),
+                                     local_output.LockedBuffer(),
+                                     m_tensors_cudnn_desc.get_prev_error_signals(),
+                                     local_gradient_wrt_output.LockedBuffer(),
+                                     &zero,
+                                     m_tensors_cudnn_desc.get_error_signals(),
+                                     local_gradient_wrt_input.Buffer()));
 
 #ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
       // Round to minimum value to avoid denormalized floats

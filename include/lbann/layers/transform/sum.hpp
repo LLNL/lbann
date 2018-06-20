@@ -124,17 +124,21 @@ class sum_layer : public transform_layer {
   }
 
   void fp_compute() override {
-    El::Zero(get_activations());
-    for (int i = 0; i < get_num_parents(); ++i) {
-      El::Axpy(m_scaling_factors[i], get_prev_activations(i),
-               get_activations());
+    auto& output = get_activations();
+    if (get_num_parents() > 0) {
+      El::Copy(get_prev_activations(0), output);
+    } else {
+      El::Zero(output);
+    }
+    for (int i = 1; i < get_num_parents(); ++i) {
+      El::Axpy(DataType(1), get_prev_activations(i), output);
     }
   }
 
   void bp_compute() override {
-    for (int i = 0; i < get_num_parents(); ++i) {
-      El::Axpy(m_scaling_factors[i], get_prev_error_signals(),
-               get_error_signals(i));
+    const auto& gradient_wrt_output = get_prev_error_signals();
+    for (auto* gradient_wrt_input : this->m_error_signals) {
+      El::LockedView(*gradient_wrt_input, gradient_wrt_output);
     }
   }
 

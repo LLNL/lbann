@@ -22,38 +22,34 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
+//
+// callback_gpu_memory_usage .hpp .cpp - Callbacks for printing GPU memory usage
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_OBJECTIVE_FUNCTION_LAYER_TERM_HPP_INCLUDED
-#define LBANN_OBJECTIVE_FUNCTION_LAYER_TERM_HPP_INCLUDED
+#ifndef __LBANN_CALLBACKS_CALLBACK_GPU_MEMORY_USAGE_HPP_INCLUDED
+#define __LBANN_CALLBACKS_CALLBACK_GPU_MEMORY_USAGE_HPP_INCLUDED
 
-#include "lbann/objective_functions/objective_function_term.hpp"
-#include "lbann/layers/transform/evaluation.hpp"
+#include "lbann/callbacks/callback.hpp"
+
+#ifdef LBANN_HAS_CUDA
 
 namespace lbann {
-
-class layer_term : public objective_function_term {
+/** Callback hooks for printing GPU memory usage. */
+class lbann_callback_gpu_memory_usage : public lbann_callback {
  public:
-  layer_term(EvalType scale_factor = EvalType(1));
-  layer_term* copy() const override { return new layer_term(*this); } 
-  std::string name() const override { return "evaluation layer term"; }
-
-  void set_evaluation_layer(Layer* l);
-
-  Layer* get_evaluation_layer();
-
-  void setup(model& m) override;
-
-  void start_evaluation() override;
-
-  EvalType finish_evaluation() override;
-
-  void differentiate() override;
   
-  void compute_weight_regularization() override {};
-
+  /** Constructor.
+   */
+  lbann_callback_gpu_memory_usage() = default;
+  lbann_callback_gpu_memory_usage(const lbann_callback_gpu_memory_usage&) = default;
+  lbann_callback_gpu_memory_usage& operator=(const lbann_callback_gpu_memory_usage&) = default;
+  lbann_callback_gpu_memory_usage* copy() const override { return new lbann_callback_gpu_memory_usage(*this); }
+  void on_epoch_begin(model *m) override;
+  std::string name() const override { return "GPU memory usage"; }
 };
 
-} // namespace lbann
+}  // namespace lbann
 
-#endif // LBANN_OBJECTIVE_FUNCTION_LAYER_TERM_HPP_INCLUDED
+#endif // LBANN_HAS_CUDA
+
+#endif  // __LBANN_CALLBACKS_CALLBACK_GPU_MEMORY_USAGE_HPP_INCLUDED

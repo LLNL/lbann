@@ -89,7 +89,7 @@ class safe_inv_layer : public transform_layer {
         const DataType x = local_input(row, col);
         const DataType dy = local_gradient_wrt_output(row, col);
         DataType& dx = local_gradient_wrt_input(row, col);
-        dx += std::fabs(x) > m_threshhold ?  - dy / (x * x) : DataType(0);
+        dx = std::fabs(x) > m_threshhold ?  - dy / (x * x) : DataType(0);
       }
     }
   }

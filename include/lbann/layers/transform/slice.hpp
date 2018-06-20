@@ -279,7 +279,7 @@ class slice_layer : public transform_layer {
                        El::IR(region * output_region_stride,
                               (region+1) * output_region_stride),
                        El::ALL);
-        El::Axpy(DataType(1), *m_output_region_v, *m_input_region_v);
+        El::Copy(*m_output_region_v, *m_input_region_v);
       }
 
     }

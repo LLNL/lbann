@@ -107,9 +107,7 @@
 #include "lbann/layers/io/target/reconstruction.hpp"
 
 /// Data Readers
-#include "lbann/data_readers/data_reader_imagenet_org.hpp"
 #include "lbann/data_readers/data_reader_imagenet.hpp"
-#include "lbann/data_readers/data_reader_imagenet_single.hpp"
 #include "lbann/data_readers/data_reader_imagenet_patches.hpp"
 #include "lbann/data_readers/data_reader_cifar10.hpp"
 #include "lbann/data_readers/data_reader_mnist.hpp"
@@ -161,6 +159,7 @@
 #include "lbann/callbacks/callback_timeline.hpp"
 #include "lbann/callbacks/callback_checkpoint.hpp"
 #include "lbann/callbacks/callback_save_model.hpp"
+#include "lbann/callbacks/callback_gpu_memory_usage.hpp"
 
 /// Weights and weight initializers
 #include "lbann/weights/weights.hpp"
@@ -188,7 +187,6 @@
 #include "lbann/objective_functions/weight_regularization/l1.hpp"
 #include "lbann/objective_functions/weight_regularization/l2.hpp"
 #include "lbann/objective_functions/weight_regularization/group_lasso.hpp"
-#include "lbann/objective_functions/kl_divergence.hpp"
 #include "lbann/objective_functions/layer_term.hpp"
 
 /// Metrics

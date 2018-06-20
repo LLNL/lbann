@@ -24,36 +24,32 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_OBJECTIVE_FUNCTION_LAYER_TERM_HPP_INCLUDED
-#define LBANN_OBJECTIVE_FUNCTION_LAYER_TERM_HPP_INCLUDED
+#ifndef LBANN_UTILS_NUMBER_THEORY_HPP
+#define LBANN_UTILS_NUMBER_THEORY_HPP
 
-#include "lbann/objective_functions/objective_function_term.hpp"
-#include "lbann/layers/transform/evaluation.hpp"
+#include <vector>
 
 namespace lbann {
+namespace number_theory {
 
-class layer_term : public objective_function_term {
- public:
-  layer_term(EvalType scale_factor = EvalType(1));
-  layer_term* copy() const override { return new layer_term(*this); } 
-  std::string name() const override { return "evaluation layer term"; }
+/** Get prime number.
+ *  Indices are zero-indexed, so prime(0) is 2, prime(1) is 3, and so
+ *  on. Results are cached for future function calls.
+ */
+int prime(int n);
 
-  void set_evaluation_layer(Layer* l);
+/** Get prime factorization of n.
+ *  Prime factors are sorted in ascending order.
+ */
+std::vector<int> prime_factors(int n);
 
-  Layer* get_evaluation_layer();
+/** Get balanced factorization of n.
+ *  Factors are sorted in ascending order. The factors should be as
+ *  close as possible.
+ */
+std::vector<int> balanced_factors(int n, int num_factors);
 
-  void setup(model& m) override;
+} // namespace number_theory
+} // lbann
 
-  void start_evaluation() override;
-
-  EvalType finish_evaluation() override;
-
-  void differentiate() override;
-  
-  void compute_weight_regularization() override {};
-
-};
-
-} // namespace lbann
-
-#endif // LBANN_OBJECTIVE_FUNCTION_LAYER_TERM_HPP_INCLUDED
+#endif // LBANN_UTILS_NUMBER_THEORY_HPP

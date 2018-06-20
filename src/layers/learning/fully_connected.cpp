@@ -170,12 +170,12 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_com
     El::Gemm(m_transpose ? El::NORMAL : El::TRANSPOSE,
              El::NORMAL,
              DataType(1), local_linearity, local_gradient_wrt_output,
-             DataType(1), local_gradient_wrt_input);
+             DataType(0), local_gradient_wrt_input);
   } else {
     El::Gemm(m_transpose ? El::NORMAL : El::TRANSPOSE,
              El::NORMAL,
              DataType(1), linearity, gradient_wrt_output,
-             DataType(1), gradient_wrt_input);
+             DataType(0), gradient_wrt_input);
   }
 
 }
@@ -253,7 +253,7 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_comp
   El::Gemm(m_transpose ? El::NORMAL : El::TRANSPOSE,
            El::NORMAL,
            DataType(1), local_linearity, local_gradient_wrt_output,
-           DataType(1), local_gradient_wrt_input);
+           DataType(0), local_gradient_wrt_input);
 
 }
 
@@ -353,7 +353,7 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_comp
   El::Gemm(m_transpose ? El::NORMAL : El::TRANSPOSE,
            El::NORMAL,
            DataType(1), local_linearity, local_gradient_wrt_output,
-           DataType(1), local_gradient_wrt_input);
+           DataType(0), local_gradient_wrt_input);
 
 #endif // LBANN_HAS_CUDNN
 }
@@ -482,12 +482,12 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_com
     El::Gemm(m_transpose ? El::NORMAL : El::TRANSPOSE,
              El::NORMAL,
              DataType(1), local_linearity, local_gradient_wrt_output,
-             DataType(1), local_gradient_wrt_input);
+             DataType(0), local_gradient_wrt_input);
   } else {
     El::Gemm(m_transpose ? El::NORMAL : El::TRANSPOSE,
              El::NORMAL,
              DataType(1), linearity, gradient_wrt_output,
-             DataType(1), gradient_wrt_input);
+             DataType(0), gradient_wrt_input);
   }
   
 #endif // LBANN_HAS_CUDNN

@@ -810,7 +810,6 @@ bool model::train_mini_batch() {
   }
 
   // Backward prop step
-  clear_error_signals();
   m_objective_function->differentiate();
   backward_prop();
   m_objective_function->compute_weight_regularization();
@@ -832,12 +831,6 @@ void model::clear_gradients() {
   for (const auto& w : m_weights) {
     optimizer* opt = w->get_optimizer();
     if (opt != nullptr) { opt->clear_gradient(); }
-  }
-}
-
-void model::clear_error_signals() {
-  for (const auto& layer : m_layers) {
-    layer->clear_error_signals(m_current_mini_batch_size);
   }
 }
 

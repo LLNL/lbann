@@ -100,8 +100,14 @@ class split_layer : public transform_layer {
 
   void bp_compute() override {
     auto& gradient_wrt_input = get_error_signals();
-    for (const auto& gradient_wrt_output : this->m_prev_error_signals) {
-      El::Axpy(DataType(1), *gradient_wrt_output, gradient_wrt_input);
+    if (get_num_children() > 0) {
+      El::Copy(get_prev_error_signals(0), gradient_wrt_input);
+    } else {
+      El::Zero(gradient_wrt_input);
+    }
+    for (int i = 1; i < get_num_children(); ++i) {
+      El::Axpy(DataType(1), get_prev_error_signals(i),
+               gradient_wrt_input);
     }
   }
 

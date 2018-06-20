@@ -56,9 +56,13 @@ class generic_input_layer : public io_layer {
       //m_data_sets_span_models(data_sets_span_models) {
     // Input layers have no parents
     m_expected_num_parent_layers = 0;
-    // Input layers output a sample and target, which could be the
-    // original value, categorical label, or regression value
-    m_expected_num_child_layers = 2;
+    if(dr_mode == data_reader_target_mode::NA) {
+      m_expected_num_child_layers = 1;
+    }else {
+      // Input layers output a sample and target, which could be the
+      // original value, categorical label, or regression value
+      m_expected_num_child_layers = 2;
+    }
 
     if(m_data_readers[execution_mode::training] != nullptr) {
       m_training_dataset.total_samples() = m_data_readers[execution_mode::training]->get_num_data();
@@ -186,7 +190,22 @@ class generic_input_layer : public io_layer {
       calculate_num_iterations_per_epoch_training_unique_per_models(max_mb_size);
     }
 
-    io_buffer->setup_data(this->m_num_neurons, get_linearized_label_size(), max_mb_size);
+    int linearized_target_size;
+    switch(m_data_reader_mode) {
+    case data_reader_target_mode::REGRESSION:
+      linearized_target_size = get_linearized_response_size();
+      break;
+    case data_reader_target_mode::RECONSTRUCTION:
+      linearized_target_size = get_linearized_data_size();
+      break;
+    case data_reader_target_mode::CLASSIFICATION:
+      linearized_target_size = get_linearized_label_size();
+      break;
+    case data_reader_target_mode::NA:
+    default:
+      linearized_target_size = 0;
+    }
+    io_buffer->setup_data(this->m_num_neurons, linearized_target_size, max_mb_size);
   }
 
   /** Define the standard view of the matrix -- and set it for the model
@@ -864,11 +883,11 @@ class generic_input_layer : public io_layer {
 };
 
 template<> inline void generic_input_layer::initialize_io_buffer<partitioned_io_buffer>(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers) {
-  io_buffer = new partitioned_io_buffer(comm, num_parallel_readers, data_readers);
+  io_buffer = new partitioned_io_buffer(comm, num_parallel_readers, data_readers, m_expected_num_child_layers);
 }
 
 template<> inline void generic_input_layer::initialize_io_buffer<distributed_io_buffer>(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers) {
-  io_buffer = new distributed_io_buffer(comm, num_parallel_readers, data_readers);
+  io_buffer = new distributed_io_buffer(comm, num_parallel_readers, data_readers, m_expected_num_child_layers);
 }
 
 }  // namespace lbann

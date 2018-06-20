@@ -139,28 +139,7 @@ message ImagePreprocessor {
   Noiser noiser = 11;
   PatchExtractor patch_extractor = 12;
 
-  // For backward compatibility. TODO: will be deprecated
-  bool scale = 13;
-  bool subtract_mean = 14;
-  bool unit_variance = 15;
-  bool z_score = 16;
-  bool horizontal_flip = 17;
-  bool vertical_flip = 18;
-  double rotation = 19;
-  double horizontal_shift = 20;
-  double vertical_shift = 21;
-  double shear_range = 22;
-  bool disable_augmentation = 23;
-  float noise_factor = 24;
-  bool no_colorize = 25; // not to use colorizer in cv_process
-  bool crop_first = 26;
-  uint32 crop_width = 27;
-  uint32 crop_height = 28;
-  bool crop_randomly = 29;
-  int32 resized_width = 30;
-  int32 resized_height = 31;
-  bool adaptive_interpolation = 32;
-  int32 early_normalization = 33; // for jag
+  int32 early_normalization = 33; // for data_reader_jag only
 }
 
 // TODO: wrap El::Mat based normalization into a generic preprocessor
@@ -244,7 +223,6 @@ message ObjectiveFunction {
   repeated L1WeightRegularization l1_weight_regularization = 20;
   repeated L2WeightRegularization l2_weight_regularization = 21;
   repeated GroupLassoWeightRegularization group_lasso_weight_regularization = 22;
-  repeated KLDivergence kl_divergence = 23;
   repeated LayerTerm layer_term = 25;
 }
 
@@ -295,11 +273,6 @@ message L2WeightRegularization {
 
 message GroupLassoWeightRegularization {
   double scale_factor = 1;
-}
-
-message KLDivergence {
-  string layer1 = 1;
-  string layer2 = 2;
 }
 
 message LayerTerm {
@@ -438,6 +411,7 @@ message Callback {
    CallbackCheckpoint checkpoint = 28;
    CallbackSaveModel save_model = 29;
    CallbackPolyLearningRate poly_learning_rate = 30;
+   CallbackGPUMemoryUsage gpu_memory_usage = 31;
 }
 
 message CallbackLTFB {
@@ -598,6 +572,9 @@ message CallbackCheckpoint {
 message CallbackSaveModel {
   string dir = 1;
   string extension = 2;
+}
+
+message CallbackGPUMemoryUsage {
 }
 
 //========================================================================

@@ -73,10 +73,10 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
     generic_data_reader *reader = nullptr;
     generic_data_reader *reader_validation = nullptr;
 
-    if ((name == "imagenet_org") || (name == "mnist") || (name == "cifar10")) {
+    if ((name == "mnist") || (name == "cifar10")) {
       init_org_image_data_reader(readme, master, reader);
       set_up_generic_preprocessor = false;
-    } else if ((name == "imagenet") || (name == "imagenet_single") || (name == "imagenet_patches") ||
+    } else if ((name == "imagenet") || (name == "imagenet_patches") ||
                (name == "triplet") || (name == "mnist_siamese") || (name == "multi_images")) {
       init_image_data_reader(readme, master, reader);
       set_up_generic_preprocessor = false;
@@ -295,13 +295,8 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       if (name == "mnist") {
         reader_validation = new mnist_reader(shuffle);
         (*(mnist_reader *)reader_validation) = (*(mnist_reader *)reader);
-      } else if (name == "imagenet_org") {
-        reader_validation = new imagenet_reader_org(shuffle);
-        (*(imagenet_reader_org *)reader_validation) = (*(imagenet_reader_org *)reader);
       } else if (name == "imagenet") {
         reader_validation = new imagenet_reader(*dynamic_cast<const imagenet_reader*>(reader));
-      } else if (name == "imagenet_single") {
-        reader_validation = new imagenet_reader_single(*dynamic_cast<const imagenet_reader_single*>(reader));
       } else if (name == "imagenet_patches") {
         reader_validation = new imagenet_reader_patches(*dynamic_cast<const imagenet_reader_patches*>(reader));
       } else if (name == "triplet") {
