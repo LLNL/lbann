@@ -8,6 +8,7 @@ set_full_path(THIS_DIR_HEADERS
   glob.hpp
   im2col.hpp
   mild_exception.hpp
+  number_theory.hpp
   omp_diagnostics.hpp
   options.hpp
   prototext.hpp

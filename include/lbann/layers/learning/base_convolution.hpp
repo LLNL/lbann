@@ -293,8 +293,8 @@ class base_convolution_layer : public learning_layer {
                                                 cudnn::get_data_type()));
 
     // Set bias tensor descriptor
-    std::vector<int> bias_dims(get_num_neuron_dims(), 1);
-    bias_dims[0] = get_neuron_dims()[0];
+    std::vector<int> bias_dims(get_num_neuron_dims() + 1, 1);
+    bias_dims[1] = get_neuron_dims()[0];
     cudnn::set_tensor_desc(m_bias_cudnn_desc, bias_dims);
 
   #endif // LBANN_HAS_CUDNN
