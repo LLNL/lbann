@@ -84,9 +84,10 @@ To look at archived results from previous builds: `cd /usr/workspace/wsb/lbannus
 To look at Bamboo agent properties: `cat /usr/global/tools/bamboo/agents/lbannusr/<bamboo-agent-name>/bin/bamboo-capabilities.properties`
 
 You can copy these files over to your own machine as follows:
-`sudo lbannusr`
-`give <lc-username> <absolute-path>`
-`exit` - to go back to your own LC account, not `lbannusr`'s.
-`take lbannusr` - now the file exists on your LC account, but not yet on your own machine.
+- `sudo lbannusr`
+- `give <lc-username> <absolute-path>`
+- `exit` - to go back to your own LC account, not `lbannusr`'s.
+- `take lbannusr` - now the file exists on your LC account, but not yet on your own machine.
+
 From your own machine, not a ssh terminal:
-`scp <lc-username>@<cluster>.llnl.gov:<absolute-path> .`
+- `scp <lc-username>@<cluster>.llnl.gov:<absolute-path> .`
