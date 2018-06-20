@@ -27,6 +27,7 @@
 #include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/utils/cublas_wrapper.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/number_theory.hpp"
 
 #include <iostream>
 #include <unordered_map>
@@ -454,41 +455,6 @@ entrywise_layer_tensor_manager
 
 namespace {
 
-/** Factor integer into three factors.
- *  The three factors should be as close as possible. This
- *  implementation is very crude.
- */
-std::tuple<int,int,int> cube_factorize(int n) {
-  static std::unordered_map<int,std::tuple<int,int,int>> past_factors;
-  
-  // Return trivial or known factorizations
-  if (n <= 1) { return std::tuple<int,int,int>(1, 1, 1); }
-  if (past_factors.count(n) > 0) { return past_factors[n]; }
-
-  // Compute prime factorization
-  std::vector<int> prime_factors;
-  for (int i = 2; n > 1; ++i) {
-    while (n % i == 0) {
-      prime_factors.push_back(i);
-      n /= i;
-    }
-  }
-  
-  // Construct three factors from primes
-  int a = 1, b = 1, c = 1;
-  const int num_prime_factors = prime_factors.size();
-  for (int i = num_prime_factors - 1; i >= 0; --i) {
-    a *= prime_factors[i];
-    if (b < a) { std::swap(a, b); }
-    if (c < b) { std::swap(b, c); }
-  }
-
-  // Record factorization and return result
-  past_factors[n] = std::tuple<int,int,int>(a, b, c);
-  return std::tuple<int,int,int>(a, b, c);
-
-}
-
 /** Set a cuDNN tensor descriptor for an entrywise tensor operation.
  *  Given local data in a (height x width) matrix, the tensor is
  *  initialized with dimensions (width, a, b, c), where
@@ -506,11 +472,20 @@ void set_entrywise_tensor_desc(cudnnTensorDescriptor_t& desc,
   const int width = local_data.Width();
   const int ldim = local_data.LDim();
   if (height > 0 && width > 0) {
-    const auto& factors = cube_factorize(height);
-    const auto& a = std::get<0>(factors);
-    const auto& b = std::get<1>(factors);
-    const auto& c = std::get<2>(factors);
-    set_tensor_desc(desc, {width, c, b, a}, {ldim, a*b, a, 1});
+
+    // Factorize height into three factors
+    // Note: factorization is memoized
+    static std::unordered_map<int,std::vector<int>> cache;
+    auto& factors = cache[height];
+    if (factors.empty()) {
+      factors = number_theory::balanced_factors(height, 3);
+    }
+
+    // Set cuDNN tensor descriptor with 4D tensor
+    set_tensor_desc(desc,
+                    {width, factors[2], factors[1], factors[0]},
+                    {ldim, factors[1]*factors[0], factors[0], 1});
+
   }
 }
 
