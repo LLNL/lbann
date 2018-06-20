@@ -69,14 +69,19 @@ std::vector<int> prime_factors(int n) {
     err << "invalid number to factorize (" << n << ")";
     LBANN_ERROR(err.str());
   }
+
+  // Extract primes from n
+  // Note: If n is greater than one and has no prime divisors less
+  // than or equal to sqrt(n), it is prime.
   std::vector<int> factors;
-  for (int i = 0; n > 1; ++i) {
-    const auto& p = prime(i);
+  for (int i = 0, p = prime(i); p * p <= n; p = prime(++i)) {
     while (n % p == 0) {
       factors.push_back(p);
       n /= p;
     }
   }
+  if (n > 1) { factors.push_back(n); }
+
   return factors;
 }
 
