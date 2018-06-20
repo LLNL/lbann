@@ -293,7 +293,7 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
 
   std::shared_ptr<cv_process> pp;
   // set up the image preprocessor
-  if ((name == "imagenet") || (name == "imagenet_single") || (name == "jag_conduit") ||
+  if ((name == "imagenet") || (name == "jag_conduit") ||
       (name == "triplet") || (name == "mnist_siamese") || (name == "multi_images")) {
     pp = std::make_shared<cv_process>();
   } else if (name == "imagenet_patches") {
@@ -325,8 +325,6 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
     reader = new data_reader_mnist_siamese(pp, shuffle);
   } else if (name == "multi_images") {
     reader = new data_reader_multi_images(pp, shuffle);
-  } else if (name == "imagenet_single") { // imagenet_single
-    reader = new imagenet_reader_single(pp, shuffle);
 #ifdef LBANN_HAS_CONDUIT
   } else if (name =="jag_conduit") {
     data_reader_jag_conduit* reader_jag = new data_reader_jag_conduit(pp, shuffle);
@@ -433,22 +431,6 @@ void init_generic_preprocessor(const lbann_data::Reader& pb_readme, const bool m
     } else {
       reader->disable_augmentation();
     }
-  } else { // For backward compatibility. TODO: will be deprecated
-    if (!pb_preprocessor.disable_augmentation() &&
-        (pb_preprocessor.horizontal_flip() ||
-         pb_preprocessor.vertical_flip() ||
-         pb_preprocessor.rotation() != 0.0 ||
-         pb_preprocessor.horizontal_shift() != 0.0 ||
-         pb_preprocessor.vertical_shift() != 0.0 ||
-         pb_preprocessor.shear_range() != 0.0)) {
-      reader->horizontal_flip( pb_preprocessor.horizontal_flip() );
-      reader->vertical_flip( pb_preprocessor.vertical_flip() );
-      reader->rotation( pb_preprocessor.rotation() );
-      reader->horizontal_shift( pb_preprocessor.horizontal_shift() );
-      reader->vertical_shift( pb_preprocessor.vertical_shift() );
-      reader->shear_range( pb_preprocessor.shear_range() );
-      if (master) std::cout << "image processor: deprecated syntax for augmenter" << std::endl;
-    }
   }
 
   // set up the normalizer
@@ -462,12 +444,6 @@ void init_generic_preprocessor(const lbann_data::Reader& pb_readme, const bool m
       reader->z_score( pb_normalizer.z_score() );
       if (master) std::cout << "image processor: normalizer is set" << std::endl;
     }
-  } else { // For backward compatibility. TODO: will be deprecated
-      reader->subtract_mean( pb_preprocessor.subtract_mean() );
-      reader->unit_variance( pb_preprocessor.unit_variance() );
-      reader->scale( pb_preprocessor.scale() );
-      reader->z_score( pb_preprocessor.z_score() );
-      if (master) std::cout << "image processor: deprecated syntax for normalizer" << std::endl;
   }
 
   if (pb_preprocessor.has_noiser()) {
@@ -477,36 +453,17 @@ void init_generic_preprocessor(const lbann_data::Reader& pb_readme, const bool m
       reader->add_noise( pb_noiser.factor() );
       if (master) std::cout << "image processor: noiser is set" << std::endl;
     }
-  } else { // For backward compatibility. TODO: will be deprecated
-    reader->add_noise( pb_preprocessor.noise_factor() );
-    if (master && (pb_preprocessor.noise_factor()>0.0)) std::cout << "image processor: deprecated syntax for noiser" << std::endl;
   }
 }
 
 
 void init_org_image_data_reader(const lbann_data::Reader& pb_readme, const bool master, generic_data_reader* &reader) {
-  const lbann_data::ImagePreprocessor& pb_preprocessor = pb_readme.image_preprocessor();
-
   // data reader name
   const std::string& name = pb_readme.name();
   // whether to shuffle data
   const bool shuffle = pb_readme.shuffle();
-  // final size of image. If image_preprocessor is not set, the type-default value
-  // (i,e., 0) is used. Then,set_input_params() will not modify the current member value.
-  const int width = pb_preprocessor.raw_width();
-  const int height = pb_preprocessor.raw_height();
 
-  // number of labels
-  const int n_labels = pb_readme.num_labels();
-
-  // TODO: as imagenet_org phases out, and mnist and cifar10 convert to use new
-  // imagenet data reader, this function will disappear
-  // create data reader
-  if (name == "imagenet_org") {
-    reader = new imagenet_reader_org(shuffle);
-    dynamic_cast<imagenet_reader_org*>(reader)->set_input_params(width, height, 3, n_labels);
-    if (master) std::cout << "imagenet_reader_org is set" << std::endl;
-  } else if (name == "mnist") {
+  if (name == "mnist") {
     reader = new mnist_reader(shuffle);
     if (master) std::cout << "mnist_reader is set" << std::endl;
   } else if (name == "cifar10") {
