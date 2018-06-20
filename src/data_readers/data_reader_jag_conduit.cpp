@@ -532,7 +532,7 @@ size_t data_reader_jag_conduit::get_linearized_input_size() const {
 size_t data_reader_jag_conduit::get_linearized_size(const data_reader_jag_conduit::variable_t t) const {
   switch (t) {
     case JAG_Image:
-      return get_linearized_image_size();
+      return get_linearized_image_size() * get_num_img_srcs();
     case JAG_Scalar:
       return get_linearized_scalar_size();
     case JAG_Input:
@@ -832,6 +832,7 @@ std::vector<CPUMat>
 data_reader_jag_conduit::create_datum_views(CPUMat& X, const std::vector<size_t>& sizes, const int mb_idx) const {
   std::vector<CPUMat> X_v(sizes.size());
   El::Int h = 0;
+
   for(size_t i=0u; i < sizes.size(); ++i) {
     const El::Int h_end =  h + static_cast<El::Int>(sizes[i]);
     El::View(X_v[i], X, El::IR(h, h_end), El::IR(mb_idx, mb_idx + 1));
@@ -881,7 +882,8 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx, in
   std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
   bool ok = true;
   for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
-    ok = fetch(X_v[i], data_id, mb_idx, tid, m_independent[i], "datum");
+    // The third argument mb_idx below is 0 because it is for the view of X not X itself
+    ok = fetch(X_v[i], data_id, 0, tid, m_independent[i], "datum");
   }
   return ok;
 }
@@ -891,7 +893,7 @@ bool data_reader_jag_conduit::fetch_response(CPUMat& X, int data_id, int mb_idx,
   std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
   bool ok = true;
   for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
-    ok = fetch(X_v[i], data_id, mb_idx, tid, m_dependent[i], "response");
+    ok = fetch(X_v[i], data_id, 0, tid, m_dependent[i], "response");
   }
   return ok;
 }
