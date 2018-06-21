@@ -47,8 +47,7 @@ class discrete_random_layer : public transform_layer {
  public:
   discrete_random_layer(lbann_comm *comm,
                         std::vector<DataType> values,
-                        std::vector<int> dims,
-                        cudnn::cudnn_manager *cudnn = nullptr)
+                        std::vector<int> dims)
     : transform_layer(comm),
       m_values(values) {
     static_assert(Dev == El::Device::CPU,

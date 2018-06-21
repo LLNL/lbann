@@ -29,7 +29,6 @@
 
 #include <vector>
 #include "lbann/layers/transform/pooling.hpp"
-#include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/im2col.hpp"
 
@@ -51,6 +50,8 @@ class unpooling_layer : public transform_layer {
       m_pooling_layer(pool) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "unpooling only supports DATA_PARALLEL");
+    static_assert(Dev == El::Device::CPU,
+                  "unpooling only supports CPU");
   }
 
   unpooling_layer* copy() const override { return new unpooling_layer(*this); }

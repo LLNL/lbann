@@ -26,6 +26,8 @@
 // recurrent .hpp .cpp - Recurrent neural network models
 ////////////////////////////////////////////////////////////////////////////////
 
+#if 0
+
 #ifndef LBANN_MODEL_RECURRENT_HPP
 #define LBANN_MODEL_RECURRENT_HPP
 
@@ -89,3 +91,5 @@ class recurrent_model : public directed_acyclic_graph_model {
 }  // namespace lbann
 
 #endif  // LBANN_MODEL_RECURRENT_HPP
+
+#endif // 0

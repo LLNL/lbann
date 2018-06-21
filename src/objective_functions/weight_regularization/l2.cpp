@@ -26,9 +26,9 @@
 
 #include "lbann/objective_functions/weight_regularization/l2.hpp"
 #include "lbann/models/model.hpp"
-#ifdef LBANN_HAS_CUDNN
-#include "lbann/utils/cublas_wrapper.hpp"
-#endif // LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_GPU
+#include "lbann/utils/cublas.hpp"
+#endif // LBANN_HAS_GPU
 
 namespace {
 
@@ -67,11 +67,7 @@ namespace lbann {
 l2_weight_regularization::l2_weight_regularization(EvalType scale_factor)
   : objective_function_term(scale_factor),
     m_sqsum(0),
-    m_allreduce_started(false)
-#ifdef LBANN_HAS_CUDNN
-    , m_cudnn(nullptr)
-#endif  // LBANN_HAS_CUDNN
-    {}
+    m_allreduce_started(false) {}
 
 void l2_weight_regularization::setup(model& m) {
   objective_function_term::setup(m);
@@ -90,15 +86,6 @@ void l2_weight_regularization::setup(model& m) {
     }
   }
 
-#ifdef LBANN_HAS_CUDNN
-  // Get cuDNN manager
-  m_cudnn = nullptr;
-  for (auto&& w : m_weights) {
-    m_cudnn = w->get_cudnn_manager();
-    if (m_cudnn != nullptr) { break; }
-  }
-#endif // LBANN_HAS_CUDNN
-
 }
 
 void l2_weight_regularization::start_evaluation() {
@@ -109,44 +96,56 @@ void l2_weight_regularization::start_evaluation() {
   CPUMat sqsums;
   El::Zeros(sqsums, num_weights, 1);
 
-#ifdef LBANN_HAS_CUDNN
-  if (m_cudnn != nullptr) {
+#ifdef LBANN_HAS_GPU
 
-    // Set cuBLAS to device pointer mode to allow pipelined calls
+  // Check whether any weights are on GPU
+  bool using_gpus = false;
+  for (const auto& w : m_weights) {
+    if (w->get_values().GetLocalDevice() == El::Device::GPU) {
+      using_gpus = true;
+      break;
+    }
+  }
+
+  // Compute L2 regularization term for weights on GPU
+  // Note: cuBLAS is set to device pointer mode to pipeline GPU
+  // kernels. Local contributions are only computed on one process in
+  // each matrix's redundant communicator.
+  if (using_gpus) {
     auto&& handle = El::GPUManager::cuBLASHandle();
     CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE));
 
-    // Compute local contributions on GPU
-    // Note: Only compute local contribution on one process in each
-    // redundant communicator.
+    // Initialize workspace
     GPUMat sqsums_d;
 #ifdef HYDROGEN_HAVE_CUB
     sqsums_d.SetMemoryMode(1); // CUB memory pool
 #endif
     El::Zeros(sqsums_d, num_weights, 1);
+
+    // Compute local contributions
     for (int i = 0; i < num_weights; ++i) {
       const auto& vals = m_weights[i]->get_values();
       if (vals.Participating()
           && vals.GetLocalDevice() == El::Device::GPU
           && vals.RedundantRank() == i % vals.RedundantSize()) {
-        /// @todo Support general case
-        if (vals.LDim() != vals.LocalHeight()) {
+        if (vals.LDim() == vals.LocalHeight()) {
+          cublas::dot(handle,
+                      vals.LocalHeight() * vals.LocalWidth(),
+                      vals.LockedBuffer(), 1,
+                      vals.LockedBuffer(), 1,
+                      sqsums_d.Buffer(i, 0));
+        } else {
+          /// @todo Support non-contiguous data
           LBANN_ERROR("we currently assume weights matrices are contiguous");
         }
-        cublas::dot(handle,
-                    vals.LocalHeight() * vals.LocalWidth(),
-                    vals.LockedBuffer(), 1,
-                    vals.LockedBuffer(), 1,
-                    sqsums_d.Buffer(i, 0));
       }
     }
 
-    // Reset cuBLAS mode and copy results to CPU
     CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_HOST));
     El::Copy(sqsums_d, sqsums);
-
   }
-#endif // LBANN_HAS_CUDNN
+
+#endif // LBANN_HAS_GPU
 
   // Compute local contributions on CPU
   // Note: Only compute local contribution on one process in each

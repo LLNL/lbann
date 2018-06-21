@@ -50,20 +50,12 @@ class sum_layer : public transform_layer {
 
  public:
   sum_layer(lbann_comm *comm,
-            std::vector<DataType> scaling_factors = std::vector<DataType>(),
-            cudnn::cudnn_manager *cudnn = nullptr)
+            std::vector<DataType> scaling_factors = std::vector<DataType>())
     : transform_layer(comm),
       m_scaling_factors(scaling_factors) {
 
     // Sum layer has no limit on parents
     m_expected_num_parent_layers = -1;
-
-  #ifdef LBANN_HAS_CUDNN
-    // Initialize GPU if available
-    if(cudnn) {
-      this->m_cudnn = cudnn;
-    }
-  #endif // LBANN_HAS_CUDNN
 
   }
 

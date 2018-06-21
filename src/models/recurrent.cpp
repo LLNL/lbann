@@ -24,6 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#if 0
+
 #include <algorithm>
 #include "lbann/models/recurrent.hpp"
 #include "lbann/layers/io/input/generic_input_layer.hpp"
@@ -409,3 +411,5 @@ void recurrent_model::setup_layers() {
 }
   
 }  // namespace lbann
+
+#endif // 0

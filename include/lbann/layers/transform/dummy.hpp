@@ -37,19 +37,11 @@ class dummy_layer : public transform_layer {
 
  public:
 
-  dummy_layer(lbann_comm *comm,
-              cudnn::cudnn_manager *cudnn = nullptr)
+  dummy_layer(lbann_comm *comm)
     : transform_layer(comm) {
 
     // Dummy layer has no children
     m_expected_num_child_layers = 0;
-
-  #ifdef LBANN_HAS_CUDNN
-    // Initialize GPU memory if using GPU
-    if (cudnn) {
-      this->m_cudnn = cudnn;
-    }
-  #endif // LBANN_HAS_CUDNN
 
   }
 

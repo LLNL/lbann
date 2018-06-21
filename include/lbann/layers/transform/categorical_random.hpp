@@ -41,8 +41,7 @@ template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El
 class categorical_random_layer : public transform_layer {
 
  public:
-  categorical_random_layer(lbann_comm *comm,
-                           cudnn::cudnn_manager *cudnn = nullptr)
+  categorical_random_layer(lbann_comm *comm)
     : transform_layer(comm) {
     static_assert(Dev == El::Device::CPU,
                   "categorical random layer currently only supports CPU");

@@ -24,96 +24,66 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef CUDNN_WRAPPER_HPP_INCLUDED
-#define CUDNN_WRAPPER_HPP_INCLUDED
+#ifndef LBANN_UTILS_CUDNN_HPP
+#define LBANN_UTILS_CUDNN_HPP
 
-#include <vector>
 #include "lbann/base.hpp"
-#include "lbann/comm.hpp"
+#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/exception.hpp"
 #include "lbann/layers/layer.hpp"
+#include <vector>
 
 #ifdef LBANN_HAS_CUDNN
-#include <cuda.h>
+
 #include <cudnn.h>
-#include <cublas_v2.h>
-#endif // #ifdef LBANN_HAS_CUDNN
 
 // Error utility macros
-#ifdef LBANN_HAS_CUDNN
-#define FORCE_CHECK_CUDA(cuda_call)                                     \
-  do {                                                                  \
-    {                                                                   \
-      /* Check for earlier asynchronous errors. */                      \
-      cudaError_t status_FORCE_CHECK_CUDA = cudaDeviceSynchronize();    \
-      if (status_FORCE_CHECK_CUDA == cudaSuccess)                       \
-        status_FORCE_CHECK_CUDA = cudaGetLastError();                   \
-      if (status_FORCE_CHECK_CUDA != cudaSuccess) {                     \
-        cudaDeviceReset();                                              \
-        LBANN_ERROR(std::string("Asynchronous CUDA error: ")            \
-                    + cudaGetErrorString(status_FORCE_CHECK_CUDA));     \
-      }                                                                 \
-    }                                                                   \
-    {                                                                   \
-      /* Make CUDA call and check for errors. */                        \
-      cudaError_t status_FORCE_CHECK_CUDA = (cuda_call);                \
-      if (status_FORCE_CHECK_CUDA == cudaSuccess)                       \
-        status_FORCE_CHECK_CUDA = cudaDeviceSynchronize();              \
-      if (status_FORCE_CHECK_CUDA == cudaSuccess)                       \
-        status_FORCE_CHECK_CUDA = cudaGetLastError();                   \
-      if (status_FORCE_CHECK_CUDA != cudaSuccess) {                     \
-        cudaDeviceReset();                                              \
-        LBANN_ERROR(std::string("CUDA error: ")                         \
-                    + cudaGetErrorString(status_FORCE_CHECK_CUDA));     \
-      }                                                                 \
-    }                                                                   \
-  } while (0)
-#define FORCE_CHECK_CUDNN(cudnn_call)                                   \
-  do {                                                                  \
-    /* Check for earlier asynchronous errors. */                        \
-    FORCE_CHECK_CUDA(cudaSuccess);                                      \
-    {                                                                   \
-      /* Make cuDNN call and check for errors. */                       \
-      const cudnnStatus_t status_FORCE_CHECK_CUDNN = (cudnn_call);      \
-      if (status_FORCE_CHECK_CUDNN != CUDNN_STATUS_SUCCESS) {           \
-        cudaDeviceReset();                                              \
-        LBANN_ERROR(std::string("cuDNN error: ")                        \
-                    + cudnnGetErrorString(status_FORCE_CHECK_CUDNN));   \
-      }                                                                 \
-    }                                                                   \
-    {                                                                   \
-      /* Check for CUDA errors. */                                      \
-      cudaError_t status_FORCE_CHECK_CUDNN = cudaDeviceSynchronize();   \
-      if (status_FORCE_CHECK_CUDNN == cudaSuccess)                      \
-        status_FORCE_CHECK_CUDNN = cudaGetLastError();                  \
-      if (status_FORCE_CHECK_CUDNN != cudaSuccess) {                    \
-        cudaDeviceReset();                                              \
-        LBANN_ERROR(std::string("CUDA error: ")                         \
-                    + cudaGetErrorString(status_FORCE_CHECK_CUDNN));    \
-      }                                                                 \
-    }                                                                   \
+#define FORCE_CHECK_CUDNN(cudnn_call)                           \
+  do {                                                          \
+    /* Call cuDNN API routine, synchronizing before and */      \
+    /* after to check for errors. */                            \
+    LBANN_CUDA_SYNC(true);                                      \
+    const cudnnStatus_t status_CHECK_CUDNN = (cudnn_call);      \
+    if (status_CHECK_CUDNN != CUDNN_STATUS_SUCCESS) {           \
+      cudaDeviceReset();                                        \
+      LBANN_ERROR(std::string("cuDNN error: ")                  \
+                  + cudnnGetErrorString(status_CHECK_CUDNN));   \
+    }                                                           \
+    LBANN_CUDA_SYNC(false);                                     \
   } while (0)
 #ifdef LBANN_DEBUG
-#define CHECK_CUDA(cuda_call)   FORCE_CHECK_CUDA(cuda_call);
 #define CHECK_CUDNN(cudnn_call) FORCE_CHECK_CUDNN(cudnn_call);
 #else
-#define CHECK_CUDA(cuda_call)   (cuda_call)
 #define CHECK_CUDNN(cudnn_call) (cudnn_call)
 #endif // #ifdef LBANN_DEBUG
-#endif // #ifdef LBANN_HAS_CUDNN
 
-namespace lbann
-{
+namespace lbann {
 
 // Forward declaration
 class Layer;
 
-namespace cudnn
-{
-
-#ifdef LBANN_HAS_CUDNN
+namespace cudnn {
 
 /** Print cuDNN version information to standard output. */
 void print_version();
+
+////////////////////////////////////////////////////////////
+// Global cuDNN objects
+////////////////////////////////////////////////////////////
+
+/** Initialize global cuDNN objects. */
+void initialize();
+/** Destroy global cuDNN objects. */
+void destroy();
+/** Get cuDNN handle.
+ *  This resets the active CUDA device and stream to the Hydrogen
+ *  defaults. The cuDNN handle is initialized if needed.
+ */
+cudnnHandle_t& get_handle();
+
+////////////////////////////////////////////////////////////
+// Helper functions for cuDNN types
+////////////////////////////////////////////////////////////
 
 /** Get cuDNN data type associated with DataType. */
 cudnnDataType_t get_data_type();
@@ -124,6 +94,7 @@ cudnnDataType_t get_data_type();
 void set_tensor_desc(cudnnTensorDescriptor_t& desc,
                      std::vector<int> dims,
                      std::vector<int> strides = {});
+
 /** Copy cuDNN tensor descriptor.
  *  dst is created or destroyed if needed.
  */
@@ -136,39 +107,9 @@ void copy_tensor_desc(const cudnnTensorDescriptor_t& src,
 void copy_activation_desc(const cudnnActivationDescriptor_t& src,
                           cudnnActivationDescriptor_t& dst);
 
-#endif // LBANN_HAS_CUDNN
-
-/** cuDNN manager. */
-class cudnn_manager {
-#ifdef LBANN_HAS_CUDNN
-
- public:
-  cudnn_manager(size_t workspace_size = 1 << 30);
-  ~cudnn_manager();
-
-  /** Get cuDNN handle.
-   *  This resets the active CUDA device and stream to the Hydrogen
-   *  defaults.
-   */
-  cudnnHandle_t& get_handle();
-
-  /** Get a recommended GPU workspace size (in bytes). */
-  size_t get_workspace_size() const { return m_workspace_size; }
-  /** Set a recommended GPU workspace size (in bytes). */
-  void set_workspace_size(size_t size) { m_workspace_size = size; }
-
- private:
-
-  /** cuDNN handle. */
-  cudnnHandle_t m_handle;
-
-  /** Recommendation for workspace size (in bytes). */
-  size_t m_workspace_size;
-
-#endif // #ifdef LBANN_HAS_CUDNN
-};
-
-#ifdef LBANN_HAS_CUDNN
+////////////////////////////////////////////////////////////
+// cuDNN tensor managers
+////////////////////////////////////////////////////////////
 
 /** Manager for a layer's cuDNN tensor descriptors. */
 class layer_tensor_manager {
@@ -242,9 +183,8 @@ public:
   cudnnTensorDescriptor_t& get_error_signals(int parent_index = 0) override;
 };
 
-#endif // #ifdef LBANN_HAS_CUDNN
+} // namespace cudnn
+} // namespace lbann
 
-}// namespace cudnn
-}// namespace lbann
-
-#endif // CUDNN_WRAPPER_HPP_INCLUDED
+#endif // LBANN_HAS_CUDNN
+#endif // LBANN_UTILS_CUDNN_HPP

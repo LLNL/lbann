@@ -46,8 +46,7 @@ class zero_layer : public transform_layer {
  public:
  zero_layer(lbann_comm *comm,
               bool first_half=true,
-              bool second_half=true,
-              cudnn::cudnn_manager *cudnn = nullptr)
+              bool second_half=true)
     : transform_layer(comm),
       m_first_half(first_half),
       m_second_half(second_half) {

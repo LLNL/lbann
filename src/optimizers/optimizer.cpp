@@ -25,14 +25,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/optimizers/optimizer.hpp"
-#include "lbann/utils/cublas_wrapper.hpp"
 #include "lbann/utils/timer.hpp"
 
 namespace lbann {
 
 optimizer::optimizer(lbann_comm *comm, DataType learning_rate)
   : m_comm(comm),
-    m_cudnn(nullptr),
     m_weights(nullptr),
     m_learning_rate(learning_rate),
     m_gradient(nullptr),
@@ -43,7 +41,6 @@ optimizer::optimizer(lbann_comm *comm, DataType learning_rate)
 
 optimizer::optimizer(const optimizer& other)
   : m_comm(other.m_comm),
-    m_cudnn(other.m_cudnn),
     m_weights(other.m_weights),
     m_learning_rate(other.m_learning_rate),
     m_gradient(other.m_gradient),
@@ -63,7 +60,6 @@ optimizer::optimizer(const optimizer& other)
 
 optimizer& optimizer::operator=(const optimizer& other) {
   m_comm = other.m_comm;
-  m_cudnn = other.m_cudnn;
   m_weights = other.m_weights;
   m_learning_rate = other.m_learning_rate;
   m_step_time = other.m_step_time;
@@ -249,9 +245,6 @@ void optimizer::setup(weights& w) {
   m_gradient->Resize(height, width);
   m_gradient_staging->Resize(height, width);
 
-  // Initialize GPU
-  m_cudnn = m_weights->m_cudnn;
-
   // Initialize with zero gradient
   clear_gradient();
 
@@ -263,15 +256,23 @@ void optimizer::step() {
   }
 
   double step_start = get_time();
+
   // Apply optimization step
   auto& values = m_weights->get_values();
   const auto& gradient = get_gradient();
-  if (m_cudnn != nullptr) {
-  #ifdef LBANN_HAS_CUDNN
-    step_compute_gpu(values, gradient);
-  #endif // LBANN_HAS_CUDNN
-  } else {
+  switch (values.GetLocalDevice()) {
+  case El::Device::CPU:
     step_compute(values, gradient);
+    break;
+#ifdef LBANN_HAS_GPU
+  case El::Device::GPU:
+    step_compute_gpu(values, gradient);
+    break;
+#endif // LBANN_HAS_GPU
+  default:
+    std::stringstream err;
+    err << "invalid device (" << (int) values.GetLocalDevice() << ")";
+    LBANN_ERROR(err.str());
   }
 
   // Clear gradients
@@ -281,12 +282,12 @@ void optimizer::step() {
 
 }
 
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_GPU
 void optimizer::step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) {
   /// @todo Automatically use CPU implementation
   LBANN_ERROR("no GPU implementation detected");
 }
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_GPU
 
 //************************************************************************
 // Checkpointing
