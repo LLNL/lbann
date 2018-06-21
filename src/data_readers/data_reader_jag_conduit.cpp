@@ -323,10 +323,8 @@ void data_reader_jag_conduit::set_all_scalar_choices() {
   }
   const conduit::Node & n_scalar = get_conduit_node("0/outputs/scalars");
   m_scalar_keys.reserve(n_scalar.number_of_children());
-  conduit::NodeConstIterator itr = n_scalar.children();
-  while (itr.has_next()) {
-    itr.next();
-    const std::string key = itr.name();
+  const std::vector<std::string>& child_names = n_scalar.child_names();
+  for (const auto& key: child_names) {
     if (filter(m_scalar_filter, m_scalar_prefix_filter, key)) {
       continue;
     }
@@ -360,10 +358,8 @@ void data_reader_jag_conduit::set_all_input_choices() {
   }
   const conduit::Node & n_input = get_conduit_node("0/inputs");
   m_input_keys.reserve(n_input.number_of_children());
-  conduit::NodeConstIterator itr = n_input.children();
-  while (itr.has_next()) {
-    itr.next();
-    const std::string key = itr.name();
+  const std::vector<std::string>& child_names = n_input.child_names();
+  for (const auto& key: child_names) {
     if (filter(m_input_filter, m_input_prefix_filter, key)) {
       continue;
     }
@@ -439,15 +435,14 @@ void data_reader_jag_conduit::check_scalar_keys() {
     return;
   }
 
-  const conduit::Node & n_scalar = get_conduit_node("0/outputs/scalars");
-  conduit::NodeConstIterator itr = n_scalar.children();
   size_t num_found = 0u;
   std::vector<bool> found(m_scalar_keys.size(), false);
   std::set<std::string> keys_conduit;
 
-  while (itr.has_next()) {
-    itr.next();
-    keys_conduit.insert(itr.name());
+  const conduit::Node & n_scalar = get_conduit_node("0/outputs/scalars");
+  const std::vector<std::string>& child_names = n_scalar.child_names();
+  for (const auto& key: child_names) {
+    keys_conduit.insert(key);
   }
 
   for (size_t i=0u; i < m_scalar_keys.size(); ++i) {
@@ -476,11 +471,12 @@ void data_reader_jag_conduit::check_input_keys() {
     return;
   }
 
-  const conduit::Node & n_input = get_conduit_node("0/inputs");
-  conduit::NodeConstIterator itr = n_input.children();
   size_t num_found = 0u;
   std::vector<bool> found(m_input_keys.size(), false);
   std::map<std::string, TypeID> keys_conduit;
+
+  const conduit::Node & n_input = get_conduit_node("0/inputs");
+  conduit::NodeConstIterator itr = n_input.children();
 
   while (itr.has_next()) {
     const conduit::Node & n = itr.next();
