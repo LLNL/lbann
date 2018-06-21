@@ -132,22 +132,15 @@ int main(int argc, char *argv[]) {
       pb_model->set_num_parallel_readers(procs_per_model);
     }
 
-    if (master) {
-      std::cout << "Model settings" << std::endl
-                << "  Models              : " << comm->get_num_models() << std::endl
-                << "  Processes per model : " << procs_per_model << std::endl
-                << "  Grid dimensions     : " << comm->get_model_grid().Height() << " x " << comm->get_model_grid().Width() << std::endl;
-      std::cout << std::endl;
-    }
-
     // Save info to file; this includes the complete prototext (with any over-rides
     // from the cmd line) and various other info
     save_session(comm, argc, argv, pb);
 
+    // Report useful information
     if (master) {
 
       // Report hardware settings
-      std::cout << "Hardware settings (for master process)" << std::endl
+      std::cout << "Hardware properties (for master process)" << std::endl
                 << "  Processes on node          : " << comm->get_procs_per_node() << std::endl
                 << "  OpenMP threads per process : " << omp_get_max_threads() << std::endl;
 #ifdef HYDROGEN_HAVE_CUDA
@@ -175,17 +168,22 @@ int main(int argc, char *argv[]) {
 #else
       std::cout << "NOT detected" << std::endl;
 #endif // LBANN_HAS_CUDNN
+      std::cout << "  CUB   : ";
+#ifdef HYDROGEN_HAVE_CUB
+      std::cout << "detected" << std::endl;
+#else
+      std::cout << "NOT detected" << std::endl;
+#endif // HYDROGEN_HAVE_CUB
       std::cout << std::endl;
 
       // Report device settings
-      const bool disable_cuda = pb_model->disable_cuda();
       std::cout << "GPU settings" << std::endl;
-      std::cout << "  CUDA         : ";
-#ifdef LBANN_HAS_GPU
-      std::cout << (disable_cuda ? "disabled" : "enabled") << std::endl;
-#else
-      std::cout << "disabled" << std::endl;
+      bool disable_cuda = pb_model->disable_cuda();
+#ifndef LBANN_HAS_GPU
+      disable_cuda = true;
 #endif // LBANN_HAS_GPU
+      std::cout << "  CUDA         : "
+                << (disable_cuda ? "disabled" : "enabled") << std::endl;
       std::cout << "  cuDNN        : ";
 #ifdef LBANN_HAS_CUDNN
       std::cout << (disable_cuda ? "disabled" : "enabled") << std::endl;
@@ -194,6 +192,14 @@ int main(int argc, char *argv[]) {
 #endif // LBANN_HAS_CUDNN
       const auto* env = std::getenv("MV2_USE_CUDA");
       std::cout << "  MV2_USE_CUDA : " << (env != nullptr ? env : "") << std::endl;
+      std::cout << std::endl;
+
+      // Report model settings
+      const auto& grid = comm->get_model_grid();
+      std::cout << "Model settings" << std::endl
+                << "  Models              : " << comm->get_num_models() << std::endl
+                << "  Processes per model : " << procs_per_model << std::endl
+                << "  Grid dimensions     : " << grid.Height() << " x " << grid.Width() << std::endl;
       std::cout << std::endl;
 
     }

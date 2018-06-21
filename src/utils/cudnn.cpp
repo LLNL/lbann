@@ -37,12 +37,6 @@
 namespace lbann {
 namespace cudnn {
 
-void print_version() {
-  std::cout << "cudnnGetVersion() : " << (int)cudnnGetVersion() << " , "
-            << "CUDNN_VERSION from cudnn.h : " << CUDNN_VERSION
-            << std::endl;
-}
-
 ////////////////////////////////////////////////////////////
 // Global cuDNN objects
 ////////////////////////////////////////////////////////////

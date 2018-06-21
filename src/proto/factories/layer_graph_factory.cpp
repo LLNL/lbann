@@ -203,9 +203,9 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
     if (layout_str == "data_parallel")  { layout = data_layout::DATA_PARALLEL; }
     if (layout_str == "model_parallel") { layout = data_layout::MODEL_PARALLEL; }
     const auto& num_parallel_readers = proto_model.num_parallel_readers();
-    const auto& device_str = proto_layer.device_allocation();
     El::Device device = El::Device::CPU;
 #ifdef LBANN_HAS_GPU
+    const auto& device_str = proto_layer.device_allocation();
     if (!proto_model.disable_cuda()) {
       if (device_str == "gpu" || device_str.empty()) {
         device = El::Device::GPU;
