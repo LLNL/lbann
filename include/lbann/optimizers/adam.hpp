@@ -100,22 +100,43 @@ class adam : public optimizer {
     DataType current_beta2;
   };
 
-  bool pack_scalars(persist& p) {
+  bool pack_scalars(persist& p, std::string m_name) {
+    #ifdef LBANN_HAS_HDF5
+    std::string group_name = "/optimizer" + m_name;
+    H5::Group optimizer_group = p.checkpoint_file->openGroup(group_name);
+    p.write_hdf5_parameter(optimizer_group, "beta1", &m_beta1);
+    p.write_hdf5_parameter(optimizer_group, "beta2", &m_beta2);
+    p.write_hdf5_parameter(optimizer_group, "eps",   &m_eps);
+    p.write_hdf5_parameter(optimizer_group, "current_beta1", &m_current_beta1);
+    p.write_hdf5_parameter(optimizer_group, "current_beta2", &m_current_beta2);    
+    #else
     p.write_parameter(persist_type::train, "beta1", m_beta1);
     p.write_parameter(persist_type::train, "beta2", m_beta2);
     p.write_parameter(persist_type::train, "eps",   m_eps);
     p.write_parameter(persist_type::train, "current_beta1", m_current_beta1);
     p.write_parameter(persist_type::train, "current_beta2", m_current_beta2);
+    #endif
+
     return true;
   }
 
-  bool unpack_scalars(persist& p, struct packing_header *header) {
+  bool unpack_scalars(persist& p, std::string m_name, struct packing_header *header) { 
+    #ifdef LBANN_HAS_HDF5
+    std::string group_name = "/optimizer" + m_name;
+    H5::Group optimizer_group = p.checkpoint_file->openGroup(group_name);
+    p.read_hdf5_parameter(optimizer_group, "beta1", &m_beta1);
+    p.read_hdf5_parameter(optimizer_group, "beta2", &m_beta2);
+    p.read_hdf5_parameter(optimizer_group, "eps",   &m_eps);
+    p.read_hdf5_parameter(optimizer_group, "current_beta1", &m_current_beta1);
+    p.read_hdf5_parameter(optimizer_group, "current_beta2", &m_current_beta2);  
+    #else  
     p.read_parameter(persist_type::train, "beta1", &m_beta1);
     p.read_parameter(persist_type::train, "beta2", &m_beta2);
     p.read_parameter(persist_type::train, "eps",   &m_eps);
     p.read_parameter(persist_type::train, "current_beta1", &m_current_beta1);
     p.read_parameter(persist_type::train, "current_beta2", &m_current_beta2);
-
+    #endif
+    
     if(header != nullptr) {
       header->beta1 = m_beta1;
       header->beta2 = m_beta2;
@@ -123,6 +144,7 @@ class adam : public optimizer {
       header->current_beta1 = m_current_beta1;
       header->current_beta2 = m_current_beta2;
     }
+    
     return true;
   }
 

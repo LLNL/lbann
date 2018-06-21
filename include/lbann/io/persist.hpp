@@ -167,7 +167,8 @@ class persist {
     ds.read(val.data(), H5::PredType::NATIVE_INT, dataspace);
     return true;
   }
-   
+
+  H5::Group getGroup(std::string group_name);
   bool write_hdf5_distmat(std::string group_name, const char *name, AbsDistMat *M, lbann_comm *comm);
   bool read_hdf5_distmat(std::string group_name, const char *name, AbsDistMat *M, lbann_comm *comm);
   #endif

@@ -207,7 +207,12 @@ bool hypergradient_adam::save_to_checkpoint_shared(persist& p, std::string name_
   if (m_comm->am_model_master()) {
     pack_scalars(p);
   }
- 
+  #ifdef LBANN_HAS_HDF5
+  std::string group_name = name_prefix + "_optimizer";
+  p.write_hdf5_distmat(group_name, "adam_moment1", m_moment1, m_comm);
+  p.write_hdf5_distmat(group_name, "adam_moment2", m_moment2, m_comm);
+  p.write_hdf5_distmat(group_name, "adam_old_gradient", m_old_gradient, m_comm);
+  #else
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
   p.write_distmat(persist_type::train, l_name, m_moment1);
@@ -217,7 +222,7 @@ bool hypergradient_adam::save_to_checkpoint_shared(persist& p, std::string name_
  
   sprintf(l_name, "%s_optimizer_adam_old_gradient_%lldx%lld", name_prefix.c_str(), m_old_gradient->Height(), m_old_gradient->Width());
   p.write_distmat(persist_type::train, l_name, m_old_gradient);
-
+  #endif
   return true;
 }
  
@@ -232,7 +237,12 @@ bool hypergradient_adam::load_from_checkpoint_shared(persist& p, std::string nam
   m_comm->model_broadcast(0, header);
 
   unpack_header(header);
-
+  #ifdef LBANN_HAS_HDF5
+  std::string group_name = name_prefix + "_optimizer";
+  p.read_hdf5_distmat(group_name, "adam_moment1", m_moment1, m_comm);
+  p.read_hdf5_distmat(group_name, "adam_moment2", m_moment2, m_comm);
+  p.read_hdf5_distmat(group_name, "adam_old_gradient", m_old_gradient, m_comm);
+  #else
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld.bin", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
   p.read_distmat(persist_type::train, l_name, m_moment1);
@@ -242,6 +252,7 @@ bool hypergradient_adam::load_from_checkpoint_shared(persist& p, std::string nam
  
   sprintf(l_name, "%s_optimizer_adam_old_gradient_%lldx%lld.bin", name_prefix.c_str(), m_old_gradient->Height(), m_old_gradient->Width());
   p.read_distmat(persist_type::train, l_name, m_old_gradient);
+  #endif
   return true;
 }
 
@@ -268,7 +279,6 @@ bool hypergradient_adam::load_from_checkpoint_distributed(persist& p, std::strin
     optimizer::load_from_checkpoint_distributed(p,name_prefix);
   struct packing_header header;
   unpack_scalars(p, &header);
-    
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
   p.read_rank_distmat(persist_type::train, l_name, *m_moment1);

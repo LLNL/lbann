@@ -377,24 +377,34 @@ bool lbann::persist::read_distmat(persist_type type, const char *name, AbsDistMa
 }
 
 #ifdef LBANN_HAS_HDF5
+H5::Group lbann::persist::getGroup(std::string group_name){
+  H5::Group abs_group;
+  if(checkpoint_file->exists(group_name))
+    abs_group = checkpoint_file->openGroup(group_name);
+  else
+    abs_group = checkpoint_file->createGroup(group_name);  
+  return abs_group; 
+}
+
 bool lbann::persist::write_hdf5_distmat(std::string group_name, const char *name, AbsDistMat *M, lbann_comm *comm) {
   const hsize_t row_count = M->Height();
   const hsize_t col_count = M->Width();
   const hsize_t dims[2]= {row_count,col_count};
+  H5::PredType hdf5_type = cpp_to_hdf5(M->Get(0,0));
   H5::DataSpace dataspace = H5::DataSpace(2, dims);
-
+  H5::Group weight_group;
   if( M->ColStride() == 1 && M->RowStride() == 1 ){
     if (comm->am_model_master()){
-      H5::Group weight_group = checkpoint_file->createGroup(group_name);
-      H5::DataSet dataset = weight_group.createDataSet(name, H5::PredType::NATIVE_FLOAT, dataspace);
-      dataset.write(M->LockedBuffer(), H5::PredType::NATIVE_FLOAT); 
+      weight_group = getGroup(group_name); 
+      H5::DataSet dataset = weight_group.createDataSet(name, hdf5_type, dataspace);
+      dataset.write(M->LockedBuffer(), hdf5_type); 
     }
   } else {
     CircMat<El::Device::CPU> temp = *M;
     if (comm->am_world_master()){
-      H5::Group weight_group = checkpoint_file->createGroup(group_name);
-      H5::DataSet dataset = weight_group.createDataSet(name, H5::PredType::NATIVE_FLOAT, dataspace);
-      dataset.write(temp.LockedBuffer(), H5::PredType::NATIVE_FLOAT);
+      weight_group = getGroup(group_name);
+      H5::DataSet dataset = weight_group.createDataSet(name, hdf5_type, dataspace);
+      dataset.write(temp.LockedBuffer(), hdf5_type);
     }
   }  
   return true;

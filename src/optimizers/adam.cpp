@@ -182,16 +182,22 @@ bool adam::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
   optimizer::save_to_checkpoint_shared(p, name_prefix);
 
   if (m_comm->am_model_master()) {
-    pack_scalars(p);
+    pack_scalars(p, name_prefix);
   }
-
+  
+  #ifdef LBANN_HAS_HDF5
+  std::string group_name = name_prefix + "_optimizer";
+  p.write_hdf5_distmat(group_name, "adam_moment1", m_moment1, m_comm);
+  p.write_hdf5_distmat(group_name, "adam_moment2", m_moment2, m_comm);  
+  #else
+  
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
   p.write_distmat(persist_type::train, l_name, m_moment1);
 
   sprintf(l_name, "%s_optimizer_adam_moment2_%lldx%lld", name_prefix.c_str(), m_moment2->Height(), m_moment2->Width());
   p.write_distmat(persist_type::train, l_name, m_moment2);
-
+  #endif
   return true;
 }
 
@@ -199,27 +205,32 @@ bool adam::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
   optimizer::load_from_checkpoint_shared(p, name_prefix);
   struct packing_header header;
   if (m_comm->am_model_master()) {
-    unpack_scalars(p, &header);
+    unpack_scalars(p, name_prefix, &header);
   }
 
   m_comm->model_broadcast(0, header);
 
   unpack_header(header);
 
+  #ifdef LBANN_HAS_HDF5
+  std::string group_name = name_prefix + "_optimizer";
+  p.read_hdf5_distmat(group_name, "adam_moment1", m_moment1, m_comm);
+  p.read_hdf5_distmat(group_name, "adam_moment2", m_moment2, m_comm);
+  #else
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld.bin", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
   p.read_distmat(persist_type::train, l_name, m_moment1);
 
   sprintf(l_name, "%s_optimizer_adam_moment2_%lldx%lld.bin", name_prefix.c_str(), m_moment2->Height(), m_moment2->Width());
   p.read_distmat(persist_type::train, l_name, m_moment2);
-
+  #endif
   return true;
 }
 
 bool adam::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
   optimizer::save_to_checkpoint_distributed(p, name_prefix);
 
-  pack_scalars(p);
+  pack_scalars(p, name_prefix);
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
@@ -234,7 +245,7 @@ bool adam::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
 bool adam::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
   optimizer::load_from_checkpoint_distributed(p, name_prefix);
   struct packing_header header;
-  unpack_scalars(p, &header);
+  unpack_scalars(p, name_prefix,  &header);
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
