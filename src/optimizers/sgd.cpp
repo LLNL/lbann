@@ -162,7 +162,7 @@ bool sgd::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
   }
   #ifdef LBANN_HAS_HDF5
   std::string group_name = name_prefix + "_optimizer";
-  p.write_hdf5_distmat(group_name, "velocity", m_velocity, m_comm);
+  p.write_hdf5_distmat(group_name, "velocity", m_velocity, m_comm->am_model_master());
   #else
   char l_name[512];
   sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->Height(), m_velocity->Width());
@@ -182,7 +182,7 @@ bool sgd::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
   unpack_header(header);
   #ifdef LBANN_HAS_HDF5
   std::string l_name = name_prefix + "_optimizer";
-  p.read_hdf5_distmat(l_name, "velocity", m_velocity, m_comm);
+  p.read_hdf5_distmat(l_name, "velocity", m_velocity, m_comm->am_model_master());
   #else
   char l_name[512];
   sprintf(l_name, "%s_optimizer_velocity_%lldx%lld.bin", name_prefix.c_str(), m_velocity->Height(), m_velocity->Width());

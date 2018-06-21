@@ -716,9 +716,9 @@ class generic_input_layer : public io_layer {
         H5::Group input_layer = p.checkpoint_file->createGroup("/input_layer");
         
         long temp = m_training_dataset.get_num_samples_processed();
-        p.write_hdf5_parameter(input_layer,"reader_train_processed", &temp);
+        p.write_hdf5_parameter(input_layer, "reader_train_processed", &temp);
         temp = m_training_dataset.get_total_samples();
-        p.write_hdf5_parameter(input_layer,"reader_train_total", &temp);
+        p.write_hdf5_parameter(input_layer, "reader_train_total", &temp);
 
         temp = m_testing_dataset.get_num_samples_processed();
         p.write_hdf5_parameter(input_layer,"reader_test_processed", &temp);
@@ -745,10 +745,10 @@ class generic_input_layer : public io_layer {
         #ifdef LBANN_HAS_HDF5
         H5::Group input_layer_val = p.checkpoint_file->openGroup("/input_layer");
         long temp =  m_validation_dataset.get_num_samples_processed();  
-        p.write_hdf5_parameter(input_layer_val,"reader_validate_processed", &temp);
+        p.write_hdf5_parameter(input_layer_val, "reader_validate_processed", &temp);
 
         temp =  m_validation_dataset.get_total_samples();
-        p.write_hdf5_parameter(input_layer_val,"reader_validate_total", &temp);
+        p.write_hdf5_parameter(input_layer_val, "reader_validate_total", &temp);
         #else
         p.write_parameter(persist_type::validate, "reader_validate_processed",
           m_validation_dataset.get_num_samples_processed());

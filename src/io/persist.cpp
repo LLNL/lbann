@@ -386,22 +386,23 @@ H5::Group lbann::persist::getGroup(std::string group_name){
   return abs_group; 
 }
 
-bool lbann::persist::write_hdf5_distmat(std::string group_name, const char *name, AbsDistMat *M, lbann_comm *comm) {
+bool lbann::persist::write_hdf5_distmat(std::string group_name, const char *name, const AbsDistMat *M, bool is_master) {
   const hsize_t row_count = M->Height();
   const hsize_t col_count = M->Width();
-  const hsize_t dims[2]= {row_count,col_count};
+  const hsize_t dims[2] = {row_count,col_count};
+  m_bytes += row_count * col_count * sizeof(DataType);
   H5::PredType hdf5_type = cpp_to_hdf5(M->Get(0,0));
   H5::DataSpace dataspace = H5::DataSpace(2, dims);
   H5::Group weight_group;
   if( M->ColStride() == 1 && M->RowStride() == 1 ){
-    if (comm->am_model_master()){
+    if (is_master){
       weight_group = getGroup(group_name); 
       H5::DataSet dataset = weight_group.createDataSet(name, hdf5_type, dataspace);
       dataset.write(M->LockedBuffer(), hdf5_type); 
     }
   } else {
     CircMat<El::Device::CPU> temp = *M;
-    if (comm->am_world_master()){
+    if (is_master){
       weight_group = getGroup(group_name);
       H5::DataSet dataset = weight_group.createDataSet(name, hdf5_type, dataspace);
       dataset.write(temp.LockedBuffer(), hdf5_type);
@@ -410,10 +411,10 @@ bool lbann::persist::write_hdf5_distmat(std::string group_name, const char *name
   return true;
 }
 
-bool lbann::persist::read_hdf5_distmat(std::string group_name, const char *name, AbsDistMat *M, lbann_comm *comm) {
+bool lbann::persist::read_hdf5_distmat(std::string group_name, const char *name, AbsDistMat *M, bool is_master) {
     CircMat<El::Device::CPU> temp(M->Grid());
     temp.Resize(M->Height(),M->Width());
-    if (comm->am_world_master()){
+    if (is_master){
       H5::Group weight_group = checkpoint_file->openGroup(group_name);
       H5::DataSet ds = weight_group.openDataSet(name);
       H5::DataSpace dataspace= ds.getSpace();
@@ -422,6 +423,7 @@ bool lbann::persist::read_hdf5_distmat(std::string group_name, const char *name,
     } 
     temp.MakeSizeConsistent();
     El::Copy(temp, *M);    
+    m_bytes += M->Height() * M->Width() * sizeof(DataType);
     return true;
 }
 #endif

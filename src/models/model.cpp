@@ -1189,7 +1189,8 @@ bool model::save_to_checkpoint_shared(persist& p) {
       p.write_hdf5_parameter(model_group,"current_step", &m_current_step);
       int temp = (int) m_execution_mode;
       p.write_hdf5_parameter(model_group,"execution_mode", &temp);
-      p.write_hdf5_parameter(model_group,"terminate_training", &m_terminate_training); 
+      temp = (int) m_terminate_training;
+      p.write_hdf5_parameter(model_group,"terminate_training", &temp);
       p.write_hdf5_parameter(model_group,"current_testing_step", &m_current_testing_step); 
       p.write_hdf5_parameter(model_group,"max_mb_size", &m_max_mini_batch_size);
       p.write_hdf5_parameter(model_group,"cur_mb_size", &m_current_mini_batch_size);

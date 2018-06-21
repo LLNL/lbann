@@ -530,9 +530,9 @@ class generic_data_reader : public lbann_image_preprocessor {
     #ifdef LBANN_HAS_HDF5
     snprintf(fieldname, sizeof(fieldname), "%s_data_reader", name);  
     H5::Group dr_group = p.checkpoint_file->createGroup(fieldname);
-    p.write_hdf5_parameter(dr_group,"current_mini_batch_idx", &m_current_mini_batch_idx);
+    p.write_hdf5_parameter(dr_group, "current_mini_batch_idx", &m_current_mini_batch_idx);
     
-    p.write_hdf5_parameter(dr_group,"data_size", &size);
+    p.write_hdf5_parameter(dr_group, "data_size", &size);
 
     p.write_hdf5_parameter(dr_group, "data_position", &m_current_pos);
     

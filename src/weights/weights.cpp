@@ -347,7 +347,7 @@ bool weights::save_to_checkpoint_shared(lbann::persist& p)
   #ifdef LBANN_HAS_HDF5
   // define hdf5 group name
   std::string l_name = m_name + "_weights";
-  p.write_hdf5_distmat(l_name, m_name.c_str(), m_values, m_comm);
+  p.write_hdf5_distmat(l_name, m_name.c_str(), m_values, m_comm->am_world_master());
   #else  
   char l_name[512];
   sprintf(l_name, "weights_%s_%lldx%lld", m_name.c_str(), m_values->Height(), m_values->Width());
@@ -402,7 +402,7 @@ bool weights::load_from_checkpoint_shared(lbann::persist& p)
   // define filename containing saved weight values
   #ifdef LBANN_HAS_HDF5
   std::string l_name = m_name + "_weights";
-  p.read_hdf5_distmat(l_name, m_name.c_str(), m_values, m_comm);
+  p.read_hdf5_distmat(l_name, m_name.c_str(), m_values, m_comm->am_world_master());
   #else
   char l_name[512], f_name[512]; 
   sprintf(l_name, "weights_%s_%lldx%lld", m_name.c_str(), m_values->Height(), m_values->Width());

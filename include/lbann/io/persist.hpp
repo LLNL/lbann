@@ -111,7 +111,7 @@ class persist {
 
 
   template<typename T>
-  bool write_parameter_vector(persist_type type, const char *name, std::vector<T> val, int array_size) {
+  bool write_parameter_vector(persist_type type, const char *name, const std::vector<T> &val, int array_size) {
     return write_bytes(type, name, val.data(), array_size * sizeof(T));
   }
   
@@ -132,11 +132,12 @@ class persist {
   H5::PredType cpp_to_hdf5(long val) { return H5::PredType::NATIVE_LONG; }
   
   template<typename T>
-  bool write_hdf5_parameter(H5::Group group_name, const char *name, T *val) {
+  bool write_hdf5_parameter(H5::Group group_name, const char *name, const T *val) {
     H5::DataSpace dataspace = H5::DataSpace();
     H5::PredType hdf5_type = cpp_to_hdf5(*val);
     H5::Attribute attribute = group_name.createAttribute(name, hdf5_type, dataspace);
-    attribute.write(hdf5_type, static_cast<void*>(val));
+    attribute.write(hdf5_type, static_cast<const void*>(val));
+    m_bytes += sizeof(T);
     return true;
   }
 
@@ -146,16 +147,18 @@ class persist {
     H5::Attribute attr = group_name.openAttribute(name);
     H5::DataType type = attr.getDataType();
     attr.read(type,val);     
+    m_bytes += sizeof(T);
     return true;
   }
 
   template<typename T>
-  bool write_hdf5_array(H5::Group group_name, const char *name, std::vector<T> val) {
+  bool write_hdf5_array(H5::Group group_name, const char *name, const std::vector<T> &val) {
     const hsize_t arr_size = val.size();
     H5::PredType hdf5_type = cpp_to_hdf5(val[0]);
     H5::DataSpace dataspace = H5::DataSpace(1,&arr_size);
     H5::DataSet dataset = group_name.createDataSet(name, hdf5_type, dataspace);
     dataset.write(val.data(), hdf5_type);
+    m_bytes += sizeof(T) * arr_size;
     return true;
   }
  
@@ -165,12 +168,13 @@ class persist {
     H5::DataSet ds = group_name.openDataSet(name);
     H5::DataSpace dataspace= ds.getSpace();
     ds.read(val.data(), H5::PredType::NATIVE_INT, dataspace);
+    m_bytes += sizeof(T) * val.size();
     return true;
   }
 
   H5::Group getGroup(std::string group_name);
-  bool write_hdf5_distmat(std::string group_name, const char *name, AbsDistMat *M, lbann_comm *comm);
-  bool read_hdf5_distmat(std::string group_name, const char *name, AbsDistMat *M, lbann_comm *comm);
+  bool write_hdf5_distmat(std::string group_name, const char *name, const AbsDistMat *M, bool is_master);
+  bool read_hdf5_distmat(std::string group_name, const char *name, AbsDistMat *M, bool is_master);
   #endif
 
  private:

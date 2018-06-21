@@ -121,7 +121,7 @@ bool adagrad::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
   optimizer::save_to_checkpoint_shared(p, name_prefix);
   #ifdef LBANN_HAS_HDF5
   std::string group_name = name_prefix + "_optimizer";
-  p.write_hdf5_distmat(group_name, "cache", m_cache, m_comm);
+  p.write_hdf5_distmat(group_name, "cache", m_cache, m_comm->am_model_master());
   #else
   char l_name[512];
   sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
@@ -134,7 +134,7 @@ bool adagrad::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
   optimizer::load_from_checkpoint_shared(p, name_prefix);
   #ifdef LBANN_HAS_HDF5
   std::string group_name = name_prefix + "_optimizer";
-  p.read_hdf5_distmat(group_name, "cache", m_cache, m_comm);
+  p.read_hdf5_distmat(group_name, "cache", m_cache, m_comm->am_model_master());
   #else
   char l_name[512];
   sprintf(l_name, "%s_optimizer_cache_%lldx%lld.bin", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
