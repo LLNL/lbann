@@ -163,6 +163,10 @@ void data_reader_jag_conduit::set_defaults() {
   m_scalar_keys.clear();
   m_input_keys.clear();
   m_uniform_input_type = false;
+  m_scalar_filter.clear();
+  m_scalar_prefix_filter.clear();
+  m_input_filter.clear();
+  m_input_prefix_filter.clear();
 }
 
 /// Replicate image processor for each OpenMP thread
@@ -266,7 +270,7 @@ void data_reader_jag_conduit::add_scalar_filter(const std::string& key) {
 }
 
 void data_reader_jag_conduit::add_scalar_prefix_filter(const prefix_t& p) {
-  m_scalar_prefix_filter.push_back(p);
+  m_scalar_prefix_filter.push_back((p.first.length() > p.second)? prefix_t(p.first, p.first.length()) : p);
 }
 
 void data_reader_jag_conduit::add_input_filter(const std::string& key) {
@@ -274,7 +278,7 @@ void data_reader_jag_conduit::add_input_filter(const std::string& key) {
 }
 
 void data_reader_jag_conduit::add_input_prefix_filter(const prefix_t& p) {
-  m_input_prefix_filter.push_back(p);
+  m_input_prefix_filter.push_back((p.first.length() > p.second)? prefix_t(p.first, p.first.length()) : p);
 }
 
 /**
@@ -708,6 +712,34 @@ std::string data_reader_jag_conduit::get_description() const {
     + " - scalars: "  + std::to_string(get_linearized_scalar_size()) + "\n"
     + " - inputs: "   + std::to_string(get_linearized_input_size()) + "\n"
     + " - uniform_input_type: " + (m_uniform_input_type? "true" : "false") + '\n';
+  if (!m_scalar_filter.empty()) {
+    ret += " - scalar filter:";
+    for (const auto& f: m_scalar_filter) {
+      ret += " \"" + f + '"';
+    }
+    ret += '\n';
+  }
+  if (!m_scalar_prefix_filter.empty()) {
+    ret += " - scalar prefix filter:";
+    for (const auto& f: m_scalar_prefix_filter) {
+      ret += " [\"" + f.first + "\" " + std::to_string(f.second) + ']';
+    }
+    ret += '\n';
+  }
+  if (!m_input_filter.empty()) {
+    ret += " - input filter:";
+    for (const auto& f: m_input_filter) {
+      ret += " \"" + f + '"';
+    }
+    ret += '\n';
+  }
+  if (!m_input_prefix_filter.empty()) {
+    ret += " - input prefix filter:";
+    for (const auto& f: m_input_prefix_filter) {
+      ret += " [\"" + f.first + "\" " + std::to_string(f.second) + ']';
+    }
+    ret += '\n';
+  }
   return ret;
 }
 
