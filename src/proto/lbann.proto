@@ -19,7 +19,7 @@ message DataReader {
 
 message Reader {
   string name = 1; //mnist, nci, nci_regression, numpy, imagenet, synthetic, merge_samples
-  string role = 3; //train, test
+  string role = 3; //train, validation, test
   bool shuffle = 4;
   string data_filedir = 5;
   string data_local_filedir = 50; //to support data_store
@@ -33,10 +33,22 @@ message Reader {
   bool gan_labelling = 201;
   int32 gan_label_value = 202;
   ImagePreprocessor image_preprocessor = 13;
-  repeated string jag_scalar_keys = 95; // only for jag
-  repeated string jag_input_keys = 96; // only for jag
-  repeated int32 independent = 97; // only for jag
-  repeated int32 dependent = 98; // only for jag
+
+  //------------------ start of only for jag_conduit -----------------------
+  repeated string jag_scalar_keys = 91;
+  repeated string jag_input_keys = 92;
+  message JagKeyPrefixFilter {
+    string key_prefix = 1;
+    uint32 min_len = 2;
+  }
+  repeated string jag_scalar_filters = 93;
+  repeated JagKeyPrefixFilter jag_scalar_prefix_filters = 94;
+  repeated string jag_input_filters = 95;
+  repeated JagKeyPrefixFilter jag_input_prefix_filters = 96;
+  repeated int32 independent = 97;
+  repeated int32 dependent = 98;
+  //------------------  end of only for jag_conduit  -----------------------
+
   int32 num_labels = 99; //for imagenet
   int64 num_samples = 100; //only for synthetic
   int64 num_features = 101; //only for synthetic
