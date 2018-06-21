@@ -27,7 +27,7 @@
 #include "math.h"
 #include "lbann/base.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/cudnn_wrapper.hpp"
+#include "lbann/utils/cuda.hpp"
 
 namespace lbann {
 
