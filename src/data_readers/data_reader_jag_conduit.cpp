@@ -122,6 +122,11 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
 
   m_data = rhs.m_data;
   m_uniform_input_type = rhs.m_uniform_input_type;
+
+  m_scalar_filter = rhs.m_scalar_filter;
+  m_scalar_prefix_filter = rhs.m_scalar_prefix_filter;
+  m_input_filter = rhs.m_input_filter;
+  m_input_prefix_filter = rhs.m_input_prefix_filter;
 }
 
 data_reader_jag_conduit::data_reader_jag_conduit(const data_reader_jag_conduit& rhs)
@@ -256,6 +261,43 @@ void data_reader_jag_conduit::set_image_dims(const int width, const int height, 
   set_linearized_image_size();
 }
 
+void data_reader_jag_conduit::add_scalar_filter(const std::string& key) {
+  m_scalar_filter.insert(key);
+}
+
+void data_reader_jag_conduit::add_scalar_prefix_filter(const prefix_t& p) {
+  m_scalar_prefix_filter.push_back(p);
+}
+
+void data_reader_jag_conduit::add_input_filter(const std::string& key) {
+  m_input_filter.insert(key);
+}
+
+void data_reader_jag_conduit::add_input_prefix_filter(const prefix_t& p) {
+  m_input_prefix_filter.push_back(p);
+}
+
+/**
+ * First, it checks if the key is in the list of keys to filter.
+ * Then, it checks if the key contains any prefix string to filter
+ * while sayisfying the mininum length requirement.
+ */
+bool data_reader_jag_conduit::filter(const std::set<std::string>& filter,
+  const std::vector<data_reader_jag_conduit::prefix_t>& prefix_filter, const std::string& key) const {
+  if (filter.find(key) != filter.end()) {
+    return true;
+  }
+  for (const auto& pf: prefix_filter) {
+    if (key.length() < pf.second) { // minimum length requirement
+      continue;
+    }
+    if (key.compare(0, pf.first.length(), pf.first) == 0) { // match
+      return true;
+    }
+  }
+  return false;
+}
+
 /**
  * To use no key, set 'Undefined' to the corresponding variable type,
  * or call this with an empty vector argument after loading data.
@@ -280,7 +322,11 @@ void data_reader_jag_conduit::set_all_scalar_choices() {
   conduit::NodeConstIterator itr = n_scalar.children();
   while (itr.has_next()) {
     itr.next();
-    m_scalar_keys.push_back(itr.name());
+    const std::string key = itr.name();
+    if (filter(m_scalar_filter, m_scalar_prefix_filter, key)) {
+      continue;
+    }
+    m_scalar_keys.push_back(key);
   }
 }
 
@@ -313,7 +359,11 @@ void data_reader_jag_conduit::set_all_input_choices() {
   conduit::NodeConstIterator itr = n_input.children();
   while (itr.has_next()) {
     itr.next();
-    m_input_keys.push_back(itr.name());
+    const std::string key = itr.name();
+    if (filter(m_input_filter, m_input_prefix_filter, key)) {
+      continue;
+    }
+    m_input_keys.push_back(key);
   }
 }
 
@@ -789,7 +839,7 @@ std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scal
     const conduit::Node & n_scalar = get_conduit_node(scalar_key);
     // All the scalar output currently seems to be scalar_t
     //add_val(key, n_scalar, scalars);
-    scalars.push_back(n_scalar.value());
+    scalars.push_back(static_cast<scalar_t>(n_scalar.to_value()));
   }
   return scalars;
 }
