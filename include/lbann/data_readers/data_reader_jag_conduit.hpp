@@ -59,6 +59,9 @@ class data_reader_jag_conduit : public generic_data_reader {
   enum variable_t {Undefined=0, JAG_Image, JAG_Scalar, JAG_Input};
   using TypeID = conduit::DataType::TypeID;
 
+  /// Type to define a prefix string and the minimum length requirement to filter out a key
+  using prefix_t = std::pair<std::string, size_t>;
+
   data_reader_jag_conduit(bool shuffle = true) = delete;
   data_reader_jag_conduit(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
   data_reader_jag_conduit(const data_reader_jag_conduit&);
@@ -82,6 +85,15 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   /// Set the image dimension
   void set_image_dims(const int width, const int height, const int ch = 1);
+
+  /// Add a scalar key to filter out
+  void add_scalar_filter(const std::string& key);
+  /// Add a scalar key prefix to filter out
+  void add_scalar_prefix_filter(const prefix_t& p);
+  /// Add an input key to filter out
+  void add_input_filter(const std::string& key);
+  /// Add an input key prefix to filter out
+  void add_input_prefix_filter(const prefix_t& p);
 
   /// Select the set of scalar output variables to use
   void set_scalar_choices(const std::vector<std::string>& keys);
@@ -177,10 +189,15 @@ class data_reader_jag_conduit : public generic_data_reader {
   virtual bool replicate_processor(const cv_process& pp);
   virtual void copy_members(const data_reader_jag_conduit& rhs);
 
+
   /// add data type for independent variable
   void add_independent_variable_type(const variable_t independent);
   /// add data type for dependent variable
   void add_dependent_variable_type(const variable_t dependent);
+
+  /// Check if a key is in the black lists to filter out
+  bool filter(const std::set<std::string>& filter,
+              const std::vector<prefix_t>& prefix_filter, const std::string& name) const;
 
   /// Return the linearized size of a particular JAG variable type
   size_t get_linearized_size(const variable_t t) const;
@@ -274,6 +291,15 @@ class data_reader_jag_conduit : public generic_data_reader {
    * we can rely on a data extraction method with lower overhead.
    */
   bool m_uniform_input_type;
+
+  /// The set of scalar variables to filter out
+  std::set<std::string> m_scalar_filter;
+  /// The list of scalar key prefixes to filter out
+  std::vector<prefix_t> m_scalar_prefix_filter;
+  /// The set of input variables to filter out
+  std::set<std::string> m_input_filter;
+  /// The list of input key prefixes to filter out
+  std::vector<prefix_t> m_input_prefix_filter;
 };
 
 

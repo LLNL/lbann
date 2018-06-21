@@ -40,6 +40,16 @@ data_reader {
 #        "MINradius"
       ]
 
+    # When using all the keys without explicit selection, key filters can be used
+    # to explicitly exclude the particular variables with keys that matches a filter.
+    # 'jag_scalar_filters' and 'jag_input_filters' rely on exact key string matching.
+    # 'jag_scalar_prefix_filters' and 'jag_input_prefix_filters' define a filter as
+    # the pair of a prefix substring and the minimum key length.
+    # For example, with the example below, any key that has a length no shorter
+    # than 27 and starts with the substring "image_[" is excluded.
+
+    jag_scalar_prefix_filters: [ { key_prefix: "image_[" min_len: 27} ]
+
     # The parameter "shape_model_initial_velocities" is used in numpy-based format but empty in conduit-based format
     jag_input_keys: ["stopping_mult",
                      "radiation_mult",
@@ -48,6 +58,8 @@ data_reader {
                      "conduction_mult",
                      "shape_model_initial_velocity_amplitude"
                     ];
+
+    jag_input_filters: ["shape_model_initial_velocity"]
 
     num_labels: 6
 
@@ -122,6 +134,8 @@ data_reader {
 #        "MINradius"
       ]
 
+    jag_scalar_prefix_filters: [ { key_prefix: "image_[" min_len: 27} ]
+
     jag_input_keys: ["stopping_mult",
                      "radiation_mult",
                      "ablation_cv",
@@ -129,6 +143,8 @@ data_reader {
                      "conduction_mult",
                      "shape_model_initial_velocity_amplitude"
                     ];
+
+    jag_input_filters: ["shape_model_initial_velocity"]
 
     num_labels: 6
 

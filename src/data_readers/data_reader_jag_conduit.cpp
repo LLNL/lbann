@@ -122,6 +122,11 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
 
   m_data = rhs.m_data;
   m_uniform_input_type = rhs.m_uniform_input_type;
+
+  m_scalar_filter = rhs.m_scalar_filter;
+  m_scalar_prefix_filter = rhs.m_scalar_prefix_filter;
+  m_input_filter = rhs.m_input_filter;
+  m_input_prefix_filter = rhs.m_input_prefix_filter;
 }
 
 data_reader_jag_conduit::data_reader_jag_conduit(const data_reader_jag_conduit& rhs)
@@ -158,6 +163,10 @@ void data_reader_jag_conduit::set_defaults() {
   m_scalar_keys.clear();
   m_input_keys.clear();
   m_uniform_input_type = false;
+  m_scalar_filter.clear();
+  m_scalar_prefix_filter.clear();
+  m_input_filter.clear();
+  m_input_prefix_filter.clear();
 }
 
 /// Replicate image processor for each OpenMP thread
@@ -256,6 +265,43 @@ void data_reader_jag_conduit::set_image_dims(const int width, const int height, 
   set_linearized_image_size();
 }
 
+void data_reader_jag_conduit::add_scalar_filter(const std::string& key) {
+  m_scalar_filter.insert(key);
+}
+
+void data_reader_jag_conduit::add_scalar_prefix_filter(const prefix_t& p) {
+  m_scalar_prefix_filter.push_back((p.first.length() > p.second)? prefix_t(p.first, p.first.length()) : p);
+}
+
+void data_reader_jag_conduit::add_input_filter(const std::string& key) {
+  m_input_filter.insert(key);
+}
+
+void data_reader_jag_conduit::add_input_prefix_filter(const prefix_t& p) {
+  m_input_prefix_filter.push_back((p.first.length() > p.second)? prefix_t(p.first, p.first.length()) : p);
+}
+
+/**
+ * First, it checks if the key is in the list of keys to filter.
+ * Then, it checks if the key contains any prefix string to filter
+ * while sayisfying the mininum length requirement.
+ */
+bool data_reader_jag_conduit::filter(const std::set<std::string>& filter,
+  const std::vector<data_reader_jag_conduit::prefix_t>& prefix_filter, const std::string& key) const {
+  if (filter.find(key) != filter.end()) {
+    return true;
+  }
+  for (const auto& pf: prefix_filter) {
+    if (key.length() < pf.second) { // minimum length requirement
+      continue;
+    }
+    if (key.compare(0, pf.first.length(), pf.first) == 0) { // match
+      return true;
+    }
+  }
+  return false;
+}
+
 /**
  * To use no key, set 'Undefined' to the corresponding variable type,
  * or call this with an empty vector argument after loading data.
@@ -277,10 +323,12 @@ void data_reader_jag_conduit::set_all_scalar_choices() {
   }
   const conduit::Node & n_scalar = get_conduit_node("0/outputs/scalars");
   m_scalar_keys.reserve(n_scalar.number_of_children());
-  conduit::NodeConstIterator itr = n_scalar.children();
-  while (itr.has_next()) {
-    itr.next();
-    m_scalar_keys.push_back(itr.name());
+  const std::vector<std::string>& child_names = n_scalar.child_names();
+  for (const auto& key: child_names) {
+    if (filter(m_scalar_filter, m_scalar_prefix_filter, key)) {
+      continue;
+    }
+    m_scalar_keys.push_back(key);
   }
 }
 
@@ -310,10 +358,12 @@ void data_reader_jag_conduit::set_all_input_choices() {
   }
   const conduit::Node & n_input = get_conduit_node("0/inputs");
   m_input_keys.reserve(n_input.number_of_children());
-  conduit::NodeConstIterator itr = n_input.children();
-  while (itr.has_next()) {
-    itr.next();
-    m_input_keys.push_back(itr.name());
+  const std::vector<std::string>& child_names = n_input.child_names();
+  for (const auto& key: child_names) {
+    if (filter(m_input_filter, m_input_prefix_filter, key)) {
+      continue;
+    }
+    m_input_keys.push_back(key);
   }
 }
 
@@ -385,15 +435,14 @@ void data_reader_jag_conduit::check_scalar_keys() {
     return;
   }
 
-  const conduit::Node & n_scalar = get_conduit_node("0/outputs/scalars");
-  conduit::NodeConstIterator itr = n_scalar.children();
   size_t num_found = 0u;
   std::vector<bool> found(m_scalar_keys.size(), false);
   std::set<std::string> keys_conduit;
 
-  while (itr.has_next()) {
-    itr.next();
-    keys_conduit.insert(itr.name());
+  const conduit::Node & n_scalar = get_conduit_node("0/outputs/scalars");
+  const std::vector<std::string>& child_names = n_scalar.child_names();
+  for (const auto& key: child_names) {
+    keys_conduit.insert(key);
   }
 
   for (size_t i=0u; i < m_scalar_keys.size(); ++i) {
@@ -422,11 +471,12 @@ void data_reader_jag_conduit::check_input_keys() {
     return;
   }
 
-  const conduit::Node & n_input = get_conduit_node("0/inputs");
-  conduit::NodeConstIterator itr = n_input.children();
   size_t num_found = 0u;
   std::vector<bool> found(m_input_keys.size(), false);
   std::map<std::string, TypeID> keys_conduit;
+
+  const conduit::Node & n_input = get_conduit_node("0/inputs");
+  conduit::NodeConstIterator itr = n_input.children();
 
   while (itr.has_next()) {
     const conduit::Node & n = itr.next();
@@ -658,6 +708,34 @@ std::string data_reader_jag_conduit::get_description() const {
     + " - scalars: "  + std::to_string(get_linearized_scalar_size()) + "\n"
     + " - inputs: "   + std::to_string(get_linearized_input_size()) + "\n"
     + " - uniform_input_type: " + (m_uniform_input_type? "true" : "false") + '\n';
+  if (!m_scalar_filter.empty()) {
+    ret += " - scalar filter:";
+    for (const auto& f: m_scalar_filter) {
+      ret += " \"" + f + '"';
+    }
+    ret += '\n';
+  }
+  if (!m_scalar_prefix_filter.empty()) {
+    ret += " - scalar prefix filter:";
+    for (const auto& f: m_scalar_prefix_filter) {
+      ret += " [\"" + f.first + "\" " + std::to_string(f.second) + ']';
+    }
+    ret += '\n';
+  }
+  if (!m_input_filter.empty()) {
+    ret += " - input filter:";
+    for (const auto& f: m_input_filter) {
+      ret += " \"" + f + '"';
+    }
+    ret += '\n';
+  }
+  if (!m_input_prefix_filter.empty()) {
+    ret += " - input prefix filter:";
+    for (const auto& f: m_input_prefix_filter) {
+      ret += " [\"" + f.first + "\" " + std::to_string(f.second) + ']';
+    }
+    ret += '\n';
+  }
   return ret;
 }
 
@@ -789,7 +867,7 @@ std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scal
     const conduit::Node & n_scalar = get_conduit_node(scalar_key);
     // All the scalar output currently seems to be scalar_t
     //add_val(key, n_scalar, scalars);
-    scalars.push_back(n_scalar.value());
+    scalars.push_back(static_cast<scalar_t>(n_scalar.to_value()));
   }
   return scalars;
 }
