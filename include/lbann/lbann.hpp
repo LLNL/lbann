@@ -61,11 +61,13 @@
 #include "lbann/layers/activations/l2_loss.hpp"
 #include "lbann/layers/activations/log.hpp"
 
-
 /// Learning Layers
 #include "lbann/layers/learning/fully_connected.hpp"
 #include "lbann/layers/learning/convolution.hpp"
 #include "lbann/layers/learning/deconvolution.hpp"
+
+/// Loss Layers
+#include "lbann/layers/loss/cross_entropy.hpp"
 
 /// Transform Layers
 #include "lbann/layers/transform/reshape.hpp"

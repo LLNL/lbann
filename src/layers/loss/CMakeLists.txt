@@ -1,13 +1,13 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
-  layer.cpp
+  cross_entropy.cpp
   )
 
-# Add the subdirectories
-add_subdirectory(activations)
-add_subdirectory(learning)
-add_subdirectory(loss)
-add_subdirectory(regularizers)
+if (LBANN_HAS_CUDA)
+  # Add the CUDA source files for this directory
+  set_full_path(THIS_DIR_CU_SOURCES
+    )
+endif ()
 
 # Propagate the files up the tree
 set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)

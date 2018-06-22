@@ -427,6 +427,11 @@ Layer* construct_layer(lbann_comm* comm,
     return new l2_loss_layer<layout, Dev>(comm);
   }
 
+  // Loss layers
+  if (proto_layer.has_cross_entropy()) {
+    return new cross_entropy_layer<layout, Dev>(comm);
+  }
+
   if (proto_layer.has_bce_with_logits()) {
     const auto& params = proto_layer.bce_with_logits();
     return new sigmoid_bce_with_logits_layer<layout, Dev>(comm, params.true_label());
