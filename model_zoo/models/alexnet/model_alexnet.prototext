@@ -307,13 +307,6 @@ model {
   }
 
   layer {
-    name: "target"
-    parents: "prob labels"
-    data_layout: "data_parallel"
-    target {}
-  }
-  
-  layer {
     name: "cross_entropy"
     parents: "prob labels"
     data_layout: "model_parallel"
@@ -325,6 +318,11 @@ model {
     data_layout: "model_parallel"
     evaluation {}    
   }
-  
+  layer {
+    name: "target"
+    parents: "prob labels"
+    data_layout: "data_parallel"
+    target {}
+  }  
 
 }
