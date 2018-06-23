@@ -50,7 +50,6 @@ data_reader {
     data_filedir: "/p/lscratche/brainusr/datasets/CUB_200_2011/basic_set_256x256/"
     data_filename: "/p/lscratche/brainusr/datasets/CUB_200_2011_list/test_list.txt"
     label_filename: ""
-    validation_percent: 1.0
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
     num_labels: 200

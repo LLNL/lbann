@@ -15,7 +15,6 @@ data_reader {
     shuffle: true
     num_samples: 32000
     num_features: 1024
-    validation_percent: 1.0
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
   }

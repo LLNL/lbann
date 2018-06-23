@@ -28,7 +28,6 @@ data_reader {
     shuffle: true
     data_filedir: "/p/lscratchh/jjayaram/LDRD-SI/deep-latent-spaces/data"
     data_filename: "outputs_polar_100k.npy:outputs_scalars_100k.npy:inputs_100k.npy"
-    validation_percent: 1.0
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
 
