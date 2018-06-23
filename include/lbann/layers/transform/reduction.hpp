@@ -126,13 +126,13 @@ class reduction_layer : public transform_layer {
       El::Ones(m_ones, input_size, 1);
       El::Gemm(El::NORMAL, El::NORMAL,
                DataType(1), m_ones, local_gradient_wrt_output,
-               DataType(1), local_gradient_wrt_input);
+               DataType(0), local_gradient_wrt_input);
       break;
     case reduction_mode::AVERAGE:
       El::Ones(m_ones, input_size, 1);
       El::Gemm(El::NORMAL, El::NORMAL,
                DataType(1) / input_size, m_ones, local_gradient_wrt_output,
-               DataType(1), local_gradient_wrt_input);
+               DataType(0), local_gradient_wrt_input);
       break;
     default:
       LBANN_ERROR("invalid reduction mode");

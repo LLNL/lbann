@@ -302,7 +302,7 @@ class softmax_layer : public activation_layer {
       #ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
         if (y <= m_min_output) { dx = DataType(0); }
       #endif
-        local_gradient_wrt_input(row, col) += dx;
+        local_gradient_wrt_input(row, col) = dx;
       }
     }
 

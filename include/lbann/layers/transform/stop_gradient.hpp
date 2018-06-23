@@ -69,10 +69,6 @@ class stop_gradient_layer : public transform_layer {
     El::LockedView(get_activations(), get_prev_activations());
   }
 
-  void bp_compute() override {
-    // El::Zero(get_error_signals());
-  }
-
 };
 
 } // namespace lbann

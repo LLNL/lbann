@@ -68,7 +68,6 @@ class dummy_layer : public transform_layer {
  protected:
 
   void fp_compute() override {}
-  void bp_compute() override {}
 
 };
 

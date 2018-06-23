@@ -105,8 +105,6 @@ class categorical_random_layer : public transform_layer {
 
   }
 
-  void bp_compute() override {}
-
 };
 
 } // namespace lbann

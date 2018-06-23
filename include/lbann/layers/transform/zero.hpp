@@ -98,9 +98,9 @@ class zero_layer : public transform_layer {
         const DataType dy = local_gradient_wrt_output(row, col);
         DataType& dx = local_gradient_wrt_input(row, col);
         if(m_first_half)
-        dx += input.GlobalCol(col) < local_width/2 ?  DataType(0) : dy;
+        dx = input.GlobalCol(col) < local_width/2 ?  DataType(0) : dy;
         if(m_second_half)
-        dx += input.GlobalCol(col) >= local_width/2 ?  DataType(0) : dy;
+        dx = input.GlobalCol(col) >= local_width/2 ?  DataType(0) : dy;
       }
     }
   }

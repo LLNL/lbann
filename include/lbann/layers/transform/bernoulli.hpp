@@ -96,8 +96,6 @@ class bernoulli_layer : public transform_layer {
     }
   }
 
-  void bp_compute() override {}
-
 };
 
 } // namespace lbann

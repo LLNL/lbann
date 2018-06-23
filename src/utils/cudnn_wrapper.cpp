@@ -27,8 +27,11 @@
 #include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/utils/cublas_wrapper.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/number_theory.hpp"
 
 #include <iostream>
+#include <unordered_map>
+#include <tuple>
 
 #include "El.hpp"
 #include <unistd.h>
@@ -118,8 +121,8 @@ void set_tensor_desc(cudnnTensorDescriptor_t& desc,
   // Note: cuDNN tensors should have at least 4 dimensions
   /// @todo Think about 1D convolution
   while (dims.size() < 4) {
-    dims.insert(dims.begin(), 1);
-    strides.insert(strides.begin(), strides.front());
+    dims.push_back(1);
+    strides.push_back(1);
   }
   if (desc == nullptr) {
     CHECK_CUDNN(cudnnCreateTensorDescriptor(&desc));
@@ -386,10 +389,6 @@ void set_data_parallel_tensor_desc(cudnnTensorDescriptor_t& desc,
     for(int i = strides.size() - 1; i > 0; --i) {
       strides[i-1] = strides[i] * dims[i];
     }
-    while (dims.size() < 3) {
-      dims.insert(dims.begin(), 1);
-      strides.insert(strides.begin(), strides.front());
-    }
     dims.insert(dims.begin(), local_data.Width());
     strides.insert(strides.begin(), local_data.LDim());
     set_tensor_desc(desc, dims, strides);
@@ -456,7 +455,11 @@ entrywise_layer_tensor_manager
 
 namespace {
 
-/** Set a cuDNN tensor descriptor for a data-parallel data layout.
+/** Set a cuDNN tensor descriptor for an entrywise tensor operation.
+ *  Given local data in a (height x width) matrix, the tensor is
+ *  initialized with dimensions (width, a, b, c), where
+ *  a*b*c=height. This is because cuDNN is optimized for 4D tensors
+ *  and gets poor performance with 1D tensors and 2D tensors.
  */
 void set_entrywise_tensor_desc(cudnnTensorDescriptor_t& desc,
                                const AbsMat& local_data) {
@@ -465,13 +468,24 @@ void set_entrywise_tensor_desc(cudnnTensorDescriptor_t& desc,
     LBANN_ERROR("attempted to setup cuDNN tensor with non-GPU data");
   }
 #endif // LBANN_DEBUG
-  if (local_data.Height() > 0 && local_data.Width() > 0) {
-    std::vector<int> dims(2), strides(2);
-    dims[0] = local_data.Width();
-    dims[1] = local_data.Height();
-    strides[0] = local_data.LDim();
-    strides[1] = 1;
-    set_tensor_desc(desc, dims, strides);
+  const int height = local_data.Height();
+  const int width = local_data.Width();
+  const int ldim = local_data.LDim();
+  if (height > 0 && width > 0) {
+
+    // Factorize height into three factors
+    // Note: factorization is memoized
+    static std::unordered_map<int,std::vector<int>> cache;
+    auto& factors = cache[height];
+    if (factors.empty()) {
+      factors = number_theory::balanced_factors(height, 3);
+    }
+
+    // Set cuDNN tensor descriptor with 4D tensor
+    set_tensor_desc(desc,
+                    {width, factors[2], factors[1], factors[0]},
+                    {ldim, factors[1]*factors[0], factors[0], 1});
+
   }
 }
 

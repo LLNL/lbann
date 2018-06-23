@@ -23,41 +23,30 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// data_reader_imagenet .hpp .cpp - generic_data_reader class for ImageNet dataset
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_DATA_READER_IMAGENET_ORG_HPP
-#define LBANN_DATA_READER_IMAGENET_ORG_HPP
-
-#include "data_reader_image.hpp"
-#include "image_preprocessor.hpp"
+#include "lbann/callbacks/callback_gpu_memory_usage.hpp"
+#include <iomanip>
 
 namespace lbann {
-class imagenet_reader_org : public image_data_reader {
- public:
-  imagenet_reader_org(bool shuffle = true);
-  imagenet_reader_org(const imagenet_reader_org&) = default;
-  imagenet_reader_org& operator=(const imagenet_reader_org&) = default;
-  ~imagenet_reader_org() override {}
 
-  imagenet_reader_org* copy() const override { return new imagenet_reader_org(*this); }
-
-  std::string get_type() const override {
-    return "imagenet_reader_org";
-  }
-
-  /// Set up imagenet specific input parameters
-  void set_input_params(const int width=256, const int height=256, const int num_ch=3, const int num_labels=1000) override;
-
- protected:
-  void set_defaults() override;
-  void allocate_pixel_bufs();
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
-
- protected:
-  std::vector<std::vector<unsigned char>> m_pixel_bufs;
-};
+void lbann_callback_gpu_memory_usage::on_epoch_begin(model *m) {
+#ifdef LBANN_HAS_CUDA
+  size_t available;
+  size_t total;
+  FORCE_CHECK_CUDA(cudaMemGetInfo(&available, &total));
+  size_t used = total - available;
+  std::cout << "GPU memory usage at epoch " << m->get_cur_epoch()
+            << " of model " << m->get_comm()->get_model_rank()
+            << " at rank " << m->get_comm()->get_rank_in_model()
+            << ": " << used << " bytes ("
+            << std::setprecision(3)
+            << (used / 1024.0 / 1024.0 / 1024.0) << " GiB) used out of "
+            << total << " bytes ("
+            << std::setprecision(3)      
+            << (total / 1024.0 / 1024.0 / 1024.0)
+            << " GiB)" << std::endl;
+#endif
+}
 
 }  // namespace lbann
-
-#endif  // LBANN_DATA_READER_IMAGENET_ORG_HPP

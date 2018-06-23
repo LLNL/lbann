@@ -344,7 +344,7 @@ __global__ void backprop2_kernel(
       auto dx = dxhat * inv_stdev;
       dx += dmean_term;
       dx += dvar_term * (x - mean);
-      global_gradient_wrt_input[row + col * gradient_wrt_input_ldim] += dx;
+      global_gradient_wrt_input[row + col * gradient_wrt_input_ldim] = dx;
     }
   }
 

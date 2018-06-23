@@ -15,7 +15,6 @@ data_reader {
     shuffle: true
     data_filename: "/p/lscratchf/brainusr/datasets/cancer/anl_datasets/tmp_norm/cl.LE.SR.dsc.all.norm"
     label_filename:"/p/lscratchf/brainusr/datasets/cancer/anl_datasets/tmp_norm/cl.LE.SR.dsc.all.norm"
-    validation_percent: 1.0
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
   }

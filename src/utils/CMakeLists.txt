@@ -6,6 +6,7 @@ set_full_path(THIS_DIR_SOURCES
   file_utils.cpp
   graph.cpp
   im2col.cpp
+  number_theory.cpp
   omp_diagnostics.cpp
   options.cpp
   protobuf_utils.cpp
