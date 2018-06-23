@@ -25,27 +25,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/loss/cross_entropy.hpp"
+#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
 namespace {
 
-/** CPU implementation of cross entropy.
- *  If all other matrices have colDist,rowDist data distribution, then
- *  workspace is assumed to have El::STAR,rowDist data distribution.
- */
-void fp_cpu(lbann_comm& comm,
-            const AbsDistMat& prediction,
-            const AbsDistMat& ground_truth,
-            AbsDistMat& output,
-            AbsDistMat& workspace) {
-  
-  // Initialize matrices
-  workspace.AlignWith(prediction.DistData());
-  workspace.Resize(1, prediction.Width());
-  auto& local_workspace = workspace.Matrix();
-  const auto& local_prediction = prediction.LockedMatrix();
-  const auto& local_ground_truth = ground_truth.LockedMatrix();
+void local_fp_cpu(const AbsMat& local_prediction,
+                  const AbsMat& local_ground_truth,
+                  AbsMat& local_contribution) {
 
   // Useful constants
   const DataType zero = DataType(0);
@@ -57,56 +45,38 @@ void fp_cpu(lbann_comm& comm,
   for (El::Int col = 0; col < local_width; ++col) {
     DataType sum = zero;
     for (El::Int row = 0; row < local_height; ++row) {
-      const auto& true_val = local_ground_truth(row, col);
-      const auto& pred_val = local_prediction(row, col);
-      if (true_val > zero) {
+      const auto& xhat = local_ground_truth(row, col);
+      if (xhat > zero) {
+        const auto& x = local_prediction(row, col);
 #ifdef LBANN_DEBUG
-        if (pred_val <= zero) { LBANN_ERROR("non-positive prediction"); }
+        if (x <= zero) { LBANN_ERROR("non-positive prediction"); }
 #endif // LBANN_DEBUG
-        sum += - true_val * std::log(pred_val);
+        sum += - xhat * std::log(x);
       }
     }
-    local_workspace(0, col) = sum;
+    local_contribution(0, col) = sum;
   }
-
-  // Accumulate local contributions
-  /// @todo Consider reduce rather than allreduce
-  comm.allreduce(workspace, workspace.RedundantComm());
-  El::Copy(workspace, output);
 
 }
 
-/** CPU implementation of cross entropy backprop.
- *  If all other matrices have colDist,rowDist data distribution, then
- *  workspace is assumed to have El::STAR,rowDist data distribution.
- */
-void bp_cpu(const AbsDistMat& prediction,
-            const AbsDistMat& ground_truth,
-            const AbsDistMat& gradient_wrt_output,
-            AbsDistMat& gradient_wrt_prediction,
-            AbsDistMat& gradient_wrt_ground_truth,
-            AbsDistMat& workspace) {
-  
-  // Initialize matrices
-  El::Copy(gradient_wrt_output, workspace);
-  const auto& local_workspace = workspace.LockedMatrix();
-  const auto& local_prediction = prediction.LockedMatrix();
-  const auto& local_ground_truth = ground_truth.LockedMatrix();
-  auto& local_gradient_wrt_prediction = gradient_wrt_prediction.Matrix();
-  auto& local_gradient_wrt_ground_truth = gradient_wrt_ground_truth.Matrix();
-
+void local_bp_cpu(const AbsMat& local_prediction,
+                  const AbsMat& local_ground_truth,
+                  const AbsMat& local_gradient_wrt_output,
+                  AbsMat& local_gradient_wrt_prediction,
+                  AbsMat& local_gradient_wrt_ground_truth) {
+                                                                       
   // Useful constants
   const DataType zero = DataType(0);
   const El::Int local_height = local_prediction.Height();
   const El::Int local_width = local_prediction.Width();
 
   // Compute gradients
-#pragma omp parallel for
+#pragma omp parallel for collapse(2)
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
       const auto& x = local_prediction(row, col);
       const auto& xhat = local_ground_truth(row, col);
-      const auto& dy = local_workspace(0, col);
+      const auto& dy = local_gradient_wrt_output(0, col);
       auto& dx = local_gradient_wrt_prediction(row, col);
       auto& dxhat = local_gradient_wrt_ground_truth(row, col);
       dx = (xhat > zero) ? - dy * xhat / x : zero;
@@ -119,45 +89,47 @@ void bp_cpu(const AbsDistMat& prediction,
 } // namespace
 
 template <>
-void cross_entropy_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::fp_compute() {
-  El::DistMatrix<DataType, El::STAR, El::MR, El::ELEMENT, El::Device::CPU> workspace;
-  fp_cpu(*this->m_comm,
-         get_prev_activations(0),
-         get_prev_activations(1),
-         get_activations(),
-         workspace);
+void cross_entropy_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
+     ::local_fp_compute(const AbsMat& local_prediction,
+                        const AbsMat& local_ground_truth,
+                        AbsMat& local_contribution) {
+  local_fp_cpu(local_prediction, local_ground_truth, local_contribution);
 }
 
 template <>
-void cross_entropy_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_compute() {
-  El::DistMatrix<DataType, El::STAR, El::MR, El::ELEMENT, El::Device::CPU> workspace;
-  bp_cpu(get_prev_activations(0),
-         get_prev_activations(1),
-         get_prev_error_signals(),
-         get_error_signals(0),
-         get_error_signals(1),
-         workspace);
+void cross_entropy_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
+     ::local_bp_compute(const AbsMat& local_prediction,
+                        const AbsMat& local_ground_truth,
+                        const AbsMat& local_gradient_wrt_output,
+                        AbsMat& local_gradient_wrt_prediction,
+                        AbsMat& local_gradient_wrt_ground_truth) {
+  local_bp_cpu(local_prediction,
+               local_ground_truth,
+               local_gradient_wrt_output,
+               local_gradient_wrt_prediction,
+               local_gradient_wrt_ground_truth);
 }
 
 template <>
-void cross_entropy_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_compute() {
-  El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, El::Device::CPU> workspace;
-  fp_cpu(*this->m_comm,
-         get_prev_activations(0),
-         get_prev_activations(1),
-         get_activations(),
-         workspace);
+void cross_entropy_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
+     ::local_fp_compute(const AbsMat& local_prediction,
+                        const AbsMat& local_ground_truth,
+                        AbsMat& local_contribution) {
+  local_fp_cpu(local_prediction, local_ground_truth, local_contribution);
 }
 
 template <>
-void cross_entropy_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
-  El::DistMatrix<DataType, El::STAR, El::VC, El::ELEMENT, El::Device::CPU> workspace;
-  bp_cpu(get_prev_activations(0),
-         get_prev_activations(1),
-         get_prev_error_signals(),
-         get_error_signals(0),
-         get_error_signals(1),
-         workspace);
+void cross_entropy_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
+     ::local_bp_compute(const AbsMat& local_prediction,
+                        const AbsMat& local_ground_truth,
+                        const AbsMat& local_gradient_wrt_output,
+                        AbsMat& local_gradient_wrt_prediction,
+                        AbsMat& local_gradient_wrt_ground_truth) {
+  local_bp_cpu(local_prediction,
+               local_ground_truth,
+               local_gradient_wrt_output,
+               local_gradient_wrt_prediction,
+               local_gradient_wrt_ground_truth);
 }
 
 } // namespace lbann
