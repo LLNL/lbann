@@ -51,14 +51,6 @@ model* instantiate_model(lbann_comm* comm,
   if (type == "directed_acyclic_graph_model") {
     return new directed_acyclic_graph_model(comm, mini_batch_size, obj, opt);
   }
-  if (type == "recurrent_model") {
-    const auto& params = proto_model.recurrent();
-    return new recurrent_model(comm,
-                               mini_batch_size,
-                               obj,
-                               opt,
-                               params.unroll_depth());
-  }
   if (type == "siamese_model") {
     const auto& params = proto_model.siamese();
     return new siamese_model(comm,
@@ -180,7 +172,6 @@ void assign_weights_to_layers(std::vector<Layer*>& layer_list,
 } // namespace
 
 model* construct_model(lbann_comm* comm,
-                       cudnn::cudnn_manager* cudnn,
                        std::map<execution_mode, generic_data_reader*>& data_readers,
                        const lbann_data::Optimizer& proto_opt,
                        const lbann_data::Model& proto_model) {
@@ -188,7 +179,6 @@ model* construct_model(lbann_comm* comm,
   // Add layer graph
   auto&& layer_list = construct_layer_graph(comm,
                                             data_readers,
-                                            cudnn,
                                             proto_model);
 
   // Construct objective function
@@ -203,7 +193,6 @@ model* construct_model(lbann_comm* comm,
   // Add weights and assign to layers
   for (int i=0; i<proto_model.weights_size(); i++) {
     m->add_weights(construct_weights(comm,
-                                     cudnn,
                                      proto_opt,
                                      proto_model.weights(i)));
   }

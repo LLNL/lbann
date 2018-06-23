@@ -38,8 +38,7 @@ template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El
 class min_layer : public transform_layer {
 
  public:
-  min_layer(lbann_comm *comm,
-            cudnn::cudnn_manager *cudnn = nullptr)
+  min_layer(lbann_comm *comm)
     : transform_layer(comm) {
 
     /// @todo Implement
@@ -48,11 +47,6 @@ class min_layer : public transform_layer {
 
     // Min layer has no limit on parents
     m_expected_num_parent_layers = -1;
-
-  #ifdef LBANN_HAS_CUDNN
-    // Initialize GPU if available
-    this->m_cudnn = cudnn;
-  #endif // LBANN_HAS_CUDNN
 
   }
 

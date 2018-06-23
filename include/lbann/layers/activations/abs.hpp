@@ -31,8 +31,7 @@
 
 namespace lbann {
 
-/** Abs(x)
- */
+/** Absolute value. */
 template <data_layout T_layout, El::Device Dev>
 class abs_layer : public entrywise_activation_layer {
  public:

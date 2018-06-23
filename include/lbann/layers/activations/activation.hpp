@@ -76,11 +76,17 @@ class entrywise_activation_layer : public activation_layer {
   }
 
   virtual void fp_compute_gpu() {
-    throw lbann_exception("entrywise_activation_layer: no forward propagation GPU implementation");
+    std::stringstream err;
+    err << get_type() << " layer \"" << get_name() << "\" "
+        << "has no GPU implementation for forward propagation";
+    LBANN_ERROR(err.str());
   }
 
   virtual void bp_compute_gpu() {
-    throw lbann_exception("entrywise_activation_layer: no backward propagation GPU implementation");
+    std::stringstream err;
+    err << get_type() << " layer \"" << get_name() << "\" "
+        << "has no GPU implementation for backward propagation";
+    LBANN_ERROR(err.str());
   }
 
   virtual void fp_compute_cpu() {

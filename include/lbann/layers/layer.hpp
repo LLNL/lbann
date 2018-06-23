@@ -32,7 +32,6 @@
 #include "lbann/utils/summary.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/io/persist.hpp"
 #include <lbann.pb.h>
@@ -44,9 +43,6 @@ namespace lbann {
 // Forward declarations
 class model;
 class weights;
-namespace cudnn {
-class cudnn_manager;
-} // namespace cudnn
 
 /** Abstract base class for neural network layers.
  *  A layer takes input tensors ("previous activations") and applies a
@@ -330,8 +326,6 @@ class Layer {
 
   /** Get reference to LBANN communicator. */
   lbann_comm* get_comm() const { return m_comm; }
-  /** Get reference to cuDNN manager. */
-  cudnn::cudnn_manager* get_cudnn_manager() const { return m_cudnn; }
 
   void freeze();
   void unfreeze();
@@ -449,8 +443,7 @@ class Layer {
   /** Setup GPU objects.
    *  Called by the setup function if GPUs are enabled. The base
    *  method initializes GPU matrices for the previous activations,
-   *  activations, previous error signals, and error signals. It also
-   *  initializes cuDNN tensor descriptors.
+   *  activations, previous error signals, and error signals.
    */
   virtual void setup_gpu() {}
 
@@ -464,9 +457,6 @@ class Layer {
    *  Returns false if the layer must reset for a new training epoch.
    */
   virtual bool update_compute() { return true; }
-
-  /** Reference to cuDNN manager. */
-  cudnn::cudnn_manager *m_cudnn;
 
   /** Avoid back prop if frozen */
   bool m_frozen;

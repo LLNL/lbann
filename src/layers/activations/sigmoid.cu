@@ -107,8 +107,7 @@ __global__ void bp_kernel(int height, int width,
 namespace lbann {
 namespace sigmoid_cuda {
 
-void fp(cudnn::cudnn_manager& cudnn,
-        int height,
+void fp(int height,
         int width,
         const lbann::DataType* input,
         int input_leading_dim,
@@ -127,8 +126,7 @@ void fp(cudnn::cudnn_manager& cudnn,
   }
 }
 
-void bp(cudnn::cudnn_manager& cudnn,
-        int height,
+void bp(int height,
         int width,
         const lbann::DataType* input,
         int input_leading_dim,

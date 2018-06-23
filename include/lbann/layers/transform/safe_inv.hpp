@@ -46,8 +46,7 @@ class safe_inv_layer : public transform_layer {
  public:
 
   safe_inv_layer(lbann_comm *comm,
-                 DataType threshhold = DataType(0),
-                 cudnn::cudnn_manager *cudnn = nullptr)
+                 DataType threshhold = DataType(0))
     : transform_layer(comm), m_threshhold(threshhold) {}
 
   safe_inv_layer* copy() const override { return new safe_inv_layer(*this); }

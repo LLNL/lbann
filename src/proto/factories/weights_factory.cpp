@@ -81,13 +81,12 @@ weights_initializer* construct_initializer(lbann_comm* comm,
 } // namespace
 
 weights* construct_weights(lbann_comm* comm,
-                           cudnn::cudnn_manager* cudnn,
                            const lbann_data::Optimizer& proto_opt,
                            const lbann_data::Weights& proto_weights) {
   std::stringstream err;
 
   // Instantiate weights
-  weights* w = new weights(comm, cudnn);
+  weights* w = new weights(comm);
   
   // Set weights name if provided
   const auto& name = proto_weights.name();

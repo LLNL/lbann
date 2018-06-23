@@ -49,7 +49,7 @@ class identity_layer : public activation_layer {
     // mini-batch size and cleared to obtain a matrix view. To avoid
     // expensive GPU memory allocations and deallocations, we use
     // CUB's GPU memory pool.
-    if (Dev == El::Device::GPU) {
+    if (using_gpus()) {
       get_local_activations().SetMemoryMode(1);
       get_local_error_signals().SetMemoryMode(1);
     }

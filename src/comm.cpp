@@ -29,7 +29,6 @@
 #include "lbann/comm.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/cudnn_wrapper.hpp"
 #include "mpi.h"
 #include "omp.h"
 #include <sstream>
@@ -143,6 +142,9 @@ void lbann_comm::intermodel_sum_matrix(AbsDistMat& mat) {
 void lbann_comm::allreduce(AbsDistMat& m,
                            const El::mpi::Comm c,
                            El::mpi::Op op) {
+  if (El::mpi::Size(c) == 1) {
+    return;  // Can skip allreduce on one rank.
+  }
   const int local_size = m.LocalHeight() * m.LocalWidth();
   bytes_sent += sizeof(DataType) * local_size;
 #ifdef LBANN_HAS_ALUMINUM
@@ -191,6 +193,9 @@ void lbann_comm::nb_allreduce(AbsDistMat& m,
                               const El::mpi::Comm c,
                               Al::request& req,
                               El::mpi::Op op) {
+  if (El::mpi::Size(c) == 1) {
+    return;  // Can skip allreduce on one rank.
+  }
 #ifdef LBANN_HAS_ALUMINUM
   const int local_size = m.LocalHeight() * m.LocalWidth();
   bytes_sent += sizeof(DataType) * local_size;

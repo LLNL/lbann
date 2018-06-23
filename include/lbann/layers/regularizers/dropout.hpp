@@ -28,6 +28,7 @@
 #define LBANN_LAYER_REGULARIZER_DROPOUT_HPP_INCLUDED
 
 #include "lbann/layers/regularizers/regularizer.hpp"
+#include "lbann/utils/cudnn.hpp"
 
 namespace lbann {
 
@@ -46,8 +47,7 @@ class dropout : public regularizer_layer {
  public:
   /** Keep units with probabiliy keep_prob. */
   dropout(lbann_comm *comm,
-          EvalType keep_prob = EvalType(0.5),
-          cudnn::cudnn_manager* cudnn = nullptr)
+          EvalType keep_prob = EvalType(0.5))
     : regularizer_layer(comm),
       m_keep_prob(keep_prob)
 #ifdef LBANN_HAS_CUDNN
@@ -55,17 +55,13 @@ class dropout : public regularizer_layer {
       m_tensors_cudnn_desc(this)
 #endif // LBANN_HAS_CUDNN
   {
-#ifdef LBANN_HAS_CUDNN
-    // Initialize GPU memory if using GPU
-    this->m_cudnn = cudnn;
-#ifdef LBANN_SEQUENTIAL_CONSISTENCY
+#if defined(LBANN_HAS_CUDNN) && defined(LBANN_SEQUENTIAL_CONSISTENCY)
     /// @todo GPU implementation of dropout with sequential consistency
     if (Dev == El::Device::GPU && get_comm()->am_model_master()) {
       std::cerr << "Warning: GPU dropout currently does not guarantee "
                 << "sequential consistency" << std::endl;
     }
-#endif // LBANN_SEQUENTIAL_CONSISTENCY
-#endif // LBANN_HAS_CUDNN
+#endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_SEQUENTIAL_CONSISTENCY)
   }
 
   dropout(const dropout& other)
@@ -271,7 +267,7 @@ class dropout : public regularizer_layer {
     m_reserve_space.Resize((size + sizeof(DataType) - 1) / sizeof(DataType), 1);
 
     // Apply dropout on the GPU
-    CHECK_CUDNN(cudnnDropoutForward(this->m_cudnn->get_handle(),
+    CHECK_CUDNN(cudnnDropoutForward(cudnn::get_handle(),
                                     m_dropout_cudnn_desc,
                                     input_desc,
                                     local_input.LockedBuffer(),
@@ -301,7 +297,7 @@ class dropout : public regularizer_layer {
     } else {
       if (local_gradient_wrt_input.Height() > 0
           && local_gradient_wrt_input.Width() > 0) {
-        CHECK_CUDNN(cudnnDropoutBackward(this->m_cudnn->get_handle(),
+        CHECK_CUDNN(cudnnDropoutBackward(cudnn::get_handle(),
                                          m_dropout_cudnn_desc,
                                          m_tensors_cudnn_desc.get_prev_error_signals(),
                                          local_gradient_wrt_output.LockedBuffer(),
@@ -327,13 +323,13 @@ class dropout : public regularizer_layer {
 
     // Setup RNG state
     size_t size;
-    CHECK_CUDNN(cudnnDropoutGetStatesSize(this->m_cudnn->get_handle(), &size));
+    CHECK_CUDNN(cudnnDropoutGetStatesSize(cudnn::get_handle(), &size));
     m_states.Resize((size + sizeof(DataType) - 1) / sizeof(DataType), 1);
 
     // Setup dropout descriptor
     CHECK_CUDNN(cudnnCreateDropoutDescriptor(&m_dropout_cudnn_desc));
     CHECK_CUDNN(cudnnSetDropoutDescriptor(m_dropout_cudnn_desc,
-                                          this->m_cudnn->get_handle(),
+                                          cudnn::get_handle(),
                                           float(1 - m_keep_prob),
                                           m_states.Buffer(),
                                           m_states.Height() * sizeof(DataType),

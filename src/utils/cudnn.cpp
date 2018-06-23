@@ -24,30 +24,65 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/utils/cudnn_wrapper.hpp"
-#include "lbann/utils/cublas_wrapper.hpp"
-#include "lbann/utils/exception.hpp"
+#include "lbann/utils/cudnn.hpp"
 #include "lbann/utils/number_theory.hpp"
 
+#include "El.hpp"
 #include <iostream>
 #include <unordered_map>
 #include <tuple>
 
-#include "El.hpp"
-#include <unistd.h>
-
 #ifdef LBANN_HAS_CUDNN
 
-namespace lbann
-{
-namespace cudnn
-{
+namespace lbann {
+namespace cudnn {
 
-void print_version() {
-  std::cout << "cudnnGetVersion() : " << (int)cudnnGetVersion() << " , "
-            << "CUDNN_VERSION from cudnn.h : " << CUDNN_VERSION
-            << std::endl;
+////////////////////////////////////////////////////////////
+// Global cuDNN objects
+////////////////////////////////////////////////////////////
+
+namespace {
+
+/** Wrapper for cuDNN handle. */
+struct handle_wrapper {
+  cudnnHandle_t handle;
+  handle_wrapper() : handle(nullptr) {
+    CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+    if (handle == nullptr) { FORCE_CHECK_CUDNN(cudnnCreate(&handle)); }
+    if (handle == nullptr) { LBANN_ERROR("failed to create cuDNN handle"); }
+    CHECK_CUDNN(cudnnSetStream(handle, El::GPUManager::Stream()));
+  }
+  handle_wrapper(const handle_wrapper&) = delete;
+  handle_wrapper& operator=(const handle_wrapper&) = delete;
+  ~handle_wrapper() {
+    if (handle != nullptr) { cudnnDestroy(handle); }
+  }
+};
+
+/** Global instance of cuDNN handle. */
+std::unique_ptr<handle_wrapper> handle_instance;
+
+} // namespace
+
+void initialize() {
+  handle_instance.reset(new handle_wrapper());
 }
+
+void destroy() {
+  handle_instance.reset();
+}
+
+cudnnHandle_t& get_handle() {
+  if (!handle_instance) { initialize(); }
+  CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+  CHECK_CUDNN(cudnnSetStream(handle_instance->handle,
+                             El::GPUManager::Stream()));
+  return handle_instance->handle;
+}
+
+////////////////////////////////////////////////////////////
+// Helper functions for cuDNN types
+////////////////////////////////////////////////////////////
 
 cudnnDataType_t get_data_type() {
   switch (sizeof(DataType)) {
@@ -200,48 +235,6 @@ void copy_activation_desc(const cudnnActivationDescriptor_t& src,
                                                  relu_ceiling));
     }
 
-}
-
-////////////////////////////////////////////////////////////
-// cuDNN manager
-////////////////////////////////////////////////////////////
-
-cudnn_manager::cudnn_manager(size_t workspace_size)
-  : m_handle(nullptr),
-    m_workspace_size(workspace_size) {
-
-  // Check that Hydrogen has detected GPUs
-  if (El::GPUManager::NumDevices() < 1)  {
-    LBANN_ERROR("no GPUs detected");
-  }
-  CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-
-#ifdef HYDROGEN_HAVE_CUB
-  // Expand CUB GPU memory pool to contain workspace
-  if (m_workspace_size > 0) {
-    GPUMat workspace;
-    workspace.SetMemoryMode(1);
-    workspace.Resize((m_workspace_size + sizeof(DataType) - 1) / sizeof(DataType), 1);
-  }
-#endif // HYDROGEN_HAVE_CUB
-
-  // Initialize cuDNN handle
-  FORCE_CHECK_CUDNN(cudnnCreate(&m_handle));
-  if (m_handle == nullptr) {
-    LBANN_ERROR("failed to create cuDNN handle");
-  }
-  CHECK_CUDNN(cudnnSetStream(m_handle, El::GPUManager::Stream()));
-
-}
-
-cudnn_manager::~cudnn_manager() {
-  if (m_handle != nullptr) { cudnnDestroy(m_handle); }
-}
-
-cudnnHandle_t& cudnn_manager::get_handle() {
-  CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-  CHECK_CUDNN(cudnnSetStream(m_handle, El::GPUManager::Stream()));
-  return m_handle;
 }
 
 ////////////////////////////////////////////////////////////
@@ -536,6 +529,6 @@ cudnnTensorDescriptor_t& entrywise_layer_tensor_manager::get_error_signals(int p
 }
 
 } // namespace cudnn
-
 } // namespace lbann
+
 #endif // LBANN_HAS_CUDNN
