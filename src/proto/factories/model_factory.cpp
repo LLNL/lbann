@@ -51,14 +51,6 @@ model* instantiate_model(lbann_comm* comm,
   if (type == "directed_acyclic_graph_model") {
     return new directed_acyclic_graph_model(comm, mini_batch_size, obj, opt);
   }
-  if (type == "recurrent_model") {
-    const auto& params = proto_model.recurrent();
-    return new recurrent_model(comm,
-                               mini_batch_size,
-                               obj,
-                               opt,
-                               params.unroll_depth());
-  }
   if (type == "siamese_model") {
     const auto& params = proto_model.siamese();
     return new siamese_model(comm,
