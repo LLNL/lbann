@@ -39,8 +39,7 @@ class constant_layer : public transform_layer {
   /** Constructor. */
   constant_layer(lbann_comm *comm,
                  DataType value,
-                 const std::vector<int>& neuron_dims,
-                 cudnn::cudnn_manager *cudnn = nullptr)
+                 const std::vector<int>& neuron_dims)
     : transform_layer(comm), m_value(value) {
 
     // Record neuron dimensions
@@ -53,14 +52,6 @@ class constant_layer : public transform_layer {
 
     // Constant layer has no parents
     m_expected_num_parent_layers = 0;
-
-  #ifdef LBANN_HAS_CUDNN
-    // Initialize GPU memory if using GPU
-    if (cudnn) {
-      // this->m_using_gpus = true;
-      this->m_cudnn = cudnn;
-    }
-  #endif // LBANN_HAS_CUDNN
 
   }
 

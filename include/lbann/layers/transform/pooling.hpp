@@ -30,7 +30,7 @@
 #include <utility>
 #include <vector>
 #include "lbann/layers/transform/transform.hpp"
-#include "lbann/utils/cudnn_wrapper.hpp"
+#include "lbann/utils/cudnn.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/im2col.hpp"
 
@@ -80,23 +80,20 @@ public:
                 int pool_dim,
                 int pad,
                 int stride,
-                pool_mode mode,
-                cudnn::cudnn_manager *cudnn = nullptr)
+                pool_mode mode)
     : pooling_layer(comm,
                     num_data_dims,
                     std::vector<int>(num_data_dims, pool_dim),
                     std::vector<int>(num_data_dims, pad),
                     std::vector<int>(num_data_dims, stride),
-                    mode,
-                    cudnn) {}
+                    mode) {}
 
   pooling_layer(lbann_comm *comm,
                 int num_data_dims,
                 std::vector<int> pool_dims,
                 std::vector<int> pads,
                 std::vector<int> strides,
-                pool_mode mode,
-                cudnn::cudnn_manager *cudnn = nullptr)
+                pool_mode mode)
     : transform_layer(comm),
       m_pool_mode(mode),
       m_pool_dims(pool_dims),
@@ -115,10 +112,6 @@ public:
                                   m_pool_dims.end(),
                                   1,
                                   std::multiplies<int>());
-
-#ifdef LBANN_HAS_CUDNN
-    this->m_cudnn = cudnn;
-#endif // LBANN_HAS_CUDNN
 
   }
 
@@ -187,8 +180,8 @@ public:
 
   ~pooling_layer() {
 #ifdef LBANN_HAS_CUDNN
-    if (m_pooling_cudnn_desc) {
-      CHECK_CUDNN(cudnnDestroyPoolingDescriptor(m_pooling_cudnn_desc));
+    if (m_pooling_cudnn_desc != nullptr) {
+      cudnnDestroyPoolingDescriptor(m_pooling_cudnn_desc);
     }
 #endif // LBANN_HAS_CUDNN
   }
@@ -281,7 +274,7 @@ public:
     if (local_input.Height() > 0 && local_input.Width() > 0) {
       const DataType zero = DataType(0);
       const DataType one = DataType(1);
-      CHECK_CUDNN(cudnnPoolingForward(this->m_cudnn->get_handle(),
+      CHECK_CUDNN(cudnnPoolingForward(cudnn::get_handle(),
                                       m_pooling_cudnn_desc,
                                       &one,
                                       m_tensors_cudnn_desc.get_prev_activations(),
@@ -309,7 +302,7 @@ public:
       const DataType zero = DataType(0);
 
       // Perform backprop on GPU
-      CHECK_CUDNN(cudnnPoolingBackward(this->m_cudnn->get_handle(),
+      CHECK_CUDNN(cudnnPoolingBackward(cudnn::get_handle(),
                                        m_pooling_cudnn_desc,
                                        &one,
                                        m_tensors_cudnn_desc.get_activations(),

@@ -31,19 +31,19 @@
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/weights/weights.hpp"
 #include <string>
 #include <unordered_set>
+
+#ifdef LBANN_HAS_GPU
+#include "lbann/utils/cuda.hpp"
+#endif // LBANN_HAS_GPU
 
 namespace lbann {
 
 // Forward declarations
 class weights;
 class persist;
-namespace cudnn {
-class cudnn_manager;
-} // namespace cudnn
 
 /** Abstract optimizer. */
 class optimizer {
@@ -126,14 +126,14 @@ class optimizer {
    */
   virtual void step_compute(AbsDistMat& values,
                             const AbsDistMat& gradient) = 0;
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_GPU
   /** Perform the computation in an optimization step on GPU.
    *  The default implementation is to transfer data to CPU and call
    *  step_compute.
    */
   virtual void step_compute_gpu(AbsDistMat& values,
                                 const AbsDistMat& gradient);
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_GPU
 
   /** Get the time spent in step(). */
   double get_step_time() const { return m_step_time; }
@@ -146,9 +146,6 @@ class optimizer {
 
   /** LBANN communicator. */
   lbann_comm *m_comm;
-
-  /** cuDNN manager. */
-  cudnn::cudnn_manager* m_cudnn;
 
   /** Weights being optimized. */
   weights* m_weights;

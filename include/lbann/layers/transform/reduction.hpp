@@ -48,8 +48,7 @@ class reduction_layer : public transform_layer {
  public:
 
   reduction_layer(lbann_comm *comm,
-                  reduction_mode mode,
-                  cudnn::cudnn_manager *cudnn = nullptr)
+                  reduction_mode mode)
     : transform_layer(comm),
       m_mode(mode) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
@@ -62,13 +61,6 @@ class reduction_layer : public transform_layer {
     this->m_num_neurons = 1;
     this->m_num_neuron_dims = 1;
     this->m_neuron_dims = {1};
-
-  #ifdef LBANN_HAS_CUDNN
-    // Initialize GPU if available
-    if (cudnn != nullptr) {
-      this->m_cudnn = cudnn;
-    }
-  #endif // LBANN_HAS_CUDNN
 
   }
 

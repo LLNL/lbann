@@ -61,7 +61,7 @@ void tanh_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
   const auto& local_input = get_local_prev_activations();
   auto& local_output = get_local_activations();
   if (local_input.Height() > 0 && local_input.Width() > 0) {
-    CHECK_CUDNN(cudnnActivationForward(this->m_cudnn->get_handle(),
+    CHECK_CUDNN(cudnnActivationForward(cudnn::get_handle(),
                                        m_activation_cudnn_desc,
                                        &one,
                                        m_tensors_cudnn_desc.get_prev_activations(),
@@ -84,18 +84,18 @@ void tanh_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
   const auto& local_gradient_wrt_output = get_local_prev_error_signals();
   auto& local_gradient_wrt_input = get_local_error_signals();
   if (local_input.Height() > 0 && local_input.Width() > 0) {
-      CHECK_CUDNN(cudnnActivationBackward(this->m_cudnn->get_handle(),
-                                          m_activation_cudnn_desc,
-                                          &one,
-                                          m_tensors_cudnn_desc.get_activations(),
-                                          local_output.LockedBuffer(),
-                                          m_tensors_cudnn_desc.get_prev_error_signals(),
-                                          local_gradient_wrt_output.LockedBuffer(),
-                                          m_tensors_cudnn_desc.get_prev_activations(),
-                                          local_input.LockedBuffer(),
-                                          &zero,
-                                          m_tensors_cudnn_desc.get_error_signals(),
-                                          local_gradient_wrt_input.Buffer()));
+    CHECK_CUDNN(cudnnActivationBackward(cudnn::get_handle(),
+                                        m_activation_cudnn_desc,
+                                        &one,
+                                        m_tensors_cudnn_desc.get_activations(),
+                                        local_output.LockedBuffer(),
+                                        m_tensors_cudnn_desc.get_prev_error_signals(),
+                                        local_gradient_wrt_output.LockedBuffer(),
+                                        m_tensors_cudnn_desc.get_prev_activations(),
+                                        local_input.LockedBuffer(),
+                                        &zero,
+                                        m_tensors_cudnn_desc.get_error_signals(),
+                                        local_gradient_wrt_input.Buffer()));
   }
 #endif // LBANN_HAS_CUDNN
 }
@@ -111,7 +111,7 @@ void tanh_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
   const auto& local_input = get_local_prev_activations();
   auto& local_output = get_local_activations();
   if (local_input.Height() > 0 && local_input.Width() > 0) {
-    CHECK_CUDNN(cudnnActivationForward(this->m_cudnn->get_handle(),
+    CHECK_CUDNN(cudnnActivationForward(cudnn::get_handle(),
                                        m_activation_cudnn_desc,
                                        &one,
                                        m_tensors_cudnn_desc.get_prev_activations(),
@@ -134,18 +134,18 @@ void tanh_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
   const auto& local_gradient_wrt_output = get_local_prev_error_signals();
   auto& local_gradient_wrt_input = get_local_error_signals();
   if (local_input.Height() > 0 && local_input.Width() > 0) {
-      CHECK_CUDNN(cudnnActivationBackward(this->m_cudnn->get_handle(),
-                                          m_activation_cudnn_desc,
-                                          &one,
-                                          m_tensors_cudnn_desc.get_activations(),
-                                          local_output.LockedBuffer(),
-                                          m_tensors_cudnn_desc.get_prev_error_signals(),
-                                          local_gradient_wrt_output.LockedBuffer(),
-                                          m_tensors_cudnn_desc.get_prev_activations(),
-                                          local_input.LockedBuffer(),
-                                          &zero,
-                                          m_tensors_cudnn_desc.get_error_signals(),
-                                          local_gradient_wrt_input.Buffer()));
+    CHECK_CUDNN(cudnnActivationBackward(cudnn::get_handle(),
+                                        m_activation_cudnn_desc,
+                                        &one,
+                                        m_tensors_cudnn_desc.get_activations(),
+                                        local_output.LockedBuffer(),
+                                        m_tensors_cudnn_desc.get_prev_error_signals(),
+                                        local_gradient_wrt_output.LockedBuffer(),
+                                        m_tensors_cudnn_desc.get_prev_activations(),
+                                        local_input.LockedBuffer(),
+                                        &zero,
+                                        m_tensors_cudnn_desc.get_error_signals(),
+                                        local_gradient_wrt_input.Buffer()));
   }
 #endif // LBANN_HAS_CUDNN
 }

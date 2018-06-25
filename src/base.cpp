@@ -41,6 +41,10 @@
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/stack_trace.hpp"
 
+#ifdef LBANN_HAS_CUDNN
+#include "lbann/utils/cudnn.hpp"
+#endif
+
 namespace lbann {
 
 lbann_comm* initialize(int& argc, char**& argv, int seed) {
@@ -86,6 +90,9 @@ lbann_comm* initialize(int& argc, char**& argv, int seed) {
 }
 
 void finalize(lbann_comm* comm) {
+#ifdef LBANN_HAS_CUDNN
+  cudnn::destroy();
+#endif
   if (comm != nullptr) {
     delete comm;
   }

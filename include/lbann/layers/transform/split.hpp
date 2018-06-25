@@ -30,7 +30,6 @@
 #include <vector>
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/cublas_wrapper.hpp"
 
 namespace lbann {
 
@@ -43,17 +42,11 @@ class split_layer : public transform_layer {
 
  public:
 
-  split_layer(lbann_comm *comm,
-              cudnn::cudnn_manager *cudnn = nullptr)
+  split_layer(lbann_comm *comm)
     : transform_layer(comm) {
 
     // Split layer has no limit on children
     m_expected_num_child_layers = -1;
-
-  #ifdef LBANN_HAS_CUDNN
-    // Initialize GPU if available
-    this->m_cudnn = cudnn;
-  #endif // LBANN_HAS_CUDNN
 
   }
 

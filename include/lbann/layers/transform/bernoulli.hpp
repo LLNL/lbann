@@ -44,8 +44,7 @@ class bernoulli_layer : public transform_layer {
  public:
   bernoulli_layer(lbann_comm *comm,
                  const std::vector<int>& neuron_dims,
-                 DataType prob = DataType(0.5),
-                 cudnn::cudnn_manager *cudnn = nullptr)
+                 DataType prob = DataType(0.5))
     : transform_layer(comm), m_prob(prob) {
 
     // Record neuron dimensions

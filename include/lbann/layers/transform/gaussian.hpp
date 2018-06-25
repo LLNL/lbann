@@ -48,8 +48,7 @@ class gaussian_layer : public transform_layer {
   gaussian_layer(lbann_comm *comm,
                  const std::vector<int>& neuron_dims,
                  DataType mean = DataType(0),
-                 DataType stdev = DataType(1),
-                 cudnn::cudnn_manager *cudnn = nullptr)
+                 DataType stdev = DataType(1))
     : transform_layer(comm), m_mean(mean), m_stdev(stdev) {
 
     // Record neuron dimensions

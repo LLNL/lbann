@@ -38,7 +38,6 @@ namespace lbann {
 
 Layer::Layer(lbann_comm *comm)
   : m_comm(comm),
-    m_cudnn(nullptr),
     m_frozen(false) {
 
   // Initialize layer name
@@ -76,7 +75,6 @@ Layer::Layer(const Layer& other) :
   m_expected_num_parent_layers(other.m_expected_num_parent_layers),
   m_expected_num_child_layers(other.m_expected_num_child_layers),
   m_model(other.m_model),
-  m_cudnn(other.m_cudnn),
   m_frozen(other.m_frozen),
   m_fp_time(other.m_fp_time),
   m_fp_compute_time(other.m_fp_compute_time),
@@ -115,7 +113,6 @@ Layer& Layer::operator=(const Layer& other) {
   m_expected_num_child_layers = other.m_expected_num_child_layers;
   m_model = other.m_model;
   m_using_gpus = other.m_using_gpus;
-  m_cudnn = other.m_cudnn;
   m_frozen = other.m_frozen;
   m_fp_time = other.m_fp_time;
   m_fp_compute_time = other.m_fp_compute_time;
@@ -186,10 +183,10 @@ void Layer::forward_prop() {
   // Setup matrix data, e.g. input matrices
   fp_setup_data(m_model->get_current_mini_batch_size());
 
-  #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
+#if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
   if (using_gpus()) { El::GPUManager::SynchronizeDevice(true); }
-  #endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
+#endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
 
   // Apply layer's compute function
   const auto fp_compute_start = get_time();
@@ -202,10 +199,10 @@ void Layer::forward_prop() {
     if (opt != nullptr) { opt->add_gradient_source(this); }
   }
 
-  #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
+#if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
   if (using_gpus()) { El::GPUManager::SynchronizeDevice(true); }
-  #endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
+#endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
 
   m_fp_time += get_time() - fp_start;
 }
@@ -216,10 +213,10 @@ void Layer::back_prop() {
   // Setup matrix data, e.g. input matrices
   bp_setup_data(m_model->get_current_mini_batch_size());
 
-  #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
+#if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
   if (using_gpus()) { El::GPUManager::SynchronizeDevice(true); }
-  #endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
+#endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
 
   // Backprop the compute function.
   const auto bp_compute_start = get_time();
@@ -232,10 +229,10 @@ void Layer::back_prop() {
     if (opt != nullptr) { opt->remove_gradient_source(this); }
   }
 
-  #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
+#if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
   if (using_gpus()) { El::GPUManager::SynchronizeDevice(true); }
-  #endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
+#endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
 
   m_bp_time += get_time() - bp_start;
 }
@@ -421,16 +418,7 @@ void Layer::setup() {
   setup_dims();
   setup_matrices(m_comm->get_model_grid());
   setup_data();
-  if (using_gpus()) {
-    if(m_cudnn == nullptr) {
-      std::stringstream err;
-      err << "layer \"" << m_name << "\" is trying to use GPUs but has an invalid pointer to the cudnn object";
-      LBANN_ERROR(err.str());
-    }
-    setup_gpu();
-  } else {
-    m_cudnn = nullptr;
-  }
+  if (using_gpus()) { setup_gpu(); }
 }
 
 void Layer::setup_pointers() {

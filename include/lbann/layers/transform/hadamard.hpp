@@ -40,19 +40,11 @@ template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El
 class hadamard_layer : public transform_layer {
  public:
 
-  hadamard_layer(lbann_comm *comm,
-                 cudnn::cudnn_manager *cudnn = nullptr)
+  hadamard_layer(lbann_comm *comm)
     : transform_layer(comm) {
 
     // Hadamard layer has no limit on parents
     m_expected_num_parent_layers = -1;
-
-  #ifdef LBANN_HAS_CUDNN
-    // Activate GPU if needed
-    if (cudnn != nullptr) {
-      this->m_cudnn = cudnn;
-    }
-  #endif // LBANN_HAS_CUDNN
 
   }
 
