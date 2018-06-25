@@ -296,14 +296,15 @@ fi
 # Load packages
 if [ ${USE_MODULES} -ne 0 ]; then
     module load git
-    CMAKE_PATH=/usr/workspace/wsb/brain/utils/toss3/cmake-3.9.6/bin
+    module load cmake/3.9.2
+    CMAKE_PATH=$(dirname $(which cmake))
 else
     if [ "${CLUSTER}" == "surface" ]; then
         use git-2.8.0
         CMAKE_PATH=/usr/workspace/wsb/brain/utils/toss2/cmake-3.9.6/bin
     else
         use git
-        #use cmake
+        CMAKE_PATH=/usr/workspace/wsb/brain/utils/toss2/cmake-3.9.6/bin
     fi
 fi
 
@@ -733,7 +734,7 @@ fi
 
 # Configure build with CMake
 CONFIGURE_COMMAND=$(cat << EOF
-${CMAKE_PATH}/cmake \
+ ${CMAKE_PATH}/cmake \
 -D CMAKE_EXPORT_COMPILE_COMMANDS=ON \
 -D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
 -D CMAKE_INSTALL_MESSAGE=${CMAKE_INSTALL_MESSAGE} \
