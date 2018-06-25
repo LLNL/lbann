@@ -854,7 +854,8 @@ void model::backward_prop() {
 
 void model::update_weights() {
   do_model_optimize_begin_cbs();
-  for (const auto& w : m_weights) {
+  for (int i = m_weights.size() - 1; i >= 0; --i) {
+    auto& w = m_weights[i];
     optimizer* opt = w->get_optimizer();
     if (opt != nullptr) {
       do_weight_optimize_begin_cbs(w);
