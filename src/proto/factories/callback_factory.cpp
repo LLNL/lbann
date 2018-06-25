@@ -75,7 +75,6 @@ lbann_callback* construct_callback(lbann_comm* comm,
     auto&& l = select_from_list<Layer>(params.layers(),
                                                      layer_list);
     std::unordered_set<Layer*> selected_layers(l.begin(), l.end());
-    for(Layer *ll : selected_layers) std::cout << "Callback IO " << ll->get_name() << std::endl;
     return new lbann_callback_io(selected_layers);
   }
   if (proto_cb.has_save_images()) {
