@@ -91,6 +91,8 @@
 #include "lbann/layers/transform/stop_gradient.hpp"
 #include "lbann/layers/transform/max.hpp"
 #include "lbann/layers/transform/min.hpp"
+#include "lbann/layers/transform/binary_cross_entropy.hpp"
+#include "lbann/layers/transform/mean_squared_error.hpp"
 
 /// Regularization layers.
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
@@ -161,6 +163,7 @@
 #include "lbann/callbacks/callback_timeline.hpp"
 #include "lbann/callbacks/callback_checkpoint.hpp"
 #include "lbann/callbacks/callback_save_model.hpp"
+#include "lbann/callbacks/callback_replace_weights.hpp"
 
 /// Weights and weight initializers
 #include "lbann/weights/weights.hpp"

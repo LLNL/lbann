@@ -438,6 +438,7 @@ message Callback {
    CallbackCheckpoint checkpoint = 28;
    CallbackSaveModel save_model = 29;
    CallbackPolyLearningRate poly_learning_rate = 30;
+   CallbackReplaceWeights replace_weights = 31;
 }
 
 message CallbackLTFB {
@@ -600,6 +601,12 @@ message CallbackSaveModel {
   string extension = 2;
 }
 
+message CallbackReplaceWeights {
+  string source_layers = 1; //set of layers to copy weights from
+  string destination_layers = 2;  //set of layers to copy weights to
+  int64 batch_interval = 3;
+}
+
 //========================================================================
 // Weights
 //========================================================================
@@ -739,6 +746,8 @@ message Layer {
    StopGradient stop_gradient = 319;
    Max max = 320;
    Min min = 321;
+   BinaryCrossEntropyLoss bce = 322;
+   MeanSquaredErrorLoss   mse = 323;
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -1008,6 +1017,11 @@ message Max {
 message Min {
 }
 
+message BinaryCrossEntropyLoss {
+}
+
+message MeanSquaredErrorLoss {
+}
 /////////////////////
 // learning Layers //
 /////////////////////
