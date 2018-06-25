@@ -26,6 +26,7 @@ set_full_path(THIS_DIR_SOURCES
   callback_timer.cpp
   callback_variable_minibatch.cpp
   profiler.cpp
+  callback_replace_weights.cpp
   )
 
 # Propagate the files up the tree
