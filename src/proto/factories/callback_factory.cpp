@@ -33,21 +33,22 @@ namespace {
 
 /** Select entries from a list based on names.
  *  Any entry in 'list' with a name found in 'names' (interpreted as a
- *  space-separated list) is added to the output set.
+ *  space-separated list) is added to the output list.
  */  
 template <typename T>
-std::unordered_set<T*> select_from_list(std::string names,
+std::vector<T*> select_from_list(std::string names,
                                         std::vector<T*> list) {
-  std::unordered_set<T*> selected;
+  std::vector<T*> selected;
   for (const auto& name : parse_list<std::string>(names)) {
     for (auto&& t : list) {
       if (name == t->get_name()) {
-        selected.insert(t);
+        selected.push_back(t);
       }
     }
   }
   return selected;
 }
+
 
 } // namespace
 
@@ -71,8 +72,10 @@ lbann_callback* construct_callback(lbann_comm* comm,
   }
   if (proto_cb.has_disp_io_stats()) {
     const auto& params = proto_cb.disp_io_stats();
-    auto&& selected_layers = select_from_list<Layer>(params.layers(),
+    auto&& l = select_from_list<Layer>(params.layers(),
                                                      layer_list);
+    std::unordered_set<Layer*> selected_layers(l.begin(), l.end());
+    for(Layer *ll : selected_layers) std::cout << "Callback IO " << ll->get_name() << std::endl;
     return new lbann_callback_io(selected_layers);
   }
   if (proto_cb.has_save_images()) {
@@ -120,16 +123,18 @@ lbann_callback* construct_callback(lbann_comm* comm,
   //////////////////////////////////////////////////////////////////
   if (proto_cb.has_step_learning_rate()) {
     const auto& params = proto_cb.step_learning_rate();
-    auto&& selected_weights = select_from_list<weights>(params.weights(),
+    auto&& w = select_from_list<weights>(params.weights(),
                                                         weights_list);
+    std::unordered_set<weights*> selected_weights(w.begin(), w.end());
     return new lbann_callback_step_learning_rate(params.step(),
                                                  params.amt(),
                                                  selected_weights);
   }
   if (proto_cb.has_adaptive_learning_rate()) {
     const auto& params = proto_cb.adaptive_learning_rate();
-    auto&& selected_weights = select_from_list<weights>(params.weights(),
+    auto&& w = select_from_list<weights>(params.weights(),
                                                         weights_list);
+    std::unordered_set<weights*> selected_weights(w.begin(), w.end());
     return new lbann_callback_adaptive_learning_rate(params.patience(),
                                                      params.amt(),
                                                      selected_weights);
@@ -140,16 +145,18 @@ lbann_callback* construct_callback(lbann_comm* comm,
     for (int i = 0; i < params.drop_epoch_size(); ++i) {
       drop_epochs.push_back(params.drop_epoch(i));
     }
-    auto&& selected_weights = select_from_list<weights>(params.weights(),
+    auto&& w = select_from_list<weights>(params.weights(),
                                                         weights_list);
+    std::unordered_set<weights*> selected_weights(w.begin(), w.end());
     return new lbann_callback_drop_fixed_learning_rate(drop_epochs,
                                                        params.amt(),
                                                        selected_weights);
   }
   if (proto_cb.has_linear_growth_learning_rate()) {
     const auto& params = proto_cb.linear_growth_learning_rate();
-    auto&& selected_weights = select_from_list<weights>(params.weights(),
+    auto&& w = select_from_list<weights>(params.weights(),
                                                         weights_list);
+    std::unordered_set<weights*> selected_weights(w.begin(), w.end());
     return new lbann_callback_linear_growth_learning_rate(params.target(),
                                                           params.num_epochs(),
                                                           params.delay(),
@@ -157,15 +164,17 @@ lbann_callback* construct_callback(lbann_comm* comm,
   }
   if (proto_cb.has_optimizerwise_adaptive_learning_rate()) {
     const auto& params = proto_cb.optimizerwise_adaptive_learning_rate();
-    auto&& selected_weights = select_from_list<weights>(params.weights(),
+    auto&& w = select_from_list<weights>(params.weights(),
                                                         weights_list);
+    std::unordered_set<weights*> selected_weights(w.begin(), w.end());
     return new lbann_callback_optimizerwise_adaptive_learning_rate(params.scale(),
                                                                    selected_weights);
   }
   if (proto_cb.has_poly_learning_rate()) {
     const auto& params = proto_cb.poly_learning_rate();
-    auto&& selected_weights = select_from_list<weights>(params.weights(),
+    auto&& w = select_from_list<weights>(params.weights(),
                                                         weights_list);
+    std::unordered_set<weights*> selected_weights(w.begin(), w.end());
     return new lbann_callback_poly_learning_rate(params.power(),
                                                  params.num_epochs(),
                                                  params.max_iter(),
@@ -212,6 +221,17 @@ lbann_callback* construct_callback(lbann_comm* comm,
     const auto& params = proto_cb.save_model();
     return new lbann_callback_save_model(params.dir(),
                                          params.extension());
+  }
+  ///////////////////////////////////////////////////////////////////
+  // Weight exchange/replace
+  //////////////////////////////////////////////////////////////////
+  if (proto_cb.has_replace_weights()) {
+    const auto& params = proto_cb.replace_weights();
+    auto&& src_layers = select_from_list<Layer>(params.source_layers(),
+                                                     layer_list);
+    auto&& dst_layers = select_from_list<Layer>(params.destination_layers(),
+                                                     layer_list);
+    return new lbann_callback_replace_weights(src_layers,dst_layers,params.batch_interval());
   }
 
   //////////////////////////////////////////////////////////////////
