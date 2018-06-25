@@ -36,7 +36,6 @@
 /// Models
 #include "lbann/models/sequential.hpp"
 #include "lbann/models/directed_acyclic_graph.hpp"
-#include "lbann/models/recurrent.hpp"
 #include "lbann/models/greedy_layerwise_autoencoder.hpp"
 #include "lbann/models/siamese.hpp"
 
