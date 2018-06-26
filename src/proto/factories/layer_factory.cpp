@@ -172,8 +172,12 @@ Layer* construct_layer(lbann_comm* comm,
     return new reshape_layer<layout, Dev>(comm, dims.size(), dims.data());
   }
   if (proto_layer.has_sum()) {
-    const auto& scaling_factors = parse_list<DataType>(proto_layer.sum().scaling_factors());
-    return new sum_layer<layout, Dev>(comm, scaling_factors);
+    return new sum_layer<layout, Dev>(comm);
+  }
+  if (proto_layer.has_weighted_sum()) {
+    const auto& params = proto_layer.weighted_sum();
+    const auto& scaling_factors = parse_list<DataType>(params.scaling_factors());
+    return new weighted_sum_layer<layout, Dev>(comm, scaling_factors);
   }
   if (proto_layer.has_split()) {
     return new split_layer<layout, Dev>(comm);

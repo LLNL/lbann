@@ -24,33 +24,40 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYER_SUM_HPP_INCLUDED
-#define LBANN_LAYER_SUM_HPP_INCLUDED
+#ifndef LBANN_LAYER_WEIGHTED_SUM_HPP_INCLUDED
+#define LBANN_LAYER_WEIGHTED_SUM_HPP_INCLUDED
 
+#include <vector>
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
-/** Sum layer. */
+/** Weighted sum layer. */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
-class sum_layer : public transform_layer {
+class weighted_sum_layer : public transform_layer {
+ private:
+
+  /** Scaling factors for weighted sum. */
+  std::vector<DataType> m_scaling_factors;
 
  public:
-  sum_layer(lbann_comm *comm)
-    : transform_layer(comm) {
-    m_expected_num_parent_layers = -1; // No limit on parents
+  weighted_sum_layer(lbann_comm *comm,
+                     std::vector<DataType> scaling_factors)
+    : transform_layer(comm),
+      m_scaling_factors(scaling_factors) {
+    this->m_expected_num_parent_layers = -1; // No limit on parents
   }
 
-  sum_layer* copy() const override { return new sum_layer(*this); }
-  std::string get_type() const override { return "sum"; }
+  weighted_sum_layer* copy() const override { return new weighted_sum_layer(*this); }
+  std::string get_type() const override { return "weighted sum"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
   /** Returns description of ctor params */
   std::string get_description() const override {
     std::stringstream s;
-     s << " sum; parents: ";
+     s << " weighted_sum; parents: ";
      for (size_t i=0; i<this->m_parent_layers.size(); i++) {
        s << this->m_parent_layers[i]->get_name() << " " << this->m_parent_layers[i]->get_type() << " ";
      }
@@ -59,6 +66,18 @@ class sum_layer : public transform_layer {
   }
 
  protected:
+
+  void setup_pointers() override {
+    transform_layer::setup_pointers();
+    if ((int) m_scaling_factors.size() != get_num_parents()) {
+      std::stringstream err;
+      err << get_type() << " layer \"" << get_name() << "\" "
+          << "has an invalid number of scaling factors "
+          << "(found " << m_scaling_factors.size() << ", "
+          << "but there are " << get_num_parents() << " parent layers)";
+      LBANN_ERROR(err.str());
+    }
+  }
 
   void setup_dims() override {
     transform_layer::setup_dims();
@@ -83,21 +102,19 @@ class sum_layer : public transform_layer {
 
   void fp_compute() override {
     auto& output = get_activations();
-    switch (get_num_parents()) {
-    case 0: El::Zero(output); break;
-    case 1: El::LockedView(output, get_prev_activations(0)); break;
-    default:
-      El::Copy(get_prev_activations(0), output);
-      for (int i = 1; i < get_num_parents(); ++i) {
-        El::Axpy(DataType(1), get_prev_activations(i), output);
-      }
+    El::Zero(output);
+    for (int i = 0; i < get_num_parents(); ++i) {
+      El::Axpy(m_scaling_factors[i], get_prev_activations(i), output);
     }
   }
 
   void bp_compute() override {
     const auto& gradient_wrt_output = get_prev_error_signals();
-    for (auto* gradient_wrt_input : this->m_error_signals) {
-      El::LockedView(*gradient_wrt_input, gradient_wrt_output);
+    for (int i = 0; i < get_num_parents(); ++i) {
+      auto& gradient_wrt_input = get_error_signals(i);
+      El::Zero(gradient_wrt_input);
+      El::Axpy(m_scaling_factors[i], gradient_wrt_output,
+               gradient_wrt_input);
     }
   }
 
@@ -105,4 +122,4 @@ class sum_layer : public transform_layer {
 
 } // namespace lbann
 
-#endif // LBANN_LAYER_SUM_HPP_INCLUDED
+#endif // LBANN_LAYER_WEIGHTED_SUM_HPP_INCLUDED
