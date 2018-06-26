@@ -461,7 +461,7 @@ class base_convolution_layer : public learning_layer {
 
     // Perform transposed convolution on the GPU
     // Determine transposed convolution algorithm
-    #ifndef LBANN_DETERMINISTIC_CUDNN
+    #ifndef LBANN_DETERMINISTIC
     cudnnConvolutionBwdDataAlgo_t transposed_convolution_cudnn_algorithm
       = CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
     CHECK_CUDNN(cudnnGetConvolutionBackwardDataAlgorithm(cudnn::get_handle(),
@@ -573,7 +573,7 @@ class base_convolution_layer : public learning_layer {
         auto&& gradient_wrt_output_desc = m_tensors_cudnn_desc.get_prev_error_signals();
 
         // Determine algorithm and compute kernel gradient
-        #ifndef LBANN_DETERMINISTIC_CUDNN
+        #ifndef LBANN_DETERMINISTIC
         cudnnConvolutionBwdFilterAlgo_t kernel_gradient_cudnn_algorithm
           = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
         #else
@@ -581,7 +581,7 @@ class base_convolution_layer : public learning_layer {
           = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1;
         #endif
         if (using_transposed_convolution) {
-          #ifndef LBANN_DETERMINISTIC_CUDNN 
+          #ifndef LBANN_DETERMINISTIC 
           CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithm(cudnn::get_handle(),
                                                                  gradient_wrt_output_desc,
                                                                  input_desc,
@@ -606,7 +606,7 @@ class base_convolution_layer : public learning_layer {
                                                      m_kernel_gradient.Buffer()));
         }
         else {
-          #ifndef LBANN_DETERMINISTIC_CUDNN 
+          #ifndef LBANN_DETERMINISTIC 
           CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithm(cudnn::get_handle(),
                                                                  input_desc,
                                                                  gradient_wrt_output_desc,

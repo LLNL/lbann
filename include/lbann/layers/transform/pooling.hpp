@@ -216,7 +216,7 @@ public:
     cudnnPoolingMode_t cudnn_pool_mode;
     switch(m_pool_mode) {
     case pool_mode::max:
-    #ifndef LBANN_DETERMINISTIC_CUDNN    
+    #ifndef LBANN_DETERMINISTIC    
       cudnn_pool_mode = CUDNN_POOLING_MAX; break;
     #else
       cudnn_pool_mode = CUDNN_POOLING_MAX_DETERMINISTIC; break;
