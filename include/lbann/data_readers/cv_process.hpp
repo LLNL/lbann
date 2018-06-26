@@ -37,6 +37,7 @@
 #include "cv_colorizer.hpp"
 #include "cv_decolorizer.hpp"
 #include "cv_cropper.hpp"
+#include "cv_resizer.hpp"
 #include "cv_mean_extractor.hpp"
 #include <memory>
 #include <limits> // std::numeric_limits

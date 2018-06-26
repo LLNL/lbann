@@ -58,6 +58,27 @@ static void set_cropper(const lbann_data::ImagePreprocessor& pb_preprocessor,
   }
 }
 
+/// set up a resizer
+static void set_resizer(const lbann_data::ImagePreprocessor& pb_preprocessor,
+                        const bool master, std::shared_ptr<cv_process>& pp,
+                        int& width, int& height) {
+  if (pb_preprocessor.has_resizer()) {
+    const lbann_data::ImagePreprocessor::Resizer& pb_resizer = pb_preprocessor.resizer();
+    if (!pb_resizer.disable()) {
+      const std::string resizer_name = ((pb_resizer.name() == "")? "default_resizer" : pb_resizer.name());
+      std::unique_ptr<lbann::cv_resizer> resizer(new(lbann::cv_resizer));
+      resizer->set_name(resizer_name);
+      resizer->set(pb_resizer.resized_width(),
+                   pb_resizer.resized_height(),
+                   pb_resizer.adaptive_interpolation());
+      pp->add_transform(std::move(resizer));
+      width = pb_resizer.resized_width();
+      height = pb_resizer.resized_height();
+      if (master) std::cout << "image processor: " << resizer_name << " resizer is set" << std::endl;
+    }
+  }
+}
+
 /// set up an augmenter
 static void set_augmenter(const lbann_data::ImagePreprocessor& pb_preprocessor,
                           const bool master, std::shared_ptr<cv_process>& pp) {
@@ -240,6 +261,7 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
   }
 
   set_cropper(pb_preprocessor, master, pp, width, height);
+  set_resizer(pb_preprocessor, master, pp, width, height);
   set_augmenter(pb_preprocessor, master, pp);
   if (has_channel_wise_subtractor(pb_preprocessor)) {
     // decolorizer and colorizer are exclusive
