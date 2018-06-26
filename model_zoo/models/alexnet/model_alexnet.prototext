@@ -66,13 +66,13 @@ model {
     name: "images"
     parents: "data"
     data_layout: "data_parallel"
-    identity {}
+    split {}
   }
   layer {
     name: "labels"
     parents: "data"
     data_layout: "model_parallel"
-    identity {}
+    split {}
   }
 
   layer {

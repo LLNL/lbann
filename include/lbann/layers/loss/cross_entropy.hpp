@@ -40,6 +40,21 @@ public:
     m_expected_num_parent_layers = 2;
   }
 
+  cross_entropy_layer(const cross_entropy_layer& other)
+    : Layer(other) {
+    m_workspace.reset(other.m_workspace ?
+                      other.m_workspace->Copy() :
+                      nullptr);
+  }
+
+  cross_entropy_layer& operator=(const cross_entropy_layer& other) {
+    Layer::operator=(other);
+    m_workspace.reset(other.m_workspace ?
+                      other.m_workspace->Copy() :
+                      nullptr);
+    return *this;
+  }
+
   cross_entropy_layer* copy() const override { return new cross_entropy_layer(*this); }
   std::string get_type() const override { return "cross entropy"; }
   data_layout get_data_layout() const override { return T_layout; }
@@ -52,68 +67,58 @@ public:
     this->m_neuron_dims = {1};
   }
 
-  void fp_compute() override {
+  void setup_data() override {
+    Layer::setup_data();
 
     // Initialize workspace
-    std::unique_ptr<AbsDistMat> workspace;
     const auto& prediction = get_prev_activations(0);
     switch (get_data_layout()) {
     case data_layout::DATA_PARALLEL:
-      workspace.reset(new StarVCMat<Dev>(prediction.Grid(),
-                                         prediction.Root()));
+      m_workspace.reset(new StarVCMat<Dev>(prediction.Grid(),
+                                           prediction.Root()));
       break;
     case data_layout::MODEL_PARALLEL:
-      workspace.reset(new StarMRMat<Dev>(prediction.Grid(),
-                                         prediction.Root()));
+      m_workspace.reset(new StarMRMat<Dev>(prediction.Grid(),
+                                           prediction.Root()));
       break;
     default: LBANN_ERROR("invalid data layout");
     }
-    workspace->AlignWith(prediction.DistData());
 #ifdef HYDROGEN_HAVE_CUB
-    if (workspace->GetLocalDevice() == El::Device::GPU) {
-      workspace->Matrix().SetMemoryMode(1); // CUB memory pool
+    if (m_workspace->GetLocalDevice() == El::Device::GPU) {
+      m_workspace->Matrix().SetMemoryMode(1); // CUB memory pool
     }
 #endif // HYDROGEN_HAVE_CUB
-    El::Zeros(*workspace, 1, prediction.Width());
+    
+  }
+
+  void fp_compute() override {
+
+    // Initialize workspace
+    const auto& prediction = get_prev_activations(0);
+    m_workspace->AlignWith(prediction.DistData());
+    m_workspace->Resize(1, prediction.Width());
 
     // Compute local contributions and accumulate
     /// @todo Consider reduce rather than allreduce
     local_fp_compute(get_local_prev_activations(0),
                      get_local_prev_activations(1),
-                     workspace->Matrix());
-    m_comm->allreduce(*workspace, workspace->RedundantComm());
-    El::Copy(*workspace, get_activations());
+                     m_workspace->Matrix());
+    m_comm->allreduce(*m_workspace, m_workspace->RedundantComm());
+    El::Copy(*m_workspace, get_activations());
     
   }
   
   void bp_compute() override {
 
     // Initialize workspace
-    std::unique_ptr<AbsDistMat> workspace;
     const auto& prediction = get_prev_activations(0);
-    switch (get_data_layout()) {
-    case data_layout::DATA_PARALLEL:
-      workspace.reset(new StarVCMat<Dev>(prediction.Grid(),
-                                         prediction.Root()));
-      break;
-    case data_layout::MODEL_PARALLEL:
-      workspace.reset(new StarMRMat<Dev>(prediction.Grid(),
-                                         prediction.Root()));
-      break;
-    default: LBANN_ERROR("invalid data layout");
-    }
-    workspace->AlignWith(prediction.DistData());
-#ifdef HYDROGEN_HAVE_CUB
-    if (workspace->GetLocalDevice() == El::Device::GPU) {
-      workspace->Matrix().SetMemoryMode(1); // CUB memory pool
-    }
-#endif // HYDROGEN_HAVE_CUB
-    El::Copy(get_prev_error_signals(), *workspace);
+    m_workspace->AlignWith(prediction.DistData());
+    El::Copy(get_prev_error_signals(), *m_workspace);
 
     // Compute local gradients
     local_bp_compute(get_local_prev_activations(0),
                      get_local_prev_activations(1),
-                     workspace->LockedMatrix(),
+                     m_workspace->LockedMatrix(),
                      get_local_error_signals(0),
                      get_local_error_signals(1));
     
@@ -131,6 +136,9 @@ private:
                                const AbsMat& local_gradient_wrt_output,
                                AbsMat& local_gradient_wrt_prediction,
                                AbsMat& local_gradient_wrt_ground_truth);
+
+  /** Workspace matrix. */
+  std::unique_ptr<AbsDistMat> m_workspace;
   
 };
 
