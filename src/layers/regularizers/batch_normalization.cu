@@ -106,7 +106,7 @@ __global__ void channel_sums_kernel(
 
   // Initialize shared memory
   __shared__ DataType shared_sums[block_size];
-  __shared__ DataType shared_sqsums[block_size];
+ __shared__ DataType shared_sqsums[block_size];
 
   // Compute row sums in shared memory
   DataType private_sum = DataType(0);
