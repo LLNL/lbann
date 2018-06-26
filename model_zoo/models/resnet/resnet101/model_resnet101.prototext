@@ -1,0 +1,3634 @@
+model {
+  name: "directed_acyclic_graph_model"
+  data_layout: "data_parallel"
+  mini_batch_size: 256
+  block_size: 256
+  num_epochs: 20
+  num_parallel_readers: 0
+  procs_per_model: 0
+  num_gpus: -1
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    cross_entropy {}
+    l2_weight_regularization {
+      scale_factor: 1e-4
+    }
+  }
+
+  ###################################################
+  # Metrics
+  ###################################################
+
+  metric { categorical_accuracy {} }
+  metric {
+    top_k_categorical_accuracy {
+       top_k: 5
+    }
+  }
+
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback {
+    checkpoint {
+      checkpoint_dir: "ckptresnet101"
+      checkpoint_epochs: 1
+    }
+  }
+  callback { print {interval: 1} }
+  callback { timer {} }
+  callback {
+    imcomm {
+      intermodel_comm_method: "normal"
+      all_optimizers: true
+    }
+  }
+  ###################################################
+  # Layers
+  ###################################################
+  layer {
+    name: "0"
+    parents: "0"
+    data_layout: "data_parallel"
+    input {
+      io_buffer: "partitioned"
+    }
+  }
+  layer {
+    name: "initial_layer_conv"
+    parents: "0"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 64
+      conv_dims_i: 7
+      conv_pads_i: 3
+      conv_strides_i: 2
+      has_bias: false
+    }
+  }
+  layer {
+    name: "initial_layer_norm"
+    parents: "initial_layer_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "initial_layer_relu"
+    parents: "initial_layer_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "initial_layer_pool"
+    parents: "initial_layer_relu"
+    data_layout: "data_parallel"
+    pooling {
+      num_dims: 2
+      pool_dims_i: 3
+      pool_strides_i: 2
+      pool_pads_i: 1
+      pool_mode: "max"
+    }
+  }
+  layer {
+    name: "resid_1_conv"
+    parents: "initial_layer_pool"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "resid_1_norm"
+    parents: "resid_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  ###################################################
+  # BottleNeck 1 Block 1
+  ###################################################
+  layer {
+    name: "bottleneck_block_1_bottleneck_conv_1_part_1_conv"
+    parents: "initial_layer_pool"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 64
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_1_bottleneck_conv_1_part_1_norm"
+    parents: "bottleneck_block_1_bottleneck_conv_1_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_1_1_relu"
+    parents: "bottleneck_block_1_bottleneck_conv_1_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_1_bottleneck_conv_1_part_2_conv"
+    parents: "bottleneck_block_1_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 64
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_1_bottleneck_conv_1_part_2_norm"
+    parents: "bottleneck_block_1_bottleneck_conv_1_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_1_2_relu"
+    parents: "bottleneck_block_1_bottleneck_conv_1_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_1_bottleneck_conv_1_part_3_conv"
+    parents: "bottleneck_block_1_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_1_bottleneck_conv_1_part_3_norm"
+    parents: "bottleneck_block_1_bottleneck_conv_1_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_1_sum"
+    parents: "resid_1_norm bottleneck_block_1_bottleneck_conv_1_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_1_3_relu"
+    parents: "bottleneck_block_1_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  ###################################################
+  # BottleNeck 2 Block 2
+  ###################################################
+  layer {
+    name: "bottleneck_block_2_bottleneck_conv_2_part_1_conv"
+    parents: "bottleneck_block_1_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 64
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_2_bottleneck_conv_2_part_1_norm"
+    parents: "bottleneck_block_2_bottleneck_conv_2_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_2_1_relu"
+    parents: "bottleneck_block_2_bottleneck_conv_2_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_2_bottleneck_conv_2_part_2_conv"
+    parents: "bottleneck_block_2_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 64
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_2_bottleneck_conv_2_part_2_norm"
+    parents: "bottleneck_block_2_bottleneck_conv_2_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_2_2_relu"
+    parents: "bottleneck_block_2_bottleneck_conv_2_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_2_bottleneck_conv_2_part_3_conv"
+    parents: "bottleneck_block_2_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_2_bottleneck_conv_2_part_3_norm"
+    parents: "bottleneck_block_2_bottleneck_conv_2_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_2_sum"
+    parents: "bottleneck_block_1_3_relu bottleneck_block_2_bottleneck_conv_2_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_2_3_relu"
+    parents: "bottleneck_block_2_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  ###################################################
+  # BottleNeck 3 Block 3
+  ###################################################
+  layer {
+    name: "bottleneck_block_3_bottleneck_conv_3_part_1_conv"
+    parents: "bottleneck_block_2_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 64
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_3_bottleneck_conv_3_part_1_norm"
+    parents: "bottleneck_block_3_bottleneck_conv_3_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_3_1_relu"
+    parents: "bottleneck_block_3_bottleneck_conv_3_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_3_bottleneck_conv_3_part_2_conv"
+    parents: "bottleneck_block_3_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 64
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_3_bottleneck_conv_3_part_2_norm"
+    parents: "bottleneck_block_3_bottleneck_conv_3_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_3_2_relu"
+    parents: "bottleneck_block_3_bottleneck_conv_3_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_3_bottleneck_conv_3_part_3_conv"
+    parents: "bottleneck_block_3_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_3_bottleneck_conv_3_part_3_norm"
+    parents: "bottleneck_block_3_bottleneck_conv_3_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_3_sum"
+    parents: "bottleneck_block_2_3_relu bottleneck_block_3_bottleneck_conv_3_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_3_3_relu"
+    parents: "bottleneck_block_3_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "resid_4_conv"
+    parents: "bottleneck_block_3_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 512
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 2
+      has_bias: false
+    }
+  }
+  layer {
+    name: "resid_4_norm"
+    parents: "resid_4_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  ###################################################
+  # BottleNeck 4 Block 1
+  ###################################################
+  layer {
+    name: "bottleneck_block_4_bottleneck_conv_4_part_1_conv"
+    parents: "bottleneck_block_3_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 2
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_4_bottleneck_conv_4_part_1_norm"
+    parents: "bottleneck_block_4_bottleneck_conv_4_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_4_1_relu"
+    parents: "bottleneck_block_4_bottleneck_conv_4_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_4_bottleneck_conv_4_part_2_conv"
+    parents: "bottleneck_block_4_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_4_bottleneck_conv_4_part_2_norm"
+    parents: "bottleneck_block_4_bottleneck_conv_4_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_4_2_relu"
+    parents: "bottleneck_block_4_bottleneck_conv_4_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_4_bottleneck_conv_4_part_3_conv"
+    parents: "bottleneck_block_4_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 512
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_4_bottleneck_conv_4_part_3_norm"
+    parents: "bottleneck_block_4_bottleneck_conv_4_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_4_sum"
+    parents: "resid_4_norm bottleneck_block_4_bottleneck_conv_4_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_4_3_relu"
+    parents: "bottleneck_block_4_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  ###################################################
+  # BottleNeck 5 Block 2
+  ###################################################
+  layer {
+    name: "bottleneck_block_5_bottleneck_conv_5_part_1_conv"
+    parents: "bottleneck_block_4_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_5_bottleneck_conv_5_part_1_norm"
+    parents: "bottleneck_block_5_bottleneck_conv_5_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_5_1_relu"
+    parents: "bottleneck_block_5_bottleneck_conv_5_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_5_bottleneck_conv_5_part_2_conv"
+    parents: "bottleneck_block_5_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_5_bottleneck_conv_5_part_2_norm"
+    parents: "bottleneck_block_5_bottleneck_conv_5_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_5_2_relu"
+    parents: "bottleneck_block_5_bottleneck_conv_5_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_5_bottleneck_conv_5_part_3_conv"
+    parents: "bottleneck_block_5_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 512
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_5_bottleneck_conv_5_part_3_norm"
+    parents: "bottleneck_block_5_bottleneck_conv_5_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_5_sum"
+    parents: "bottleneck_block_4_3_relu bottleneck_block_5_bottleneck_conv_5_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_5_3_relu"
+    parents: "bottleneck_block_5_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  ###################################################
+  # BottleNeck 6 Block 3
+  ###################################################
+  layer {
+    name: "bottleneck_block_6_bottleneck_conv_6_part_1_conv"
+    parents: "bottleneck_block_5_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_6_bottleneck_conv_6_part_1_norm"
+    parents: "bottleneck_block_6_bottleneck_conv_6_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_6_1_relu"
+    parents: "bottleneck_block_6_bottleneck_conv_6_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_6_bottleneck_conv_6_part_2_conv"
+    parents: "bottleneck_block_6_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_6_bottleneck_conv_6_part_2_norm"
+    parents: "bottleneck_block_6_bottleneck_conv_6_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_6_2_relu"
+    parents: "bottleneck_block_6_bottleneck_conv_6_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_6_bottleneck_conv_6_part_3_conv"
+    parents: "bottleneck_block_6_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 512
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_6_bottleneck_conv_6_part_3_norm"
+    parents: "bottleneck_block_6_bottleneck_conv_6_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_6_sum"
+    parents: "bottleneck_block_5_3_relu bottleneck_block_6_bottleneck_conv_6_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_6_3_relu"
+    parents: "bottleneck_block_6_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  ###################################################
+  # BottleNeck 7 Block 4
+  ###################################################
+  layer {
+    name: "bottleneck_block_7_bottleneck_conv_7_part_1_conv"
+    parents: "bottleneck_block_6_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_7_bottleneck_conv_7_part_1_norm"
+    parents: "bottleneck_block_7_bottleneck_conv_7_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_7_1_relu"
+    parents: "bottleneck_block_7_bottleneck_conv_7_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_7_bottleneck_conv_7_part_2_conv"
+    parents: "bottleneck_block_7_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_7_bottleneck_conv_7_part_2_norm"
+    parents: "bottleneck_block_7_bottleneck_conv_7_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_7_2_relu"
+    parents: "bottleneck_block_7_bottleneck_conv_7_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_7_bottleneck_conv_7_part_3_conv"
+    parents: "bottleneck_block_7_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 512
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_7_bottleneck_conv_7_part_3_norm"
+    parents: "bottleneck_block_7_bottleneck_conv_7_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_7_sum"
+    parents: "bottleneck_block_6_3_relu bottleneck_block_7_bottleneck_conv_7_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_7_3_relu"
+    parents: "bottleneck_block_7_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "resid_8_conv"
+    parents: "bottleneck_block_7_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 2
+      has_bias: false
+    }
+  }
+  layer {
+    name: "resid_8_norm"
+    parents: "resid_8_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  ###################################################
+  # BottleNeck 8 Block 1
+  ###################################################
+  layer {
+    name: "bottleneck_block_8_bottleneck_conv_8_part_1_conv"
+    parents: "bottleneck_block_7_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 2
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_8_bottleneck_conv_8_part_1_norm"
+    parents: "bottleneck_block_8_bottleneck_conv_8_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_8_1_relu"
+    parents: "bottleneck_block_8_bottleneck_conv_8_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_8_bottleneck_conv_8_part_2_conv"
+    parents: "bottleneck_block_8_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_8_bottleneck_conv_8_part_2_norm"
+    parents: "bottleneck_block_8_bottleneck_conv_8_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_8_2_relu"
+    parents: "bottleneck_block_8_bottleneck_conv_8_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_8_bottleneck_conv_8_part_3_conv"
+    parents: "bottleneck_block_8_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_8_bottleneck_conv_8_part_3_norm"
+    parents: "bottleneck_block_8_bottleneck_conv_8_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_8_sum"
+    parents: "resid_8_norm bottleneck_block_8_bottleneck_conv_8_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_8_3_relu"
+    parents: "bottleneck_block_8_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  ###################################################
+  # BottleNeck 9 Block 2
+  ###################################################
+  layer {
+    name: "bottleneck_block_9_bottleneck_conv_9_part_1_conv"
+    parents: "bottleneck_block_8_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_9_bottleneck_conv_9_part_1_norm"
+    parents: "bottleneck_block_9_bottleneck_conv_9_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_9_1_relu"
+    parents: "bottleneck_block_9_bottleneck_conv_9_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_9_bottleneck_conv_9_part_2_conv"
+    parents: "bottleneck_block_9_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_9_bottleneck_conv_9_part_2_norm"
+    parents: "bottleneck_block_9_bottleneck_conv_9_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_9_2_relu"
+    parents: "bottleneck_block_9_bottleneck_conv_9_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_9_bottleneck_conv_9_part_3_conv"
+    parents: "bottleneck_block_9_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_9_bottleneck_conv_9_part_3_norm"
+    parents: "bottleneck_block_9_bottleneck_conv_9_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_9_sum"
+    parents: "bottleneck_block_8_3_relu bottleneck_block_9_bottleneck_conv_9_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_9_3_relu"
+    parents: "bottleneck_block_9_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  ###################################################
+  # BottleNeck 10 Block 3
+  ###################################################
+  layer {
+    name: "bottleneck_block_10_bottleneck_conv_10_part_1_conv"
+    parents: "bottleneck_block_9_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_10_bottleneck_conv_10_part_1_norm"
+    parents: "bottleneck_block_10_bottleneck_conv_10_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_10_1_relu"
+    parents: "bottleneck_block_10_bottleneck_conv_10_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_10_bottleneck_conv_10_part_2_conv"
+    parents: "bottleneck_block_10_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_10_bottleneck_conv_10_part_2_norm"
+    parents: "bottleneck_block_10_bottleneck_conv_10_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_10_2_relu"
+    parents: "bottleneck_block_10_bottleneck_conv_10_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_10_bottleneck_conv_10_part_3_conv"
+    parents: "bottleneck_block_10_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_10_bottleneck_conv_10_part_3_norm"
+    parents: "bottleneck_block_10_bottleneck_conv_10_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_10_sum"
+    parents: "bottleneck_block_9_3_relu bottleneck_block_10_bottleneck_conv_10_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_10_3_relu"
+    parents: "bottleneck_block_10_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  ###################################################
+  # BottleNeck 11 Block 4
+  ###################################################
+  layer {
+    name: "bottleneck_block_11_bottleneck_conv_11_part_1_conv"
+    parents: "bottleneck_block_10_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_11_bottleneck_conv_11_part_1_norm"
+    parents: "bottleneck_block_11_bottleneck_conv_11_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_11_1_relu"
+    parents: "bottleneck_block_11_bottleneck_conv_11_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_11_bottleneck_conv_11_part_2_conv"
+    parents: "bottleneck_block_11_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_11_bottleneck_conv_11_part_2_norm"
+    parents: "bottleneck_block_11_bottleneck_conv_11_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_11_2_relu"
+    parents: "bottleneck_block_11_bottleneck_conv_11_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_11_bottleneck_conv_11_part_3_conv"
+    parents: "bottleneck_block_11_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_11_bottleneck_conv_11_part_3_norm"
+    parents: "bottleneck_block_11_bottleneck_conv_11_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_11_sum"
+    parents: "bottleneck_block_10_3_relu bottleneck_block_11_bottleneck_conv_11_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_11_3_relu"
+    parents: "bottleneck_block_11_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  ###################################################
+  # BottleNeck 12 Block 5
+  ###################################################
+  layer {
+    name: "bottleneck_block_12_bottleneck_conv_12_part_1_conv"
+    parents: "bottleneck_block_11_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_12_bottleneck_conv_12_part_1_norm"
+    parents: "bottleneck_block_12_bottleneck_conv_12_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_12_1_relu"
+    parents: "bottleneck_block_12_bottleneck_conv_12_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_12_bottleneck_conv_12_part_2_conv"
+    parents: "bottleneck_block_12_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_12_bottleneck_conv_12_part_2_norm"
+    parents: "bottleneck_block_12_bottleneck_conv_12_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_12_2_relu"
+    parents: "bottleneck_block_12_bottleneck_conv_12_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_12_bottleneck_conv_12_part_3_conv"
+    parents: "bottleneck_block_12_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_12_bottleneck_conv_12_part_3_norm"
+    parents: "bottleneck_block_12_bottleneck_conv_12_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_12_sum"
+    parents: "bottleneck_block_11_3_relu bottleneck_block_12_bottleneck_conv_12_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_12_3_relu"
+    parents: "bottleneck_block_12_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  ###################################################
+  # BottleNeck 13 Block 6
+  ###################################################
+  layer {
+    name: "bottleneck_block_13_bottleneck_conv_13_part_1_conv"
+    parents: "bottleneck_block_12_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_13_bottleneck_conv_13_part_1_norm"
+    parents: "bottleneck_block_13_bottleneck_conv_13_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_13_1_relu"
+    parents: "bottleneck_block_13_bottleneck_conv_13_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_13_bottleneck_conv_13_part_2_conv"
+    parents: "bottleneck_block_13_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_13_bottleneck_conv_13_part_2_norm"
+    parents: "bottleneck_block_13_bottleneck_conv_13_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_13_2_relu"
+    parents: "bottleneck_block_13_bottleneck_conv_13_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_13_bottleneck_conv_13_part_3_conv"
+    parents: "bottleneck_block_13_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_13_bottleneck_conv_13_part_3_norm"
+    parents: "bottleneck_block_13_bottleneck_conv_13_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_13_sum"
+    parents: "bottleneck_block_12_3_relu bottleneck_block_13_bottleneck_conv_13_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_13_3_relu"
+    parents: "bottleneck_block_13_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  ###################################################
+  # BottleNeck 14 Block 7
+  ###################################################
+  layer {
+    name: "bottleneck_block_14_bottleneck_conv_14_part_1_conv"
+    parents: "bottleneck_block_13_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_14_bottleneck_conv_14_part_1_norm"
+    parents: "bottleneck_block_14_bottleneck_conv_14_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_14_1_relu"
+    parents: "bottleneck_block_14_bottleneck_conv_14_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_14_bottleneck_conv_14_part_2_conv"
+    parents: "bottleneck_block_14_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_14_bottleneck_conv_14_part_2_norm"
+    parents: "bottleneck_block_14_bottleneck_conv_14_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_14_2_relu"
+    parents: "bottleneck_block_14_bottleneck_conv_14_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_14_bottleneck_conv_14_part_3_conv"
+    parents: "bottleneck_block_14_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_14_bottleneck_conv_14_part_3_norm"
+    parents: "bottleneck_block_14_bottleneck_conv_14_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_14_sum"
+    parents: "bottleneck_block_13_3_relu bottleneck_block_14_bottleneck_conv_14_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_14_3_relu"
+    parents: "bottleneck_block_14_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  ###################################################
+  # BottleNeck 15 Block 8
+  ###################################################
+  layer {
+    name: "bottleneck_block_15_bottleneck_conv_15_part_1_conv"
+    parents: "bottleneck_block_14_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_15_bottleneck_conv_15_part_1_norm"
+    parents: "bottleneck_block_15_bottleneck_conv_15_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_15_1_relu"
+    parents: "bottleneck_block_15_bottleneck_conv_15_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_15_bottleneck_conv_15_part_2_conv"
+    parents: "bottleneck_block_15_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_15_bottleneck_conv_15_part_2_norm"
+    parents: "bottleneck_block_15_bottleneck_conv_15_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_15_2_relu"
+    parents: "bottleneck_block_15_bottleneck_conv_15_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_15_bottleneck_conv_15_part_3_conv"
+    parents: "bottleneck_block_15_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_15_bottleneck_conv_15_part_3_norm"
+    parents: "bottleneck_block_15_bottleneck_conv_15_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_15_sum"
+    parents: "bottleneck_block_14_3_relu bottleneck_block_15_bottleneck_conv_15_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_15_3_relu"
+    parents: "bottleneck_block_15_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  ###################################################
+  # BottleNeck 16 Block 9
+  ###################################################
+  layer {
+    name: "bottleneck_block_16_bottleneck_conv_16_part_1_conv"
+    parents: "bottleneck_block_15_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_16_bottleneck_conv_16_part_1_norm"
+    parents: "bottleneck_block_16_bottleneck_conv_16_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_16_1_relu"
+    parents: "bottleneck_block_16_bottleneck_conv_16_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_16_bottleneck_conv_16_part_2_conv"
+    parents: "bottleneck_block_16_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_16_bottleneck_conv_16_part_2_norm"
+    parents: "bottleneck_block_16_bottleneck_conv_16_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_16_2_relu"
+    parents: "bottleneck_block_16_bottleneck_conv_16_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_16_bottleneck_conv_16_part_3_conv"
+    parents: "bottleneck_block_16_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_16_bottleneck_conv_16_part_3_norm"
+    parents: "bottleneck_block_16_bottleneck_conv_16_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_16_sum"
+    parents: "bottleneck_block_15_3_relu bottleneck_block_16_bottleneck_conv_16_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_16_3_relu"
+    parents: "bottleneck_block_16_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  ###################################################
+  # BottleNeck 17 Block 10
+  ###################################################
+  layer {
+    name: "bottleneck_block_17_bottleneck_conv_17_part_1_conv"
+    parents: "bottleneck_block_16_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_17_bottleneck_conv_17_part_1_norm"
+    parents: "bottleneck_block_17_bottleneck_conv_17_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_17_1_relu"
+    parents: "bottleneck_block_17_bottleneck_conv_17_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_17_bottleneck_conv_17_part_2_conv"
+    parents: "bottleneck_block_17_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_17_bottleneck_conv_17_part_2_norm"
+    parents: "bottleneck_block_17_bottleneck_conv_17_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_17_2_relu"
+    parents: "bottleneck_block_17_bottleneck_conv_17_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_17_bottleneck_conv_17_part_3_conv"
+    parents: "bottleneck_block_17_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_17_bottleneck_conv_17_part_3_norm"
+    parents: "bottleneck_block_17_bottleneck_conv_17_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_17_sum"
+    parents: "bottleneck_block_16_3_relu bottleneck_block_17_bottleneck_conv_17_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_17_3_relu"
+    parents: "bottleneck_block_17_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  ###################################################
+  # BottleNeck 18 Block 11
+  ###################################################
+  layer {
+    name: "bottleneck_block_18_bottleneck_conv_18_part_1_conv"
+    parents: "bottleneck_block_17_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_18_bottleneck_conv_18_part_1_norm"
+    parents: "bottleneck_block_18_bottleneck_conv_18_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_18_1_relu"
+    parents: "bottleneck_block_18_bottleneck_conv_18_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_18_bottleneck_conv_18_part_2_conv"
+    parents: "bottleneck_block_18_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_18_bottleneck_conv_18_part_2_norm"
+    parents: "bottleneck_block_18_bottleneck_conv_18_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_18_2_relu"
+    parents: "bottleneck_block_18_bottleneck_conv_18_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_18_bottleneck_conv_18_part_3_conv"
+    parents: "bottleneck_block_18_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_18_bottleneck_conv_18_part_3_norm"
+    parents: "bottleneck_block_18_bottleneck_conv_18_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_18_sum"
+    parents: "bottleneck_block_17_3_relu bottleneck_block_18_bottleneck_conv_18_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_18_3_relu"
+    parents: "bottleneck_block_18_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  ###################################################
+  # BottleNeck 19 Block 12
+  ###################################################
+  layer {
+    name: "bottleneck_block_19_bottleneck_conv_19_part_1_conv"
+    parents: "bottleneck_block_18_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_19_bottleneck_conv_19_part_1_norm"
+    parents: "bottleneck_block_19_bottleneck_conv_19_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_19_1_relu"
+    parents: "bottleneck_block_19_bottleneck_conv_19_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_19_bottleneck_conv_19_part_2_conv"
+    parents: "bottleneck_block_19_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_19_bottleneck_conv_19_part_2_norm"
+    parents: "bottleneck_block_19_bottleneck_conv_19_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_19_2_relu"
+    parents: "bottleneck_block_19_bottleneck_conv_19_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_19_bottleneck_conv_19_part_3_conv"
+    parents: "bottleneck_block_19_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_19_bottleneck_conv_19_part_3_norm"
+    parents: "bottleneck_block_19_bottleneck_conv_19_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_19_sum"
+    parents: "bottleneck_block_18_3_relu bottleneck_block_19_bottleneck_conv_19_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_19_3_relu"
+    parents: "bottleneck_block_19_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  ###################################################
+  # BottleNeck 20 Block 13
+  ###################################################
+  layer {
+    name: "bottleneck_block_20_bottleneck_conv_20_part_1_conv"
+    parents: "bottleneck_block_19_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_20_bottleneck_conv_20_part_1_norm"
+    parents: "bottleneck_block_20_bottleneck_conv_20_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_20_1_relu"
+    parents: "bottleneck_block_20_bottleneck_conv_20_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_20_bottleneck_conv_20_part_2_conv"
+    parents: "bottleneck_block_20_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_20_bottleneck_conv_20_part_2_norm"
+    parents: "bottleneck_block_20_bottleneck_conv_20_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_20_2_relu"
+    parents: "bottleneck_block_20_bottleneck_conv_20_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_20_bottleneck_conv_20_part_3_conv"
+    parents: "bottleneck_block_20_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_20_bottleneck_conv_20_part_3_norm"
+    parents: "bottleneck_block_20_bottleneck_conv_20_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_20_sum"
+    parents: "bottleneck_block_19_3_relu bottleneck_block_20_bottleneck_conv_20_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_20_3_relu"
+    parents: "bottleneck_block_20_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  ###################################################
+  # BottleNeck 21 Block 14
+  ###################################################
+  layer {
+    name: "bottleneck_block_21_bottleneck_conv_21_part_1_conv"
+    parents: "bottleneck_block_20_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_21_bottleneck_conv_21_part_1_norm"
+    parents: "bottleneck_block_21_bottleneck_conv_21_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_21_1_relu"
+    parents: "bottleneck_block_21_bottleneck_conv_21_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_21_bottleneck_conv_21_part_2_conv"
+    parents: "bottleneck_block_21_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_21_bottleneck_conv_21_part_2_norm"
+    parents: "bottleneck_block_21_bottleneck_conv_21_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_21_2_relu"
+    parents: "bottleneck_block_21_bottleneck_conv_21_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_21_bottleneck_conv_21_part_3_conv"
+    parents: "bottleneck_block_21_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_21_bottleneck_conv_21_part_3_norm"
+    parents: "bottleneck_block_21_bottleneck_conv_21_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_21_sum"
+    parents: "bottleneck_block_20_3_relu bottleneck_block_21_bottleneck_conv_21_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_21_3_relu"
+    parents: "bottleneck_block_21_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  ###################################################
+  # BottleNeck 22 Block 15
+  ###################################################
+  layer {
+    name: "bottleneck_block_22_bottleneck_conv_22_part_1_conv"
+    parents: "bottleneck_block_21_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_22_bottleneck_conv_22_part_1_norm"
+    parents: "bottleneck_block_22_bottleneck_conv_22_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_22_1_relu"
+    parents: "bottleneck_block_22_bottleneck_conv_22_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_22_bottleneck_conv_22_part_2_conv"
+    parents: "bottleneck_block_22_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_22_bottleneck_conv_22_part_2_norm"
+    parents: "bottleneck_block_22_bottleneck_conv_22_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_22_2_relu"
+    parents: "bottleneck_block_22_bottleneck_conv_22_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_22_bottleneck_conv_22_part_3_conv"
+    parents: "bottleneck_block_22_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_22_bottleneck_conv_22_part_3_norm"
+    parents: "bottleneck_block_22_bottleneck_conv_22_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_22_sum"
+    parents: "bottleneck_block_21_3_relu bottleneck_block_22_bottleneck_conv_22_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_22_3_relu"
+    parents: "bottleneck_block_22_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  ###################################################
+  # BottleNeck 23 Block 16
+  ###################################################
+  layer {
+    name: "bottleneck_block_23_bottleneck_conv_23_part_1_conv"
+    parents: "bottleneck_block_22_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_23_bottleneck_conv_23_part_1_norm"
+    parents: "bottleneck_block_23_bottleneck_conv_23_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_23_1_relu"
+    parents: "bottleneck_block_23_bottleneck_conv_23_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_23_bottleneck_conv_23_part_2_conv"
+    parents: "bottleneck_block_23_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_23_bottleneck_conv_23_part_2_norm"
+    parents: "bottleneck_block_23_bottleneck_conv_23_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_23_2_relu"
+    parents: "bottleneck_block_23_bottleneck_conv_23_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_23_bottleneck_conv_23_part_3_conv"
+    parents: "bottleneck_block_23_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_23_bottleneck_conv_23_part_3_norm"
+    parents: "bottleneck_block_23_bottleneck_conv_23_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_23_sum"
+    parents: "bottleneck_block_22_3_relu bottleneck_block_23_bottleneck_conv_23_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_23_3_relu"
+    parents: "bottleneck_block_23_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  ###################################################
+  # BottleNeck 24 Block 17
+  ###################################################
+  layer {
+    name: "bottleneck_block_24_bottleneck_conv_24_part_1_conv"
+    parents: "bottleneck_block_23_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_24_bottleneck_conv_24_part_1_norm"
+    parents: "bottleneck_block_24_bottleneck_conv_24_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_24_1_relu"
+    parents: "bottleneck_block_24_bottleneck_conv_24_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_24_bottleneck_conv_24_part_2_conv"
+    parents: "bottleneck_block_24_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_24_bottleneck_conv_24_part_2_norm"
+    parents: "bottleneck_block_24_bottleneck_conv_24_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_24_2_relu"
+    parents: "bottleneck_block_24_bottleneck_conv_24_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_24_bottleneck_conv_24_part_3_conv"
+    parents: "bottleneck_block_24_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_24_bottleneck_conv_24_part_3_norm"
+    parents: "bottleneck_block_24_bottleneck_conv_24_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_24_sum"
+    parents: "bottleneck_block_23_3_relu bottleneck_block_24_bottleneck_conv_24_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_24_3_relu"
+    parents: "bottleneck_block_24_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  ###################################################
+  # BottleNeck 25 Block 18
+  ###################################################
+  layer {
+    name: "bottleneck_block_25_bottleneck_conv_25_part_1_conv"
+    parents: "bottleneck_block_24_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_25_bottleneck_conv_25_part_1_norm"
+    parents: "bottleneck_block_25_bottleneck_conv_25_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_25_1_relu"
+    parents: "bottleneck_block_25_bottleneck_conv_25_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_25_bottleneck_conv_25_part_2_conv"
+    parents: "bottleneck_block_25_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_25_bottleneck_conv_25_part_2_norm"
+    parents: "bottleneck_block_25_bottleneck_conv_25_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_25_2_relu"
+    parents: "bottleneck_block_25_bottleneck_conv_25_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_25_bottleneck_conv_25_part_3_conv"
+    parents: "bottleneck_block_25_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_25_bottleneck_conv_25_part_3_norm"
+    parents: "bottleneck_block_25_bottleneck_conv_25_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_25_sum"
+    parents: "bottleneck_block_24_3_relu bottleneck_block_25_bottleneck_conv_25_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_25_3_relu"
+    parents: "bottleneck_block_25_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  ###################################################
+  # BottleNeck 26 Block 19
+  ###################################################
+  layer {
+    name: "bottleneck_block_26_bottleneck_conv_26_part_1_conv"
+    parents: "bottleneck_block_25_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_26_bottleneck_conv_26_part_1_norm"
+    parents: "bottleneck_block_26_bottleneck_conv_26_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_26_1_relu"
+    parents: "bottleneck_block_26_bottleneck_conv_26_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_26_bottleneck_conv_26_part_2_conv"
+    parents: "bottleneck_block_26_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_26_bottleneck_conv_26_part_2_norm"
+    parents: "bottleneck_block_26_bottleneck_conv_26_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_26_2_relu"
+    parents: "bottleneck_block_26_bottleneck_conv_26_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_26_bottleneck_conv_26_part_3_conv"
+    parents: "bottleneck_block_26_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_26_bottleneck_conv_26_part_3_norm"
+    parents: "bottleneck_block_26_bottleneck_conv_26_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_26_sum"
+    parents: "bottleneck_block_25_3_relu bottleneck_block_26_bottleneck_conv_26_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_26_3_relu"
+    parents: "bottleneck_block_26_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  ###################################################
+  # BottleNeck 27 Block 20
+  ###################################################
+  layer {
+    name: "bottleneck_block_27_bottleneck_conv_27_part_1_conv"
+    parents: "bottleneck_block_26_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_27_bottleneck_conv_27_part_1_norm"
+    parents: "bottleneck_block_27_bottleneck_conv_27_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_27_1_relu"
+    parents: "bottleneck_block_27_bottleneck_conv_27_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_27_bottleneck_conv_27_part_2_conv"
+    parents: "bottleneck_block_27_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_27_bottleneck_conv_27_part_2_norm"
+    parents: "bottleneck_block_27_bottleneck_conv_27_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_27_2_relu"
+    parents: "bottleneck_block_27_bottleneck_conv_27_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_27_bottleneck_conv_27_part_3_conv"
+    parents: "bottleneck_block_27_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_27_bottleneck_conv_27_part_3_norm"
+    parents: "bottleneck_block_27_bottleneck_conv_27_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_27_sum"
+    parents: "bottleneck_block_26_3_relu bottleneck_block_27_bottleneck_conv_27_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_27_3_relu"
+    parents: "bottleneck_block_27_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  ###################################################
+  # BottleNeck 28 Block 21
+  ###################################################
+  layer {
+    name: "bottleneck_block_28_bottleneck_conv_28_part_1_conv"
+    parents: "bottleneck_block_27_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_28_bottleneck_conv_28_part_1_norm"
+    parents: "bottleneck_block_28_bottleneck_conv_28_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_28_1_relu"
+    parents: "bottleneck_block_28_bottleneck_conv_28_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_28_bottleneck_conv_28_part_2_conv"
+    parents: "bottleneck_block_28_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_28_bottleneck_conv_28_part_2_norm"
+    parents: "bottleneck_block_28_bottleneck_conv_28_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_28_2_relu"
+    parents: "bottleneck_block_28_bottleneck_conv_28_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_28_bottleneck_conv_28_part_3_conv"
+    parents: "bottleneck_block_28_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_28_bottleneck_conv_28_part_3_norm"
+    parents: "bottleneck_block_28_bottleneck_conv_28_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_28_sum"
+    parents: "bottleneck_block_27_3_relu bottleneck_block_28_bottleneck_conv_28_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_28_3_relu"
+    parents: "bottleneck_block_28_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  ###################################################
+  # BottleNeck 29 Block 22
+  ###################################################
+  layer {
+    name: "bottleneck_block_29_bottleneck_conv_29_part_1_conv"
+    parents: "bottleneck_block_28_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_29_bottleneck_conv_29_part_1_norm"
+    parents: "bottleneck_block_29_bottleneck_conv_29_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_29_1_relu"
+    parents: "bottleneck_block_29_bottleneck_conv_29_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_29_bottleneck_conv_29_part_2_conv"
+    parents: "bottleneck_block_29_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_29_bottleneck_conv_29_part_2_norm"
+    parents: "bottleneck_block_29_bottleneck_conv_29_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_29_2_relu"
+    parents: "bottleneck_block_29_bottleneck_conv_29_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_29_bottleneck_conv_29_part_3_conv"
+    parents: "bottleneck_block_29_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_29_bottleneck_conv_29_part_3_norm"
+    parents: "bottleneck_block_29_bottleneck_conv_29_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_29_sum"
+    parents: "bottleneck_block_28_3_relu bottleneck_block_29_bottleneck_conv_29_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_29_3_relu"
+    parents: "bottleneck_block_29_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  ###################################################
+  # BottleNeck 30 Block 23
+  ###################################################
+  layer {
+    name: "bottleneck_block_30_bottleneck_conv_30_part_1_conv"
+    parents: "bottleneck_block_29_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_30_bottleneck_conv_30_part_1_norm"
+    parents: "bottleneck_block_30_bottleneck_conv_30_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_30_1_relu"
+    parents: "bottleneck_block_30_bottleneck_conv_30_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_30_bottleneck_conv_30_part_2_conv"
+    parents: "bottleneck_block_30_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_30_bottleneck_conv_30_part_2_norm"
+    parents: "bottleneck_block_30_bottleneck_conv_30_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_30_2_relu"
+    parents: "bottleneck_block_30_bottleneck_conv_30_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_30_bottleneck_conv_30_part_3_conv"
+    parents: "bottleneck_block_30_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_30_bottleneck_conv_30_part_3_norm"
+    parents: "bottleneck_block_30_bottleneck_conv_30_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_30_sum"
+    parents: "bottleneck_block_29_3_relu bottleneck_block_30_bottleneck_conv_30_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_30_3_relu"
+    parents: "bottleneck_block_30_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "resid_31_conv"
+    parents: "bottleneck_block_30_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 2048
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 2
+      has_bias: false
+    }
+  }
+  layer {
+    name: "resid_31_norm"
+    parents: "resid_31_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  ###################################################
+  # BottleNeck 31 Block 1
+  ###################################################
+  layer {
+    name: "bottleneck_block_31_bottleneck_conv_31_part_1_conv"
+    parents: "bottleneck_block_30_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 512
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 2
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_31_bottleneck_conv_31_part_1_norm"
+    parents: "bottleneck_block_31_bottleneck_conv_31_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_31_1_relu"
+    parents: "bottleneck_block_31_bottleneck_conv_31_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_31_bottleneck_conv_31_part_2_conv"
+    parents: "bottleneck_block_31_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 512
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_31_bottleneck_conv_31_part_2_norm"
+    parents: "bottleneck_block_31_bottleneck_conv_31_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_31_2_relu"
+    parents: "bottleneck_block_31_bottleneck_conv_31_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_31_bottleneck_conv_31_part_3_conv"
+    parents: "bottleneck_block_31_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 2048
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_31_bottleneck_conv_31_part_3_norm"
+    parents: "bottleneck_block_31_bottleneck_conv_31_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_31_sum"
+    parents: "resid_31_norm bottleneck_block_31_bottleneck_conv_31_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_31_3_relu"
+    parents: "bottleneck_block_31_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  ###################################################
+  # BottleNeck 32 Block 2
+  ###################################################
+  layer {
+    name: "bottleneck_block_32_bottleneck_conv_32_part_1_conv"
+    parents: "bottleneck_block_31_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 512
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_32_bottleneck_conv_32_part_1_norm"
+    parents: "bottleneck_block_32_bottleneck_conv_32_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_32_1_relu"
+    parents: "bottleneck_block_32_bottleneck_conv_32_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_32_bottleneck_conv_32_part_2_conv"
+    parents: "bottleneck_block_32_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 512
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_32_bottleneck_conv_32_part_2_norm"
+    parents: "bottleneck_block_32_bottleneck_conv_32_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_32_2_relu"
+    parents: "bottleneck_block_32_bottleneck_conv_32_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_32_bottleneck_conv_32_part_3_conv"
+    parents: "bottleneck_block_32_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 2048
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_32_bottleneck_conv_32_part_3_norm"
+    parents: "bottleneck_block_32_bottleneck_conv_32_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_32_sum"
+    parents: "bottleneck_block_31_3_relu bottleneck_block_32_bottleneck_conv_32_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_32_3_relu"
+    parents: "bottleneck_block_32_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  ###################################################
+  # BottleNeck 33 Block 3
+  ###################################################
+  layer {
+    name: "bottleneck_block_33_bottleneck_conv_33_part_1_conv"
+    parents: "bottleneck_block_32_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 512
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_33_bottleneck_conv_33_part_1_norm"
+    parents: "bottleneck_block_33_bottleneck_conv_33_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_33_1_relu"
+    parents: "bottleneck_block_33_bottleneck_conv_33_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_33_bottleneck_conv_33_part_2_conv"
+    parents: "bottleneck_block_33_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 512
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_33_bottleneck_conv_33_part_2_norm"
+    parents: "bottleneck_block_33_bottleneck_conv_33_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_33_2_relu"
+    parents: "bottleneck_block_33_bottleneck_conv_33_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "bottleneck_block_33_bottleneck_conv_33_part_3_conv"
+    parents: "bottleneck_block_33_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 2048
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "bottleneck_block_33_bottleneck_conv_33_part_3_norm"
+    parents: "bottleneck_block_33_bottleneck_conv_33_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "bottleneck_block_33_sum"
+    parents: "bottleneck_block_32_3_relu bottleneck_block_33_bottleneck_conv_33_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "bottleneck_block_33_3_relu"
+    parents: "bottleneck_block_33_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "final_layer_pool"
+    parents: "bottleneck_block_33_3_relu"
+    data_layout: "data_parallel"
+    pooling {
+      num_dims: 2
+      pool_dims_i: 7
+      pool_strides_i: 1
+      pool_pads_i: 0
+      pool_mode: "average"
+    }
+  }
+  layer {
+    name: "final_layer_fc"
+    parents: "final_layer_pool"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 1000
+      has_bias: False
+    }
+  }
+  layer {
+    name: "final_layer_softmax"
+    parents: "final_layer_fc"
+    data_layout: "model_parallel"
+    softmax {
+    }
+  }
+  layer {
+    name: "output_layer"
+    parents: "final_layer_softmax 0"
+    data_layout: "data_parallel"
+    target {
+    }
+  }
+}
