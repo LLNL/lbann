@@ -35,8 +35,16 @@ namespace lbann {
 void generic_data_reader::shuffle_indices() {
   // Shuffle the data
   if (m_shuffle) {
-    std::shuffle(m_shuffled_indices.begin(), m_shuffled_indices.end(),
-                 get_data_seq_generator());
+    if (m_is_partitioned) {
+      for (size_t j=0; j<m_shuffled_partitioned_indices.size(); j++) {
+        std::shuffle(m_shuffled_partitioned_indices[j].begin(), 
+                     m_shuffled_partitioned_indices[j].end(),
+                     get_data_seq_generator());
+      }
+    } else {
+      std::shuffle(m_shuffled_indices.begin(), m_shuffled_indices.end(),
+                   get_data_seq_generator());
+    }
   }
 }
 
@@ -57,7 +65,36 @@ void generic_data_reader::setup() {
 
   set_initial_position();
 
+  if (m_is_partitioned) {
+    setup_shuffled_partitioned_indices();
+  }
+
   shuffle_indices();
+}
+
+void generic_data_reader::setup_partitioned_shuffled_indices() {
+  std::shuffle(m_shuffled_indices.begin(), m_shuffled_indices.end(),
+               get_data_seq_generator());
+  m_shuffled_partitioned_indices.resize(m_num_partitions);
+
+  //HACK! Ensure all partitions have same number of indices, to avoid
+  ///     dealing with corner cases. At most this should discard
+  ///     a few samples, so probably no heartache, unless you're obsessive/
+  ///     commpulsive
+  int indices_per_partition = m_shuffled_indices.size() / m_num_partitions;
+  int n = indices_per_partition * m_num_partitions;
+  if (n != m_shuffled_indices.size()) {
+    if (is_master()) {
+      std::cerr << "generic_data_reader::setup_partitioned_shuffled_indices; discarding " << m_shuffled_indices.size() - n << " indices\n";
+    }
+  }
+
+  for (size_t h=0; h<m_num_partitions; h++) {
+    m_shuffled_partitioned_indices.resize(indices_per_partition);
+    std::copy(m_shuffled_indices.begin() + indices_per_partition*h;
+              m_shuffled_indices.begin() + indices_per_partition*(h+1),
+              m_shuffled_partitioned_indices[h].begin();
+  }
 }
 
 int lbann::generic_data_reader::fetch_data(CPUMat& X) {
@@ -323,6 +360,7 @@ int generic_data_reader::get_next_position() const {
 }
 
 void generic_data_reader::select_subset_of_data() {
+  //todo: if (m_is_partitioned) ... need to add modifications ...
   m_num_global_indices = m_shuffled_indices.size();
   shuffle_indices();
 
@@ -530,6 +568,14 @@ void generic_data_reader::init_minibatch() {
   if (m_data_store != nullptr) {
     m_data_store->init_minibatch();
   }
+}
+
+void generic_data_reader::set_partitioned(double overlap) {
+  m_is_partitioned = true;
+  m_partition_overlap = overlap;
+  m_procs_per_partition = m_comm->get_procs_per_model();
+  m_num_partitions = m_comm->num_models();
+  m_my_partition = m_comm->get_model_rank();
 }
 
 }  // namespace lbann

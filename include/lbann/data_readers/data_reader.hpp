@@ -88,7 +88,10 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_compound_rank(0),
     m_gan_labelling(false), //default, not GAN
     m_gan_label_value(0),  //If GAN, default for fake label, discriminator model
-    m_num_global_indices(0)
+    m_num_global_indices(0),
+    m_is_partitioned(false),
+    m_partition_overlap(0),
+    m_procs_per_partition(1)
   {}
   generic_data_reader(const generic_data_reader&) = default;
   generic_data_reader& operator=(const generic_data_reader&) = default;
@@ -508,6 +511,9 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   void use_unused_index_set();
 
+  /// partition the dataset amongst the models, with possible overlap
+  void set_partitioned(double overlap=0.0); 
+
   /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
   bool save_to_checkpoint_shared(persist& p, const char *name);
 
@@ -799,6 +805,31 @@ class generic_data_reader : public lbann_image_preprocessor {
 
    /// added to support data store functionality
    size_t m_num_global_indices;
+
+   /// if true, dataset is partitioned amongst several models,
+   /// with options overlap (yeah, I know, if there's overlap its
+   /// not technically a partition)
+   bool m_is_partitioned;
+
+   /// if m_is_partitioned, this determines the amount of overlap
+   /// Has no effect if m_is_partitioned = false
+   double m_partition_overlap;
+
+   /// only relevant if m_is_partitioned = true (currently this is same as
+   /// comm->num_models())
+   int m_num_partitions;
+
+   /// only relevant if m_is_partitioned = true (currently this is same as
+   /// comm->get_model_rank()
+   int m_my_partition;
+
+   /// only relevant if m_is_partitioned = true (currently this is same as
+   /// comm->get_procs_per_model)
+   int m_procs_per_partition;
+
+   std::vector<std::vector<int> > m_shuffled_partitioned_indices;
+
+   void setup_shuffled_partitioned_indices();
 };
 
 template<typename T>
