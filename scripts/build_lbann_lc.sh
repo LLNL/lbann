@@ -403,7 +403,7 @@ if [ "${BUILD_TYPE}" == "Release" ]; then
             C_FLAGS="${C_FLAGS} -march=ivybridge -mtune=ivybridge"
             CXX_FLAGS="${CXX_FLAGS} -march=ivybridge -mtune=ivybridge"
             Fortran_FLAGS="${Fortran_FLAGS} -march=ivybridge -mtune=ivybridge"
-        elif [ "${CLUSTER}" == "quartz" ]; then
+        elif [ "${CLUSTER}" == "quartz" ] || [ "${CLUSTER}" == "pascal" ] ; then
             C_FLAGS="${C_FLAGS} -march=broadwell -mtune=broadwell"
             CXX_FLAGS="${CXX_FLAGS} -march=broadwell -mtune=broadwell"
             Fortran_FLAGS="${Fortran_FLAGS} -march=broadwell -mtune=broadwell"
