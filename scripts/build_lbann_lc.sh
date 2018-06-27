@@ -242,9 +242,11 @@ while :; do
             WITH_ALUMINUM=ON
             ;;
         --aluminum-with-mpi-cuda)
+            WITH_ALUMINUM=ON
             ALUMINUM_WITH_MPI_CUDA=ON
             ;;
         --aluminum-with-nccl)
+            WITH_ALUMINUM=ON
             ALUMINUM_WITH_NCCL=ON
             ;;
         --with-conduit)
