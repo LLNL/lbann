@@ -212,5 +212,6 @@
 #include "lbann/io/persist.hpp"
 #include "lbann/utils/compiler_control.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
+#include "lbann/utils/peek_map.hpp"
 
 #endif // LBANN_HPP_INCLUDED
