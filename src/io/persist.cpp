@@ -416,11 +416,17 @@ bool lbann::persist::read_hdf5_distmat(std::string group_name, const char *name,
     temp.Resize(M->Height(),M->Width());
     if (is_master){
       H5::Group weight_group = checkpoint_file->openGroup(group_name);
-      H5::DataSet ds = weight_group.openDataSet(name);
-      H5::DataSpace dataspace= ds.getSpace();
-      ds.read(temp.Buffer(), H5::PredType::NATIVE_FLOAT, dataspace);     
-      temp.Resize(M->Height(),M->Width());
-    } 
+      if(weight_group.exists(name)){
+        H5::DataSet ds = weight_group.openDataSet(name);
+        H5::DataSpace dataspace= ds.getSpace();
+        ds.read(temp.Buffer(), H5::PredType::NATIVE_FLOAT, dataspace);     
+        temp.Resize(M->Height(),M->Width());
+      } else {
+        std::cout << "Failed to load weight: " << name << ".  Training will be impacted." << std::endl;
+      }
+      
+    }
+
     temp.MakeSizeConsistent();
     El::Copy(temp, *M);    
     m_bytes += M->Height() * M->Width() * sizeof(DataType);

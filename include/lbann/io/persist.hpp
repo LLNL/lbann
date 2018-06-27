@@ -144,11 +144,16 @@ class persist {
 
   template<typename T>
   bool read_hdf5_parameter(H5::Group group_name, const char *name, T *val) {
-    H5::Attribute attr = group_name.openAttribute(name);
-    H5::DataType type = attr.getDataType();
-    attr.read(type,val);     
-    m_bytes += sizeof(T);
-    return true;
+    if(group_name.attrExists(name)){
+      H5::Attribute attr = group_name.openAttribute(name);
+      H5::DataType type = attr.getDataType();
+      attr.read(type,val);     
+      m_bytes += sizeof(T);
+      return true;
+    } else {
+        std::cout << "Failed to load parameter: " << name << ". Restart may abort or otherwise fail." << std::endl;
+        return false;
+    }
   }
 
   template<typename T>
@@ -165,11 +170,16 @@ class persist {
  
   template<typename T>
   bool read_hdf5_array(H5::Group group_name, const char *name, std::vector<T> &val) {
-    H5::DataSet ds = group_name.openDataSet(name);
-    H5::DataSpace dataspace= ds.getSpace();
-    ds.read(val.data(), H5::PredType::NATIVE_INT, dataspace);
-    m_bytes += sizeof(T) * val.size();
-    return true;
+    if(group_name.exists(name)){
+      H5::DataSet ds = group_name.openDataSet(name);
+      H5::DataSpace dataspace= ds.getSpace();
+      ds.read(val.data(), H5::PredType::NATIVE_INT, dataspace);
+      m_bytes += sizeof(T) * val.size();
+      return true;
+    } else { 
+      std::cout << "Failed to load parameter: " << name << ". Restart may abort or otherwise fail." << std::endl;
+      return false;
+    } 
   }
 
   H5::Group getGroup(std::string group_name);
