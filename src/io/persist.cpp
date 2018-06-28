@@ -398,7 +398,12 @@ bool lbann::persist::write_hdf5_distmat(std::string group_name, const char *name
     if (is_master){
       weight_group = getGroup(group_name); 
       H5::DataSet dataset = weight_group.createDataSet(name, hdf5_type, dataspace);
+      #ifdef LBANN_HAS_CUDA
+      CircMat<El::Device::CPU> temp = *M;
+      dataset.write(temp.LockedBuffer(), hdf5_type);
+      #else
       dataset.write(M->LockedBuffer(), hdf5_type); 
+      #endif
     }
   } else {
     CircMat<El::Device::CPU> temp = *M;
