@@ -52,7 +52,8 @@ class generic_input_layer : public io_layer {
       m_training_dataset(),
       m_testing_dataset(),
       m_validation_dataset(),
-      m_data_readers(data_readers) {
+      m_data_readers(data_readers),
+      m_data_set_processed(false) {
       //m_data_sets_span_models(data_sets_span_models) {
     // Input layers have no parents
     m_expected_num_parent_layers = 0;
@@ -240,7 +241,7 @@ class generic_input_layer : public io_layer {
     // Initialize matrices
     io_layer::fp_setup_data(mini_batch_size);
 
-    // Once the current mini-batch size is defined, set the standard view for activations only
+    // Local matrix bypass is only allowed it there is only a single io_buffer
     if(m_io_buffers.size() == 1) {
       for (int i = 0; i < get_num_children(); ++i) {
         m_io_buffers[0]->set_local_matrix_bypass(static_cast<CPUMat*>(&get_local_activations(i)), i);
@@ -263,9 +264,18 @@ class generic_input_layer : public io_layer {
 
     generic_io_buffer* io_buffer = m_io_buffers[m_active_buffer];
 
-    int num_samples_in_batch = io_buffer->fetch_to_local_matrix(get_data_reader(), mode);
+    int num_samples_in_batch;
+    if(io_buffer->num_samples_ready(mode) > 0) {
+      num_samples_in_batch = io_buffer->num_samples_ready(mode);
+    }else {
+      num_samples_in_batch = io_buffer->fetch_to_local_matrix(get_data_reader(), mode);
+    }
 
     if(dynamic_cast<partitioned_io_buffer*>(io_buffer) != nullptr) {
+      if(num_samples_in_batch != get_current_mini_batch_size()) {
+        LBANN_ERROR("Not enough samples: " + std::to_string(num_samples_in_batch)
+                    + " and mini-batch size: " + std::to_string(get_current_mini_batch_size()));
+      }
       // Use the predetermined size of the mini-batch to set the current
       // batch size for the neural network
       num_samples_in_batch = get_current_mini_batch_size();
@@ -305,18 +315,35 @@ class generic_input_layer : public io_layer {
           << "could not fp_compute for I/O layers : encoutered generic_io_buffer type";
       throw lbann_exception(err.str());
     }
+
+    m_data_set_processed = io_buffer->update_data_set(get_data_reader(), this->m_model->get_execution_mode());
   }
 
   void bp_compute() override {}
+
+  void setup_next_io_buffer(generic_io_buffer* io_buffer) {
+    int mini_batch_size = get_current_mini_batch_size();
+    for (int i = 0; i < get_num_children(); ++i) {
+      io_buffer->fp_setup_data(mini_batch_size, i);
+    }
+  }
 
   /**
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
   bool update_compute() override {
     generic_io_buffer* io_buffer = m_io_buffers[m_active_buffer];
-    /// Only update the active buffer index once the entire FP, BP,  update phases are completed
+    /// Only update the active buffer index once the entire FP, BP, update phases are completed
     m_active_buffer = (m_active_buffer + 1) % m_io_buffers.size();
-    return io_buffer->is_data_set_processed(get_data_reader(), this->m_model->get_execution_mode());
+
+    if(!m_data_set_processed && m_io_buffers.size() > 1) {
+      execution_mode mode = this->m_model->get_execution_mode();
+      io_buffer = m_io_buffers[m_active_buffer];
+      setup_next_io_buffer(io_buffer);
+      io_buffer->fetch_to_local_matrix(get_data_reader(), mode);
+    }
+
+    return m_data_set_processed;
   }
 
   //************************************************************************
@@ -902,6 +929,7 @@ class generic_input_layer : public io_layer {
 
   data_reader_map_t m_data_readers;
  //  std::map<execution_mode, dataset_stats> m_dataset_stats;
+  bool m_data_set_processed;
 };
 
 template<> inline void generic_input_layer::initialize_io_buffer<partitioned_io_buffer>(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers) {

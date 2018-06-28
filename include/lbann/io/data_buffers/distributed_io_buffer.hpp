@@ -125,7 +125,8 @@ class distributed_io_buffer : public generic_io_buffer {
 
   int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) override;
   void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample, AbsDistMat& response) override;
-  bool is_data_set_processed(generic_data_reader *data_reader, execution_mode mode) override;
+  bool update_data_set(generic_data_reader *data_reader, execution_mode mode) override;
+  int num_samples_ready(execution_mode mode) override;
 
   void calculate_num_iterations_per_epoch(int num_models, int model_rank, int max_mini_batch_size, generic_data_reader *data_reader);
   void calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader) override;

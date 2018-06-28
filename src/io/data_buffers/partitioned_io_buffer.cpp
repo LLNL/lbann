@@ -29,7 +29,8 @@
 
 lbann::partitioned_io_buffer::partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, int num_child_layers)
   : generic_io_buffer(comm, num_parallel_readers, data_readers),
-    M_local(num_child_layers, nullptr) {
+    M_local(num_child_layers, nullptr),
+    m_num_samples_fetched(0) {
   M_local[0] = new CPUMat();
   M_local[1] = new CPUMat();
 }
@@ -37,7 +38,7 @@ lbann::partitioned_io_buffer::partitioned_io_buffer(lbann_comm *comm, int num_pa
 int lbann::partitioned_io_buffer::fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) {
   int num_parallel_readers = data_reader->get_num_parallel_readers();
 
-  int num_samples_fetched = 0;
+  m_num_samples_fetched = 0;
 
   /// Coordinate all available readers so that the perform I/O in the same step
   /// Check to make sure that the local matrix has space for data
@@ -49,16 +50,16 @@ int lbann::partitioned_io_buffer::fetch_to_local_matrix(generic_data_reader *dat
     /// Each data reader needs to either have independent / split
     /// data, or take an offset / stride
     if(M_local.size() == 2) {
-      num_samples_fetched = (*fetch_data_fn)(*M_local[0], *M_local[1], data_reader);
+      m_num_samples_fetched = (*fetch_data_fn)(*M_local[0], *M_local[1], data_reader);
     }else {
-      num_samples_fetched = (*fetch_data_fn)(*M_local[0], data_reader);
+      m_num_samples_fetched = (*fetch_data_fn)(*M_local[0], data_reader);
     }
-    bool data_valid = (num_samples_fetched > 0);
+    bool data_valid = (m_num_samples_fetched > 0);
     if(data_valid) {
       //      m_num_data_per_epoch+=num_samples_fetched; /// BVE FIXME need to change how this is shared
     }
   }
-  return num_samples_fetched;
+  return m_num_samples_fetched;
 }
 
 void lbann::partitioned_io_buffer::distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample, AbsDistMat& response) {
@@ -69,10 +70,11 @@ void lbann::partitioned_io_buffer::distribute_from_local_matrix(generic_data_rea
   if(M_local[1] != &(response.Matrix())) {
     Copy(*M_local[1], response.Matrix());
   }
+  m_num_samples_fetched = 0;
   return;
 }
 
-bool lbann::partitioned_io_buffer::is_data_set_processed(generic_data_reader *data_reader, execution_mode mode) {
+bool lbann::partitioned_io_buffer::update_data_set(generic_data_reader *data_reader, execution_mode mode) {
   int num_iterations_per_epoch = data_reader->get_num_iterations_per_epoch();
   int current_step_in_epoch = data_reader->get_current_step_in_epoch(); // Get the current step before the update function increments it
 
@@ -83,6 +85,10 @@ bool lbann::partitioned_io_buffer::is_data_set_processed(generic_data_reader *da
   } else {
     return false;
   }
+}
+
+int lbann::partitioned_io_buffer::num_samples_ready(execution_mode mode) {
+  return m_num_samples_fetched;
 }
 
 int lbann::partitioned_io_buffer::compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const {

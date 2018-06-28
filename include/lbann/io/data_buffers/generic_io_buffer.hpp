@@ -109,7 +109,8 @@ public:
 
   virtual int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) = 0;
   virtual void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample, AbsDistMat& response) {}
-  virtual bool is_data_set_processed(generic_data_reader *data_reader, execution_mode mode) = 0;
+  virtual bool update_data_set(generic_data_reader *data_reader, execution_mode mode) = 0;
+  virtual int num_samples_ready(execution_mode mode) = 0;
 
   virtual void calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader) = 0;
   virtual void calculate_num_iterations_per_epoch_single_model(int max_mini_batch_size, generic_data_reader *data_reader) = 0;
