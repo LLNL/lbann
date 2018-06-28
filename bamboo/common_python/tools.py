@@ -200,7 +200,7 @@ def get_command(cluster,
         option_model = ' --model=%s' % model_path
     if data_reader_path != None:
         # If data_reader_name is set, an exception will be raised later.
-        option_data_reader_name = ' --reader=%s' % data_reader_path
+        option_data_reader = ' --reader=%s' % data_reader_path
     if optimizer_path != None:
         # If optimizer_name is set, an exception will be raised later.
         option_optimizer_name = ' --optimizer=%s' % optimizer_path
@@ -261,7 +261,7 @@ def get_command(cluster,
             option_data_filedir_train  = ' --data_filedir_train=%s'  % re.sub('[a-z]scratch[a-z]', 'gscratchr', data_filedir_train_default)
             option_data_filename_train = ' --data_filename_train=%s' % re.sub('[a-z]scratch[a-z]', 'gscratchr', data_filename_train_default)
             option_data_filedir_test   = ' --data_filedir_test=%s'   % re.sub('[a-z]scratch[a-z]', 'gscratchr', data_filedir_test_default)
-            option_data_filename_train = ' --data_filename_test=%s'  % re.sub('[a-z]scratch[a-z]', 'gscratchr', data_filename_test_default)
+            option_data_filename_test = ' --data_filename_test=%s'  % re.sub('[a-z]scratch[a-z]', 'gscratchr', data_filename_test_default)
     if (data_reader_name != None) or (data_reader_path != None):
         if data_filedir_default != None:
             if data_file_parameters != [None, None, None, None]: # If any are not None

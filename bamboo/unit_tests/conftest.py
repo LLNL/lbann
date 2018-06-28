@@ -18,7 +18,7 @@ def pytest_addoption(parser):
         default_exes['intel18'] = '%s/bamboo/compiler_tests/builds/%s_intel-18.0.0_x86_64_gpu_mvapich2-2.2_openblas_rel/build/model_zoo/lbann' % (default_dirname, cluster)
 
     if cluster == 'ray':
-        default_exes['gcc4'] = '%s/bamboo/compiler_tests/builds/%s_gcc-4.9.3_ppc64le_gpu_spectrum-mpi-2018.04.27_openblas_rel/build/model_zoo/lbann' % (default_dirname, cluster)
+        default_exes['gcc4'] = '%s/bamboo/compiler_tests/builds/%s_gcc-4.9.3_ppc64le_gpu_cuda-9.2.64_cudnn-7.0_spectrum-mpi-2018.04.27_openblas_rel/build/model_zoo/lbann' % (default_dirname, cluster)
 
     if cluster == 'surface':
         default_exes['gcc4'] = default_exes['default']

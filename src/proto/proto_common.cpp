@@ -49,6 +49,18 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
   const lbann_data::DataReader & d_reader = p.data_reader();
   int size = d_reader.reader_size();
 
+  // A separate explicit validation set is created only if a reader with role "validate"
+  // is found in the list of data readers. Otherwise, a validation set is created as a
+  // percentage of data from the train set.
+  bool separate_validation = false;
+  for (int j=0; j<size; j++) {
+    const lbann_data::Reader& readme = d_reader.reader(j);
+    if (readme.role() == "validate") {
+        separate_validation = true;
+        break;
+    }
+  }
+
   for (int j=0; j<size; j++) {
     const lbann_data::Reader& readme = d_reader.reader(j);
     // This is a temporary measure until we individually setup data reader specific preprocessors
@@ -61,10 +73,10 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
     generic_data_reader *reader = nullptr;
     generic_data_reader *reader_validation = nullptr;
 
-    if ((name == "imagenet_org") || (name == "mnist") || (name == "cifar10")) {
+    if ((name == "mnist") || (name == "cifar10")) {
       init_org_image_data_reader(readme, master, reader);
       set_up_generic_preprocessor = false;
-    } else if ((name == "imagenet") || (name == "imagenet_single") || (name == "imagenet_patches") ||
+    } else if ((name == "imagenet") || (name == "imagenet_patches") ||
                (name == "triplet") || (name == "mnist_siamese") || (name == "multi_images")) {
       init_image_data_reader(readme, master, reader);
       set_up_generic_preprocessor = false;
@@ -198,8 +210,6 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
 
     } else if (name == "synthetic") {
       reader = new data_reader_synthetic(readme.num_samples(), readme.num_features(), shuffle);
-    } else if (name == "ascii") {
-      reader = new ascii_reader(p.model().recurrent().unroll_depth(), shuffle);
     } else if (name == "mesh") {
       reader = new mesh_reader(shuffle);
     } else {
@@ -250,11 +260,13 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       reader->set_role("train");
     } else if (readme.role() == "test") {
       reader->set_role("test");
+    } else if (readme.role() == "validate") {
+      reader->set_role("validate");
     } else {
       reader->set_role("error");
     }
     if (readme.role() == "train") {
-      if (create_tarball) {
+      if (create_tarball || separate_validation) {
         reader->set_validation_percent( 0. );
       } else {
         reader->set_validation_percent( readme.validation_percent() );
@@ -269,20 +281,20 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
     if (readme.role() == "train") {
       data_readers[execution_mode::training] = reader;
     } else if (readme.role() == "test") {
+      // While the default validation_percent is 0.0, this line is added to be consistent with the case of "train"
+      reader->set_validation_percent( 0. );
       data_readers[execution_mode::testing] = reader;
+    } else if (readme.role() == "validate") {
+      reader->set_validation_percent( 0. );
+      data_readers[execution_mode::validation] = reader;
     }
 
-    if (readme.role() == "train" && readme.validation_percent() > 0. && !create_tarball) {
+    if (readme.role() == "train" && readme.validation_percent() > 0. && !create_tarball && !separate_validation) {
       if (name == "mnist") {
         reader_validation = new mnist_reader(shuffle);
         (*(mnist_reader *)reader_validation) = (*(mnist_reader *)reader);
-      } else if (name == "imagenet_org") {
-        reader_validation = new imagenet_reader_org(shuffle);
-        (*(imagenet_reader_org *)reader_validation) = (*(imagenet_reader_org *)reader);
       } else if (name == "imagenet") {
         reader_validation = new imagenet_reader(*dynamic_cast<const imagenet_reader*>(reader));
-      } else if (name == "imagenet_single") {
-        reader_validation = new imagenet_reader_single(*dynamic_cast<const imagenet_reader_single*>(reader));
       } else if (name == "imagenet_patches") {
         reader_validation = new imagenet_reader_patches(*dynamic_cast<const imagenet_reader_patches*>(reader));
       } else if (name == "triplet") {
@@ -318,9 +330,6 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
         } else if (name == "synthetic") {
         reader_validation = new data_reader_synthetic(shuffle);
         */
-      } else if (name == "ascii") {
-        reader_validation = new ascii_reader(p.model().recurrent().unroll_depth(), shuffle);
-        (*(ascii_reader *)reader_validation) = (*(ascii_reader *)reader);
       } else if (name == "mesh") {
         reader_validation = new mesh_reader(shuffle);
         (*(mesh_reader *)reader_validation) = (*(mesh_reader *)reader);
@@ -340,6 +349,20 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
 
       data_readers[execution_mode::validation] = reader_validation;
     }
+  }
+
+  if (master) {
+    if (separate_validation) {
+      const generic_data_reader* r_train = data_readers[execution_mode::training];
+      const generic_data_reader* r_validate = data_readers[execution_mode::validation];
+      const size_t num_train = (r_train == nullptr)? 0u : r_train->get_num_data();
+      const size_t num_validate = (r_validate == nullptr)? 0u : r_validate->get_num_data();
+      std::cout << "Training using " << num_train << " samples." << std::endl
+                << "Validating using " << num_validate << " samples." << std::endl;
+    }
+    const generic_data_reader* r_test = data_readers[execution_mode::testing];
+    const size_t num_test = (r_test == nullptr)? 0u : r_test->get_num_data();
+    std::cout << "Testing using " << num_test << " samples." << std::endl;
   }
 }
 

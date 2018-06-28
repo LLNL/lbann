@@ -46,8 +46,7 @@ class safe_inv_layer : public transform_layer {
  public:
 
   safe_inv_layer(lbann_comm *comm,
-                 DataType threshhold = DataType(0),
-                 cudnn::cudnn_manager *cudnn = nullptr)
+                 DataType threshhold = DataType(0))
     : transform_layer(comm), m_threshhold(threshhold) {}
 
   safe_inv_layer* copy() const override { return new safe_inv_layer(*this); }
@@ -89,7 +88,7 @@ class safe_inv_layer : public transform_layer {
         const DataType x = local_input(row, col);
         const DataType dy = local_gradient_wrt_output(row, col);
         DataType& dx = local_gradient_wrt_input(row, col);
-        dx += std::fabs(x) > m_threshhold ?  - dy / (x * x) : DataType(0);
+        dx = std::fabs(x) > m_threshhold ?  - dy / (x * x) : DataType(0);
       }
     }
   }

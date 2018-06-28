@@ -170,12 +170,12 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_com
     El::Gemm(m_transpose ? El::NORMAL : El::TRANSPOSE,
              El::NORMAL,
              DataType(1), local_linearity, local_gradient_wrt_output,
-             DataType(1), local_gradient_wrt_input);
+             DataType(0), local_gradient_wrt_input);
   } else {
     El::Gemm(m_transpose ? El::NORMAL : El::TRANSPOSE,
              El::NORMAL,
              DataType(1), linearity, gradient_wrt_output,
-             DataType(1), gradient_wrt_input);
+             DataType(0), gradient_wrt_input);
   }
 
 }
@@ -253,7 +253,7 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_comp
   El::Gemm(m_transpose ? El::NORMAL : El::TRANSPOSE,
            El::NORMAL,
            DataType(1), local_linearity, local_gradient_wrt_output,
-           DataType(1), local_gradient_wrt_input);
+           DataType(0), local_gradient_wrt_input);
 
 }
 
@@ -261,9 +261,6 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_comp
 /** GPU implementation of forward prop computation. */
 template <>
 void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
-#ifndef LBANN_HAS_CUDNN
-  throw lbann_exception("fully_connected: CUDA not detected");
-#else
 
   // Matrices
   const auto& local_input = get_local_prev_activations();
@@ -290,15 +287,11 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_comp
              DataType(1), local_output);
   }
   
-#endif // LBANN_HAS_CUDNN
 }
 
 /** GPU implementation of backward prop computation. */
 template <>
 void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
-#ifndef LBANN_HAS_CUDNN
-  throw lbann_exception("fully_connected: CUDA not detected");
-#else
 
   // Effective mini-batch size
   const int mini_batch_size = this->m_model->get_effective_mini_batch_size();
@@ -313,15 +306,20 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_comp
   optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
   if (m_bias_scaling_factor != DataType(0)
       && bias_optimizer != nullptr) {
-    GPUMat ones;
+    if (local_gradient_wrt_output.Height() < 1
+        || local_gradient_wrt_output.Width() < 1) {
+      El::Zero(*m_bias_gradient);
+    } else {
+      GPUMat ones;
 #ifdef HYDROGEN_HAVE_CUB
-    ones.SetMemoryMode(1); // Use CUB GPU memory pool if possible
+      ones.SetMemoryMode(1); // Use CUB GPU memory pool if possible
 #endif // HYDROGEN_HAVE_CUB
-    ones.Resize(local_input.Width(), 1);
-    El::Fill(ones, DataType(1));
-    El::Gemv(El::NORMAL,
-             m_bias_scaling_factor, local_gradient_wrt_output, ones,
-             DataType(0), m_bias_gradient->Matrix());
+      ones.Resize(local_gradient_wrt_output.Width(), 1);
+      El::Fill(ones, DataType(1));
+      El::Gemv(El::NORMAL,
+               m_bias_scaling_factor, local_gradient_wrt_output, ones,
+               DataType(0), m_bias_gradient->Matrix());
+    }
     bias_optimizer->add_to_gradient_staging(
       *m_bias_gradient,
       m_bias_scaling_factor / mini_batch_size);
@@ -348,16 +346,13 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_comp
   El::Gemm(m_transpose ? El::NORMAL : El::TRANSPOSE,
            El::NORMAL,
            DataType(1), local_linearity, local_gradient_wrt_output,
-           DataType(1), local_gradient_wrt_input);
+           DataType(0), local_gradient_wrt_input);
 
-#endif // LBANN_HAS_CUDNN
 }
 
 template <>
 void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
-#ifndef LBANN_HAS_CUDNN
-  throw lbann_exception("fully_connected: CUDA not detected");
-#else
+
   // Matrices
   const auto& input = get_prev_activations();
   auto& output = get_activations();
@@ -392,14 +387,10 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_com
              DataType(1), output.Matrix());
   }
   
-#endif // LBANN_HAS_CUDNN
 }
 
 template <>
 void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
-#ifndef LBANN_HAS_CUDNN
-  throw lbann_exception("fully_connected: CUDA not detected");
-#else
 
   // Effective mini-batch size
   const int mini_batch_size = this->m_model->get_effective_mini_batch_size();
@@ -419,15 +410,20 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_com
   optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
   if (m_bias_scaling_factor != DataType(0)
       && bias_optimizer != nullptr) {
-    GPUMat ones;
+    if (local_gradient_wrt_output.Height() < 1
+        || local_gradient_wrt_output.Width() < 1) {
+      El::Zero(*m_bias_gradient);
+    } else {
+      GPUMat ones;
 #ifdef HYDROGEN_HAVE_CUB
-    ones.SetMemoryMode(1); // Use CUB GPU memory pool if possible
+      ones.SetMemoryMode(1); // Use CUB GPU memory pool if possible
 #endif // HYDROGEN_HAVE_CUB
-    ones.Resize(input.LocalWidth(), 1);
-    El::Fill(ones, DataType(1));
-    El::Gemv(El::NORMAL,
-             m_bias_scaling_factor, local_gradient_wrt_output, ones,
-             DataType(0), m_bias_gradient->Matrix());
+      ones.Resize(local_gradient_wrt_output.Width(), 1);
+      El::Fill(ones, DataType(1));
+      El::Gemv(El::NORMAL,
+               m_bias_scaling_factor, local_gradient_wrt_output, ones,
+               DataType(0), m_bias_gradient->Matrix());
+    }
     bias_optimizer->add_to_gradient_staging(
       *m_bias_gradient,
       m_bias_scaling_factor / mini_batch_size);
@@ -472,15 +468,14 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_com
     El::Gemm(m_transpose ? El::NORMAL : El::TRANSPOSE,
              El::NORMAL,
              DataType(1), local_linearity, local_gradient_wrt_output,
-             DataType(1), local_gradient_wrt_input);
+             DataType(0), local_gradient_wrt_input);
   } else {
     El::Gemm(m_transpose ? El::NORMAL : El::TRANSPOSE,
              El::NORMAL,
              DataType(1), linearity, gradient_wrt_output,
-             DataType(1), gradient_wrt_input);
+             DataType(0), gradient_wrt_input);
   }
   
-#endif // LBANN_HAS_CUDNN
 }
 #endif // LBANN_HAS_GPU
 

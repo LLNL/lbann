@@ -29,7 +29,6 @@
 
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/cublas_wrapper.hpp"
 
 namespace lbann {
 
@@ -53,8 +52,7 @@ class concatenation_layer : public transform_layer {
  public:
 
   concatenation_layer(lbann_comm *comm,
-                      int concatenation_axis,
-                      cudnn::cudnn_manager *cudnn = nullptr)
+                      int concatenation_axis)
     : transform_layer(comm),
       m_concatenation_axis(concatenation_axis),
       m_input_region_v(nullptr),
@@ -62,13 +60,6 @@ class concatenation_layer : public transform_layer {
 
     // Concatenation layer has no limit on parents
     m_expected_num_parent_layers = -1;
-
-  #ifdef LBANN_HAS_CUDNN
-    // Initialize GPU if available
-    if(cudnn) {
-      this->m_cudnn = cudnn;
-    }
-  #endif // LBANN_HAS_CUDNN
 
   }
 
@@ -302,7 +293,7 @@ class concatenation_layer : public transform_layer {
                  El::IR(region * input_region_stride,
                         (region+1) * input_region_stride),
                  El::ALL);
-        El::Axpy(DataType(1), *m_output_region_v, *m_input_region_v);
+        El::Copy(*m_output_region_v, *m_input_region_v);
       }
     }
 

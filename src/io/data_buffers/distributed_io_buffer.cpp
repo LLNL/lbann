@@ -27,12 +27,13 @@
 #include "lbann/io/data_buffers/distributed_io_buffer.hpp"
 #include "lbann/utils/exception.hpp"
 
-lbann::distributed_io_buffer::distributed_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
+lbann::distributed_io_buffer::distributed_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, int num_child_layers)
   : generic_io_buffer(comm, num_parallel_readers, data_readers),
-    m_requested_max_num_parallel_readers(num_parallel_readers) {
-  m_data_buffers[execution_mode::training] = new data_buffer(comm);
-  m_data_buffers[execution_mode::validation] = new data_buffer(comm);
-  m_data_buffers[execution_mode::testing] = new data_buffer(comm);
+    m_requested_max_num_parallel_readers(num_parallel_readers),
+    m_num_child_layers(num_child_layers) {
+  m_data_buffers[execution_mode::training] = new data_buffer(comm, num_child_layers);
+  m_data_buffers[execution_mode::validation] = new data_buffer(comm, num_child_layers);
+  m_data_buffers[execution_mode::testing] = new data_buffer(comm, num_child_layers);
 }
 
 int lbann::distributed_io_buffer::fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) {
@@ -43,12 +44,17 @@ int lbann::distributed_io_buffer::fetch_to_local_matrix(generic_data_reader *dat
   data_buffer *buf = get_data_buffer(mode);
   if (buf->m_root == 0) {
     if (m_comm->get_rank_in_model() < num_parallel_readers && !buf->m_local_reader_done) {
-      Zero(*buf->M_local[0]);
-      Zero(*buf->M_local[1]);
+      for(auto& m : buf->M_local) {
+        Zero(*m);
+      }
 
       /// Each data reader needs to either have independent / split
       /// data, or take an offset / stride
-      buf->m_num_samples_in_batch = (*fetch_data_fn)(*buf->M_local[0], *buf->M_local[1], data_reader);
+      if(buf->M_local.size() == 2) {
+        buf->m_num_samples_in_batch = (*fetch_data_fn)(*buf->M_local[0], *buf->M_local[1], data_reader);
+      }else {
+        buf->m_num_samples_in_batch = (*fetch_data_fn)(*buf->M_local[0], data_reader);
+      }
       bool data_valid = (buf->m_num_samples_in_batch > 0);
       if(data_valid) {
         buf->m_num_data_per_epoch+=buf->m_num_samples_in_batch;

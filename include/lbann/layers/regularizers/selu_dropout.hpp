@@ -136,7 +136,7 @@ class selu_dropout : public regularizer_layer {
   void bp_compute() override {
     if (this->m_model->get_execution_mode() != execution_mode::training
         || m_keep_prob < 0.0f) {
-      El::LockedView(get_error_signals(), get_prev_error_signals());
+      El::Copy(get_prev_error_signals(), get_error_signals());
     } else {
 
       Mat& local_prev_error_signal = get_local_prev_error_signals();

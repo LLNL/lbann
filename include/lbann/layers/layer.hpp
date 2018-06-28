@@ -32,7 +32,6 @@
 #include "lbann/utils/summary.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/io/persist.hpp"
 #include <lbann.pb.h>
@@ -41,8 +40,9 @@
 
 namespace lbann {
 
-// Forward declaration
+// Forward declarations
 class model;
+class weights;
 class lbann_callback_sync_layers;
 
 /** Abstract base class for neural network layers.
@@ -113,11 +113,7 @@ class Layer {
    *  (the previous error signals), compute the gradients w.r.t. the
    *  previous activations (the error signals) and w.r.t. the
    *  weights. This is essentially an application of the chain
-   *  rule. Note that the objective function may have terms that are
-   *  independent of the activations, so we add to the gradients
-   *  rather than overwriting them. This means the error signals and
-   *  weight gradients must be cleared before performing backward
-   *  propagation (see the clear_error_signals function).
+   *  rule.
    */
   virtual void back_prop();
   /** Update step.
@@ -125,11 +121,6 @@ class Layer {
    *  step for the weights happens elsewhere.
    */
   virtual bool update();
-
-  /** Set the error signal tensors to zero.
-   *  The error signals are resized for the current mini-batch size.
-   */
-  virtual void clear_error_signals(int mini_batch_size);
 
   virtual void summarize_stats(lbann_summary& summarizer, int step);
   virtual void summarize_matrices(lbann_summary& summarizer, int step);
@@ -338,8 +329,6 @@ class Layer {
 
   /** Get reference to LBANN communicator. */
   lbann_comm* get_comm() const { return m_comm; }
-  /** Get reference to cuDNN manager. */
-  cudnn::cudnn_manager* get_cudnn_manager() const { return m_cudnn; }
 
   void freeze();
   void unfreeze();
@@ -424,9 +413,8 @@ class Layer {
    */
   virtual void fp_setup_data(int mini_batch_size);
   /** Setup data for forward propagation.
-   *  Base method gets previous error signals from child layers. The
-   *  error signals are resized for the current mini-batch size in the
-   *  clear_error_signals function.
+   *  Base method gets previous error signals from child layers and
+   *  resizes error signals for the current mini-batch size.
    */
   virtual void bp_setup_data(int mini_batch_size);
 
@@ -458,38 +446,23 @@ class Layer {
   /** Setup GPU objects.
    *  Called by the setup function if GPUs are enabled. The base
    *  method initializes GPU matrices for the previous activations,
-   *  activations, previous error signals, and error signals. It also
-   *  initializes cuDNN tensor descriptors.
+   *  activations, previous error signals, and error signals.
    */
-  virtual void setup_gpu();
+  virtual void setup_gpu() {}
 
   /** Perform the computation for the forward propagation step. */
   virtual void fp_compute() = 0;
-  /** Perform the computation for the backward propagation step. */
-  virtual void bp_compute() = 0;
+  /** Perform the computation for the backward propagation step.
+   *  The base implementation sets all error signals to zero.
+   */
+  virtual void bp_compute();
   /** Perform the computation for the update step.
    *  Returns false if the layer must reset for a new training epoch.
    */
   virtual bool update_compute() { return true; }
 
-  /** Reference to cuDNN manager. */
-  cudnn::cudnn_manager *m_cudnn;
-
   /** Avoid back prop if frozen */
   bool m_frozen;
-
-#ifdef LBANN_HAS_CUDNN
-
-  /** cuDNN descriptor for first previous activation tensor. */
-  cudnnTensorDescriptor_t m_prev_activations_cudnn_desc;
-  /** cuDNN descriptor for first activations tensor. */
-  cudnnTensorDescriptor_t m_activations_cudnn_desc;
-  /** cuDNN descriptor for first previous error signal tensor. */
-  cudnnTensorDescriptor_t m_prev_error_signals_cudnn_desc;
-  /** cuDNN descriptor for first error signal tensor. */
-  cudnnTensorDescriptor_t m_error_signals_cudnn_desc;
-
-#endif // LBANN_HAS_CUDNN
 
   /** Time spent in forward propagation. */
   EvalType m_fp_time;

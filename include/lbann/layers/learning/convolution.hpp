@@ -29,11 +29,7 @@
 
 #include <vector>
 #include "lbann/layers/learning/base_convolution.hpp"
-#include "lbann/layers/layer.hpp"
-#include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/random.hpp"
-#include "lbann/utils/timer.hpp"
 
 namespace lbann {
 
@@ -104,16 +100,14 @@ class convolution_layer : public base_convolution_layer<Dev> {
                     int conv_dim,
                     int pad,
                     int stride,
-                    bool has_bias = true,
-                    cudnn::cudnn_manager *cudnn = nullptr)
+                    bool has_bias = true)
     : convolution_layer(comm,
                         num_data_dims,
                         num_output_channels,
                         std::vector<int>(num_data_dims, conv_dim),
                         std::vector<int>(num_data_dims, pad),
                         std::vector<int>(num_data_dims, stride),
-                        has_bias,
-                        cudnn) {}
+                        has_bias) {}
 
   convolution_layer(lbann_comm *comm,
                     int num_data_dims,
@@ -121,16 +115,14 @@ class convolution_layer : public base_convolution_layer<Dev> {
                     std::vector<int> conv_dims,
                     std::vector<int> pads,
                     std::vector<int> strides,
-                    bool has_bias = true,
-                    cudnn::cudnn_manager *cudnn = nullptr)
+                    bool has_bias = true)
     : base_convolution_layer<Dev>(comm,
                                   num_data_dims,
                                   num_output_channels,
                                   conv_dims,
                                   pads,
                                   strides,
-                                  has_bias,
-                                  cudnn) {
+                                  has_bias) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "convolution only supports DATA_PARALLEL");
 

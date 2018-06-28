@@ -67,6 +67,8 @@ WITH_CUDA=
 WITH_TOPO_AWARE=ON
 INSTRUMENT=
 WITH_ALUMINUM=OFF
+ALUMINUM_WITH_MPI_CUDA=OFF
+ALUMINUM_WITH_NCCL=OFF
 WITH_CONDUIT=OFF
 WITH_TBINF=OFF
 RECONFIGURE=0
@@ -120,10 +122,11 @@ Options:
   ${C}--build${N}                 Specify alternative build directory; default is <lbann_home>/build.
   ${C}--suffix${N}                Specify suffix for build directory. If you are, e.g, building on surface, your build will be <someplace>/surface.llnl.gov, regardless of your choice of compiler or other flags. This option enables you to specify, e.g: --suffix gnu_debug, in which case your build will be in the directory <someplace>/surface.llnl.gov.gnu_debug
   ${C}--instrument${N}            Use -finstrument-functions flag, for profiling stack traces
-  ${C}--use-nccl${N}              Use NCCL library
   ${C}--disable-cuda${N}          Disable CUDA
   ${C}--disable-topo-aware${N}    Disable topological-aware configuration (no HWLOC)
   ${C}--with-aluminum${N}              Use Aluminum allreduce library
+  ${C}--aluminum-with-mpi-cuda         Enable MPI-CUDA backend in Aluminum
+  ${C}--aluminum-with-nccl             Enable NCCL backend in Aluminum
 EOF
 }
 
@@ -232,14 +235,19 @@ while :; do
         --disable-cuda)
             WITH_CUDA=OFF
             ;;
-        --use-nccl)
-            WITH_NCCL=ON
-            ;;
         --disable-topo-aware)
             WITH_TOPO_AWARE=OFF
             ;;
         --with-aluminum)
             WITH_ALUMINUM=ON
+            ;;
+        --aluminum-with-mpi-cuda)
+            WITH_ALUMINUM=ON
+            ALUMINUM_WITH_MPI_CUDA=ON
+            ;;
+        --aluminum-with-nccl)
+            WITH_ALUMINUM=ON
+            ALUMINUM_WITH_NCCL=ON
             ;;
         --with-conduit)
             WITH_CONDUIT=ON
@@ -269,7 +277,7 @@ done
 # Determine whether system uses modules
 USE_MODULES=0
 case $TOSS in
-	3.10.0|4.11.0) 
+	3.10.0|4.11.0)
 		USE_MODULES=1
 		;;
 	2.6.32)
@@ -290,14 +298,15 @@ fi
 # Load packages
 if [ ${USE_MODULES} -ne 0 ]; then
     module load git
-    CMAKE_PATH=/usr/workspace/wsb/brain/utils/toss3/cmake-3.9.6/bin
+    module load cmake/3.9.2
+    CMAKE_PATH=$(dirname $(which cmake))
 else
     if [ "${CLUSTER}" == "surface" ]; then
         use git-2.8.0
         CMAKE_PATH=/usr/workspace/wsb/brain/utils/toss2/cmake-3.9.6/bin
     else
         use git
-        #use cmake
+        CMAKE_PATH=/usr/workspace/wsb/brain/utils/toss2/cmake-3.9.6/bin
     fi
 fi
 
@@ -396,7 +405,7 @@ if [ "${BUILD_TYPE}" == "Release" ]; then
             C_FLAGS="${C_FLAGS} -march=ivybridge -mtune=ivybridge"
             CXX_FLAGS="${CXX_FLAGS} -march=ivybridge -mtune=ivybridge"
             Fortran_FLAGS="${Fortran_FLAGS} -march=ivybridge -mtune=ivybridge"
-        elif [ "${CLUSTER}" == "quartz" ]; then
+        elif [ "${CLUSTER}" == "quartz" ] || [ "${CLUSTER}" == "pascal" ] ; then
             C_FLAGS="${C_FLAGS} -march=broadwell -mtune=broadwell"
             CXX_FLAGS="${CXX_FLAGS} -march=broadwell -mtune=broadwell"
             Fortran_FLAGS="${Fortran_FLAGS} -march=broadwell -mtune=broadwell"
@@ -633,7 +642,7 @@ if [ "${CLUSTER}" == "sierra" ]; then
 else
 	OPENBLAS_ARCH=
 fi
-	
+
 ################################################################
 # Display parameters
 ################################################################
@@ -727,7 +736,7 @@ fi
 
 # Configure build with CMake
 CONFIGURE_COMMAND=$(cat << EOF
-${CMAKE_PATH}/cmake \
+ ${CMAKE_PATH}/cmake \
 -D CMAKE_EXPORT_COMPILE_COMMANDS=ON \
 -D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
 -D CMAKE_INSTALL_MESSAGE=${CMAKE_INSTALL_MESSAGE} \
@@ -739,14 +748,16 @@ ${CMAKE_PATH}/cmake \
 -D LBANN_SB_BUILD_OPENCV=ON \
 -D LBANN_SB_BUILD_JPEG_TURBO=ON \
 -D LBANN_SB_BUILD_PROTOBUF=ON \
--D LBANN_SB_BUILD_CUB=${WITH_CUB}
+-D LBANN_SB_BUILD_CUB=${WITH_CUB} \
+-D LBANN_SB_BUILD_ALUMINUM=${WITH_ALUMINUM} \
+-D ALUMINUM_ENABLE_MPI_CUDA=${ALUMINUM_WITH_MPI_CUDA} \
+-D ALUMINUM_ENABLE_NCCL=${ALUMINUM_WITH_NCCL} \
 -D LBANN_SB_BUILD_LBANN=ON \
 -D CMAKE_CXX_FLAGS="${CXX_FLAGS}" \
 -D CMAKE_C_FLAGS="${C_FLAGS}" \
 -D CMAKE_C_COMPILER=${C_COMPILER} \
 -D CMAKE_CXX_COMPILER=${CXX_COMPILER} \
 -D CMAKE_Fortran_COMPILER=${Fortran_COMPILER} \
--D LBANN_WITH_NCCL=${WITH_NCCL} \
 -D LBANN_WITH_CUDA=${WITH_CUDA} \
 -D LBANN_WITH_NVPROF=${WITH_NVPROF} \
 -D LBANN_WITH_VTUNE=${WITH_VTUNE} \
@@ -754,7 +765,6 @@ ${CMAKE_PATH}/cmake \
 -D LBANN_WITH_TOPO_AWARE=${WITH_TOPO_AWARE} \
 -D LBANN_SEQUENTIAL_INITIALIZATION=${SEQ_INIT} \
 -D LBANN_WITH_ALUMINUM=${WITH_ALUMINUM} \
--D LBANN_ALUMINUM_DIR=${ALUMINUM_DIR} \
 -D LBANN_WITH_CONDUIT=${WITH_CONDUIT} \
 -D LBANN_CONDUIT_DIR=${CONDUIT_DIR} \
 -D LBANN_BUILT_WITH_SPECTRUM=${WITH_SPECTRUM} \

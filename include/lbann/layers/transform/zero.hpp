@@ -46,8 +46,7 @@ class zero_layer : public transform_layer {
  public:
  zero_layer(lbann_comm *comm,
               bool first_half=true,
-              bool second_half=true,
-              cudnn::cudnn_manager *cudnn = nullptr)
+              bool second_half=true)
     : transform_layer(comm),
       m_first_half(first_half),
       m_second_half(second_half) {
@@ -98,9 +97,9 @@ class zero_layer : public transform_layer {
         const DataType dy = local_gradient_wrt_output(row, col);
         DataType& dx = local_gradient_wrt_input(row, col);
         if(m_first_half)
-        dx += input.GlobalCol(col) < local_width/2 ?  DataType(0) : dy;
+        dx = input.GlobalCol(col) < local_width/2 ?  DataType(0) : dy;
         if(m_second_half)
-        dx += input.GlobalCol(col) >= local_width/2 ?  DataType(0) : dy;
+        dx = input.GlobalCol(col) >= local_width/2 ?  DataType(0) : dy;
       }
     }
   }

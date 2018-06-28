@@ -50,14 +50,14 @@ __global__ void fp_kernel(int height, int width,
                           lbann::DataType* __restrict__ output,
                           int output_leading_dim,
                           lbann::DataType cutoff) {
-  const auto tid = threadIdx.x + blockIdx.x * blockDim.x;
+  const auto gid = threadIdx.x + blockIdx.x * blockDim.x;
   const auto size = height * width;
   const auto num_threads = blockDim.x * gridDim.x;
-  for (int pos = tid; pos < size; pos += num_threads) {
+  for (int pos = gid; pos < size; pos += num_threads) {
 
     // Get input value
-    const int row = tid % height;
-    const int col = tid / height;
+    const int row = pos % height;
+    const int col = pos / height;
     auto x = input[row + col * input_leading_dim];
 
     // Compute output value
@@ -78,14 +78,14 @@ __global__ void bp_kernel(int height, int width,
                           lbann::DataType* __restrict__ gradient_wrt_input,
                           int gradient_wrt_input_leading_dim,
                           lbann::DataType cutoff) {
-  const auto tid = threadIdx.x + blockIdx.x * blockDim.x;
+  const auto gid = threadIdx.x + blockIdx.x * blockDim.x;
   const auto size = height * width;
   const auto num_threads = blockDim.x * gridDim.x;
-  for (int pos = tid; pos < size; pos += num_threads) {
+  for (int pos = gid; pos < size; pos += num_threads) {
 
     // Get input value
-    const int row = tid % height;
-    const int col = tid / height;
+    const int row = pos % height;
+    const int col = pos / height;
     const auto x = input[row + col * input_leading_dim];
     lbann::DataType dx = lbann::DataType(0);
   #ifdef LBANN_ENABLE_SIGMOID_CUTOFF
@@ -107,8 +107,7 @@ __global__ void bp_kernel(int height, int width,
 namespace lbann {
 namespace sigmoid_cuda {
 
-void fp(cudnn::cudnn_manager& cudnn,
-        int height,
+void fp(int height,
         int width,
         const lbann::DataType* input,
         int input_leading_dim,
@@ -117,16 +116,17 @@ void fp(cudnn::cudnn_manager& cudnn,
         lbann::DataType cutoff) {
   const int block_dim = 256;
   const int grid_dim = (height * width + block_dim - 1) / block_dim;
-  CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-  fp_kernel<<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
-    height, width,
-    input, input_leading_dim,
-    output, output_leading_dim,
-    cutoff);
+  if (grid_dim > 0) {
+    CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+    fp_kernel<<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
+      height, width,
+      input, input_leading_dim,
+      output, output_leading_dim,
+      cutoff);
+  }
 }
 
-void bp(cudnn::cudnn_manager& cudnn,
-        int height,
+void bp(int height,
         int width,
         const lbann::DataType* input,
         int input_leading_dim,
@@ -137,13 +137,15 @@ void bp(cudnn::cudnn_manager& cudnn,
         lbann::DataType cutoff) {
   const int block_dim = 256;
   const int grid_dim = (height * width + block_dim - 1) / block_dim;
-  CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-  bp_kernel<<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
-    height, width,
-    input, input_leading_dim,
-    gradient_wrt_output, gradient_wrt_output_leading_dim,
-    gradient_wrt_input, gradient_wrt_input_leading_dim,
-    cutoff);
+  if (grid_dim > 0) {
+    CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+    bp_kernel<<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
+      height, width,
+      input, input_leading_dim,
+      gradient_wrt_output, gradient_wrt_output_leading_dim,
+      gradient_wrt_input, gradient_wrt_input_leading_dim,
+      cutoff);
+  }
 }
 
 } // namespace sigmoid_cuda

@@ -38,7 +38,6 @@ namespace lbann {
 
 Layer::Layer(lbann_comm *comm)
   : m_comm(comm),
-    m_cudnn(nullptr),
     m_frozen(false) {
 
   // Initialize layer name
@@ -56,12 +55,6 @@ Layer::Layer(lbann_comm *comm)
 
   // Initialize GPU information
   m_using_gpus = false;
-#ifdef LBANN_HAS_CUDNN
-  m_prev_activations_cudnn_desc = nullptr;
-  m_activations_cudnn_desc = nullptr;
-  m_prev_error_signals_cudnn_desc = nullptr;
-  m_error_signals_cudnn_desc = nullptr;
-#endif // LBANN_HAS_CUDNN
 
   // Reset timing counters
   reset_counters();
@@ -82,7 +75,6 @@ Layer::Layer(const Layer& other) :
   m_expected_num_parent_layers(other.m_expected_num_parent_layers),
   m_expected_num_child_layers(other.m_expected_num_child_layers),
   m_model(other.m_model),
-  m_cudnn(other.m_cudnn),
   m_frozen(other.m_frozen),
   m_fp_time(other.m_fp_time),
   m_fp_compute_time(other.m_fp_compute_time),
@@ -102,20 +94,6 @@ Layer::Layer(const Layer& other) :
   for (auto& m : m_prev_error_signals) { m = m->Copy(); }
   for (auto& m : m_error_signals)      { m = m->Copy(); }
 
-#ifdef LBANN_HAS_CUDNN
-  m_prev_activations_cudnn_desc = nullptr;
-  m_activations_cudnn_desc = nullptr;
-  m_prev_error_signals_cudnn_desc = nullptr;
-  m_error_signals_cudnn_desc = nullptr;
-  cudnn::copy_tensor_cudnn_desc(other.m_prev_activations_cudnn_desc,
-                                m_prev_activations_cudnn_desc);
-  cudnn::copy_tensor_cudnn_desc(other.m_activations_cudnn_desc,
-                                m_activations_cudnn_desc);
-  cudnn::copy_tensor_cudnn_desc(other.m_prev_error_signals_cudnn_desc,
-                                m_prev_error_signals_cudnn_desc);
-  cudnn::copy_tensor_cudnn_desc(other.m_error_signals_cudnn_desc,
-                                m_error_signals_cudnn_desc);
-#endif // LBANN_HAS_CUDNN
 }
 
 Layer& Layer::operator=(const Layer& other) {
@@ -135,7 +113,6 @@ Layer& Layer::operator=(const Layer& other) {
   m_expected_num_child_layers = other.m_expected_num_child_layers;
   m_model = other.m_model;
   m_using_gpus = other.m_using_gpus;
-  m_cudnn = other.m_cudnn;
   m_frozen = other.m_frozen;
   m_fp_time = other.m_fp_time;
   m_fp_compute_time = other.m_fp_compute_time;
@@ -155,35 +132,10 @@ Layer& Layer::operator=(const Layer& other) {
   for (auto& m : m_prev_error_signals) { m = m->Copy(); }
   for (auto& m : m_error_signals)      { m = m->Copy(); }
 
-#ifdef LBANN_HAS_CUDNN
-  cudnn::copy_tensor_cudnn_desc(other.m_prev_activations_cudnn_desc,
-                                m_prev_activations_cudnn_desc);
-  cudnn::copy_tensor_cudnn_desc(other.m_activations_cudnn_desc,
-                                m_activations_cudnn_desc);
-  cudnn::copy_tensor_cudnn_desc(other.m_prev_error_signals_cudnn_desc,
-                                m_prev_error_signals_cudnn_desc);
-  cudnn::copy_tensor_cudnn_desc(other.m_error_signals_cudnn_desc,
-                                m_error_signals_cudnn_desc);
-#endif // LBANN_HAS_CUDNN
-
   return *this;
 }
 
 Layer::~Layer() {
-#ifdef LBANN_HAS_CUDNN
-  if(m_prev_activations_cudnn_desc != nullptr) {
-    CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_prev_activations_cudnn_desc));
-  }
-  if(m_activations_cudnn_desc != nullptr) {
-    CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_activations_cudnn_desc));
-  }
-  if(m_prev_error_signals_cudnn_desc != nullptr) {
-    CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_prev_error_signals_cudnn_desc));
-  }
-  if(m_error_signals_cudnn_desc != nullptr) {
-    CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_error_signals_cudnn_desc));
-  }
-#endif // LBANN_HAS_CUDNN
   deallocate_matrices();
 }
 
@@ -231,10 +183,10 @@ void Layer::forward_prop() {
   // Setup matrix data, e.g. input matrices
   fp_setup_data(m_model->get_current_mini_batch_size());
 
-  #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
+#if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
   if (using_gpus()) { El::GPUManager::SynchronizeDevice(true); }
-  #endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
+#endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
 
   // Apply layer's compute function
   const auto fp_compute_start = get_time();
@@ -247,10 +199,10 @@ void Layer::forward_prop() {
     if (opt != nullptr) { opt->add_gradient_source(this); }
   }
 
-  #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
+#if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
   if (using_gpus()) { El::GPUManager::SynchronizeDevice(true); }
-  #endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
+#endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
 
   m_fp_time += get_time() - fp_start;
 }
@@ -261,10 +213,10 @@ void Layer::back_prop() {
   // Setup matrix data, e.g. input matrices
   bp_setup_data(m_model->get_current_mini_batch_size());
 
-  #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
+#if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
   if (using_gpus()) { El::GPUManager::SynchronizeDevice(true); }
-  #endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
+#endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
 
   // Backprop the compute function.
   const auto bp_compute_start = get_time();
@@ -277,10 +229,10 @@ void Layer::back_prop() {
     if (opt != nullptr) { opt->remove_gradient_source(this); }
   }
 
-  #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
+#if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
   if (using_gpus()) { El::GPUManager::SynchronizeDevice(true); }
-  #endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
+#endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
 
   m_bp_time += get_time() - bp_start;
 }
@@ -307,6 +259,9 @@ void Layer::summarize_stats(lbann_summary& summarizer, int step) {
   summarizer.reduce_scalar(prefix + "fp_time", m_fp_time, step);
   summarizer.reduce_scalar(prefix + "bp_time", m_bp_time, step);
   summarizer.reduce_scalar(prefix + "update_time", m_update_time, step);
+  summarizer.reduce_scalar_all(prefix + "fp_time", m_fp_time, step);
+  summarizer.reduce_scalar_all(prefix + "bp_time", m_bp_time, step);
+  summarizer.reduce_scalar_all(prefix + "update_time", m_update_time, step);
   reset_counters();
   // Combine the optimizer step time from all the weights.
   double step_time = 0.0;
@@ -318,6 +273,7 @@ void Layer::summarize_stats(lbann_summary& summarizer, int step) {
     }
   }
   summarizer.reduce_scalar(prefix + "opt_time", step_time, step);
+  summarizer.reduce_scalar_all(prefix + "opt_time", step_time, step);
 }
 
 void Layer::summarize_matrices(lbann_summary& summarizer, int step) {
@@ -434,12 +390,6 @@ const AbsMat& Layer::get_local_error_signals(int parent_index) const {
   return get_error_signals(parent_index).LockedMatrix();
 }
 
-void Layer::clear_error_signals(int mini_batch_size) {
-  for (int i = 0; i < get_num_parents(); ++i) {
-    El::Zeros(get_error_signals(i), get_num_prev_neurons(i), mini_batch_size);
-  }
-}
-
 void Layer::freeze() {
   m_frozen = true;
   for(auto& w : m_weights) {
@@ -468,16 +418,7 @@ void Layer::setup() {
   setup_dims();
   setup_matrices(m_comm->get_model_grid());
   setup_data();
-  if (using_gpus()) {
-    if(m_cudnn == nullptr) {
-      std::stringstream err;
-      err << "layer \"" << m_name << "\" is trying to use GPUs but has an invalid pointer to the cudnn object";
-      LBANN_ERROR(err.str());
-    }
-    setup_gpu();
-  } else {
-    m_cudnn = nullptr;
-  }
+  if (using_gpus()) { setup_gpu(); }
 }
 
 void Layer::setup_pointers() {
@@ -653,72 +594,10 @@ void Layer::setup_data() {
 
 }
 
-void Layer::setup_gpu() {
-#ifndef LBANN_HAS_CUDNN
-  LBANN_ERROR("cuDNN not detected");
-#else
-
-  // Set tensor descriptors
-  // Note: If the data layout is data-parallel, then the descriptors
-  // describe the corresponding neuron tensors. If the data layout is
-  // model-parallel, the descriptors describe the local matrix.
-  if (get_num_parents() > 0) {
-    const auto& input = get_prev_activations();
-    const auto& gradient_wrt_input = get_error_signals();
-    switch (get_data_layout()) {
-    case data_layout::DATA_PARALLEL:
-      cudnn::set_tensor_cudnn_desc(m_prev_activations_cudnn_desc,
-                                   input.LocalWidth(),
-                                   get_prev_neuron_dims(),
-                                   input.LDim());
-      cudnn::set_tensor_cudnn_desc(m_error_signals_cudnn_desc,
-                                   gradient_wrt_input.LocalWidth(),
-                                   get_prev_neuron_dims(),
-                                   gradient_wrt_input.LDim());
-      break;
-    case data_layout::MODEL_PARALLEL:
-      cudnn::set_tensor_cudnn_desc(m_prev_activations_cudnn_desc,
-                                   input.LocalHeight(),
-                                   input.LocalWidth(),
-                                   input.LDim());
-      cudnn::set_tensor_cudnn_desc(m_error_signals_cudnn_desc,
-                                   gradient_wrt_input.LocalHeight(),
-                                   gradient_wrt_input.LocalWidth(),
-                                   gradient_wrt_input.LDim());
-      break;
-    default:
-      LBANN_ERROR("invalid distributed matrix layout");
-    }
+void Layer::bp_compute() {
+  for (int i = 0; i < get_num_parents(); ++i) {
+    El::Zero(get_error_signals(i));
   }
-  if (get_num_children() > 0) {
-    const auto& output = get_activations();
-    switch (get_data_layout()) {
-    case data_layout::DATA_PARALLEL:
-      cudnn::set_tensor_cudnn_desc(m_activations_cudnn_desc,
-                                   output.LocalWidth(),
-                                   get_neuron_dims(),
-                                   output.LDim());
-      cudnn::set_tensor_cudnn_desc(m_prev_error_signals_cudnn_desc,
-                                   get_activations().LocalWidth(),
-                                   get_neuron_dims(),
-                                   get_activations().LDim());
-      break;
-    case data_layout::MODEL_PARALLEL:
-      cudnn::set_tensor_cudnn_desc(m_activations_cudnn_desc,
-                                   output.LocalHeight(),
-                                   output.LocalWidth(),
-                                   output.LDim());
-      cudnn::set_tensor_cudnn_desc(m_prev_error_signals_cudnn_desc,
-                                   get_activations().LocalHeight(),
-                                   get_activations().LocalWidth(),
-                                   get_activations().LDim());
-      break;
-    default:
-      LBANN_ERROR("invalid distributed matrix layout");
-    }
-  }
-
-#endif // LBANN_HAS_CUDNN
 }
 
 void Layer::check_setup() {
@@ -803,6 +682,7 @@ void Layer::deallocate_matrices() {
   for (const auto& m : m_prev_activations) {
     if (m != nullptr) delete m;
   }
+
   for (const auto& m : m_activations) {
     if (m != nullptr) delete m;
   }
@@ -885,124 +765,43 @@ void Layer::fp_setup_data(int mini_batch_size) {
     }
   }
 
-  #ifdef LBANN_HAS_CUDNN
-  // Set cuDNN tensor descriptors if needed
-  // Note: If the data layout is data-parallel, then the descriptors
-  // describe the corresponding neuron tensors. If the data layout is
-  // model-parallel, the descriptors describe the local matrix.
-  if (using_gpus()) {
-    if (get_num_parents() > 0) {
-      const auto& input = get_prev_activations();
-      switch (get_data_layout()) {
-      case data_layout::DATA_PARALLEL:
-        cudnn::set_tensor_cudnn_desc(m_prev_activations_cudnn_desc,
-                                     input.LocalWidth(),
-                                     get_prev_neuron_dims(),
-                                     input.LDim());
-        break;
-      case data_layout::MODEL_PARALLEL:
-        cudnn::set_tensor_cudnn_desc(m_prev_activations_cudnn_desc,
-                                     input.LocalHeight(),
-                                     input.LocalWidth(),
-                                     input.LDim());
-        break;
-      default:
-        LBANN_ERROR("invalid distributed matrix layout");
-      }
-    }
-    if (get_num_children() > 0) {
-      const auto& output = get_activations();
-      switch (get_data_layout()) {
-      case data_layout::DATA_PARALLEL:
-        cudnn::set_tensor_cudnn_desc(m_activations_cudnn_desc,
-                                     output.LocalWidth(),
-                                     get_neuron_dims(),
-                                     output.LDim());
-        break;
-      case data_layout::MODEL_PARALLEL:
-        cudnn::set_tensor_cudnn_desc(m_activations_cudnn_desc,
-                                     output.LocalHeight(),
-                                     output.LocalWidth(),
-                                     output.LDim());
-        break;
-      default:
-        LBANN_ERROR("invalid distributed matrix layout");
-      }
-    }
-  }
-  #endif // LBANN_HAS_CUDNN
-
 }
 
 void Layer::bp_setup_data(int mini_batch_size) {
 
   // Initialize previous error signals
   for (int i = 0; i < get_num_children(); ++i) {
-    const auto& child = m_child_layers[i];
 
-    // Get previous error signal from child layer
-    auto& bp_input = get_prev_error_signals(i);
-    child->get_bp_output(bp_input, this);
+    const auto& child = m_child_layers[i];
+    child->get_bp_output(get_prev_error_signals(i), this);
+
+    // Check dimensions of previous error signal matrix
     const int expected_height = get_num_neurons(i);
-    if (bp_input.Height() != expected_height
-        || bp_input.Width() != mini_batch_size) {
+    const auto& gradient_wrt_output = get_prev_error_signals(i);
+    if (gradient_wrt_output.Height() != expected_height
+        || gradient_wrt_output.Width() != mini_batch_size) {
       std::stringstream err;
       err << "layer \"" << get_name() << "\" expected a "
           << expected_height << " x " << mini_batch_size
-          << " input matrix from layer \"" << child->get_name() << "\""
+          << " error signal matrix from layer \"" << child->get_name() << "\""
           << " during backward prop, but got a "
-          << bp_input.Height() << " x " << bp_input.Width() << " matrix";
+          << gradient_wrt_output.Height() << " x "
+          << gradient_wrt_output.Width() << " matrix";
       LBANN_ERROR(err.str());
     }
 
   }
 
-  #ifdef LBANN_HAS_CUDNN
-  // Set cuDNN tensor descriptors if needed
-  // Note: If the data layout is data-parallel, then the descriptors
-  // describe the corresponding neuron tensors. If the data layout is
-  // model-parallel, the descriptors describe the local matrix.
-  if (using_gpus()) {
-    if (get_num_children() > 0) {
-      const auto& gradient_wrt_output = get_prev_error_signals();
-      switch (get_data_layout()) {
-      case data_layout::DATA_PARALLEL:
-        cudnn::set_tensor_cudnn_desc(m_prev_error_signals_cudnn_desc,
-                                     gradient_wrt_output.LocalWidth(),
-                                     get_neuron_dims(),
-                                     gradient_wrt_output.LDim());
-        break;
-      case data_layout::MODEL_PARALLEL:
-        cudnn::set_tensor_cudnn_desc(m_prev_error_signals_cudnn_desc,
-                                     gradient_wrt_output.LocalHeight(),
-                                     gradient_wrt_output.LocalWidth(),
-                                     gradient_wrt_output.LDim());
-        break;
-      default:
-        LBANN_ERROR("invalid distributed matrix layout");
-      }
-    }
-    if (get_num_parents() > 0) {
-      const auto& gradient_wrt_input = get_error_signals();
-      switch (get_data_layout()) {
-      case data_layout::DATA_PARALLEL:
-        cudnn::set_tensor_cudnn_desc(m_error_signals_cudnn_desc,
-                                     gradient_wrt_input.LocalWidth(),
-                                     get_prev_neuron_dims(),
-                                     gradient_wrt_input.LDim());
-        break;
-      case data_layout::MODEL_PARALLEL:
-        cudnn::set_tensor_cudnn_desc(m_error_signals_cudnn_desc,
-                                     gradient_wrt_input.LocalHeight(),
-                                     gradient_wrt_input.LocalWidth(),
-                                     gradient_wrt_input.LDim());
-        break;
-      default:
-        LBANN_ERROR("invalid distributed matrix layout");
-      }
+  // Initialize error signals
+  for (int i = 0; i < get_num_parents(); ++i) {
+    auto& error_signals = get_error_signals(i);
+    const auto num_prev_neurons = get_num_prev_neurons(i);
+    if (error_signals.Height() != num_prev_neurons
+        || error_signals.Width() != mini_batch_size) {
+      error_signals.Empty(false); // Reset matrix views (without deallocating memory)
+      error_signals.Resize(num_prev_neurons, mini_batch_size);
     }
   }
-  #endif // LBANN_HAS_CUDNN
 
 }
 

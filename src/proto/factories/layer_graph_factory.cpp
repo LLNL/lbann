@@ -122,47 +122,6 @@ void setup_target_pointers(lbann_comm* comm,
   }
 }
 
-/** Setup original layers for reconstruction layers. */
-void setup_reconstruction_pointers(lbann_comm* comm,
-                                   std::vector<Layer*>& layers,
-                                   std::unordered_map<std::string, Layer*>& names_to_layers,
-                                   const lbann_data::Model& proto_model) {
-  std::stringstream err;
-  for (int i=0; i<proto_model.layer_size(); ++i) {
-    const auto& proto_layer = proto_model.layer(i);
-    Layer* l = layers[i];
-    if (proto_layer.has_reconstruction()) {
-      Layer* original = nullptr;
-      const auto& original_name = proto_layer.reconstruction().original_layer();
-      if (!original_name.empty()) {
-        original = names_to_layers[original_name];
-      } else {
-        for (auto&& other : layers) {
-          original = dynamic_cast<generic_input_layer*>(other);
-          if (original != nullptr) { break; }
-        }
-      }
-      if (original == nullptr) {
-        err << "could not find original layer " << original_name << " "
-            << "for reconstruction layer " << l->get_name();
-        LBANN_ERROR(err.str());
-      }
-      auto&& recon_dp_cpu = dynamic_cast<reconstruction_layer<data_layout::DATA_PARALLEL, El::Device::CPU>*>(l);
-      auto&& recon_mp_cpu = dynamic_cast<reconstruction_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>*>(l);
-#ifdef LBANN_HAS_GPU
-      auto&& recon_dp_gpu = dynamic_cast<reconstruction_layer<data_layout::DATA_PARALLEL, El::Device::GPU>*>(l);
-      auto&& recon_mp_gpu = dynamic_cast<reconstruction_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>*>(l);
-#endif // LBANN_HAS_GPU
-      if (recon_dp_cpu != nullptr) { recon_dp_cpu->set_original_layer(original); }
-      if (recon_mp_cpu != nullptr) { recon_mp_cpu->set_original_layer(original); }
-#ifdef LBANN_HAS_GPU
-      if (recon_dp_gpu != nullptr) { recon_dp_gpu->set_original_layer(original); }
-      if (recon_mp_gpu != nullptr) { recon_mp_gpu->set_original_layer(original); }
-#endif // LBANN_HAS_GPU
-    }
-  }
-}
-
 /** Setup paired pooling layers for unpooling layers. */
 void setup_unpooling_pointers(lbann_comm* comm,
                               std::vector<Layer*>& layers,
@@ -209,7 +168,6 @@ void setup_unpooling_pointers(lbann_comm* comm,
 
 std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
                                           std::map<execution_mode, generic_data_reader *>& data_readers,
-                                          cudnn::cudnn_manager* cudnn,
                                           const lbann_data::Model& proto_model) {
   std::stringstream err;
 
@@ -245,38 +203,33 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
     if (layout_str == "data_parallel")  { layout = data_layout::DATA_PARALLEL; }
     if (layout_str == "model_parallel") { layout = data_layout::MODEL_PARALLEL; }
     const auto& num_parallel_readers = proto_model.num_parallel_readers();
-    const auto& device_allocation_str = proto_layer.device_allocation();
-    El::Device device_allocation = El::Device::CPU;
+    El::Device device = El::Device::CPU;
 #ifdef LBANN_HAS_GPU
-    if (cudnn != nullptr) { device_allocation = El::Device::GPU; }
-#endif // LBANN_HAS_GPU
-    if (device_allocation_str == "cpu") { device_allocation = El::Device::CPU; }
-#ifdef LBANN_HAS_GPU
-    if (device_allocation_str == "gpu") { device_allocation = El::Device::GPU; }
-#endif // LBANN_HAS_GPU
-    if (device_allocation_str.empty()
-        && (proto_layer.has_input() || proto_layer.has_target()
-            || proto_layer.has_reconstruction()
-            || (proto_layer.has_softmax() && layout == data_layout::MODEL_PARALLEL))) {
-      // Input, Target, Reconstruction, and model-parallel Softmax layers are not
-      // allowed on the GPUs force the default to be the CPU
-      device_allocation = El::Device::CPU;
+    const auto& device_str = proto_layer.device_allocation();
+    if (!proto_model.disable_cuda()) {
+      if (device_str == "gpu" || device_str.empty()) {
+        device = El::Device::GPU;
+      }
+      if (device_str == "cpu") { device = El::Device::CPU; }
+      if (proto_layer.has_input()
+          || proto_layer.has_target()
+          || proto_layer.has_reconstruction()) {
+        // Input, Target, and Reconstruction layers are not allowed on
+        // the GPUs: force the default to be the CPU
+        device = El::Device::CPU;
+      }
     }
-    cudnn::cudnn_manager* layer_cudnn = cudnn;
-    if (device_allocation == El::Device::CPU) {
-      layer_cudnn = nullptr;
-    }
+#endif // LBANN_HAS_GPU
 
     // Construct layer
     Layer* l = nullptr;
 #define TEMPLATE_INSTANTIATION(T_layout, T_device)                      \
     do {                                                                \
-      if (layout == T_layout && device_allocation == T_device) {        \
+      if (layout == T_layout && device == T_device) {        \
         l = construct_layer<T_layout, T_device>(                        \
               comm,                                                     \
               data_readers,                                             \
               num_parallel_readers,                                     \
-              layer_cudnn,                                              \
               proto_layer);                                             \
       }                                                                 \
     } while (0)
@@ -306,9 +259,11 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
     names_to_layers[name] = l;
 
     if (proto_layer.freeze()) {
+      #ifdef LBANN_DEBUG
       if (comm->am_world_master()) {
         std::cout << "freezing " << l->get_name() << std::endl;
       }
+      #endif
       l->freeze();
     }
     // Add layer to list
@@ -319,7 +274,6 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
   // Setup pointers between layers
   setup_parents_and_children(comm, layers, names_to_layers, proto_model);
   setup_target_pointers(comm, layers, names_to_layers, proto_model);
-  setup_reconstruction_pointers(comm, layers, names_to_layers, proto_model);
   setup_unpooling_pointers(comm, layers, names_to_layers, proto_model);
 
   // Optionally Set num_neurons = num_labels

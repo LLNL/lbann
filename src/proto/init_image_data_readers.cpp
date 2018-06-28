@@ -58,6 +58,27 @@ static void set_cropper(const lbann_data::ImagePreprocessor& pb_preprocessor,
   }
 }
 
+/// set up a resizer
+static void set_resizer(const lbann_data::ImagePreprocessor& pb_preprocessor,
+                        const bool master, std::shared_ptr<cv_process>& pp,
+                        int& width, int& height) {
+  if (pb_preprocessor.has_resizer()) {
+    const lbann_data::ImagePreprocessor::Resizer& pb_resizer = pb_preprocessor.resizer();
+    if (!pb_resizer.disable()) {
+      const std::string resizer_name = ((pb_resizer.name() == "")? "default_resizer" : pb_resizer.name());
+      std::unique_ptr<lbann::cv_resizer> resizer(new(lbann::cv_resizer));
+      resizer->set_name(resizer_name);
+      resizer->set(pb_resizer.resized_width(),
+                   pb_resizer.resized_height(),
+                   pb_resizer.adaptive_interpolation());
+      pp->add_transform(std::move(resizer));
+      width = pb_resizer.resized_width();
+      height = pb_resizer.resized_height();
+      if (master) std::cout << "image processor: " << resizer_name << " resizer is set" << std::endl;
+    }
+  }
+}
+
 /// set up an augmenter
 static void set_augmenter(const lbann_data::ImagePreprocessor& pb_preprocessor,
                           const bool master, std::shared_ptr<cv_process>& pp) {
@@ -240,6 +261,7 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
   }
 
   set_cropper(pb_preprocessor, master, pp, width, height);
+  set_resizer(pb_preprocessor, master, pp, width, height);
   set_augmenter(pb_preprocessor, master, pp);
   if (has_channel_wise_subtractor(pb_preprocessor)) {
     // decolorizer and colorizer are exclusive
@@ -293,7 +315,7 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
 
   std::shared_ptr<cv_process> pp;
   // set up the image preprocessor
-  if ((name == "imagenet") || (name == "imagenet_single") || (name == "jag_conduit") ||
+  if ((name == "imagenet") || (name == "jag_conduit") ||
       (name == "triplet") || (name == "mnist_siamese") || (name == "multi_images")) {
     pp = std::make_shared<cv_process>();
   } else if (name == "imagenet_patches") {
@@ -325,8 +347,6 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
     reader = new data_reader_mnist_siamese(pp, shuffle);
   } else if (name == "multi_images") {
     reader = new data_reader_multi_images(pp, shuffle);
-  } else if (name == "imagenet_single") { // imagenet_single
-    reader = new imagenet_reader_single(pp, shuffle);
 #ifdef LBANN_HAS_CONDUIT
   } else if (name =="jag_conduit") {
     data_reader_jag_conduit* reader_jag = new data_reader_jag_conduit(pp, shuffle);
@@ -372,6 +392,36 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
 
     if (input_keys.size() > 0u) {
       reader_jag->set_input_choices(input_keys);
+    }
+
+    // add scalar output keys to filter out
+    const int num_scalar_filters = pb_readme.jag_scalar_filters_size();
+    for (int i=0; i < num_scalar_filters; ++i) {
+      reader_jag->add_scalar_filter(pb_readme.jag_scalar_filters(i));
+    }
+
+    // add scalar output key prefixes to filter out by
+    const int num_scalar_prefix_filters = pb_readme.jag_scalar_prefix_filters_size();
+    for (int i=0; i < num_scalar_prefix_filters; ++i) {
+      using prefix_t = lbann::data_reader_jag_conduit::prefix_t;
+      const prefix_t pf = std::make_pair(pb_readme.jag_scalar_prefix_filters(i).key_prefix(),
+                                         pb_readme.jag_scalar_prefix_filters(i).min_len());
+      reader_jag->add_scalar_prefix_filter(pf);
+    }
+
+    // add input parameter keys to filter out
+    const int num_input_filters = pb_readme.jag_input_filters_size();
+    for (int i=0; i < num_input_filters; ++i) {
+      reader_jag->add_input_filter(pb_readme.jag_input_filters(i));
+    }
+
+    // add scalar output key prefixes to filter out by
+    const int num_input_prefix_filters = pb_readme.jag_input_prefix_filters_size();
+    for (int i=0; i < num_input_prefix_filters; ++i) {
+      using prefix_t = lbann::data_reader_jag_conduit::prefix_t;
+      const prefix_t pf = std::make_pair(pb_readme.jag_scalar_prefix_filters(i).key_prefix(),
+                                         pb_readme.jag_scalar_prefix_filters(i).min_len());
+      reader_jag->add_input_prefix_filter(pf);
     }
 
     reader = reader_jag;
@@ -433,22 +483,6 @@ void init_generic_preprocessor(const lbann_data::Reader& pb_readme, const bool m
     } else {
       reader->disable_augmentation();
     }
-  } else { // For backward compatibility. TODO: will be deprecated
-    if (!pb_preprocessor.disable_augmentation() &&
-        (pb_preprocessor.horizontal_flip() ||
-         pb_preprocessor.vertical_flip() ||
-         pb_preprocessor.rotation() != 0.0 ||
-         pb_preprocessor.horizontal_shift() != 0.0 ||
-         pb_preprocessor.vertical_shift() != 0.0 ||
-         pb_preprocessor.shear_range() != 0.0)) {
-      reader->horizontal_flip( pb_preprocessor.horizontal_flip() );
-      reader->vertical_flip( pb_preprocessor.vertical_flip() );
-      reader->rotation( pb_preprocessor.rotation() );
-      reader->horizontal_shift( pb_preprocessor.horizontal_shift() );
-      reader->vertical_shift( pb_preprocessor.vertical_shift() );
-      reader->shear_range( pb_preprocessor.shear_range() );
-      if (master) std::cout << "image processor: deprecated syntax for augmenter" << std::endl;
-    }
   }
 
   // set up the normalizer
@@ -462,12 +496,6 @@ void init_generic_preprocessor(const lbann_data::Reader& pb_readme, const bool m
       reader->z_score( pb_normalizer.z_score() );
       if (master) std::cout << "image processor: normalizer is set" << std::endl;
     }
-  } else { // For backward compatibility. TODO: will be deprecated
-      reader->subtract_mean( pb_preprocessor.subtract_mean() );
-      reader->unit_variance( pb_preprocessor.unit_variance() );
-      reader->scale( pb_preprocessor.scale() );
-      reader->z_score( pb_preprocessor.z_score() );
-      if (master) std::cout << "image processor: deprecated syntax for normalizer" << std::endl;
   }
 
   if (pb_preprocessor.has_noiser()) {
@@ -477,36 +505,17 @@ void init_generic_preprocessor(const lbann_data::Reader& pb_readme, const bool m
       reader->add_noise( pb_noiser.factor() );
       if (master) std::cout << "image processor: noiser is set" << std::endl;
     }
-  } else { // For backward compatibility. TODO: will be deprecated
-    reader->add_noise( pb_preprocessor.noise_factor() );
-    if (master && (pb_preprocessor.noise_factor()>0.0)) std::cout << "image processor: deprecated syntax for noiser" << std::endl;
   }
 }
 
 
 void init_org_image_data_reader(const lbann_data::Reader& pb_readme, const bool master, generic_data_reader* &reader) {
-  const lbann_data::ImagePreprocessor& pb_preprocessor = pb_readme.image_preprocessor();
-
   // data reader name
   const std::string& name = pb_readme.name();
   // whether to shuffle data
   const bool shuffle = pb_readme.shuffle();
-  // final size of image. If image_preprocessor is not set, the type-default value
-  // (i,e., 0) is used. Then,set_input_params() will not modify the current member value.
-  const int width = pb_preprocessor.raw_width();
-  const int height = pb_preprocessor.raw_height();
 
-  // number of labels
-  const int n_labels = pb_readme.num_labels();
-
-  // TODO: as imagenet_org phases out, and mnist and cifar10 convert to use new
-  // imagenet data reader, this function will disappear
-  // create data reader
-  if (name == "imagenet_org") {
-    reader = new imagenet_reader_org(shuffle);
-    dynamic_cast<imagenet_reader_org*>(reader)->set_input_params(width, height, 3, n_labels);
-    if (master) std::cout << "imagenet_reader_org is set" << std::endl;
-  } else if (name == "mnist") {
+  if (name == "mnist") {
     reader = new mnist_reader(shuffle);
     if (master) std::cout << "mnist_reader is set" << std::endl;
   } else if (name == "cifar10") {

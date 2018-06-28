@@ -1,6 +1,5 @@
 enable_language(C)
 enable_language(CXX)
-enable_language(Fortran)
 
 option(Hydrogen_ENABLE_OPENMP "Hydrogen use OpenMP threading." ON)
 
@@ -33,10 +32,25 @@ if (TARGET OPENBLAS)
   endif ()
 endif ()
 
+# No Aluminum in hydrogen yet!
+if (FALSE AND TARGET Aluminum)
+  option(Hydrogen_USE_Aluminum "Whether to use Aluminum in Hydrogen" ON)
+
+  if (Hydrogen_USE_Aluminum)
+    set(LBANN_SB_FWD_HYDROGEN_Aluminum_DIR "${ALUMINUM_DIR}/lib/cmake/aluminum"
+      CACHE STRING "The path to Aluminum for Hydrogen.")
+
+    set(_hydrogen_depends_tag DEPENDS)
+    list(APPEND _HYDROGEN_DEPENDS Aluminum)
+  endif (Hydrogen_USE_Aluminum)
+endif (FALSE AND TARGET Aluminum)
+
 # Get the list of HYDROGEN variables
 get_property(HYDROGEN_VARIABLES DIRECTORY PROPERTY VARIABLES)
-list(FILTER HYDROGEN_VARIABLES INCLUDE REGEX "^HYDROGEN_.*\|^Hydrogen_.*\|^LBANN_SB_FWD_HYDROGEN_.*")
-list(FILTER HYDROGEN_VARIABLES EXCLUDE REGEX "Hydrogen_URL\|Hydrogen_TAG\|Hydrogen_CMAKE_GENERATOR")
+list(FILTER HYDROGEN_VARIABLES INCLUDE REGEX
+  "^HYDROGEN_.*\|^Hydrogen_.*\|^LBANN_SB_FWD_HYDROGEN_.*\|^LBANN_SB_FWD_Hydrogen_.*")
+list(FILTER HYDROGEN_VARIABLES EXCLUDE REGEX
+  "Hydrogen_URL\|Hydrogen_TAG\|Hydrogen_CMAKE_GENERATOR")
 
 create_cmake_arguments(
   OUTPUT_VARIABLE HYDROGEN_CMAKE_ARGS
@@ -75,7 +89,6 @@ ExternalProject_Add(HYDROGEN
   -G${Hydrogen_CMAKE_GENERATOR}
   -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
   -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-  -DCMAKE_Fortran_COMPILER=${CMAKE_Fortran_COMPILER}
   ${HYDROGEN_CMAKE_ARGS}
   )
 
