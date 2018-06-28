@@ -226,6 +226,12 @@ lbann_callback* construct_callback(lbann_comm* comm,
   if (proto_cb.has_profiler()) {
     return new lbann_callback_profiler();
   }
+  if (proto_cb.has_sync_layers()) {
+    const auto& params = proto_cb.sync_layers();
+    return new lbann_callback_sync_layers(params.sync_gpus(),
+                                          params.sync_mpi(),
+                                          params.only_input());
+  }
 
   //////////////////////////////////////////////////////////////////
   // Debugging
