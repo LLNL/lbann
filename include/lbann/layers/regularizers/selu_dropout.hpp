@@ -48,7 +48,7 @@ class selu_dropout : public regularizer_layer {
     regularizer_layer(comm),
     m_keep_prob(keep_prob),
     m_mask(nullptr) {
-#ifdef LBANN_PROCDET_DROPOUT
+#ifdef LBANN_DETERMINISTIC
     throw lbann_exception("selu_dropout: deterministic dropout not supported");
 #endif
     // Compute alpha' and the affine transform.

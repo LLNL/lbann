@@ -147,7 +147,7 @@ class batch_normalization : public regularizer_layer {
       m_bias_gradient(nullptr) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "batch normalization only supports DATA_PARALLEL");
-#ifdef LBANN_SEQUENTIAL_CONSISTENCY
+#ifdef LBANN_DETERMINISTIC
     // Force global computation.
     m_use_global_stats = true;
 #endif
