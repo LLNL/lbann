@@ -91,7 +91,14 @@ lbann_callback* construct_callback(lbann_comm* comm,
   // Inter-model communication
   //////////////////////////////////////////////////////////////////
   if (proto_cb.has_ltfb()) {
+    auto&& m = parse_list<>(proto_cb.ltfb().eval_metrics());
+    auto&& w = parse_list<>(proto_cb.ltfb().weights_tosend());
+    std::unordered_set<std::string> metric_names(m.begin(), m.end());
+    std::unordered_set<std::string> weight_names(w.begin(), w.end());
     return new lbann_callback_ltfb(proto_cb.ltfb().round_size(),
+                                   proto_cb.ltfb().metric_mode(),
+                                   metric_names,
+                                   weight_names,
                                    summarizer);
   }  
   /// @todo

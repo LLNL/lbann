@@ -442,7 +442,10 @@ message Callback {
 }
 
 message CallbackLTFB {
-  int64 round_size = 1;
+  int64 round_size = 1; 
+  string metric_mode = 2; //Expectation for a good tournament metric: increasing/descreasing 
+  string eval_metrics = 3; //eval metrics to use for tournament, at least 1 metric has to be provided
+  string weights_tosend = 4; //list of weights to transfer between model, default is all weights (classic LTFB)
 }
 
 message CallbackStepLearningRate {
