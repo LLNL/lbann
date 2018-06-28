@@ -7,29 +7,28 @@ model {
   num_parallel_readers: 0
   procs_per_model: 0
   num_gpus: -1
-
   ###################################################
   # Objective function
   ###################################################
-
   objective_function {
-    cross_entropy {}
+    cross_entropy {
+    }
     l2_weight_regularization {
       scale_factor: 1e-4
     }
   }
-
   ###################################################
   # Metrics
   ###################################################
-
-  metric { categorical_accuracy {} }
   metric {
-    top_k_categorical_accuracy {
-       top_k: 5
+    categorical_accuracy {
     }
   }
-
+  metric {
+    top_k_categorical_accuracy {
+      top_k: 5
+    }
+  }
   ###################################################
   # Callbacks
   ###################################################
@@ -51,16 +50,16 @@ model {
   # Layers
   ###################################################
   layer {
-    name: "0"
-    parents: "0"
+    name: "index_0_initial_layer_input"
+    parents: "index_0_initial_layer_input"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
     }
   }
   layer {
-    name: "initial_layer_conv"
-    parents: "0"
+    name: "index_1_initial_layer_conv"
+    parents: "index_0_initial_layer_input"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -72,8 +71,8 @@ model {
     }
   }
   layer {
-    name: "initial_layer_norm"
-    parents: "initial_layer_conv"
+    name: "index_2_initial_layer_norm"
+    parents: "index_1_initial_layer_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -83,27 +82,27 @@ model {
     }
   }
   layer {
-    name: "initial_layer_relu"
-    parents: "initial_layer_norm"
+    name: "index_3_initial_layer_relu"
+    parents: "index_2_initial_layer_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "initial_layer_pool"
-    parents: "initial_layer_relu"
+    name: "index_4_initial_layer_pool"
+    parents: "index_3_initial_layer_relu"
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
       pool_dims_i: 3
-      pool_strides_i: 2
       pool_pads_i: 1
+      pool_strides_i: 2
       pool_mode: "max"
     }
   }
   layer {
-    name: "resid_1_conv"
-    parents: "initial_layer_pool"
+    name: "index_5_resid_1_conv"
+    parents: "index_4_initial_layer_pool"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -115,8 +114,8 @@ model {
     }
   }
   layer {
-    name: "resid_1_norm"
-    parents: "resid_1_conv"
+    name: "index_6_resid_1_norm"
+    parents: "index_5_resid_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -125,12 +124,15 @@ model {
       epsilon: 1e-5
     }
   }
+
   ###################################################
-  # BottleNeck 1 Block 1
+  # BottleNeck Layer 1 Block 1
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_1_bottleneck_conv_1_part_1_conv"
-    parents: "initial_layer_pool"
+    name: "index_7_bottleneck_layer_1_bottleneck_block_1_part_1_conv"
+    parents: "index_4_initial_layer_pool"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -142,8 +144,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_1_bottleneck_conv_1_part_1_norm"
-    parents: "bottleneck_block_1_bottleneck_conv_1_part_1_conv"
+    name: "index_8_bottleneck_layer_1_bottleneck_block_1_part_1_norm"
+    parents: "index_7_bottleneck_layer_1_bottleneck_block_1_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -153,15 +155,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_1_1_relu"
-    parents: "bottleneck_block_1_bottleneck_conv_1_part_1_norm"
+    name: "index_9_bottleneck_layer_1_bottleneck_block_1_part_1_relu"
+    parents: "index_8_bottleneck_layer_1_bottleneck_block_1_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_1_bottleneck_conv_1_part_2_conv"
-    parents: "bottleneck_block_1_1_relu"
+    name: "index_10_bottleneck_layer_1_bottleneck_block_1_part_2_conv"
+    parents: "index_9_bottleneck_layer_1_bottleneck_block_1_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -173,8 +175,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_1_bottleneck_conv_1_part_2_norm"
-    parents: "bottleneck_block_1_bottleneck_conv_1_part_2_conv"
+    name: "index_11_bottleneck_layer_1_bottleneck_block_1_part_2_norm"
+    parents: "index_10_bottleneck_layer_1_bottleneck_block_1_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -184,15 +186,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_1_2_relu"
-    parents: "bottleneck_block_1_bottleneck_conv_1_part_2_norm"
+    name: "index_12_bottleneck_layer_1_bottleneck_block_1_part_2_relu"
+    parents: "index_11_bottleneck_layer_1_bottleneck_block_1_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_1_bottleneck_conv_1_part_3_conv"
-    parents: "bottleneck_block_1_2_relu"
+    name: "index_13_bottleneck_layer_1_bottleneck_block_1_part_3_conv"
+    parents: "index_12_bottleneck_layer_1_bottleneck_block_1_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -204,8 +206,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_1_bottleneck_conv_1_part_3_norm"
-    parents: "bottleneck_block_1_bottleneck_conv_1_part_3_conv"
+    name: "index_14_bottleneck_layer_1_bottleneck_block_1_part_3_norm"
+    parents: "index_13_bottleneck_layer_1_bottleneck_block_1_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -215,25 +217,28 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_1_sum"
-    parents: "resid_1_norm bottleneck_block_1_bottleneck_conv_1_part_3_norm"
+    name: "index_15_bottleneck_layer_1_bottleneck_block_1_sum"
+    parents: "index_6_resid_1_norm index_14_bottleneck_layer_1_bottleneck_block_1_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_1_3_relu"
-    parents: "bottleneck_block_1_sum"
+    name: "index_16_bottleneck_layer_1_bottleneck_block_1_part_3_relu"
+    parents: "index_15_bottleneck_layer_1_bottleneck_block_1_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
+
   ###################################################
-  # BottleNeck 2 Block 2
+  # BottleNeck Layer 1 Block 2
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_2_bottleneck_conv_2_part_1_conv"
-    parents: "bottleneck_block_1_3_relu"
+    name: "index_17_bottleneck_layer_1_bottleneck_block_2_part_1_conv"
+    parents: "index_16_bottleneck_layer_1_bottleneck_block_1_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -245,8 +250,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_2_bottleneck_conv_2_part_1_norm"
-    parents: "bottleneck_block_2_bottleneck_conv_2_part_1_conv"
+    name: "index_18_bottleneck_layer_1_bottleneck_block_2_part_1_norm"
+    parents: "index_17_bottleneck_layer_1_bottleneck_block_2_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -256,15 +261,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_2_1_relu"
-    parents: "bottleneck_block_2_bottleneck_conv_2_part_1_norm"
+    name: "index_19_bottleneck_layer_1_bottleneck_block_2_part_1_relu"
+    parents: "index_18_bottleneck_layer_1_bottleneck_block_2_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_2_bottleneck_conv_2_part_2_conv"
-    parents: "bottleneck_block_2_1_relu"
+    name: "index_20_bottleneck_layer_1_bottleneck_block_2_part_2_conv"
+    parents: "index_19_bottleneck_layer_1_bottleneck_block_2_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -276,8 +281,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_2_bottleneck_conv_2_part_2_norm"
-    parents: "bottleneck_block_2_bottleneck_conv_2_part_2_conv"
+    name: "index_21_bottleneck_layer_1_bottleneck_block_2_part_2_norm"
+    parents: "index_20_bottleneck_layer_1_bottleneck_block_2_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -287,15 +292,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_2_2_relu"
-    parents: "bottleneck_block_2_bottleneck_conv_2_part_2_norm"
+    name: "index_22_bottleneck_layer_1_bottleneck_block_2_part_2_relu"
+    parents: "index_21_bottleneck_layer_1_bottleneck_block_2_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_2_bottleneck_conv_2_part_3_conv"
-    parents: "bottleneck_block_2_2_relu"
+    name: "index_23_bottleneck_layer_1_bottleneck_block_2_part_3_conv"
+    parents: "index_22_bottleneck_layer_1_bottleneck_block_2_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -307,8 +312,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_2_bottleneck_conv_2_part_3_norm"
-    parents: "bottleneck_block_2_bottleneck_conv_2_part_3_conv"
+    name: "index_24_bottleneck_layer_1_bottleneck_block_2_part_3_norm"
+    parents: "index_23_bottleneck_layer_1_bottleneck_block_2_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -318,25 +323,28 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_2_sum"
-    parents: "bottleneck_block_1_3_relu bottleneck_block_2_bottleneck_conv_2_part_3_norm"
+    name: "index_25_bottleneck_layer_1_bottleneck_block_2_sum"
+    parents: "index_6_resid_1_norm index_24_bottleneck_layer_1_bottleneck_block_2_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_2_3_relu"
-    parents: "bottleneck_block_2_sum"
+    name: "index_26_bottleneck_layer_1_bottleneck_block_2_part_3_relu"
+    parents: "index_25_bottleneck_layer_1_bottleneck_block_2_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
+
   ###################################################
-  # BottleNeck 3 Block 3
+  # BottleNeck Layer 1 Block 3
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_3_bottleneck_conv_3_part_1_conv"
-    parents: "bottleneck_block_2_3_relu"
+    name: "index_27_bottleneck_layer_1_bottleneck_block_3_part_1_conv"
+    parents: "index_26_bottleneck_layer_1_bottleneck_block_2_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -348,8 +356,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_3_bottleneck_conv_3_part_1_norm"
-    parents: "bottleneck_block_3_bottleneck_conv_3_part_1_conv"
+    name: "index_28_bottleneck_layer_1_bottleneck_block_3_part_1_norm"
+    parents: "index_27_bottleneck_layer_1_bottleneck_block_3_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -359,15 +367,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_3_1_relu"
-    parents: "bottleneck_block_3_bottleneck_conv_3_part_1_norm"
+    name: "index_29_bottleneck_layer_1_bottleneck_block_3_part_1_relu"
+    parents: "index_28_bottleneck_layer_1_bottleneck_block_3_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_3_bottleneck_conv_3_part_2_conv"
-    parents: "bottleneck_block_3_1_relu"
+    name: "index_30_bottleneck_layer_1_bottleneck_block_3_part_2_conv"
+    parents: "index_29_bottleneck_layer_1_bottleneck_block_3_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -379,8 +387,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_3_bottleneck_conv_3_part_2_norm"
-    parents: "bottleneck_block_3_bottleneck_conv_3_part_2_conv"
+    name: "index_31_bottleneck_layer_1_bottleneck_block_3_part_2_norm"
+    parents: "index_30_bottleneck_layer_1_bottleneck_block_3_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -390,15 +398,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_3_2_relu"
-    parents: "bottleneck_block_3_bottleneck_conv_3_part_2_norm"
+    name: "index_32_bottleneck_layer_1_bottleneck_block_3_part_2_relu"
+    parents: "index_31_bottleneck_layer_1_bottleneck_block_3_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_3_bottleneck_conv_3_part_3_conv"
-    parents: "bottleneck_block_3_2_relu"
+    name: "index_33_bottleneck_layer_1_bottleneck_block_3_part_3_conv"
+    parents: "index_32_bottleneck_layer_1_bottleneck_block_3_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -410,8 +418,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_3_bottleneck_conv_3_part_3_norm"
-    parents: "bottleneck_block_3_bottleneck_conv_3_part_3_conv"
+    name: "index_34_bottleneck_layer_1_bottleneck_block_3_part_3_norm"
+    parents: "index_33_bottleneck_layer_1_bottleneck_block_3_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -421,22 +429,22 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_3_sum"
-    parents: "bottleneck_block_2_3_relu bottleneck_block_3_bottleneck_conv_3_part_3_norm"
+    name: "index_35_bottleneck_layer_1_bottleneck_block_3_sum"
+    parents: "index_6_resid_1_norm index_34_bottleneck_layer_1_bottleneck_block_3_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_3_3_relu"
-    parents: "bottleneck_block_3_sum"
+    name: "index_36_bottleneck_layer_1_bottleneck_block_3_part_3_relu"
+    parents: "index_35_bottleneck_layer_1_bottleneck_block_3_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "resid_4_conv"
-    parents: "bottleneck_block_3_3_relu"
+    name: "index_37_resid_4_conv"
+    parents: "index_36_bottleneck_layer_1_bottleneck_block_3_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -448,8 +456,8 @@ model {
     }
   }
   layer {
-    name: "resid_4_norm"
-    parents: "resid_4_conv"
+    name: "index_38_resid_4_norm"
+    parents: "index_37_resid_4_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -458,12 +466,15 @@ model {
       epsilon: 1e-5
     }
   }
+
   ###################################################
-  # BottleNeck 4 Block 1
+  # BottleNeck Layer 2 Block 1
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_4_bottleneck_conv_4_part_1_conv"
-    parents: "bottleneck_block_3_3_relu"
+    name: "index_39_bottleneck_layer_2_bottleneck_block_1_part_1_conv"
+    parents: "index_36_bottleneck_layer_1_bottleneck_block_3_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -475,8 +486,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_4_bottleneck_conv_4_part_1_norm"
-    parents: "bottleneck_block_4_bottleneck_conv_4_part_1_conv"
+    name: "index_40_bottleneck_layer_2_bottleneck_block_1_part_1_norm"
+    parents: "index_39_bottleneck_layer_2_bottleneck_block_1_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -486,15 +497,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_4_1_relu"
-    parents: "bottleneck_block_4_bottleneck_conv_4_part_1_norm"
+    name: "index_41_bottleneck_layer_2_bottleneck_block_1_part_1_relu"
+    parents: "index_40_bottleneck_layer_2_bottleneck_block_1_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_4_bottleneck_conv_4_part_2_conv"
-    parents: "bottleneck_block_4_1_relu"
+    name: "index_42_bottleneck_layer_2_bottleneck_block_1_part_2_conv"
+    parents: "index_41_bottleneck_layer_2_bottleneck_block_1_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -506,8 +517,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_4_bottleneck_conv_4_part_2_norm"
-    parents: "bottleneck_block_4_bottleneck_conv_4_part_2_conv"
+    name: "index_43_bottleneck_layer_2_bottleneck_block_1_part_2_norm"
+    parents: "index_42_bottleneck_layer_2_bottleneck_block_1_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -517,15 +528,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_4_2_relu"
-    parents: "bottleneck_block_4_bottleneck_conv_4_part_2_norm"
+    name: "index_44_bottleneck_layer_2_bottleneck_block_1_part_2_relu"
+    parents: "index_43_bottleneck_layer_2_bottleneck_block_1_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_4_bottleneck_conv_4_part_3_conv"
-    parents: "bottleneck_block_4_2_relu"
+    name: "index_45_bottleneck_layer_2_bottleneck_block_1_part_3_conv"
+    parents: "index_44_bottleneck_layer_2_bottleneck_block_1_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -537,8 +548,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_4_bottleneck_conv_4_part_3_norm"
-    parents: "bottleneck_block_4_bottleneck_conv_4_part_3_conv"
+    name: "index_46_bottleneck_layer_2_bottleneck_block_1_part_3_norm"
+    parents: "index_45_bottleneck_layer_2_bottleneck_block_1_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -548,25 +559,28 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_4_sum"
-    parents: "resid_4_norm bottleneck_block_4_bottleneck_conv_4_part_3_norm"
+    name: "index_47_bottleneck_layer_2_bottleneck_block_1_sum"
+    parents: "index_38_resid_4_norm index_46_bottleneck_layer_2_bottleneck_block_1_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_4_3_relu"
-    parents: "bottleneck_block_4_sum"
+    name: "index_48_bottleneck_layer_2_bottleneck_block_1_part_3_relu"
+    parents: "index_47_bottleneck_layer_2_bottleneck_block_1_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
+
   ###################################################
-  # BottleNeck 5 Block 2
+  # BottleNeck Layer 2 Block 2
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_5_bottleneck_conv_5_part_1_conv"
-    parents: "bottleneck_block_4_3_relu"
+    name: "index_49_bottleneck_layer_2_bottleneck_block_2_part_1_conv"
+    parents: "index_48_bottleneck_layer_2_bottleneck_block_1_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -578,8 +592,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_5_bottleneck_conv_5_part_1_norm"
-    parents: "bottleneck_block_5_bottleneck_conv_5_part_1_conv"
+    name: "index_50_bottleneck_layer_2_bottleneck_block_2_part_1_norm"
+    parents: "index_49_bottleneck_layer_2_bottleneck_block_2_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -589,15 +603,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_5_1_relu"
-    parents: "bottleneck_block_5_bottleneck_conv_5_part_1_norm"
+    name: "index_51_bottleneck_layer_2_bottleneck_block_2_part_1_relu"
+    parents: "index_50_bottleneck_layer_2_bottleneck_block_2_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_5_bottleneck_conv_5_part_2_conv"
-    parents: "bottleneck_block_5_1_relu"
+    name: "index_52_bottleneck_layer_2_bottleneck_block_2_part_2_conv"
+    parents: "index_51_bottleneck_layer_2_bottleneck_block_2_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -609,8 +623,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_5_bottleneck_conv_5_part_2_norm"
-    parents: "bottleneck_block_5_bottleneck_conv_5_part_2_conv"
+    name: "index_53_bottleneck_layer_2_bottleneck_block_2_part_2_norm"
+    parents: "index_52_bottleneck_layer_2_bottleneck_block_2_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -620,15 +634,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_5_2_relu"
-    parents: "bottleneck_block_5_bottleneck_conv_5_part_2_norm"
+    name: "index_54_bottleneck_layer_2_bottleneck_block_2_part_2_relu"
+    parents: "index_53_bottleneck_layer_2_bottleneck_block_2_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_5_bottleneck_conv_5_part_3_conv"
-    parents: "bottleneck_block_5_2_relu"
+    name: "index_55_bottleneck_layer_2_bottleneck_block_2_part_3_conv"
+    parents: "index_54_bottleneck_layer_2_bottleneck_block_2_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -640,8 +654,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_5_bottleneck_conv_5_part_3_norm"
-    parents: "bottleneck_block_5_bottleneck_conv_5_part_3_conv"
+    name: "index_56_bottleneck_layer_2_bottleneck_block_2_part_3_norm"
+    parents: "index_55_bottleneck_layer_2_bottleneck_block_2_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -651,25 +665,28 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_5_sum"
-    parents: "bottleneck_block_4_3_relu bottleneck_block_5_bottleneck_conv_5_part_3_norm"
+    name: "index_57_bottleneck_layer_2_bottleneck_block_2_sum"
+    parents: "index_38_resid_4_norm index_56_bottleneck_layer_2_bottleneck_block_2_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_5_3_relu"
-    parents: "bottleneck_block_5_sum"
+    name: "index_58_bottleneck_layer_2_bottleneck_block_2_part_3_relu"
+    parents: "index_57_bottleneck_layer_2_bottleneck_block_2_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
+
   ###################################################
-  # BottleNeck 6 Block 3
+  # BottleNeck Layer 2 Block 3
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_6_bottleneck_conv_6_part_1_conv"
-    parents: "bottleneck_block_5_3_relu"
+    name: "index_59_bottleneck_layer_2_bottleneck_block_3_part_1_conv"
+    parents: "index_58_bottleneck_layer_2_bottleneck_block_2_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -681,8 +698,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_6_bottleneck_conv_6_part_1_norm"
-    parents: "bottleneck_block_6_bottleneck_conv_6_part_1_conv"
+    name: "index_60_bottleneck_layer_2_bottleneck_block_3_part_1_norm"
+    parents: "index_59_bottleneck_layer_2_bottleneck_block_3_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -692,15 +709,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_6_1_relu"
-    parents: "bottleneck_block_6_bottleneck_conv_6_part_1_norm"
+    name: "index_61_bottleneck_layer_2_bottleneck_block_3_part_1_relu"
+    parents: "index_60_bottleneck_layer_2_bottleneck_block_3_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_6_bottleneck_conv_6_part_2_conv"
-    parents: "bottleneck_block_6_1_relu"
+    name: "index_62_bottleneck_layer_2_bottleneck_block_3_part_2_conv"
+    parents: "index_61_bottleneck_layer_2_bottleneck_block_3_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -712,8 +729,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_6_bottleneck_conv_6_part_2_norm"
-    parents: "bottleneck_block_6_bottleneck_conv_6_part_2_conv"
+    name: "index_63_bottleneck_layer_2_bottleneck_block_3_part_2_norm"
+    parents: "index_62_bottleneck_layer_2_bottleneck_block_3_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -723,15 +740,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_6_2_relu"
-    parents: "bottleneck_block_6_bottleneck_conv_6_part_2_norm"
+    name: "index_64_bottleneck_layer_2_bottleneck_block_3_part_2_relu"
+    parents: "index_63_bottleneck_layer_2_bottleneck_block_3_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_6_bottleneck_conv_6_part_3_conv"
-    parents: "bottleneck_block_6_2_relu"
+    name: "index_65_bottleneck_layer_2_bottleneck_block_3_part_3_conv"
+    parents: "index_64_bottleneck_layer_2_bottleneck_block_3_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -743,8 +760,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_6_bottleneck_conv_6_part_3_norm"
-    parents: "bottleneck_block_6_bottleneck_conv_6_part_3_conv"
+    name: "index_66_bottleneck_layer_2_bottleneck_block_3_part_3_norm"
+    parents: "index_65_bottleneck_layer_2_bottleneck_block_3_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -754,25 +771,28 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_6_sum"
-    parents: "bottleneck_block_5_3_relu bottleneck_block_6_bottleneck_conv_6_part_3_norm"
+    name: "index_67_bottleneck_layer_2_bottleneck_block_3_sum"
+    parents: "index_38_resid_4_norm index_66_bottleneck_layer_2_bottleneck_block_3_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_6_3_relu"
-    parents: "bottleneck_block_6_sum"
+    name: "index_68_bottleneck_layer_2_bottleneck_block_3_part_3_relu"
+    parents: "index_67_bottleneck_layer_2_bottleneck_block_3_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
+
   ###################################################
-  # BottleNeck 7 Block 4
+  # BottleNeck Layer 2 Block 4
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_7_bottleneck_conv_7_part_1_conv"
-    parents: "bottleneck_block_6_3_relu"
+    name: "index_69_bottleneck_layer_2_bottleneck_block_4_part_1_conv"
+    parents: "index_68_bottleneck_layer_2_bottleneck_block_3_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -784,8 +804,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_7_bottleneck_conv_7_part_1_norm"
-    parents: "bottleneck_block_7_bottleneck_conv_7_part_1_conv"
+    name: "index_70_bottleneck_layer_2_bottleneck_block_4_part_1_norm"
+    parents: "index_69_bottleneck_layer_2_bottleneck_block_4_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -795,15 +815,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_7_1_relu"
-    parents: "bottleneck_block_7_bottleneck_conv_7_part_1_norm"
+    name: "index_71_bottleneck_layer_2_bottleneck_block_4_part_1_relu"
+    parents: "index_70_bottleneck_layer_2_bottleneck_block_4_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_7_bottleneck_conv_7_part_2_conv"
-    parents: "bottleneck_block_7_1_relu"
+    name: "index_72_bottleneck_layer_2_bottleneck_block_4_part_2_conv"
+    parents: "index_71_bottleneck_layer_2_bottleneck_block_4_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -815,8 +835,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_7_bottleneck_conv_7_part_2_norm"
-    parents: "bottleneck_block_7_bottleneck_conv_7_part_2_conv"
+    name: "index_73_bottleneck_layer_2_bottleneck_block_4_part_2_norm"
+    parents: "index_72_bottleneck_layer_2_bottleneck_block_4_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -826,15 +846,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_7_2_relu"
-    parents: "bottleneck_block_7_bottleneck_conv_7_part_2_norm"
+    name: "index_74_bottleneck_layer_2_bottleneck_block_4_part_2_relu"
+    parents: "index_73_bottleneck_layer_2_bottleneck_block_4_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_7_bottleneck_conv_7_part_3_conv"
-    parents: "bottleneck_block_7_2_relu"
+    name: "index_75_bottleneck_layer_2_bottleneck_block_4_part_3_conv"
+    parents: "index_74_bottleneck_layer_2_bottleneck_block_4_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -846,8 +866,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_7_bottleneck_conv_7_part_3_norm"
-    parents: "bottleneck_block_7_bottleneck_conv_7_part_3_conv"
+    name: "index_76_bottleneck_layer_2_bottleneck_block_4_part_3_norm"
+    parents: "index_75_bottleneck_layer_2_bottleneck_block_4_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -857,22 +877,22 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_7_sum"
-    parents: "bottleneck_block_6_3_relu bottleneck_block_7_bottleneck_conv_7_part_3_norm"
+    name: "index_77_bottleneck_layer_2_bottleneck_block_4_sum"
+    parents: "index_38_resid_4_norm index_76_bottleneck_layer_2_bottleneck_block_4_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_7_3_relu"
-    parents: "bottleneck_block_7_sum"
+    name: "index_78_bottleneck_layer_2_bottleneck_block_4_part_3_relu"
+    parents: "index_77_bottleneck_layer_2_bottleneck_block_4_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "resid_8_conv"
-    parents: "bottleneck_block_7_3_relu"
+    name: "index_79_resid_8_conv"
+    parents: "index_78_bottleneck_layer_2_bottleneck_block_4_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -884,8 +904,8 @@ model {
     }
   }
   layer {
-    name: "resid_8_norm"
-    parents: "resid_8_conv"
+    name: "index_80_resid_8_norm"
+    parents: "index_79_resid_8_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -894,12 +914,15 @@ model {
       epsilon: 1e-5
     }
   }
+
   ###################################################
-  # BottleNeck 8 Block 1
+  # BottleNeck Layer 3 Block 1
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_8_bottleneck_conv_8_part_1_conv"
-    parents: "bottleneck_block_7_3_relu"
+    name: "index_81_bottleneck_layer_3_bottleneck_block_1_part_1_conv"
+    parents: "index_78_bottleneck_layer_2_bottleneck_block_4_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -911,8 +934,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_8_bottleneck_conv_8_part_1_norm"
-    parents: "bottleneck_block_8_bottleneck_conv_8_part_1_conv"
+    name: "index_82_bottleneck_layer_3_bottleneck_block_1_part_1_norm"
+    parents: "index_81_bottleneck_layer_3_bottleneck_block_1_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -922,118 +945,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_8_1_relu"
-    parents: "bottleneck_block_8_bottleneck_conv_8_part_1_norm"
+    name: "index_83_bottleneck_layer_3_bottleneck_block_1_part_1_relu"
+    parents: "index_82_bottleneck_layer_3_bottleneck_block_1_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_8_bottleneck_conv_8_part_2_conv"
-    parents: "bottleneck_block_8_1_relu"
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 256
-      conv_dims_i: 3
-      conv_pads_i: 1
-      conv_strides_i: 1
-      has_bias: false
-    }
-  }
-  layer {
-    name: "bottleneck_block_8_bottleneck_conv_8_part_2_norm"
-    parents: "bottleneck_block_8_bottleneck_conv_8_part_2_conv"
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-  }
-  layer {
-    name: "bottleneck_block_8_2_relu"
-    parents: "bottleneck_block_8_bottleneck_conv_8_part_2_norm"
-    data_layout: "data_parallel"
-    relu {
-    }
-  }
-  layer {
-    name: "bottleneck_block_8_bottleneck_conv_8_part_3_conv"
-    parents: "bottleneck_block_8_2_relu"
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 1024
-      conv_dims_i: 1
-      conv_pads_i: 0
-      conv_strides_i: 1
-      has_bias: false
-    }
-  }
-  layer {
-    name: "bottleneck_block_8_bottleneck_conv_8_part_3_norm"
-    parents: "bottleneck_block_8_bottleneck_conv_8_part_3_conv"
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-  }
-  layer {
-    name: "bottleneck_block_8_sum"
-    parents: "resid_8_norm bottleneck_block_8_bottleneck_conv_8_part_3_norm"
-    data_layout: "data_parallel"
-    sum {
-    }
-  }
-  layer {
-    name: "bottleneck_block_8_3_relu"
-    parents: "bottleneck_block_8_sum"
-    data_layout: "data_parallel"
-    relu {
-    }
-  }
-  ###################################################
-  # BottleNeck 9 Block 2
-  ###################################################
-  layer {
-    name: "bottleneck_block_9_bottleneck_conv_9_part_1_conv"
-    parents: "bottleneck_block_8_3_relu"
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 256
-      conv_dims_i: 1
-      conv_pads_i: 0
-      conv_strides_i: 1
-      has_bias: false
-    }
-  }
-  layer {
-    name: "bottleneck_block_9_bottleneck_conv_9_part_1_norm"
-    parents: "bottleneck_block_9_bottleneck_conv_9_part_1_conv"
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-  }
-  layer {
-    name: "bottleneck_block_9_1_relu"
-    parents: "bottleneck_block_9_bottleneck_conv_9_part_1_norm"
-    data_layout: "data_parallel"
-    relu {
-    }
-  }
-  layer {
-    name: "bottleneck_block_9_bottleneck_conv_9_part_2_conv"
-    parents: "bottleneck_block_9_1_relu"
+    name: "index_84_bottleneck_layer_3_bottleneck_block_1_part_2_conv"
+    parents: "index_83_bottleneck_layer_3_bottleneck_block_1_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1045,8 +965,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_9_bottleneck_conv_9_part_2_norm"
-    parents: "bottleneck_block_9_bottleneck_conv_9_part_2_conv"
+    name: "index_85_bottleneck_layer_3_bottleneck_block_1_part_2_norm"
+    parents: "index_84_bottleneck_layer_3_bottleneck_block_1_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1056,15 +976,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_9_2_relu"
-    parents: "bottleneck_block_9_bottleneck_conv_9_part_2_norm"
+    name: "index_86_bottleneck_layer_3_bottleneck_block_1_part_2_relu"
+    parents: "index_85_bottleneck_layer_3_bottleneck_block_1_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_9_bottleneck_conv_9_part_3_conv"
-    parents: "bottleneck_block_9_2_relu"
+    name: "index_87_bottleneck_layer_3_bottleneck_block_1_part_3_conv"
+    parents: "index_86_bottleneck_layer_3_bottleneck_block_1_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1076,8 +996,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_9_bottleneck_conv_9_part_3_norm"
-    parents: "bottleneck_block_9_bottleneck_conv_9_part_3_conv"
+    name: "index_88_bottleneck_layer_3_bottleneck_block_1_part_3_norm"
+    parents: "index_87_bottleneck_layer_3_bottleneck_block_1_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1087,25 +1007,28 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_9_sum"
-    parents: "bottleneck_block_8_3_relu bottleneck_block_9_bottleneck_conv_9_part_3_norm"
+    name: "index_89_bottleneck_layer_3_bottleneck_block_1_sum"
+    parents: "index_80_resid_8_norm index_88_bottleneck_layer_3_bottleneck_block_1_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_9_3_relu"
-    parents: "bottleneck_block_9_sum"
+    name: "index_90_bottleneck_layer_3_bottleneck_block_1_part_3_relu"
+    parents: "index_89_bottleneck_layer_3_bottleneck_block_1_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
+
   ###################################################
-  # BottleNeck 10 Block 3
+  # BottleNeck Layer 3 Block 2
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_10_bottleneck_conv_10_part_1_conv"
-    parents: "bottleneck_block_9_3_relu"
+    name: "index_91_bottleneck_layer_3_bottleneck_block_2_part_1_conv"
+    parents: "index_90_bottleneck_layer_3_bottleneck_block_1_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1117,8 +1040,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_10_bottleneck_conv_10_part_1_norm"
-    parents: "bottleneck_block_10_bottleneck_conv_10_part_1_conv"
+    name: "index_92_bottleneck_layer_3_bottleneck_block_2_part_1_norm"
+    parents: "index_91_bottleneck_layer_3_bottleneck_block_2_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1128,15 +1051,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_10_1_relu"
-    parents: "bottleneck_block_10_bottleneck_conv_10_part_1_norm"
+    name: "index_93_bottleneck_layer_3_bottleneck_block_2_part_1_relu"
+    parents: "index_92_bottleneck_layer_3_bottleneck_block_2_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_10_bottleneck_conv_10_part_2_conv"
-    parents: "bottleneck_block_10_1_relu"
+    name: "index_94_bottleneck_layer_3_bottleneck_block_2_part_2_conv"
+    parents: "index_93_bottleneck_layer_3_bottleneck_block_2_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1148,8 +1071,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_10_bottleneck_conv_10_part_2_norm"
-    parents: "bottleneck_block_10_bottleneck_conv_10_part_2_conv"
+    name: "index_95_bottleneck_layer_3_bottleneck_block_2_part_2_norm"
+    parents: "index_94_bottleneck_layer_3_bottleneck_block_2_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1159,15 +1082,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_10_2_relu"
-    parents: "bottleneck_block_10_bottleneck_conv_10_part_2_norm"
+    name: "index_96_bottleneck_layer_3_bottleneck_block_2_part_2_relu"
+    parents: "index_95_bottleneck_layer_3_bottleneck_block_2_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_10_bottleneck_conv_10_part_3_conv"
-    parents: "bottleneck_block_10_2_relu"
+    name: "index_97_bottleneck_layer_3_bottleneck_block_2_part_3_conv"
+    parents: "index_96_bottleneck_layer_3_bottleneck_block_2_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1179,8 +1102,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_10_bottleneck_conv_10_part_3_norm"
-    parents: "bottleneck_block_10_bottleneck_conv_10_part_3_conv"
+    name: "index_98_bottleneck_layer_3_bottleneck_block_2_part_3_norm"
+    parents: "index_97_bottleneck_layer_3_bottleneck_block_2_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1190,25 +1113,28 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_10_sum"
-    parents: "bottleneck_block_9_3_relu bottleneck_block_10_bottleneck_conv_10_part_3_norm"
+    name: "index_99_bottleneck_layer_3_bottleneck_block_2_sum"
+    parents: "index_80_resid_8_norm index_98_bottleneck_layer_3_bottleneck_block_2_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_10_3_relu"
-    parents: "bottleneck_block_10_sum"
+    name: "index_100_bottleneck_layer_3_bottleneck_block_2_part_3_relu"
+    parents: "index_99_bottleneck_layer_3_bottleneck_block_2_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
+
   ###################################################
-  # BottleNeck 11 Block 4
+  # BottleNeck Layer 3 Block 3
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_11_bottleneck_conv_11_part_1_conv"
-    parents: "bottleneck_block_10_3_relu"
+    name: "index_101_bottleneck_layer_3_bottleneck_block_3_part_1_conv"
+    parents: "index_100_bottleneck_layer_3_bottleneck_block_2_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1220,8 +1146,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_11_bottleneck_conv_11_part_1_norm"
-    parents: "bottleneck_block_11_bottleneck_conv_11_part_1_conv"
+    name: "index_102_bottleneck_layer_3_bottleneck_block_3_part_1_norm"
+    parents: "index_101_bottleneck_layer_3_bottleneck_block_3_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1231,15 +1157,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_11_1_relu"
-    parents: "bottleneck_block_11_bottleneck_conv_11_part_1_norm"
+    name: "index_103_bottleneck_layer_3_bottleneck_block_3_part_1_relu"
+    parents: "index_102_bottleneck_layer_3_bottleneck_block_3_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_11_bottleneck_conv_11_part_2_conv"
-    parents: "bottleneck_block_11_1_relu"
+    name: "index_104_bottleneck_layer_3_bottleneck_block_3_part_2_conv"
+    parents: "index_103_bottleneck_layer_3_bottleneck_block_3_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1251,8 +1177,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_11_bottleneck_conv_11_part_2_norm"
-    parents: "bottleneck_block_11_bottleneck_conv_11_part_2_conv"
+    name: "index_105_bottleneck_layer_3_bottleneck_block_3_part_2_norm"
+    parents: "index_104_bottleneck_layer_3_bottleneck_block_3_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1262,15 +1188,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_11_2_relu"
-    parents: "bottleneck_block_11_bottleneck_conv_11_part_2_norm"
+    name: "index_106_bottleneck_layer_3_bottleneck_block_3_part_2_relu"
+    parents: "index_105_bottleneck_layer_3_bottleneck_block_3_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_11_bottleneck_conv_11_part_3_conv"
-    parents: "bottleneck_block_11_2_relu"
+    name: "index_107_bottleneck_layer_3_bottleneck_block_3_part_3_conv"
+    parents: "index_106_bottleneck_layer_3_bottleneck_block_3_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1282,8 +1208,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_11_bottleneck_conv_11_part_3_norm"
-    parents: "bottleneck_block_11_bottleneck_conv_11_part_3_conv"
+    name: "index_108_bottleneck_layer_3_bottleneck_block_3_part_3_norm"
+    parents: "index_107_bottleneck_layer_3_bottleneck_block_3_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1293,25 +1219,28 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_11_sum"
-    parents: "bottleneck_block_10_3_relu bottleneck_block_11_bottleneck_conv_11_part_3_norm"
+    name: "index_109_bottleneck_layer_3_bottleneck_block_3_sum"
+    parents: "index_80_resid_8_norm index_108_bottleneck_layer_3_bottleneck_block_3_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_11_3_relu"
-    parents: "bottleneck_block_11_sum"
+    name: "index_110_bottleneck_layer_3_bottleneck_block_3_part_3_relu"
+    parents: "index_109_bottleneck_layer_3_bottleneck_block_3_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
+
   ###################################################
-  # BottleNeck 12 Block 5
+  # BottleNeck Layer 3 Block 4
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_12_bottleneck_conv_12_part_1_conv"
-    parents: "bottleneck_block_11_3_relu"
+    name: "index_111_bottleneck_layer_3_bottleneck_block_4_part_1_conv"
+    parents: "index_110_bottleneck_layer_3_bottleneck_block_3_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1323,8 +1252,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_12_bottleneck_conv_12_part_1_norm"
-    parents: "bottleneck_block_12_bottleneck_conv_12_part_1_conv"
+    name: "index_112_bottleneck_layer_3_bottleneck_block_4_part_1_norm"
+    parents: "index_111_bottleneck_layer_3_bottleneck_block_4_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1334,15 +1263,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_12_1_relu"
-    parents: "bottleneck_block_12_bottleneck_conv_12_part_1_norm"
+    name: "index_113_bottleneck_layer_3_bottleneck_block_4_part_1_relu"
+    parents: "index_112_bottleneck_layer_3_bottleneck_block_4_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_12_bottleneck_conv_12_part_2_conv"
-    parents: "bottleneck_block_12_1_relu"
+    name: "index_114_bottleneck_layer_3_bottleneck_block_4_part_2_conv"
+    parents: "index_113_bottleneck_layer_3_bottleneck_block_4_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1354,8 +1283,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_12_bottleneck_conv_12_part_2_norm"
-    parents: "bottleneck_block_12_bottleneck_conv_12_part_2_conv"
+    name: "index_115_bottleneck_layer_3_bottleneck_block_4_part_2_norm"
+    parents: "index_114_bottleneck_layer_3_bottleneck_block_4_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1365,15 +1294,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_12_2_relu"
-    parents: "bottleneck_block_12_bottleneck_conv_12_part_2_norm"
+    name: "index_116_bottleneck_layer_3_bottleneck_block_4_part_2_relu"
+    parents: "index_115_bottleneck_layer_3_bottleneck_block_4_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_12_bottleneck_conv_12_part_3_conv"
-    parents: "bottleneck_block_12_2_relu"
+    name: "index_117_bottleneck_layer_3_bottleneck_block_4_part_3_conv"
+    parents: "index_116_bottleneck_layer_3_bottleneck_block_4_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1385,8 +1314,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_12_bottleneck_conv_12_part_3_norm"
-    parents: "bottleneck_block_12_bottleneck_conv_12_part_3_conv"
+    name: "index_118_bottleneck_layer_3_bottleneck_block_4_part_3_norm"
+    parents: "index_117_bottleneck_layer_3_bottleneck_block_4_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1396,25 +1325,28 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_12_sum"
-    parents: "bottleneck_block_11_3_relu bottleneck_block_12_bottleneck_conv_12_part_3_norm"
+    name: "index_119_bottleneck_layer_3_bottleneck_block_4_sum"
+    parents: "index_80_resid_8_norm index_118_bottleneck_layer_3_bottleneck_block_4_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_12_3_relu"
-    parents: "bottleneck_block_12_sum"
+    name: "index_120_bottleneck_layer_3_bottleneck_block_4_part_3_relu"
+    parents: "index_119_bottleneck_layer_3_bottleneck_block_4_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
+
   ###################################################
-  # BottleNeck 13 Block 6
+  # BottleNeck Layer 3 Block 5
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_13_bottleneck_conv_13_part_1_conv"
-    parents: "bottleneck_block_12_3_relu"
+    name: "index_121_bottleneck_layer_3_bottleneck_block_5_part_1_conv"
+    parents: "index_120_bottleneck_layer_3_bottleneck_block_4_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1426,8 +1358,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_13_bottleneck_conv_13_part_1_norm"
-    parents: "bottleneck_block_13_bottleneck_conv_13_part_1_conv"
+    name: "index_122_bottleneck_layer_3_bottleneck_block_5_part_1_norm"
+    parents: "index_121_bottleneck_layer_3_bottleneck_block_5_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1437,15 +1369,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_13_1_relu"
-    parents: "bottleneck_block_13_bottleneck_conv_13_part_1_norm"
+    name: "index_123_bottleneck_layer_3_bottleneck_block_5_part_1_relu"
+    parents: "index_122_bottleneck_layer_3_bottleneck_block_5_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_13_bottleneck_conv_13_part_2_conv"
-    parents: "bottleneck_block_13_1_relu"
+    name: "index_124_bottleneck_layer_3_bottleneck_block_5_part_2_conv"
+    parents: "index_123_bottleneck_layer_3_bottleneck_block_5_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1457,8 +1389,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_13_bottleneck_conv_13_part_2_norm"
-    parents: "bottleneck_block_13_bottleneck_conv_13_part_2_conv"
+    name: "index_125_bottleneck_layer_3_bottleneck_block_5_part_2_norm"
+    parents: "index_124_bottleneck_layer_3_bottleneck_block_5_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1468,15 +1400,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_13_2_relu"
-    parents: "bottleneck_block_13_bottleneck_conv_13_part_2_norm"
+    name: "index_126_bottleneck_layer_3_bottleneck_block_5_part_2_relu"
+    parents: "index_125_bottleneck_layer_3_bottleneck_block_5_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_13_bottleneck_conv_13_part_3_conv"
-    parents: "bottleneck_block_13_2_relu"
+    name: "index_127_bottleneck_layer_3_bottleneck_block_5_part_3_conv"
+    parents: "index_126_bottleneck_layer_3_bottleneck_block_5_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1488,8 +1420,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_13_bottleneck_conv_13_part_3_norm"
-    parents: "bottleneck_block_13_bottleneck_conv_13_part_3_conv"
+    name: "index_128_bottleneck_layer_3_bottleneck_block_5_part_3_norm"
+    parents: "index_127_bottleneck_layer_3_bottleneck_block_5_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1499,25 +1431,28 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_13_sum"
-    parents: "bottleneck_block_12_3_relu bottleneck_block_13_bottleneck_conv_13_part_3_norm"
+    name: "index_129_bottleneck_layer_3_bottleneck_block_5_sum"
+    parents: "index_80_resid_8_norm index_128_bottleneck_layer_3_bottleneck_block_5_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_13_3_relu"
-    parents: "bottleneck_block_13_sum"
+    name: "index_130_bottleneck_layer_3_bottleneck_block_5_part_3_relu"
+    parents: "index_129_bottleneck_layer_3_bottleneck_block_5_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
+
   ###################################################
-  # BottleNeck 14 Block 7
+  # BottleNeck Layer 3 Block 6
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_14_bottleneck_conv_14_part_1_conv"
-    parents: "bottleneck_block_13_3_relu"
+    name: "index_131_bottleneck_layer_3_bottleneck_block_6_part_1_conv"
+    parents: "index_130_bottleneck_layer_3_bottleneck_block_5_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1529,8 +1464,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_14_bottleneck_conv_14_part_1_norm"
-    parents: "bottleneck_block_14_bottleneck_conv_14_part_1_conv"
+    name: "index_132_bottleneck_layer_3_bottleneck_block_6_part_1_norm"
+    parents: "index_131_bottleneck_layer_3_bottleneck_block_6_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1540,15 +1475,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_14_1_relu"
-    parents: "bottleneck_block_14_bottleneck_conv_14_part_1_norm"
+    name: "index_133_bottleneck_layer_3_bottleneck_block_6_part_1_relu"
+    parents: "index_132_bottleneck_layer_3_bottleneck_block_6_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_14_bottleneck_conv_14_part_2_conv"
-    parents: "bottleneck_block_14_1_relu"
+    name: "index_134_bottleneck_layer_3_bottleneck_block_6_part_2_conv"
+    parents: "index_133_bottleneck_layer_3_bottleneck_block_6_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1560,8 +1495,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_14_bottleneck_conv_14_part_2_norm"
-    parents: "bottleneck_block_14_bottleneck_conv_14_part_2_conv"
+    name: "index_135_bottleneck_layer_3_bottleneck_block_6_part_2_norm"
+    parents: "index_134_bottleneck_layer_3_bottleneck_block_6_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1571,15 +1506,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_14_2_relu"
-    parents: "bottleneck_block_14_bottleneck_conv_14_part_2_norm"
+    name: "index_136_bottleneck_layer_3_bottleneck_block_6_part_2_relu"
+    parents: "index_135_bottleneck_layer_3_bottleneck_block_6_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_14_bottleneck_conv_14_part_3_conv"
-    parents: "bottleneck_block_14_2_relu"
+    name: "index_137_bottleneck_layer_3_bottleneck_block_6_part_3_conv"
+    parents: "index_136_bottleneck_layer_3_bottleneck_block_6_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1591,8 +1526,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_14_bottleneck_conv_14_part_3_norm"
-    parents: "bottleneck_block_14_bottleneck_conv_14_part_3_conv"
+    name: "index_138_bottleneck_layer_3_bottleneck_block_6_part_3_norm"
+    parents: "index_137_bottleneck_layer_3_bottleneck_block_6_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1602,25 +1537,28 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_14_sum"
-    parents: "bottleneck_block_13_3_relu bottleneck_block_14_bottleneck_conv_14_part_3_norm"
+    name: "index_139_bottleneck_layer_3_bottleneck_block_6_sum"
+    parents: "index_80_resid_8_norm index_138_bottleneck_layer_3_bottleneck_block_6_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_14_3_relu"
-    parents: "bottleneck_block_14_sum"
+    name: "index_140_bottleneck_layer_3_bottleneck_block_6_part_3_relu"
+    parents: "index_139_bottleneck_layer_3_bottleneck_block_6_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
+
   ###################################################
-  # BottleNeck 15 Block 8
+  # BottleNeck Layer 3 Block 7
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_15_bottleneck_conv_15_part_1_conv"
-    parents: "bottleneck_block_14_3_relu"
+    name: "index_141_bottleneck_layer_3_bottleneck_block_7_part_1_conv"
+    parents: "index_140_bottleneck_layer_3_bottleneck_block_6_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1632,8 +1570,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_15_bottleneck_conv_15_part_1_norm"
-    parents: "bottleneck_block_15_bottleneck_conv_15_part_1_conv"
+    name: "index_142_bottleneck_layer_3_bottleneck_block_7_part_1_norm"
+    parents: "index_141_bottleneck_layer_3_bottleneck_block_7_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1643,15 +1581,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_15_1_relu"
-    parents: "bottleneck_block_15_bottleneck_conv_15_part_1_norm"
+    name: "index_143_bottleneck_layer_3_bottleneck_block_7_part_1_relu"
+    parents: "index_142_bottleneck_layer_3_bottleneck_block_7_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_15_bottleneck_conv_15_part_2_conv"
-    parents: "bottleneck_block_15_1_relu"
+    name: "index_144_bottleneck_layer_3_bottleneck_block_7_part_2_conv"
+    parents: "index_143_bottleneck_layer_3_bottleneck_block_7_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1663,8 +1601,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_15_bottleneck_conv_15_part_2_norm"
-    parents: "bottleneck_block_15_bottleneck_conv_15_part_2_conv"
+    name: "index_145_bottleneck_layer_3_bottleneck_block_7_part_2_norm"
+    parents: "index_144_bottleneck_layer_3_bottleneck_block_7_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1674,15 +1612,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_15_2_relu"
-    parents: "bottleneck_block_15_bottleneck_conv_15_part_2_norm"
+    name: "index_146_bottleneck_layer_3_bottleneck_block_7_part_2_relu"
+    parents: "index_145_bottleneck_layer_3_bottleneck_block_7_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_15_bottleneck_conv_15_part_3_conv"
-    parents: "bottleneck_block_15_2_relu"
+    name: "index_147_bottleneck_layer_3_bottleneck_block_7_part_3_conv"
+    parents: "index_146_bottleneck_layer_3_bottleneck_block_7_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1694,8 +1632,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_15_bottleneck_conv_15_part_3_norm"
-    parents: "bottleneck_block_15_bottleneck_conv_15_part_3_conv"
+    name: "index_148_bottleneck_layer_3_bottleneck_block_7_part_3_norm"
+    parents: "index_147_bottleneck_layer_3_bottleneck_block_7_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1705,25 +1643,28 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_15_sum"
-    parents: "bottleneck_block_14_3_relu bottleneck_block_15_bottleneck_conv_15_part_3_norm"
+    name: "index_149_bottleneck_layer_3_bottleneck_block_7_sum"
+    parents: "index_80_resid_8_norm index_148_bottleneck_layer_3_bottleneck_block_7_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_15_3_relu"
-    parents: "bottleneck_block_15_sum"
+    name: "index_150_bottleneck_layer_3_bottleneck_block_7_part_3_relu"
+    parents: "index_149_bottleneck_layer_3_bottleneck_block_7_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
+
   ###################################################
-  # BottleNeck 16 Block 9
+  # BottleNeck Layer 3 Block 8
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_16_bottleneck_conv_16_part_1_conv"
-    parents: "bottleneck_block_15_3_relu"
+    name: "index_151_bottleneck_layer_3_bottleneck_block_8_part_1_conv"
+    parents: "index_150_bottleneck_layer_3_bottleneck_block_7_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1735,8 +1676,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_16_bottleneck_conv_16_part_1_norm"
-    parents: "bottleneck_block_16_bottleneck_conv_16_part_1_conv"
+    name: "index_152_bottleneck_layer_3_bottleneck_block_8_part_1_norm"
+    parents: "index_151_bottleneck_layer_3_bottleneck_block_8_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1746,15 +1687,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_16_1_relu"
-    parents: "bottleneck_block_16_bottleneck_conv_16_part_1_norm"
+    name: "index_153_bottleneck_layer_3_bottleneck_block_8_part_1_relu"
+    parents: "index_152_bottleneck_layer_3_bottleneck_block_8_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_16_bottleneck_conv_16_part_2_conv"
-    parents: "bottleneck_block_16_1_relu"
+    name: "index_154_bottleneck_layer_3_bottleneck_block_8_part_2_conv"
+    parents: "index_153_bottleneck_layer_3_bottleneck_block_8_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1766,8 +1707,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_16_bottleneck_conv_16_part_2_norm"
-    parents: "bottleneck_block_16_bottleneck_conv_16_part_2_conv"
+    name: "index_155_bottleneck_layer_3_bottleneck_block_8_part_2_norm"
+    parents: "index_154_bottleneck_layer_3_bottleneck_block_8_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1777,15 +1718,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_16_2_relu"
-    parents: "bottleneck_block_16_bottleneck_conv_16_part_2_norm"
+    name: "index_156_bottleneck_layer_3_bottleneck_block_8_part_2_relu"
+    parents: "index_155_bottleneck_layer_3_bottleneck_block_8_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_16_bottleneck_conv_16_part_3_conv"
-    parents: "bottleneck_block_16_2_relu"
+    name: "index_157_bottleneck_layer_3_bottleneck_block_8_part_3_conv"
+    parents: "index_156_bottleneck_layer_3_bottleneck_block_8_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1797,8 +1738,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_16_bottleneck_conv_16_part_3_norm"
-    parents: "bottleneck_block_16_bottleneck_conv_16_part_3_conv"
+    name: "index_158_bottleneck_layer_3_bottleneck_block_8_part_3_norm"
+    parents: "index_157_bottleneck_layer_3_bottleneck_block_8_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1808,25 +1749,28 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_16_sum"
-    parents: "bottleneck_block_15_3_relu bottleneck_block_16_bottleneck_conv_16_part_3_norm"
+    name: "index_159_bottleneck_layer_3_bottleneck_block_8_sum"
+    parents: "index_80_resid_8_norm index_158_bottleneck_layer_3_bottleneck_block_8_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_16_3_relu"
-    parents: "bottleneck_block_16_sum"
+    name: "index_160_bottleneck_layer_3_bottleneck_block_8_part_3_relu"
+    parents: "index_159_bottleneck_layer_3_bottleneck_block_8_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
+
   ###################################################
-  # BottleNeck 17 Block 10
+  # BottleNeck Layer 3 Block 9
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_17_bottleneck_conv_17_part_1_conv"
-    parents: "bottleneck_block_16_3_relu"
+    name: "index_161_bottleneck_layer_3_bottleneck_block_9_part_1_conv"
+    parents: "index_160_bottleneck_layer_3_bottleneck_block_8_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1838,8 +1782,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_17_bottleneck_conv_17_part_1_norm"
-    parents: "bottleneck_block_17_bottleneck_conv_17_part_1_conv"
+    name: "index_162_bottleneck_layer_3_bottleneck_block_9_part_1_norm"
+    parents: "index_161_bottleneck_layer_3_bottleneck_block_9_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1849,15 +1793,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_17_1_relu"
-    parents: "bottleneck_block_17_bottleneck_conv_17_part_1_norm"
+    name: "index_163_bottleneck_layer_3_bottleneck_block_9_part_1_relu"
+    parents: "index_162_bottleneck_layer_3_bottleneck_block_9_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_17_bottleneck_conv_17_part_2_conv"
-    parents: "bottleneck_block_17_1_relu"
+    name: "index_164_bottleneck_layer_3_bottleneck_block_9_part_2_conv"
+    parents: "index_163_bottleneck_layer_3_bottleneck_block_9_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1869,8 +1813,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_17_bottleneck_conv_17_part_2_norm"
-    parents: "bottleneck_block_17_bottleneck_conv_17_part_2_conv"
+    name: "index_165_bottleneck_layer_3_bottleneck_block_9_part_2_norm"
+    parents: "index_164_bottleneck_layer_3_bottleneck_block_9_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1880,15 +1824,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_17_2_relu"
-    parents: "bottleneck_block_17_bottleneck_conv_17_part_2_norm"
+    name: "index_166_bottleneck_layer_3_bottleneck_block_9_part_2_relu"
+    parents: "index_165_bottleneck_layer_3_bottleneck_block_9_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_17_bottleneck_conv_17_part_3_conv"
-    parents: "bottleneck_block_17_2_relu"
+    name: "index_167_bottleneck_layer_3_bottleneck_block_9_part_3_conv"
+    parents: "index_166_bottleneck_layer_3_bottleneck_block_9_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1900,8 +1844,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_17_bottleneck_conv_17_part_3_norm"
-    parents: "bottleneck_block_17_bottleneck_conv_17_part_3_conv"
+    name: "index_168_bottleneck_layer_3_bottleneck_block_9_part_3_norm"
+    parents: "index_167_bottleneck_layer_3_bottleneck_block_9_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1911,25 +1855,28 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_17_sum"
-    parents: "bottleneck_block_16_3_relu bottleneck_block_17_bottleneck_conv_17_part_3_norm"
+    name: "index_169_bottleneck_layer_3_bottleneck_block_9_sum"
+    parents: "index_80_resid_8_norm index_168_bottleneck_layer_3_bottleneck_block_9_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_17_3_relu"
-    parents: "bottleneck_block_17_sum"
+    name: "index_170_bottleneck_layer_3_bottleneck_block_9_part_3_relu"
+    parents: "index_169_bottleneck_layer_3_bottleneck_block_9_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
+
   ###################################################
-  # BottleNeck 18 Block 11
+  # BottleNeck Layer 3 Block 10
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_18_bottleneck_conv_18_part_1_conv"
-    parents: "bottleneck_block_17_3_relu"
+    name: "index_171_bottleneck_layer_3_bottleneck_block_10_part_1_conv"
+    parents: "index_170_bottleneck_layer_3_bottleneck_block_9_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1941,8 +1888,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_18_bottleneck_conv_18_part_1_norm"
-    parents: "bottleneck_block_18_bottleneck_conv_18_part_1_conv"
+    name: "index_172_bottleneck_layer_3_bottleneck_block_10_part_1_norm"
+    parents: "index_171_bottleneck_layer_3_bottleneck_block_10_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1952,15 +1899,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_18_1_relu"
-    parents: "bottleneck_block_18_bottleneck_conv_18_part_1_norm"
+    name: "index_173_bottleneck_layer_3_bottleneck_block_10_part_1_relu"
+    parents: "index_172_bottleneck_layer_3_bottleneck_block_10_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_18_bottleneck_conv_18_part_2_conv"
-    parents: "bottleneck_block_18_1_relu"
+    name: "index_174_bottleneck_layer_3_bottleneck_block_10_part_2_conv"
+    parents: "index_173_bottleneck_layer_3_bottleneck_block_10_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1972,8 +1919,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_18_bottleneck_conv_18_part_2_norm"
-    parents: "bottleneck_block_18_bottleneck_conv_18_part_2_conv"
+    name: "index_175_bottleneck_layer_3_bottleneck_block_10_part_2_norm"
+    parents: "index_174_bottleneck_layer_3_bottleneck_block_10_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1983,15 +1930,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_18_2_relu"
-    parents: "bottleneck_block_18_bottleneck_conv_18_part_2_norm"
+    name: "index_176_bottleneck_layer_3_bottleneck_block_10_part_2_relu"
+    parents: "index_175_bottleneck_layer_3_bottleneck_block_10_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_18_bottleneck_conv_18_part_3_conv"
-    parents: "bottleneck_block_18_2_relu"
+    name: "index_177_bottleneck_layer_3_bottleneck_block_10_part_3_conv"
+    parents: "index_176_bottleneck_layer_3_bottleneck_block_10_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2003,8 +1950,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_18_bottleneck_conv_18_part_3_norm"
-    parents: "bottleneck_block_18_bottleneck_conv_18_part_3_conv"
+    name: "index_178_bottleneck_layer_3_bottleneck_block_10_part_3_norm"
+    parents: "index_177_bottleneck_layer_3_bottleneck_block_10_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2014,25 +1961,28 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_18_sum"
-    parents: "bottleneck_block_17_3_relu bottleneck_block_18_bottleneck_conv_18_part_3_norm"
+    name: "index_179_bottleneck_layer_3_bottleneck_block_10_sum"
+    parents: "index_80_resid_8_norm index_178_bottleneck_layer_3_bottleneck_block_10_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_18_3_relu"
-    parents: "bottleneck_block_18_sum"
+    name: "index_180_bottleneck_layer_3_bottleneck_block_10_part_3_relu"
+    parents: "index_179_bottleneck_layer_3_bottleneck_block_10_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
+
   ###################################################
-  # BottleNeck 19 Block 12
+  # BottleNeck Layer 3 Block 11
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_19_bottleneck_conv_19_part_1_conv"
-    parents: "bottleneck_block_18_3_relu"
+    name: "index_181_bottleneck_layer_3_bottleneck_block_11_part_1_conv"
+    parents: "index_180_bottleneck_layer_3_bottleneck_block_10_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2044,8 +1994,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_19_bottleneck_conv_19_part_1_norm"
-    parents: "bottleneck_block_19_bottleneck_conv_19_part_1_conv"
+    name: "index_182_bottleneck_layer_3_bottleneck_block_11_part_1_norm"
+    parents: "index_181_bottleneck_layer_3_bottleneck_block_11_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2055,15 +2005,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_19_1_relu"
-    parents: "bottleneck_block_19_bottleneck_conv_19_part_1_norm"
+    name: "index_183_bottleneck_layer_3_bottleneck_block_11_part_1_relu"
+    parents: "index_182_bottleneck_layer_3_bottleneck_block_11_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_19_bottleneck_conv_19_part_2_conv"
-    parents: "bottleneck_block_19_1_relu"
+    name: "index_184_bottleneck_layer_3_bottleneck_block_11_part_2_conv"
+    parents: "index_183_bottleneck_layer_3_bottleneck_block_11_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2075,8 +2025,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_19_bottleneck_conv_19_part_2_norm"
-    parents: "bottleneck_block_19_bottleneck_conv_19_part_2_conv"
+    name: "index_185_bottleneck_layer_3_bottleneck_block_11_part_2_norm"
+    parents: "index_184_bottleneck_layer_3_bottleneck_block_11_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2086,15 +2036,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_19_2_relu"
-    parents: "bottleneck_block_19_bottleneck_conv_19_part_2_norm"
+    name: "index_186_bottleneck_layer_3_bottleneck_block_11_part_2_relu"
+    parents: "index_185_bottleneck_layer_3_bottleneck_block_11_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_19_bottleneck_conv_19_part_3_conv"
-    parents: "bottleneck_block_19_2_relu"
+    name: "index_187_bottleneck_layer_3_bottleneck_block_11_part_3_conv"
+    parents: "index_186_bottleneck_layer_3_bottleneck_block_11_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2106,8 +2056,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_19_bottleneck_conv_19_part_3_norm"
-    parents: "bottleneck_block_19_bottleneck_conv_19_part_3_conv"
+    name: "index_188_bottleneck_layer_3_bottleneck_block_11_part_3_norm"
+    parents: "index_187_bottleneck_layer_3_bottleneck_block_11_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2117,25 +2067,28 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_19_sum"
-    parents: "bottleneck_block_18_3_relu bottleneck_block_19_bottleneck_conv_19_part_3_norm"
+    name: "index_189_bottleneck_layer_3_bottleneck_block_11_sum"
+    parents: "index_80_resid_8_norm index_188_bottleneck_layer_3_bottleneck_block_11_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_19_3_relu"
-    parents: "bottleneck_block_19_sum"
+    name: "index_190_bottleneck_layer_3_bottleneck_block_11_part_3_relu"
+    parents: "index_189_bottleneck_layer_3_bottleneck_block_11_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
+
   ###################################################
-  # BottleNeck 20 Block 13
+  # BottleNeck Layer 3 Block 12
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_20_bottleneck_conv_20_part_1_conv"
-    parents: "bottleneck_block_19_3_relu"
+    name: "index_191_bottleneck_layer_3_bottleneck_block_12_part_1_conv"
+    parents: "index_190_bottleneck_layer_3_bottleneck_block_11_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2147,8 +2100,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_20_bottleneck_conv_20_part_1_norm"
-    parents: "bottleneck_block_20_bottleneck_conv_20_part_1_conv"
+    name: "index_192_bottleneck_layer_3_bottleneck_block_12_part_1_norm"
+    parents: "index_191_bottleneck_layer_3_bottleneck_block_12_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2158,15 +2111,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_20_1_relu"
-    parents: "bottleneck_block_20_bottleneck_conv_20_part_1_norm"
+    name: "index_193_bottleneck_layer_3_bottleneck_block_12_part_1_relu"
+    parents: "index_192_bottleneck_layer_3_bottleneck_block_12_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_20_bottleneck_conv_20_part_2_conv"
-    parents: "bottleneck_block_20_1_relu"
+    name: "index_194_bottleneck_layer_3_bottleneck_block_12_part_2_conv"
+    parents: "index_193_bottleneck_layer_3_bottleneck_block_12_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2178,8 +2131,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_20_bottleneck_conv_20_part_2_norm"
-    parents: "bottleneck_block_20_bottleneck_conv_20_part_2_conv"
+    name: "index_195_bottleneck_layer_3_bottleneck_block_12_part_2_norm"
+    parents: "index_194_bottleneck_layer_3_bottleneck_block_12_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2189,15 +2142,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_20_2_relu"
-    parents: "bottleneck_block_20_bottleneck_conv_20_part_2_norm"
+    name: "index_196_bottleneck_layer_3_bottleneck_block_12_part_2_relu"
+    parents: "index_195_bottleneck_layer_3_bottleneck_block_12_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_20_bottleneck_conv_20_part_3_conv"
-    parents: "bottleneck_block_20_2_relu"
+    name: "index_197_bottleneck_layer_3_bottleneck_block_12_part_3_conv"
+    parents: "index_196_bottleneck_layer_3_bottleneck_block_12_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2209,8 +2162,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_20_bottleneck_conv_20_part_3_norm"
-    parents: "bottleneck_block_20_bottleneck_conv_20_part_3_conv"
+    name: "index_198_bottleneck_layer_3_bottleneck_block_12_part_3_norm"
+    parents: "index_197_bottleneck_layer_3_bottleneck_block_12_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2220,25 +2173,28 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_20_sum"
-    parents: "bottleneck_block_19_3_relu bottleneck_block_20_bottleneck_conv_20_part_3_norm"
+    name: "index_199_bottleneck_layer_3_bottleneck_block_12_sum"
+    parents: "index_80_resid_8_norm index_198_bottleneck_layer_3_bottleneck_block_12_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_20_3_relu"
-    parents: "bottleneck_block_20_sum"
+    name: "index_200_bottleneck_layer_3_bottleneck_block_12_part_3_relu"
+    parents: "index_199_bottleneck_layer_3_bottleneck_block_12_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
+
   ###################################################
-  # BottleNeck 21 Block 14
+  # BottleNeck Layer 3 Block 13
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_21_bottleneck_conv_21_part_1_conv"
-    parents: "bottleneck_block_20_3_relu"
+    name: "index_201_bottleneck_layer_3_bottleneck_block_13_part_1_conv"
+    parents: "index_200_bottleneck_layer_3_bottleneck_block_12_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2250,8 +2206,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_21_bottleneck_conv_21_part_1_norm"
-    parents: "bottleneck_block_21_bottleneck_conv_21_part_1_conv"
+    name: "index_202_bottleneck_layer_3_bottleneck_block_13_part_1_norm"
+    parents: "index_201_bottleneck_layer_3_bottleneck_block_13_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2261,15 +2217,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_21_1_relu"
-    parents: "bottleneck_block_21_bottleneck_conv_21_part_1_norm"
+    name: "index_203_bottleneck_layer_3_bottleneck_block_13_part_1_relu"
+    parents: "index_202_bottleneck_layer_3_bottleneck_block_13_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_21_bottleneck_conv_21_part_2_conv"
-    parents: "bottleneck_block_21_1_relu"
+    name: "index_204_bottleneck_layer_3_bottleneck_block_13_part_2_conv"
+    parents: "index_203_bottleneck_layer_3_bottleneck_block_13_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2281,8 +2237,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_21_bottleneck_conv_21_part_2_norm"
-    parents: "bottleneck_block_21_bottleneck_conv_21_part_2_conv"
+    name: "index_205_bottleneck_layer_3_bottleneck_block_13_part_2_norm"
+    parents: "index_204_bottleneck_layer_3_bottleneck_block_13_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2292,15 +2248,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_21_2_relu"
-    parents: "bottleneck_block_21_bottleneck_conv_21_part_2_norm"
+    name: "index_206_bottleneck_layer_3_bottleneck_block_13_part_2_relu"
+    parents: "index_205_bottleneck_layer_3_bottleneck_block_13_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_21_bottleneck_conv_21_part_3_conv"
-    parents: "bottleneck_block_21_2_relu"
+    name: "index_207_bottleneck_layer_3_bottleneck_block_13_part_3_conv"
+    parents: "index_206_bottleneck_layer_3_bottleneck_block_13_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2312,8 +2268,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_21_bottleneck_conv_21_part_3_norm"
-    parents: "bottleneck_block_21_bottleneck_conv_21_part_3_conv"
+    name: "index_208_bottleneck_layer_3_bottleneck_block_13_part_3_norm"
+    parents: "index_207_bottleneck_layer_3_bottleneck_block_13_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2323,25 +2279,28 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_21_sum"
-    parents: "bottleneck_block_20_3_relu bottleneck_block_21_bottleneck_conv_21_part_3_norm"
+    name: "index_209_bottleneck_layer_3_bottleneck_block_13_sum"
+    parents: "index_80_resid_8_norm index_208_bottleneck_layer_3_bottleneck_block_13_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_21_3_relu"
-    parents: "bottleneck_block_21_sum"
+    name: "index_210_bottleneck_layer_3_bottleneck_block_13_part_3_relu"
+    parents: "index_209_bottleneck_layer_3_bottleneck_block_13_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
+
   ###################################################
-  # BottleNeck 22 Block 15
+  # BottleNeck Layer 3 Block 14
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_22_bottleneck_conv_22_part_1_conv"
-    parents: "bottleneck_block_21_3_relu"
+    name: "index_211_bottleneck_layer_3_bottleneck_block_14_part_1_conv"
+    parents: "index_210_bottleneck_layer_3_bottleneck_block_13_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2353,8 +2312,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_22_bottleneck_conv_22_part_1_norm"
-    parents: "bottleneck_block_22_bottleneck_conv_22_part_1_conv"
+    name: "index_212_bottleneck_layer_3_bottleneck_block_14_part_1_norm"
+    parents: "index_211_bottleneck_layer_3_bottleneck_block_14_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2364,15 +2323,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_22_1_relu"
-    parents: "bottleneck_block_22_bottleneck_conv_22_part_1_norm"
+    name: "index_213_bottleneck_layer_3_bottleneck_block_14_part_1_relu"
+    parents: "index_212_bottleneck_layer_3_bottleneck_block_14_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_22_bottleneck_conv_22_part_2_conv"
-    parents: "bottleneck_block_22_1_relu"
+    name: "index_214_bottleneck_layer_3_bottleneck_block_14_part_2_conv"
+    parents: "index_213_bottleneck_layer_3_bottleneck_block_14_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2384,8 +2343,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_22_bottleneck_conv_22_part_2_norm"
-    parents: "bottleneck_block_22_bottleneck_conv_22_part_2_conv"
+    name: "index_215_bottleneck_layer_3_bottleneck_block_14_part_2_norm"
+    parents: "index_214_bottleneck_layer_3_bottleneck_block_14_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2395,15 +2354,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_22_2_relu"
-    parents: "bottleneck_block_22_bottleneck_conv_22_part_2_norm"
+    name: "index_216_bottleneck_layer_3_bottleneck_block_14_part_2_relu"
+    parents: "index_215_bottleneck_layer_3_bottleneck_block_14_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_22_bottleneck_conv_22_part_3_conv"
-    parents: "bottleneck_block_22_2_relu"
+    name: "index_217_bottleneck_layer_3_bottleneck_block_14_part_3_conv"
+    parents: "index_216_bottleneck_layer_3_bottleneck_block_14_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2415,8 +2374,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_22_bottleneck_conv_22_part_3_norm"
-    parents: "bottleneck_block_22_bottleneck_conv_22_part_3_conv"
+    name: "index_218_bottleneck_layer_3_bottleneck_block_14_part_3_norm"
+    parents: "index_217_bottleneck_layer_3_bottleneck_block_14_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2426,25 +2385,28 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_22_sum"
-    parents: "bottleneck_block_21_3_relu bottleneck_block_22_bottleneck_conv_22_part_3_norm"
+    name: "index_219_bottleneck_layer_3_bottleneck_block_14_sum"
+    parents: "index_80_resid_8_norm index_218_bottleneck_layer_3_bottleneck_block_14_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_22_3_relu"
-    parents: "bottleneck_block_22_sum"
+    name: "index_220_bottleneck_layer_3_bottleneck_block_14_part_3_relu"
+    parents: "index_219_bottleneck_layer_3_bottleneck_block_14_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
+
   ###################################################
-  # BottleNeck 23 Block 16
+  # BottleNeck Layer 3 Block 15
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_23_bottleneck_conv_23_part_1_conv"
-    parents: "bottleneck_block_22_3_relu"
+    name: "index_221_bottleneck_layer_3_bottleneck_block_15_part_1_conv"
+    parents: "index_220_bottleneck_layer_3_bottleneck_block_14_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2456,8 +2418,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_23_bottleneck_conv_23_part_1_norm"
-    parents: "bottleneck_block_23_bottleneck_conv_23_part_1_conv"
+    name: "index_222_bottleneck_layer_3_bottleneck_block_15_part_1_norm"
+    parents: "index_221_bottleneck_layer_3_bottleneck_block_15_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2467,15 +2429,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_23_1_relu"
-    parents: "bottleneck_block_23_bottleneck_conv_23_part_1_norm"
+    name: "index_223_bottleneck_layer_3_bottleneck_block_15_part_1_relu"
+    parents: "index_222_bottleneck_layer_3_bottleneck_block_15_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_23_bottleneck_conv_23_part_2_conv"
-    parents: "bottleneck_block_23_1_relu"
+    name: "index_224_bottleneck_layer_3_bottleneck_block_15_part_2_conv"
+    parents: "index_223_bottleneck_layer_3_bottleneck_block_15_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2487,8 +2449,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_23_bottleneck_conv_23_part_2_norm"
-    parents: "bottleneck_block_23_bottleneck_conv_23_part_2_conv"
+    name: "index_225_bottleneck_layer_3_bottleneck_block_15_part_2_norm"
+    parents: "index_224_bottleneck_layer_3_bottleneck_block_15_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2498,15 +2460,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_23_2_relu"
-    parents: "bottleneck_block_23_bottleneck_conv_23_part_2_norm"
+    name: "index_226_bottleneck_layer_3_bottleneck_block_15_part_2_relu"
+    parents: "index_225_bottleneck_layer_3_bottleneck_block_15_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_23_bottleneck_conv_23_part_3_conv"
-    parents: "bottleneck_block_23_2_relu"
+    name: "index_227_bottleneck_layer_3_bottleneck_block_15_part_3_conv"
+    parents: "index_226_bottleneck_layer_3_bottleneck_block_15_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2518,8 +2480,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_23_bottleneck_conv_23_part_3_norm"
-    parents: "bottleneck_block_23_bottleneck_conv_23_part_3_conv"
+    name: "index_228_bottleneck_layer_3_bottleneck_block_15_part_3_norm"
+    parents: "index_227_bottleneck_layer_3_bottleneck_block_15_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2529,25 +2491,28 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_23_sum"
-    parents: "bottleneck_block_22_3_relu bottleneck_block_23_bottleneck_conv_23_part_3_norm"
+    name: "index_229_bottleneck_layer_3_bottleneck_block_15_sum"
+    parents: "index_80_resid_8_norm index_228_bottleneck_layer_3_bottleneck_block_15_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_23_3_relu"
-    parents: "bottleneck_block_23_sum"
+    name: "index_230_bottleneck_layer_3_bottleneck_block_15_part_3_relu"
+    parents: "index_229_bottleneck_layer_3_bottleneck_block_15_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
+
   ###################################################
-  # BottleNeck 24 Block 17
+  # BottleNeck Layer 3 Block 16
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_24_bottleneck_conv_24_part_1_conv"
-    parents: "bottleneck_block_23_3_relu"
+    name: "index_231_bottleneck_layer_3_bottleneck_block_16_part_1_conv"
+    parents: "index_230_bottleneck_layer_3_bottleneck_block_15_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2559,8 +2524,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_24_bottleneck_conv_24_part_1_norm"
-    parents: "bottleneck_block_24_bottleneck_conv_24_part_1_conv"
+    name: "index_232_bottleneck_layer_3_bottleneck_block_16_part_1_norm"
+    parents: "index_231_bottleneck_layer_3_bottleneck_block_16_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2570,15 +2535,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_24_1_relu"
-    parents: "bottleneck_block_24_bottleneck_conv_24_part_1_norm"
+    name: "index_233_bottleneck_layer_3_bottleneck_block_16_part_1_relu"
+    parents: "index_232_bottleneck_layer_3_bottleneck_block_16_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_24_bottleneck_conv_24_part_2_conv"
-    parents: "bottleneck_block_24_1_relu"
+    name: "index_234_bottleneck_layer_3_bottleneck_block_16_part_2_conv"
+    parents: "index_233_bottleneck_layer_3_bottleneck_block_16_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2590,8 +2555,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_24_bottleneck_conv_24_part_2_norm"
-    parents: "bottleneck_block_24_bottleneck_conv_24_part_2_conv"
+    name: "index_235_bottleneck_layer_3_bottleneck_block_16_part_2_norm"
+    parents: "index_234_bottleneck_layer_3_bottleneck_block_16_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2601,15 +2566,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_24_2_relu"
-    parents: "bottleneck_block_24_bottleneck_conv_24_part_2_norm"
+    name: "index_236_bottleneck_layer_3_bottleneck_block_16_part_2_relu"
+    parents: "index_235_bottleneck_layer_3_bottleneck_block_16_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_24_bottleneck_conv_24_part_3_conv"
-    parents: "bottleneck_block_24_2_relu"
+    name: "index_237_bottleneck_layer_3_bottleneck_block_16_part_3_conv"
+    parents: "index_236_bottleneck_layer_3_bottleneck_block_16_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2621,8 +2586,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_24_bottleneck_conv_24_part_3_norm"
-    parents: "bottleneck_block_24_bottleneck_conv_24_part_3_conv"
+    name: "index_238_bottleneck_layer_3_bottleneck_block_16_part_3_norm"
+    parents: "index_237_bottleneck_layer_3_bottleneck_block_16_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2632,25 +2597,28 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_24_sum"
-    parents: "bottleneck_block_23_3_relu bottleneck_block_24_bottleneck_conv_24_part_3_norm"
+    name: "index_239_bottleneck_layer_3_bottleneck_block_16_sum"
+    parents: "index_80_resid_8_norm index_238_bottleneck_layer_3_bottleneck_block_16_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_24_3_relu"
-    parents: "bottleneck_block_24_sum"
+    name: "index_240_bottleneck_layer_3_bottleneck_block_16_part_3_relu"
+    parents: "index_239_bottleneck_layer_3_bottleneck_block_16_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
+
   ###################################################
-  # BottleNeck 25 Block 18
+  # BottleNeck Layer 3 Block 17
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_25_bottleneck_conv_25_part_1_conv"
-    parents: "bottleneck_block_24_3_relu"
+    name: "index_241_bottleneck_layer_3_bottleneck_block_17_part_1_conv"
+    parents: "index_240_bottleneck_layer_3_bottleneck_block_16_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2662,8 +2630,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_25_bottleneck_conv_25_part_1_norm"
-    parents: "bottleneck_block_25_bottleneck_conv_25_part_1_conv"
+    name: "index_242_bottleneck_layer_3_bottleneck_block_17_part_1_norm"
+    parents: "index_241_bottleneck_layer_3_bottleneck_block_17_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2673,15 +2641,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_25_1_relu"
-    parents: "bottleneck_block_25_bottleneck_conv_25_part_1_norm"
+    name: "index_243_bottleneck_layer_3_bottleneck_block_17_part_1_relu"
+    parents: "index_242_bottleneck_layer_3_bottleneck_block_17_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_25_bottleneck_conv_25_part_2_conv"
-    parents: "bottleneck_block_25_1_relu"
+    name: "index_244_bottleneck_layer_3_bottleneck_block_17_part_2_conv"
+    parents: "index_243_bottleneck_layer_3_bottleneck_block_17_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2693,8 +2661,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_25_bottleneck_conv_25_part_2_norm"
-    parents: "bottleneck_block_25_bottleneck_conv_25_part_2_conv"
+    name: "index_245_bottleneck_layer_3_bottleneck_block_17_part_2_norm"
+    parents: "index_244_bottleneck_layer_3_bottleneck_block_17_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2704,15 +2672,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_25_2_relu"
-    parents: "bottleneck_block_25_bottleneck_conv_25_part_2_norm"
+    name: "index_246_bottleneck_layer_3_bottleneck_block_17_part_2_relu"
+    parents: "index_245_bottleneck_layer_3_bottleneck_block_17_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_25_bottleneck_conv_25_part_3_conv"
-    parents: "bottleneck_block_25_2_relu"
+    name: "index_247_bottleneck_layer_3_bottleneck_block_17_part_3_conv"
+    parents: "index_246_bottleneck_layer_3_bottleneck_block_17_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2724,8 +2692,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_25_bottleneck_conv_25_part_3_norm"
-    parents: "bottleneck_block_25_bottleneck_conv_25_part_3_conv"
+    name: "index_248_bottleneck_layer_3_bottleneck_block_17_part_3_norm"
+    parents: "index_247_bottleneck_layer_3_bottleneck_block_17_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2735,25 +2703,28 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_25_sum"
-    parents: "bottleneck_block_24_3_relu bottleneck_block_25_bottleneck_conv_25_part_3_norm"
+    name: "index_249_bottleneck_layer_3_bottleneck_block_17_sum"
+    parents: "index_80_resid_8_norm index_248_bottleneck_layer_3_bottleneck_block_17_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_25_3_relu"
-    parents: "bottleneck_block_25_sum"
+    name: "index_250_bottleneck_layer_3_bottleneck_block_17_part_3_relu"
+    parents: "index_249_bottleneck_layer_3_bottleneck_block_17_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
+
   ###################################################
-  # BottleNeck 26 Block 19
+  # BottleNeck Layer 3 Block 18
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_26_bottleneck_conv_26_part_1_conv"
-    parents: "bottleneck_block_25_3_relu"
+    name: "index_251_bottleneck_layer_3_bottleneck_block_18_part_1_conv"
+    parents: "index_250_bottleneck_layer_3_bottleneck_block_17_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2765,8 +2736,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_26_bottleneck_conv_26_part_1_norm"
-    parents: "bottleneck_block_26_bottleneck_conv_26_part_1_conv"
+    name: "index_252_bottleneck_layer_3_bottleneck_block_18_part_1_norm"
+    parents: "index_251_bottleneck_layer_3_bottleneck_block_18_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2776,15 +2747,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_26_1_relu"
-    parents: "bottleneck_block_26_bottleneck_conv_26_part_1_norm"
+    name: "index_253_bottleneck_layer_3_bottleneck_block_18_part_1_relu"
+    parents: "index_252_bottleneck_layer_3_bottleneck_block_18_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_26_bottleneck_conv_26_part_2_conv"
-    parents: "bottleneck_block_26_1_relu"
+    name: "index_254_bottleneck_layer_3_bottleneck_block_18_part_2_conv"
+    parents: "index_253_bottleneck_layer_3_bottleneck_block_18_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2796,8 +2767,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_26_bottleneck_conv_26_part_2_norm"
-    parents: "bottleneck_block_26_bottleneck_conv_26_part_2_conv"
+    name: "index_255_bottleneck_layer_3_bottleneck_block_18_part_2_norm"
+    parents: "index_254_bottleneck_layer_3_bottleneck_block_18_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2807,15 +2778,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_26_2_relu"
-    parents: "bottleneck_block_26_bottleneck_conv_26_part_2_norm"
+    name: "index_256_bottleneck_layer_3_bottleneck_block_18_part_2_relu"
+    parents: "index_255_bottleneck_layer_3_bottleneck_block_18_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_26_bottleneck_conv_26_part_3_conv"
-    parents: "bottleneck_block_26_2_relu"
+    name: "index_257_bottleneck_layer_3_bottleneck_block_18_part_3_conv"
+    parents: "index_256_bottleneck_layer_3_bottleneck_block_18_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2827,8 +2798,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_26_bottleneck_conv_26_part_3_norm"
-    parents: "bottleneck_block_26_bottleneck_conv_26_part_3_conv"
+    name: "index_258_bottleneck_layer_3_bottleneck_block_18_part_3_norm"
+    parents: "index_257_bottleneck_layer_3_bottleneck_block_18_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2838,25 +2809,28 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_26_sum"
-    parents: "bottleneck_block_25_3_relu bottleneck_block_26_bottleneck_conv_26_part_3_norm"
+    name: "index_259_bottleneck_layer_3_bottleneck_block_18_sum"
+    parents: "index_80_resid_8_norm index_258_bottleneck_layer_3_bottleneck_block_18_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_26_3_relu"
-    parents: "bottleneck_block_26_sum"
+    name: "index_260_bottleneck_layer_3_bottleneck_block_18_part_3_relu"
+    parents: "index_259_bottleneck_layer_3_bottleneck_block_18_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
+
   ###################################################
-  # BottleNeck 27 Block 20
+  # BottleNeck Layer 3 Block 19
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_27_bottleneck_conv_27_part_1_conv"
-    parents: "bottleneck_block_26_3_relu"
+    name: "index_261_bottleneck_layer_3_bottleneck_block_19_part_1_conv"
+    parents: "index_260_bottleneck_layer_3_bottleneck_block_18_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2868,8 +2842,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_27_bottleneck_conv_27_part_1_norm"
-    parents: "bottleneck_block_27_bottleneck_conv_27_part_1_conv"
+    name: "index_262_bottleneck_layer_3_bottleneck_block_19_part_1_norm"
+    parents: "index_261_bottleneck_layer_3_bottleneck_block_19_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2879,15 +2853,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_27_1_relu"
-    parents: "bottleneck_block_27_bottleneck_conv_27_part_1_norm"
+    name: "index_263_bottleneck_layer_3_bottleneck_block_19_part_1_relu"
+    parents: "index_262_bottleneck_layer_3_bottleneck_block_19_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_27_bottleneck_conv_27_part_2_conv"
-    parents: "bottleneck_block_27_1_relu"
+    name: "index_264_bottleneck_layer_3_bottleneck_block_19_part_2_conv"
+    parents: "index_263_bottleneck_layer_3_bottleneck_block_19_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2899,8 +2873,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_27_bottleneck_conv_27_part_2_norm"
-    parents: "bottleneck_block_27_bottleneck_conv_27_part_2_conv"
+    name: "index_265_bottleneck_layer_3_bottleneck_block_19_part_2_norm"
+    parents: "index_264_bottleneck_layer_3_bottleneck_block_19_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2910,15 +2884,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_27_2_relu"
-    parents: "bottleneck_block_27_bottleneck_conv_27_part_2_norm"
+    name: "index_266_bottleneck_layer_3_bottleneck_block_19_part_2_relu"
+    parents: "index_265_bottleneck_layer_3_bottleneck_block_19_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_27_bottleneck_conv_27_part_3_conv"
-    parents: "bottleneck_block_27_2_relu"
+    name: "index_267_bottleneck_layer_3_bottleneck_block_19_part_3_conv"
+    parents: "index_266_bottleneck_layer_3_bottleneck_block_19_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2930,8 +2904,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_27_bottleneck_conv_27_part_3_norm"
-    parents: "bottleneck_block_27_bottleneck_conv_27_part_3_conv"
+    name: "index_268_bottleneck_layer_3_bottleneck_block_19_part_3_norm"
+    parents: "index_267_bottleneck_layer_3_bottleneck_block_19_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2941,25 +2915,28 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_27_sum"
-    parents: "bottleneck_block_26_3_relu bottleneck_block_27_bottleneck_conv_27_part_3_norm"
+    name: "index_269_bottleneck_layer_3_bottleneck_block_19_sum"
+    parents: "index_80_resid_8_norm index_268_bottleneck_layer_3_bottleneck_block_19_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_27_3_relu"
-    parents: "bottleneck_block_27_sum"
+    name: "index_270_bottleneck_layer_3_bottleneck_block_19_part_3_relu"
+    parents: "index_269_bottleneck_layer_3_bottleneck_block_19_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
+
   ###################################################
-  # BottleNeck 28 Block 21
+  # BottleNeck Layer 3 Block 20
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_28_bottleneck_conv_28_part_1_conv"
-    parents: "bottleneck_block_27_3_relu"
+    name: "index_271_bottleneck_layer_3_bottleneck_block_20_part_1_conv"
+    parents: "index_270_bottleneck_layer_3_bottleneck_block_19_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2971,8 +2948,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_28_bottleneck_conv_28_part_1_norm"
-    parents: "bottleneck_block_28_bottleneck_conv_28_part_1_conv"
+    name: "index_272_bottleneck_layer_3_bottleneck_block_20_part_1_norm"
+    parents: "index_271_bottleneck_layer_3_bottleneck_block_20_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2982,15 +2959,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_28_1_relu"
-    parents: "bottleneck_block_28_bottleneck_conv_28_part_1_norm"
+    name: "index_273_bottleneck_layer_3_bottleneck_block_20_part_1_relu"
+    parents: "index_272_bottleneck_layer_3_bottleneck_block_20_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_28_bottleneck_conv_28_part_2_conv"
-    parents: "bottleneck_block_28_1_relu"
+    name: "index_274_bottleneck_layer_3_bottleneck_block_20_part_2_conv"
+    parents: "index_273_bottleneck_layer_3_bottleneck_block_20_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -3002,8 +2979,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_28_bottleneck_conv_28_part_2_norm"
-    parents: "bottleneck_block_28_bottleneck_conv_28_part_2_conv"
+    name: "index_275_bottleneck_layer_3_bottleneck_block_20_part_2_norm"
+    parents: "index_274_bottleneck_layer_3_bottleneck_block_20_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -3013,15 +2990,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_28_2_relu"
-    parents: "bottleneck_block_28_bottleneck_conv_28_part_2_norm"
+    name: "index_276_bottleneck_layer_3_bottleneck_block_20_part_2_relu"
+    parents: "index_275_bottleneck_layer_3_bottleneck_block_20_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_28_bottleneck_conv_28_part_3_conv"
-    parents: "bottleneck_block_28_2_relu"
+    name: "index_277_bottleneck_layer_3_bottleneck_block_20_part_3_conv"
+    parents: "index_276_bottleneck_layer_3_bottleneck_block_20_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -3033,8 +3010,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_28_bottleneck_conv_28_part_3_norm"
-    parents: "bottleneck_block_28_bottleneck_conv_28_part_3_conv"
+    name: "index_278_bottleneck_layer_3_bottleneck_block_20_part_3_norm"
+    parents: "index_277_bottleneck_layer_3_bottleneck_block_20_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -3044,25 +3021,28 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_28_sum"
-    parents: "bottleneck_block_27_3_relu bottleneck_block_28_bottleneck_conv_28_part_3_norm"
+    name: "index_279_bottleneck_layer_3_bottleneck_block_20_sum"
+    parents: "index_80_resid_8_norm index_278_bottleneck_layer_3_bottleneck_block_20_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_28_3_relu"
-    parents: "bottleneck_block_28_sum"
+    name: "index_280_bottleneck_layer_3_bottleneck_block_20_part_3_relu"
+    parents: "index_279_bottleneck_layer_3_bottleneck_block_20_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
+
   ###################################################
-  # BottleNeck 29 Block 22
+  # BottleNeck Layer 3 Block 21
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_29_bottleneck_conv_29_part_1_conv"
-    parents: "bottleneck_block_28_3_relu"
+    name: "index_281_bottleneck_layer_3_bottleneck_block_21_part_1_conv"
+    parents: "index_280_bottleneck_layer_3_bottleneck_block_20_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -3074,8 +3054,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_29_bottleneck_conv_29_part_1_norm"
-    parents: "bottleneck_block_29_bottleneck_conv_29_part_1_conv"
+    name: "index_282_bottleneck_layer_3_bottleneck_block_21_part_1_norm"
+    parents: "index_281_bottleneck_layer_3_bottleneck_block_21_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -3085,15 +3065,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_29_1_relu"
-    parents: "bottleneck_block_29_bottleneck_conv_29_part_1_norm"
+    name: "index_283_bottleneck_layer_3_bottleneck_block_21_part_1_relu"
+    parents: "index_282_bottleneck_layer_3_bottleneck_block_21_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_29_bottleneck_conv_29_part_2_conv"
-    parents: "bottleneck_block_29_1_relu"
+    name: "index_284_bottleneck_layer_3_bottleneck_block_21_part_2_conv"
+    parents: "index_283_bottleneck_layer_3_bottleneck_block_21_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -3105,8 +3085,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_29_bottleneck_conv_29_part_2_norm"
-    parents: "bottleneck_block_29_bottleneck_conv_29_part_2_conv"
+    name: "index_285_bottleneck_layer_3_bottleneck_block_21_part_2_norm"
+    parents: "index_284_bottleneck_layer_3_bottleneck_block_21_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -3116,15 +3096,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_29_2_relu"
-    parents: "bottleneck_block_29_bottleneck_conv_29_part_2_norm"
+    name: "index_286_bottleneck_layer_3_bottleneck_block_21_part_2_relu"
+    parents: "index_285_bottleneck_layer_3_bottleneck_block_21_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_29_bottleneck_conv_29_part_3_conv"
-    parents: "bottleneck_block_29_2_relu"
+    name: "index_287_bottleneck_layer_3_bottleneck_block_21_part_3_conv"
+    parents: "index_286_bottleneck_layer_3_bottleneck_block_21_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -3136,8 +3116,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_29_bottleneck_conv_29_part_3_norm"
-    parents: "bottleneck_block_29_bottleneck_conv_29_part_3_conv"
+    name: "index_288_bottleneck_layer_3_bottleneck_block_21_part_3_norm"
+    parents: "index_287_bottleneck_layer_3_bottleneck_block_21_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -3147,25 +3127,28 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_29_sum"
-    parents: "bottleneck_block_28_3_relu bottleneck_block_29_bottleneck_conv_29_part_3_norm"
+    name: "index_289_bottleneck_layer_3_bottleneck_block_21_sum"
+    parents: "index_80_resid_8_norm index_288_bottleneck_layer_3_bottleneck_block_21_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_29_3_relu"
-    parents: "bottleneck_block_29_sum"
+    name: "index_290_bottleneck_layer_3_bottleneck_block_21_part_3_relu"
+    parents: "index_289_bottleneck_layer_3_bottleneck_block_21_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
+
   ###################################################
-  # BottleNeck 30 Block 23
+  # BottleNeck Layer 3 Block 22
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_30_bottleneck_conv_30_part_1_conv"
-    parents: "bottleneck_block_29_3_relu"
+    name: "index_291_bottleneck_layer_3_bottleneck_block_22_part_1_conv"
+    parents: "index_290_bottleneck_layer_3_bottleneck_block_21_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -3177,8 +3160,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_30_bottleneck_conv_30_part_1_norm"
-    parents: "bottleneck_block_30_bottleneck_conv_30_part_1_conv"
+    name: "index_292_bottleneck_layer_3_bottleneck_block_22_part_1_norm"
+    parents: "index_291_bottleneck_layer_3_bottleneck_block_22_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -3188,15 +3171,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_30_1_relu"
-    parents: "bottleneck_block_30_bottleneck_conv_30_part_1_norm"
+    name: "index_293_bottleneck_layer_3_bottleneck_block_22_part_1_relu"
+    parents: "index_292_bottleneck_layer_3_bottleneck_block_22_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_30_bottleneck_conv_30_part_2_conv"
-    parents: "bottleneck_block_30_1_relu"
+    name: "index_294_bottleneck_layer_3_bottleneck_block_22_part_2_conv"
+    parents: "index_293_bottleneck_layer_3_bottleneck_block_22_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -3208,8 +3191,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_30_bottleneck_conv_30_part_2_norm"
-    parents: "bottleneck_block_30_bottleneck_conv_30_part_2_conv"
+    name: "index_295_bottleneck_layer_3_bottleneck_block_22_part_2_norm"
+    parents: "index_294_bottleneck_layer_3_bottleneck_block_22_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -3219,15 +3202,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_30_2_relu"
-    parents: "bottleneck_block_30_bottleneck_conv_30_part_2_norm"
+    name: "index_296_bottleneck_layer_3_bottleneck_block_22_part_2_relu"
+    parents: "index_295_bottleneck_layer_3_bottleneck_block_22_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_30_bottleneck_conv_30_part_3_conv"
-    parents: "bottleneck_block_30_2_relu"
+    name: "index_297_bottleneck_layer_3_bottleneck_block_22_part_3_conv"
+    parents: "index_296_bottleneck_layer_3_bottleneck_block_22_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -3239,8 +3222,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_30_bottleneck_conv_30_part_3_norm"
-    parents: "bottleneck_block_30_bottleneck_conv_30_part_3_conv"
+    name: "index_298_bottleneck_layer_3_bottleneck_block_22_part_3_norm"
+    parents: "index_297_bottleneck_layer_3_bottleneck_block_22_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -3250,22 +3233,128 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_30_sum"
-    parents: "bottleneck_block_29_3_relu bottleneck_block_30_bottleneck_conv_30_part_3_norm"
+    name: "index_299_bottleneck_layer_3_bottleneck_block_22_sum"
+    parents: "index_80_resid_8_norm index_298_bottleneck_layer_3_bottleneck_block_22_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_30_3_relu"
-    parents: "bottleneck_block_30_sum"
+    name: "index_300_bottleneck_layer_3_bottleneck_block_22_part_3_relu"
+    parents: "index_299_bottleneck_layer_3_bottleneck_block_22_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+
+  ###################################################
+  # BottleNeck Layer 3 Block 23
+  ###################################################
+
+
+  layer {
+    name: "index_301_bottleneck_layer_3_bottleneck_block_23_part_1_conv"
+    parents: "index_300_bottleneck_layer_3_bottleneck_block_22_part_3_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "index_302_bottleneck_layer_3_bottleneck_block_23_part_1_norm"
+    parents: "index_301_bottleneck_layer_3_bottleneck_block_23_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "index_303_bottleneck_layer_3_bottleneck_block_23_part_1_relu"
+    parents: "index_302_bottleneck_layer_3_bottleneck_block_23_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "resid_31_conv"
-    parents: "bottleneck_block_30_3_relu"
+    name: "index_304_bottleneck_layer_3_bottleneck_block_23_part_2_conv"
+    parents: "index_303_bottleneck_layer_3_bottleneck_block_23_part_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "index_305_bottleneck_layer_3_bottleneck_block_23_part_2_norm"
+    parents: "index_304_bottleneck_layer_3_bottleneck_block_23_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "index_306_bottleneck_layer_3_bottleneck_block_23_part_2_relu"
+    parents: "index_305_bottleneck_layer_3_bottleneck_block_23_part_2_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "index_307_bottleneck_layer_3_bottleneck_block_23_part_3_conv"
+    parents: "index_306_bottleneck_layer_3_bottleneck_block_23_part_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 1024
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "index_308_bottleneck_layer_3_bottleneck_block_23_part_3_norm"
+    parents: "index_307_bottleneck_layer_3_bottleneck_block_23_part_3_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "index_309_bottleneck_layer_3_bottleneck_block_23_sum"
+    parents: "index_80_resid_8_norm index_308_bottleneck_layer_3_bottleneck_block_23_part_3_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "index_310_bottleneck_layer_3_bottleneck_block_23_part_3_relu"
+    parents: "index_309_bottleneck_layer_3_bottleneck_block_23_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "index_311_resid_31_conv"
+    parents: "index_310_bottleneck_layer_3_bottleneck_block_23_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -3277,8 +3366,8 @@ model {
     }
   }
   layer {
-    name: "resid_31_norm"
-    parents: "resid_31_conv"
+    name: "index_312_resid_31_norm"
+    parents: "index_311_resid_31_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -3287,12 +3376,15 @@ model {
       epsilon: 1e-5
     }
   }
+
   ###################################################
-  # BottleNeck 31 Block 1
+  # BottleNeck Layer 4 Block 1
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_31_bottleneck_conv_31_part_1_conv"
-    parents: "bottleneck_block_30_3_relu"
+    name: "index_313_bottleneck_layer_4_bottleneck_block_1_part_1_conv"
+    parents: "index_310_bottleneck_layer_3_bottleneck_block_23_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -3304,8 +3396,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_31_bottleneck_conv_31_part_1_norm"
-    parents: "bottleneck_block_31_bottleneck_conv_31_part_1_conv"
+    name: "index_314_bottleneck_layer_4_bottleneck_block_1_part_1_norm"
+    parents: "index_313_bottleneck_layer_4_bottleneck_block_1_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -3315,15 +3407,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_31_1_relu"
-    parents: "bottleneck_block_31_bottleneck_conv_31_part_1_norm"
+    name: "index_315_bottleneck_layer_4_bottleneck_block_1_part_1_relu"
+    parents: "index_314_bottleneck_layer_4_bottleneck_block_1_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_31_bottleneck_conv_31_part_2_conv"
-    parents: "bottleneck_block_31_1_relu"
+    name: "index_316_bottleneck_layer_4_bottleneck_block_1_part_2_conv"
+    parents: "index_315_bottleneck_layer_4_bottleneck_block_1_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -3335,8 +3427,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_31_bottleneck_conv_31_part_2_norm"
-    parents: "bottleneck_block_31_bottleneck_conv_31_part_2_conv"
+    name: "index_317_bottleneck_layer_4_bottleneck_block_1_part_2_norm"
+    parents: "index_316_bottleneck_layer_4_bottleneck_block_1_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -3346,15 +3438,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_31_2_relu"
-    parents: "bottleneck_block_31_bottleneck_conv_31_part_2_norm"
+    name: "index_318_bottleneck_layer_4_bottleneck_block_1_part_2_relu"
+    parents: "index_317_bottleneck_layer_4_bottleneck_block_1_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_31_bottleneck_conv_31_part_3_conv"
-    parents: "bottleneck_block_31_2_relu"
+    name: "index_319_bottleneck_layer_4_bottleneck_block_1_part_3_conv"
+    parents: "index_318_bottleneck_layer_4_bottleneck_block_1_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -3366,8 +3458,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_31_bottleneck_conv_31_part_3_norm"
-    parents: "bottleneck_block_31_bottleneck_conv_31_part_3_conv"
+    name: "index_320_bottleneck_layer_4_bottleneck_block_1_part_3_norm"
+    parents: "index_319_bottleneck_layer_4_bottleneck_block_1_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -3377,25 +3469,28 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_31_sum"
-    parents: "resid_31_norm bottleneck_block_31_bottleneck_conv_31_part_3_norm"
+    name: "index_321_bottleneck_layer_4_bottleneck_block_1_sum"
+    parents: "index_312_resid_31_norm index_320_bottleneck_layer_4_bottleneck_block_1_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_31_3_relu"
-    parents: "bottleneck_block_31_sum"
+    name: "index_322_bottleneck_layer_4_bottleneck_block_1_part_3_relu"
+    parents: "index_321_bottleneck_layer_4_bottleneck_block_1_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
+
   ###################################################
-  # BottleNeck 32 Block 2
+  # BottleNeck Layer 4 Block 2
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_32_bottleneck_conv_32_part_1_conv"
-    parents: "bottleneck_block_31_3_relu"
+    name: "index_323_bottleneck_layer_4_bottleneck_block_2_part_1_conv"
+    parents: "index_322_bottleneck_layer_4_bottleneck_block_1_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -3407,8 +3502,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_32_bottleneck_conv_32_part_1_norm"
-    parents: "bottleneck_block_32_bottleneck_conv_32_part_1_conv"
+    name: "index_324_bottleneck_layer_4_bottleneck_block_2_part_1_norm"
+    parents: "index_323_bottleneck_layer_4_bottleneck_block_2_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -3418,15 +3513,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_32_1_relu"
-    parents: "bottleneck_block_32_bottleneck_conv_32_part_1_norm"
+    name: "index_325_bottleneck_layer_4_bottleneck_block_2_part_1_relu"
+    parents: "index_324_bottleneck_layer_4_bottleneck_block_2_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_32_bottleneck_conv_32_part_2_conv"
-    parents: "bottleneck_block_32_1_relu"
+    name: "index_326_bottleneck_layer_4_bottleneck_block_2_part_2_conv"
+    parents: "index_325_bottleneck_layer_4_bottleneck_block_2_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -3438,8 +3533,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_32_bottleneck_conv_32_part_2_norm"
-    parents: "bottleneck_block_32_bottleneck_conv_32_part_2_conv"
+    name: "index_327_bottleneck_layer_4_bottleneck_block_2_part_2_norm"
+    parents: "index_326_bottleneck_layer_4_bottleneck_block_2_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -3449,15 +3544,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_32_2_relu"
-    parents: "bottleneck_block_32_bottleneck_conv_32_part_2_norm"
+    name: "index_328_bottleneck_layer_4_bottleneck_block_2_part_2_relu"
+    parents: "index_327_bottleneck_layer_4_bottleneck_block_2_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_32_bottleneck_conv_32_part_3_conv"
-    parents: "bottleneck_block_32_2_relu"
+    name: "index_329_bottleneck_layer_4_bottleneck_block_2_part_3_conv"
+    parents: "index_328_bottleneck_layer_4_bottleneck_block_2_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -3469,8 +3564,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_32_bottleneck_conv_32_part_3_norm"
-    parents: "bottleneck_block_32_bottleneck_conv_32_part_3_conv"
+    name: "index_330_bottleneck_layer_4_bottleneck_block_2_part_3_norm"
+    parents: "index_329_bottleneck_layer_4_bottleneck_block_2_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -3480,25 +3575,28 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_32_sum"
-    parents: "bottleneck_block_31_3_relu bottleneck_block_32_bottleneck_conv_32_part_3_norm"
+    name: "index_331_bottleneck_layer_4_bottleneck_block_2_sum"
+    parents: "index_312_resid_31_norm index_330_bottleneck_layer_4_bottleneck_block_2_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_32_3_relu"
-    parents: "bottleneck_block_32_sum"
+    name: "index_332_bottleneck_layer_4_bottleneck_block_2_part_3_relu"
+    parents: "index_331_bottleneck_layer_4_bottleneck_block_2_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
+
   ###################################################
-  # BottleNeck 33 Block 3
+  # BottleNeck Layer 4 Block 3
   ###################################################
+
+
   layer {
-    name: "bottleneck_block_33_bottleneck_conv_33_part_1_conv"
-    parents: "bottleneck_block_32_3_relu"
+    name: "index_333_bottleneck_layer_4_bottleneck_block_3_part_1_conv"
+    parents: "index_332_bottleneck_layer_4_bottleneck_block_2_part_3_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -3510,8 +3608,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_33_bottleneck_conv_33_part_1_norm"
-    parents: "bottleneck_block_33_bottleneck_conv_33_part_1_conv"
+    name: "index_334_bottleneck_layer_4_bottleneck_block_3_part_1_norm"
+    parents: "index_333_bottleneck_layer_4_bottleneck_block_3_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -3521,15 +3619,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_33_1_relu"
-    parents: "bottleneck_block_33_bottleneck_conv_33_part_1_norm"
+    name: "index_335_bottleneck_layer_4_bottleneck_block_3_part_1_relu"
+    parents: "index_334_bottleneck_layer_4_bottleneck_block_3_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_33_bottleneck_conv_33_part_2_conv"
-    parents: "bottleneck_block_33_1_relu"
+    name: "index_336_bottleneck_layer_4_bottleneck_block_3_part_2_conv"
+    parents: "index_335_bottleneck_layer_4_bottleneck_block_3_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -3541,8 +3639,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_33_bottleneck_conv_33_part_2_norm"
-    parents: "bottleneck_block_33_bottleneck_conv_33_part_2_conv"
+    name: "index_337_bottleneck_layer_4_bottleneck_block_3_part_2_norm"
+    parents: "index_336_bottleneck_layer_4_bottleneck_block_3_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -3552,15 +3650,15 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_33_2_relu"
-    parents: "bottleneck_block_33_bottleneck_conv_33_part_2_norm"
+    name: "index_338_bottleneck_layer_4_bottleneck_block_3_part_2_relu"
+    parents: "index_337_bottleneck_layer_4_bottleneck_block_3_part_2_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "bottleneck_block_33_bottleneck_conv_33_part_3_conv"
-    parents: "bottleneck_block_33_2_relu"
+    name: "index_339_bottleneck_layer_4_bottleneck_block_3_part_3_conv"
+    parents: "index_338_bottleneck_layer_4_bottleneck_block_3_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -3572,8 +3670,8 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_33_bottleneck_conv_33_part_3_norm"
-    parents: "bottleneck_block_33_bottleneck_conv_33_part_3_conv"
+    name: "index_340_bottleneck_layer_4_bottleneck_block_3_part_3_norm"
+    parents: "index_339_bottleneck_layer_4_bottleneck_block_3_part_3_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -3583,52 +3681,54 @@ model {
     }
   }
   layer {
-    name: "bottleneck_block_33_sum"
-    parents: "bottleneck_block_32_3_relu bottleneck_block_33_bottleneck_conv_33_part_3_norm"
+    name: "index_341_bottleneck_layer_4_bottleneck_block_3_sum"
+    parents: "index_312_resid_31_norm index_340_bottleneck_layer_4_bottleneck_block_3_part_3_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "bottleneck_block_33_3_relu"
-    parents: "bottleneck_block_33_sum"
+    name: "index_342_bottleneck_layer_4_bottleneck_block_3_part_3_relu"
+    parents: "index_341_bottleneck_layer_4_bottleneck_block_3_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "final_layer_pool"
-    parents: "bottleneck_block_33_3_relu"
+    name: "index_343_final_layer_pool"
+    parents: "index_342_bottleneck_layer_4_bottleneck_block_3_part_3_relu"
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
       pool_dims_i: 7
-      pool_strides_i: 1
       pool_pads_i: 0
+      pool_strides_i: 1
       pool_mode: "average"
     }
   }
   layer {
-    name: "final_layer_fc"
-    parents: "final_layer_pool"
+    name: "index_344_final_layer_fc"
+    parents: "index_343_final_layer_pool"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 1000
-      has_bias: False
+      has_bias: false
     }
   }
   layer {
-    name: "final_layer_softmax"
-    parents: "final_layer_fc"
+    name: "index_345_final_layer_softmax"
+    parents: "index_344_final_layer_fc"
     data_layout: "model_parallel"
     softmax {
     }
   }
   layer {
-    name: "output_layer"
-    parents: "final_layer_softmax 0"
+    name: "index_346_final_layer_target"
+    parents: "index_345_final_layer_softmax index_0_initial_layer_input"
     data_layout: "data_parallel"
     target {
+      io_buffer: "partitioned"
+      shared_data_reader: true
     }
   }
 }

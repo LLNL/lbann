@@ -1,5 +1,5 @@
 model {
-  name: "sequential_model"
+  name: "directed_acyclic_graph_model"
   data_layout: "data_parallel"
   mini_batch_size: 256
   block_size: 256
@@ -7,56 +7,50 @@ model {
   num_parallel_readers: 0
   procs_per_model: 0
   num_gpus: -1
-
-  ##########################################
-  # Objective objective
-  ##########################################
-
+  ###################################################
+  # Objective function
+  ###################################################
   objective_function {
-    cross_entropy{}
+    cross_entropy {
+    }
     l2_weight_regularization {
       scale_factor: 1e-4
     }
   }
-
-
-  #############################################
+  ###################################################
   # Metrics
-  #############################################
-
-  metric { categorical_accuracy {} }
+  ###################################################
+  metric {
+    categorical_accuracy {
+    }
+  }
   metric {
     top_k_categorical_accuracy {
       top_k: 5
     }
   }
-
-  ##############################################
+  ###################################################
   # Callbacks
-  ##############################################
+  ###################################################
   callback {
     checkpoint {
-      checkpoint_dir: "ckptResnet256"
+      checkpoint_dir: "ckptresnet18"
       checkpoint_epochs: 1
     }
   }
+  callback { print {interval: 1} }
+  callback { timer {} }
   callback {
-    print {
-      interval: 1
+    imcomm {
+      intermodel_comm_method: "normal"
+      all_optimizers: true
     }
   }
-
   callback {
     drop_fixed_learning_rate {
       drop_epoch: 15
       drop_epoch: 30
       amt: 0.1
-    }
-  }
-
-  callback {
-    timer {
-
     }
   }
   callback {
@@ -66,29 +60,20 @@ model {
       mat_interval: 25
     }
   }
-  callback {
-    imcomm {
-      intermodel_comm_method: "normal"
-      all_optimizers: true
-    }
-  }
-
-  ###############################################
+  ###################################################
   # Layers
-  ###############################################
-
+  ###################################################
   layer {
-    name: "0"
-    parents: "0"
-    children: ""
+    name: "index_0_initial_layer_input"
+    parents: "index_0_initial_layer_input"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
     }
   }
   layer {
-    name: "1"
-    parents: "0"
+    name: "index_1_initial_layer_conv"
+    parents: "index_0_initial_layer_input"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -100,9 +85,8 @@ model {
     }
   }
   layer {
-    name: "2"
-    parents: "1"
-    children: ""
+    name: "index_2_initial_layer_norm"
+    parents: "index_1_initial_layer_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -112,17 +96,15 @@ model {
     }
   }
   layer {
-    name: "3"
-    parents: "2"
-    children: ""
+    name: "index_3_initial_layer_relu"
+    parents: "index_2_initial_layer_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
   layer {
-    name: "4"
-    parents: "3"
-    children: ""
+    name: "index_4_initial_layer_pool"
+    parents: "index_3_initial_layer_relu"
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
@@ -133,15 +115,14 @@ model {
     }
   }
 
+  ###################################################
+  # Basic Layer 1 Block 1
+  ###################################################
 
-  #############################################
-  # BasicBlock 1
-  #############################################
 
   layer {
-    name: "5"
-    parents: "4"
-    children: ""
+    name: "index_5_basic_layer_1_basic_block_1_part_1_conv"
+    parents: "index_4_initial_layer_pool"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -153,9 +134,8 @@ model {
     }
   }
   layer {
-    name: "6"
-    parents: "5"
-    children: ""
+    name: "index_6_basic_layer_1_basic_block_1_part_1_norm"
+    parents: "index_5_basic_layer_1_basic_block_1_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -165,18 +145,15 @@ model {
     }
   }
   layer {
-    name: "7"
-    parents: "6"
-    children: ""
+    name: "index_7_basic_layer_1_basic_block_1_part_1_relu"
+    parents: "index_6_basic_layer_1_basic_block_1_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
-
   layer {
-    name: "8"
-    parents: "7"
-    children: ""
+    name: "index_8_basic_layer_1_basic_block_1_part_2_conv"
+    parents: "index_7_basic_layer_1_basic_block_1_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -188,9 +165,8 @@ model {
     }
   }
   layer {
-    name: "9"
-    parents: "8"
-    children: ""
+    name: "index_9_basic_layer_1_basic_block_1_part_2_norm"
+    parents: "index_8_basic_layer_1_basic_block_1_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -200,31 +176,28 @@ model {
     }
   }
   layer {
-    name: "10"
-    parents: "9 4"
-    children: ""
+    name: "index_10_basic_layer_1_basic_block_1_sum"
+    parents: "index_4_initial_layer_pool index_9_basic_layer_1_basic_block_1_part_2_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "11"
-    parents: "10"
-    children: ""
+    name: "index_11_basic_layer_1_basic_block_1_part_2_relu"
+    parents: "index_10_basic_layer_1_basic_block_1_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
 
-  ########################################
-  # BasicBlock 2
-  ########################################
+  ###################################################
+  # Basic Layer 1 Block 2
+  ###################################################
 
 
   layer {
-    name: "12"
-    parents: "11"
-    children: ""
+    name: "index_12_basic_layer_1_basic_block_2_part_1_conv"
+    parents: "index_11_basic_layer_1_basic_block_1_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -236,9 +209,8 @@ model {
     }
   }
   layer {
-    name: "13"
-    parents: "12"
-    children: ""
+    name: "index_13_basic_layer_1_basic_block_2_part_1_norm"
+    parents: "index_12_basic_layer_1_basic_block_2_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -248,18 +220,15 @@ model {
     }
   }
   layer {
-    name: "14"
-    parents: "13"
-    children: ""
+    name: "index_14_basic_layer_1_basic_block_2_part_1_relu"
+    parents: "index_13_basic_layer_1_basic_block_2_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
-
   layer {
-    name: "15"
-    parents: "14"
-    children: ""
+    name: "index_15_basic_layer_1_basic_block_2_part_2_conv"
+    parents: "index_14_basic_layer_1_basic_block_2_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -271,9 +240,8 @@ model {
     }
   }
   layer {
-    name: "16"
-    parents: "15"
-    children: ""
+    name: "index_16_basic_layer_1_basic_block_2_part_2_norm"
+    parents: "index_15_basic_layer_1_basic_block_2_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -283,30 +251,28 @@ model {
     }
   }
   layer {
-    name: "17"
-    parents: "16 11"
-    children: ""
+    name: "index_17_basic_layer_1_basic_block_2_sum"
+    parents: "index_11_basic_layer_1_basic_block_1_part_2_relu index_16_basic_layer_1_basic_block_2_part_2_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "18"
-    parents: "17"
-    children: ""
+    name: "index_18_basic_layer_1_basic_block_2_part_2_relu"
+    parents: "index_17_basic_layer_1_basic_block_2_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
 
-  ######################################
-  # BasicBlock 3
-  ######################################
+  ###################################################
+  # Basic Layer 2 Block 1
+  ###################################################
+
 
   layer {
-    name: "19"
-    parents: "18"
-    children: ""
+    name: "index_19_basic_layer_2_basic_block_1_part_1_conv"
+    parents: "index_18_basic_layer_1_basic_block_2_part_2_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -318,9 +284,8 @@ model {
     }
   }
   layer {
-    name: "20"
-    parents: "19"
-    children: ""
+    name: "index_20_basic_layer_2_basic_block_1_part_1_norm"
+    parents: "index_19_basic_layer_2_basic_block_1_part_1_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -330,18 +295,15 @@ model {
     }
   }
   layer {
-    name: "21"
-    parents: "20"
-    children: ""
+    name: "index_21_basic_layer_2_basic_block_1_part_1_relu"
+    parents: "index_20_basic_layer_2_basic_block_1_part_1_norm"
     data_layout: "data_parallel"
     relu {
     }
   }
-
   layer {
-    name: "22"
-    parents: "21"
-    children: ""
+    name: "index_22_basic_layer_2_basic_block_1_part_2_conv"
+    parents: "index_21_basic_layer_2_basic_block_1_part_1_relu"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -353,9 +315,8 @@ model {
     }
   }
   layer {
-    name: "23"
-    parents: "22"
-    children: ""
+    name: "index_23_basic_layer_2_basic_block_1_part_2_norm"
+    parents: "index_22_basic_layer_2_basic_block_1_part_2_conv"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -365,473 +326,429 @@ model {
     }
   }
   layer {
-    name: "24"
-    parents: "23"
-    children: ""
+    name: "index_24_basic_layer_2_basic_block_1_sum"
+    parents: "index_23_basic_layer_2_basic_block_1_part_2_norm"
     data_layout: "data_parallel"
     sum {
     }
   }
   layer {
-    name: "25"
-    parents: "24"
-    children: ""
+    name: "index_25_basic_layer_2_basic_block_1_part_2_relu"
+    parents: "index_24_basic_layer_2_basic_block_1_sum"
     data_layout: "data_parallel"
     relu {
     }
   }
 
-  ##################################
-  # BasicBlock 4
-  ##################################
+  ###################################################
+  # Basic Layer 2 Block 2
+  ###################################################
 
 
-    layer {
-      name: "26"
-      parents: "25"
-      children: ""
-      data_layout: "data_parallel"
-      convolution {
-        num_dims: 2
-        num_output_channels: 128
-        conv_dims_i: 3
-        conv_pads_i: 1
-        conv_strides_i: 1
-        has_bias: false
-      }
+  layer {
+    name: "index_26_basic_layer_2_basic_block_2_part_1_conv"
+    parents: "index_25_basic_layer_2_basic_block_1_part_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
     }
-    layer {
-      name: "27"
-      parents: "26"
-      children: ""
-      data_layout: "data_parallel"
-      batch_normalization {
-        decay: 0.9
-        scale_init: 1.0
-        bias_init: 0.0
-        epsilon: 1e-5
-      }
+  }
+  layer {
+    name: "index_27_basic_layer_2_basic_block_2_part_1_norm"
+    parents: "index_26_basic_layer_2_basic_block_2_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
     }
-    layer {
-      name: "28"
-      parents: "27"
-      children: ""
-      data_layout: "data_parallel"
-      relu {
-      }
+  }
+  layer {
+    name: "index_28_basic_layer_2_basic_block_2_part_1_relu"
+    parents: "index_27_basic_layer_2_basic_block_2_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
     }
+  }
+  layer {
+    name: "index_29_basic_layer_2_basic_block_2_part_2_conv"
+    parents: "index_28_basic_layer_2_basic_block_2_part_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 128
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "index_30_basic_layer_2_basic_block_2_part_2_norm"
+    parents: "index_29_basic_layer_2_basic_block_2_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "index_31_basic_layer_2_basic_block_2_sum"
+    parents: "index_25_basic_layer_2_basic_block_1_part_2_relu index_30_basic_layer_2_basic_block_2_part_2_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "index_32_basic_layer_2_basic_block_2_part_2_relu"
+    parents: "index_31_basic_layer_2_basic_block_2_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
 
-    layer {
-      name: "29"
-      parents: "28"
-      children: ""
-      data_layout: "data_parallel"
-      convolution {
-        num_dims: 2
-        num_output_channels: 128
-        conv_dims_i: 3
-        conv_pads_i: 1
-        conv_strides_i: 1
-        has_bias: false
-      }
-    }
-    layer {
-      name: "30"
-      parents: "29"
-      children: ""
-      data_layout: "data_parallel"
-      batch_normalization {
-        decay: 0.9
-        scale_init: 1.0
-        bias_init: 0.0
-        epsilon: 1e-5
-      }
-    }
-    layer {
-      name: "31"
-      parents: "30 25"
-      children: ""
-      data_layout: "data_parallel"
-      sum {
-      }
-    }
-    layer {
-      name: "32"
-      parents: "31"
-      children: ""
-      data_layout: "data_parallel"
-      relu {
-      }
-    }
-
-    ##################################
-    # BasicBlock 5
-    ##################################
-
-    layer {
-      name: "33"
-      parents: "32"
-      children: ""
-      data_layout: "data_parallel"
-      convolution {
-        num_dims: 2
-        num_output_channels: 256
-        conv_dims_i: 3
-        conv_pads_i: 1
-        conv_strides_i: 2
-        has_bias: false
-      }
-    }
-    layer {
-      name: "34"
-      parents: "33"
-      children: ""
-      data_layout: "data_parallel"
-      batch_normalization {
-        decay: 0.9
-        scale_init: 1.0
-        bias_init: 0.0
-        epsilon: 1e-5
-      }
-    }
-    layer {
-      name: "35"
-      parents: "34"
-      children: ""
-      data_layout: "data_parallel"
-      relu {
-      }
-    }
-
-    layer {
-      name: "36"
-      parents: "35"
-      children: ""
-      data_layout: "data_parallel"
-      convolution {
-        num_dims: 2
-        num_output_channels: 256
-        conv_dims_i: 3
-        conv_pads_i: 1
-        conv_strides_i: 1
-        has_bias: false
-      }
-    }
-    layer {
-      name: "37"
-      parents: "36"
-      children: ""
-      data_layout: "data_parallel"
-      batch_normalization {
-        decay: 0.9
-        scale_init: 1.0
-        bias_init: 0.0
-        epsilon: 1e-5
-      }
-    }
-    layer {
-      name: "38"
-      parents: "37"
-      children: ""
-      data_layout: "data_parallel"
-      sum {
-      }
-    }
-    layer {
-      name: "39"
-      parents: "38"
-      children: ""
-      data_layout: "data_parallel"
-      relu {
-      }
-    }
-
-    #################################
-    # BasicBlock 6
-    #################################
-
-    layer {
-      name: "40"
-      parents: "39"
-      children: ""
-      data_layout: "data_parallel"
-      convolution {
-        num_dims: 2
-        num_output_channels: 256
-        conv_dims_i: 3
-        conv_pads_i: 1
-        conv_strides_i: 1
-        has_bias: false
-      }
-    }
-    layer {
-      name: "41"
-      parents: "40"
-      children: ""
-      data_layout: "data_parallel"
-      batch_normalization {
-        decay: 0.9
-        scale_init: 1.0
-        bias_init: 0.0
-        epsilon: 1e-5
-      }
-    }
-    layer {
-      name: "42"
-      parents: "41"
-      children: ""
-      data_layout: "data_parallel"
-      relu {
-      }
-    }
-
-    layer {
-      name: "43"
-      parents: "42"
-      children: ""
-      data_layout: "data_parallel"
-      convolution {
-        num_dims: 2
-        num_output_channels: 256
-        conv_dims_i: 3
-        conv_pads_i: 1
-        conv_strides_i: 1
-        has_bias: false
-      }
-    }
-    layer {
-      name: "44"
-      parents: "43"
-      children: ""
-      data_layout: "data_parallel"
-      batch_normalization {
-        decay: 0.9
-        scale_init: 1.0
-        bias_init: 0.0
-        epsilon: 1e-5
-      }
-    }
-    layer {
-      name: "45"
-      parents: "44 39"
-      children: ""
-      data_layout: "data_parallel"
-      sum {
-      }
-    }
-    layer {
-      name: "46"
-      parents: "45"
-      children: ""
-      data_layout: "data_parallel"
-      relu {
-      }
-    }
-
-    ###############################
-    # BasicBlock 7
-    ###############################
-
-    layer {
-      name: "47"
-      parents: "46"
-      children: ""
-      data_layout: "data_parallel"
-      convolution {
-        num_dims: 2
-        num_output_channels: 512
-        conv_dims_i: 3
-        conv_pads_i: 1
-        conv_strides_i: 2
-        has_bias: false
-      }
-    }
-    layer {
-      name: "48"
-      parents: "47"
-      children: ""
-      data_layout: "data_parallel"
-      batch_normalization {
-        decay: 0.9
-        scale_init: 1.0
-        bias_init: 0.0
-        epsilon: 1e-5
-      }
-    }
-    layer {
-      name: "49"
-      parents: "48"
-      children: ""
-      data_layout: "data_parallel"
-      relu {
-      }
-    }
-
-    layer {
-      name: "50"
-      parents: "49"
-      children: ""
-      data_layout: "data_parallel"
-      convolution {
-        num_dims: 2
-        num_output_channels: 512
-        conv_dims_i: 3
-        conv_pads_i: 1
-        conv_strides_i: 1
-        has_bias: false
-      }
-    }
-    layer {
-      name: "51"
-      parents: "50"
-      children: ""
-      data_layout: "data_parallel"
-      batch_normalization {
-        decay: 0.9
-        scale_init: 1.0
-        bias_init: 0.0
-        epsilon: 1e-5
-      }
-    }
-    layer {
-      name: "52"
-      parents: "51"
-      children: ""
-      data_layout: "data_parallel"
-      sum {
-      }
-    }
-    layer {
-      name: "53"
-      parents: "52"
-      children: ""
-      data_layout: "data_parallel"
-      relu {
-      }
-    }
-
-    ###################################
-    # BasicBlock 8
-    ###################################
-
-    layer {
-      name: "54"
-      parents: "53"
-      children: ""
-      data_layout: "data_parallel"
-      convolution {
-        num_dims: 2
-        num_output_channels: 512
-        conv_dims_i: 3
-        conv_pads_i: 1
-        conv_strides_i: 1
-        has_bias: false
-      }
-    }
-    layer {
-      name: "55"
-      parents: "54"
-      children: ""
-      data_layout: "data_parallel"
-      batch_normalization {
-        decay: 0.9
-        scale_init: 1.0
-        bias_init: 0.0
-        epsilon: 1e-5
-      }
-    }
-    layer {
-      name: "56"
-      parents: "55"
-      children: ""
-      data_layout: "data_parallel"
-      relu {
-      }
-    }
-
-    layer {
-      name: "57"
-      parents: "56"
-      children: ""
-      data_layout: "data_parallel"
-      convolution {
-        num_dims: 2
-        num_output_channels: 512
-        conv_dims_i: 3
-        conv_pads_i: 1
-        conv_strides_i: 1
-        has_bias: false
-      }
-    }
-    layer {
-      name: "58"
-      parents: "57"
-      children: ""
-      data_layout: "data_parallel"
-      batch_normalization {
-        decay: 0.9
-        scale_init: 1.0
-        bias_init: 0.0
-        epsilon: 1e-5
-      }
-    }
-    layer {
-      name: "59"
-      parents: "58 53"
-      children: ""
-      data_layout: "data_parallel"
-      sum {
-      }
-    }
-    layer {
-      name: "60"
-      parents: "59"
-      children: ""
-      data_layout: "data_parallel"
-      relu {
-      }
-    }
-    layer {
-      name: "61"
-      parents: "60"
-      children: ""
-      data_layout: "data_parallel"
-      pooling {
-        num_dims: 2
-        pool_dims_i: 7
-        pool_pads_i: 0
-        pool_strides_i: 1
-        pool_mode: "average"
-      }
-    }
-    layer {
-      name: "62"
-      parents: "61"
-      children: ""
-      data_layout: "model_parallel"
-      fully_connected {
-        num_neurons: 1000
-        has_bias: false
-      }
-    }
-    layer {
-      name: "63"
-      parents: "62"
-      children: ""
-      data_layout: "model_parallel"
-      softmax {
-      }
-    }
-    layer {
-      name: "64"
-      parents: "63"
-      children: ""
-      data_layout: "data_parallel"
-      target {
-        io_buffer: "partitioned"
-        shared_data_reader: true
-      }
-    }
+  ###################################################
+  # Basic Layer 3 Block 1
+  ###################################################
 
 
+  layer {
+    name: "index_33_basic_layer_3_basic_block_1_part_1_conv"
+    parents: "index_32_basic_layer_2_basic_block_2_part_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 2
+      has_bias: false
+    }
+  }
+  layer {
+    name: "index_34_basic_layer_3_basic_block_1_part_1_norm"
+    parents: "index_33_basic_layer_3_basic_block_1_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "index_35_basic_layer_3_basic_block_1_part_1_relu"
+    parents: "index_34_basic_layer_3_basic_block_1_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "index_36_basic_layer_3_basic_block_1_part_2_conv"
+    parents: "index_35_basic_layer_3_basic_block_1_part_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "index_37_basic_layer_3_basic_block_1_part_2_norm"
+    parents: "index_36_basic_layer_3_basic_block_1_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "index_38_basic_layer_3_basic_block_1_sum"
+    parents: "index_37_basic_layer_3_basic_block_1_part_2_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "index_39_basic_layer_3_basic_block_1_part_2_relu"
+    parents: "index_38_basic_layer_3_basic_block_1_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+
+  ###################################################
+  # Basic Layer 3 Block 2
+  ###################################################
+
+
+  layer {
+    name: "index_40_basic_layer_3_basic_block_2_part_1_conv"
+    parents: "index_39_basic_layer_3_basic_block_1_part_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "index_41_basic_layer_3_basic_block_2_part_1_norm"
+    parents: "index_40_basic_layer_3_basic_block_2_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "index_42_basic_layer_3_basic_block_2_part_1_relu"
+    parents: "index_41_basic_layer_3_basic_block_2_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "index_43_basic_layer_3_basic_block_2_part_2_conv"
+    parents: "index_42_basic_layer_3_basic_block_2_part_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 256
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "index_44_basic_layer_3_basic_block_2_part_2_norm"
+    parents: "index_43_basic_layer_3_basic_block_2_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "index_45_basic_layer_3_basic_block_2_sum"
+    parents: "index_39_basic_layer_3_basic_block_1_part_2_relu index_44_basic_layer_3_basic_block_2_part_2_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "index_46_basic_layer_3_basic_block_2_part_2_relu"
+    parents: "index_45_basic_layer_3_basic_block_2_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+
+  ###################################################
+  # Basic Layer 4 Block 1
+  ###################################################
+
+
+  layer {
+    name: "index_47_basic_layer_4_basic_block_1_part_1_conv"
+    parents: "index_46_basic_layer_3_basic_block_2_part_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 512
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 2
+      has_bias: false
+    }
+  }
+  layer {
+    name: "index_48_basic_layer_4_basic_block_1_part_1_norm"
+    parents: "index_47_basic_layer_4_basic_block_1_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "index_49_basic_layer_4_basic_block_1_part_1_relu"
+    parents: "index_48_basic_layer_4_basic_block_1_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "index_50_basic_layer_4_basic_block_1_part_2_conv"
+    parents: "index_49_basic_layer_4_basic_block_1_part_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 512
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "index_51_basic_layer_4_basic_block_1_part_2_norm"
+    parents: "index_50_basic_layer_4_basic_block_1_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "index_52_basic_layer_4_basic_block_1_sum"
+    parents: "index_51_basic_layer_4_basic_block_1_part_2_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "index_53_basic_layer_4_basic_block_1_part_2_relu"
+    parents: "index_52_basic_layer_4_basic_block_1_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+
+  ###################################################
+  # Basic Layer 4 Block 2
+  ###################################################
+
+
+  layer {
+    name: "index_54_basic_layer_4_basic_block_2_part_1_conv"
+    parents: "index_53_basic_layer_4_basic_block_1_part_2_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 512
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "index_55_basic_layer_4_basic_block_2_part_1_norm"
+    parents: "index_54_basic_layer_4_basic_block_2_part_1_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "index_56_basic_layer_4_basic_block_2_part_1_relu"
+    parents: "index_55_basic_layer_4_basic_block_2_part_1_norm"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "index_57_basic_layer_4_basic_block_2_part_2_conv"
+    parents: "index_56_basic_layer_4_basic_block_2_part_1_relu"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 512
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: false
+    }
+  }
+  layer {
+    name: "index_58_basic_layer_4_basic_block_2_part_2_norm"
+    parents: "index_57_basic_layer_4_basic_block_2_part_2_conv"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    name: "index_59_basic_layer_4_basic_block_2_sum"
+    parents: "index_53_basic_layer_4_basic_block_1_part_2_relu index_58_basic_layer_4_basic_block_2_part_2_norm"
+    data_layout: "data_parallel"
+    sum {
+    }
+  }
+  layer {
+    name: "index_60_basic_layer_4_basic_block_2_part_2_relu"
+    parents: "index_59_basic_layer_4_basic_block_2_sum"
+    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "index_61_final_layer_pool"
+    parents: "index_60_basic_layer_4_basic_block_2_part_2_relu"
+    data_layout: "data_parallel"
+    pooling {
+      num_dims: 2
+      pool_dims_i: 7
+      pool_pads_i: 0
+      pool_strides_i: 1
+      pool_mode: "average"
+    }
+  }
+  layer {
+    name: "index_62_final_layer_fc"
+    parents: "index_61_final_layer_pool"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 1000
+      has_bias: false
+    }
+  }
+  layer {
+    name: "index_63_final_layer_softmax"
+    parents: "index_62_final_layer_fc"
+    data_layout: "model_parallel"
+    softmax {
+    }
+  }
+  layer {
+    name: "index_64_final_layer_target"
+    parents: "index_63_final_layer_softmax index_0_initial_layer_input"
+    data_layout: "data_parallel"
+    target {
+      io_buffer: "partitioned"
+      shared_data_reader: true
+    }
+  }
 }
