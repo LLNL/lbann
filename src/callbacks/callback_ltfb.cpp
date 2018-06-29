@@ -158,8 +158,7 @@ lbann_callback_ltfb::~lbann_callback_ltfb() {
 }
 
 void lbann_callback_ltfb::setup(model *m) {
-
-  if(m_metric_mode != "increasing" || m_metric_mode != "decreasing")
+  if(!(m_metric_mode == "increasing" || m_metric_mode == "decreasing"))
     LBANN_ERROR("Metric mode has to be either increasing or decreasing");
   
   if(m_eval_metrics.size() < 1)

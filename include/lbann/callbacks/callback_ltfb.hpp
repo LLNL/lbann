@@ -54,6 +54,7 @@ class lbann_callback_ltfb : public lbann_callback {
   /** Constructor.
    *  @param round_size The number of minibatches in each round.
    *  @param metric_mode  The expectation for a good tournament metric: increasing/descreasing 
+   *  @todo pair metric_mode with eval_metric
    *  @param eval_metric Tournament evaluation metrics
    *  @param selected_weights set of weights to exchange
    */
