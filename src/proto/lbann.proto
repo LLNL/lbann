@@ -68,9 +68,8 @@ message Reader {
   int32 num_image_srcs = 114; // data_reader_multi_images
 
   //------------- start of only for partitioned data sets ------------------
-  bool is_partitioned = 200; 
-  double partitioned_overlap = 201;
-  int32 procs_per_partition = 202;
+  bool is_partitioned = 300; 
+  double partitioned_overlap = 301;
   //------------- end of only for partitioned data sets ------------------
 }
 

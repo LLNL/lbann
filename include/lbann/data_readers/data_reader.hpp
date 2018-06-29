@@ -312,7 +312,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Set the mini batch size
   void set_mini_batch_size(const int s) {
-  std::cerr << "set_mini_batch_size: " << s << "\n";
     m_mini_batch_size = s;
   }
   /// Get the mini batch size
@@ -333,7 +332,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Set the mini batch size across all models (global)
   void set_global_mini_batch_size(const int s) {
-  std::cerr << "set_global_mini_batch_size: " << s << "\n";
     m_global_mini_batch_size = s;
   }
   /// Return the mini_batch_size across all models (global)
@@ -342,7 +340,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Set the mini batch stride
   void set_stride_to_next_mini_batch(const int s) {
-  std::cerr << "set_stride_to_next_mini_batch: " << s << "\n";
     m_stride_to_next_mini_batch = s;
   }
   /// Return the mini batch stride.
@@ -351,7 +348,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Set the sample stride
   void set_sample_stride(const int s) {
-  std::cerr << "set_sample_stride: " << s << "\n";
     m_sample_stride = s;
   }
   /// Return the sample stride.
@@ -360,7 +356,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Set the iteration stride
   void set_iteration_stride(const int s) {
-  std::cerr << "set_iteration_stride: " << s << "\n";
     m_iteration_stride = s;
   }
   /// Return the iteration stride.
@@ -369,7 +364,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Return the base offset.
   void set_base_offset(const int s) {
-  std::cerr << "set_base_offset: " << s << "\n";
     m_base_offset = s;
   }
   /// Return the base offset.
@@ -378,7 +372,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Set the model offset
   void set_model_offset(const int s) {
-  std::cerr << "set_model_offset: " << s << "\n";
     m_model_offset = s;
   }
   /// Return the model offset.
@@ -387,7 +380,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Set the last mini batch size
   void set_last_mini_batch_size(const int s) {
-  std::cerr << "set_last_mini_batch_size: " << s << "\n";
     m_last_mini_batch_size = s;
   }
   /// Return the last mini batch size
@@ -396,7 +388,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Set the last mini batch size across all models (global)
   void set_global_last_mini_batch_size(const int s) {
-  std::cerr << "set_last_global_mini_batch_size: " << s << "\n";
     m_global_last_mini_batch_size = s;
   }
   /// Return the last mini batch size across all models (global)
@@ -405,7 +396,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Set the world master mini batch adjustment (global)
   void set_world_master_mini_batch_adjustment(const int s) {
-  std::cerr << "set_world_master_mini_batch_adjustment: " << s << "\n";
     m_world_master_mini_batch_adjustment = s;
   }
   /// Return the world master mini batch adjustment (global)
@@ -414,7 +404,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Set the last mini batch stride
   void set_stride_to_last_mini_batch(const int s) {
-  std::cerr << "set_stride_to_last_mini_batch: " << s << "\n";
     m_stride_to_last_mini_batch = s;
   }
   /// Return the last mini batch stride
@@ -423,7 +412,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Set the number of parallel readers per model
   void set_num_parallel_readers(const int s) {
-  std::cerr << "set_num_parallel_readers: " << s << "\n";
     m_num_parallel_readers = s;
   }
   /// Return the number of parallel readers per model
@@ -432,7 +420,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Set the starting mini-batch index for the epoch
   void set_reset_mini_batch_index(const int s) {
-  std::cerr << "sset_reset_mini_batch_index: " << s << "\n";
     m_reset_mini_batch_index = s;
   }
   /// Return the starting mini-batch index for the epoch
@@ -449,7 +436,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Set the current position based on the base and model offsets
   void set_initial_position() {
-  std::cerr << "set_initial_position: " << s << "\n";
     m_current_pos = m_base_offset + m_model_offset;
     m_loaded_mini_batch_idx = m_reset_mini_batch_index;
     m_current_mini_batch_idx = 0;
@@ -482,7 +468,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Set the number of iterations in each epoch.
   void set_num_iterations_per_epoch(int num_iterations_per_epoch) {
-  std::cerr << "set_num_iteration_per_epoch: " << s << "\n";
     m_num_iterations_per_epoch = num_iterations_per_epoch;  /// @todo BVE FIXME merge this with alternate approach
   }
   /// Get the number of iterations in each epoch.

@@ -327,7 +327,7 @@ void generic_data_reader::select_subset_of_data() {
 
   // optionally partition data set amongst the models
   if (m_is_partitioned) {
-    int partition_size = m_num_global_indices / m_num_partitions;
+    size_t partition_size = m_num_global_indices / m_num_partitions;
     if (partition_size*m_num_partitions < m_num_global_indices
         && is_master()) {
       std::cerr << "select_subset_of_data; data set is partitioned; dropping " 
@@ -335,11 +335,11 @@ void generic_data_reader::select_subset_of_data() {
                 << " to avoid dealing with edge cases (hack)\n";
       if (m_my_partition > 0) {
         std::copy(
-          m_shuffled_indices.begin() + indices_per_partition*m_my_partition;
-          m_shuffled_indices.begin() + indices_per_partition*(m_my_partition+1),
+          m_shuffled_indices.begin() + partition_size*m_my_partition,
+          m_shuffled_indices.begin() + partition_size*(m_my_partition+1),
           m_shuffled_indices.begin());
       }
-      m_shuffled_partitioned_indices.resize(indices_per_partition);
+      m_shuffled_indices.resize(partition_size);
     }
     m_num_global_indices = partition_size;
   }
@@ -555,7 +555,7 @@ void generic_data_reader::set_partitioned(double overlap) {
   m_is_partitioned = true;
   m_partition_overlap = overlap;
   m_procs_per_partition = m_comm->get_procs_per_model();
-  m_num_partitions = m_comm->num_models();
+  m_num_partitions = m_comm->get_num_models();
   m_my_partition = m_comm->get_model_rank();
 }
 
