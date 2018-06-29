@@ -181,6 +181,10 @@ void lbann::distributed_io_buffer::calculate_num_iterations_per_epoch(int num_mo
     max_mini_batch_size = data_reader->get_num_data();
   }
 
+  bool partitioned = data_reader->is_partitioned();
+  //@todo "if (partitioned)" conditionals below assume one processor per model;
+  //      this needs to be revisited for cases with multiple cpus per model
+
   /// Check to make sure that there is enough data for all of the parallel readers
   int num_parallel_readers_per_model = compute_max_num_parallel_readers(data_reader->get_num_data(), max_mini_batch_size, m_requested_max_num_parallel_readers);
   data_reader->set_num_parallel_readers(num_parallel_readers_per_model);
@@ -189,11 +193,21 @@ void lbann::distributed_io_buffer::calculate_num_iterations_per_epoch(int num_mo
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
       " :: distributed_io_buffer: number of parallel readers is zero");
   }
+  if (partitioned) {
+    num_parallel_readers_per_model = 1;
+  }
 
   /// Set the basic parameters for stride and offset of the data reader
   int batch_stride = num_models * num_parallel_readers_per_model * max_mini_batch_size;
   int base_offset = m_comm->get_rank_in_model() * num_models * max_mini_batch_size;
   int model_offset = model_rank * max_mini_batch_size;
+
+  if (partitioned) {
+    batch_stride = max_mini_batch_size;
+    base_offset = 1;
+    model_offset = 1;
+  }
+
   /// Set mini-batch size and stride
   data_reader->set_mini_batch_size(max_mini_batch_size);
   data_reader->set_stride_to_next_mini_batch(batch_stride);
@@ -206,8 +220,11 @@ void lbann::distributed_io_buffer::calculate_num_iterations_per_epoch(int num_mo
   data_reader->set_initial_position();
 
   int min_stride_across_models = max_mini_batch_size * num_models;  /// Given that each model has to have at least one reader, what is the minimum stride
-
+  if (partitioned) {
+    min_stride_across_models = max_mini_batch_size;
+  }
   data_reader->set_global_mini_batch_size(min_stride_across_models); /// The global mini-batch is a full mini-batch per model
+
   data_reader->set_last_mini_batch_size(max_mini_batch_size); /// By default the last mini-batch is a full one
   data_reader->set_global_last_mini_batch_size(min_stride_across_models); /// By default the last mini-batch is a full one per model
 
