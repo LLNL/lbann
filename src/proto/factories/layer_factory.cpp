@@ -310,6 +310,10 @@ Layer* construct_layer(lbann_comm* comm,
       return new min_layer<layout, El::Device::CPU>(comm);
     }
   }
+  if (proto_layer.has_in_top_k()) {
+    const auto& params = proto_layer.in_top_k();
+    return new in_top_k_layer<layout, Dev>(comm, params.k());
+  }
 
   // Regularizer layers
   if (proto_layer.has_batch_normalization()) {

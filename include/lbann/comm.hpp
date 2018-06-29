@@ -298,6 +298,12 @@ class lbann_comm {
     }
   }
 
+  /** Allgather over an arbitrary communicator */
+  template <typename T>
+  void all_gather(const T* src, int src_count, T* rcv, int rcv_count, El::mpi::Comm c) {
+    El::mpi::AllGather<T>(src, src_count, rcv, rcv_count, c);
+  }
+
   /** 
    * Allgatherv over an arbitrary communicator;
    * all vectors must be correctly sized prior to entry.

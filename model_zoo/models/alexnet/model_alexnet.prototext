@@ -22,10 +22,16 @@ model {
   # Metrics
   ###################################################
 
-  metric { categorical_accuracy {} }
   metric {
-    top_k_categorical_accuracy {
-       top_k: 5
+    layer_metric {
+      layer: "top1_accuracy_eval"
+      unit: "%"
+    }
+  }
+  metric {
+    layer_metric {
+      layer: "top5_accuracy_eval"
+      unit: "%"
     }
   }
 
@@ -318,11 +324,65 @@ model {
     data_layout: "model_parallel"
     evaluation {}    
   }
+
   layer {
-    name: "target"
-    parents: "prob labels"
+    name: "top1_prob"
+    parents: "prob"
+    data_layout: "model_parallel"
+    device_allocation: "cpu"
+    in_top_k {
+      k: 1
+    }
+  }
+  layer {
+    name: "top1_correct"
+    parents: "top1_prob labels"
+    data_layout: "model_parallel"
+    hadamard {}
+  }
+  layer {
+    name: "top1_accuracy"
+    parents: "top1_correct"
     data_layout: "data_parallel"
-    target {}
-  }  
+    reduction {
+      mode: "sum"
+    }
+  }
+  layer {
+    name: "top1_accuracy_eval"
+    parents: "top1_accuracy"
+    data_layout: "model_parallel"
+    evaluation {}
+  }
+
+  layer {
+    name: "top5_prob"
+    parents: "prob"
+    data_layout: "model_parallel"
+    device_allocation: "cpu"
+    in_top_k {
+      k: 5
+    }
+  }
+  layer {
+    name: "top5_correct"
+    parents: "top5_prob labels"
+    data_layout: "model_parallel"
+    hadamard {}
+  }
+  layer {
+    name: "top5_accuracy"
+    parents: "top5_correct"
+    data_layout: "data_parallel"
+    reduction {
+      mode: "sum"
+    }
+  }
+  layer {
+    name: "top5_accuracy_eval"
+    parents: "top5_accuracy"
+    data_layout: "model_parallel"
+    evaluation {}
+  }
 
 }

@@ -732,6 +732,7 @@ message Layer {
    StopGradient stop_gradient = 320;
    Max max = 321;
    Min min = 322;
+   InTopK in_top_k = 324;
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -959,7 +960,7 @@ message Zero {
 }
 
 message Reduction {
-  string mode=1;
+  string mode=1; //"sum" or "average"
 }
 
 message Evaluation {
@@ -1005,6 +1006,10 @@ message Max {
 }
 
 message Min {
+}
+
+message InTopK {
+  int64 k = 1;
 }
 
 /////////////////////

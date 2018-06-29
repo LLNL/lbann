@@ -92,6 +92,7 @@
 #include "lbann/layers/transform/stop_gradient.hpp"
 #include "lbann/layers/transform/max.hpp"
 #include "lbann/layers/transform/min.hpp"
+#include "lbann/layers/transform/in_top_k.hpp"
 
 /// Regularization layers.
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
