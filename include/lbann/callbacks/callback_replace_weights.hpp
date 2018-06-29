@@ -23,7 +23,6 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_replace_weights .hpp .cpp - Callbacks to dump activations
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_CALLBACKS_CALLBACK_REPLACE_WEIGHTS_HPP_INCLUDED
