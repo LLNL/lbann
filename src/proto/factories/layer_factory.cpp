@@ -302,13 +302,6 @@ Layer* construct_layer(lbann_comm* comm,
       return new min_layer<layout, El::Device::CPU>(comm, cudnn);
     }
   }
-  if (proto_layer.has_bce()) {
-    return new binary_cross_entropy_layer<layout, Dev>(comm, cudnn);
-  }
-
-  if (proto_layer.has_mse()) {
-    return new mean_squared_error_layer<layout, Dev>(comm, cudnn);
-  }
   // Regularizer layers
   if (proto_layer.has_batch_normalization()) {
     const auto& params = proto_layer.batch_normalization();

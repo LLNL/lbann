@@ -749,8 +749,6 @@ message Layer {
    StopGradient stop_gradient = 319;
    Max max = 320;
    Min min = 321;
-   BinaryCrossEntropyLoss bce = 322;
-   MeanSquaredErrorLoss   mse = 323;
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -1020,11 +1018,6 @@ message Max {
 message Min {
 }
 
-message BinaryCrossEntropyLoss {
-}
-
-message MeanSquaredErrorLoss {
-}
 /////////////////////
 // learning Layers //
 /////////////////////
