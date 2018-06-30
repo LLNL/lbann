@@ -58,6 +58,9 @@ class lbann_callback_sync_layers : public lbann_callback {
   }
   std::string name() const override { return "sync_layers"; }
 
+  using lbann_callback::on_forward_prop_end;
+  using lbann_callback::on_backward_prop_end;
+
   void on_forward_prop_end(model *m, Layer *l) override;
   void on_backward_prop_end(model *m, Layer *l) override;
     
