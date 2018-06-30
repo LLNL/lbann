@@ -168,7 +168,7 @@ static void set_subtractor(const lbann_data::ImagePreprocessor& pb_preprocessor,
       }
       else if (pb_subtractor.channel_mean_size() > 0) {
         const size_t n = pb_subtractor.channel_mean_size();
-        if (n != static_cast<const size_t>(channels)) {
+        if (n != static_cast<size_t>(channels)) {
           throw lbann_exception("Failed to setup subtractor due to inconsistent number of channels.");
         }
         std::vector<lbann::DataType> ch_mean(n);
@@ -192,7 +192,7 @@ static void set_subtractor(const lbann_data::ImagePreprocessor& pb_preprocessor,
       }
       else if (pb_subtractor.channel_stddev_size() > 0) {
         const size_t n = pb_subtractor.channel_stddev_size();
-        if (n != static_cast<const size_t>(channels)) {
+        if (n != static_cast<size_t>(channels)) {
           throw lbann_exception("Failed to setup subtractor due to inconsistent number of channels.");
         }
         std::vector<lbann::DataType> ch_stddev(n);
