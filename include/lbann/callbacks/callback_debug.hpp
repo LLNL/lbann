@@ -58,6 +58,15 @@ class lbann_callback_debug : public lbann_callback {
   /** Print that a layer's forward prop is ending. */
   void on_batch_evaluate_end(model *m) override;
 
+  using lbann_callback::on_forward_prop_begin;
+  using lbann_callback::on_forward_prop_end;
+  using lbann_callback::on_backward_prop_begin;
+  using lbann_callback::on_backward_prop_end;
+  using lbann_callback::on_evaluate_forward_prop_begin;
+  using lbann_callback::on_evaluate_forward_prop_end;
+  using lbann_callback::on_optimize_begin;
+  using lbann_callback::on_optimize_end;
+
   /** Print that a layer's forward prop is beginning. */
   void on_forward_prop_begin(model *m, Layer *l) override;
   /** Print that a layer's forward prop is ending. */
