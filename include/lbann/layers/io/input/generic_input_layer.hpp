@@ -76,6 +76,7 @@ class generic_input_layer : public io_layer {
     if(m_data_readers[execution_mode::testing] != nullptr) {
       m_testing_dataset.total_samples() = m_data_readers[execution_mode::testing]->get_num_data();
     }
+    omp_init_lock(&dr_lock);
   }
 
   ~generic_input_layer() override {
@@ -86,6 +87,7 @@ class generic_input_layer : public io_layer {
     for (auto& dr : m_data_readers) {
       delete dr.second;
     }
+    omp_destroy_lock(&dr_lock);
   }
 
   // Input layers copy their datareaders.
@@ -254,6 +256,22 @@ class generic_input_layer : public io_layer {
     }
   }
 
+  void fetch_data_in_background() {
+    int active_buffer = m_active_buffer % m_io_buffers.size();
+    generic_io_buffer* io_buffer = m_io_buffers[active_buffer];
+
+    if(!m_data_set_processed && m_io_buffers.size() > 1) {
+      //      if(omp_test_lock(&dr_lock)) {
+      //      std::cout << "I am about to fetch some data in the background" << std::endl;
+      execution_mode mode = this->m_model->get_execution_mode();
+      io_buffer = m_io_buffers[active_buffer];
+      omp_set_lock(&dr_lock);
+      setup_next_io_buffer(io_buffer);
+      io_buffer->fetch_to_local_matrix(get_data_reader(), mode);
+      omp_unset_lock(&dr_lock);
+    }
+  }
+
   void fp_compute() override {
     execution_mode mode = this->m_model->get_execution_mode();
 
@@ -262,13 +280,16 @@ class generic_input_layer : public io_layer {
     /// next mb from file, then exchange data as needed
     get_data_reader()->init_minibatch();
 
-    generic_io_buffer* io_buffer = m_io_buffers[m_active_buffer];
+    generic_io_buffer* io_buffer = m_io_buffers[m_active_buffer % m_io_buffers.size()];
 
+    omp_set_lock(&dr_lock);
     int num_samples_in_batch;
     if(io_buffer->num_samples_ready(mode) > 0) {
       num_samples_in_batch = io_buffer->num_samples_ready(mode);
+      //      std::cout << "fp_compute already has data" << std::endl;
     }else {
       num_samples_in_batch = io_buffer->fetch_to_local_matrix(get_data_reader(), mode);
+      //      std::cout << "fp_compute is fetching data" << std::endl;
     }
 
     if(dynamic_cast<partitioned_io_buffer*>(io_buffer) != nullptr) {
@@ -317,9 +338,13 @@ class generic_input_layer : public io_layer {
     }
 
     m_data_set_processed = io_buffer->update_data_set(get_data_reader(), this->m_model->get_execution_mode());
+    /// Only update the active buffer index once the entire FP, BP, update phases are completed
+    m_active_buffer++;
+    omp_unset_lock(&dr_lock);
   }
 
-  void bp_compute() override {}
+  void bp_compute() override {
+  }
 
   void setup_next_io_buffer(generic_io_buffer* io_buffer) {
     int mini_batch_size = get_current_mini_batch_size();
@@ -332,17 +357,6 @@ class generic_input_layer : public io_layer {
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
   bool update_compute() override {
-    generic_io_buffer* io_buffer = m_io_buffers[m_active_buffer];
-    /// Only update the active buffer index once the entire FP, BP, update phases are completed
-    m_active_buffer = (m_active_buffer + 1) % m_io_buffers.size();
-
-    if(!m_data_set_processed && m_io_buffers.size() > 1) {
-      execution_mode mode = this->m_model->get_execution_mode();
-      io_buffer = m_io_buffers[m_active_buffer];
-      setup_next_io_buffer(io_buffer);
-      io_buffer->fetch_to_local_matrix(get_data_reader(), mode);
-    }
-
     return m_data_set_processed;
   }
 
@@ -930,6 +944,7 @@ class generic_input_layer : public io_layer {
   data_reader_map_t m_data_readers;
  //  std::map<execution_mode, dataset_stats> m_dataset_stats;
   bool m_data_set_processed;
+  omp_lock_t dr_lock;
 };
 
 template<> inline void generic_input_layer::initialize_io_buffer<partitioned_io_buffer>(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers) {
