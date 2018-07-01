@@ -100,10 +100,11 @@ void lbann::distributed_io_buffer::distribute_from_local_matrix(generic_data_rea
   Copy(*buf->Ms[0], sample);
   Copy(*buf->Ms[1], response);
 
+  buf->m_num_samples_in_batch = 0;
   return;
 }
 
-bool lbann::distributed_io_buffer::is_data_set_processed(generic_data_reader *data_reader, execution_mode mode) {
+bool lbann::distributed_io_buffer::update_data_set(generic_data_reader *data_reader, execution_mode mode) {
   // not just the ones in the last round.  This will ensure that all readers, that had data
   // will have distributed it.
   int num_parallel_readers = data_reader->get_num_parallel_readers();
@@ -135,6 +136,11 @@ bool lbann::distributed_io_buffer::is_data_set_processed(generic_data_reader *da
   } else {
     return false;
   }
+}
+
+int lbann::distributed_io_buffer::num_samples_ready(execution_mode mode) {
+  data_buffer *buf = get_data_buffer(mode);
+  return buf->m_num_samples_in_batch;
 }
 
 /** Make sure that there are enough ranks and data for all of the

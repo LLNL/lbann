@@ -49,6 +49,7 @@ class input_layer : public generic_input_layer {
     validate_data_layout();
     // Initialize two buffers
     initialize_io_buffer(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), data_readers);
+    initialize_io_buffer(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), data_readers);
     for (auto io_buffer : m_io_buffers) {
       io_buffer->fetch_data_fn = new fetch_data_functor(target_mode);
       io_buffer->update_data_reader_fn = new update_data_reader_functor();

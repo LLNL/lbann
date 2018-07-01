@@ -213,16 +213,6 @@ int lbann::generic_data_reader::fetch_responses(CPUMat& Y) {
   return mb_size;
 }
 
-bool generic_data_reader::is_data_reader_done(bool is_active_reader) {
-  bool reader_not_done = true;
-  if(is_active_reader) {
-    reader_not_done = !((m_loaded_mini_batch_idx + m_iteration_stride) >= m_num_iterations_per_epoch);
-  }else {
-    reader_not_done = !(m_loaded_mini_batch_idx >= m_num_iterations_per_epoch);
-  }
-  return reader_not_done;
-}
-
 bool generic_data_reader::update(bool is_active_reader) {
   bool reader_not_done = true; // BVE The sense of this should be fixed
   m_current_mini_batch_idx++;

@@ -111,12 +111,12 @@ class generic_data_reader : public lbann_image_preprocessor {
   // load, etc.
 
   /**
-   * Set base directory for your data. 
+   * Set base directory for your data.
    */
   void set_file_dir(std::string s);
 
   /**
-   * Set base directory for your locally cached (e.g, on ssd) data. 
+   * Set base directory for your locally cached (e.g, on ssd) data.
    */
   void set_local_file_dir(std::string s);
 
@@ -264,7 +264,6 @@ class generic_data_reader : public lbann_image_preprocessor {
                           bool do_scale = true) override {
     NOT_IMPLEMENTED("save_image");
   }
-  bool is_data_reader_done(bool is_active_reader);
   /**
    * During the network's update phase, the data reader will
    * advanced the current position pointer.  If the pointer wraps
