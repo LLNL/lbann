@@ -69,7 +69,7 @@ message Reader {
 
   //------------- start of only for partitioned data sets ------------------
   bool is_partitioned = 300; 
-  double partitioned_overlap = 301;
+  double partition_overlap = 301;
   //------------- end of only for partitioned data sets ------------------
 }
 

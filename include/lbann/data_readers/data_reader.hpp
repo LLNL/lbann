@@ -512,7 +512,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   void use_unused_index_set();
 
   /// partition the dataset amongst the models, with possible overlap
-  void set_partitioned(double overlap=0.0); 
+  void set_partitioned(bool partitioned_yes=true, double overlap=0.0); 
 
   /// returns true if the data set is partitioned
   bool is_partitioned() const { return m_is_partitioned; }

@@ -551,8 +551,9 @@ void generic_data_reader::init_minibatch() {
   }
 }
 
-void generic_data_reader::set_partitioned(double overlap) {
-  m_is_partitioned = true;
+void generic_data_reader::set_partitioned(bool partitioned_yes, double overlap) {
+  m_is_partitioned = partitioned_yes;
+  //n.b. the following params have no affect if m_is_partitioned is false
   m_partition_overlap = overlap;
   m_procs_per_partition = m_comm->get_procs_per_model();
   m_num_partitions = m_comm->get_num_models();
