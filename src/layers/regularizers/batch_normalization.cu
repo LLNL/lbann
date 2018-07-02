@@ -27,7 +27,7 @@
 #include "math.h"
 #include "lbann/base.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/cudnn_wrapper.hpp"
+#include "lbann/utils/cuda.hpp"
 
 namespace lbann {
 
@@ -106,7 +106,7 @@ __global__ void channel_sums_kernel(
 
   // Initialize shared memory
   __shared__ DataType shared_sums[block_size];
-  __shared__ DataType shared_sqsums[block_size];
+ __shared__ DataType shared_sqsums[block_size];
 
   // Compute row sums in shared memory
   DataType private_sum = DataType(0);
@@ -344,7 +344,7 @@ __global__ void backprop2_kernel(
       auto dx = dxhat * inv_stdev;
       dx += dmean_term;
       dx += dvar_term * (x - mean);
-      global_gradient_wrt_input[row + col * gradient_wrt_input_ldim] += dx;
+      global_gradient_wrt_input[row + col * gradient_wrt_input_ldim] = dx;
     }
   }
 

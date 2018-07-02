@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/utils/cublas_wrapper.hpp"
+#include "lbann/utils/cublas.hpp"
 #include "lbann/utils/exception.hpp"
 
 #ifdef LBANN_HAS_CUDA

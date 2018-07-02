@@ -19,7 +19,7 @@ message DataReader {
 
 message Reader {
   string name = 1; //mnist, nci, nci_regression, numpy, imagenet, synthetic, merge_samples
-  string role = 3; //train, test
+  string role = 3; //train, validation, test
   bool shuffle = 4;
   string data_filedir = 5;
   string data_local_filedir = 50; //to support data_store
@@ -33,10 +33,22 @@ message Reader {
   bool gan_labelling = 201;
   int32 gan_label_value = 202;
   ImagePreprocessor image_preprocessor = 13;
-  repeated string jag_scalar_keys = 95; // only for jag
-  repeated string jag_input_keys = 96; // only for jag
-  repeated int32 independent = 97; // only for jag
-  repeated int32 dependent = 98; // only for jag
+
+  //------------------ start of only for jag_conduit -----------------------
+  repeated string jag_scalar_keys = 91;
+  repeated string jag_input_keys = 92;
+  message JagKeyPrefixFilter {
+    string key_prefix = 1;
+    uint32 min_len = 2;
+  }
+  repeated string jag_scalar_filters = 93;
+  repeated JagKeyPrefixFilter jag_scalar_prefix_filters = 94;
+  repeated string jag_input_filters = 95;
+  repeated JagKeyPrefixFilter jag_input_prefix_filters = 96;
+  repeated int32 independent = 97;
+  repeated int32 dependent = 98;
+  //------------------  end of only for jag_conduit  -----------------------
+
   int32 num_labels = 99; //for imagenet
   int64 num_samples = 100; //only for synthetic
   int64 num_features = 101; //only for synthetic
@@ -71,6 +83,14 @@ message ImagePreprocessor {
     int32 resized_width = 6;
     int32 resized_height = 7;
     bool adaptive_interpolation = 8;
+  }
+
+  message Resizer {
+    string name = 1;
+    bool disable = 2;
+    int32 resized_width = 3;
+    int32 resized_height = 4;
+    bool adaptive_interpolation = 5;
   }
 
   message Augmenter {
@@ -131,6 +151,7 @@ message ImagePreprocessor {
   }
 
   Cropper cropper = 5;
+  Resizer resizer = 34;
   Augmenter augmenter = 6;
   Decolorizer decolorizer = 7;
   Colorizer colorizer = 8;
@@ -139,28 +160,7 @@ message ImagePreprocessor {
   Noiser noiser = 11;
   PatchExtractor patch_extractor = 12;
 
-  // For backward compatibility. TODO: will be deprecated
-  bool scale = 13;
-  bool subtract_mean = 14;
-  bool unit_variance = 15;
-  bool z_score = 16;
-  bool horizontal_flip = 17;
-  bool vertical_flip = 18;
-  double rotation = 19;
-  double horizontal_shift = 20;
-  double vertical_shift = 21;
-  double shear_range = 22;
-  bool disable_augmentation = 23;
-  float noise_factor = 24;
-  bool no_colorize = 25; // not to use colorizer in cv_process
-  bool crop_first = 26;
-  uint32 crop_width = 27;
-  uint32 crop_height = 28;
-  bool crop_randomly = 29;
-  int32 resized_width = 30;
-  int32 resized_height = 31;
-  bool adaptive_interpolation = 32;
-  int32 early_normalization = 33; // for jag
+  int32 early_normalization = 33; // for data_reader_jag only
 }
 
 // TODO: wrap El::Mat based normalization into a generic preprocessor
@@ -185,7 +185,7 @@ message GenericPreprocessor {
 //========================================================================
 
 message Model {
-  string name = 1; //sequential_model, dag_model, recurrent_model, greedy_layerwise_autoencoder, siamese_model
+  string name = 1; //sequential_model, dag_model, greedy_layerwise_autoencoder, siamese_model
   ObjectiveFunction objective_function = 2;
   repeated Metric metric = 5;
   string data_layout = 6;
@@ -214,12 +214,6 @@ message Model {
   // If true, models will have their model rank mixed into their random seed.
   bool random_init_models_differently = 31;
 
-  // Recurrent model parameters
-  message Recurrent {
-    uint32 unroll_depth = 1;
-  }
-  Recurrent recurrent = 36;
-
   // Siamese model parameters
   message Siamese {
     uint32 num_heads = 1;
@@ -244,7 +238,6 @@ message ObjectiveFunction {
   repeated L1WeightRegularization l1_weight_regularization = 20;
   repeated L2WeightRegularization l2_weight_regularization = 21;
   repeated GroupLassoWeightRegularization group_lasso_weight_regularization = 22;
-  repeated KLDivergence kl_divergence = 23;
   repeated LayerTerm layer_term = 25;
 }
 
@@ -295,11 +288,6 @@ message L2WeightRegularization {
 
 message GroupLassoWeightRegularization {
   double scale_factor = 1;
-}
-
-message KLDivergence {
-  string layer1 = 1;
-  string layer2 = 2;
 }
 
 message LayerTerm {
@@ -438,6 +426,8 @@ message Callback {
    CallbackCheckpoint checkpoint = 28;
    CallbackSaveModel save_model = 29;
    CallbackPolyLearningRate poly_learning_rate = 30;
+   CallbackGPUMemoryUsage gpu_memory_usage = 31;
+   CallbackSyncLayers sync_layers = 32;
 }
 
 message CallbackLTFB {
@@ -600,6 +590,15 @@ message CallbackSaveModel {
   string extension = 2;
 }
 
+message CallbackGPUMemoryUsage {
+}
+
+message CallbackSyncLayers {
+  bool sync_gpus = 1;
+  bool sync_mpi = 2;
+  bool only_input = 3;
+}
+
 //========================================================================
 // Weights
 //========================================================================
@@ -745,6 +744,9 @@ message Layer {
    FullyConnected fully_connected = 11;
    Convolution convolution = 13;
    Deconvolution deconvolution = 305;
+
+   // loss layers
+   CrossEntropy cross_entropy = 60;
 
    // target Layers
    Target target = 18;

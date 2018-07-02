@@ -28,11 +28,11 @@
 #define LBANN_LAYER_REGULARIZER_BATCH_NORMALIZATION_HPP_INCLUDED
 
 #include "lbann/layers/regularizers/regularizer.hpp"
-#include "lbann/utils/cudnn_wrapper.hpp"
+#include "lbann/utils/cuda.hpp"
 
 namespace lbann {
 
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_GPU
 namespace batch_normalization_cuda {
 /** Compute channel sums.
  *  Sums and squares of sums are used to compute mean and variance.
@@ -83,7 +83,7 @@ void backprop2(int global_width,
                const AbsMat& dvar,
                AbsMat& gradient_wrt_input);
 }
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_GPU
 
 /** Batch normalization layer.
  *  Each input channel is normalized across the mini-batch to have
@@ -134,9 +134,7 @@ class batch_normalization : public regularizer_layer {
   batch_normalization(lbann_comm *comm,
                       DataType decay=0.9,
                       DataType epsilon=1e-5,
-                      bool use_global_stats = false,
-                      cudnn::cudnn_manager *cudnn = nullptr
-                      )
+                      bool use_global_stats = false)
     : regularizer_layer(comm),
       m_decay(decay),
       m_epsilon(epsilon),
@@ -149,13 +147,10 @@ class batch_normalization : public regularizer_layer {
       m_bias_gradient(nullptr) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "batch normalization only supports DATA_PARALLEL");
-#ifdef LBANN_SEQUENTIAL_CONSISTENCY
+#ifdef LBANN_DETERMINISTIC
     // Force global computation.
     m_use_global_stats = true;
 #endif
-#ifdef LBANN_HAS_CUDNN
-    this->m_cudnn = cudnn;
-#endif // LBANN_HAS_CUDNN
   }
 
   batch_normalization(const batch_normalization& other) :
@@ -250,27 +245,27 @@ class batch_normalization : public regularizer_layer {
     }
     this->m_weights.resize(4, nullptr);
     if (this->m_weights[0] == nullptr) {
-      this->m_weights[0] = new weights(this->m_comm, this->m_cudnn);
+      this->m_weights[0] = new weights(this->m_comm);
       this->m_weights[0]->set_name(this->m_name + "_scale");
       this->m_weights[0]->set_initializer(new constant_initializer(this->m_comm, DataType(1)));
       this->m_weights[0]->set_optimizer(m_model->create_optimizer());
       this->m_model->add_weights(this->m_weights[0]);
     }
     if (this->m_weights[1] == nullptr) {
-      this->m_weights[1] = new weights(this->m_comm, this->m_cudnn);
+      this->m_weights[1] = new weights(this->m_comm);
       this->m_weights[1]->set_name(this->m_name + "_bias");
       this->m_weights[1]->set_initializer(new constant_initializer(this->m_comm, DataType(0)));
       this->m_weights[1]->set_optimizer(m_model->create_optimizer());
       this->m_model->add_weights(this->m_weights[1]);
     }
     if (this->m_weights[2] == nullptr) {
-      this->m_weights[2] = new weights(this->m_comm, this->m_cudnn);
+      this->m_weights[2] = new weights(this->m_comm);
       this->m_weights[2]->set_name(this->m_name + "_running_mean");
       this->m_weights[2]->set_initializer(new constant_initializer(this->m_comm, DataType(0)));
       this->m_model->add_weights(this->m_weights[2]);
     }
     if (this->m_weights[3] == nullptr) {
-      this->m_weights[3] = new weights(this->m_comm, this->m_cudnn);
+      this->m_weights[3] = new weights(this->m_comm);
       this->m_weights[3]->set_name(this->m_name + "_running_variance");
       this->m_weights[3]->set_initializer(new constant_initializer(this->m_comm, DataType(1)));
       this->m_model->add_weights(this->m_weights[3]);
@@ -321,8 +316,8 @@ class batch_normalization : public regularizer_layer {
   }
 
   void fp_compute_gpu() {
-#ifndef LBANN_HAS_CUDNN
-    LBANN_ERROR("cuDNN not detected");
+#ifndef LBANN_HAS_GPU
+    LBANN_ERROR("CUDA not detected");
 #else
 
     // Matrices
@@ -369,12 +364,12 @@ class batch_normalization : public regularizer_layer {
       m_weights[1]->get_values().Matrix(),
       local_output);
 
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_GPU
   }
 
   void bp_compute_gpu() {
-#ifndef LBANN_HAS_CUDNN
-    LBANN_ERROR("cuDNN not detected");
+#ifndef LBANN_HAS_GPU
+    LBANN_ERROR("CUDA not detected");
 #else
     const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
     const int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
@@ -438,7 +433,7 @@ class batch_normalization : public regularizer_layer {
                                         m_var_gradient->LockedMatrix(),
                                         local_gradient_wrt_input);
 
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_GPU
   }
 
   void fp_compute_cpu() {
@@ -687,7 +682,7 @@ class batch_normalization : public regularizer_layer {
             auto dx = dxhat * inv_stdev;
             dx += dmean_term;
             dx += dvar_term * (x - mean);
-            local_gradient_wrt_input(row, col) += dx;
+            local_gradient_wrt_input(row, col) = dx;
           }
         }
 

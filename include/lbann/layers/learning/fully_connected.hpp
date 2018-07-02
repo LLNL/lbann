@@ -29,18 +29,13 @@
 
 #include "lbann/layers/learning/learning.hpp"
 #include "lbann/layers/activations/activation.hpp"
-#include "lbann/utils/random.hpp"
-#include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/weights/initializer.hpp"
 #include "lbann/weights/fan_in_fan_out_initializers.hpp"
-#include "lbann/utils/cublas_wrapper.hpp"
 #include <string>
 #include <sstream>
 
 namespace lbann {
-
-enum class device {CPU, CUDA};
 
 /** Fully-connected layer.
  *  This layer applies an affine transformation.
@@ -74,8 +69,7 @@ class fully_connected_layer : public learning_layer {
                         int num_neurons,  // TODO: accept a vector for neuron dims
                         bool transpose = false,
                         weights* weight = nullptr,
-                        bool has_bias = true,
-                        cudnn::cudnn_manager *cudnn = nullptr)
+                        bool has_bias = true)
     : learning_layer(comm),
       m_linearity_gradient(nullptr),
       m_bias_gradient(nullptr),
@@ -89,11 +83,6 @@ class fully_connected_layer : public learning_layer {
     // Initialize bias
     m_bias_scaling_factor = has_bias ? DataType(1) : DataType(0);
 
-#ifdef LBANN_HAS_CUDNN
-    if (cudnn) {
-     this->m_cudnn = cudnn;
-    }
-#endif // LBANN_HAS_CUDNN
   }
 
   /** Returns description of ctor params */
@@ -190,14 +179,14 @@ class fully_connected_layer : public learning_layer {
     }
     this->m_weights.resize(2, nullptr);
     if (this->m_weights[0] == nullptr) {
-      this->m_weights[0] = new weights(this->m_comm, this->m_cudnn);
+      this->m_weights[0] = new weights(this->m_comm);
       this->m_weights[0]->set_name(this->m_name + "_linearity_weights");
       this->m_weights[0]->set_initializer(new he_normal_initializer(this->m_comm));
       this->m_weights[0]->set_optimizer(m_model->create_optimizer());
       this->m_model->add_weights(this->m_weights[0]);
     }
     if (this->m_weights[1] == nullptr) {
-      this->m_weights[1] = new weights(this->m_comm, this->m_cudnn);
+      this->m_weights[1] = new weights(this->m_comm);
       this->m_weights[1]->set_name(this->m_name + "_bias_weights");
       this->m_weights[1]->set_optimizer(m_model->create_optimizer());
       this->m_model->add_weights(this->m_weights[1]);

@@ -28,7 +28,7 @@
 #define LBANN_LAYER_ACTIVATION_TANH_HPP_INCLUDED
 
 #include "lbann/layers/activations/activation.hpp"
-#include "lbann/utils/cudnn_wrapper.hpp"
+#include "lbann/utils/cudnn.hpp"
 
 namespace lbann {
 
@@ -46,16 +46,13 @@ class tanh_layer : public entrywise_activation_layer {
 
  public:
 
-  tanh_layer(lbann_comm *comm,
-             cudnn::cudnn_manager *cudnn = nullptr)
+  tanh_layer(lbann_comm *comm)
     : entrywise_activation_layer(comm)
 #ifdef LBANN_HAS_CUDNN
     , m_activation_cudnn_desc(nullptr),
       m_tensors_cudnn_desc(this)
 #endif // LBANN_HAS_CUDNN
-  {
-    this->m_cudnn = cudnn;
-  }
+  {}
 
   tanh_layer(const tanh_layer& other)
     : entrywise_activation_layer(other)

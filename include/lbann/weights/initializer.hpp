@@ -32,7 +32,6 @@
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/cudnn_wrapper.hpp"
 
 namespace lbann {
 

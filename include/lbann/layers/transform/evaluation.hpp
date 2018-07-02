@@ -40,8 +40,7 @@ class evaluation_layer : public transform_layer {
 
  public:
 
-  evaluation_layer(lbann_comm *comm,
-              cudnn::cudnn_manager *cudnn = nullptr)
+  evaluation_layer(lbann_comm *comm)
     : transform_layer(comm), m_scale(0), m_value(0) {
     static_assert(Dev == El::Device::CPU,
                   "evaluation layer currently only supports CPU");

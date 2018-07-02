@@ -38,8 +38,7 @@ template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El
 class max_layer : public transform_layer {
 
  public:
-  max_layer(lbann_comm *comm,
-            cudnn::cudnn_manager *cudnn = nullptr)
+  max_layer(lbann_comm *comm)
     : transform_layer(comm) {
 
     /// @todo Implement
@@ -48,11 +47,6 @@ class max_layer : public transform_layer {
 
     // Max layer has no limit on parents
     m_expected_num_parent_layers = -1;
-
-  #ifdef LBANN_HAS_CUDNN
-    // Initialize GPU if available
-    this->m_cudnn = cudnn;
-  #endif // LBANN_HAS_CUDNN
 
   }
 
@@ -150,8 +144,7 @@ class max_layer : public transform_layer {
     const int num_parents = get_num_parents();
     switch (num_parents) {
     case 1:
-      // El::LockedView(get_error_signals(), get_prev_error_signals());
-      El::Axpy(DataType(1), get_prev_error_signals(), get_error_signals());
+      El::LockedView(get_error_signals(), get_prev_error_signals());
       break;
     case 2:
       {
@@ -168,14 +161,14 @@ class max_layer : public transform_layer {
             auto& dx0 = local_gradient_wrt_input0(row, col);
             auto& dx1 = local_gradient_wrt_input1(row, col);
             if (x0 > x1) {
-              dx0 += dy;
-              dx1 += zero;
+              dx0 = dy;
+              dx1 = zero;
             } else if (x0 < x1) {
-              dx0 += zero;
-              dx1 += dy;
+              dx0 = zero;
+              dx1 = dy;
             } else {
-              dx0 += dy / 2;
-              dx1 += dy / 2;
+              dx0 = dy / 2;
+              dx1 = dy / 2;
             }
           }
         }
@@ -201,7 +194,7 @@ class max_layer : public transform_layer {
           // Output error signal to maximum input
           for (int i = 0; i < num_parents; ++i) {
             auto& dx = get_local_error_signals(i)(row, col);
-            dx += (i == max_index) ? dy : zero;
+            dx = (i == max_index) ? dy : zero;
           }
 
         }

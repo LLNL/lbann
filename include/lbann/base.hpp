@@ -122,25 +122,24 @@ enum class pool_mode {invalid, max, average, average_no_pad};
 /** returns a string representation of the pool_mode */
 std::string get_pool_mode_name(pool_mode m);
 
-enum class data_reader_target_mode {CLASSIFICATION, REGRESSION, RECONSTRUCTION};
+// NA - Not applicable, used for input layers that don't produce a second output
+enum class data_reader_target_mode {CLASSIFICATION, REGRESSION, RECONSTRUCTION, NA};
 
 namespace lbann {
 
 // Forward-declaration.
 class lbann_comm;
 
-/**
- * Initialize LBANN.
- * The comm instance this returns places every process in one model. This can be
- * changed with lbann_comm::split_models afterward.
- * @param argc The program's argc.
- * @param argv The program's argv.
- * @param seed Optional seed for random number generators.
+/** Initialize LBANN.
+ *  The comm instance this returns places every process in one
+ *  model. This can be changed with lbann_comm::split_models
+ *  afterward.
+ *  @param argc Command line arguments.
+ *  @param argv Number of command line arguments.
+ *  @param seed Optional RNG seed.
  */
 lbann_comm* initialize(int& argc, char**& argv, int seed = -1);
-/**
- * Perform finalization.
- */
+/** Finalize LBANN. */
 void finalize(lbann_comm* comm = nullptr);
 
 /*

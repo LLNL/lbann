@@ -3,7 +3,6 @@
 
 #include "lbann/lbann.hpp"
 #include <lbann.pb.h>
-#include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/proto/factories.hpp"
 
 /// Returns true if the Model contains at least one MotifLayer

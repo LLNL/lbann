@@ -1,11 +1,12 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
-  cublas_wrapper.cpp
   cnpy_utils.cpp
-  cudnn_wrapper.cpp
+  cublas.cpp
+  cudnn.cpp
   file_utils.cpp
   graph.cpp
   im2col.cpp
+  number_theory.cpp
   omp_diagnostics.cpp
   options.cpp
   protobuf_utils.cpp

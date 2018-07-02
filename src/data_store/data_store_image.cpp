@@ -31,7 +31,11 @@
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/io/file_io.hpp"
+
+#ifdef LBANN_SYS_SENDFILE_OK
 #include <sys/sendfile.h>
+#endif // LBANN_SYS_SENDFILE_OK
+
 #include <sys/stat.h>
 
 namespace lbann {
@@ -47,7 +51,7 @@ void data_store_image::setup() {
   bool using_tarball = opts->has_string("use_tarball") ? true : false;
   bool creating_tarball = are_we_creating_tarballs();
   if (using_tarball && creating_tarball) {
-    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + 
+    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
              " :: you cannot use both --using_tarball and --creating_tarball options");
   }
 
@@ -91,7 +95,7 @@ void data_store_image::setup() {
       read_datastore_indices();
     } else {
       get_file_sizes();
-    }  
+    }
     if (m_master) std::cerr << "TIME for get_file_sizes: " << get_time() - tm << "\n";
 
     if (m_master) std::cerr << "data_store_image - calling build_index_owner\n";
@@ -104,7 +108,7 @@ void data_store_image::setup() {
       tm = get_time();
       stage_files();
       if (m_master) std::cerr << "TIME for stage_files: " << get_time() - tm << "\n";
-    }  
+    }
 
     // create tarball and copy to lscratch (or where ever)
     if (creating_tarball) {
@@ -115,8 +119,8 @@ void data_store_image::setup() {
     }
 
     m_is_setup = true;
-  } 
-  
+  }
+
   //==========================================================================
   // block for running in in-memory mode
   //==========================================================================
@@ -232,7 +236,7 @@ void data_store_image::exchange_data() {
         }
         int len = m_file_sizes[index];
         m_comm->nb_tagged_send<unsigned char>(
-            m_data[index].data(), len, p, index, 
+            m_data[index].data(), len, p, index,
             send_req[p][jj++], m_comm->get_model_comm());
 
       }
@@ -247,7 +251,7 @@ void data_store_image::exchange_data() {
     int owner = get_index_owner(index);
     proc_to_indices[owner].insert(index);
   }
-  
+
   //start recvs
   m_my_minibatch_data.clear();
   std::vector<std::vector<El::mpi::Request<unsigned char>>> recv_req(m_np);
@@ -268,7 +272,7 @@ void data_store_image::exchange_data() {
         size_t len = m_file_sizes[index];
         m_my_minibatch_data[index].resize(len);
         m_comm->nb_tagged_recv<unsigned char>(
-            m_my_minibatch_data[index].data(), len, owner, 
+            m_my_minibatch_data[index].data(), len, owner,
             index, recv_req[owner][jj++], m_comm->get_model_comm());
       }
     }
@@ -285,7 +289,7 @@ void data_store_image::exchange_data() {
   }
 
   if (m_master) {
-    std::cerr << "TIME for exchange_data: " << get_time() - tm1 
+    std::cerr << "TIME for exchange_data: " << get_time() - tm1
               << "; role: " << m_reader->get_role() << "\n";
   }
 }
@@ -320,7 +324,7 @@ void data_store_image::exchange_file_sizes(
   for (size_t j=0; j<all_global_indices.size(); j++) {
     if (all_global_indices[j] != -1) {
       m_file_sizes[all_global_indices[j]] = all_num_bytes[j];
-    }  
+    }
   }
 }
 
@@ -346,7 +350,7 @@ size_t data_store_image::get_my_num_file_bytes() {
             << " failed to find " << idx << " in m_file_sizes; count: " << count
             << " m_file_sizes.size(): " << m_file_sizes.size();
         throw lbann_exception(err.str());
-      }  
+      }
       count += m_file_sizes[index];
     }
   }
@@ -377,7 +381,7 @@ size_t data_store_image::get_available_memory() {
         "\nWARNING: data_store_image::get_available_memory failed\n"
         "failed to find 'MemFree in /proc/meminfo\n"
         "therefore we cannot advise whether you have enough resources\n"
-        "to contain all data files in memory\n"; 
+        "to contain all data files in memory\n";
     }
     return 0;
   }
@@ -400,8 +404,8 @@ void data_store_image::report_memory_constraints() {
 
   double global = get_global_num_file_bytes()/1000000;
 
-  if (!m_master) { 
-    return; 
+  if (!m_master) {
+    return;
   }
 
   /// determine the amount of memory required for files for all
@@ -424,7 +428,7 @@ void data_store_image::report_memory_constraints() {
   double percent = required / available * 100.0;
   std::cerr << "\n"
             << "===============================================\n"
-            << "Memory Constraints for: " << m_reader->get_role() << "\n" 
+            << "Memory Constraints for: " << m_reader->get_role() << "\n"
             << "Global data set size:               " << global << " MB\n"
             << "Required for data set on this node: " << required << " MB\n"
             << "Available memory on this node: "      << available << " MB\n"
@@ -445,7 +449,7 @@ void data_store_image::report_memory_constraints() {
 }
 
 
-// the input string "s" should be one of the forms: 
+// the input string "s" should be one of the forms:
 //   dir1/[dir2/...]/filename
 //   /dir1/[dir2/...]/filename
 //   /dir1/[dir2/...]/
@@ -492,8 +496,8 @@ void data_store_image::stage_files() {
       double time_per_file = e / j;
       int remaining_files = m_data_filepaths.size()-j;
       double estimated_remaining_time = time_per_file * remaining_files;
-      std::cerr << "P_0: staged " << j << " of " << m_data_filepaths.size() 
-                << " files; elapsed time: " << get_time() - tm 
+      std::cerr << "P_0: staged " << j << " of " << m_data_filepaths.size()
+                << " files; elapsed time: " << get_time() - tm
                 << "s est. remaining time: " << estimated_remaining_time << "s\n";
     }
     if (access(s.str().c_str(), F_OK | R_OK) == -1 ) {
@@ -522,17 +526,27 @@ void data_store_image::stage_files() {
             << "fstat failed for file: " << s.str();
         throw lbann_exception(err.str());
       }
+#ifdef LBANN_SYS_SENDFILE_OK
       ssize_t e = sendfile(write_fd, read_fd, &offset, stat_buf.st_size);
       if (e == -1) {
         err << __FILE__ << " " << __LINE__ << " :: "
             << "failed to copy file to location: " << s.str()
             << ";\nerror code is: " << std::strerror(errno);
         throw lbann_exception(err.str());
-
       }
+#else
+      // FIXME: This is the fastest way to deal with this issue for
+      // OSX pending a "real" fix.
+      (void) offset;// Silence a warning
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "Header <sys/sendfile.h> is not found on this system. "
+          << "sendfile() won't work. This is not a permanent fix.";
+      throw lbann_exception(err.str());
+#endif // LBANN_SYS_SENDFILE_OK
+
       close(read_fd);
       close(write_fd);
-    }  
+    }
   }
 }
 
@@ -550,7 +564,7 @@ void data_store_image::fetch_data() {
 
   //build map: proc -> global indices that proc needs for this epoch, and
   //                   which I own
-  std::unordered_map<int, std::unordered_set<int>> proc_to_indices; 
+  std::unordered_map<int, std::unordered_set<int>> proc_to_indices;
 
   for (int p = 0; p<m_np; p++) {
       if (m_cur_minibatch > m_all_partitioned_indices[p].size() -1) {
@@ -581,7 +595,7 @@ void data_store_image::fetch_data() {
 
   size_t req_idx = 0;
   for (int p=0; p<m_np; p++) {
-    if (m_all_partitioned_indices[p].size() >= m_cur_minibatch 
+    if (m_all_partitioned_indices[p].size() >= m_cur_minibatch
         && proc_to_indices.find(p) != proc_to_indices.end()) {
       const std::unordered_set<int> &s = proc_to_indices[p];
       read_files(s);
@@ -633,12 +647,12 @@ void data_store_image::fetch_data() {
               << " m_file_sizes.find(" << index << ") failed"
               << " m_file_sizes.size(): " << m_file_sizes.size()
               << " m_my_minibatch_indices_v.size(): " << m_my_minibatch_indices_v.size();
-         throw lbann_exception(err.str());              
+         throw lbann_exception(err.str());
         }
         size_t len = m_file_sizes[index];
         m_my_minibatch_data[index].resize(len);
         m_comm->nb_tagged_recv<unsigned char>(
-            m_my_minibatch_data[index].data(), len, owner, 
+            m_my_minibatch_data[index].data(), len, owner,
             index, recv_req[req_idx++], m_comm->get_model_comm());
       }
     }
@@ -652,8 +666,8 @@ void data_store_image::fetch_data() {
 
   if (m_master && m_verbose) {
     std::cerr << "TIME (P_0) for reading from local disk: "
-              << get_time() - tm1 << "; role: " << m_reader->get_role() 
-              << "  minibatch " << 1+m_cur_minibatch << " of " 
+              << get_time() - tm1 << "; role: " << m_reader->get_role()
+              << "  minibatch " << 1+m_cur_minibatch << " of "
               << m_num_minibatches << "; " << m_reader->get_role() << "\n";
   }
 }
@@ -755,7 +769,7 @@ bool data_store_image::are_we_creating_tarballs() {
     if (m_comm->get_procs_per_node() != 1) {
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
-          << "--create_tarball=<string> was specified; you have " 
+          << "--create_tarball=<string> was specified; you have "
           << m_comm->get_procs_per_node() << "; you must use a"
           << "single core per node when creating tarballs";
       throw lbann_exception(err.str());
@@ -823,7 +837,7 @@ void data_store_image::read_datastore_indices() {
     std::stringstream s;
     s << m_reader->get_local_file_dir() << "/datastore_indices.txt";
     std::ifstream in(s.str().c_str());
-  
+
     //note: datastore_indices.txt may not exist on all processors;
     //      this is the case where we're using tarballed data, and
     //      running with more processors than were used to create
@@ -856,11 +870,11 @@ void data_store_image::stage_tarball() {
   for (int j=0; j<m_np; j++) {
     m_comm->global_barrier();
     if (m_rank == j) {
-      std::cerr << "rank: " << m_rank << " rank in node: " << m_comm->get_rank_in_node() << " procs_per_node: " << procs_per_node << " 
+      std::cerr << "rank: " << m_rank << " rank in node: " << m_comm->get_rank_in_node() << " procs_per_node: " << procs_per_node << "
     }
   }
 */
-  
+
   options *opts = options::get();
   if (!opts->has_int("num_tarballs")) {
     err << __FILE__ << " " << __LINE__ << " :: "
@@ -878,30 +892,30 @@ void data_store_image::stage_tarball() {
     std::stringstream tarball_filename(names.first);
     tarball_filename << names.first << "_" << m_reader->get_role()
               << "_rank=" << fake_rank << "_np=" << num_tarballs << ".tar";
-  
+
     //This is somewhat fragile. For now I assume the local_dir is
     //of the form: /l/ssd/train
     std::string local_dir = m_reader->get_local_file_dir();
     size_t j = local_dir.rfind('/', local_dir.size()-2);
     std::string ssd = local_dir.substr(0, j);
-  
+
     std::stringstream s;
     s << "cp -f " << names.second << "/" << tarball_filename.str() << " " << ssd;
     if (m_master)  std::cerr << "\nabout to execute: " << s.str()<< "\n";
     run_cmd(s.str());
-  
+
     s.clear();
     s.str("");
     s << "cd " << ssd << "; tar xf " << tarball_filename.str();
     if (m_master)  std::cerr << "\nabout to execute: " << s.str()<< "\n";
     run_cmd(s.str());
-  
+
     s.clear();
     s.str("");
     s << "mv " << ssd  << "/" << local_dir << " " << ssd;
     if (m_master)  std::cerr << "\nabout to execute: " << s.str()<< "\n";
     run_cmd(s.str());
-  }  
+  }
   m_comm->global_barrier();
 }
 

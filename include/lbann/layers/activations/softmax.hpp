@@ -32,6 +32,8 @@
 #include "lbann/io/file_io.hpp"
 #include "lbann/utils/random.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/cudnn.hpp"
 #include <unistd.h>
 #include <string>
 
@@ -42,7 +44,7 @@
 
 namespace lbann {
 
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_GPU
 namespace softmax_cuda {
 /** Apply minimum cutoff to activation entries.
  *  A minimum output value helps avoid denormalized floats. Data is
@@ -105,7 +107,7 @@ void grad_wrt_input_and_cutoff(int height, int width,
                                const DataType cutoff,
                                cudaStream_t stream);
 }  // namespace softmax_cuda
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_CUDA
 
 /** Softmax layer. */
 template <data_layout T_layout, El::Device Dev>
@@ -129,17 +131,14 @@ class softmax_layer : public activation_layer {
 
  public:
 
-  softmax_layer(lbann_comm *comm,
-                cudnn::cudnn_manager *cudnn=nullptr)
+  softmax_layer(lbann_comm *comm)
     : activation_layer(comm),
       m_workspace(nullptr),
       m_min_output(std::sqrt(std::numeric_limits<DataType>::min()))
 #ifdef LBANN_HAS_CUDNN
     , m_tensors_cudnn_desc(this)
 #endif // LBANN_HAS_CUDNN
-  {
-    this->m_cudnn = cudnn;
-  }
+  {}
 
   softmax_layer(const softmax_layer& other)
     : activation_layer(other),
@@ -302,7 +301,7 @@ class softmax_layer : public activation_layer {
       #ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
         if (y <= m_min_output) { dx = DataType(0); }
       #endif
-        local_gradient_wrt_input(row, col) += dx;
+        local_gradient_wrt_input(row, col) = dx;
       }
     }
 

@@ -14,7 +14,6 @@ data_reader {
     shuffle: false
     data_filedir: "/p/lscratche/brainusr/datasets/tinyshakespeare/"
     data_filename: "input.txt"
-    validation_percent: 1.0
     percent_of_data_to_use: 1.0
   }
 }

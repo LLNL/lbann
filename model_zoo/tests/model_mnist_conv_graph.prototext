@@ -11,14 +11,8 @@ model {
   # Objective function
   ###################################################
   objective_function {
-    cross_entropy {}
+    layer_term { layer: "cross_entropy_eval" }
   }
-
-  ###################################################
-  # Metrics
-  ###################################################
-  metric { categorical_accuracy {} }
-  metric { top_k_categorical_accuracy { top_k: 2 } }
 
   ###################################################
   # Callbacks
@@ -39,14 +33,28 @@ model {
   # data
   layer {
     name: "data"
-    children: "conv1 target"
-    input { io_buffer: "partitioned" }
+    children: "images labels"
     data_layout: "data_parallel"
+    input {
+      io_buffer: "partitioned"
+    }
+  }
+  layer {
+    name: "images"
+    parents: "data"
+    data_layout: "data_parallel"
+    identity {}
+  }
+  layer {
+    name: "labels"
+    parents: "data"
+    data_layout: "model_parallel"
+    identity {}
   }
 
   # conv1
   layer {
-    parents: "data"
+    parents: "images"
     name: "conv1"
     convolution {
       num_dims: 2
@@ -209,12 +217,18 @@ model {
     data_layout: "data_parallel"
   }
 
-  # target
+  # cross_entropy
   layer {
-    parents: "prob data"
-    name: "target"
-    data_layout: "data_parallel"
-    target {}
+    name: "cross_entropy"
+    parents: "prob labels"
+    data_layout: "model_parallel"
+    cross_entropy {}    
+  }
+  layer {
+    name: "cross_entropy_eval"
+    parents: "cross_entropy"
+    data_layout: "model_parallel"
+    evaluation {}    
   }
 
 }

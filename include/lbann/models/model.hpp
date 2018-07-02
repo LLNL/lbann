@@ -340,11 +340,6 @@ class model {
    *  set an optimizer flag during forward prop.
    */
   virtual void clear_gradients();
-  /** Clear each layer's error signal tensor.
-   *  This must be called after the input layer's forward prop since
-   *  it determines the current mini-batch size.
-   */
-  virtual void clear_error_signals();
   /** Update weights step. */
   virtual void update_weights();
   /** Update layers step. */

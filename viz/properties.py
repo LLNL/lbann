@@ -19,7 +19,7 @@ class properties :
     for j in range(len(a)) :
       if a[j].find('layer_names_and_overrides') != -1 :
         k = j+1
-        while len(a[k]) > 3 :
+        while k < len(a) and len(a[k]) > 3 :
           t = a[k].split()
           layer_type = t[0]
           layer_name = t[1]
@@ -35,24 +35,33 @@ class properties :
 
   def shape(self, name) :
     if not self._layers.has_key(name) :
-      print 'Nothing known about this layer:', name
+      return 'rect'
+      '''
+      print 'shape(): Nothing known about this layer:', name
       print 'Please check your properties file'
       print
       exit(0)
+      '''
     return self._layers[name][0]
 
   def color(self, name) :
     if not self._layers.has_key(name) :
-      print 'Nothing known about this layer:', name
+      return 'grey'
+      '''
+      print 'color(): Nothing known about this layer:', name
       print 'Please check your properties file'
       print
       exit(0)
+      '''
     return self._layers[name][1]
 
   def arrow(self, name) :
     if not self._layers.has_key(name) :
-      print 'Nothing known about this layer:', name
+      return 'grey'
+      '''
+      print 'arrow(): Nothing known about this layer:', name
       print 'Please check your properties file'
       print
       exit(0)
+      '''
     return self._layers[name][2]

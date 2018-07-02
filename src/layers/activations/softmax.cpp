@@ -26,7 +26,7 @@
 
 #include "lbann/layers/activations/softmax.hpp"
 #ifdef LBANN_HAS_CUDNN
-#include "lbann/utils/cublas_wrapper.hpp"
+#include "lbann/utils/cublas.hpp"
 #endif  // LBANN_HAS_CUDNN
 
 namespace lbann {
@@ -78,9 +78,7 @@ void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_compute() {
 #ifdef LBANN_HAS_GPU
 template <>
 void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
-#ifndef LBANN_HAS_CUDNN
-  LBANN_ERROR("cuDNN not detected");
-#else
+
   // Local matrices.
   const auto& local_input = get_local_prev_activations();
   auto& local_output = get_local_activations();
@@ -122,14 +120,12 @@ void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
     local_height, local_width, local_output.Buffer(),
     local_output.LDim(), local_workspace.LockedBuffer(), m_min_output,
     El::GPUManager::Stream());
-#endif  // LBANN_HAS_CUDNN
+
 }
 
 template <>
 void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
-#ifndef LBANN_HAS_CUDNN
-  LBANN_ERROR("cuDNN not detected");
-#else
+
   // Local matrices.
   const auto& local_output = get_local_activations();
   const auto& local_grad_wrt_output = get_local_prev_error_signals();
@@ -159,7 +155,7 @@ void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
     local_grad_wrt_output.LockedBuffer(), local_grad_wrt_output.LDim(),
     local_grad_wrt_input.Buffer(), local_grad_wrt_input.LDim(),
     m_min_output, El::GPUManager::Stream());
-#endif  // LBANN_HAS_CUDNN
+
 }
 #endif // LBANN_HAS_GPU
 
@@ -188,7 +184,7 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
     const DataType one = DataType(1);
 
     // Apply softmax
-    CHECK_CUDNN(cudnnSoftmaxForward(this->m_cudnn->get_handle(),
+    CHECK_CUDNN(cudnnSoftmaxForward(cudnn::get_handle(),
                                     CUDNN_SOFTMAX_ACCURATE,
                                     CUDNN_SOFTMAX_MODE_INSTANCE,
                                     &one,
@@ -222,21 +218,22 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
   auto& local_gradient_wrt_input = get_local_error_signals();
   if (local_output.Height() > 0 && local_output.Width() > 0) {
 
-      // Useful constants
-      const DataType one = 1;
+    // Useful constants
+    const DataType zero = DataType(0);
+    const DataType one = DataType(1);
     
-      // Perform backprop
-      CHECK_CUDNN(cudnnSoftmaxBackward(this->m_cudnn->get_handle(),
-                                       CUDNN_SOFTMAX_ACCURATE,
-                                       CUDNN_SOFTMAX_MODE_INSTANCE,
-                                       &one,
-                                       m_tensors_cudnn_desc.get_activations(),
-                                       local_output.LockedBuffer(),
-                                       m_tensors_cudnn_desc.get_prev_error_signals(),
-                                       local_gradient_wrt_output.LockedBuffer(),
-                                       &one,
-                                       m_tensors_cudnn_desc.get_error_signals(),
-                                       local_gradient_wrt_input.Buffer()));
+    // Perform backprop
+    CHECK_CUDNN(cudnnSoftmaxBackward(cudnn::get_handle(),
+                                     CUDNN_SOFTMAX_ACCURATE,
+                                     CUDNN_SOFTMAX_MODE_INSTANCE,
+                                     &one,
+                                     m_tensors_cudnn_desc.get_activations(),
+                                     local_output.LockedBuffer(),
+                                     m_tensors_cudnn_desc.get_prev_error_signals(),
+                                     local_gradient_wrt_output.LockedBuffer(),
+                                     &zero,
+                                     m_tensors_cudnn_desc.get_error_signals(),
+                                     local_gradient_wrt_input.Buffer()));
 
 #ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
       // Round to minimum value to avoid denormalized floats

@@ -48,12 +48,27 @@ class fetch_data_functor {
       El::Copy(samples, responses);
       num_responses_fetched = num_samples_fetched;
       break;
+    case data_reader_target_mode::NA:
+       throw lbann_exception("Invalid data reader target mode");
     case data_reader_target_mode::CLASSIFICATION:
     default:
       num_responses_fetched = data_reader->fetch_labels(responses);
     }
     if(num_samples_fetched != num_responses_fetched) {
       throw lbann_exception("Number of samples does not match the number of responses");
+    }
+    return num_samples_fetched;
+  }
+  int operator() (CPUMat& samples, generic_data_reader* data_reader) const {
+    int num_samples_fetched = data_reader->fetch_data(samples);
+    switch(_target_mode) {
+    case data_reader_target_mode::NA:
+      break;
+    case data_reader_target_mode::REGRESSION:
+    case data_reader_target_mode::RECONSTRUCTION:
+    case data_reader_target_mode::CLASSIFICATION:
+    default:
+      throw lbann_exception("Invalid data reader target mode");
     }
     return num_samples_fetched;
   }

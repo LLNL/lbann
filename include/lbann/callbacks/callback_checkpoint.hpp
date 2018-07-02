@@ -108,6 +108,14 @@ class lbann_callback_checkpoint : public lbann_callback {
   persist p;
   bool m_checkpoint_dist;
   bool m_checkpoint_shared;
+
+  template<size_t _max_dir_len>
+  struct header_t {
+    int epoch;
+    int step;
+    int shared;
+    char dirname[_max_dir_len];
+  };
 };
 
 }  // namespace lbann

@@ -2,6 +2,7 @@
 # custom flags. <Tom's skeptical face>
 
 include(CheckCXXCompilerFlag)
+include(CheckIncludeFileCXX)
 
 # MACRO LBANN_CHECK_AND_APPEND_FLAG
 #
@@ -143,3 +144,6 @@ if (${_IS_SYSTEM_DIR} STREQUAL "-1")
   list(APPEND CMAKE_INSTALL_RPATH
     "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
 endif ()
+
+# Check if we can use Linux's sys/sendfile.h
+check_include_file_cxx(sys/sendfile.h LBANN_SYS_SENDFILE_OK)

@@ -38,7 +38,6 @@ namespace lbann {
 
 Layer::Layer(lbann_comm *comm)
   : m_comm(comm),
-    m_cudnn(nullptr),
     m_frozen(false) {
 
   // Initialize layer name
@@ -76,7 +75,6 @@ Layer::Layer(const Layer& other) :
   m_expected_num_parent_layers(other.m_expected_num_parent_layers),
   m_expected_num_child_layers(other.m_expected_num_child_layers),
   m_model(other.m_model),
-  m_cudnn(other.m_cudnn),
   m_frozen(other.m_frozen),
   m_fp_time(other.m_fp_time),
   m_fp_compute_time(other.m_fp_compute_time),
@@ -115,7 +113,6 @@ Layer& Layer::operator=(const Layer& other) {
   m_expected_num_child_layers = other.m_expected_num_child_layers;
   m_model = other.m_model;
   m_using_gpus = other.m_using_gpus;
-  m_cudnn = other.m_cudnn;
   m_frozen = other.m_frozen;
   m_fp_time = other.m_fp_time;
   m_fp_compute_time = other.m_fp_compute_time;
@@ -186,10 +183,10 @@ void Layer::forward_prop() {
   // Setup matrix data, e.g. input matrices
   fp_setup_data(m_model->get_current_mini_batch_size());
 
-  #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
+#if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
   if (using_gpus()) { El::GPUManager::SynchronizeDevice(true); }
-  #endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
+#endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
 
   // Apply layer's compute function
   const auto fp_compute_start = get_time();
@@ -202,10 +199,10 @@ void Layer::forward_prop() {
     if (opt != nullptr) { opt->add_gradient_source(this); }
   }
 
-  #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
+#if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
   if (using_gpus()) { El::GPUManager::SynchronizeDevice(true); }
-  #endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
+#endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
 
   m_fp_time += get_time() - fp_start;
 }
@@ -216,10 +213,10 @@ void Layer::back_prop() {
   // Setup matrix data, e.g. input matrices
   bp_setup_data(m_model->get_current_mini_batch_size());
 
-  #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
+#if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
   if (using_gpus()) { El::GPUManager::SynchronizeDevice(true); }
-  #endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
+#endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
 
   // Backprop the compute function.
   const auto bp_compute_start = get_time();
@@ -232,10 +229,10 @@ void Layer::back_prop() {
     if (opt != nullptr) { opt->remove_gradient_source(this); }
   }
 
-  #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
+#if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
   if (using_gpus()) { El::GPUManager::SynchronizeDevice(true); }
-  #endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_DEBUG)
+#endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
 
   m_bp_time += get_time() - bp_start;
 }
@@ -262,6 +259,9 @@ void Layer::summarize_stats(lbann_summary& summarizer, int step) {
   summarizer.reduce_scalar(prefix + "fp_time", m_fp_time, step);
   summarizer.reduce_scalar(prefix + "bp_time", m_bp_time, step);
   summarizer.reduce_scalar(prefix + "update_time", m_update_time, step);
+  summarizer.reduce_scalar_all(prefix + "fp_time", m_fp_time, step);
+  summarizer.reduce_scalar_all(prefix + "bp_time", m_bp_time, step);
+  summarizer.reduce_scalar_all(prefix + "update_time", m_update_time, step);
   reset_counters();
   // Combine the optimizer step time from all the weights.
   double step_time = 0.0;
@@ -273,6 +273,7 @@ void Layer::summarize_stats(lbann_summary& summarizer, int step) {
     }
   }
   summarizer.reduce_scalar(prefix + "opt_time", step_time, step);
+  summarizer.reduce_scalar_all(prefix + "opt_time", step_time, step);
 }
 
 void Layer::summarize_matrices(lbann_summary& summarizer, int step) {
@@ -389,13 +390,6 @@ const AbsMat& Layer::get_local_error_signals(int parent_index) const {
   return get_error_signals(parent_index).LockedMatrix();
 }
 
-void Layer::clear_error_signals(int mini_batch_size) {
-  for (int i = 0; i < get_num_parents(); ++i) {
-    // get_error_signals(i).Empty(false); // Reset matrix views (without deallocating memory)
-    El::Zeros(get_error_signals(i), get_num_prev_neurons(i), mini_batch_size);
-  }
-}
-
 void Layer::freeze() {
   m_frozen = true;
   for(auto& w : m_weights) {
@@ -424,16 +418,7 @@ void Layer::setup() {
   setup_dims();
   setup_matrices(m_comm->get_model_grid());
   setup_data();
-  if (using_gpus()) {
-    if(m_cudnn == nullptr) {
-      std::stringstream err;
-      err << "layer \"" << m_name << "\" is trying to use GPUs but has an invalid pointer to the cudnn object";
-      LBANN_ERROR(err.str());
-    }
-    setup_gpu();
-  } else {
-    m_cudnn = nullptr;
-  }
+  if (using_gpus()) { setup_gpu(); }
 }
 
 void Layer::setup_pointers() {
@@ -609,6 +594,12 @@ void Layer::setup_data() {
 
 }
 
+void Layer::bp_compute() {
+  for (int i = 0; i < get_num_parents(); ++i) {
+    El::Zero(get_error_signals(i));
+  }
+}
+
 void Layer::check_setup() {
   std::stringstream err;
 
@@ -780,23 +771,36 @@ void Layer::bp_setup_data(int mini_batch_size) {
 
   // Initialize previous error signals
   for (int i = 0; i < get_num_children(); ++i) {
-    const auto& child = m_child_layers[i];
 
-    // Get previous error signal from child layer
-    auto& bp_input = get_prev_error_signals(i);
-    child->get_bp_output(bp_input, this);
+    const auto& child = m_child_layers[i];
+    child->get_bp_output(get_prev_error_signals(i), this);
+
+    // Check dimensions of previous error signal matrix
     const int expected_height = get_num_neurons(i);
-    if (bp_input.Height() != expected_height
-        || bp_input.Width() != mini_batch_size) {
+    const auto& gradient_wrt_output = get_prev_error_signals(i);
+    if (gradient_wrt_output.Height() != expected_height
+        || gradient_wrt_output.Width() != mini_batch_size) {
       std::stringstream err;
       err << "layer \"" << get_name() << "\" expected a "
           << expected_height << " x " << mini_batch_size
-          << " input matrix from layer \"" << child->get_name() << "\""
+          << " error signal matrix from layer \"" << child->get_name() << "\""
           << " during backward prop, but got a "
-          << bp_input.Height() << " x " << bp_input.Width() << " matrix";
+          << gradient_wrt_output.Height() << " x "
+          << gradient_wrt_output.Width() << " matrix";
       LBANN_ERROR(err.str());
     }
 
+  }
+
+  // Initialize error signals
+  for (int i = 0; i < get_num_parents(); ++i) {
+    auto& error_signals = get_error_signals(i);
+    const auto num_prev_neurons = get_num_prev_neurons(i);
+    if (error_signals.Height() != num_prev_neurons
+        || error_signals.Width() != mini_batch_size) {
+      error_signals.Empty(false); // Reset matrix views (without deallocating memory)
+      error_signals.Resize(num_prev_neurons, mini_batch_size);
+    }
   }
 
 }

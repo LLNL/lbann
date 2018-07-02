@@ -66,6 +66,7 @@ file(GLOB IMGPIPE_DEPEND_SRCS
      ${LBANN_DIR}/src/data_readers/cv_normalizer.cpp
      ${LBANN_DIR}/src/data_readers/cv_process.cpp
      ${LBANN_DIR}/src/data_readers/cv_process_patches.cpp
+     ${LBANN_DIR}/src/data_readers/cv_resizer.cpp
      ${LBANN_DIR}/src/data_readers/cv_subtractor.cpp
      ${LBANN_DIR}/src/data_readers/cv_transform.cpp
      ${LBANN_DIR}/src/data_readers/cv_utils.cpp

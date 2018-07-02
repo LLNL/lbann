@@ -29,7 +29,7 @@
 
 #include <vector>
 #include "lbann/layers/regularizers/regularizer.hpp"
-#include "lbann/utils/cudnn_wrapper.hpp"
+#include "lbann/utils/cudnn.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
@@ -60,8 +60,7 @@ class local_response_normalization_layer : public regularizer_layer {
                                      int window_width,
                                      DataType alpha,
                                      DataType beta,
-                                     DataType k,
-                                     cudnn::cudnn_manager *cudnn = nullptr)
+                                     DataType k)
     : regularizer_layer(comm),
       m_window_width(window_width), m_alpha(alpha), m_beta(beta), m_k(k)
 #ifdef LBANN_HAS_CUDNN
@@ -71,9 +70,6 @@ class local_response_normalization_layer : public regularizer_layer {
   {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "local_response_normalization only supports DATA_PARALLEL");
-#ifdef LBANN_HAS_CUDNN
-    this->m_cudnn = cudnn;
-#endif // LBANN_HAS_CUDNN
   }
 
   local_response_normalization_layer(const local_response_normalization_layer& other)
@@ -192,7 +188,7 @@ class local_response_normalization_layer : public regularizer_layer {
     if (local_input.Height() > 0 && local_input.Width() > 0) {
       const DataType zero = DataType(0);
       const DataType one = DataType(1);
-      CHECK_CUDNN(cudnnLRNCrossChannelForward(this->m_cudnn->get_handle(),
+      CHECK_CUDNN(cudnnLRNCrossChannelForward(cudnn::get_handle(),
                                               m_lrn_cudnn_desc,
                                               CUDNN_LRN_CROSS_CHANNEL_DIM1,
                                               &one,
@@ -215,8 +211,9 @@ class local_response_normalization_layer : public regularizer_layer {
     const auto& local_gradient_wrt_output = get_local_prev_error_signals();
     auto& local_gradient_wrt_input = get_local_error_signals();
     if (local_input.Height() > 0 && local_input.Width() > 0) {
-      const DataType one = 1;
-      CHECK_CUDNN(cudnnLRNCrossChannelBackward(this->m_cudnn->get_handle(),
+      const DataType zero = DataType(0);
+      const DataType one = DataType(1);
+      CHECK_CUDNN(cudnnLRNCrossChannelBackward(cudnn::get_handle(),
                                                m_lrn_cudnn_desc,
                                                CUDNN_LRN_CROSS_CHANNEL_DIM1,
                                                &one,
@@ -226,7 +223,7 @@ class local_response_normalization_layer : public regularizer_layer {
                                                local_gradient_wrt_output.LockedBuffer(),
                                                m_tensors_cudnn_desc.get_activations(),
                                                local_output.LockedBuffer(),
-                                               &one,
+                                               &zero,
                                                m_tensors_cudnn_desc.get_error_signals(),
                                                local_gradient_wrt_input.Buffer()));
     }
@@ -395,11 +392,11 @@ class local_response_normalization_layer : public regularizer_layer {
               = gradient_wrt_input_buffer[index + sample * gradient_wrt_input_ldim];
             if (default_beta) { // Special case when beta = 0.75
               gradient_wrt_input_entry
-                += gradient_wrt_output_entry * std::sqrt(scale_factor * std::sqrt(scale_factor));
+                = gradient_wrt_output_entry * std::sqrt(scale_factor * std::sqrt(scale_factor));
             }
             else {
               gradient_wrt_input_entry
-                += gradient_wrt_output_entry * std::pow(scale_factor, m_beta);
+                = gradient_wrt_output_entry * std::pow(scale_factor, m_beta);
             }
           }
 

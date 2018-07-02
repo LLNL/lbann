@@ -7,6 +7,7 @@ set_full_path(THIS_DIR_HEADERS
 add_subdirectory(activations)
 add_subdirectory(io)
 add_subdirectory(learning)
+add_subdirectory(loss)
 add_subdirectory(regularizers)
 add_subdirectory(transform)
 

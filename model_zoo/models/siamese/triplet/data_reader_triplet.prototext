@@ -54,7 +54,6 @@ data_reader {
     data_filedir: "/p/lscratche/brainusr/datasets/ILSVRC2012/patches_84h_110x110_13x13-blur-ab_compact/"
     data_filename: "/p/lscratche/brainusr/datasets/ILSVRC2012/patches_84h_110x110_13x13-blur-ab_compact/val/val_list_8h.nfl.npz"
     label_filename: ""
-    validation_percent: 1.0
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
     num_labels: 20

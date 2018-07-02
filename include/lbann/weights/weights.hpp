@@ -40,9 +40,6 @@ namespace lbann {
 // Forward declaration
 class weights_initializer;
 class optimizer;
-namespace cudnn {
-class cudnn_manager;
-} // namespace cudnn
 
 /** Neural network weights.
  *  Weights are tensors that act as trainable parameters for a neural
@@ -62,8 +59,7 @@ class weights {
   friend class optimizer;
 
  public:
-  weights(lbann_comm* comm,
-          cudnn::cudnn_manager* cudnn = nullptr);
+  weights(lbann_comm* comm);
   weights(const weights& other);
   weights& operator=(const weights& other);
   virtual ~weights();
@@ -148,9 +144,6 @@ class weights {
    */
   int get_matrix_width() const;
 
-  /** Get reference to cuDNN manager. */
-  inline cudnn::cudnn_manager* get_cudnn_manager() { return m_cudnn; }
-
   /** Get weights initializer. */
   inline weights_initializer& get_initializer() { return *m_initializer; }
   /** Get weights initializer (const). */
@@ -213,8 +206,6 @@ class weights {
 
   /** Reference to LBANN communicator. */
   lbann_comm* m_comm;
-  /** Reference to cuDNN manager. */
-  cudnn::cudnn_manager* m_cudnn;
 
   /** Tensor dimensions corresponding to matrix height.
    *  See get_matrix_height_dims function.
