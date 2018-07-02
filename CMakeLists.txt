@@ -359,6 +359,7 @@ target_link_libraries(lbann PUBLIC ${DL_LIBRARY})
 add_subdirectory(model_zoo)
 add_subdirectory(model_zoo/tests)
 add_subdirectory(tests)
+add_subdirectory(scripts)
 
 ################################################################
 # Install LBANN
