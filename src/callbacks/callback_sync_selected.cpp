@@ -96,7 +96,7 @@ bool lbann_callback_sync_selected::check_if_cuda_profiler_initialized() {
  * @param out_mode output mode for cuda profiler.
  *        (cuda_profiler_setup::output_mode in the prototext)
  * @param comm global world communicator.
- * The profile output will be wrttien to out_dir/layer_name.prop.rank
+ * The profile output will be wrttien to out_dir/layer_name.prop.rank.prof
  */
 void lbann_callback_sync_selected::init_cuda_profiler(
   const std::string cfg_file, const std::string out_dir, int out_mode, lbann_comm* comm) const {
@@ -124,7 +124,7 @@ void lbann_callback_sync_selected::init_cuda_profiler(
   }
   const std::string o_prefix = o_dir + selection;
   const int my_rank = comm->get_rank_in_world();
-  const std::string o_file = o_prefix + std::to_string(my_rank);
+  const std::string o_file = o_prefix + std::to_string(my_rank) + ".prof";
   const cudaOutputMode_t o_mode = (out_mode == 0)? cudaKeyValuePair : cudaCSV;
 
   const auto ret = cudaProfilerInitialize(cfg_file.c_str(), o_file.c_str(), o_mode);
@@ -143,7 +143,7 @@ void lbann_callback_sync_selected::init_cuda_profiler(
     if (comm->am_world_master()) {
       std::string msg = "Preparing callback sync_selected";
       if (!o_prefix.empty()) {
-        msg += " with cudaProfiler writing to " + o_prefix + ".rank";
+        msg += " with cudaProfiler writing to " + o_prefix + ".rank.prof";
       }
       std::cout << msg << std::endl;
     }
