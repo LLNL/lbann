@@ -219,6 +219,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
         throw lbann_exception(err.str());
       }
     }
+    reader->set_comm(comm);
 
     if (readme.data_filename() != "") {
       reader->set_data_filename( readme.data_filename() );
@@ -277,7 +278,6 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
 
     reader->set_master(master);
 
-    reader->set_comm(comm);
     reader->load();
 
     if (readme.role() == "train") {

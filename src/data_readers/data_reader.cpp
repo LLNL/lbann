@@ -322,26 +322,148 @@ int generic_data_reader::get_next_position() const {
   }
 }
 
+void generic_data_reader::select_subset_of_data_partitioned() {
+/*
+char b[1024];
+sprintf(b, "debug.%d", m_comm->get_rank_in_world());
+std::ofstream out(b);
+*/
+
+  if (get_absolute_sample_count()) {
+    throw lbann_exception(
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+      " :: generic_data_reader - absolute_sample_count is not supported "
+      + "for partitioned data_set");
+  }
+  double use_percent = get_use_percent();
+  if (use_percent <= 0.0 || use_percent > 1.0) {
+    throw lbann_exception(
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+      " :: generic_data_reader - percent_of_data_to_use must be > 0 "
+      + "and <= 1");
+  }    
+
+  shuffle_indices();
+
+  m_num_global_indices = get_use_percent()*get_num_data();
+  m_shuffled_indices.resize(m_num_global_indices);
+
+  size_t partition_size = m_num_global_indices / m_num_partitions;
+  if (is_master()) {
+    std::cerr << "m_num_global_indices: " << m_num_global_indices 
+              << " partition_size: " << partition_size
+              << " partition_size*m_num_partitions: " << partition_size*m_num_partitions << "\n";
+  }
+  if (partition_size*m_num_partitions < m_num_global_indices
+      && is_master()) {
+    std::cerr << "select_subset_of_data; data set is partitioned; dropping " 
+              << m_num_global_indices - (partition_size*m_num_partitions)   
+              << " to avoid dealing with edge cases (hack)\n";
+  }
+
+  // make temp copy of indices; need this to compute overlap (below)
+  std::vector<int> s_indices = m_shuffled_indices;
+
+  //partition the data; we'll pull out the validation set, and add in
+  //overlap a bit laater
+  if (m_my_partition > 0) {
+    std::copy(
+      m_shuffled_indices.begin() + partition_size*m_my_partition,
+      m_shuffled_indices.begin() + partition_size*(m_my_partition+1),
+      m_shuffled_indices.begin());
+  }
+  m_shuffled_indices.resize(partition_size);
+
+  //gymnastics: we'll pull the validation indices from the middle of each
+  //partition so that, if overlap is non-zero, the validation set (hopefully)
+  //remains unique to each partition 
+  size_t unused =  get_validation_percent() * partition_size;
+  size_t use_me = partition_size - unused;
+  size_t start_of_my_partition = m_my_partition*partition_size;
+  size_t end_of_my_partition = (m_my_partition+1)*partition_size;
+  size_t validation_start_offset = start_of_my_partition + (partition_size/2) - (unused/2);
+  size_t validation_end_offset = validation_start_offset + unused;
+  if (unused != validation_end_offset - validation_start_offset) {
+    throw lbann_exception(
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+      " :: generic_data_reader - something's badly wrong");
+  }
+
+  if (unused > 0) {
+    m_unused_indices.reserve(unused);
+    for (size_t j=validation_start_offset; j<validation_end_offset; j++) {
+      m_unused_indices.push_back(m_shuffled_indices[j]);
+    }
+    m_shuffled_indices.clear();
+    size_t sanity = 0;
+    for (size_t j = start_of_my_partition; j<validation_start_offset; j++) {
+      m_shuffled_indices.push_back(s_indices[j]);
+      ++sanity;
+//out << "using idx= " << j << " index: " << s_indices[j] << "\n";
+    }
+    for (size_t j = validation_end_offset; j < end_of_my_partition; j++) {
+      ++sanity;
+      m_shuffled_indices.push_back(s_indices[j]);
+//out << "XX using idx= " << j << " index: " << s_indices[j] << "\n";
+    }
+    if (sanity != use_me) {
+      throw lbann_exception(
+        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+        " :: generic_data_reader - something's badly wrong, #2");
+    }
+  }
+
+  if (m_partition_overlap) {
+    if (m_partition_overlap > 1.) {
+      throw lbann_exception(
+        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+        " :: generic_data_reader - overlap must be >= 0 and <= 1");
+    }    
+    size_t overlap_count = m_partition_overlap*use_me;
+
+    //if overlap was requested, ensure there's at least one overlap
+    //at each end of a proc's partition; this is needed to ensure
+    //that, when testing with smallish data sets, rounding error doesn't
+    //set overlap to 0.
+    if (overlap_count < 2) {
+      overlap_count = 2;
+    }
+
+    size_t overlap_before_a = start_of_my_partition - (overlap_count/2);
+    size_t overlap_before_b = start_of_my_partition;
+    size_t overlap_after_a = end_of_my_partition;
+    size_t overlap_after_b = end_of_my_partition + (overlap_count/2);
+
+    if (m_my_partition == 0) {
+      size_t n = partition_size*m_num_partitions;
+      overlap_before_a = n - (overlap_count/2);
+      overlap_before_b = n;
+    }
+    if (m_my_partition == m_num_partitions-1) {
+      overlap_after_a = 0;
+      overlap_after_b = overlap_count/2;
+    }
+
+    for (size_t j = overlap_before_a; j< overlap_before_b; j++) {
+      m_shuffled_indices.push_back(s_indices[j]);
+//out << "xxAA overlap: " << j << " index: " << s_indices[j] << "\n";
+    }
+    for (size_t j = overlap_after_a; j < overlap_after_b; j++) {
+      m_shuffled_indices.push_back(s_indices[j]);
+//out << "xxBB overlap: " << j << " index: " << s_indices[j] << "\n";
+    }
+  }
+  
+//out.close();
+}
+
 void generic_data_reader::select_subset_of_data() {
   m_num_global_indices = m_shuffled_indices.size();
 
   // optionally partition data set amongst the models
   if (m_is_partitioned) {
-    size_t partition_size = m_num_global_indices / m_num_partitions;
-    if (partition_size*m_num_partitions < m_num_global_indices
-        && is_master()) {
-      std::cerr << "select_subset_of_data; data set is partitioned; dropping " 
-                << m_num_global_indices - (partition_size*m_num_partitions)   
-                << " to avoid dealing with edge cases (hack)\n";
-      if (m_my_partition > 0) {
-        std::copy(
-          m_shuffled_indices.begin() + partition_size*m_my_partition,
-          m_shuffled_indices.begin() + partition_size*(m_my_partition+1),
-          m_shuffled_indices.begin());
-      }
-      m_shuffled_indices.resize(partition_size);
-    }
-    m_num_global_indices = partition_size;
+    select_subset_of_data_partitioned();
+    return ;
   }
 
   shuffle_indices();
@@ -383,7 +505,7 @@ void generic_data_reader::select_subset_of_data() {
   if (unused > 0) {
       m_unused_indices=std::vector<int>(m_shuffled_indices.begin() + use_me, m_shuffled_indices.end());
       m_shuffled_indices.resize(use_me);
-    }
+  }
 
   if(!m_shuffle) {
     std::sort(m_shuffled_indices.begin(), m_shuffled_indices.end());

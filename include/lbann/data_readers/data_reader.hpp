@@ -505,6 +505,9 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   void select_subset_of_data();
 
+  /// called by select_subset_of_data() if data set is partitioned
+  void select_subset_of_data_partitioned();
+
   /**
    * Replaced the shuffled index set with the unused index set, empying the
    * unused set.
@@ -674,13 +677,6 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   double get_validation_percent() const;
 
-  /**
-   * Returns the number of global indices. For train and validation,
-   * this is the sum of their numbers
-   */
-  size_t get_num_global_indices() {
-    return m_num_global_indices;
-  }
  protected:
 
    int m_rank;
