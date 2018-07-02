@@ -131,19 +131,22 @@ void lbann::partitioned_io_buffer::calculate_num_iterations_per_epoch_spanning_m
       + " :: partitioned_io_buffer: number of parallel readers is " + std::to_string(num_parallel_readers_per_model)
       + " and there are " + std::to_string(m_comm->get_procs_per_model()) + " processes in the model");
   }
+  /*
   if (partitioned) {
     num_parallel_readers_per_model = 1;
   }
+  */
 
   /// Set the basic parameters for stride and offset of the data reader
   int batch_stride = m_comm->get_num_models() * max_mini_batch_size;
   int base_offset  = m_comm->get_rank_in_model();
   int model_offset = m_comm->get_model_rank() * max_mini_batch_size;
+
   if (partitioned) {
     batch_stride = max_mini_batch_size;
-    base_offset = 1;
-    model_offset = 1;
+    model_offset = 0;
   }
+
   /// Set mini-batch size and stride
   data_reader->set_mini_batch_size(max_mini_batch_size);
   data_reader->set_stride_to_next_mini_batch(batch_stride);

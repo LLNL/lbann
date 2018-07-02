@@ -60,7 +60,15 @@ void generic_data_reader::setup() {
   shuffle_indices();
 }
 
+std::ofstream debug;
+
 int lbann::generic_data_reader::fetch_data(CPUMat& X) {
+if (! debug.is_open()) {
+  char b[1024];
+  sprintf(b, "debug.%d", m_comm->get_rank_in_world());
+  debug.open(b);
+}
+if (get_role() == "train") debug << "\nstarting fetch_data ";
   int nthreads = omp_get_max_threads();
   if(!position_valid()) {
     throw lbann_exception(
@@ -105,6 +113,7 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X) {
       // Catch exceptions within the OpenMP thread.
       try {
         int n = m_current_pos + (s * m_sample_stride);
+if (get_role() == "train") debug << n << " ";
         int index = m_shuffled_indices[n];
         bool valid = fetch_datum(X, index, s, omp_get_thread_num());
         if (!valid) {

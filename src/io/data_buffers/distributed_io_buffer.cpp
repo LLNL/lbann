@@ -193,8 +193,17 @@ void lbann::distributed_io_buffer::calculate_num_iterations_per_epoch(int num_mo
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
       " :: distributed_io_buffer: number of parallel readers is zero");
   }
+
   if (partitioned) {
-    num_parallel_readers_per_model = 1;
+    int n = m_comm->get_procs_per_model();
+    if (num_parallel_readers_per_model != n) {
+      throw lbann_exception(
+        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+        " :: distributed_io_buffer: num_parallel_readers_per_model = "
+        + std::to_string(num_parallel_readers_per_model) + " but m_comm->get_procs_per_model() = "
+        + std::to_string(m_comm->get_procs_per_model()) + "; this will probably break things, "
+        + "since you're running with a distributed data set.");
+    }
   }
 
   /// Set the basic parameters for stride and offset of the data reader
@@ -203,9 +212,9 @@ void lbann::distributed_io_buffer::calculate_num_iterations_per_epoch(int num_mo
   int model_offset = model_rank * max_mini_batch_size;
 
   if (partitioned) {
-    batch_stride = max_mini_batch_size;
-    base_offset = 1;
-    model_offset = 1;
+    batch_stride = max_mini_batch_size * num_parallel_readers_per_model;
+    base_offset = m_comm->get_rank_in_model() * max_mini_batch_size;
+    model_offset = 0;
   }
 
   /// Set mini-batch size and stride
