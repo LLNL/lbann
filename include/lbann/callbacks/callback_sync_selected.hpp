@@ -76,6 +76,7 @@ class lbann_callback_sync_selected : public lbann_callback_sync_layers {
   ~lbann_callback_sync_selected() override;
 
   std::string name() const override { return "sync_selected"; }
+  std::string get_description() const;
 
   /// To protect in case that cudaProfilerInitialized() has already been called
   static void turn_off_init_cuda_profiler();
@@ -85,6 +86,10 @@ class lbann_callback_sync_selected : public lbann_callback_sync_layers {
 
   void init_cuda_profiler(const std::string cfg_file, const std::string out_dir,
                           int out_mode, lbann_comm* comm) const;
+
+  /** Called once to set up the callback (after all layers are set up).
+   * Then, populate the layer pointers */
+  void setup(model *m) override;
 
   using lbann_callback::on_forward_prop_begin;
   using lbann_callback::on_backward_prop_begin;

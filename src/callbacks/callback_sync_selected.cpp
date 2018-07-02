@@ -70,6 +70,15 @@ lbann_callback_sync_selected::~lbann_callback_sync_selected() {
   #endif
 }
 
+std::string lbann_callback_sync_selected::get_description() const {
+  std::string selection;
+  for (const auto& l: m_layers) {
+    std::map<prop_t, std::string>::const_iterator it = m_prop_str.find(l.second);
+    selection += l.first + '.' + it->second + ' ';
+  }
+  return "sync_selected : { " + selection + '}';
+}
+
 void lbann_callback_sync_selected::turn_off_init_cuda_profiler() {
   m_cuda_profiler_initialized = true;
 }
@@ -142,10 +151,20 @@ void lbann_callback_sync_selected::init_cuda_profiler(
 #endif
 }
 
+void lbann_callback_sync_selected::setup(model *m) {
+  const std::vector<Layer *>& layers = m->get_layers();
+  for (auto l: layers) {
+    populate_layer_ptrs(l, Forward);
+    populate_layer_ptrs(l, Backward);
+  }
+  if (!m_all_set) {
+    throw lbann_exception("sync_selected cannot recognize all the layer names");
+  }
+}
+
 
 void lbann_callback_sync_selected::on_forward_prop_begin(model *m, Layer *l) {
-  const layer_ptrs_t::const_iterator it
-    = (!m_all_set)? populate_layer_ptrs(l, Forward) : m_fwd_ptrs.find(l);
+  const layer_ptrs_t::const_iterator it = m_fwd_ptrs.find(l);
 
   if (it == m_fwd_ptrs.cend()) {
     return;
@@ -167,8 +186,7 @@ void lbann_callback_sync_selected::on_forward_prop_end(model *m, Layer *l) {
 }
 
 void lbann_callback_sync_selected::on_backward_prop_begin(model *m, Layer *l) {
-  const layer_ptrs_t::const_iterator it
-    = (!m_all_set)? populate_layer_ptrs(l, Backward) : m_bwd_ptrs.find(l);
+  const layer_ptrs_t::const_iterator it = m_bwd_ptrs.find(l);
 
   if (it == m_bwd_ptrs.cend()) {
     return;
