@@ -67,6 +67,7 @@ void fp_cpu(lbann_comm& comm,
   // Local matrices
   const auto& local_input = input.LockedMatrix();
   auto& local_output = output.Matrix();
+  const El::Int height = input.Height();
   const El::Int local_height = local_input.Height();
   const El::Int local_width = local_input.Width();
 
@@ -121,7 +122,7 @@ void fp_cpu(lbann_comm& comm,
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int i = 0; i < k; ++i) {
       const auto& global_row = top_k_entries[col*k+i].index;
-      if (output.IsLocalRow(global_row)) {
+      if (global_row < height && output.IsLocalRow(global_row)) {
         local_output(output.LocalRow(global_row), col) = DataType(1);
       }
     }

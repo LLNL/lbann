@@ -329,10 +329,7 @@ model {
     name: "top1_prob"
     parents: "prob"
     data_layout: "model_parallel"
-    device_allocation: "cpu"
-    in_top_k {
-      k: 1
-    }
+    in_top_k { k: 1 }
   }
   layer {
     name: "top1_correct"
@@ -359,10 +356,7 @@ model {
     name: "top5_prob"
     parents: "prob"
     data_layout: "model_parallel"
-    device_allocation: "cpu"
-    in_top_k {
-      k: 5
-    }
+    in_top_k { k: 5 }
   }
   layer {
     name: "top5_correct"
