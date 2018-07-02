@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+
+# Global imports
+import argparse
+
+# Import from this package
+from lbplot.plot import plot
+
+def main():
+    # Parse user arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-p', '--stat_paths', nargs='+', help='<Required> Set flag', required=True)
+    parser.add_argument('-n', '--stat_names', nargs='+', help='<Required> Set flag', required=False)
+    parser.add_argument('--ind_var', type=str, choices=['epoch', 'time'], default='time', 
+        help='Independent variable for plotting.')
+    parser.add_argument('--time_units', type=str, choices=['seconds', 'minutes', 'hours'], default='hours')
+    args = parser.parse_args()
+
+    # Tabulate and plot stats from user input files
+    plot(args.stat_paths, args.stat_names, ind_var=args.ind_var, time_units=args.time_units)
+
+
+if __name__=='__main__':
+    main()
