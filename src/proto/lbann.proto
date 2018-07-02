@@ -612,10 +612,14 @@ message CallbackSyncSelected {
   }
 
   message CudaProfilerSetup {
+    enum OutputMode {
+      KeyValuePair = 0;
+      CSV = 1;
+    }
     bool no_init = 1;
     string config_file = 2;
     string output_dir = 3;
-    int32 output_mode = 4;
+    OutputMode output_mode = 4;
   }
 
   bool async_gpus = 1;
