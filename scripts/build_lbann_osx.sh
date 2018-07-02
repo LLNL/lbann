@@ -23,7 +23,7 @@ brew_check_install()
 # Check for LBANN dependencies
 brew_check_install git
 brew_check_install cmake
-brew_check_install llvm       # Require OpenMP support in clang
+brew_check_install llvm       # Require OpenMP support in clang brew install --with-toolchain llvm
 brew_check_install gcc49      # gfortran-4.9 is compatible with clang
 brew_check_install open-mpi
 brew_check_install doxygen
