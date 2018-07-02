@@ -243,8 +243,9 @@ bool lbann_callback_checkpoint::restart(model *m) {
   if (m_checkpoint_dir.length() == 0 &&  m_per_rank_dir.length() == 0) {
     return false;
   }
+  constexpr unsigned int max_len_dirname = 1024;
   // get top level directory
-  char dir[1024];
+  char dir[max_len_dirname];
   int epoch = -1;
   int step = -1;
   int epoch_dist = -1;
@@ -281,13 +282,7 @@ bool lbann_callback_checkpoint::restart(model *m) {
   // TODO: we would want to prepend dir with the model name and model rank:
   // m->get_name() + '.' + std::to_string(comm->get_model_rank()) + '.'
 #if 1
-  struct header_t {
-    int epoch;
-    int step;
-    int shared;
-    char dirname[sizeof(dir)];
-  };
-  header_t header;
+  header_t<max_len_dirname> header;
 
   header.epoch = epoch;
   header.step = step;

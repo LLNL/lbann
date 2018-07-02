@@ -432,6 +432,7 @@ message Callback {
    CallbackSaveModel save_model = 29;
    CallbackPolyLearningRate poly_learning_rate = 30;
    CallbackGPUMemoryUsage gpu_memory_usage = 31;
+   CallbackSyncLayers sync_layers = 32;
 }
 
 message CallbackLTFB {
@@ -595,6 +596,12 @@ message CallbackSaveModel {
 }
 
 message CallbackGPUMemoryUsage {
+}
+
+message CallbackSyncLayers {
+  bool sync_gpus = 1;
+  bool sync_mpi = 2;
+  bool only_input = 3;
 }
 
 //========================================================================

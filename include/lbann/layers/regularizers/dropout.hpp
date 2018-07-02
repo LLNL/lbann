@@ -55,13 +55,13 @@ class dropout : public regularizer_layer {
       m_tensors_cudnn_desc(this)
 #endif // LBANN_HAS_CUDNN
   {
-#if defined(LBANN_HAS_CUDNN) && defined(LBANN_SEQUENTIAL_CONSISTENCY)
+#if defined(LBANN_HAS_CUDNN) && defined(LBANN_DETERMINISTIC)
     /// @todo GPU implementation of dropout with sequential consistency
     if (Dev == El::Device::GPU && get_comm()->am_model_master()) {
       std::cerr << "Warning: GPU dropout currently does not guarantee "
                 << "sequential consistency" << std::endl;
     }
-#endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_SEQUENTIAL_CONSISTENCY)
+#endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_DETERMINISTIC)
   }
 
   dropout(const dropout& other)
@@ -210,7 +210,7 @@ class dropout : public regularizer_layer {
     const auto& height = input.Height();
     const auto& width = input.Width();
     m_mask->Resize(height, width);
-#ifdef LBANN_SEQUENTIAL_CONSISTENCY
+#ifdef LBANN_DETERMINISTIC
     bernoulli_fill_procdet(*m_mask, height, width, DataType(m_keep_prob));
     *m_mask *= scale;
 #else
@@ -221,7 +221,7 @@ class dropout : public regularizer_layer {
                        std::bernoulli_distribution dist(m_keep_prob);
                        return dist(gen) ? scale : DataType(0);
                      }));
-#endif // LBANN_SEQUENTIAL_CONSISTENCY
+#endif // LBANN_DETERMINISTIC
 
     // Apply mask matrix to get activations
     El::Hadamard(input, *m_mask, output);
