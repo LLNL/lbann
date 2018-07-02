@@ -85,6 +85,14 @@ message ImagePreprocessor {
     bool adaptive_interpolation = 8;
   }
 
+  message Resizer {
+    string name = 1;
+    bool disable = 2;
+    int32 resized_width = 3;
+    int32 resized_height = 4;
+    bool adaptive_interpolation = 5;
+  }
+
   message Augmenter {
     string name = 1;
     bool disable = 2;
@@ -143,6 +151,7 @@ message ImagePreprocessor {
   }
 
   Cropper cropper = 5;
+  Resizer resizer = 34;
   Augmenter augmenter = 6;
   Decolorizer decolorizer = 7;
   Colorizer colorizer = 8;
@@ -176,7 +185,7 @@ message GenericPreprocessor {
 //========================================================================
 
 message Model {
-  string name = 1; //sequential_model, dag_model, recurrent_model, greedy_layerwise_autoencoder, siamese_model
+  string name = 1; //sequential_model, dag_model, greedy_layerwise_autoencoder, siamese_model
   ObjectiveFunction objective_function = 2;
   repeated Metric metric = 5;
   string data_layout = 6;
@@ -204,12 +213,6 @@ message Model {
   int64 random_seed = 30;
   // If true, models will have their model rank mixed into their random seed.
   bool random_init_models_differently = 31;
-
-  // Recurrent model parameters
-  message Recurrent {
-    uint32 unroll_depth = 1;
-  }
-  Recurrent recurrent = 36;
 
   // Siamese model parameters
   message Siamese {
@@ -424,6 +427,7 @@ message Callback {
    CallbackSaveModel save_model = 29;
    CallbackPolyLearningRate poly_learning_rate = 30;
    CallbackGPUMemoryUsage gpu_memory_usage = 31;
+   CallbackSyncLayers sync_layers = 32;
 }
 
 message CallbackLTFB {
@@ -589,6 +593,12 @@ message CallbackSaveModel {
 message CallbackGPUMemoryUsage {
 }
 
+message CallbackSyncLayers {
+  bool sync_gpus = 1;
+  bool sync_mpi = 2;
+  bool only_input = 3;
+}
+
 //========================================================================
 // Weights
 //========================================================================
@@ -734,6 +744,9 @@ message Layer {
    FullyConnected fully_connected = 11;
    Convolution convolution = 13;
    Deconvolution deconvolution = 305;
+
+   // loss layers
+   CrossEntropy cross_entropy = 60;
 
    // target Layers
    Target target = 18;

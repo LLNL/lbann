@@ -566,22 +566,27 @@ void model::add_dummy_layers() {
     std::vector<Layer*> dummy_layers;
     while (layer->get_num_children() < layer->get_expected_num_child_layers()) {
       Layer *dummy = nullptr;
-      auto&& cudnn = layer->get_cudnn_manager();
-      switch (layer->get_data_layout()) {
-      case data_layout::DATA_PARALLEL:
-        dummy = new dummy_layer<data_layout::DATA_PARALLEL>(m_comm, cudnn);
-        break;
-      case data_layout::MODEL_PARALLEL:
-        dummy = new dummy_layer<data_layout::MODEL_PARALLEL>(m_comm, cudnn);
-        break;
-      default:
-        std::stringstream err;
-        err << __FILE__ << " " << __LINE__ << " :: " << "invalid data layout";
-        throw lbann_exception(err.str());
+      using args_tuple = std::tuple<data_layout,El::Device>;
+      args_tuple args(layer->get_data_layout(), layer->get_device_allocation());
+      if (args == args_tuple(data_layout::DATA_PARALLEL, El::Device::CPU)) {
+        dummy = new dummy_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(m_comm);
+      }
+      if (args == args_tuple(data_layout::MODEL_PARALLEL, El::Device::CPU)) {
+        dummy = new dummy_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>(m_comm);
+      }
+#ifdef LBANN_HAS_GPU
+      if (args == args_tuple(data_layout::DATA_PARALLEL, El::Device::GPU)) {
+        dummy = new dummy_layer<data_layout::DATA_PARALLEL, El::Device::GPU>(m_comm);
+      }
+      if (args == args_tuple(data_layout::MODEL_PARALLEL, El::Device::GPU)) {
+        dummy = new dummy_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>(m_comm);
+      }
+#endif // LBANN_HAS_GPU
+      if (dummy == nullptr) {
+        LBANN_ERROR("invalid arguments for layer template specialization");
       }
       dummy->set_name(layer->get_name()
-                      + "_dummy"
-                      + std::to_string(dummy_layers.size()));
+                      + "_dummy" + std::to_string(dummy_layers.size()));
       layer->add_child_layer(dummy);
       dummy->add_parent_layer(layer);
       dummy_layers.push_back(dummy);
@@ -606,46 +611,24 @@ void model::add_split_layers() {
 
       // Create split layer
       Layer *split = nullptr;
-      auto&& cudnn = layer->get_cudnn_manager();
-      switch (layer->get_data_layout()) {
-      case data_layout::DATA_PARALLEL:
-        switch(layer->get_device_allocation()) {
-        case El::Device::CPU:
-          split = new split_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(m_comm, cudnn);
-          break;
+      using args_tuple = std::tuple<data_layout,El::Device>;
+      args_tuple args(layer->get_data_layout(), layer->get_device_allocation());
+      if (args == args_tuple(data_layout::DATA_PARALLEL, El::Device::CPU)) {
+        split = new split_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(m_comm);
+      }
+      if (args == args_tuple(data_layout::MODEL_PARALLEL, El::Device::CPU)) {
+        split = new split_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>(m_comm);
+      }
 #ifdef LBANN_HAS_GPU
-        case El::Device::GPU:
-          split = new split_layer<data_layout::DATA_PARALLEL, El::Device::GPU>(m_comm, cudnn);
-          break;
+      if (args == args_tuple(data_layout::DATA_PARALLEL, El::Device::GPU)) {
+        split = new split_layer<data_layout::DATA_PARALLEL, El::Device::GPU>(m_comm);
+      }
+      if (args == args_tuple(data_layout::MODEL_PARALLEL, El::Device::GPU)) {
+        split = new split_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>(m_comm);
+      }
 #endif // LBANN_HAS_GPU
-        default:
-          std::stringstream err;
-          err << __FILE__ << " " << __LINE__ << " :: "
-              << "invalid matrix data allocation";
-          throw lbann_exception(err.str());
-        }
-        break;
-      case data_layout::MODEL_PARALLEL:
-        switch(layer->get_device_allocation()) {
-        case El::Device::CPU:
-          split = new split_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>(m_comm, cudnn);
-          break;
-#ifdef LBANN_HAS_GPU
-        case El::Device::GPU:
-          split = new split_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>(m_comm, cudnn);
-          break;
-#endif // LBANN_HAS_GPU
-        default:
-          std::stringstream err;
-          err << __FILE__ << " " << __LINE__ << " :: "
-              << "invalid matrix data allocation";
-          throw lbann_exception(err.str());
-        }
-        break;
-      default:
-        std::stringstream err;
-        err << __FILE__ << " " << __LINE__ << " :: " << "invalid data layout";
-        throw lbann_exception(err.str());
+      if (split == nullptr) {
+        LBANN_ERROR("invalid arguments for layer template specialization");
       }
       split->set_name(layer->get_name() + "_split");
 
@@ -894,7 +877,8 @@ void model::backward_prop() {
 
 void model::update_weights() {
   do_model_optimize_begin_cbs();
-  for (const auto& w : m_weights) {
+  for (int i = m_weights.size() - 1; i >= 0; --i) {
+    auto& w = m_weights[i];
     optimizer* opt = w->get_optimizer();
     if (opt != nullptr) {
       do_weight_optimize_begin_cbs(w);

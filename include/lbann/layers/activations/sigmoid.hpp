@@ -28,24 +28,22 @@
 #define LBANN_LAYER_ACTIVATION_SIGMOID_HPP_INCLUDED
 
 #include "lbann/layers/activations/activation.hpp"
-#include "lbann/utils/cudnn_wrapper.hpp"
+#include "lbann/utils/cuda.hpp"
 
 // Output is strictly in (0,1) to avoid numerical issues
 #define LBANN_ENABLE_SIGMOID_CUTOFF
 
 namespace lbann {
 
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_GPU
 namespace sigmoid_cuda {
-  void fp(cudnn::cudnn_manager& cudnn,
-          int height, int width,
+  void fp(int height, int width,
           const DataType* input,
           int input_leading_dim,
           DataType* output,
           int output_leading_dim,
           DataType cutoff);
-  void bp(cudnn::cudnn_manager& cudnn,
-          int height, int width,
+  void bp(int height, int width,
           const DataType* input,
           int input_leading_dim,
           const DataType* gradient_wrt_output,
@@ -54,7 +52,7 @@ namespace sigmoid_cuda {
           int gradient_wrt_input_leading_dim,
           DataType cutoff);
 } // namespace sigmoid_cuda
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_GPU
 
 /** Sigmoid activation function.
  *  See https://en.wikipedia.org/wiki/Sigmoid_function
@@ -71,18 +69,12 @@ class sigmoid_layer : public entrywise_activation_layer {
   DataType m_cutoff;
 
  public:
-  sigmoid_layer(lbann_comm *comm,
-                cudnn::cudnn_manager *cudnn = nullptr)
+  sigmoid_layer(lbann_comm *comm)
     : entrywise_activation_layer(comm) {
 
     // Compute cutoff value to ensure output is in (0,1)
     const DataType eps = std::numeric_limits<DataType>::epsilon();
     m_cutoff = std::log(DataType(1) - eps) - std::log(eps);
-
-  #ifdef LBANN_HAS_CUDNN
-    // Activate GPU if needed
-    this->m_cudnn = cudnn;
-  #endif // LBANN_HAS_CUDNN
 
   }
 
@@ -115,26 +107,24 @@ class sigmoid_layer : public entrywise_activation_layer {
   }
 
   void fp_compute_gpu() override {
-  #ifndef LBANN_HAS_CUDNN
-    throw lbann_exception("sigmoid_layer: cuDNN not detected");
-  #else
-    sigmoid_cuda::fp(*m_cudnn,
-                     get_num_neurons(),
+#ifndef LBANN_HAS_GPU
+    LBANN_ERROR("CUDA not detected");
+#else
+    sigmoid_cuda::fp(get_num_neurons(),
                      get_prev_activations().LocalWidth(),
                      get_prev_activations().LockedBuffer(),
                      get_prev_activations().LDim(),
                      get_activations().Buffer(),
                      get_activations().LDim(),
                      m_cutoff);
-  #endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_GPU
   }
 
   void bp_compute_gpu() override {
-  #ifndef LBANN_HAS_CUDNN
-    throw lbann_exception("sigmoid_layer: cuDNN not detected");
-  #else
-    sigmoid_cuda::bp(*m_cudnn,
-                     get_num_neurons(),
+#ifndef LBANN_HAS_GPU
+    LBANN_ERROR("CUDA not detected");
+#else
+    sigmoid_cuda::bp(get_num_neurons(),
                      get_prev_activations().LocalWidth(),
                      get_prev_activations().LockedBuffer(),
                      get_prev_activations().LDim(),
@@ -143,7 +133,7 @@ class sigmoid_layer : public entrywise_activation_layer {
                      get_error_signals().Buffer(),
                      get_error_signals().LDim(),
                      m_cutoff);
-  #endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_GPU
   }
 
 };

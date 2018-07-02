@@ -29,7 +29,6 @@
 
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/cublas_wrapper.hpp"
 
 namespace lbann {
 
@@ -51,8 +50,7 @@ class crop_layer : public transform_layer {
  public:
 
   crop_layer(lbann_comm *comm,
-             std::vector<int> dims,
-             cudnn::cudnn_manager *cudnn = nullptr)
+             std::vector<int> dims)
     : transform_layer(comm),
       m_input_region_v(nullptr),
       m_output_region_v(nullptr) {
@@ -71,14 +69,6 @@ class crop_layer : public transform_layer {
  
     // Parent layers for original tensor and crop position
     m_expected_num_parent_layers = 2;
-
-  #if 0
-  //  #ifdef LBANN_HAS_CUDNN
-    // Initialize GPU if available
-    if(cudnn) {
-      this->m_cudnn = cudnn;
-    }
-  #endif // LBANN_HAS_CUDNN
 
   }
 

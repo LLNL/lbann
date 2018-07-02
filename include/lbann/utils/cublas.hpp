@@ -28,7 +28,7 @@
 #define CUBLAS_WRAPPER_HPP_INCLUDED
 
 #include "lbann/base.hpp"
-#include "lbann/utils/cudnn_wrapper.hpp"
+#include "lbann/utils/cuda.hpp"
 
 #ifdef LBANN_HAS_CUDA
 #include <cuda_runtime.h>

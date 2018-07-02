@@ -28,7 +28,7 @@
 #define LBANN_LAYER_ACTIVATION_RELU_HPP_INCLUDED
 
 #include "lbann/layers/activations/activation.hpp"
-#include "lbann/utils/cudnn_wrapper.hpp"
+#include "lbann/utils/cudnn.hpp"
 
 namespace lbann {
 
@@ -49,16 +49,13 @@ class relu_layer : public entrywise_activation_layer {
 
  public:
 
-  relu_layer(lbann_comm *comm,
-             cudnn::cudnn_manager *cudnn = nullptr)
+  relu_layer(lbann_comm *comm)
     : entrywise_activation_layer(comm)
 #ifdef LBANN_HAS_CUDNN
     , m_activation_cudnn_desc(nullptr),
       m_tensors_cudnn_desc(this)
 #endif // LBANN_HAS_CUDNN
-  {
-    this->m_cudnn = cudnn;
-  }
+  {}
 
   relu_layer(const relu_layer& other)
     : entrywise_activation_layer(other)

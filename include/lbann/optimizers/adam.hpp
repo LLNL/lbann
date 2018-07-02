@@ -43,8 +43,7 @@ class adam : public optimizer {
        DataType learning_rate,
        DataType beta1 = DataType(0.9),
        DataType beta2 = DataType(0.99),
-       DataType eps = DataType(1e-8),
-       cudnn::cudnn_manager *cudnn = nullptr);
+       DataType eps = DataType(1e-8));
 
 
   /** Copy constructor. */

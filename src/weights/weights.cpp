@@ -34,10 +34,8 @@
 
 namespace lbann {
 
-weights::weights(lbann_comm* comm,
-                 cudnn::cudnn_manager* cudnn)
+weights::weights(lbann_comm* comm)
   : m_comm(comm),
-    m_cudnn(cudnn),
     m_frozen(false) {
 
   // Initialize weights name
@@ -53,7 +51,6 @@ weights::weights(lbann_comm* comm,
 weights::weights(const weights& other)
   : m_name(other.m_name),
     m_comm(other.m_comm),
-    m_cudnn(other.m_cudnn),
     m_matrix_height_dims(other.m_matrix_height_dims),
     m_matrix_width_dims(other.m_matrix_width_dims),
     m_values(other.m_values),
@@ -74,7 +71,6 @@ weights::weights(const weights& other)
 weights& weights::operator=(const weights& other) {
   m_name = other.m_name;
   m_comm = other.m_comm;
-  m_cudnn = other.m_cudnn;
   m_matrix_height_dims = other.m_matrix_height_dims;
   m_matrix_width_dims = other.m_matrix_width_dims;
 
@@ -323,11 +319,9 @@ void weights::set_value(DataType value, int row, int col) {
 
 void weights::get_values_view(AbsDistMat& values_v) {
   const AbsDistMat& values = get_values();
-  if (values.DistData() == values_v.DistData()
-      && m_cudnn == nullptr) {
+  if (values.DistData() == values_v.DistData()) {
     El::LockedView(values_v, values);
-  }
-  else {
+  } else {
     El::Copy(values, values_v);
   }
 }

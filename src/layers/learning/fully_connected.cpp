@@ -261,9 +261,6 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_comp
 /** GPU implementation of forward prop computation. */
 template <>
 void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
-#ifndef LBANN_HAS_CUDNN
-  throw lbann_exception("fully_connected: CUDA not detected");
-#else
 
   // Matrices
   const auto& local_input = get_local_prev_activations();
@@ -290,15 +287,11 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_comp
              DataType(1), local_output);
   }
   
-#endif // LBANN_HAS_CUDNN
 }
 
 /** GPU implementation of backward prop computation. */
 template <>
 void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
-#ifndef LBANN_HAS_CUDNN
-  throw lbann_exception("fully_connected: CUDA not detected");
-#else
 
   // Effective mini-batch size
   const int mini_batch_size = this->m_model->get_effective_mini_batch_size();
@@ -355,14 +348,11 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_comp
            DataType(1), local_linearity, local_gradient_wrt_output,
            DataType(0), local_gradient_wrt_input);
 
-#endif // LBANN_HAS_CUDNN
 }
 
 template <>
 void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
-#ifndef LBANN_HAS_CUDNN
-  throw lbann_exception("fully_connected: CUDA not detected");
-#else
+
   // Matrices
   const auto& input = get_prev_activations();
   auto& output = get_activations();
@@ -397,14 +387,10 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_com
              DataType(1), output.Matrix());
   }
   
-#endif // LBANN_HAS_CUDNN
 }
 
 template <>
 void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
-#ifndef LBANN_HAS_CUDNN
-  throw lbann_exception("fully_connected: CUDA not detected");
-#else
 
   // Effective mini-batch size
   const int mini_batch_size = this->m_model->get_effective_mini_batch_size();
@@ -490,7 +476,6 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_com
              DataType(0), gradient_wrt_input);
   }
   
-#endif // LBANN_HAS_CUDNN
 }
 #endif // LBANN_HAS_GPU
 

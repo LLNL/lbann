@@ -168,7 +168,6 @@ void setup_unpooling_pointers(lbann_comm* comm,
 
 std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
                                           std::map<execution_mode, generic_data_reader *>& data_readers,
-                                          cudnn::cudnn_manager* cudnn,
                                           const lbann_data::Model& proto_model) {
   std::stringstream err;
 
@@ -204,37 +203,33 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
     if (layout_str == "data_parallel")  { layout = data_layout::DATA_PARALLEL; }
     if (layout_str == "model_parallel") { layout = data_layout::MODEL_PARALLEL; }
     const auto& num_parallel_readers = proto_model.num_parallel_readers();
-    const auto& device_allocation_str = proto_layer.device_allocation();
-    El::Device device_allocation = El::Device::CPU;
+    El::Device device = El::Device::CPU;
 #ifdef LBANN_HAS_GPU
-    if (cudnn != nullptr) { device_allocation = El::Device::GPU; }
-#endif // LBANN_HAS_GPU
-    if (device_allocation_str == "cpu") { device_allocation = El::Device::CPU; }
-#ifdef LBANN_HAS_GPU
-    if (device_allocation_str == "gpu") { device_allocation = El::Device::GPU; }
-#endif // LBANN_HAS_GPU
-    if (device_allocation_str.empty()
-        && (proto_layer.has_input() || proto_layer.has_target()
-            || proto_layer.has_reconstruction())) {
-      // Input, Target, and Reconstruction layers are not allowed on the GPUs:
-      // force the default to be the CPU
-      device_allocation = El::Device::CPU;
+    const auto& device_str = proto_layer.device_allocation();
+    if (!proto_model.disable_cuda()) {
+      if (device_str == "gpu" || device_str.empty()) {
+        device = El::Device::GPU;
+      }
+      if (device_str == "cpu") { device = El::Device::CPU; }
+      if (proto_layer.has_input()
+          || proto_layer.has_target()
+          || proto_layer.has_reconstruction()) {
+        // Input, Target, and Reconstruction layers are not allowed on
+        // the GPUs: force the default to be the CPU
+        device = El::Device::CPU;
+      }
     }
-    cudnn::cudnn_manager* layer_cudnn = cudnn;
-    if (device_allocation == El::Device::CPU) {
-      layer_cudnn = nullptr;
-    }
+#endif // LBANN_HAS_GPU
 
     // Construct layer
     Layer* l = nullptr;
 #define TEMPLATE_INSTANTIATION(T_layout, T_device)                      \
     do {                                                                \
-      if (layout == T_layout && device_allocation == T_device) {        \
+      if (layout == T_layout && device == T_device) {        \
         l = construct_layer<T_layout, T_device>(                        \
               comm,                                                     \
               data_readers,                                             \
               num_parallel_readers,                                     \
-              layer_cudnn,                                              \
               proto_layer);                                             \
       }                                                                 \
     } while (0)

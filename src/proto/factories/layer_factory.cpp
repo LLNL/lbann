@@ -33,7 +33,6 @@ template <data_layout layout, El::Device Dev>
 Layer* construct_layer(lbann_comm* comm,
                        std::map<execution_mode, generic_data_reader*>& data_readers,
                        int num_parallel_readers,
-                       cudnn::cudnn_manager* cudnn,
                        const lbann_data::Layer& proto_layer) {
   std::stringstream err;
 
@@ -97,8 +96,7 @@ Layer* construct_layer(lbann_comm* comm,
                                                   num_neurons,
                                                   params.transpose(),
                                                   nullptr,
-                                                  params.has_bias(),
-                                                  cudnn);
+                                                  params.has_bias());
   }
 
   // Convolution and deconvolution layer
@@ -113,7 +111,7 @@ Layer* construct_layer(lbann_comm* comm,
       if (layout == data_layout::DATA_PARALLEL) {
         return new convolution_layer<data_layout::DATA_PARALLEL, Dev>(
                      comm, dims.size(), num_output_channels,
-                     dims, pads, strides, bias, cudnn
+                     dims, pads, strides, bias
                    );
       }
     } else {
@@ -124,7 +122,7 @@ Layer* construct_layer(lbann_comm* comm,
       if (layout == data_layout::DATA_PARALLEL) {
         return new convolution_layer<data_layout::DATA_PARALLEL, Dev>(
                      comm, num_dims, num_output_channels,
-                     dim, pad, stride, bias, cudnn
+                     dim, pad, stride, bias
                    );
       }
     }
@@ -143,7 +141,7 @@ Layer* construct_layer(lbann_comm* comm,
       if (layout == data_layout::DATA_PARALLEL) {
         return new deconvolution_layer<data_layout::DATA_PARALLEL, Dev>(
                      comm, dims.size(), num_output_channels,
-                     dims, pads, strides, bias, cudnn
+                     dims, pads, strides, bias
                    );
       }
     } else {
@@ -154,7 +152,7 @@ Layer* construct_layer(lbann_comm* comm,
       if (layout == data_layout::DATA_PARALLEL) {
         return new deconvolution_layer<data_layout::DATA_PARALLEL, Dev>(
                      comm, num_dims, num_output_channels,
-                     dim, pad, stride, bias, cudnn
+                     dim, pad, stride, bias
                    );
       }
     }
@@ -171,34 +169,33 @@ Layer* construct_layer(lbann_comm* comm,
       }
       dims.push_back(data_readers[execution_mode::training]->get_linearized_data_size());
     }
-    return new reshape_layer<layout, Dev>(comm, dims.size(), dims.data(), cudnn);
+    return new reshape_layer<layout, Dev>(comm, dims.size(), dims.data());
   }
   if (proto_layer.has_sum()) {
     const auto& scaling_factors = parse_list<DataType>(proto_layer.sum().scaling_factors());
-    return new sum_layer<layout, Dev>(comm, scaling_factors, cudnn);
+    return new sum_layer<layout, Dev>(comm, scaling_factors);
   }
   if (proto_layer.has_split()) {
-    return new split_layer<layout, Dev>(comm, cudnn);
+    return new split_layer<layout, Dev>(comm);
   }
   if (proto_layer.has_concatenation()) {
     const auto& axis = proto_layer.concatenation().concatenation_axis();
-    return new concatenation_layer<layout, Dev>(comm, axis, cudnn);
+    return new concatenation_layer<layout, Dev>(comm, axis);
   }
   if (proto_layer.has_slice()) {
     const auto& params = proto_layer.slice();
     const auto& slice_points = parse_list<int>(params.slice_points());
     return new slice_layer<layout, Dev>(comm,
-                                   params.slice_axis(),
-                                   slice_points,
-                                   cudnn);
+                                        params.slice_axis(),
+                                        slice_points);
   }
   if (proto_layer.has_hadamard()) {
-    return new hadamard_layer<layout, Dev>(comm, cudnn);
+    return new hadamard_layer<layout, Dev>(comm);
   }
   if (proto_layer.has_constant()) {
     const auto& params = proto_layer.constant();
     const auto& dims = parse_list<int>(params.num_neurons());
-    return new constant_layer<layout, Dev>(comm, params.value(), dims, cudnn);
+    return new constant_layer<layout, Dev>(comm, params.value(), dims);
   }
   if (proto_layer.has_gaussian()) {
     const auto& params = proto_layer.gaussian();
@@ -206,16 +203,14 @@ Layer* construct_layer(lbann_comm* comm,
     return new gaussian_layer<layout, Dev>(comm,
                                            dims,
                                            params.mean(),
-                                           params.stdev(),
-                                           cudnn);
+                                           params.stdev());
   }
   if (proto_layer.has_bernoulli()) {
     const auto& params = proto_layer.bernoulli();
     const auto& dims = parse_list<int>(params.neuron_dims());
     return new bernoulli_layer<layout, Dev>(comm,
                                             dims,
-                                            params.prob(),
-                                            cudnn);
+                                            params.prob());
   }
   if (proto_layer.has_uniform()) {
     const auto& params = proto_layer.uniform();
@@ -223,12 +218,11 @@ Layer* construct_layer(lbann_comm* comm,
     return new uniform_layer<layout, Dev>(comm,
                                           dims,
                                           params.min(),
-                                          params.max(),
-                                          cudnn);
+                                          params.max());
   }
   if (proto_layer.has_zero()) {
     const auto& params = proto_layer.zero();
-    return new zero_layer<layout>(comm, params.first_half(), params.second_half(), cudnn);
+    return new zero_layer<layout>(comm, params.first_half(), params.second_half());
   }
   if (proto_layer.has_pooling()) {
     const auto& params = proto_layer.pooling();
@@ -243,7 +237,7 @@ Layer* construct_layer(lbann_comm* comm,
       const auto& strides = parse_list<int>(params.pool_strides());
       if (layout == data_layout::DATA_PARALLEL) {
         return new pooling_layer<data_layout::DATA_PARALLEL, Dev>(
-                     comm, dims.size(), dims, pads, strides, mode, cudnn
+                     comm, dims.size(), dims, pads, strides, mode
                    );
       }
     } else {
@@ -253,14 +247,14 @@ Layer* construct_layer(lbann_comm* comm,
       const auto& stride = params.pool_strides_i();
       if (layout == data_layout::DATA_PARALLEL) {
         return new pooling_layer<data_layout::DATA_PARALLEL, Dev>(
-                     comm, num_dims, dim, pad, stride, mode, cudnn
+                     comm, num_dims, dim, pad, stride, mode
                    );
       }
     }
   }
   if (proto_layer.has_unpooling()) {
-    if (layout == data_layout::DATA_PARALLEL) {
-      return new unpooling_layer<data_layout::DATA_PARALLEL, Dev>(comm);
+    if (layout == data_layout::DATA_PARALLEL && Dev == El::Device::CPU) {
+      return new unpooling_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(comm);
     }
   }
   if (proto_layer.has_reduction()) {
@@ -270,24 +264,24 @@ Layer* construct_layer(lbann_comm* comm,
     if (mode_str == "sum" || mode_str.empty()) { mode = reduction_mode::SUM; }
     if (mode_str == "average") { mode = reduction_mode::AVERAGE; }
     if (layout == data_layout::DATA_PARALLEL) {
-      return new reduction_layer<data_layout::DATA_PARALLEL, Dev>(comm, mode, cudnn);
+      return new reduction_layer<data_layout::DATA_PARALLEL, Dev>(comm, mode);
     }
   }
   if (proto_layer.has_evaluation()) {
-    return new evaluation_layer<layout>(comm, cudnn);
+    return new evaluation_layer<layout>(comm);
   }
   if (proto_layer.has_crop()) {
     const auto& params = proto_layer.crop();
     const auto& dims = parse_list<int>(params.dims());
     if (layout == data_layout::DATA_PARALLEL
         && Dev == El::Device::CPU) {
-      return new crop_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(comm, dims, cudnn);
+      return new crop_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(comm, dims);
     }
   }
   if (proto_layer.has_categorical_random()) {
     if (layout == data_layout::DATA_PARALLEL
         && Dev == El::Device::CPU) {
-      return new categorical_random_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(comm, cudnn);
+      return new categorical_random_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(comm);
     }
   }
   if (proto_layer.has_discrete_random()) {
@@ -297,23 +291,23 @@ Layer* construct_layer(lbann_comm* comm,
     if (layout == data_layout::DATA_PARALLEL
         && Dev == El::Device::CPU) {
       return new discrete_random_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(
-                   comm, values, dims, cudnn);
+                   comm, values, dims);
     }
   }
   if (proto_layer.has_dummy()) {
-    return new dummy_layer<layout, Dev>(comm, cudnn);
+    return new dummy_layer<layout, Dev>(comm);
   }
   if (proto_layer.has_stop_gradient()) {
-    return new stop_gradient_layer<layout, Dev>(comm, cudnn);
+    return new stop_gradient_layer<layout, Dev>(comm);
   }
   if (proto_layer.has_max()) {
     if (Dev == El::Device::CPU) {
-      return new max_layer<layout, El::Device::CPU>(comm, cudnn);
+      return new max_layer<layout, El::Device::CPU>(comm);
     }
   }
   if (proto_layer.has_min()) {
     if (Dev == El::Device::CPU) {
-      return new min_layer<layout, El::Device::CPU>(comm, cudnn);
+      return new min_layer<layout, El::Device::CPU>(comm);
     }
   }
 
@@ -324,23 +318,21 @@ Layer* construct_layer(lbann_comm* comm,
       return new batch_normalization<data_layout::DATA_PARALLEL, Dev>(comm,
                                                                       params.decay(),
                                                                       params.epsilon(),
-                                                                      params.global_stats(),
-                                                                      cudnn);
+                                                                      params.global_stats());
     }
   }
   if (proto_layer.has_dropout()) {
     const auto& params = proto_layer.dropout();
-    return new dropout<layout, Dev>(comm, params.keep_prob(), cudnn);
+    return new dropout<layout, Dev>(comm, params.keep_prob());
   }
   if (proto_layer.has_local_response_normalization()) {
-    const auto& params = proto_layer.local_response_normalization();
+ const auto& params = proto_layer.local_response_normalization();
     if (layout == data_layout::DATA_PARALLEL) {
       return new local_response_normalization_layer<data_layout::DATA_PARALLEL, Dev>(comm,
                                                                                      params.window_width(),
                                                                                      params.lrn_alpha(),
                                                                                      params.lrn_beta(),
-                                                                                     params.lrn_k(),
-                                                                                     cudnn);
+                                                                                     params.lrn_k());
     }
   }
   if (proto_layer.has_selu_dropout()) {
@@ -357,16 +349,16 @@ Layer* construct_layer(lbann_comm* comm,
 
   // Activation layers
   if (proto_layer.has_softmax()) {
-    return new softmax_layer<layout, Dev>(comm, cudnn);
+    return new softmax_layer<layout, Dev>(comm);
   }
   if (proto_layer.has_relu()) {
-    return new relu_layer<layout, Dev>(comm, cudnn);
+    return new relu_layer<layout, Dev>(comm);
   }
   if (proto_layer.has_sigmoid()) {
-    return new sigmoid_layer<layout, Dev>(comm, cudnn);
+    return new sigmoid_layer<layout, Dev>(comm);
   }
   if (proto_layer.has_tanh()) {
-    return new tanh_layer<layout, Dev>(comm, cudnn);
+    return new tanh_layer<layout, Dev>(comm);
   }
   if (proto_layer.has_atan()) {
     return new atan_layer<layout, Dev>(comm);
@@ -427,6 +419,11 @@ Layer* construct_layer(lbann_comm* comm,
     return new l2_loss_layer<layout, Dev>(comm);
   }
 
+  // Loss layers
+  if (proto_layer.has_cross_entropy()) {
+    return new cross_entropy_layer<layout, Dev>(comm);
+  }
+
   if (proto_layer.has_bce_with_logits()) {
     const auto& params = proto_layer.bce_with_logits();
     return new sigmoid_bce_with_logits_layer<layout, Dev>(comm, params.true_label());
@@ -444,14 +441,12 @@ template Layer* construct_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(
   lbann_comm* comm,
   std::map<execution_mode, generic_data_reader*>& data_readers,
   int num_parallel_readers,
-  cudnn::cudnn_manager* cudnn,
   const lbann_data::Layer& proto_layer
 );
 template Layer* construct_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>(
   lbann_comm* comm,
   std::map<execution_mode, generic_data_reader*>& data_readers,
   int num_parallel_readers,
-  cudnn::cudnn_manager* cudnn,
   const lbann_data::Layer& proto_layer
 );
 #ifdef LBANN_HAS_GPU
@@ -459,14 +454,12 @@ template Layer* construct_layer<data_layout::DATA_PARALLEL, El::Device::GPU>(
   lbann_comm* comm,
   std::map<execution_mode, generic_data_reader*>& data_readers,
   int num_parallel_readers,
-  cudnn::cudnn_manager* cudnn,
   const lbann_data::Layer& proto_layer
 );
 template Layer* construct_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>(
   lbann_comm* comm,
   std::map<execution_mode, generic_data_reader*>& data_readers,
   int num_parallel_readers,
-  cudnn::cudnn_manager* cudnn,
   const lbann_data::Layer& proto_layer
 );
 #endif // LBANN_HAS_GPU
