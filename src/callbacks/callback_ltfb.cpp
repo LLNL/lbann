@@ -71,17 +71,26 @@ int assign_partners(lbann_comm* comm) {
 /** Exchange weights with remote model.
  *  Weights from the local model are copied into local_weights and
  *  weights from the remote model are copied into model_weights.
+ *  classic LTFB uses all weights, LTFB GAN uses selected weights
  */
 void exchange_weights(lbann_comm* comm,
                       std::vector<weights*>& model_weights,
                       std::vector<weights*>& local_weights,
+                      std::unordered_set<std::string>& selected_weights,
                       int partner) {
   for (size_t i = 0; i < model_weights.size(); ++i) {
     *local_weights[i] = *model_weights[i];
     const auto& local_matrix = local_weights[i]->get_values();
     auto&& remote_matrix = local_matrix.Copy();
     const auto& size = local_matrix.LocalHeight() * local_matrix.LocalWidth();
-    if (size > 0) {
+    bool send  = true;
+    if(!selected_weights.empty()) {
+      if(std::find(std::begin(selected_weights), std::end(selected_weights),
+          model_weights[i]->get_name()) == std::end(selected_weights)) {
+        send = false;
+      }
+    }
+    if (size > 0 && send) {
       comm->sendrecv(local_matrix.LockedBuffer(), size, partner,
                      remote_matrix->Buffer(), size, partner);
       model_weights[i]->set_values(*remote_matrix);
@@ -90,13 +99,16 @@ void exchange_weights(lbann_comm* comm,
   }
 }
 
-/** Evaluate a model on tournament data and return its accuracy. */
-EvalType evaluate(model *m) {
+
+/** Evaluate a model on tournament data and return evaluation metric value(s). */
+/** @todo: deal with multiple metric values, return a list of values, max, min, mean? */
+EvalType evaluate(model *m, std::unordered_set<std::string>& eval_metrics) {
   const auto& mode = m->get_execution_mode();
   m->evaluate(execution_mode::validation);
   m->set_execution_mode(mode);
   for (const auto& met : m->get_metrics()) {
-    if (dynamic_cast<categorical_accuracy_metric*>(met) != nullptr) {
+    if(std::find(std::begin(eval_metrics), std::end(eval_metrics),
+                  met->name()) != std::end(eval_metrics)) {
       return met->get_mean_value(execution_mode::validation);
     }
   }
@@ -105,15 +117,22 @@ EvalType evaluate(model *m) {
 
 } // namespace
 
-lbann_callback_ltfb::lbann_callback_ltfb(int round_size,
+lbann_callback_ltfb::lbann_callback_ltfb(int round_size,std::string metric_mode, 
+                                         std::unordered_set<std::string> eval_metrics,
+                                         std::unordered_set<std::string> weights_tosend, 
                                          lbann_summary *summarizer)
-  : lbann_callback(1, summarizer), m_round_size(round_size) {}
+  : lbann_callback(1, summarizer), m_round_size(round_size),m_metric_mode(metric_mode), 
+                   m_eval_metrics(std::move(eval_metrics)),
+                   m_weights_tosend(std::move(weights_tosend)){}
 
 lbann_callback_ltfb::lbann_callback_ltfb(const lbann_callback_ltfb& other) :
   lbann_callback(other),
   m_comm(other.m_comm),
   m_round_size(other.m_round_size),
-  m_local_weights(other.m_local_weights) {
+  m_metric_mode(other.m_metric_mode),
+  m_local_weights(other.m_local_weights),
+  m_eval_metrics(other.m_eval_metrics),
+  m_weights_tosend(other.m_weights_tosend) {
   for (auto& w : m_local_weights) { w = w->copy(); }
 }
 
@@ -122,6 +141,9 @@ lbann_callback_ltfb& lbann_callback_ltfb::operator=(const lbann_callback_ltfb& o
   // Shallow copies
   m_comm = other.m_comm;
   m_round_size = other.m_round_size;
+  m_metric_mode = other.m_metric_mode; 
+  m_eval_metrics = other.m_eval_metrics;
+  m_weights_tosend = other.m_weights_tosend;
 
   // Deep copy
   for (auto& w : m_local_weights) { delete w; }
@@ -136,6 +158,12 @@ lbann_callback_ltfb::~lbann_callback_ltfb() {
 }
 
 void lbann_callback_ltfb::setup(model *m) {
+  if(!(m_metric_mode == "increasing" || m_metric_mode == "decreasing"))
+    LBANN_ERROR("Metric mode has to be either increasing or decreasing");
+  
+  if(m_eval_metrics.size() < 1)
+    LBANN_ERROR("LTFB: specify at least one evaluation metric for tournament voting."); 
+
   m_comm = m->get_comm();
 
   // Create copy of model weights
@@ -143,7 +171,7 @@ void lbann_callback_ltfb::setup(model *m) {
   for (auto& w : m_local_weights) { delete w; }
   m_local_weights = m->get_weights();
   for (auto& w : m_local_weights) { w = w->copy(); }
-
+  
   // Make sure model does not have inter-model communication callback
   for (auto&& cb : m->get_callbacks()) {
     if (dynamic_cast<lbann_callback_imcomm*>(cb) != nullptr) {
@@ -173,28 +201,32 @@ void lbann_callback_ltfb::on_batch_begin(model *m) {
   if (m_comm->am_world_master()) {
     std::cout << "LTFB: evaluating local model..." << std::endl;
   }
-  const auto& local_score = evaluate(m);
-
+  /** @todo: deal with multiple metric values, return a list of values, max, min, mean? */
+  const auto& local_score = evaluate(m, m_eval_metrics);
   // Evaluate remote model on tournament data
-  // Note: Weights from remote model are copied into local model
   if (m_comm->am_world_master()) {
     std::cout << "LTFB: evaluating remote model..." << std::endl;
   }
   auto model_weights = m->get_weights();
-  exchange_weights(m_comm, model_weights, m_local_weights, remote_model);
-  const auto& remote_score = evaluate(m);
+  // Note: (Selected/all) weights from remote model are copied into local model
+  //GAN: only send weights specified in prototext (e.g., generator or discriminator)
+  exchange_weights(m_comm, model_weights, m_local_weights,m_weights_tosend, remote_model);
+
+  //evaluate received model on tournament data
+  const auto& remote_score = evaluate(m, m_eval_metrics);
 
   // Restore local weights if they achieve a better score
-  if (remote_score <= local_score) {
+  if((m_metric_mode == "increasing" && remote_score <= local_score) ||
+      (m_metric_mode == "decreasing" && remote_score >= local_score)) {
     for (size_t i = 0; i < model_weights.size(); ++i) {
       *model_weights[i] = *m_local_weights[i];
     }
   } else {
     if (m_comm->am_model_master()) {
       std::cout << "LTFB: replacing model " << local_model << " "
-                << "(" << local_score << "% categorical accuracy) "
+                << "(" << local_score << " score) "
                 << "with model " << remote_model << " "
-                << "(" << remote_score << "% categorical accuracy)"
+                << "(" << remote_score << " score) "
                 << std::endl;
     }
   }

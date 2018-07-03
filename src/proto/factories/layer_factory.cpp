@@ -310,7 +310,6 @@ Layer* construct_layer(lbann_comm* comm,
       return new min_layer<layout, El::Device::CPU>(comm);
     }
   }
-
   // Regularizer layers
   if (proto_layer.has_batch_normalization()) {
     const auto& params = proto_layer.batch_normalization();

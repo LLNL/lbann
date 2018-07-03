@@ -426,12 +426,16 @@ message Callback {
    CallbackCheckpoint checkpoint = 28;
    CallbackSaveModel save_model = 29;
    CallbackPolyLearningRate poly_learning_rate = 30;
+   CallbackReplaceWeights replace_weights = 31;
    CallbackGPUMemoryUsage gpu_memory_usage = 31;
    CallbackSyncLayers sync_layers = 32;
 }
 
 message CallbackLTFB {
-  int64 round_size = 1;
+  int64 round_size = 1; 
+  string metric_mode = 2; //Expectation for a good tournament metric: increasing/descreasing 
+  string eval_metrics = 3; //eval metrics to use for tournament, at least 1 metric has to be provided
+  string weights_tosend = 4; //list of weights to transfer between model, default is all weights (classic LTFB)
 }
 
 message CallbackStepLearningRate {
@@ -590,6 +594,11 @@ message CallbackSaveModel {
   string extension = 2;
 }
 
+message CallbackReplaceWeights {
+  string source_layers = 1; //set of layers to copy weights from
+  string destination_layers = 2;  //set of layers to copy weights to
+  int64 batch_interval = 3;
+}
 message CallbackGPUMemoryUsage {
 }
 

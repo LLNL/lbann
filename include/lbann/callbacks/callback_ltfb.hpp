@@ -39,6 +39,9 @@ namespace lbann {
  * model. The pairs exchange their models and evaluate both their local and the
  * received model on their validation data. The model achieving the highest
  * accuracy is retained and training continues.
+ * Extension to GAN list of weights to send are specified
+ * For example, a trainer will evaluate on its generator and partner's generator
+ * using its holdout tournament data and local discriminator
  * Current limitations:
  * - Does not transfer optimizer state, so it's best to stick to SGD without
  * momentum.
@@ -50,8 +53,15 @@ class lbann_callback_ltfb : public lbann_callback {
 
   /** Constructor.
    *  @param round_size The number of minibatches in each round.
+   *  @param metric_mode  The expectation for a good tournament metric: increasing/descreasing 
+   *  @todo pair metric_mode with eval_metric
+   *  @param eval_metric Tournament evaluation metrics
+   *  @param selected_weights set of weights to exchange
    */
-  lbann_callback_ltfb(int round_size, lbann_summary* summarizer = nullptr);
+  lbann_callback_ltfb(int round_size, std::string metric_mode,
+                      std::unordered_set<std::string> eval_metrics,
+                      std::unordered_set<std::string> weights_tosend = std::unordered_set<std::string>(),
+                      lbann_summary* summarizer = nullptr);
   lbann_callback_ltfb(const lbann_callback_ltfb& other);
   lbann_callback_ltfb& operator=(const lbann_callback_ltfb& other);
   ~lbann_callback_ltfb() override;
@@ -69,8 +79,14 @@ class lbann_callback_ltfb : public lbann_callback {
   lbann_comm *m_comm;
   /** Number of minibatches in a round. */
   int m_round_size;
+  /** Expectation for a good tournament metric: increasing/descreasing */
+  std::string m_metric_mode;
   /** Weights from local model. */
   std::vector<weights*> m_local_weights;
+  /** Evaluation metrics. */
+  std::unordered_set<std::string> m_eval_metrics;
+  /** List of weights to send. */
+  std::unordered_set<std::string> m_weights_tosend;
 
 };
 
