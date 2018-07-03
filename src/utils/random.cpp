@@ -222,28 +222,28 @@ void init_data_seq_random(int seed) {
 
 void gaussian_fill(AbsDistMat& mat, El::Int m, El::Int n, DataType mean,
                    DataType stddev) {
-#ifdef LBANN_PARALLEL_RANDOM_MATRICES
+#ifndef LBANN_DETERMINISTIC
   El::Gaussian(mat, m, n, mean, stddev);
 #else
   gaussian_fill_procdet(mat, m, n, mean, stddev);
-#endif  // LBANN_PARALLEL_RANDOM_MATRICES
+#endif  // LBANN_PARALLEL_DETERMINISTIC
 }
 
 void bernoulli_fill(AbsDistMat& mat, El::Int m, El::Int n, double p) {
-#ifdef LBANN_PARALLEL_RANDOM_MATRICES
+#ifndef LBANN_DETERMINISTIC
   El::Bernoulli(mat, m, n, p);
 #else
   bernoulli_fill_procdet(mat, m, n, p);
-#endif  // LBANN_PARALLEL_RANDOM_MATRICES
+#endif  // LBANN_PARALLEL_DETERMINISTIC
 }
 
 void uniform_fill(AbsDistMat& mat, El::Int m, El::Int n, DataType center,
                   DataType radius) {
-#ifdef LBANN_PARALLEL_RANDOM_MATRICES
+#ifndef LBANN_DETERMINISTIC
   El::Uniform(mat, m, n, center, radius);
 #else
   uniform_fill_procdet(mat, m, n, center, radius);
-#endif  // LBANN_PARALLEL_RANDOM_MATRICES
+#endif  // LBANN_PARALLEL_DETERMINISTIC
 }
 
 void gaussian_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n, DataType mean,

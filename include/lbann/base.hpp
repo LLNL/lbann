@@ -122,23 +122,24 @@ enum class pool_mode {invalid, max, average, average_no_pad};
 /** returns a string representation of the pool_mode */
 std::string get_pool_mode_name(pool_mode m);
 
+// NA - Not applicable, used for input layers that don't produce a second output
+enum class data_reader_target_mode {CLASSIFICATION, REGRESSION, RECONSTRUCTION, NA};
+
 namespace lbann {
 
 // Forward-declaration.
 class lbann_comm;
 
-/**
- * Initialize LBANN.
- * The comm instance this returns places every process in one model. This can be
- * changed with lbann_comm::split_models afterward.
- * @param argc The program's argc.
- * @param argv The program's argv.
- * @param seed Optional seed for random number generators.
+/** Initialize LBANN.
+ *  The comm instance this returns places every process in one
+ *  model. This can be changed with lbann_comm::split_models
+ *  afterward.
+ *  @param argc Command line arguments.
+ *  @param argv Number of command line arguments.
+ *  @param seed Optional RNG seed.
  */
 lbann_comm* initialize(int& argc, char**& argv, int seed = -1);
-/**
- * Perform finalization.
- */
+/** Finalize LBANN. */
 void finalize(lbann_comm* comm = nullptr);
 
 /*
@@ -157,17 +158,6 @@ static bool __attribute__((used)) endsWith(const std::string mainStr, const std:
 }
 
 }  // namespace lbann
-
-// Macro to throw an LBANN exception
-#define LBANN_ERROR(message)                                            \
-  do {                                                                  \
-    std::stringstream ss_LBANN_ERROR;                                   \
-    ss_LBANN_ERROR << "LBANN error"                                     \
-                   << " (" << __FILE__ << ":" << __LINE__ << ")"        \
-                   << ": " << (message);                                \
-    throw lbann::lbann_exception(ss_LBANN_ERROR.str());                 \
-  } while(0)
-
 
 /// Print the dimensions and name of a Elemental matrix
 static void __attribute__((used)) _display_matrix(ElMat *m, const char *name) {

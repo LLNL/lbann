@@ -23,7 +23,7 @@ if (CMAKE_HOST_SYSTEM_NAME MATCHES "Linux")
     if (LBANN_SB_BUILD_${_pkg})
       if (_pkg STREQUAL "HYDROGEN")
         list(APPEND LBANN_CMAKE_INSTALL_RPATH
-          "${${Hydrogen}_CMAKE_INSTALL_PREFIX}/lib")
+          "${Hydrogen_CMAKE_INSTALL_PREFIX}/lib")
       else ()
         list(APPEND LBANN_CMAKE_INSTALL_RPATH
           "${${_pkg}_CMAKE_INSTALL_PREFIX}/lib")
@@ -36,6 +36,16 @@ if (LBANN_CMAKE_INSTALL_RPATH)
 endif ()
 
 # Build the dependency set
+if (TARGET Aluminum)
+  option(LBANN_WITH_ALUMINUM "Whether to use Aluminum in LBANN" ON)
+
+  if (LBANN_WITH_ALUMINUM)
+    set(LBANN_SB_FWD_LBANN_Aluminum_DIR "${ALUMINUM_DIR}/lib/cmake/Aluminum"
+      CACHE STRING "The path to Aluminum for LBANN.")
+
+    list(APPEND _LBANN_DEPENDS Aluminum)
+  endif (LBANN_WITH_ALUMINUM)
+endif (TARGET Aluminum)
 if (TARGET CNPY)
   list(APPEND _LBANN_DEPENDS CNPY)
   set(LBANN_SB_FWD_LBANN_CNPY_DIR "${CNPY_DIR}")
@@ -64,16 +74,13 @@ if (TARGET HYDROGEN)
 endif ()
 if (TARGET OPENCV)
   list(APPEND _LBANN_DEPENDS OPENCV)
-  set(LBANN_SB_FWD_LBANN_OpenCV_DIR "${OPENCV_DIR}")
+  set(LBANN_SB_FWD_LBANN_OpenCV_DIR "${OPENCV_DIR}/share/OpenCV")
 endif ()
 if (TARGET PROTOBUF)
   list(APPEND _LBANN_DEPENDS PROTOBUF)
   set(LBANN_SB_FWD_LBANN_PROTOBUF_DIR "${PROTOBUF_DIR}")
 endif ()
-if (TARGET ALUMINUM)
-  list(APPEND _LBANN_DEPENDS ALUMINUM)
-  set(LBANN_SB_FWD_LBANN_ALUMINUM_DIR "${ALUMINUM_DIR}")
-endif ()
+
 # Get the list of LBANN variables
 get_property(LBANN_VARIABLES DIRECTORY PROPERTY VARIABLES)
 list(FILTER LBANN_VARIABLES INCLUDE REGEX "^LBANN_.*")

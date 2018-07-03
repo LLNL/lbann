@@ -41,11 +41,7 @@ namespace lbann {
 template <data_layout T_layout, El::Device Dev>
 class stop_gradient_layer : public transform_layer {
  public:
-  stop_gradient_layer(lbann_comm *comm,
-                      cudnn::cudnn_manager* cudnn = nullptr)
-    : transform_layer(comm) {
-    this->m_cudnn = cudnn;
-  }
+  stop_gradient_layer(lbann_comm *comm) : transform_layer(comm) {}
   stop_gradient_layer* copy() const override { return new stop_gradient_layer(*this); }
   std::string get_type() const override { return "stop_gradient"; }
   data_layout get_data_layout() const override { return T_layout; }
@@ -67,10 +63,6 @@ class stop_gradient_layer : public transform_layer {
 
   void fp_compute() override {
     El::LockedView(get_activations(), get_prev_activations());
-  }
-
-  void bp_compute() override {
-    // El::Zero(get_error_signals());
   }
 
 };

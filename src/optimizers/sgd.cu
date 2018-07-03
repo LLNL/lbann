@@ -25,7 +25,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/optimizers/sgd.hpp"
-#include "lbann/utils/cublas_wrapper.hpp"
 
 namespace lbann {
 

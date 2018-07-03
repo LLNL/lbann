@@ -62,7 +62,7 @@ class hypergradient_adam : public optimizer {
   hypergradient_adam* copy() const override { return new hypergradient_adam(*this); }
   
   /** Returns the optimizer name. */
-  std::string get_type() const override { return "hypergradient_adam"; }
+  std::string get_type() const override { return "hypergradient Adam"; }
   /** Get a human-readable description of the optimizer. */
   std::string get_description() const override;
 

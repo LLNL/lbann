@@ -49,19 +49,20 @@ class repeated_input_layer : public input_layer<partitioned_io_buffer, data_layo
                        std::map<execution_mode, generic_data_reader *> data_readers,
                        int num_steps,
                        bool data_set_spans_models = true,
-                       bool for_regression = false)
+                       data_reader_target_mode target_mode = data_reader_target_mode::CLASSIFICATION)
     : input_layer<partitioned_io_buffer, data_layout::DATA_PARALLEL>(comm,
                                                                      num_parallel_readers,
                                                                      data_readers,
                                                                      data_set_spans_models,
-                                                                     for_regression),
+                                                                     target_mode),
       m_num_steps(num_steps) {
 
     m_label_io_buffer = new partitioned_io_buffer(comm,
                                                   num_parallel_readers,
-                                                  data_readers);
-    m_label_io_buffer->fetch_data_fn = new fetch_data_functor(false, false);
-    m_label_io_buffer->update_data_reader_fn = new update_data_reader_functor(false);
+                                                  data_readers,
+                                                  m_expected_num_child_layers);
+    m_label_io_buffer->fetch_data_fn = new fetch_data_functor(target_mode);
+    m_label_io_buffer->update_data_reader_fn = new update_data_reader_functor();
 
   }
 

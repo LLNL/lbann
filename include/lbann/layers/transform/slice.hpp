@@ -29,7 +29,6 @@
 
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/cublas_wrapper.hpp"
 
 namespace lbann {
 
@@ -54,8 +53,7 @@ class slice_layer : public transform_layer {
 
   slice_layer(lbann_comm *comm,
               int slice_axis,
-              std::vector<int> slice_points,
-              cudnn::cudnn_manager *cudnn = nullptr)
+              std::vector<int> slice_points)
     : transform_layer(comm),
       m_slice_axis(slice_axis),
       m_slice_points(slice_points),
@@ -64,13 +62,6 @@ class slice_layer : public transform_layer {
 
     // Slice layer has no limit on children
     m_expected_num_child_layers = -1;
-
-  #ifdef LBANN_HAS_CUDNN
-    // Initialize GPU if available
-    if(cudnn) {
-      this->m_cudnn = cudnn;
-    }
-  #endif // LBANN_HAS_CUDNN
 
   }
 
@@ -279,7 +270,7 @@ class slice_layer : public transform_layer {
                        El::IR(region * output_region_stride,
                               (region+1) * output_region_stride),
                        El::ALL);
-        El::Axpy(DataType(1), *m_output_region_v, *m_input_region_v);
+        El::Copy(*m_output_region_v, *m_input_region_v);
       }
 
     }

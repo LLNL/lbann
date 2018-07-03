@@ -179,16 +179,15 @@ void greedy_layerwise_autoencoder::set_phase(int phase) {
 
   // Initialize reconstruction layer
   if (m_reconstruction != nullptr) delete m_reconstruction;
-  Layer* original_layer = m_layers[encoder_start-1];
   switch (encoder_parents[0]->get_data_layout()) {
   case data_layout::MODEL_PARALLEL:
     switch(encoder_parents[0]->get_device_allocation()) {
     case El::Device::CPU:
-      m_reconstruction = new reconstruction_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>(m_comm, original_layer);
+      m_reconstruction = new reconstruction_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>(m_comm);
       break;
 #ifdef LBANN_HAS_GPU
     case El::Device::GPU:
-      m_reconstruction = new reconstruction_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>(m_comm, original_layer);
+      m_reconstruction = new reconstruction_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>(m_comm);
       break;
 #endif // LBANN_HAS_GPU
     default:
@@ -201,11 +200,11 @@ void greedy_layerwise_autoencoder::set_phase(int phase) {
   case data_layout::DATA_PARALLEL:
     switch(encoder_parents[0]->get_device_allocation()) {
     case El::Device::CPU:
-      m_reconstruction = new reconstruction_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(m_comm, original_layer);
+      m_reconstruction = new reconstruction_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(m_comm);
       break;
 #ifdef LBANN_HAS_GPU
     case El::Device::GPU:
-      m_reconstruction = new reconstruction_layer<data_layout::DATA_PARALLEL, El::Device::GPU>(m_comm, original_layer);
+      m_reconstruction = new reconstruction_layer<data_layout::DATA_PARALLEL, El::Device::GPU>(m_comm);
       break;
 #endif // LBANN_HAS_GPU
     default:
@@ -225,9 +224,12 @@ void greedy_layerwise_autoencoder::set_phase(int phase) {
 
   // Setup layer pointers to train encoder and decoder
   encoder_children[0] = m_layers[decoder_start];
+  /// @todo FIXME this model needs to put a split layer in here so that we can duplicate the original data
+  /// @todo then it should have something like: encoder_children[1] = m_reconstruction;
   decoder_parents[0] = m_layers[encoder_end-1];
   decoder_children[0] = m_reconstruction;
   m_reconstruction->add_parent_layer(m_layers[decoder_end-1]);
+  m_reconstruction->add_parent_layer(m_layers[encoder_start-1]);
 
   // Set objective function to reconstruction layer
   for (auto term : m_objective_function->get_terms()) {

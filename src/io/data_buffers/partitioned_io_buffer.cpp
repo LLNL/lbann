@@ -27,9 +27,9 @@
 #include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
 #include "lbann/utils/exception.hpp"
 
-lbann::partitioned_io_buffer::partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
+lbann::partitioned_io_buffer::partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, int num_child_layers)
   : generic_io_buffer(comm, num_parallel_readers, data_readers),
-    M_local(2, nullptr) {}
+    M_local(num_child_layers, nullptr) {}
 
 int lbann::partitioned_io_buffer::fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) {
   int num_parallel_readers = data_reader->get_num_parallel_readers();
@@ -39,12 +39,17 @@ int lbann::partitioned_io_buffer::fetch_to_local_matrix(generic_data_reader *dat
   /// Coordinate all available readers so that the perform I/O in the same step
   /// Check to make sure that the local matrix has space for data
   if (m_comm->get_rank_in_model() < num_parallel_readers && (M_local[0]->Height() != 0 && M_local[0]->Width() != 0)) {
-    Zero(*M_local[0]);
-    Zero(*M_local[1]);
+    for(auto& m : M_local) {
+      Zero(*m);
+    }
 
     /// Each data reader needs to either have independent / split
     /// data, or take an offset / stride
-    num_samples_fetched = (*fetch_data_fn)(*M_local[0], *M_local[1], data_reader);
+    if(M_local.size() == 2) {
+      num_samples_fetched = (*fetch_data_fn)(*M_local[0], *M_local[1], data_reader);
+    }else {
+      num_samples_fetched = (*fetch_data_fn)(*M_local[0], data_reader);
+    }
     bool data_valid = (num_samples_fetched > 0);
     if(data_valid) {
       //      m_num_data_per_epoch+=num_samples_fetched; /// BVE FIXME need to change how this is shared

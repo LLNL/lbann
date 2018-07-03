@@ -28,6 +28,7 @@
 #define LBANN_LAYER_REGULARIZER_DROPOUT_HPP_INCLUDED
 
 #include "lbann/layers/regularizers/regularizer.hpp"
+#include "lbann/utils/cudnn.hpp"
 
 namespace lbann {
 
@@ -46,64 +47,67 @@ class dropout : public regularizer_layer {
  public:
   /** Keep units with probabiliy keep_prob. */
   dropout(lbann_comm *comm,
-          EvalType keep_prob = EvalType(0.5),
-          cudnn::cudnn_manager* cudnn = nullptr)
+          EvalType keep_prob = EvalType(0.5))
     : regularizer_layer(comm),
-      m_keep_prob(keep_prob) {
-
-  #ifdef LBANN_HAS_CUDNN
-    // Initialize GPU memory if using GPU
-    this->m_cudnn = cudnn;
-  #ifdef LBANN_SEQUENTIAL_CONSISTENCY
+      m_keep_prob(keep_prob)
+#ifdef LBANN_HAS_CUDNN
+    , m_dropout_cudnn_desc(nullptr),
+      m_tensors_cudnn_desc(this)
+#endif // LBANN_HAS_CUDNN
+  {
+#if defined(LBANN_HAS_CUDNN) && defined(LBANN_DETERMINISTIC)
     /// @todo GPU implementation of dropout with sequential consistency
     if (Dev == El::Device::GPU && get_comm()->am_model_master()) {
       std::cerr << "Warning: GPU dropout currently does not guarantee "
                 << "sequential consistency" << std::endl;
     }
-  #endif // LBANN_SEQUENTIAL_CONSISTENCY
-  #endif // LBANN_HAS_CUDNN
-
+#endif // defined(LBANN_HAS_CUDNN) && defined(LBANN_DETERMINISTIC)
   }
 
-  dropout(const dropout& other) :
-    regularizer_layer(other),
-    m_keep_prob(other.m_keep_prob),
-    m_mask(!other.m_mask? nullptr : other.m_mask->Copy()) {
-  #ifdef LBANN_HAS_CUDNN
+  dropout(const dropout& other)
+    : regularizer_layer(other),
+      m_keep_prob(other.m_keep_prob),
+      m_mask(other.m_mask ? other.m_mask->Copy() : nullptr)
+#ifdef LBANN_HAS_CUDNN
+    , m_dropout_cudnn_desc(nullptr),
+      m_tensors_cudnn_desc(other.m_tensors_cudnn_desc)
+#endif // LBANN_HAS_CUDNN
+  {
+#ifdef LBANN_HAS_CUDNN
+    m_tensors_cudnn_desc.set_layer(this);
     m_states = other.m_states;
     m_reserve_space = other.m_reserve_space;
     if (other.m_dropout_cudnn_desc != nullptr) {
       setup_dropout_cudnn_desc();
     }
-  #endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_CUDNN
   }
 
   dropout& operator=(const dropout& other) {
     regularizer_layer::operator=(other);
     m_keep_prob = other.m_keep_prob;
-    if (!!other.m_mask) {
-      m_mask = std::unique_ptr<AbsDistMat>(other.m_mask->Copy());
-    }
-  #ifdef LBANN_HAS_CUDNN
+    m_mask = other.m_mask ? other.m_mask->Copy() : nullptr;
+#ifdef LBANN_HAS_CUDNN
+    m_tensors_cudnn_desc = other.m_tensors_cudnn_desc;
+    m_tensors_cudnn_desc.set_layer(this);
     m_states = other.m_states;
     m_reserve_space = other.m_reserve_space;
-    if (m_dropout_cudnn_desc != nullptr) {
-      CHECK_CUDNN(cudnnDestroyDropoutDescriptor(m_dropout_cudnn_desc));
-    }
-    m_dropout_cudnn_desc = nullptr;
     if (other.m_dropout_cudnn_desc != nullptr) {
       setup_dropout_cudnn_desc();
+    } else {
+      CHECK_CUDNN(cudnnDestroyDropoutDescriptor(m_dropout_cudnn_desc));
+      m_dropout_cudnn_desc = nullptr;
     }
-  #endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_CUDNN
     return *this;
   }
 
   ~dropout() override {
-  #ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_CUDNN
     if (m_dropout_cudnn_desc != nullptr) {
-      CHECK_CUDNN(cudnnDestroyDropoutDescriptor(m_dropout_cudnn_desc));
+      cudnnDestroyDropoutDescriptor(m_dropout_cudnn_desc);
     }
-  #endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_CUDNN
   }
 
   dropout* copy() const override { return new dropout(*this); }
@@ -124,31 +128,26 @@ class dropout : public regularizer_layer {
 
   void setup_gpu() override {
     regularizer_layer::setup_gpu();
-  #ifndef LBANN_HAS_CUDNN
+#ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
-  #else
+#else
 
-    // Allocate work spaces
-    size_t size;
-    CHECK_CUDNN(cudnnDropoutGetStatesSize(this->m_cudnn->get_handle(), &size));
-    El::Zeros(m_states, (size + sizeof(DataType) - 1) / sizeof(DataType), 1);
-    CHECK_CUDNN(cudnnDropoutGetReserveSpaceSize(this->m_prev_activations_cudnn_desc, &size));
-    El::Zeros(m_reserve_space, (size + sizeof(DataType) - 1) / sizeof(DataType), 1);
-
-    // Initialize cuDNN descriptors
-    setup_dropout_cudnn_desc();
-
-  #ifdef HYDROGEN_HAVE_CUB
-    // Set GPU output matrix to use CUB GPU memory pool
+#ifdef HYDROGEN_HAVE_CUB
+    // Use CUB GPU memory pool for some matrices
     // Note: Activation matrix owns data during training and is a
     // matrix view during evaluation. To avoid expensive GPU memory
     // allocation and deallocation, we use CUB's GPU memory pool.
     if (Dev == El::Device::GPU) {
       get_local_activations().SetMemoryMode(1);
+      get_local_error_signals().SetMemoryMode(1);
+      m_reserve_space.SetMemoryMode(1);
     }
-  #endif
+#endif // HYDROGEN_HAVE_CUB
 
-  #endif
+    // Initialize cuDNN objects
+    setup_dropout_cudnn_desc();
+
+#endif // LBANN_HAVE_CUDNN
   }
 
  protected:
@@ -162,6 +161,17 @@ class dropout : public regularizer_layer {
       get_activations().Empty(false);
     }
     regularizer_layer::fp_setup_data(mini_batch_size);
+  }
+
+  void bp_setup_data(int mini_batch_size) override {
+    // If needed, reset matrix view without deallocating memory
+    // Note: Activation matrix owns data during training and is a
+    // matrix view during evaluation.
+    const auto& mode = this->m_model->get_execution_mode();
+    if (mode == execution_mode::training && m_keep_prob < EvalType(0)) {
+      get_error_signals().Empty(false);
+    }
+    regularizer_layer::bp_setup_data(mini_batch_size);
   }
 
   void fp_compute () override {
@@ -200,7 +210,7 @@ class dropout : public regularizer_layer {
     const auto& height = input.Height();
     const auto& width = input.Width();
     m_mask->Resize(height, width);
-#ifdef LBANN_SEQUENTIAL_CONSISTENCY
+#ifdef LBANN_DETERMINISTIC
     bernoulli_fill_procdet(*m_mask, height, width, DataType(m_keep_prob));
     *m_mask *= scale;
 #else
@@ -211,7 +221,7 @@ class dropout : public regularizer_layer {
                        std::bernoulli_distribution dist(m_keep_prob);
                        return dist(gen) ? scale : DataType(0);
                      }));
-#endif // LBANN_SEQUENTIAL_CONSISTENCY
+#endif // LBANN_DETERMINISTIC
 
     // Apply mask matrix to get activations
     El::Hadamard(input, *m_mask, output);
@@ -224,107 +234,125 @@ class dropout : public regularizer_layer {
     auto& gradient_wrt_input = get_error_signals();
     const auto& mode = this->m_model->get_execution_mode();
     if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
-      El::Axpy(DataType(1), gradient_wrt_output, gradient_wrt_input);
+      El::LockedView(gradient_wrt_input, gradient_wrt_output);
     } else {
-      El::Hadamard(gradient_wrt_output, *m_mask, *m_mask);
-      El::Axpy(DataType(1), *m_mask, gradient_wrt_input);
+      El::Hadamard(gradient_wrt_output, *m_mask, gradient_wrt_input);
     }
   }
 
   void fp_compute_gpu() {
-  #ifndef LBANN_HAS_CUDNN
+#ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
-  #else
+#else
+    
+    // Matrices
     const auto& input = get_prev_activations();
+    const auto& local_input = input.LockedMatrix();
     auto& output = get_activations();
+    auto& local_output = output.Matrix();
 
-    // Do nothing if dropout is disabled
+    // Do nothing if dropout is disabled or there is no local data
     const auto& mode = this->m_model->get_execution_mode();
     if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
       El::LockedView(output, input);
       return;
     }
+    if (local_input.Height() < 1 && local_input.Width() < 1) { return; }
 
-    // Resize GPU work space if needed
+    // Initialize cuDNN objects
+    auto&& input_desc = m_tensors_cudnn_desc.get_prev_activations();
+    auto&& output_desc = m_tensors_cudnn_desc.get_activations();
     size_t size;
-    CHECK_CUDNN(cudnnDropoutGetReserveSpaceSize(this->m_prev_activations_cudnn_desc, &size));
-    if (size > m_reserve_space.Height() * sizeof(DataType)) {
-      m_reserve_space.Resize((size + sizeof(DataType) - 1) / sizeof(DataType), 1);
-    }
+    CHECK_CUDNN(cudnnDropoutGetReserveSpaceSize(input_desc, &size));
+    m_reserve_space.Resize((size + sizeof(DataType) - 1) / sizeof(DataType), 1);
 
     // Apply dropout on the GPU
-    CHECK_CUDNN(cudnnDropoutForward(this->m_cudnn->get_handle(),
+    CHECK_CUDNN(cudnnDropoutForward(cudnn::get_handle(),
                                     m_dropout_cudnn_desc,
-                                    this->m_prev_activations_cudnn_desc,
-                                    input.LockedBuffer(),
-                                    this->m_activations_cudnn_desc,
-                                    output.Buffer(),
+                                    input_desc,
+                                    local_input.LockedBuffer(),
+                                    output_desc,
+                                    local_output.Buffer(),
                                     m_reserve_space.Buffer(),
                                     m_reserve_space.Height() * sizeof(DataType)));
-  #endif // LBANN_HAS_CUDNN
+
+#endif // LBANN_HAS_CUDNN
   }
 
   void bp_compute_gpu() {
-  #ifndef LBANN_HAS_CUDNN
+#ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
-  #else
+#else
+
+    // Matrices
     const auto& gradient_wrt_output = get_prev_error_signals();
+    const auto& local_gradient_wrt_output = gradient_wrt_output.LockedMatrix();
     auto& gradient_wrt_input = get_error_signals();
+    auto& local_gradient_wrt_input = gradient_wrt_input.Matrix();
 
     // Copy error signal if dropout is disabled
-    /// @todo This is technically incorrect since it overwrites the error signal
     const auto& mode = this->m_model->get_execution_mode();
     if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
-      El::Axpy(DataType(1), gradient_wrt_output, gradient_wrt_input);
-      /// @todo - Note that a future optimization may switch this to
-      //      use a locked view, but it requires special handling in
-      //      how the gradients are cleared.
-      //      El::LockedView(gradient_wrt_input, gradient_wrt_output);
-      return;
+      El::LockedView(gradient_wrt_input, gradient_wrt_output);
+    } else {
+      if (local_gradient_wrt_input.Height() > 0
+          && local_gradient_wrt_input.Width() > 0) {
+        CHECK_CUDNN(cudnnDropoutBackward(cudnn::get_handle(),
+                                         m_dropout_cudnn_desc,
+                                         m_tensors_cudnn_desc.get_prev_error_signals(),
+                                         local_gradient_wrt_output.LockedBuffer(),
+                                         m_tensors_cudnn_desc.get_error_signals(),
+                                         local_gradient_wrt_input.Buffer(),
+                                         m_reserve_space.Buffer(),
+                                         m_reserve_space.Height() * sizeof(DataType)));
+      }
     }
-
-    // Apply dropout backprop on each GPU
-    /// @todo This is technically incorrect since it overwrites the error signal
-    CHECK_CUDNN(cudnnDropoutBackward(this->m_cudnn->get_handle(),
-                                     m_dropout_cudnn_desc,
-                                     this->m_prev_error_signals_cudnn_desc,
-                                     gradient_wrt_output.LockedBuffer(),
-                                     this->m_error_signals_cudnn_desc,
-                                     gradient_wrt_input.Buffer(),
-                                     m_reserve_space.Buffer(),
-                                     m_reserve_space.Height() * sizeof(DataType)));
-
-  #endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_CUDNN
   }
 
-  #ifdef LBANN_HAS_CUDNN
-  /** Setup cuDNN dropout descriptors.
-   *  It is assumed that m_states has already been initialized.
+#ifdef LBANN_HAS_CUDNN
+  /** Setup cuDNN dropout descriptor and RNG state.
    */
   void setup_dropout_cudnn_desc() {
+
+    // Deallocate dropout descriptor if needed
+    if (m_dropout_cudnn_desc != nullptr) {
+      CHECK_CUDNN(cudnnDestroyDropoutDescriptor(m_dropout_cudnn_desc));
+    }
+    m_dropout_cudnn_desc = nullptr;
+
+    // Setup RNG state
+    size_t size;
+    CHECK_CUDNN(cudnnDropoutGetStatesSize(cudnn::get_handle(), &size));
+    m_states.Resize((size + sizeof(DataType) - 1) / sizeof(DataType), 1);
+
+    // Setup dropout descriptor
     CHECK_CUDNN(cudnnCreateDropoutDescriptor(&m_dropout_cudnn_desc));
     CHECK_CUDNN(cudnnSetDropoutDescriptor(m_dropout_cudnn_desc,
-                                          this->m_cudnn->get_handle(),
+                                          cudnn::get_handle(),
                                           float(1 - m_keep_prob),
                                           m_states.Buffer(),
                                           m_states.Height() * sizeof(DataType),
                                           get_generator()()));
+
   }
-  #endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_CUDNN
 
   /** Probability of keeping each unit. */
   EvalType m_keep_prob;
   /** Current dropout mask (a scaled Bernoulli random matrix). */
   std::unique_ptr<AbsDistMat> m_mask;
 
-  #ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_CUDNN
   /** Dropout cuDNN descriptor. */
-  cudnnDropoutDescriptor_t m_dropout_cudnn_desc = nullptr;
+  cudnnDropoutDescriptor_t m_dropout_cudnn_desc;
+  /** Tensor cuDNN descriptors. */
+  cudnn::entrywise_layer_tensor_manager m_tensors_cudnn_desc;
   /** RNG state for cuDNN dropout. */
   GPUMat m_states;
   /** Work space for cuDNN dropout. */
   GPUMat m_reserve_space;
-  #endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_CUDNN
 
 };
 

@@ -35,6 +35,16 @@
 #include <iostream>
 #include <exception>
 
+// Macro to throw an LBANN exception
+#define LBANN_ERROR(message)                                            \
+  do {                                                                  \
+    std::stringstream ss_LBANN_ERROR;                                   \
+    ss_LBANN_ERROR << "LBANN error"                                     \
+                   << " (" << __FILE__ << ":" << __LINE__ << ")"        \
+                   << ": " << (message);                                \
+    throw lbann::lbann_exception(ss_LBANN_ERROR.str());                 \
+  } while(0)
+
 namespace lbann {
 
 class lbann_exception : public std::exception {

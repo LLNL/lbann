@@ -35,6 +35,8 @@
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
 #include "lbann/data_readers/cv_process.hpp"
+#include <string>
+#include <set>
 
 namespace lbann {
 
@@ -55,6 +57,10 @@ class data_reader_jag_conduit : public generic_data_reader {
    * - Undefined: the default
    */
   enum variable_t {Undefined=0, JAG_Image, JAG_Scalar, JAG_Input};
+  using TypeID = conduit::DataType::TypeID;
+
+  /// Type to define a prefix string and the minimum length requirement to filter out a key
+  using prefix_t = std::pair<std::string, size_t>;
 
   data_reader_jag_conduit(bool shuffle = true) = delete;
   data_reader_jag_conduit(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
@@ -79,6 +85,15 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   /// Set the image dimension
   void set_image_dims(const int width, const int height, const int ch = 1);
+
+  /// Add a scalar key to filter out
+  void add_scalar_filter(const std::string& key);
+  /// Add a scalar key prefix to filter out
+  void add_scalar_prefix_filter(const prefix_t& p);
+  /// Add an input key to filter out
+  void add_input_filter(const std::string& key);
+  /// Add an input key prefix to filter out
+  void add_input_prefix_filter(const prefix_t& p);
 
   /// Select the set of scalar output variables to use
   void set_scalar_choices(const std::vector<std::string>& keys);
@@ -146,6 +161,9 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Return the simulation input parameters of the i-th sample
   std::vector<input_t> get_inputs(const size_t i) const;
 
+  template<typename S>
+  static size_t add_val(const std::string key, const conduit::Node& n, std::vector<S>& vals);
+
   /// Check if the simulation was successful
   int check_exp_success(const size_t sample_id) const;
 
@@ -161,15 +179,25 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// A utility function to convert a JAG variable type to name string
   static std::string to_string(const variable_t t);
 
+  /// print the schema of the all the samples
+  void print_schema() const;
+  /// print the schema of the specific sample identified by a given id
+  void print_schema(const size_t i) const;
+
  protected:
   virtual void set_defaults();
   virtual bool replicate_processor(const cv_process& pp);
   virtual void copy_members(const data_reader_jag_conduit& rhs);
 
+
   /// add data type for independent variable
   void add_independent_variable_type(const variable_t independent);
   /// add data type for dependent variable
   void add_dependent_variable_type(const variable_t dependent);
+
+  /// Check if a key is in the black lists to filter out
+  bool filter(const std::set<std::string>& filter,
+              const std::vector<prefix_t>& prefix_filter, const std::string& name) const;
 
   /// Return the linearized size of a particular JAG variable type
   size_t get_linearized_size(const variable_t t) const;
@@ -207,6 +235,12 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Check if the given sample id is valid
   bool check_sample_id(const size_t i) const;
 
+  /**
+   * Check if the key is associated with non-numeric value, that is not and
+   * cannot be converted to a numertic.
+   */
+  static bool check_non_numeric(const std::string key);
+
   /// Choose the image closest to the bang time among those associated with the i-th sample
   std::vector<int> choose_image_near_bang_time(const size_t i) const;
 
@@ -243,7 +277,155 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   /// data wrapped in a conduit structure
   conduit::Node m_data;
+
+  /**
+   * Set of keys that are associated with non_numerical values.
+   * Such a variable requires a specific method for mapping to a numeric value.
+   * When a key is found in the set, the variable is ignored. Therefore,
+   * when a conversion is defined for such a key, remove it from the set.
+   */
+  static const std::set<std::string> non_numeric_vars;
+
+  /**
+   * indicate if all the input variables are of the input_t type, in which case
+   * we can rely on a data extraction method with lower overhead.
+   */
+  bool m_uniform_input_type;
+
+  /// The set of scalar variables to filter out
+  std::set<std::string> m_scalar_filter;
+  /// The list of scalar key prefixes to filter out
+  std::vector<prefix_t> m_scalar_prefix_filter;
+  /// The set of input variables to filter out
+  std::set<std::string> m_input_filter;
+  /// The list of input key prefixes to filter out
+  std::vector<prefix_t> m_input_prefix_filter;
 };
+
+
+/**
+ * To faciliate the type comparison between a c++ native type and a conduit type id.
+ * By deafult, each pair of a native type TN and a conduit type TC is not the same.
+ * Those that are the same require explicit instantication to say otherwise.
+ */
+template<typename TN, conduit::DataType::TypeID TC>
+struct is_same : std::false_type {};
+
+#define _LBANN_CONDUIT_DTYPE_INSTANTIATION_(TN, TC) \
+  template<> struct is_same<TN, TC> : std::true_type {}
+
+_LBANN_CONDUIT_DTYPE_INSTANTIATION_(int8_t,   conduit::DataType::INT8_ID);
+_LBANN_CONDUIT_DTYPE_INSTANTIATION_(int16_t,  conduit::DataType::INT16_ID);
+_LBANN_CONDUIT_DTYPE_INSTANTIATION_(int32_t,  conduit::DataType::INT32_ID);
+_LBANN_CONDUIT_DTYPE_INSTANTIATION_(int64_t,  conduit::DataType::INT64_ID);
+_LBANN_CONDUIT_DTYPE_INSTANTIATION_(uint8_t,  conduit::DataType::UINT8_ID);
+_LBANN_CONDUIT_DTYPE_INSTANTIATION_(uint16_t, conduit::DataType::UINT16_ID);
+_LBANN_CONDUIT_DTYPE_INSTANTIATION_(uint32_t, conduit::DataType::UINT32_ID);
+_LBANN_CONDUIT_DTYPE_INSTANTIATION_(uint64_t, conduit::DataType::UINT64_ID);
+_LBANN_CONDUIT_DTYPE_INSTANTIATION_(float,    conduit::DataType::FLOAT32_ID);
+_LBANN_CONDUIT_DTYPE_INSTANTIATION_(double,   conduit::DataType::FLOAT64_ID);
+_LBANN_CONDUIT_DTYPE_INSTANTIATION_(char*,    conduit::DataType::CHAR8_STR_ID);
+
+#undef _LBANN_CONDUIT_DTYPE_INSTANTIATION_
+
+/// Check if type identified by the conduit dtype id is the same type as the type given as the template parameter
+template<typename TN>
+inline bool is_same_type(const conduit::DataType::TypeID dt) {
+  switch(dt) {
+    case conduit::DataType::INT8_ID:    return is_same<TN, conduit::DataType::INT8_ID>::value;
+    case conduit::DataType::INT16_ID:   return is_same<TN, conduit::DataType::INT16_ID>::value;
+    case conduit::DataType::INT32_ID:   return is_same<TN, conduit::DataType::INT32_ID>::value;
+    case conduit::DataType::INT64_ID:   return is_same<TN, conduit::DataType::INT64_ID>::value;
+    case conduit::DataType::UINT8_ID:   return is_same<TN, conduit::DataType::UINT8_ID>::value;
+    case conduit::DataType::UINT16_ID:  return is_same<TN, conduit::DataType::UINT16_ID>::value;
+    case conduit::DataType::UINT32_ID:  return is_same<TN, conduit::DataType::UINT32_ID>::value;
+    case conduit::DataType::UINT64_ID:  return is_same<TN, conduit::DataType::UINT64_ID>::value;
+    case conduit::DataType::FLOAT32_ID: return is_same<TN, conduit::DataType::FLOAT32_ID>::value;
+    case conduit::DataType::FLOAT64_ID: return is_same<TN, conduit::DataType::FLOAT64_ID>::value;
+    case conduit::DataType::CHAR8_STR_ID: return is_same<TN, conduit::DataType::CHAR8_STR_ID>::value;
+    default: return false;
+  }
+  return false;
+}
+
+/**
+ * Retrieve a value from the given node n, and add it to the vector of type S, vals.
+ * The first argument key is the name of the current node (i.e. the name reported by
+ * the node iterator to the node).
+ */
+template<typename S>
+inline size_t data_reader_jag_conduit::add_val(const std::string key, const conduit::Node& n, std::vector<S>& vals) {
+  size_t cnt = 0u;
+
+  switch (n.dtype().id()) {
+    case TypeID::OBJECT_ID: {
+        //std::cout << "O " << n.path() << std::endl;
+        if (check_non_numeric(key)) {
+          return 0u;
+        }
+        conduit::NodeConstIterator itr = n.children();
+        while (itr.has_next()) {
+          const conduit::Node& n_child = itr.next();
+          cnt += add_val(itr.name(), n_child, vals);
+        }
+      }
+      break;
+    case TypeID::LIST_ID: {
+        //std::cout << "L " << n.path() << std::endl;
+        if (check_non_numeric(key)) {
+          return 0u;
+        }
+        conduit::NodeConstIterator itr = n.children();
+        while (itr.has_next()) {
+          const conduit::Node& n_child = itr.next();
+          cnt += add_val(itr.name(), n_child, vals);
+        }
+      }
+      break;
+    case TypeID::INT8_ID:
+    case TypeID::INT16_ID:
+    case TypeID::INT32_ID:
+    case TypeID::INT64_ID:
+    case TypeID::UINT8_ID:
+    case TypeID::UINT16_ID:
+    case TypeID::UINT32_ID:
+    case TypeID::UINT64_ID:
+    case TypeID::FLOAT32_ID:
+    case TypeID::FLOAT64_ID:
+      cnt = 1u;
+      //std::cout << "N " << n.path() << ": " << static_cast<S>(n.to_value()) << std::endl;
+      vals.push_back(static_cast<S>(n.to_value()));
+      break;
+    case TypeID::CHAR8_STR_ID: {
+        // In case of a charater string, the method to convert it to a float number is specific to each key
+        if (check_non_numeric(key)) {
+          return 0u;
+        //} else if (key == "some_key_with_non_numeric_values_that_can_be_converted_to_numerics_in_a_specific_way") {
+        } else {
+          const char* c_str = n.as_char8_str();
+          // make sure that the std::string does not contain null character
+          const std::string str
+            = ((c_str == nullptr)? std::string() : std::string(c_str, n.dtype().number_of_elements())).c_str();
+
+          cnt = 1u;
+          const S v = static_cast<S>(atof(str.c_str()));
+          vals.push_back(v);
+          //std::cout << "S " << n.path() << ": " << str << " => " << vals.back() << std::endl;
+        }
+      }
+      break;
+    case TypeID::EMPTY_ID:
+    default:
+      std::string err = std::string("data_reader_jag_conduit::add_val() : invalid dtype (")
+                      + n.dtype().name() + ") for " + n.path() + '.';
+     #if 1
+      std::cerr << err << " Skipping for now." << std::endl;
+     #else
+      throw lbann_exception(err);
+     #endif
+  }
+  return cnt;
+}
 
 } // end of namespace lbann
 #endif // LBANN_HAS_CONDUIT

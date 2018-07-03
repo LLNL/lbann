@@ -28,56 +28,128 @@
 
 namespace lbann {
 
-/** CPU implementation of forward prop computation. */
+// Model-parallel CPU forward/backward prop
 template <>
 void tanh_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::fp_compute() {
   entrywise_activation_layer::fp_compute_cpu();
 }
-
-/** CPU implementation of forward prop computation. */
-template <>
-void tanh_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_compute() {
-  entrywise_activation_layer::fp_compute_cpu();
-}
-
-#ifdef LBANN_HAS_GPU
-/** GPU implementation of forward prop computation. */
-template <>
-void tanh_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
-  fp_compute_gpu();
-}
-
-/** GPU implementation of forward prop computation. */
-template <>
-void tanh_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
-  fp_compute_gpu();
-}
-#endif // LBANN_HAS_GPU
-
-/** CPU implementation of backward prop computation. */
 template <>
 void tanh_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_compute() {
   entrywise_activation_layer::bp_compute_cpu();
 }
 
-/** CPU implementation of backward prop computation. */
+// Data-parallel CPU forward/backward prop
+template <>
+void tanh_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_compute() {
+  entrywise_activation_layer::fp_compute_cpu();
+}
 template <>
 void tanh_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
   entrywise_activation_layer::bp_compute_cpu();
 }
 
 #ifdef LBANN_HAS_GPU
-/** GPU implementation of backward prop computation. */
+
+// Model-parallel GPU forward/backward prop
+template <>
+void tanh_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
+#ifndef LBANN_HAS_CUDNN
+  LBANN_ERROR("cuDNN not detected");
+#else
+  const DataType zero = DataType(0);
+  const DataType one = DataType(1);
+  const auto& local_input = get_local_prev_activations();
+  auto& local_output = get_local_activations();
+  if (local_input.Height() > 0 && local_input.Width() > 0) {
+    CHECK_CUDNN(cudnnActivationForward(cudnn::get_handle(),
+                                       m_activation_cudnn_desc,
+                                       &one,
+                                       m_tensors_cudnn_desc.get_prev_activations(),
+                                       local_input.LockedBuffer(),
+                                       &zero,
+                                       m_tensors_cudnn_desc.get_activations(),
+                                       local_output.Buffer()));
+  }
+#endif // LBANN_HAS_CUDNN
+}
 template <>
 void tanh_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
-  bp_compute_gpu();
+#ifndef LBANN_HAS_CUDNN
+  LBANN_ERROR("cuDNN not detected");
+#else
+  const DataType zero = DataType(0);
+  const DataType one = DataType(1);
+  const auto& local_input = get_local_prev_activations();
+  const auto& local_output = get_local_activations();
+  const auto& local_gradient_wrt_output = get_local_prev_error_signals();
+  auto& local_gradient_wrt_input = get_local_error_signals();
+  if (local_input.Height() > 0 && local_input.Width() > 0) {
+    CHECK_CUDNN(cudnnActivationBackward(cudnn::get_handle(),
+                                        m_activation_cudnn_desc,
+                                        &one,
+                                        m_tensors_cudnn_desc.get_activations(),
+                                        local_output.LockedBuffer(),
+                                        m_tensors_cudnn_desc.get_prev_error_signals(),
+                                        local_gradient_wrt_output.LockedBuffer(),
+                                        m_tensors_cudnn_desc.get_prev_activations(),
+                                        local_input.LockedBuffer(),
+                                        &zero,
+                                        m_tensors_cudnn_desc.get_error_signals(),
+                                        local_gradient_wrt_input.Buffer()));
+  }
+#endif // LBANN_HAS_CUDNN
 }
 
-/** GPU implementation of backward prop computation. */
+// Data-parallel GPU forward/backward prop
+template <>
+void tanh_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
+#ifndef LBANN_HAS_CUDNN
+  LBANN_ERROR("cuDNN not detected");
+#else
+  const DataType zero = DataType(0);
+  const DataType one = DataType(1);
+  const auto& local_input = get_local_prev_activations();
+  auto& local_output = get_local_activations();
+  if (local_input.Height() > 0 && local_input.Width() > 0) {
+    CHECK_CUDNN(cudnnActivationForward(cudnn::get_handle(),
+                                       m_activation_cudnn_desc,
+                                       &one,
+                                       m_tensors_cudnn_desc.get_prev_activations(),
+                                       local_input.LockedBuffer(),
+                                       &zero,
+                                       m_tensors_cudnn_desc.get_activations(),
+                                       local_output.Buffer()));
+  }
+#endif // LBANN_HAS_CUDNN
+}
 template <>
 void tanh_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
-  bp_compute_gpu();
+#ifndef LBANN_HAS_CUDNN
+  LBANN_ERROR("cuDNN not detected");
+#else
+  const DataType zero = DataType(0);
+  const DataType one = DataType(1);
+  const auto& local_input = get_local_prev_activations();
+  const auto& local_output = get_local_activations();
+  const auto& local_gradient_wrt_output = get_local_prev_error_signals();
+  auto& local_gradient_wrt_input = get_local_error_signals();
+  if (local_input.Height() > 0 && local_input.Width() > 0) {
+    CHECK_CUDNN(cudnnActivationBackward(cudnn::get_handle(),
+                                        m_activation_cudnn_desc,
+                                        &one,
+                                        m_tensors_cudnn_desc.get_activations(),
+                                        local_output.LockedBuffer(),
+                                        m_tensors_cudnn_desc.get_prev_error_signals(),
+                                        local_gradient_wrt_output.LockedBuffer(),
+                                        m_tensors_cudnn_desc.get_prev_activations(),
+                                        local_input.LockedBuffer(),
+                                        &zero,
+                                        m_tensors_cudnn_desc.get_error_signals(),
+                                        local_gradient_wrt_input.Buffer()));
+  }
+#endif // LBANN_HAS_CUDNN
 }
+
 #endif // LBANN_HAS_GPU
 
 } // namespace lbann

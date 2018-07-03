@@ -50,7 +50,7 @@ class adagrad : public optimizer {
   adagrad* copy() const override { return new adagrad(*this); }
 
   /** Get the optimizer name. */
-  std::string get_type() const override { return "adagrad"; }
+  std::string get_type() const override { return "Adagrad"; }
   /** Get a human-readable description of the optimizer. */
   std::string get_description() const override;
 
@@ -60,6 +60,10 @@ class adagrad : public optimizer {
 
   /** Perform the computation in an optimization step. */
   void step_compute(AbsDistMat& values, const AbsDistMat& gradient) override;
+#ifdef LBANN_HAS_CUDNN
+  /** Perform the computation in an optimization step on GPU. */
+  void step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) override;
+#endif // LBANN_HAS_CUDNN
 
   /// Set parameters to optimize and initialize optimizer
   void setup(AbsDistMat *parameters) ;

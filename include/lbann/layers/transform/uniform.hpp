@@ -48,8 +48,7 @@ class uniform_layer : public transform_layer {
   uniform_layer(lbann_comm *comm,
                  const std::vector<int>& neuron_dims,
                  DataType min = DataType(0),
-                 DataType max = DataType(1),
-                 cudnn::cudnn_manager *cudnn = nullptr)
+                 DataType max = DataType(1))
     : transform_layer(comm), m_min(min), m_max(max) {
 
     // Record neuron dimensions
@@ -102,8 +101,6 @@ class uniform_layer : public transform_layer {
       El::Fill(output, mean);
     }
   }
-
-  void bp_compute() override {}
 
 };
 

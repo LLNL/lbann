@@ -71,11 +71,6 @@ class l2_weight_regularization : public objective_function_term {
   /** Whether local contribution aggregation has started. */
   bool m_allreduce_started;
 
-#ifdef LBANN_HAS_CUDNN
-  /** Reference to cuDNN manager. */
-  cudnn::cudnn_manager* m_cudnn;
-#endif // LBANN_HAS_CUDNN
-
 };
 
 } // namespace lbann

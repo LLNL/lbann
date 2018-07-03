@@ -15,6 +15,9 @@ class Layer :
       if line.find('{') != -1 :
         t = line.split()
         self._type = t[0]
+        j = self._type.find('{')
+        if j != -1 :
+          self._type = self._type[:j]
     for line in self._layer :
       if line.find('parents:') != -1 :
         t = line.replace('"', '')

@@ -631,7 +631,7 @@ bool data_reader_jag::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
   std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
   bool ok = true;
   for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
-    ok = fetch(X_v[i], data_id, mb_idx, tid, m_independent[i], "datum");
+    ok = fetch(X_v[i], data_id, 0, tid, m_independent[i], "datum");
   }
   return ok;
 }
@@ -641,7 +641,7 @@ bool data_reader_jag::fetch_response(CPUMat& X, int data_id, int mb_idx, int tid
   std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
   bool ok = true;
   for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
-    ok = fetch(X_v[i], data_id, mb_idx, tid, m_dependent[i], "response");
+    ok = fetch(X_v[i], data_id, 0, tid, m_dependent[i], "response");
   }
   return ok;
 }
