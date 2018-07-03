@@ -61,32 +61,34 @@ struct entry_compare : thrust::binary_function<entry,entry,bool> {
   }
 };
 
-/** Initialize sparse vector from local input data. */
-__global__ void initialize_entries(El::Int k,
-                                   El::Int num_entries,
-                                   El::Int local_height,
-                                   El::Int local_width,
-                                   El::Int col_shift,
-                                   El::Int col_stride,
-                                   const DataType* __restrict__ local_input,
-                                   El::Int local_input_ldim,
-                                   entry*  __restrict__ entries,
-                                   El::Int* __restrict__ cols) {
+/** Initialize sparse vector entries from local input data.
+ *  Each column of the input matrix is converted into a sparse
+ *  vector.
+ */
+__global__ void initialize_local_entries(El::Int num_local_entries,
+                                         El::Int local_height,
+                                         El::Int local_width,
+                                         El::Int col_shift,
+                                         El::Int col_stride,
+                                         const DataType* __restrict__ local_input,
+                                         El::Int local_input_ldim,
+                                         entry*  __restrict__ local_entries,
+                                         El::Int* __restrict__ local_entry_cols) {
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int num_threads = blockDim.x * gridDim.x;
-  const El::Int num_entries_per_col = num_entries / local_width;
-  for (El::Int i = gid; i < num_entries; i += num_threads) {
-    const auto& row = i % num_entries_per_col;
-    const auto& col = i / num_entries_per_col;
+  const El::Int num_local_entries_per_col = num_local_entries / local_width;
+  for (El::Int i = gid; i < num_local_entries; i += num_threads) {
+    const auto& row = i % num_local_entries_per_col;
+    const auto& col = i / num_local_entries_per_col;
     if (row < local_height) {
       const auto& global_row = col_shift + row * col_stride;
-      entries[i].value = local_input[row + col * local_input_ldim];
-      entries[i].index = global_row;
+      local_entries[i].value = local_input[row + col * local_input_ldim];
+      local_entries[i].index = global_row;
     } else {
-      entries[i].value = entry::min_value;
-      entries[i].index = entry::max_index;
+      local_entries[i].value = entry::min_value;
+      local_entries[i].index = entry::max_index;
     }
-    cols[i] = col;
+    local_entry_cols[i] = col;
   }  
 }
 
@@ -95,8 +97,8 @@ __global__ void initialize_entries(El::Int k,
  *  corresponding entry in a packed tensor.
  */
 __global__ void fill_tensor_indices(El::Int tensor_size,
-                                    El::Int dim_stride,
                                     El::Int dim_max,
+                                    El::Int dim_stride,
                                     El::Int* indices) {
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int num_threads = blockDim.x * gridDim.x;
@@ -106,23 +108,25 @@ __global__ void fill_tensor_indices(El::Int tensor_size,
 }
 
 /** Set selected entries in local output data to one. */
-__global__ void indicate_entries(El::Int k,
-                                 El::Int num_entries,
-                                 El::Int height,
-                                 El::Int local_height,
-                                 El::Int local_width,
-                                 El::Int col_rank,
-                                 El::Int col_align,
-                                 El::Int col_shift,
-                                 El::Int col_stride,
-                                 DataType* __restrict__ local_output,
-                                 El::Int local_output_ldim,
-                                 const entry*  __restrict__ entries) {
+__global__ void indicate_local_entries(El::Int k,
+                                       El::Int num_entries,
+                                       El::Int height,
+                                       El::Int local_height,
+                                       El::Int local_width,
+                                       El::Int col_rank,
+                                       El::Int col_align,
+                                       El::Int col_shift,
+                                       El::Int col_stride,
+                                       DataType* __restrict__ local_output,
+                                       El::Int local_output_ldim,
+                                       const entry*  __restrict__ entries,
+                                       El::Int entries_ldim) {
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int num_threads = blockDim.x * gridDim.x;
   for (El::Int i = gid; i < num_entries; i += num_threads) {
+    const auto& ind = i % k;
     const auto& col = i / k;
-    const auto& global_row = entries[i].index;
+    const auto& global_row = entries[ind + col * entries_ldim].index;
     const auto& row_owner = (global_row + col_align) % col_stride;
     if (global_row < height && row_owner == col_rank) {
       const auto& row = (global_row > col_shift ?
@@ -141,15 +145,6 @@ void fp_gpu(lbann_comm& comm,
                 "distributed matrices");
   }
 
-  // Trivial cases
-  if (k < 1) {
-    El::Zero(output);
-    return;
-  } else if (k >= input.Height()) {
-    El::Fill(output, DataType(1));
-    return;
-  }
-  
   // Local matrices
   const auto& local_input = input.LockedMatrix();
   auto& local_output = output.Matrix();
@@ -157,7 +152,23 @@ void fp_gpu(lbann_comm& comm,
   const El::Int local_height = local_input.Height();
   const El::Int local_width = local_input.Width();
 
-  // Initialize GPU objects
+  // Trivial cases
+  if (k < 1) {
+    El::Zero(output);
+    return;
+  } else if (k >= height) {
+    El::Fill(output, DataType(1));
+    return;
+  } else if (local_width < 1) {
+    return;
+  }
+  
+  // Column communicator
+  auto&& col_comm = input.ColComm();
+  const auto& col_comm_rank = El::mpi::Rank(col_comm);
+  const auto& col_comm_size = El::mpi::Size(col_comm);
+
+  // GPU objects
   using entry_array = El::Memory<entry, El::Device::GPU>;
   using entry_ptr = thrust::device_ptr<entry>;
   using index_array = El::Memory<El::Int, El::Device::GPU>;
@@ -167,35 +178,37 @@ void fp_gpu(lbann_comm& comm,
 #else
   const unsigned int memory_mode = 0;
 #endif // HYDROGEN_HAVE_CUB
-  auto stream = El::GPUManager::Stream();
+  auto&& stream = El::GPUManager::Stream();
+  entry_array top_entries(col_comm_size * local_width * k, memory_mode);
+  auto* local_top_entries = (top_entries.Buffer()
+                             + col_comm_rank * local_width * k);
 
   // Find top-k entries in each local matrix column
-  entry_array top_k_entries(k * local_width, memory_mode);
   {
-    const auto& num_entries_per_col = std::max(local_height, k);
-    const auto& num_entries = num_entries_per_col * local_width;
-    entry_array entries(num_entries, memory_mode);
-    index_array cols(num_entries, memory_mode);
+    const auto& num_local_entries_per_col = std::max(local_height, k);
+    const auto& num_local_entries = local_width * num_local_entries_per_col;
     const auto& block_dim = 256;
-    const auto& grid_dim = (num_entries + block_dim - 1) / block_dim;
-    initialize_entries<<<grid_dim, block_dim, 0, stream>>>(
-      k, num_entries, local_height, local_width,
+    const auto& grid_dim = (num_local_entries + block_dim - 1) / block_dim;
+    entry_array local_entries(num_local_entries, memory_mode);
+    index_array local_entry_cols(num_local_entries, memory_mode);
+    initialize_local_entries<<<grid_dim, block_dim, 0, stream>>>(
+      num_local_entries, local_height, local_width,
       input.ColShift(), input.ColStride(),
       local_input.LockedBuffer(), local_input.LDim(),
-      entries.Buffer(), cols.Buffer());
+      local_entries.Buffer(), local_entry_cols.Buffer());
     thrust::sort_by_key(thrust::cuda::par.on(stream),
-                        entry_ptr(entries.Buffer()),
-                        entry_ptr(entries.Buffer() + num_entries),
-                        index_ptr(cols.Buffer()),
+                        entry_ptr(local_entries.Buffer()),
+                        entry_ptr(local_entries.Buffer() + num_local_entries),
+                        index_ptr(local_entry_cols.Buffer()),
                         entry_compare());
     thrust::stable_sort_by_key(thrust::cuda::par.on(stream),
-                               index_ptr(cols.Buffer()),
-                               index_ptr(cols.Buffer() + num_entries),
-                               entry_ptr(entries.Buffer()));
-    CHECK_CUDA(cudaMemcpy2DAsync(top_k_entries.Buffer(),
+                               index_ptr(local_entry_cols.Buffer()),
+                               index_ptr(local_entry_cols.Buffer() + num_local_entries),
+                               entry_ptr(local_entries.Buffer()));
+    CHECK_CUDA(cudaMemcpy2DAsync(local_top_entries,
                                  k * sizeof(entry),
-                                 entries.Buffer(),
-                                 num_entries_per_col * sizeof(entry),
+                                 local_entries.Buffer(),
+                                 num_local_entries_per_col * sizeof(entry),
                                  k * sizeof(entry),
                                  local_width,
                                  cudaMemcpyDeviceToDevice,
@@ -203,55 +216,42 @@ void fp_gpu(lbann_comm& comm,
   }
 
   // Find top-k entries in each global matrix column
-  // Note: Nothing needs to be done if matrix columns are not
-  // distributed.
-  auto&& col_comm = input.ColComm();
-  const El::Int col_comm_size = El::mpi::Size(col_comm);
   if (col_comm_size > 1) {
-    const auto& num_entries_per_rank = k * local_width;
-    const auto& num_entries = num_entries_per_rank * col_comm_size;
-    entry_array entries(num_entries, memory_mode);
-    index_array cols(num_entries, memory_mode);
-    comm.all_gather(reinterpret_cast<El::byte*>(top_k_entries.Buffer()),
-                    num_entries_per_rank * sizeof(entry) / sizeof(El::byte),
-                    reinterpret_cast<El::byte*>(entries.Buffer()),
-                    num_entries_per_rank * sizeof(entry) / sizeof(El::byte),
-                    col_comm);
+    const auto& num_entries_per_rank = local_width * k;
+    const auto& num_entries = col_comm_size * num_entries_per_rank;
     const auto& block_dim = 256;
     const auto& grid_dim = (num_entries + block_dim - 1) / block_dim;
+    comm.all_gather(reinterpret_cast<El::byte*>(MPI_IN_PLACE),
+                    num_entries_per_rank * sizeof(entry),
+                    reinterpret_cast<El::byte*>(top_entries.Buffer()),
+                    num_entries_per_rank * sizeof(entry),
+                    col_comm);
+    index_array top_entry_cols(num_entries, memory_mode);
     fill_tensor_indices<<<grid_dim, block_dim, 0, stream>>>(
-      num_entries, k, local_width, cols.Buffer());
+      num_entries, local_width, k, top_entry_cols.Buffer());
     thrust::sort_by_key(thrust::cuda::par.on(stream),
-                        entry_ptr(entries.Buffer()),
-                        entry_ptr(entries.Buffer() + num_entries),
-                        index_ptr(cols.Buffer()),
+                        entry_ptr(top_entries.Buffer()),
+                        entry_ptr(top_entries.Buffer() + num_entries),
+                        index_ptr(top_entry_cols.Buffer()),
                         entry_compare());
     thrust::stable_sort_by_key(thrust::cuda::par.on(stream),
-                               index_ptr(cols.Buffer()),
-                               index_ptr(cols.Buffer() + num_entries),
-                               entry_ptr(entries.Buffer()));
-    CHECK_CUDA(cudaMemcpy2DAsync(top_k_entries.Buffer(),
-                                 k * sizeof(entry),
-                                 entries.Buffer(),
-                                 k * col_comm_size * sizeof(entry),
-                                 k * sizeof(entry),
-                                 local_width,
-                                 cudaMemcpyDeviceToDevice,
-                                 stream));
+                               index_ptr(top_entry_cols.Buffer()),
+                               index_ptr(top_entry_cols.Buffer() + num_entries),
+                               entry_ptr(top_entries.Buffer()));
   }
 
   // Indicate output entries corresponding to top-k input entries
   El::Zero(output);
   if (output.Participating() && local_height > 0 && local_width > 0) {
-    const auto& num_entries = k * local_width;
+    const auto& num_entries = local_width * k;
     const auto& block_dim = 256;
     const auto& grid_dim = (num_entries + block_dim - 1) / block_dim;
-    indicate_entries<<<grid_dim, block_dim, 0, stream>>>(
+    indicate_local_entries<<<grid_dim, block_dim, 0, stream>>>(
       k, num_entries, height, local_height, local_width,
       output.ColRank(), output.ColAlign(),
       output.ColShift(), output.ColStride(),
       local_output.Buffer(), local_output.LDim(),
-      top_k_entries.Buffer());
+      top_entries.Buffer(), col_comm_size * k);
   }
 
 }
