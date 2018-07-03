@@ -427,8 +427,8 @@ message Callback {
    CallbackSaveModel save_model = 29;
    CallbackPolyLearningRate poly_learning_rate = 30;
    CallbackReplaceWeights replace_weights = 31;
-   CallbackGPUMemoryUsage gpu_memory_usage = 31;
-   CallbackSyncLayers sync_layers = 32;
+   CallbackGPUMemoryUsage gpu_memory_usage = 32;
+   CallbackSyncLayers sync_layers = 33;
 }
 
 message CallbackLTFB {
