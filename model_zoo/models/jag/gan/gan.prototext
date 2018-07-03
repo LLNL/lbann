@@ -441,7 +441,7 @@ model {
   callback {
     ltfb {
       round_size: 10 
-      metric_mode: "decreasing"
+      increasing_metric_mode: false
       eval_metrics: "l_l2_y_eval"
       #weights_tosend: "gen1fc1linearity gen1fc1bias gen1fc2linearity gen1fc2bias gen1fc3linearity gen1fc3bias gen1fc4linearity gen1fc4bias" 
       weights_tosend: "gen1fc1_linearity_weights gen1fc1_bias_weights gen1fc2_linearity_weights gen1fc2_bias_weights gen1fc3_linearity_weights gen1fc3_bias_weights gen1fc4_linearity_weights gen1fc4_bias_weights" 
