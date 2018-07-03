@@ -498,6 +498,7 @@ class lbann_comm {
   /** Scalar-array reduce (for root processes). */
   template <typename T>
   void reduce(T *snd, int count, T *rcv, const El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
+    if (snd == rcv) { snd = MPI_IN_PLACE; }
     El::mpi::Reduce(snd, rcv, count, op, El::mpi::Rank(c), c);
     bytes_received += sizeof(T) * count * (El::mpi::Size(c) - 1);
   }

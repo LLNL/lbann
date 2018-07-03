@@ -67,6 +67,7 @@
 
 /// Loss Layers
 #include "lbann/layers/loss/cross_entropy.hpp"
+#include "lbann/layers/loss/top_k_categorical_accuracy.hpp"
 
 /// Transform Layers
 #include "lbann/layers/transform/reshape.hpp"

@@ -326,24 +326,11 @@ model {
   }
 
   layer {
-    name: "top1_prob"
-    parents: "prob"
-    data_layout: "model_parallel"
-    in_top_k { k: 1 }
-  }
-  layer {
-    name: "top1_correct"
-    parents: "top1_prob labels"
-    data_layout: "model_parallel"
-    hadamard {}
-  }
-  layer {
     name: "top1_accuracy"
-    parents: "top1_correct"
-    data_layout: "data_parallel"
-    reduction {
-      mode: "sum"
-    }
+    parents: "prob labels"
+    data_layout: "model_parallel"
+    device_allocation: "cpu"
+    top_k_categorical_accuracy { k: 1 }
   }
   layer {
     name: "top1_accuracy_eval"
@@ -353,24 +340,11 @@ model {
   }
 
   layer {
-    name: "top5_prob"
-    parents: "prob"
-    data_layout: "model_parallel"
-    in_top_k { k: 5 }
-  }
-  layer {
-    name: "top5_correct"
-    parents: "top5_prob labels"
-    data_layout: "model_parallel"
-    hadamard {}
-  }
-  layer {
     name: "top5_accuracy"
-    parents: "top5_correct"
-    data_layout: "data_parallel"
-    reduction {
-      mode: "sum"
-    }
+    parents: "prob labels"
+    data_layout: "model_parallel"
+    device_allocation: "cpu"
+    top_k_categorical_accuracy { k: 5 }
   }
   layer {
     name: "top5_accuracy_eval"

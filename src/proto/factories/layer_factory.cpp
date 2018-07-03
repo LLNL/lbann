@@ -427,6 +427,10 @@ Layer* construct_layer(lbann_comm* comm,
   if (proto_layer.has_cross_entropy()) {
     return new cross_entropy_layer<layout, Dev>(comm);
   }
+  if (proto_layer.has_top_k_categorical_accuracy()) {
+    const auto& params = proto_layer.top_k_categorical_accuracy();
+    return new top_k_categorical_accuracy_layer<layout, Dev>(comm, params.k());
+  }
 
   if (proto_layer.has_bce_with_logits()) {
     const auto& params = proto_layer.bce_with_logits();

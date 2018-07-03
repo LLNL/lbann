@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/layers/transform/in_top_k.hpp"
+#include "lbann/layers/loss/top_k_categorical_accuracy.hpp"
 #include "lbann/utils/cuda.hpp"
 #include "lbann/utils/exception.hpp"
 
@@ -137,11 +137,11 @@ __global__ void indicate_local_entries(El::Int k,
   }  
 }
 
-/** GPU implementation of in_top_k layer forward prop. */
+/** GPU implementation of top-k categorical accuracy layer forward prop. */
 void fp_gpu(lbann_comm& comm,
             El::Int k, const AbsDistMat& input, AbsDistMat& output) {
   if (input.Wrap() != El::ELEMENT || output.Wrap() != El::ELEMENT) {
-    LBANN_ERROR("in_top_k layer GPU implementation assumes elemental "
+    LBANN_ERROR("top-k categorical accuracy layer GPU implementation assumes elemental "
                 "distributed matrices");
   }
 
@@ -259,14 +259,14 @@ void fp_gpu(lbann_comm& comm,
 } // namespace
 
 template <>
-void in_top_k_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
+void top_k_categorical_accuracy_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
      ::fp_compute() {
-  fp_gpu(*get_comm(), m_k, get_prev_activations(), get_activations());
+  LBANN_ERROR("not yet implemented");
 }
 template <>
-void in_top_k_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
+void top_k_categorical_accuracy_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
      ::fp_compute() {
-  fp_gpu(*get_comm(), m_k, get_prev_activations(), get_activations());
+  LBANN_ERROR("not yet implemented");
 }
 
 } // namespace lbann
