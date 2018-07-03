@@ -58,6 +58,8 @@ class data_store_image : public generic_data_store {
 
   void setup() override;
 
+  using generic_data_store::get_data_buf;
+
   /// data readers call this method
   void get_data_buf(int data_id, std::vector<unsigned char> *&buf, int multi_idx = 0) override;
 
