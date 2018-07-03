@@ -433,7 +433,7 @@ message Callback {
 
 message CallbackLTFB {
   int64 round_size = 1; 
-  string metric_mode = 2; //Expectation for a good tournament metric: increasing/descreasing 
+  bool increasing_metric_mode = 2; //Expectation for a good tournament metric: increasing (true) is default 
   string eval_metrics = 3; //eval metrics to use for tournament, at least 1 metric has to be provided
   string weights_tosend = 4; //list of weights to transfer between model, default is all weights (classic LTFB)
 }

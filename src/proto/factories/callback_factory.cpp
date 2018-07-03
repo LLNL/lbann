@@ -96,8 +96,8 @@ lbann_callback* construct_callback(lbann_comm* comm,
     std::unordered_set<std::string> metric_names(m.begin(), m.end());
     std::unordered_set<std::string> weight_names(w.begin(), w.end());
     return new lbann_callback_ltfb(proto_cb.ltfb().round_size(),
-                                   proto_cb.ltfb().metric_mode(),
                                    metric_names,
+                                   proto_cb.ltfb().increasing_metric_mode(),
                                    weight_names,
                                    summarizer);
   }  

@@ -117,22 +117,24 @@ EvalType evaluate(model *m, std::unordered_set<std::string>& eval_metrics) {
 
 } // namespace
 
-lbann_callback_ltfb::lbann_callback_ltfb(int round_size,std::string metric_mode, 
+lbann_callback_ltfb::lbann_callback_ltfb(int round_size, 
                                          std::unordered_set<std::string> eval_metrics,
+                                         bool increasing_metric_mode,
                                          std::unordered_set<std::string> weights_tosend, 
                                          lbann_summary *summarizer)
-  : lbann_callback(1, summarizer), m_round_size(round_size),m_metric_mode(metric_mode), 
+  : lbann_callback(1, summarizer), m_round_size(round_size), 
                    m_eval_metrics(std::move(eval_metrics)),
+                   m_increasing_metric_mode(increasing_metric_mode),
                    m_weights_tosend(std::move(weights_tosend)){}
 
 lbann_callback_ltfb::lbann_callback_ltfb(const lbann_callback_ltfb& other) :
   lbann_callback(other),
   m_comm(other.m_comm),
   m_round_size(other.m_round_size),
-  m_metric_mode(other.m_metric_mode),
-  m_local_weights(other.m_local_weights),
   m_eval_metrics(other.m_eval_metrics),
-  m_weights_tosend(other.m_weights_tosend) {
+  m_increasing_metric_mode(other.m_increasing_metric_mode),
+  m_weights_tosend(other.m_weights_tosend),
+  m_local_weights(other.m_local_weights) {
   for (auto& w : m_local_weights) { w = w->copy(); }
 }
 
@@ -141,8 +143,8 @@ lbann_callback_ltfb& lbann_callback_ltfb::operator=(const lbann_callback_ltfb& o
   // Shallow copies
   m_comm = other.m_comm;
   m_round_size = other.m_round_size;
-  m_metric_mode = other.m_metric_mode; 
   m_eval_metrics = other.m_eval_metrics;
+  m_increasing_metric_mode = other.m_increasing_metric_mode; 
   m_weights_tosend = other.m_weights_tosend;
 
   // Deep copy
@@ -158,8 +160,6 @@ lbann_callback_ltfb::~lbann_callback_ltfb() {
 }
 
 void lbann_callback_ltfb::setup(model *m) {
-  if(!(m_metric_mode == "increasing" || m_metric_mode == "decreasing"))
-    LBANN_ERROR("Metric mode has to be either increasing or decreasing");
   
   if(m_eval_metrics.size() < 1)
     LBANN_ERROR("LTFB: specify at least one evaluation metric for tournament voting."); 
@@ -216,8 +216,8 @@ void lbann_callback_ltfb::on_batch_begin(model *m) {
   const auto& remote_score = evaluate(m, m_eval_metrics);
 
   // Restore local weights if they achieve a better score
-  if((m_metric_mode == "increasing" && remote_score <= local_score) ||
-      (m_metric_mode == "decreasing" && remote_score >= local_score)) {
+  if((m_increasing_metric_mode && remote_score <= local_score) ||
+      (!m_increasing_metric_mode  && remote_score >= local_score)) {
     for (size_t i = 0; i < model_weights.size(); ++i) {
       *model_weights[i] = *m_local_weights[i];
     }
