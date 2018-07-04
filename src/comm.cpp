@@ -63,13 +63,6 @@ lbann_comm::lbann_comm(int ppm, const El::mpi::Comm world) :
   int argc_dummy = 0;
   char** argv_dummy = nullptr;
   ::Al::Initialize(argc_dummy, argv_dummy);
-#ifdef AL_HAS_NCCL
-  for (int i = 0; i < m_num_al_nccl_streams; ++i) {
-    CHECK_CUDA(cudaStreamCreate(&m_al_nccl_streams[i]));
-  }
-  CHECK_CUDA(cudaEventCreateWithFlags(&m_al_nccl_sync_event,
-                                      cudaEventDisableTiming));
-#endif
 #endif
   // Set up the initial model split
   split_models(procs_per_model);
@@ -95,15 +88,6 @@ lbann_comm::~lbann_comm() {
   }
 #ifdef LBANN_HAS_ALUMINUM
   m_al_comms.clear();
-#ifdef AL_HAS_NCCL
-  for (int i = 0; i < m_num_al_nccl_streams; ++i) {
-    CHECK_CUDA(cudaStreamDestroy(m_al_nccl_streams[i]));
-  }
-  CHECK_CUDA(cudaEventDestroy(m_al_nccl_sync_event));
-  for (auto&& e : m_al_nccl_req_events) {
-    CHECK_CUDA(cudaEventDestroy(e));
-  }
-#endif
   ::Al::Finalize();
 #endif
 }
@@ -192,7 +176,6 @@ void lbann_comm::allreduce(AbsDistMat& m,
   /// @todo MPI-CUDA backend
 #ifdef AL_HAS_NCCL
   if (t == std::type_index(typeid(::Al::NCCLBackend))) {
-    El::GPUManager::SynchronizeStream();
     ::Al::Allreduce<::Al::NCCLBackend>(
       m.Buffer(),
       local_size,
@@ -244,33 +227,12 @@ void lbann_comm::nb_allreduce(AbsDistMat& m,
   /// @todo MPI-CUDA backend
 #ifdef AL_HAS_NCCL
   if (t == std::type_index(typeid(::Al::NCCLBackend))) {
-    cudaStream_t stream = m_al_nccl_streams[m_al_cur_nccl_req % m_num_al_nccl_streams];
-    ++m_al_cur_nccl_req;
-    // Use an event to synchronize the selected NCCL stream and LBANN's stream.
-    // Note that cudaStreamWaitEvent uses the event state when it is called, so
-    // the event can be overwritten safely.
-    CHECK_CUDA(cudaEventRecord(m_al_nccl_sync_event, El::GPUManager::Stream()));
-    CHECK_CUDA(cudaStreamWaitEvent(stream, m_al_nccl_sync_event, 0));
-    // Enqueue the allreduce in the NCCL stream.
     ::Al::NonblockingAllreduce<::Al::NCCLBackend>(
       m.Buffer(),
       local_size,
       mpi_op_to_al_op(op),
       *static_cast<::Al::NCCLCommunicator*>(comm),
-      stream);
-    // Use a separate event as the request object to synchronize on.
-    // This avoids having to wait for all work in the stream to complete.
-    // Grab a spare event if one is available, otherwise create one.
-    cudaEvent_t req_event;
-    if (m_al_nccl_req_events.empty()) {
-      CHECK_CUDA(cudaEventCreateWithFlags(&req_event,
-                                          cudaEventDisableTiming));
-    } else {
-      req_event = m_al_nccl_req_events.back();
-      m_al_nccl_req_events.pop_back();
-    }
-    CHECK_CUDA(cudaEventRecord(req_event, stream));
-    req.nccl_req = req_event;
+      req.nccl_req);
   }
 #endif // AL_HAS_NCCL
   bytes_received += sizeof(DataType) * local_size * (El::mpi::Size(c) - 1);
@@ -287,9 +249,8 @@ void lbann_comm::wait(Al::request& req) {
   /// @todo MPI-CUDA backend
 #ifdef AL_HAS_NCCL
   if (req.nccl_req != Al::nccl_null_req) {
-    CHECK_CUDA(cudaEventSynchronize(req.nccl_req));
-    // Reuse the event.
-    m_al_nccl_req_events.push_back(req.nccl_req);
+    // Note this does not block the host.
+    ::Al::Wait<::Al::NCCLBackend>(req.nccl_req);
   }
 #endif // AL_HAS_NCCL
 #endif // LBANN_HAS_ALUMINUM
@@ -304,10 +265,7 @@ bool lbann_comm::test(Al::request& req) {
   /// @todo MPI-CUDA backend
 #ifdef AL_HAS_NCCL
   if (req.nccl_req != Al::nccl_null_req) {
-    req_test = req_test && (cudaEventQuery(req.nccl_req) == cudaSuccess);
-    if (req_test) {
-      m_al_nccl_req_events.push_back(req.nccl_req);
-    }
+    req_test = req_test && ::Al::Test<::Al::NCCLBackend>(req.nccl_req);
   }
 #endif // AL_HAS_NCCL
 #endif // LBANN_HAS_ALUMINUM
@@ -1178,7 +1136,7 @@ uint8_t *lbann_comm::get_collective_buffer(size_t size, size_t idx) {
     /// @todo MPI-CUDA backend
     #ifdef AL_HAS_NCCL
     if (t == std::type_index(typeid(::Al::NCCLBackend))) {
-      auto&& val = new ::Al::NCCLCommunicator(c.comm);
+      auto&& val = new ::Al::NCCLCommunicator(c.comm, El::GPUManager::Stream());
       m_al_comms[key] = al_comms_val_type(val);
     }
     #endif // AL_HAS_NCCL
