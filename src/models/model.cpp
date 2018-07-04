@@ -781,29 +781,37 @@ bool model::train_mini_batch() {
   reset_mode_and_model(execution_mode::training);
   do_batch_begin_cbs(execution_mode::training);
 
-  // Forward prop step
-  clear_gradients();
-  forward_prop(execution_mode::training);
-  // Result is not needed until the end of the mini-batch.
-  m_objective_function->start_evaluation(execution_mode::training,
-                                         get_current_mini_batch_size());
-  for (const auto& m : m_metrics) {
-    m->evaluate(execution_mode::training,
-                get_current_mini_batch_size());
+  bool finished;
+
+  #pragma omp parallel
+  {
+    #pragma omp single
+    {
+      // Forward prop step
+      clear_gradients();
+      forward_prop(execution_mode::training);
+      // Result is not needed until the end of the mini-batch.
+      m_objective_function->start_evaluation(execution_mode::training,
+                                             get_current_mini_batch_size());
+      for (const auto& m : m_metrics) {
+        m->evaluate(execution_mode::training,
+                    get_current_mini_batch_size());
+      }
+
+      // Backward prop step
+      m_objective_function->differentiate();
+      backward_prop();
+      m_objective_function->compute_weight_regularization();
+
+      // Finish evaluation.
+      m_objective_function->finish_evaluation(execution_mode::training,
+                                              get_current_mini_batch_size());
+
+      // Update step
+      update_weights();
+      finished = update_layers();
+    }
   }
-
-  // Backward prop step
-  m_objective_function->differentiate();
-  backward_prop();
-  m_objective_function->compute_weight_regularization();
-
-  // Finish evaluation.
-  m_objective_function->finish_evaluation(execution_mode::training,
-                                          get_current_mini_batch_size());
-
-  // Update step
-  update_weights();
-  const bool finished = update_layers();
 
   ++m_current_step;
   do_batch_end_cbs(execution_mode::training);

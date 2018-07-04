@@ -43,16 +43,17 @@ EvalType mean_absolute_deviation_loss::finish_evaluate_compute(
 
   // Compute sum of errors
   EvalType sum = 0;
-  #pragma omp parallel for reduction(+:sum) collapse(2)
+#pragma omp taskloop collapse(2) default(shared) /// @todo reduction(+:sum)
   for(El::Int col = 0; col < local_width; ++col) {
     for(El::Int row = 0; row < local_height; ++row) {
       const EvalType true_val = ground_truth_local(row, col);
       const EvalType pred_val = predictions_local(row, col);
       const EvalType error = true_val - pred_val;
+      #pragma omp critical
       sum += error >= EvalType(0) ? error : - error;
     }
   }
-  
+
   // Compute mean objective function value across mini-batch
   return get_comm().allreduce(sum / (height * width),
                               predictions.DistComm());
@@ -75,7 +76,7 @@ void mean_absolute_deviation_loss::differentiate_compute(const AbsDistMat& predi
 
   // Compute gradient
   const DataType scale = DataType(1) / height;
-  #pragma omp parallel for collapse(2)
+#pragma omp taskloop collapse(2) default(shared)
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
       const DataType true_val = ground_truth_local(row, col);

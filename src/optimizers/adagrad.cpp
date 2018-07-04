@@ -90,7 +90,7 @@ void adagrad::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
       || gradient_ldim != local_height
       || cache_ldim != local_height) {
     // Update with non-contiguous data
-    #pragma omp parallel for collapse(2)
+#pragma omp taskloop collapse(2) default(shared)
     for (int j=0; j<local_width; ++j) {
       for (int i=0; i<local_height; ++i) {
         DataType& x = values_buffer[i+j*values_ldim];
@@ -102,7 +102,7 @@ void adagrad::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
     }
   } else {
     // Update with contiguous data
-    #pragma omp parallel for
+#pragma omp taskloop default(shared)
     for (int i=0; i<local_height*local_width; ++i) {
       DataType& x = values_buffer[i];
       const DataType g = gradient_buffer[i];

@@ -38,15 +38,16 @@ EvalType boolean_false_negatives_metric::evaluate_compute(
 
   // Compute sum of predictions.
   EvalType sum = 0;
-  #pragma omp parallel for reduction(+:sum) collapse(2)
+#pragma omp taskloop collapse(2) default(shared) /// @todo reduction(+:sum)
   for(El::Int col = 0; col < local_width; ++col) {
     for(El::Int row = 0; row < local_height; ++row) {
       const bool true_val = ground_truth_local(row, col) > DataType(0.5);
       const bool pred_val = prediction_local(row, col) > DataType(0.5);
+      #pragma omp critical
       sum += EvalType((true_val != pred_val) && true_val);
     }
   }
-  
+
   // Compute mean value across mini-batch.
   return get_comm().allreduce(sum / height, prediction.DistComm()) *
     EvalType(100);

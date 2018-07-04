@@ -73,7 +73,7 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X) {
   if (!m_save_minibatch_indices) {
     /// Allow each thread to perform any preprocessing necessary on the
     /// data source prior to fetching data
-    #pragma omp parallel for schedule(static, 1)
+#pragma omp taskloop default(shared)
     for (int t = 0; t < nthreads; t++) {
       preprocess_data_source(omp_get_thread_num());
     }
@@ -100,7 +100,7 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X) {
   }
 
   else {
-    #pragma omp parallel for
+#pragma omp taskloop default(shared)
     for (int s = 0; s < mb_size; s++) {
       // Catch exceptions within the OpenMP thread.
       try {
@@ -122,7 +122,7 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X) {
 
     /// Allow each thread to perform any postprocessing necessary on the
     /// data source prior to fetching data
-    #pragma omp parallel for schedule(static, 1)
+#pragma omp taskloop default(shared)
     for (int t = 0; t < nthreads; t++) {
       postprocess_data_source(omp_get_thread_num());
     }
@@ -153,7 +153,7 @@ int lbann::generic_data_reader::fetch_labels(CPUMat& Y) {
  // }
 
 //  else {
-    #pragma omp parallel for
+#pragma omp taskloop default(shared)
     for (int s = 0; s < mb_size; s++) {
       // Catch exceptions within the OpenMP thread.
       try {
@@ -191,7 +191,7 @@ int lbann::generic_data_reader::fetch_responses(CPUMat& Y) {
     Y.Width());
 
   El::Zeros(Y, Y.Height(), Y.Width());
-  #pragma omp parallel for
+#pragma omp taskloop default(shared)
   for (int s = 0; s < mb_size; s++) {
     // Catch exceptions within the OpenMP thread.
     try {

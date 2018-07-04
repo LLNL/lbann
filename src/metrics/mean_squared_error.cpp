@@ -35,23 +35,24 @@ EvalType mean_squared_error_metric::evaluate_compute(const AbsDistMat& predictio
   const int height = prediction.Height();
   const int local_height = prediction.LocalHeight();
   const int local_width = prediction.LocalWidth();
-  
+
   // Get local matrices
   const Mat& prediction_local = prediction.LockedMatrix();
   const Mat& ground_truth_local = ground_truth.LockedMatrix();
 
   // Compute sum of squared errors
   EvalType sum = 0;
-  #pragma omp parallel for reduction(+:sum) collapse(2)
+#pragma omp taskloop collapse(2) default(shared) /// @todo reduction(+:sum)
   for(El::Int col = 0; col < local_width; ++col) {
     for(El::Int row = 0; row < local_height; ++row) {
       const EvalType true_val = ground_truth_local(row, col);
       const EvalType pred_val = prediction_local(row, col);
       const EvalType error = true_val - pred_val;
+      #pragma omp critical
       sum += error * error;
     }
   }
-  
+
   // Compute mean value across mini-batch
   return get_comm().allreduce(sum / height, prediction.DistComm());
 

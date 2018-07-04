@@ -88,9 +88,10 @@ class evaluation_layer : public transform_layer {
 
     // Compute average value
     EvalType sum = EvalType(0);
-    #pragma omp parallel for reduction(+:sum) collapse(2)
+#pragma omp taskloop collapse(2) default(shared) /// @todo reduction(+:sum)
     for (El::Int col = 0; col < local_width; ++col) {
       for (El::Int row = 0; row < local_height; ++row) {
+        #pragma omp critical
         sum += local_input(row, col);
       }
     }

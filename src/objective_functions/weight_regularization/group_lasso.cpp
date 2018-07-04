@@ -69,7 +69,7 @@ EvalType group_lasso_weight_regularization::finish_evaluation() {
 
     // Compute sum of squares of each column
     sqsums.Resize(1, local_width);
-    #pragma omp parallel for
+#pragma omp taskloop default(shared)
     for (int col = 0; col < local_width; ++col) {
       DataType sqsum = EvalType(0);
       for (int row = 0; row < local_height; ++row) {
@@ -106,7 +106,7 @@ void group_lasso_weight_regularization::compute_weight_regularization() {
 
     // Compute sum of squares of each column
     sqsums.Resize(1, local_width);
-    #pragma omp parallel for
+#pragma omp taskloop default(shared)
     for (int col = 0; col < local_width; ++col) {
       DataType sqsum = DataType(0);
       for (int row = 0; row < local_height; ++row) {
@@ -128,7 +128,7 @@ void group_lasso_weight_regularization::compute_weight_regularization() {
         sqsums(0, col) = DataType(0);
       }
     }
-    #pragma omp parallel for collapse(2)
+#pragma omp taskloop collapse(2) default(shared)
     for (int col = 0; col < local_width; ++col) {
       for (int row = 0; row < local_height; ++row) {
         gradient_local(row, col) = values_local(row, col) * sqsums(0, col);

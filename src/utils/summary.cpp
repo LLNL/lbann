@@ -468,14 +468,16 @@ DataType lbann_summary::local_sum(const Mat& mat) const {
   auto sum = DataType(0);
   if (ldim == height) {
     const El::Int size = height*width;
-#pragma omp parallel for reduction(+:sum)
+#pragma omp taskloop default(shared) /// @todo reduction(+:sum)
     for (El::Int i = 0; i < size; ++i) {
+      #pragma omp critical
       sum += mat_buf[i];
     }
   } else {
-#pragma omp parallel for reduction(+:sum) collapse(2)
+#pragma omp taskloop collapse(2) default(shared) /// @todo reduction(+:sum)
     for (El::Int row = 0; row < height; ++row) {
       for (El::Int col = 0; col < width; ++col) {
+        #pragma omp critical
         sum += mat_buf[row + col * ldim];
       }
     }
@@ -494,19 +496,25 @@ void lbann_summary::local_sum_sqsum(
   sqsum = DataType(0);
   if (ldim == height) {
     const El::Int size = height*width;
-#pragma omp parallel for reduction(+:sum,sqsum)
+#pragma omp taskloop default(shared) /// @todo reduction(+:sum,sqsum)
     for (El::Int i = 0; i < size; ++i) {
       const DataType val = mat_buf[i];
-      sum += val;
-      sqsum += val*val;
+      #pragma omp critical
+      {
+        sum += val;
+        sqsum += val*val;
+      }
     }
   } else {
-#pragma omp parallel for reduction(+:sum,sqsum) collapse(2)
+#pragma omp taskloop collapse(2) default(shared) /// @todo reduction(+:sum,sqsum)
     for (El::Int row = 0; row < height; ++row) {
       for (El::Int col = 0; col < width; ++col) {
         const DataType val = mat_buf[row + col*ldim];
-        sum += val;
-        sqsum += val * val;
+        #pragma omp critical
+        {
+          sum += val;
+          sqsum += val * val;
+        }
       }
     }
   }
@@ -520,14 +528,16 @@ DataType lbann_summary::local_min(const Mat& mat) const {
   auto min = std::numeric_limits<DataType>::max();
   if (ldim == height) {
     const El::Int size = height*width;
-#pragma omp parallel for reduction(min:min)
+#pragma omp taskloop default(shared) /// @todo reduction(min:min)
     for (El::Int i = 0; i < size; ++i) {
+      #pragma omp critical
       min = std::min(min, mat_buf[i]);
     }
   } else {
-#pragma omp parallel for reduction(min:min) collapse(2)
+#pragma omp taskloop collapse(2) default(shared) /// @todo reduction(min:min)
     for (El::Int row = 0; row < height; ++row) {
       for (El::Int col = 0; col < width; ++col) {
+        #pragma omp critical
         min = std::min(min, mat_buf[row + col*ldim]);
       }
     }
@@ -543,14 +553,16 @@ DataType lbann_summary::local_max(const Mat& mat) const {
   auto max = std::numeric_limits<DataType>::min();
   if (ldim == height) {
     const El::Int size = height*width;
-#pragma omp parallel for reduction(max:max)
+#pragma omp taskloop default(shared) /// @todo reduction(max:max)
     for (El::Int i = 0; i < size; ++i) {
+      #pragma omp critical
       max = std::max(max, mat_buf[i]);
     }
   } else {
-#pragma omp parallel for reduction(max:max) collapse(2)
+#pragma omp taskloop collapse(2) default(shared) /// @todo reduction(max:max)
     for (El::Int row = 0; row < height; ++row) {
       for (El::Int col = 0; col < width; ++col) {
+        #pragma omp critical
         max = std::max(max, mat_buf[row + col*ldim]);
       }
     }
@@ -567,14 +579,16 @@ DataType lbann_summary::local_2norm(const Mat& mat) const {
   auto norm = DataType(0);
   if (ldim == height) {
     const El::Int size = height*width;
-#pragma omp parallel for reduction(+:norm)
+#pragma omp taskloop default(shared) /// @todo  reduction(+:norm)
     for (El::Int i = 0; i < size; ++i) {
+     #pragma omp critical
       norm += mat_buf[i] * mat_buf[i];
     }
   } else {
-#pragma omp parallel for reduction(+:norm) collapse(2)
+#pragma omp taskloop collapse(2) default(shared) /// @todo reduction(+:norm)
     for (El::Int row = 0; row < height; ++row) {
       for (El::Int col = 0; col < width; ++col) {
+        #pragma omp critical
         norm += mat_buf[row + col * ldim] * mat_buf[row + col * ldim];
       }
     }

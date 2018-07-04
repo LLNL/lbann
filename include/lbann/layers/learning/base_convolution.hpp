@@ -351,7 +351,7 @@ class base_convolution_layer : public learning_layer {
         || output.Height() < 1 || output.Width() < 1) {
       return;
     }
-    
+
     // Initialize GPU workspace
     GPUMat workspace;
 #ifdef HYDROGEN_HAVE_CUB
@@ -581,7 +581,7 @@ class base_convolution_layer : public learning_layer {
           = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1;
         #endif
         if (using_transposed_convolution) {
-          #ifndef LBANN_DETERMINISTIC 
+          #ifndef LBANN_DETERMINISTIC
           CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithm(cudnn::get_handle(),
                                                                  gradient_wrt_output_desc,
                                                                  input_desc,
@@ -606,7 +606,7 @@ class base_convolution_layer : public learning_layer {
                                                      m_kernel_gradient.Buffer()));
         }
         else {
-          #ifndef LBANN_DETERMINISTIC 
+          #ifndef LBANN_DETERMINISTIC
           CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithm(cudnn::get_handle(),
                                                                  input_desc,
                                                                  gradient_wrt_output_desc,
@@ -773,7 +773,7 @@ class base_convolution_layer : public learning_layer {
     const El::Int num_per_output_channel = this->m_num_neurons / num_output_channels;
 
     // Apply bias to each output channel
-    #pragma omp parallel for
+#pragma omp taskloop default(shared)
     for (El::Int channel = 0; channel < num_output_channels; ++channel) {
       const El::Int row_start = channel * num_per_output_channel;
       const El::Int row_end = (channel+1) * num_per_output_channel;
@@ -806,7 +806,7 @@ class base_convolution_layer : public learning_layer {
     // Note: Sum is computed with Kahan summation
     optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
     if (m_bias_scaling_factor != DataType(0) && bias_optimizer != nullptr) {
-      #pragma omp parallel for
+#pragma omp taskloop default(shared)
       for (int channel = 0; channel < num_output_channels; ++channel) {
         const El::Int row_start = channel * num_per_output_channel;
         const El::Int row_end = (channel+1) * num_per_output_channel;

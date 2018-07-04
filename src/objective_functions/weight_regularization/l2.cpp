@@ -42,17 +42,19 @@ namespace {
     if (ldim == height) {
       // Parallelize single loop if data is contiguous
       const El::Int size = height*width;
-      #pragma omp parallel for reduction(+:sqsum)
+#pragma omp taskloop default(shared) /// @todo reduction(+:sqsum)
       for (El::Int i = 0; i < size; ++i) {
         const EvalType val = buf[i];
+        #pragma omp critical
         sqsum += val * val;
       }
     } else {
       // Parallelize double loop if data is not contiguous
-      #pragma omp parallel for reduction(+:sqsum) collapse(2)
+#pragma omp taskloop collapse(2) default(shared) ///  @todo reduction(+:sqsum)
       for (El::Int j = 0; j < width; ++j) {
         for (El::Int i = 0; i < height; ++i) {
           const EvalType val = buf[i + j*ldim];
+          #pragma omp critical
           sqsum += val * val;
         }
       }
@@ -156,7 +158,7 @@ void l2_weight_regularization::start_evaluation() {
     if (vals.Participating()
         && vals.GetLocalDevice() == El::Device::CPU
         && vals.RedundantRank() == i % vals.RedundantSize()) {
-      sqsums(i, 0) = sum_of_squares(vals.LockedMatrix());      
+      sqsums(i, 0) = sum_of_squares(vals.LockedMatrix());
     }
     m_sqsum += sqsums(i, 0);
   }

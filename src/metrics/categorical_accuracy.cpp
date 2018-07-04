@@ -27,6 +27,8 @@
 #include "lbann/metrics/categorical_accuracy.hpp"
 #include "lbann/layers/io/target/generic_target_layer.hpp"
 
+#include <omp.h>
+
 namespace lbann {
 
 categorical_accuracy_metric::categorical_accuracy_metric(lbann_comm *comm)
@@ -119,7 +121,7 @@ EvalType categorical_accuracy_metric::evaluate_compute(const AbsDistMat& predict
   m_prediction_indices.resize(local_width);
 
   // Find largest value in each column of prediction matrix
-  #pragma omp parallel for
+#pragma omp taskloop default(shared)
   for (int col = 0; col < local_width; ++col) {
     DataType max_val;
     int max_index;
@@ -145,7 +147,7 @@ EvalType categorical_accuracy_metric::evaluate_compute(const AbsDistMat& predict
                        El::mpi::MAX);
 
   // Find first index corresponding to maximum prediction matrix values
-  #pragma omp parallel for
+#pragma omp taskloop default(shared)
   for (int col = 0; col < local_width; ++col) {
     const int row = m_prediction_indices[col];
     if (local_height > 0
