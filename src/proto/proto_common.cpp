@@ -367,7 +367,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
   // remove null data_reader pointers if there is any
   for (auto it = data_readers.cbegin(); it != data_readers.cend() ; ) {
     if (!it->second) {
-      data_readers.erase(it++);
+      it = data_readers.erase(it);
     } else {
       ++it;
     }
