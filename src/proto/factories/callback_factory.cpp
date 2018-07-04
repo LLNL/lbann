@@ -258,6 +258,43 @@ lbann_callback* construct_callback(lbann_comm* comm,
                                           params.sync_mpi(),
                                           params.only_input());
   }
+  if (proto_cb.has_sync_selected()) {
+    const auto& params = proto_cb.sync_selected();
+    const int num_layers = params.layer_to_sync_size();
+    if (num_layers == 0) {
+      throw lbann_exception("sync_selected requires at least a layer to synchronize.");
+    }
+
+    using layers_t = lbann_callback_sync_selected::layers_t;
+    using prop_t = lbann_callback_sync_selected::prop_t;
+
+    layers_t selected_layers;
+    selected_layers.reserve(num_layers);
+
+    for (int i = 0; i < num_layers; ++i) {
+      const auto& layer_to_sync = params.layer_to_sync(i);
+      selected_layers.emplace(layer_to_sync.name(),
+                              static_cast<prop_t>(layer_to_sync.prop()));
+    }
+
+    lbann_callback_sync_selected* cb_ptr
+      = new lbann_callback_sync_selected(selected_layers,
+                                        params.async_gpus(),
+                                        params.async_mpi());
+
+    #ifdef LBANN_NVPROF
+    const auto& cp_setup = params.cuda_profiler_setup();
+    if (cp_setup.no_init()) {
+      lbann_callback_sync_selected::turn_off_init_cuda_profiler();
+    } else {
+      cb_ptr->init_cuda_profiler(cp_setup.config_file(),
+                                 cp_setup.output_dir(),
+                                 cp_setup.output_mode(),
+                                 comm);
+    }
+    #endif // LBANN_NVPROF
+    return cb_ptr;
+  }
 
   //////////////////////////////////////////////////////////////////
   // Debugging
