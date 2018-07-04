@@ -567,6 +567,14 @@ class lbann_comm {
    *  If LBANN has not been built with Aluminum, then this calls a
    *  blocking matrix allreduce.
    */
+  void nb_allreduce(AbsMat& m,
+                    const El::mpi::Comm c,
+                    Al::request& req,
+                    El::mpi::Op op = El::mpi::SUM);
+  /** Non-blocking matrix allreduce.
+   *  If LBANN has not been built with Aluminum, then this calls a
+   *  blocking matrix allreduce.
+   */
   void nb_allreduce(AbsDistMat& m,
                     const El::mpi::Comm c,
                     Al::request& req,

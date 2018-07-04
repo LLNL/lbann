@@ -78,6 +78,8 @@ void fp_cpu(lbann_comm& comm,
   } else if (k >= height) {
     El::Fill(loss, DataType(1));
     return;
+  } else if (local_width < 1) {
+    return;
   }
   
   // Column communicator
@@ -86,8 +88,9 @@ void fp_cpu(lbann_comm& comm,
   const auto& col_comm_size = El::mpi::Size(col_comm);
   const auto& col_comm_root = loss.RowOwner(0);
 
-  // Search for label indices in local label data
+  // Get label indices
   std::vector<El::Int> label_indices(local_width, entry::max_index);
+  Al::request req;
 #pragma omp parallel for collapse(2)
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
@@ -95,6 +98,10 @@ void fp_cpu(lbann_comm& comm,
         label_indices[col] = labels.GlobalRow(row);
       }
     }
+  }
+  if (col_comm_size > 1) {
+    comm.nb_allreduce(label_indices.data(), label_indices.size(),
+                      col_comm, req, El::mpi::MIN);
   }
 
   // Find top-k entries in each local prediction matrix column
@@ -113,15 +120,8 @@ void fp_cpu(lbann_comm& comm,
                            entry::compare);
   }
 
-  // Perform communication if needed
-  if (col_comm_size > 1 && local_width > 0) {
-
-    // Determine label indices
-    Al::request req;
-    comm.nb_allreduce(label_indices.data(), label_indices.size(),
-                      col_comm, req, El::mpi::MIN);
-
-    // Find top-k entries in each global prediction matrix column
+  // Find top-k entries in each global prediction matrix column
+  if (col_comm_size > 1) {
     if (col_comm_rank != col_comm_root) {
       comm.gather(reinterpret_cast<El::byte*>(top_k_entries.data()),
                   top_k_entries.size() * sizeof(entry),
@@ -150,19 +150,18 @@ void fp_cpu(lbann_comm& comm,
       }
     }
 
-    // Wait for non-blocking requests to finish if needed
-    // if (col_comm_rank == col_comm_root) { comm.wait(req); }
-    comm.wait(req);
-
   }
 
   // Compute categorical accuracy
   El::Zero(loss);
+  comm.wait(req);
   if (col_comm_rank == col_comm_root) {
 #pragma omp parallel for collapse(2)
     for (El::Int col = 0; col < local_width; ++col) {
       for (El::Int i = 0; i < k; ++i) {
-        if (top_k_entries[col*k+i].index == label_indices[col]) {
+        label_index = label_indices[col];
+        if (top_k_entries[col*k+i].index == label_index
+            && label_index < height) {
           local_loss(0, col) = DataType(1);
         }
       }

@@ -206,7 +206,7 @@ void lbann_comm::allreduce(AbsDistMat& m,
   bytes_received += sizeof(DataType) * local_size * (El::mpi::Size(c) - 1);
 }
 
-void lbann_comm::nb_allreduce(AbsDistMat& m,
+void lbann_comm::nb_allreduce(AbsMat& m,
                               const El::mpi::Comm c,
                               Al::request& req,
                               El::mpi::Op op) {
@@ -214,15 +214,15 @@ void lbann_comm::nb_allreduce(AbsDistMat& m,
     return;  // Can skip allreduce on one rank.
   }
 #ifdef LBANN_HAS_ALUMINUM
-  const int local_size = m.LocalHeight() * m.LocalWidth();
+  const int local_size = m.Height() * m.Width();
   bytes_sent += sizeof(DataType) * local_size;
-  if (m.LocalHeight() != m.LDim()) {
+  if (m.Height() != m.LDim()) {
     throw lbann_exception("Aluminum does not support allreduces on"
                           " non-contiguous matrices");
   }
   std::type_index t = std::type_index(typeid(::Al::MPIBackend));
 #ifdef LBANN_HAS_GPU
-  if (m.GetLocalDevice() == El::Device::GPU) {
+  if (m.GetDevice() == El::Device::GPU) {
 #ifdef AL_HAS_NCCL
     // Force GPU matrices to use NCCL.
     t = std::type_index(typeid(::Al::NCCLBackend));
@@ -277,6 +277,13 @@ void lbann_comm::nb_allreduce(AbsDistMat& m,
 #else
   allreduce(m, c, op);
 #endif // LBANN_HAS_ALUMINUM
+}
+
+void lbann_comm::nb_allreduce(AbsDistMat& m,
+                              const El::mpi::Comm c,
+                              Al::request& req,
+                              El::mpi::Op op) {
+  nb_allreduce(m.Matrix(), c, req, op);
 }
 
 void lbann_comm::wait(Al::request& req) {

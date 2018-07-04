@@ -329,7 +329,6 @@ model {
     name: "top1_accuracy"
     parents: "prob labels"
     data_layout: "model_parallel"
-    device_allocation: "cpu"
     top_k_categorical_accuracy { k: 1 }
   }
   layer {
@@ -343,7 +342,6 @@ model {
     name: "top5_accuracy"
     parents: "prob labels"
     data_layout: "model_parallel"
-    device_allocation: "cpu"
     top_k_categorical_accuracy { k: 5 }
   }
   layer {
