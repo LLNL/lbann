@@ -159,7 +159,7 @@ void fp_cpu(lbann_comm& comm,
 #pragma omp parallel for collapse(2)
     for (El::Int col = 0; col < local_width; ++col) {
       for (El::Int i = 0; i < k; ++i) {
-        label_index = label_indices[col];
+        const auto& label_index = label_indices[col];
         if (top_k_entries[col*k+i].index == label_index
             && label_index < height) {
           local_loss(0, col) = DataType(1);

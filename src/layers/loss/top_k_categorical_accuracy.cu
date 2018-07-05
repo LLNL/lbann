@@ -152,6 +152,44 @@ __global__ void compute_categorical_accuracy(El::Int k,
   }  
 }
 
+/** Wrapper for CUB GPU memory pool.
+ *  This allows Thrust to interact with the memory pool.
+ */
+template <typename T>
+class allocator_wrapper {
+public:
+  typedef T value_type;
+
+  allocator_wrapper() {}
+  ~allocator_wrapper() {
+    for (auto* buffer : m_buffers) {
+      El::cub::MemoryPool().DeviceFree(buffer);
+    }
+  }
+
+  /** Allocate GPU buffer. */
+  T* allocate(size_t size) {
+    T* buffer = nullptr;
+    auto& memory_pool = El::cub::MemoryPool();
+    CHECK_CUDA(memory_pool.DeviceAllocate(reinterpret_cast<void**>(&buffer),
+                                          size * sizeof(T),
+                                          El::GPUManager::Stream()));
+    m_buffers.insert(buffer);
+    return buffer;
+  }
+
+  /** Deallocate GPU buffer. */
+  void deallocate(T* buffer, size_t size = 0) {
+    CHECK_CUDA(El::cub::MemoryPool().DeviceFree(buffer));
+    m_buffers.erase(buffer);
+  }
+
+private:
+  /** Allocated GPU buffers. */
+  std::unordered_set<T*> m_buffers;
+
+};
+
 /** GPU implementation of top-k categorical accuracy layer forward prop. */
 void fp_gpu(lbann_comm& comm,
             El::Int k,
@@ -195,12 +233,13 @@ void fp_gpu(lbann_comm& comm,
   using entry_ptr = thrust::device_ptr<entry>;
   using index_array = El::Memory<El::Int, El::Device::GPU>;
   using index_ptr = thrust::device_ptr<El::Int>;
+  auto&& stream = El::GPUManager::Stream();
+  auto&& alloc = allocator_wrapper<El::byte>();
 #ifdef HYDROGEN_HAVE_CUB
   const unsigned int memory_mode = 1; // CUB GPU memory pool
 #else
   const unsigned int memory_mode = 0;
 #endif // HYDROGEN_HAVE_CUB
-  auto&& stream = El::GPUManager::Stream();
   entry_array top_entries(local_width * k, memory_mode);
   index_array label_indices(local_width, memory_mode);
 
@@ -209,7 +248,7 @@ void fp_gpu(lbann_comm& comm,
     const auto& local_size = local_height * local_width;
     const auto& block_dim = 256;
     const auto& grid_dim = (local_size + block_dim - 1) / block_dim;
-    thrust::fill_n(thrust::cuda::par.on(stream),
+    thrust::fill_n(thrust::cuda::par(alloc).on(stream),
                    index_ptr(label_indices.Buffer()),
                    local_width,
                    entry::max_index);
@@ -242,12 +281,12 @@ void fp_gpu(lbann_comm& comm,
     fill_tensor_indices<<<grid_dim, block_dim, 0, stream>>>(
       num_local_entries, local_width, num_local_entries_per_col,
       local_entries_cols.Buffer());
-    thrust::sort_by_key(thrust::cuda::par.on(stream),
+    thrust::sort_by_key(thrust::cuda::par(alloc).on(stream),
                         entry_ptr(local_entries.Buffer()),
                         entry_ptr(local_entries.Buffer() + num_local_entries),
                         index_ptr(local_entries_cols.Buffer()),
                         entry_compare());
-    thrust::stable_sort_by_key(thrust::cuda::par.on(stream),
+    thrust::stable_sort_by_key(thrust::cuda::par(alloc).on(stream),
                                index_ptr(local_entries_cols.Buffer()),
                                index_ptr(local_entries_cols.Buffer() + num_local_entries),
                                entry_ptr(local_entries.Buffer()));
@@ -281,12 +320,12 @@ void fp_gpu(lbann_comm& comm,
                   col_comm);
       fill_tensor_indices<<<grid_dim, block_dim, 0, stream>>>(
         num_entries, local_width, k, global_top_entries_cols.Buffer());
-      thrust::sort_by_key(thrust::cuda::par.on(stream),
+      thrust::sort_by_key(thrust::cuda::par(alloc).on(stream),
                           entry_ptr(global_top_entries.Buffer()),
                           entry_ptr(global_top_entries.Buffer() + num_entries),
                           index_ptr(global_top_entries_cols.Buffer()),
                           entry_compare());
-      thrust::stable_sort_by_key(thrust::cuda::par.on(stream),
+      thrust::stable_sort_by_key(thrust::cuda::par(alloc).on(stream),
                                  index_ptr(global_top_entries_cols.Buffer()),
                                  index_ptr(global_top_entries_cols.Buffer() + num_entries),
                                  entry_ptr(global_top_entries.Buffer()));
