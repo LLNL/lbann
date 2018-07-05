@@ -62,7 +62,7 @@ void setup_parents_and_children(lbann_comm* comm,
 
 void setup_fc_num_neurons(
   std::vector<Layer*>& layers,
-  std::map<execution_mode, generic_data_reader *>& data_readers,
+  const std::map<execution_mode, generic_data_reader *>& data_readers,
   const lbann_data::Model& proto_model) {
   std::stringstream err;
   for (int i=0; i<proto_model.layer_size(); ++i) {
@@ -73,6 +73,7 @@ void setup_fc_num_neurons(
       if (set_num_neurons) {
         int num_neurons = 0;
         for (auto t : data_readers) {
+          if (!t.second) continue;
           if (t.second->get_role() == "train") {
             num_neurons = t.second->get_num_labels();
             auto&& fc_dp_cpu = dynamic_cast<fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>*>(l);
@@ -167,7 +168,7 @@ void setup_unpooling_pointers(lbann_comm* comm,
 } // namespace
 
 std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
-                                          std::map<execution_mode, generic_data_reader *>& data_readers,
+                                          const std::map<execution_mode, generic_data_reader *>& data_readers,
                                           const lbann_data::Model& proto_model) {
   std::stringstream err;
 
