@@ -341,6 +341,8 @@ void generic_data_reader::select_subset_of_data_partitioned() {
 
   shuffle_indices();
 
+  //optionally only use a portion of the data (useful for testing
+  //and debugging during development)
   m_num_global_indices = get_use_percent()*get_num_data();
   m_shuffled_indices.resize(m_num_global_indices);
 
@@ -360,8 +362,7 @@ void generic_data_reader::select_subset_of_data_partitioned() {
   // make temp copy of indices; need this to compute overlap (below)
   std::vector<int> s_indices = m_shuffled_indices;
 
-  //partition the data; we'll pull out the validation set, and add in
-  //overlap a bit laater
+  //partition the data
   if (m_my_partition > 0) {
     std::copy(
       m_shuffled_indices.begin() + partition_size*m_my_partition,
@@ -370,41 +371,12 @@ void generic_data_reader::select_subset_of_data_partitioned() {
   }
   m_shuffled_indices.resize(partition_size);
 
-  //gymnastics: we'll pull the validation indices from the middle of each
-  //partition so that, if overlap is non-zero, the validation set (hopefully)
-  //remains unique to each partition 
-  size_t unused =  get_validation_percent() * partition_size;
-  size_t use_me = partition_size - unused;
-  size_t start_of_my_partition = m_my_partition*partition_size;
-  size_t end_of_my_partition = (m_my_partition+1)*partition_size;
-  size_t validation_start_offset = start_of_my_partition + (partition_size/2) - (unused/2);
-  size_t validation_end_offset = validation_start_offset + unused;
-  if (unused != validation_end_offset - validation_start_offset) {
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: generic_data_reader - something's badly wrong");
-  }
-
+  //pull out validation set
+  long unused = get_validation_percent()*get_num_data(); //get_num_data() = m_shuffled_indices.size()
+  long use_me = get_num_data() - unused;
   if (unused > 0) {
-    m_unused_indices.reserve(unused);
-    for (size_t j=validation_start_offset; j<validation_end_offset; j++) {
-      m_unused_indices.push_back(m_shuffled_indices[j]);
-    }
-    m_shuffled_indices.clear();
-    size_t sanity = 0;
-    for (size_t j = start_of_my_partition; j<validation_start_offset; j++) {
-      m_shuffled_indices.push_back(s_indices[j]);
-      ++sanity;
-    }
-    for (size_t j = validation_end_offset; j < end_of_my_partition; j++) {
-      ++sanity;
-      m_shuffled_indices.push_back(s_indices[j]);
-    }
-    if (sanity != use_me) {
-      throw lbann_exception(
-        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-        " :: generic_data_reader - something's badly wrong, #2");
-    }
+      m_unused_indices=std::vector<int>(m_shuffled_indices.begin() + use_me, m_shuffled_indices.end());
+      m_shuffled_indices.resize(use_me);
   }
 
   if (m_partition_overlap) {
@@ -415,6 +387,9 @@ void generic_data_reader::select_subset_of_data_partitioned() {
     }    
     size_t overlap_count = m_partition_overlap*use_me;
 
+    // ?? Not sure if this is how overlap should be handled; need
+    //    to talk with Sam
+
     //if overlap was requested, ensure there's at least one overlap
     //at each end of a proc's partition; this is needed to ensure
     //that, when testing with smallish data sets, rounding error doesn't
@@ -423,6 +398,8 @@ void generic_data_reader::select_subset_of_data_partitioned() {
       overlap_count = 2;
     }
 
+    size_t start_of_my_partition = m_my_partition*partition_size;
+    size_t end_of_my_partition = (m_my_partition+1)*partition_size;
     size_t overlap_before_a = start_of_my_partition - (overlap_count/2);
     size_t overlap_before_b = start_of_my_partition;
     size_t overlap_after_a = end_of_my_partition;
