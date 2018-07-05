@@ -74,6 +74,7 @@
 #include "lbann/layers/transform/unpooling.hpp"
 #include "lbann/layers/transform/split.hpp"
 #include "lbann/layers/transform/sum.hpp"
+#include "lbann/layers/transform/weighted_sum.hpp"
 #include "lbann/layers/transform/slice.hpp"
 #include "lbann/layers/transform/concatenation.hpp"
 #include "lbann/layers/transform/constant.hpp"
