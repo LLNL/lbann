@@ -67,12 +67,19 @@ using nccl_backend = lbann::Al::dummy_backend;
 #endif // defined(LBANN_HAS_ALUMINUM) && defined(AL_HAS_NCCL)
 using nccl_req_type = nccl_backend::req_type;
 static const nccl_req_type nccl_null_req = nccl_backend::null_req;
+#if defined(LBANN_HAS_ALUMINUM) && defined(AL_HAS_MPI_CUDA)
+using mpicuda_backend = ::Al::MPICUDABackend;
+#else
+using mpicuda_backend = lbann::Al::dummy_backend;
+#endif  // defined(LBANN_HAS_ALUMINUM) && defined(AL_HAS_MPI_CUDA)
+using mpicuda_req_type = mpicuda_backend::req_type;
+static const mpicuda_req_type mpicuda_null_req = mpicuda_backend::null_req;
 
 /** Wrapper for Aluminum non-blocking routine requests. */
 struct request {
   mpi_req_type mpi_req = mpi_null_req;
-  /// @todo MPI-CUDA backend
   nccl_req_type nccl_req = nccl_null_req;
+  mpicuda_req_type mpicuda_req = mpicuda_null_req;
 };
 
 } // namespace Al
