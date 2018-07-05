@@ -60,15 +60,9 @@ void generic_data_reader::setup() {
   shuffle_indices();
 }
 
-std::ofstream debug;
 
 int lbann::generic_data_reader::fetch_data(CPUMat& X) {
-if (! debug.is_open()) {
-  char b[1024];
-  sprintf(b, "debug.%d", m_comm->get_rank_in_world());
-  debug.open(b);
-}
-if (get_role() == "train") debug << "\nstarting fetch_data ";
+
   int nthreads = omp_get_max_threads();
   if(!position_valid()) {
     throw lbann_exception(
@@ -113,7 +107,6 @@ if (get_role() == "train") debug << "\nstarting fetch_data ";
       // Catch exceptions within the OpenMP thread.
       try {
         int n = m_current_pos + (s * m_sample_stride);
-if (get_role() == "train") debug << n << " ";
         int index = m_shuffled_indices[n];
         bool valid = fetch_datum(X, index, s, omp_get_thread_num());
         if (!valid) {
@@ -332,12 +325,6 @@ int generic_data_reader::get_next_position() const {
 }
 
 void generic_data_reader::select_subset_of_data_partitioned() {
-/*
-char b[1024];
-sprintf(b, "debug.%d", m_comm->get_rank_in_world());
-std::ofstream out(b);
-*/
-
   if (get_absolute_sample_count()) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
@@ -408,12 +395,10 @@ std::ofstream out(b);
     for (size_t j = start_of_my_partition; j<validation_start_offset; j++) {
       m_shuffled_indices.push_back(s_indices[j]);
       ++sanity;
-//out << "using idx= " << j << " index: " << s_indices[j] << "\n";
     }
     for (size_t j = validation_end_offset; j < end_of_my_partition; j++) {
       ++sanity;
       m_shuffled_indices.push_back(s_indices[j]);
-//out << "XX using idx= " << j << " index: " << s_indices[j] << "\n";
     }
     if (sanity != use_me) {
       throw lbann_exception(
@@ -455,15 +440,11 @@ std::ofstream out(b);
 
     for (size_t j = overlap_before_a; j< overlap_before_b; j++) {
       m_shuffled_indices.push_back(s_indices[j]);
-//out << "xxAA overlap: " << j << " index: " << s_indices[j] << "\n";
     }
     for (size_t j = overlap_after_a; j < overlap_after_b; j++) {
       m_shuffled_indices.push_back(s_indices[j]);
-//out << "xxBB overlap: " << j << " index: " << s_indices[j] << "\n";
     }
   }
-  
-//out.close();
 }
 
 void generic_data_reader::select_subset_of_data() {
