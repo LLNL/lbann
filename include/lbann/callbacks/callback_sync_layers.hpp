@@ -64,7 +64,7 @@ class lbann_callback_sync_layers : public lbann_callback {
   void on_forward_prop_end(model *m, Layer *l) override;
   void on_backward_prop_end(model *m, Layer *l) override;
     
- private:
+ protected:
   /** Whether to synchronize GPUs. */
   bool m_sync_gpus;
   /** Whether to do a global synchronization. */
@@ -72,7 +72,7 @@ class lbann_callback_sync_layers : public lbann_callback {
   /** Whether to only synchronize after the input layer. */
   bool m_only_input;
 
-  void do_sync(Layer *l);
+  virtual void do_sync(Layer *l);
 };
 
 }  // namespace lbann

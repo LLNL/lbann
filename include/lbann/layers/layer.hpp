@@ -62,6 +62,7 @@ class lbann_callback_sync_layers;
  */
 class Layer {
   friend class lbann_callback_sync_layers;
+  friend class lbann_callback_sync_selected;
 
  public:
   Layer(lbann_comm *comm);

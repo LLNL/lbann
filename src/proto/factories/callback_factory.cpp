@@ -33,21 +33,22 @@ namespace {
 
 /** Select entries from a list based on names.
  *  Any entry in 'list' with a name found in 'names' (interpreted as a
- *  space-separated list) is added to the output set.
+ *  space-separated list) is added to the output list.
  */  
 template <typename T>
-std::unordered_set<T*> select_from_list(std::string names,
+std::vector<T*> select_from_list(std::string names,
                                         std::vector<T*> list) {
-  std::unordered_set<T*> selected;
+  std::vector<T*> selected;
   for (const auto& name : parse_list<std::string>(names)) {
     for (auto&& t : list) {
       if (name == t->get_name()) {
-        selected.insert(t);
+        selected.push_back(t);
       }
     }
   }
   return selected;
 }
+
 
 } // namespace
 
@@ -71,8 +72,9 @@ lbann_callback* construct_callback(lbann_comm* comm,
   }
   if (proto_cb.has_disp_io_stats()) {
     const auto& params = proto_cb.disp_io_stats();
-    auto&& selected_layers = select_from_list<Layer>(params.layers(),
+    auto&& l = select_from_list<Layer>(params.layers(),
                                                      layer_list);
+    std::unordered_set<Layer*> selected_layers(l.begin(), l.end());
     return new lbann_callback_io(selected_layers);
   }
   if (proto_cb.has_save_images()) {
@@ -89,7 +91,14 @@ lbann_callback* construct_callback(lbann_comm* comm,
   // Inter-model communication
   //////////////////////////////////////////////////////////////////
   if (proto_cb.has_ltfb()) {
+    auto&& m = parse_list<>(proto_cb.ltfb().eval_metrics());
+    auto&& w = parse_list<>(proto_cb.ltfb().weights_tosend());
+    std::unordered_set<std::string> metric_names(m.begin(), m.end());
+    std::unordered_set<std::string> weight_names(w.begin(), w.end());
     return new lbann_callback_ltfb(proto_cb.ltfb().round_size(),
+                                   metric_names,
+                                   proto_cb.ltfb().increasing_metric_mode(),
+                                   weight_names,
                                    summarizer);
   }  
   /// @todo
@@ -120,16 +129,18 @@ lbann_callback* construct_callback(lbann_comm* comm,
   //////////////////////////////////////////////////////////////////
   if (proto_cb.has_step_learning_rate()) {
     const auto& params = proto_cb.step_learning_rate();
-    auto&& selected_weights = select_from_list<weights>(params.weights(),
+    auto&& w = select_from_list<weights>(params.weights(),
                                                         weights_list);
+    std::unordered_set<weights*> selected_weights(w.begin(), w.end());
     return new lbann_callback_step_learning_rate(params.step(),
                                                  params.amt(),
                                                  selected_weights);
   }
   if (proto_cb.has_adaptive_learning_rate()) {
     const auto& params = proto_cb.adaptive_learning_rate();
-    auto&& selected_weights = select_from_list<weights>(params.weights(),
+    auto&& w = select_from_list<weights>(params.weights(),
                                                         weights_list);
+    std::unordered_set<weights*> selected_weights(w.begin(), w.end());
     return new lbann_callback_adaptive_learning_rate(params.patience(),
                                                      params.amt(),
                                                      selected_weights);
@@ -140,16 +151,18 @@ lbann_callback* construct_callback(lbann_comm* comm,
     for (int i = 0; i < params.drop_epoch_size(); ++i) {
       drop_epochs.push_back(params.drop_epoch(i));
     }
-    auto&& selected_weights = select_from_list<weights>(params.weights(),
+    auto&& w = select_from_list<weights>(params.weights(),
                                                         weights_list);
+    std::unordered_set<weights*> selected_weights(w.begin(), w.end());
     return new lbann_callback_drop_fixed_learning_rate(drop_epochs,
                                                        params.amt(),
                                                        selected_weights);
   }
   if (proto_cb.has_linear_growth_learning_rate()) {
     const auto& params = proto_cb.linear_growth_learning_rate();
-    auto&& selected_weights = select_from_list<weights>(params.weights(),
+    auto&& w = select_from_list<weights>(params.weights(),
                                                         weights_list);
+    std::unordered_set<weights*> selected_weights(w.begin(), w.end());
     return new lbann_callback_linear_growth_learning_rate(params.target(),
                                                           params.num_epochs(),
                                                           params.delay(),
@@ -157,15 +170,17 @@ lbann_callback* construct_callback(lbann_comm* comm,
   }
   if (proto_cb.has_optimizerwise_adaptive_learning_rate()) {
     const auto& params = proto_cb.optimizerwise_adaptive_learning_rate();
-    auto&& selected_weights = select_from_list<weights>(params.weights(),
+    auto&& w = select_from_list<weights>(params.weights(),
                                                         weights_list);
+    std::unordered_set<weights*> selected_weights(w.begin(), w.end());
     return new lbann_callback_optimizerwise_adaptive_learning_rate(params.scale(),
                                                                    selected_weights);
   }
   if (proto_cb.has_poly_learning_rate()) {
     const auto& params = proto_cb.poly_learning_rate();
-    auto&& selected_weights = select_from_list<weights>(params.weights(),
+    auto&& w = select_from_list<weights>(params.weights(),
                                                         weights_list);
+    std::unordered_set<weights*> selected_weights(w.begin(), w.end());
     return new lbann_callback_poly_learning_rate(params.power(),
                                                  params.num_epochs(),
                                                  params.max_iter(),
@@ -213,6 +228,17 @@ lbann_callback* construct_callback(lbann_comm* comm,
     return new lbann_callback_save_model(params.dir(),
                                          params.extension());
   }
+  ///////////////////////////////////////////////////////////////////
+  // Weight exchange/replace
+  //////////////////////////////////////////////////////////////////
+  if (proto_cb.has_replace_weights()) {
+    const auto& params = proto_cb.replace_weights();
+    auto&& src_layers = select_from_list<Layer>(params.source_layers(),
+                                                     layer_list);
+    auto&& dst_layers = select_from_list<Layer>(params.destination_layers(),
+                                                     layer_list);
+    return new lbann_callback_replace_weights(src_layers,dst_layers,params.batch_interval());
+  }
 
   //////////////////////////////////////////////////////////////////
   // Profiling
@@ -231,6 +257,43 @@ lbann_callback* construct_callback(lbann_comm* comm,
     return new lbann_callback_sync_layers(params.sync_gpus(),
                                           params.sync_mpi(),
                                           params.only_input());
+  }
+  if (proto_cb.has_sync_selected()) {
+    const auto& params = proto_cb.sync_selected();
+    const int num_layers = params.layer_to_sync_size();
+    if (num_layers == 0) {
+      throw lbann_exception("sync_selected requires at least a layer to synchronize.");
+    }
+
+    using layers_t = lbann_callback_sync_selected::layers_t;
+    using prop_t = lbann_callback_sync_selected::prop_t;
+
+    layers_t selected_layers;
+    selected_layers.reserve(num_layers);
+
+    for (int i = 0; i < num_layers; ++i) {
+      const auto& layer_to_sync = params.layer_to_sync(i);
+      selected_layers.emplace(layer_to_sync.name(),
+                              static_cast<prop_t>(layer_to_sync.prop()));
+    }
+
+    lbann_callback_sync_selected* cb_ptr
+      = new lbann_callback_sync_selected(selected_layers,
+                                        params.async_gpus(),
+                                        params.async_mpi());
+
+    #ifdef LBANN_NVPROF
+    const auto& cp_setup = params.cuda_profiler_setup();
+    if (cp_setup.no_init()) {
+      lbann_callback_sync_selected::turn_off_init_cuda_profiler();
+    } else {
+      cb_ptr->init_cuda_profiler(cp_setup.config_file(),
+                                 cp_setup.output_dir(),
+                                 cp_setup.output_mode(),
+                                 comm);
+    }
+    #endif // LBANN_NVPROF
+    return cb_ptr;
   }
 
   //////////////////////////////////////////////////////////////////

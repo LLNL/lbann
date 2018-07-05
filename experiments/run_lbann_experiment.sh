@@ -6,7 +6,7 @@ LBANN_DIR=$(git rev-parse --show-toplevel)
 MODEL_PROTO="--model=${LBANN_DIR}/model_zoo/models/alexnet/model_alexnet.prototext --num_epochs=10"
 READER_PROTO="--reader=${LBANN_DIR}/model_zoo/data_readers/data_reader_imagenet.prototext"
 OPTIMIZER_PROTO="--optimizer=${LBANN_DIR}/model_zoo/optimizers/opt_sgd.prototext"
-IMAGENET_CLASSES=10 # options: 10, 100, 300, 1000 (leave blank to use other dataset)
+IMAGENET_CLASSES= # options: 10, 100, 300, 1000 (leave blank to use other dataset)
 BUILD=          # default: Release
 
 # Hardware configuration
@@ -105,7 +105,7 @@ case ${CLUSTER} in
     "pascal")
         SCHEDULER=slurm
         PARTITION=${PARTITION:-pbatch}
-        ACCOUNT=${ACCOUNT:-lc}
+        ACCOUNT=${ACCOUNT:-hpcdl}
         CACHE_DIR=${CACHE_DIR:-/tmp/${USER}}
         CORES_PER_NODE=36
         HAS_GPU=YES
