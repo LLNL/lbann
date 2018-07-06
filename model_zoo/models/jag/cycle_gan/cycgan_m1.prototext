@@ -394,6 +394,7 @@ model {
     name: "disc1_real_bce"
     data_layout: "data_parallel"
     parents: "disc1fc3_real"
+    device_allocation: "cpu"
     bce_with_logits {
       true_label: 1
     }
@@ -409,6 +410,7 @@ model {
     name: "disc1_fake_bce"
     data_layout: "data_parallel"
     parents: "disc1fc3_fake"
+    device_allocation: "cpu"
     bce_with_logits {
       true_label: 0
     }
@@ -424,6 +426,7 @@ model {
     name: "disc2_real_bce"
     data_layout: "data_parallel"
     parents: "disc2fc3_real"
+    device_allocation: "cpu"
     bce_with_logits {
       true_label: 1
     }
@@ -439,6 +442,7 @@ model {
     name: "disc2_fake_bce"
     data_layout: "data_parallel"
     parents: "disc2fc3_fake"
+    device_allocation: "cpu"
     bce_with_logits {
       true_label: 0
     }
