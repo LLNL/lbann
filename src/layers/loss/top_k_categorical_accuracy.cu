@@ -169,43 +169,6 @@ __global__ void compute_categorical_accuracy(El::Int k,
   }  
 }
 
-/** Wrapper for CUB GPU memory pool.
- *  This allows Thrust to interact with the memory pool.
- */
-template <typename T = El::byte>
-struct allocator_wrapper
-  : public thrust::detail::tagged_allocator<
-      T,
-      thrust::system::cuda::tag,
-      thrust::pointer<T, thrust::system::cuda::tag>> {
-
-  // Typedefs
-  typedef typename thrust::detail::tagged_allocator<
-    T,
-    thrust::system::cuda::tag,
-    thrust::pointer<T, thrust::system::cuda::tag>> parent;
-  typedef typename parent::value_type value_type;
-  typedef typename parent::pointer pointer;
-  typedef typename parent::size_type size_type;
-
-  /** Allocate GPU buffer. */
-  pointer allocate(size_type size) {
-    value_type* buffer = nullptr;
-    auto& memory_pool = El::cub::MemoryPool();
-    CHECK_CUDA(memory_pool.DeviceAllocate(reinterpret_cast<void**>(&buffer),
-                                          size * sizeof(value_type),
-                                          El::GPUManager::Stream()));
-    return pointer(buffer);
-  }
-
-  /** Deallocate GPU buffer. */
-  void deallocate(pointer buffer, size_type size = 0) {
-    auto& memory_pool = El::cub::MemoryPool();
-    CHECK_CUDA(memory_pool.DeviceFree(buffer.get()));
-  }
-
-};
-
 /** GPU implementation of top-k categorical accuracy layer forward prop. */
 void fp_gpu(lbann_comm& comm,
             El::Int k,
@@ -246,9 +209,9 @@ void fp_gpu(lbann_comm& comm,
 
   // GPU objects
   auto&& stream = El::GPUManager::Stream();
-  allocator_wrapper<> alloc;
-  using entry_array = thrust::device_vector<entry, allocator_wrapper<entry>>;
-  using index_array = thrust::device_vector<El::Int, allocator_wrapper<El::Int>>;
+  cuda::thrust::allocator<> alloc(stream);
+  using entry_array = thrust::device_vector<entry, cuda::thrust::allocator<entry>>;
+  using index_array = thrust::device_vector<El::Int, cuda::thrust::allocator<El::Int>>;
 
   // Get label indices
   index_array label_indices(local_width);

@@ -560,6 +560,10 @@ class lbann_comm {
     bytes_received += count * sizeof(T) * (El::mpi::Size(c) - 1);
   }
   /** Matrix allreduce. */
+  void allreduce(AbsMat& m,
+                 const El::mpi::Comm c,
+                 El::mpi::Op op = El::mpi::SUM);
+  /** Matrix allreduce. */
   void allreduce(AbsDistMat& m,
                  const El::mpi::Comm c,
                  El::mpi::Op op = El::mpi::SUM);
