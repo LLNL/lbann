@@ -353,16 +353,24 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
 
   if (master) {
     if (separate_validation) {
-      const generic_data_reader* r_train = data_readers[execution_mode::training];
-      const generic_data_reader* r_validate = data_readers[execution_mode::validation];
+      const generic_data_reader* r_train = peek_map(data_readers, execution_mode::training);
+      const generic_data_reader* r_validate = peek_map(data_readers, execution_mode::validation);
       const size_t num_train = (r_train == nullptr)? 0u : r_train->get_num_data();
       const size_t num_validate = (r_validate == nullptr)? 0u : r_validate->get_num_data();
       std::cout << "Training using " << num_train << " samples." << std::endl
                 << "Validating using " << num_validate << " samples." << std::endl;
     }
-    const generic_data_reader* r_test = data_readers[execution_mode::testing];
+    const generic_data_reader* r_test = peek_map(data_readers, execution_mode::testing);
     const size_t num_test = (r_test == nullptr)? 0u : r_test->get_num_data();
     std::cout << "Testing using " << num_test << " samples." << std::endl;
+  }
+  // remove null data_reader pointers if there is any
+  for (auto it = data_readers.cbegin(); it != data_readers.cend() ; ) {
+    if (!it->second) {
+      it = data_readers.erase(it);
+    } else {
+      ++it;
+    }
   }
 }
 

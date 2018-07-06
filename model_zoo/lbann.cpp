@@ -230,6 +230,7 @@ int main(int argc, char *argv[]) {
         std::cerr << "\nUSING DATA STORE!\n\n";
       }
       for (auto r : data_readers) {
+        if (!r.second) continue;
         r.second->setup_data_store(model);
       }
     }

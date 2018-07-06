@@ -324,7 +324,7 @@ model {
     name: "cycy_minus_y"
     data_layout: "data_parallel"
     parents: "gen1fc4_2 image_data_dummy"
-    sum {
+    weighted_sum {
       scaling_factors: "1 -1"
     }
   }
@@ -411,7 +411,7 @@ model {
     name: "cycx_minus_x"
     data_layout: "data_parallel"
     parents: "gen2fc4_gsample param_data_id"
-    sum {
+    weighted_sum {
       scaling_factors: "1 -1"
     }
   }
@@ -434,7 +434,7 @@ model {
     name: "gsample_minus_y"
     data_layout: "data_parallel"
     parents: "gen1fc4_1 image_data_dummy"
-    sum {
+    weighted_sum {
       scaling_factors: "1 -1"
     }
   }

@@ -74,6 +74,7 @@
 #include "lbann/layers/transform/unpooling.hpp"
 #include "lbann/layers/transform/split.hpp"
 #include "lbann/layers/transform/sum.hpp"
+#include "lbann/layers/transform/weighted_sum.hpp"
 #include "lbann/layers/transform/slice.hpp"
 #include "lbann/layers/transform/concatenation.hpp"
 #include "lbann/layers/transform/constant.hpp"
@@ -163,6 +164,7 @@
 #include "lbann/callbacks/callback_replace_weights.hpp"
 #include "lbann/callbacks/callback_gpu_memory_usage.hpp"
 #include "lbann/callbacks/callback_sync_layers.hpp"
+#include "lbann/callbacks/callback_sync_selected.hpp"
 
 /// Weights and weight initializers
 #include "lbann/weights/weights.hpp"
@@ -214,5 +216,6 @@
 #include "lbann/io/persist.hpp"
 #include "lbann/utils/compiler_control.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
+#include "lbann/utils/peek_map.hpp"
 
 #endif // LBANN_HPP_INCLUDED
