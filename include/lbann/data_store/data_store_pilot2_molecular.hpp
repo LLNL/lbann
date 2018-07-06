@@ -57,6 +57,7 @@ class data_store_pilot2_molecular : public generic_data_store {
   //! dtor
   ~data_store_pilot2_molecular() override;
 
+  using generic_data_store::get_data_buf;
   void get_data_buf(int data_id, int tid, std::vector<double> *&buf) override; 
 
   void setup() override;

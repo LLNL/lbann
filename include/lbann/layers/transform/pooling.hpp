@@ -216,12 +216,11 @@ public:
     cudnnPoolingMode_t cudnn_pool_mode;
     switch(m_pool_mode) {
     case pool_mode::max:
-#ifdef LBANN_SEQUENTIAL_CONSISTENCY
-      cudnn_pool_mode = CUDNN_POOLING_MAX_DETERMINISTIC;
-#else
-      cudnn_pool_mode = CUDNN_POOLING_MAX;
-#endif // LBANN_SEQUENTIAL_CONSISTENCY
-      break;
+    #ifndef LBANN_DETERMINISTIC    
+      cudnn_pool_mode = CUDNN_POOLING_MAX; break;
+    #else
+      cudnn_pool_mode = CUDNN_POOLING_MAX_DETERMINISTIC; break;
+    #endif  
     case pool_mode::average:
       cudnn_pool_mode = CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING; break;
     case pool_mode::average_no_pad:

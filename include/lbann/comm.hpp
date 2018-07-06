@@ -62,19 +62,24 @@ static const mpi_req_type mpi_null_req = mpi_backend::null_req;
 #if defined(LBANN_HAS_ALUMINUM) && defined(AL_HAS_NCCL)
 using nccl_backend = ::Al::NCCLBackend;
 // LBANN does its own synchronization on this.
-using nccl_req_type = cudaEvent_t;
-static const nccl_req_type nccl_null_req = (nccl_req_type) (-1);
 #else
 using nccl_backend = lbann::Al::dummy_backend;
+#endif // defined(LBANN_HAS_ALUMINUM) && defined(AL_HAS_NCCL)
 using nccl_req_type = nccl_backend::req_type;
 static const nccl_req_type nccl_null_req = nccl_backend::null_req;
-#endif // defined(LBANN_HAS_ALUMINUM) && defined(AL_HAS_NCCL)
+#if defined(LBANN_HAS_ALUMINUM) && defined(AL_HAS_MPI_CUDA)
+using mpicuda_backend = ::Al::MPICUDABackend;
+#else
+using mpicuda_backend = lbann::Al::dummy_backend;
+#endif  // defined(LBANN_HAS_ALUMINUM) && defined(AL_HAS_MPI_CUDA)
+using mpicuda_req_type = mpicuda_backend::req_type;
+static const mpicuda_req_type mpicuda_null_req = mpicuda_backend::null_req;
 
 /** Wrapper for Aluminum non-blocking routine requests. */
 struct request {
   mpi_req_type mpi_req = mpi_null_req;
-  /// @todo MPI-CUDA backend
   nccl_req_type nccl_req = nccl_null_req;
+  mpicuda_req_type mpicuda_req = mpicuda_null_req;
 };
 
 } // namespace Al
@@ -1083,18 +1088,6 @@ class lbann_comm {
   using al_comms_key_type = std::pair<MPI_Comm, std::type_index>;
   using al_comms_val_type = std::unique_ptr<::Al::MPICommunicator>;
   std::map<al_comms_key_type, al_comms_val_type> m_al_comms;
-#ifdef AL_HAS_NCCL
-  /** Number of streams to round-robin between for NCCL allreduces. */
-  static constexpr int m_num_al_nccl_streams = 5;
-  /** Streams for non-blocking NCCL allreduces. */
-  cudaStream_t m_al_nccl_streams[m_num_al_nccl_streams];
-  /** Counter for round-robin'ing across streams. */
-  size_t m_al_cur_nccl_req = 0;
-  /** Event for synchronizing between LBANN and NCCL streams. */
-  cudaEvent_t m_al_nccl_sync_event;
-  /** Events used to check for completion of NCCL allreduces. */
-  std::vector<cudaEvent_t> m_al_nccl_req_events;
-#endif
 
   /** Get an Aluminum communicator.
    *  The communicator will have the same process configuration as the

@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
       init_data_seq_random(random_seed);
     }
     // Initialize models differently if needed.
-#ifndef LBANN_SEQUENTIAL_CONSISTENCY
+#ifndef LBANN_DETERMINISTIC
     if (pb_model->random_init_models_differently()) {
       random_seed = random_seed + comm->get_model_rank();
       // Reseed here so that setup is done with this new seed.
@@ -230,6 +230,7 @@ int main(int argc, char *argv[]) {
         std::cerr << "\nUSING DATA STORE!\n\n";
       }
       for (auto r : data_readers) {
+        if (!r.second) continue;
         r.second->setup_data_store(model);
       }
     }
@@ -257,7 +258,7 @@ int main(int argc, char *argv[]) {
 
     if (! (opts->has_bool("exit_after_setup") && opts->get_bool("exit_after_setup"))) {
 
-#ifndef LBANN_SEQUENTIAL_CONSISTENCY
+#ifndef LBANN_DETERMINISTIC
       // Under normal conditions, reinitialize the random number generator so
       // that regularization techniques (e.g. dropout) generate unique patterns
       // on different ranks.

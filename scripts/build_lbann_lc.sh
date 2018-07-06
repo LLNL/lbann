@@ -53,7 +53,7 @@ C_FLAGS=
 CXX_FLAGS=-DLBANN_SET_EL_RNG
 Fortran_FLAGS=
 CLEAN_BUILD=0
-DATATYPE=4
+DATATYPE=float
 VERBOSE=0
 CMAKE_INSTALL_MESSAGE=LAZY
 MAKE_NUM_PROCESSES=$(($(nproc) + 1))
@@ -62,7 +62,7 @@ INSTALL_LBANN=0
 BUILD_DIR=
 INSTALL_DIR=
 BUILD_SUFFIX=
-SEQ_INIT=OFF
+DETERMINISTIC=OFF
 WITH_CUDA=
 WITH_TOPO_AWARE=ON
 INSTRUMENT=
@@ -199,7 +199,7 @@ while :; do
         -d|--debug)
             # Debug mode
             BUILD_TYPE=Debug
-            SEQ_INIT=ON
+            DETERMINISTIC=ON
             ;;
         --tbinf)
             # Tensorboard interface
@@ -242,9 +242,11 @@ while :; do
             WITH_ALUMINUM=ON
             ;;
         --aluminum-with-mpi-cuda)
+            WITH_ALUMINUM=ON
             ALUMINUM_WITH_MPI_CUDA=ON
             ;;
         --aluminum-with-nccl)
+            WITH_ALUMINUM=ON
             ALUMINUM_WITH_NCCL=ON
             ;;
         --with-conduit)
@@ -403,7 +405,7 @@ if [ "${BUILD_TYPE}" == "Release" ]; then
             C_FLAGS="${C_FLAGS} -march=ivybridge -mtune=ivybridge"
             CXX_FLAGS="${CXX_FLAGS} -march=ivybridge -mtune=ivybridge"
             Fortran_FLAGS="${Fortran_FLAGS} -march=ivybridge -mtune=ivybridge"
-        elif [ "${CLUSTER}" == "quartz" ]; then
+        elif [ "${CLUSTER}" == "quartz" ] || [ "${CLUSTER}" == "pascal" ] ; then
             C_FLAGS="${C_FLAGS} -march=broadwell -mtune=broadwell"
             CXX_FLAGS="${CXX_FLAGS} -march=broadwell -mtune=broadwell"
             Fortran_FLAGS="${Fortran_FLAGS} -march=broadwell -mtune=broadwell"
@@ -564,14 +566,14 @@ if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" -o \
     ELEMENTAL_USE_CUBLAS=OFF
 	case $CLUSTER in
 		ray)
-			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.0.5-3+cuda8.0_ppc64el
+			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.2.12-1+cuda9.2_ppc64le
 			;;
 		sierra)
 			# NCCL not available
 			unset NCCL_DIR
 			;;
 		*)
-			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.1.15-1+cuda9.1_x86_64
+			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.2.12-1+cuda9.0_x86_64
 			;;
 	esac
 
@@ -694,7 +696,7 @@ if [ ${VERBOSE} -ne 0 ]; then
     print_variable ELEMENTAL_USE_CUBLAS
     print_variable ELEMENTAL_MATH_LIBS
     print_variable PATCH_OPENBLAS
-    print_variable SEQ_INIT
+    print_variable DETERMINISTIC
     print_variable CLEAN_BUILD
     print_variable VERBOSE
     print_variable MAKE_NUM_PROCESSES
@@ -761,7 +763,8 @@ CONFIGURE_COMMAND=$(cat << EOF
 -D LBANN_WITH_VTUNE=${WITH_VTUNE} \
 -D LBANN_WITH_TBINF=${WITH_TBINF} \
 -D LBANN_WITH_TOPO_AWARE=${WITH_TOPO_AWARE} \
--D LBANN_SEQUENTIAL_INITIALIZATION=${SEQ_INIT} \
+-D LBANN_DATATYPE=${DATATYPE} \
+-D LBANN_DETERMINISTIC=${DETERMINISTIC} \
 -D LBANN_WITH_ALUMINUM=${WITH_ALUMINUM} \
 -D LBANN_WITH_CONDUIT=${WITH_CONDUIT} \
 -D LBANN_CONDUIT_DIR=${CONDUIT_DIR} \

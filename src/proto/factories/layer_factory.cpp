@@ -25,13 +25,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/proto/factories.hpp"
+#include "lbann/utils/peek_map.hpp"
 
 namespace lbann {
 namespace proto {
 
 template <data_layout layout, El::Device Dev>
 Layer* construct_layer(lbann_comm* comm,
-                       std::map<execution_mode, generic_data_reader*>& data_readers,
+                       const std::map<execution_mode, generic_data_reader*>& data_readers,
                        int num_parallel_readers,
                        const lbann_data::Layer& proto_layer) {
   std::stringstream err;
@@ -90,7 +91,11 @@ Layer* construct_layer(lbann_comm* comm,
     const auto& params = proto_layer.fully_connected();
     int num_neurons = params.num_neurons();
     if (proto_layer.num_neurons_from_data_reader()) {
-      num_neurons = data_readers[execution_mode::training]->get_linearized_data_size();
+      const auto dr  = lbann::peek_map(data_readers, execution_mode::training);
+      if (!dr) {
+        LBANN_ERROR("training data reader does not exist!");
+      }
+      num_neurons = dr->get_linearized_data_size();
     }
     return new fully_connected_layer<layout, Dev>(comm,
                                                   num_neurons,
@@ -132,7 +137,11 @@ Layer* construct_layer(lbann_comm* comm,
     const auto& bias = params.has_bias();
     int num_output_channels = params.num_output_channels();
     if (proto_layer.num_neurons_from_data_reader()) {
-      num_output_channels = data_readers[execution_mode::training]->get_linearized_data_size();
+      const auto dr  = lbann::peek_map(data_readers, execution_mode::training);
+      if (!dr) {
+        LBANN_ERROR("Training data reader does not exist!");
+      }
+      num_output_channels = dr->get_linearized_data_size();
     }
     if (params.has_vectors()) {
       const auto& dims = parse_list<int>(params.conv_dims());
@@ -167,13 +176,21 @@ Layer* construct_layer(lbann_comm* comm,
       if (params.reshape_to_flattened_conv_format()) {
         dims.push_back(1);
       }
-      dims.push_back(data_readers[execution_mode::training]->get_linearized_data_size());
+      const auto dr  = lbann::peek_map(data_readers, execution_mode::training);
+      if (!dr) {
+        LBANN_ERROR("Training data reader does not exist!");
+      }
+      dims.push_back(dr->get_linearized_data_size());
     }
     return new reshape_layer<layout, Dev>(comm, dims.size(), dims.data());
   }
   if (proto_layer.has_sum()) {
-    const auto& scaling_factors = parse_list<DataType>(proto_layer.sum().scaling_factors());
-    return new sum_layer<layout, Dev>(comm, scaling_factors);
+    return new sum_layer<layout, Dev>(comm);
+  }
+  if (proto_layer.has_weighted_sum()) {
+    const auto& params = proto_layer.weighted_sum();
+    const auto& scaling_factors = parse_list<DataType>(params.scaling_factors());
+    return new weighted_sum_layer<layout, Dev>(comm, scaling_factors);
   }
   if (proto_layer.has_split()) {
     return new split_layer<layout, Dev>(comm);
@@ -447,26 +464,26 @@ Layer* construct_layer(lbann_comm* comm,
 // Template instantiation
 template Layer* construct_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(
   lbann_comm* comm,
-  std::map<execution_mode, generic_data_reader*>& data_readers,
+  const std::map<execution_mode, generic_data_reader*>& data_readers,
   int num_parallel_readers,
   const lbann_data::Layer& proto_layer
 );
 template Layer* construct_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>(
   lbann_comm* comm,
-  std::map<execution_mode, generic_data_reader*>& data_readers,
+  const std::map<execution_mode, generic_data_reader*>& data_readers,
   int num_parallel_readers,
   const lbann_data::Layer& proto_layer
 );
 #ifdef LBANN_HAS_GPU
 template Layer* construct_layer<data_layout::DATA_PARALLEL, El::Device::GPU>(
   lbann_comm* comm,
-  std::map<execution_mode, generic_data_reader*>& data_readers,
+  const std::map<execution_mode, generic_data_reader*>& data_readers,
   int num_parallel_readers,
   const lbann_data::Layer& proto_layer
 );
 template Layer* construct_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>(
   lbann_comm* comm,
-  std::map<execution_mode, generic_data_reader*>& data_readers,
+  const std::map<execution_mode, generic_data_reader*>& data_readers,
   int num_parallel_readers,
   const lbann_data::Layer& proto_layer
 );

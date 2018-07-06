@@ -27,36 +27,19 @@
 #ifndef LBANN_LAYER_SUM_HPP_INCLUDED
 #define LBANN_LAYER_SUM_HPP_INCLUDED
 
-#include <vector>
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
-/** Sum layer.
- *  This layer performs a weighted sum of input tensors, possibly with
- *  a different scaling factor for each input. If the scaling factors
- *  are not provided, they are all set to one so that this layer
- *  performs a simple sum.
- */
+/** Sum layer. */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class sum_layer : public transform_layer {
- private:
-
-  /** Scaling term applied to each input tensor.
-   *  If these are not provided, the scaling factors are set to one.
-   */
-  std::vector<DataType> m_scaling_factors;
 
  public:
-  sum_layer(lbann_comm *comm,
-            std::vector<DataType> scaling_factors = std::vector<DataType>())
-    : transform_layer(comm),
-      m_scaling_factors(scaling_factors) {
-
-    // Sum layer has no limit on parents
-    m_expected_num_parent_layers = -1;
-
+  sum_layer(lbann_comm *comm)
+    : transform_layer(comm) {
+    m_expected_num_parent_layers = -1; // No limit on parents
   }
 
   sum_layer* copy() const override { return new sum_layer(*this); }
@@ -83,47 +66,31 @@ class sum_layer : public transform_layer {
       const auto& parent_dims = parent->fp_output_dims(this);
       if (m_neuron_dims != parent_dims) {
         std::stringstream err;
-        err << __FILE__ << " " << __LINE__ << " :: "
-            << "layer " << get_name() << " expects inputs with "
-            << "dimensions ";
+        err << get_type() << " layer \"" << get_name() << "\" "
+            << "expects inputs with dimensions ";
         for (size_t i = 0; i < m_neuron_dims.size(); ++i) {
           err << (i > 0 ? "x" : "") << m_neuron_dims[i];
         }
-        err << ", but layer " << parent->get_name() << " outputs with "
-            << "dimensions ";
+        err << ", but layer \"" << parent->get_name() << "\" outputs "
+            << "with dimensions ";
         for (size_t i = 0; i < parent_dims.size(); ++i) {
           err << (i > 0 ? "x" : "") << parent_dims[i];
         }
-        throw lbann_exception(err.str());
+        LBANN_ERROR(err.str());
       }
-    }
-  }
-
-  void setup_data() override {
-    transform_layer::setup_data();
-    if (m_scaling_factors.empty()) {
-      m_scaling_factors.assign(get_num_parents(), DataType(1));
-    }
-    if ((int) m_scaling_factors.size() != get_num_parents()) {
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "layer " << get_name() << " has an invalid number of "
-          << "scaling factors "
-          << "(found " << m_scaling_factors.size() << ", "
-          << "but there are " << get_num_parents() << " parent layers)";
-      throw lbann_exception(err.str());
     }
   }
 
   void fp_compute() override {
     auto& output = get_activations();
-    if (get_num_parents() > 0) {
+    switch (get_num_parents()) {
+    case 0: El::Zero(output); break;
+    case 1: El::LockedView(output, get_prev_activations(0)); break;
+    default:
       El::Copy(get_prev_activations(0), output);
-    } else {
-      El::Zero(output);
-    }
-    for (int i = 1; i < get_num_parents(); ++i) {
-      El::Axpy(DataType(1), get_prev_activations(i), output);
+      for (int i = 1; i < get_num_parents(); ++i) {
+        El::Axpy(DataType(1), get_prev_activations(i), output);
+      }
     }
   }
 

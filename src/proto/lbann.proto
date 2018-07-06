@@ -428,11 +428,17 @@ message Callback {
    CallbackCheckpoint checkpoint = 28;
    CallbackSaveModel save_model = 29;
    CallbackPolyLearningRate poly_learning_rate = 30;
-   CallbackGPUMemoryUsage gpu_memory_usage = 31;
+   CallbackReplaceWeights replace_weights = 31;
+   CallbackGPUMemoryUsage gpu_memory_usage = 32;
+   CallbackSyncLayers sync_layers = 33;
+   CallbackSyncSelected sync_selected = 34;
 }
 
 message CallbackLTFB {
-  int64 round_size = 1;
+  int64 round_size = 1; 
+  bool increasing_metric_mode = 2; //Expectation for a good tournament metric: increasing (true) is default 
+  string eval_metrics = 3; //eval metrics to use for tournament, at least 1 metric has to be provided
+  string weights_tosend = 4; //list of weights to transfer between model, default is all weights (classic LTFB)
 }
 
 message CallbackStepLearningRate {
@@ -591,7 +597,46 @@ message CallbackSaveModel {
   string extension = 2;
 }
 
+message CallbackReplaceWeights {
+  string source_layers = 1; //set of layers to copy weights from
+  string destination_layers = 2;  //set of layers to copy weights to
+  int64 batch_interval = 3;
+}
 message CallbackGPUMemoryUsage {
+}
+
+message CallbackSyncLayers {
+  bool sync_gpus = 1;
+  bool sync_mpi = 2;
+  bool only_input = 3;
+}
+
+message CallbackSyncSelected {
+  message LayerToSync {
+    enum PropDirection {
+      Both = 0;
+      Forward = 1;
+      Backward = 2;
+    }
+    string name = 1; // name of the layer to synchronize
+    PropDirection prop = 2; // propagation setep to synchronize
+  }
+
+  message CudaProfilerSetup {
+    enum OutputMode {
+      KeyValuePair = 0;
+      CSV = 1;
+    }
+    bool no_init = 1;
+    string config_file = 2;
+    string output_dir = 3;
+    OutputMode output_mode = 4;
+  }
+
+  bool async_gpus = 1;
+  bool async_mpi = 2;
+  repeated LayerToSync layer_to_sync = 3;
+  CudaProfilerSetup cuda_profiler_setup = 4;
 }
 
 //========================================================================
@@ -718,6 +763,7 @@ message Layer {
    Slice slice = 301;
    Split split = 302;
    Sum sum = 303;
+   WeightedSum weighted_sum = 323;
    Unpooling unpooling = 304;
    Hadamard hadamard = 308;
    Constant constant = 309;
@@ -945,6 +991,9 @@ message Split {
 }
 
 message Sum {
+}
+
+message WeightedSum {
   string scaling_factors = 1; //should be a space-separated list of doubles, e.g. "1.0 2.0 -1.0"
 }
 

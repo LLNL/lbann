@@ -35,7 +35,10 @@ using namespace lbann;
 
 const int lbann_default_random_seed = 42;
 
-model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &pb);
+model * build_model_from_prototext(int argc, char **argv, 
+                                   lbann_data::LbannPB &pb,
+                                   lbann_comm *comm,
+                                   bool first_model);
           
 
 int main(int argc, char *argv[]) {
@@ -62,16 +65,19 @@ int main(int argc, char *argv[]) {
     std::vector<lbann_data::LbannPB *> pbs;
     protobuf_utils::load_prototext(master, argc, argv, pbs);
 
-    model *model_1 = build_model_from_prototext(argc, argv, *(pbs[0])); //D1 solver
+    model *model_1 = build_model_from_prototext(argc, argv, *(pbs[0]),
+                                                comm, true); //D1 solver
     model *model_2 = nullptr; //G1 solver
     model *model_3 = nullptr; //G2 solver
 
     if (pbs.size() > 1) {
-      model_2 = build_model_from_prototext(argc, argv, *(pbs[1]));
+      model_2 = build_model_from_prototext(argc, argv, *(pbs[1]),
+                                           comm, false);
     }
 
     if (pbs.size() > 2) {
-      model_3 = build_model_from_prototext(argc, argv, *(pbs[2]));
+      model_3 = build_model_from_prototext(argc, argv, *(pbs[2]),
+                                           comm, false);
     }
     
     const lbann_data::Model pb_model = pbs[0]->model();
@@ -132,9 +138,11 @@ int main(int argc, char *argv[]) {
   return 0;
 }
    
-model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &pb) {
+model * build_model_from_prototext(int argc, char **argv, 
+                                   lbann_data::LbannPB &pb,
+                                   lbann_comm *comm,
+                                   bool first_model) {
   int random_seed = lbann_default_random_seed;
-  lbann_comm *comm = initialize(argc, argv, random_seed);
   bool master = comm->am_world_master();
   if (master) std::cerr << "starting build_model_from_prototext\n";
   model *model = nullptr; //d hysom bad namimg! should fix
@@ -166,7 +174,7 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
       init_data_seq_random(random_seed);
     }
     // Initialize models differently if needed.
-#ifndef LBANN_SEQUENTIAL_CONSISTENCY
+#ifndef LBANN_DETERMINISTIC
     if (pb_model->random_init_models_differently()) {
       random_seed = random_seed + comm->get_model_rank();
       // Reseed here so that setup is done with this new seed.
@@ -187,9 +195,13 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
     if (procs_per_model == 0) {
       procs_per_model = comm->get_procs_in_world();
     }
-    comm->split_models(procs_per_model);
-    if (pb_model->num_parallel_readers() > procs_per_model) {
-      pb_model->set_num_parallel_readers(procs_per_model);
+    if (first_model) {
+      comm->split_models(procs_per_model);
+      if (pb_model->num_parallel_readers() > procs_per_model) {
+        pb_model->set_num_parallel_readers(procs_per_model);
+      }
+    } else if (procs_per_model != comm->get_procs_per_model()) {
+      LBANN_ERROR("Model prototexts requesting different procs per model is not supported");
     }
 
     // Save info to file; this includes the complete prototext (with any over-rides
@@ -301,7 +313,7 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
       }
     }
 
-#ifndef LBANN_SEQUENTIAL_CONSISTENCY
+#ifndef LBANN_DETERMINISTIC
       // Under normal conditions, reinitialize the random number generator so
       // that regularization techniques (e.g. dropout) generate unique patterns
       // on different ranks.
