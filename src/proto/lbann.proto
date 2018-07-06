@@ -341,8 +341,9 @@ message BooleanFalseNegatives {
 }
 
 message LayerMetric {
-  string unit = 1;
-  string layer = 2;
+  string layer = 1;
+  string name = 2;
+  string unit = 3;
 }
 
 //========================================================================
