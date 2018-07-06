@@ -32,12 +32,12 @@
 namespace lbann {
 
 /** Top-k categorical accuracy layer.
- *  The inputs are interpreted as prediction scores and ground-truth
- *  labels, respectively. An output is set to one if the corresponding
- *  label matches one of the top-k prediction scores and is otherwise
- *  zero. Each label is assumed to be a one-hot vector and ties in the
- *  top-k prediction scores are broken in favor of entries with
- *  smaller indices.
+ *  The two inputs are interpreted as prediction scores and
+ *  ground-truth labels, respectively. An output is set to one if the
+ *  corresponding label matches one of the top-k prediction scores and
+ *  is otherwise zero. Each label is assumed to be a one-hot vector
+ *  and ties in the top-k prediction scores are broken in favor of
+ *  entries with smaller indices.
  *  @todo Gracefully handle case where label is not a one-hot vector.
  */
 template <data_layout T_layout, El::Device Dev>
@@ -50,7 +50,9 @@ public:
     m_expected_num_parent_layers = 2;
   }
 
-  top_k_categorical_accuracy_layer* copy() const override { return new top_k_categorical_accuracy_layer(*this); }
+  top_k_categorical_accuracy_layer* copy() const override {
+    return new top_k_categorical_accuracy_layer(*this);
+  }
   std::string get_type() const override { return "top-k accuracy"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }

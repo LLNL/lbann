@@ -37,13 +37,18 @@ namespace {
 struct entry {
 
   /** Vector entry value. */
-  DataType value = -std::numeric_limits<DataType>::infinity();
+  DataType value = min_value;
   /** Vector entry index. */
-  El::Int index = std::numeric_limits<El::Int>::max();
+  El::Int index = max_index;
+
+  /** Minimum possible value. */
+  static constexpr DataType min_value = -std::numeric_limits<DataType>::infinity();
+  /** Maximum possible index. */
+  static constexpr El::Int max_index = std::numeric_limits<El::Int>::max();
 
   /** Comparison operation to sort vector entries.
-   *  Entries are sorted by value in decreasing order. Entries with
-   *  the same value are sorted by index in increasing order.
+   *  Entries are sorted by value in decreasing order, with ties
+   *  broken in favor of entries with smaller indices.
    */
   static bool compare(const entry& a, const entry& b) {
     return a.value > b.value || (a.value == b.value && a.index < b.index);
@@ -53,17 +58,10 @@ struct entry {
 
 /** CPU implementation of in_top_k layer forward prop. */
 void fp_cpu(lbann_comm& comm,
-            El::Int k, const AbsDistMat& input, AbsDistMat& output) {
+            El::Int k,
+            const AbsDistMat& input,
+            AbsDistMat& output) {
 
-  // Trivial cases
-  if (k < 1) {
-    El::Zero(output);
-    return;
-  } else if (k >= input.Height()) {
-    El::Fill(output, DataType(1));
-    return;
-  }
-  
   // Local matrices
   const auto& local_input = input.LockedMatrix();
   auto& local_output = output.Matrix();
@@ -71,8 +69,23 @@ void fp_cpu(lbann_comm& comm,
   const El::Int local_height = local_input.Height();
   const El::Int local_width = local_input.Width();
 
-  // Find top-k entries in each local matrix column
-  std::vector<entry> top_k_entries(k * local_width);
+  // Trivial cases
+  if (k < 1) {
+    El::Zero(output);
+    return;
+  } else if (k >= height) {
+    El::Fill(output, DataType(1));
+    return;
+  } else if (local_width < 1) {
+    return;
+  }
+
+  // Column communicator
+  auto&& col_comm = input.ColComm();
+  const auto& col_comm_size = El::mpi::Size(col_comm);
+  
+  // Find top-k entries in each column of local input matrix
+  std::vector<entry> top_entries(local_width * k);
 #pragma omp parallel for
   for (El::Int col = 0; col < local_width; ++col) {
     std::vector<entry> local_entries(std::max(local_height, k));
@@ -82,36 +95,30 @@ void fp_cpu(lbann_comm& comm,
     }
     std::partial_sort_copy(local_entries.begin(),
                            local_entries.end(),
-                           &top_k_entries[k*col],
-                           &top_k_entries[k*(col+1)],
+                           &top_entries[col*k],
+                           &top_entries[col*k] + k,
                            entry::compare);
   }
   
-  // Find top-k entries in each global matrix column
-  // Note: Nothing needs to be done if matrix columns are not
-  // distributed.
-  auto&& col_comm = input.ColComm();
-  const El::Int col_comm_size = El::mpi::Size(col_comm);
-  if (col_comm_size > 1 && local_width > 0) {
-    std::vector<entry> global_top_k_entries(k * local_width * col_comm_size);
-    comm.all_gather(reinterpret_cast<El::byte*>(top_k_entries.data()),
-                    top_k_entries.size() * sizeof(entry) / sizeof(El::byte),
-                    reinterpret_cast<El::byte*>(global_top_k_entries.data()),
-                    top_k_entries.size() * sizeof(entry) / sizeof(El::byte),
+  // Find top-k entries in each column of global input matrix
+  if (col_comm_size > 1) {
+    std::vector<entry> global_top_entries(col_comm_size * local_width * k);
+    comm.all_gather(reinterpret_cast<El::byte*>(top_entries.data()),
+                    top_entries.size() * sizeof(entry),
+                    reinterpret_cast<El::byte*>(global_top_entries.data()),
+                    top_entries.size() * sizeof(entry),
                     col_comm);
 #pragma omp parallel for
     for (El::Int col = 0; col < local_width; ++col) {
-      std::vector<entry> entries(col_comm_size * k);
+      std::vector<entry> col_entries(col_comm_size * k);
       for (El::Int rank = 0; rank < col_comm_size; ++rank) {
-        const auto& offset = rank * local_width * k + col * k;
-        std::copy(&global_top_k_entries[offset],
-                  &global_top_k_entries[offset+k],
-                  &entries[k*rank]);
+        const auto* start = &global_top_entries[rank*local_width*k+col*k];
+        std::copy(start, start + k, &col_entries[rank*k]);
       }
-      std::partial_sort_copy(entries.begin(),
-                             entries.end(),
-                             &top_k_entries[k*col],
-                             &top_k_entries[k*(col+1)],
+      std::partial_sort_copy(col_entries.begin(),
+                             col_entries.end(),
+                             &top_entries[col*k],
+                             &top_entries[col*k] + k,
                              entry::compare);
     }
   }
@@ -121,9 +128,10 @@ void fp_cpu(lbann_comm& comm,
 #pragma omp parallel for collapse(2)
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int i = 0; i < k; ++i) {
-      const auto& global_row = top_k_entries[col*k+i].index;
+      const auto& global_row = top_entries[col*k+i].index;
       if (global_row < height && output.IsLocalRow(global_row)) {
-        local_output(output.LocalRow(global_row), col) = DataType(1);
+        const auto& row = output.LocalRow(global_row);
+        local_output(row, col) = DataType(1);
       }
     }
   }

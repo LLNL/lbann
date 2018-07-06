@@ -53,8 +53,8 @@ struct entry {
 };
 
 /** Comparison operation to sort sparse vector entries.
- *  Entries are sorted by value in decreasing order. Entries with the
- *  same value are sorted by index in increasing order.
+ *  Entries are sorted by value in decreasing order, with ties broken
+ *  in favor of entries with smaller indices.
  */
 struct entry_compare : thrust::binary_function<entry,entry,bool> {
   __host__ __device__ bool operator()(const entry& a, const entry& b) const {
@@ -62,92 +62,109 @@ struct entry_compare : thrust::binary_function<entry,entry,bool> {
   }
 };
 
-/** Initialize sparse vector entries from local input data.
- *  Each column of the input matrix is converted into a sparse
- *  vector.
+/** Convert columns of a dense matrix into sparse vectors.
+ *  The matrix and vectors are both distributed, so entry indices in
+ *  the sparse vectors correspond to global row indices in the dense
+ *  matrix.
  */
-__global__ void initialize_local_entries(El::Int num_local_entries,
-                                         El::Int local_height,
-                                         El::Int local_width,
-                                         El::Int col_shift,
-                                         El::Int col_stride,
-                                         const DataType* __restrict__ local_input,
-                                         El::Int local_input_ldim,
-                                         entry*  __restrict__ local_entries) {
+__global__ void dense_matrix_to_sparse_vectors(El::Int local_vector_size,
+                                               El::Int local_matrix_height,
+                                               El::Int local_matrix_width,
+                                               El::Int global_matrix_col_shift,
+                                               El::Int global_matrix_col_stride,
+                                               const DataType* __restrict__ local_matrix,
+                                               El::Int local_matrix_ldim,
+                                               entry* __restrict__ local_entries,
+                                               El::Int local_entries_ldim) {
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int num_threads = blockDim.x * gridDim.x;
-  const El::Int num_local_entries_per_col = num_local_entries / local_width;
+  const El::Int num_local_entries = local_vector_size * local_matrix_width;
   for (El::Int i = gid; i < num_local_entries; i += num_threads) {
-    const auto& row = i % num_local_entries_per_col;
-    const auto& col = i / num_local_entries_per_col;
-    if (row < local_height) {
-      const auto& global_row = col_shift + row * col_stride;
-      local_entries[i].value = local_input[row + col * local_input_ldim];
-      local_entries[i].index = global_row;
+    const auto& local_row = i % local_vector_size;
+    const auto& local_col = i / local_vector_size;
+    auto& current_entry = local_entries[local_row + local_col * local_entries_ldim];
+    if (local_row < local_matrix_height) {
+      const auto& global_row = (global_matrix_col_shift
+                                + local_row * global_matrix_col_stride);
+      current_entry.value = local_matrix[local_row + local_col * local_matrix_ldim];
+      current_entry.index = global_row;
     } else {
-      local_entries[i].value = entry::min_value;
-      local_entries[i].index = entry::max_index;
+      current_entry.value = entry::min_value;
+      current_entry.index = entry::max_index;
     }
+  }
+}
+
+/** Fill an array with a corresponding tensor index.
+ *  Consider a d(1) x d(2) x ... x d(n) tensor with entry indices
+ *  denoted with (i(1), ..., i(n)). This tensor is contiguous in
+ *  memory with d(1) as the most major dimension and d(n) as the most
+ *  minor (e.g. d(1) is the width and d(2) is the height for a
+ *  column-major matrix). Given some k, this kernel sets each entry in
+ *  the tensor to i(k). Using this notation:
+ *    tensor_size = d(1) * ... * d(n)
+ *    dim         = d(k)
+ *    dim_stride  = d(k+1) * ... * d(n)
+ */
+__global__ void fill_with_tensor_index(El::Int tensor_size,
+                                       El::Int dim,
+                                       El::Int dim_stride,
+                                       El::Int* tensor) {
+  const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
+  const El::Int num_threads = blockDim.x * gridDim.x;
+  for (El::Int i = gid; i < tensor_size; i += num_threads) {
+    tensor[i] = (i / dim_stride) % dim;
   }  
 }
 
 /** Get indices corresponding to one-hot matrix.
  *  Each column of the input matrix is interpreted as a one-hot
- *  vector.
+ *  vector. Note that we may get race conditions if a matrix column is
+ *  not a one-hot vector.
  */
 __global__ void one_hot_matrix_to_indices(El::Int local_height,
                                           El::Int local_width,
-                                          El::Int col_shift,
-                                          El::Int col_stride,
-                                          const DataType* __restrict__ local_input,
-                                          El::Int local_input_ldim,
+                                          El::Int global_matrix_col_shift,
+                                          El::Int global_matrix_col_stride,
+                                          const DataType* __restrict__ local_matrix,
+                                          El::Int local_matrix_ldim,
                                           El::Int* __restrict__ indices) {
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int num_threads = blockDim.x * gridDim.x;
   const El::Int local_size = local_height * local_width;
   for (El::Int i = gid; i < local_size; i += num_threads) {
-    const auto& row = i % local_height;
-    const auto& col = i / local_height;
-    if (local_input[row + col * local_input_ldim] > DataType(0)) {
-      const auto& global_row = col_shift + row * col_stride;
-      indices[col] = global_row;
+    const auto& local_row = i % local_height;
+    const auto& local_col = i / local_height;
+    if (local_matrix[local_row + local_col * local_matrix_ldim] > DataType(0)) {
+      const auto& global_row = (global_matrix_col_shift
+                                + local_row * global_matrix_col_stride);
+      indices[local_col] = global_row;
     }
   }  
 }
 
-/** Fill an array with tensor dimension indices.
- *  Entries in 'indices' are populated with the dimension index for a
- *  corresponding entry in a packed tensor.
+/** Compute categorical accuracy for each matrix column.
+ *  Loss is one if the label index matches one of the top-k entries
+ *  and is otherwise zero.
  */
-__global__ void fill_tensor_indices(El::Int tensor_size,
-                                    El::Int dim_max,
-                                    El::Int dim_stride,
-                                    El::Int* indices) {
-  const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
-  const El::Int num_threads = blockDim.x * gridDim.x;
-  for (El::Int i = gid; i < tensor_size; i += num_threads) {
-    indices[i] = (i / dim_stride) % dim_max;
-  }  
-}
-
 __global__ void compute_categorical_accuracy(El::Int k,
-                                             El::Int height,
-                                             El::Int local_width,
+                                             El::Int width,
+                                             El::Int max_entry,
                                              const entry*  __restrict__ top_entries,
                                              El::Int top_entries_ldim,
                                              const El::Int*  __restrict__ label_indices,
-                                             DataType* __restrict__ local_loss,
-                                             El::Int local_loss_ldim) {
+                                             DataType* __restrict__ loss,
+                                             El::Int loss_stride) {
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int num_threads = blockDim.x * gridDim.x;
-  const El::Int num_entries = local_width * k;
+  const El::Int num_entries = width * k;
   for (El::Int i = gid; i < num_entries; i += num_threads) {
     const auto& ind = i % k;
     const auto& col = i / k;
     const auto& label_index = label_indices[col];
     if (top_entries[ind + col * top_entries_ldim].index == label_index
-        && label_index < height) {
-      local_loss[col * local_loss_ldim] = DataType(1);
+        && label_index <= max_entry) {
+      loss[col * loss_stride] = DataType(1);
     }
   }  
 }
@@ -155,38 +172,37 @@ __global__ void compute_categorical_accuracy(El::Int k,
 /** Wrapper for CUB GPU memory pool.
  *  This allows Thrust to interact with the memory pool.
  */
-template <typename T>
-class allocator_wrapper {
-public:
-  typedef T value_type;
+template <typename T = El::byte>
+struct allocator_wrapper
+  : public thrust::detail::tagged_allocator<
+      T,
+      thrust::system::cuda::tag,
+      thrust::pointer<T, thrust::system::cuda::tag>> {
 
-  allocator_wrapper() {}
-  ~allocator_wrapper() {
-    for (auto* buffer : m_buffers) {
-      El::cub::MemoryPool().DeviceFree(buffer);
-    }
-  }
+  // Typedefs
+  typedef typename thrust::detail::tagged_allocator<
+    T,
+    thrust::system::cuda::tag,
+    thrust::pointer<T, thrust::system::cuda::tag>> parent;
+  typedef typename parent::value_type value_type;
+  typedef typename parent::pointer pointer;
+  typedef typename parent::size_type size_type;
 
   /** Allocate GPU buffer. */
-  T* allocate(size_t size) {
-    T* buffer = nullptr;
+  pointer allocate(size_type size) {
+    value_type* buffer = nullptr;
     auto& memory_pool = El::cub::MemoryPool();
     CHECK_CUDA(memory_pool.DeviceAllocate(reinterpret_cast<void**>(&buffer),
-                                          size * sizeof(T),
+                                          size * sizeof(value_type),
                                           El::GPUManager::Stream()));
-    m_buffers.insert(buffer);
-    return buffer;
+    return pointer(buffer);
   }
 
   /** Deallocate GPU buffer. */
-  void deallocate(T* buffer, size_t size = 0) {
-    CHECK_CUDA(El::cub::MemoryPool().DeviceFree(buffer));
-    m_buffers.erase(buffer);
+  void deallocate(pointer buffer, size_type size = 0) {
+    auto& memory_pool = El::cub::MemoryPool();
+    CHECK_CUDA(memory_pool.DeviceFree(buffer.get()));
   }
-
-private:
-  /** Allocated GPU buffers. */
-  std::unordered_set<T*> m_buffers;
 
 };
 
@@ -199,8 +215,8 @@ void fp_gpu(lbann_comm& comm,
   if (predictions.Wrap() != El::ELEMENT
       || labels.Wrap() != El::ELEMENT
       || loss.Wrap() != El::ELEMENT) {
-    LBANN_ERROR("top-k categorical accuracy layer GPU implementation assumes elemental "
-                "distributed matrices");
+    LBANN_ERROR("top-k categorical accuracy layer GPU implementation "
+                "assumes elemental distributed matrices");
   }
 
   // Local matrices
@@ -229,70 +245,63 @@ void fp_gpu(lbann_comm& comm,
   const auto& col_comm_root = loss.RowOwner(0);
 
   // GPU objects
-  using entry_array = El::Memory<entry, El::Device::GPU>;
-  using entry_ptr = thrust::device_ptr<entry>;
-  using index_array = El::Memory<El::Int, El::Device::GPU>;
-  using index_ptr = thrust::device_ptr<El::Int>;
   auto&& stream = El::GPUManager::Stream();
-  auto&& alloc = allocator_wrapper<El::byte>();
-#ifdef HYDROGEN_HAVE_CUB
-  const unsigned int memory_mode = 1; // CUB GPU memory pool
-#else
-  const unsigned int memory_mode = 0;
-#endif // HYDROGEN_HAVE_CUB
-  entry_array top_entries(local_width * k, memory_mode);
-  index_array label_indices(local_width, memory_mode);
+  allocator_wrapper<> alloc;
+  using entry_array = thrust::device_vector<entry, allocator_wrapper<entry>>;
+  using index_array = thrust::device_vector<El::Int, allocator_wrapper<El::Int>>;
 
   // Get label indices
+  index_array label_indices(local_width);
   {
     const auto& local_size = local_height * local_width;
     const auto& block_dim = 256;
     const auto& grid_dim = (local_size + block_dim - 1) / block_dim;
-    thrust::fill_n(thrust::cuda::par(alloc).on(stream),
-                   index_ptr(label_indices.Buffer()),
-                   local_width,
-                   entry::max_index);
+    thrust::fill(thrust::cuda::par(alloc).on(stream),
+                 label_indices.begin(),
+                 label_indices.end(),
+                 entry::max_index);
     one_hot_matrix_to_indices<<<grid_dim, block_dim, 0, stream>>>(
       local_height, local_width,
       labels.ColShift(), labels.ColStride(),
       local_labels.LockedBuffer(), local_labels.LDim(),
-      label_indices.Buffer());
-  }
-  if (col_comm_size > 1) {
+      label_indices.data().get());
     /// @todo The LBANN Aluminum interface doesn't gracefully handle
     /// GPU data that is not DataType.
-    El::mpi::AllReduce(label_indices.Buffer(), local_width,
-                       El::mpi::MIN, col_comm);
+    El::mpi::AllReduce(label_indices.data().get(),
+                       label_indices.size(),
+                       El::mpi::MIN,
+                       col_comm);
   }
 
-  // Find top-k entries in each local matrix column
+  // Find top-k entries in each column of local prediction matrix
+  entry_array top_entries(local_width * k);
   {
     const auto& num_local_entries_per_col = std::max(local_height, k);
     const auto& num_local_entries = local_width * num_local_entries_per_col;
     const auto& block_dim = 256;
     const auto& grid_dim = (num_local_entries + block_dim - 1) / block_dim;
-    entry_array local_entries(num_local_entries, memory_mode);
-    index_array local_entries_cols(num_local_entries, memory_mode);
-    initialize_local_entries<<<grid_dim, block_dim, 0, stream>>>(
-      num_local_entries, local_height, local_width,
+    entry_array local_entries(num_local_entries);
+    index_array local_entries_cols(num_local_entries);
+    dense_matrix_to_sparse_vectors<<<grid_dim, block_dim, 0, stream>>>(
+      num_local_entries_per_col, local_height, local_width,
       predictions.ColShift(), predictions.ColStride(),
       local_predictions.LockedBuffer(), local_predictions.LDim(),
-      local_entries.Buffer());
-    fill_tensor_indices<<<grid_dim, block_dim, 0, stream>>>(
+      local_entries.data().get(), num_local_entries_per_col);
+    fill_with_tensor_index<<<grid_dim, block_dim, 0, stream>>>(
       num_local_entries, local_width, num_local_entries_per_col,
-      local_entries_cols.Buffer());
+      local_entries_cols.data().get());
     thrust::sort_by_key(thrust::cuda::par(alloc).on(stream),
-                        entry_ptr(local_entries.Buffer()),
-                        entry_ptr(local_entries.Buffer() + num_local_entries),
-                        index_ptr(local_entries_cols.Buffer()),
+                        local_entries.begin(),
+                        local_entries.end(),
+                        local_entries_cols.begin(),
                         entry_compare());
     thrust::stable_sort_by_key(thrust::cuda::par(alloc).on(stream),
-                               index_ptr(local_entries_cols.Buffer()),
-                               index_ptr(local_entries_cols.Buffer() + num_local_entries),
-                               entry_ptr(local_entries.Buffer()));
-    CHECK_CUDA(cudaMemcpy2DAsync(top_entries.Buffer(),
+                               local_entries_cols.begin(),
+                               local_entries_cols.end(),
+                               local_entries.begin());
+    CHECK_CUDA(cudaMemcpy2DAsync(top_entries.data().get(),
                                  k * sizeof(entry),
-                                 local_entries.Buffer(),
+                                 local_entries.data().get(),
                                  num_local_entries_per_col * sizeof(entry),
                                  k * sizeof(entry),
                                  local_width,
@@ -300,38 +309,38 @@ void fp_gpu(lbann_comm& comm,
                                  stream));
   }
 
-  // Find top-k entries in each global matrix column
+  // Find top-k entries in each column of global prediction matrix
   if (col_comm_size > 1) {
     const auto& num_entries_per_rank = local_width * k;
     const auto& num_entries = col_comm_size * num_entries_per_rank;
     const auto& block_dim = 256;
     const auto& grid_dim = (num_entries + block_dim - 1) / block_dim;
     if (col_comm_rank != col_comm_root) {
-      comm.gather(reinterpret_cast<El::byte*>(top_entries.Buffer()),
-                  num_entries_per_rank * sizeof(entry),
+      comm.gather(reinterpret_cast<El::byte*>(top_entries.data().get()),
+                  top_entries.size() * sizeof(entry),
                   col_comm_root,
                   col_comm);
     } else {
-      entry_array global_top_entries(col_comm_size * local_width * k, memory_mode);
-      index_array global_top_entries_cols(num_entries, memory_mode);
-      comm.gather(reinterpret_cast<El::byte*>(top_entries.Buffer()),
-                  num_entries_per_rank * sizeof(entry),
-                  reinterpret_cast<El::byte*>(global_top_entries.Buffer()),
+      entry_array global_top_entries(num_entries);
+      index_array global_top_entries_cols(num_entries);
+      comm.gather(reinterpret_cast<El::byte*>(top_entries.data().get()),
+                  top_entries.size() * sizeof(entry),
+                  reinterpret_cast<El::byte*>(global_top_entries.data().get()),
                   col_comm);
-      fill_tensor_indices<<<grid_dim, block_dim, 0, stream>>>(
-        num_entries, local_width, k, global_top_entries_cols.Buffer());
+      fill_with_tensor_index<<<grid_dim, block_dim, 0, stream>>>(
+        num_entries, local_width, k, global_top_entries_cols.data().get());
       thrust::sort_by_key(thrust::cuda::par(alloc).on(stream),
-                          entry_ptr(global_top_entries.Buffer()),
-                          entry_ptr(global_top_entries.Buffer() + num_entries),
-                          index_ptr(global_top_entries_cols.Buffer()),
+                          global_top_entries.begin(),
+                          global_top_entries.end(),
+                          global_top_entries_cols.begin(),
                           entry_compare());
       thrust::stable_sort_by_key(thrust::cuda::par(alloc).on(stream),
-                                 index_ptr(global_top_entries_cols.Buffer()),
-                                 index_ptr(global_top_entries_cols.Buffer() + num_entries),
-                                 entry_ptr(global_top_entries.Buffer()));
-      CHECK_CUDA(cudaMemcpy2DAsync(top_entries.Buffer(),
+                                 global_top_entries_cols.begin(),
+                                 global_top_entries_cols.end(),
+                                 global_top_entries.begin());
+      CHECK_CUDA(cudaMemcpy2DAsync(top_entries.data().get(),
                                    k * sizeof(entry),
-                                   global_top_entries.Buffer(),
+                                   global_top_entries.data().get(),
                                    col_comm_size * k * sizeof(entry),
                                    k * sizeof(entry),
                                    local_width,
@@ -347,8 +356,9 @@ void fp_gpu(lbann_comm& comm,
     const auto& block_dim = 256;
     const auto& grid_dim = (num_entries + block_dim - 1) / block_dim;
     compute_categorical_accuracy<<<grid_dim, block_dim, 0, stream>>>(
-      k, height, local_width,
-      top_entries.Buffer(), k, label_indices.Buffer(),
+      k, local_width, height-1,
+      top_entries.data().get(), k,
+      label_indices.data().get(),
       local_loss.Buffer(), local_loss.LDim());
   }
 

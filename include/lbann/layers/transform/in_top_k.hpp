@@ -35,7 +35,7 @@ namespace lbann {
 /** Indicate top-k entries in each mini-batch sample.
  *  Output entries corresponding to the top-k input entries are set to
  *  one and the rest are set to zero. Ties are broken in favor of
- *  entries with smaller row indices.
+ *  entries with smaller indices.
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class in_top_k_layer : public transform_layer {
