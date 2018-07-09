@@ -1188,7 +1188,7 @@ uint8_t *lbann_comm::get_collective_buffer(size_t size, size_t idx) {
     #endif // AL_HAS_NCCL
     #ifdef AL_HAS_MPI_CUDA
     if (t == std::type_index(typeid(::Al::MPICUDABackend))) {
-      auto&& val = new ::Al::MPICDABackend::comm_type(c.comm, El::GPUManager::Stream());
+      auto&& val = new ::Al::MPICUDABackend::comm_type(c.comm, El::GPUManager::Stream());
       m_al_comms[key] = al_comms_val_type(val);
     }
     #endif  // AL_HAS_MPI_CUDA
