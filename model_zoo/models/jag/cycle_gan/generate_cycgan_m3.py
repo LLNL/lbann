@@ -191,8 +191,8 @@ def configure_model(model):
     #Dont add weights, share weights with _1
     G_cyc_y = add_generator(model,g_sample2,'gen1',2500,True,True,False,'_2')
     #G_cyc_y - y
-    l = new_layer(model,'cycy_minus_y',G_cyc_y + ' image_data_dummy','sum')
-    l.sum.scaling_factors = '1 -1'
+    l = new_layer(model,'cycy_minus_y',G_cyc_y + ' image_data_dummy','weighted_sum')
+    l.weighted_sum.scaling_factors = '1 -1'
     #abs(x) x= G_cyc_y - y = cycy_minus_y
     l = new_layer(model,'L_cyc_y', 'cycy_minus_y', 'abs')
     l = new_layer(model, 'L_cyc_y_eval','L_cyc_y', 'evaluation')
@@ -202,22 +202,22 @@ def configure_model(model):
     #G_cyc_x = generator2(G_sample) //freeze, shared weights with previous but not name
     G_cyc_x = add_generator(model,g_sample,'gen2', 11, False,False,False,'_gsample')
     #G_cyc_x - x
-    l = new_layer(model,'cycx_minus_x',G_cyc_x + ' param_data_id','sum')
-    l.sum.scaling_factors = '1 -1'
+    l = new_layer(model,'cycx_minus_x',G_cyc_x + ' param_data_id','weighted_sum')
+    l.weighted_sum.scaling_factors = '1 -1'
     #abs(x) x= G_cyc_x - x = cycx_minus_x
     l = new_layer(model,'L_cyc_x', 'cycx_minus_x', 'abs')
     l = new_layer(model, 'L_cyc_x_eval','L_cyc_x', 'evaluation')
 
     #******************************************************
     #L_cyc = L_cyc_y + L_cyc_x
-    #l = new_layer(model, 'L_cyc', 'L_cyc_y L_cyc_x', 'sum')
-    #l.sum.scaling_factors = '1 1'
+    #l = new_layer(model, 'L_cyc', 'L_cyc_y L_cyc_x', 'weighted_sum')
+    #l.weighted_sum.scaling_factors = '1 1'
     #l = new_layer(model, 'L_cyc_eval','L_cyc', 'evaluation')
     #******************************************************
     #******************************************************
     #l2_norm(gsample2 - x)
-    l = new_layer(model, 'gsample2_minus_x', g_sample2+' param_data_id','sum')
-    l.sum.scaling_factors = '1 -1'
+    l = new_layer(model, 'gsample2_minus_x', g_sample2+' param_data_id','weighted_sum')
+    l.weighted_sum.scaling_factors = '1 -1'
 
     l = new_layer(model, 'l_l2_x', 'gsample2_minus_x', 'l2_loss')
     l = new_layer(model, 'l_l2_x_eval','l_l2_x', 'evaluation')

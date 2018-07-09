@@ -766,6 +766,7 @@ message Layer {
    Slice slice = 301;
    Split split = 302;
    Sum sum = 303;
+   WeightedSum weighted_sum = 323;
    Unpooling unpooling = 304;
    Hadamard hadamard = 308;
    Constant constant = 309;
@@ -991,6 +992,9 @@ message Split {
 }
 
 message Sum {
+}
+
+message WeightedSum {
   string scaling_factors = 1; //should be a space-separated list of doubles, e.g. "1.0 2.0 -1.0"
 }
 

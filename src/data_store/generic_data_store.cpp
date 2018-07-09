@@ -39,28 +39,43 @@ namespace lbann {
 
 generic_data_store::generic_data_store(generic_data_reader *reader, model *m) :
     m_reader(reader), 
-    m_comm(m->get_comm()),
     m_my_minibatch_indices(nullptr),
     m_epoch(0),
     m_in_memory(true),
     m_model(m),
-    m_dir(m_reader->get_file_dir()),
     m_extended_testing(false),
     m_is_subsidiary_store(false),
     m_cur_minibatch(1000000),
     m_is_setup(false),
     m_verbose(false)
 {
+  if (m_reader == nullptr) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << " m_reader is nullptr";
+        throw lbann_exception(err.str());
+  }
+
+  if (m_model == nullptr) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << " m_model is nullptr";
+        throw lbann_exception(err.str());
+  }
+
+  m_comm = m_model->get_comm();
   if (m_comm == nullptr) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
-        << " m_reader->get_comm is nullptr";
+        << " m_comm is nullptr";
         throw lbann_exception(err.str());
   }
   m_master = m_comm->am_world_master();
   m_rank = m_comm->get_rank_in_model();
   m_np = m_comm->get_procs_per_model();
   m_mpi_comm = m_comm->get_model_comm().comm;
+
+  m_dir = m_reader->get_file_dir();
 
   set_name("generic_data_store");
   options *opts = options::get();

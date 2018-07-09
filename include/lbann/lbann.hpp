@@ -74,6 +74,7 @@
 #include "lbann/layers/transform/unpooling.hpp"
 #include "lbann/layers/transform/split.hpp"
 #include "lbann/layers/transform/sum.hpp"
+#include "lbann/layers/transform/weighted_sum.hpp"
 #include "lbann/layers/transform/slice.hpp"
 #include "lbann/layers/transform/concatenation.hpp"
 #include "lbann/layers/transform/constant.hpp"
@@ -215,5 +216,6 @@
 #include "lbann/io/persist.hpp"
 #include "lbann/utils/compiler_control.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
+#include "lbann/utils/peek_map.hpp"
 
 #endif // LBANN_HPP_INCLUDED

@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/proto/factories.hpp"
+#include "lbann/utils/peek_map.hpp"
 
 namespace lbann {
 namespace proto {
@@ -54,7 +55,7 @@ std::vector<T*> select_from_list(std::string names,
 
 lbann_callback* construct_callback(lbann_comm* comm,
                                    const lbann_data::Callback& proto_cb,
-                                   std::map<execution_mode, generic_data_reader*>& data_readers,
+                                   const std::map<execution_mode, generic_data_reader*>& data_readers,
                                    std::vector<Layer*> layer_list,
                                    std::vector<weights*> weights_list,
                                    lbann_summary* summarizer) {
@@ -79,7 +80,7 @@ lbann_callback* construct_callback(lbann_comm* comm,
   }
   if (proto_cb.has_save_images()) {
     const auto& params = proto_cb.save_images();
-    auto&& reader = data_readers[execution_mode::training] ;
+    auto&& reader = lbann::peek_map(data_readers, execution_mode::training);
     const auto& layer_names = parse_list<>(params.layer_names());
     return new lbann_callback_save_images(reader,
                                           params.image_dir(),

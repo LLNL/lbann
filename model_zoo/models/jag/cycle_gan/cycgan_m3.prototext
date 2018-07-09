@@ -165,6 +165,7 @@ model {
   layer {
     name: "g_adv2_bce"
     data_layout: "data_parallel"
+    device_allocation: "cpu"
     parents: "disc2fc3_real"
     bce_with_logits {
       true_label: 1
@@ -315,7 +316,7 @@ model {
     name: "cycy_minus_y"
     data_layout: "data_parallel"
     parents: "gen1fc4_2 image_data_dummy"
-    sum {
+    weighted_sum {
       scaling_factors: "1 -1"
     }
   }
@@ -324,6 +325,7 @@ model {
     }
     name: "L_cyc_y"
     data_layout: "data_parallel"
+    device_allocation: "cpu"
     parents: "cycy_minus_y"
   }
   layer {
@@ -471,7 +473,7 @@ model {
     name: "cycx_minus_x"
     data_layout: "data_parallel"
     parents: "gen2fc4_gsample param_data_id"
-    sum {
+    weighted_sum {
       scaling_factors: "1 -1"
     }
   }
@@ -480,6 +482,7 @@ model {
     }
     name: "L_cyc_x"
     data_layout: "data_parallel"
+    device_allocation: "cpu"
     parents: "cycx_minus_x"
   }
   layer {
@@ -493,7 +496,7 @@ model {
     name: "gsample2_minus_x"
     data_layout: "data_parallel"
     parents: "gen2fc4_y param_data_id"
-    sum {
+    weighted_sum {
       scaling_factors: "1 -1"
     }
   }
@@ -502,6 +505,7 @@ model {
     }
     name: "l_l2_x"
     data_layout: "data_parallel"
+    device_allocation: "cpu"
     parents: "gsample2_minus_x"
   }
   layer {

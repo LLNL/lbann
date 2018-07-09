@@ -48,7 +48,8 @@ model {
   data_layout: "data_parallel"
   layer {
     input {
-      io_buffer: "distributed"
+      io_buffer: "partitioned"
+      data_set_per_model: true
       target_mode: "N/A"
     }
     name: "data1"
@@ -256,6 +257,7 @@ model {
     }
     name: "disc1_real_bce"
     data_layout: "data_parallel"
+    device_allocation: "cpu"
     parents: "d1fc3_real"
   }
   layer {
@@ -271,6 +273,7 @@ model {
     }
     name: "disc1_fake_bce"
     data_layout: "data_parallel"
+    device_allocation: "cpu"
     parents: "d1fc3_fake"
   }
   layer {
@@ -337,6 +340,7 @@ model {
     }
     name: "g_adv1_bce"
     data_layout: "data_parallel"
+    device_allocation: "cpu"
     parents: "d2fc3"
   }
   layer {
@@ -360,6 +364,7 @@ model {
     }
     name: "l_l2_y"
     data_layout: "data_parallel"
+    device_allocation: "cpu"
     parents: "gsample_minus_y"
   }
     
@@ -440,7 +445,7 @@ model {
   #}
   callback {
     ltfb {
-      round_size: 10 
+      round_size: 100 
       increasing_metric_mode: false
       eval_metrics: "l_l2_y_eval"
       #weights_tosend: "gen1fc1linearity gen1fc1bias gen1fc2linearity gen1fc2bias gen1fc3linearity gen1fc3bias gen1fc4linearity gen1fc4bias" 

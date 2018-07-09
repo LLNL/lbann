@@ -1,0 +1,655 @@
+
+
+==============================================================
+STARTING lbann with this command line:
+./build/gnu.Release.pascal.llnl.gov/install/bin/lbann --num_gpus=1 --model=proto/model_resnet50_fmow.prototext --reader=proto/data_reader_fmow_final.prototext --optimizer=model_zoo/optimizers/opt_sgd_1e-3.prototext --mini_batch_size=16 --num_epochs=100 
+
+protobuf_utils::verify_prototext; starting verify for 1 models
+	Max Parallel I/O Fetch: 2 (Limited to # Processes)
+Model settings
+  Models              : 1
+  Processes per model : 2
+  Grid dimensions     : 1 x 2
+
+
+writing options and prototext to file: data.prototext_1
+
+code was compiled with LBANN_HAS_CUDNN, and we are using cudnn
+Hardware settings (for master process)
+  Processes on node            : 2
+  OpenMP threads per process   : 36
+  GPUs on node                 : 2
+  MV2_USE_CUDA                 : 1
+
+image processor: default_resizer resizer is set
+imagenet_reader is set
+image processor: default_resizer resizer is set
+imagenet_reader is set
+
+Running with these parameters:
+ General:
+  datatype size:        4
+  mini_batch_size:      16
+  num_epochs:           100
+  block_size:           256
+  procs_per_model:      0
+  num_parallel_readers: 2
+  disable_cuda:         0
+  random_seed:          0
+  data_layout:          data_parallel
+     (only used for metrics)
+
+ Optimizer:    Sgd
+  learn_rate: 0.001
+  momentum:   0.9
+  decay_rate: 0.0005
+  nesterov:   0
+        data:[ input:partitioned(C)] Set up a layer with input       0 and  196608 neurons. (activations[0] = [3 x 256 x 256, 16s], activations[1] = [62, 16s])
+       conv1:[       convolution(G)] Set up a layer with input  196608 and 1048576 neurons. (activations = [64c x 128w x 128h, 16s] - C=64o,3i F=7w x 7h)
+    bn_conv1:[batch normalization(G)] Set up a layer with input 1048576 and 1048576 neurons. (activations = [64c x 128w x 128h, 16s])
+  conv1_relu:[              ReLU(G)] Set up a layer with input 1048576 and 1048576 neurons. (activations = [64c x 128w x 128h, 16s])
+       pool1:[           pooling(G)] Set up a layer with input 1048576 and  262144 neurons. (activations = [64c x 64w x 64h, 16s])
+ pool1_split:[             split(G)] Set up a layer with input  262144 and  262144 neurons. (activations[0] = [64c x 64w x 64h, 16s], activations[1] = [64c x 64w x 64h, 16s])
+res2a_branch1:[       convolution(G)] Set up a layer with input  262144 and 1048576 neurons. (activations = [256c x 64w x 64h, 16s] - C=256o,64i F=1w x 1h)
+bn2a_branch1:[batch normalization(G)] Set up a layer with input 1048576 and 1048576 neurons. (activations = [256c x 64w x 64h, 16s])
+res2a_branch2a:[       convolution(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [64c x 64w x 64h, 16s] - C=64o,64i F=1w x 1h)
+bn2a_branch2a:[batch normalization(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [64c x 64w x 64h, 16s])
+res2a_branch2a_relu:[              ReLU(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [64c x 64w x 64h, 16s])
+res2a_branch2b:[       convolution(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [64c x 64w x 64h, 16s] - C=64o,64i F=3w x 3h)
+bn2a_branch2b:[batch normalization(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [64c x 64w x 64h, 16s])
+res2a_branch2b_relu:[              ReLU(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [64c x 64w x 64h, 16s])
+res2a_branch2c:[       convolution(G)] Set up a layer with input  262144 and 1048576 neurons. (activations = [256c x 64w x 64h, 16s] - C=256o,64i F=1w x 1h)
+bn2a_branch2c:[batch normalization(G)] Set up a layer with input 1048576 and 1048576 neurons. (activations = [256c x 64w x 64h, 16s])
+       res2a:[               sum(G)] Set up a layer with input 1048576 and 1048576 neurons. (activations = [256c x 64w x 64h, 16s])
+  res2a_relu:[              ReLU(G)] Set up a layer with input 1048576 and 1048576 neurons. (activations = [256c x 64w x 64h, 16s])
+res2a_relu_split:[             split(G)] Set up a layer with input 1048576 and 1048576 neurons. (activations[0] = [256c x 64w x 64h, 16s], activations[1] = [256c x 64w x 64h, 16s])
+res2b_branch2a:[       convolution(G)] Set up a layer with input 1048576 and  262144 neurons. (activations = [64c x 64w x 64h, 16s] - C=64o,256i F=1w x 1h)
+bn2b_branch2a:[batch normalization(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [64c x 64w x 64h, 16s])
+res2b_branch2a_relu:[              ReLU(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [64c x 64w x 64h, 16s])
+res2b_branch2b:[       convolution(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [64c x 64w x 64h, 16s] - C=64o,64i F=3w x 3h)
+bn2b_branch2b:[batch normalization(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [64c x 64w x 64h, 16s])
+res2b_branch2b_relu:[              ReLU(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [64c x 64w x 64h, 16s])
+res2b_branch2c:[       convolution(G)] Set up a layer with input  262144 and 1048576 neurons. (activations = [256c x 64w x 64h, 16s] - C=256o,64i F=1w x 1h)
+bn2b_branch2c:[batch normalization(G)] Set up a layer with input 1048576 and 1048576 neurons. (activations = [256c x 64w x 64h, 16s])
+       res2b:[               sum(G)] Set up a layer with input 1048576 and 1048576 neurons. (activations = [256c x 64w x 64h, 16s])
+  res2b_relu:[              ReLU(G)] Set up a layer with input 1048576 and 1048576 neurons. (activations = [256c x 64w x 64h, 16s])
+res2b_relu_split:[             split(G)] Set up a layer with input 1048576 and 1048576 neurons. (activations[0] = [256c x 64w x 64h, 16s], activations[1] = [256c x 64w x 64h, 16s])
+res2c_branch2a:[       convolution(G)] Set up a layer with input 1048576 and  262144 neurons. (activations = [64c x 64w x 64h, 16s] - C=64o,256i F=1w x 1h)
+bn2c_branch2a:[batch normalization(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [64c x 64w x 64h, 16s])
+res2c_branch2a_relu:[              ReLU(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [64c x 64w x 64h, 16s])
+res2c_branch2b:[       convolution(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [64c x 64w x 64h, 16s] - C=64o,64i F=3w x 3h)
+bn2c_branch2b:[batch normalization(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [64c x 64w x 64h, 16s])
+res2c_branch2b_relu:[              ReLU(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [64c x 64w x 64h, 16s])
+res2c_branch2c:[       convolution(G)] Set up a layer with input  262144 and 1048576 neurons. (activations = [256c x 64w x 64h, 16s] - C=256o,64i F=1w x 1h)
+bn2c_branch2c:[batch normalization(G)] Set up a layer with input 1048576 and 1048576 neurons. (activations = [256c x 64w x 64h, 16s])
+       res2c:[               sum(G)] Set up a layer with input 1048576 and 1048576 neurons. (activations = [256c x 64w x 64h, 16s])
+  res2c_relu:[              ReLU(G)] Set up a layer with input 1048576 and 1048576 neurons. (activations = [256c x 64w x 64h, 16s])
+res2c_relu_split:[             split(G)] Set up a layer with input 1048576 and 1048576 neurons. (activations[0] = [256c x 64w x 64h, 16s], activations[1] = [256c x 64w x 64h, 16s])
+res3a_branch1:[       convolution(G)] Set up a layer with input 1048576 and  524288 neurons. (activations = [512c x 32w x 32h, 16s] - C=512o,256i F=1w x 1h)
+bn3a_branch1:[batch normalization(G)] Set up a layer with input  524288 and  524288 neurons. (activations = [512c x 32w x 32h, 16s])
+res3a_branch2a:[       convolution(G)] Set up a layer with input 1048576 and  131072 neurons. (activations = [128c x 32w x 32h, 16s] - C=128o,256i F=1w x 1h)
+bn3a_branch2a:[batch normalization(G)] Set up a layer with input  131072 and  131072 neurons. (activations = [128c x 32w x 32h, 16s])
+res3a_branch2a_relu:[              ReLU(G)] Set up a layer with input  131072 and  131072 neurons. (activations = [128c x 32w x 32h, 16s])
+res3a_branch2b:[       convolution(G)] Set up a layer with input  131072 and  131072 neurons. (activations = [128c x 32w x 32h, 16s] - C=128o,128i F=3w x 3h)
+bn3a_branch2b:[batch normalization(G)] Set up a layer with input  131072 and  131072 neurons. (activations = [128c x 32w x 32h, 16s])
+res3a_branch2b_relu:[              ReLU(G)] Set up a layer with input  131072 and  131072 neurons. (activations = [128c x 32w x 32h, 16s])
+res3a_branch2c:[       convolution(G)] Set up a layer with input  131072 and  524288 neurons. (activations = [512c x 32w x 32h, 16s] - C=512o,128i F=1w x 1h)
+bn3a_branch2c:[batch normalization(G)] Set up a layer with input  524288 and  524288 neurons. (activations = [512c x 32w x 32h, 16s])
+       res3a:[               sum(G)] Set up a layer with input  524288 and  524288 neurons. (activations = [512c x 32w x 32h, 16s])
+  res3a_relu:[              ReLU(G)] Set up a layer with input  524288 and  524288 neurons. (activations = [512c x 32w x 32h, 16s])
+res3a_relu_split:[             split(G)] Set up a layer with input  524288 and  524288 neurons. (activations[0] = [512c x 32w x 32h, 16s], activations[1] = [512c x 32w x 32h, 16s])
+res3b_branch2a:[       convolution(G)] Set up a layer with input  524288 and  131072 neurons. (activations = [128c x 32w x 32h, 16s] - C=128o,512i F=1w x 1h)
+bn3b_branch2a:[batch normalization(G)] Set up a layer with input  131072 and  131072 neurons. (activations = [128c x 32w x 32h, 16s])
+res3b_branch2a_relu:[              ReLU(G)] Set up a layer with input  131072 and  131072 neurons. (activations = [128c x 32w x 32h, 16s])
+res3b_branch2b:[       convolution(G)] Set up a layer with input  131072 and  131072 neurons. (activations = [128c x 32w x 32h, 16s] - C=128o,128i F=3w x 3h)
+bn3b_branch2b:[batch normalization(G)] Set up a layer with input  131072 and  131072 neurons. (activations = [128c x 32w x 32h, 16s])
+res3b_branch2b_relu:[              ReLU(G)] Set up a layer with input  131072 and  131072 neurons. (activations = [128c x 32w x 32h, 16s])
+res3b_branch2c:[       convolution(G)] Set up a layer with input  131072 and  524288 neurons. (activations = [512c x 32w x 32h, 16s] - C=512o,128i F=1w x 1h)
+bn3b_branch2c:[batch normalization(G)] Set up a layer with input  524288 and  524288 neurons. (activations = [512c x 32w x 32h, 16s])
+       res3b:[               sum(G)] Set up a layer with input  524288 and  524288 neurons. (activations = [512c x 32w x 32h, 16s])
+  res3b_relu:[              ReLU(G)] Set up a layer with input  524288 and  524288 neurons. (activations = [512c x 32w x 32h, 16s])
+res3b_relu_split:[             split(G)] Set up a layer with input  524288 and  524288 neurons. (activations[0] = [512c x 32w x 32h, 16s], activations[1] = [512c x 32w x 32h, 16s])
+res3c_branch2a:[       convolution(G)] Set up a layer with input  524288 and  131072 neurons. (activations = [128c x 32w x 32h, 16s] - C=128o,512i F=1w x 1h)
+bn3c_branch2a:[batch normalization(G)] Set up a layer with input  131072 and  131072 neurons. (activations = [128c x 32w x 32h, 16s])
+res3c_branch2a_relu:[              ReLU(G)] Set up a layer with input  131072 and  131072 neurons. (activations = [128c x 32w x 32h, 16s])
+res3c_branch2b:[       convolution(G)] Set up a layer with input  131072 and  131072 neurons. (activations = [128c x 32w x 32h, 16s] - C=128o,128i F=3w x 3h)
+bn3c_branch2b:[batch normalization(G)] Set up a layer with input  131072 and  131072 neurons. (activations = [128c x 32w x 32h, 16s])
+res3c_branch2b_relu:[              ReLU(G)] Set up a layer with input  131072 and  131072 neurons. (activations = [128c x 32w x 32h, 16s])
+res3c_branch2c:[       convolution(G)] Set up a layer with input  131072 and  524288 neurons. (activations = [512c x 32w x 32h, 16s] - C=512o,128i F=1w x 1h)
+bn3c_branch2c:[batch normalization(G)] Set up a layer with input  524288 and  524288 neurons. (activations = [512c x 32w x 32h, 16s])
+       res3c:[               sum(G)] Set up a layer with input  524288 and  524288 neurons. (activations = [512c x 32w x 32h, 16s])
+  res3c_relu:[              ReLU(G)] Set up a layer with input  524288 and  524288 neurons. (activations = [512c x 32w x 32h, 16s])
+res3c_relu_split:[             split(G)] Set up a layer with input  524288 and  524288 neurons. (activations[0] = [512c x 32w x 32h, 16s], activations[1] = [512c x 32w x 32h, 16s])
+res3d_branch2a:[       convolution(G)] Set up a layer with input  524288 and  131072 neurons. (activations = [128c x 32w x 32h, 16s] - C=128o,512i F=1w x 1h)
+bn3d_branch2a:[batch normalization(G)] Set up a layer with input  131072 and  131072 neurons. (activations = [128c x 32w x 32h, 16s])
+res3d_branch2a_relu:[              ReLU(G)] Set up a layer with input  131072 and  131072 neurons. (activations = [128c x 32w x 32h, 16s])
+res3d_branch2b:[       convolution(G)] Set up a layer with input  131072 and  131072 neurons. (activations = [128c x 32w x 32h, 16s] - C=128o,128i F=3w x 3h)
+bn3d_branch2b:[batch normalization(G)] Set up a layer with input  131072 and  131072 neurons. (activations = [128c x 32w x 32h, 16s])
+res3d_branch2b_relu:[              ReLU(G)] Set up a layer with input  131072 and  131072 neurons. (activations = [128c x 32w x 32h, 16s])
+res3d_branch2c:[       convolution(G)] Set up a layer with input  131072 and  524288 neurons. (activations = [512c x 32w x 32h, 16s] - C=512o,128i F=1w x 1h)
+bn3d_branch2c:[batch normalization(G)] Set up a layer with input  524288 and  524288 neurons. (activations = [512c x 32w x 32h, 16s])
+       res3d:[               sum(G)] Set up a layer with input  524288 and  524288 neurons. (activations = [512c x 32w x 32h, 16s])
+  res3d_relu:[              ReLU(G)] Set up a layer with input  524288 and  524288 neurons. (activations = [512c x 32w x 32h, 16s])
+res3d_relu_split:[             split(G)] Set up a layer with input  524288 and  524288 neurons. (activations[0] = [512c x 32w x 32h, 16s], activations[1] = [512c x 32w x 32h, 16s])
+res4a_branch1:[       convolution(G)] Set up a layer with input  524288 and  262144 neurons. (activations = [1024c x 16w x 16h, 16s] - C=1024o,512i F=1w x 1h)
+bn4a_branch1:[batch normalization(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [1024c x 16w x 16h, 16s])
+res4a_branch2a:[       convolution(G)] Set up a layer with input  524288 and   65536 neurons. (activations = [256c x 16w x 16h, 16s] - C=256o,512i F=1w x 1h)
+bn4a_branch2a:[batch normalization(G)] Set up a layer with input   65536 and   65536 neurons. (activations = [256c x 16w x 16h, 16s])
+res4a_branch2a_relu:[              ReLU(G)] Set up a layer with input   65536 and   65536 neurons. (activations = [256c x 16w x 16h, 16s])
+res4a_branch2b:[       convolution(G)] Set up a layer with input   65536 and   65536 neurons. (activations = [256c x 16w x 16h, 16s] - C=256o,256i F=3w x 3h)
+bn4a_branch2b:[batch normalization(G)] Set up a layer with input   65536 and   65536 neurons. (activations = [256c x 16w x 16h, 16s])
+res4a_branch2b_relu:[              ReLU(G)] Set up a layer with input   65536 and   65536 neurons. (activations = [256c x 16w x 16h, 16s])
+res4a_branch2c:[       convolution(G)] Set up a layer with input   65536 and  262144 neurons. (activations = [1024c x 16w x 16h, 16s] - C=1024o,256i F=1w x 1h)
+bn4a_branch2c:[batch normalization(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [1024c x 16w x 16h, 16s])
+       res4a:[               sum(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [1024c x 16w x 16h, 16s])
+  res4a_relu:[              ReLU(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [1024c x 16w x 16h, 16s])
+res4a_relu_split:[             split(G)] Set up a layer with input  262144 and  262144 neurons. (activations[0] = [1024c x 16w x 16h, 16s], activations[1] = [1024c x 16w x 16h, 16s])
+res4b_branch2a:[       convolution(G)] Set up a layer with input  262144 and   65536 neurons. (activations = [256c x 16w x 16h, 16s] - C=256o,1024i F=1w x 1h)
+bn4b_branch2a:[batch normalization(G)] Set up a layer with input   65536 and   65536 neurons. (activations = [256c x 16w x 16h, 16s])
+res4b_branch2a_relu:[              ReLU(G)] Set up a layer with input   65536 and   65536 neurons. (activations = [256c x 16w x 16h, 16s])
+res4b_branch2b:[       convolution(G)] Set up a layer with input   65536 and   65536 neurons. (activations = [256c x 16w x 16h, 16s] - C=256o,256i F=3w x 3h)
+bn4b_branch2b:[batch normalization(G)] Set up a layer with input   65536 and   65536 neurons. (activations = [256c x 16w x 16h, 16s])
+res4b_branch2b_relu:[              ReLU(G)] Set up a layer with input   65536 and   65536 neurons. (activations = [256c x 16w x 16h, 16s])
+res4b_branch2c:[       convolution(G)] Set up a layer with input   65536 and  262144 neurons. (activations = [1024c x 16w x 16h, 16s] - C=1024o,256i F=1w x 1h)
+bn4b_branch2c:[batch normalization(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [1024c x 16w x 16h, 16s])
+       res4b:[               sum(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [1024c x 16w x 16h, 16s])
+  res4b_relu:[              ReLU(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [1024c x 16w x 16h, 16s])
+res4b_relu_split:[             split(G)] Set up a layer with input  262144 and  262144 neurons. (activations[0] = [1024c x 16w x 16h, 16s], activations[1] = [1024c x 16w x 16h, 16s])
+res4c_branch2a:[       convolution(G)] Set up a layer with input  262144 and   65536 neurons. (activations = [256c x 16w x 16h, 16s] - C=256o,1024i F=1w x 1h)
+bn4c_branch2a:[batch normalization(G)] Set up a layer with input   65536 and   65536 neurons. (activations = [256c x 16w x 16h, 16s])
+res4c_branch2a_relu:[              ReLU(G)] Set up a layer with input   65536 and   65536 neurons. (activations = [256c x 16w x 16h, 16s])
+res4c_branch2b:[       convolution(G)] Set up a layer with input   65536 and   65536 neurons. (activations = [256c x 16w x 16h, 16s] - C=256o,256i F=3w x 3h)
+bn4c_branch2b:[batch normalization(G)] Set up a layer with input   65536 and   65536 neurons. (activations = [256c x 16w x 16h, 16s])
+res4c_branch2b_relu:[              ReLU(G)] Set up a layer with input   65536 and   65536 neurons. (activations = [256c x 16w x 16h, 16s])
+res4c_branch2c:[       convolution(G)] Set up a layer with input   65536 and  262144 neurons. (activations = [1024c x 16w x 16h, 16s] - C=1024o,256i F=1w x 1h)
+bn4c_branch2c:[batch normalization(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [1024c x 16w x 16h, 16s])
+       res4c:[               sum(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [1024c x 16w x 16h, 16s])
+  res4c_relu:[              ReLU(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [1024c x 16w x 16h, 16s])
+res4c_relu_split:[             split(G)] Set up a layer with input  262144 and  262144 neurons. (activations[0] = [1024c x 16w x 16h, 16s], activations[1] = [1024c x 16w x 16h, 16s])
+res4d_branch2a:[       convolution(G)] Set up a layer with input  262144 and   65536 neurons. (activations = [256c x 16w x 16h, 16s] - C=256o,1024i F=1w x 1h)
+bn4d_branch2a:[batch normalization(G)] Set up a layer with input   65536 and   65536 neurons. (activations = [256c x 16w x 16h, 16s])
+res4d_branch2a_relu:[              ReLU(G)] Set up a layer with input   65536 and   65536 neurons. (activations = [256c x 16w x 16h, 16s])
+res4d_branch2b:[       convolution(G)] Set up a layer with input   65536 and   65536 neurons. (activations = [256c x 16w x 16h, 16s] - C=256o,256i F=3w x 3h)
+bn4d_branch2b:[batch normalization(G)] Set up a layer with input   65536 and   65536 neurons. (activations = [256c x 16w x 16h, 16s])
+res4d_branch2b_relu:[              ReLU(G)] Set up a layer with input   65536 and   65536 neurons. (activations = [256c x 16w x 16h, 16s])
+res4d_branch2c:[       convolution(G)] Set up a layer with input   65536 and  262144 neurons. (activations = [1024c x 16w x 16h, 16s] - C=1024o,256i F=1w x 1h)
+bn4d_branch2c:[batch normalization(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [1024c x 16w x 16h, 16s])
+       res4d:[               sum(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [1024c x 16w x 16h, 16s])
+  res4d_relu:[              ReLU(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [1024c x 16w x 16h, 16s])
+res4d_relu_split:[             split(G)] Set up a layer with input  262144 and  262144 neurons. (activations[0] = [1024c x 16w x 16h, 16s], activations[1] = [1024c x 16w x 16h, 16s])
+res4e_branch2a:[       convolution(G)] Set up a layer with input  262144 and   65536 neurons. (activations = [256c x 16w x 16h, 16s] - C=256o,1024i F=1w x 1h)
+bn4e_branch2a:[batch normalization(G)] Set up a layer with input   65536 and   65536 neurons. (activations = [256c x 16w x 16h, 16s])
+res4e_branch2a_relu:[              ReLU(G)] Set up a layer with input   65536 and   65536 neurons. (activations = [256c x 16w x 16h, 16s])
+res4e_branch2b:[       convolution(G)] Set up a layer with input   65536 and   65536 neurons. (activations = [256c x 16w x 16h, 16s] - C=256o,256i F=3w x 3h)
+bn4e_branch2b:[batch normalization(G)] Set up a layer with input   65536 and   65536 neurons. (activations = [256c x 16w x 16h, 16s])
+res4e_branch2b_relu:[              ReLU(G)] Set up a layer with input   65536 and   65536 neurons. (activations = [256c x 16w x 16h, 16s])
+res4e_branch2c:[       convolution(G)] Set up a layer with input   65536 and  262144 neurons. (activations = [1024c x 16w x 16h, 16s] - C=1024o,256i F=1w x 1h)
+bn4e_branch2c:[batch normalization(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [1024c x 16w x 16h, 16s])
+       res4e:[               sum(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [1024c x 16w x 16h, 16s])
+  res4e_relu:[              ReLU(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [1024c x 16w x 16h, 16s])
+res4e_relu_split:[             split(G)] Set up a layer with input  262144 and  262144 neurons. (activations[0] = [1024c x 16w x 16h, 16s], activations[1] = [1024c x 16w x 16h, 16s])
+res4f_branch2a:[       convolution(G)] Set up a layer with input  262144 and   65536 neurons. (activations = [256c x 16w x 16h, 16s] - C=256o,1024i F=1w x 1h)
+bn4f_branch2a:[batch normalization(G)] Set up a layer with input   65536 and   65536 neurons. (activations = [256c x 16w x 16h, 16s])
+res4f_branch2a_relu:[              ReLU(G)] Set up a layer with input   65536 and   65536 neurons. (activations = [256c x 16w x 16h, 16s])
+res4f_branch2b:[       convolution(G)] Set up a layer with input   65536 and   65536 neurons. (activations = [256c x 16w x 16h, 16s] - C=256o,256i F=3w x 3h)
+bn4f_branch2b:[batch normalization(G)] Set up a layer with input   65536 and   65536 neurons. (activations = [256c x 16w x 16h, 16s])
+res4f_branch2b_relu:[              ReLU(G)] Set up a layer with input   65536 and   65536 neurons. (activations = [256c x 16w x 16h, 16s])
+res4f_branch2c:[       convolution(G)] Set up a layer with input   65536 and  262144 neurons. (activations = [1024c x 16w x 16h, 16s] - C=1024o,256i F=1w x 1h)
+bn4f_branch2c:[batch normalization(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [1024c x 16w x 16h, 16s])
+       res4f:[               sum(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [1024c x 16w x 16h, 16s])
+  res4f_relu:[              ReLU(G)] Set up a layer with input  262144 and  262144 neurons. (activations = [1024c x 16w x 16h, 16s])
+res4f_relu_split:[             split(G)] Set up a layer with input  262144 and  262144 neurons. (activations[0] = [1024c x 16w x 16h, 16s], activations[1] = [1024c x 16w x 16h, 16s])
+res5a_branch1:[       convolution(G)] Set up a layer with input  262144 and  131072 neurons. (activations = [2048c x 8w x 8h, 16s] - C=2048o,1024i F=1w x 1h)
+bn5a_branch1:[batch normalization(G)] Set up a layer with input  131072 and  131072 neurons. (activations = [2048c x 8w x 8h, 16s])
+res5a_branch2a:[       convolution(G)] Set up a layer with input  262144 and   32768 neurons. (activations = [512c x 8w x 8h, 16s] - C=512o,1024i F=1w x 1h)
+bn5a_branch2a:[batch normalization(G)] Set up a layer with input   32768 and   32768 neurons. (activations = [512c x 8w x 8h, 16s])
+res5a_branch2a_relu:[              ReLU(G)] Set up a layer with input   32768 and   32768 neurons. (activations = [512c x 8w x 8h, 16s])
+res5a_branch2b:[       convolution(G)] Set up a layer with input   32768 and   32768 neurons. (activations = [512c x 8w x 8h, 16s] - C=512o,512i F=3w x 3h)
+bn5a_branch2b:[batch normalization(G)] Set up a layer with input   32768 and   32768 neurons. (activations = [512c x 8w x 8h, 16s])
+res5a_branch2b_relu:[              ReLU(G)] Set up a layer with input   32768 and   32768 neurons. (activations = [512c x 8w x 8h, 16s])
+res5a_branch2c:[       convolution(G)] Set up a layer with input   32768 and  131072 neurons. (activations = [2048c x 8w x 8h, 16s] - C=2048o,512i F=1w x 1h)
+bn5a_branch2c:[batch normalization(G)] Set up a layer with input  131072 and  131072 neurons. (activations = [2048c x 8w x 8h, 16s])
+       res5a:[               sum(G)] Set up a layer with input  131072 and  131072 neurons. (activations = [2048c x 8w x 8h, 16s])
+  res5a_relu:[              ReLU(G)] Set up a layer with input  131072 and  131072 neurons. (activations = [2048c x 8w x 8h, 16s])
+res5a_relu_split:[             split(G)] Set up a layer with input  131072 and  131072 neurons. (activations[0] = [2048c x 8w x 8h, 16s], activations[1] = [2048c x 8w x 8h, 16s])
+res5b_branch2a:[       convolution(G)] Set up a layer with input  131072 and   32768 neurons. (activations = [512c x 8w x 8h, 16s] - C=512o,2048i F=1w x 1h)
+bn5b_branch2a:[batch normalization(G)] Set up a layer with input   32768 and   32768 neurons. (activations = [512c x 8w x 8h, 16s])
+res5b_branch2a_relu:[              ReLU(G)] Set up a layer with input   32768 and   32768 neurons. (activations = [512c x 8w x 8h, 16s])
+res5b_branch2b:[       convolution(G)] Set up a layer with input   32768 and   32768 neurons. (activations = [512c x 8w x 8h, 16s] - C=512o,512i F=3w x 3h)
+bn5b_branch2b:[batch normalization(G)] Set up a layer with input   32768 and   32768 neurons. (activations = [512c x 8w x 8h, 16s])
+res5b_branch2b_relu:[              ReLU(G)] Set up a layer with input   32768 and   32768 neurons. (activations = [512c x 8w x 8h, 16s])
+res5b_branch2c:[       convolution(G)] Set up a layer with input   32768 and  131072 neurons. (activations = [2048c x 8w x 8h, 16s] - C=2048o,512i F=1w x 1h)
+bn5b_branch2c:[batch normalization(G)] Set up a layer with input  131072 and  131072 neurons. (activations = [2048c x 8w x 8h, 16s])
+       res5b:[               sum(G)] Set up a layer with input  131072 and  131072 neurons. (activations = [2048c x 8w x 8h, 16s])
+  res5b_relu:[              ReLU(G)] Set up a layer with input  131072 and  131072 neurons. (activations = [2048c x 8w x 8h, 16s])
+res5b_relu_split:[             split(G)] Set up a layer with input  131072 and  131072 neurons. (activations[0] = [2048c x 8w x 8h, 16s], activations[1] = [2048c x 8w x 8h, 16s])
+res5c_branch2a:[       convolution(G)] Set up a layer with input  131072 and   32768 neurons. (activations = [512c x 8w x 8h, 16s] - C=512o,2048i F=1w x 1h)
+bn5c_branch2a:[batch normalization(G)] Set up a layer with input   32768 and   32768 neurons. (activations = [512c x 8w x 8h, 16s])
+res5c_branch2a_relu:[              ReLU(G)] Set up a layer with input   32768 and   32768 neurons. (activations = [512c x 8w x 8h, 16s])
+res5c_branch2b:[       convolution(G)] Set up a layer with input   32768 and   32768 neurons. (activations = [512c x 8w x 8h, 16s] - C=512o,512i F=3w x 3h)
+bn5c_branch2b:[batch normalization(G)] Set up a layer with input   32768 and   32768 neurons. (activations = [512c x 8w x 8h, 16s])
+res5c_branch2b_relu:[              ReLU(G)] Set up a layer with input   32768 and   32768 neurons. (activations = [512c x 8w x 8h, 16s])
+res5c_branch2c:[       convolution(G)] Set up a layer with input   32768 and  131072 neurons. (activations = [2048c x 8w x 8h, 16s] - C=2048o,512i F=1w x 1h)
+bn5c_branch2c:[batch normalization(G)] Set up a layer with input  131072 and  131072 neurons. (activations = [2048c x 8w x 8h, 16s])
+       res5c:[               sum(G)] Set up a layer with input  131072 and  131072 neurons. (activations = [2048c x 8w x 8h, 16s])
+  res5c_relu:[              ReLU(G)] Set up a layer with input  131072 and  131072 neurons. (activations = [2048c x 8w x 8h, 16s])
+       pool5:[           pooling(G)] Set up a layer with input  131072 and    8192 neurons. (activations = [2048c x 2w x 2h, 16s])
+        fc62:[   fully connected(G)] Set up a layer with input    8192 and      62 neurons. (activations = [62, 16s])
+        prob:[           softmax(G)] Set up a layer with input      62 and      62 neurons. (activations = [62, 16s])
+      target:[           target:(C)] Set up a layer with input      62 and      62 neurons.
+Training with LLNL LBANN version v0.93-2924-g764d1ee-dirty
+
+Callbacks:
+print
+timer
+imcomm
+
+0  input_layer partitioned dataLayout: data_parallel (activations[0] = [3 x 256 x 256, 16s], activations[1] = [62, 16s])
+1  convolution; conv_dims: activations = [64c x 128w x 128h, 16s] - C=64o,3i F=7w x 7h pads: 3 3  strides: 2 2  num_output_channels: 64 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+2  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+3  relu dataLayout: data_parallel
+4  pooling; num_data_dims: 2 pool_dims: 3 3  pads: 1 1  strides: 2 2  pool_mode: max dataLayout: data_parallel device alloc: gpu
+5  split; children: res2a_branch1 convolution res2a_branch2a convolution  dataLayout: data_parallel
+6  convolution; conv_dims: activations = [256c x 64w x 64h, 16s] - C=256o,64i F=1w x 1h pads: 0 0  strides: 1 1  num_output_channels: 256 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+7  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+8  convolution; conv_dims: activations = [64c x 64w x 64h, 16s] - C=64o,64i F=1w x 1h pads: 0 0  strides: 1 1  num_output_channels: 64 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+9  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+10  relu dataLayout: data_parallel
+11  convolution; conv_dims: activations = [64c x 64w x 64h, 16s] - C=64o,64i F=3w x 3h pads: 1 1  strides: 1 1  num_output_channels: 64 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+12  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+13  relu dataLayout: data_parallel
+14  convolution; conv_dims: activations = [256c x 64w x 64h, 16s] - C=256o,64i F=1w x 1h pads: 0 0  strides: 1 1  num_output_channels: 256 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+15  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+16  sum; parents: bn2a_branch1 batch normalization bn2a_branch2c batch normalization  dataLayout: data_parallel
+17  relu dataLayout: data_parallel
+18  split; children: res2b_branch2a convolution res2b sum  dataLayout: data_parallel
+19  convolution; conv_dims: activations = [64c x 64w x 64h, 16s] - C=64o,256i F=1w x 1h pads: 0 0  strides: 1 1  num_output_channels: 64 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+20  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+21  relu dataLayout: data_parallel
+22  convolution; conv_dims: activations = [64c x 64w x 64h, 16s] - C=64o,64i F=3w x 3h pads: 1 1  strides: 1 1  num_output_channels: 64 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+23  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+24  relu dataLayout: data_parallel
+25  convolution; conv_dims: activations = [256c x 64w x 64h, 16s] - C=256o,64i F=1w x 1h pads: 0 0  strides: 1 1  num_output_channels: 256 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+26  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+27  sum; parents: res2a_relu_split split bn2b_branch2c batch normalization  dataLayout: data_parallel
+28  relu dataLayout: data_parallel
+29  split; children: res2c_branch2a convolution res2c sum  dataLayout: data_parallel
+30  convolution; conv_dims: activations = [64c x 64w x 64h, 16s] - C=64o,256i F=1w x 1h pads: 0 0  strides: 1 1  num_output_channels: 64 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+31  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+32  relu dataLayout: data_parallel
+33  convolution; conv_dims: activations = [64c x 64w x 64h, 16s] - C=64o,64i F=3w x 3h pads: 1 1  strides: 1 1  num_output_channels: 64 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+34  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+35  relu dataLayout: data_parallel
+36  convolution; conv_dims: activations = [256c x 64w x 64h, 16s] - C=256o,64i F=1w x 1h pads: 0 0  strides: 1 1  num_output_channels: 256 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+37  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+38  sum; parents: res2b_relu_split split bn2c_branch2c batch normalization  dataLayout: data_parallel
+39  relu dataLayout: data_parallel
+40  split; children: res3a_branch1 convolution res3a_branch2a convolution  dataLayout: data_parallel
+41  convolution; conv_dims: activations = [512c x 32w x 32h, 16s] - C=512o,256i F=1w x 1h pads: 0 0  strides: 2 2  num_output_channels: 512 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+42  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+43  convolution; conv_dims: activations = [128c x 32w x 32h, 16s] - C=128o,256i F=1w x 1h pads: 0 0  strides: 2 2  num_output_channels: 128 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+44  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+45  relu dataLayout: data_parallel
+46  convolution; conv_dims: activations = [128c x 32w x 32h, 16s] - C=128o,128i F=3w x 3h pads: 1 1  strides: 1 1  num_output_channels: 128 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+47  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+48  relu dataLayout: data_parallel
+49  convolution; conv_dims: activations = [512c x 32w x 32h, 16s] - C=512o,128i F=1w x 1h pads: 0 0  strides: 1 1  num_output_channels: 512 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+50  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+51  sum; parents: bn3a_branch1 batch normalization bn3a_branch2c batch normalization  dataLayout: data_parallel
+52  relu dataLayout: data_parallel
+53  split; children: res3b_branch2a convolution res3b sum  dataLayout: data_parallel
+54  convolution; conv_dims: activations = [128c x 32w x 32h, 16s] - C=128o,512i F=1w x 1h pads: 0 0  strides: 1 1  num_output_channels: 128 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+55  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+56  relu dataLayout: data_parallel
+57  convolution; conv_dims: activations = [128c x 32w x 32h, 16s] - C=128o,128i F=3w x 3h pads: 1 1  strides: 1 1  num_output_channels: 128 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+58  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+59  relu dataLayout: data_parallel
+60  convolution; conv_dims: activations = [512c x 32w x 32h, 16s] - C=512o,128i F=1w x 1h pads: 0 0  strides: 1 1  num_output_channels: 512 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+61  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+62  sum; parents: res3a_relu_split split bn3b_branch2c batch normalization  dataLayout: data_parallel
+63  relu dataLayout: data_parallel
+64  split; children: res3c_branch2a convolution res3c sum  dataLayout: data_parallel
+65  convolution; conv_dims: activations = [128c x 32w x 32h, 16s] - C=128o,512i F=1w x 1h pads: 0 0  strides: 1 1  num_output_channels: 128 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+66  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+67  relu dataLayout: data_parallel
+68  convolution; conv_dims: activations = [128c x 32w x 32h, 16s] - C=128o,128i F=3w x 3h pads: 1 1  strides: 1 1  num_output_channels: 128 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+69  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+70  relu dataLayout: data_parallel
+71  convolution; conv_dims: activations = [512c x 32w x 32h, 16s] - C=512o,128i F=1w x 1h pads: 0 0  strides: 1 1  num_output_channels: 512 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+72  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+73  sum; parents: res3b_relu_split split bn3c_branch2c batch normalization  dataLayout: data_parallel
+74  relu dataLayout: data_parallel
+75  split; children: res3d_branch2a convolution res3d sum  dataLayout: data_parallel
+76  convolution; conv_dims: activations = [128c x 32w x 32h, 16s] - C=128o,512i F=1w x 1h pads: 0 0  strides: 1 1  num_output_channels: 128 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+77  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+78  relu dataLayout: data_parallel
+79  convolution; conv_dims: activations = [128c x 32w x 32h, 16s] - C=128o,128i F=3w x 3h pads: 1 1  strides: 1 1  num_output_channels: 128 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+80  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+81  relu dataLayout: data_parallel
+82  convolution; conv_dims: activations = [512c x 32w x 32h, 16s] - C=512o,128i F=1w x 1h pads: 0 0  strides: 1 1  num_output_channels: 512 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+83  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+84  sum; parents: res3c_relu_split split bn3d_branch2c batch normalization  dataLayout: data_parallel
+85  relu dataLayout: data_parallel
+86  split; children: res4a_branch1 convolution res4a_branch2a convolution  dataLayout: data_parallel
+87  convolution; conv_dims: activations = [1024c x 16w x 16h, 16s] - C=1024o,512i F=1w x 1h pads: 0 0  strides: 2 2  num_output_channels: 1024 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+88  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+89  convolution; conv_dims: activations = [256c x 16w x 16h, 16s] - C=256o,512i F=1w x 1h pads: 0 0  strides: 2 2  num_output_channels: 256 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+90  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+91  relu dataLayout: data_parallel
+92  convolution; conv_dims: activations = [256c x 16w x 16h, 16s] - C=256o,256i F=3w x 3h pads: 1 1  strides: 1 1  num_output_channels: 256 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+93  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+94  relu dataLayout: data_parallel
+95  convolution; conv_dims: activations = [1024c x 16w x 16h, 16s] - C=1024o,256i F=1w x 1h pads: 0 0  strides: 1 1  num_output_channels: 1024 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+96  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+97  sum; parents: bn4a_branch1 batch normalization bn4a_branch2c batch normalization  dataLayout: data_parallel
+98  relu dataLayout: data_parallel
+99  split; children: res4b_branch2a convolution res4b sum  dataLayout: data_parallel
+100  convolution; conv_dims: activations = [256c x 16w x 16h, 16s] - C=256o,1024i F=1w x 1h pads: 0 0  strides: 1 1  num_output_channels: 256 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+101  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+102  relu dataLayout: data_parallel
+103  convolution; conv_dims: activations = [256c x 16w x 16h, 16s] - C=256o,256i F=3w x 3h pads: 1 1  strides: 1 1  num_output_channels: 256 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+104  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+105  relu dataLayout: data_parallel
+106  convolution; conv_dims: activations = [1024c x 16w x 16h, 16s] - C=1024o,256i F=1w x 1h pads: 0 0  strides: 1 1  num_output_channels: 1024 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+107  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+108  sum; parents: res4a_relu_split split bn4b_branch2c batch normalization  dataLayout: data_parallel
+109  relu dataLayout: data_parallel
+110  split; children: res4c_branch2a convolution res4c sum  dataLayout: data_parallel
+111  convolution; conv_dims: activations = [256c x 16w x 16h, 16s] - C=256o,1024i F=1w x 1h pads: 0 0  strides: 1 1  num_output_channels: 256 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+112  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+113  relu dataLayout: data_parallel
+114  convolution; conv_dims: activations = [256c x 16w x 16h, 16s] - C=256o,256i F=3w x 3h pads: 1 1  strides: 1 1  num_output_channels: 256 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+115  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+116  relu dataLayout: data_parallel
+117  convolution; conv_dims: activations = [1024c x 16w x 16h, 16s] - C=1024o,256i F=1w x 1h pads: 0 0  strides: 1 1  num_output_channels: 1024 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+118  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+119  sum; parents: res4b_relu_split split bn4c_branch2c batch normalization  dataLayout: data_parallel
+120  relu dataLayout: data_parallel
+121  split; children: res4d_branch2a convolution res4d sum  dataLayout: data_parallel
+122  convolution; conv_dims: activations = [256c x 16w x 16h, 16s] - C=256o,1024i F=1w x 1h pads: 0 0  strides: 1 1  num_output_channels: 256 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+123  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+124  relu dataLayout: data_parallel
+125  convolution; conv_dims: activations = [256c x 16w x 16h, 16s] - C=256o,256i F=3w x 3h pads: 1 1  strides: 1 1  num_output_channels: 256 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+126  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+127  relu dataLayout: data_parallel
+128  convolution; conv_dims: activations = [1024c x 16w x 16h, 16s] - C=1024o,256i F=1w x 1h pads: 0 0  strides: 1 1  num_output_channels: 1024 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+129  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+130  sum; parents: res4c_relu_split split bn4d_branch2c batch normalization  dataLayout: data_parallel
+131  relu dataLayout: data_parallel
+132  split; children: res4e_branch2a convolution res4e sum  dataLayout: data_parallel
+133  convolution; conv_dims: activations = [256c x 16w x 16h, 16s] - C=256o,1024i F=1w x 1h pads: 0 0  strides: 1 1  num_output_channels: 256 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+134  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+135  relu dataLayout: data_parallel
+136  convolution; conv_dims: activations = [256c x 16w x 16h, 16s] - C=256o,256i F=3w x 3h pads: 1 1  strides: 1 1  num_output_channels: 256 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+137  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+138  relu dataLayout: data_parallel
+139  convolution; conv_dims: activations = [1024c x 16w x 16h, 16s] - C=1024o,256i F=1w x 1h pads: 0 0  strides: 1 1  num_output_channels: 1024 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+140  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+141  sum; parents: res4d_relu_split split bn4e_branch2c batch normalization  dataLayout: data_parallel
+142  relu dataLayout: data_parallel
+143  split; children: res4f_branch2a convolution res4f sum  dataLayout: data_parallel
+144  convolution; conv_dims: activations = [256c x 16w x 16h, 16s] - C=256o,1024i F=1w x 1h pads: 0 0  strides: 1 1  num_output_channels: 256 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+145  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+146  relu dataLayout: data_parallel
+147  convolution; conv_dims: activations = [256c x 16w x 16h, 16s] - C=256o,256i F=3w x 3h pads: 1 1  strides: 1 1  num_output_channels: 256 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+148  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+149  relu dataLayout: data_parallel
+150  convolution; conv_dims: activations = [1024c x 16w x 16h, 16s] - C=1024o,256i F=1w x 1h pads: 0 0  strides: 1 1  num_output_channels: 1024 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+151  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+152  sum; parents: res4e_relu_split split bn4f_branch2c batch normalization  dataLayout: data_parallel
+153  relu dataLayout: data_parallel
+154  split; children: res5a_branch1 convolution res5a_branch2a convolution  dataLayout: data_parallel
+155  convolution; conv_dims: activations = [2048c x 8w x 8h, 16s] - C=2048o,1024i F=1w x 1h pads: 0 0  strides: 2 2  num_output_channels: 2048 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+156  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+157  convolution; conv_dims: activations = [512c x 8w x 8h, 16s] - C=512o,1024i F=1w x 1h pads: 0 0  strides: 2 2  num_output_channels: 512 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+158  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+159  relu dataLayout: data_parallel
+160  convolution; conv_dims: activations = [512c x 8w x 8h, 16s] - C=512o,512i F=3w x 3h pads: 1 1  strides: 1 1  num_output_channels: 512 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+161  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+162  relu dataLayout: data_parallel
+163  convolution; conv_dims: activations = [2048c x 8w x 8h, 16s] - C=2048o,512i F=1w x 1h pads: 0 0  strides: 1 1  num_output_channels: 2048 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+164  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+165  sum; parents: bn5a_branch1 batch normalization bn5a_branch2c batch normalization  dataLayout: data_parallel
+166  relu dataLayout: data_parallel
+167  split; children: res5b_branch2a convolution res5b sum  dataLayout: data_parallel
+168  convolution; conv_dims: activations = [512c x 8w x 8h, 16s] - C=512o,2048i F=1w x 1h pads: 0 0  strides: 1 1  num_output_channels: 512 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+169  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+170  relu dataLayout: data_parallel
+171  convolution; conv_dims: activations = [512c x 8w x 8h, 16s] - C=512o,512i F=3w x 3h pads: 1 1  strides: 1 1  num_output_channels: 512 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+172  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+173  relu dataLayout: data_parallel
+174  convolution; conv_dims: activations = [2048c x 8w x 8h, 16s] - C=2048o,512i F=1w x 1h pads: 0 0  strides: 1 1  num_output_channels: 2048 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+175  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+176  sum; parents: res5a_relu_split split bn5b_branch2c batch normalization  dataLayout: data_parallel
+177  relu dataLayout: data_parallel
+178  split; children: res5c_branch2a convolution res5c sum  dataLayout: data_parallel
+179  convolution; conv_dims: activations = [512c x 8w x 8h, 16s] - C=512o,2048i F=1w x 1h pads: 0 0  strides: 1 1  num_output_channels: 512 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+180  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+181  relu dataLayout: data_parallel
+182  convolution; conv_dims: activations = [512c x 8w x 8h, 16s] - C=512o,512i F=3w x 3h pads: 1 1  strides: 1 1  num_output_channels: 512 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+183  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+184  relu dataLayout: data_parallel
+185  convolution; conv_dims: activations = [2048c x 8w x 8h, 16s] - C=2048o,512i F=1w x 1h pads: 0 0  strides: 1 1  num_output_channels: 2048 has_bias: 0 dataLayout: data_parallel device alloc: gpu
+186  batch_normalization; decay: 0.9 epsilon : 1e-05 data_layout: data_parallel
+187  sum; parents: res5b_relu_split split bn5c_branch2c batch normalization  dataLayout: data_parallel
+188  relu dataLayout: data_parallel
+189  pooling; num_data_dims: 2 pool_dims: 7 7  pads: 0 0  strides: 1 1  pool_mode: average dataLayout: data_parallel device alloc: gpu
+190  fully_connected; num_neurons: 62 has_bias: 0.000000 dataLayout: model_parallel device alloc: gpu
+191  softmax dataLayout: model_parallel
+192  target_layer  dataLayout: data_parallel ()
+--------------------------------------------------------------------------------
+[0] Epoch : stats formated [tr/v/te] iter/epoch = [22724/3316/0]
+            global MB = [  16/  16/   0] global last MB = [   4  /   3  /   0  ]
+             local MB = [  16/  16/   0]  local last MB = [   4+0/   3+0/   0+0]
+--------------------------------------------------------------------------------
+Model 0 training epoch 0 objective function : 3.09973
+Model 0 training epoch 0 categorical accuracy : 22.2556%
+Model 0 training epoch 0 top-5 categorical accuracy : 49.1465%
+Model 0 training epoch 0 run time : 23071.1s
+Model 0 training epoch 0 mini-batch time statistics : 1.01527s mean, 3.20334s max, 0.869996s min, 0.17418s stdev
+Model 0 validation objective function : 4.37993
+Model 0 validation categorical accuracy : 29.3912%
+Model 0 validation top-5 categorical accuracy : 58.3828%
+Model 0 validation run time : 1652.27s
+Model 0 validation mini-batch time statistics : 0.498271s mean, 1.98777s max, 0.331308s min, 0.155883s stdev
+--------------------------------------------------------------------------------
+[1] Epoch : stats formated [tr/v/te] iter/epoch = [22724/3316/0]
+            global MB = [  16/  16/   0] global last MB = [   4  /   3  /   0  ]
+             local MB = [  16/  16/   0]  local last MB = [   4+0/   3+0/   0+0]
+--------------------------------------------------------------------------------
+Model 0 training epoch 1 objective function : 2.23222
+Model 0 training epoch 1 categorical accuracy : 39.4277%
+Model 0 training epoch 1 top-5 categorical accuracy : 70.8776%
+Model 0 training epoch 1 run time : 23417.9s
+Model 0 training epoch 1 mini-batch time statistics : 1.03053s mean, 24.7427s max, 0.828541s min, 0.267696s stdev
+Model 0 validation objective function : 2.69997
+Model 0 validation categorical accuracy : 43.8569%
+Model 0 validation top-5 categorical accuracy : 74.549%
+Model 0 validation run time : 1477.08s
+Model 0 validation mini-batch time statistics : 0.445439s mean, 1.99903s max, 0.300246s min, 0.153881s stdev
+--------------------------------------------------------------------------------
+[2] Epoch : stats formated [tr/v/te] iter/epoch = [22724/3316/0]
+            global MB = [  16/  16/   0] global last MB = [   4  /   3  /   0  ]
+             local MB = [  16/  16/   0]  local last MB = [   4+0/   3+0/   0+0]
+--------------------------------------------------------------------------------
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+srun: error: mpi/pmi2: invalid tree req command
+Model 0 training epoch 2 objective function : 1.80915
+Model 0 training epoch 2 categorical accuracy : 49.7992%
+Model 0 training epoch 2 top-5 categorical accuracy : 79.442%
+Model 0 training epoch 2 run time : 23876.8s
+Model 0 training epoch 2 mini-batch time statistics : 1.05073s mean, 63.5239s max, 0.904883s min, 0.456798s stdev
+Model 0 validation objective function : 2.1324
+Model 0 validation categorical accuracy : 49.4938%
+Model 0 validation top-5 categorical accuracy : 79.0642%
+Model 0 validation run time : 1608.99s
+Model 0 validation mini-batch time statistics : 0.48522s mean, 1.91048s max, 0.342888s min, 0.161868s stdev
+--------------------------------------------------------------------------------
+[3] Epoch : stats formated [tr/v/te] iter/epoch = [22724/3316/0]
+            global MB = [  16/  16/   0] global last MB = [   4  /   3  /   0  ]
+             local MB = [  16/  16/   0]  local last MB = [   4+0/   3+0/   0+0]
+--------------------------------------------------------------------------------
+srun: Force Terminated job 64528
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+slurmstepd: error: *** STEP 64528.0 ON pascal105 CANCELLED AT 2018-06-29T20:33:59 DUE TO TIME LIMIT ***
+srun: error: pascal105: task 0: Terminated
+srun: error: pascal105: task 1: Terminated
