@@ -285,7 +285,7 @@ Layer* construct_layer(lbann_comm* comm,
     }
   }
   if (proto_layer.has_evaluation()) {
-    return new evaluation_layer<layout>(comm);
+    return new evaluation_layer<layout, Dev>(comm);
   }
   if (proto_layer.has_crop()) {
     const auto& params = proto_layer.crop();

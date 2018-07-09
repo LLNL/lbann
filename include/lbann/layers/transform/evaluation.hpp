@@ -60,7 +60,7 @@ private:
   /** Scaling factor to apply to evaluated value. */
   EvalType m_scale;
   /** Evaluated value. */
-  std::unique_ptr<El::AbstractDistMatrix<EvalType>> m_value;
+  std::unique_ptr<AbsDistMat> m_value;
   /** Non-blocking allreduce request. */
   Al::request m_allreduce_req;
   

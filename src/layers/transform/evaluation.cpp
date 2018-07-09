@@ -26,40 +26,72 @@
 
 #include "lbann/layers/transform/evaluation.hpp"
 #include "lbann/utils/exception.hpp"
+#ifdef LBANN_HAS_GPU
+#include "lbann/utils/cublas.hpp"
+#endif // LBANN_HAS_GPU
 
 namespace lbann {
 
 namespace {
 
-/** Compute sum of entries in local matrix.
+/** Compute sum of entries in matrix.
  *  Result is recorded in 1x1 matrix 'sum'.
  */
-void local_matrix_sum(const AbsMat& local_matrix,
-                      El::AbstractMatrix<EvalType>& local_sum) {
-  if (local_matrix.GetDevice() != local_sum.GetDevice()) {
+void matrix_sum(const AbsMat& matrix, AbsMat& sum) {
+  if (matrix.GetDevice() != sum.GetDevice()) {
     LBANN_ERROR("input matrix and accumulation variable "
                 "must be on same device");
   }
-  El::Zeros(local_sum, 1, 1);
-  switch (local_matrix.GetDevice()) {
+  sum.Resize(1, 1);
+  switch (matrix.GetDevice()) {
   case El::Device::CPU:
     {
-      auto& sum = local_sum(0,0);
-#pragma omp parallel for reduction(+:sum) collapse(2)
-      for (El::Int col = 0; col < local_matrix.Height(); ++col) {
-        for (El::Int row = 0; row < local_matrix.Width(); ++row) {
-          sum += EvalType(local_matrix(row, col));
+      auto& s = sum(0,0);
+      s = DataType(0);
+#pragma omp parallel for reduction(+:s) collapse(2)
+      for (El::Int col = 0; col < matrix.Height(); ++col) {
+        for (El::Int row = 0; row < matrix.Width(); ++row) {
+          s += matrix(row, col);
         }
       }
     }
     break;
+
 #ifdef LBANN_HAS_GPU
   case El::Device::GPU:
-    {
-      LBANN_ERROR("not yet implemented");
+    if (matrix.Height() > 0 && matrix.Width() > 0) {
+
+      // Initialize temporary matrices
+      // Note: 'matrix' is copied into a contiguous temporary matrix
+      // if it is not contiguous.
+      const auto& size = matrix.Height() * matrix.Width();
+      GPUMat contig_matrix, ones;
+#ifdef HYDROGEN_HAVE_CUB
+      contig_matrix.SetMemoryMode(1); // Use CUB GPU memory pool if possible
+      ones.SetMemoryMode(1);          // Use CUB GPU memory pool if possible
+#endif // HYDROGEN_HAVE_CUB
+      if (matrix.Height() == matrix.LDim() || matrix.Width() == 1) {
+        El::LockedView(contig_matrix, matrix);
+      } else {
+        El::Copy(matrix, contig_matrix);
+      }
+      ones.Resize(size, 1);
+      El::Fill(ones, DataType(1));
+
+      // Compute sum with cuBLAS
+      auto&& handle = El::GPUManager::cuBLASHandle();
+      CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE));
+      cublas::dot(handle,
+                  size,
+                  contig_matrix.LockedBuffer(), 1,
+                  ones.LockedBuffer(), 1,
+                  sum.Buffer());
+      CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_HOST));
+
     }
     break;
 #endif // LBANN_HAS_GPU
+
   default: LBANN_ERROR("invalid device");
   }
 }
@@ -68,7 +100,7 @@ void local_matrix_sum(const AbsMat& local_matrix,
 
 EvalType abstract_evaluation_layer::get_value(bool scaled) {
   get_comm()->wait(m_allreduce_req);
-  const auto& value = m_value->Get(0,0);
+  const EvalType value = m_value->Get(0,0);
   if (scaled) { return m_scale * value; }
   else        { return value; }
 }
@@ -101,12 +133,10 @@ void abstract_evaluation_layer::setup_matrices(const El::Grid& grid) {
   transform_layer::setup_matrices(grid);
   switch (get_device_allocation()) {
   case El::Device::CPU:
-    m_value.reset(new El::DistMatrix<EvalType, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU>());
-    break;
+    m_value.reset(new StarMat<El::Device::CPU>(grid)); break;
 #ifdef LBANN_HAS_GPU
   case El::Device::GPU:
-    m_value.reset(new El::DistMatrix<EvalType, El::STAR, El::STAR, El::ELEMENT, El::Device::GPU>());
-    break;
+    m_value.reset(new StarMat<El::Device::GPU>(grid)); break;
 #endif // LBANN_HAS_GPU
   default: LBANN_ERROR("invalid device");
   }
@@ -116,10 +146,9 @@ void abstract_evaluation_layer::setup_matrices(const El::Grid& grid) {
 void abstract_evaluation_layer::fp_compute() {
   const auto& input = get_prev_activations();
   const auto& mini_batch_size = input.Width();
-  local_matrix_sum(input.LockedMatrix(), m_value->Matrix());
-  *m_value *= EvalType(1) / mini_batch_size;
-  get_comm()->nb_allreduce(m_value->Buffer(), 1, input.DistComm(),
-                           m_allreduce_req);
+  matrix_sum(input.LockedMatrix(), m_value->Matrix());
+  *m_value *= DataType(1) / mini_batch_size;
+  get_comm()->nb_allreduce(*m_value, input.DistComm(), m_allreduce_req);
 }
 
 void abstract_evaluation_layer::bp_compute() {
