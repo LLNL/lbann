@@ -36,14 +36,25 @@
 #include <exception>
 
 // Macro to throw an LBANN exception
-#define LBANN_ERROR(message)                                            \
+#define LBANN_ERROR(message)                                    \
+  do {                                                          \
+    std::stringstream ss_LBANN_ERROR;                           \
+    ss_LBANN_ERROR << "LBANN error "                            \
+                   << "(" << __FILE__ << ":" << __LINE__ << ")" \
+                   << ": " << (message);                        \
+    throw lbann::lbann_exception(ss_LBANN_ERROR.str());         \
+  } while (0)
+
+// Macro to print a warning to standard error stream.
+#define LBANN_WARNING(message, comm)                                    \
   do {                                                                  \
-    std::stringstream ss_LBANN_ERROR;                                   \
-    ss_LBANN_ERROR << "LBANN error"                                     \
-                   << " (" << __FILE__ << ":" << __LINE__ << ")"        \
-                   << ": " << (message);                                \
-    throw lbann::lbann_exception(ss_LBANN_ERROR.str());                 \
-  } while(0)
+    std::stringstream ss_LBANN_WARNING;                                 \
+    ss_LBANN_WARNING << "LBANN warning "                                \
+                     << "on rank " << comm.get_rank_in_world() << " "   \
+                     << "(" << __FILE__ << ":" << __LINE__ << ")"       \
+                     << ": " << (message) << std::endl;                 \
+    std::cerr << ss_LBANN_WARNING.str();                                \
+  } while (0)
 
 namespace lbann {
 
