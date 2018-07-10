@@ -457,7 +457,7 @@ void generic_data_reader::select_subset_of_data_partitioned() {
         ++shared_index_count;
       }
       for (size_t j = 0; j<overlap_count; j++) {
-        m_shuffled_indices.push_back(s_indices[start_of_next_partition+j+overlap_count]);
+        m_shuffled_indices.push_back(s_indices[start_of_next_partition+j]);
         ++shared_index_count;
       }
     }
@@ -466,6 +466,37 @@ void generic_data_reader::select_subset_of_data_partitioned() {
       std::cout << "Actual overlap percentage: " << s << "%\n";
     }
   }
+
+  #if 0
+  NOTE: the following block will eventually go away, but please
+        leave it alone for now; I need it to explore alternative
+        overlap algorithms in the future
+
+  char b[80];
+  sprintf(b, "indices.%d", m_comm->get_rank_in_world());
+  std::ofstream out(b);
+  for (auto t : m_shuffled_indices) out << t << " ";
+  out << "\n";
+  out.close();
+
+  script for examining overlap:
+
+r = {}
+for j in range(5) :
+  a = open('indices.' + str(j)).readlines()
+  t = a[0].split()
+  for x in t :
+    if not r.has_key(x) : r[x] = 0
+    r[x] += 1
+
+for j in range(40) :
+  n = 0;
+  for k in r.keys() :
+    if r[k] == j :
+      n += 1
+  if n :
+    print j, n
+  #endif
 }
 
 void generic_data_reader::select_subset_of_data() {
