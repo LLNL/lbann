@@ -1270,13 +1270,7 @@ void Layer::setup_tensor_distribution_init(
     }
     // Put the remaining factor into the outer-most process dimension
     float rem = np / (float)nchw;
-    if (n != 1) {
-      n *= rem;
-    } else if (h != 1) {
-      h *= rem;
-    } else if (w != 1) {
-      w *= rem;
-    }
+    n *= rem;
     nchw = n * c * h * w;
     if (nchw != np) {
       MPIRootPrintStreamError() <<
