@@ -14,7 +14,7 @@ if [ "${CLUSTER}" == "pascal" ]; then
 	# The latest GCC version on Pascal is 7, which is not supported by nvcc.
 	# Version 6.1.0 does not work with CUDA 9.1, either.
 	COMPILER=gnu
-	module load gcc/4.9.3
+	module load gcc/6.1.0
 fi
 if [ "${ARCH}" == "x86_64" ]; then
     MPI=mvapich2

@@ -114,6 +114,7 @@ if [ "${GPU}" == "1" -o "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" -o "$
     FEATURE="_gpu"
   fi
   EL_VER="${EL_VER}+cuda"
+  MPI="${MPI}+cuda"
 else
   PLATFORM="~gpu"
 fi
@@ -259,5 +260,3 @@ if [ ! -z "$bamboo_SPACK_ROOT" ]; then
 else
     eval $FIX
 fi
-
-

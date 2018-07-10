@@ -107,7 +107,7 @@ class discrete_random_layer : public transform_layer {
     }
 
     // Process each mini-batch sample
-    #pragma omp parallel for
+#pragma omp taskloop default(shared)
     for (El::Int col = 0; col < local_width; ++col) {
       const auto& input_ptr = local_input.LockedBuffer(0, col);
       const auto& output_ptr = local_output.Buffer(0, col);

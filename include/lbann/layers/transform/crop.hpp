@@ -66,7 +66,7 @@ class crop_layer : public transform_layer {
                                           m_neuron_dims.end(),
                                           1,
                                           std::multiplies<int>());
- 
+
     // Parent layers for original tensor and crop position
     m_expected_num_parent_layers = 2;
 
@@ -167,7 +167,7 @@ class crop_layer : public transform_layer {
     auto& local_output = get_local_activations();
 
     // Crop each mini-batch sample
-    #pragma omp parallel for
+#pragma omp taskloop default(shared)
     for (El::Int s = 0; s < local_input.Width(); ++s) {
 
       // Determine crop position
@@ -197,7 +197,7 @@ class crop_layer : public transform_layer {
           output_index = output_dims[d] * output_index + output_pos[d+1];
         }
         local_output(output_index, s) = local_input(input_index, s);
-          
+
         // Move to next entry
         ++output_pos.back();
         for (int d = num_dims-1; d >= 1; --d) {
@@ -206,7 +206,7 @@ class crop_layer : public transform_layer {
             ++output_pos[d-1];
           }
         }
-        
+
       }
 
     }
@@ -227,7 +227,7 @@ class crop_layer : public transform_layer {
     El::Zero(get_error_signals(1));
 
     // Crop each mini-batch sample
-    #pragma omp parallel for
+#pragma omp taskloop default(shared)
     for (El::Int s = 0; s < local_gradient_wrt_output.Width(); ++s) {
 
       // Determine crop position
@@ -255,7 +255,7 @@ class crop_layer : public transform_layer {
         }
         local_gradient_wrt_input(input_index, s)
           = local_gradient_wrt_output(output_index, s);
-          
+
         // Move to next entry
         ++output_pos.back();
         for (int d = num_dims-1; d >= 1; --d) {
@@ -264,7 +264,7 @@ class crop_layer : public transform_layer {
             ++output_pos[d-1];
           }
         }
-        
+
       }
 
     }

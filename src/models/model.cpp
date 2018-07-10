@@ -783,11 +783,9 @@ bool model::train_mini_batch() {
 
   bool finished;
 
-  // shared (mb_lock)
   #pragma omp parallel
-  #pragma omp single
   {
-    #pragma omp taskgroup
+    #pragma omp single
     {
       #pragma omp task
       {
@@ -825,7 +823,7 @@ bool model::train_mini_batch() {
           }
         }
       }
-    } /* end OMP taskgroup */
+    } /* end OMP single */
   } /* end OMP parallel */
 
   ++m_current_step;

@@ -41,7 +41,7 @@ void local_fp_cpu(const AbsMat& local_prediction,
   const El::Int local_width = local_prediction.Width();
 
   // Compute local contribution to cross entropy
-#pragma omp parallel for
+#pragma omp taskloop default(shared)
   for (El::Int col = 0; col < local_width; ++col) {
     DataType sum = zero;
     for (El::Int row = 0; row < local_height; ++row) {
@@ -64,14 +64,14 @@ void local_bp_cpu(const AbsMat& local_prediction,
                   const AbsMat& local_gradient_wrt_output,
                   AbsMat& local_gradient_wrt_prediction,
                   AbsMat& local_gradient_wrt_ground_truth) {
-                                                                       
+
   // Useful constants
   const DataType zero = DataType(0);
   const El::Int local_height = local_prediction.Height();
   const El::Int local_width = local_prediction.Width();
 
   // Compute gradients
-#pragma omp parallel for collapse(2)
+#pragma omp taskloop collapse(2) default(shared)
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
       const auto& x = local_prediction(row, col);
