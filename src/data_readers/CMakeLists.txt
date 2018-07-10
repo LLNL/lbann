@@ -35,6 +35,7 @@ set_full_path(THIS_DIR_SOURCES
   offline_patches_npz.cpp
   image_preprocessor.cpp
   image_utils.cpp
+  data_reader_multi_conduit.cpp
   )
 
 # Add the subdirectories
