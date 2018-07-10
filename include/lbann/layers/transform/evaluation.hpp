@@ -48,10 +48,7 @@ public:
 protected:
 
   abstract_evaluation_layer(lbann_comm *comm);
-  abstract_evaluation_layer(const abstract_evaluation_layer& other);
-  abstract_evaluation_layer& operator=(const abstract_evaluation_layer& other);
 
-  void setup_matrices(const El::Grid& grid) override;
   void fp_compute() override;
   void bp_compute() override;
 
@@ -60,7 +57,7 @@ private:
   /** Scaling factor to apply to evaluated value. */
   EvalType m_scale;
   /** Evaluated value. */
-  std::unique_ptr<AbsDistMat> m_value;
+  DataType m_value;
   /** Non-blocking allreduce request. */
   Al::request m_allreduce_req;
   
