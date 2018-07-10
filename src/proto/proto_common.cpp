@@ -131,7 +131,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
     } else if (name == "pilot2_molecular_reader") {
       pilot2_molecular_reader* reader_pilot2_molecular = new pilot2_molecular_reader(readme.num_neighbors(), readme.max_neighborhood(), shuffle);
       reader = reader_pilot2_molecular;
-    } else if (name == "merge_samples" || name == "merge_features") {
+    } else if (name == "merge_samples" || name == "merge_features" || name == "multi_conduit") {
       //TODO: verify how much of wildcard conflict with label file, label file should be loaded separately
       auto filedir = readme.data_filedir();
       if(!endsWith(filedir, "/")) {
@@ -147,6 +147,12 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
           reader_numpy->set_has_labels(!readme.disable_labels());
           reader_numpy->set_has_responses(!readme.disable_responses());
           npy_readers.push_back(reader_numpy);
+#ifdef LBANN_HAS_CONDUIT
+        } else if (readme.format() == "jag_conduit") {
+          init_image_data_reader(readme, master, reader);
+          set_up_generic_preprocessor = false;
+          npy_readers.push_back(reader);
+#endif
         } else if (readme.format() == "pilot2_molecular_reader") {
           pilot2_molecular_reader* reader_pilot2_molecular = new pilot2_molecular_reader(readme.num_neighbors(), readme.max_neighborhood(), shuffle);
           reader_pilot2_molecular->set_data_filename(path);
@@ -175,6 +181,9 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       }
       if(name == "merge_samples") {
         data_reader_merge_samples* merged_samples = new data_reader_merge_samples(npy_readers, shuffle);
+        reader = merged_samples;
+      if (name == "multi_conduit") {
+        data_reader_multi_conduit* multi_conduit = new data_reader_multi_conduit(npy_readers, shuffle);
         reader = merged_samples;
       }else {
         //create label file
