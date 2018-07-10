@@ -252,7 +252,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       reader->set_gan_labelling(readme.gan_labelling());
       reader->set_gan_label_value(readme.gan_label_value());
 
-      reader->set_partitioned(readme.is_partitioned(), readme.partition_overlap());
+      reader->set_partitioned(readme.is_partitioned(), readme.partition_overlap(), readme.partition_mode());
 
       if (set_up_generic_preprocessor) {
         init_generic_preprocessor(readme, master, reader);

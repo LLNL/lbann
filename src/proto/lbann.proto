@@ -70,6 +70,9 @@ message Reader {
   //------------- start of only for partitioned data sets ------------------
   bool is_partitioned = 300; 
   double partition_overlap = 301;
+  int32 partition_mode = 302;  
+       // 1 - share a portion of your data with two neighbors;
+       // 2 - there's a set of overlap indices that are common to all models
   //------------- end of only for partitioned data sets ------------------
 }
 

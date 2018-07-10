@@ -88,9 +88,9 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_compound_rank(0),
     m_gan_labelling(false), //default, not GAN
     m_gan_label_value(0),  //If GAN, default for fake label, discriminator model
-    m_num_global_indices(0),
     m_is_partitioned(false),
     m_partition_overlap(0),
+    m_partition_mode(0),
     m_procs_per_partition(1)
   {}
   generic_data_reader(const generic_data_reader&) = default;
@@ -514,8 +514,8 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   void use_unused_index_set();
 
-  /// partition the dataset amongst the models, with possible overlap
-  void set_partitioned(bool partitioned_yes=true, double overlap=0.0); 
+  /// partition the dataset amongst the models
+  void set_partitioned(bool is_partitioned=true, double overlap=0.0, int mode=0); 
 
   /// returns true if the data set is partitioned
   bool is_partitioned() const { return m_is_partitioned; }
@@ -802,9 +802,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   bool m_gan_labelling; //boolean flag of whether its GAN binary label, default is false
   int m_gan_label_value; //zero(0) or 1 label value for discriminator, default is 0
 
-   /// added to support data store functionality
-   size_t m_num_global_indices;
-
    /// if true, dataset is partitioned amongst several models,
    /// with options overlap (yeah, I know, if there's overlap its
    /// not technically a partition)
@@ -813,6 +810,10 @@ class generic_data_reader : public lbann_image_preprocessor {
    /// if m_is_partitioned, this determines the amount of overlap
    /// Has no effect if m_is_partitioned = false
    double m_partition_overlap;
+
+   /// mode = 1: share overlap_percent/2 with left and right nabors
+   /// mode = 2: there's a set of overlap indices common to all models
+   int m_partition_mode;
 
    /// only relevant if m_is_partitioned = true.  Currently this is same as
    /// comm->num_models()
