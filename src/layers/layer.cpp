@@ -306,6 +306,102 @@ void Layer::summarize_matrices(lbann_summary& summarizer, int step) {
 
 }
 
+
+// ===================================================================
+// Tensor dimension access functions
+// ===================================================================
+
+std::vector<int> Layer::get_input_dims(int input_index) const {
+
+  // Get parent layer
+  const auto& num_inputs = get_num_parents();
+  if (input_index < 0 || input_index >= num_inputs) {
+    std::stringstream err;
+    err << "attempted to access dimensions of invalid input tensor "
+        << "in layer \"" << get_name() << "\" "
+        << "(requested index " << input_index << ", but there are "
+        << num_inputs << " input tensors)";
+    LBANN_ERROR(err.str());
+  } else if (m_parent_layers[input_index] == nullptr) {
+    std::stringstream err;
+    err << "layer \"" << get_name() << "\" "
+        << "has a null pointer to parent layer "
+        << "(index " << input_index << ")";
+    LBANN_ERROR(err.str());
+  }
+  const auto& parent = *m_parent_layers[input_index];
+
+  // Get dimensions of corresponding output tensor in parent layer
+  const auto num_parent_outputs = parent.get_num_children();
+  const int parent_output_index = (std::find(parent.m_child_layers.begin(),
+                                             parent.m_child_layers.end(),
+                                             this)
+                                   - parent.m_child_layers.begin());
+  if (parent_output_index >= num_parent_outputs) {
+    std::stringstream err;
+    err << "layer \"" << parent.get_name() << "\" is a parent of "
+        << "layer \"" << get_name() << "\", but "
+        << "\"" << get_name() << "\" is not a child of "
+        << "\"" << parent.get_name() << "\"";
+    LBANN_ERROR(err.str());
+  }
+  return parent.get_output_dims(parent_output_index);
+
+}
+
+int Layer::get_input_size(int input_index) const {
+  const auto& dims = get_input_dims(input_index);
+  if (dims.empty()) {
+    return 0;
+  } else {
+    return std::accumulate(dims.begin(), dims.end(), 1,
+                           std::multiplies<int>());
+  }
+}
+
+std::vector<int> Layer::get_output_dims(int output_index) const {
+  const auto num_outputs = get_num_children();
+  if ((int) m_output_dims_list.size() != num_outputs) {
+    std::stringstream err;
+    err << "attempted to access dimensions of output tensor "
+        << "in layer \"" << get_name() << "\" "
+        << "before they are initialized";
+    LBANN_ERROR(err.str());
+  } else if (output_index < 0 || output_index >= num_outputs) {
+    std::stringstream err;
+    err << "attempted to access dimensions of invalid output tensor "
+        << "in layer \"" << get_name() << "\" "
+        << "(requested index " << output_index << ", but there are "
+        << num_outputs << " output tensors)";
+    LBANN_ERROR(err.str());
+  }
+  return m_output_dims_list[output_index];
+}
+
+int Layer::get_output_size(int output_index) const {
+  const auto& dims = get_output_dims(output_index);
+  if (dims.empty()) {
+    return 0;
+  } else {
+    return std::accumulate(dims.begin(), dims.end(), 1,
+                           std::multiplies<int>());
+  }
+}
+
+void Layer::set_output_dims(std::vector<int> dims, int output_index) {
+  const auto& num_outputs = get_num_children();
+  m_output_dims_list.resize(num_outputs);
+  if (output_index < 0 || output_index >= num_outputs) {
+    std::stringstream err;
+    err << "attempted to set dimensions of invalid output tensor "
+        << "in layer \"" << m_name << "\" "
+        << "(requested index " << output_index << ", but there are "
+        << m_activations.size() << " output tensors)";
+    LBANN_ERROR(err.str());
+  }
+  m_output_dims_list[output_index] = dims;
+}
+
 // Data matrix access functions
 // Note: Using idiom from Item 3, p. 23 in "Effective C++", 3rd ed.,
 // by Scott Meyers.

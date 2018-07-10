@@ -295,6 +295,27 @@ class Layer {
   /** Replace weights with another Layer's weights*/
   void replace_weights(Layer* other_layer);
 
+  /** Get dimensions of an input tensor.
+   *  E.g. get the dimensions of a "previous activations tensor" or
+   *  the "previous neuron dimensions."
+   */
+  std::vector<int> get_input_dims(int input_index = 0) const;
+  /** Get size of an input tensor.
+   *  E.g. get the size of a "previous activations tensor" or
+   *  the number of "previous neurons."
+   */
+  int get_input_size(int input_index = 0) const;
+  /** Get dimensions of an output tensor.
+   *  E.g. get the dimensions of an "activations tensor" or the
+   *  "neuron dimensions."
+   */
+  std::vector<int> get_output_dims(int output_index = 0) const;
+  /** Get size of an output tensor.
+   *  E.g. get the size of a "previous activations tensor" or
+   *  the number of "previous neurons."
+   */
+  int get_output_size(int output_index = 0) const;
+
   /** Get previous activation tensor. */
   AbsDistMat& get_prev_activations(int parent_index = 0);
   /** Get activation tensor. */
@@ -408,6 +429,12 @@ class Layer {
   /** Reference to model managing this layer. */
   model *m_model = nullptr;
 
+  /** Set dimensions of an output tensor.
+   *  E.g. set the dimensions of an "activations tensor" or the
+   *  "neuron dimensions."
+   */
+  void set_output_dims(std::vector<int> dims, int output_index = 0);
+
   /** Setup data for forward propagation.
    *  Base method gets previous activations from parent layers and
    *  resizes activations for the current mini-batch size.
@@ -486,6 +513,9 @@ class Layer {
 
   /** Whether current layer is using a GPU implementation. */
   bool m_using_gpus;
+
+  /** Dimensions of each output tensor. */
+  std::vector<std::vector<int>> m_output_dims_list;
 
   /** Instantiate distributed matrices. */
   template <data_layout T, El::Device Dev>
