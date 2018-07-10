@@ -88,7 +88,10 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_compound_rank(0),
     m_gan_labelling(false), //default, not GAN
     m_gan_label_value(0),  //If GAN, default for fake label, discriminator model
-    m_num_global_indices(0)
+    m_is_partitioned(false),
+    m_partition_overlap(0),
+    m_partition_mode(0),
+    m_procs_per_partition(1)
   {}
   generic_data_reader(const generic_data_reader&) = default;
   generic_data_reader& operator=(const generic_data_reader&) = default;
@@ -502,11 +505,20 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   void select_subset_of_data();
 
+  /// called by select_subset_of_data() if data set is partitioned
+  void select_subset_of_data_partitioned();
+
   /**
    * Replaced the shuffled index set with the unused index set, empying the
    * unused set.
    */
   void use_unused_index_set();
+
+  /// partition the dataset amongst the models
+  void set_partitioned(bool is_partitioned=true, double overlap=0.0, int mode=0); 
+
+  /// returns true if the data set is partitioned
+  bool is_partitioned() const { return m_is_partitioned; }
 
   /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
   bool save_to_checkpoint_shared(persist& p, const char *name);
@@ -665,13 +677,6 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   double get_validation_percent() const;
 
-  /**
-   * Returns the number of global indices. For train and validation,
-   * this is the sum of their numbers
-   */
-  size_t get_num_global_indices() {
-    return m_num_global_indices;
-  }
  protected:
 
    int m_rank;
@@ -797,8 +802,30 @@ class generic_data_reader : public lbann_image_preprocessor {
   bool m_gan_labelling; //boolean flag of whether its GAN binary label, default is false
   int m_gan_label_value; //zero(0) or 1 label value for discriminator, default is 0
 
-   /// added to support data store functionality
-   size_t m_num_global_indices;
+   /// if true, dataset is partitioned amongst several models,
+   /// with options overlap (yeah, I know, if there's overlap its
+   /// not technically a partition)
+   bool m_is_partitioned;
+
+   /// if m_is_partitioned, this determines the amount of overlap
+   /// Has no effect if m_is_partitioned = false
+   double m_partition_overlap;
+
+   /// mode = 1: share overlap_percent/2 with left and right nabors
+   /// mode = 2: there's a set of overlap indices common to all models
+   int m_partition_mode;
+
+   /// only relevant if m_is_partitioned = true.  Currently this is same as
+   /// comm->num_models()
+   int m_num_partitions;
+
+   /// only relevant if m_is_partitioned = true.  Currently this is same as
+   /// comm->get_model_rank())
+   int m_my_partition;
+
+   /// only relevant if m_is_partitioned = true.  Currently this is same as
+   /// comm->get_procs_per_model)
+   int m_procs_per_partition;
 };
 
 template<typename T>
