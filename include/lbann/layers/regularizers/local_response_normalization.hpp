@@ -245,8 +245,8 @@ class local_response_normalization_layer : public regularizer_layer {
     const int output_ldim = local_output.LDim();
 
     // Get LRN parameters
-    const int num_channels = this->m_neuron_dims[0];
-    const int num_per_channel = this->m_num_neurons / num_channels;
+    const int num_channels = get_output_dims()[0];
+    const int num_per_channel = get_output_size() / num_channels;
 
     // Check if LRN is using default beta parameter
     const bool default_beta = (std::fabs((m_beta - 0.75) / 0.75)
@@ -333,8 +333,8 @@ class local_response_normalization_layer : public regularizer_layer {
     const int gradient_wrt_input_ldim = local_gradient_wrt_input.LDim();
 
     // Get LRN parameters
-    const int num_channels = this->m_neuron_dims[0];
-    const int num_per_channel = this->m_num_neurons / num_channels;
+    const int num_channels = get_output_dims()[0];
+    const int num_per_channel = get_output_size() / num_channels;
 
     // Check if LRN is using default beta parameter
     const bool default_beta = (std::fabs((m_beta - 0.75) / 0.75)

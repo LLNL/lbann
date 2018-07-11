@@ -312,13 +312,16 @@ void model::permute_layers(const std::vector<int>& permutation) {
 std::string model::print_layer_description(const Layer* layer) const {
   if (layer == nullptr) return std::string();
   std::stringstream os;
+  /// @todo Clean up
   //std::string description = layer->get_description();
   os << std::setw(12) << layer->get_name() << ":[" << std::setw(18)
      << layer->get_type()
      << "(" << layer->get_device_allocation_string_short(layer->get_device_allocation()) << ")"
      <<  "] Set up a layer with input " << std::setw(7)
-     << layer->get_num_prev_neurons() << " and " << std::setw(7)
-     << layer->get_num_neurons() << " neurons.";
+     << (layer->get_num_parents() > 0 ? layer->get_input_size() : 0)
+     << " and " << std::setw(7)
+     << (layer->get_num_children() > 0 ? layer->get_output_size() : 0)
+     << " neurons.";
   std::string s = layer->get_topo_description();
   if(s != "") {
     os << " (" << s << ")";
