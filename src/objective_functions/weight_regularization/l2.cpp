@@ -39,25 +39,30 @@ namespace {
     const El::Int ldim = mat.LDim();
     const auto& __restrict__ buf = mat.LockedBuffer();
     EvalType sqsum = EvalType(0);
+    int nthreads = omp_get_num_threads();
+    std::vector<EvalType> local_sqsum(nthreads, EvalType(0));
     if (ldim == height) {
       // Parallelize single loop if data is contiguous
       const El::Int size = height*width;
-#pragma omp taskloop default(shared) /// @todo reduction(+:sqsum)
+#pragma omp taskloop default(shared)
       for (El::Int i = 0; i < size; ++i) {
         const EvalType val = buf[i];
-        #pragma omp critical
-        sqsum += val * val;
+        const int tid = omp_get_thread_num();
+        local_sqsum[tid] += val * val;
       }
     } else {
       // Parallelize double loop if data is not contiguous
-#pragma omp taskloop collapse(2) default(shared) ///  @todo reduction(+:sqsum)
+#pragma omp taskloop collapse(2) default(shared)
       for (El::Int j = 0; j < width; ++j) {
         for (El::Int i = 0; i < height; ++i) {
           const EvalType val = buf[i + j*ldim];
-          #pragma omp critical
-          sqsum += val * val;
+          const int tid = omp_get_thread_num();
+          local_sqsum[tid] += val * val;
         }
       }
+    }
+    for (int i = 0; i < nthreads; ++i) {
+      sqsum += local_sqsum[i];
     }
     return sqsum;
   }
