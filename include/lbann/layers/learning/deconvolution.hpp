@@ -115,26 +115,28 @@ class deconvolution_layer : public base_convolution_layer<Dev> {
     // Get tensor dimensions
     auto& kernel_dims = this->m_kernel_dims;
     const auto& input_dims = this->get_input_dims();
-    std::vector<int> output_dims = input_dims;
+    auto output_dims = input_dims;
 
     // Initialize deconvolution kernel dimensions
     // Note: Unlike the convolutional kernel, the previous layer's
     // number of channels is now the leading position -- keep in mind
     // that deconvolution is the transpose of a convolution.
     kernel_dims.insert(kernel_dims.begin(), input_dims[0]);
+    this->m_kernel_size = std::accumulate(kernel_dims.begin(),
+                                          kernel_dims.end(),
+                                          1,
+                                          std::multiplies<int>());
 
     // Check if input tensor dimensions are valid
-#ifdef LBANN_DEBUG
     if (input_dims.size() != kernel_dims.size() - 1) {
       std::stringstream err;
-      err << get_type() << " layer \"" << get_name() << "\ "
+      err << this->get_type() << " layer \"" << this->get_name() << "\" "
           << "has an input tensor with "
           << input_dims.size() << " dimensions "
           << "and a convolution kernel with "
           << kernel_dims.size() << " dimensions";
       LBANN_ERROR(err.str());
     }
-#endif
 
     // Initialize output tensor dimensions
     output_dims[0] = kernel_dims[1];
@@ -145,12 +147,6 @@ class deconvolution_layer : public base_convolution_layer<Dev> {
                           + kernel_dims[i+2] - 2 * pad);
     }
     this->set_output_dims(output_dims);
-
-    // Get size of convolutional kernel
-    this->m_kernel_size = std::accumulate(kernel_dims.begin(),
-                                          kernel_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
 
   }
 

@@ -373,6 +373,7 @@ int Layer::get_output_size(int output_index) const {
 void Layer::set_output_dims(std::vector<int> dims, int output_index) {
   if ((int) m_output_dims_list.size() != get_num_children()
       || (int) m_output_dims_list.size() <= output_index) {
+    // Handles case where dims are set before child layers are set
     m_output_dims_list.resize(std::max(get_num_children(),
                                        output_index + 1));
   }

@@ -281,8 +281,8 @@ class Layer {
    */
   std::vector<int> get_output_dims(int output_index = 0) const;
   /** Get size of an output tensor.
-   *  E.g. get the size of a "previous activations tensor" or
-   *  the number of "previous neurons."
+   *  E.g. get the size of an "activations tensor" or the number of
+   *  "neurons."
    */
   int get_output_size(int output_index = 0) const;
 
@@ -404,10 +404,9 @@ class Layer {
    */
   virtual void setup_pointers();
   /** Setup tensor dimensions
-   *  Called by the setup function. Ihe base class sets all
-   *  uninitialized output tensor dimensions equal to the first input
-   *  tensor's dimensions (provided there is at least one input
-   *  tensor)
+   *  Called by the setup function. If there are any input tensors,
+   *  the base method sets all uninitialized output tensor dimensions
+   *  equal to the first input tensor dimensions.
    */
   virtual void setup_dims();
   /** Instantiate distributed matrices.
@@ -466,7 +465,7 @@ class Layer {
   /** Whether current layer is using a GPU implementation. */
   bool m_using_gpus;
 
-  /** Dimensions of each output tensor. */
+  /** Dimensions of output tensors. */
   std::vector<std::vector<int>> m_output_dims_list;
 
   /** Instantiate distributed matrices. */
