@@ -38,14 +38,19 @@ EvalType boolean_accuracy_metric::evaluate_compute(const AbsDistMat& prediction,
 
   // Compute sum of predictions.
   EvalType sum = 0;
-#pragma omp taskloop collapse(2) default(shared) /// @todo reduction(+:sum)
+  int nthreads = omp_get_num_threads();
+  std::vector<EvalType> local_sum(nthreads, EvalType(0));
+#pragma omp taskloop collapse(2) default(shared)
   for(El::Int col = 0; col < local_width; ++col) {
     for(El::Int row = 0; row < local_height; ++row) {
       const bool true_val = ground_truth_local(row, col) > DataType(0.5);
       const bool pred_val = prediction_local(row, col) > DataType(0.5);
-      #pragma omp critical
-      sum += EvalType(true_val == pred_val);
+      const int tid = omp_get_thread_num();
+      local_sum[tid] += EvalType(true_val == pred_val);
     }
+  }
+  for (int i = 0; i < nthreads; ++i) {
+    sum += local_sum[i];
   }
 
   // Compute mean value across mini-batch.

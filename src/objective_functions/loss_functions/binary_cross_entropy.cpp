@@ -82,27 +82,30 @@ EvalType binary_cross_entropy::finish_evaluate_compute(
 
   // Compute sum of cross entropy terms
   EvalType sum = 0;
-#pragma omp taskloop collapse(2) default(shared) /// @todo reduction(+:sum)
+  int nthreads = omp_get_num_threads();
+  std::vector<EvalType> local_sum(nthreads, EvalType(0));
+#pragma omp taskloop collapse(2) default(shared)
   for (int col = 0; col < local_width; ++col) {
     for (int row = 0; row < local_height; ++row) {
       const DataType true_val = ground_truth_local(row, col);
       const DataType pred_val = predictions_local(row, col);
+      const int tid = omp_get_thread_num();
       #ifdef LBANN_DEBUG
       binary_cross_entropy_debug::check_entry(ground_truth.GlobalRow(row),
                                               ground_truth.GlobalCol(col),
                                               true_val,
                                               pred_val);
       #endif // LBANN_DEBUG
-      #pragma omp critical
-      {
-        if (true_val > DataType(0)) {
-          sum += - true_val * std::log(pred_val);
-        }
-        if (true_val < DataType(1)) {
-          sum += - (EvalType(1) - true_val) * std::log(EvalType(1) - pred_val);
-        }
+      if (true_val > DataType(0)) {
+        local_sum[tid] += - true_val * std::log(pred_val);
+      }
+      if (true_val < DataType(1)) {
+        local_sum[tid] += - (EvalType(1) - true_val) * std::log(EvalType(1) - pred_val);
       }
     }
+  }
+  for (int i = 0; i < nthreads; ++i) {
+    sum += local_sum[i];
   }
 
   // Compute mean objective function value across mini-batch

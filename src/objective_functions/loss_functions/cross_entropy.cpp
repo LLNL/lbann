@@ -41,17 +41,20 @@ void cross_entropy::start_evaluate_compute(const AbsDistMat& predictions,
 
   // Compute sum of cross entropy terms
   EvalType sum = EvalType(0);
-#pragma omp taskloop collapse(2) default(shared) /// @todo reduction(+:sum)
+  int nthreads = omp_get_num_threads();
+  std::vector<EvalType> local_sum(nthreads, EvalType(0));
+#pragma omp taskloop collapse(2) default(shared)
   for (int col = 0; col < local_width; ++col) {
     for (int row = 0; row < local_height; ++row) {
       const EvalType true_val = ground_truth_local(row, col);
-      #pragma omp critical
-      {
-	sum += (true_val != EvalType(0) ?
-		- true_val * std::log(predictions_local(row, col)) :
-		EvalType(0));
-      }
+      const int tid = omp_get_thread_num();
+      local_sum[tid] += (true_val != EvalType(0) ?
+                         - true_val * std::log(predictions_local(row, col)) :
+                         EvalType(0));
     }
+  }
+  for (int i = 0; i < nthreads; ++i) {
+    sum += local_sum[i];
   }
   // Compute mean objective function value across mini-batch
   m_sum = sum / width;  // Can't reduce on class members.

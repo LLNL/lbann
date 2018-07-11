@@ -466,21 +466,26 @@ DataType lbann_summary::local_sum(const Mat& mat) const {
   const El::Int ldim = mat.LDim();
   const DataType * __restrict__ mat_buf = mat.LockedBuffer();
   auto sum = DataType(0);
+  int nthreads = omp_get_num_threads();
+  std::vector<EvalType> local_sum(nthreads, EvalType(0));
   if (ldim == height) {
     const El::Int size = height*width;
-#pragma omp taskloop default(shared) /// @todo reduction(+:sum)
+#pragma omp taskloop default(shared)
     for (El::Int i = 0; i < size; ++i) {
-      #pragma omp critical
-      sum += mat_buf[i];
+      const int tid = omp_get_thread_num();
+      local_sum[tid] += mat_buf[i];
     }
   } else {
-#pragma omp taskloop collapse(2) default(shared) /// @todo reduction(+:sum)
+#pragma omp taskloop collapse(2) default(shared)
     for (El::Int row = 0; row < height; ++row) {
       for (El::Int col = 0; col < width; ++col) {
-        #pragma omp critical
-        sum += mat_buf[row + col * ldim];
+        const int tid = omp_get_thread_num();
+        local_sum[tid] += mat_buf[row + col * ldim];
       }
     }
+  }
+  for (int i = 0; i < nthreads; ++i) {
+    sum += local_sum[i];
   }
   return sum;
 }
@@ -494,29 +499,32 @@ void lbann_summary::local_sum_sqsum(
   const DataType * __restrict__ mat_buf = mat.LockedBuffer();
   sum = DataType(0);
   sqsum = DataType(0);
+  int nthreads = omp_get_num_threads();
+  std::vector<EvalType> local_sum(nthreads, EvalType(0));
+  std::vector<EvalType> local_sqsum(nthreads, EvalType(0));
   if (ldim == height) {
     const El::Int size = height*width;
-#pragma omp taskloop default(shared) /// @todo reduction(+:sum,sqsum)
+#pragma omp taskloop default(shared)
     for (El::Int i = 0; i < size; ++i) {
       const DataType val = mat_buf[i];
-      #pragma omp critical
-      {
-        sum += val;
-        sqsum += val*val;
-      }
+      const int tid = omp_get_thread_num();
+      local_sum[tid] += val;
+      local_sqsum[tid] += val*val;
     }
   } else {
-#pragma omp taskloop collapse(2) default(shared) /// @todo reduction(+:sum,sqsum)
+#pragma omp taskloop collapse(2) default(shared)
     for (El::Int row = 0; row < height; ++row) {
       for (El::Int col = 0; col < width; ++col) {
         const DataType val = mat_buf[row + col*ldim];
-        #pragma omp critical
-        {
-          sum += val;
-          sqsum += val * val;
-        }
+        const int tid = omp_get_thread_num();
+        local_sum[tid] += val;
+        local_sqsum[tid] += val * val;
       }
     }
+  }
+  for (int i = 0; i < nthreads; ++i) {
+    sum += local_sum[i];
+    sqsum += local_sqsum[i];
   }
 }
 
@@ -526,21 +534,26 @@ DataType lbann_summary::local_min(const Mat& mat) const {
   const El::Int ldim = mat.LDim();
   const DataType * __restrict__ mat_buf = mat.LockedBuffer();
   auto min = std::numeric_limits<DataType>::max();
+  int nthreads = omp_get_num_threads();
+  std::vector<EvalType> local_min(nthreads, std::numeric_limits<DataType>::max());
   if (ldim == height) {
     const El::Int size = height*width;
-#pragma omp taskloop default(shared) /// @todo reduction(min:min)
+#pragma omp taskloop default(shared)
     for (El::Int i = 0; i < size; ++i) {
-      #pragma omp critical
-      min = std::min(min, mat_buf[i]);
+      const int tid = omp_get_thread_num();
+      local_min[tid] = std::min(local_min[tid], mat_buf[i]);
     }
   } else {
-#pragma omp taskloop collapse(2) default(shared) /// @todo reduction(min:min)
+#pragma omp taskloop collapse(2) default(shared)
     for (El::Int row = 0; row < height; ++row) {
       for (El::Int col = 0; col < width; ++col) {
-        #pragma omp critical
-        min = std::min(min, mat_buf[row + col*ldim]);
+        const int tid = omp_get_thread_num();
+        local_min[tid] = std::min(local_min[tid], mat_buf[row + col*ldim]);
       }
     }
+  }
+  for (int i = 0; i < nthreads; ++i) {
+    min = std::min(min, local_min[i]);
   }
   return min;
 }
@@ -551,21 +564,26 @@ DataType lbann_summary::local_max(const Mat& mat) const {
   const El::Int ldim = mat.LDim();
   const DataType * __restrict__ mat_buf = mat.LockedBuffer();
   auto max = std::numeric_limits<DataType>::min();
+  int nthreads = omp_get_num_threads();
+  std::vector<EvalType> local_max(nthreads, std::numeric_limits<DataType>::min());
   if (ldim == height) {
     const El::Int size = height*width;
-#pragma omp taskloop default(shared) /// @todo reduction(max:max)
+#pragma omp taskloop default(shared)
     for (El::Int i = 0; i < size; ++i) {
-      #pragma omp critical
-      max = std::max(max, mat_buf[i]);
+      const int tid = omp_get_thread_num();
+      local_max[tid] = std::max(local_max[tid], mat_buf[i]);
     }
   } else {
-#pragma omp taskloop collapse(2) default(shared) /// @todo reduction(max:max)
+#pragma omp taskloop collapse(2) default(shared)
     for (El::Int row = 0; row < height; ++row) {
       for (El::Int col = 0; col < width; ++col) {
-        #pragma omp critical
-        max = std::max(max, mat_buf[row + col*ldim]);
+        const int tid = omp_get_thread_num();
+        local_max[tid] = std::max(local_max[tid], mat_buf[row + col*ldim]);
       }
     }
+  }
+  for (int i = 0; i < nthreads; ++i) {
+    max = std::max(max, local_max[i]);
   }
   return max;
 }
@@ -577,21 +595,26 @@ DataType lbann_summary::local_2norm(const Mat& mat) const {
   const El::Int ldim = mat.LDim();
   const DataType * __restrict__ mat_buf = mat.LockedBuffer();
   auto norm = DataType(0);
+  int nthreads = omp_get_num_threads();
+  std::vector<EvalType> local_norm(nthreads, EvalType(0));
   if (ldim == height) {
     const El::Int size = height*width;
-#pragma omp taskloop default(shared) /// @todo  reduction(+:norm)
+#pragma omp taskloop default(shared)
     for (El::Int i = 0; i < size; ++i) {
-     #pragma omp critical
-      norm += mat_buf[i] * mat_buf[i];
+      const int tid = omp_get_thread_num();
+      local_norm[tid] += mat_buf[i] * mat_buf[i];
     }
   } else {
-#pragma omp taskloop collapse(2) default(shared) /// @todo reduction(+:norm)
+#pragma omp taskloop collapse(2) default(shared)
     for (El::Int row = 0; row < height; ++row) {
       for (El::Int col = 0; col < width; ++col) {
-        #pragma omp critical
-        norm += mat_buf[row + col * ldim] * mat_buf[row + col * ldim];
+        const int tid = omp_get_thread_num();
+        local_norm[tid] += mat_buf[row + col * ldim] * mat_buf[row + col * ldim];
       }
     }
+  }
+  for (int i = 0; i < nthreads; ++i) {
+    norm += local_norm[i];
   }
   return std::sqrt(norm);
 }
