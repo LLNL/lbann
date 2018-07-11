@@ -37,6 +37,7 @@
 #include "lbann/data_readers/cv_process.hpp"
 #include <string>
 #include <set>
+#include <unordered_map>
 
 namespace lbann {
 
@@ -300,6 +301,13 @@ class data_reader_jag_conduit : public generic_data_reader {
   std::set<std::string> m_input_filter;
   /// The list of input key prefixes to filter out
   std::vector<prefix_t> m_input_prefix_filter;
+
+  /**
+   * maps integers to sample IDs. In the future the sample IDs may
+   * not be integers; also, this map only includes sample IDs that
+   * have <sample_id>/performance/success = 1
+   */
+  std::unordered_map<int, std::string> m_success_map;
 };
 
 

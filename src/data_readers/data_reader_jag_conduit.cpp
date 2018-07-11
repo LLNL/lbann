@@ -113,6 +113,7 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
   m_is_data_loaded = rhs.m_is_data_loaded;
   m_scalar_keys = rhs.m_scalar_keys;
   m_input_keys = rhs.m_input_keys;
+  m_success_map = rhs.m_success_map;
 
   if (rhs.m_pps.size() == 0u || !rhs.m_pps[0]) {
     _THROW_LBANN_EXCEPTION_(get_type(), " construction error: no image processor");
@@ -318,10 +319,10 @@ void data_reader_jag_conduit::set_scalar_choices(const std::vector<std::string>&
 }
 
 void data_reader_jag_conduit::set_all_scalar_choices() {
-  if (!check_sample_id(0)) {
+  if (m_success_map.size() == 0) {
     return;
   }
-  const conduit::Node & n_scalar = get_conduit_node("0/outputs/scalars");
+  const conduit::Node & n_scalar = get_conduit_node(m_success_map[0] + "/outputs/scalars");
   m_scalar_keys.reserve(n_scalar.number_of_children());
   const std::vector<std::string>& child_names = n_scalar.child_names();
   for (const auto& key: child_names) {
@@ -353,7 +354,7 @@ void data_reader_jag_conduit::set_input_choices(const std::vector<std::string>& 
 }
 
 void data_reader_jag_conduit::set_all_input_choices() {
-  if (!check_sample_id(0)) {
+  if (m_success_map.size() == 0) {
     return;
   }
   const conduit::Node & n_input = get_conduit_node("0/inputs");
@@ -373,11 +374,16 @@ const std::vector<std::string>& data_reader_jag_conduit::get_input_choices() con
 
 
 void data_reader_jag_conduit::set_num_img_srcs() {
-  if (!check_sample_id(0)) {
+  m_num_img_srcs = 1;
+#if 0
+todo TODO fix, once we are given advice as to how to handle images
+
+
+  if (m_success_map.size() == 0) {
     return;
   }
 
-  conduit::NodeConstIterator itr = get_conduit_node("0/outputs/images").children();
+  conduit::NodeConstIterator itr = get_conduit_node(m_success_map[0] + "/outputs/images").children();
 
   using view_set = std::set< std::pair<float, float> >;
   view_set views;
@@ -396,6 +402,7 @@ void data_reader_jag_conduit::set_num_img_srcs() {
   if (m_num_img_srcs == 0u) {
     m_num_img_srcs = 1u;
   }
+#endif
 }
 
 void data_reader_jag_conduit::set_linearized_image_size() {
@@ -405,10 +412,10 @@ void data_reader_jag_conduit::set_linearized_image_size() {
 }
 
 void data_reader_jag_conduit::check_image_size() {
-  if (!check_sample_id(0)) {
+  if (m_success_map.size() == 0) {
     return;
   }
-  const conduit::Node & n_imageset = get_conduit_node("0/outputs/images");
+  const conduit::Node & n_imageset = get_conduit_node(m_success_map[0] + "/outputs/images");
   if (static_cast<size_t>(n_imageset.number_of_children()) == 0u) {
     //m_image_width = 0;
     //m_image_height = 0;
@@ -416,7 +423,9 @@ void data_reader_jag_conduit::check_image_size() {
     _THROW_LBANN_EXCEPTION_(_CN_, "check_image_size() : no image in data");
     return;
   }
-  const conduit::Node & n_image = get_conduit_node("0/outputs/images/0/emi");
+  // (dah)
+  //const conduit::Node & n_image = get_conduit_node("0/outputs/images/0/emi");
+  const conduit::Node & n_image = get_conduit_node(m_success_map[0] + "/outputs/images/(0.0, 0.0)/0.0emi");
   conduit::float64_array emi = n_image.value();
   if (m_image_linearized_size != static_cast<size_t>(emi.number_of_elements())) {
     if ((m_image_width == 0) && (m_image_height == 0)) {
@@ -430,7 +439,7 @@ void data_reader_jag_conduit::check_image_size() {
 }
 
 void data_reader_jag_conduit::check_scalar_keys() {
-  if (!check_sample_id(0)) {
+  if (m_success_map.size() == 0) {
     m_scalar_keys.clear();
     return;
   }
@@ -439,7 +448,7 @@ void data_reader_jag_conduit::check_scalar_keys() {
   std::vector<bool> found(m_scalar_keys.size(), false);
   std::set<std::string> keys_conduit;
 
-  const conduit::Node & n_scalar = get_conduit_node("0/outputs/scalars");
+  const conduit::Node & n_scalar = get_conduit_node(m_success_map[0] + "/outputs/scalars");
   const std::vector<std::string>& child_names = n_scalar.child_names();
   for (const auto& key: child_names) {
     keys_conduit.insert(key);
@@ -466,7 +475,7 @@ void data_reader_jag_conduit::check_scalar_keys() {
 
 
 void data_reader_jag_conduit::check_input_keys() {
-  if (!check_sample_id(0)) {
+  if (m_success_map.size() == 0) {
     m_input_keys.clear();
     return;
   }
@@ -475,7 +484,7 @@ void data_reader_jag_conduit::check_input_keys() {
   std::vector<bool> found(m_input_keys.size(), false);
   std::map<std::string, TypeID> keys_conduit;
 
-  const conduit::Node & n_input = get_conduit_node("0/inputs");
+  const conduit::Node & n_input = get_conduit_node(m_success_map[0] + "/inputs");
   conduit::NodeConstIterator itr = n_input.children();
 
   while (itr.has_next()) {
@@ -539,6 +548,18 @@ void data_reader_jag_conduit::load() {
 void data_reader_jag_conduit::load_conduit(const std::string conduit_file_path) {
   conduit::relay::io::load(conduit_file_path, "hdf5", m_data);
 
+  // set up mapping: need to do this since some of the data may be bad
+  const std::vector<std::string> &children_names = m_data.child_names();
+  int idx = 0;
+  for (auto t : children_names) {
+    const std::string key = "/" + t + "/performance/success";
+    const conduit::Node& n_ok = get_conduit_node(key);
+    int success = n_ok.to_int64();
+    if (success == 1) {
+      m_success_map[idx++] = t;
+    } 
+  }
+
   set_num_img_srcs();
   check_image_size();
 
@@ -559,7 +580,7 @@ void data_reader_jag_conduit::load_conduit(const std::string conduit_file_path) 
 
 
 size_t data_reader_jag_conduit::get_num_samples() const {
-  return static_cast<size_t>(m_data.number_of_children());
+  return m_success_map.size();
 }
 
 unsigned int data_reader_jag_conduit::get_num_img_srcs() const {
@@ -740,6 +761,8 @@ std::string data_reader_jag_conduit::get_description() const {
 }
 
 
+/// I think this is no longer relevant, since calls: check_sample_id(0)
+/// have been replaced by: if (m_success_map.size() == 0) return;
 bool data_reader_jag_conduit::check_sample_id(const size_t sample_id) const {
   return (static_cast<conduit_index_t>(sample_id) < m_data.number_of_children());
 }
@@ -761,9 +784,12 @@ bool data_reader_jag_conduit::check_non_numeric(const std::string key) {
 
 
 std::vector<int> data_reader_jag_conduit::choose_image_near_bang_time(const size_t sample_id) const {
+  std::vector<int> img_indices;
+  return img_indices;
+#if 0
   using view_map = std::map<std::pair<float, float>, std::pair<int, double> >;
 
-  conduit::NodeConstIterator itr = get_conduit_node(std::to_string(sample_id) + "/outputs/images").children();
+  conduit::NodeConstIterator itr = get_conduit_node(m_success_map[sample_id] + "/outputs/images").children();
   view_map near_bang_time;
   int idx = 0;
 
@@ -793,19 +819,58 @@ std::vector<int> data_reader_jag_conduit::choose_image_near_bang_time(const size
     img_indices.push_back(view.second.first);
   }
   return img_indices;
+#endif
 }
 
 std::vector< std::pair<size_t, const data_reader_jag_conduit::ch_t*> >
 data_reader_jag_conduit::get_image_ptrs(const size_t sample_id) const {
-  if (!check_sample_id(sample_id)) {
+  if (sample_id >= m_success_map.size()) {
     _THROW_LBANN_EXCEPTION_(_CN_, "get_images() : invalid sample index");
   }
+
+  std::vector< std::pair<size_t, const ch_t*> >image_ptrs;
+  std::unordered_map<int, std::string>::const_iterator it = m_success_map.find(sample_id);
+  std::string img_key = it->second + "/outputs/images/(0.0, 0.0)/0.0/emi";
+  const conduit::Node & n_image = get_conduit_node(img_key);
+  conduit::float64_array emi = n_image.value();
+  const size_t num_pixels = emi.number_of_elements();
+  const ch_t* emi_data = n_image.value();
+  image_ptrs.push_back(std::make_pair(num_pixels, emi_data));
+
+  return image_ptrs;
+
+#if 0
+The following does not work with the reorganization of the jag data schema;
+in the old scheme the image keys were:
+  <sample_id>/outputs/images/0/emi
+  <sample_id>/outputs/images/1/emi
+
+They are now:
+  <sample_id>/outputs/images/(0.0, 0.0)/0.0/emi
+  <sample_id>/outputs/images/(0.0, 0.0)/-0.01/emi
+  <sample_id>/outputs/images/(0.0, 0.0)/-0.02/emi
+  <sample_id>/outputs/images/(0.0, 0.0)/-0.03/emi
+ 
+  <sample_id>/outputs/images/(90.0, 0.0)/0.0/emi
+  <sample_id>/outputs/images/(90.0, 0.0)/-0.01/emi
+  <sample_id>/outputs/images/(90.0, 0.0)/-0.02/emi
+  <sample_id>/outputs/images/(90.0, 0.0)/-0.03/emi
+ 
+  <sample_id>/outputs/images/(90.0, 78.0)/0.0/emi
+  <sample_id>/outputs/images/(90.0, 78.0)/-0.01/emi
+  <sample_id>/outputs/images/(90.0, 78.0)/-0.02/emi
+  <sample_id>/outputs/images/(90.0, 78.0)/-0.03/emi
+
+Until we get advice as to which image(s) to use, I return the first image,
+so we can get this data reader working
+
+
   std::vector<int> img_indices = choose_image_near_bang_time(sample_id);
   std::vector< std::pair<size_t, const ch_t*> >image_ptrs;
   image_ptrs.reserve(img_indices.size());
 
   for (const auto idx: img_indices) {
-    std::string img_key = std::to_string(sample_id) + "/outputs/images/" + std::to_string(idx) + "/emi";
+    std::string img_key = m_success_map[sample_id] + "/outputs/images/" + std::to_string(idx) + "/emi";
     const conduit::Node & n_image = get_conduit_node(img_key);
     conduit::float64_array emi = n_image.value();
     const size_t num_pixels = emi.number_of_elements();
@@ -814,6 +879,7 @@ data_reader_jag_conduit::get_image_ptrs(const size_t sample_id) const {
     image_ptrs.push_back(std::make_pair(num_pixels, emi_data));
   }
   return image_ptrs;
+#endif
 }
 
 cv::Mat data_reader_jag_conduit::cast_to_cvMat(const std::pair<size_t, const ch_t*> img, const int height) {
@@ -928,7 +994,7 @@ bool data_reader_jag_conduit::fetch(CPUMat& X, int data_id, int mb_idx, int tid,
       std::vector<cv::Mat> images = get_cv_images(data_id);
 
       if (images.size() != get_num_img_srcs()) {
-        _THROW_LBANN_EXCEPTION2_(_CN_, "fetch_datum() : the number of images is not as expected", \
+        _THROW_LBANN_EXCEPTION2_(_CN_, "fetch() : the number of images is not as expected", \
           std::to_string(images.size()) + "!=" + std::to_string(get_num_img_srcs()));
       }
 

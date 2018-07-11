@@ -182,10 +182,12 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       if(name == "merge_samples") {
         data_reader_merge_samples* merged_samples = new data_reader_merge_samples(npy_readers, shuffle);
         reader = merged_samples;
-      if (name == "multi_conduit") {
-        data_reader_multi_conduit* multi_conduit = new data_reader_multi_conduit(npy_readers, shuffle);
-        reader = merged_samples;
-      }else {
+      } else if (name == "multi_conduit") {
+        //note: this is not a mistake! We may have a separate multi_conduit
+        //      reader in the future, but for now merge_samples does what we need.
+        data_reader_merge_samples* multi_conduit = new data_reader_merge_samples(npy_readers, shuffle);
+        reader = multi_conduit;
+      } else {
         //create label file
         //we can use merge_features without label
         generic_data_reader* label_reader = nullptr;
