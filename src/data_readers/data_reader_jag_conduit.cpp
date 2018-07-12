@@ -425,7 +425,7 @@ void data_reader_jag_conduit::check_image_size() {
   }
   // (dah)
   //const conduit::Node & n_image = get_conduit_node("0/outputs/images/0/emi");
-  const conduit::Node & n_image = get_conduit_node(m_success_map[0] + "/outputs/images/(0.0, 0.0)/0.0emi");
+  const conduit::Node & n_image = get_conduit_node(m_success_map[0] + "/outputs/images/(0.0, 0.0)/0.0/emi");
   conduit::float64_array emi = n_image.value();
   if (m_image_linearized_size != static_cast<size_t>(emi.number_of_elements())) {
     if ((m_image_width == 0) && (m_image_height == 0)) {
@@ -433,7 +433,10 @@ void data_reader_jag_conduit::check_image_size() {
       m_image_width = static_cast<int>(emi.number_of_elements());
       set_linearized_image_size();
     } else {
-      _THROW_LBANN_EXCEPTION_(_CN_, "check_image_size() : image size mismatch");
+      //_THROW_LBANN_EXCEPTION_(_CN_, "check_image_size() : image size mismatch");
+      std::stringstream err;
+      err << "check_image_size() : image size mismatch; m_image_width: " << m_image_width << " m_image_height: " << m_image_height << std::endl;
+      throw lbann_exception(err.str());
     }
   }
 }
