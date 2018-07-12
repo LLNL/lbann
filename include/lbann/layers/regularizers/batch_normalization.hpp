@@ -235,7 +235,8 @@ class batch_normalization : public regularizer_layer {
 
   void setup_data() override {
     regularizer_layer::setup_data();
-    const auto& num_channels = get_output_dims()[0];
+    const auto& output_dims = get_output_dims();
+    const auto& num_channels = output_dims[0];
 
     // Initialize default weights if none are provided
     if (this->m_weights.size() > 4) {
@@ -329,7 +330,8 @@ class batch_normalization : public regularizer_layer {
     // Compute statistics during training
     const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
     if (is_training) {
-      const int num_channels = get_output_dims()[0];
+      const auto& output_dims = get_output_dims();
+      const int num_channels = output_dims[0];
       const int channel_size = get_output_size() / num_channels;
       batch_normalization_cuda::channel_sums(num_channels,
                                              local_input,
@@ -452,7 +454,8 @@ class batch_normalization : public regularizer_layer {
     // Matrix parameters
     const int width = input.Width();
     const El::Int local_width = local_input.Width();
-    const int num_channels = get_output_dims()[0];
+    const auto& output_dims = get_output_dims();
+    const int num_channels = output_dims[0];
     const int channel_size = get_output_size() / num_channels;
 
     // Compute statistics
@@ -583,7 +586,8 @@ class batch_normalization : public regularizer_layer {
     const int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
     const int width = input.Width();
     const El::Int local_width = local_input.Width();
-    const int num_channels = get_output_dims()[0];
+    const auto& output_dims = get_output_dims();
+    const int num_channels = output_dims[0];
     const int channel_size = get_output_size() / num_channels;
 
     // Compute local gradients

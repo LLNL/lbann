@@ -202,6 +202,8 @@ class base_convolution_layer : public learning_layer {
    *  deconvolution classes. */
   void setup_data() override {
     learning_layer::setup_data();
+    const auto& input_dims = get_input_dims();
+    const auto& output_dims = get_output_dims();
 
     // Initialize default weights if none are provided
     if (this->m_weights.size() > 2) {
@@ -232,12 +234,12 @@ class base_convolution_layer : public learning_layer {
     auto* cast_initializer
       = dynamic_cast<fan_in_fan_out_initializer*>(&this->m_weights[0]->get_initializer());
     if (cast_initializer != nullptr) {
-      cast_initializer->set_fan_in(m_kernel_size / get_output_dims()[0]);
-      cast_initializer->set_fan_out(m_kernel_size / get_input_dims()[0]);
+      cast_initializer->set_fan_in(m_kernel_size / output_dims[0]);
+      cast_initializer->set_fan_out(m_kernel_size / input_dims[0]);
     }
 
     // Initialize bias
-    this->m_weights[1]->setup(get_output_dims()[0], Dev);
+    this->m_weights[1]->setup(output_dims[0], Dev);
     El::Zeros(m_bias_gradient,
               this->m_weights[1]->get_matrix_height(),
               this->m_weights[1]->get_matrix_width());
@@ -771,7 +773,8 @@ class base_convolution_layer : public learning_layer {
 
     // Matrix parameters
     const El::Int local_width = local_output.Width();
-    const El::Int num_output_channels = get_output_dims()[0];
+    const auto& output_dims = get_output_dims();
+    const El::Int num_output_channels = output_dims[0];
     const El::Int num_per_output_channel = get_output_size() / num_output_channels;
 
     // Apply bias to each output channel
