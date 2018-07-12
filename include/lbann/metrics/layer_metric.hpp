@@ -35,7 +35,9 @@ namespace lbann {
 class layer_metric : public metric {
 
  public:
-  layer_metric(lbann_comm *comm, std::string unit = "");
+  layer_metric(lbann_comm *comm,
+               std::string name = "",
+               std::string unit = "");
   layer_metric(const layer_metric& other) = default;
   layer_metric& operator=(const layer_metric& other) = default;
   virtual ~layer_metric() = default;
@@ -59,12 +61,19 @@ class layer_metric : public metric {
    */
   EvalType evaluate_compute(const AbsDistMat& prediction,
                             const AbsDistMat& ground_truth) override {
+    LBANN_ERROR("This function should not be called");
     return EvalType(0);
   }
 
  private:
-  
+
+  /** Descriptive name for metric. */
+  std::string m_name;
+  /** Metric unit.
+   *  If the unit is "%", the reported value is multiplied by 100.
+   */
   std::string m_unit;
+  /** Metric value source. */
   abstract_evaluation_layer* m_evaluation_layer;
 
 };
