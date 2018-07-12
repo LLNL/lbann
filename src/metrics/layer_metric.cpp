@@ -45,18 +45,6 @@ std::string layer_metric::name() const {
   }
 }
 
-void layer_metric::set_evaluation_layer(Layer* eval) {
-  auto&& eval_dp = dynamic_cast<evaluation_layer<data_layout::DATA_PARALLEL>*>(eval);
-  auto&& eval_mp = dynamic_cast<evaluation_layer<data_layout::MODEL_PARALLEL>*>(eval);
-  if (eval_dp == nullptr && eval_mp == nullptr) {
-    std::stringstream err;
-    err << "layer metric must point to an evaluation layer, "
-        << "but " << eval->get_name() << " is type " << eval->get_type();
-    LBANN_ERROR(err.str());
-  }
-  m_evaluation_layer = eval;
-}
-
 void layer_metric::setup(model& m) {
   if (m_evaluation_layer == nullptr) {
     LBANN_ERROR("attempted to setup layer metric without setting evaluation layer");
@@ -71,18 +59,15 @@ EvalType layer_metric::evaluate(execution_mode mode,
     LBANN_ERROR("attempted to evaluate metric without setting a target layer");
   }
 
+  // Get evaluation layer value
   const auto& start = get_time();
-  EvalType total_value = 0;
-  auto&& eval_dp = dynamic_cast<evaluation_layer<data_layout::DATA_PARALLEL>*>(m_evaluation_layer);
-  auto&& eval_mp = dynamic_cast<evaluation_layer<data_layout::MODEL_PARALLEL>*>(m_evaluation_layer);
-  if (eval_dp) { total_value = eval_dp->get_value(true) * mini_batch_size; }
-  if (eval_mp) { total_value = eval_mp->get_value(true) * mini_batch_size; }
-  if (m_unit == "%") { total_value *= 100; }
+  auto value = m_evaluation_layer->get_value(false);
+  if (m_unit == "%") { value *= 100; }
   get_evaluate_time() += get_time() - start;
 
   // Record result in statistics and return
-  get_statistics()[mode].add_value(total_value, mini_batch_size);
-  return total_value / mini_batch_size;
+  get_statistics()[mode].add_value(value * mini_batch_size, mini_batch_size);
+  return value;
 
 }
 

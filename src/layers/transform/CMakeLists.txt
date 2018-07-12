@@ -1,5 +1,6 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
+  evaluation.cpp
   in_top_k.cpp
   )
 

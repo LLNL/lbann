@@ -28,6 +28,7 @@
 #define LBANN_METRIC_LAYER_METRIC_HPP
 
 #include "lbann/metrics/metric.hpp"
+#include "lbann/layers/transform/evaluation.hpp"
 
 namespace lbann {
 
@@ -46,8 +47,8 @@ class layer_metric : public metric {
   std::string name() const override;
   std::string get_unit() const override { return m_unit; }
 
-  void set_evaluation_layer(Layer* l);
-  Layer* get_evaluation_layer() { return m_evaluation_layer; }
+  void set_evaluation_layer(abstract_evaluation_layer* l) { m_evaluation_layer = l; }
+  abstract_evaluation_layer* get_evaluation_layer() const { return m_evaluation_layer; }
 
  protected:
   
@@ -73,7 +74,7 @@ class layer_metric : public metric {
    */
   std::string m_unit;
   /** Metric value source. */
-  Layer* m_evaluation_layer;
+  abstract_evaluation_layer* m_evaluation_layer;
 
 };
 
