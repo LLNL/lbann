@@ -46,11 +46,13 @@
   } while (0)
 
 // Macro to print a warning to standard error stream.
-#define LBANN_WARNING(message, comm)                                    \
+#define LBANN_WARNING(message)                                          \
   do {                                                                  \
+    int rank_LBANN_WARNING = 0;                                         \
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank_LBANN_WARNING);                 \
     std::stringstream ss_LBANN_WARNING;                                 \
     ss_LBANN_WARNING << "LBANN warning "                                \
-                     << "on rank " << comm.get_rank_in_world() << " "   \
+                     << "on rank " << rank_LBANN_WARNING << " "         \
                      << "(" << __FILE__ << ":" << __LINE__ << ")"       \
                      << ": " << (message) << std::endl;                 \
     std::cerr << ss_LBANN_WARNING.str();                                \
