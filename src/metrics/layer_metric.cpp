@@ -29,11 +29,16 @@
 
 namespace lbann {
 
-layer_metric::layer_metric(lbann_comm *comm, std::string unit)
-  : metric(comm), m_unit(unit), m_evaluation_layer(nullptr) {}
+layer_metric::layer_metric(lbann_comm *comm, std::string name_, std::string unit)
+  : metric(comm),
+    m_name(name_),
+    m_unit(unit),
+    m_evaluation_layer(nullptr) {}
 
 std::string layer_metric::name() const {
-  if (m_evaluation_layer != nullptr) {
+  if (!m_name.empty()) {
+    return m_name;
+  } else if (m_evaluation_layer != nullptr) {
     return m_evaluation_layer->get_name();
   } else {
     return "uninitialized layer metric";

@@ -303,6 +303,12 @@ class lbann_comm {
     }
   }
 
+  /** Allgather over an arbitrary communicator */
+  template <typename T>
+  void all_gather(const T* src, int src_count, T* rcv, int rcv_count, El::mpi::Comm c) {
+    El::mpi::AllGather<T>(src, src_count, rcv, rcv_count, c);
+  }
+
   /** 
    * Allgatherv over an arbitrary communicator;
    * all vectors must be correctly sized prior to entry.
@@ -497,6 +503,7 @@ class lbann_comm {
   /** Scalar-array reduce (for root processes). */
   template <typename T>
   void reduce(T *snd, int count, T *rcv, const El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
+    if (snd == rcv) { snd = MPI_IN_PLACE; }
     El::mpi::Reduce(snd, rcv, count, op, El::mpi::Rank(c), c);
     bytes_received += sizeof(T) * count * (El::mpi::Size(c) - 1);
   }
@@ -558,9 +565,21 @@ class lbann_comm {
     bytes_received += count * sizeof(T) * (El::mpi::Size(c) - 1);
   }
   /** Matrix allreduce. */
+  void allreduce(AbsMat& m,
+                 const El::mpi::Comm c,
+                 El::mpi::Op op = El::mpi::SUM);
+  /** Matrix allreduce. */
   void allreduce(AbsDistMat& m,
                  const El::mpi::Comm c,
                  El::mpi::Op op = El::mpi::SUM);
+  /** Non-blocking matrix allreduce.
+   *  If LBANN has not been built with Aluminum, then this calls a
+   *  blocking matrix allreduce.
+   */
+  void nb_allreduce(AbsMat& m,
+                    const El::mpi::Comm c,
+                    Al::request& req,
+                    El::mpi::Op op = El::mpi::SUM);
   /** Non-blocking matrix allreduce.
    *  If LBANN has not been built with Aluminum, then this calls a
    *  blocking matrix allreduce.
