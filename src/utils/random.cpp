@@ -92,7 +92,8 @@ bool save_rng_to_checkpoint_shared(persist& p, const lbann_comm* comm) {
 
   }
 #ifdef _OPENMP
-#pragma omp task default(shared) private(rng_name)
+#pragma omp taskloop default(shared) private(rng_name)
+  for(int i = 0; i < omp_get_num_threads(); ++i)
   {
     rng_name = dirname + "/rng_generator_" + rank_in_world + "_" + std::to_string(omp_get_thread_num());
     std::ofstream rng(rng_name);
@@ -137,7 +138,8 @@ bool load_rng_from_checkpoint_shared(persist& p, const lbann_comm* comm) {
   }
 
  #ifdef _OPENMP
-#pragma omp task default(shared) private(rng_name)
+#pragma omp taskloop default(shared) private(rng_name)
+  for(int i = 0; i < omp_get_num_threads(); ++i)
   {
     rng_name = dirname + "/rng_generator_" + rank_in_world + "_" + std::to_string(omp_get_thread_num());
     std::ifstream rng(rng_name);
@@ -165,7 +167,9 @@ void init_random(int seed, lbann_comm *comm) {
     // Seed every OpenMP thread, if present.
     // Note: Threadprivate OMP variables don't work with dynamic threads.
 #ifdef _OPENMP
-#pragma omp task default(shared)
+    /* Fork a team to initialize all RNGs.  Note note under a master
+       parallel section here. */
+#pragma omp parallel
     {
       get_generator().seed((seed << 8) | omp_get_thread_num());
       get_fast_generator().seed((seed << 8) | omp_get_thread_num());
@@ -186,7 +190,9 @@ void init_random(int seed, lbann_comm *comm) {
     std::random_device rd;
     unsigned rand_val = rd();
 #ifdef _OPENMP
-#pragma omp task default(shared)
+    /* Fork a team to initialize all RNGs.  Note note under a master
+       parallel section here. */
+#pragma omp parallel
     {
       get_generator().seed((rand_val << 8) | omp_get_thread_num());
       get_fast_generator().seed((rand_val << 8) | omp_get_thread_num());
@@ -211,7 +217,9 @@ void init_data_seq_random(int seed) {
   // Seed every OpenMP thread, if present.
   // Note: Threadprivate OMP variables don't work with dynamic threads.
 #ifdef _OPENMP
-#pragma omp task default(shared)
+    /* Fork a team to initialize all RNGs.  Note note under a master
+       parallel section here. */
+#pragma omp parallel
   {
     get_data_seq_generator().seed(seed);
   }

@@ -226,7 +226,7 @@ void __attribute__((used)) display_omp_setup()
     }
   }else {
     /* Fork a team of threads giving them their own copies of variables */
-#pragma omp task shared(rank, np, secs, hostname)
+#pragma omp parallel shared(rank, np, secs, hostname)
     {
       th_print_affinity(rank, np, hostname);
     }  /* All threads join master thread and disband */
