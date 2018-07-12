@@ -46,7 +46,7 @@ namespace lbann {
  */
 class data_reader_jag_conduit : public generic_data_reader {
  public:
-  using ch_t = double; ///< jag output image channel type
+  using ch_t = float; ///< jag output image channel type
   using scalar_t = double; ///< jag scalar output type
   using input_t = double; ///< jag input parameter type
 
