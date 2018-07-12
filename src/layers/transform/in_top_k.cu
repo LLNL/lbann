@@ -69,6 +69,7 @@ struct entry_compare : thrust::binary_function<entry,entry,bool> {
 __global__ void dense_matrix_to_sparse_vectors(El::Int local_vector_size,
                                                El::Int local_matrix_height,
                                                El::Int local_matrix_width,
+                                               El::Int global_matrix_height,
                                                El::Int global_matrix_col_shift,
                                                El::Int global_matrix_col_stride,
                                                const DataType* __restrict__ local_matrix,
@@ -89,7 +90,7 @@ __global__ void dense_matrix_to_sparse_vectors(El::Int local_vector_size,
       current_entry.index = global_row;
     } else {
       current_entry.value = entry::min_value;
-      current_entry.index = entry::max_index;
+      current_entry.index = global_matrix_height;
     }
   }
 }
@@ -201,7 +202,7 @@ void fp_gpu(lbann_comm& comm,
     entry_array local_entries(num_local_entries);
     index_array local_entries_cols(num_local_entries);
     dense_matrix_to_sparse_vectors<<<grid_dim, block_dim, 0, stream>>>(
-      num_local_entries_per_col, local_height, local_width,
+      num_local_entries_per_col, local_height, local_width, height,
       input.ColShift(), input.ColStride(),
       local_input.LockedBuffer(), local_input.LDim(),
       local_entries.data().get(), num_local_entries_per_col);

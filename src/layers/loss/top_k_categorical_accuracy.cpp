@@ -91,7 +91,7 @@ void fp_cpu(lbann_comm& comm,
   // Get label indices
   // Note: This may have race conditions if columns of labels matrix
   // are not one-hot vectors.
-  std::vector<El::Int> label_indices(local_width, entry::max_index);
+  std::vector<El::Int> label_indices(local_width, height);
   Al::request req;
 #pragma omp parallel for collapse(2)
   for (El::Int col = 0; col < local_width; ++col) {
