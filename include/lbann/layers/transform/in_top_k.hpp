@@ -24,36 +24,48 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_OBJECTIVE_FUNCTION_LAYER_TERM_HPP_INCLUDED
-#define LBANN_OBJECTIVE_FUNCTION_LAYER_TERM_HPP_INCLUDED
+#ifndef LBANN_LAYER_IN_TOP_K_HPP_INCLUDED
+#define LBANN_LAYER_IN_TOP_K_HPP_INCLUDED
 
-#include "lbann/objective_functions/objective_function_term.hpp"
-#include "lbann/layers/transform/evaluation.hpp"
+#include "lbann/layers/transform/transform.hpp"
+#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
-class layer_term : public objective_function_term {
+/** Indicate top-k entries in each mini-batch sample.
+ *  Output entries corresponding to the top-k input entries are set to
+ *  one and the rest are set to zero. Ties are broken in favor of
+ *  entries with smaller indices.
+ */
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
+class in_top_k_layer : public transform_layer {
  public:
-  layer_term(EvalType scale_factor = EvalType(1));
-  layer_term* copy() const override { return new layer_term(*this); } 
-  std::string name() const override { return "evaluation layer term"; }
 
-  void set_evaluation_layer(abstract_evaluation_layer* l);
+  in_top_k_layer(lbann_comm *comm, El::Int k)
+    : transform_layer(comm), m_k(k) {
+    if (m_k < 0) {
+      std::stringstream err;
+      err << "invalid parameter for top-k search (k=" << m_k << ")";
+      LBANN_ERROR(err.str());
+    }
+  }
 
-  abstract_evaluation_layer* get_evaluation_layer();
+  in_top_k_layer* copy() const override { return new in_top_k_layer(*this); }
+  std::string get_type() const override { return "in_top_k"; }
+  data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
-  void setup(model& m) override;
+ protected:
 
-  void start_evaluation() override;
+  void fp_compute() override;
 
-  EvalType finish_evaluation() override;
+ private:
 
-  void differentiate() override;
-  
-  void compute_weight_regularization() override {};
+  /** Parameter for top-k search. */
+  const El::Int m_k;
 
 };
 
 } // namespace lbann
 
-#endif // LBANN_OBJECTIVE_FUNCTION_LAYER_TERM_HPP_INCLUDED
+#endif // LBANN_LAYER_IN_TOP_K_HPP_INCLUDED

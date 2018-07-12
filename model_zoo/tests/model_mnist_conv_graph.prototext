@@ -222,13 +222,13 @@ model {
     name: "cross_entropy"
     parents: "prob labels"
     data_layout: "model_parallel"
-    cross_entropy {}    
+    cross_entropy {}
   }
   layer {
     name: "cross_entropy_eval"
     parents: "cross_entropy"
     data_layout: "model_parallel"
-    evaluation {}    
+    evaluation {}
   }
 
 }

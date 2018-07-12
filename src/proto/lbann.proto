@@ -329,7 +329,8 @@ message CategoricalAccuracy {
 // message MeanSquaredError {}
 
 message TopKCategoricalAccuracy {
-  int64 top_k = 2; //only applicable for top_k_categorical_accuracy
+  int64 k = 1;
+  int64 top_k = 2; //deprecated
 }
 
 message PearsonCorrelation {
@@ -348,8 +349,9 @@ message BooleanFalseNegatives {
 }
 
 message LayerMetric {
-  string unit = 1;
-  string layer = 2;
+  string layer = 1;
+  string name = 2;
+  string unit = 3;
 }
 
 //========================================================================
@@ -786,6 +788,7 @@ message Layer {
    StopGradient stop_gradient = 320;
    Max max = 321;
    Min min = 322;
+   InTopK in_top_k = 324;
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -794,6 +797,7 @@ message Layer {
 
    // loss layers
    CrossEntropy cross_entropy = 60;
+   TopKCategoricalAccuracy top_k_categorical_accuracy = 61;
 
    // target Layers
    Target target = 18;
@@ -1016,7 +1020,7 @@ message Zero {
 }
 
 message Reduction {
-  string mode=1;
+  string mode=1; //"sum" or "average"
 }
 
 message Evaluation {
@@ -1062,6 +1066,10 @@ message Max {
 }
 
 message Min {
+}
+
+message InTopK {
+  int64 k = 1;
 }
 
 /////////////////////
