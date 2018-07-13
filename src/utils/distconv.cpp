@@ -27,8 +27,11 @@
 #include "lbann/utils/distconv.hpp"
 #include "lbann/utils/cudnn.hpp"
 #include <memory>
+#include <cstdlib>
 
 #ifdef LBANN_HAS_DISTCONV
+
+using namespace distconv;
 
 namespace lbann {
 namespace dc {
@@ -42,12 +45,12 @@ namespace {
 /** Global instance of cuDNN handle. */
 std::unique_ptr<Backend> backend_instance;
 
-void initialize() {
+void initialize(MPI_Comm comm) {
   auto &cudnn_h = lbann::cudnn::get_handle();
   cudaStream_t s;
   CHECK_CUDNN(cudnnGetStream(cudnn_h, &s));
   backend_instance.reset(
-      new Backend(cudnn_h, s));
+      new Backend(comm, cudnn_h, s));
 }
 
 void destroy() {
@@ -56,11 +59,28 @@ void destroy() {
 
 } // namespace
 
-Backend &get_backend() {
-  if (!backend_instance) { initialize(); }
+Backend &get_backend(MPI_Comm comm) {
+  if (!backend_instance) { initialize(comm); }
   return *backend_instance;
 }
 
+HaloExchangeMethod get_halo_exchange_method() {
+  char *env = std::getenv("DISTCONV_HALO_EXCHANGE");
+  if (!env) {
+    // not specified
+    return HaloExchangeMethod::MPI_DERIVED_TYPE;
+  }
+  std::string s(env);
+  if (s == "P2P") {
+    return HaloExchangeMethod::P2P;
+  } else if (s == "MPI") {
+    return HaloExchangeMethod::MPI;
+  } else if (s == "MPI_DERIVED_TYPE") {
+    return HaloExchangeMethod::MPI_DERIVED_TYPE;
+  } else {
+    LBANN_ERROR("Unknown value of environment variable DISTCONV_HALO_EXCHANGE");
+  }
+}
 } // namespace dc
 } // namespace lbann
 

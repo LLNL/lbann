@@ -651,7 +651,8 @@ private:
     setup_error_signals_copyout_tensor(dists);
 
     // Init the dc::Pooling layer
-    m_pooling = new dc::Pooling(dc::get_backend());
+    m_pooling = new dc::Pooling(dc::get_backend(this->get_comm()->get_model_comm().comm),
+                                dc::get_halo_exchange_method());
 
     std::string mode;
     switch(m_pool_mode) {
