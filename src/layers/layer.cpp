@@ -39,6 +39,7 @@
 // input data to be modified by another layer before it is used by
 // this layer.
 // #define ASYNC_INPUT_MEMORY_TRANSFER
+#include "lbann/utils/cuda.hpp"
 
 namespace lbann {
 
@@ -1453,7 +1454,7 @@ void Layer::setup_activations_tensor(const std::array<Dist, 4> &dists) {
   const Array4 output_tensor_shape =
       {m_neuron_dims[2], m_neuron_dims[1],
        m_neuron_dims[0], this->m_model->get_max_mini_batch_size()};
-  const Array4 &activations_local_shape =
+  const Array4 activations_local_shape =
       get_activations_tensor_local_shape();
   m_activations_t = TensorDev(output_tensor_shape,
                               loc, dists[1], activations_local_shape,
@@ -1713,10 +1714,13 @@ void Layer::ensure_prev_activations() {
       m_prev_activations_const_view.get_const_base_ptr(),
       m_prev_activations_t.get_base_ptr(),
       El::GPUManager::Stream());
+  this->m_model->clock_start();
 }
 
 void Layer::copy_out_activations() {
   if (!m_child_copy_out_required) return;
+
+  this->m_model->clock_end();
   
   MPIPrintStreamDebug() << "Copying activations back to sample decomposition\n";
   assert0(dc::tensor::View(

@@ -281,6 +281,30 @@ using vector = ::thrust::device_vector<T, allocator<T>>;
 } // namespace thrust
 
 } // namespace cuda
+
+struct CUDAClock {
+  cudaEvent_t m_ev;
+  CUDAClock() {
+    FORCE_CHECK_CUDA(cudaEventCreate(&m_ev));
+  }
+  ~CUDAClock() {
+    FORCE_CHECK_CUDA(cudaEventDestroy(m_ev));
+  }
+  void record(cudaStream_t s=0) {
+    FORCE_CHECK_CUDA(cudaEventRecord(m_ev, s));
+  }
+  // returns elapsed time in sec since the recorded time with clk. 
+  float get_elapsed_time_since(const CUDAClock &clk) {
+    FORCE_CHECK_CUDA(cudaEventSynchronize(m_ev));
+    FORCE_CHECK_CUDA(cudaEventSynchronize(clk.m_ev));
+    float elapsed;
+    FORCE_CHECK_CUDA(cudaEventElapsedTime(&elapsed, clk.m_ev, m_ev));
+    // cudaEventElapsedTime returns ms.
+    elapsed *= 0.001;
+    return elapsed;
+  }
+};
+
 } // namespace lbann
 
 // Header implementations

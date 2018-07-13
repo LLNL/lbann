@@ -44,6 +44,10 @@
 #include <string>
 #include <unordered_map>
 
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/utils/cuda.hpp"
+#endif
+
 namespace lbann {
 
 // Forward declarations
@@ -506,6 +510,25 @@ private:
    */
   void add_split_layers(std::unordered_set<std::string>& layer_names);
 
+#ifdef LBANN_HAS_DISTCONV
+ public:
+  CUDAClock m_clk_start;
+  CUDAClock m_clk_end;
+  float m_elapsed = 0;
+  int m_num_iterations = 0;
+  void clock_start() {
+    m_clk_start.record();
+  }
+  void clock_end() {
+    m_clk_end.record();
+    m_elapsed += m_clk_end.get_elapsed_time_since(m_clk_start);
+    ++m_num_iterations;
+  }
+  void clock_clear() {
+    m_elapsed = 0.0;
+    m_num_iterations = 0;
+  }
+#endif
 };
 
 } // namespace lbann
