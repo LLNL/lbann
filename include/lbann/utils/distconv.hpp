@@ -79,9 +79,8 @@ using MPIRootPrintStreamInfo = ::distconv::util::MPIRootPrintStreamInfo;
 
 using Backend = ::distconv::cudnn::BackendCUDNN;
 using ReLU = ::distconv::ReLU<Backend>;
-using Convolution = ::distconv::Convolution<Backend>;
-using Pooling = ::distconv::Pooling<Backend>;
-template <typename DataType>
+using Convolution = ::distconv::Convolution<Backend, 4, DataType>;
+using Pooling = ::distconv::Pooling<Backend, 4, DataType>;
 using BatchNormalization = ::distconv::BatchNormalization<Backend, DataType>;
 
 namespace tensor = ::distconv::tensor;
@@ -89,7 +88,10 @@ namespace util = ::distconv::util;
 
 /** Get Distconv backend handle.
  */
-Backend &get_backend();
+Backend &get_backend(MPI_Comm comm);
+/** Return a HaloExchangeMethod
+ */
+::distconv::HaloExchangeMethod get_halo_exchange_method();
 
 } // namespace dc
 } // namespace lbann
