@@ -2,6 +2,7 @@ enable_language(C)
 enable_language(CXX)
 
 option(Hydrogen_ENABLE_OPENMP "Hydrogen use OpenMP threading." ON)
+option(Hydrogen_ENABLE_OMP_TASKLOOP "Hydrogen use OpenMP taskloops for parallel regions." ON)
 
 option(Hydrogen_USE_64BIT_INTS
   "Hydrogen use 64-bit internal indices" ON)

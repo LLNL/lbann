@@ -59,6 +59,8 @@ CMAKE_INSTALL_MESSAGE=LAZY
 MAKE_NUM_PROCESSES=$(($(nproc) + 1))
 GEN_DOC=0
 INSTALL_LBANN=0
+BUILD_TOOL="make"
+CMAKE_BUILD_FLAG=
 BUILD_DIR=
 INSTALL_DIR=
 BUILD_SUFFIX=
@@ -107,6 +109,7 @@ Usage: ${SCRIPT} [options]
 Options:
   ${C}--help${N}                  Display this help message and exit.
   ${C}--compiler${N} <val>        Specify compiler ('gnu' or 'intel' or 'clang').
+  ${C}--ninja${N}                 Use njnia instead of make
   ${C}--mpi${N} <val>             Specify MPI library ('mvapich2' or 'openmpi' or 'spectrum').
   ${C}--datatype${N} <val>        Datatype size in bytes (4 for float and 8 for double).
   ${C}--verbose${N}               Verbose output.
@@ -170,6 +173,10 @@ while :; do
                 echo "\"${1}\" option requires a non-empty option argument" >&2
                 exit 1
             fi
+            ;;
+        --ninja)
+            BUILD_TOOL="ninja"
+            CMAKE_BUILD_FLAG="-GNinja "
             ;;
         --mpi)
             # Choose mpi library
@@ -683,6 +690,7 @@ if [ ${VERBOSE} -ne 0 ]; then
     echo "----------------------"
     echo "Build parameters"
     echo "----------------------"
+    print_variable BUILD_TOOL
     print_variable BUILD_TYPE
     print_variable BUILD_SUFFIX
     print_variable BUILD_DIR
@@ -721,22 +729,22 @@ if [ ${CLEAN_BUILD} -ne 0 ]; then
     eval ${CLEAN_COMMAND}
 fi
 
-if [ -f ${BUILD_DIR}/lbann/build/Makefile ] && [ ${RECONFIGURE} != 1 ]; then
+if [[ ((${BUILD_TOOL} == "make" && -f ${BUILD_DIR}/lbann/build/Makefile) ||
+       (${BUILD_TOOL} == "ninja" && -f ${BUILD_DIR}/lbann/build/build.ninja))
+      && (${RECONFIGURE} != 1) ]]; then
     echo "Building previously configured LBANN"
     cd ${BUILD_DIR}/lbann/build/
-    make -j${MAKE_NUM_PROCESSES} all
-    make install -j${MAKE_NUM_PROCESSES} all
+    ${BUILD_TOOL} -j${MAKE_NUM_PROCESSES} all
+    ${BUILD_TOOL} install -j${MAKE_NUM_PROCESSES} all
     exit $?
 fi
-
-
 
 # ATM: goes after Elemental_DIR
 #-D OpenCV_DIR=${OpenCV_DIR} \
 
 # Configure build with CMake
 CONFIGURE_COMMAND=$(cat << EOF
- ${CMAKE_PATH}/cmake \
+ ${CMAKE_PATH}/cmake ${CMAKE_BUILD_FLAG}\
 -D CMAKE_EXPORT_COMPILE_COMMANDS=ON \
 -D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
 -D CMAKE_INSTALL_MESSAGE=${CMAKE_INSTALL_MESSAGE} \
@@ -786,9 +794,18 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+BUILD_OPTIONS="-j${MAKE_NUM_PROCESSES}"
+if [ ${VERBOSE} -ne 0 ]; then
+  if [ "${BUILD_TOOL}" == "ninja" ]; then
+      BUILD_OPTIONS+=" -v"
+  else
+      BUILD_OPTIONS+=" VERBOSE=${VERBOSE}"
+  fi
+fi
+
 # Build LBANN with make
 # Note: Ensure Elemental to be built before LBANN. Dependency violation appears to occur only when using cuda_add_library.
-BUILD_COMMAND="make -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"
+BUILD_COMMAND="${BUILD_TOOL} ${BUILD_OPTIONS}"
 if [ ${VERBOSE} -ne 0 ]; then
     echo "${BUILD_COMMAND}"
 fi
@@ -802,7 +819,7 @@ fi
 
 # Install LBANN with make
 if [ ${INSTALL_LBANN} -ne 0 ]; then
-    INSTALL_COMMAND="make install -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"
+    INSTALL_COMMAND="${BUILD_TOOL} install ${BUILD_OPTIONS}"
     if [ ${VERBOSE} -ne 0 ]; then
         echo "${INSTALL_COMMAND}"
     fi
@@ -817,7 +834,7 @@ fi
 
 # Generate documentation with make
 if [ ${GEN_DOC} -ne 0 ]; then
-    DOC_COMMAND="make doc"
+    DOC_COMMAND="${BUILD_TOOL} doc"
     if [ ${VERBOSE} -ne 0 ]; then
         echo "${DOC_COMMAND}"
     fi
