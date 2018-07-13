@@ -293,10 +293,10 @@ class generic_input_layer : public io_layer {
     }
 
     if(dynamic_cast<partitioned_io_buffer*>(io_buffer) != nullptr) {
-      if(num_samples_in_batch != get_current_mini_batch_size()) {
-        LBANN_ERROR("Not enough samples: " + std::to_string(num_samples_in_batch)
-                    + " and mini-batch size: " + std::to_string(get_current_mini_batch_size()));
-      }
+      // if(num_samples_in_batch != get_current_mini_batch_size()) {
+      //   LBANN_ERROR("Not enough samples: " + std::to_string(num_samples_in_batch)
+      //               + " and mini-batch size: " + std::to_string(get_current_mini_batch_size()));
+      // }
       // Use the predetermined size of the mini-batch to set the current
       // batch size for the neural network
       num_samples_in_batch = get_current_mini_batch_size();
