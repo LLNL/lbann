@@ -56,12 +56,7 @@ class reduction_layer : public transform_layer {
     if (mode == reduction_mode::INVALID) {
       LBANN_ERROR("invalid reduction mode");
     }
-
-    // Initialize neuron tensor dimensions
-    this->m_num_neurons = 1;
-    this->m_num_neuron_dims = 1;
-    this->m_neuron_dims = {1};
-
+    set_output_dims({1});
   }
 
   reduction_layer* copy() const override { return new reduction_layer(*this); }
@@ -70,13 +65,6 @@ class reduction_layer : public transform_layer {
   El::Device get_device_allocation() const override { return Dev; }
 
  protected:
-
-  void setup_dims() override {
-    transform_layer::setup_dims();
-    this->m_num_neurons = 1;
-    this->m_num_neuron_dims = 1;
-    this->m_neuron_dims = {1};
-  }
 
   void fp_compute() override {
 

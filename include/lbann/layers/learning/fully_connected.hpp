@@ -66,7 +66,7 @@ class fully_connected_layer : public learning_layer {
  public:
 
   fully_connected_layer(lbann_comm *comm,
-                        int num_neurons,  // TODO: accept a vector for neuron dims
+                        int output_size,  /// @todo Accept a vector
                         bool transpose = false,
                         weights* weight = nullptr,
                         bool has_bias = true)
@@ -75,10 +75,8 @@ class fully_connected_layer : public learning_layer {
       m_bias_gradient(nullptr),
       m_transpose(transpose) {
 
-    // Initialize neuron tensor dimensions
-    this->m_num_neurons = num_neurons;
-    this->m_num_neuron_dims = 1;
-    this->m_neuron_dims.assign(1, this->m_num_neurons);
+    // Initialize output tensor dimensions
+    set_output_dims({output_size});
 
     // Initialize bias
     m_bias_scaling_factor = has_bias ? DataType(1) : DataType(0);
@@ -89,7 +87,7 @@ class fully_connected_layer : public learning_layer {
   std::string get_description() const override {
     return std::string {} +
      " fully_connected; num_neurons: "
-     + std::to_string(this->m_num_neurons)
+     + std::to_string(get_output_size())
      + " has_bias: " + std::to_string(this->m_bias_scaling_factor)
      + " dataLayout: " + this->get_data_layout_string(get_data_layout())
      + " device alloc: " + this->get_device_allocation_string(get_device_allocation());
@@ -141,31 +139,21 @@ class fully_connected_layer : public learning_layer {
 
   std::string get_type() const override { return "fully connected"; }
 
-  void set_num_neurons(int n) { 
-    m_num_neurons = n; 
-    this->m_neuron_dims.assign(1, this->m_num_neurons);
-  }
-
   data_layout get_data_layout() const override { return T_layout; }
 
   El::Device get_device_allocation() const override { return Dev; }
 
-  void setup_matrices(const El::Grid& grid) override;
-
-  void setup_dims() override {
-    // Store neuron tensor dimensions
-    const int num_neurons = this->m_num_neurons;
-    const int num_neuron_dims = this->m_num_neuron_dims;
-    const std::vector<int> neuron_dims = this->m_neuron_dims;
-
-    // Initialize previous neuron tensor dimensions
-    learning_layer::setup_dims();
-
-    // Initialize neuron tensor dimensions
-    this->m_num_neurons = num_neurons;
-    this->m_num_neuron_dims = num_neuron_dims;
-    this->m_neuron_dims = neuron_dims;
+  /** Set dimensions of output tensor.
+   *  E.g. set the dimensions of an "activations tensor" or the
+   *  "neuron dimensions."
+   */
+  void set_output_dims(std::vector<int> dims) {
+    learning_layer::set_output_dims(dims);
   }
+
+ protected:
+
+  void setup_matrices(const El::Grid& grid) override;
 
   void setup_data() override {
     learning_layer::setup_data();
@@ -196,8 +184,8 @@ class fully_connected_layer : public learning_layer {
     auto* cast_initializer
       = dynamic_cast<fan_in_fan_out_initializer*>(&this->m_weights[0]->get_initializer());
     if (cast_initializer != nullptr) {
-      cast_initializer->set_fan_in(this->m_num_prev_neurons);
-      cast_initializer->set_fan_out(this->m_num_neurons);
+      cast_initializer->set_fan_in(get_input_size());
+      cast_initializer->set_fan_out(get_output_size());
     }
 
     // Setup weights
@@ -217,15 +205,15 @@ class fully_connected_layer : public learning_layer {
       LBANN_ERROR("invalid data layout");
     }
     if (m_transpose) {
-      this->m_weights[0]->setup(get_num_prev_neurons(),
-                                get_num_neurons(),
+      this->m_weights[0]->setup(get_input_size(),
+                                get_output_size(),
                                 col_dist, row_dist, Dev);
     } else {
-      this->m_weights[0]->setup(get_num_neurons(),
-                                get_num_prev_neurons(),
+      this->m_weights[0]->setup(get_output_size(),
+                                get_input_size(),
                                 col_dist, row_dist, Dev);
     }
-    this->m_weights[1]->setup(get_num_neurons(),
+    this->m_weights[1]->setup(get_output_size(),
                               1,
                               get_activations().DistData().colDist,
                               El::STAR, Dev);

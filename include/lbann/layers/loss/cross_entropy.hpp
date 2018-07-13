@@ -36,6 +36,8 @@ class cross_entropy_layer : public Layer {
 public:
 
   cross_entropy_layer(lbann_comm *comm) : Layer(comm) {
+    set_output_dims({1});
+
     // Expects inputs for prediction and ground truth
     m_expected_num_parent_layers = 2;
   }
@@ -59,13 +61,6 @@ public:
   std::string get_type() const override { return "cross entropy"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
-
-  void setup_dims() override {
-    Layer::setup_dims();
-    this->m_num_neurons = 1;
-    this->m_num_neuron_dims = 1;
-    this->m_neuron_dims = {1};
-  }
 
   void setup_data() override {
     Layer::setup_data();
