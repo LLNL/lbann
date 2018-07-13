@@ -308,6 +308,8 @@ class data_reader_jag_conduit : public generic_data_reader {
    * have <sample_id>/performance/success = 1
    */
   std::unordered_map<int, std::string> m_success_map;
+
+  std::set<std::string> m_emi_selectors;
 };
 
 

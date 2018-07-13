@@ -357,7 +357,7 @@ void data_reader_jag_conduit::set_all_input_choices() {
   if (m_success_map.size() == 0) {
     return;
   }
-  const conduit::Node & n_input = get_conduit_node("0/inputs");
+  const conduit::Node & n_input = get_conduit_node(m_success_map[0] + "/inputs");
   m_input_keys.reserve(n_input.number_of_children());
   const std::vector<std::string>& child_names = n_input.child_names();
   for (const auto& key: child_names) {
@@ -374,10 +374,8 @@ const std::vector<std::string>& data_reader_jag_conduit::get_input_choices() con
 
 
 void data_reader_jag_conduit::set_num_img_srcs() {
-  m_num_img_srcs = 1;
+  m_num_img_srcs = m_emi_selectors.size();
 #if 0
-todo TODO fix, once we are given advice as to how to handle images
-
 
   if (m_success_map.size() == 0) {
     return;
@@ -415,6 +413,7 @@ void data_reader_jag_conduit::check_image_size() {
   if (m_success_map.size() == 0) {
     return;
   }
+
   const conduit::Node & n_imageset = get_conduit_node(m_success_map[0] + "/outputs/images");
   if (static_cast<size_t>(n_imageset.number_of_children()) == 0u) {
     //m_image_width = 0;
@@ -423,10 +422,14 @@ void data_reader_jag_conduit::check_image_size() {
     _THROW_LBANN_EXCEPTION_(_CN_, "check_image_size() : no image in data");
     return;
   }
-  // (dah)
-  //const conduit::Node & n_image = get_conduit_node("0/outputs/images/0/emi");
   const conduit::Node & n_image = get_conduit_node(m_success_map[0] + "/outputs/images/(0.0, 0.0)/0.0/emi");
-  conduit::float64_array emi = n_image.value();
+  conduit::float32_array emi = n_image.value();
+
+  m_image_linearized_size = static_cast<size_t>(emi.number_of_elements());
+
+#if 0
+//dah: the following block is throwing an error, since m_image_linearized_size = 64*64, which is != emi.number_of_elements(), which is 16384
+
   if (m_image_linearized_size != static_cast<size_t>(emi.number_of_elements())) {
     if ((m_image_width == 0) && (m_image_height == 0)) {
       m_image_height = 1;
@@ -435,10 +438,13 @@ void data_reader_jag_conduit::check_image_size() {
     } else {
       //_THROW_LBANN_EXCEPTION_(_CN_, "check_image_size() : image size mismatch");
       std::stringstream err;
-      err << "check_image_size() : image size mismatch; m_image_width: " << m_image_width << " m_image_height: " << m_image_height << std::endl;
-      throw lbann_exception(err.str());
+      err << __FILE__ << " " << __LINE__ << " :: "
+          <<"check_image_size() : image size mismatch; m_image_width: " 
+          << m_image_width << " m_image_height: " << m_image_height 
+          << " m_image_linearized_size: " << m_image_linearized_size << std::endl;
     }
   }
+#endif
 }
 
 void data_reader_jag_conduit::check_scalar_keys() {
@@ -533,6 +539,10 @@ void data_reader_jag_conduit::load() {
 
   const std::string data_dir = add_delimiter(get_file_dir());
   const std::string conduit_file_name = get_data_filename();
+
+  m_emi_selectors.insert("(0.0, 0.0)");
+  m_emi_selectors.insert("(90.0, 0.0)");
+  m_emi_selectors.insert("(90.0, 78.0)");
 
   load_conduit(data_dir + conduit_file_name);
 
@@ -691,6 +701,13 @@ const std::vector<int> data_reader_jag_conduit::get_data_dims() const {
     const std::vector<int> ld = get_dims(t);
     all_dim.insert(all_dim.end(), ld.begin(), ld.end());
   }
+
+if (is_master()) {
+  std::cerr << "\ndebug from data_reader_jag_conduit::get_data_dims(); data dims: ";
+  for (auto t : all_dim) std::cerr << t << " ";
+  std::cerr << "\n\n";
+}
+
   return all_dim;
 }
 
@@ -833,56 +850,17 @@ data_reader_jag_conduit::get_image_ptrs(const size_t sample_id) const {
 
   std::vector< std::pair<size_t, const ch_t*> >image_ptrs;
   std::unordered_map<int, std::string>::const_iterator it = m_success_map.find(sample_id);
-  std::string img_key = it->second + "/outputs/images/(0.0, 0.0)/0.0/emi";
-  const conduit::Node & n_image = get_conduit_node(img_key);
-  conduit::float64_array emi = n_image.value();
-  const size_t num_pixels = emi.number_of_elements();
-  const ch_t* emi_data = n_image.value();
-  image_ptrs.push_back(std::make_pair(num_pixels, emi_data));
 
-  return image_ptrs;
-
-#if 0
-The following does not work with the reorganization of the jag data schema;
-in the old scheme the image keys were:
-  <sample_id>/outputs/images/0/emi
-  <sample_id>/outputs/images/1/emi
-
-They are now:
-  <sample_id>/outputs/images/(0.0, 0.0)/0.0/emi
-  <sample_id>/outputs/images/(0.0, 0.0)/-0.01/emi
-  <sample_id>/outputs/images/(0.0, 0.0)/-0.02/emi
-  <sample_id>/outputs/images/(0.0, 0.0)/-0.03/emi
- 
-  <sample_id>/outputs/images/(90.0, 0.0)/0.0/emi
-  <sample_id>/outputs/images/(90.0, 0.0)/-0.01/emi
-  <sample_id>/outputs/images/(90.0, 0.0)/-0.02/emi
-  <sample_id>/outputs/images/(90.0, 0.0)/-0.03/emi
- 
-  <sample_id>/outputs/images/(90.0, 78.0)/0.0/emi
-  <sample_id>/outputs/images/(90.0, 78.0)/-0.01/emi
-  <sample_id>/outputs/images/(90.0, 78.0)/-0.02/emi
-  <sample_id>/outputs/images/(90.0, 78.0)/-0.03/emi
-
-Until we get advice as to which image(s) to use, I return the first image,
-so we can get this data reader working
-
-
-  std::vector<int> img_indices = choose_image_near_bang_time(sample_id);
-  std::vector< std::pair<size_t, const ch_t*> >image_ptrs;
-  image_ptrs.reserve(img_indices.size());
-
-  for (const auto idx: img_indices) {
-    std::string img_key = m_success_map[sample_id] + "/outputs/images/" + std::to_string(idx) + "/emi";
+  for (auto t : m_emi_selectors) {
+    std::string img_key = it->second + "/outputs/images/" + t + "/0.0/emi";
     const conduit::Node & n_image = get_conduit_node(img_key);
     conduit::float64_array emi = n_image.value();
     const size_t num_pixels = emi.number_of_elements();
     const ch_t* emi_data = n_image.value();
-
     image_ptrs.push_back(std::make_pair(num_pixels, emi_data));
-  }
+  }  
+
   return image_ptrs;
-#endif
 }
 
 cv::Mat data_reader_jag_conduit::cast_to_cvMat(const std::pair<size_t, const ch_t*> img, const int height) {
