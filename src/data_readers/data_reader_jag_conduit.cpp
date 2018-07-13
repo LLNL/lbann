@@ -44,6 +44,8 @@
 #include <map>
 #include "lbann/data_readers/image_utils.hpp"
 #include <omp.h>
+#include "lbann/utils/timer.hpp"
+#include "lbann/utils/glob.hpp"
 
 
 // This macro may be moved to a global scope
@@ -537,18 +539,40 @@ void data_reader_jag_conduit::load() {
               << m_gan_labelling <<" : " << m_gan_label_value << std::endl;
   }
 
-  const std::string data_dir = add_delimiter(get_file_dir());
-  const std::string conduit_file_name = get_data_filename();
-
+  // for selecting images, per Luc's advise
   m_emi_selectors.insert("(0.0, 0.0)");
   m_emi_selectors.insert("(90.0, 0.0)");
   m_emi_selectors.insert("(90.0, 78.0)");
 
-  load_conduit(data_dir + conduit_file_name);
+  //const std::string data_dir = add_delimiter(get_file_dir());
+  //const std::string conduit_file_name = get_data_filename();
+  const std::string pattern = get_file_dir();
+  std::vector<std::string> names = glob(pattern);
+  if (names.size() < 1) {
+    _THROW_LBANN_EXCEPTION_(get_type(), " failed to get data filenames");
+  }
 
   if (m_first_n > 0) {
     _THROW_LBANN_EXCEPTION_(_CN_, "load() does not support first_n feature.");
   }
+
+  int max_files_to_load = INT_MAX;
+  if (m_max_files_to_load > 0) {
+    max_files_to_load = m_max_files_to_load;
+  }
+
+  double tm1 = get_time();
+  int n = 0;
+  for (auto t : names) {
+    load_conduit(t);
+    ++n;
+    if (is_master()) std::cerr << "time to load: " << n << " files: " << get_time() - tm1 << "\n";
+    if (n >= max_files_to_load) {
+      break;
+    }
+  }  
+  if (is_master()) std::cerr << "time to load conduit files: " << get_time() - tm1
+        << "  num samples: " << m_data.number_of_children() << "\n";
 
   // reset indices
   m_shuffled_indices.resize(get_num_samples());
@@ -559,7 +583,8 @@ void data_reader_jag_conduit::load() {
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
 void data_reader_jag_conduit::load_conduit(const std::string conduit_file_path) {
-  conduit::relay::io::load(conduit_file_path, "hdf5", m_data);
+if (is_master()) std::cerr << "loading: " << conduit_file_path<< "\n";
+  conduit::relay::io::load_merged(conduit_file_path, "hdf5", m_data);
 
   // set up mapping: need to do this since some of the data may be bad
   const std::vector<std::string> &children_names = m_data.child_names();

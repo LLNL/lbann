@@ -241,6 +241,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
     if (readme.data_filedir() != "") {
       reader->set_file_dir( readme.data_filedir() );
     }
+    reader->set_max_files_to_load( readme.max_files_to_load() );
     if (readme.data_local_filedir() != "") {
       reader->set_local_file_dir( readme.data_local_filedir() );
     }
