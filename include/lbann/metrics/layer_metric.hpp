@@ -47,8 +47,12 @@ class layer_metric : public metric {
   std::string name() const override;
   std::string get_unit() const override { return m_unit; }
 
-  void set_evaluation_layer(abstract_evaluation_layer* l) { m_evaluation_layer = l; }
-  abstract_evaluation_layer* get_evaluation_layer() const { return m_evaluation_layer; }
+  /** Set corresponding layer. */
+  void set_layer(Layer& l);
+  /** Get corresponding layer. */
+  Layer& get_layer();
+  /** Get corresponding layer (const). */
+  const Layer& get_layer() const;
 
  protected:
   
@@ -73,9 +77,12 @@ class layer_metric : public metric {
    *  If the unit is "%", the reported value is multiplied by 100.
    */
   std::string m_unit;
-  /** Metric value source. */
-  abstract_evaluation_layer* m_evaluation_layer;
+  /** Corresponding layer. */
+  Layer* m_layer;
 
+  /** Get corresponding evaluation layer. */
+  abstract_evaluation_layer& get_evaluation_layer();
+  
 };
 
 }  // namespace lbann

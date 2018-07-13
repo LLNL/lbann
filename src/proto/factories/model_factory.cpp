@@ -83,7 +83,7 @@ void assign_layers_to_objective_function(std::vector<Layer*>& layer_list,
     names_to_layers[name] = l;
   }
 
-  // Assign evaluation layers to layer terms in objective function
+  // Assign layers to layer terms in objective function
   auto&& obj_terms = obj->get_terms();
   int num_layer_terms = 0;
   for (size_t i = 0; i < obj_terms.size(); ++i) {
@@ -92,16 +92,23 @@ void assign_layers_to_objective_function(std::vector<Layer*>& layer_list,
       ++num_layer_terms;
       if (num_layer_terms > proto_obj.layer_term_size()) { continue; }
       const auto& params = proto_obj.layer_term(num_layer_terms-1);
-      auto&& eval = names_to_layers[params.layer()];
-      term->set_evaluation_layer(dynamic_cast<abstract_evaluation_layer*>(eval));
+      auto* l = names_to_layers[params.layer()];
+      if (l == nullptr) {
+        err << "attempted to set objective function layer term "
+            << "to correspond to layer \"" << params.layer() << "\", "
+            << "but no such layer exists";
+        LBANN_ERROR(err.str());
+      }
+      term->set_layer(*l);
     }
   }
 
   // Check that layer terms in objective function match prototext
   if (num_layer_terms != proto_obj.layer_term_size()) {
-    err << "number of layer terms in objective function does not match prototext "
-        << "(expected " << proto_obj.layer_term_size() << ", "
-        << "found " << num_layer_terms << ")";
+    err << "recieved " << num_layer_terms << " "
+        << "objective function layer terms, "
+        << "but there are " << proto_obj.layer_term_size() << " "
+        << "in the prototext";
     LBANN_ERROR(err.str());
   }
   
@@ -128,8 +135,15 @@ void assign_layers_to_metrics(std::vector<Layer*>& layer_list,
     auto&& m = dynamic_cast<layer_metric*>(metric_list[i]);
     if (m != nullptr) {
       const auto& params = proto_model.metric(i).layer_metric();
-      auto&& eval = names_to_layers[params.layer()];
-      m->set_evaluation_layer(dynamic_cast<abstract_evaluation_layer*>(eval));
+      auto* l = names_to_layers[params.layer()];
+      if (l == nullptr) {
+        std::stringstream err;
+        err << "attempted to set layer metric \"" << m->name() << "\" "
+            << "to correspond to layer \"" << params.layer() << "\", "
+            << "but no such layer exists";
+        LBANN_ERROR(err.str());
+      }
+      m->set_layer(*l);
     }
   }
   

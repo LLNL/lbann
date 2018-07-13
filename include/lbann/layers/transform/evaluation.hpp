@@ -45,6 +45,13 @@ public:
   /** Get evaluated value. */
   EvalType get_value(bool scaled = true);
 
+  /** Construct an evaluation layer.
+   *  The caller is responsible for deallocating the layer.
+   */
+  static abstract_evaluation_layer* construct(lbann_comm *comm,
+                                              data_layout layout,
+                                              El::Device device);
+  
 protected:
 
   abstract_evaluation_layer(lbann_comm *comm);

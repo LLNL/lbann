@@ -25,7 +25,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/metrics/layer_metric.hpp"
-#include "lbann/layers/transform/evaluation.hpp"
 
 namespace lbann {
 
@@ -33,42 +32,61 @@ layer_metric::layer_metric(lbann_comm *comm, std::string name_, std::string unit
   : metric(comm),
     m_name(name_),
     m_unit(unit),
-    m_evaluation_layer(nullptr) {}
+    m_layer(nullptr) {}
 
 std::string layer_metric::name() const {
   if (!m_name.empty()) {
     return m_name;
-  } else if (m_evaluation_layer != nullptr) {
-    return m_evaluation_layer->get_name();
+  } else if (m_layer != nullptr) {
+    return m_layer->get_name();
   } else {
     return "uninitialized layer metric";
   }
 }
 
-void layer_metric::setup(model& m) {
-  if (m_evaluation_layer == nullptr) {
-    LBANN_ERROR("attempted to setup layer metric without setting evaluation layer");
+void layer_metric::set_layer(Layer& l) { m_layer = &l; }
+Layer& layer_metric::get_layer() {
+  // Idiom from Item 3, p. 23 in "Effective C++", 3rd ed., by Scott Meyers.
+  return *(const_cast<Layer*>(&static_cast<const layer_metric&>(*this).get_layer()));
+}
+const Layer& layer_metric::get_layer() const {
+  if (m_layer == nullptr) {
+    std::stringstream err;
+    err << "attempted to get the layer corresponding to "
+        << "layer metric \"" << name() << "\", "
+        << "but no such layer has been set";
+    LBANN_ERROR(err.str());
   }
+  return *m_layer;
+}
+
+abstract_evaluation_layer& layer_metric::get_evaluation_layer() {
+  auto& l = get_layer();
+  auto* eval = dynamic_cast<abstract_evaluation_layer*>(&l);
+  if (eval == nullptr) {
+    std::stringstream err;
+    err << "attempted to get the evaluation layer corresponding to "
+        << "layer metric \"" << name() << "\", "
+        << "but it currently corresponds to "
+        << l.get_type() << " layer \"" << l.get_name() << "\"";
+    LBANN_ERROR(err.str());
+  }
+  return *eval;
+}
+  
+void layer_metric::setup(model& m) {
+  get_evaluation_layer();
 }
 
 EvalType layer_metric::evaluate(execution_mode mode,
                                 int mini_batch_size) {
-
-  // Check if evaluation layer pointer has been setup
-  if (m_evaluation_layer == nullptr) {
-    LBANN_ERROR("attempted to evaluate metric without setting a target layer");
-  }
-
-  // Get evaluation layer value
   const auto& start = get_time();
-  auto value = m_evaluation_layer->get_value(false);
-  if (m_unit == "%") { value *= 100; }
+  auto value = get_evaluation_layer().get_value(false);
   get_evaluate_time() += get_time() - start;
-
-  // Record result in statistics and return
-  get_statistics()[mode].add_value(value * mini_batch_size, mini_batch_size);
+  if (m_unit == "%") { value *= 100; }
+  get_statistics()[mode].add_value(value * mini_batch_size,
+                                   mini_batch_size);
   return value;
-
 }
 
 } // namespace lbann
