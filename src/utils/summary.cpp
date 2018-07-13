@@ -535,7 +535,7 @@ DataType lbann_summary::local_min(const Mat& mat) const {
   const DataType * __restrict__ mat_buf = mat.LockedBuffer();
   auto min = std::numeric_limits<DataType>::max();
   int nthreads = omp_get_num_threads();
-  std::vector<EvalType> local_min(nthreads, std::numeric_limits<DataType>::max());
+  std::vector<DataType> local_min(nthreads, std::numeric_limits<DataType>::max());
   if (ldim == height) {
     const El::Int size = height*width;
 #pragma omp taskloop default(shared)
@@ -565,7 +565,7 @@ DataType lbann_summary::local_max(const Mat& mat) const {
   const DataType * __restrict__ mat_buf = mat.LockedBuffer();
   auto max = std::numeric_limits<DataType>::min();
   int nthreads = omp_get_num_threads();
-  std::vector<EvalType> local_max(nthreads, std::numeric_limits<DataType>::min());
+  std::vector<DataType> local_max(nthreads, std::numeric_limits<DataType>::min());
   if (ldim == height) {
     const El::Int size = height*width;
 #pragma omp taskloop default(shared)
