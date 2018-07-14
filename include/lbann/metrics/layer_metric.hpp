@@ -54,6 +54,11 @@ class layer_metric : public metric {
   /** Get corresponding layer (const). */
   const Layer& get_layer() const;
 
+  /** Get list of pointers to layers. */
+  std::vector<Layer*> get_layer_pointers() const override;
+  /** Set list of pointers to layers. */
+  void set_layer_pointers(std::vector<Layer*> layers) override;
+  
  protected:
   
   void setup(model& m) override;

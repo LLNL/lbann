@@ -130,7 +130,7 @@ void assign_layers_to_metrics(std::vector<Layer*>& layer_list,
     names_to_layers[name] = l;
   }
 
-  // Assign evaluation layers to layer metrics
+  // Assign layers to layer metrics
   for (int i=0; i<proto_model.metric_size(); ++i) {
     auto&& m = dynamic_cast<layer_metric*>(metric_list[i]);
     if (m != nullptr) {
@@ -190,7 +190,7 @@ model* construct_model(lbann_comm* comm,
                        const lbann_data::Optimizer& proto_opt,
                        const lbann_data::Model& proto_model) {
 
-  // Add layer graph
+  // Construct layer graph
   auto&& layer_list = construct_layer_graph(comm,
                                             data_readers,
                                             proto_model);
@@ -199,38 +199,41 @@ model* construct_model(lbann_comm* comm,
   const auto& proto_obj = proto_model.objective_function();
   auto&& obj = construct_objective_function(proto_obj);
   assign_layers_to_objective_function(layer_list, obj, proto_obj);
-  
-  // Instantiate model
-  auto&& m = instantiate_model(comm, obj, proto_opt, proto_model);
-  for (auto&& l : layer_list) { m->add_layer(l); }
 
-  // Add weights and assign to layers
+  // Construct weights
+  std::vector<weights*> weights_list;
   for (int i=0; i<proto_model.weights_size(); i++) {
-    m->add_weights(construct_weights(comm,
-                                     proto_opt,
-                                     proto_model.weights(i)));
+    weights_list.push_back(construct_weights(comm,
+                                             proto_opt,
+                                             proto_model.weights(i)));
   }
-  auto weights_list = m->get_weights();
   assign_weights_to_layers(layer_list, weights_list, proto_model);
 
-  // Add metrics
+  // Construct metrics
+  std::vector<metric*> metric_list;
   for (int i=0; i<proto_model.metric_size(); ++i) {
-    m->add_metric(construct_metric(comm, proto_model.metric(i)));
+    metric_list.push_back(construct_metric(comm, proto_model.metric(i)));
   }
-  auto metric_list = m->get_metrics();
   assign_layers_to_metrics(layer_list, metric_list, proto_model);
 
-  // Add callbacks
+  // Construct callbacks
+  std::vector<lbann_callback*> callback_list;
   auto&& summarizer = construct_summarizer(comm, proto_model);
   for (int i=0; i<proto_model.callback_size(); i++) {
-    m->add_callback(construct_callback(comm,
-                                       proto_model.callback(i),
-                                       data_readers,
-                                       layer_list,
-                                       weights_list,
-                                       summarizer));
+    callback_list.push_back(construct_callback(comm,
+                                               proto_model.callback(i),
+                                               data_readers,
+                                               layer_list,
+                                               weights_list,
+                                               summarizer));
   }
 
+  // Instantiate model
+  auto&& m = instantiate_model(comm, obj, proto_opt, proto_model);
+  for (auto&& l   : layer_list   ) { m->add_layer(l);     }
+  for (auto&& w   : weights_list ) { m->add_weights(w);   }
+  for (auto&& met : metric_list  ) { m->add_metric(met);  }
+  for (auto&& cb  : callback_list) { m->add_callback(cb); }
   return m;
 
 }

@@ -60,18 +60,16 @@ const Layer& layer_metric::get_layer() const {
   return *m_layer;
 }
 
-abstract_evaluation_layer& layer_metric::get_evaluation_layer() {
-  auto& l = get_layer();
-  auto* eval = dynamic_cast<abstract_evaluation_layer*>(&l);
-  if (eval == nullptr) {
-    std::stringstream err;
-    err << "attempted to get the evaluation layer corresponding to "
-        << "layer metric \"" << name() << "\", "
-        << "but it currently corresponds to "
-        << l.get_type() << " layer \"" << l.get_name() << "\"";
-    LBANN_ERROR(err.str());
-  }
-  return *eval;
+std::vector<Layer*> layer_metric::get_layer_pointers() const {
+  auto layer_pointers = metric::get_layer_pointers();
+  layer_pointers.push_back(m_layer);
+  return layer_pointers;
+}
+
+void layer_metric::set_layer_pointers(std::vector<Layer*> layers) {
+  metric::set_layer_pointers(std::vector<Layer*>(layers.begin(),
+                                                 layers.end() - 1));
+  m_layer = layers.back();
 }
   
 void layer_metric::setup(model& m) {
@@ -87,6 +85,20 @@ EvalType layer_metric::evaluate(execution_mode mode,
   get_statistics()[mode].add_value(value * mini_batch_size,
                                    mini_batch_size);
   return value;
+}
+
+abstract_evaluation_layer& layer_metric::get_evaluation_layer() {
+  auto& l = get_layer();
+  auto* eval = dynamic_cast<abstract_evaluation_layer*>(&l);
+  if (eval == nullptr) {
+    std::stringstream err;
+    err << "attempted to get the evaluation layer corresponding to "
+        << "layer metric \"" << name() << "\", "
+        << "but it currently corresponds to "
+        << l.get_type() << " layer \"" << l.get_name() << "\"";
+    LBANN_ERROR(err.str());
+  }
+  return *eval;
 }
 
 } // namespace lbann
