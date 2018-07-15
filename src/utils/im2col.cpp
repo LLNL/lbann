@@ -107,7 +107,7 @@ void im2col(const CPUMat& im,
   }
 
   // Iterate through col matrix columns
-#pragma omp taskloop default(shared)
+  LBANN_OMP_TASKLOOP
   for(int col_col = 0; col_col < col_width; ++col_col) {
 
     // Initialize arrays
@@ -274,7 +274,7 @@ void col2im(const CPUMat& col,
   }
 
   // Iterate through im matrix entries
-#pragma omp taskloop default(shared)
+  LBANN_OMP_TASKLOOP
   for(int im_index = 0; im_index < im_size; ++im_index) {
 
     // Initialize arrays
@@ -383,7 +383,7 @@ void im2col_2d(const DataType *__restrict__ input_buffer,
   const int output_height = num_channels * window_dim_x * window_dim_y;
 
   // Iterate through output matrix entries
-#pragma omp taskloop collapse(5) default(shared)
+  LBANN_OMP_TASKLOOP_COLLAPSE5
   for(int offset_y = 0; offset_y < offset_num_y; ++offset_y) {
     for(int offset_x = 0; offset_x < offset_num_x; ++offset_x) {
       for(int channel = 0; channel < num_channels; ++channel) {
@@ -462,7 +462,7 @@ void col2im_2d(const DataType *__restrict__ input_buffer,
   const int input_height = num_channels * window_dim_x * window_dim_y;
 
   // Iterate through output entries
-#pragma omp taskloop collapse(3) default(shared)
+  LBANN_OMP_TASKLOOP_COLLAPSE3
   for(int channel = 0; channel < num_channels; ++channel) {
     for(int output_pos_y = 0;
         output_pos_y < output_dim_y;
