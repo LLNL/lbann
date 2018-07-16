@@ -188,8 +188,8 @@ void lbann_quantizer::adaptive_unquantize(
   const colT ldim = mat.LDim();
   const auto *q_col = (const colT *) q;
   //  const int num_threads = get_adaptive_quantization_threads(mat.Width());
-#pragma omp taskloop default(shared) num_tasks(1) firstprivate(header_len, buf)
-  //  LBANN_OMP_TASKLOOP("firstprivate(header_len, buf)")
+  //#pragma omp taskloop default(shared) num_tasks(1) firstprivate(header_len, buf)
+  LBANN_OMP_TASKLOOP_ARGS(firstprivate(header_len, buf))
   for (colT header_loc = 0; header_loc < header_len; header_loc += HEADER_FACTOR) {
     const colT col_offset = (header_loc / HEADER_FACTOR) * ldim;
     // Extract averages.
@@ -242,7 +242,7 @@ void lbann_quantizer::adaptive_unquantize_add(
   const colT ldim = mat.LDim();
   const auto *q_col = (const colT *) q;
   //  const int num_threads = get_adaptive_quantization_threads(mat.Width());
-#pragma omp taskloop default(shared) num_tasks(1) firstprivate(header_len, buf)
+  LBANN_OMP_TASKLOOP_ARGS(firstprivate(header_len, buf))
   for (colT header_loc = 0; header_loc < header_len; header_loc += HEADER_FACTOR) {
     const colT col_offset = (header_loc / HEADER_FACTOR) * ldim;
     // Extract averages.
@@ -381,7 +381,8 @@ void lbann_quantizer::adaptive_quantize_replace(
   q.resize(header_len + total_quantized);
   // const int num_copy_threads =
   //   get_adaptive_quantization_copy_threads(width);
-#pragma omp taskloop default(shared)
+  LBANN_OMP_TASKLOOP
+    //#pragma omp taskloop default(shared)
   for (unsigned tid = 0; tid < thread_qs.size(); ++tid) {
     std::copy(thread_qs[tid].begin(),
               thread_qs[tid].begin() + quantized_counts[tid],
