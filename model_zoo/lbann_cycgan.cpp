@@ -142,6 +142,11 @@ model * build_model_from_prototext(int argc, char **argv,
                                    lbann_data::LbannPB &pb,
                                    lbann_comm *comm,
                                    bool first_model) {
+
+  // code to avoid having every model create 
+  static std::map<execution_mode, generic_data_reader *> global_data_readers
+  static bool global_data_readers_were_built = false;
+
   int random_seed = lbann_default_random_seed;
   bool master = comm->am_world_master();
   if (master) std::cerr << "starting build_model_from_prototext\n";
@@ -149,6 +154,11 @@ model * build_model_from_prototext(int argc, char **argv,
   try {
     std::stringstream err;
     options *opts = options::get();
+
+    bool reuse_data_readers = false;
+    if (opts->has_bool("reuse_data_readers") && opts->get_bool("reuse_data_readers")) {
+      reuse_data_readers = true;
+    }
 
     // Optionally over-ride some values in prototext
     get_cmdline_overrides(comm, pb);
