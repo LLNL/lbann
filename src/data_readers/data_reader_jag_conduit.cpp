@@ -377,6 +377,7 @@ const std::vector<std::string>& data_reader_jag_conduit::get_input_choices() con
 
 void data_reader_jag_conduit::set_num_img_srcs() {
   m_num_img_srcs = m_emi_selectors.size();
+
 #if 0
 
   if (m_success_map.size() == 0) {
@@ -579,6 +580,10 @@ void data_reader_jag_conduit::load() {
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
 
   select_subset_of_data();
+
+  if (is_master()) {
+    std::cout << "\n" << get_description() << "\n\n";
+  }
 }
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
@@ -726,13 +731,6 @@ const std::vector<int> data_reader_jag_conduit::get_data_dims() const {
     const std::vector<int> ld = get_dims(t);
     all_dim.insert(all_dim.end(), ld.begin(), ld.end());
   }
-
-if (is_master()) {
-  std::cerr << "\ndebug from data_reader_jag_conduit::get_data_dims(); data dims: ";
-  for (auto t : all_dim) std::cerr << t << " ";
-  std::cerr << "\n\n";
-}
-
   return all_dim;
 }
 
