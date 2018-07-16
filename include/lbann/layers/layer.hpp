@@ -194,24 +194,6 @@ class Layer {
   /** Write layer to proto file */
   virtual void write_proto(lbann_data::Layer* proto) const;
 
-  /** Send forward propagation output to a child layer.
-   *  On output, fp_output is either a matrix view or copy of the
-   *  appropriate activation tensor.
-   */
-  virtual void get_fp_output(AbsDistMat& fp_output, const Layer* child) const;
-  /** Send backward propagation output to a parent layer.
-   *  On output, bp_output is either a matrix view or copy of the
-   *  appropriate error signal tensor.
-   */
-  virtual void get_bp_output(AbsDistMat& bp_output, const Layer* parent) const;
-
-  /** Add to the layer's error signal. */
-  virtual void add_to_error_signal(const AbsDistMat& error_signals,
-                                   DataType scale = DataType(1),
-                                   int parent_index = 0) {
-    El::Axpy(scale, error_signals, *m_error_signals[parent_index]);
-  }
-
   /** Get parent layers. */
   inline std::vector<const Layer*>& get_parent_layers() { return m_parent_layers; }
   /** Get parent layers. (const) */
@@ -286,37 +268,29 @@ class Layer {
    */
   int get_output_size(int output_index = 0) const;
 
-  /** Get previous activation tensor. */
-  AbsDistMat& get_prev_activations(int parent_index = 0);
   /** Get activation tensor. */
   AbsDistMat& get_activations(int child_index = 0);
-  /** Get previous error signal tensor. */
-  AbsDistMat& get_prev_error_signals(int child_index = 0);
   /** Get error signal tensor. */
   AbsDistMat& get_error_signals(int parent_index = 0);
-  /** Get previous activation tensor. (const) */
+  /** Get previous activation tensor. */
   const AbsDistMat& get_prev_activations(int parent_index = 0) const;
-  /** Get activation tensor. (const) */
+  /** Get activation tensor. */
   const AbsDistMat& get_activations(int child_index = 0) const;
-  /** Get previous error signal tensor. (const) */
+  /** Get previous error signal tensor. */
   const AbsDistMat& get_prev_error_signals(int child_index = 0) const;
-  /** Get error signal tensor. (const) */
+  /** Get error signal tensor. */
   const AbsDistMat& get_error_signals(int parent_index = 0) const;
-  /** Get local portion of previous activation tensor. */
-  AbsMat& get_local_prev_activations(int parent_index = 0);
   /** Get local portion of activation tensor. */
   AbsMat& get_local_activations(int child_index = 0);
-  /** Get local portion of previous error signal tensor. */
-  AbsMat& get_local_prev_error_signals(int child_index = 0);
   /** Get local portion of error signal tensor. */
   AbsMat& get_local_error_signals(int parent_index = 0);
-  /** Get local portion of previous activation tensor. (const) */
+  /** Get local portion of previous activation tensor. */
   const AbsMat& get_local_prev_activations(int parent_index = 0) const;
-  /** Get local portion of activation tensor. (const) */
+  /** Get local portion of activation tensor. */
   const AbsMat& get_local_activations(int child_index = 0) const;
-  /** Get local portion of previous error signal tensor. (const) */
+  /** Get local portion of previous error signal tensor. */
   const AbsMat& get_local_prev_error_signals(int child_index = 0) const;
-  /** Get local portion of error signal tensor. (const) */
+  /** Get local portion of error signal tensor. */
   const AbsMat& get_local_error_signals(int parent_index = 0) const;
 
   /** Get reference to LBANN communicator. */
@@ -474,6 +448,11 @@ class Layer {
 
   /** Deallocate distributed matrices. */
   void deallocate_matrices();
+
+  /** Get activation tensor corresponding to child layer. */
+  const AbsDistMat& get_activations(const Layer& child) const;
+  /** Get error signal tensor corresponding to parent layer. */
+  const AbsDistMat& get_error_signals(const Layer& parent) const;
 
 };
 

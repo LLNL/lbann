@@ -380,21 +380,11 @@ void Layer::set_output_dims(std::vector<int> dims, int output_index) {
   m_output_dims_list[output_index] = dims;
 }
 
-// Data matrix access functions
-// Note: Using idiom from Item 3, p. 23 in "Effective C++", 3rd ed.,
-// by Scott Meyers.
-AbsDistMat& Layer::get_prev_activations(int parent_index) {
-  return const_cast<AbsDistMat&>(static_cast<const Layer&>(*this).get_prev_activations(parent_index));
-}
-AbsDistMat& Layer::get_activations(int child_index) {
-  return const_cast<AbsDistMat&>(static_cast<const Layer&>(*this).get_activations(child_index));
-}
-AbsDistMat& Layer::get_prev_error_signals(int child_index) {
-  return const_cast<AbsDistMat&>(static_cast<const Layer&>(*this).get_prev_error_signals(child_index));
-}
-AbsDistMat& Layer::get_error_signals(int parent_index) {
-  return const_cast<AbsDistMat&>(static_cast<const Layer&>(*this).get_error_signals(parent_index));
-}
+// ===================================================================
+// Tensor access functions
+// ===================================================================
+
+// Accessing distributed matrices
 const AbsDistMat& Layer::get_prev_activations(int parent_index) const {
   if (parent_index < 0 || parent_index >= (int) m_prev_activations.size()) {
     std::stringstream err;
@@ -439,14 +429,20 @@ const AbsDistMat& Layer::get_error_signals(int parent_index) const {
   }
   return *m_error_signals[parent_index];
 }
-AbsMat& Layer::get_local_prev_activations(int parent_index) {
-  return get_prev_activations(parent_index).Matrix();
+
+// Accessing non-const distributed matrices
+// Note: Using idiom from Item 3, p. 23 in "Effective C++", 3rd ed.,
+// by Scott Meyers.
+AbsDistMat& Layer::get_activations(int child_index) {
+  return const_cast<AbsDistMat&>(static_cast<const Layer&>(*this).get_activations(child_index));
 }
+AbsDistMat& Layer::get_error_signals(int parent_index) {
+  return const_cast<AbsDistMat&>(static_cast<const Layer&>(*this).get_error_signals(parent_index));
+}
+
+// Accessing local matrices
 AbsMat& Layer::get_local_activations(int child_index) {
   return get_activations(child_index).Matrix();
-}
-AbsMat& Layer::get_local_prev_error_signals(int child_index) {
-  return get_prev_error_signals(child_index).Matrix();
 }
 AbsMat& Layer::get_local_error_signals(int parent_index) {
   return get_error_signals(parent_index).Matrix();
@@ -462,6 +458,38 @@ const AbsMat& Layer::get_local_prev_error_signals(int child_index) const {
 }
 const AbsMat& Layer::get_local_error_signals(int parent_index) const {
   return get_error_signals(parent_index).LockedMatrix();
+}
+
+// Accessing matrices corresponding to parent/child layer
+const AbsDistMat& Layer::get_activations(const Layer& child) const {
+  const int child_index = (std::find(m_child_layers.begin(),
+                                     m_child_layers.end(),
+                                     &child)
+                           - m_child_layers.begin());
+  if (child_index >= get_num_children()) {
+    std::stringstream err;
+    err << "attempted to get activation tensor of "
+        << "layer \"" << get_name() << "\" "
+        << "corresponding to layer\"" << child.get_name() << "\", "
+        << "which is not a child layer";
+    LBANN_ERROR(err.str());
+  }
+  return get_activations(child_index);
+}
+const AbsDistMat& Layer::get_error_signals(const Layer& parent) const {
+  const int parent_index = (std::find(m_parent_layers.begin(),
+                                      m_parent_layers.end(),
+                                      &parent)
+                           - m_parent_layers.begin());
+  if (parent_index >= get_num_parents()) {
+    std::stringstream err;
+    err << "attempted to get error signal tensor of "
+        << "layer \"" << get_name() << "\" "
+        << "corresponding to layer\"" << parent.get_name() << "\", "
+        << "which is not a parent layer";
+    LBANN_ERROR(err.str());
+  }
+  return get_error_signals(parent_index);
 }
 
 void Layer::freeze() {
@@ -629,32 +657,38 @@ void Layer::setup_matrices(const El::Grid& grid) {
 void Layer::setup_data() {
   const int mini_batch_size = m_model->get_max_mini_batch_size();
 
-  // Initialize previous activations
+  // Determine distributed matrix alignment
+  El::DistData alignment_dist;
+  if (get_num_parents() > 0) {
+    alignment_dist = m_parent_layers[0]->get_activations(*this).DistData();
+  } else if (get_num_children() > 0) {
+    alignment_dist = get_activations().DistData();
+  }
+
+  // Initialize input tensors
   for (int i = 0; i < get_num_parents(); ++i) {
-    auto& fp_input = get_prev_activations(i);
-    m_parent_layers[i]->get_fp_output(fp_input, this);
-    const int expected_height = get_input_size(i);
-    if (fp_input.Height() != expected_height
-        || fp_input.Width() != mini_batch_size) {
-      std::stringstream err;
-      err << "layer \"" << get_name() << "\" expected a "
-          << expected_height << " x " << mini_batch_size << " matrix "
-          << "from layer \"" << m_parent_layers[i]->get_name() << "\" "
-          << "as forward prop input, but got a "
-          << fp_input.Height() << " x " << fp_input.Width() << " matrix";
-      LBANN_ERROR(err.str());
+    const auto& parent_output = m_parent_layers[i]->get_activations(*this);
+    auto& input = *m_prev_activations[i];
+    input.AlignWith(alignment_dist);
+    if (parent_output.DistData() == input.DistData()) {
+      El::LockedView(input, parent_output);
+    } else {
+      El::Copy(parent_output, input);
     }
   }
 
-  // Initialize error signals
-  for (int i = 0; i < get_num_parents(); ++i) {
-    get_error_signals(i).Resize(get_input_size(i), mini_batch_size);
+  // Initialize output tensors
+  for (int i = 0; i < get_num_children(); ++i) {
+    auto& output = get_activations(i);
+    output.AlignWith(alignment_dist);
+    output.Resize(get_output_size(i), mini_batch_size);
   }
 
-
-  // Initialize activations
-  for (int i = 0; i < get_num_children(); ++i) {
-    get_activations(i).Resize(get_output_size(i), mini_batch_size);
+  // Initialize gradient w.r.t. input tensors
+  for (int i = 0; i < get_num_parents(); ++i) {
+    auto& gradient_wrt_input = get_error_signals(i);
+    gradient_wrt_input.AlignWith(alignment_dist);
+    gradient_wrt_input.Resize(get_input_size(i), mini_batch_size);
   }
 
 }
@@ -668,55 +702,26 @@ void Layer::bp_compute() {
 void Layer::check_setup() {
   std::stringstream err;
 
-  // Check that matrices matches number of parent/child layers
-  const int num_parents = get_num_parents();
-  const int num_children = get_num_children();
-  if ((int) m_prev_activations.size() != num_parents
-      || (int) m_activations.size() != num_children) {
-    err << "layer " << m_name << " has an invalid number of "
-        << "forward prop matrices (expected "
-        << num_parents << " input and " << num_children << " output, "
-        << "but found " << m_prev_activations.size() << " and "
-        << m_activations.size() << " respectively) ";
-    LBANN_ERROR(err.str());
-  }
-  if ((int) m_prev_error_signals.size() != num_children
-      || (int) m_error_signals.size() != num_parents) {
-    err << "layer " << m_name << " has an invalid number of "
-        << "backward prop matrices (expected "
-        << num_children << " input and " << num_parents << " output. "
-        << "but found " << m_prev_error_signals.size() << " and "
-        << m_error_signals.size() << " respectively) ";
-    LBANN_ERROR(err.str());
-  }
-
-  // Check that matrices are initialized
-  for (const auto& m : m_prev_activations) {
-    if (m == nullptr) {
-      err << "layer " << m_name << " has an uninitialized previous activation matrix";
+  // Check tensor dimensions
+  for (int i = 0; i < get_num_parents(); ++i) {
+    const auto& dims = get_input_dims(i);
+    if (dims.empty()) {
+      err << "layer \"" << get_name() << "\" has "
+          << "uninitialized input tensor dimensions "
+          << "(index " << i << ")";
+      LBANN_ERROR(err.str());
+    }
+    if (std::any_of(dims.begin(), dims.end(),
+                    [](int d) { return d <= 0; })) {
+      err << "layer \"" << get_name() << "\" has invalid "
+          << "input tensor dimensions (";
+      for (size_t j = 0; j < dims.size(); ++j) {
+        err << (j > 0 ? " x " : "") << dims[j];
+      }
+      err << " at index " << i << ")";
       LBANN_ERROR(err.str());
     }
   }
-  for (const auto& m : m_activations) {
-    if (m == nullptr) {
-      err << "layer " << m_name << " has an uninitialized activation matrix";
-      LBANN_ERROR(err.str());
-    }
-  }
-  for (const auto& m : m_prev_error_signals) {
-    if (m == nullptr) {
-      err << "layer " << m_name << " has an uninitialized previous error signal matrix";
-      LBANN_ERROR(err.str());
-    }
-  }
-  for (const auto& m : m_error_signals) {
-    if (m == nullptr) {
-      err << "layer " << m_name << " has an uninitialized error signal matrix";
-      LBANN_ERROR(err.str());
-    }
-  }
-
-  // Check that output tensor dimensions are valid
   for (int i = 0; i < get_num_children(); ++i) {
     const auto& dims = get_output_dims(i);
     if (dims.empty()) {
@@ -730,9 +735,59 @@ void Layer::check_setup() {
       err << "layer \"" << get_name() << "\" has invalid "
           << "output tensor dimensions (";
       for (size_t j = 0; j < dims.size(); ++j) {
-        err << (j > 0 ? " x " : "")  << dims[j];
+        err << (j > 0 ? " x " : "") << dims[j];
       }
       err << " at index " << i << ")";
+      LBANN_ERROR(err.str());
+    }
+  }
+
+  // Check number of tensors
+  const int num_parents = get_num_parents();
+  const int num_children = get_num_children();
+  if ((int) m_prev_activations.size() != num_parents
+      || (int) m_activations.size() != num_children
+      || (int) m_prev_error_signals.size() != num_children
+      || (int) m_error_signals.size() != num_parents) {
+    err << "layer \"" << get_name() << "\" has an "
+        << "invalid number of input and output tensors "
+        << "(found " << num_parents << " parent layers, "
+        << num_children << " child layers, "
+        << m_prev_activations.size() << " input tensors, "
+        << m_activations.size() << " output tensors, "
+        << m_prev_error_signals.size() << " gradient w.r.t. output tensors, "
+        << m_error_signals.size() << " gradient w.r.t. input tensors)";
+    LBANN_ERROR(err.str());
+  }
+
+  // Check that tensors are initialized
+  for (int i = 0; i < get_num_parents(); ++i) {
+    if (m_prev_activations[i] == nullptr) {
+      err << "layer \"" << get_name() << "\" has an "
+          << "uninitialized input tensor (index " << i << ")";
+      LBANN_ERROR(err.str());
+    }
+  }
+  for (int i = 0; i < get_num_children(); ++i) {
+    if (m_activations[i] == nullptr) {
+      err << "layer \"" << get_name() << "\" has an "
+          << "uninitialized output tensor (index " << i << ")";
+      LBANN_ERROR(err.str());
+    }
+  }
+  for (int i = 0; i < get_num_children(); ++i) {
+    if (m_prev_error_signals[i] == nullptr) {
+      err << "layer \"" << get_name() << "\" has an "
+          << "uninitialized gradient w.r.t. output tensor "
+          << "(index " << i << ")";
+      LBANN_ERROR(err.str());
+    }
+  }
+  for (int i = 0; i < get_num_parents(); ++i) {
+    if (m_error_signals[i] == nullptr) {
+      err << "layer \"" << get_name() << "\" has an "
+          << "uninitialized gradient w.r.t. input tensor "
+          << "(index " << i << ")";
       LBANN_ERROR(err.str());
     }
   }
@@ -806,37 +861,52 @@ void Layer::write_proto(lbann_data::Layer* proto) const {
 
 void Layer::fp_setup_data(int mini_batch_size) {
 
-  // Initialize previous activations
+  // Determine distributed matrix alignment
+  El::DistData alignment_dist;
+  if (get_num_parents() > 0) {
+    alignment_dist = m_parent_layers[0]->get_activations(*this).DistData();
+  } else if (get_num_children() > 0) {
+    alignment_dist = get_activations().DistData();
+  }
+
+  // Initialize input tensors
   for (int i = 0; i < get_num_parents(); ++i) {
 
-    // Get previous activation from parent layer
-    const auto& parent = m_parent_layers[i];
-    parent->get_fp_output(get_prev_activations(i), this);
+    // Initialize input tensor
+    const auto& parent = *m_parent_layers[i];
+    const auto& parent_output = parent.get_activations(*this);
+    auto& input = *m_prev_activations[i];
+    input.AlignWith(alignment_dist);
+    if (parent_output.DistData() == input.DistData()) {
+      El::LockedView(input, parent_output);
+    } else {
+      El::Copy(parent_output, input);
+    }
 
-    // Check dimensions of previous activations matrix
-    const int expected_height = get_input_size(i);
-    const auto& input = get_prev_activations(i);
-    if (input.Height() != expected_height
-        || input.Width() != mini_batch_size) {
+    // Check input matrix dimensions
+    const auto& height = get_input_size(i);
+    const auto& width = mini_batch_size;
+    if (input.Height() != height || input.Width() != width) {
       std::stringstream err;
-      err << "layer \"" << get_name() << "\" expected a "
-          << expected_height << " x " << mini_batch_size
-          << " input matrix from layer \"" << parent->get_name() << "\""
-          << " during forward prop, but got a "
+      err << "layer \"" << get_name() << "\" "
+          << "expected an input tensor stored in a "
+          << height << " x " << width << " matrix "
+          << "from layer \"" << parent.get_name() << "\", but got a "
           << input.Height() << " x " << input.Width() << " matrix";
       LBANN_ERROR(err.str());
     }
 
   }
 
-  // Initialize activations
+  // Initialize output tensors
   for (int i = 0; i < get_num_children(); ++i) {
-    auto& activations = get_activations(i);
-    const auto activations_size = get_output_size(i);
-    if (activations.Height() != activations_size
-        || activations.Width() != mini_batch_size) {
-      activations.Empty(false); // Reset matrix views (without deallocating memory)
-      activations.Resize(activations_size, mini_batch_size);
+    auto& output = get_activations(i);
+    const auto& height = get_output_size(i);
+    const auto& width = mini_batch_size;
+    output.AlignWith(alignment_dist);
+    if (output.Height() != height || output.Width() != width) {
+      output.Empty(false); // Reset matrix views without deallocating memory
+      output.Resize(height, width);
     }
   }
 
@@ -844,22 +914,31 @@ void Layer::fp_setup_data(int mini_batch_size) {
 
 void Layer::bp_setup_data(int mini_batch_size) {
 
-  // Initialize previous error signals
+  // Initialize gradient w.r.t. output tensors
   for (int i = 0; i < get_num_children(); ++i) {
 
-    const auto& child = m_child_layers[i];
-    child->get_bp_output(get_prev_error_signals(i), this);
+    // Initialize gradient w.r.t. output tensor
+    const auto& child = *m_child_layers[i];
+    const auto& child_gradient_wrt_input = child.get_error_signals(*this);
+    auto& gradient_wrt_output = *m_prev_error_signals[i];
+    gradient_wrt_output.AlignWith(get_activations(i));
+    if (child_gradient_wrt_input.DistData()
+        == gradient_wrt_output.DistData()) {
+      El::LockedView(gradient_wrt_output, child_gradient_wrt_input);
+    } else {
+      El::Copy(child_gradient_wrt_input, gradient_wrt_output);
+    }
 
-    // Check dimensions of previous error signal matrix
-    const auto& expected_height = get_output_size(i);
-    const auto& gradient_wrt_output = get_prev_error_signals(i);
-    if (gradient_wrt_output.Height() != expected_height
-        || gradient_wrt_output.Width() != mini_batch_size) {
+    // Check gradient w.r.t. output matrix dimensions
+    const auto& height = get_output_size(i);
+    const auto& width = mini_batch_size;
+    if (gradient_wrt_output.Height() != height
+        || gradient_wrt_output.Width() != width) {
       std::stringstream err;
-      err << "layer \"" << get_name() << "\" expected a "
-          << expected_height << " x " << mini_batch_size
-          << " error signal matrix from layer \"" << child->get_name() << "\""
-          << " during backward prop, but got a "
+      err << "layer \"" << get_name() << "\" "
+          << "expected a gradient w.r.t. output tensor stored in a "
+          << height << " x " << width << " matrix "
+          << "from layer \"" << child.get_name() << "\", but got a "
           << gradient_wrt_output.Height() << " x "
           << gradient_wrt_output.Width() << " matrix";
       LBANN_ERROR(err.str());
@@ -867,69 +946,17 @@ void Layer::bp_setup_data(int mini_batch_size) {
 
   }
 
-  // Initialize error signals
+  // Initialize gradient w.r.t. input tensors
   for (int i = 0; i < get_num_parents(); ++i) {
-    auto& error_signals = get_error_signals(i);
-    const auto error_signals_size = get_input_size(i);
-    if (error_signals.Height() != error_signals_size
-        || error_signals.Width() != mini_batch_size) {
-      error_signals.Empty(false); // Reset matrix views (without deallocating memory)
-      error_signals.Resize(error_signals_size, mini_batch_size);
+    auto& gradient_wrt_input = get_error_signals(i);
+    const auto& height = get_input_size(i);
+    const auto& width = mini_batch_size;
+    gradient_wrt_input.AlignWith(get_prev_activations(i));
+    if (gradient_wrt_input.Height() != height
+        || gradient_wrt_input.Width() != width) {
+      gradient_wrt_input.Empty(false); // Reset matrix views without deallocating memory
+      gradient_wrt_input.Resize(height, width);
     }
-  }
-
-}
-
-void Layer::get_fp_output(AbsDistMat& output, const Layer* child) const {
-
-  // Get activation matrix corresponding to child layer
-  // Note: the const_cast is morally dubious, but it should be
-  // unnecessary once Hydrogen supports GPU memory copies.
-  const size_t child_index = (std::find(m_child_layers.begin(),
-                                        m_child_layers.end(),
-                                        child)
-                              - m_child_layers.begin());
-  if (child_index >= m_child_layers.size()) {
-    std::stringstream err;
-    err << get_name() << " has no forward prop output corresponding to "
-        << child->get_name();
-    LBANN_ERROR(err.str());
-  }
-  auto& activation = const_cast<Layer*>(this)->get_activations(child_index);
-
-  // Put view or copy of activation matrix in output matrix
-  if(activation.DistData() == output.DistData()) {
-    El::LockedView(output, activation);
-  }
-  else {
-    El::Copy(activation, output);
-  }
-
-}
-
-void Layer::get_bp_output(AbsDistMat& output, const Layer* parent) const {
-
-  // Get error signal matrix corresponding to parent layer
-  // Note: the const_cast is morally dubious, but it should be
-  // unnecessary once Hydrogen supports GPU memory copies.
-  const size_t parent_index = (std::find(m_parent_layers.begin(),
-                                         m_parent_layers.end(),
-                                         parent)
-                               - m_parent_layers.begin());
-  if (parent_index >= m_parent_layers.size()) {
-    std::stringstream err;
-    err << get_name() << " has no backward prop output corresponding to "
-        << parent->get_name();
-    LBANN_ERROR(err.str());
-  }
-  auto& error_signal = const_cast<Layer*>(this)->get_error_signals(parent_index);
-
-  // Put view or copy of error signal matrix in output matrix
-  if(error_signal.DistData() == output.DistData()) {
-    El::LockedView(output, error_signal);
-  }
-  else {
-    El::Copy(error_signal, output);
   }
 
 }
