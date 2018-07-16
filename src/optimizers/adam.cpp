@@ -143,7 +143,7 @@ void adam::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
       || moment1_ldim != local_height
       || moment2_ldim != local_height) {
     // Update with non-contiguous data
-#pragma omp taskloop collapse(2) default(shared)
+    LBANN_OMP_TASKLOOP_COLLAPSE2
     for (int j=0; j<local_width; ++j) {
       for (int i=0; i<local_height; ++i) {
         DataType& x = values_buffer[i+j*values_ldim];
@@ -158,7 +158,7 @@ void adam::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
     }
   } else {
     // Update with contiguous data
-#pragma omp taskloop default(shared)
+    LBANN_OMP_TASKLOOP
     for (int i=0; i<local_height*local_width; ++i) {
       DataType& x = values_buffer[i];
       // We add eps here because sometimes the gradient is small enough that

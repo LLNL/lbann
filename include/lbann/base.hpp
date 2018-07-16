@@ -125,10 +125,13 @@ std::string get_pool_mode_name(pool_mode m);
 // NA - Not applicable, used for input layers that don't produce a second output
 enum class data_reader_target_mode {CLASSIFICATION, REGRESSION, RECONSTRUCTION, NA};
 
-#define LBANN_OMP_TASKLOOP _Pragma("omp taskloop default(shared) num_tasks(1)")
-#define LBANN_OMP_TASKLOOP_COLLAPSE2 _Pragma("omp taskloop collapse(2) default(shared) num_tasks(1)")
-#define LBANN_OMP_TASKLOOP_COLLAPSE3 _Pragma("omp taskloop collapse(3) default(shared) num_tasks(1)")
-#define LBANN_OMP_TASKLOOP_COLLAPSE5 _Pragma("omp taskloop collapse(5) default(shared) num_tasks(1)")
+#define LBANN_OMP_TASKLOOP _Pragma("omp taskloop default(shared)")
+// #define LBANN_OMP_TASKLOOP_ARGS_(args_) _Pragma((args_))
+//#define LBANN_OMP_TASKLOOP_ARGS(arg) _Pragma("omp taskloop default(shared) " ## args)
+//#define LBANN_OMP_TASKLOOP_ARGS(arg) LBANN_OMP_TASKLOOP_ARGS_("omp taskloop default(shared) num_tasks(1) " ## "arg")
+#define LBANN_OMP_TASKLOOP_COLLAPSE2 _Pragma("omp taskloop collapse(2) default(shared)")
+#define LBANN_OMP_TASKLOOP_COLLAPSE3 _Pragma("omp taskloop collapse(3) default(shared)")
+#define LBANN_OMP_TASKLOOP_COLLAPSE5 _Pragma("omp taskloop collapse(5) default(shared)")
 
 namespace lbann {
 

@@ -106,7 +106,7 @@ class min_layer : public transform_layer {
     const int local_width = local_output.Width();
 
     // Minimum of first two inputs
-#pragma omp taskloop collapse(2) default(shared)
+    LBANN_OMP_TASKLOOP_COLLAPSE2
     for (int col = 0; col < local_width; ++col) {
       for (int row = 0; row < local_height; ++row) {
         local_output(row, col) = std::min(local_input0(row, col),
@@ -117,7 +117,7 @@ class min_layer : public transform_layer {
     // Handle case with more than two parents
     for (int i = 2; i < num_parents; ++i) {
       const auto& local_input = get_local_prev_activations(i);
-#pragma omp taskloop collapse(2) default(shared)
+      LBANN_OMP_TASKLOOP_COLLAPSE2
       for (int col = 0; col < local_width; ++col) {
         for (int row = 0; row < local_height; ++row) {
           const auto& x = local_input(row, col);
@@ -152,7 +152,7 @@ class min_layer : public transform_layer {
         const auto& local_input1 = get_local_prev_activations(1);
         auto& local_gradient_wrt_input0 = get_local_error_signals(0);
         auto& local_gradient_wrt_input1 = get_local_error_signals(1);
-#pragma omp taskloop collapse(2) default(shared)
+	LBANN_OMP_TASKLOOP_COLLAPSE2
         for (int col = 0; col < local_width; ++col) {
           for (int row = 0; row < local_height; ++row) {
             const auto& x0 = local_input0(row, col);
@@ -175,7 +175,7 @@ class min_layer : public transform_layer {
       }
       break;
     default:
-#pragma omp taskloop collapse(2) default(shared)
+      LBANN_OMP_TASKLOOP_COLLAPSE2
       for (int col = 0; col < local_width; ++col) {
         for (int row = 0; row < local_height; ++row) {
           const auto& dy = local_gradient_wrt_output(row, col);

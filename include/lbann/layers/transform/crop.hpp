@@ -167,7 +167,7 @@ class crop_layer : public transform_layer {
     auto& local_output = get_local_activations();
 
     // Crop each mini-batch sample
-#pragma omp taskloop default(shared)
+    LBANN_OMP_TASKLOOP
     for (El::Int s = 0; s < local_input.Width(); ++s) {
 
       // Determine crop position
@@ -227,7 +227,7 @@ class crop_layer : public transform_layer {
     El::Zero(get_error_signals(1));
 
     // Crop each mini-batch sample
-#pragma omp taskloop default(shared)
+    LBANN_OMP_TASKLOOP
     for (El::Int s = 0; s < local_gradient_wrt_output.Width(); ++s) {
 
       // Determine crop position

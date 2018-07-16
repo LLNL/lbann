@@ -44,7 +44,7 @@ namespace {
     if (ldim == height) {
       // Parallelize single loop if data is contiguous
       const El::Int size = height*width;
-#pragma omp taskloop default(shared)
+      LBANN_OMP_TASKLOOP
       for (El::Int i = 0; i < size; ++i) {
         const EvalType val = buf[i];
         const int tid = omp_get_thread_num();
@@ -52,7 +52,7 @@ namespace {
       }
     } else {
       // Parallelize double loop if data is not contiguous
-#pragma omp taskloop collapse(2) default(shared)
+      LBANN_OMP_TASKLOOP_COLLAPSE2
       for (El::Int j = 0; j < width; ++j) {
         for (El::Int i = 0; i < height; ++i) {
           const EvalType val = buf[i + j*ldim];

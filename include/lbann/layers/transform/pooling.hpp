@@ -361,7 +361,7 @@ public:
         // Apply max pooling
         DataType *output_buffer = local_output.Buffer(0, sample);
         int *indices_buffer = &m_max_pool_indices[sample * this->m_num_neurons];
-#pragma omp taskloop default(shared)
+	LBANN_OMP_TASKLOOP
         for(int channel = 0; channel < num_channels; ++channel) {
           for(int j = 0; j < num_per_output_channel; ++j) {
             DataType *im2col_buffer = im2col_mat.Buffer(channel*m_pool_size, j);
@@ -384,7 +384,7 @@ public:
       if(m_pool_mode == pool_mode::average) {
         // Apply average pooling
         DataType *output_buffer = local_output.Buffer(0, sample);
-#pragma omp taskloop default(shared)
+	LBANN_OMP_TASKLOOP
         for(int channel = 0; channel < num_channels; ++channel) {
           for(int j = 0; j < num_per_output_channel; ++j) {
             const DataType *im2col_buffer
@@ -438,7 +438,7 @@ public:
           = local_gradient_wrt_output.LockedBuffer(0, sample);
         const int *indices_buffer
           = &m_max_pool_indices[sample * this->m_num_neurons];
-#pragma omp taskloop default(shared)
+	LBANN_OMP_TASKLOOP
         for(int channel = 0; channel < num_channels; ++channel) {
           for(int j = 0; j < num_per_input_channel; ++j) {
             const int input_index = j + channel * num_per_input_channel;
@@ -455,7 +455,7 @@ public:
       if(m_pool_mode == pool_mode::average) {
         const DataType *gradient_wrt_output_buffer
           = local_gradient_wrt_output.LockedBuffer(0, sample);
-#pragma omp taskloop default(shared)
+	LBANN_OMP_TASKLOOP
         for(int channel = 0; channel < num_channels; ++channel) {
           for(int j = 0; j < num_per_input_channel; ++j) {
             DataType *im2col_buffer = im2col_mat.Buffer(channel*m_pool_size, j);

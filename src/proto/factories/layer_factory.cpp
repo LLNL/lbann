@@ -420,9 +420,9 @@ Layer* construct_layer(lbann_comm* comm,
   }
 
   // Loss layers
-  if (proto_layer.has_cross_entropy()) {
-    return new cross_entropy_layer<layout, Dev>(comm);
-  }
+//   if (proto_layer.has_cross_entropy()) {
+//     return new cross_entropy_layer<layout, Dev>(comm);
+//   }
 
   if (proto_layer.has_bce_with_logits()) {
     const auto& params = proto_layer.bce_with_logits();

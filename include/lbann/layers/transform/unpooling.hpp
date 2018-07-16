@@ -160,7 +160,7 @@ class unpooling_layer : public transform_layer {
         = prev_activations_local.LockedBuffer(0, sample);
       const int *indices_buffer
         = &m_pooling_layer->m_max_pool_indices[sample * this->m_num_prev_neurons];
-#pragma omp taskloop default(shared)
+      LBANN_OMP_TASKLOOP
       for(int channel = 0; channel < num_channels; ++channel) {
         for(int j = 0; j < num_per_input_channel; ++j) {
           const int input_index = j + channel * num_per_input_channel;
@@ -223,7 +223,7 @@ class unpooling_layer : public transform_layer {
       DataType *output_buffer = error_signal_local.Buffer(0, sample);
       const int *indices_buffer
         = &m_pooling_layer->m_max_pool_indices[sample * this->m_num_prev_neurons];
-#pragma omp taskloop default(shared)
+      LBANN_OMP_TASKLOOP
       for(int channel = 0; channel < num_channels; ++channel) {
         for(int j = 0; j < num_per_output_channel; ++j) {
           const int output_index = j + channel * num_per_output_channel;

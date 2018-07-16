@@ -175,7 +175,7 @@ bool data_reader_jag_conduit::replicate_processor(const cv_process& pp) {
   m_pps.resize(nthreads);
 
   // Construct thread private preprocessing objects out of a shared pointer
-#pragma omp taskloop default(shared)
+  LBANN_OMP_TASKLOOP
   for (int i = 0; i < nthreads; ++i) {
     //auto ppu = std::make_unique<cv_process>(pp); // c++14
     std::unique_ptr<cv_process> ppu(new cv_process(pp));

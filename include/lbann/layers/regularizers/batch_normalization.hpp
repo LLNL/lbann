@@ -468,7 +468,7 @@ class batch_normalization : public regularizer_layer {
       auto& local_new_running_var = m_var_gradient->Matrix();
 
       // Compute sums and sums of squares
-#pragma omp taskloop default(shared)
+      LBANN_OMP_TASKLOOP
       for (int channel = 0; channel < num_channels; ++channel) {
         DataType sum = zero;
         DataType sqsum = zero;
@@ -499,7 +499,7 @@ class batch_normalization : public regularizer_layer {
       if (num_per_sum <= 1) {
         El::Fill(local_var, one);
       } else {
-#pragma omp taskloop default(shared)
+	LBANN_OMP_TASKLOOP
         for (int channel = 0; channel < num_channels; ++channel) {
           const DataType mean = local_mean(channel, 0) / num_per_sum;
           const DataType sqmean = local_var(channel, 0) / num_per_sum;
@@ -530,7 +530,7 @@ class batch_normalization : public regularizer_layer {
                              this->m_weights[3]->get_values().LockedMatrix());
 
     // Iterate through channels
-#pragma omp taskloop default(shared)
+    LBANN_OMP_TASKLOOP
     for (int channel = 0; channel < num_channels; ++channel) {
 
       // Get channel parameters
@@ -586,7 +586,7 @@ class batch_normalization : public regularizer_layer {
     const int channel_size = this->m_num_neurons / num_channels;
 
     // Compute local gradients
-#pragma omp taskloop default(shared)
+    LBANN_OMP_TASKLOOP
     for (int channel = 0; channel < num_channels; ++channel) {
 
       // Initialize channel parameters and gradients
@@ -656,7 +656,7 @@ class batch_normalization : public regularizer_layer {
     if (num_per_sum <= 1) {
       El::Zero(local_gradient_wrt_input);
     } else {
-#pragma omp taskloop default(shared)
+      LBANN_OMP_TASKLOOP
       for (int channel = 0; channel < num_channels; ++channel) {
 
         // Initialize channel parameters and gradients

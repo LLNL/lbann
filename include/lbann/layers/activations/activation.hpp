@@ -107,13 +107,13 @@ class entrywise_activation_layer : public activation_layer {
     if (input_ldim == local_height && output_ldim == local_height) {
       // Contiguous data
       const size_t buffer_size = local_height * local_width;
-#pragma omp taskloop default(shared)
+      LBANN_OMP_TASKLOOP
       for (size_t i = 0; i < buffer_size; ++i) {
         output_buffer[i] = activation(input_buffer[i]);
       }
     } else {
       // Non-contiguous data
-#pragma omp taskloop collapse(2) default(shared)
+      LBANN_OMP_TASKLOOP_COLLAPSE2
       for(int col = 0; col < local_width; ++col) {
         for(int row = 0; row < local_height; ++row) {
           const auto& x = input_buffer[row + col * input_ldim];
@@ -150,7 +150,7 @@ class entrywise_activation_layer : public activation_layer {
         && gradient_wrt_input_ldim == local_height) {
       // Contiguous data
       const size_t buffer_size = local_height * local_width;
-#pragma omp taskloop default(shared)
+      LBANN_OMP_TASKLOOP
       for (size_t i = 0; i < buffer_size; ++i) {
         const auto& x = input_buffer[i];
         const auto& dy = gradient_wrt_output_buffer[i];
@@ -159,7 +159,7 @@ class entrywise_activation_layer : public activation_layer {
       }
     } else {
       // Non-contiguous data
-#pragma omp taskloop collapse(2) default(shared)
+      LBANN_OMP_TASKLOOP_COLLAPSE2
       for(int col = 0; col < local_width; ++col) {
         for(int row = 0; row < local_height; ++row) {
           const auto& x = input_buffer[row + col * input_ldim];

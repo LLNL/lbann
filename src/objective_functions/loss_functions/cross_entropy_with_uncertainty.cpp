@@ -113,7 +113,7 @@ EvalType cross_entropy_with_uncertainty::finish_evaluate_compute(
   const int local_width = predictions_local.Width();
 
   // Compute sum of predictions
-#pragma omp taskloop default(shared)
+  LBANN_OMP_TASKLOOP
   for (int col = 0; col < local_width; ++col) {
     EvalType pred_sum = EvalType(0);
     for (int row = 0; row < local_height; ++row) {
@@ -150,7 +150,7 @@ void cross_entropy_with_uncertainty::differentiate_compute(const AbsDistMat& pre
   const El::Int local_width = gradient_local.Width();
 
   // Compute gradient
-#pragma omp taskloop collapse(2) default(shared)
+  LBANN_OMP_TASKLOOP_COLLAPSE2
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
       const DataType true_val = ground_truth_local(row, col);

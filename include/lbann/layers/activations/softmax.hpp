@@ -224,7 +224,7 @@ class softmax_layer : public activation_layer {
       // the maximum across processors is still computed correctly.
       El::Fill(local_workspace, std::numeric_limits<DataType>::lowest());
     } else {
-#pragma omp taskloop default(shared)
+      LBANN_OMP_TASKLOOP
       for (El::Int col = 0; col < local_width; ++col) {
         DataType max_entry = local_input(0, col);
         for (El::Int row = 1; row < local_height; ++row) {
@@ -239,7 +239,7 @@ class softmax_layer : public activation_layer {
     // Exponentiate activations and compute column sums
     // Note: Subtracting by the column max prevents activations from
     // blowing up. Large negative values underflow to 0.
-#pragma omp taskloop default(shared)
+    LBANN_OMP_TASKLOOP
     for (El::Int col = 0; col < local_width; ++col) {
       const DataType shift = local_workspace(0, col);
       DataType sum = 0;
@@ -256,7 +256,7 @@ class softmax_layer : public activation_layer {
     // Divide activations by column sums
     // Note: Small values are rounded to minimum output value to avoid
     // denormalized floats.
-#pragma omp taskloop default(shared)
+    LBANN_OMP_TASKLOOP
     for (El::Int col = 0; col < local_width; ++col) {
       const DataType scale = DataType(1) / local_workspace(0, col);
       for (El::Int row = 0; row < local_height; ++row) {
@@ -291,7 +291,7 @@ class softmax_layer : public activation_layer {
     m_comm->allreduce(*m_workspace, m_workspace->RedundantComm());
 
     // Compute gradient w.r.t. input
-#pragma omp taskloop default(shared)
+    LBANN_OMP_TASKLOOP
     for (El::Int col = 0; col < local_width; ++col) {
       const DataType y_dot_dy = local_workspace(0, col);
       for (El::Int row = 0; row < local_height; ++row) {
