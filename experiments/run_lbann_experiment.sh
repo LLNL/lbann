@@ -18,11 +18,12 @@ ACCOUNT=
 TIME_LIMIT=     # default: 1:00 (format is hours:minutes)
 
 # Additional parameters
-SUBMIT_JOB=     # default: YES
-USE_GPU=        # default: YES (ignored if built without GPUs)
-CACHE_DATASET=  # default: NO
-USE_VTUNE=      # default: NO
-USE_NVPROF=     # default: NO
+SUBMIT_JOB=       # default: YES
+USE_GPU=          # default: YES (ignored if built without GPUs)
+CACHE_DATASET=    # default: NO
+USE_VTUNE=        # default: NO
+USE_NVPROF=       # default: NO
+USE_CUDAMEMCHECK= # default: NO
 EXPERIMENT_HOME_DIR=${EXPERIMENT_HOME_DIR:-${LBANN_DIR}/experiments}
 TRAIN_DATASET_DIR=
 TRAIN_DATASET_LABELS=
@@ -33,6 +34,7 @@ CACHE_DIR=
 EXPERIMENT_SCRIPT=$(readlink -f "$0")
 VTUNE_EXE="amplxe-cl-mpi -collect hotspots"
 NVPROF_EXE="nvprof --profile-child-processes --unified-memory-profiling off"
+CUDAMEMCHECK_EXE="${LBANN_DIR}/scripts/debug/cuda-memcheck.sh"
 
 # Set defaults
 EXPERIMENT_NAME=${EXPERIMENT_NAME:-lbann}
@@ -50,6 +52,7 @@ USE_GPU=${USE_GPU:-YES}
 CACHE_DATASET=${CACHE_DATASET:-NO}
 USE_VTUNE=${USE_VTUNE:-NO}
 USE_NVPROF=${USE_NVPROF:-NO}
+USE_CUDAMEMCHECK=${USE_CUDAMEMCHECK:-NO}
 
 # Set cluster-specific defaults
 CLUSTER=${CLUSTER:-$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')}
@@ -245,14 +248,20 @@ EXPERIMENT_COMMAND="${LBANN_EXE} ${MODEL_PROTO} ${OPTIMIZER_PROTO} ${READER_PROT
 # Initialize profiler command
 case ${USE_VTUNE} in
     YES|yes|TRUE|true|ON|on|1)
-        PROFILER_COMMAND="${PROFILER_COMMAND} ${VTUNE_EXE} -r ./vtune --"
+        DEBUGGER_COMMAND="${DEBUGGER_COMMAND} ${VTUNE_EXE} -r ./vtune --"
         EXPERIMENT_NAME=${EXPERIMENT_NAME}_vtune
         ;;
 esac
 case ${USE_NVPROF} in
     YES|yes|TRUE|true|ON|on|1)
-        PROFILER_COMMAND="${PROFILER_COMMAND} ${NVPROF_EXE} --log-file nvprof_output-%h-%p.txt --export-profile %h-%p.prof"
+        DEBUGGER_COMMAND="${DEBUGGER_COMMAND} ${NVPROF_EXE} --log-file nvprof_output-%h-%p.txt --export-profile %h-%p.prof"
         EXPERIMENT_NAME=${EXPERIMENT_NAME}_nvprof
+        ;;
+esac
+case ${USE_CUDAMEMCHECK} in
+    YES|yes|TRUE|true|ON|on|1)
+        DEBUGGER_COMMAND="${DEBUGGER_COMMAND} ${CUDAMEMCHECK_EXE}"
+        EXPERIMENT_NAME=${EXPERIMENT_NAME}_cudamemcheck
         ;;
 esac
 
@@ -347,6 +356,7 @@ echo "# USE_GPU: ${USE_GPU}"                            >> ${BATCH_SCRIPT}
 echo "# CACHE_DATASET: ${CACHE_DATASET}"                >> ${BATCH_SCRIPT}
 echo "# USE_VTUNE: ${USE_VTUNE}"                        >> ${BATCH_SCRIPT}
 echo "# USE_NVPROF: ${USE_NVPROF}"                      >> ${BATCH_SCRIPT}
+echo "# USE_CUDAMEMCHECK: ${USE_CUDAMEMCHECK}"          >> ${BATCH_SCRIPT}
 echo "# EXPERIMENT_HOME_DIR: ${EXPERIMENT_HOME_DIR}"    >> ${BATCH_SCRIPT}
 echo "# CACHE_DIR: ${CACHE_DIR}"                        >> ${BATCH_SCRIPT}
 echo ""                                                 >> ${BATCH_SCRIPT}
@@ -386,7 +396,7 @@ esac
 
 # Set experiment
 echo "# ======== Experiment ========" >> ${BATCH_SCRIPT}
-echo "${MPIRUN} ${PROFILER_COMMAND} ${EXPERIMENT_COMMAND}" >> ${BATCH_SCRIPT}
+echo "${MPIRUN} ${DEBUGGER_COMMAND} ${EXPERIMENT_COMMAND}" >> ${BATCH_SCRIPT}
 
 # Submit batch script
 SUBMIT_EXE=sh
