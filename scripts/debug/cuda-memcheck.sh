@@ -1,4 +1,6 @@
 #!/bin/bash
+# Convenience wrapper for CUDA-MEMCHECK
+# Usage: [mpiexec|mpirun|srun] cuda-memcheck.sh my_program [args]
 
 # CUDA-MEMCHECK parameters
 tool=memcheck # Options: memcheck, racecheck, initcheck, synccheck
