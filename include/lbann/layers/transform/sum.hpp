@@ -98,8 +98,8 @@ class sum_layer : public transform_layer {
 
   void bp_compute() override {
     const auto& gradient_wrt_output = get_prev_error_signals();
-    for (auto* gradient_wrt_input : this->m_error_signals) {
-      El::LockedView(*gradient_wrt_input, gradient_wrt_output);
+    for (int i = 0; i < get_num_parents(); ++i) {
+      El::LockedView(get_error_signals(i), gradient_wrt_output);
     }
   }
 

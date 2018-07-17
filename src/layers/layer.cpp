@@ -72,14 +72,14 @@ Layer::Layer(const Layer& other) :
   m_output_dims_list(other.m_output_dims_list) {
 
   // Deep matrix copies
-  m_prev_activations   = other.m_prev_activations;
-  m_activations        = other.m_activations;
-  m_prev_error_signals = other.m_prev_error_signals;
-  m_error_signals      = other.m_error_signals;
-  for (auto& m : m_prev_activations)   { m = m->Copy(); }
-  for (auto& m : m_activations)        { m = m->Copy(); }
-  for (auto& m : m_prev_error_signals) { m = m->Copy(); }
-  for (auto& m : m_error_signals)      { m = m->Copy(); }
+  m_inputs               = other.m_inputs;
+  m_outputs              = other.m_outputs;
+  m_gradient_wrt_outputs = other.m_gradient_wrt_outputs;
+  m_gradient_wrt_inputs  = other.m_gradient_wrt_inputs;
+  for (auto& m : m_inputs)               { m = m->Copy(); }
+  for (auto& m : m_outputs)              { m = m->Copy(); }
+  for (auto& m : m_gradient_wrt_outputs) { m = m->Copy(); }
+  for (auto& m : m_gradient_wrt_inputs)  { m = m->Copy(); }
 
 }
 
@@ -105,14 +105,14 @@ Layer& Layer::operator=(const Layer& other) {
 
   // Deep matrix copies
   deallocate_matrices();
-  m_prev_activations   = other.m_prev_activations;
-  m_activations        = other.m_activations;
-  m_prev_error_signals = other.m_prev_error_signals;
-  m_error_signals      = other.m_error_signals;
-  for (auto& m : m_prev_activations)   { m = m->Copy(); }
-  for (auto& m : m_activations)        { m = m->Copy(); }
-  for (auto& m : m_prev_error_signals) { m = m->Copy(); }
-  for (auto& m : m_error_signals)      { m = m->Copy(); }
+  m_inputs               = other.m_inputs;
+  m_outputs              = other.m_outputs;
+  m_gradient_wrt_outputs = other.m_gradient_wrt_outputs;
+  m_gradient_wrt_inputs  = other.m_gradient_wrt_inputs;
+  for (auto& m : m_inputs)               { m = m->Copy(); }
+  for (auto& m : m_outputs)              { m = m->Copy(); }
+  for (auto& m : m_gradient_wrt_outputs) { m = m->Copy(); }
+  for (auto& m : m_gradient_wrt_inputs)  { m = m->Copy(); }
 
   return *this;
 }
@@ -263,7 +263,7 @@ void Layer::summarize_matrices(lbann_summary& summarizer, int step) {
   // Summarize activation matrices
   const int num_children = get_num_children();
   for (int i = 0; i < num_children; ++i) {
-    AbsDistMatReadProxy<El::Device::CPU> acts(*m_activations[i]);
+    AbsDistMatReadProxy<El::Device::CPU> acts(*m_outputs[i]);
     std::string prefix = m_name + "/activations";
     if (num_children > 1) { prefix += std::to_string(i); }
     summarizer.reduce_mean(prefix + "/mean", acts.GetLocked(), step);
@@ -276,7 +276,7 @@ void Layer::summarize_matrices(lbann_summary& summarizer, int step) {
   // Summarize error signal matrices
   const int num_parents = get_num_parents();
   for (int i = 0; i < num_parents; ++i) {
-    AbsDistMatReadProxy<El::Device::CPU> error_signals(*m_error_signals[i]);
+    AbsDistMatReadProxy<El::Device::CPU> error_signals(*m_gradient_wrt_inputs[i]);
     std::string prefix = m_name + "/error_signals";
     if (num_parents > 1) { prefix += std::to_string(i); }
     summarizer.reduce_mean(prefix + "/mean", error_signals.GetLocked(), step);
@@ -386,48 +386,48 @@ void Layer::set_output_dims(std::vector<int> dims, int output_index) {
 
 // Accessing distributed matrices
 const AbsDistMat& Layer::get_prev_activations(int parent_index) const {
-  if (parent_index < 0 || parent_index >= (int) m_prev_activations.size()) {
+  if (parent_index < 0 || parent_index >= (int) m_inputs.size()) {
     std::stringstream err;
     err << "attempted to access invalid previous activation matrix "
         << "from " << m_name << " "
         << "(requested index " << parent_index << ", but there are "
-        << m_prev_activations.size() << " previous activation matrices)";
+        << m_inputs.size() << " previous activation matrices)";
     LBANN_ERROR(err.str());
   }
-  return *m_prev_activations[parent_index];
+  return *m_inputs[parent_index];
 }
 const AbsDistMat& Layer::get_activations(int child_index) const {
-  if (child_index < 0 || child_index >= (int) m_activations.size()) {
+  if (child_index < 0 || child_index >= (int) m_outputs.size()) {
     std::stringstream err;
     err << "attempted to access invalid activation matrix "
         << "from " << m_name << " "
         << "(requested index " << child_index << ", but there are "
-        << m_activations.size() << " activation matrices)";
+        << m_outputs.size() << " activation matrices)";
     LBANN_ERROR(err.str());
   }
-  return *m_activations[child_index];
+  return *m_outputs[child_index];
 }
 const AbsDistMat& Layer::get_prev_error_signals(int child_index) const {
-  if (child_index < 0 || child_index >= (int) m_prev_error_signals.size()) {
+  if (child_index < 0 || child_index >= (int) m_gradient_wrt_outputs.size()) {
     std::stringstream err;
     err << "attempted to access invalid previous error signal matrix "
         << "from " << m_name << " "
         << "(requested index " << child_index << ", but there are "
-        << m_prev_error_signals.size() << " previous error signal matrices)";
+        << m_gradient_wrt_outputs.size() << " previous error signal matrices)";
     LBANN_ERROR(err.str());
   }
-  return *m_prev_error_signals[child_index];
+  return *m_gradient_wrt_outputs[child_index];
 }
 const AbsDistMat& Layer::get_error_signals(int parent_index) const {
-  if (parent_index < 0 || parent_index >= (int) m_error_signals.size()) {
+  if (parent_index < 0 || parent_index >= (int) m_gradient_wrt_inputs.size()) {
     std::stringstream err;
     err << "attempted to access invalid error signal matrix "
         << "from " << m_name << " "
         << "(requested index " << parent_index << ", but there are "
-        << m_error_signals.size() << " error signal matrices)";
+        << m_gradient_wrt_inputs.size() << " error signal matrices)";
     LBANN_ERROR(err.str());
   }
-  return *m_error_signals[parent_index];
+  return *m_gradient_wrt_inputs[parent_index];
 }
 
 // Accessing non-const distributed matrices
@@ -563,12 +563,12 @@ void Layer::setup_dims() {
 template <>
 void Layer::instantiate_matrices<data_layout::MODEL_PARALLEL, El::Device::CPU>(const El::Grid& grid) {
   for (int i = 0; i < get_num_parents(); ++i) {
-    m_prev_activations.push_back(new MCMRMat<El::Device::CPU>(grid));
-    m_error_signals.push_back(new MCMRMat<El::Device::CPU>(grid));
+    m_inputs.push_back(new MCMRMat<El::Device::CPU>(grid));
+    m_gradient_wrt_inputs.push_back(new MCMRMat<El::Device::CPU>(grid));
   }
   for (int i = 0; i < get_num_children(); ++i) {
-    m_activations.push_back(new MCMRMat<El::Device::CPU>(grid));
-    m_prev_error_signals.push_back(new MCMRMat<El::Device::CPU>(grid));
+    m_outputs.push_back(new MCMRMat<El::Device::CPU>(grid));
+    m_gradient_wrt_outputs.push_back(new MCMRMat<El::Device::CPU>(grid));
   }
 //  m_using_gpus = false;
 }
@@ -576,12 +576,12 @@ void Layer::instantiate_matrices<data_layout::MODEL_PARALLEL, El::Device::CPU>(c
 template <>
 void Layer::instantiate_matrices<data_layout::DATA_PARALLEL, El::Device::CPU>(const El::Grid& grid) {
   for (int i = 0; i < get_num_parents(); ++i) {
-    m_prev_activations.push_back(new StarVCMat<El::Device::CPU>(grid));
-    m_error_signals.push_back(new StarVCMat<El::Device::CPU>(grid));
+    m_inputs.push_back(new StarVCMat<El::Device::CPU>(grid));
+    m_gradient_wrt_inputs.push_back(new StarVCMat<El::Device::CPU>(grid));
   }
   for (int i = 0; i < get_num_children(); ++i) {
-    m_activations.push_back(new StarVCMat<El::Device::CPU>(grid));
-    m_prev_error_signals.push_back(new StarVCMat<El::Device::CPU>(grid));
+    m_outputs.push_back(new StarVCMat<El::Device::CPU>(grid));
+    m_gradient_wrt_outputs.push_back(new StarVCMat<El::Device::CPU>(grid));
   }
 //  m_using_gpus = false;
 }
@@ -593,12 +593,12 @@ void Layer::instantiate_matrices<data_layout::DATA_PARALLEL, El::Device::CPU>(co
 template <>
 void Layer::instantiate_matrices<data_layout::MODEL_PARALLEL, El::Device::GPU>(const El::Grid& grid) {
   for (int i = 0; i < get_num_parents(); ++i) {
-    m_prev_activations.push_back(new MCMRMat<El::Device::GPU>(grid));
-    m_error_signals.push_back(new MCMRMat<El::Device::GPU>(grid));
+    m_inputs.push_back(new MCMRMat<El::Device::GPU>(grid));
+    m_gradient_wrt_inputs.push_back(new MCMRMat<El::Device::GPU>(grid));
   }
   for (int i = 0; i < get_num_children(); ++i) {
-    m_activations.push_back(new MCMRMat<El::Device::GPU>(grid));
-    m_prev_error_signals.push_back(new MCMRMat<El::Device::GPU>(grid));
+    m_outputs.push_back(new MCMRMat<El::Device::GPU>(grid));
+    m_gradient_wrt_outputs.push_back(new MCMRMat<El::Device::GPU>(grid));
   }
   m_using_gpus = true;
 }
@@ -606,12 +606,12 @@ void Layer::instantiate_matrices<data_layout::MODEL_PARALLEL, El::Device::GPU>(c
 template <>
 void Layer::instantiate_matrices<data_layout::DATA_PARALLEL, El::Device::GPU>(const El::Grid& grid) {
   for (int i = 0; i < get_num_parents(); ++i) {
-    m_prev_activations.push_back(new StarVCMat<El::Device::GPU>(grid));
-    m_error_signals.push_back(new StarVCMat<El::Device::GPU>(grid));
+    m_inputs.push_back(new StarVCMat<El::Device::GPU>(grid));
+    m_gradient_wrt_inputs.push_back(new StarVCMat<El::Device::GPU>(grid));
   }
   for (int i = 0; i < get_num_children(); ++i) {
-    m_activations.push_back(new StarVCMat<El::Device::GPU>(grid));
-    m_prev_error_signals.push_back(new StarVCMat<El::Device::GPU>(grid));
+    m_outputs.push_back(new StarVCMat<El::Device::GPU>(grid));
+    m_gradient_wrt_outputs.push_back(new StarVCMat<El::Device::GPU>(grid));
   }
   m_using_gpus = true;
 }
@@ -668,7 +668,7 @@ void Layer::setup_data() {
   // Initialize input tensors
   for (int i = 0; i < get_num_parents(); ++i) {
     const auto& parent_output = m_parent_layers[i]->get_activations(*this);
-    auto& input = *m_prev_activations[i];
+    auto& input = *m_inputs[i];
     input.AlignWith(alignment_dist);
     if (parent_output.DistData() == input.DistData()) {
       El::LockedView(input, parent_output);
@@ -745,38 +745,38 @@ void Layer::check_setup() {
   // Check number of tensors
   const int num_parents = get_num_parents();
   const int num_children = get_num_children();
-  if ((int) m_prev_activations.size() != num_parents
-      || (int) m_activations.size() != num_children
-      || (int) m_prev_error_signals.size() != num_children
-      || (int) m_error_signals.size() != num_parents) {
+  if ((int) m_inputs.size() != num_parents
+      || (int) m_outputs.size() != num_children
+      || (int) m_gradient_wrt_outputs.size() != num_children
+      || (int) m_gradient_wrt_inputs.size() != num_parents) {
     err << "layer \"" << get_name() << "\" has an "
         << "invalid number of input and output tensors "
         << "(found " << num_parents << " parent layers, "
         << num_children << " child layers, "
-        << m_prev_activations.size() << " input tensors, "
-        << m_activations.size() << " output tensors, "
-        << m_prev_error_signals.size() << " gradient w.r.t. output tensors, "
-        << m_error_signals.size() << " gradient w.r.t. input tensors)";
+        << m_inputs.size() << " input tensors, "
+        << m_outputs.size() << " output tensors, "
+        << m_gradient_wrt_outputs.size() << " gradient w.r.t. output tensors, "
+        << m_gradient_wrt_inputs.size() << " gradient w.r.t. input tensors)";
     LBANN_ERROR(err.str());
   }
 
   // Check that tensors are initialized
   for (int i = 0; i < get_num_parents(); ++i) {
-    if (m_prev_activations[i] == nullptr) {
+    if (m_inputs[i] == nullptr) {
       err << "layer \"" << get_name() << "\" has an "
           << "uninitialized input tensor (index " << i << ")";
       LBANN_ERROR(err.str());
     }
   }
   for (int i = 0; i < get_num_children(); ++i) {
-    if (m_activations[i] == nullptr) {
+    if (m_outputs[i] == nullptr) {
       err << "layer \"" << get_name() << "\" has an "
           << "uninitialized output tensor (index " << i << ")";
       LBANN_ERROR(err.str());
     }
   }
   for (int i = 0; i < get_num_children(); ++i) {
-    if (m_prev_error_signals[i] == nullptr) {
+    if (m_gradient_wrt_outputs[i] == nullptr) {
       err << "layer \"" << get_name() << "\" has an "
           << "uninitialized gradient w.r.t. output tensor "
           << "(index " << i << ")";
@@ -784,7 +784,7 @@ void Layer::check_setup() {
     }
   }
   for (int i = 0; i < get_num_parents(); ++i) {
-    if (m_error_signals[i] == nullptr) {
+    if (m_gradient_wrt_inputs[i] == nullptr) {
       err << "layer \"" << get_name() << "\" has an "
           << "uninitialized gradient w.r.t. input tensor "
           << "(index " << i << ")";
@@ -809,23 +809,23 @@ void Layer::replace_weights(Layer* other_layer) {
 void Layer::deallocate_matrices() {
 
   // Deallocate matrices
-  for (const auto& m : m_prev_activations) {
+  for (const auto& m : m_inputs) {
     if (m != nullptr) delete m;
   }
 
-  for (const auto& m : m_activations) {
+  for (const auto& m : m_outputs) {
     if (m != nullptr) delete m;
   }
-  for (const auto& m : m_prev_error_signals) {
+  for (const auto& m : m_gradient_wrt_outputs) {
     if (m != nullptr) delete m;
   }
-  for (const auto& m : m_error_signals) {
+  for (const auto& m : m_gradient_wrt_inputs) {
     if (m != nullptr) delete m;
   }
-  m_prev_activations.clear();
-  m_activations.clear();
-  m_prev_error_signals.clear();
-  m_error_signals.clear();
+  m_inputs.clear();
+  m_outputs.clear();
+  m_gradient_wrt_outputs.clear();
+  m_gradient_wrt_inputs.clear();
 
 }
 
@@ -875,7 +875,7 @@ void Layer::fp_setup_data(int mini_batch_size) {
     // Initialize input tensor
     const auto& parent = *m_parent_layers[i];
     const auto& parent_output = parent.get_activations(*this);
-    auto& input = *m_prev_activations[i];
+    auto& input = *m_inputs[i];
     input.AlignWith(alignment_dist);
     if (parent_output.DistData() == input.DistData()) {
       El::LockedView(input, parent_output);
@@ -920,7 +920,7 @@ void Layer::bp_setup_data(int mini_batch_size) {
     // Initialize gradient w.r.t. output tensor
     const auto& child = *m_child_layers[i];
     const auto& child_gradient_wrt_input = child.get_error_signals(*this);
-    auto& gradient_wrt_output = *m_prev_error_signals[i];
+    auto& gradient_wrt_output = *m_gradient_wrt_outputs[i];
     gradient_wrt_output.AlignWith(get_activations(i));
     if (child_gradient_wrt_input.DistData()
         == gradient_wrt_output.DistData()) {

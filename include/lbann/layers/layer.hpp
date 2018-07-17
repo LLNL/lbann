@@ -305,35 +305,6 @@ class Layer {
   /** Reference to LBANN communicator. */
   lbann_comm *m_comm;
 
-  /** Previous activation matrices.
-   *  Forward propagation inputs from each parent layer. These are
-   *  typically matrix views where each column is a flattened tensor
-   *  corresponding to a mini-batch sample. The matrices are owned by
-   *  the layer.
-   */
-  std::vector<AbsDistMat*> m_prev_activations;
-  /** Activation matrices.
-   *  Forward propagation outputs to each child layer. These are
-   *  typically matrices where each column is a flattened tensor
-   *  corresponding to a mini-batch sample. The matrices are owned by
-   *  the layer.
-   */
-  std::vector<AbsDistMat*> m_activations;
-  /** Error signal matrices.
-   *  Backward propagation inputs from each child layer. These are
-   *  typically matrix views where each column is a flattened tensor
-   *  corresponding to a mini-batch sample. The matrices are owned by
-   *  the layer.
-   */
-  std::vector<AbsDistMat*> m_prev_error_signals;
-  /** Error signal matrices.
-   *  Backward propagation outputs to each parent layer. These are
-   *  typically matrices where each column is a flattened tensor
-   *  corresponding to a mini-batch sample. The matrices are owned by
-   *  the layer.
-   */
-  std::vector<AbsDistMat*> m_error_signals;
-
   /** References to layer weights. */
   std::vector<weights*> m_weights;
 
@@ -441,6 +412,23 @@ class Layer {
 
   /** Dimensions of output tensors. */
   std::vector<std::vector<int>> m_output_dims_list;
+
+  /** Input tensors.
+   *  Each matrix column corresponds to a flattened mini-batch sample.
+   */
+  std::vector<AbsDistMat*> m_inputs;
+  /** Output tensors.
+   *  Each matrix column corresponds to a flattened mini-batch sample.
+   */
+  std::vector<AbsDistMat*> m_outputs;
+  /** Objective function gradients w.r.t. the output tensors.
+   *  Each matrix column corresponds to a flattened mini-batch sample.
+   */
+  std::vector<AbsDistMat*> m_gradient_wrt_outputs;
+  /** Objective function gradients w.r.t. the input tensors.
+   *  Each matrix column corresponds to a flattened mini-batch sample.
+   */
+  std::vector<AbsDistMat*> m_gradient_wrt_inputs;
 
   /** Instantiate distributed matrices. */
   template <data_layout T, El::Device Dev>
