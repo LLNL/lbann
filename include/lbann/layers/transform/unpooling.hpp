@@ -232,13 +232,8 @@ class unpooling_layer : public transform_layer {
       // Propagate error signal based on pooling layer
       DataType *output_buffer = error_signal_local.Buffer(0, sample);
       const int *indices_buffer
-<<<<<<< HEAD
-        = &m_pooling_layer->m_max_pool_indices[sample * this->m_num_prev_neurons];
-      LBANN_OMP_TASKLOOP
-=======
         = &m_pooling_layer->m_max_pool_indices[sample * get_input_size()];
-      #pragma omp parallel for
->>>>>>> d44f63fdbbd84f7af96e925b1987e0ffa3276842
+      LBANN_OMP_TASKLOOP
       for(int channel = 0; channel < num_channels; ++channel) {
         for(int j = 0; j < num_per_output_channel; ++j) {
           const int output_index = j + channel * num_per_output_channel;
