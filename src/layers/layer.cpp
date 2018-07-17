@@ -45,9 +45,6 @@ Layer::Layer(lbann_comm *comm)
   m_name = "layer" + std::to_string(num_layers);
   num_layers++;
 
-  // Initialize GPU information
-  m_using_gpus = false;
-
   // Reset timing counters
   reset_counters();
 
@@ -68,18 +65,25 @@ Layer::Layer(const Layer& other) :
   m_bp_compute_time(other.m_bp_compute_time),
   m_update_time(other.m_update_time),
   m_name(other.m_name),
-  m_using_gpus(other.m_using_gpus),
   m_output_dims_list(other.m_output_dims_list) {
 
   // Deep matrix copies
-  m_inputs               = other.m_inputs;
-  m_outputs              = other.m_outputs;
-  m_gradient_wrt_outputs = other.m_gradient_wrt_outputs;
-  m_gradient_wrt_inputs  = other.m_gradient_wrt_inputs;
-  for (auto& m : m_inputs)               { m = m->Copy(); }
-  for (auto& m : m_outputs)              { m = m->Copy(); }
-  for (auto& m : m_gradient_wrt_outputs) { m = m->Copy(); }
-  for (auto& m : m_gradient_wrt_inputs)  { m = m->Copy(); }
+  m_inputs.reserve(other.m_inputs.size());
+  m_outputs.reserve(other.m_outputs.size());
+  m_gradient_wrt_outputs.reserve(other.m_gradient_wrt_outputs.size());
+  m_gradient_wrt_inputs.reserve(other.m_gradient_wrt_inputs.size());
+  for (const auto& ptr : other.m_inputs) {
+    m_inputs.emplace_back(ptr ? nullptr : ptr->Copy());
+  }
+  for (const auto& ptr : other.m_outputs) {
+    m_outputs.emplace_back(ptr ? nullptr : ptr->Copy());
+  }
+  for (const auto& ptr : other.m_gradient_wrt_outputs) {
+    m_gradient_wrt_outputs.emplace_back(ptr ? nullptr : ptr->Copy());
+  }
+  for (const auto& ptr : other.m_gradient_wrt_inputs) {
+    m_gradient_wrt_inputs.emplace_back(ptr ? nullptr : ptr->Copy());
+  }
 
 }
 
@@ -93,7 +97,6 @@ Layer& Layer::operator=(const Layer& other) {
   m_expected_num_parent_layers = other.m_expected_num_parent_layers;
   m_expected_num_child_layers = other.m_expected_num_child_layers;
   m_model = other.m_model;
-  m_using_gpus = other.m_using_gpus;
   m_frozen = other.m_frozen;
   m_fp_time = other.m_fp_time;
   m_fp_compute_time = other.m_fp_compute_time;
@@ -104,21 +107,28 @@ Layer& Layer::operator=(const Layer& other) {
   m_output_dims_list = other.m_output_dims_list;
 
   // Deep matrix copies
-  deallocate_matrices();
-  m_inputs               = other.m_inputs;
-  m_outputs              = other.m_outputs;
-  m_gradient_wrt_outputs = other.m_gradient_wrt_outputs;
-  m_gradient_wrt_inputs  = other.m_gradient_wrt_inputs;
-  for (auto& m : m_inputs)               { m = m->Copy(); }
-  for (auto& m : m_outputs)              { m = m->Copy(); }
-  for (auto& m : m_gradient_wrt_outputs) { m = m->Copy(); }
-  for (auto& m : m_gradient_wrt_inputs)  { m = m->Copy(); }
+  m_inputs.clear();
+  m_outputs.clear();
+  m_gradient_wrt_outputs.clear();
+  m_gradient_wrt_inputs.clear();
+  m_inputs.reserve(other.m_inputs.size());
+  m_outputs.reserve(other.m_outputs.size());
+  m_gradient_wrt_outputs.reserve(other.m_gradient_wrt_outputs.size());
+  m_gradient_wrt_inputs.reserve(other.m_gradient_wrt_inputs.size());
+  for (const auto& ptr : other.m_inputs) {
+    m_inputs.emplace_back(ptr ? nullptr : ptr->Copy());
+  }
+  for (const auto& ptr : other.m_outputs) {
+    m_outputs.emplace_back(ptr ? nullptr : ptr->Copy());
+  }
+  for (const auto& ptr : other.m_gradient_wrt_outputs) {
+    m_gradient_wrt_outputs.emplace_back(ptr ? nullptr : ptr->Copy());
+  }
+  for (const auto& ptr : other.m_gradient_wrt_inputs) {
+    m_gradient_wrt_inputs.emplace_back(ptr ? nullptr : ptr->Copy());
+  }
 
   return *this;
-}
-
-Layer::~Layer() {
-  deallocate_matrices();
 }
 
 std::string Layer::get_description() const {
@@ -557,99 +567,90 @@ void Layer::setup_dims() {
   }
 }
 
-///************************************************************************
-/// Instantiate CPU Matrices
-///************************************************************************
-template <>
-void Layer::instantiate_matrices<data_layout::MODEL_PARALLEL, El::Device::CPU>(const El::Grid& grid) {
-  for (int i = 0; i < get_num_parents(); ++i) {
-    m_inputs.push_back(new MCMRMat<El::Device::CPU>(grid));
-    m_gradient_wrt_inputs.push_back(new MCMRMat<El::Device::CPU>(grid));
-  }
-  for (int i = 0; i < get_num_children(); ++i) {
-    m_outputs.push_back(new MCMRMat<El::Device::CPU>(grid));
-    m_gradient_wrt_outputs.push_back(new MCMRMat<El::Device::CPU>(grid));
-  }
-//  m_using_gpus = false;
-}
+namespace {
 
-template <>
-void Layer::instantiate_matrices<data_layout::DATA_PARALLEL, El::Device::CPU>(const El::Grid& grid) {
-  for (int i = 0; i < get_num_parents(); ++i) {
-    m_inputs.push_back(new StarVCMat<El::Device::CPU>(grid));
-    m_gradient_wrt_inputs.push_back(new StarVCMat<El::Device::CPU>(grid));
-  }
-  for (int i = 0; i < get_num_children(); ++i) {
-    m_outputs.push_back(new StarVCMat<El::Device::CPU>(grid));
-    m_gradient_wrt_outputs.push_back(new StarVCMat<El::Device::CPU>(grid));
-  }
-//  m_using_gpus = false;
-}
-
+template <typename T>
+El::AbstractDistMatrix<T>* construct_dist_matrix(El::Distribution col_dist,
+                                                 El::Distribution row_dist,
+                                                 El::DistWrap wrap,
+                                                 El::Device device,
+                                                 const El::Grid& grid) {
+  
+#define LBANN_CONSTRUCT_DIST_MATRIX(T_col_dist, T_row_dist,     \
+                                    T_wrap, T_device)           \
+  do {                                                          \
+    if (col_dist == T_col_dist && row_dist == T_row_dist        \
+        && wrap == T_wrap && device == T_device) {              \
+      return new El::DistMatrix<T, T_col_dist, T_row_dist,      \
+                                T_wrap, T_device>(grid);        \
+    }                                                           \
+  } while (false)
+  LBANN_CONSTRUCT_DIST_MATRIX(El::MC, El::MR, El::ELEMENT, El::Device::CPU);
+  LBANN_CONSTRUCT_DIST_MATRIX(El::STAR, El::VC, El::ELEMENT, El::Device::CPU);
 #ifdef LBANN_HAS_GPU
-///************************************************************************
-/// Instantiate GPU Matrices
-///************************************************************************
-template <>
-void Layer::instantiate_matrices<data_layout::MODEL_PARALLEL, El::Device::GPU>(const El::Grid& grid) {
-  for (int i = 0; i < get_num_parents(); ++i) {
-    m_inputs.push_back(new MCMRMat<El::Device::GPU>(grid));
-    m_gradient_wrt_inputs.push_back(new MCMRMat<El::Device::GPU>(grid));
-  }
-  for (int i = 0; i < get_num_children(); ++i) {
-    m_outputs.push_back(new MCMRMat<El::Device::GPU>(grid));
-    m_gradient_wrt_outputs.push_back(new MCMRMat<El::Device::GPU>(grid));
-  }
-  m_using_gpus = true;
-}
-
-template <>
-void Layer::instantiate_matrices<data_layout::DATA_PARALLEL, El::Device::GPU>(const El::Grid& grid) {
-  for (int i = 0; i < get_num_parents(); ++i) {
-    m_inputs.push_back(new StarVCMat<El::Device::GPU>(grid));
-    m_gradient_wrt_inputs.push_back(new StarVCMat<El::Device::GPU>(grid));
-  }
-  for (int i = 0; i < get_num_children(); ++i) {
-    m_outputs.push_back(new StarVCMat<El::Device::GPU>(grid));
-    m_gradient_wrt_outputs.push_back(new StarVCMat<El::Device::GPU>(grid));
-  }
-  m_using_gpus = true;
-}
+  LBANN_CONSTRUCT_DIST_MATRIX(El::MC, El::MR, El::ELEMENT, El::Device::GPU);
+  LBANN_CONSTRUCT_DIST_MATRIX(El::STAR, El::VC, El::ELEMENT, El::Device::GPU);
 #endif // LBANN_HAS_GPU
-
+#undef LBANN_CONSTRUCT_DIST_MATRIX
+  
+  // Failed to construct matrix
+  std::stringstream err;
+  err << "invalid matrix parameters "
+      << "(colDist=" << (int) col_dist << ", "
+      << "rowDist=" << (int) row_dist << ", "
+      << "wrap=" << (int) wrap << ", "
+      << "device=" << (int) device << ")";
+  LBANN_ERROR(err.str());
+  return nullptr;
+  
+}
+  
+} // namespace
+  
 void Layer::setup_matrices(const El::Grid& grid) {
 
-  // Delete any previously allocated matrices
-  deallocate_matrices();
-
-  // Allocate input and output matrices for forward an back prop
+  // Choose matrix distribution
+  El::Distribution col_dist, row_dist;
+  El::DistWrap wrap = El::ELEMENT;
+  El::Device device = get_device_allocation();
   switch (get_data_layout()) {
-  case data_layout::MODEL_PARALLEL:
-    switch (get_device_allocation()) {
-    case El::Device::CPU:
-      instantiate_matrices<data_layout::MODEL_PARALLEL, El::Device::CPU>(grid); break;
-#ifdef LBANN_HAS_GPU
-    case El::Device::GPU:
-      instantiate_matrices<data_layout::MODEL_PARALLEL, El::Device::GPU>(grid); break;
-#endif // LBANN_HAS_GPU
-    default:
-      LBANN_ERROR("invalid matrix data allocation");
-    }
-    break;
   case data_layout::DATA_PARALLEL:
-    switch (get_device_allocation()) {
-    case El::Device::CPU:
-      instantiate_matrices<data_layout::DATA_PARALLEL, El::Device::CPU>(grid); break;
-#ifdef LBANN_HAS_GPU
-    case El::Device::GPU:
-      instantiate_matrices<data_layout::DATA_PARALLEL, El::Device::GPU>(grid); break;
-#endif // LBANN_HAS_GPU
-    default:
-      LBANN_ERROR("invalid matrix data allocation");
-    }
+    col_dist = El::STAR;
+    row_dist = El::VC;
     break;
-  default:
-    LBANN_ERROR("invalid distributed matrix layout");
+  case data_layout::MODEL_PARALLEL:
+    col_dist = El::MC;
+    row_dist = El::MR;
+    break;
+  default: LBANN_ERROR("invalid data layout");
+  }
+  
+  // Delete any previously allocated matrices
+  m_inputs.clear();
+  m_outputs.clear();
+  m_gradient_wrt_outputs.clear();
+  m_gradient_wrt_inputs.clear();
+  m_inputs.resize(get_num_parents());
+  m_outputs.resize(get_num_children());
+  m_gradient_wrt_outputs.resize(get_num_children());
+  m_gradient_wrt_inputs.resize(get_num_parents());
+
+  // Construct matrices
+  for (auto& ptr : m_inputs) {
+    ptr.reset(construct_dist_matrix<DataType>(col_dist, row_dist,
+                                              wrap, device, grid));
+  }
+  for (auto& ptr : m_outputs) {
+    ptr.reset(construct_dist_matrix<DataType>(col_dist, row_dist,
+                                              wrap, device, grid));
+  }
+  for (auto& ptr : m_gradient_wrt_outputs) {
+    ptr.reset(construct_dist_matrix<DataType>(col_dist, row_dist,
+                                              wrap, device, grid));
+  }
+  for (auto& ptr : m_gradient_wrt_inputs) {
+    ptr.reset(construct_dist_matrix<DataType>(col_dist, row_dist,
+                                              wrap, device, grid));
   }
 
 }
@@ -805,30 +806,6 @@ void Layer::replace_weights(Layer* other_layer) {
   }
 
 }
-
-void Layer::deallocate_matrices() {
-
-  // Deallocate matrices
-  for (const auto& m : m_inputs) {
-    if (m != nullptr) delete m;
-  }
-
-  for (const auto& m : m_outputs) {
-    if (m != nullptr) delete m;
-  }
-  for (const auto& m : m_gradient_wrt_outputs) {
-    if (m != nullptr) delete m;
-  }
-  for (const auto& m : m_gradient_wrt_inputs) {
-    if (m != nullptr) delete m;
-  }
-  m_inputs.clear();
-  m_outputs.clear();
-  m_gradient_wrt_outputs.clear();
-  m_gradient_wrt_inputs.clear();
-
-}
-
 
 bool Layer::save_to_checkpoint_shared(persist& p) const {
   return true;

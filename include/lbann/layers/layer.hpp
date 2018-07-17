@@ -68,7 +68,7 @@ class Layer {
   Layer(lbann_comm *comm);
   Layer(const Layer& other);
   Layer& operator=(const Layer& other);
-  virtual ~Layer();
+  virtual ~Layer() = default;
 
   /** Copy function.
    *  This function dynamically allocates memory for a layer instance
@@ -167,7 +167,7 @@ class Layer {
   virtual void reset_counters();
 
   /** Whether the layer is using a GPU implementation. */
-  inline bool using_gpus() const { return m_using_gpus; }
+  inline bool using_gpus() const { return get_device_allocation() == El::Device::GPU; }
 
   /** Get expected number of parent layers.
    *  A negative value indicates no limit.
@@ -355,9 +355,8 @@ class Layer {
    */
   virtual void setup_dims();
   /** Instantiate distributed matrices.
-   *  If the layer has already been setup, this function should
-   *  destroy all matrices and reinstantiate them. However, it is not
-   *  guaranteed that derived classes will obey this behavior.
+   *  If the layer has already been setup, this function will destroy
+   *  and reinstantiate all matrices.
    */
   virtual void setup_matrices(const El::Grid& grid);
   /** Setup layer data.
@@ -407,35 +406,25 @@ class Layer {
 
  private:
 
-  /** Whether current layer is using a GPU implementation. */
-  bool m_using_gpus;
-
   /** Dimensions of output tensors. */
   std::vector<std::vector<int>> m_output_dims_list;
 
   /** Input tensors.
    *  Each matrix column corresponds to a flattened mini-batch sample.
    */
-  std::vector<AbsDistMat*> m_inputs;
+  std::vector<std::unique_ptr<AbsDistMat>> m_inputs;
   /** Output tensors.
    *  Each matrix column corresponds to a flattened mini-batch sample.
    */
-  std::vector<AbsDistMat*> m_outputs;
+  std::vector<std::unique_ptr<AbsDistMat>> m_outputs;
   /** Objective function gradients w.r.t. the output tensors.
    *  Each matrix column corresponds to a flattened mini-batch sample.
    */
-  std::vector<AbsDistMat*> m_gradient_wrt_outputs;
+  std::vector<std::unique_ptr<AbsDistMat>> m_gradient_wrt_outputs;
   /** Objective function gradients w.r.t. the input tensors.
    *  Each matrix column corresponds to a flattened mini-batch sample.
    */
-  std::vector<AbsDistMat*> m_gradient_wrt_inputs;
-
-  /** Instantiate distributed matrices. */
-  template <data_layout T, El::Device Dev>
-  void instantiate_matrices(const El::Grid& grid);
-
-  /** Deallocate distributed matrices. */
-  void deallocate_matrices();
+  std::vector<std::unique_ptr<AbsDistMat>> m_gradient_wrt_inputs;
 
   /** Get activation tensor corresponding to child layer. */
   const AbsDistMat& get_activations(const Layer& child) const;
