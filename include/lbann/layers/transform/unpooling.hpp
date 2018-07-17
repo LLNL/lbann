@@ -73,21 +73,29 @@ class unpooling_layer : public transform_layer {
   }
 
   void setup_dims() override {
-
-    // Initialize previous neuron tensor dimensions
     transform_layer::setup_dims();
 
-    // Check that previous neuron tensor is valid
-    if(this->m_num_prev_neurons != m_pooling_layer->m_num_neurons
-       || this->m_num_prev_neuron_dims != m_pooling_layer->m_num_neuron_dims
-       || this->m_prev_neuron_dims != m_pooling_layer->m_neuron_dims) {
-      throw lbann_exception("unpooling_layer: previous neuron tensor must match neuron tensor of corresponding pooling layer");
+    // Check that input tensor is valid
+    const auto& input_dims = get_input_dims();
+    const auto& pool_output_dims = m_pooling_layer->get_output_dims();
+    if (input_dims != pool_output_dims) {
+      std::stringstream err;
+      err << get_type() << " layer \"" << get_name() << "\" "
+          << "expects input tensors with dimensions ";
+      for (size_t i = 0; i < pool_output_dims.size(); ++i) {
+        err << (i > 0 ? " x " : "") << pool_output_dims[i];
+      }
+      err << ", but parent layer "
+          << "\"" << m_parent_layers[0]->get_name() << "\" "
+          << "outputs with dimensions ";
+      for (size_t i = 0; i < input_dims.size(); ++i) {
+        err << (i > 0 ? " x " : "") << input_dims[i];
+      }
+      LBANN_ERROR(err.str());
     }
 
-    // Initialize neuron tensor based on corresponding pooling layer
-    this->m_num_neurons = m_pooling_layer->m_num_prev_neurons;
-    this->m_num_neuron_dims = m_pooling_layer->m_num_prev_neuron_dims;
-    this->m_neuron_dims = m_pooling_layer->m_prev_neuron_dims;
+    // Initialize output tensor based on corresponding pooling layer
+    set_output_dims(m_pooling_layer->get_input_dims());
 
   }
 
@@ -142,8 +150,9 @@ class unpooling_layer : public transform_layer {
 
     // Get parameters
     const int local_width = prev_activations_local.Width();
-    const int num_channels = this->m_prev_neuron_dims[0];
-    const int num_per_input_channel = this->m_num_prev_neurons / num_channels;
+    const auto& output_dims = get_output_dims();
+    const int num_channels = output_dims[0];
+    const int num_per_input_channel = get_input_size() / num_channels;
     const int pool_size = m_pooling_layer->m_pool_size;
 
     // Initialize im2col matrix
@@ -159,7 +168,7 @@ class unpooling_layer : public transform_layer {
       const DataType *prev_activations_buffer
         = prev_activations_local.LockedBuffer(0, sample);
       const int *indices_buffer
-        = &m_pooling_layer->m_max_pool_indices[sample * this->m_num_prev_neurons];
+        = &m_pooling_layer->m_max_pool_indices[sample * get_input_size()];
       LBANN_OMP_TASKLOOP
       for(int channel = 0; channel < num_channels; ++channel) {
         for(int j = 0; j < num_per_input_channel; ++j) {
@@ -177,8 +186,8 @@ class unpooling_layer : public transform_layer {
       col2im(im2col_mat,
              output_mat,
              num_channels,
-             this->m_num_neuron_dims - 1,
-             this->m_neuron_dims.data() + 1,
+             output_dims.size() - 1,
+             &output_dims[1],
              m_pooling_layer->m_pads.data(),
              m_pooling_layer->m_pool_dims.data(),
              m_pooling_layer->m_strides.data(),
@@ -197,8 +206,9 @@ class unpooling_layer : public transform_layer {
 
     // Get parameters
     const int local_width = prev_error_signal_local.Width();
-    const int num_channels = this->m_prev_neuron_dims[0];
-    const int num_per_output_channel = this->m_num_prev_neurons / num_channels;
+    const auto& output_dims = get_output_dims();
+    const int num_channels = output_dims[0];
+    const int num_per_output_channel = get_input_size() / num_channels;
     const int pool_size = m_pooling_layer->m_pool_size;
 
     // Initialize im2col matrix
@@ -213,8 +223,8 @@ class unpooling_layer : public transform_layer {
       im2col(input_mat,
              im2col_mat,
              num_channels,
-             this->m_num_neuron_dims - 1,
-             this->m_neuron_dims.data() + 1,
+             output_dims.size() - 1,
+             &output_dims[1],
              m_pooling_layer->m_pads.data(),
              m_pooling_layer->m_pool_dims.data(),
              m_pooling_layer->m_strides.data());
@@ -222,8 +232,13 @@ class unpooling_layer : public transform_layer {
       // Propagate error signal based on pooling layer
       DataType *output_buffer = error_signal_local.Buffer(0, sample);
       const int *indices_buffer
+<<<<<<< HEAD
         = &m_pooling_layer->m_max_pool_indices[sample * this->m_num_prev_neurons];
       LBANN_OMP_TASKLOOP
+=======
+        = &m_pooling_layer->m_max_pool_indices[sample * get_input_size()];
+      #pragma omp parallel for
+>>>>>>> d44f63fdbbd84f7af96e925b1987e0ffa3276842
       for(int channel = 0; channel < num_channels; ++channel) {
         for(int j = 0; j < num_per_output_channel; ++j) {
           const int output_index = j + channel * num_per_output_channel;

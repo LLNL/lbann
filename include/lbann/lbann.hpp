@@ -67,6 +67,7 @@
 
 /// Loss Layers
 #include "lbann/layers/loss/cross_entropy.hpp"
+#include "lbann/layers/loss/top_k_categorical_accuracy.hpp"
 
 /// Transform Layers
 #include "lbann/layers/transform/reshape.hpp"
@@ -74,6 +75,7 @@
 #include "lbann/layers/transform/unpooling.hpp"
 #include "lbann/layers/transform/split.hpp"
 #include "lbann/layers/transform/sum.hpp"
+#include "lbann/layers/transform/weighted_sum.hpp"
 #include "lbann/layers/transform/slice.hpp"
 #include "lbann/layers/transform/concatenation.hpp"
 #include "lbann/layers/transform/constant.hpp"
@@ -92,6 +94,7 @@
 #include "lbann/layers/transform/stop_gradient.hpp"
 #include "lbann/layers/transform/max.hpp"
 #include "lbann/layers/transform/min.hpp"
+#include "lbann/layers/transform/in_top_k.hpp"
 
 /// Regularization layers.
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
@@ -160,8 +163,10 @@
 #include "lbann/callbacks/callback_timeline.hpp"
 #include "lbann/callbacks/callback_checkpoint.hpp"
 #include "lbann/callbacks/callback_save_model.hpp"
+#include "lbann/callbacks/callback_replace_weights.hpp"
 #include "lbann/callbacks/callback_gpu_memory_usage.hpp"
 #include "lbann/callbacks/callback_sync_layers.hpp"
+#include "lbann/callbacks/callback_sync_selected.hpp"
 
 /// Weights and weight initializers
 #include "lbann/weights/weights.hpp"
@@ -213,5 +218,6 @@
 #include "lbann/io/persist.hpp"
 #include "lbann/utils/compiler_control.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
+#include "lbann/utils/peek_map.hpp"
 
 #endif // LBANN_HPP_INCLUDED

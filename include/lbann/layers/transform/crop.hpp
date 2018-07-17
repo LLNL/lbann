@@ -60,12 +60,7 @@ class crop_layer : public transform_layer {
                   "crop layer currently only supports DATA_PARALLEL");
 
     // Crop dimensions
-    this->m_neuron_dims = dims;
-    this->m_num_neuron_dims = m_neuron_dims.size();
-    this->m_num_neurons = std::accumulate(m_neuron_dims.begin(),
-                                          m_neuron_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
+    set_output_dims(dims);
 
     // Parent layers for original tensor and crop position
     m_expected_num_parent_layers = 2;
@@ -119,19 +114,34 @@ class crop_layer : public transform_layer {
   }
 
   void setup_dims() override {
-    const auto crop_dims = this->m_neuron_dims;
     transform_layer::setup_dims();
-    this->m_neuron_dims = crop_dims;
-    this->m_num_neuron_dims = m_neuron_dims.size();
-    this->m_num_neurons = std::accumulate(m_neuron_dims.begin(),
-                                          m_neuron_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
+    std::stringstream err;
 
-    // Make sure crop position has correct dimensions
-    if (this->m_parent_layers[1]->fp_output_dims(this)
-        != get_prev_neuron_dims(1)) {
-      LBANN_ERROR("crop position tensor input must match number of neuron dimensions");
+    // Make sure input tensors have valid dimensions
+    const auto& input_dims = get_input_dims(0);
+    const auto& loc_dims = get_input_dims(1);
+    const auto& output_dims = get_output_dims();
+    if (input_dims.size() != output_dims.size()) {
+      err << get_type() << " layer \"" << get_name() << "\" "
+          << "expects a crop input tensor with "
+          << output_dims.size() << " dimensions, "
+          << "but parent layer "
+          << "\"" << m_parent_layers[0]->get_name() << "\" "
+          << "outputs a tensor with "
+          << input_dims.size() << " dimensions";
+      LBANN_ERROR(err.str());
+    }
+    if (loc_dims.size() != 1 || loc_dims[0] != (int) input_dims.size()) {
+      err << get_type() << " layer \"" << get_name() << "\" "
+          << "expects a 1D crop position tensor with "
+          << output_dims.size() << " entries, "
+          << "but parent layer "
+          << "\"" << m_parent_layers[1]->get_name() << "\" "
+          << "outputs a tensor with dimensions ";
+      for (size_t i = 0; i < loc_dims.size(); ++i) {
+        err << (i > 0 ? " x " : "") << loc_dims[i];
+      }
+      LBANN_ERROR(err.str());
     }
 
   }
@@ -157,9 +167,9 @@ class crop_layer : public transform_layer {
   void fp_compute_cpu() {
 
     // Tensor dimensions
-    const El::Int num_dims = get_num_neuron_dims();
-    const auto& input_dims = get_prev_neuron_dims(0);
-    const auto& output_dims = get_neuron_dims();
+    const auto& input_dims = get_input_dims(0);
+    const auto& output_dims = get_output_dims();
+    const El::Int num_dims = output_dims.size();
 
     // Input and output tensors
     const auto& local_crop_pos = get_local_prev_activations(1);
@@ -216,9 +226,9 @@ class crop_layer : public transform_layer {
   void bp_compute_cpu() {
 
     // Tensor dimensions
-    const El::Int num_dims = get_num_neuron_dims();
-    const auto& input_dims = get_prev_neuron_dims(0);
-    const auto& output_dims = get_neuron_dims();
+    const auto& input_dims = get_input_dims(0);
+    const auto& output_dims = get_output_dims();
+    const El::Int num_dims = output_dims.size();
 
     // Input and output tensors
     const auto& local_crop_pos = get_local_prev_activations(1);
@@ -279,26 +289,6 @@ class crop_layer : public transform_layer {
   void bp_compute_gpu() {
     /// @todo Implement
     LBANN_ERROR("not yet implemented");
-  }
-
-  std::vector<int> get_prev_neuron_dims(int parent_index = 0) const override {
-    switch (parent_index) {
-    case 0: return transform_layer::get_prev_neuron_dims(parent_index);
-    case 1: return {get_num_neuron_dims()};
-    default: LBANN_ERROR("attempted to access invalid parent of crop layer");
-    }
-  }
-
-  int get_num_prev_neurons(int parent_index = 0) const override {
-    const auto& prev_neuron_dims = get_prev_neuron_dims(parent_index);
-    return std::accumulate(prev_neuron_dims.begin(),
-                           prev_neuron_dims.end(),
-                           1,
-                           std::multiplies<int>());
-  }
-
-  int get_num_prev_neuron_dims(int parent_index = 0) const override {
-    return get_prev_neuron_dims(parent_index).size();
   }
 
 };

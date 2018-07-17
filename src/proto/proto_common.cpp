@@ -185,11 +185,13 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
           if (readme.format() == "numpy") {
              auto* label_numpy  = new numpy_reader(false);
              label_numpy->set_label_filename(readme.label_filename());
+             label_numpy->set_data_filename(readme.label_filename());
              label_reader = label_numpy;
            } else if (readme.format() == "csv") { //if format is csv and label_filename is not empty
              auto* label_csv = new csv_reader(shuffle);
              if(master) { std::cout << "Set label filename: " << readme.label_filename() << std::endl; }
              label_csv->set_label_filename(readme.label_filename());
+             label_csv->set_data_filename(readme.label_filename());
              label_csv->disable_labels(readme.disable_labels());
              label_csv->enable_responses(readme.disable_responses());
              label_csv->set_has_header(readme.has_header()); //use same as parent file
@@ -219,6 +221,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
         throw lbann_exception(err.str());
       }
     }
+    reader->set_comm(comm);
 
     if (readme.data_filename() != "") {
       reader->set_data_filename( readme.data_filename() );
@@ -251,6 +254,8 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       reader->set_gan_labelling(readme.gan_labelling());
       reader->set_gan_label_value(readme.gan_label_value());
 
+      reader->set_partitioned(readme.is_partitioned(), readme.partition_overlap(), readme.partition_mode());
+
       if (set_up_generic_preprocessor) {
         init_generic_preprocessor(readme, master, reader);
       }
@@ -275,7 +280,6 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
 
     reader->set_master(master);
 
-    reader->set_comm(comm);
     reader->load();
 
     if (readme.role() == "train") {
@@ -353,16 +357,24 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
 
   if (master) {
     if (separate_validation) {
-      const generic_data_reader* r_train = data_readers[execution_mode::training];
-      const generic_data_reader* r_validate = data_readers[execution_mode::validation];
+      const generic_data_reader* r_train = peek_map(data_readers, execution_mode::training);
+      const generic_data_reader* r_validate = peek_map(data_readers, execution_mode::validation);
       const size_t num_train = (r_train == nullptr)? 0u : r_train->get_num_data();
       const size_t num_validate = (r_validate == nullptr)? 0u : r_validate->get_num_data();
       std::cout << "Training using " << num_train << " samples." << std::endl
                 << "Validating using " << num_validate << " samples." << std::endl;
     }
-    const generic_data_reader* r_test = data_readers[execution_mode::testing];
+    const generic_data_reader* r_test = peek_map(data_readers, execution_mode::testing);
     const size_t num_test = (r_test == nullptr)? 0u : r_test->get_num_data();
     std::cout << "Testing using " << num_test << " samples." << std::endl;
+  }
+  // remove null data_reader pointers if there is any
+  for (auto it = data_readers.cbegin(); it != data_readers.cend() ; ) {
+    if (!it->second) {
+      it = data_readers.erase(it);
+    } else {
+      ++it;
+    }
   }
 }
 

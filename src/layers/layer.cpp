@@ -45,14 +45,6 @@ Layer::Layer(lbann_comm *comm)
   m_name = "layer" + std::to_string(num_layers);
   num_layers++;
 
-  // Initialize neuron tensor dimensions
-  m_neuron_dims = std::vector<int>(1, 0);
-  m_num_neurons = 0;
-  m_num_neuron_dims = 1;
-  m_prev_neuron_dims = std::vector<int>(1, 0);
-  m_num_prev_neurons = 0;
-  m_num_prev_neuron_dims = 1;
-
   // Initialize GPU information
   m_using_gpus = false;
 
@@ -63,12 +55,6 @@ Layer::Layer(lbann_comm *comm)
 
 Layer::Layer(const Layer& other) :
   m_comm(other.m_comm),
-  m_neuron_dims(other.m_neuron_dims),
-  m_num_neurons(other.m_num_neurons),
-  m_num_neuron_dims(other.m_num_neuron_dims),
-  m_prev_neuron_dims(other.m_prev_neuron_dims),
-  m_num_prev_neurons(other.m_num_prev_neurons),
-  m_num_prev_neuron_dims(other.m_num_prev_neuron_dims),
   m_weights(other.m_weights),
   m_parent_layers(other.m_parent_layers),
   m_child_layers(other.m_child_layers),
@@ -82,7 +68,8 @@ Layer::Layer(const Layer& other) :
   m_bp_compute_time(other.m_bp_compute_time),
   m_update_time(other.m_update_time),
   m_name(other.m_name),
-  m_using_gpus(other.m_using_gpus) {
+  m_using_gpus(other.m_using_gpus),
+  m_output_dims_list(other.m_output_dims_list) {
 
   // Deep matrix copies
   m_prev_activations   = other.m_prev_activations;
@@ -100,12 +87,6 @@ Layer& Layer::operator=(const Layer& other) {
 
   // Shallow copies
   m_comm = other.m_comm;
-  m_neuron_dims = other.m_neuron_dims;
-  m_num_neurons = other.m_num_neurons;
-  m_num_neuron_dims = other.m_num_neuron_dims;
-  m_prev_neuron_dims = other.m_prev_neuron_dims;
-  m_num_prev_neurons = other.m_num_prev_neurons;
-  m_num_prev_neuron_dims = other.m_num_prev_neuron_dims;
   m_weights = other.m_weights;
   m_parent_layers = other.m_parent_layers;
   m_child_layers = other.m_child_layers;
@@ -120,6 +101,7 @@ Layer& Layer::operator=(const Layer& other) {
   m_bp_compute_time = other.m_bp_compute_time;
   m_update_time = other.m_update_time;
   m_name = other.m_name;
+  m_output_dims_list = other.m_output_dims_list;
 
   // Deep matrix copies
   deallocate_matrices();
@@ -149,7 +131,7 @@ std::string Layer::get_topo_description() const {
   std::stringstream ss;
   const size_t num_children = get_num_children();
   for (size_t i = 0; i < num_children; ++i) {
-    const auto& dims = get_neuron_dims(i);
+    const auto& dims = get_output_dims(i);
     if (i > 0) { ss << ", "; }
     ss << "activations";
     if (num_children > 1) { ss << "[" << i << "]"; }
@@ -306,6 +288,98 @@ void Layer::summarize_matrices(lbann_summary& summarizer, int step) {
 
 }
 
+
+// ===================================================================
+// Tensor dimension access functions
+// ===================================================================
+
+std::vector<int> Layer::get_input_dims(int input_index) const {
+
+  // Get parent layer
+  const auto& num_inputs = get_num_parents();
+  if (input_index < 0 || input_index >= num_inputs) {
+    std::stringstream err;
+    err << "attempted to access dimensions of invalid input tensor "
+        << "in layer \"" << get_name() << "\" "
+        << "(requested index " << input_index << ", but there are "
+        << num_inputs << " input tensors)";
+    LBANN_ERROR(err.str());
+  } else if (m_parent_layers[input_index] == nullptr) {
+    std::stringstream err;
+    err << "layer \"" << get_name() << "\" "
+        << "has a null pointer to parent layer "
+        << "(index " << input_index << ")";
+    LBANN_ERROR(err.str());
+  }
+  const auto& parent = *m_parent_layers[input_index];
+
+  // Get dimensions of corresponding output tensor in parent layer
+  const auto num_parent_outputs = parent.get_num_children();
+  const int parent_output_index = (std::find(parent.m_child_layers.begin(),
+                                             parent.m_child_layers.end(),
+                                             this)
+                                   - parent.m_child_layers.begin());
+  if (parent_output_index >= num_parent_outputs) {
+    std::stringstream err;
+    err << "layer \"" << parent.get_name() << "\" is a parent of "
+        << "layer \"" << get_name() << "\", but "
+        << "\"" << get_name() << "\" is not a child of "
+        << "\"" << parent.get_name() << "\"";
+    LBANN_ERROR(err.str());
+  }
+  return parent.get_output_dims(parent_output_index);
+
+}
+
+int Layer::get_input_size(int input_index) const {
+  const auto& dims = get_input_dims(input_index);
+  if (dims.empty()) {
+    return 0;
+  } else {
+    return std::accumulate(dims.begin(), dims.end(), 1,
+                           std::multiplies<int>());
+  }
+}
+
+std::vector<int> Layer::get_output_dims(int output_index) const {
+  const auto num_outputs = get_num_children();
+  if ((int) m_output_dims_list.size() != num_outputs) {
+    std::stringstream err;
+    err << "attempted to access dimensions of output tensor "
+        << "in layer \"" << get_name() << "\" "
+        << "before they are initialized";
+    LBANN_ERROR(err.str());
+  } else if (output_index < 0 || output_index >= num_outputs) {
+    std::stringstream err;
+    err << "attempted to access dimensions of invalid output tensor "
+        << "in layer \"" << get_name() << "\" "
+        << "(requested index " << output_index << ", but there are "
+        << num_outputs << " output tensors)";
+    LBANN_ERROR(err.str());
+  }
+  return m_output_dims_list[output_index];
+}
+
+int Layer::get_output_size(int output_index) const {
+  const auto& dims = get_output_dims(output_index);
+  if (dims.empty()) {
+    return 0;
+  } else {
+    return std::accumulate(dims.begin(), dims.end(), 1,
+                           std::multiplies<int>());
+  }
+}
+
+void Layer::set_output_dims(std::vector<int> dims, int output_index) {
+  if ((int) m_output_dims_list.size() != get_num_children()
+      || (int) m_output_dims_list.size() <= output_index) {
+    // Handles case where dims are set before child layers are set
+    m_output_dims_list.resize(std::max(get_num_children(),
+                                       output_index + 1));
+  }
+  m_output_dims_list[output_index] = dims;
+}
+
 // Data matrix access functions
 // Note: Using idiom from Item 3, p. 23 in "Effective C++", 3rd ed.,
 // by Scott Meyers.
@@ -444,24 +518,15 @@ void Layer::setup_pointers() {
 }
 
 void Layer::setup_dims() {
-
-  // Get dimensions of previous neuron tensor
-  if(m_parent_layers.empty()) {
-    m_prev_neuron_dims.assign(1, 0);
-  } else {
-    m_prev_neuron_dims = m_parent_layers.front()->fp_output_dims(this);
+  m_output_dims_list.resize(get_num_children());
+  if (get_num_parents() > 0) {
+    const auto& input_dims = get_input_dims();
+    for (auto& output_dims : m_output_dims_list) {
+      if (output_dims.empty()) {
+        output_dims = input_dims;
+      }
+    }
   }
-  m_num_prev_neuron_dims = m_prev_neuron_dims.size();
-  m_num_prev_neurons = std::accumulate(m_prev_neuron_dims.begin(),
-                                       m_prev_neuron_dims.end(),
-                                       1,
-                                       std::multiplies<int>());
-
-  // Set neuron tensor dimensions equal to previous neuron tensor
-  m_num_neurons = m_num_prev_neurons;
-  m_num_neuron_dims = m_num_prev_neuron_dims;
-  m_neuron_dims = m_prev_neuron_dims;
-
 }
 
 ///************************************************************************
@@ -568,7 +633,7 @@ void Layer::setup_data() {
   for (int i = 0; i < get_num_parents(); ++i) {
     auto& fp_input = get_prev_activations(i);
     m_parent_layers[i]->get_fp_output(fp_input, this);
-    const int expected_height = get_num_prev_neurons(i);
+    const int expected_height = get_input_size(i);
     if (fp_input.Height() != expected_height
         || fp_input.Width() != mini_batch_size) {
       std::stringstream err;
@@ -583,13 +648,13 @@ void Layer::setup_data() {
 
   // Initialize error signals
   for (int i = 0; i < get_num_parents(); ++i) {
-    get_error_signals(i).Resize(get_num_prev_neurons(i), mini_batch_size);
+    get_error_signals(i).Resize(get_input_size(i), mini_batch_size);
   }
 
 
   // Initialize activations
   for (int i = 0; i < get_num_children(); ++i) {
-    get_activations(i).Resize(get_num_neurons(i), mini_batch_size);
+    get_activations(i).Resize(get_output_size(i), mini_batch_size);
   }
 
 }
@@ -651,15 +716,25 @@ void Layer::check_setup() {
     }
   }
 
-  // Check that number of neurons is greater than zero
-  if (m_num_neurons <= 0) {
-    err << "layer " << m_name << " has invalid output dimensions "
-        << "(" << m_neuron_dims[0];
-    for (size_t i = 1; i < m_neuron_dims.size(); ++i) {
-      err << "x" << m_neuron_dims[i];
+  // Check that output tensor dimensions are valid
+  for (int i = 0; i < get_num_children(); ++i) {
+    const auto& dims = get_output_dims(i);
+    if (dims.empty()) {
+      err << "layer \"" << get_name() << "\" has "
+          << "uninitialized output tensor dimensions "
+          << "(index " << i << ")";
+      LBANN_ERROR(err.str());
     }
-    err << ")";
-    LBANN_ERROR(err.str());
+    if (std::any_of(dims.begin(), dims.end(),
+                    [](int d) { return d <= 0; })) {
+      err << "layer \"" << get_name() << "\" has invalid "
+          << "output tensor dimensions (";
+      for (size_t j = 0; j < dims.size(); ++j) {
+        err << (j > 0 ? " x " : "")  << dims[j];
+      }
+      err << " at index " << i << ")";
+      LBANN_ERROR(err.str());
+    }
   }
 
 }
@@ -739,7 +814,7 @@ void Layer::fp_setup_data(int mini_batch_size) {
     parent->get_fp_output(get_prev_activations(i), this);
 
     // Check dimensions of previous activations matrix
-    const int expected_height = get_num_prev_neurons(i);
+    const int expected_height = get_input_size(i);
     const auto& input = get_prev_activations(i);
     if (input.Height() != expected_height
         || input.Width() != mini_batch_size) {
@@ -757,11 +832,11 @@ void Layer::fp_setup_data(int mini_batch_size) {
   // Initialize activations
   for (int i = 0; i < get_num_children(); ++i) {
     auto& activations = get_activations(i);
-    const auto num_neurons = get_num_neurons(i);
-    if (activations.Height() != num_neurons
+    const auto activations_size = get_output_size(i);
+    if (activations.Height() != activations_size
         || activations.Width() != mini_batch_size) {
       activations.Empty(false); // Reset matrix views (without deallocating memory)
-      activations.Resize(num_neurons, mini_batch_size);
+      activations.Resize(activations_size, mini_batch_size);
     }
   }
 
@@ -776,7 +851,7 @@ void Layer::bp_setup_data(int mini_batch_size) {
     child->get_bp_output(get_prev_error_signals(i), this);
 
     // Check dimensions of previous error signal matrix
-    const int expected_height = get_num_neurons(i);
+    const auto& expected_height = get_output_size(i);
     const auto& gradient_wrt_output = get_prev_error_signals(i);
     if (gradient_wrt_output.Height() != expected_height
         || gradient_wrt_output.Width() != mini_batch_size) {
@@ -795,11 +870,11 @@ void Layer::bp_setup_data(int mini_batch_size) {
   // Initialize error signals
   for (int i = 0; i < get_num_parents(); ++i) {
     auto& error_signals = get_error_signals(i);
-    const auto num_prev_neurons = get_num_prev_neurons(i);
-    if (error_signals.Height() != num_prev_neurons
+    const auto error_signals_size = get_input_size(i);
+    if (error_signals.Height() != error_signals_size
         || error_signals.Width() != mini_batch_size) {
       error_signals.Empty(false); // Reset matrix views (without deallocating memory)
-      error_signals.Resize(num_prev_neurons, mini_batch_size);
+      error_signals.Resize(error_signals_size, mini_batch_size);
     }
   }
 

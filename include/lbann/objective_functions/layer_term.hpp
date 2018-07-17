@@ -38,9 +38,9 @@ class layer_term : public objective_function_term {
   layer_term* copy() const override { return new layer_term(*this); } 
   std::string name() const override { return "evaluation layer term"; }
 
-  void set_evaluation_layer(Layer* l);
+  void set_evaluation_layer(abstract_evaluation_layer* l);
 
-  Layer* get_evaluation_layer();
+  abstract_evaluation_layer* get_evaluation_layer();
 
   void setup(model& m) override;
 

@@ -573,14 +573,14 @@ if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" -o \
     ELEMENTAL_USE_CUBLAS=OFF
 	case $CLUSTER in
 		ray)
-			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.0.5-3+cuda8.0_ppc64el
+			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.2.12-1+cuda9.2_ppc64le
 			;;
 		sierra)
 			# NCCL not available
 			unset NCCL_DIR
 			;;
 		*)
-			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.1.15-1+cuda9.1_x86_64
+			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.2.12-1+cuda9.0_x86_64
 			;;
 	esac
 
@@ -592,12 +592,12 @@ if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" -o \
 			;;
 		ray)
 			module del cuda
-			CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/8.0}
+			CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/9.2.88}
 			;;
 		sierra)
 			module del cuda
 			# cuDNN is not yet available for CUDA 9.2
-			CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/9.1.85}
+			CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/9.2.88}
 			;;
 	esac
 fi
@@ -627,7 +627,11 @@ if [ "${WITH_CUDA}" == "ON" ]; then
 
 	# CUDNN
 	if [ -z "${CUDNN_DIR}" ]; then
-		CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-7.1.1/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
+		if [ "${CUDA_TOOLKIT_VERSION}" == "9.2" ]; then
+			CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-7.1.4/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
+		elif [ "${CUDA_TOOLKIT_VERSION}" == "9.1" ]; then
+			CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-7.1.3/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
+		fi
 	fi
 	if [ ! -d "${CUDNN_DIR}" ]; then
 		echo "Could not find cuDNN at $CUDNN_DIR"

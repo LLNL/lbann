@@ -93,7 +93,7 @@ void assign_layers_to_objective_function(std::vector<Layer*>& layer_list,
       if (num_layer_terms > proto_obj.layer_term_size()) { continue; }
       const auto& params = proto_obj.layer_term(num_layer_terms-1);
       auto&& eval = names_to_layers[params.layer()];
-      term->set_evaluation_layer(eval);
+      term->set_evaluation_layer(dynamic_cast<abstract_evaluation_layer*>(eval));
     }
   }
 
@@ -129,7 +129,7 @@ void assign_layers_to_metrics(std::vector<Layer*>& layer_list,
     if (m != nullptr) {
       const auto& params = proto_model.metric(i).layer_metric();
       auto&& eval = names_to_layers[params.layer()];
-      m->set_evaluation_layer(eval);
+      m->set_evaluation_layer(dynamic_cast<abstract_evaluation_layer*>(eval));
     }
   }
   
@@ -172,7 +172,7 @@ void assign_weights_to_layers(std::vector<Layer*>& layer_list,
 } // namespace
 
 model* construct_model(lbann_comm* comm,
-                       std::map<execution_mode, generic_data_reader*>& data_readers,
+                       const std::map<execution_mode, generic_data_reader*>& data_readers,
                        const lbann_data::Optimizer& proto_opt,
                        const lbann_data::Model& proto_model) {
 

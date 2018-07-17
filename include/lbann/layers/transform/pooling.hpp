@@ -187,22 +187,15 @@ public:
   }
 
   void setup_dims() override {
-
-    // Initialize previous neuron tensor dimensions
     transform_layer::setup_dims();
-
-    // Initialize neuron tensor dimensions
-    for(int i=0; i<this->m_num_neuron_dims-1; ++i) {
-      const int effective_dim = (this->m_prev_neuron_dims[i+1]
-                                 + 2 * m_pads[i] - m_pool_dims[i] + 1);
-      this->m_neuron_dims[i+1] = ((effective_dim + m_strides[i] - 1)
-                                  / m_strides[i]);
+    const auto& input_dims = get_input_dims();
+    auto output_dims = input_dims;
+    for(size_t i = 0; i < output_dims.size() - 1; ++i) {
+      const int effective_dim = (input_dims[i+1] + 2 * m_pads[i]
+                                 - m_pool_dims[i] + 1);
+      output_dims[i+1] = (effective_dim + m_strides[i] - 1) / m_strides[i];
     }
-    this->m_num_neurons = std::accumulate(this->m_neuron_dims.begin(),
-                                          this->m_neuron_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
-
+    set_output_dims(output_dims);
   }
 
   /// Initialize GPU objects
@@ -330,12 +323,13 @@ public:
 
     // Pool parameters
     const int local_width = local_input.Width();
-    const int num_channels = this->m_prev_neuron_dims[0];
-    const int num_per_output_channel = this->m_num_neurons / num_channels;
+    const auto& input_dims = get_input_dims();
+    const int num_channels = input_dims[0];
+    const int num_per_output_channel = get_output_size() / num_channels;
 
     // Initialize max pool indices if needed
     if(m_pool_mode == pool_mode::max) {
-      m_max_pool_indices.assign(this->m_num_neurons * local_width, 0);
+      m_max_pool_indices.assign(get_output_size() * local_width, 0);
     }
 
     // Initialize matrices
@@ -351,8 +345,8 @@ public:
       im2col(input_mat,
              im2col_mat,
              num_channels,
-             this->m_num_prev_neuron_dims - 1,
-             &this->m_prev_neuron_dims[1],
+             input_dims.size() - 1,
+             &input_dims[1],
              m_pads.data(),
              m_pool_dims.data(),
              m_strides.data());
@@ -360,8 +354,13 @@ public:
       if(m_pool_mode == pool_mode::max) {
         // Apply max pooling
         DataType *output_buffer = local_output.Buffer(0, sample);
+<<<<<<< HEAD
         int *indices_buffer = &m_max_pool_indices[sample * this->m_num_neurons];
 	LBANN_OMP_TASKLOOP
+=======
+        int *indices_buffer = &m_max_pool_indices[sample * get_output_size()];
+        #pragma omp parallel for
+>>>>>>> d44f63fdbbd84f7af96e925b1987e0ffa3276842
         for(int channel = 0; channel < num_channels; ++channel) {
           for(int j = 0; j < num_per_output_channel; ++j) {
             DataType *im2col_buffer = im2col_mat.Buffer(channel*m_pool_size, j);
@@ -416,8 +415,9 @@ public:
 
     // Pool parameters
     const int local_width = local_gradient_wrt_output.Width();
-    const int num_channels = this->m_prev_neuron_dims[0];
-    const int num_per_input_channel = this->m_num_neurons / num_channels;
+    const auto& input_dims = get_input_dims();
+    const int num_channels = input_dims[0];
+    const int num_per_input_channel = get_output_size() / num_channels;
 
     // Initialize matrices
     CPUMat im2col_mat(m_pool_size * num_channels, num_per_input_channel);
@@ -437,8 +437,8 @@ public:
         const DataType *gradient_wrt_output_buffer
           = local_gradient_wrt_output.LockedBuffer(0, sample);
         const int *indices_buffer
-          = &m_max_pool_indices[sample * this->m_num_neurons];
-	LBANN_OMP_TASKLOOP
+          = &m_max_pool_indices[sample * get_output_size()];
+	      LBANN_OMP_TASKLOOP
         for(int channel = 0; channel < num_channels; ++channel) {
           for(int j = 0; j < num_per_input_channel; ++j) {
             const int input_index = j + channel * num_per_input_channel;
@@ -476,8 +476,8 @@ public:
       col2im(im2col_mat,
              gradient_wrt_input_col,
              num_channels,
-             this->m_num_prev_neuron_dims - 1,
-             &this->m_prev_neuron_dims[1],
+             input_dims.size() - 1,
+             &input_dims[1],
              m_pads.data(),
              m_pool_dims.data(),
              m_strides.data());

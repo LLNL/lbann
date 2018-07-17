@@ -7,6 +7,7 @@ set_full_path(THIS_DIR_HEADERS
   slice.hpp
   split.hpp
   sum.hpp
+  weighted_sum.hpp
   transform.hpp
   unpooling.hpp
   constant.hpp
@@ -23,6 +24,7 @@ set_full_path(THIS_DIR_HEADERS
   stop_gradient.hpp
   max.hpp
   min.hpp
+  in_top_k.hpp
   )
 
 # Propagate the files up the tree

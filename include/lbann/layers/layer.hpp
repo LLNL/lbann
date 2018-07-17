@@ -62,6 +62,7 @@ class lbann_callback_sync_layers;
  */
 class Layer {
   friend class lbann_callback_sync_layers;
+  friend class lbann_callback_sync_selected;
 
  public:
   Layer(lbann_comm *comm);
@@ -162,31 +163,6 @@ class Layer {
   /** Get a short human-readable description of the device allocation */
   std::string get_device_allocation_string_short(El::Device dev) const;
 
-  /** Get the dimensions of a previous activations tensor. */
-  virtual std::vector<int> get_prev_neuron_dims(int parent_index = 0) const {
-    return m_prev_neuron_dims;
-  }
-  /** Get the size of a previous activations tensor. */
-  virtual int get_num_prev_neurons(int parent_index = 0) const {
-    return m_num_prev_neurons;
-  }
-  /** Get the number of dimensions of a previous activations tensor. */
-  virtual int get_num_prev_neuron_dims(int parent_index = 0) const {
-    return m_num_prev_neuron_dims;
-  }
-  /** Get the dimensions of an activations tensor. */
-  virtual std::vector<int> get_neuron_dims(int child_index = 0) const {
-    return m_neuron_dims;
-  }
-  /** Get the size of an activations tensor. */
-  virtual int get_num_neurons(int child_index = 0) const {
-    return m_num_neurons;
-  }
-  /** Get the number of dimensions of an activations tensor. */
-  virtual int get_num_neuron_dims(int child_index = 0) const {
-    return m_num_neuron_dims;
-  }
-
   /** Reset layer stat counters. */
   virtual void reset_counters();
 
@@ -228,11 +204,6 @@ class Layer {
    *  appropriate error signal tensor.
    */
   virtual void get_bp_output(AbsDistMat& bp_output, const Layer* parent) const;
-
-  /** Get dimensions of forward propagation output to a child layer.
-   *  Returns the dimensions of the appropriate activations tensor.
-   */
-  virtual std::vector<int> fp_output_dims(const Layer* child = nullptr) const { return m_neuron_dims; }
 
   /** Add to the layer's error signal. */
   virtual void add_to_error_signal(const AbsDistMat& error_signals,
@@ -294,6 +265,27 @@ class Layer {
   /** Replace weights with another Layer's weights*/
   void replace_weights(Layer* other_layer);
 
+  /** Get dimensions of an input tensor.
+   *  E.g. get the dimensions of a "previous activations tensor" or
+   *  the "previous neuron dimensions."
+   */
+  std::vector<int> get_input_dims(int input_index = 0) const;
+  /** Get size of an input tensor.
+   *  E.g. get the size of a "previous activations tensor" or
+   *  the number of "previous neurons."
+   */
+  int get_input_size(int input_index = 0) const;
+  /** Get dimensions of an output tensor.
+   *  E.g. get the dimensions of an "activations tensor" or the
+   *  "neuron dimensions."
+   */
+  std::vector<int> get_output_dims(int output_index = 0) const;
+  /** Get size of an output tensor.
+   *  E.g. get the size of an "activations tensor" or the number of
+   *  "neurons."
+   */
+  int get_output_size(int output_index = 0) const;
+
   /** Get previous activation tensor. */
   AbsDistMat& get_prev_activations(int parent_index = 0);
   /** Get activation tensor. */
@@ -338,25 +330,6 @@ class Layer {
 
   /** Reference to LBANN communicator. */
   lbann_comm *m_comm;
-
-  /** Dimensions of activation tensor.
-   *  If a derived class has more than one activation tensor, it is
-   *  responsible for its own interpretation.
-   */
-  std::vector<int> m_neuron_dims;
-  /** Size of activation tensor. */
-  int m_num_neurons;
-  /** Number of dimensions of activation tensor. */
-  int m_num_neuron_dims;
-  /** Dimensions of previous activation tensor.
-   *  If a derived class has more than one previous activation tensor,
-   *  it is responsible for its own interpretation.
-   */
-  std::vector<int> m_prev_neuron_dims;
-  /** Size of previous activation tensor. */
-  int m_num_prev_neurons;
-  /** Number of dimensions of previous activation tensor. */
-  int m_num_prev_neuron_dims;
 
   /** Previous activation matrices.
    *  Forward propagation inputs from each parent layer. These are
@@ -407,6 +380,12 @@ class Layer {
   /** Reference to model managing this layer. */
   model *m_model = nullptr;
 
+  /** Set dimensions of an output tensor.
+   *  E.g. set the dimensions of an "activations tensor" or the
+   *  "neuron dimensions."
+   */
+  void set_output_dims(std::vector<int> dims, int output_index = 0);
+
   /** Setup data for forward propagation.
    *  Base method gets previous activations from parent layers and
    *  resizes activations for the current mini-batch size.
@@ -425,9 +404,9 @@ class Layer {
    */
   virtual void setup_pointers();
   /** Setup tensor dimensions
-   *  Called by the setup function. The base method sets the
-   *  dimensions of the activation tensors equal to the dimensions of
-   *  the first previous activation tensor.
+   *  Called by the setup function. If there are any input tensors,
+   *  the base method sets all uninitialized output tensor dimensions
+   *  equal to the first input tensor dimensions.
    */
   virtual void setup_dims();
   /** Instantiate distributed matrices.
@@ -485,6 +464,9 @@ class Layer {
 
   /** Whether current layer is using a GPU implementation. */
   bool m_using_gpus;
+
+  /** Dimensions of output tensors. */
+  std::vector<std::vector<int>> m_output_dims_list;
 
   /** Instantiate distributed matrices. */
   template <data_layout T, El::Device Dev>

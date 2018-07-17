@@ -46,22 +46,12 @@ class uniform_layer : public transform_layer {
 
  public:
   uniform_layer(lbann_comm *comm,
-                 const std::vector<int>& neuron_dims,
-                 DataType min = DataType(0),
-                 DataType max = DataType(1))
+                std::vector<int> dims,
+                DataType min = DataType(0),
+                DataType max = DataType(1))
     : transform_layer(comm), m_min(min), m_max(max) {
-
-    // Record neuron dimensions
-    this->m_neuron_dims = neuron_dims;
-    this->m_num_neuron_dims = neuron_dims.size();
-    this->m_num_neurons = std::accumulate(neuron_dims.begin(),
-                                          neuron_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
-
-    // Uniform layer has no parents
+    set_output_dims(dims);
     m_expected_num_parent_layers = 0;
-
   }
   uniform_layer* copy() const override { return new uniform_layer(*this); }
   std::string get_type() const override { return "uniform"; }
@@ -79,17 +69,6 @@ class uniform_layer : public transform_layer {
   }
 
  protected:
-
-  void setup_dims() override {
-    const auto neuron_dims = this->m_neuron_dims;
-    transform_layer::setup_dims();
-    this->m_neuron_dims = neuron_dims;
-    this->m_num_neuron_dims = neuron_dims.size();
-    this->m_num_neurons = std::accumulate(neuron_dims.begin(),
-                                          neuron_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
-  }
 
   void fp_compute() override {
     const auto& mean = (m_max + m_min) / 2;

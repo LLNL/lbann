@@ -43,21 +43,11 @@ class bernoulli_layer : public transform_layer {
 
  public:
   bernoulli_layer(lbann_comm *comm,
-                 const std::vector<int>& neuron_dims,
-                 DataType prob = DataType(0.5))
+                  std::vector<int> dims,
+                  DataType prob = DataType(0.5))
     : transform_layer(comm), m_prob(prob) {
-
-    // Record neuron dimensions
-    this->m_neuron_dims = neuron_dims;
-    this->m_num_neuron_dims = neuron_dims.size();
-    this->m_num_neurons = std::accumulate(neuron_dims.begin(),
-                                          neuron_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
-
-    // Bernoulli layer has no parents
+    set_output_dims(dims);
     m_expected_num_parent_layers = 0;
-
   }
   bernoulli_layer* copy() const override { return new bernoulli_layer(*this); }
   std::string get_type() const override { return "Bernoulli"; }
@@ -74,17 +64,6 @@ class bernoulli_layer : public transform_layer {
   }
 
  protected:
-
-  void setup_dims() override {
-    const auto neuron_dims = this->m_neuron_dims;
-    transform_layer::setup_dims();
-    this->m_neuron_dims = neuron_dims;
-    this->m_num_neuron_dims = neuron_dims.size();
-    this->m_num_neurons = std::accumulate(neuron_dims.begin(),
-                                          neuron_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
-  }
 
   void fp_compute() override {
     auto& output = get_activations();
