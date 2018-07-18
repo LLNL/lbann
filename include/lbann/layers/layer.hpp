@@ -127,16 +127,10 @@ class Layer {
   virtual void summarize_matrices(lbann_summary& summarizer, int step);
 
   /** Setup layer members.
-   *  By default, this calls the setup_pointers, setup_dims,
-   *  setup_matrices, setup_data, and setup_gpu (if needed)
-   *  functions. Unless the setup_pointers function has been replaced
-   *  in an inherited class, it is assumed that pointers to
-   *  parent/child layers have already been initialized.
-   *
-   *  If the layer has already been setup, this function should
-   *  destroy all layer members and reinitialize them. However, it is
-   *  not guaranteed that derived classes will obey this
-   *  behavior. Caveat emptor.
+   *  This calls the 'setup_pointers', 'setup_dims', 'setup_matrices',
+   *  'setup_data', and 'setup_gpu' (if needed) functions. It is
+   *  assumed that pointers to parent/child layers have already been
+   *  initialized.
    */
   virtual void setup();
   /** Check that the setup is reasonable. */
@@ -342,34 +336,39 @@ class Layer {
    */
   virtual void bp_setup_data(int mini_batch_size);
 
-  /** Setup pointers to parent and child layers.
-   *  Called by the setup function. The base method checks that the
-   *  number of parents and children are valid. Pointers to the
-   *  parent/child layers are assumed to be already initialized.
+  /** Setup layer pointers.
+   *  Called by the 'setup' function. Pointers to parent/child layers
+   *  are assumed to be already initialized.
    */
   virtual void setup_pointers();
   /** Setup tensor dimensions
-   *  Called by the setup function. If there are any input tensors,
+   *  Called by the 'setup' function. If there are any input tensors,
    *  the base method sets all uninitialized output tensor dimensions
    *  equal to the first input tensor dimensions.
    */
   virtual void setup_dims();
-  /** Instantiate distributed matrices.
-   *  If the layer has already been setup, this function will destroy
-   *  and reinstantiate all matrices.
+  /** Setup distributed matrices.
+   *  Called by the 'setup' function. Each distributed matrix is
+   *  constructed by calling the 'construct_matrix' function. If any
+   *  matrices have already been setup, they are destroy and
+   *  reinstantiated.
    */
   virtual void setup_matrices(const El::Grid& grid);
+  /** Construct distributed matrix.
+   *  Called by the 'setup_matrices' function. 'type' is one of the
+   *  following: "input", "output", "gradient_wrt_output",
+   *  "gradient_wrt_input".
+   */
+  virtual std::unique_ptr<AbsDistMat> construct_matrix(const El::Grid& grid,
+                                                       std::string type,
+                                                       El::Int index);
   /** Setup layer data.
-   *  Called by the setup function. The base method sets the previous
-   *  activation, activation, previous error signal, and error signal
-   *  matrices to zero matrices with the proper dimensions. Matrix
-   *  buffers are pinned if needed for GPU transfers.
+   *  Called by the 'setup' function. Resizes matrices to the
+   *  appropriate dimensions.
    */
   virtual void setup_data();
   /** Setup GPU objects.
-   *  Called by the setup function if GPUs are enabled. The base
-   *  method initializes GPU matrices for the previous activations,
-   *  activations, previous error signals, and error signals.
+   *  Called by the 'setup' function if the layer is on GPUs.
    */
   virtual void setup_gpu() {}
 
