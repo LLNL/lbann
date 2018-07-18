@@ -73,7 +73,7 @@ WITH_CONDUIT=OFF
 WITH_TBINF=OFF
 RECONFIGURE=0
 # In case that autoconf fails during on-demand buid on surface, try the newer
-# version of autoconf installed under '/p/lscratche/brainusr/autoconf/bin'
+# version of autoconf installed under '/p/lscratchh/brainusr/autoconf/bin'
 # by putting it at the beginning of the PATH or use the preinstalled library
 # by enabling LIBJPEG_TURBO_DIR
 WITH_LIBJPEG_TURBO=ON
@@ -83,7 +83,7 @@ WITH_LIBJPEG_TURBO=ON
 function version_gt() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; }
 
 if [ "${CLUSTER}" == "surface" ]; then
-    AUTOCONF_CUSTOM_DIR=/p/lscratche/brainusr/autoconf/bin
+    AUTOCONF_CUSTOM_DIR=/p/lscratchh/brainusr/autoconf/bin
     AUTOCONF_VER_DEFAULT=`autoconf --version | awk '(FNR==1){print $NF}'`
     AUTOCONF_VER_CUSTOM=`${AUTOCONF_CUSTOM_DIR}/autoconf --version | awk '(FNR==1){print $NF}'`
 
