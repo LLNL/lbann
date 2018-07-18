@@ -68,7 +68,7 @@ class Layer {
   Layer(lbann_comm *comm);
   Layer(const Layer& other);
   Layer& operator=(const Layer& other);
-  virtual ~Layer();
+  virtual ~Layer() = default;
 
   /** Copy function.
    *  This function dynamically allocates memory for a layer instance
@@ -167,7 +167,7 @@ class Layer {
   virtual void reset_counters();
 
   /** Whether the layer is using a GPU implementation. */
-  inline bool using_gpus() const { return m_using_gpus; }
+  inline bool using_gpus() const { return get_device_allocation() == El::Device::GPU; }
 
   /** Get expected number of parent layers.
    *  A negative value indicates no limit.
@@ -193,24 +193,6 @@ class Layer {
 
   /** Write layer to proto file */
   virtual void write_proto(lbann_data::Layer* proto) const;
-
-  /** Send forward propagation output to a child layer.
-   *  On output, fp_output is either a matrix view or copy of the
-   *  appropriate activation tensor.
-   */
-  virtual void get_fp_output(AbsDistMat& fp_output, const Layer* child) const;
-  /** Send backward propagation output to a parent layer.
-   *  On output, bp_output is either a matrix view or copy of the
-   *  appropriate error signal tensor.
-   */
-  virtual void get_bp_output(AbsDistMat& bp_output, const Layer* parent) const;
-
-  /** Add to the layer's error signal. */
-  virtual void add_to_error_signal(const AbsDistMat& error_signals,
-                                   DataType scale = DataType(1),
-                                   int parent_index = 0) {
-    El::Axpy(scale, error_signals, *m_error_signals[parent_index]);
-  }
 
   /** Get parent layers. */
   inline std::vector<const Layer*>& get_parent_layers() { return m_parent_layers; }
@@ -286,37 +268,29 @@ class Layer {
    */
   int get_output_size(int output_index = 0) const;
 
-  /** Get previous activation tensor. */
-  AbsDistMat& get_prev_activations(int parent_index = 0);
   /** Get activation tensor. */
   AbsDistMat& get_activations(int child_index = 0);
-  /** Get previous error signal tensor. */
-  AbsDistMat& get_prev_error_signals(int child_index = 0);
   /** Get error signal tensor. */
   AbsDistMat& get_error_signals(int parent_index = 0);
-  /** Get previous activation tensor. (const) */
+  /** Get previous activation tensor. */
   const AbsDistMat& get_prev_activations(int parent_index = 0) const;
-  /** Get activation tensor. (const) */
+  /** Get activation tensor. */
   const AbsDistMat& get_activations(int child_index = 0) const;
-  /** Get previous error signal tensor. (const) */
+  /** Get previous error signal tensor. */
   const AbsDistMat& get_prev_error_signals(int child_index = 0) const;
-  /** Get error signal tensor. (const) */
+  /** Get error signal tensor. */
   const AbsDistMat& get_error_signals(int parent_index = 0) const;
-  /** Get local portion of previous activation tensor. */
-  AbsMat& get_local_prev_activations(int parent_index = 0);
   /** Get local portion of activation tensor. */
   AbsMat& get_local_activations(int child_index = 0);
-  /** Get local portion of previous error signal tensor. */
-  AbsMat& get_local_prev_error_signals(int child_index = 0);
   /** Get local portion of error signal tensor. */
   AbsMat& get_local_error_signals(int parent_index = 0);
-  /** Get local portion of previous activation tensor. (const) */
+  /** Get local portion of previous activation tensor. */
   const AbsMat& get_local_prev_activations(int parent_index = 0) const;
-  /** Get local portion of activation tensor. (const) */
+  /** Get local portion of activation tensor. */
   const AbsMat& get_local_activations(int child_index = 0) const;
-  /** Get local portion of previous error signal tensor. (const) */
+  /** Get local portion of previous error signal tensor. */
   const AbsMat& get_local_prev_error_signals(int child_index = 0) const;
-  /** Get local portion of error signal tensor. (const) */
+  /** Get local portion of error signal tensor. */
   const AbsMat& get_local_error_signals(int parent_index = 0) const;
 
   /** Get reference to LBANN communicator. */
@@ -330,35 +304,6 @@ class Layer {
 
   /** Reference to LBANN communicator. */
   lbann_comm *m_comm;
-
-  /** Previous activation matrices.
-   *  Forward propagation inputs from each parent layer. These are
-   *  typically matrix views where each column is a flattened tensor
-   *  corresponding to a mini-batch sample. The matrices are owned by
-   *  the layer.
-   */
-  std::vector<AbsDistMat*> m_prev_activations;
-  /** Activation matrices.
-   *  Forward propagation outputs to each child layer. These are
-   *  typically matrices where each column is a flattened tensor
-   *  corresponding to a mini-batch sample. The matrices are owned by
-   *  the layer.
-   */
-  std::vector<AbsDistMat*> m_activations;
-  /** Error signal matrices.
-   *  Backward propagation inputs from each child layer. These are
-   *  typically matrix views where each column is a flattened tensor
-   *  corresponding to a mini-batch sample. The matrices are owned by
-   *  the layer.
-   */
-  std::vector<AbsDistMat*> m_prev_error_signals;
-  /** Error signal matrices.
-   *  Backward propagation outputs to each parent layer. These are
-   *  typically matrices where each column is a flattened tensor
-   *  corresponding to a mini-batch sample. The matrices are owned by
-   *  the layer.
-   */
-  std::vector<AbsDistMat*> m_error_signals;
 
   /** References to layer weights. */
   std::vector<weights*> m_weights;
@@ -410,9 +355,8 @@ class Layer {
    */
   virtual void setup_dims();
   /** Instantiate distributed matrices.
-   *  If the layer has already been setup, this function should
-   *  destroy all matrices and reinstantiate them. However, it is not
-   *  guaranteed that derived classes will obey this behavior.
+   *  If the layer has already been setup, this function will destroy
+   *  and reinstantiate all matrices.
    */
   virtual void setup_matrices(const El::Grid& grid);
   /** Setup layer data.
@@ -462,18 +406,30 @@ class Layer {
 
  private:
 
-  /** Whether current layer is using a GPU implementation. */
-  bool m_using_gpus;
-
   /** Dimensions of output tensors. */
   std::vector<std::vector<int>> m_output_dims_list;
 
-  /** Instantiate distributed matrices. */
-  template <data_layout T, El::Device Dev>
-  void instantiate_matrices(const El::Grid& grid);
+  /** Input tensors.
+   *  Each matrix column corresponds to a flattened mini-batch sample.
+   */
+  std::vector<std::unique_ptr<AbsDistMat>> m_inputs;
+  /** Output tensors.
+   *  Each matrix column corresponds to a flattened mini-batch sample.
+   */
+  std::vector<std::unique_ptr<AbsDistMat>> m_outputs;
+  /** Objective function gradients w.r.t. the output tensors.
+   *  Each matrix column corresponds to a flattened mini-batch sample.
+   */
+  std::vector<std::unique_ptr<AbsDistMat>> m_gradient_wrt_outputs;
+  /** Objective function gradients w.r.t. the input tensors.
+   *  Each matrix column corresponds to a flattened mini-batch sample.
+   */
+  std::vector<std::unique_ptr<AbsDistMat>> m_gradient_wrt_inputs;
 
-  /** Deallocate distributed matrices. */
-  void deallocate_matrices();
+  /** Get activation tensor corresponding to child layer. */
+  const AbsDistMat& get_activations(const Layer& child) const;
+  /** Get error signal tensor corresponding to parent layer. */
+  const AbsDistMat& get_error_signals(const Layer& parent) const;
 
 };
 

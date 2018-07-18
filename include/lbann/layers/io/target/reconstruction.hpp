@@ -73,7 +73,6 @@ class reconstruction_layer : public generic_target_layer {
 
   void bp_compute() override {}
 
-  AbsDistMat& get_ground_truth() override { return get_prev_activations(1); }
   const AbsDistMat& get_ground_truth() const override { return get_prev_activations(1); }
 
 public:
