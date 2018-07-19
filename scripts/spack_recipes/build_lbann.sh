@@ -1,8 +1,12 @@
 #!/bin/bash
 
+set -e
+
 if [ ! -z "$bamboo_SPACK_ROOT" ]; then
     . $bamboo_SPACK_ROOT/share/spack/setup-env.sh
 fi
+
+CLUSTER=`hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g'`
 
 SPACK_RECIPES=`dirname ${0}`
 #Set Script Name variable
@@ -19,11 +23,15 @@ fi
 BLAS=openblas
 BUILD_TYPE=Release
 COMPILER=gcc@4.9.3
-DTYPE=4
+DTYPE=float
 EL_VER=develop
-MPI=mvapich2
+if [ "${CLUSTER}" == "ray" -o "${CLUSTER}" == "sierra" ]; then
+  MPI=spectrum-mpi
+else
+  MPI=mvapich2
+fi
 VARIANTS=
-GPU=0
+GPU=0 # usually ignored
 
 #Help function
 function HELP {
@@ -90,20 +98,24 @@ shift $((OPTIND-1))
 # now do something with $@
 
 # Figure out which cluster we are on
-CLUSTER=`hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g'`
 ARCH=`uname -m`
 
 PLATFORM=
 FEATURE=
-if [ "${GPU}" == "1" -o "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" ]; then
+if [ "${GPU}" == "1" -o "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" -o "${CLUSTER}" == "sierra" -o "${CLUSTER}" == "pascal" ]; then
   if [ "${CLUSTER}" == "flash" ]; then
     PLATFORM="+gpu ^cuda@7.5 ^cudnn@5.1"
     FEATURE="_gpu_cuda-7.5_cudnn-5.1"
+  elif [ "${CLUSTER}" == "sierra" -o "${CLUSTER}" == "ray" ]; then
+    PLATFORM="+gpu ^cuda@9.2.64 ^cudnn@7.0"
+    FEATURE="_gpu_cuda-9.2.64_cudnn-7.0"
   else
     PLATFORM="+gpu"
     FEATURE="_gpu"
   fi
-  EL_VER="${EL_VER}+cublas"
+  EL_VER="${EL_VER}+cuda"
+else
+  PLATFORM="~gpu"
 fi
 
 C_FLAGS=
@@ -122,7 +134,7 @@ case ${BUILD_TYPE} in
     if [[ (${COMPILER} == gcc@*) ]]; then
         if [ "${CLUSTER}" == "catalyst" ]; then
             ARCH_FLAGS="-march=ivybridge -mtune=ivybridge"
-        elif [ "${CLUSTER}" == "quartz" ]; then
+        elif [ "${CLUSTER}" == "quartz"  -o "${CLUSTER}" == "pascal" ]; then
             ARCH_FLAGS="-march=broadwell -mtune=broadwell"
         elif [ "${CLUSTER}" == "surface" ]; then
             ARCH_FLAGS="-march=sandybridge -mtune=sandybridge"
@@ -132,7 +144,7 @@ case ${BUILD_TYPE} in
     elif [[ (${COMPILER} == intel@*) ]]; then
         if [ "${CLUSTER}" == "catalyst" ]; then
             ARCH_FLAGS="-march=corei7-avx -mtune=ivybridge"
-        elif [ "${CLUSTER}" == "quartz" ]; then
+        elif [ "${CLUSTER}" == "quartz"  -o "${CLUSTER}" == "pascal" ]; then
             ARCH_FLAGS="-march=core-avx2 -mtune=broadwell"
         elif [ "${CLUSTER}" == "surface" ]; then
             ARCH_FLAGS="-march=corei7-avx -mtune=sandybridge"
@@ -142,7 +154,7 @@ case ${BUILD_TYPE} in
     elif [[ ${COMPILER} == clang@* ]]; then
         if [ "${CLUSTER}" == "catalyst" -o "${CLUSTER}" == "surface" ]; then
             ARCH_FLAGS="-mavx -march=native"
-        elif [ "${CLUSTER}" == "quartz" -o "${CLUSTER}" == "flash" ]; then
+        elif [ "${CLUSTER}" == "quartz" -o "${CLUSTER}" == "flash"  -o "${CLUSTER}" == "pascal" ]; then
             ARCH_FLAGS="-mavx2 -march=native"
         fi
     fi
@@ -179,9 +191,18 @@ if [ "${SPACK_DIRTY}" == "1" ]; then
   SPACK_SETUP_FLAGS="--dirty"
 fi
 
-SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ^elemental@${EL_VER} blas=${BLAS} ^${MPI}"
+if [ "${CLUSTER}" == "ray" ]; then
+  MPI="spectrum-mpi@2018.04.27"
+fi
+
+SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ^hydrogen@${EL_VER} build_type=${BUILD_TYPE} blas=${BLAS} ^${MPI}"
 # Disable the extra compiler flags until spack supports propagating flags properly
 #SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ${SPACK_CFLAGS} ${SPACK_CXXFLAGS} ${SPACK_FFLAGS} ^elemental@${EL_VER} blas=${BLAS} ^${MPI}"
+
+# Use older cmake to avoid passing -pthread to nvcc
+if [ "${CLUSTER}" == "ray" -o "${CLUSTER}" == "sierra" ]; then
+  SPACK_OPTIONS="$SPACK_OPTIONS ^cmake@3.9.0"
+fi
 
 SPEC="spack spec ${SPACK_OPTIONS}"
 CMD="spack setup ${SPACK_SETUP_FLAGS} ${SPACK_OPTIONS}"
@@ -230,6 +251,13 @@ if [ ! -z ${PATH_TO_SRC} -a -d ${PATH_TO_SRC}/src ]; then
 fi
 
 # Deal with the fact that spack should not install a package when doing setup"
-FIX="spack uninstall -y lbann %${COMPILER}"
+FIX="spack uninstall --all -y lbann %${COMPILER} build_type=${BUILD_TYPE}"
 echo $FIX
-eval $FIX
+if [ ! -z "$bamboo_SPACK_ROOT" ]; then
+    eval $FIX &> /dev/null
+    exit 0
+else
+    eval $FIX
+fi
+
+

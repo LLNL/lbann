@@ -40,7 +40,8 @@ void lbann_callback_timer::batch_timing_end(model *m) {
   const EvalType mb_time = get_time() - m_batch_start_time;
   m_batch_times.push_back(mb_time);
   if (m_summarizer != nullptr) {
-    m_summarizer->reduce_scalar("minibatch_time", mb_time, m->get_cur_step());
+    m_summarizer->reduce_scalar("minibatch_time", mb_time, m->get_cur_step()-1);
+    m_summarizer->reduce_scalar_all("minibatch_time", mb_time, m->get_cur_step()-1);
   }
 }
 
@@ -85,7 +86,7 @@ void lbann_callback_timer::timing_end(model *m) {
   std::string mode_string;
   switch(m->get_execution_mode()) {
   case execution_mode::training:
-    mode_string = "training epoch " + std::to_string(m->get_cur_epoch());
+    mode_string = "training epoch " + std::to_string(m->get_cur_epoch()-1);
     break;
   case execution_mode::validation:
     mode_string = "validation";
@@ -162,7 +163,7 @@ void lbann_callback_timer::timing_end(model *m) {
 
     }
   }
-  
+
 }
 
 }  // namespace lbann

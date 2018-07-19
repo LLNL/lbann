@@ -44,21 +44,15 @@ namespace lbann {
 class io_layer : public Layer {
  protected:
   bool m_data_set_spans_models;
-
- private:
-  bool m_for_regression;
+  data_reader_target_mode m_data_reader_mode;
 
  public:
   io_layer(lbann_comm *comm,
            bool data_set_spans_models = true,
-           bool for_regression = false)
+           data_reader_target_mode data_reader_mode = data_reader_target_mode::CLASSIFICATION)
     : Layer(comm),
       m_data_set_spans_models(data_set_spans_models),
-      m_for_regression(for_regression) {
-  }
-
-  template<data_layout T_layout> inline void initialize_distributed_matrices() {
-    Layer::initialize_distributed_matrices<T_layout>();
+      m_data_reader_mode(data_reader_mode) {
   }
 
   /**
@@ -97,7 +91,7 @@ class io_layer : public Layer {
   /**
    * Get the dimensions of the underlying data.
    */
-  virtual const std::vector<int> get_data_dims() const = 0;
+  virtual const std::vector<int> get_data_dims(int child_index = 0) const = 0;
 
   std::string get_topo_description() const override = 0;
 
@@ -182,7 +176,7 @@ class io_layer : public Layer {
   }
 #endif
   bool is_for_regression() const {
-    return m_for_regression;
+    return (m_data_reader_mode == data_reader_target_mode::REGRESSION);
   }
 };
 

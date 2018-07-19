@@ -112,7 +112,7 @@ bool process_images(const image_list& img_list, const params& mp,
 
     buf.clear();
     // Load an image bytestream into memory
-    bool ok = read_file(root_data_path + filenames[i], buf);
+    bool ok = lbann::load_file(root_data_path + filenames[i], buf);
     if (!ok) {
       ms.abort_by_me("Failed to load " + root_data_path + filenames[i]);
     }

@@ -27,11 +27,21 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/image_utils.hpp"
+#include "lbann/utils/exception.hpp"
+
+#define _THROW_EXCEPTION_NO_OPENCV_() { \
+  std::stringstream err; \
+  err << __FILE__ << " " << __LINE__ \
+      << " :: not compiled with LBANN_ENABLE_OPENCV!"; \
+  throw lbann_exception(err.str()); \
+}
 
 
-bool lbann::image_utils::loadIMG(const std::string& Imagefile, int& Width, int& Height, bool Flip, unsigned char *&Pixels) {
-#ifdef __LIB_OPENCV
-  cv::Mat image = cv::imread(Imagefile, _LBANN_CV_COLOR_);
+namespace lbann {
+
+bool image_utils::loadIMG(const std::string& Imagefile, int& Width, int& Height, bool Flip, unsigned char *&Pixels) {
+#ifdef LBANN_HAS_OPENCV
+  cv::Mat image = cv_utils::lbann_imread(Imagefile, _LBANN_CV_COLOR_);
   if (image.empty()) {
     return false;
   }
@@ -51,12 +61,13 @@ bool lbann::image_utils::loadIMG(const std::string& Imagefile, int& Width, int& 
 
   return true;
 #else
+  _THROW_EXCEPTION_NO_OPENCV_();
   return false;
 #endif
 }
 
-bool lbann::image_utils::loadIMG(std::vector<unsigned char>& image_buf, int& Width, int& Height, bool Flip, unsigned char *&Pixels) {
-#ifdef __LIB_OPENCV
+bool image_utils::loadIMG(std::vector<unsigned char>& image_buf, int& Width, int& Height, bool Flip, unsigned char *&Pixels) {
+#ifdef LBANN_HAS_OPENCV
   cv::Mat image = cv::imdecode(image_buf, _LBANN_CV_COLOR_);
   //cv::Mat image = cv::imdecode(image_buf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
   if (image.empty()) {
@@ -78,12 +89,13 @@ bool lbann::image_utils::loadIMG(std::vector<unsigned char>& image_buf, int& Wid
 
   return true;
 #else
+  _THROW_EXCEPTION_NO_OPENCV_();
   return false;
 #endif
 }
 
-bool lbann::image_utils::saveIMG(const std::string& Imagefile, int Width, int Height, bool Flip, unsigned char *Pixels) {
-#ifdef __LIB_OPENCV
+bool image_utils::saveIMG(const std::string& Imagefile, int Width, int Height, bool Flip, unsigned char *Pixels) {
+#ifdef LBANN_HAS_OPENCV
   cv::Mat image = cv::Mat(Height, Width, CV_8UC3);
 
   for (int y = 0; y < Height; y++) {
@@ -100,32 +112,99 @@ bool lbann::image_utils::saveIMG(const std::string& Imagefile, int Width, int He
 
   return true;
 #else
+  _THROW_EXCEPTION_NO_OPENCV_();
   return false;
 #endif
 }
 
-bool lbann::image_utils::load_image(const std::string& filename,
-                                    int& Width, int& Height, int& Type, cv_process& pp, std::vector<uint8_t>& buf) {
-#ifdef __LIB_OPENCV
-  cv::Mat image = cv::imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
-  bool ok = !image.empty() && pp.preprocess(image);
-  ok = ok && cv_utils::copy_cvMat_to_buf(image, buf, pp);
+
+#ifdef LBANN_HAS_OPENCV
+bool image_utils::process_image(cv::Mat& image, int& Width, int& Height, int& Type, cv_process& pp, ::Mat& out) {
+  bool ok1 = !image.empty() && pp.preprocess(image);
+  bool ok2 = ok1 && cv_utils::copy_cvMat_to_buf(image, out, pp);
+  // Disabling normalizer is needed because normalizer is not necessarily
+  // called during preprocessing but implicitly applied during data copying to
+  // reduce overhead.
   pp.disable_lazy_normalizer();
 
-  _LBANN_MILD_EXCEPTION(!ok, "Image preprocessing or copying failed.", false)
+  if (!ok2) {
+    throw lbann_exception(std::string("image_utils::process_image(): image ") +
+      (image.empty()? "is empty." :
+                      (ok1? "copying failed." :
+                            "preprocessing failed.")));
+  }
 
   Width  = image.cols;
   Height = image.rows;
   Type   = image.type();
-  return ok;
-#else
-  return false;
-#endif // __LIB_OPENCV
+
+  return ok2;
 }
 
-bool lbann::image_utils::save_image(const std::string& filename,
+bool image_utils::process_image(cv::Mat& image, int& Width, int& Height, int& Type, cv_process& pp, std::vector<uint8_t>& out) {
+  bool ok1 = !image.empty() && pp.preprocess(image);
+  bool ok2 = ok1 && cv_utils::copy_cvMat_to_buf(image, out, pp);
+  pp.disable_lazy_normalizer();
+
+  if (!ok2) {
+    throw lbann_exception(std::string("image_utils::process_image(): image ") +
+      (image.empty()? "is empty." :
+                      (ok1? "copying failed." :
+                            "preprocessing failed.")));
+  }
+
+  Width  = image.cols;
+  Height = image.rows;
+  Type   = image.type();
+
+  return ok2;
+}
+
+bool image_utils::process_image(cv::Mat& image, int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<::Mat>& out) {
+  std::vector<cv::Mat> patches;
+  bool ok1 = !image.empty() && pp.preprocess(image, patches);
+  bool ok2 = ok1 && (patches.size() != 0u) && (patches.size() == out.size());
+  bool ok3 = ok2;
+
+  for(size_t i=0u; ok3 && (i < patches.size()); ++i) {
+    ok3 = cv_utils::copy_cvMat_to_buf(patches[i], out[i], pp);
+  }
+  pp.disable_lazy_normalizer();
+
+  if (!ok3) {
+    throw lbann_exception(std::string("image_utils::process_image(): image ") +
+      (image.empty()? "is empty." :
+                      (ok1? (ok2? "copying failed." :
+                                  "extracted to invalid number of patches: " +
+                                   std::to_string(patches.size()) + " != " +
+                                   std::to_string(out.size())) :
+                            "preprocessing failed.")));
+  }
+
+  Width  = patches[0].cols;
+  Height = patches[0].rows;
+  Type   = patches[0].type();
+
+  return ok3;
+}
+#endif // LBANN_HAS_OPENCV
+
+
+bool image_utils::load_image(const std::string& filename,
+                                    int& Width, int& Height, int& Type, cv_process& pp, std::vector<uint8_t>& buf) {
+#ifdef LBANN_HAS_OPENCV
+  cv::Mat image = cv_utils::lbann_imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+
+  return process_image(image, Width, Height, Type, pp, buf);
+#else
+  _THROW_EXCEPTION_NO_OPENCV_();
+  return false;
+#endif // LBANN_HAS_OPENCV
+}
+
+bool image_utils::save_image(const std::string& filename,
                                     const int Width, const int Height, const int Type, cv_process& pp, const std::vector<uint8_t>& buf) {
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
   pp.determine_inverse_lazy_normalization();
   cv::Mat image = cv_utils::copy_buf_to_cvMat(buf, Width, Height, Type, pp);
   bool ok = !image.empty() && pp.postprocess(image);
@@ -134,8 +213,9 @@ bool lbann::image_utils::save_image(const std::string& filename,
 
   return (ok && cv::imwrite(filename, image));
 #else
+  _THROW_EXCEPTION_NO_OPENCV_();
   return false;
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
 }
 
 /**
@@ -146,26 +226,16 @@ bool lbann::image_utils::save_image(const std::string& filename,
  *  @param pp       The pre-processing parameters
  *  @param data     The pre-processed image data to be stored in El::Matrix<DataType> format
  */
-bool lbann::image_utils::load_image(const std::string& filename,
+bool image_utils::load_image(const std::string& filename,
                                     int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data) {
-#ifdef __LIB_OPENCV
-  cv::Mat image = cv::imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
-  bool ok = !image.empty() && pp.preprocess(image);
-  ok = ok && cv_utils::copy_cvMat_to_buf(image, data, pp);
-  // Disabling normalizer is needed because normalizer is not necessarily
-  // called during preprocessing but implicitly applied during data copying to
-  // reduce overhead.
-  pp.disable_lazy_normalizer();
+#ifdef LBANN_HAS_OPENCV
+  cv::Mat image = cv_utils::lbann_imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
 
-  _LBANN_MILD_EXCEPTION(!ok, "Image preprocessing or copying failed.", false)
-
-  Width  = image.cols;
-  Height = image.rows;
-  Type   = image.type();
-  return ok;
+  return process_image(image, Width, Height, Type, pp, data);
 #else
+  _THROW_EXCEPTION_NO_OPENCV_();
   return false;
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
 }
 
 /**
@@ -176,35 +246,39 @@ bool lbann::image_utils::load_image(const std::string& filename,
  *  @param pp       The pre-processing parameters
  *  @param data     The pre-processed image data to be stored in El::Matrix<DataType> format
  */
-bool lbann::image_utils::load_image(const std::string& filename,
+bool image_utils::load_image(const std::string& filename,
                                     int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<::Mat>& data) {
-#ifdef __LIB_OPENCV
-  cv::Mat image = cv::imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+#ifdef LBANN_HAS_OPENCV
+  cv::Mat image = cv_utils::lbann_imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
 
-  std::vector<cv::Mat> patches;
-  bool ok = !image.empty() && pp.preprocess(image, patches);
-  if ((patches.size() == 0u) || (patches.size() != data.size())) {
-    return false;
-  }
+  return process_image(image, Width, Height, Type, pp, data);
+#else
+  _THROW_EXCEPTION_NO_OPENCV_();
+  return false;
+#endif // LBANN_HAS_OPENCV
+}
 
-  for(size_t i=0u; ok && (i < patches.size()); ++i) {
-    ok = cv_utils::copy_cvMat_to_buf(patches[i], data[i], pp);
-  }
+//XX
+/**
+ *  @param filename The name of the image file to read in
+ *  @param Width    The width of a patch from the image read
+ *  @param Height   The height of a patch from the image read
+ *  @param Type     The type of the image patches (OpenCV code used for cv::Mat)
+ *  @param pp       The pre-processing parameters
+ *  @param data     The pre-processed image data to be stored in El::Matrix<DataType> format
+ */
+bool image_utils::load_image(std::vector<unsigned char>& image_buf,
+                                    int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<::Mat>& data) {
+/*
+#ifdef LBANN_HAS_OPENCV
+  cv::Mat image = cv::imdecode(image_buf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
 
-  // Disabling normalizer is needed because normalizer is not necessarily
-  // called during preprocessing but implicitly applied during data copying to
-  // reduce overhead.
-  pp.disable_lazy_normalizer();
-
-  _LBANN_MILD_EXCEPTION(!ok, "Image preprocessing or copying failed.", false)
-
-  Width  = patches[0].cols;
-  Height = patches[0].rows;
-  Type   = patches[0].type();
-  return ok;
+  return process_image(image, Width, Height, Type, pp, data);
 #else
   return false;
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
+*/
+  return import_image(image_buf, Width, Height, Type, pp, data);
 }
 
 /**
@@ -215,9 +289,9 @@ bool lbann::image_utils::load_image(const std::string& filename,
  *  @param pp       The post-processing parameters
  *  @param data     The image data in El::Matrix<DataType> format to post-process and write
  */
-bool lbann::image_utils::save_image(const std::string& filename,
+bool image_utils::save_image(const std::string& filename,
                                     const int Width, const int Height, const int Type, cv_process& pp, const ::Mat& data) {
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
   pp.determine_inverse_lazy_normalization();
   cv::Mat image = cv_utils::copy_buf_to_cvMat(data, Width, Height, Type, pp);
   bool ok = !image.empty() && pp.postprocess(image);
@@ -226,8 +300,9 @@ bool lbann::image_utils::save_image(const std::string& filename,
 
   return (ok && cv::imwrite(filename, image));
 #else
+  _THROW_EXCEPTION_NO_OPENCV_();
   return false;
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
 }
 
 /**
@@ -240,23 +315,16 @@ bool lbann::image_utils::save_image(const std::string& filename,
  *  @param pp      The pre-processing parameters
  *  @param data    The pre-processed image data. A set of sub-matrix Views can be used to store the data.
  */
-bool lbann::image_utils::import_image(cv::InputArray inbuf,
+bool image_utils::import_image(cv::InputArray inbuf,
                                       int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data) {
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
   cv::Mat image = cv::imdecode(inbuf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
-  bool ok = !image.empty() && pp.preprocess(image);
-  ok = ok && cv_utils::copy_cvMat_to_buf(image, data, pp);
-  pp.disable_lazy_normalizer();
 
-  _LBANN_MILD_EXCEPTION(!ok, "Image preprocessing or copying failed.", false)
-
-  Width  = image.cols;
-  Height = image.rows;
-  Type   = image.type();
-  return ok;
+  return process_image(image, Width, Height, Type, pp, data);
 #else
+  _THROW_EXCEPTION_NO_OPENCV_();
   return false;
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
 }
 
 /**
@@ -269,32 +337,16 @@ bool lbann::image_utils::import_image(cv::InputArray inbuf,
  *  @param pp      The pre-processing parameters
  *  @param data    The pre-processed image data. A set of sub-matrix Views can be used to store the data.
  */
-bool lbann::image_utils::import_image(cv::InputArray inbuf,
+bool image_utils::import_image(cv::InputArray inbuf,
                                       int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<::Mat>& data) {
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
   cv::Mat image = cv::imdecode(inbuf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
 
-  std::vector<cv::Mat> patches;
-  bool ok = !image.empty() && pp.preprocess(image, patches);
-  if ((patches.size() == 0u) || (patches.size() != data.size())) {
-    return false;
-  }
-
-  for(size_t i=0u; ok && (i < patches.size()); ++i) {
-    ok = cv_utils::copy_cvMat_to_buf(patches[i], data[i], pp);
-  }
-
-  pp.disable_lazy_normalizer();
-
-  _LBANN_MILD_EXCEPTION(!ok, "Image preprocessing or copying failed.", false)
-
-  Width  = patches[0].cols;
-  Height = patches[0].rows;
-  Type   = patches[0].type();
-  return ok;
+  return process_image(image, Width, Height, Type, pp, data);
 #else
+  _THROW_EXCEPTION_NO_OPENCV_();
   return false;
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
 }
 
 /**
@@ -306,9 +358,9 @@ bool lbann::image_utils::import_image(cv::InputArray inbuf,
  *  @param pp      The post-processing parameters
  *  @param data    The image data. A sub-matrix View can be passed instead of the entire matrix.
  */
-bool lbann::image_utils::export_image(const std::string& fileExt, std::vector<uchar>& outbuf,
+bool image_utils::export_image(const std::string& fileExt, std::vector<uchar>& outbuf,
                                       const int Width, const int Height, const int Type, cv_process& pp, const ::Mat& data) {
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
   pp.determine_inverse_lazy_normalization();
   cv::Mat image = cv_utils::copy_buf_to_cvMat(data, Width, Height, Type, pp);
   bool ok = !image.empty() && pp.postprocess(image);
@@ -328,6 +380,16 @@ bool lbann::image_utils::export_image(const std::string& fileExt, std::vector<uc
 
   return (ok && cv::imencode(ext, image, outbuf));
 #else
+  _THROW_EXCEPTION_NO_OPENCV_();
   return false;
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
 }
+
+
+
+bool image_utils::load_image(std::vector<unsigned char>& image_buf,
+                                    int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data) {
+  return import_image(image_buf, Width, Height, Type, pp, data);
+}
+
+} // namespace lbann

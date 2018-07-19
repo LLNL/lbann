@@ -22,31 +22,16 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// batch_normalization.cu - GPU helper routines for batch normalization layer
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "math.h"
-#include <iostream>
-#include "lbann/layers/regularizers/batch_normalization_cuda.hpp"
+#include "lbann/base.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/cuda.hpp"
 
-// Macros to check CUDA calls
-#define FORCE_CHECK_CUDA(cuda_call)                                     \
-  do {                                                                  \
-    const cudaError_t status = cuda_call;                               \
-    if (status != cudaSuccess) {                                        \
-      std::cerr << "CUDA error: " << cudaGetErrorString(status) << "\n"; \
-      std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";  \
-      cudaDeviceReset();                                                \
-      throw lbann::lbann_exception("CUDA error");                       \
-    }                                                                   \
-  } while (0)
-#ifdef LBANN_DEBUG
-#define CHECK_CUDA(cuda_call) FORCE_CHECK_CUDA(cuda_call)
-#else
-#define CHECK_CUDA(cuda_call) cuda_call
-#endif // #ifdef LBANN_DEBUG
+namespace lbann {
+
+namespace {
 
 // Atomic add functions
 #if __CUDA_ARCH__ >= 530
@@ -92,28 +77,27 @@ __device__ inline double atomic_add(double* address, double val) {
 
 // Reciprocal square root functions
 #if __CUDA_ARCH__ >= 530
-__device__ inline float reciprocal_square_root(__half x) {
+__device__ inline float rsqrt_(__half x) {
   return hrsqrt(x);
 }
 #endif // __CUDA_ARCH__ >= 530
-__device__ inline float reciprocal_square_root(float x) {
+__device__ inline float rsqrt_(float x) {
   return rsqrtf(x);
 }
-__device__ inline double reciprocal_square_root(double x) {
+__device__ inline double rsqrt_(double x) {
   return rsqrt(x);
 }
 
-namespace lbann {
-namespace batch_normalization_cuda {
-
-template <typename DataType, int block_size>
-__global__ void channel_sums_and_sqsums_kernel(
-  int height,
+/** CUDA kernel to compute channel sums.
+ *  Sums and squares of sums are used to compute mean and variance.
+ */
+template <int block_size>
+__global__ void channel_sums_kernel(
+  int channel_height,
   int width,
-  int channel_size,
-  const DataType * __restrict__ global_data,
-        DataType * __restrict__ global_sums,
-        DataType * __restrict__ global_sqsums) {
+  const DataType * __restrict__ data, int data_ldim,
+        DataType * __restrict__ sums,
+        DataType * __restrict__ sqsums) {
 
   // Indices
   const int tid = threadIdx.x;
@@ -122,25 +106,25 @@ __global__ void channel_sums_and_sqsums_kernel(
 
   // Initialize shared memory
   __shared__ DataType shared_sums[block_size];
-  __shared__ DataType shared_sqsums[block_size];
+ __shared__ DataType shared_sqsums[block_size];
 
   // Compute row sums in shared memory
-  DataType sum = DataType(0);
-  DataType sqsum = DataType(0);
-  if(gidx < channel_size) {
-    const int row = gidx + bidy * channel_size;
-    for(int col = 0; col < width; ++col) {
-      const DataType x = global_data[row + col * height];
-      sum += x;
-      sqsum += x * x;
+  DataType private_sum = DataType(0);
+  DataType private_sqsum = DataType(0);
+  if (gidx < channel_height) {
+    const int row = gidx + bidy * channel_height;
+    for (int col = 0; col < width; ++col) {
+      const auto& x = data[row + col * data_ldim];
+      private_sum += x;
+      private_sqsum += x * x;
     }
   }
-  shared_sums[tid] = sum;
-  shared_sqsums[tid] = sqsum;
+  shared_sums[tid] = private_sum;
+  shared_sqsums[tid] = private_sqsum;
 
   // Compute channel sum with shared memory reduction
-  // TODO: unroll loops
-  for(int stride = block_size / 2; stride > 0; stride /= 2) {
+  /// @todo unroll loops
+  for (int stride = block_size / 2; stride > 0; stride /= 2) {
     __syncthreads();
     if(tid < stride) {
       shared_sums[tid] += shared_sums[tid + stride];
@@ -149,174 +133,97 @@ __global__ void channel_sums_and_sqsums_kernel(
   }
 
   // Output channel sum to global memory
-  if(tid == 0) {
-    atomic_add(&global_sums[bidy], shared_sums[0]);
-    atomic_add(&global_sqsums[bidy], shared_sqsums[0]);
+  if (tid == 0) {
+    atomic_add(&sums[bidy], shared_sums[0]);
+    atomic_add(&sqsums[bidy], shared_sqsums[0]);
   }
 
 }
 
-template <typename DataType>
-void channel_sums_and_sqsums(int height,
-                             int width,
-                             int num_channels,
-                             const DataType *data_d,
-                                   DataType *sums_d,
-                                   DataType *sqsums_d,
-                             cudaStream_t stream) {
-  
-  // CUDA block size
-  const int block_size = 256;
-
-  // Clear GPU memory
-  CHECK_CUDA(cudaMemsetAsync(sums_d, 0, num_channels * sizeof(DataType), stream));
-  CHECK_CUDA(cudaMemsetAsync(sqsums_d, 0, num_channels * sizeof(DataType), stream));
-
-  // Return if there is no input data
-  if(width <= 0) return;
-
-  // Launch CUDA kernel to compute sums and sums of squares
-  const int channel_size = height / num_channels;
-  dim3 block_dims, grid_dims;
-  block_dims.x = block_size;
-  grid_dims.x = (channel_size + block_size - 1) / block_size;
-  grid_dims.y = num_channels;
-  channel_sums_and_sqsums_kernel<DataType,block_size>
-    <<<grid_dims, block_dims, 0, stream>>>
-    (height, width, channel_size, data_d, sums_d, sqsums_d);
-
-}
-
-template <typename DataType>
-__global__ void sums_to_statistics_kernel(
-  int num_entries,
-  DataType samples_per_sum,
+/** CUDA kernel to compute statistics.
+ *  On input, global_mean and global_var are assumed to contain sums
+ *  and squares of sums, respectively.
+ */
+__global__ void compute_statistics_kernel(
+  int num_sums,
+  int num_per_sum,
+  DataType epsilon,
   DataType decay,
   DataType * __restrict__ global_mean,
   DataType * __restrict__ global_var,
   DataType * __restrict__ global_running_mean,
   DataType * __restrict__ global_running_var) {
-  int gid = threadIdx.x + blockIdx.x * blockDim.x;
-  while(gid < num_entries) {
+  const DataType one = DataType(1);
+  const int gid = threadIdx.x + blockIdx.x * blockDim.x;
+  const int num_threads = blockDim.x * gridDim.x;
+  for (int i = gid; i < num_sums; i += num_threads) {
 
-    // Compute statistics
-    const DataType mean = global_mean[gid] / samples_per_sum;
-    const DataType sqmean = global_var[gid] / samples_per_sum;
-    DataType var = sqmean - mean * mean;
-    var = var > DataType(0) ? var : DataType(0);
-    var *= samples_per_sum / (samples_per_sum - DataType(1));
+    // Compute mean and variance
+    const auto& mean = global_mean[i] / num_per_sum;
+    const auto& sqmean = global_var[i] / num_per_sum;
+    auto var = num_per_sum * (sqmean - mean * mean) / (num_per_sum - 1);
+    var = var > epsilon ? var : epsilon;
     global_mean[gid] = mean;
     global_var[gid] = var;
 
     // Compute running statistics
-    DataType& running_mean = global_running_mean[gid];
-    DataType& running_var = global_running_var[gid];
-    running_mean = decay * running_mean + (DataType(1) - decay) * mean;
-    running_var = decay * running_var + (DataType(1) - decay) * var;
-    
-    gid += blockDim.x * gridDim.x;
+    auto& running_mean = global_running_mean[gid];
+    auto& running_var = global_running_var[gid];
+    running_mean = decay * running_mean + (one - decay) * mean;
+    running_var = decay * running_var + (one - decay) * var;
+
   }
+
 }
 
-template <typename DataType>
-void sums_to_statistics(int num_entries,
-                        int samples_per_sum,
-                        DataType decay,
-                        DataType *mean_d,
-                        DataType *var_d,
-                        DataType *running_mean_d,
-                        DataType *running_var_d,
-                        cudaStream_t stream) {
-  dim3 block_dims, grid_dims;
-  block_dims.x = 256;
-  grid_dims.x = (num_entries + block_dims.x - 1) / block_dims.x;
-  sums_to_statistics_kernel<DataType>
-    <<<grid_dims, block_dims, 0, stream>>>
-    (num_entries, (DataType)samples_per_sum, decay,
-     mean_d, var_d, running_mean_d, running_var_d);
-}
-
-template <typename DataType, int block_size>
+/** CUDA kernel to apply batch normalization. */
+template <int block_size>
 __global__ void batch_normalization_kernel(
-  int height,
+  int channel_height,
   int width,
-  int channel_size,
-  const DataType * __restrict__ global_prev_activations,
+  const DataType * __restrict__ global_input, int input_ldim,
   const DataType * __restrict__ global_mean,
   const DataType * __restrict__ global_var,
   DataType epsilon,
   const DataType * __restrict__ global_scale,
   const DataType * __restrict__ global_bias,
-        DataType * __restrict__ global_activations) {
+        DataType * __restrict__ global_output, int output_ldim) {
 
   // Indices
   const int gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const int bidy = blockIdx.y;
 
   // Copy batch normalization parameters to private memory
-  const DataType mean = global_mean[bidy];
-  const DataType var = global_var[bidy];
-  const DataType scale = global_scale[bidy];
-  const DataType bias = global_bias[bidy];
+  const auto& mean = global_mean[bidy];
+  const auto& var = global_var[bidy];
+  const auto& scale = global_scale[bidy];
+  const auto& bias = global_bias[bidy];
 
   // Get reciprocal of standard deviation
-  const DataType inv_stdev = reciprocal_square_root(var + epsilon);
+  const auto& inv_stdev = rsqrt_(var + epsilon);
 
   // Apply batch normalization
-  if(gidx < channel_size) {
-    const int row = gidx + bidy * channel_size;
-    for(int col = 0; col < width; ++col) {
-      const DataType x = global_prev_activations[row + col * height];
-      const DataType xhat = (x - mean) * inv_stdev;
-      const DataType y = scale * xhat + bias;
-      global_activations[row + col * height] = y;
+  if (gidx < channel_height) {
+    const int row = gidx + bidy * channel_height;
+    for (int col = 0; col < width; ++col) {
+      const auto& x = global_input[row + col * input_ldim];
+      const auto& xhat = (x - mean) * inv_stdev;
+      const auto& y = scale * xhat + bias;
+      global_output[row + col * output_ldim] = y;
     }
   }
 
 }
 
-template <typename DataType>
-void batch_normalization(int height,
-                         int width,
-                         int num_channels,
-                         const DataType *prev_activations_d,
-                         const DataType *mean_d,
-                         const DataType *var_d,
-                         DataType epsilon,
-                         const DataType *scale_d,
-                         const DataType *bias_d,
-                               DataType *activations_d,
-                         cudaStream_t stream) {
-
-  // CUDA block size
-  const int block_size = 256;
-
-  // Return if there is no input data
-  if(width <= 0) return;
-
-  // Launch CUDA kernel to apply batch normalization
-  const int channel_size = height / num_channels;
-  dim3 block_dims, grid_dims;
-  block_dims.x = block_size;
-  grid_dims.x = (channel_size + block_size - 1) / block_size;
-  grid_dims.y = num_channels;
-  batch_normalization_kernel<DataType,block_size>
-    <<<grid_dims, block_dims, 0, stream>>>
-    (height, width, channel_size,
-     prev_activations_d,
-     mean_d, var_d, epsilon,
-     scale_d, bias_d,
-     activations_d);
-
-}
-
-template <typename DataType, int block_size>
-__global__ void batch_normalization_backprop1_kernel(
-  int height,
+/** CUDA kernel to compute gradients w.r.t. batch norm parameters. */
+template <int block_size>
+__global__ void backprop1_kernel(
+  int channel_height,
   int width,
-  int channel_size,
-  const DataType * __restrict__ global_prev_activations,
-  const DataType * __restrict__ global_prev_error_signal,
+  const DataType * __restrict__ global_input,
+  int input_ldim,
+  const DataType * __restrict__ global_gradient_wrt_output,
+  int gradient_wrt_output_ldim,
   const DataType * __restrict__ global_mean,
   const DataType * __restrict__ global_var,
   DataType epsilon,
@@ -338,28 +245,29 @@ __global__ void batch_normalization_backprop1_kernel(
   __shared__ DataType shared_dvar[block_size];
 
   // Copy batch normalization parameters to private memory
-  const DataType mean = global_mean[bidy];
-  const DataType var = global_var[bidy];
-  const DataType scale = global_scale[bidy];
+  const auto& mean = global_mean[bidy];
+  const auto& var = global_var[bidy];
+  const auto& scale = global_scale[bidy];
 
   // Compute useful constants
-  const DataType inv_stdev = reciprocal_square_root(var + epsilon);
-  const DataType dvar_factor = inv_stdev * inv_stdev * inv_stdev / 2;
+  const DataType zero = DataType(0);
+  const auto& inv_stdev = rsqrt_(var + epsilon);
+  const auto& dvar_factor = inv_stdev * inv_stdev * inv_stdev / 2;
 
   // Compute row-wise gradient contributions in shared memory
-  DataType dscale = DataType(0);
-  DataType dbias = DataType(0);
-  DataType dmean = DataType(0);
-  DataType dvar = DataType(0);
-  if(gidx < channel_size) {
-    const int row = gidx + bidy * channel_size;
+  auto dscale = zero;
+  auto dbias = zero;
+  auto dmean = zero;
+  auto dvar = zero;
+  if (gidx < channel_height) {
+    const int row = gidx + bidy * channel_height;
     for(int col = 0; col < width; ++col) {
-      const DataType x = global_prev_activations[row + col * height];
-      const DataType xhat = (x - mean) * inv_stdev;
-      const DataType dy = global_prev_error_signal[row + col * height];
+      const auto& x = global_input[row + col * input_ldim];
+      const auto& xhat = (x - mean) * inv_stdev;
+      const auto& dy = global_gradient_wrt_output[row + col * gradient_wrt_output_ldim];
       dscale += dy * xhat;
       dbias += dy;
-      const DataType dxhat = dy * scale;
+      const auto& dxhat = dy * scale;
       dmean += - dxhat * inv_stdev;
       dvar += - dxhat * (x - mean) * dvar_factor;
     }
@@ -370,10 +278,10 @@ __global__ void batch_normalization_backprop1_kernel(
   shared_dvar[tid] = dvar;
 
   // Compute gradients with shared memory reduction
-  // TODO: unroll loops
-  for(int stride = block_size / 2; stride > 0; stride /= 2) {
+  // @todo unroll loops
+  for (int stride = block_size / 2; stride > 0; stride /= 2) {
     __syncthreads();
-    if(tid < stride) {
+    if (tid < stride) {
       shared_dscale[tid] += shared_dscale[tid + stride];
       shared_dbias[tid] += shared_dbias[tid + stride];
       shared_dmean[tid] += shared_dmean[tid + stride];
@@ -382,7 +290,7 @@ __global__ void batch_normalization_backprop1_kernel(
   }
 
   // Output channel sum to global memory
-  if(tid == 0) {
+  if (tid == 0) {
     atomic_add(&global_dscale[bidy], shared_dscale[0]);
     atomic_add(&global_dbias[bidy], shared_dbias[0]);
     atomic_add(&global_dmean[bidy], shared_dmean[0]);
@@ -391,253 +299,322 @@ __global__ void batch_normalization_backprop1_kernel(
 
 }
 
-template <typename DataType>
-void batch_normalization_backprop1(int height,
-                                   int width,
-                                   int num_channels,
-                                   const DataType *prev_activations_d,
-                                   const DataType *prev_error_signal_d,
-                                   const DataType *mean_d,
-                                   const DataType *var_d,
-                                   DataType epsilon,
-                                   const DataType *scale_d,
-                                         DataType *dscale_d,
-                                         DataType *dbias_d,
-                                         DataType *dmean_d,
-                                         DataType *dvar_d,
-                                   cudaStream_t stream) {
-  
-  // CUDA block size
-  const int block_size = 256;
-
-  // Clear GPU memory
-  CHECK_CUDA(cudaMemsetAsync(dscale_d, 0, num_channels * sizeof(DataType), stream));
-  CHECK_CUDA(cudaMemsetAsync(dbias_d, 0, num_channels * sizeof(DataType), stream));
-  CHECK_CUDA(cudaMemsetAsync(dmean_d, 0, num_channels * sizeof(DataType), stream));
-  CHECK_CUDA(cudaMemsetAsync(dvar_d, 0, num_channels * sizeof(DataType), stream));
-
-  // Return if there is no input data
-  if(width <= 0) return;
-
-  // Launch CUDA kernel for first phase of batch normalization backward propagation
-  const int channel_size = height / num_channels;
-  dim3 block_dims, grid_dims;
-  block_dims.x = block_size;
-  grid_dims.x = (channel_size + block_size - 1) / block_size;
-  grid_dims.y = num_channels;
-  batch_normalization_backprop1_kernel<DataType,block_size>
-    <<<grid_dims, block_dims, 0, stream>>>
-    (height, width, channel_size,
-     prev_activations_d, prev_error_signal_d,
-     mean_d, var_d, epsilon, scale_d,
-     dscale_d, dbias_d, dmean_d, dvar_d);
-
-}
-
-template <typename DataType, int block_size>
-__global__ void batch_normalization_backprop2_kernel(
-  int height,
+/** CUDA kernel to compute gradients w.r.t. input. */
+template <int block_size>
+__global__ void backprop2_kernel(
+  int channel_height,
   int local_width,
   int global_width,
-  int channel_size,
-  const DataType * __restrict__ global_prev_activations,
-  const DataType * __restrict__ global_prev_error_signal,
+  const DataType * __restrict__ global_input,
+  int input_ldim,
+  const DataType * __restrict__ global_gradient_wrt_output,
+  int gradient_wrt_output_ldim,
   const DataType * __restrict__ global_mean,
   const DataType * __restrict__ global_var,
   DataType epsilon,
   const DataType * __restrict__ global_scale,
   const DataType * __restrict__ global_dmean,
   const DataType * __restrict__ global_dvar,
-        DataType * __restrict__ global_error_signal) {
+        DataType * __restrict__ global_gradient_wrt_input,
+  int gradient_wrt_input_ldim) {
 
   // Indices
   const int gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const int bidy = blockIdx.y;
 
   // Copy batch normalization parameters to private memory
-  const DataType mean = global_mean[bidy];
-  const DataType var = global_var[bidy];
-  const DataType scale = global_scale[bidy];
-  const DataType dmean = global_dmean[bidy];
-  const DataType dvar = global_dvar[bidy];
+  const auto& mean = global_mean[bidy];
+  const auto& var = global_var[bidy];
+  const auto& scale = global_scale[bidy];
+  const auto& dmean = global_dmean[bidy];
+  const auto& dvar = global_dvar[bidy];
 
   // Compute useful constants
-  const DataType inv_stdev = reciprocal_square_root(var + epsilon);
-  const DataType dmean_term = dmean / (global_width * channel_size);
-  const DataType dvar_term = dvar * 2 / (global_width * channel_size - 1);
+  const auto& inv_stdev = rsqrt_(var + epsilon);
+  const auto& dmean_term = dmean / (global_width * channel_height);
+  const auto& dvar_term = dvar * 2 / (global_width * channel_height - 1);
 
   // Apply batch normalization
-  if(gidx < channel_size) {
-    const int row = gidx + bidy * channel_size;
-    for(int col = 0; col < local_width; ++col) {
-      const DataType x = global_prev_activations[row + col * height];
-      const DataType dy = global_prev_error_signal[row + col * height];
-      const DataType dxhat = dy * scale;
-      DataType dx = dxhat * inv_stdev;
+  if (gidx < channel_height) {
+    const int row = gidx + bidy * channel_height;
+    for (int col = 0; col < local_width; ++col) {
+      const auto& x = global_input[row + col * input_ldim];
+      const auto& dy = global_gradient_wrt_output[row + col * gradient_wrt_output_ldim];
+      const auto& dxhat = dy * scale;
+      auto dx = dxhat * inv_stdev;
       dx += dmean_term;
       dx += dvar_term * (x - mean);
-      global_error_signal[row + col * height] = dx;
+      global_gradient_wrt_input[row + col * gradient_wrt_input_ldim] = dx;
     }
   }
 
 }
 
-template <typename DataType>
-void batch_normalization_backprop2(int height,
-                                   int local_width,
-                                   int global_width,
-                                   int num_channels,
-                                   const DataType *prev_activations_d,
-                                   const DataType *prev_error_signal_d,
-                                   const DataType *mean_d,
-                                   const DataType *var_d,
-                                   DataType epsilon,
-                                   const DataType *scale_d,
-                                   const DataType *dmean_d,
-                                   const DataType *dvar_d,
-                                         DataType *error_signal_d,
-                                   cudaStream_t stream) {
-  
-  // CUDA block size
-  const int block_size = 256;
+} // namespace
 
-  // Return if there is no input data
-  if(local_width <= 0) return;
+namespace batch_normalization_cuda {
 
-  // Launch CUDA kernel for second phase of batch normalization backward propagation
-  const int channel_size = height / num_channels;
-  dim3 block_dims, grid_dims;
-  block_dims.x = block_size;
-  grid_dims.x = (channel_size + block_size - 1) / block_size;
-  grid_dims.y = num_channels;
-  batch_normalization_backprop2_kernel<DataType,block_size>
-    <<<grid_dims, block_dims, 0, stream>>>
-    (height, local_width, global_width, channel_size,
-     prev_activations_d, prev_error_signal_d,
-     mean_d, var_d, epsilon, scale_d, dmean_d, dvar_d,
-     error_signal_d);
+void channel_sums(int num_channels,
+                  const AbsMat& data,
+                  AbsMat& sums,
+                  AbsMat& sqsums) {
+
+#ifdef LBANN_DEBUG
+  // Check that inputs are valid
+  if (num_channels < 1) { LBANN_ERROR("non-positive number of channels"); }
+  if (data.Height() % num_channels != 0) {
+    LBANN_ERROR("number of channels does not divide input matrix height"); 
+  }
+  if (data.GetDevice() != El::Device::GPU
+      || sums.GetDevice() != El::Device::GPU
+      || sqsums.GetDevice() != El::Device::GPU) {
+    LBANN_ERROR("matrices do not reside on GPU");
+  }
+#endif // LBANN_DEBUG  
+
+  // Compute channel sums and squares of sums
+  El::Zeros(sums, num_channels, 1);
+  El::Zeros(sqsums, num_channels, 1);
+  if (data.Height() > 0 && data.Width() > 0) {
+    const int channel_height = data.Height() / num_channels;
+    const int block_size = 256;
+    dim3 block_dims, grid_dims;
+    block_dims.x = block_size;
+    grid_dims.x = (channel_height + block_size - 1) / block_size;
+    grid_dims.y = num_channels;
+    CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+    channel_sums_kernel<block_size>
+      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+        channel_height, data.Width(),
+        data.LockedBuffer(), data.LDim(),
+        sums.Buffer(), sqsums.Buffer());
+  }
+}
+
+void compute_statistics(int num_per_sum,
+                        DataType epsilon,
+                        DataType decay,
+                        AbsMat& mean,
+                        AbsMat& var,
+                        AbsMat& running_mean,
+                        AbsMat& running_var) {
+
+#ifdef LBANN_DEBUG
+  // Check that inputs are valid
+  if (mean.Height() != var.Height()
+      || mean.Height() != running_mean.Height()
+      || mean.Height() != running_var.Height()
+      || mean.Width() != 1 || var.Width() != 1
+      || running_mean.Width() != 1 || running_var.Width() != 1) {
+    LBANN_ERROR("invalid matrix dimensions");
+  }
+  if (mean.GetDevice() != El::Device::GPU
+      || var.GetDevice() != El::Device::GPU
+      || running_mean.GetDevice() != El::Device::GPU
+      || running_var.GetDevice() != El::Device::GPU) {
+    LBANN_ERROR("matrices do not reside on GPU");
+  }
+#endif // LBANN_DEBUG  
+
+  // Compute statistics from sums
+  const int block_dim = 256;
+  const int grid_dim = (mean.Height() + block_dim - 1) / block_dim;
+  if (num_per_sum > 1) {
+    if (grid_dim > 0) {
+      CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+      compute_statistics_kernel
+        <<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
+          mean.Height(), num_per_sum, epsilon, decay,
+          mean.Buffer(), var.Buffer(),
+          running_mean.Buffer(), running_var.Buffer());
+    }
+  } else {
+    El::Fill(var, DataType(1));
+  }
 
 }
 
-// Explicit instantiation
-template
-void channel_sums_and_sqsums<float>(int height,
-                                    int width,
-                                    int num_channels,
-                                    const float *data_d,
-                                    float *sums_d,
-                                    float *sqsums_d,
-                                    cudaStream_t stream);
-template
-void sums_to_statistics<float>(int num_entries,
-                               int entries_per_sum,
-                               float decay,
-                               float *mean_d,
-                               float *var_d,
-                               float *running_mean_d,
-                               float *running_var_d,
-                               cudaStream_t stream);
-template
-void batch_normalization<float>(int height,
-                                int width,
-                                int num_channels,
-                                const float *prev_activations_d,
-                                const float *mean_d,
-                                const float *var_d,
-                                float epsilon,
-                                const float *scale_d,
-                                const float *bias_d,
-                                float *activations_d,
-                                cudaStream_t stream);
-template
-void batch_normalization_backprop1<float>(int height,
-                                          int width,
-                                          int num_channels,
-                                          const float *prev_activations_d,
-                                          const float *prev_error_signal_d,
-                                          const float *mean_d,
-                                          const float *var_d,
-                                          float epsilon,
-                                          const float *scale_d,
-                                          float *dscale_d,
-                                          float *dbias_d,
-                                          float *dmean_d,
-                                          float *dvar_d,
-                                          cudaStream_t stream);
-template
-void batch_normalization_backprop2<float>(int height,
-                                          int local_width,
-                                          int global_width,
-                                          int num_channels,
-                                          const float *prev_activations_d,
-                                          const float *prev_error_signal_d,
-                                          const float *mean_d,
-                                          const float *var_d,
-                                          float epsilon,
-                                          const float *scale_d,
-                                          const float *dmean_d,
-                                          const float *dvar_d,
-                                          float *error_signal_d,
-                                          cudaStream_t stream);
-template
-void channel_sums_and_sqsums<double>(int height,
-                                     int width,
-                                     int num_channels,
-                                     const double *data_d,
-                                     double *sums_d,
-                                     double *sqsums_d,
-                                     cudaStream_t stream);
-template
-void sums_to_statistics<double>(int num_entries,
-                                int entries_per_sum,
-                                double decay,
-                                double *mean_d,
-                                double *var_d,
-                                double *running_mean_d,
-                                double *running_var_d,
-                                cudaStream_t stream);
-template
-void batch_normalization<double>(int height,
-                                 int width,
-                                 int num_channels,
-                                 const double *prev_activations_d,
-                                 const double *mean_d,
-                                 const double *var_d,
-                                 double epsilon,
-                                 const double *scale_d,
-                                 const double *bias_d,
-                                 double *activations_d,
-                                 cudaStream_t stream);
-template
-void batch_normalization_backprop1<double>(int height,
-                                           int width,
-                                           int num_channels,
-                                           const double *prev_activations_d,
-                                           const double *prev_error_signal_d,
-                                           const double *mean_d,
-                                           const double *var_d,
-                                           double epsilon,
-                                           const double *scale_d,
-                                           double *dscale_d,
-                                           double *dbias_d,
-                                           double *dmean_d,
-                                           double *dvar_d,
-                                           cudaStream_t stream);
-template
-void batch_normalization_backprop2<double>(int height,
-                                           int local_width,
-                                           int global_width,
-                                           int num_channels,
-                                           const double *prev_activations_d,
-                                           const double *prev_error_signal_d,
-                                           const double *mean_d,
-                                           const double *var_d,
-                                           double epsilon,
-                                           const double *scale_d,
-                                           const double *dmean_d,
-                                           const double *dvar_d,
-                                           double *error_signal_d,
-                                           cudaStream_t stream);
+void batch_normalization(const AbsMat& input,
+                         const AbsMat& mean,
+                         const AbsMat& var,
+                         DataType epsilon,
+                         const AbsMat& scale,
+                         const AbsMat& bias,
+                         AbsMat& output) {
+  const int num_channels = mean.Height();
+
+#ifdef LBANN_DEBUG
+  // Check that inputs are valid
+  if (num_channels < 1) { LBANN_ERROR("non-positive number of channels"); }
+  if (input.Height() % num_channels != 0) {
+    LBANN_ERROR("number of channels does not divide input matrix height"); 
+  }
+  if (mean.Height() != num_channels || var.Height() != num_channels
+      || scale.Height() != num_channels || bias.Height() != num_channels
+      || mean.Width() != 1 || var.Width() != 1
+      || scale.Width() != 1 || bias.Width() != 1
+      || input.Height() != output.Height()
+      || input.Width() != output.Width()) {
+    LBANN_ERROR("invalid matrix dimensions");
+  }
+  if (input.GetDevice() != El::Device::GPU
+      || mean.GetDevice() != El::Device::GPU
+      || var.GetDevice() != El::Device::GPU
+      || scale.GetDevice() != El::Device::GPU
+      || bias.GetDevice() != El::Device::GPU
+      || output.GetDevice() != El::Device::GPU) {
+    LBANN_ERROR("matrices do not reside on GPU");
+  }
+#endif // LBANN_DEBUG  
+
+  // Apply batch normalization
+  if (input.Height() > 0 && input.Width() > 0) {
+    const int channel_height = input.Height() / num_channels;
+    const int block_size = 256;
+    dim3 block_dims, grid_dims;
+    block_dims.x = block_size;
+    grid_dims.x = (channel_height + block_size - 1) / block_size;
+    grid_dims.y = num_channels;
+    CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+    batch_normalization_kernel<block_size>
+      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+        channel_height, input.Width(),
+        input.LockedBuffer(), input.LDim(),
+        mean.LockedBuffer(), var.LockedBuffer(), epsilon,
+        scale.LockedBuffer(), bias.LockedBuffer(),
+        output.Buffer(), output.LDim());
+  }
+
+}
+
+void backprop1(const AbsMat& input,
+               const AbsMat& gradient_wrt_output,
+               const AbsMat& mean,
+               const AbsMat& var,
+               DataType epsilon,
+               const AbsMat& scale,
+               AbsMat& dscale,
+               AbsMat& dbias,
+               AbsMat& dmean,
+               AbsMat& dvar) {
+  const int num_channels = mean.Height();
+
+#ifdef LBANN_DEBUG
+  // Check that inputs are valid
+  if (num_channels < 1) { LBANN_ERROR("non-positive number of channels"); }
+  if (input.Height() % num_channels != 0) {
+    LBANN_ERROR("number of channels does not divide input matrix height"); 
+  }
+  if (mean.Height() != num_channels || var.Height() != num_channels
+      || scale.Height() != num_channels
+      || mean.Width() != 1 || var.Width() != 1 || scale.Width() != 1
+      || input.Height() != gradient_wrt_output.Height()
+      || input.Width() != gradient_wrt_output.Width()) {
+    LBANN_ERROR("invalid matrix dimensions");
+  }
+  if (input.GetDevice() != El::Device::GPU
+      || gradient_wrt_output.GetDevice() != El::Device::GPU
+      || mean.GetDevice() != El::Device::GPU
+      || var.GetDevice() != El::Device::GPU
+      || scale.GetDevice() != El::Device::GPU
+      || dscale.GetDevice() != El::Device::GPU
+      || dbias.GetDevice() != El::Device::GPU
+      || dmean.GetDevice() != El::Device::GPU
+      || dvar.GetDevice() != El::Device::GPU) {
+    LBANN_ERROR("matrices do not reside on GPU");
+  }
+#endif // LBANN_DEBUG  
+
+  // Compute gradients w.r.t. batch norm parameters
+  El::Zeros(dscale, num_channels, 1);
+  El::Zeros(dbias, num_channels, 1);
+  El::Zeros(dmean, num_channels, 1);
+  El::Zeros(dvar, num_channels, 1);
+  if (input.Height() > 0 && input.Width() > 0) {
+    const int channel_height = input.Height() / num_channels;
+    const int block_size = 256;
+    dim3 block_dims, grid_dims;
+    block_dims.x = block_size;
+    grid_dims.x = (channel_height + block_size - 1) / block_size;
+    grid_dims.y = num_channels;
+    CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+    backprop1_kernel<block_size>
+      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+        channel_height, input.Width(),
+        input.LockedBuffer(), input.LDim(),
+        gradient_wrt_output.LockedBuffer(), gradient_wrt_output.LDim(),
+        mean.LockedBuffer(), var.LockedBuffer(), epsilon,
+        scale.LockedBuffer(), dscale.Buffer(), dbias.Buffer(),
+        dmean.Buffer(), dvar.Buffer());
+  }
+
+}
+
+void backprop2(int global_width,
+               const AbsMat& input,
+               const AbsMat& gradient_wrt_output,
+               const AbsMat& mean,
+               const AbsMat& var,
+               DataType epsilon,
+               const AbsMat& scale,
+               const AbsMat& dmean,
+               const AbsMat& dvar,
+               AbsMat& gradient_wrt_input) {
+  const int num_channels = mean.Height();
+
+#ifdef LBANN_DEBUG
+  // Check that inputs are valid
+  if (num_channels < 1) { LBANN_ERROR("non-positive number of channels"); }
+  if (input.Height() % num_channels != 0) {
+    LBANN_ERROR("number of channels does not divide input matrix height"); 
+  }
+  if (mean.Height() != num_channels || var.Height() != num_channels
+      || scale.Height() != num_channels
+      || dmean.Height() != num_channels || dvar.Height() != num_channels
+      || mean.Width() != 1 || var.Width() != 1 || scale.Width() != 1
+      || dmean.Width() != 1 || dvar.Width() != 1
+      || input.Height() != gradient_wrt_output.Height()
+      || input.Height() != gradient_wrt_input.Height()
+      || input.Width() != gradient_wrt_output.Width()
+      || input.Width() != gradient_wrt_input.Width()) {
+    LBANN_ERROR("invalid matrix dimensions");
+  }
+  if (input.GetDevice() != El::Device::GPU
+      || gradient_wrt_output.GetDevice() != El::Device::GPU
+      || mean.GetDevice() != El::Device::GPU
+      || var.GetDevice() != El::Device::GPU
+      || scale.GetDevice() != El::Device::GPU
+      || dmean.GetDevice() != El::Device::GPU
+      || dvar.GetDevice() != El::Device::GPU
+      || gradient_wrt_input.GetDevice() != El::Device::GPU) {
+    LBANN_ERROR("matrices do not reside on GPU");
+  }
+#endif // LBANN_DEBUG  
+
+  // Compute gradient w.r.t. input
+  const int channel_height = input.Height() / num_channels;
+  if (channel_height * global_width <= 1) {
+    // El::Zero(gradient_wrt_input);
+  } else {
+    if (input.Height() > 0 && input.Width() > 0) {
+      const int block_size = 256;
+      dim3 block_dims, grid_dims;
+      block_dims.x = block_size;
+      grid_dims.x = (channel_height + block_size - 1) / block_size;
+      grid_dims.y = num_channels;
+      CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+      backprop2_kernel<block_size>
+        <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+          channel_height, input.Width(), global_width,
+          input.LockedBuffer(), input.LDim(),
+          gradient_wrt_output.LockedBuffer(), gradient_wrt_output.LDim(),
+          mean.LockedBuffer(), var.LockedBuffer(), epsilon,
+          scale.LockedBuffer(), dmean.LockedBuffer(), dvar.LockedBuffer(),
+          gradient_wrt_input.Buffer(), gradient_wrt_input.LDim());
+    }
+  }
+
+}
 
 } // namespace batch_normalization
 } // namespace lbann

@@ -71,7 +71,7 @@ inline void assert_false(bool x, const char *xname, const char *file,
   }
 }
 
-inline void assert_mat_eq(const Mat& x, const Mat& y, DataType tol,
+inline void assert_mat_eq(const Mat& x, const Mat& y, lbann::DataType tol,
                           const char *xname, const char *yname,
                           const char *file, size_t line) {
   // There are better ways to compare floating point values, but this should be
@@ -92,14 +92,14 @@ inline void assert_mat_eq(const Mat& x, const Mat& y, DataType tol,
   }
 }
 
-inline void assert_mat_eq(const DistMat& x, const DistMat& y, DataType tol,
+inline void assert_mat_eq(const DistMat& x, const DistMat& y, lbann::DataType tol,
                           const char *xname, const char *yname,
                           const char *file, size_t line) {
   assert_mat_eq(x.LockedMatrix(), y.LockedMatrix(), tol, xname, yname, file,
                 line);
 }
 
-inline void assert_mat_neq(const Mat& x, const Mat& y, DataType tol,
+inline void assert_mat_neq(const Mat& x, const Mat& y, lbann::DataType tol,
                            const char *xname, const char *yname,
                            const char *file, size_t line) {
   // Still ensure these matrices are the same size.
@@ -117,7 +117,7 @@ inline void assert_mat_neq(const Mat& x, const Mat& y, DataType tol,
   exit(1);
 }
 
-inline void assert_mat_neq(const DistMat& x, const DistMat& y, DataType tol,
+inline void assert_mat_neq(const DistMat& x, const DistMat& y, lbann::DataType tol,
                            const char *xname, const char *yname,
                            const char *file, size_t line) {
   assert_mat_neq(x.LockedMatrix(), y.LockedMatrix(), tol, xname, yname, file,
@@ -168,14 +168,14 @@ inline void assert_vector_neq(const std::vector<T> x, const std::vector<T> y,
  * Compute the absolute error between approx_val and true_val, both overall
  * (in the return value) and element-wise (in elemerr).
  */
-DataType absolute_error(Mat& approx_val, Mat& true_val, Mat& elemerr) {
+lbann::DataType absolute_error(CPUMat& approx_val, CPUMat& true_val, CPUMat& elemerr) {
   ASSERT_EQ(approx_val.Width(), true_val.Width());
   ASSERT_EQ(approx_val.Height(), true_val.Height());
   elemerr = true_val;
   elemerr -= approx_val;
-  DataType abs_err = El::EntrywiseNorm(elemerr, 1);
-  El::EntrywiseMap(elemerr, std::function<DataType(const DataType&)>(
-  [](const DataType& x) {
+  lbann::DataType abs_err = El::EntrywiseNorm(elemerr, 1);
+  El::EntrywiseMap(elemerr, std::function<lbann::DataType(const lbann::DataType&)>(
+  [](const lbann::DataType& x) {
     return fabs(x);
   }));
   return abs_err;
@@ -185,18 +185,18 @@ DataType absolute_error(Mat& approx_val, Mat& true_val, Mat& elemerr) {
  * Compute the relative error between approx_val and true_val, both overall
  * (in the return value) and element-wise (in elemerr).
  */
-DataType relative_error(Mat& approx_val, Mat& true_val, Mat& elemerr) {
+lbann::DataType relative_error(CPUMat& approx_val, CPUMat& true_val, CPUMat& elemerr) {
   ASSERT_EQ(approx_val.Width(), true_val.Width());
   ASSERT_EQ(approx_val.Height(), true_val.Height());
-  DataType abs_err = absolute_error(approx_val, true_val, elemerr);
-  DataType rel_err = abs_err / El::EntrywiseNorm(true_val, 1);
+  lbann::DataType abs_err = absolute_error(approx_val, true_val, elemerr);
+  lbann::DataType rel_err = abs_err / El::EntrywiseNorm(true_val, 1);
   Mat true_copy(true_val);
-  El::EntrywiseMap(true_copy, std::function<DataType(const DataType&)>(
-  [](const DataType& x) {
+  El::EntrywiseMap(true_copy, std::function<lbann::DataType(const lbann::DataType&)>(
+  [](const lbann::DataType& x) {
     return 1.0f / fabs(x);
   }));
   Mat elemerr_copy(elemerr);
-  El::Hadamard(elemerr_copy, true_copy, elemerr);
+  El::Hadamard(static_cast<AbsMat&>(elemerr_copy), static_cast<AbsMat&>(true_copy), static_cast<AbsMat&>(elemerr));
   return rel_err;
 }
 

@@ -120,7 +120,7 @@ void image_list::load_file(const std::string& file_name, const mpi_states& ms, s
 
   // root rank load a file into a buffer, which wil be broadcast later
   if (ms.is_root()) {
-    ok = read_file(file_name, buf);
+    ok = lbann::load_file(file_name, buf);
     if (!ok) {
       ms.abort("Could not read the file : " + file_name);
     }

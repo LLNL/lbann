@@ -6,15 +6,13 @@ model {
   num_epochs: 10
   num_parallel_readers: 0
   procs_per_model: 0
-  use_cudnn: true
-  num_gpus: -1
 
   ###################################################
   # Objective function
   ###################################################
 
   objective_function {
-    cross_entropy {}
+    layer_term { layer: "cross_entropy" }
     l2_weight_regularization {
       scale_factor: 1e-4
     }
@@ -24,32 +22,26 @@ model {
   # Metrics
   ###################################################
 
-  metric { categorical_accuracy {} }
   metric {
-    top_k_categorical_accuracy {
-       top_k: 5
+    layer_metric {
+      name: "categorical accuracy"
+      layer: "top1_accuracy"
+      unit: "%"
+    }
+  }
+  metric {
+    layer_metric {
+      name: "top-5 categorical accuracy"
+      layer: "top5_accuracy"
+      unit: "%"
     }
   }
 
   ###################################################
   # Callbacks
   ###################################################
-  callback {
-    print {
-      interval: 1
-    }
-  }
-  callback {
-    timer {
-    }
-  }
-  callback {
-    summary {
-      dir: "."
-      batch_interval: 1
-      mat_interval: 25
-    }
-  }
+  callback { print {} }
+  callback { timer {} }
   callback {
     imcomm {
       intermodel_comm_method: "normal"
@@ -61,19 +53,32 @@ model {
   # Layers
   ###################################################
 
-  # conv1
+  # data
   layer {
-    parents: ""
     name: "data"
-    children: "conv1"
+    children: "images labels"
     data_layout: "data_parallel"
-    input_partitioned_minibatch {
+    input {
+      io_buffer: "partitioned"
     }
   }
   layer {
+    name: "images"
     parents: "data"
+    data_layout: "data_parallel"
+    split {}
+  }
+  layer {
+    name: "labels"
+    parents: "data"
+    data_layout: "data_parallel"
+    split {}
+  }
+
+  # conv1
+  layer {
+    parents: "images"
     name: "conv1"
-    children: "bn_conv1"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -87,7 +92,6 @@ model {
   layer {
     parents: "conv1"
     name: "bn_conv1"
-    children: "conv1_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -99,7 +103,6 @@ model {
   layer {
     parents: "bn_conv1"
     name: "conv1_relu"
-    children: "pool1"
     data_layout: "data_parallel"
     relu {
     }
@@ -107,12 +110,11 @@ model {
   layer {
     parents: "conv1_relu"
     name: "pool1"
-    children: "res2a_split"
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
       pool_dims_i: 3
-      pool_pads_i: 0
+      pool_pads_i: 1
       pool_strides_i: 2
       pool_mode: "max"
     }
@@ -121,16 +123,7 @@ model {
   # res2a
   layer {
     parents: "pool1"
-    name: "res2a_split"
-    children: "res2a_branch1 res2a_branch2a"
-    data_layout: "data_parallel"
-    split {
-    }
-  }
-  layer {
-    parents: "res2a_split"
     name: "res2a_branch1"
-    children: "bn2a_branch1"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -144,7 +137,6 @@ model {
   layer {
     parents: "res2a_branch1"
     name: "bn2a_branch1"
-    children: "res2a"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -154,9 +146,8 @@ model {
     }
   }
   layer {
-    parents: "res2a_split"
+    parents: "pool1"
     name: "res2a_branch2a"
-    children: "bn2a_branch2a"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -170,7 +161,6 @@ model {
   layer {
     parents: "res2a_branch2a"
     name: "bn2a_branch2a"
-    children: "res2a_branch2a_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -182,7 +172,6 @@ model {
   layer {
     parents: "bn2a_branch2a"
     name: "res2a_branch2a_relu"
-    children: "res2a_branch2b"
     data_layout: "data_parallel"
     relu {
     }
@@ -190,7 +179,6 @@ model {
   layer {
     parents: "res2a_branch2a_relu"
     name: "res2a_branch2b"
-    children: "bn2a_branch2b"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -204,7 +192,6 @@ model {
   layer {
     parents: "res2a_branch2b"
     name: "bn2a_branch2b"
-    children: "res2a_branch2b_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -216,7 +203,6 @@ model {
   layer {
     parents: "bn2a_branch2b"
     name: "res2a_branch2b_relu"
-    children: "res2a_branch2c"
     data_layout: "data_parallel"
     relu {
     }
@@ -224,7 +210,6 @@ model {
   layer {
     parents: "res2a_branch2b_relu"
     name: "res2a_branch2c"
-    children: "bn2a_branch2c"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -238,7 +223,6 @@ model {
   layer {
     parents: "res2a_branch2c"
     name: "bn2a_branch2c"
-    children: "res2a"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -250,7 +234,6 @@ model {
   layer {
     parents: "bn2a_branch1 bn2a_branch2c"
     name: "res2a"
-    children: "res2a_relu"
     data_layout: "data_parallel"
     sum {
     }
@@ -258,7 +241,6 @@ model {
   layer {
     parents: "res2a"
     name: "res2a_relu"
-    children: "res2b_split"
     data_layout: "data_parallel"
     relu {
     }
@@ -267,16 +249,7 @@ model {
   # res2b
   layer {
     parents: "res2a_relu"
-    name: "res2b_split"
-    children: "res2b res2b_branch2a"
-    data_layout: "data_parallel"
-    split {
-    }
-  }
-  layer {
-    parents: "res2b_split"
     name: "res2b_branch2a"
-    children: "bn2b_branch2a"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -290,7 +263,6 @@ model {
   layer {
     parents: "res2b_branch2a"
     name: "bn2b_branch2a"
-    children: "res2b_branch2a_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -302,7 +274,6 @@ model {
   layer {
     parents: "bn2b_branch2a"
     name: "res2b_branch2a_relu"
-    children: "res2b_branch2b"
     data_layout: "data_parallel"
     relu {
     }
@@ -310,7 +281,6 @@ model {
   layer {
     parents: "res2b_branch2a_relu"
     name: "res2b_branch2b"
-    children: "bn2b_branch2b"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -324,7 +294,6 @@ model {
   layer {
     parents: "res2b_branch2b"
     name: "bn2b_branch2b"
-    children: "res2b_branch2b_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -336,7 +305,6 @@ model {
   layer {
     parents: "bn2b_branch2b"
     name: "res2b_branch2b_relu"
-    children: "res2b_branch2c"
     data_layout: "data_parallel"
     relu {
     }
@@ -344,7 +312,6 @@ model {
   layer {
     parents: "res2b_branch2b_relu"
     name: "res2b_branch2c"
-    children: "bn2b_branch2c"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -358,7 +325,6 @@ model {
   layer {
     parents: "res2b_branch2c"
     name: "bn2b_branch2c"
-    children: "res2b"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -368,9 +334,8 @@ model {
     }
   }
   layer {
-    parents: "res2b_split bn2b_branch2c"
+    parents: "res2a_relu bn2b_branch2c"
     name: "res2b"
-    children: "res2b_relu"
     data_layout: "data_parallel"
     sum {
     }
@@ -378,7 +343,6 @@ model {
   layer {
     parents: "res2b"
     name: "res2b_relu"
-    children: "res2c_split"
     data_layout: "data_parallel"
     relu {
     }
@@ -387,16 +351,7 @@ model {
   # res2c
   layer {
     parents: "res2b_relu"
-    name: "res2c_split"
-    children: "res2c res2c_branch2a"
-    data_layout: "data_parallel"
-    split {
-    }
-  }
-  layer {
-    parents: "res2c_split"
     name: "res2c_branch2a"
-    children: "bn2c_branch2a"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -410,7 +365,6 @@ model {
   layer {
     parents: "res2c_branch2a"
     name: "bn2c_branch2a"
-    children: "res2c_branch2a_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -422,7 +376,6 @@ model {
   layer {
     parents: "bn2c_branch2a"
     name: "res2c_branch2a_relu"
-    children: "res2c_branch2b"
     data_layout: "data_parallel"
     relu {
     }
@@ -430,7 +383,6 @@ model {
   layer {
     parents: "res2c_branch2a_relu"
     name: "res2c_branch2b"
-    children: "bn2c_branch2b"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -444,7 +396,6 @@ model {
   layer {
     parents: "res2c_branch2b"
     name: "bn2c_branch2b"
-    children: "res2c_branch2b_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -456,7 +407,6 @@ model {
   layer {
     parents: "bn2c_branch2b"
     name: "res2c_branch2b_relu"
-    children: "res2c_branch2c"
     data_layout: "data_parallel"
     relu {
     }
@@ -464,7 +414,6 @@ model {
   layer {
     parents: "res2c_branch2b_relu"
     name: "res2c_branch2c"
-    children: "bn2c_branch2c"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -478,7 +427,6 @@ model {
   layer {
     parents: "res2c_branch2c"
     name: "bn2c_branch2c"
-    children: "res2c"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -488,9 +436,8 @@ model {
     }
   }
   layer {
-    parents: "res2c_split bn2c_branch2c"
+    parents: "res2b_relu bn2c_branch2c"
     name: "res2c"
-    children: "res2c_relu"
     data_layout: "data_parallel"
     sum {
     }
@@ -498,7 +445,6 @@ model {
   layer {
     parents: "res2c"
     name: "res2c_relu"
-    children: "res3a_split"
     data_layout: "data_parallel"
     relu {
     }
@@ -507,16 +453,7 @@ model {
   # res3a
   layer {
     parents: "res2c_relu"
-    name: "res3a_split"
-    children: "res3a_branch1 res3a_branch2a"
-    data_layout: "data_parallel"
-    split {
-    }
-  }
-  layer {
-    parents: "res3a_split"
     name: "res3a_branch1"
-    children: "bn3a_branch1"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -530,7 +467,6 @@ model {
   layer {
     parents: "res3a_branch1"
     name: "bn3a_branch1"
-    children: "res3a"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -540,9 +476,8 @@ model {
     }
   }
   layer {
-    parents: "res3a_split"
+    parents: "res2c_relu"
     name: "res3a_branch2a"
-    children: "bn3a_branch2a"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -556,7 +491,6 @@ model {
   layer {
     parents: "res3a_branch2a"
     name: "bn3a_branch2a"
-    children: "res3a_branch2a_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -568,7 +502,6 @@ model {
   layer {
     parents: "bn3a_branch2a"
     name: "res3a_branch2a_relu"
-    children: "res3a_branch2b"
     data_layout: "data_parallel"
     relu {
     }
@@ -576,7 +509,6 @@ model {
   layer {
     parents: "res3a_branch2a_relu"
     name: "res3a_branch2b"
-    children: "bn3a_branch2b"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -590,7 +522,6 @@ model {
   layer {
     parents: "res3a_branch2b"
     name: "bn3a_branch2b"
-    children: "res3a_branch2b_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -602,7 +533,6 @@ model {
   layer {
     parents: "bn3a_branch2b"
     name: "res3a_branch2b_relu"
-    children: "res3a_branch2c"
     data_layout: "data_parallel"
     relu {
     }
@@ -610,7 +540,6 @@ model {
   layer {
     parents: "res3a_branch2b_relu"
     name: "res3a_branch2c"
-    children: "bn3a_branch2c"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -624,7 +553,6 @@ model {
   layer {
     parents: "res3a_branch2c"
     name: "bn3a_branch2c"
-    children: "res3a"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -636,7 +564,6 @@ model {
   layer {
     parents: "bn3a_branch1 bn3a_branch2c"
     name: "res3a"
-    children: "res3a_relu"
     data_layout: "data_parallel"
     sum {
     }
@@ -644,7 +571,6 @@ model {
   layer {
     parents: "res3a"
     name: "res3a_relu"
-    children: "res3b_split"
     data_layout: "data_parallel"
     relu {
     }
@@ -653,16 +579,7 @@ model {
   # res3b
   layer {
     parents: "res3a_relu"
-    name: "res3b_split"
-    children: "res3b res3b_branch2a"
-    data_layout: "data_parallel"
-    split {
-    }
-  }
-  layer {
-    parents: "res3b_split"
     name: "res3b_branch2a"
-    children: "bn3b_branch2a"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -676,7 +593,6 @@ model {
   layer {
     parents: "res3b_branch2a"
     name: "bn3b_branch2a"
-    children: "res3b_branch2a_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -688,7 +604,6 @@ model {
   layer {
     parents: "bn3b_branch2a"
     name: "res3b_branch2a_relu"
-    children: "res3b_branch2b"
     data_layout: "data_parallel"
     relu {
     }
@@ -696,7 +611,6 @@ model {
   layer {
     parents: "res3b_branch2a_relu"
     name: "res3b_branch2b"
-    children: "bn3b_branch2b"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -710,7 +624,6 @@ model {
   layer {
     parents: "res3b_branch2b"
     name: "bn3b_branch2b"
-    children: "res3b_branch2b_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -722,7 +635,6 @@ model {
   layer {
     parents: "bn3b_branch2b"
     name: "res3b_branch2b_relu"
-    children: "res3b_branch2c"
     data_layout: "data_parallel"
     relu {
     }
@@ -730,7 +642,6 @@ model {
   layer {
     parents: "res3b_branch2b_relu"
     name: "res3b_branch2c"
-    children: "bn3b_branch2c"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -744,7 +655,6 @@ model {
   layer {
     parents: "res3b_branch2c"
     name: "bn3b_branch2c"
-    children: "res3b"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -754,9 +664,8 @@ model {
     }
   }
   layer {
-    parents: "res3b_split bn3b_branch2c"
+    parents: "res3a_relu bn3b_branch2c"
     name: "res3b"
-    children: "res3b_relu"
     data_layout: "data_parallel"
     sum {
     }
@@ -764,7 +673,6 @@ model {
   layer {
     parents: "res3b"
     name: "res3b_relu"
-    children: "res3c_split"
     data_layout: "data_parallel"
     relu {
     }
@@ -773,16 +681,7 @@ model {
   # res3c
   layer {
     parents: "res3b_relu"
-    name: "res3c_split"
-    children: "res3c res3c_branch2a"
-    data_layout: "data_parallel"
-    split {
-    }
-  }
-  layer {
-    parents: "res3c_split"
     name: "res3c_branch2a"
-    children: "bn3c_branch2a"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -796,7 +695,6 @@ model {
   layer {
     parents: "res3c_branch2a"
     name: "bn3c_branch2a"
-    children: "res3c_branch2a_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -808,7 +706,6 @@ model {
   layer {
     parents: "bn3c_branch2a"
     name: "res3c_branch2a_relu"
-    children: "res3c_branch2b"
     data_layout: "data_parallel"
     relu {
     }
@@ -816,7 +713,6 @@ model {
   layer {
     parents: "res3c_branch2a_relu"
     name: "res3c_branch2b"
-    children: "bn3c_branch2b"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -830,7 +726,6 @@ model {
   layer {
     parents: "res3c_branch2b"
     name: "bn3c_branch2b"
-    children: "res3c_branch2b_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -842,7 +737,6 @@ model {
   layer {
     parents: "bn3c_branch2b"
     name: "res3c_branch2b_relu"
-    children: "res3c_branch2c"
     data_layout: "data_parallel"
     relu {
     }
@@ -850,7 +744,6 @@ model {
   layer {
     parents: "res3c_branch2b_relu"
     name: "res3c_branch2c"
-    children: "bn3c_branch2c"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -864,7 +757,6 @@ model {
   layer {
     parents: "res3c_branch2c"
     name: "bn3c_branch2c"
-    children: "res3c"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -874,9 +766,8 @@ model {
     }
   }
   layer {
-    parents: "res3c_split bn3c_branch2c"
+    parents: "res3b_relu bn3c_branch2c"
     name: "res3c"
-    children: "res3c_relu"
     data_layout: "data_parallel"
     sum {
     }
@@ -884,25 +775,15 @@ model {
   layer {
     parents: "res3c"
     name: "res3c_relu"
-    children: "res3d_split"
     data_layout: "data_parallel"
     relu {
     }
   }
-  
+
   # res3d
   layer {
     parents: "res3c_relu"
-    name: "res3d_split"
-    children: "res3d res3d_branch2a"
-    data_layout: "data_parallel"
-    split {
-    }
-  }
-  layer {
-    parents: "res3d_split"
     name: "res3d_branch2a"
-    children: "bn3d_branch2a"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -916,7 +797,6 @@ model {
   layer {
     parents: "res3d_branch2a"
     name: "bn3d_branch2a"
-    children: "res3d_branch2a_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -928,7 +808,6 @@ model {
   layer {
     parents: "bn3d_branch2a"
     name: "res3d_branch2a_relu"
-    children: "res3d_branch2b"
     data_layout: "data_parallel"
     relu {
     }
@@ -936,7 +815,6 @@ model {
   layer {
     parents: "res3d_branch2a_relu"
     name: "res3d_branch2b"
-    children: "bn3d_branch2b"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -950,7 +828,6 @@ model {
   layer {
     parents: "res3d_branch2b"
     name: "bn3d_branch2b"
-    children: "res3d_branch2b_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -962,7 +839,6 @@ model {
   layer {
     parents: "bn3d_branch2b"
     name: "res3d_branch2b_relu"
-    children: "res3d_branch2c"
     data_layout: "data_parallel"
     relu {
     }
@@ -970,7 +846,6 @@ model {
   layer {
     parents: "res3d_branch2b_relu"
     name: "res3d_branch2c"
-    children: "bn3d_branch2c"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -984,7 +859,6 @@ model {
   layer {
     parents: "res3d_branch2c"
     name: "bn3d_branch2c"
-    children: "res3d"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -994,9 +868,8 @@ model {
     }
   }
   layer {
-    parents: "res3d_split bn3d_branch2c"
+    parents: "res3c_relu bn3d_branch2c"
     name: "res3d"
-    children: "res3d_relu"
     data_layout: "data_parallel"
     sum {
     }
@@ -1004,7 +877,6 @@ model {
   layer {
     parents: "res3d"
     name: "res3d_relu"
-    children: "res4a_split"
     data_layout: "data_parallel"
     relu {
     }
@@ -1013,16 +885,7 @@ model {
   # res4a
   layer {
     parents: "res3d_relu"
-    name: "res4a_split"
-    children: "res4a_branch1 res4a_branch2a"
-    data_layout: "data_parallel"
-    split {
-    }
-  }
-  layer {
-    parents: "res4a_split"
     name: "res4a_branch1"
-    children: "bn4a_branch1"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1036,7 +899,6 @@ model {
   layer {
     parents: "res4a_branch1"
     name: "bn4a_branch1"
-    children: "res4a"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1046,9 +908,8 @@ model {
     }
   }
   layer {
-    parents: "res4a_split"
+    parents: "res3d_relu"
     name: "res4a_branch2a"
-    children: "bn4a_branch2a"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1062,7 +923,6 @@ model {
   layer {
     parents: "res4a_branch2a"
     name: "bn4a_branch2a"
-    children: "res4a_branch2a_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1074,7 +934,6 @@ model {
   layer {
     parents: "bn4a_branch2a"
     name: "res4a_branch2a_relu"
-    children: "res4a_branch2b"
     data_layout: "data_parallel"
     relu {
     }
@@ -1082,7 +941,6 @@ model {
   layer {
     parents: "res4a_branch2a_relu"
     name: "res4a_branch2b"
-    children: "bn4a_branch2b"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1096,7 +954,6 @@ model {
   layer {
     parents: "res4a_branch2b"
     name: "bn4a_branch2b"
-    children: "res4a_branch2b_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1108,7 +965,6 @@ model {
   layer {
     parents: "bn4a_branch2b"
     name: "res4a_branch2b_relu"
-    children: "res4a_branch2c"
     data_layout: "data_parallel"
     relu {
     }
@@ -1116,7 +972,6 @@ model {
   layer {
     parents: "res4a_branch2b_relu"
     name: "res4a_branch2c"
-    children: "bn4a_branch2c"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1130,7 +985,6 @@ model {
   layer {
     parents: "res4a_branch2c"
     name: "bn4a_branch2c"
-    children: "res4a"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1142,7 +996,6 @@ model {
   layer {
     parents: "bn4a_branch1 bn4a_branch2c"
     name: "res4a"
-    children: "res4a_relu"
     data_layout: "data_parallel"
     sum {
     }
@@ -1150,7 +1003,6 @@ model {
   layer {
     parents: "res4a"
     name: "res4a_relu"
-    children: "res4b_split"
     data_layout: "data_parallel"
     relu {
     }
@@ -1159,16 +1011,7 @@ model {
   # res4b
   layer {
     parents: "res4a_relu"
-    name: "res4b_split"
-    children: "res4b res4b_branch2a"
-    data_layout: "data_parallel"
-    split {
-    }
-  }
-  layer {
-    parents: "res4b_split"
     name: "res4b_branch2a"
-    children: "bn4b_branch2a"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1182,7 +1025,6 @@ model {
   layer {
     parents: "res4b_branch2a"
     name: "bn4b_branch2a"
-    children: "res4b_branch2a_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1194,7 +1036,6 @@ model {
   layer {
     parents: "bn4b_branch2a"
     name: "res4b_branch2a_relu"
-    children: "res4b_branch2b"
     data_layout: "data_parallel"
     relu {
     }
@@ -1202,7 +1043,6 @@ model {
   layer {
     parents: "res4b_branch2a_relu"
     name: "res4b_branch2b"
-    children: "bn4b_branch2b"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1216,7 +1056,6 @@ model {
   layer {
     parents: "res4b_branch2b"
     name: "bn4b_branch2b"
-    children: "res4b_branch2b_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1228,7 +1067,6 @@ model {
   layer {
     parents: "bn4b_branch2b"
     name: "res4b_branch2b_relu"
-    children: "res4b_branch2c"
     data_layout: "data_parallel"
     relu {
     }
@@ -1236,7 +1074,6 @@ model {
   layer {
     parents: "res4b_branch2b_relu"
     name: "res4b_branch2c"
-    children: "bn4b_branch2c"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1250,7 +1087,6 @@ model {
   layer {
     parents: "res4b_branch2c"
     name: "bn4b_branch2c"
-    children: "res4b"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1260,9 +1096,8 @@ model {
     }
   }
   layer {
-    parents: "res4b_split bn4b_branch2c"
+    parents: "res4a_relu bn4b_branch2c"
     name: "res4b"
-    children: "res4b_relu"
     data_layout: "data_parallel"
     sum {
     }
@@ -1270,7 +1105,6 @@ model {
   layer {
     parents: "res4b"
     name: "res4b_relu"
-    children: "res4c_split"
     data_layout: "data_parallel"
     relu {
     }
@@ -1279,16 +1113,7 @@ model {
   # res4c
   layer {
     parents: "res4b_relu"
-    name: "res4c_split"
-    children: "res4c res4c_branch2a"
-    data_layout: "data_parallel"
-    split {
-    }
-  }
-  layer {
-    parents: "res4c_split"
     name: "res4c_branch2a"
-    children: "bn4c_branch2a"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1302,7 +1127,6 @@ model {
   layer {
     parents: "res4c_branch2a"
     name: "bn4c_branch2a"
-    children: "res4c_branch2a_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1314,7 +1138,6 @@ model {
   layer {
     parents: "bn4c_branch2a"
     name: "res4c_branch2a_relu"
-    children: "res4c_branch2b"
     data_layout: "data_parallel"
     relu {
     }
@@ -1322,7 +1145,6 @@ model {
   layer {
     parents: "res4c_branch2a_relu"
     name: "res4c_branch2b"
-    children: "bn4c_branch2b"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1336,7 +1158,6 @@ model {
   layer {
     parents: "res4c_branch2b"
     name: "bn4c_branch2b"
-    children: "res4c_branch2b_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1348,7 +1169,6 @@ model {
   layer {
     parents: "bn4c_branch2b"
     name: "res4c_branch2b_relu"
-    children: "res4c_branch2c"
     data_layout: "data_parallel"
     relu {
     }
@@ -1356,7 +1176,6 @@ model {
   layer {
     parents: "res4c_branch2b_relu"
     name: "res4c_branch2c"
-    children: "bn4c_branch2c"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1370,7 +1189,6 @@ model {
   layer {
     parents: "res4c_branch2c"
     name: "bn4c_branch2c"
-    children: "res4c"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1380,9 +1198,8 @@ model {
     }
   }
   layer {
-    parents: "res4c_split bn4c_branch2c"
+    parents: "res4b_relu bn4c_branch2c"
     name: "res4c"
-    children: "res4c_relu"
     data_layout: "data_parallel"
     sum {
     }
@@ -1390,7 +1207,6 @@ model {
   layer {
     parents: "res4c"
     name: "res4c_relu"
-    children: "res4d_split"
     data_layout: "data_parallel"
     relu {
     }
@@ -1399,16 +1215,7 @@ model {
   # res4d
   layer {
     parents: "res4c_relu"
-    name: "res4d_split"
-    children: "res4d res4d_branch2a"
-    data_layout: "data_parallel"
-    split {
-    }
-  }
-  layer {
-    parents: "res4d_split"
     name: "res4d_branch2a"
-    children: "bn4d_branch2a"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1422,7 +1229,6 @@ model {
   layer {
     parents: "res4d_branch2a"
     name: "bn4d_branch2a"
-    children: "res4d_branch2a_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1434,7 +1240,6 @@ model {
   layer {
     parents: "bn4d_branch2a"
     name: "res4d_branch2a_relu"
-    children: "res4d_branch2b"
     data_layout: "data_parallel"
     relu {
     }
@@ -1442,7 +1247,6 @@ model {
   layer {
     parents: "res4d_branch2a_relu"
     name: "res4d_branch2b"
-    children: "bn4d_branch2b"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1456,7 +1260,6 @@ model {
   layer {
     parents: "res4d_branch2b"
     name: "bn4d_branch2b"
-    children: "res4d_branch2b_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1468,7 +1271,6 @@ model {
   layer {
     parents: "bn4d_branch2b"
     name: "res4d_branch2b_relu"
-    children: "res4d_branch2c"
     data_layout: "data_parallel"
     relu {
     }
@@ -1476,7 +1278,6 @@ model {
   layer {
     parents: "res4d_branch2b_relu"
     name: "res4d_branch2c"
-    children: "bn4d_branch2c"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1490,7 +1291,6 @@ model {
   layer {
     parents: "res4d_branch2c"
     name: "bn4d_branch2c"
-    children: "res4d"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1500,9 +1300,8 @@ model {
     }
   }
   layer {
-    parents: "res4d_split bn4d_branch2c"
+    parents: "res4c_relu bn4d_branch2c"
     name: "res4d"
-    children: "res4d_relu"
     data_layout: "data_parallel"
     sum {
     }
@@ -1510,7 +1309,6 @@ model {
   layer {
     parents: "res4d"
     name: "res4d_relu"
-    children: "res4e_split"
     data_layout: "data_parallel"
     relu {
     }
@@ -1519,16 +1317,7 @@ model {
   # res4e
   layer {
     parents: "res4d_relu"
-    name: "res4e_split"
-    children: "res4e res4e_branch2a"
-    data_layout: "data_parallel"
-    split {
-    }
-  }
-  layer {
-    parents: "res4e_split"
     name: "res4e_branch2a"
-    children: "bn4e_branch2a"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1542,7 +1331,6 @@ model {
   layer {
     parents: "res4e_branch2a"
     name: "bn4e_branch2a"
-    children: "res4e_branch2a_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1554,7 +1342,6 @@ model {
   layer {
     parents: "bn4e_branch2a"
     name: "res4e_branch2a_relu"
-    children: "res4e_branch2b"
     data_layout: "data_parallel"
     relu {
     }
@@ -1562,7 +1349,6 @@ model {
   layer {
     parents: "res4e_branch2a_relu"
     name: "res4e_branch2b"
-    children: "bn4e_branch2b"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1576,7 +1362,6 @@ model {
   layer {
     parents: "res4e_branch2b"
     name: "bn4e_branch2b"
-    children: "res4e_branch2b_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1588,7 +1373,6 @@ model {
   layer {
     parents: "bn4e_branch2b"
     name: "res4e_branch2b_relu"
-    children: "res4e_branch2c"
     data_layout: "data_parallel"
     relu {
     }
@@ -1596,7 +1380,6 @@ model {
   layer {
     parents: "res4e_branch2b_relu"
     name: "res4e_branch2c"
-    children: "bn4e_branch2c"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1610,7 +1393,6 @@ model {
   layer {
     parents: "res4e_branch2c"
     name: "bn4e_branch2c"
-    children: "res4e"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1620,9 +1402,8 @@ model {
     }
   }
   layer {
-    parents: "res4e_split bn4e_branch2c"
+    parents: "res4d_relu bn4e_branch2c"
     name: "res4e"
-    children: "res4e_relu"
     data_layout: "data_parallel"
     sum {
     }
@@ -1630,7 +1411,6 @@ model {
   layer {
     parents: "res4e"
     name: "res4e_relu"
-    children: "res4f_split"
     data_layout: "data_parallel"
     relu {
     }
@@ -1639,16 +1419,7 @@ model {
   # res4f
   layer {
     parents: "res4e_relu"
-    name: "res4f_split"
-    children: "res4f res4f_branch2a"
-    data_layout: "data_parallel"
-    split {
-    }
-  }
-  layer {
-    parents: "res4f_split"
     name: "res4f_branch2a"
-    children: "bn4f_branch2a"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1662,7 +1433,6 @@ model {
   layer {
     parents: "res4f_branch2a"
     name: "bn4f_branch2a"
-    children: "res4f_branch2a_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1674,7 +1444,6 @@ model {
   layer {
     parents: "bn4f_branch2a"
     name: "res4f_branch2a_relu"
-    children: "res4f_branch2b"
     data_layout: "data_parallel"
     relu {
     }
@@ -1682,7 +1451,6 @@ model {
   layer {
     parents: "res4f_branch2a_relu"
     name: "res4f_branch2b"
-    children: "bn4f_branch2b"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1696,7 +1464,6 @@ model {
   layer {
     parents: "res4f_branch2b"
     name: "bn4f_branch2b"
-    children: "res4f_branch2b_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1708,7 +1475,6 @@ model {
   layer {
     parents: "bn4f_branch2b"
     name: "res4f_branch2b_relu"
-    children: "res4f_branch2c"
     data_layout: "data_parallel"
     relu {
     }
@@ -1716,7 +1482,6 @@ model {
   layer {
     parents: "res4f_branch2b_relu"
     name: "res4f_branch2c"
-    children: "bn4f_branch2c"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1730,7 +1495,6 @@ model {
   layer {
     parents: "res4f_branch2c"
     name: "bn4f_branch2c"
-    children: "res4f"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1740,9 +1504,8 @@ model {
     }
   }
   layer {
-    parents: "res4f_split bn4f_branch2c"
+    parents: "res4e_relu bn4f_branch2c"
     name: "res4f"
-    children: "res4f_relu"
     data_layout: "data_parallel"
     sum {
     }
@@ -1750,7 +1513,6 @@ model {
   layer {
     parents: "res4f"
     name: "res4f_relu"
-    children: "res5a_split"
     data_layout: "data_parallel"
     relu {
     }
@@ -1759,16 +1521,7 @@ model {
   # res5a
   layer {
     parents: "res4f_relu"
-    name: "res5a_split"
-    children: "res5a_branch1 res5a_branch2a"
-    data_layout: "data_parallel"
-    split {
-    }
-  }
-  layer {
-    parents: "res5a_split"
     name: "res5a_branch1"
-    children: "bn5a_branch1"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1782,7 +1535,6 @@ model {
   layer {
     parents: "res5a_branch1"
     name: "bn5a_branch1"
-    children: "res5a"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1792,9 +1544,8 @@ model {
     }
   }
   layer {
-    parents: "res5a_split"
+    parents: "res4f_relu"
     name: "res5a_branch2a"
-    children: "bn5a_branch2a"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1808,7 +1559,6 @@ model {
   layer {
     parents: "res5a_branch2a"
     name: "bn5a_branch2a"
-    children: "res5a_branch2a_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1820,7 +1570,6 @@ model {
   layer {
     parents: "bn5a_branch2a"
     name: "res5a_branch2a_relu"
-    children: "res5a_branch2b"
     data_layout: "data_parallel"
     relu {
     }
@@ -1828,7 +1577,6 @@ model {
   layer {
     parents: "res5a_branch2a_relu"
     name: "res5a_branch2b"
-    children: "bn5a_branch2b"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1842,7 +1590,6 @@ model {
   layer {
     parents: "res5a_branch2b"
     name: "bn5a_branch2b"
-    children: "res5a_branch2b_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1854,7 +1601,6 @@ model {
   layer {
     parents: "bn5a_branch2b"
     name: "res5a_branch2b_relu"
-    children: "res5a_branch2c"
     data_layout: "data_parallel"
     relu {
     }
@@ -1862,7 +1608,6 @@ model {
   layer {
     parents: "res5a_branch2b_relu"
     name: "res5a_branch2c"
-    children: "bn5a_branch2c"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1876,7 +1621,6 @@ model {
   layer {
     parents: "res5a_branch2c"
     name: "bn5a_branch2c"
-    children: "res5a"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1888,7 +1632,6 @@ model {
   layer {
     parents: "bn5a_branch1 bn5a_branch2c"
     name: "res5a"
-    children: "res5a_relu"
     data_layout: "data_parallel"
     sum {
     }
@@ -1896,25 +1639,15 @@ model {
   layer {
     parents: "res5a"
     name: "res5a_relu"
-    children: "res5b_split"
     data_layout: "data_parallel"
     relu {
     }
   }
-  
+
   # res5b
   layer {
     parents: "res5a_relu"
-    name: "res5b_split"
-    children: "res5b res5b_branch2a"
-    data_layout: "data_parallel"
-    split {
-    }
-  }
-  layer {
-    parents: "res5b_split"
     name: "res5b_branch2a"
-    children: "bn5b_branch2a"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1928,7 +1661,6 @@ model {
   layer {
     parents: "res5b_branch2a"
     name: "bn5b_branch2a"
-    children: "res5b_branch2a_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1940,7 +1672,6 @@ model {
   layer {
     parents: "bn5b_branch2a"
     name: "res5b_branch2a_relu"
-    children: "res5b_branch2b"
     data_layout: "data_parallel"
     relu {
     }
@@ -1948,7 +1679,6 @@ model {
   layer {
     parents: "res5b_branch2a_relu"
     name: "res5b_branch2b"
-    children: "bn5b_branch2b"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1962,7 +1692,6 @@ model {
   layer {
     parents: "res5b_branch2b"
     name: "bn5b_branch2b"
-    children: "res5b_branch2b_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -1974,7 +1703,6 @@ model {
   layer {
     parents: "bn5b_branch2b"
     name: "res5b_branch2b_relu"
-    children: "res5b_branch2c"
     data_layout: "data_parallel"
     relu {
     }
@@ -1982,7 +1710,6 @@ model {
   layer {
     parents: "res5b_branch2b_relu"
     name: "res5b_branch2c"
-    children: "bn5b_branch2c"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1996,7 +1723,6 @@ model {
   layer {
     parents: "res5b_branch2c"
     name: "bn5b_branch2c"
-    children: "res5b"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2006,9 +1732,8 @@ model {
     }
   }
   layer {
-    parents: "res5b_split bn5b_branch2c"
+    parents: "res5a_relu bn5b_branch2c"
     name: "res5b"
-    children: "res5b_relu"
     data_layout: "data_parallel"
     sum {
     }
@@ -2016,7 +1741,6 @@ model {
   layer {
     parents: "res5b"
     name: "res5b_relu"
-    children: "res5c_split"
     data_layout: "data_parallel"
     relu {
     }
@@ -2025,16 +1749,7 @@ model {
   # res5c
   layer {
     parents: "res5b_relu"
-    name: "res5c_split"
-    children: "res5c res5c_branch2a"
-    data_layout: "data_parallel"
-    split {
-    }
-  }
-  layer {
-    parents: "res5c_split"
     name: "res5c_branch2a"
-    children: "bn5c_branch2a"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2048,7 +1763,6 @@ model {
   layer {
     parents: "res5c_branch2a"
     name: "bn5c_branch2a"
-    children: "res5c_branch2a_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2060,7 +1774,6 @@ model {
   layer {
     parents: "bn5c_branch2a"
     name: "res5c_branch2a_relu"
-    children: "res5c_branch2b"
     data_layout: "data_parallel"
     relu {
     }
@@ -2068,7 +1781,6 @@ model {
   layer {
     parents: "res5c_branch2a_relu"
     name: "res5c_branch2b"
-    children: "bn5c_branch2b"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2082,7 +1794,6 @@ model {
   layer {
     parents: "res5c_branch2b"
     name: "bn5c_branch2b"
-    children: "res5c_branch2b_relu"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2094,7 +1805,6 @@ model {
   layer {
     parents: "bn5c_branch2b"
     name: "res5c_branch2b_relu"
-    children: "res5c_branch2c"
     data_layout: "data_parallel"
     relu {
     }
@@ -2102,7 +1812,6 @@ model {
   layer {
     parents: "res5c_branch2b_relu"
     name: "res5c_branch2c"
-    children: "bn5c_branch2c"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -2116,7 +1825,6 @@ model {
   layer {
     parents: "res5c_branch2c"
     name: "bn5c_branch2c"
-    children: "res5c"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -2126,9 +1834,8 @@ model {
     }
   }
   layer {
-    parents: "res5c_split bn5c_branch2c"
+    parents: "res5b_relu bn5c_branch2c"
     name: "res5c"
-    children: "res5c_relu"
     data_layout: "data_parallel"
     sum {
     }
@@ -2136,7 +1843,6 @@ model {
   layer {
     parents: "res5c"
     name: "res5c_relu"
-    children: "pool5"
     data_layout: "data_parallel"
     relu {
     }
@@ -2146,7 +1852,6 @@ model {
   layer {
     parents: "res5c_relu"
     name: "pool5"
-    children: "fc1000"
     data_layout: "data_parallel"
     pooling {
       num_dims: 2
@@ -2159,7 +1864,6 @@ model {
   layer {
     parents: "pool5"
     name: "fc1000"
-    children: "prob"
     data_layout: "model_parallel"
     fully_connected {
     num_neurons: 1000
@@ -2169,19 +1873,27 @@ model {
   layer {
     parents: "fc1000"
     name: "prob"
-    children: "target"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     softmax {
     }
   }
   layer {
-    parents: "prob"
-    name: "target"
-    children: ""
+    name: "cross_entropy"
+    parents: "prob labels"
     data_layout: "data_parallel"
-    target_partitioned_minibatch {
-      shared_data_reader: true
-    }
+    cross_entropy {}    
+  }
+  layer {
+    name: "top1_accuracy"
+    parents: "prob labels"
+    data_layout: "data_parallel"
+    top_k_categorical_accuracy { k: 1 }
+  }
+  layer {
+    name: "top5_accuracy"
+    parents: "prob labels"
+    data_layout: "data_parallel"
+    top_k_categorical_accuracy { k: 5 }
   }
 
 }

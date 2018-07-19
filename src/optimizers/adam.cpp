@@ -22,10 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// adam .hpp .cpp .cu - SGD with Adam
-// Reference:
-// Kingma, D. and Ba, J. 2014. Adam: A Method for Stochastic Optimization.
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/optimizers/adam.hpp"
@@ -37,8 +33,7 @@ adam::adam(lbann_comm *comm,
            DataType learning_rate,
            DataType beta1,
            DataType beta2,
-           DataType eps,
-           cudnn::cudnn_manager *cudnn)
+           DataType eps)
   : optimizer(comm, learning_rate),
     m_beta1(beta1),
     m_beta2(beta2),
@@ -59,14 +54,6 @@ adam::adam(const adam& other)
     m_moment2(other.m_moment2) {
   if (m_moment1 != nullptr) { m_moment1 = m_moment1->Copy(); }
   if (m_moment2 != nullptr) { m_moment2 = m_moment2->Copy(); }
-  #ifdef __LIB_CUDNN
-  if (m_cudnn != nullptr && other.m_weights != nullptr) {
-    const int height = other.m_weights->get_height();
-    const int width = other.m_weights->get_width();
-    m_moment1_d = m_cudnn->copy(other.m_moment1_d, height, width);
-    m_moment2_d = m_cudnn->copy(other.m_moment2_d, height, width);
-  }
-  #endif // __LIB_CUDNN
 }
 
 adam& adam::operator=(const adam& other) {
@@ -97,30 +84,12 @@ adam& adam::operator=(const adam& other) {
     if (m_moment2 != nullptr) { m_moment2 = m_moment2->Copy(); }
   }
 
-  // Copy GPU data
-  #ifdef __LIB_CUDNN
-  if (m_cudnn != nullptr && other.m_weights != nullptr) {
-    const int height = other.m_weights->get_height();
-    const int width = other.m_weights->get_width();
-    m_cudnn->deallocate_on_gpus(m_moment1_d);
-    m_cudnn->deallocate_on_gpus(m_moment2_d);
-    m_moment1_d = m_cudnn->copy(other.m_moment1_d, height, width);
-    m_moment2_d = m_cudnn->copy(other.m_moment2_d, height, width);
-  }
-  #endif // __LIB_CUDNN
-
   return *this;
 }
 
 adam::~adam() {
   if(m_moment1 != nullptr) { delete m_moment1; }
   if(m_moment2 != nullptr) { delete m_moment2; }
-  #ifdef __LIB_CUDNN
-  if (m_cudnn != nullptr) {
-    m_cudnn->deallocate_on_gpus(m_moment1_d);
-    m_cudnn->deallocate_on_gpus(m_moment2_d);
-  }
-  #endif // __LIB_CUDNN
 }
 
 std::string adam::get_description() const {
@@ -144,14 +113,6 @@ void adam::setup(weights& w) {
                                     m_gradient->Root());
   El::Zeros(*m_moment1, height, width);
   El::Zeros(*m_moment2, height, width);
-
-  // Allocate GPU objects
-  if (m_cudnn != nullptr) {
-#ifdef __LIB_CUDNN
-    m_cudnn->allocate_on_gpus(m_moment1_d, height, width);
-    m_cudnn->allocate_on_gpus(m_moment2_d, height, width);
-#endif // __LIB_CUDNN
-  }
 
 }
 
@@ -219,18 +180,17 @@ void adam::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
 
 bool adam::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
   optimizer::save_to_checkpoint_shared(p, name_prefix);
-// m_learning_rate;
 
-  if (p.get_rank() == 0) {
+  if (m_comm->am_model_master()) {
     pack_scalars(p);
   }
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
-  p.write_distmat(persist_type::train, l_name, (DistMat*)m_moment1);
+  p.write_distmat(persist_type::train, l_name, m_moment1);
 
   sprintf(l_name, "%s_optimizer_adam_moment2_%lldx%lld", name_prefix.c_str(), m_moment2->Height(), m_moment2->Width());
-  p.write_distmat(persist_type::train, l_name, (DistMat*)m_moment2);
+  p.write_distmat(persist_type::train, l_name, m_moment2);
 
   return true;
 }
@@ -238,21 +198,52 @@ bool adam::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
 bool adam::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
   optimizer::load_from_checkpoint_shared(p, name_prefix);
   struct packing_header header;
-  if (p.get_rank() == 0) {
+  if (m_comm->am_model_master()) {
     unpack_scalars(p, &header);
   }
 
-  MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
+  m_comm->model_broadcast(0, header);
 
   unpack_header(header);
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld.bin", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
-  p.read_distmat(persist_type::train, l_name, (DistMat*)m_moment1);
+  p.read_distmat(persist_type::train, l_name, m_moment1);
 
   sprintf(l_name, "%s_optimizer_adam_moment2_%lldx%lld.bin", name_prefix.c_str(), m_moment2->Height(), m_moment2->Width());
-  p.read_distmat(persist_type::train, l_name, (DistMat*)m_moment2);
+  p.read_distmat(persist_type::train, l_name, m_moment2);
 
   return true;
 }
+
+bool adam::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
+  optimizer::save_to_checkpoint_distributed(p, name_prefix);
+
+  pack_scalars(p);
+
+  char l_name[512];
+  sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
+  p.write_rank_distmat(persist_type::train, l_name, *m_moment1);
+
+  sprintf(l_name, "%s_optimizer_adam_moment2_%lldx%lld", name_prefix.c_str(), m_moment2->Height(), m_moment2->Width());
+  p.write_rank_distmat(persist_type::train, l_name, *m_moment2);
+
+  return true;
+}
+
+bool adam::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
+  optimizer::load_from_checkpoint_distributed(p, name_prefix);
+  struct packing_header header;
+  unpack_scalars(p, &header);
+
+  char l_name[512];
+  sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
+  p.read_rank_distmat(persist_type::train, l_name, *m_moment1);
+
+  sprintf(l_name, "%s_optimizer_adam_moment2_%lldx%lld", name_prefix.c_str(), m_moment2->Height(), m_moment2->Width());
+  p.read_rank_distmat(persist_type::train, l_name, *m_moment2);
+
+  return true;
+}
+
 }  // namespace lbann

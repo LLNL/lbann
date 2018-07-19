@@ -51,7 +51,11 @@ void l1_weight_regularization::setup(model& m) {
 
 }
 
-EvalType l1_weight_regularization::evaluate() {
+void l1_weight_regularization::start_evaluation() {
+
+}
+
+EvalType l1_weight_regularization::finish_evaluation() {
   if (m_scale_factor == EvalType(0)) { return EvalType(0); }
   EvalType value = EvalType(0);
   for (weights* w : m_weights) {
@@ -77,11 +81,11 @@ EvalType l1_weight_regularization::evaluate() {
   return m_scale_factor * value;
 }
 
-void l1_weight_regularization::differentiate() {
+void l1_weight_regularization::compute_weight_regularization() {
   if (m_scale_factor == EvalType(0)) { return; }
   AbsDistMat* gradient;
   for (weights* w : m_weights) {
-    
+
     // Get matrices
     const AbsDistMat& values = w->get_values();
     const Mat& values_local = values.LockedMatrix();
@@ -104,7 +108,7 @@ void l1_weight_regularization::differentiate() {
           grad = DataType(0);
         }
       }
-    }    
+    }
     w->get_optimizer()->add_to_gradient(*gradient, m_scale_factor);
     delete gradient;
 

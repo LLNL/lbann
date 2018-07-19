@@ -58,6 +58,12 @@ class siamese_model : public directed_acyclic_graph_model {
 
  protected:
 
+  /** For Siamese models, users specify only the last layer to freeze in the
+   *  model description prototext. Then, the layers that precedes it will
+   *  automatically be frozen as well.
+   */
+  void freeze_layers_under_frozen_surface() override;
+
   /** Set up topology of Siamese network.
    *  Called in setup function. Determines the network's master head
    *  and duplicates it.

@@ -7,6 +7,7 @@
 #include <algorithm>
 #include "lbann/data_readers/image_utils.hpp"
 #include "lbann/data_readers/cv_process.hpp"
+#include "lbann/utils/file_utils.hpp"
 
 
 struct cropper_params {
@@ -22,6 +23,18 @@ struct cropper_params {
       m_adaptive_interpolation(false),
       m_crop_sz(std::make_pair(0, 0)),
       m_roi_sz(std::make_pair(0,0)) {}
+};
+
+struct resizer_params {
+  bool m_is_set;
+  unsigned int m_width;
+  unsigned int m_height;
+  bool m_adaptive_interpolation;
+  resizer_params(void)
+    : m_is_set(false),
+      m_width(0u),
+      m_height(0u),
+      m_adaptive_interpolation(false) {}
 };
 
 struct augmenter_params {
@@ -47,6 +60,7 @@ struct main_params {
   enum normalizer_type {_NONE_,_CHANNEL_WISE_,_PIXEL_WISE_};
   unsigned int m_num_bytes;
   bool m_enable_cropper;
+  bool m_enable_resizer;
   bool m_enable_augmenter;
   bool m_enable_colorizer;
   bool m_enable_decolorizer;
@@ -63,6 +77,7 @@ struct main_params {
   main_params(void)
     : m_num_bytes(0u),
       m_enable_cropper(true),
+      m_enable_resizer(false),
       m_enable_augmenter(false),
       m_enable_colorizer(false),
       m_enable_decolorizer(false),
@@ -72,7 +87,7 @@ struct main_params {
       m_num_iter(1u) {}
 };
 
-bool test_image_io(const std::string filename, const main_params& op, const cropper_params& rp, const augmenter_params& ap);
+bool test_image_io(const std::string filename, const main_params& op, const cropper_params& rp, const resizer_params& sp, const augmenter_params& ap);
 
 void show_help(std::string name);
 
@@ -88,6 +103,8 @@ int main(int argc, char *argv[]) {
 
   main_params mp;
   mp.m_enable_cropper = true;
+  // to test resizer manually swap m_enalbe_cropper/resizer
+  mp.m_enable_resizer = false;
   mp.m_enable_augmenter = static_cast<bool>(atoi(argv[8]));
   mp.m_enable_colorizer = true;
   mp.m_enable_decolorizer = false;
@@ -108,6 +125,14 @@ int main(int argc, char *argv[]) {
     //rp.m_adaptive_interpolation = true;
   }
 
+  resizer_params sp;
+  if (mp.m_enable_resizer) {
+    sp.m_is_set = true;
+    sp.m_width = static_cast<unsigned int>(atoi(argv[2]));
+    sp.m_height = static_cast<unsigned int>(atoi(argv[3]));
+    //sp.m_adaptive_interpolation = true;
+  }
+
   augmenter_params ap;
   if (mp.m_enable_augmenter) {
     ap.m_is_set = true;
@@ -117,7 +142,7 @@ int main(int argc, char *argv[]) {
   }
 
   // read write test with converting to/from a serialized buffer
-  bool ok = test_image_io(filename, mp, rp, ap);
+  bool ok = test_image_io(filename, mp, rp, sp, ap);
   if (!ok) {
     std::cout << "Test failed" << std::endl;
     return 0;
@@ -163,36 +188,6 @@ void show_image_size(const int width, const int height, const int type) {
   std::cout << "Total bytes                    : " << width *height *NCh *esz << std::endl;
 }
 
-std::string get_file_extention(const std::string filename) {
-  size_t pos = filename.find_last_of('.');
-  if (pos == 0u) {
-    return "";
-  }
-  return filename.substr(pos+1, filename.size());
-}
-
-bool read_file(const std::string filename, std::vector<unsigned char>& buf) {
-  std::ifstream file(filename, std::ios::binary);
-  if (!file.good()) {
-    return false;
-  }
-
-  file.unsetf(std::ios::skipws);
-
-  file.seekg(0, std::ios::end);
-  const std::streampos file_size = file.tellg();
-
-  file.seekg(0, std::ios::beg);
-
-  buf.reserve(file_size);
-
-  buf.insert(buf.begin(),
-             std::istream_iterator<unsigned char>(file),
-             std::istream_iterator<unsigned char>());
-
-  return true;
-}
-
 void write_file(const std::string filename, const std::vector<unsigned char>& buf) {
   std::ofstream file(filename, std::ios::out | std::ios::binary);
   file.write((const char *) buf.data(), buf.size() * sizeof(unsigned char));
@@ -203,6 +198,7 @@ void write_file(const std::string filename, const std::vector<unsigned char>& bu
 bool test_image_io(const std::string filename,
   const main_params& mp,
   const cropper_params& rp,
+  const resizer_params& sp,
   const augmenter_params& ap)
 {
 
@@ -218,6 +214,15 @@ bool test_image_io(const std::string filename,
       cropper->set(rp.m_crop_sz.first, rp.m_crop_sz.second, rp.m_rand_center, rp.m_roi_sz, rp.m_adaptive_interpolation);
       pp.add_transform(std::move(cropper));
       num_bytes = rp.m_crop_sz.first * rp.m_crop_sz.second * 3;
+      transform_idx ++;
+    }
+
+    if (sp.m_is_set) { // If resizer parameters are given
+      // Setup a cropper
+      std::unique_ptr<lbann::cv_resizer> resizer(new(lbann::cv_resizer));
+      resizer->set(sp.m_width, sp.m_height, rp.m_adaptive_interpolation);
+      pp.add_transform(std::move(resizer));
+      num_bytes = sp.m_width * sp.m_height * 3;
       transform_idx ++;
     }
 
@@ -258,12 +263,19 @@ bool test_image_io(const std::string filename,
         pp.add_normalizer(std::move(normalizer));
       } else {
         std::unique_ptr<lbann::cv_subtractor> normalizer(new(lbann::cv_subtractor));
+#if 0
         cv::Mat img_to_sub = cv::imread(mp.m_mean_image_name);
         if (img_to_sub.empty()) {
           std::cout << mp.m_mean_image_name << " does not exist" << std::endl;
           return false;
         }
-        normalizer->set(img_to_sub);
+        normalizer->set_mean(img_to_sub);
+#else
+        std::vector<lbann::DataType> mean = {0.40625, 0.45703, 0.48047};
+        normalizer->set_mean(mean);
+        std::vector<lbann::DataType> stddev = {0.3, 0.5, 0.3};
+        normalizer->set_stddev(stddev);
+#endif
         pp.add_normalizer(std::move(normalizer));
       }
       transform_idx ++;
@@ -272,7 +284,7 @@ bool test_image_io(const std::string filename,
 
   // Load an image bytestream into memory
   std::vector<unsigned char> buf;
-  bool ok = read_file(filename, buf);
+  bool ok = lbann::load_file(filename, buf);
   if (!ok) {
     std::cout << "Failed to load" << std::endl;
     return false;
@@ -291,16 +303,17 @@ bool test_image_io(const std::string filename,
   for (unsigned int i=0; i < mp.m_num_iter; ++i)
   {
     // This has nothing to do with the image type but only to create view on a block of bytes
-    typedef lbann::cv_image_type<uint8_t> InputBuf_T;
+    using InputBuf_T = lbann::cv_image_type<uint8_t>;
     // Construct a zero copying view to a portion of a preloaded data buffer
     const cv::Mat inbuf(1, (img_end - img_begin), InputBuf_T::T(1), &(buf[img_begin]));
 
     if (num_bytes == 0) {
       ok = lbann::image_utils::import_image(inbuf, width, height, type, pp, Images);
       num_bytes = Images.Height();
-      View(Image_v, Images, 0, 0, num_bytes, 1);
+      El::View(Image_v, Images, El::IR(0, num_bytes), El::IR(0, 1));
     } else {
-      View(Image_v, Images, 0, 0, num_bytes, 1);
+      El::View(Image_v, Images, El::IR(0, num_bytes), El::IR(0, 1));
+      //ok = lbann::image_utils::import_image(buf, width, height, type, pp, Image_v);
       ok = lbann::image_utils::import_image(inbuf, width, height, type, pp, Image_v);
     }
     if (!ok) {
@@ -329,7 +342,7 @@ bool test_image_io(const std::string filename,
   }
 
   // Export the unnormalized image
-  const std::string ext = get_file_extention(filename);
+  const std::string ext = lbann::get_ext_name(filename);
   std::vector<unsigned char> outbuf;
   ok = lbann::image_utils::export_image(ext, outbuf, width, height, type, pp, Image_v);
   write_file("copy." + ext, outbuf);

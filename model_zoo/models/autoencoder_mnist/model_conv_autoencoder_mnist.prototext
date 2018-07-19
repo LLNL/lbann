@@ -5,9 +5,7 @@ model {
   block_size: 256
   num_epochs: 4
   num_parallel_readers: 1
-  procs_per_model: 0 
-  use_cudnn: false
-  num_gpus: -1
+  procs_per_model: 0
 
   ###################################################
   # Objective function
@@ -48,8 +46,11 @@ model {
   #######
   layer {
     name: "data"
+    children: "conv1 reconstruction"
     data_layout: "data_parallel"
-    input_distributed_minibatch {
+    input {
+      io_buffer: "distributed"
+      target_mode: "reconstruction"
     }
   }
 
@@ -181,7 +182,7 @@ model {
       has_vectors: true
     }
   }
-  
+
  #########
   # UNPOOLING 3
   #########
@@ -193,7 +194,7 @@ model {
       pooling_layer: "pool3"
     }
   }
- 
+
   #############
   # DECONVOLUTION 3
   #############
@@ -251,7 +252,7 @@ model {
   }
 
   ######
-  # RELU 5 
+  # RELU 5
   ######
   layer {
     name: "relu5"
@@ -322,16 +323,15 @@ model {
     }
   }
 
-  
+
   #################
   # RECONSTRUCTION
   #################
   layer {
     name: "reconstruction"
+    parents: "sigmoid data"
     data_layout: "data_parallel"
-    reconstruction {
-      original_layer: "data"
-    }
+    reconstruction {}
   }
 
   ###################################################

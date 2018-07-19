@@ -28,11 +28,12 @@
 
 #include "lbann/callbacks/callback_checksmall.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/layers/io/target/target_layer.hpp"
 
 namespace lbann {
 
 void lbann_callback_checksmall::on_forward_prop_end(model *m, Layer *l) {
-  if (dynamic_cast<target_layer*>(l) != nullptr) {
+  if (dynamic_cast<generic_target_layer*>(l) != nullptr) {
     return;
   }
   const AbsDistMat& acts = l->get_activations();
@@ -74,7 +75,7 @@ void lbann_callback_checksmall::on_batch_end(model *m) {
 }
 
 bool lbann_callback_checksmall::is_good(const AbsDistMat& m) {
-  const Mat& local_mat = m.LockedMatrix();
+  const AbsMat& local_mat = m.LockedMatrix();
   const El::Int height = local_mat.Height();
   const El::Int width = local_mat.Width();
   for (El::Int col = 0; col < width; ++col) {

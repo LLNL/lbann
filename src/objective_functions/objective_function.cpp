@@ -72,13 +72,24 @@ void objective_function::setup(model& m) {
   }
 }
 
-EvalType objective_function::evaluate(execution_mode mode) {
+void objective_function::start_evaluation(execution_mode mode,
+                                          int mini_batch_size) {
+  const auto start_time = get_time();
+  for (const auto& term : m_terms) {
+    term->start_evaluation();
+  }
+  m_evaluation_time += get_time() - start_time;
+}
+
+EvalType objective_function::finish_evaluation(execution_mode mode,
+                                               int mini_batch_size) {
   const auto start_time = get_time();
   EvalType value = EvalType(0);
   for (const auto& term : m_terms) {
-    value += term->evaluate();
+    value += term->finish_evaluation();
   }
-  m_statistics[mode].add_value(value, 1);
+  m_statistics[mode].add_value(mini_batch_size * value,
+                               mini_batch_size);
   m_evaluation_time += get_time() - start_time;
   return value;
 }
@@ -87,6 +98,14 @@ void objective_function::differentiate() {
   const auto start_time = get_time();
   for (const auto& term : m_terms) {
     term->differentiate();
+  }
+  m_differentiation_time += get_time() - start_time;
+}
+
+void objective_function::compute_weight_regularization() {
+  const auto start_time = get_time();
+  for (const auto& term : m_terms) {
+    term->compute_weight_regularization();
   }
   m_differentiation_time += get_time() - start_time;
 }
@@ -163,20 +182,5 @@ void objective_function::set_weights_pointers(std::vector<weights*> w) {
     throw lbann_exception(err.str());
   }
 }
-
-bool objective_function::save_to_checkpoint_shared(lbann::persist& p) {
-  for (objective_function_term *term : m_terms) {
-    term->save_to_checkpoint_shared(p);
-  }
-  return true;
-}
-
-bool objective_function::load_from_checkpoint_shared(lbann::persist& p) {
-  for (objective_function_term *term : m_terms) {
-    term->load_from_checkpoint_shared(p);
-  }
-  return true;
-}
-
 
 }  // namespace lbann

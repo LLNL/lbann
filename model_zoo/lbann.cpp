@@ -29,11 +29,15 @@
 #include "lbann/lbann.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf_utils.hpp"
+#include "lbann/utils/stack_profiler.hpp"
+#include "lbann/data_store/generic_data_store.hpp"
+#include <cstdlib>
 
 
 using namespace lbann;
 
 const int lbann_default_random_seed = 42;
+
 
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
@@ -63,9 +67,14 @@ int main(int argc, char *argv[]) {
       return 0;
     }
 
-    //must be called after opts->init(); must also specify "--catch-signals" 
-    //on cmd line
+
+
+    //this must be called after call to opts->init();
+    //must also specify "--catch-signals" on cmd line
     stack_trace::register_handler();
+
+    //to activate, must specify --st_on on cmd line
+    stack_profiler::get()->activate(comm->get_rank_in_world());
 
     std::vector<lbann_data::LbannPB *> pbs;
     protobuf_utils::load_prototext(master, argc, argv, pbs);
@@ -97,7 +106,7 @@ int main(int argc, char *argv[]) {
       init_data_seq_random(random_seed);
     }
     // Initialize models differently if needed.
-#ifndef LBANN_SEQUENTIAL_CONSISTENCY
+#ifndef LBANN_DETERMINISTIC
     if (pb_model->random_init_models_differently()) {
       random_seed = random_seed + comm->get_model_rank();
       // Reseed here so that setup is done with this new seed.
@@ -123,53 +132,76 @@ int main(int argc, char *argv[]) {
       pb_model->set_num_parallel_readers(procs_per_model);
     }
 
-    if (master) {
-      std::cout << "Model settings" << std::endl
-                << "  Models              : " << comm->get_num_models() << std::endl
-                << "  Processes per model : " << procs_per_model << std::endl
-                << "  Grid dimensions     : " << comm->get_model_grid().Height() << " x " << comm->get_model_grid().Width() << std::endl;
-      std::cout << std::endl;
-    }
-
     // Save info to file; this includes the complete prototext (with any over-rides
     // from the cmd line) and various other info
     save_session(comm, argc, argv, pb);
 
-    // Check for cudnn, with user feedback
-    cudnn::cudnn_manager *cudnn = nullptr;
-#if __LIB_CUDNN
-    if (pb_model->use_cudnn()) {
-      if (master) {
-        std::cerr << "code was compiled with __LIB_CUDNN, and we are using cudnn\n";
-      }
-      if(pb_model->use_nccl()) {
-        cudnn = new cudnn::cudnn_manager(comm, pb_model->num_gpus(), true);
-      }
-      else{
-        cudnn = new cudnn::cudnn_manager(comm, pb_model->num_gpus(), false);
-      }
-    } else {
-      if (master) {
-        std::cerr << "code was compiled with __LIB_CUDNN, but we are NOT USING cudnn\n";
-      }
-    }
-#else
+    // Report useful information
     if (master) {
-      std::cerr << "code was NOT compiled with __LIB_CUDNN\n";
-    }
-#endif
 
-    if (master) {
-      std::cout << "Hardware settings (for master process)" << std::endl
-                << "  Processes on node            : " << comm->get_procs_per_node() << std::endl
-                << "  OpenMP threads per process   : " << omp_get_max_threads() << std::endl;
-      #if __LIB_CUDNN
-      if (cudnn != nullptr) {
-        std::cout << "  GPUs on node                 : " << cudnn->get_num_visible_gpus() << std::endl
-                  << "  GPUs per process             : " << cudnn->get_num_gpus() << std::endl;
-      }
-      #endif // __LIB_CUDNN
+      // Report hardware settings
+      std::cout << "Hardware properties (for master process)" << std::endl
+                << "  Processes on node          : " << comm->get_procs_per_node() << std::endl
+                << "  OpenMP threads per process : " << omp_get_max_threads() << std::endl;
+#ifdef HYDROGEN_HAVE_CUDA
+      std::cout << "  GPUs on node               : " << El::GPUManager::NumDevices() << std::endl;
+#endif // HYDROGEN_HAVE_CUDA
       std::cout << std::endl;
+
+      // Report build settings
+      std::cout << "Build settings" << std::endl;
+      std::cout << "  Type  : ";
+#ifdef LBANN_DEBUG
+      std::cout << "Debug" << std::endl;
+#else
+      std::cout << "Release" << std::endl;
+#endif // LBANN_DEBUG
+      std::cout << "  CUDA  : ";
+#ifdef LBANN_HAS_GPU
+      std::cout << "detected" << std::endl;
+#else
+      std::cout << "NOT detected" << std::endl;
+#endif // LBANN_HAS_GPU
+      std::cout << "  cuDNN : ";
+#ifdef LBANN_HAS_CUDNN
+      std::cout << "detected" << std::endl;
+#else
+      std::cout << "NOT detected" << std::endl;
+#endif // LBANN_HAS_CUDNN
+      std::cout << "  CUB   : ";
+#ifdef HYDROGEN_HAVE_CUB
+      std::cout << "detected" << std::endl;
+#else
+      std::cout << "NOT detected" << std::endl;
+#endif // HYDROGEN_HAVE_CUB
+      std::cout << std::endl;
+
+      // Report device settings
+      std::cout << "GPU settings" << std::endl;
+      bool disable_cuda = pb_model->disable_cuda();
+#ifndef LBANN_HAS_GPU
+      disable_cuda = true;
+#endif // LBANN_HAS_GPU
+      std::cout << "  CUDA         : "
+                << (disable_cuda ? "disabled" : "enabled") << std::endl;
+      std::cout << "  cuDNN        : ";
+#ifdef LBANN_HAS_CUDNN
+      std::cout << (disable_cuda ? "disabled" : "enabled") << std::endl;
+#else
+      std::cout << "disabled" << std::endl;
+#endif // LBANN_HAS_CUDNN
+      const auto* env = std::getenv("MV2_USE_CUDA");
+      std::cout << "  MV2_USE_CUDA : " << (env != nullptr ? env : "") << std::endl;
+      std::cout << std::endl;
+
+      // Report model settings
+      const auto& grid = comm->get_model_grid();
+      std::cout << "Model settings" << std::endl
+                << "  Models              : " << comm->get_num_models() << std::endl
+                << "  Processes per model : " << procs_per_model << std::endl
+                << "  Grid dimensions     : " << grid.Height() << " x " << grid.Width() << std::endl;
+      std::cout << std::endl;
+
     }
 
     // Display how the OpenMP threads are provisioned
@@ -180,31 +212,39 @@ int main(int argc, char *argv[]) {
     // Initialize data readers
     //@todo: code not in place for correctly handling image preprocessing
     std::map<execution_mode, generic_data_reader *> data_readers;
-    init_data_readers(master, pb, data_readers);
-
-    // Construct optimizer
-    optimizer *default_optimizer = init_default_optimizer(comm, cudnn, pb);
+    init_data_readers(comm, pb, data_readers);
 
     // User feedback
     print_parameters(comm, pb);
 
     // Initalize model
-    // @todo: not all callbacks code is in place
-    model *model = init_model(comm, default_optimizer, pb);
-    add_layers(model, data_readers, cudnn, pb);
-    init_callbacks(comm, model, data_readers, pb);
+    auto&& model = proto::construct_model(comm,
+                                          data_readers,
+                                          pb.optimizer(),
+                                          pb.model());
     model->setup();
+
+    //under development; experimental
+    if (opts->has_bool("use_data_store") && opts->get_bool("use_data_store")) {
+      if (master) {
+        std::cerr << "\nUSING DATA STORE!\n\n";
+      }
+      for (auto r : data_readers) {
+        if (!r.second) continue;
+        r.second->setup_data_store(model);
+      }
+    }
+
+    if (opts->has_string("create_tarball")) {
+      finalize(comm);
+      return 0;
+    }
+
     // restart model from checkpoint if we have one
     //@todo
-    
+
     if (comm->am_world_master()) {
       std::cout << std::endl;
-      if (default_optimizer != nullptr) {
-        std::cout << "Default optimizer: " << default_optimizer->get_description();
-      } else {
-        std::cout << "No optimizer";
-      }
-      std::cout << std::endl << std::endl;
       std::cout << "Callbacks:" << std::endl;
       for (lbann_callback *cb : model->get_callbacks()) {
         std::cout << cb->name() << std::endl;
@@ -216,15 +256,20 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    if (!opts->has_string("exit_after_setup")) {
-#ifndef LBANN_SEQUENTIAL_CONSISTENCY
+    if (! (opts->has_bool("exit_after_setup") && opts->get_bool("exit_after_setup"))) {
+
+#ifndef LBANN_DETERMINISTIC
       // Under normal conditions, reinitialize the random number generator so
       // that regularization techniques (e.g. dropout) generate unique patterns
       // on different ranks.
-      init_random(random_seed + comm->get_rank_in_world());
+      // Do not do this if current epoch/iter is not 0. 
+      // Signifies a restart has occured and rng state has been loaded in. 
+      if(model->get_cur_epoch() == 0 && model->get_cur_step() == 0){
+        init_random(random_seed + comm->get_rank_in_world());
+      }
 #else
       if(comm->am_world_master()) {
-        std::cout << 
+        std::cout <<
           "--------------------------------------------------------------------------------\n"
           "ALERT: executing in sequentially consistent mode -- performance will suffer\n"
           "--------------------------------------------------------------------------------\n";
@@ -237,14 +282,20 @@ int main(int argc, char *argv[]) {
       // Evaluate model on test set
       model->evaluate(execution_mode::testing);
 
+      //has no affect unless option: --st_on was given
+      stack_profiler::get()->print();
+
     } else {
       if (comm->am_world_master()) {
-        std::cout << 
+        std::cout <<
           "--------------------------------------------------------------------------------\n"
           "ALERT: model has been setup; we are now exiting due to command\n"
           "       line option: --exit_after_setup\n"
           "--------------------------------------------------------------------------------\n";
       }
+
+      //has no affect unless option: --st_on was given
+      stack_profiler::get()->print();
     }
 
     // @todo: figure out and implement coherent strategy

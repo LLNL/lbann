@@ -1,0 +1,247 @@
+model {
+  name: "recurrent_model"
+  data_layout: "data_parallel"
+  mini_batch_size: 256
+  block_size: 256
+  num_epochs: 20
+  num_parallel_readers: 0
+  procs_per_model: 0
+  recurrent {
+    unroll_depth : 5
+  }
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    mean_squared_error {}
+    l2_weight_regularization {
+      scale_factor: 0.0005
+    }
+  }
+
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback { print {} }
+  callback { timer {} }
+
+  ###################################################
+  # Layers
+  ###################################################
+
+  # Data
+  layer {
+    name: "data"
+    children: "lstm1_forgetgate_input eval"
+    input {
+      io_buffer: "partitioned"
+    }
+    data_layout: "data_parallel"
+  }
+
+  # lstm1 forget gate
+  layer {
+    parents: "data"
+    name: "lstm1_forgetgate_input"
+    fully_connected {
+      num_neurons: 128
+      has_bias: true
+    }
+    data_layout: "data_parallel"
+  }
+  layer {
+    parents: "lstm1_output"
+    name: "lstm1_forgetgate_output"
+    fully_connected {
+      num_neurons: 128
+      has_bias: false
+    }
+    data_layout: "data_parallel"
+  }
+  layer {
+    parents: "lstm1_forgetgate_input lstm1_forgetgate_output"
+    name: "lstm1_forgetgate_sum"
+    sum {}
+    data_layout: "data_parallel"
+  }
+  layer {
+    parents: "lstm1_forgetgate_sum"
+    name: "lstm1_forgetgate"
+    sigmoid {}
+    data_layout: "data_parallel"
+  }
+
+  # lstm1 input gate
+  layer {
+    parents: "data"
+    name: "lstm1_inputgate_input"
+    fully_connected {
+      num_neurons: 128
+      has_bias: true
+    }
+    data_layout: "data_parallel"
+  }
+  layer {
+    parents: "lstm1_output"
+    name: "lstm1_inputgate_output"
+    fully_connected {
+      num_neurons: 128
+      has_bias: false
+    }
+    data_layout: "data_parallel"
+  }
+  layer {
+    parents: "lstm1_inputgate_input lstm1_inputgate_output"
+    name: "lstm1_inputgate_sum"
+    sum {}
+    data_layout: "data_parallel"
+  }
+  layer {
+    parents: "lstm1_inputgate_sum"
+    name: "lstm1_inputgate"
+    sigmoid {}
+    data_layout: "data_parallel"
+  }
+
+  # lstm1 output gate
+  layer {
+    parents: "data"
+    name: "lstm1_outputgate_input"
+    fully_connected {
+      num_neurons: 128
+      has_bias: true
+    }
+    data_layout: "data_parallel"
+  }
+  layer {
+    parents: "lstm1_output"
+    name: "lstm1_outputgate_output"
+    fully_connected {
+      num_neurons: 128
+      has_bias: false
+    }
+    data_layout: "data_parallel"
+  }
+  layer {
+    parents: "lstm1_outputgate_input lstm1_outputgate_output"
+    name: "lstm1_outputgate_sum"
+    sum {}
+    data_layout: "data_parallel"
+  }
+  layer {
+    parents: "lstm1_outputgate_sum"
+    name: "lstm1_outputgate"
+    sigmoid {}
+    data_layout: "data_parallel"
+  }
+
+  # lstm1 cell update
+  layer {
+    parents: "data"
+    name: "lstm1_cellupdate_input"
+    fully_connected {
+      num_neurons: 128
+      has_bias: true
+    }
+    data_layout: "data_parallel"
+  }
+  layer {
+    parents: "lstm1_output"
+    name: "lstm1_cellupdate_history"
+    fully_connected {
+      num_neurons: 128
+      has_bias: false
+    }
+    data_layout: "data_parallel"
+  }
+  layer {
+    parents: "lstm1_cellupdate_input lstm1_cellupdate_history"
+    name: "lstm1_cellupdate_sum"
+    sum {}
+    data_layout: "data_parallel"
+  }
+  layer {
+    parents: "lstm1_cellupdate_sum"
+    name: "lstm1_cellupdate_tanh"
+    tanh {}
+    data_layout: "data_parallel"
+  }
+
+  # lstm1 cell state
+  layer {
+    parents: "lstm1_forgetgate lstm1_cell"
+    name: "lstm1_cell_history"
+    hadamard {}
+    data_layout: "data_parallel"
+  }
+  layer {
+    parents: "lstm1_inputgate lstm1_cellupdate_tanh"
+    name: "lstm1_cell_update"
+    hadamard {}
+    data_layout: "data_parallel"
+  }
+  layer {
+    parents: "lstm1_cell_history lstm1_cell_update"
+    name: "lstm1_cell_sum"
+    sum {}
+    data_layout: "data_parallel"
+  }
+  layer {
+    parents: "lstm1_cell_sum"
+    name: "lstm1_cell"
+    reshape {
+      num_dims: 1
+      dims: "128"
+    }
+    data_layout: "data_parallel"
+  }
+
+  # lstm1 output
+  layer {
+    parents: "lstm1_cell"
+    name: "lstm1_output_tanh"
+    tanh {}
+    data_layout: "data_parallel"
+  }
+  layer {
+    parents: "lstm1_outputgate lstm1_output_tanh"
+    name: "lstm1_output_hadamard"
+    hadamard {}
+    data_layout: "data_parallel"
+  }
+  layer {
+    parents: "lstm1_output_hadamard"
+    name: "lstm1_output"
+    reshape {
+      num_dims: 1
+      dims: "128"
+    }
+    data_layout: "data_parallel"
+  }
+
+  # prediction
+  layer {
+    parents: "lstm1_output"
+    name: "fc"
+    fully_connected {
+      num_neurons: 128
+      has_bias: false
+    }
+    data_layout: "data_parallel"
+  }
+  layer {
+    parents: "fc"
+    name: "prob"
+    softmax {}
+    data_layout: "data_parallel"
+  }
+  layer {
+    parents: "prob data"
+    name: "eval"
+    target {}
+    data_layout: "data_parallel"
+  }
+
+}

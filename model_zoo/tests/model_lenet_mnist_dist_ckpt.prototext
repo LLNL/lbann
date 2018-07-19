@@ -1,0 +1,164 @@
+model {
+  name: "sequential_model"
+  data_layout: "data_parallel"
+  mini_batch_size: 64
+  block_size: 256
+  num_epochs: 20
+  num_parallel_readers: 0
+  procs_per_model: 0
+  disable_cuda: true
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    cross_entropy {}
+    l2_weight_regularization {
+      scale_factor: 1e-4
+    }
+  }
+
+  ###################################################
+  # Metrics
+  ###################################################
+
+  metric {
+    categorical_accuracy {}
+  }
+
+  ###################################################
+  # Callbacks
+  ###################################################
+
+  callback { print {} }
+  callback { timer {} }
+  callback {
+    summary {
+      dir: "."
+      mat_interval: 25
+    }
+  }
+
+  callback {
+    checkpoint {
+      checkpoint_dir: "ckpt"
+      ckpt_dist_epochs: 1
+      ckpt_dist_steps: 845
+      per_rank_dir: "."
+    }
+  }
+  callback {
+    adaptive_learning_rate {
+      patience: 4
+      amt: 0.1
+    }
+  }
+  callback {
+    imcomm {
+      intermodel_comm_method: "normal"
+      all_optimizers: true
+    }
+  }
+
+
+  ###################################################
+  # Layers
+  ###################################################
+
+  layer {
+    name: "data"
+    children: "conv1 target"
+    data_layout: "data_parallel"
+    input {
+      io_buffer: "partitioned"
+    }
+  }
+
+  layer {
+    name: "conv1"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 20
+      conv_dims_i: 5
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: true
+    }
+  }
+
+  layer {
+    name: "pool1"
+    data_layout: "data_parallel"
+    pooling {
+      num_dims: 2
+      pool_dims_i: 2
+      pool_pads_i: 0
+      pool_strides_i: 2
+      pool_mode: "max"
+    }
+  }
+
+  layer {
+    name: "conv2"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 50
+      conv_dims_i: 5
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: true
+    }
+  }
+
+  layer {
+    name: "pool2"
+    data_layout: "data_parallel"
+    pooling {
+      num_dims: 2
+      pool_dims_i: 2
+      pool_pads_i: 0
+      pool_strides_i: 2
+      pool_mode: "max"
+    }
+  }
+
+  layer {
+    name: "ip1"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 500
+      has_bias: true
+    }
+  }
+
+  layer {
+    name: "relu1"
+    data_layout: "model_parallel"
+    relu {}
+  }
+
+  layer {
+    name: "ip2"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 10
+      has_bias: true
+    }
+  }
+
+  layer {
+    name: "prob"
+    data_layout: "model_parallel"
+    softmax {}
+  }
+
+  layer {
+    parents: "prob data"
+    name: "target"
+    data_layout: "data_parallel"
+    target {}
+  }
+
+}

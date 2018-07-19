@@ -1,5 +1,5 @@
 #
-# shapes: http://www.graphviz.org/content/node-shapes
+# shapes: https://graphviz.gitlab.io/_pages/doc/info/shapes.html
 # color names: http://www.graphviz.org/doc/info/colors.html
 #
 # I found this tutorial useful: http://tonyballantyne.com/graphs.html
@@ -20,15 +20,13 @@ layer_names_and_overrides
 learning     convolution             shape=tripleoctagon   color=chartreuse3
 learning     fully_connected 
 learning     deconvolution           shape=octogon
-learning     fully_connected_cuda 
-io           input_distributed_minibatch
-io           input_partitioned_minibatch
-io           target_distributed_minibatch
-io           target_partitioned_minibatch
+io           input
+io           target
 io           reconstruction
+io           repeated_input
 activations  softmax
 activations  elu
-activations  id
+activations  identity
 activations  leaky_relu
 activations  relu
 activations  sigmoid
@@ -36,6 +34,9 @@ activations  smooth_relu
 activations  softplus
 activations  selu
 activations  tanh
+activations  exponential
+activations  power
+activations  log
 regularizers batch_normalization
 regularizers local_response_normalization
 regularizers dropout
@@ -46,6 +47,21 @@ transform    concatenation
 transform    slice
 transform    split arrow=red
 transform    sum
-transform    noise
 transform    unpooling
-
+transform    hadamard
+transform    zero
+transform    transform
+transform    constant
+transform    reduction
+transform    evaluation
+transform    gaussian
+transform    bernoulli
+transform    uniform
+transform    zero
+transform    noise
+transform    crop
+transform    categorical_random
+transform    discrete_random
+transform    stop_gradient
+transform    max
+transform    min

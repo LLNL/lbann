@@ -22,54 +22,30 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// sum.hpp - Sum layer
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_LAYER_SUM_HPP_INCLUDED
 #define LBANN_LAYER_SUM_HPP_INCLUDED
 
-#include <vector>
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
-/// Sum layer
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
+/** Sum layer. */
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class sum_layer : public transform_layer {
- private:
 
  public:
-  /// Constructor
-  sum_layer(lbann_comm *comm,
-            cudnn::cudnn_manager *cudnn = nullptr)
+  sum_layer(lbann_comm *comm)
     : transform_layer(comm) {
-
-    // Setup the data distribution
-    initialize_distributed_matrices();
-
-    // Sum layer has no limit on parents
-    m_max_num_parent_layers = -1;
-
-  #ifdef __LIB_CUDNN
-    // Initialize GPU if available
-    if(cudnn) {
-      this->m_using_gpus = true;
-      this->m_cudnn = cudnn;
-    }
-  #endif // __LIB_CUDNN
-
+    m_expected_num_parent_layers = -1; // No limit on parents
   }
 
-  sum_layer(const sum_layer&) = default;
-  sum_layer& operator=(const sum_layer&) = default;
-  ~sum_layer() override {
-  #ifdef __LIB_CUDNN
-    // GPU memory for activations is a copy of previous layer's activations
-    this->m_error_signal_d.clear();
-  #endif // __LIB_CUDNN
-  }
+  sum_layer* copy() const override { return new sum_layer(*this); }
+  std::string get_type() const override { return "sum"; }
+  data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   /** Returns description of ctor params */
   std::string get_description() const override {
@@ -82,129 +58,53 @@ class sum_layer : public transform_layer {
      return s.str();
   }
 
-  sum_layer* copy() const override { return new sum_layer(*this); }
+ protected:
 
-  std::string get_type() const override { return "sum"; }
-
-  virtual inline void initialize_distributed_matrices() {
-    transform_layer::initialize_distributed_matrices<T_layout>();
-  }
-  data_layout get_data_layout() const override { return T_layout; }
-
-  void setup_gpu() override {
-    transform_layer::setup_gpu();
-  #ifndef __LIB_CUDNN
-    throw lbann_exception("sum_layer: cuDNN not detected");
-  #else
-
-    // Copy backward propagation output from GPUs if a parent layer is
-    // not using GPU implementation
-    for(size_t i=1; i<this->m_parent_layers.size(); ++i) {
-      if(!this->m_parent_layers[i]->using_gpus()) {
-        m_copy_bp_output_from_gpus = true;
+  void setup_dims() override {
+    transform_layer::setup_dims();
+    const auto& output_dims = get_output_dims();
+    for (int i = 0; i < get_num_parents(); ++i) {
+      const auto& input_dims = get_input_dims(i);
+      if (input_dims != output_dims) {
+        std::stringstream err;
+        err << get_type() << " layer \"" << get_name() << "\" "
+            << "expects input tensors with dimensions ";
+        for (size_t j = 0; j < output_dims.size(); ++j) {
+          err << (j > 0 ? " x " : "") << output_dims[j];
+        }
+        err << ", but parent layer "
+            << "\"" << m_parent_layers[i]->get_name() << "\" "
+            << "outputs with dimensions ";
+        for (size_t j = 0; j < input_dims.size(); ++j) {
+          err << (j > 0 ? " x " : "") << input_dims[j];
+        }
+        LBANN_ERROR(err.str());
       }
     }
-
-  #endif // #ifndef __LIB_CUDNN
   }
 
-  protected:
-
   void fp_compute() override {
-    if(this->m_using_gpus) {
-      fp_compute_cudnn();
-    } else {
-      fp_compute_cpu();
+    auto& output = get_activations();
+    switch (get_num_parents()) {
+    case 0: El::Zero(output); break;
+    case 1: El::LockedView(output, get_prev_activations(0)); break;
+    default:
+      El::Copy(get_prev_activations(0), output);
+      for (int i = 1; i < get_num_parents(); ++i) {
+        El::Axpy(DataType(1), get_prev_activations(i), output);
+      }
     }
   }
 
   void bp_compute() override {
-    if(this->m_using_gpus) {
-  #ifndef __LIB_CUDNN
-      throw lbann_exception("sum_layer: cuDNN not detected");
-  #else
-      this->m_cudnn->copy_on_gpus(this->m_error_signal_d,
-                                  this->m_prev_error_signal_dv,
-                                  this->m_num_neurons,
-                                  this->m_mini_batch_size_per_gpu);
-  #endif // __LIB_CUDNN
-    }
-    else {
-      El::LockedView(*this->m_error_signal_v, *this->m_prev_error_signal_v);
-    }
-  }
-
-  void fp_compute_cudnn() {
-  #ifndef __LIB_CUDNN
-    throw lbann_exception("sum_layer: cuDNN not detected");
-  #else
-
-    // Useful constant
-    const DataType one = 1;
-
-    // Copy error signal from first child layer
-    this->m_cudnn->copy_on_gpus(this->m_activations_d,
-                                this->m_prev_activations_dv,
-                                this->m_num_prev_neurons,
-                                this->m_mini_batch_size_per_gpu);
-
-    // Iterate through child layers
-    const int num_gpus = this->m_cudnn->get_num_gpus();
-    for(size_t parent_index = 1;
-        parent_index < this->m_parent_layers.size();
-        ++parent_index) {
-      const Layer* parent = this->m_parent_layers[parent_index];
-
-      // Get child error signal on GPUs
-      if(parent->using_gpus()) {
-        parent->get_gpu_fp_output(this->m_prev_activations_dv,
-                                  this->m_prev_activations_d,
-                                  this);
-      }
-      else {
-        parent->get_fp_output(*this->m_prev_activations_v, this);
-        if(m_prev_activations_d.empty()) {
-          m_cudnn->allocate_on_gpus(m_prev_activations_d,
-                                    m_num_prev_neurons,
-                                    m_max_mini_batch_size_per_gpu);
-        }
-        this->m_cudnn->scatter_to_gpus(this->m_prev_activations_d,
-                                       this->m_prev_activations_v->LockedMatrix(),
-                                       this->m_mini_batch_size_per_gpu);
-        m_prev_activations_dv = m_prev_activations_d;
-      }
-
-      // Add child error signal to this layer's error signal
-      for(int i=0; i<num_gpus; ++i) {
-        CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-        CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
-                                   this->m_cudnn->get_stream(i)));
-        CHECK_CUDNN(cudnnAddTensor(this->m_cudnn->get_handle(i),
-                                   &one,
-                                   this->m_prev_neurons_cudnn_desc,
-                                   this->m_prev_activations_dv[i],
-                                   &one,
-                                   this->m_neurons_cudnn_desc,
-                                   this->m_activations_d[i]));
-      }
-
-    }
-
-  #endif // #ifndef __LIB_CUDNN
-  }
-
-  void fp_compute_cpu() {
-    El::Copy(*this->m_prev_activations_v, *this->m_activations_v);
-    for(size_t i=1; i<this->m_parent_layers.size(); ++i) {
-      this->m_parent_layers[i]->get_fp_output(*this->m_prev_activations_v, this);
-      El::Axpy(DataType(1),
-               *this->m_prev_activations_v,
-               *this->m_activations_v);
+    const auto& gradient_wrt_output = get_prev_error_signals();
+    for (int i = 0; i < get_num_parents(); ++i) {
+      El::LockedView(get_error_signals(i), gradient_wrt_output);
     }
   }
 
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_LAYER_SUM_HPP_INCLUDED
+#endif // LBANN_LAYER_SUM_HPP_INCLUDED

@@ -6,8 +6,6 @@ model {
   num_epochs: 10
   num_parallel_readers: 0
   procs_per_model: 0
-  use_cudnn: true
-  num_gpus: -1
 
   ###################################################
   # Objective function
@@ -56,6 +54,7 @@ model {
       all_optimizers: true
     }
   }
+  # callback { gradient_check {} }
 
   ###################################################
   # Layers
@@ -64,9 +63,10 @@ model {
   layer {
     name: "0"
     parents: "0"
-    children: ""
+    children: "1 184"
     data_layout: "data_parallel"
-    input_partitioned_minibatch {
+    input {
+      io_buffer: "partitioned"
     }
   }
   layer {
@@ -111,7 +111,7 @@ model {
     pooling {
       num_dims: 2
       pool_dims_i: 3
-      pool_pads_i: 0
+      pool_pads_i: 1
       pool_strides_i: 2
       pool_mode: "max"
     }
@@ -2045,11 +2045,9 @@ model {
   }
   layer {
     name: "184"
-    parents: "183"
+    parents: "183 0"
     children: ""
     data_layout: "data_parallel"
-    target_partitioned_minibatch {
-      shared_data_reader: true
-    }
+    target {}
   }
 }

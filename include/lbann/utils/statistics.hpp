@@ -64,6 +64,7 @@ void columnwise_mean_and_stdev(const Mat& data, Mat& means, Mat& stdevs);
 void columnwise_mean_and_stdev(const Mat& data, Mat& means, Mat& stdevs);
 
 /// Compute column-wise means and standard deviations
+//  Wraps around column-wise sum and sqsum
 /** @param data    Input matrix in U,V format.
  *  @param means   Mean vector in STAR,V format. Output as a row vector
  *                 with same number of columns as 'data'.
@@ -74,6 +75,17 @@ void columnwise_mean_and_stdev(const AbsDistMat& data,
                                AbsDistMat& means,
                                AbsDistMat& stdevs);
 
+/// Compute column-wise sum and sqsum
+/** @param data    Input matrix in U,V format.
+ *  @param sum     Sum vector in STAR,V format. Output as a row vector
+ *                 with same number of columns as 'data'.
+ *  @param sqsum   Sum of squared vector in STAR,V format. Output as
+ *                 a row vector with same number of columns as 'data'.
+ */
+void columnwise_sums_and_sqsums(const AbsDistMat& data,
+                               AbsDistMat& sums,
+                               AbsDistMat& sqsums);
+
 /// Compute row-wise means and standard deviations
 /** @param data    Input matrix.
  *  @param means   Mean vector. Output as a column vector with same
@@ -83,7 +95,19 @@ void columnwise_mean_and_stdev(const AbsDistMat& data,
  */
 void rowwise_mean_and_stdev(const Mat& data, Mat& means, Mat& stdevs);
 
+/// Compute row-wise sum and sum of squares
+/** @param data    Input matrix in U,V format.
+ *  @param sum     Sum vector in U,STAR format. Output as a column
+ *                 vector with same number of rows as 'data'.
+ *  @param sqsum   Sum of squared in U,STAR format. Output as
+ *                 a column vector with same number of rows as 'data'.
+ */
+void rowwise_sums_and_sqsums(const AbsDistMat& data,
+                            AbsDistMat& sums,
+                            AbsDistMat& sqsums);
+
 /// Compute row-wise means and standard deviations
+//Wraps around rowwise_sum_and_sqsum
 /** @param data    Input matrix in U,V format.
  *  @param means   Mean vector in U,STAR format. Output as a column
  *                 vector with same number of rows as 'data'.

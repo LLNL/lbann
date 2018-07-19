@@ -48,6 +48,10 @@ class data_reader_merge_samples : public generic_compound_data_reader {
     return new data_reader_merge_samples(*this);
   }
 
+  std::string get_type() const override {
+    return "data_reader_merge_samples";
+  }
+
   /// Load subsidiary data readers.
   void load() override;
 
@@ -62,13 +66,35 @@ class data_reader_merge_samples : public generic_compound_data_reader {
     return m_data_readers[0]->get_data_dims();
   }
 
+  /// support for data store functionality
+  const std::vector<int> & get_num_samples_psum() {
+    return m_num_samples_psum;
+  }
+
+  /// sets up a data_store.
+  void setup_data_store(model *m) override;
+
  protected:
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
-  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
-  bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) override;
 
   /// Partial sums of the number of samples in each reader.
   std::vector<int> m_num_samples_psum;
+
+  /// support for data store functionality; load() will call
+  /// this method when using data store
+  void load_using_data_store();
+
+  /// code common to both load() and load_using_data_store()
+  void setup_indices(int num_samples);
+
+  /// code common to both load() and load_using_data_store()
+  size_t compute_num_samples_psum();
+  
+  /// code common to both load() and load_using_data_store()
+  void sanity_check_for_consistency(int num_labels, int data_size, int label_size, const std::vector<int> &data_dims);
+
 };
 
 }  // namespace lbann

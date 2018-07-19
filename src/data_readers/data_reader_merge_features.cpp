@@ -27,6 +27,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_merge_features.hpp"
+#include "lbann/data_store/data_store_merge_features.hpp"
+#include "lbann/utils/options.hpp"
+#include "lbann/utils/timer.hpp"
 
 namespace lbann {
 
@@ -40,7 +43,9 @@ data_reader_merge_features::data_reader_merge_features(
   const data_reader_merge_features& other) :
   generic_compound_data_reader(other),
   m_data_size(other.m_data_size) {
-  m_label_reader = other.m_label_reader->copy();
+  if(other.m_label_reader != nullptr) 
+    m_label_reader = other.m_label_reader->copy();
+  else m_label_reader = nullptr;
 }
 
 data_reader_merge_features& data_reader_merge_features::operator=(
@@ -50,19 +55,26 @@ data_reader_merge_features& data_reader_merge_features::operator=(
   if (m_label_reader) {
     delete m_label_reader;
   }
-  m_label_reader = other.m_label_reader->copy();
+  if(other.m_label_reader != nullptr) 
+    m_label_reader = other.m_label_reader->copy();
+  else m_label_reader = nullptr;
   return *this;
 }
 
 data_reader_merge_features::~data_reader_merge_features() {
-  delete m_label_reader;
+  if(m_label_reader != nullptr) delete m_label_reader;
 }
 
 void data_reader_merge_features::load() {
   // Load each data reader separately.
   for (auto&& reader : m_data_readers) {
+    double tm1 = get_time();
+    reader->set_comm(m_comm);
     reader->load();
     m_data_size += reader->get_linearized_data_size();
+    if (is_master()) {
+      std::cerr << "time to set up subsidiary reader: " << get_time() - tm1 << "\n";
+    }  
   }
   // Verify the readers have the same number of samples.
   int num_samples = m_data_readers[0]->get_num_data();
@@ -72,14 +84,14 @@ void data_reader_merge_features::load() {
         "data_reader_merge_features: data readers do not have the same amount of data");
     }
   }
-  m_label_reader->load();
+  if(m_label_reader != nullptr) m_label_reader->load();
   // Reset indices.
   m_shuffled_indices.resize(num_samples);
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
   select_subset_of_data();
 }
 
-bool data_reader_merge_features::fetch_datum(Mat& X, int data_id, int mb_idx,
+bool data_reader_merge_features::fetch_datum(CPUMat& X, int data_id, int mb_idx,
                                              int tid) {
   int start = 0;
   for (auto&& reader : m_data_readers) {
@@ -91,14 +103,24 @@ bool data_reader_merge_features::fetch_datum(Mat& X, int data_id, int mb_idx,
   return true;
 }
 
-bool data_reader_merge_features::fetch_label(Mat& Y, int data_id, int mb_idx,
+bool data_reader_merge_features::fetch_label(CPUMat& Y, int data_id, int mb_idx,
                                              int tid) {
   return m_label_reader->fetch_label(Y, data_id, mb_idx, tid);
 }
 
-bool data_reader_merge_features::fetch_response(Mat& Y, int data_id, int mb_idx,
+bool data_reader_merge_features::fetch_response(CPUMat& Y, int data_id, int mb_idx,
                                                 int tid) {
   return m_label_reader->fetch_response(Y, data_id, mb_idx, tid);
+}
+
+void data_reader_merge_features::setup_data_store(model *m) {
+  if (m_data_store != nullptr) {
+    delete m_data_store;
+  }
+  m_data_store = new data_store_merge_features(this, m);
+  if (m_data_store != nullptr) {
+    m_data_store->setup();
+  }
 }
 
 }  // namespace lbann

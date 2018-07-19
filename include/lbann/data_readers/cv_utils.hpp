@@ -36,7 +36,7 @@
 #include "lbann/utils/mild_exception.hpp"
 
 
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
 namespace lbann {
 
 class cv_utils {
@@ -102,6 +102,16 @@ class cv_utils {
    *  otherwise.
    */
   static cv::Mat copy_buf_to_cvMat(const ::Mat& buf, const int Width, const int Height, const int Type, const cv_process& pp);
+
+  /**
+   *  Use cv::imdecode() to load an image data instead of relying on cv::imread().
+   *  This avoids reading the image header to determine the decoder directly from
+   *  the file but allow doing so from the memory.
+   *  The arguments are the same as the ones with cv::imread() as well as the
+   *  return type. Avoiding the extra access to the underlying filesystem may
+   *  result in a better performance.
+   */
+  static cv::Mat lbann_imread(const std::string& img_file_path, int flags);
 };
 
 
@@ -483,6 +493,6 @@ inline cv::Mat cv_utils::copy_buf_to_cvMat_with_known_type(
 //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
 } // end of namespace lbann
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
 
 #endif // LBANN_CV_UTILS_HPP

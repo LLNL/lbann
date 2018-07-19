@@ -43,11 +43,18 @@ class imagenet_reader : public image_data_reader {
 
   imagenet_reader* copy() const override { return new imagenet_reader(*this); }
 
+  std::string get_type() const override {
+    return "imagenet_reader";
+  }
+
  protected:
   void set_defaults() override;
   virtual bool replicate_processor(const cv_process& pp);
-  virtual ::Mat create_datum_view(::Mat& X, const int mb_idx) const;
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
+  virtual CPUMat create_datum_view(CPUMat& X, const int mb_idx) const;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
+
+  /// sets up a data_store.
+  void setup_data_store(model *m) override;
 
  protected:
   /// preprocessor duplicated for each omp thread

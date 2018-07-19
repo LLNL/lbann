@@ -29,6 +29,7 @@
 #include <utility>
 
 #include "lbann/callbacks/callback_variable_minibatch.hpp"
+#include "lbann/layers/io/input/input_layer.hpp"
 
 namespace lbann {
 
@@ -38,13 +39,16 @@ lbann_callback_variable_minibatch::lbann_callback_variable_minibatch(
 
 void lbann_callback_variable_minibatch::on_train_begin(model *m) {
   // Avoid issues with the train method being called multiple times.
-  if (m->get_cur_epoch() != 0) {
-    return;
+  if (m->get_cur_epoch() != 0) { return; }
+
+  // Get first input layer in model
+  generic_input_layer* input = nullptr;
+  for (auto&& l : m->get_layers()) {
+    input = dynamic_cast<generic_input_layer*>(l);
+    if (input != nullptr) { break; }
   }
-  auto* input = dynamic_cast<input_layer*>(m->get_layers()[0]);
-  if (!input) {
-    throw lbann_exception("variable_minibatch: could not get input layer");
-  }
+  if (input == nullptr) { LBANN_ERROR("could not get input layer"); }
+
   if (m_starting_mbsize > m->get_max_mini_batch_size()) {
     throw lbann_exception(
       "variable_minibatch: starting mini-batch size is larger than max");
@@ -60,7 +64,15 @@ void lbann_callback_variable_minibatch::on_train_begin(model *m) {
 }
 
 void lbann_callback_variable_minibatch::on_epoch_end(model *m) {
-  auto* input = dynamic_cast<input_layer*>(m->get_layers()[0]);
+
+  // Get first input layer in model
+  generic_input_layer* input = nullptr;
+  for (auto&& l : m->get_layers()) {
+    input = dynamic_cast<generic_input_layer*>(l);
+    if (input != nullptr) { break; }
+  }
+  if (input == nullptr) { LBANN_ERROR("could not get input layer"); }
+
   lbann_comm *comm = m->get_comm();
   int new_mbsize = 0;
   float new_lr = 0.0f;

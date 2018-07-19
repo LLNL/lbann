@@ -1,0 +1,44 @@
+#ifndef LBANN_CONFIG_HPP__
+#define LBANN_CONFIG_HPP__
+
+#include <El/hydrogen_config.h>
+
+#ifdef HYDROGEN_HAVE_CUDA
+#define LBANN_HAS_GPU
+#endif // HYDROGEN_HAVE_CUDA
+
+/* Version string for LBANN */
+#define LBANN_VERSION @LBANN_VERSION@
+
+/* Defined if LBANN is in debug mode */
+#cmakedefine LBANN_DEBUG
+
+/* Defined if LBANN is linked to HWLOC */
+#cmakedefine LBANN_TOPO_AWARE
+
+#cmakedefine LBANN_GNU_LINUX
+
+#cmakedefine LBANN_HAS_OPENCV
+#cmakedefine LBANN_HAS_TBINF
+#cmakedefine LBANN_HAS_CNPY
+#cmakedefine LBANN_HAS_VTUNE
+#cmakedefine LBANN_HAS_ALUMINUM
+#cmakedefine LBANN_ALUMINUM_MPI_PASSTHROUGH
+#cmakedefine LBANN_HAS_CONDUIT
+
+#cmakedefine LBANN_DETERMINISTIC
+
+#cmakedefine LBANN_HAS_CUDA
+#cmakedefine LBANN_HAS_CUDNN
+
+#cmakedefine LBANN_NVPROF
+
+#cmakedefine LBANN_SYS_SENDFILE_OK
+
+// Define the LBANN datatype
+namespace lbann
+{
+using DataType = @LBANN_DATATYPE@;
+}// namespace lbann
+
+#endif /* LBANN_CONFIG_H__ */

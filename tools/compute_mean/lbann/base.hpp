@@ -29,18 +29,7 @@
 #ifndef LBANN_BASE_HPP
 #define LBANN_BASE_HPP
 
-#if LBANN_DATATYPE == 8
-typedef double DataType;
-#elif LBANN_DATATYPE == 4
-typedef float DataType;
-#else
-// Default to floats
-#define LBANN_DATATYPE 4
-typedef float DataType;
-#endif
-
-#include "lbann/Mat.hpp"
-
-using Mat = ElMatLike<DataType>;
+#include "lbann_config.hpp"
+#include "Mat.hpp"
 
 #endif // LBANN_BASE_HPP

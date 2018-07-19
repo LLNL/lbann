@@ -1,0 +1,46 @@
+data_reader {
+  reader {
+    name: "jag"
+    role: "train"
+    shuffle: true
+    data_filedir: "/p/lscratchh/jjayaram/LDRD-SI/deep-latent-spaces/data"
+    data_filename: "outputs_polar_100k.npy:outputs_scalars_100k.npy:inputs_100k.npy"
+    validation_percent: 0.1
+    absolute_sample_count: 0
+    percent_of_data_to_use: 1.0
+
+    # 1: JAG_Image,  2: JAG_Scalar,  3: JAG_Input
+    independent: [1, 2]
+    dependent: [3]
+
+    image_preprocessor {
+      raw_width: 50
+      raw_height: 50
+
+      # 0: none,  1: dataset-wise,  2: sample-wise
+      early_normalization: 2
+    }
+  }
+
+  reader {
+    name: "jag"
+    role: "test"
+    shuffle: true
+    data_filedir: "/p/lscratchh/jjayaram/LDRD-SI/deep-latent-spaces/data"
+    data_filename: "outputs_polar_100k.npy:outputs_scalars_100k.npy:inputs_100k.npy"
+    absolute_sample_count: 0
+    percent_of_data_to_use: 1.0
+
+    # 1: JAG_Image,  2: JAG_Scalar,  3: JAG_Input
+    independent: [1, 2]
+    dependent: [3]
+
+    image_preprocessor {
+      raw_width: 50
+      raw_height: 50
+
+      # 0: none,  1: dataset-wise,  2: sample-wise
+      early_normalization: 2
+    }
+  }
+}

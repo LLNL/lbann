@@ -40,6 +40,7 @@
 #include "lbann/metrics/metric.hpp"
 #include "lbann/weights/weights.hpp"
 #include "lbann/optimizers/optimizer.hpp"
+#include <lbann.pb.h>
 #include <vector>
 #include <string>
 #include <unordered_map>
@@ -115,6 +116,10 @@ class model {
   /** Replace the model's weights. */
   void replace_weights(std::vector<weights *>& w);
 
+  /** Copy trained weights from input parameter w. 
+ *  Only weight values are placed, pointers and layer structure are in place*/
+  void copy_trained_weights_from(std::vector<weights *>& w);
+
   /** Return the model's weights. */
   const std::vector<weights *>& get_weights() const { return m_weights; }
 
@@ -168,6 +173,7 @@ class model {
   inline void set_effective_mini_batch_size(int mini_batch_size) {
     m_effective_mini_batch_size = mini_batch_size;
   }
+  int get_num_iterations_per_epoch(execution_mode mode) const;
 
   /** Get the current phase (multiple epochs) in layer-wise model training. */
   inline int get_current_phase() const {
@@ -195,15 +201,25 @@ class model {
   }
 
   /** Train model. */
-  virtual void train(int num_epochs);
+  virtual void train(int num_epochs, int num_batches=0);
   /** Evaluate model. */
   virtual void evaluate(execution_mode mode);
+
+  /** Run one epoch using only the input layer; this supports
+   *  data_store functionality
+   */
+  void collect_indices(execution_mode mode);
 
   /** Checkpoint model to given file descriptor, return number of bytes written */
   virtual bool save_to_checkpoint_shared(persist& p);
   /** Restore model by reading checkpoint from given file descriptor, return number of bytes read */
   virtual bool load_from_checkpoint_shared(persist& p);
 
+  virtual bool save_to_checkpoint_distributed(persist& p);
+  virtual bool load_from_checkpoint_distributed(persist& p);
+
+  /** Write model to proto file */
+  virtual void write_proto(lbann_data::Model* proto);
 
  protected:
 
@@ -278,6 +294,13 @@ class model {
   virtual void remap_pointers(const std::unordered_map<Layer *,Layer *>& layer_map,
                               const std::unordered_map<weights *,weights *>& weights_map);
 
+  /** In case that a layer is frozen, also freeze layers that precede it if that
+   *  makes senses for the particular model, such as sequential or siamese.
+   *  For othe models, users can manually control the behaivor by indicating
+   *  whether to freeze each layer in the model description prototext.
+   */
+  virtual void freeze_layers_under_frozen_surface();
+
   /** Set up topology of layer graph.
    *  Called in setup function. All layers in connected component of
    *  layer graph are added to the model and all parent/child
@@ -287,7 +310,7 @@ class model {
   /** Set up layer execution order.
    *  Called in setup function.
    */
-  virtual void setup_layer_execution_order() {}
+  virtual void setup_layer_execution_order();
   /** Set up layers.
    *  Called in setup function.
    */
@@ -312,8 +335,11 @@ class model {
   virtual void forward_prop(execution_mode mode);
   /** Backward propagation step. */
   virtual void backward_prop();
-  /** Clear each layer's error signal tensor. */
-  virtual void clear_error_signals();
+  /** Clear each optimizer's gradient. 
+   *  This must be called before training forward prop since layers
+   *  set an optimizer flag during forward prop.
+   */
+  virtual void clear_gradients();
   /** Update weights step. */
   virtual void update_weights();
   /** Update layers step. */
@@ -363,6 +389,29 @@ class model {
   virtual void do_weight_optimize_begin_cbs(weights *w);
   /** Execute callbacks at the end of weight optimization. */
   virtual void do_weight_optimize_end_cbs(weights *w);
+
+ private:
+  /** Search layer graph and add all connected layers. */
+  void add_connected_layers();
+  /** Insert evaluation layers where needed.
+   *  If an objective function layer term or a layer metric
+   *  corresponds to a layer that is not an evaluation layer, an
+   *  evaluation layer is added as a child of the original layer and
+   *  set as the corresponding layer to the layer term or layer
+   *  metric.
+   */
+  void add_evaluation_layers();
+  /** Insert dummy layers after layers with too few children.
+   *  If a layer expects more child layers than it has, add dummy
+   *  layers until it has enough children.
+   */
+  void add_dummy_layers();
+  /** Insert split layers after layers with too many children.
+   *  If a layer expects one child layer but has multiple, add a split
+   *  layer. The split layer will be the original layer's child and
+   *  the split layer's children will be the original children.
+   */
+  void add_split_layers();
 
 };
 

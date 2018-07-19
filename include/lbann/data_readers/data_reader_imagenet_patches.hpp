@@ -43,23 +43,24 @@ class imagenet_reader_patches : public image_data_reader {
 
   imagenet_reader_patches* copy() const override { return new imagenet_reader_patches(*this); }
 
-  using image_data_reader::fetch_data;
-  virtual int fetch_data(std::vector<::Mat>& X);
+  std::string get_type() const override {
+    return "imagenet_reader_patches";
+  }
 
   int get_linearized_data_size() const override {
-    return m_image_width * m_image_height * m_image_num_channels * m_num_patches;
+    return m_image_linearized_size * m_num_patches;
   }
   const std::vector<int> get_data_dims() const override {
     return {m_num_patches*m_image_num_channels, m_image_height, m_image_width};
   }
 
+  void setup_data_store(model *m) override;
+
  protected:
   void set_defaults() override;
   virtual bool replicate_processor(const cv_process_patches& pp);
-  virtual std::vector<::Mat> create_datum_views(::Mat& X, const int mb_idx) const;
-  virtual std::vector<::Mat> create_datum_views(std::vector<::Mat>& X, const int mb_idx) const;
-  bool fetch_datum(::Mat& X, int data_id, int mb_idx, int tid) override;
-  virtual bool fetch_datum(std::vector<::Mat>& X, int data_id, int mb_idx, int tid);
+  virtual std::vector<CPUMat> create_datum_views(CPUMat& X, const int mb_idx) const;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
 
  protected:
   int m_num_patches; ///< number of patches extracted

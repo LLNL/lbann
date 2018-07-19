@@ -22,10 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// adam .hpp .cpp .cu - SGD with Adam
-// Reference:
-// Kingma, D. and Ba, J. 2014. Adam: A Method for Stochastic Optimization.
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_OPTIMIZER_ADAM_HPP
@@ -35,7 +31,10 @@
 
 namespace lbann {
 
-/** Adam optimizer. */
+/** Adam optimizer.
+ *  Reference:
+ *  Kingma, D. and Ba, J. 2014. Adam: A Method for Stochastic Optimization.
+ */
 class adam : public optimizer {
  public:
 
@@ -44,8 +43,7 @@ class adam : public optimizer {
        DataType learning_rate,
        DataType beta1 = DataType(0.9),
        DataType beta2 = DataType(0.99),
-       DataType eps = DataType(1e-8),
-       cudnn::cudnn_manager *cudnn = nullptr);
+       DataType eps = DataType(1e-8));
 
 
   /** Copy constructor. */
@@ -58,7 +56,7 @@ class adam : public optimizer {
   adam* copy() const override { return new adam(*this); }
 
   /** Returns the optimizer name. */
-  std::string get_type() const override { return "adam"; }
+  std::string get_type() const override { return "Adam"; }
   /** Get a human-readable description of the optimizer. */
   std::string get_description() const override;
 
@@ -67,11 +65,10 @@ class adam : public optimizer {
 
   /** Perform the computation in an optimization step. */
   void step_compute(AbsDistMat& values, const AbsDistMat& gradient) override;
-#ifdef __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
   /** Perform the computation in an optimization step on GPU. */
-  void step_compute_gpu(std::vector<DataType*> values_d,
-                        std::vector<DataType*> gradient_d) override;
-#endif // __LIB_CUDNN
+  void step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) override;
+#endif // LBANN_HAS_CUDNN
 
  private:
 
@@ -89,13 +86,6 @@ class adam : public optimizer {
   AbsDistMat *m_moment1;
   /** Second moment estimates. */
   AbsDistMat *m_moment2;
-
-#ifdef __LIB_CUDNN
-  /** GPU memory for first moment estimates. */
-  std::vector<DataType*> m_moment1_d;
-  /** GPU memory for second moment estimates. */
-  std::vector<DataType*> m_moment2_d;
-#endif // __LIB_CUDNN
 
 //************************************************************************
 // Checkpointing
@@ -146,7 +136,8 @@ class adam : public optimizer {
 
   bool save_to_checkpoint_shared(persist& p, std::string m_name) override;
   bool load_from_checkpoint_shared(persist& p, std::string m_name) override;
-
+  bool save_to_checkpoint_distributed(persist& p, std::string m_name) override;
+  bool load_from_checkpoint_distributed(persist& p, std::string m_name) override;
 };
 
 } // namespace lbann

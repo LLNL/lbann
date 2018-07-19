@@ -29,13 +29,17 @@
 #include "lbann/lbann.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf_utils.hpp"
-
+#include <dirent.h>
+#include <cstdlib>
 using namespace lbann;
 
 const int lbann_default_random_seed = 42;
 
-model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &pb);
-          
+model * build_model_from_prototext(int argc, char **argv,
+                                   lbann_data::LbannPB &pb,
+                                   lbann_comm *comm,
+                                   bool first_model);
+bool load_model_weights(std::string ckpt_dir, model * m);
 
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
@@ -61,17 +65,30 @@ int main(int argc, char *argv[]) {
     std::vector<lbann_data::LbannPB *> pbs;
     protobuf_utils::load_prototext(master, argc, argv, pbs);
 
-    model *model_1 = build_model_from_prototext(argc, argv, *(pbs[0]));
+    model *model_1 = build_model_from_prototext(argc, argv, *(pbs[0]),
+                                                comm, true);
     model *model_2 = nullptr;
     if (pbs.size() > 1) {
-      model_2 = build_model_from_prototext(argc, argv, *(pbs[1]));
+      model_2 = build_model_from_prototext(argc, argv, *(pbs[1]),
+                                           comm, false);
     }
-
+    // Load layer weights from checkpoint if checkpoint directory given
+    if(opts->has_string("ckpt_dir")){
+      load_model_weights(opts->get_string("ckpt_dir"), model_1);
+    }
     // Train model
     if (master)  std::cerr << "\nSTARTING train - model 1\n\n";
     const lbann_data::Model pb_model = pbs[0]->model();
-    model_1->train( pb_model.num_epochs() );
-    model_1->evaluate(execution_mode::testing);
+
+    // When using checkpoint states, skip training as those could be the result
+    // of checkpointing by steps.
+    if (!opts->has_string("no_model1_train")){
+      model_1->train( pb_model.num_epochs() );
+    }
+    // Evaluate model 1 unless it is set to skip
+    if (!opts->has_string("no_model1_eval")){
+      model_1->evaluate(execution_mode::testing);
+    }
 
     if (model_2 != nullptr) {
       const auto layers1 = model_1->get_layers();
@@ -79,13 +96,13 @@ int main(int argc, char *argv[]) {
       for(size_t l2=0; l2 < layers2.size(); l2++) {
         for(size_t l1=0; l1 < layers1.size(); l1++) {
            if(layers2[l2]->get_name() == layers1[l1]->get_name()){
-             if(master) std::cout << "Model 1 Layer " << layers1[l1]->get_name(); 
+             if(master) std::cout << "Model 1 Layer " << layers1[l1]->get_name();
              layers2[l2]->replace_weights(layers1[l1]);
              if(master) std::cout << " copied to Model2 Layer " << std::endl;
            }
          }
        }
-                
+
       if (master) std::cerr << "\n STARTING train - model 2\n\n";
       const lbann_data::Model pb_model_2 = pbs[1]->model();
       model_2->train( pb_model_2.num_epochs() );
@@ -110,10 +127,12 @@ int main(int argc, char *argv[]) {
   finalize(comm);
   return 0;
 }
-   
-model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &pb) {
+
+model * build_model_from_prototext(int argc, char **argv,
+                                   lbann_data::LbannPB &pb,
+                                   lbann_comm *comm,
+                                   bool first_model) {
   int random_seed = lbann_default_random_seed;
-  lbann_comm *comm = initialize(argc, argv, random_seed);
   bool master = comm->am_world_master();
   if (master) std::cerr << "starting build_model_from_prototext\n";
   model *model = nullptr; //d hysom bad namimg! should fix
@@ -145,7 +164,7 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
       init_data_seq_random(random_seed);
     }
     // Initialize models differently if needed.
-#ifndef LBANN_SEQUENTIAL_CONSISTENCY
+#ifndef LBANN_DETERMINISTIC
     if (pb_model->random_init_models_differently()) {
       random_seed = random_seed + comm->get_model_rank();
       // Reseed here so that setup is done with this new seed.
@@ -161,64 +180,94 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
     }
 #endif
 
-    // Set up the communicator and get the grid.
+    // Set up the communicator and get the grid based on the first model's spec.
+    // We do not currently support splitting different models in different ways,
+    // as this implies different grids.
     int procs_per_model = pb_model->procs_per_model();
     if (procs_per_model == 0) {
       procs_per_model = comm->get_procs_in_world();
     }
-    comm->split_models(procs_per_model);
-    if (pb_model->num_parallel_readers() > procs_per_model) {
-      pb_model->set_num_parallel_readers(procs_per_model);
-    }
-
-    if (master) {
-      std::cout << "Model settings" << std::endl
-                << "  Models              : " << comm->get_num_models() << std::endl
-                << "  Processes per model : " << procs_per_model << std::endl
-                << "  Grid dimensions     : " << comm->get_model_grid().Height() << " x " << comm->get_model_grid().Width() << std::endl;
-      std::cout << std::endl;
+    if (first_model) {
+      comm->split_models(procs_per_model);
+      if (pb_model->num_parallel_readers() > procs_per_model) {
+        pb_model->set_num_parallel_readers(procs_per_model);
+      }
+    } else if (procs_per_model != comm->get_procs_per_model()) {
+      LBANN_ERROR("Model prototexts requesting different procs per model is not supported");
     }
 
     // Save info to file; this includes the complete prototext (with any over-rides
     // from the cmd line) and various other info
     //save_session(comm, argc, argv, pb);
 
-    // Check for cudnn, with user feedback
-    cudnn::cudnn_manager *cudnn = nullptr;
-#if __LIB_CUDNN
-    if (pb_model->use_cudnn()) {
-      if (master) {
-        std::cerr << "code was compiled with __LIB_CUDNN, and we are using cudnn\n";
-      }
-      if(pb_model->use_nccl()) {
-        cudnn = new cudnn::cudnn_manager(comm, pb_model->num_gpus(), true);
-      }
-      else{
-        cudnn = new cudnn::cudnn_manager(comm, pb_model->num_gpus(), false);
-      }
-    } else {
-      if (master) {
-        std::cerr << "code was compiled with __LIB_CUDNN, but we are NOT USING cudnn\n";
-      }
-    }
-#else
+    // Report useful information
     if (master) {
-      std::cerr << "code was NOT compiled with __LIB_CUDNN\n";
-    }
-#endif
 
-    if (master) {
-      std::cout << "Hardware settings (for master process)" << std::endl
-                << "  Processes on node            : " << comm->get_procs_per_node() << std::endl
-                << "  OpenMP threads per process   : " << omp_get_max_threads() << std::endl;
-      #if __LIB_CUDNN
-      if (cudnn != nullptr) {
-        std::cout << "  GPUs on node                 : " << cudnn->get_num_visible_gpus() << std::endl
-                  << "  GPUs per process             : " << cudnn->get_num_gpus() << std::endl;
-      }
-      #endif // __LIB_CUDNN
+      // Report hardware settings
+      std::cout << "Hardware properties (for master process)" << std::endl
+                << "  Processes on node          : " << comm->get_procs_per_node() << std::endl
+                << "  OpenMP threads per process : " << omp_get_max_threads() << std::endl;
+#ifdef HYDROGEN_HAVE_CUDA
+      std::cout << "  GPUs on node               : " << El::GPUManager::NumDevices() << std::endl;
+#endif // HYDROGEN_HAVE_CUDA
       std::cout << std::endl;
+
+      // Report build settings
+      std::cout << "Build settings" << std::endl;
+      std::cout << "  Type  : ";
+#ifdef LBANN_DEBUG
+      std::cout << "Debug" << std::endl;
+#else
+      std::cout << "Release" << std::endl;
+#endif // LBANN_DEBUG
+      std::cout << "  CUDA  : ";
+#ifdef LBANN_HAS_GPU
+      std::cout << "detected" << std::endl;
+#else
+      std::cout << "NOT detected" << std::endl;
+#endif // LBANN_HAS_GPU
+      std::cout << "  cuDNN : ";
+#ifdef LBANN_HAS_CUDNN
+      std::cout << "detected" << std::endl;
+#else
+      std::cout << "NOT detected" << std::endl;
+#endif // LBANN_HAS_CUDNN
+      std::cout << "  CUB   : ";
+#ifdef HYDROGEN_HAVE_CUB
+      std::cout << "detected" << std::endl;
+#else
+      std::cout << "NOT detected" << std::endl;
+#endif // HYDROGEN_HAVE_CUB
+      std::cout << std::endl;
+
+      // Report device settings
+      std::cout << "GPU settings" << std::endl;
+      bool disable_cuda = pb_model->disable_cuda();
+#ifndef LBANN_HAS_GPU
+      disable_cuda = true;
+#endif // LBANN_HAS_GPU
+      std::cout << "  CUDA         : "
+                << (disable_cuda ? "disabled" : "enabled") << std::endl;
+      std::cout << "  cuDNN        : ";
+#ifdef LBANN_HAS_CUDNN
+      std::cout << (disable_cuda ? "disabled" : "enabled") << std::endl;
+#else
+      std::cout << "disabled" << std::endl;
+#endif // LBANN_HAS_CUDNN
+      const auto* env = std::getenv("MV2_USE_CUDA");
+      std::cout << "  MV2_USE_CUDA : " << (env != nullptr ? env : "") << std::endl;
+      std::cout << std::endl;
+
+      // Report model settings
+      const auto& grid = comm->get_model_grid();
+      std::cout << "Model settings" << std::endl
+                << "  Models              : " << comm->get_num_models() << std::endl
+                << "  Processes per model : " << procs_per_model << std::endl
+                << "  Grid dimensions     : " << grid.Height() << " x " << grid.Width() << std::endl;
+      std::cout << std::endl;
+
     }
+
     // Display how the OpenMP threads are provisioned
     if (opts->has_string("print_affinity")) {
       display_omp_setup();
@@ -227,19 +276,16 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
     // Initialize data readers
     //@todo: code not in place for correctly handling image preprocessing
     std::map<execution_mode, generic_data_reader *> data_readers;
-    init_data_readers(master, pb, data_readers);
-
-    // Construct optimizer
-    optimizer *default_optimizer = init_default_optimizer(comm, cudnn, pb);
+    init_data_readers(comm, pb, data_readers);
 
     // User feedback
     print_parameters(comm, pb);
 
     // Initalize model
-    // @todo: not all callbacks code is in place
-    model = init_model(comm, default_optimizer, pb);
-    add_layers(model, data_readers, cudnn, pb);
-    init_callbacks(comm, model, data_readers, pb);
+    model = proto::construct_model(comm,
+                                   data_readers,
+                                   pb.optimizer(),
+                                   pb.model());
     model->setup();
 
     // restart model from checkpoint if we have one
@@ -248,12 +294,6 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
 
     if (comm->am_world_master()) {
       std::cout << std::endl;
-      if (default_optimizer != nullptr) {
-        std::cout << "Default optimizer: " << default_optimizer->get_description();
-      } else {
-        std::cout << "No optimizer";
-      }
-      std::cout << std::endl << std::endl;
       std::cout << "Callbacks:" << std::endl;
       for (lbann_callback *cb : model->get_callbacks()) {
         std::cout << cb->name() << std::endl;
@@ -265,14 +305,14 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
       }
     }
 
-#ifndef LBANN_SEQUENTIAL_CONSISTENCY
+#ifndef LBANN_DETERMINISTIC
       // Under normal conditions, reinitialize the random number generator so
       // that regularization techniques (e.g. dropout) generate unique patterns
       // on different ranks.
       init_random(random_seed + comm->get_rank_in_world());
 #else
       if(comm->am_world_master()) {
-        std::cout << 
+        std::cout <<
           "--------------------------------------------------------------------------------\n"
           "ALERT: executing in sequentially consistent mode -- performance will suffer\n"
           "--------------------------------------------------------------------------------\n";
@@ -286,4 +326,45 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
   }
 
   return model;
+}
+
+bool load_model_weights(std::string ckpt_dir, model * m){
+  std::vector<std::string> weight_list = std::vector<std::string>();
+  int epochLast = -1;
+  int stepLast = -1;
+  // define filename
+  char latest[1024];
+  sprintf(latest, "%s/last.shared.checkpoint", ckpt_dir.c_str());
+  // get last epoch and step saved.
+  int fd = openread(latest);
+  lbann_comm *temp_comm = m->get_comm();
+  if (fd != -1) {
+    char field[256];
+    read_string(fd, "shared.last", field, sizeof(field));
+    int ret = sscanf(field, "epoch=%d step=%d\n", &epochLast, &stepLast);
+    if(ret != 2) { return false; }
+    closeread(fd, latest);
+    if(temp_comm->am_model_master())
+      sprintf(latest, "%s/shared.model.%d.epoch.%d.step.%d/", ckpt_dir.c_str(), temp_comm->get_model_rank(), epochLast, stepLast);
+    temp_comm->model_broadcast(0, &(latest[0]), sizeof(latest));
+  }
+
+  DIR *weight_dir;
+  struct dirent *weight_file;
+  if((weight_dir = opendir(latest)) == NULL)
+  {
+    std::cout << "error opening " << latest << "\n";
+    return false;
+  }
+  // Populate weight list
+  while ((weight_file = readdir(weight_dir)) != NULL){
+    if(!strncmp(weight_file->d_name,"model_weights_",14))
+      weight_list.push_back(std::string(weight_file->d_name));
+  }
+  closedir(weight_dir);
+  // load weights that appear in weight list.
+  for(weights *w : m->get_weights()) {
+    w->load_from_save(latest,weight_list);
+  }
+  return true;
 }

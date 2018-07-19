@@ -29,6 +29,7 @@
 
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
+#include "lbann/io/persist.hpp"
 #include <random>
 
 namespace lbann {
@@ -55,7 +56,6 @@ fast_rng_gen& get_fast_generator();
  * @note If compiling with OpenMP, this is stored in a threadprivate variable.
  */
 rng_gen& get_data_seq_generator();
-
 /**
  * Return random integers uniformly distributed in [0, max).
  * @param g C++ uniform random bit generator.
@@ -155,6 +155,9 @@ void bernoulli_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n, double p = 0.
  */
 void uniform_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n,
                           DataType center = 0.0f, DataType radius = 1.0f);
+
+bool save_rng_to_checkpoint_shared(persist& p, const lbann_comm* comm);
+bool load_rng_from_checkpoint_shared(persist& p, const lbann_comm* comm);
 
 template<typename DistType,typename DType=DataType>
 class rng {

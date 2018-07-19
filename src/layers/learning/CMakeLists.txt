@@ -1,5 +1,7 @@
-if(LBANN_HAS_CUDA)
-  add_sources(
-    fully_connected.cu
+# Add the source files for this directory
+set_full_path(THIS_DIR_SOURCES
+  fully_connected.cpp
   )
-endif()
+
+# Propagate the files up the tree
+set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)

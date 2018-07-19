@@ -31,40 +31,45 @@
 
 namespace lbann {
 
-/** Objective function term for L2 weight regularization. */
+/** Objective function term for L2 weight regularization.
+ *  Given weights \f$w_1,\cdots,w_n\f$, the L2 weight regularization
+ *  term is
+ *    \f[
+ *    L2(w) = \frac{1}{2} \sum\limits_{i} w_i
+ *    \f]
+ *  Note the \f$1/2\f$ scaling factor.
+ */
 class l2_weight_regularization : public objective_function_term {
  public:
-  /** Default constructor. */
-  l2_weight_regularization(EvalType scale_factor = EvalType(1))
-    : objective_function_term(scale_factor) {}
 
-  /** Copy constructor. */
-  l2_weight_regularization(const l2_weight_regularization& other) = default;
-  /** Copy assignment operator. */
-  l2_weight_regularization& operator=(const l2_weight_regularization& other) = default;
-  /** Destructor. */
-  ~l2_weight_regularization() override = default;
-  /** Copy function. */
+  l2_weight_regularization(EvalType scale_factor = EvalType(1));
   l2_weight_regularization* copy() const override { return new l2_weight_regularization(*this); }
-
-  /** Get the name of the objective function term. */
-  std::string name() const override { return "l2_weight_regularization"; }
-
-  /** Setup L2 regularization term. */
+  std::string name() const override { return "L2 weight regularization"; }
   void setup(model& m) override;
-  
-  /** Get the value of the L2 regularization term. */
-  EvalType evaluate() override;
+  void start_evaluation() override;
+  EvalType finish_evaluation() override;
 
-  /** Compute the gradient of the L2 regularization term.
-   *  The gradient is computed w.r.t. the weights.
+  /** Compute the gradient w.r.t. the activations.
+   *  L2 weight regularization is independent of the activations.
    */
-  void differentiate() override;
+  void differentiate() override {};
+
+  /** Compute the gradient w.r.t. the weights.
+   *  The gradient w.r.t. the weights is
+   *    \f[
+   *    \nabla_w L2(w) = w
+   *    \f]
+   */
+  void compute_weight_regularization() override;
 
  private:
 
-  /** Compute the squared L2 norm of mat. */
-  EvalType local_squared_l2_norm(const Mat& mat) const;
+  /** Holds intermediate term for local contributions. */
+  EvalType m_sqsum;
+  /** Aluminum request for local contribution aggregation. */
+  Al::request m_allreduce_req;
+  /** Whether local contribution aggregation has started. */
+  bool m_allreduce_started;
 
 };
 

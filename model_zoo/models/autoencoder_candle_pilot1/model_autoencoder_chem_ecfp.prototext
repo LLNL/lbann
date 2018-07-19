@@ -1,7 +1,7 @@
 model {
   ### Model description and network architecture taken from:
   ### https://lc.llnl.gov/bitbucket/projects/BIOM/repos/molresp/browse/tf_model.py?at=TensorFlow_chemClass
-  ### This network description is anologous to AutoEncoder_Chem_ECFP 
+  ### This network description is anologous to AutoEncoder_Chem_ECFP
   name: "sequential_model"
   data_layout: "model_parallel"
   mini_batch_size: 128
@@ -9,8 +9,6 @@ model {
   num_epochs: 4
   num_parallel_readers: 1
   procs_per_model: 0
-  use_cudnn: true
-  num_gpus: -1
 
   ###################################################
   # Objective function
@@ -62,8 +60,11 @@ model {
   #######
   layer {
     name: "data"
+    children: "encode1 reconstruction"
     data_layout: "model_parallel"
-    input_distributed_minibatch {
+    input {
+      io_buffer: "distributed"
+      target_mode: "reconstruction"
     }
   }
 
@@ -120,7 +121,7 @@ model {
     name: "encode3"
     data_layout: "model_parallel"
     fully_connected {
-      num_neurons: 500 
+      num_neurons: 500
       weight_initialization: "glorot_uniform"
       has_bias: true
     }
@@ -298,16 +299,15 @@ model {
     }
   }
 
-  
+
   #################
   # RECONSTRUCTION
   #################
   layer {
     name: "reconstruction"
+    parents: "relu10 data"
     data_layout: "model_parallel"
-    reconstruction {
-      original_layer: "data"
-    }
+    reconstruction {}
   }
 
   ###################################################

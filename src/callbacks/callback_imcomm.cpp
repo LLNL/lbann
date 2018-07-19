@@ -41,7 +41,7 @@ lbann_callback_imcomm::lbann_callback_imcomm(lbann_callback_imcomm::comm_type ct
 lbann_callback_imcomm::lbann_callback_imcomm(lbann_callback_imcomm::comm_type ct,
     std::unordered_set<weights *> weights_list,
     lbann_summary *summarizer) :
-  lbann_callback_imcomm(NONE, summarizer) {
+  lbann_callback_imcomm(ct, summarizer) {
   for (weights *w : weights_list) {
     m_weights_params[w] = {};
     m_weights_params[w].ct = ct;
@@ -132,17 +132,20 @@ void lbann_callback_imcomm::on_epoch_end(model *m) {
     optimizer *opt = w->get_optimizer();
     if (ct_does_quantization(params.ct)) {
       comm->intermodel_sum_matrix(params.error);
+      opt->clear_gradient();
+      auto gradient = opt->get_gradient().Copy();
       Mat *local_gradients = nullptr;
-      Mat reshaped;
+      CPUMat reshaped;
       if (params.reshape_height > 0) {
-        reshape_mat(opt->get_gradient().Matrix(),
+        reshape_mat(gradient->Matrix(),
                     reshaped, params.reshape_height, params.reshape_width);
         local_gradients = &reshaped;
       } else {
-        local_gradients = &(opt->get_gradient().Matrix());
+        local_gradients = &(static_cast<CPUMat&>(gradient->Matrix()));
       }
       *local_gradients = params.error;
-      *local_gradients *= DataType(1) / comm->get_num_models();
+      opt->add_to_gradient(*gradient);
+      delete gradient;
       // Apply optimizer update with accumulated gradient error.
       opt->step();
       El::Zero(params.error);
@@ -163,14 +166,15 @@ void lbann_callback_imcomm::on_backward_prop_end(model *m) {
       continue;
     }
     optimizer *opt = w->get_optimizer();
+    auto gradient = opt->get_gradient().Copy();
     Mat* local_gradients = nullptr;
-    Mat reshaped;
+    CPUMat reshaped;
     if (params.reshape_height > 0) {
-      reshape_mat(opt->get_gradient().Matrix(),
+      reshape_mat(gradient->Matrix(),
                   reshaped, params.reshape_height, params.reshape_width);
       local_gradients = &reshaped;
     } else {
-      local_gradients = &(opt->get_gradient().Matrix());
+      local_gradients = &(static_cast<CPUMat&>(gradient->Matrix()));
     }
     switch (params.ct) {
     case NORMAL:
@@ -192,7 +196,9 @@ void lbann_callback_imcomm::on_backward_prop_end(model *m) {
       throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: "
          + "imcomm: unknown comm type");
     }
-    *local_gradients *= DataType(1) / comm->get_num_models();
+    opt->clear_gradient();
+    opt->add_to_gradient(*gradient);
+    delete gradient;
     EvalType im_time = get_time() - start_time;
     do_summary(m, w, im_time);
   }
@@ -214,8 +220,8 @@ void lbann_callback_imcomm::do_summary(model *m, weights *w,
     bytes_received = comm->get_ar_bytes_received();
   } else {
     // Use the same approximation the comm layer does.
-    const Mat& local_gradients =
-      w->get_optimizer()->get_gradient().LockedMatrix();
+    const CPUMat& local_gradients =
+      static_cast<const CPUMat&>(w->get_optimizer()->get_gradient().LockedMatrix());
     bytes_sent =
       sizeof(DataType) * local_gradients.Height() * local_gradients.Width();
     bytes_received =

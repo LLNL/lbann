@@ -29,12 +29,19 @@
 #include "lbann/models/model.hpp"
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/io/persist.hpp"
-#include "lbann/layers/io/input/input_layer.hpp"
+#include "lbann/layers/io/input/generic_input_layer.hpp"
+#include "lbann/layers/transform/dummy.hpp"
+#include "lbann/layers/transform/split.hpp"
+#include "lbann/layers/transform/evaluation.hpp"
+#include "lbann/objective_functions/layer_term.hpp"
+#include "lbann/metrics/layer_metric.hpp"
+#include "lbann/utils/random.hpp"
 #include <string>
 #include <unistd.h>
 #include <iomanip>
 #include <queue>
 #include <unordered_set>
+#include <lbann.pb.h>
 
 #include "mpi.h"
 
@@ -92,12 +99,16 @@ model::model(const model& other) :
   }
   std::unordered_map<Layer *,Layer *> layer_map;
   for (auto& l : m_layers) {
-    l = layer_map[l] = l->copy();
-    l->set_model(this);
+    auto&& l_copy = l->copy();
+    layer_map[l] = l_copy;
+    l_copy->set_model(this);
+    l = l_copy;
   }
   std::unordered_map<weights *,weights *> weights_map;
   for (auto& w : m_weights) {
-    w = weights_map[w] = w->copy();
+    auto&& w_copy = w->copy();
+    weights_map[w] = w_copy;
+    w = w_copy;
   }
   remap_pointers(layer_map, weights_map);
 
@@ -238,6 +249,24 @@ void model::replace_weights(std::vector<weights*>& new_weights) {
 
 }
 
+void model::copy_trained_weights_from(std::vector<weights*>& new_weights) {
+  if (new_weights.empty()) {
+    if(m_comm->am_world_master()) std::cout << "No trained weights to copy " << std::endl;
+    return;
+  }
+  for(size_t i = 0; i < new_weights.size(); ++i) {
+     for (size_t j = 0; j < m_weights.size(); ++j) {
+       //copy only trained weights (that is unfrozen layer)
+       if(m_weights[j]->get_name() == new_weights[i]->get_name() && !new_weights[i]->is_frozen()) {
+         #ifdef LBANN_DEBUG
+         if(m_comm->am_world_master()) std::cout << " Replacing " << m_weights[j]->get_name() << " with " << new_weights[i]->get_name() << std::endl;
+         #endif
+         m_weights[j]->set_values(new_weights[i]->get_values());
+       }
+     }
+   }
+}
+
 optimizer* model::create_optimizer() const {
   if (m_default_optimizer != nullptr) {
     return m_default_optimizer->copy();
@@ -248,7 +277,7 @@ optimizer* model::create_optimizer() const {
 
 bool model::is_execution_mode_valid(execution_mode mode) const {
   for (const auto& layer : m_layers) {
-    const auto *input = dynamic_cast<const input_layer*>(layer);
+    const auto *input = dynamic_cast<const generic_input_layer*>(layer);
     if (input != nullptr
         && !input->is_execution_mode_valid(mode)) {
       return false;
@@ -286,14 +315,22 @@ void model::permute_layers(const std::vector<int>& permutation) {
 std::string model::print_layer_description(const Layer* layer) const {
   if (layer == nullptr) return std::string();
   std::stringstream os;
+  /// @todo Clean up
   //std::string description = layer->get_description();
   os << std::setw(12) << layer->get_name() << ":[" << std::setw(18)
-     << layer->get_type() <<  "] Set up a layer with input " << std::setw(7)
-     << layer->get_num_prev_neurons() << " and " << std::setw(7)
-     << layer->get_num_neurons() << " neurons.";
+     << layer->get_type()
+     << "(" << layer->get_device_allocation_string_short(layer->get_device_allocation()) << ")"
+     <<  "] Set up a layer with input " << std::setw(7)
+     << (layer->get_num_parents() > 0 ? layer->get_input_size() : 0)
+     << " and " << std::setw(7)
+     << (layer->get_num_children() > 0 ? layer->get_output_size() : 0)
+     << " neurons.";
   std::string s = layer->get_topo_description();
   if(s != "") {
     os << " (" << s << ")";
+  }
+  if (layer->is_frozen()) {
+    os << " frozen";
   }
   return os.str();
 }
@@ -350,6 +387,24 @@ void model::remap_pointers(const std::unordered_map<Layer *,Layer *>& layer_map,
 
 }
 
+void model::freeze_layers_under_frozen_surface() {
+  bool freezing = false;
+  for (size_t i = m_layers.size(); i-- > 0u; ) {
+    auto& l = m_layers[i];
+    if (dynamic_cast<io_layer*>(l) != nullptr) {
+      if (l->is_frozen()) {
+        throw lbann_exception("Frozen io_layer!");
+      }
+      continue;
+    }
+    if (!freezing) {
+      freezing = l->is_frozen();
+    } else {
+      l->freeze();
+    }
+  }
+}
+
 ////////////////////////////////////////////////////////////
 // Setup
 ////////////////////////////////////////////////////////////
@@ -381,33 +436,10 @@ void model::setup() {
 
 void model::setup_layer_topology() {
 
-  // Perform breadth-first searches to find connected components
-  std::queue<const Layer *> layer_queue;
-  std::unordered_set<const Layer *> layer_set;
-  for (const auto& layer : m_layers) {
-    layer_queue.push(layer);
-    layer_set.insert(layer);
-  }
-  while (!layer_queue.empty()) {
-    const Layer *layer = layer_queue.front();
-    layer_queue.pop();
-    std::vector<const Layer *> relatives;
-    for (const auto& parent : layer->get_parent_layers()) {
-      relatives.push_back(parent);
-    }
-    for (const auto& child : layer->get_child_layers()) {
-      relatives.push_back(child);
-    }
-    for (const auto& relative : relatives) {
-      if (layer_set.count(relative) == 0) {
-        m_layers.push_back(const_cast<Layer *>(relative));
-        layer_queue.push(relative);
-        layer_set.insert(relative);
-      }
-    }
-  }
+  // Search layer graph and add all connected layers
+  add_connected_layers();
 
-  // Make sure parent and child relationships are reciprocated
+  // Make sure parent/child relationships are reciprocated
   for (const auto& layer : m_layers) {
     for (const auto& parent : layer->get_parent_layers()) {
       const_cast<Layer *>(parent)->add_child_layer(layer);
@@ -416,6 +448,36 @@ void model::setup_layer_topology() {
       const_cast<Layer *>(child)->add_parent_layer(layer);
     }
   }
+
+  // Add utility layers if needed
+  add_evaluation_layers();
+  add_dummy_layers();
+  add_split_layers();
+
+}
+
+void model::setup_layer_execution_order() {
+
+  // Find input layers
+  std::vector<generic_input_layer*> input_layers;
+  std::vector<Layer*> other_layers;
+  for (auto&& l : m_layers) {
+    auto&& input = dynamic_cast<generic_input_layer*>(l);
+    if (input != nullptr) {
+      input_layers.push_back(input);
+    } else {
+      other_layers.push_back(l);
+    }
+  }
+
+  // Make sure input layers are executed first
+  m_layers.clear();
+  m_layers.insert(m_layers.end(),
+                  input_layers.begin(),
+                  input_layers.end());
+  m_layers.insert(m_layers.end(),
+                  other_layers.begin(),
+                  other_layers.end());
 
 }
 
@@ -466,6 +528,212 @@ void model::setup_weights() {
 
 }
 
+void model::add_connected_layers() {
+
+  // Initialize breadth-first search queue with layer list
+  std::queue<const Layer *> layer_queue;
+  std::unordered_set<const Layer *> layer_set;
+  for (const auto& layer : m_layers) {
+    layer_queue.push(layer);
+    layer_set.insert(layer);
+  }
+
+  // Visit nodes in search queue until it is exhausted
+  while (!layer_queue.empty()) {
+    const Layer *layer = layer_queue.front();
+    layer_queue.pop();
+
+    // Find neighbors of current node
+    std::vector<const Layer *> relatives;
+    for (const auto& parent : layer->get_parent_layers()) {
+      relatives.push_back(parent);
+    }
+    for (const auto& child : layer->get_child_layers()) {
+      relatives.push_back(child);
+    }
+
+    // Add neighbors to search queue if they aren't in the layer list
+    for (const auto& relative : relatives) {
+      if (layer_set.count(relative) == 0) {
+        m_layers.push_back(const_cast<Layer *>(relative));
+        layer_queue.push(relative);
+        layer_set.insert(relative);
+      }
+    }
+
+  }
+
+}
+
+void model::add_evaluation_layers() {
+
+  // Add evaluation layers corresponding to objective function layer terms
+  for (auto* t : m_objective_function->get_terms()) {
+    auto* term = dynamic_cast<layer_term*>(t);
+    if (term != nullptr) {
+      auto* l = &term->get_layer();
+      const size_t pos = (std::find(m_layers.begin(), m_layers.end(), l)
+                          - m_layers.begin());
+      if (pos >= m_layers.size()) {
+        std::stringstream err;
+        err << "an objective function layer term corresponds to "
+            << "layer \"" << l->get_name() << "\", "
+            << "which is not in current model";
+        LBANN_ERROR(err.str());
+      }
+      if (dynamic_cast<abstract_evaluation_layer*>(l) == nullptr) {
+        auto* eval = abstract_evaluation_layer::construct(
+                       l->get_comm(),
+                       l->get_data_layout(),
+                       l->get_device_allocation());
+        eval->set_name(l->get_name() + "_eval");
+        l->add_child_layer(eval);
+        eval->add_parent_layer(l);
+        term->set_layer(*eval);
+        m_layers.insert(m_layers.begin() + pos + 1, eval);
+      }
+    }
+  }
+
+  // Add evaluation layers corresponding to layer metrics
+  for (auto* m : m_metrics) {
+    auto* met = dynamic_cast<layer_metric*>(m);
+    if (met != nullptr) {
+      auto* l = &met->get_layer();
+      const size_t pos = (std::find(m_layers.begin(), m_layers.end(), l)
+                          - m_layers.begin());
+      if (pos >= m_layers.size()) {
+        std::stringstream err;
+        err << "layer metric \"" << met->name() << "\" "
+            << "corresponds to layer \"" << l->get_name() << "\", "
+            << "which is not in current model";
+        LBANN_ERROR(err.str());
+      }
+      if (dynamic_cast<abstract_evaluation_layer*>(l) == nullptr) {
+        auto* eval = abstract_evaluation_layer::construct(
+                       l->get_comm(),
+                       l->get_data_layout(),
+                       l->get_device_allocation());
+        eval->set_name(l->get_name() + "_eval");
+        l->add_child_layer(eval);
+        eval->add_parent_layer(l);
+        met->set_layer(*eval);
+        m_layers.insert(m_layers.begin() + pos + 1, eval);
+      }
+    }
+  }
+
+}
+  
+void model::add_dummy_layers() {
+  for (size_t i = 0; i < m_layers.size(); ++i) {
+    auto layer = m_layers[i];
+
+    // Create dummy layers until current layer has enough children
+    std::vector<Layer*> dummy_layers;
+    while (layer->get_num_children() < layer->get_expected_num_child_layers()) {
+      Layer *dummy = nullptr;
+      using args_tuple = std::tuple<data_layout,El::Device>;
+      args_tuple args(layer->get_data_layout(), layer->get_device_allocation());
+      if (args == args_tuple(data_layout::DATA_PARALLEL, El::Device::CPU)) {
+        dummy = new dummy_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(m_comm);
+      }
+      if (args == args_tuple(data_layout::MODEL_PARALLEL, El::Device::CPU)) {
+        dummy = new dummy_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>(m_comm);
+      }
+#ifdef LBANN_HAS_GPU
+      if (args == args_tuple(data_layout::DATA_PARALLEL, El::Device::GPU)) {
+        dummy = new dummy_layer<data_layout::DATA_PARALLEL, El::Device::GPU>(m_comm);
+      }
+      if (args == args_tuple(data_layout::MODEL_PARALLEL, El::Device::GPU)) {
+        dummy = new dummy_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>(m_comm);
+      }
+#endif // LBANN_HAS_GPU
+      if (dummy == nullptr) {
+        LBANN_ERROR("invalid arguments for layer template specialization");
+      }
+      dummy->set_name(layer->get_name()
+                      + "_dummy" + std::to_string(dummy_layers.size()));
+      layer->add_child_layer(dummy);
+      dummy->add_parent_layer(layer);
+      dummy_layers.push_back(dummy);
+    }
+
+    // Add dummy layers to layer list
+    m_layers.insert(m_layers.begin() + i + 1,
+                    dummy_layers.begin(),
+                    dummy_layers.end());
+
+  }
+}
+
+void model::add_split_layers() {
+  for (size_t i = 0; i < m_layers.size(); ++i) {
+    auto layer = m_layers[i];
+
+    // Add split layer if layer expects one child but has multiple
+    auto& children = layer->get_child_layers();
+    if (layer->get_expected_num_child_layers() == 1
+        && children.size() != 1) {
+
+      // Create split layer
+      Layer *split = nullptr;
+      using args_tuple = std::tuple<data_layout,El::Device>;
+      args_tuple args(layer->get_data_layout(), layer->get_device_allocation());
+      if (args == args_tuple(data_layout::DATA_PARALLEL, El::Device::CPU)) {
+        split = new split_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(m_comm);
+      }
+      if (args == args_tuple(data_layout::MODEL_PARALLEL, El::Device::CPU)) {
+        split = new split_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>(m_comm);
+      }
+#ifdef LBANN_HAS_GPU
+      if (args == args_tuple(data_layout::DATA_PARALLEL, El::Device::GPU)) {
+        split = new split_layer<data_layout::DATA_PARALLEL, El::Device::GPU>(m_comm);
+      }
+      if (args == args_tuple(data_layout::MODEL_PARALLEL, El::Device::GPU)) {
+        split = new split_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>(m_comm);
+      }
+#endif // LBANN_HAS_GPU
+      if (split == nullptr) {
+        LBANN_ERROR("invalid arguments for layer template specialization");
+      }
+      split->set_name(layer->get_name() + "_split");
+
+      // Setup relationships between split layer and child layers
+      for (auto&& const_child : children) {
+        Layer *child = const_cast<Layer*>(const_child);
+        split->add_child_layer(child);
+        auto& child_parents = child->get_parent_layers();
+        std::replace(child_parents.begin(), child_parents.end(),
+                     layer, split);
+      }
+
+      // Setup relationship between current layer and split layer
+      children.clear();
+      layer->add_child_layer(split);
+      split->add_parent_layer(layer);
+
+      // Add split layer to layer list
+      m_layers.insert(m_layers.begin() + i + 1, split);
+
+    }
+
+  }
+}
+
+int model::get_num_iterations_per_epoch(execution_mode mode) const {
+  generic_input_layer* input = nullptr;
+  for (auto&& l : m_layers) {
+    input = dynamic_cast<generic_input_layer*>(l);
+    if (input != nullptr) { break; }
+  }
+  if (input == nullptr) {
+    return 0;
+  } else {
+    return input->get_num_iterations_per_epoch(mode);
+  }
+}
+
 ////////////////////////////////////////////////////////////
 // Evaluation and training
 ////////////////////////////////////////////////////////////
@@ -483,14 +751,30 @@ void model::evaluate(execution_mode mode) {
   }
 
   // Evaluate on all mini-batches
+  reset_epoch_statistics(mode);
   reset_mode_and_model(mode);
   do_evaluate_begin_cbs(mode);
   while (!evaluate_mini_batch(mode)) {}
   do_evaluate_end_cbs(mode);
+}
+
+//this is for data store functionality
+void model::collect_indices(execution_mode mode) {
+  reset_mode_and_model(mode);
+  while (true) {
+    m_layers[0]->forward_prop();
+    bool finished = true;
+    finished = m_layers[0]->update() && finished;
+    if (finished) {
+      break;
+    }
+  }
+  //this may not be necessary, but shouldn't hurt
   reset_epoch_statistics(mode);
 }
 
-void model::train(int num_epochs) {
+
+void model::train(int num_epochs, int num_batches) {
   do_train_begin_cbs();
   for (int epoch = m_current_epoch; epoch < num_epochs; ++epoch) {
 
@@ -500,9 +784,14 @@ void model::train(int num_epochs) {
     // Setup epoch
     reset_mode_and_model(execution_mode::training);
 
-    // Train on mini-batches
     do_epoch_begin_cbs();
-    while (!train_mini_batch()) {}
+    // Train on num_batches (subepoch) if specified
+    if(num_batches) {
+      for(int i = 0; i < num_batches; i++)
+        train_mini_batch();
+    } else { //train full epoch
+      while (!train_mini_batch()) {}
+    }
     // Once the epoch is complete, Increase the count
     ++m_current_epoch;
     do_epoch_end_cbs();
@@ -532,11 +821,13 @@ void model::reset_epoch_statistics(execution_mode mode) {
 }
 
 bool model::evaluate_mini_batch(execution_mode mode) {
+  reset_mode_and_model(mode);
   do_batch_begin_cbs(mode);
   forward_prop(mode);
-  m_objective_function->evaluate(mode);
+  m_objective_function->start_evaluation(mode, get_current_mini_batch_size());
+  m_objective_function->finish_evaluation(mode, get_current_mini_batch_size());
   for (const auto& m : m_metrics) {
-    m->evaluate(mode);
+    m->evaluate(mode, get_current_mini_batch_size());
   }
   const bool finished = update_layers();
   switch(m_execution_mode) {
@@ -554,19 +845,28 @@ bool model::evaluate_mini_batch(execution_mode mode) {
 }
 
 bool model::train_mini_batch() {
+  reset_mode_and_model(execution_mode::training);
   do_batch_begin_cbs(execution_mode::training);
 
   // Forward prop step
+  clear_gradients();
   forward_prop(execution_mode::training);
-  m_objective_function->evaluate(execution_mode::training);
+  // Result is not needed until the end of the mini-batch.
+  m_objective_function->start_evaluation(execution_mode::training,
+                                         get_current_mini_batch_size());
   for (const auto& m : m_metrics) {
-    m->evaluate(execution_mode::training);
+    m->evaluate(execution_mode::training,
+                get_current_mini_batch_size());
   }
 
   // Backward prop step
-  clear_error_signals();
   m_objective_function->differentiate();
   backward_prop();
+  m_objective_function->compute_weight_regularization();
+
+  // Finish evaluation.
+  m_objective_function->finish_evaluation(execution_mode::training,
+                                          get_current_mini_batch_size());
 
   // Update step
   update_weights();
@@ -577,9 +877,10 @@ bool model::train_mini_batch() {
   return finished;
 }
 
-void model::clear_error_signals() {
-  for (const auto& layer : m_layers) {
-    layer->clear_error_signal();
+void model::clear_gradients() {
+  for (const auto& w : m_weights) {
+    optimizer* opt = w->get_optimizer();
+    if (opt != nullptr) { opt->clear_gradient(); }
   }
 }
 
@@ -596,17 +897,32 @@ void model::forward_prop(execution_mode mode) {
 void model::backward_prop() {
   do_model_backward_prop_begin_cbs();
   for (int l = m_layers.size() - 1; l >= 0; --l) {
+
+    // Perform backward prop step on current layer
     Layer *layer = m_layers[l];
     do_layer_backward_prop_begin_cbs(layer);
     layer->back_prop();
     do_layer_backward_prop_end_cbs(layer);
+
+    // Terminate early if all gradients have been computed
+    bool all_gradients_computed = true;
+    for (auto&& w : m_weights) {
+      auto&& opt = w->get_optimizer();
+      if (opt != nullptr && opt->get_num_gradient_sources() != 0) {
+        all_gradients_computed = false;
+        break;
+      }
+    }
+    if (all_gradients_computed) { break; }
+
   }
   do_model_backward_prop_end_cbs();
 }
 
 void model::update_weights() {
   do_model_optimize_begin_cbs();
-  for (const auto& w : m_weights) {
+  for (int i = m_weights.size() - 1; i >= 0; --i) {
+    auto& w = m_weights[i];
     optimizer* opt = w->get_optimizer();
     if (opt != nullptr) {
       do_weight_optimize_begin_cbs(w);
@@ -895,6 +1211,15 @@ void model::summarize_stats(lbann_summary& summarizer) {
     m_objective_function->get_differentiation_time(),
     get_cur_step());
   m_objective_function->reset_counters();
+  double total_metric_time = 0.0;
+  for (auto&& m : m_metrics) {
+    total_metric_time += m->get_evaluate_time();
+    m->reset_counters();
+  }
+  summarizer.reduce_scalar(
+    "metric_evaluation_time",
+    total_metric_time,
+    get_cur_step());
 }
 
 void model::summarize_matrices(lbann_summary& summarizer) {
@@ -918,24 +1243,55 @@ struct lbann_model_header {
   uint32_t max_mini_batch_size;
   uint32_t current_mini_batch_size;
   uint32_t current_phase;
+  uint32_t callback_type;;
 };
 
 bool model::save_to_checkpoint_shared(persist& p) {
   // write out fields we need to save for model
-  if (p.get_rank() == 0) {
-    p.write_uint32(persist_type::train, "execution_mode",     (uint32_t) m_execution_mode);
-    p.write_uint32(persist_type::train, "terminate_training", (uint32_t) m_terminate_training);
-    p.write_uint64(persist_type::train, "current_epoch",      (uint64_t) m_current_epoch);
-    p.write_uint64(persist_type::train, "current_step",       (uint64_t) m_current_step);
-    p.write_uint64(persist_type::train, "current_validataion_step",       (uint64_t) m_current_validation_step);
-    p.write_uint64(persist_type::train, "current_testing_step",       (uint64_t) m_current_testing_step);
-    p.write_uint32(persist_type::train, "max_mini_batch_size",      (uint32_t) m_max_mini_batch_size);
-    p.write_uint32(persist_type::train, "current_mini_batch_size",      (uint32_t) m_current_mini_batch_size);
-    p.write_uint32(persist_type::train, "current_phase",      (uint32_t) m_current_phase);
-  }
+  if (p.get_cb_type() != callback_type::validation) {
+    if (m_comm->am_model_master()) {
+      p.write_uint32(persist_type::train, "execution_mode",     (uint32_t) m_execution_mode);
+      p.write_uint32(persist_type::train, "terminate_training", (uint32_t) m_terminate_training);
+      p.write_uint64(persist_type::train, "current_epoch",      (uint64_t) m_current_epoch);
+      p.write_uint64(persist_type::train, "current_step",       (uint64_t) m_current_step);
+      p.write_uint64(persist_type::train, "current_testing_step",       (uint64_t) m_current_testing_step);
+      p.write_uint32(persist_type::train, "max_mini_batch_size",      (uint32_t) m_max_mini_batch_size);
+      p.write_uint32(persist_type::train, "current_mini_batch_size",      (uint32_t) m_current_mini_batch_size);
+      p.write_uint32(persist_type::train, "current_phase",      (uint32_t) m_current_phase);
+      p.write_uint32(persist_type::train, "persist_callback_type",      (uint32_t) p.get_cb_type());
+      if(p.get_cb_type() == callback_type::batch)
+        p.write_uint64(persist_type::validate, "current_validataion_step",       (uint64_t) m_current_validation_step);
+    }
 
-  for (const auto& m : m_metrics) {
-    m->save_to_checkpoint_shared(p);
+    for (weights *w : m_weights) {
+      w->save_to_checkpoint_shared(p);
+    }
+
+    for (size_t l = 0; l < m_layers.size(); l++) {
+      if (! m_layers[l]->save_to_checkpoint_shared(p)) {
+        return false;
+      }
+    }
+    if(p.get_cb_type() == callback_type::batch || get_num_iterations_per_epoch(execution_mode::validation) == 0){
+      save_rng_to_checkpoint_shared(p, m_comm);
+      for (const auto& m : m_metrics) {
+        m->save_to_checkpoint_shared(p);
+      }
+    }
+  }
+  else{
+    if (m_comm->am_model_master()) {
+      p.write_uint64(persist_type::validate, "current_validataion_step",       (uint64_t) m_current_validation_step);
+    }
+    save_rng_to_checkpoint_shared(p, m_comm);
+    for (size_t l = 0; l < m_layers.size(); l++) {
+      if (! m_layers[l]->save_to_checkpoint_shared(p)) {
+        return false;
+      }
+    }
+    for (const auto& m : m_metrics) {
+      m->save_to_checkpoint_shared(p);
+    }
   }
   return true;
 }
@@ -944,37 +1300,156 @@ bool model::load_from_checkpoint_shared(persist& p) {
   // have rank 0 read the file
   // read state from file
   struct lbann_model_header header;
-  if (p.get_rank() == 0) {
+  // Assume checkpoint reload from epoch end not step end
+  if (m_comm->am_model_master()) {
     p.read_uint32(persist_type::train, "execution_mode",     &header.execution_mode);
     p.read_uint32(persist_type::train, "terminate_training", &header.terminate_training);
     p.read_uint64(persist_type::train, "current_epoch",      &header.current_epoch);
     p.read_uint64(persist_type::train, "current_step",       &header.current_step);
-    p.read_uint64(persist_type::train, "current_validation_step",       &header.current_validation_step);
+    if(get_num_iterations_per_epoch(execution_mode::validation) != 0)
+      p.read_uint64(persist_type::validate, "current_validation_step",       &header.current_validation_step);
     p.read_uint64(persist_type::train, "current_testing_step",       &header.current_testing_step);
     p.read_uint32(persist_type::train, "max_mini_batch_size",      &header.max_mini_batch_size);
     p.read_uint32(persist_type::train, "current_mini_batch_size",      &header.current_mini_batch_size);
     p.read_uint32(persist_type::train, "current_phase",      &header.current_phase);
+    p.read_uint32(persist_type::train, "persist_callback_type",     &header.callback_type);
   }
-
+  load_rng_from_checkpoint_shared(p, m_comm);
   // TODO: this assumes homogeneous processors
   // broadcast state from rank 0
-  MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
-
+  m_comm->model_broadcast(0, header);
   // set our member params from values read from disk
   m_execution_mode     = (execution_mode) header.execution_mode;
   m_terminate_training = (bool)           header.terminate_training;
   m_current_epoch      = (int)            header.current_epoch;
   m_current_step       = (int)            header.current_step;
-  m_current_validation_step = (int)       header.current_validation_step;
+  if(get_num_iterations_per_epoch(execution_mode::validation) != 0)
+    m_current_validation_step = (int)       header.current_validation_step;
+  m_current_testing_step = (int)          header.current_testing_step;
+  m_max_mini_batch_size = (int)           header.max_mini_batch_size;
+  m_current_mini_batch_size = (int)       header.current_mini_batch_size;
+  m_current_phase      =                  header.current_phase;
+  // set state of persist object to know which type of ckpt we are returning from.
+  p.set_cb_type((callback_type) header.callback_type);
+
+  for (weights *w : m_weights) {
+    w->load_from_checkpoint_shared(p);
+  }
+
+  // read in each layer
+  for (size_t l = 0; l < m_layers.size(); l++) {
+    if (! m_layers[l]->load_from_checkpoint_shared(p)) {
+      return false;
+    }
+  }
+  if(get_num_iterations_per_epoch(execution_mode::validation) != 0){
+    for (const auto& m : m_metrics) {
+      m->load_from_checkpoint_shared(p);
+    }
+  }
+#ifdef LBANN_HAS_GPU
+  El::GPUManager::SynchronizeDevice();
+#endif // LBANN_HAS_GPU
+  return true;
+}
+
+bool model::save_to_checkpoint_distributed(persist& p){
+  // write out fields we need to save for model
+  if (p.get_cb_type() != callback_type::validation) {
+    p.write_uint32(persist_type::train, "execution_mode",     (uint32_t) m_execution_mode);
+    p.write_uint32(persist_type::train, "terminate_training", (uint32_t) m_terminate_training);
+    p.write_uint64(persist_type::train, "current_epoch",      (uint64_t) m_current_epoch);
+    p.write_uint64(persist_type::train, "current_step",       (uint64_t) m_current_step);
+    p.write_uint64(persist_type::train, "current_testing_step",       (uint64_t) m_current_testing_step);
+    p.write_uint32(persist_type::train, "max_mini_batch_size",      (uint32_t) m_max_mini_batch_size);
+    p.write_uint32(persist_type::train, "current_mini_batch_size",      (uint32_t) m_current_mini_batch_size);
+    p.write_uint32(persist_type::train, "current_phase",      (uint32_t) m_current_phase);
+    p.write_uint32(persist_type::train, "persist_callback_type",      (uint32_t) p.get_cb_type());
+    if(p.get_cb_type() == callback_type::batch)
+      p.write_uint64(persist_type::validate, "current_validataion_step",       (uint64_t) m_current_validation_step);
+
+    for (weights *w : m_weights) {
+      w->save_to_checkpoint_distributed(p);
+    }
+
+    for (size_t l = 0; l < m_layers.size(); l++) {
+      if (! m_layers[l]->save_to_checkpoint_distributed(p)) {
+        return false;
+      }
+    }
+    if(p.get_cb_type() == callback_type::batch || get_num_iterations_per_epoch(execution_mode::validation) == 0){
+       save_rng_to_checkpoint_shared(p, m_comm);
+      for (const auto& m : m_metrics) {
+        m->save_to_checkpoint_distributed(p);
+      }
+    }
+  }
+
+  else {
+    p.write_uint64(persist_type::validate, "current_validataion_step",       (uint64_t) m_current_validation_step);
+    save_rng_to_checkpoint_shared(p, m_comm);
+
+    for (size_t l = 0; l < m_layers.size(); l++) {
+      if (! m_layers[l]->save_to_checkpoint_distributed(p)) {
+        return false;
+      }
+    }
+    for (const auto& m : m_metrics) {
+      m->save_to_checkpoint_distributed(p);
+    }
+  }
+  return true;
+}
+
+bool model::load_from_checkpoint_distributed(persist& p){
+  struct lbann_model_header header;
+  p.read_uint32(persist_type::train, "execution_mode",     &header.execution_mode);
+  p.read_uint32(persist_type::train, "terminate_training", &header.terminate_training);
+  p.read_uint64(persist_type::train, "current_epoch",      &header.current_epoch);
+  p.read_uint64(persist_type::train, "current_step",       &header.current_step);
+  if(get_num_iterations_per_epoch(execution_mode::validation) != 0)
+    p.read_uint64(persist_type::validate, "current_validation_step",       &header.current_validation_step);
+  p.read_uint64(persist_type::train, "current_testing_step",       &header.current_testing_step);
+  p.read_uint32(persist_type::train, "max_mini_batch_size",      &header.max_mini_batch_size);
+  p.read_uint32(persist_type::train, "current_mini_batch_size",      &header.current_mini_batch_size);
+  p.read_uint32(persist_type::train, "current_phase",      &header.current_phase);
+  p.read_uint32(persist_type::train, "persist_callback_type",     &header.callback_type);
+
+  m_execution_mode     = (execution_mode) header.execution_mode;
+  m_terminate_training = (bool)           header.terminate_training;
+  m_current_epoch      = (int)            header.current_epoch;
+  m_current_step       = (int)            header.current_step;
+  if(get_num_iterations_per_epoch(execution_mode::validation) != 0)
+    m_current_validation_step = (int)       header.current_validation_step;
   m_current_testing_step = (int)          header.current_testing_step;
   m_max_mini_batch_size = (int)           header.max_mini_batch_size;
   m_current_mini_batch_size = (int)       header.current_mini_batch_size;
   m_current_phase      =                  header.current_phase;
 
-  for (const auto& m : m_metrics) {
-    m->load_from_checkpoint_shared(p);
+  p.set_cb_type((callback_type) header.callback_type);
+  load_rng_from_checkpoint_shared(p, m_comm);
+
+  for (weights *w : m_weights) {
+    w->load_from_checkpoint_distributed(p);
+  }
+
+  for (size_t l = 0; l < m_layers.size(); l++) {
+    if (! m_layers[l]->load_from_checkpoint_distributed(p)) {
+      return false;
+    }
+  }
+  if(get_num_iterations_per_epoch(execution_mode::validation) != 0){
+    for (const auto& m : m_metrics) {
+      m->load_from_checkpoint_distributed(p);
+    }
   }
   return true;
+}
+
+void model::write_proto(lbann_data::Model* proto) {
+  proto->Clear();
+  if (m_comm->am_world_master())
+    proto->set_mini_batch_size(m_max_mini_batch_size);
 }
 
 }  // namespace lbann

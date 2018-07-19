@@ -22,8 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_layer .hpp .cpp - Parent class for all layer types
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/layer.hpp"
@@ -38,406 +36,224 @@
 
 namespace lbann {
 
-template <>
-void Layer::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>() {
-
-  // Instantiate matrices with MC,MR distribution
-  El::Grid& grid = m_comm->get_model_grid();
-  m_prev_activations_v  = new DistMat(grid);
-  m_activations         = new DistMat(grid);
-  m_prev_error_signal_v = new DistMat(grid);
-  m_error_signal        = new DistMat(grid);
-
-  // Construct matrix views
-  m_activations_v = m_activations->Construct(m_activations->Grid(),
-                                             m_activations->Root());
-  m_error_signal_v = m_error_signal->Construct(m_error_signal->Grid(),
-                                               m_error_signal->Root());
-
-}
-
-template<>
-void Layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>() {
-
-  // Instantiate matrices with STAR,VC distribution
-  El::Grid& grid = m_comm->get_model_grid();
-  m_prev_activations_v  = new StarVCMat(grid);
-  m_activations         = new StarVCMat(grid);
-  m_prev_error_signal_v = new StarVCMat(grid);
-  m_error_signal        = new StarVCMat(grid);
-
-  // Construct matrix views
-  m_activations_v = m_activations->Construct(m_activations->Grid(),
-                                             m_activations->Root());
-  m_error_signal_v = m_error_signal->Construct(m_error_signal->Grid(),
-                                               m_error_signal->Root());
-
-}
-
 Layer::Layer(lbann_comm *comm)
   : m_comm(comm),
-    m_cudnn(nullptr) {
+    m_frozen(false) {
 
   // Initialize layer name
   static int num_layers = 0;
   m_name = "layer" + std::to_string(num_layers);
   num_layers++;
 
-  // Initialize neuron tensor dimensions
-  m_num_neurons = 0;
-  m_num_neuron_dims = 1;
-  m_neuron_dims = std::vector<int>(1, 0);
-  m_num_prev_neurons = 0;
-  m_num_prev_neuron_dims = 1;
-  m_neuron_dims = std::vector<int>(1, 0);
-
-  // Default number of parent and child layers
-  m_max_num_parent_layers = 1;
-  m_max_num_child_layers = 1;
-
-  // Initialize model
-  m_model = nullptr;
-
-  // Initialize GPU information
-  m_using_gpus = false;
-#ifdef __LIB_CUDNN
-  m_mini_batch_size_per_gpu = 0;
-  m_max_mini_batch_size_per_gpu = 0;
-  m_copy_fp_input_to_gpus = false;
-  m_copy_fp_output_from_gpus = false;
-  m_copy_bp_input_to_gpus = false;
-  m_copy_bp_output_from_gpus = false;
-  m_prev_neurons_cudnn_desc = nullptr;
-  m_neurons_cudnn_desc = nullptr;
-#endif // __LIB_CUDNN
-
+  // Reset timing counters
   reset_counters();
+
 }
 
 Layer::Layer(const Layer& other) :
   m_comm(other.m_comm),
-  m_num_neurons(other.m_num_neurons),
-  m_num_neuron_dims(other.m_num_neuron_dims),
-  m_neuron_dims(other.m_neuron_dims),
-  m_num_prev_neurons(other.m_num_prev_neurons),
-  m_num_prev_neuron_dims(other.m_num_prev_neuron_dims),
-  m_prev_neuron_dims(other.m_prev_neuron_dims),
   m_weights(other.m_weights),
   m_parent_layers(other.m_parent_layers),
   m_child_layers(other.m_child_layers),
-  m_max_num_parent_layers(other.m_max_num_parent_layers),
-  m_max_num_child_layers(other.m_max_num_child_layers),
+  m_expected_num_parent_layers(other.m_expected_num_parent_layers),
+  m_expected_num_child_layers(other.m_expected_num_child_layers),
   m_model(other.m_model),
-  m_using_gpus(other.m_using_gpus),
-  m_cudnn(other.m_cudnn)
-#ifdef __LIB_CUDNN
-  ,
-  m_mini_batch_size_per_gpu(other.m_mini_batch_size_per_gpu),
-  m_max_mini_batch_size_per_gpu(other.m_max_mini_batch_size_per_gpu),
-  m_copy_fp_input_to_gpus(other.m_copy_fp_input_to_gpus),
-  m_copy_fp_output_from_gpus(other.m_copy_fp_output_from_gpus),
-  m_copy_bp_input_to_gpus(other.m_copy_bp_input_to_gpus),
-  m_copy_bp_output_from_gpus(other.m_copy_bp_output_from_gpus)
-#endif // __LIB_CUDNN
-{
-  fp_time = other.fp_time;
-  fp_compute_time = other.fp_compute_time;
-  bp_time = other.bp_time;
-  bp_compute_time = other.bp_compute_time;
-  update_time = other.update_time;
-  m_prev_activations_v = other.m_prev_activations_v->Copy();
-  m_activations = other.m_activations->Copy();
-  m_activations_v = other.m_activations_v->Copy();
-  m_prev_error_signal_v = other.m_prev_error_signal_v->Copy();
-  m_error_signal = other.m_error_signal->Copy();
-  m_error_signal_v = other.m_error_signal_v->Copy();
-#ifdef __LIB_CUDNN
-  if(m_cudnn != nullptr) {
-    m_prev_activations_d = m_cudnn->copy(other.m_prev_activations_d,
-                                         m_num_prev_neurons,
-                                         m_max_mini_batch_size_per_gpu);
-    m_activations_d = m_cudnn->copy(other.m_activations_d,
-                                    m_num_neurons,
-                                    m_max_mini_batch_size_per_gpu);
-    m_prev_error_signal_d = m_cudnn->copy(other.m_prev_error_signal_d,
-                                          m_num_neurons,
-                                          m_max_mini_batch_size_per_gpu);
-    m_error_signal_d = m_cudnn->copy(other.m_error_signal_d,
-                                     m_num_prev_neurons,
-                                     m_max_mini_batch_size_per_gpu);
+  m_frozen(other.m_frozen),
+  m_fp_time(other.m_fp_time),
+  m_fp_compute_time(other.m_fp_compute_time),
+  m_bp_time(other.m_bp_time),
+  m_bp_compute_time(other.m_bp_compute_time),
+  m_update_time(other.m_update_time),
+  m_name(other.m_name),
+  m_output_dims_list(other.m_output_dims_list) {
+
+  // Deep matrix copies
+  m_inputs.reserve(other.m_inputs.size());
+  m_outputs.reserve(other.m_outputs.size());
+  m_gradient_wrt_outputs.reserve(other.m_gradient_wrt_outputs.size());
+  m_gradient_wrt_inputs.reserve(other.m_gradient_wrt_inputs.size());
+  for (const auto& ptr : other.m_inputs) {
+    m_inputs.emplace_back(ptr ? nullptr : ptr->Copy());
   }
-  m_prev_neurons_cudnn_desc = nullptr;
-  m_neurons_cudnn_desc = nullptr;
-  cudnn::copy_tensor_cudnn_desc(other.m_prev_neurons_cudnn_desc,
-                                m_prev_neurons_cudnn_desc);
-  cudnn::copy_tensor_cudnn_desc(other.m_neurons_cudnn_desc,
-                                m_neurons_cudnn_desc);
-#endif // __LIB_CUDNN
-  m_name = other.m_name;
+  for (const auto& ptr : other.m_outputs) {
+    m_outputs.emplace_back(ptr ? nullptr : ptr->Copy());
+  }
+  for (const auto& ptr : other.m_gradient_wrt_outputs) {
+    m_gradient_wrt_outputs.emplace_back(ptr ? nullptr : ptr->Copy());
+  }
+  for (const auto& ptr : other.m_gradient_wrt_inputs) {
+    m_gradient_wrt_inputs.emplace_back(ptr ? nullptr : ptr->Copy());
+  }
+
 }
 
 Layer& Layer::operator=(const Layer& other) {
+
+  // Shallow copies
   m_comm = other.m_comm;
-  m_num_neurons = other.m_num_neurons;
-  m_num_neuron_dims = other.m_num_neuron_dims;
-  m_neuron_dims = other.m_neuron_dims;
-  m_num_prev_neurons = other.m_num_prev_neurons;
-  m_num_prev_neuron_dims = other.m_num_prev_neuron_dims;
-  m_prev_neuron_dims = other.m_prev_neuron_dims;
   m_weights = other.m_weights;
   m_parent_layers = other.m_parent_layers;
   m_child_layers = other.m_child_layers;
-  m_max_num_parent_layers = other.m_max_num_parent_layers;
-  m_max_num_child_layers = other.m_max_num_child_layers;
+  m_expected_num_parent_layers = other.m_expected_num_parent_layers;
+  m_expected_num_child_layers = other.m_expected_num_child_layers;
   m_model = other.m_model;
-  m_using_gpus = other.m_using_gpus;
-  m_cudnn = other.m_cudnn;
-  fp_time = other.fp_time;
-  fp_compute_time = other.fp_compute_time;
-  bp_time = other.bp_time;
-  bp_compute_time = other.bp_compute_time;
-  update_time = other.update_time;
-#ifdef __LIB_CUDNN
-  m_mini_batch_size_per_gpu = other.m_mini_batch_size_per_gpu;
-  m_max_mini_batch_size_per_gpu = other.m_max_mini_batch_size_per_gpu;
-  m_copy_fp_input_to_gpus = other.m_copy_fp_input_to_gpus;
-  m_copy_fp_output_from_gpus = other.m_copy_fp_output_from_gpus;
-  m_copy_bp_input_to_gpus = other.m_copy_bp_input_to_gpus;
-  m_copy_bp_output_from_gpus = other.m_copy_bp_output_from_gpus;
-#endif // __LIB_CUDNN
-
-  // Free allocated memory and copy data from other matrix
-#define COPY_MATRIX(src, dst)                   \
-  do {                                          \
-    if(src != nullptr && dst != nullptr) {      \
-      El::Copy(*src, *dst);                     \
-    }                                           \
-    if(src != nullptr && dst == nullptr) {      \
-      dst = src->Copy();                        \
-    }                                           \
-    if(src == nullptr && dst != nullptr) {      \
-      delete dst;                               \
-      dst = nullptr;                            \
-    }                                           \
-  } while(false)
-  COPY_MATRIX(other.m_activations, m_activations);
-  COPY_MATRIX(other.m_error_signal, m_error_signal);
-  COPY_MATRIX(other.m_prev_activations_v, m_prev_activations_v);
-  COPY_MATRIX(other.m_prev_error_signal_v, m_prev_error_signal_v);
-  COPY_MATRIX(other.m_activations_v, m_activations_v);
-  COPY_MATRIX(other.m_error_signal_v, m_error_signal_v);
-#undef COPY_MATRIX
-
-#ifdef __LIB_CUDNN
-  if(m_cudnn != nullptr) {
-    m_cudnn->deallocate_on_gpus(m_prev_activations_d);
-    m_cudnn->deallocate_on_gpus(m_activations_d);
-    m_cudnn->deallocate_on_gpus(m_prev_error_signal_d);
-    m_cudnn->deallocate_on_gpus(m_error_signal_d);
-    m_prev_activations_d = m_cudnn->copy(other.m_prev_activations_d,
-                                         m_num_prev_neurons,
-                                         m_max_mini_batch_size_per_gpu);
-    m_activations_d = m_cudnn->copy(other.m_activations_d,
-                                    m_num_neurons,
-                                    m_max_mini_batch_size_per_gpu);
-    m_prev_error_signal_d = m_cudnn->copy(other.m_prev_error_signal_d,
-                                          m_num_neurons,
-                                          m_max_mini_batch_size_per_gpu);
-    m_error_signal_d = m_cudnn->copy(other.m_error_signal_d,
-                                     m_num_prev_neurons,
-                                     m_max_mini_batch_size_per_gpu);
-  }
-  cudnn::copy_tensor_cudnn_desc(other.m_prev_neurons_cudnn_desc,
-                                m_prev_neurons_cudnn_desc);
-  cudnn::copy_tensor_cudnn_desc(other.m_neurons_cudnn_desc,
-                                m_neurons_cudnn_desc);
+  m_frozen = other.m_frozen;
+  m_fp_time = other.m_fp_time;
+  m_fp_compute_time = other.m_fp_compute_time;
+  m_bp_time = other.m_bp_time;
+  m_bp_compute_time = other.m_bp_compute_time;
+  m_update_time = other.m_update_time;
   m_name = other.m_name;
-#endif // __LIB_CUDNN
+  m_output_dims_list = other.m_output_dims_list;
+
+  // Deep matrix copies
+  m_inputs.clear();
+  m_outputs.clear();
+  m_gradient_wrt_outputs.clear();
+  m_gradient_wrt_inputs.clear();
+  m_inputs.reserve(other.m_inputs.size());
+  m_outputs.reserve(other.m_outputs.size());
+  m_gradient_wrt_outputs.reserve(other.m_gradient_wrt_outputs.size());
+  m_gradient_wrt_inputs.reserve(other.m_gradient_wrt_inputs.size());
+  for (const auto& ptr : other.m_inputs) {
+    m_inputs.emplace_back(ptr ? nullptr : ptr->Copy());
+  }
+  for (const auto& ptr : other.m_outputs) {
+    m_outputs.emplace_back(ptr ? nullptr : ptr->Copy());
+  }
+  for (const auto& ptr : other.m_gradient_wrt_outputs) {
+    m_gradient_wrt_outputs.emplace_back(ptr ? nullptr : ptr->Copy());
+  }
+  for (const auto& ptr : other.m_gradient_wrt_inputs) {
+    m_gradient_wrt_inputs.emplace_back(ptr ? nullptr : ptr->Copy());
+  }
 
   return *this;
 }
 
-Layer::~Layer() {
-#ifdef __LIB_CUDNN
-  if(m_prev_neurons_cudnn_desc != nullptr) {
-    CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_prev_neurons_cudnn_desc));
+std::string Layer::get_description() const {
+  std::stringstream ss;
+  ss << get_name() << " (" << get_type() << "): ";
+  return ss.str();
+}
+
+std::string Layer::get_topo_description() const {
+  std::stringstream ss;
+  const size_t num_children = get_num_children();
+  for (size_t i = 0; i < num_children; ++i) {
+    const auto& dims = get_output_dims(i);
+    if (i > 0) { ss << ", "; }
+    ss << "activations";
+    if (num_children > 1) { ss << "[" << i << "]"; }
+    ss << " = [";
+    switch (dims.size()) {
+    case 0:
+      ss << "0"; break;
+    case 2:
+      ss << dims[0] << "c x "
+         << dims[1] << "w";
+      break;
+    case 3:
+      ss << dims[0] << "c x "
+         << dims[1] << "w x "
+         << dims[2] << "h";
+      break;
+    default:
+      ss << dims[0];
+      for (size_t j = 1; j < dims.size(); ++j) {
+        ss << " x " << dims[j];
+      }
+    }
+    ss << ", " << get_activations(i).Width() << "s]";
   }
-  if(m_neurons_cudnn_desc != nullptr) {
-    CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_neurons_cudnn_desc));
-  }
-  if(m_cudnn != nullptr) {
-    m_cudnn->deallocate_on_gpus(m_prev_activations_d);
-    m_cudnn->deallocate_on_gpus(m_activations_d);
-    m_cudnn->deallocate_on_gpus(m_prev_error_signal_d);
-    m_cudnn->deallocate_on_gpus(m_error_signal_d);
-    m_cudnn->unpin_matrix(*m_prev_activations_v);
-    m_cudnn->unpin_matrix(*m_activations);
-    m_cudnn->unpin_matrix(*m_prev_error_signal_v);
-    m_cudnn->unpin_matrix(*m_error_signal);
-  }
-#endif // __LIB_CUDNN
-  if(m_activations         != nullptr) delete m_activations;
-  if(m_error_signal        != nullptr) delete m_error_signal;
-  if(m_prev_activations_v  != nullptr) delete m_prev_activations_v;
-  if(m_prev_error_signal_v != nullptr) delete m_prev_error_signal_v;
-  if(m_activations_v       != nullptr) delete m_activations_v;
-  if(m_error_signal_v      != nullptr) delete m_error_signal_v;
+  return ss.str();
 }
 
 void Layer::forward_prop() {
-  double fp_start = get_time();
+  const auto fp_start = get_time();
 
-  // Set matrix views based on current mini-batch size
-  fp_set_std_matrix_view();
+  // Setup matrix data, e.g. input matrices
+  fp_setup_data(m_model->get_current_mini_batch_size());
 
-  // Get incoming activations and convert matrix distribution if necessary
-  if(!m_parent_layers.empty()) {
-    m_parent_layers.front()->get_fp_output(*m_prev_activations_v, this);
-  } else {
-    const int mini_batch_size = m_model->get_current_mini_batch_size();
-    El::Zeros(*m_prev_activations_v, m_num_prev_neurons, mini_batch_size);
-  }
-
-#ifdef __LIB_CUDNN
-  if(m_using_gpus) {
-
-    // Determine mini-batch size per GPU
-    const int num_gpus = m_cudnn->get_num_gpus();
-    const int local_mini_batch_size = m_activations_v->LocalWidth();
-    m_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
-
-    // Set tensor descriptors
-    cudnn::set_tensor_cudnn_desc(m_prev_neurons_cudnn_desc,
-                                 m_mini_batch_size_per_gpu,
-                                 m_prev_neuron_dims);
-    cudnn::set_tensor_cudnn_desc(m_neurons_cudnn_desc,
-                                 m_mini_batch_size_per_gpu,
-                                 m_neuron_dims);
-
-    // Transfer inputs from CPU to GPUs if needed
-    if(m_copy_fp_input_to_gpus) {
-      if(m_prev_activations_d.empty()) {
-        m_cudnn->allocate_on_gpus(m_prev_activations_d,
-                                  m_num_prev_neurons,
-                                  m_max_mini_batch_size_per_gpu);
-      }
-      m_cudnn->scatter_to_gpus(m_prev_activations_d,
-                               m_prev_activations_v->LockedMatrix(),
-                               m_mini_batch_size_per_gpu);
-      m_prev_activations_dv = m_prev_activations_d;
-    } else {
-      if(!m_parent_layers.empty()) {
-        m_parent_layers.front()->get_gpu_fp_output(m_prev_activations_dv,
-                                                   m_prev_activations_d,
-                                                   this);
-      }
-    }
-
-  }
-#endif // __LIB_CUDNN
+#if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
+  // Synchronize GPUs and check for errors
+  if (using_gpus()) { El::GPUManager::SynchronizeDevice(true); }
+#endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
 
   // Apply layer's compute function
-  double fp_compute_start = get_time();
+  const auto fp_compute_start = get_time();
   fp_compute();
-  fp_compute_time += get_time() - fp_compute_start;
+  m_fp_compute_time += get_time() - fp_compute_start;
 
-#ifdef __LIB_CUDNN
-  // Transfer outputs from GPUs to CPU if needed
-  if(m_using_gpus && m_copy_fp_output_from_gpus) {
-    m_cudnn->gather_from_gpus(m_activations_v->Matrix(),
-                              m_activations_d,
-                              m_mini_batch_size_per_gpu);
-    m_cudnn->synchronize();
+  // Add this layer as a gradient source for weight optimizers
+  for (auto&& w : m_weights) {
+    optimizer* opt = w->get_optimizer();
+    if (opt != nullptr) { opt->add_gradient_source(this); }
   }
-#endif // __LIB_CUDNN
 
-  fp_time += get_time() - fp_start;
+#if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
+  // Synchronize GPUs and check for errors
+  if (using_gpus()) { El::GPUManager::SynchronizeDevice(true); }
+#endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
+
+  m_fp_time += get_time() - fp_start;
 }
 
 void Layer::back_prop() {
-  double bp_start = get_time();
+  const auto bp_start = get_time();
 
-  // Set matrix views based on current mini-batch size
-  bp_set_std_matrix_view();
+  // Setup matrix data, e.g. input matrices
+  bp_setup_data(m_model->get_current_mini_batch_size());
 
-  // Get incoming error signal and convert matrix distribution if necessary
-  if(!m_child_layers.empty()) {
-    m_child_layers.front()->get_bp_output(*m_prev_error_signal_v, this);
-  } else {
-    const int mini_batch_size = m_model->get_current_mini_batch_size();
-    El::Zeros(*m_prev_error_signal_v, m_num_neurons, mini_batch_size);
-  }
-
-#ifdef __LIB_CUDNN
-  if(m_using_gpus) {
-
-    // Determine mini-batch size per GPU
-    const int num_gpus = m_cudnn->get_num_gpus();
-    const int local_mini_batch_size = m_activations_v->LocalWidth();
-    m_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
-
-    // Set tensor descriptors
-    cudnn::set_tensor_cudnn_desc(m_prev_neurons_cudnn_desc,
-                                 m_mini_batch_size_per_gpu,
-                                 m_prev_neuron_dims);
-    cudnn::set_tensor_cudnn_desc(m_neurons_cudnn_desc,
-                                 m_mini_batch_size_per_gpu,
-                                 m_neuron_dims);
-
-    // Transfer inputs from CPU to GPUs if needed
-    if(m_copy_bp_input_to_gpus) {
-      if(m_prev_error_signal_d.empty()) {
-        m_cudnn->allocate_on_gpus(m_prev_error_signal_d,
-                                  m_num_neurons,
-                                  m_max_mini_batch_size_per_gpu);
-      }
-      m_cudnn->scatter_to_gpus(m_prev_error_signal_d,
-                               m_prev_error_signal_v->LockedMatrix(),
-                               m_mini_batch_size_per_gpu);
-      m_prev_error_signal_dv = m_prev_error_signal_d;
-    } else {
-      if(!m_child_layers.empty()) {
-        m_child_layers.front()->get_gpu_bp_output(m_prev_error_signal_dv,
-                                                  m_prev_error_signal_d,
-                                                  this);
-      }
-    }
-
-  }
-#endif // __LIB_CUDNN
+#if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
+  // Synchronize GPUs and check for errors
+  if (using_gpus()) { El::GPUManager::SynchronizeDevice(true); }
+#endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
 
   // Backprop the compute function.
-  double bp_compute_start = get_time();
+  const auto bp_compute_start = get_time();
   bp_compute();
-  bp_compute_time += get_time() - bp_compute_start;
+  m_bp_compute_time += get_time() - bp_compute_start;
 
-#ifdef __LIB_CUDNN
-  // Transfer outputs from GPUs to CPU if needed
-  if(m_using_gpus && m_copy_bp_output_from_gpus) {
-    m_cudnn->gather_from_gpus(m_error_signal_v->Matrix(),
-                              m_error_signal_d,
-                              m_mini_batch_size_per_gpu);
-    m_cudnn->synchronize();
+  // Remove this layer as a gradient source for weight optimizers
+  for (auto&& w : m_weights) {
+    auto&& opt = w->get_optimizer();
+    if (opt != nullptr) { opt->remove_gradient_source(this); }
   }
-#endif // __LIB_CUDNN
 
-  bp_time += get_time() - bp_start;
+#if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
+  // Synchronize GPUs and check for errors
+  if (using_gpus()) { El::GPUManager::SynchronizeDevice(true); }
+#endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
+
+  m_bp_time += get_time() - bp_start;
 }
 
 bool Layer::update() {
-  bool layer_done = false;
+  if (m_frozen) { return true; }
   // Apply any updates.
-  double update_compute_start = get_time();
-  layer_done = update_compute();
-  update_time += get_time() - update_compute_start;
+  const auto update_compute_start = get_time();
+  const auto layer_done = update_compute();
+  m_update_time += get_time() - update_compute_start;
   return layer_done;
+}
+
+void Layer::reset_counters() {
+  m_fp_time         = EvalType(0);
+  m_fp_compute_time = EvalType(0);
+  m_bp_time         = EvalType(0);
+  m_bp_compute_time = EvalType(0);
+  m_update_time     = EvalType(0);
 }
 
 void Layer::summarize_stats(lbann_summary& summarizer, int step) {
   std::string prefix = m_name + "/";
-  summarizer.reduce_scalar(prefix + "fp_time", fp_time, step);
-  summarizer.reduce_scalar(prefix + "bp_time", bp_time, step);
-  summarizer.reduce_scalar(prefix + "update_time", update_time, step);
+  summarizer.reduce_scalar(prefix + "fp_time", m_fp_time, step);
+  summarizer.reduce_scalar(prefix + "bp_time", m_bp_time, step);
+  summarizer.reduce_scalar(prefix + "update_time", m_update_time, step);
+  summarizer.reduce_scalar_all(prefix + "fp_time", m_fp_time, step);
+  summarizer.reduce_scalar_all(prefix + "bp_time", m_bp_time, step);
+  summarizer.reduce_scalar_all(prefix + "update_time", m_update_time, step);
   reset_counters();
   // Combine the optimizer step time from all the weights.
   double step_time = 0.0;
@@ -449,189 +265,541 @@ void Layer::summarize_stats(lbann_summary& summarizer, int step) {
     }
   }
   summarizer.reduce_scalar(prefix + "opt_time", step_time, step);
+  summarizer.reduce_scalar_all(prefix + "opt_time", step_time, step);
 }
 
 void Layer::summarize_matrices(lbann_summary& summarizer, int step) {
-  std::string prefix = m_name + "/activations/";
-  summarizer.reduce_mean(prefix + "mean", *m_activations_v, step);
-  summarizer.reduce_min(prefix + "min", *m_activations_v, step);
-  summarizer.reduce_max(prefix + "max", *m_activations_v, step);
-  summarizer.reduce_stdev(prefix + "stdev", *m_activations_v, step);
-  summarizer.reduce_2norm(prefix + "2norm2", *m_activations_v, step);
-  prefix = m_name + "/error_signal/";
-  summarizer.reduce_mean(prefix + "mean", *m_error_signal_v, step);
-  summarizer.reduce_min(prefix + "min", *m_error_signal_v, step);
-  summarizer.reduce_max(prefix + "max", *m_error_signal_v, step);
-  summarizer.reduce_stdev(prefix + "stdev", *m_error_signal_v, step);
-  summarizer.reduce_2norm(prefix + "2norm2", *m_error_signal_v, step);
+
+  // Summarize activation matrices
+  const int num_children = get_num_children();
+  for (int i = 0; i < num_children; ++i) {
+    AbsDistMatReadProxy<El::Device::CPU> acts(*m_outputs[i]);
+    std::string prefix = m_name + "/activations";
+    if (num_children > 1) { prefix += std::to_string(i); }
+    summarizer.reduce_mean(prefix + "/mean", acts.GetLocked(), step);
+    summarizer.reduce_min(prefix + "/min", acts.GetLocked(), step);
+    summarizer.reduce_max(prefix + "/max", acts.GetLocked(), step);
+    summarizer.reduce_stdev(prefix + "/stdev", acts.GetLocked(), step);
+    summarizer.reduce_2norm(prefix + "/2norm2", acts.GetLocked(), step);
+  }
+
+  // Summarize error signal matrices
+  const int num_parents = get_num_parents();
+  for (int i = 0; i < num_parents; ++i) {
+    AbsDistMatReadProxy<El::Device::CPU> error_signals(*m_gradient_wrt_inputs[i]);
+    std::string prefix = m_name + "/error_signals";
+    if (num_parents > 1) { prefix += std::to_string(i); }
+    summarizer.reduce_mean(prefix + "/mean", error_signals.GetLocked(), step);
+    summarizer.reduce_min(prefix + "/min", error_signals.GetLocked(), step);
+    summarizer.reduce_max(prefix + "/max", error_signals.GetLocked(), step);
+    summarizer.reduce_stdev(prefix + "/stdev", error_signals.GetLocked(), step);
+    summarizer.reduce_2norm(prefix + "/2norm2", error_signals.GetLocked(), step);
+  }
+
 }
 
-void Layer::clear_error_signal() {
-  if(m_using_gpus) {
-#ifdef __LIB_CUDNN
-    m_cudnn->clear_on_gpus(m_error_signal_d,
-                           m_num_prev_neurons,
-                           m_max_mini_batch_size_per_gpu);
-#endif // __LIB_CUDNN
+
+// ===================================================================
+// Tensor dimension access functions
+// ===================================================================
+
+std::vector<int> Layer::get_input_dims(int input_index) const {
+
+  // Get parent layer
+  const auto& num_inputs = get_num_parents();
+  if (input_index < 0 || input_index >= num_inputs) {
+    std::stringstream err;
+    err << "attempted to access dimensions of invalid input tensor "
+        << "in layer \"" << get_name() << "\" "
+        << "(requested index " << input_index << ", but there are "
+        << num_inputs << " input tensors)";
+    LBANN_ERROR(err.str());
+  } else if (m_parent_layers[input_index] == nullptr) {
+    std::stringstream err;
+    err << "layer \"" << get_name() << "\" "
+        << "has a null pointer to parent layer "
+        << "(index " << input_index << ")";
+    LBANN_ERROR(err.str());
   }
-  else {
-    El::Zero(*m_error_signal);
+  const auto& parent = *m_parent_layers[input_index];
+
+  // Get dimensions of corresponding output tensor in parent layer
+  const auto num_parent_outputs = parent.get_num_children();
+  const int parent_output_index = (std::find(parent.m_child_layers.begin(),
+                                             parent.m_child_layers.end(),
+                                             this)
+                                   - parent.m_child_layers.begin());
+  if (parent_output_index >= num_parent_outputs) {
+    std::stringstream err;
+    err << "layer \"" << parent.get_name() << "\" is a parent of "
+        << "layer \"" << get_name() << "\", but "
+        << "\"" << get_name() << "\" is not a child of "
+        << "\"" << parent.get_name() << "\"";
+    LBANN_ERROR(err.str());
   }
+  return parent.get_output_dims(parent_output_index);
+
+}
+
+int Layer::get_input_size(int input_index) const {
+  const auto& dims = get_input_dims(input_index);
+  if (dims.empty()) {
+    return 0;
+  } else {
+    return std::accumulate(dims.begin(), dims.end(), 1,
+                           std::multiplies<int>());
+  }
+}
+
+std::vector<int> Layer::get_output_dims(int output_index) const {
+  const auto num_outputs = get_num_children();
+  if ((int) m_output_dims_list.size() != num_outputs) {
+    std::stringstream err;
+    err << "attempted to access dimensions of output tensor "
+        << "in layer \"" << get_name() << "\" "
+        << "before they are initialized";
+    LBANN_ERROR(err.str());
+  } else if (output_index < 0 || output_index >= num_outputs) {
+    std::stringstream err;
+    err << "attempted to access dimensions of invalid output tensor "
+        << "in layer \"" << get_name() << "\" "
+        << "(requested index " << output_index << ", but there are "
+        << num_outputs << " output tensors)";
+    LBANN_ERROR(err.str());
+  }
+  return m_output_dims_list[output_index];
+}
+
+int Layer::get_output_size(int output_index) const {
+  const auto& dims = get_output_dims(output_index);
+  if (dims.empty()) {
+    return 0;
+  } else {
+    return std::accumulate(dims.begin(), dims.end(), 1,
+                           std::multiplies<int>());
+  }
+}
+
+void Layer::set_output_dims(std::vector<int> dims, int output_index) {
+  if ((int) m_output_dims_list.size() != get_num_children()
+      || (int) m_output_dims_list.size() <= output_index) {
+    // Handles case where dims are set before child layers are set
+    m_output_dims_list.resize(std::max(get_num_children(),
+                                       output_index + 1));
+  }
+  m_output_dims_list[output_index] = dims;
+}
+
+// ===================================================================
+// Tensor access functions
+// ===================================================================
+
+// Accessing distributed matrices
+const AbsDistMat& Layer::get_prev_activations(int parent_index) const {
+  if (parent_index < 0 || parent_index >= (int) m_inputs.size()) {
+    std::stringstream err;
+    err << "attempted to access invalid previous activation matrix "
+        << "from " << m_name << " "
+        << "(requested index " << parent_index << ", but there are "
+        << m_inputs.size() << " previous activation matrices)";
+    LBANN_ERROR(err.str());
+  }
+  return *m_inputs[parent_index];
+}
+const AbsDistMat& Layer::get_activations(int child_index) const {
+  if (child_index < 0 || child_index >= (int) m_outputs.size()) {
+    std::stringstream err;
+    err << "attempted to access invalid activation matrix "
+        << "from " << m_name << " "
+        << "(requested index " << child_index << ", but there are "
+        << m_outputs.size() << " activation matrices)";
+    LBANN_ERROR(err.str());
+  }
+  return *m_outputs[child_index];
+}
+const AbsDistMat& Layer::get_prev_error_signals(int child_index) const {
+  if (child_index < 0 || child_index >= (int) m_gradient_wrt_outputs.size()) {
+    std::stringstream err;
+    err << "attempted to access invalid previous error signal matrix "
+        << "from " << m_name << " "
+        << "(requested index " << child_index << ", but there are "
+        << m_gradient_wrt_outputs.size() << " previous error signal matrices)";
+    LBANN_ERROR(err.str());
+  }
+  return *m_gradient_wrt_outputs[child_index];
+}
+const AbsDistMat& Layer::get_error_signals(int parent_index) const {
+  if (parent_index < 0 || parent_index >= (int) m_gradient_wrt_inputs.size()) {
+    std::stringstream err;
+    err << "attempted to access invalid error signal matrix "
+        << "from " << m_name << " "
+        << "(requested index " << parent_index << ", but there are "
+        << m_gradient_wrt_inputs.size() << " error signal matrices)";
+    LBANN_ERROR(err.str());
+  }
+  return *m_gradient_wrt_inputs[parent_index];
+}
+
+// Accessing non-const distributed matrices
+// Note: Using idiom from Item 3, p. 23 in "Effective C++", 3rd ed.,
+// by Scott Meyers.
+AbsDistMat& Layer::get_activations(int child_index) {
+  return const_cast<AbsDistMat&>(static_cast<const Layer&>(*this).get_activations(child_index));
+}
+AbsDistMat& Layer::get_error_signals(int parent_index) {
+  return const_cast<AbsDistMat&>(static_cast<const Layer&>(*this).get_error_signals(parent_index));
+}
+
+// Accessing local matrices
+AbsMat& Layer::get_local_activations(int child_index) {
+  return get_activations(child_index).Matrix();
+}
+AbsMat& Layer::get_local_error_signals(int parent_index) {
+  return get_error_signals(parent_index).Matrix();
+}
+const AbsMat& Layer::get_local_prev_activations(int parent_index) const {
+  return get_prev_activations(parent_index).LockedMatrix();
+}
+const AbsMat& Layer::get_local_activations(int child_index) const {
+  return get_activations(child_index).LockedMatrix();
+}
+const AbsMat& Layer::get_local_prev_error_signals(int child_index) const {
+  return get_prev_error_signals(child_index).LockedMatrix();
+}
+const AbsMat& Layer::get_local_error_signals(int parent_index) const {
+  return get_error_signals(parent_index).LockedMatrix();
+}
+
+// Accessing matrices corresponding to parent/child layer
+const AbsDistMat& Layer::get_activations(const Layer& child) const {
+  const int child_index = (std::find(m_child_layers.begin(),
+                                     m_child_layers.end(),
+                                     &child)
+                           - m_child_layers.begin());
+  if (child_index >= get_num_children()) {
+    std::stringstream err;
+    err << "attempted to get activation tensor of "
+        << "layer \"" << get_name() << "\" "
+        << "corresponding to layer\"" << child.get_name() << "\", "
+        << "which is not a child layer";
+    LBANN_ERROR(err.str());
+  }
+  return get_activations(child_index);
+}
+const AbsDistMat& Layer::get_error_signals(const Layer& parent) const {
+  const int parent_index = (std::find(m_parent_layers.begin(),
+                                      m_parent_layers.end(),
+                                      &parent)
+                           - m_parent_layers.begin());
+  if (parent_index >= get_num_parents()) {
+    std::stringstream err;
+    err << "attempted to get error signal tensor of "
+        << "layer \"" << get_name() << "\" "
+        << "corresponding to layer\"" << parent.get_name() << "\", "
+        << "which is not a parent layer";
+    LBANN_ERROR(err.str());
+  }
+  return get_error_signals(parent_index);
+}
+
+void Layer::freeze() {
+  m_frozen = true;
+  for(auto& w : m_weights) {
+    w->freeze();
+  }
+}
+
+void Layer::unfreeze() {
+  m_frozen = false;
+  for(auto& w : m_weights) {
+    w->unfreeze();
+  }
+}
+
+bool Layer::is_frozen() const {
+  for(auto& w : m_weights) {
+    if (w->is_frozen() != m_frozen) {
+      LBANN_ERROR("layer and weights of them are inconsistently frozen");
+    }
+  }
+  return m_frozen;
 }
 
 void Layer::setup() {
   setup_pointers();
   setup_dims();
+  setup_matrices(m_comm->get_model_grid());
   setup_data();
-  setup_views();
-  if (m_using_gpus) {
-    setup_gpu();
-  }
+  if (using_gpus()) { setup_gpu(); }
 }
 
 void Layer::setup_pointers() {
+
   // Check if the number of parents/children are valid
-  if(m_max_num_parent_layers >= 0
-     && (int)m_parent_layers.size() > m_max_num_parent_layers) {
+  if(m_expected_num_parent_layers >= 0
+     && get_num_parents() != m_expected_num_parent_layers) {
     std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "layer " << m_name << " has too many parent layers "
-        << "(found ";
-    for (const auto& parent : m_parent_layers) {
-      err << parent->get_name() << ", ";
-    }
-    err << "but only " << m_max_num_parent_layers << " parent layers are allowed)";
-    throw lbann_exception(err.str());
+    err << "layer " << m_name << " has an invalid number of parent layers "
+        << "(expected " << m_expected_num_parent_layers << ", "
+        << "but found " << m_parent_layers.size() << ")";
+    LBANN_ERROR(err.str());
   }
-  if(m_max_num_child_layers >= 0
-     && (int)m_child_layers.size() > m_max_num_child_layers) {
+  if(m_expected_num_child_layers >= 0
+     && get_num_children() != m_expected_num_child_layers) {
     std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "layer " << m_name << " has too many child layers "
-        << "(found ";
-    for (const auto& child : m_child_layers) {
-      err << child->get_name() << ", ";
-    }
-    err << "but only " << m_max_num_child_layers << " child layers are allowed)";
-    throw lbann_exception(err.str());
+    err << "layer " << m_name << " has an invalid number of child layers "
+        << "(expected " << m_expected_num_child_layers << ", "
+        << "but found " << m_child_layers.size() << ")";
+    LBANN_ERROR(err.str());
   }
+
 }
 
 void Layer::setup_dims() {
-
-  // Get dimensions of previous neuron tensor
-  if(m_parent_layers.empty()) {
-    m_prev_neuron_dims.assign(1, 0);
-  } else {
-    m_prev_neuron_dims = m_parent_layers.front()->fp_output_dims(this);
+  m_output_dims_list.resize(get_num_children());
+  if (get_num_parents() > 0) {
+    const auto& input_dims = get_input_dims();
+    for (auto& output_dims : m_output_dims_list) {
+      if (output_dims.empty()) {
+        output_dims = input_dims;
+      }
+    }
   }
-  m_num_prev_neuron_dims = m_prev_neuron_dims.size();
-  m_num_prev_neurons = std::accumulate(m_prev_neuron_dims.begin(),
-                                       m_prev_neuron_dims.end(),
-                                       1,
-                                       std::multiplies<int>());
+}
+
+namespace {
+
+template <typename T>
+El::AbstractDistMatrix<T>* construct_dist_matrix(El::Distribution col_dist,
+                                                 El::Distribution row_dist,
+                                                 El::DistWrap wrap,
+                                                 El::Device device,
+                                                 const El::Grid& grid) {
   
-  // Set neuron tensor dimensions equal to previous neuron tensor
-  m_num_neurons = m_num_prev_neurons;
-  m_num_neuron_dims = m_num_prev_neuron_dims;
-  m_neuron_dims = m_prev_neuron_dims;
+#define LBANN_CONSTRUCT_DIST_MATRIX(T_col_dist, T_row_dist,     \
+                                    T_wrap, T_device)           \
+  do {                                                          \
+    if (col_dist == T_col_dist && row_dist == T_row_dist        \
+        && wrap == T_wrap && device == T_device) {              \
+      return new El::DistMatrix<T, T_col_dist, T_row_dist,      \
+                                T_wrap, T_device>(grid);        \
+    }                                                           \
+  } while (false)
+  LBANN_CONSTRUCT_DIST_MATRIX(El::MC, El::MR, El::ELEMENT, El::Device::CPU);
+  LBANN_CONSTRUCT_DIST_MATRIX(El::STAR, El::VC, El::ELEMENT, El::Device::CPU);
+#ifdef LBANN_HAS_GPU
+  LBANN_CONSTRUCT_DIST_MATRIX(El::MC, El::MR, El::ELEMENT, El::Device::GPU);
+  LBANN_CONSTRUCT_DIST_MATRIX(El::STAR, El::VC, El::ELEMENT, El::Device::GPU);
+#endif // LBANN_HAS_GPU
+#undef LBANN_CONSTRUCT_DIST_MATRIX
   
+  // Failed to construct matrix
+  std::stringstream err;
+  err << "invalid matrix parameters "
+      << "(colDist=" << (int) col_dist << ", "
+      << "rowDist=" << (int) row_dist << ", "
+      << "wrap=" << (int) wrap << ", "
+      << "device=" << (int) device << ")";
+  LBANN_ERROR(err.str());
+  return nullptr;
+  
+}
+  
+} // namespace
+  
+void Layer::setup_matrices(const El::Grid& grid) {
+
+  // Choose matrix distribution
+  El::Distribution col_dist, row_dist;
+  El::DistWrap wrap = El::ELEMENT;
+  El::Device device = get_device_allocation();
+  switch (get_data_layout()) {
+  case data_layout::DATA_PARALLEL:
+    col_dist = El::STAR;
+    row_dist = El::VC;
+    break;
+  case data_layout::MODEL_PARALLEL:
+    col_dist = El::MC;
+    row_dist = El::MR;
+    break;
+  default: LBANN_ERROR("invalid data layout");
+  }
+  
+  // Delete any previously allocated matrices
+  m_inputs.clear();
+  m_outputs.clear();
+  m_gradient_wrt_outputs.clear();
+  m_gradient_wrt_inputs.clear();
+  m_inputs.resize(get_num_parents());
+  m_outputs.resize(get_num_children());
+  m_gradient_wrt_outputs.resize(get_num_children());
+  m_gradient_wrt_inputs.resize(get_num_parents());
+
+  // Construct matrices
+  for (auto& ptr : m_inputs) {
+    ptr.reset(construct_dist_matrix<DataType>(col_dist, row_dist,
+                                              wrap, device, grid));
+  }
+  for (auto& ptr : m_outputs) {
+    ptr.reset(construct_dist_matrix<DataType>(col_dist, row_dist,
+                                              wrap, device, grid));
+  }
+  for (auto& ptr : m_gradient_wrt_outputs) {
+    ptr.reset(construct_dist_matrix<DataType>(col_dist, row_dist,
+                                              wrap, device, grid));
+  }
+  for (auto& ptr : m_gradient_wrt_inputs) {
+    ptr.reset(construct_dist_matrix<DataType>(col_dist, row_dist,
+                                              wrap, device, grid));
+  }
+
 }
 
 void Layer::setup_data() {
+  const int mini_batch_size = m_model->get_max_mini_batch_size();
 
-  // Initialize matrices
-  const int max_mini_batch_size = m_model->get_max_mini_batch_size();
-  if(max_mini_batch_size <= 0) {
-    throw lbann_exception(
-      std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
-      "Layer: max mini-batch size is invalid");
-  }
-  if(m_num_prev_neurons > 0) {
-    El::Zeros(*m_error_signal, m_num_prev_neurons, max_mini_batch_size);
-  }
-  if(m_num_neurons > 0) {
-    El::Zeros(*m_activations, m_num_neurons, max_mini_batch_size);
+  // Determine distributed matrix alignment
+  El::DistData alignment_dist;
+  if (get_num_parents() > 0) {
+    alignment_dist = m_parent_layers[0]->get_activations(*this).DistData();
+  } else if (get_num_children() > 0) {
+    alignment_dist = get_activations().DistData();
   }
 
-#ifdef __LIB_CUDNN
-  // Pin host memory if needed for GPU memory transfers
-  pin_data();
-#endif // __LIB_CUDNN
+  // Initialize input tensors
+  for (int i = 0; i < get_num_parents(); ++i) {
+    const auto& parent_output = m_parent_layers[i]->get_activations(*this);
+    auto& input = *m_inputs[i];
+    input.AlignWith(alignment_dist);
+    if (parent_output.DistData() == input.DistData()) {
+      El::LockedView(input, parent_output);
+    } else {
+      El::Copy(parent_output, input);
+    }
+  }
+
+  // Initialize output tensors
+  for (int i = 0; i < get_num_children(); ++i) {
+    auto& output = get_activations(i);
+    output.AlignWith(alignment_dist);
+    output.Resize(get_output_size(i), mini_batch_size);
+  }
+
+  // Initialize gradient w.r.t. input tensors
+  for (int i = 0; i < get_num_parents(); ++i) {
+    auto& gradient_wrt_input = get_error_signals(i);
+    gradient_wrt_input.AlignWith(alignment_dist);
+    gradient_wrt_input.Resize(get_input_size(i), mini_batch_size);
+  }
 
 }
 
-void Layer::setup_gpu() {
-#ifndef __LIB_CUDNN
-  throw lbann_exception(
-      std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
-      "Layer: cuDNN not detected");
-#else
-
-  // Throw error is data layout is not data parallel
-  // TODO: Design a more general interface
-  if(get_data_layout() != data_layout::DATA_PARALLEL) {
-    throw lbann_exception(
-      std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
-      "Layer: GPUs are currently only supported for data parallel layers");
+void Layer::bp_compute() {
+  for (int i = 0; i < get_num_parents(); ++i) {
+    El::Zero(get_error_signals(i));
   }
-
-  // Determine whether to transfer data between CPU and GPUs
-  if(m_parent_layers.empty() || !m_parent_layers.front()->using_gpus()) {
-    m_copy_fp_input_to_gpus = true;
-    m_copy_bp_output_from_gpus = true;
-  }
-  if(m_child_layers.empty() || !m_child_layers.front()->using_gpus()) {
-    m_copy_fp_output_from_gpus = true;
-    m_copy_bp_input_to_gpus = true;
-  }
-  
-  // Split mini-batch amongst GPUs
-  const int num_gpus = m_cudnn->get_num_gpus();
-  const int num_processes = m_comm->get_procs_per_model();
-  const int local_mini_batch_size =
-    (m_model->get_max_mini_batch_size() + num_processes - 1) / num_processes;
-  m_max_mini_batch_size_per_gpu = (local_mini_batch_size + num_gpus - 1) / num_gpus;
-  m_mini_batch_size_per_gpu = m_max_mini_batch_size_per_gpu;
-
-  // Set tensor descriptors
-  cudnn::set_tensor_cudnn_desc(m_prev_neurons_cudnn_desc,
-                               m_mini_batch_size_per_gpu,
-                               m_prev_neuron_dims);
-  cudnn::set_tensor_cudnn_desc(m_neurons_cudnn_desc,
-                               m_mini_batch_size_per_gpu,
-                               m_neuron_dims);
-
-  // Allocate GPU memory
-  m_cudnn->allocate_on_gpus(m_activations_d,
-                            m_num_neurons,
-                            m_max_mini_batch_size_per_gpu);
-  m_cudnn->allocate_on_gpus(m_error_signal_d,
-                            m_num_prev_neurons,
-                            m_max_mini_batch_size_per_gpu);
-
-#endif // __LIB_CUDNN
 }
 
 void Layer::check_setup() {
-  if (m_num_neurons <= 0) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "layer " << m_name << " has invalid output dimensions "
-        << "(" << m_neuron_dims[0];
-    for (size_t i = 1; i < m_neuron_dims.size(); ++i) {
-      err << "x" << m_neuron_dims[i];
+  std::stringstream err;
+
+  // Check tensor dimensions
+  for (int i = 0; i < get_num_parents(); ++i) {
+    const auto& dims = get_input_dims(i);
+    if (dims.empty()) {
+      err << "layer \"" << get_name() << "\" has "
+          << "uninitialized input tensor dimensions "
+          << "(index " << i << ")";
+      LBANN_ERROR(err.str());
     }
-    err << ")";
-    throw lbann_exception(err.str());
+    if (std::any_of(dims.begin(), dims.end(),
+                    [](int d) { return d <= 0; })) {
+      err << "layer \"" << get_name() << "\" has invalid "
+          << "input tensor dimensions (";
+      for (size_t j = 0; j < dims.size(); ++j) {
+        err << (j > 0 ? " x " : "") << dims[j];
+      }
+      err << " at index " << i << ")";
+      LBANN_ERROR(err.str());
+    }
   }
+  for (int i = 0; i < get_num_children(); ++i) {
+    const auto& dims = get_output_dims(i);
+    if (dims.empty()) {
+      err << "layer \"" << get_name() << "\" has "
+          << "uninitialized output tensor dimensions "
+          << "(index " << i << ")";
+      LBANN_ERROR(err.str());
+    }
+    if (std::any_of(dims.begin(), dims.end(),
+                    [](int d) { return d <= 0; })) {
+      err << "layer \"" << get_name() << "\" has invalid "
+          << "output tensor dimensions (";
+      for (size_t j = 0; j < dims.size(); ++j) {
+        err << (j > 0 ? " x " : "") << dims[j];
+      }
+      err << " at index " << i << ")";
+      LBANN_ERROR(err.str());
+    }
+  }
+
+  // Check number of tensors
+  const int num_parents = get_num_parents();
+  const int num_children = get_num_children();
+  if ((int) m_inputs.size() != num_parents
+      || (int) m_outputs.size() != num_children
+      || (int) m_gradient_wrt_outputs.size() != num_children
+      || (int) m_gradient_wrt_inputs.size() != num_parents) {
+    err << "layer \"" << get_name() << "\" has an "
+        << "invalid number of input and output tensors "
+        << "(found " << num_parents << " parent layers, "
+        << num_children << " child layers, "
+        << m_inputs.size() << " input tensors, "
+        << m_outputs.size() << " output tensors, "
+        << m_gradient_wrt_outputs.size() << " gradient w.r.t. output tensors, "
+        << m_gradient_wrt_inputs.size() << " gradient w.r.t. input tensors)";
+    LBANN_ERROR(err.str());
+  }
+
+  // Check that tensors are initialized
+  for (int i = 0; i < get_num_parents(); ++i) {
+    if (m_inputs[i] == nullptr) {
+      err << "layer \"" << get_name() << "\" has an "
+          << "uninitialized input tensor (index " << i << ")";
+      LBANN_ERROR(err.str());
+    }
+  }
+  for (int i = 0; i < get_num_children(); ++i) {
+    if (m_outputs[i] == nullptr) {
+      err << "layer \"" << get_name() << "\" has an "
+          << "uninitialized output tensor (index " << i << ")";
+      LBANN_ERROR(err.str());
+    }
+  }
+  for (int i = 0; i < get_num_children(); ++i) {
+    if (m_gradient_wrt_outputs[i] == nullptr) {
+      err << "layer \"" << get_name() << "\" has an "
+          << "uninitialized gradient w.r.t. output tensor "
+          << "(index " << i << ")";
+      LBANN_ERROR(err.str());
+    }
+  }
+  for (int i = 0; i < get_num_parents(); ++i) {
+    if (m_gradient_wrt_inputs[i] == nullptr) {
+      err << "layer \"" << get_name() << "\" has an "
+          << "uninitialized gradient w.r.t. input tensor "
+          << "(index " << i << ")";
+      LBANN_ERROR(err.str());
+    }
+  }
+
 }
 
 void Layer::replace_weights(Layer* other_layer) {
   if (other_layer == nullptr) {
-    throw lbann_exception("Layer::replace_weighhts: Attempted to add null pointer as a replacement layer.");
+    LBANN_ERROR("attempted to add null pointer as a replacement layer");
   }
-  
+
   const std::vector<weights *> other_layer_weights = other_layer->get_weights();
   for (size_t i = 0; i < m_weights.size(); ++i) {
     m_weights[i]->set_values(other_layer_weights[i]->get_values());
@@ -639,199 +807,136 @@ void Layer::replace_weights(Layer* other_layer) {
 
 }
 
-
-bool Layer::saveToCheckpoint(int fd, const char *filename, size_t *bytes) const {
-  //writeDist(fd, filename, *m_weights, bytes);
-  
-  // Need to catch return value from function
-  // m_optimizer->saveToCheckpoint(fd, filename, bytes);
-  return true;
-}
-
-bool Layer::loadFromCheckpoint(int fd, const char *filename, size_t *bytes) {
-  // TODO: implement reader for other matrix distributions
-  //readDist(fd, filename, (DistMat&) *m_weights, bytes);
-
-  // Need to catch return value from function
-  // m_optimizer->loadFromCheckpoint(fd, filename, bytes);
-  return true;
-}
-
 bool Layer::save_to_checkpoint_shared(persist& p) const {
-  //for (weights *w : m_weights) {
-  //  w->saveToCheckpointShared(p);  
-  //}
   return true;
 }
 
 bool Layer::load_from_checkpoint_shared(persist& p) {
-  //for (weights *w : m_weights) {
-  //  w->loadFromCheckpointShared(p);
-  //}
-
   return true;
 }
 
-void Layer::fp_set_std_matrix_view() {
-  int mini_batch_size = m_model->get_current_mini_batch_size();
-  El::View(*m_activations_v, *m_activations, El::ALL, El::IR(0, mini_batch_size));
+bool Layer::save_to_checkpoint_distributed(persist& p) const {
+  return true;
 }
 
-void Layer::bp_set_std_matrix_view() {
-  int mini_batch_size = m_model->get_current_mini_batch_size();
-  El::View(*m_activations_v, *m_activations, El::ALL, El::IR(0, mini_batch_size));
-  El::View(*m_error_signal_v, *m_error_signal, El::ALL, El::IR(0, mini_batch_size));
+bool Layer::load_from_checkpoint_distributed(persist& p) {
+  return true;
 }
 
-#ifdef __LIB_CUDNN
-void Layer::pin_data() {
-
-  // Get maximum mini-batch size
-  const int max_mini_batch_size = m_model->get_max_mini_batch_size();
-
-  // Flags to determine whether to pin memory
-  bool pin_fp_input = false;
-  bool pin_fp_output = false;
-  bool pin_bp_input = false;
-  bool pin_bp_output = false;
-
-  // Pin fp input if there is no input layer and this layer uses GPUs
-  if(m_parent_layers.empty() && m_using_gpus) {
-    pin_fp_input = true;
+void Layer::write_proto(lbann_data::Layer* proto) const {
+  proto->Clear();
+  proto->set_name(get_name());
+  proto->set_type(get_type());
+  if(!m_parent_layers.empty()) proto->set_bottom(m_parent_layers.front()->get_name());
+  proto->set_top(get_name());
+  //Add weights
+  for (weights *w : m_weights) {
+    auto weight_proto = proto->add_weights_data();
+    w->write_proto(weight_proto);
   }
-    
-  // Pin fp input if input layer does not use GPUs, this layer uses
-  // GPUs, and input layer has different distribution
-  if(!m_parent_layers.empty()
-     && !m_parent_layers.front()->using_gpus()
-     && m_using_gpus) {
-    if(m_parent_layers.front()->m_activations->DistData()
-       != m_prev_activations_v->DistData()) {
-      pin_fp_input = true;
+}
+
+void Layer::fp_setup_data(int mini_batch_size) {
+
+  // Determine distributed matrix alignment
+  El::DistData alignment_dist;
+  if (get_num_parents() > 0) {
+    alignment_dist = m_parent_layers[0]->get_activations(*this).DistData();
+  } else if (get_num_children() > 0) {
+    alignment_dist = get_activations().DistData();
+  }
+
+  // Initialize input tensors
+  for (int i = 0; i < get_num_parents(); ++i) {
+
+    // Initialize input tensor
+    const auto& parent = *m_parent_layers[i];
+    const auto& parent_output = parent.get_activations(*this);
+    auto& input = *m_inputs[i];
+    input.AlignWith(alignment_dist);
+    if (parent_output.DistData() == input.DistData()) {
+      El::LockedView(input, parent_output);
+    } else {
+      El::Copy(parent_output, input);
+    }
+
+    // Check input matrix dimensions
+    const auto& height = get_input_size(i);
+    const auto& width = mini_batch_size;
+    if (input.Height() != height || input.Width() != width) {
+      std::stringstream err;
+      err << "layer \"" << get_name() << "\" "
+          << "expected an input tensor stored in a "
+          << height << " x " << width << " matrix "
+          << "from layer \"" << parent.get_name() << "\", but got a "
+          << input.Height() << " x " << input.Width() << " matrix";
+      LBANN_ERROR(err.str());
+    }
+
+  }
+
+  // Initialize output tensors
+  for (int i = 0; i < get_num_children(); ++i) {
+    auto& output = get_activations(i);
+    const auto& height = get_output_size(i);
+    const auto& width = mini_batch_size;
+    output.AlignWith(alignment_dist);
+    if (output.Height() != height || output.Width() != width) {
+      output.Empty(false); // Reset matrix views without deallocating memory
+      output.Resize(height, width);
     }
   }
 
-  // Pin fp output if this layer does not use GPUs, output layer uses
-  // GPUs, and output layer has same distribution
-  if(!m_using_gpus
-     && !m_parent_layers.empty()
-     && m_parent_layers.front()->using_gpus()) {
-    if(m_parent_layers.front()->m_prev_activations_v->DistData()
-       != m_activations->DistData()) {
-      pin_fp_output = true;
+}
+
+void Layer::bp_setup_data(int mini_batch_size) {
+
+  // Initialize gradient w.r.t. output tensors
+  for (int i = 0; i < get_num_children(); ++i) {
+
+    // Initialize gradient w.r.t. output tensor
+    const auto& child = *m_child_layers[i];
+    const auto& child_gradient_wrt_input = child.get_error_signals(*this);
+    auto& gradient_wrt_output = *m_gradient_wrt_outputs[i];
+    gradient_wrt_output.AlignWith(get_activations(i));
+    if (child_gradient_wrt_input.DistData()
+        == gradient_wrt_output.DistData()) {
+      El::LockedView(gradient_wrt_output, child_gradient_wrt_input);
+    } else {
+      El::Copy(child_gradient_wrt_input, gradient_wrt_output);
+    }
+
+    // Check gradient w.r.t. output matrix dimensions
+    const auto& height = get_output_size(i);
+    const auto& width = mini_batch_size;
+    if (gradient_wrt_output.Height() != height
+        || gradient_wrt_output.Width() != width) {
+      std::stringstream err;
+      err << "layer \"" << get_name() << "\" "
+          << "expected a gradient w.r.t. output tensor stored in a "
+          << height << " x " << width << " matrix "
+          << "from layer \"" << child.get_name() << "\", but got a "
+          << gradient_wrt_output.Height() << " x "
+          << gradient_wrt_output.Width() << " matrix";
+      LBANN_ERROR(err.str());
+    }
+
+  }
+
+  // Initialize gradient w.r.t. input tensors
+  for (int i = 0; i < get_num_parents(); ++i) {
+    auto& gradient_wrt_input = get_error_signals(i);
+    const auto& height = get_input_size(i);
+    const auto& width = mini_batch_size;
+    gradient_wrt_input.AlignWith(get_prev_activations(i));
+    if (gradient_wrt_input.Height() != height
+        || gradient_wrt_input.Width() != width) {
+      gradient_wrt_input.Empty(false); // Reset matrix views without deallocating memory
+      gradient_wrt_input.Resize(height, width);
     }
   }
 
-  // Pin fp output if this layer uses GPUs and output layer does not
-  // use GPUs
-  if(m_using_gpus
-     && !m_child_layers.empty()
-     && !m_child_layers.front()->using_gpus()) {
-    pin_fp_output = true;
-  }
-
-  // Pin fp output if this layer uses GPUs and there is no output layer
-  if(m_using_gpus && m_child_layers.empty()) {
-    pin_fp_output = true;
-  }
-
-  // Pin bp input if there is no input layer and this layer uses GPUs
-  if(m_child_layers.empty() && m_using_gpus) {
-    pin_bp_input = true;
-  }
-    
-  // Pin bp input if input layer does not use GPUs, this layer uses
-  // GPUs, and input layer has different distribution
-  if(!m_child_layers.empty()
-     && !m_child_layers.front()->using_gpus()
-     && m_using_gpus) {
-    if(m_child_layers.front()->m_error_signal->DistData()
-       != m_prev_error_signal_v->DistData()) {
-      pin_bp_input = true;
-    }
-  }
-
-  // Pin bp output if this layer does not use GPUs, output layer uses
-  // GPUs, and output layer has same distribution
-  if(!m_using_gpus
-     && !m_parent_layers.empty()
-     && m_parent_layers.front()->using_gpus()) {
-    if(m_parent_layers.front()->m_prev_error_signal_v->DistData()
-       != m_error_signal->DistData()) {
-      pin_bp_output = true;
-    }
-  }
-
-  // Pin bp output if this layer uses GPUs and output layer does not
-  // use GPUs
-  if(m_using_gpus
-     && !m_parent_layers.empty()
-     && !m_parent_layers.front()->using_gpus()) {
-    pin_bp_output = true;
-  }
-
-  // Pin bp output if this layer uses GPUs and there is no output layer
-  if(m_using_gpus && m_parent_layers.empty()) {
-    pin_bp_output = true;
-  }
-
-  // Pin host memory if needed for GPU memory transfers
-  if(pin_fp_input) {
-    /// @todo If m_prev_activations is resized, we might leak pinned memory
-    // m_prev_activations_v->Resize(m_num_prev_neurons, max_mini_batch_size);
-    // m_cudnn->pin_matrix(*m_prev_activations_v);
-  }
-  if(pin_fp_output) {
-    m_activations->Resize(m_num_neurons, max_mini_batch_size);
-    m_cudnn->pin_matrix(*m_activations);
-  }
-  if(pin_bp_input) {
-    /// @todo If m_prev_error_signal is resized, we might leak pinned memory
-    // m_prev_error_signal->Resize(m_num_neurons, max_mini_batch_size);
-    // m_cudnn->pin_matrix(*m_prev_error_signal_v);
-  }
-  if(pin_bp_output) {
-    m_error_signal->Resize(m_num_prev_neurons, max_mini_batch_size);
-    m_cudnn->pin_matrix(*m_error_signal);
-  }
-
 }
-
-#endif // __LIB_CUDNN
-
-void Layer::get_fp_output(AbsDistMat& fp_output, const Layer* next_layer) const {
-  if(m_activations_v->DistData() == fp_output.DistData()) {
-    El::LockedView(fp_output, *m_activations_v);
-  }
-  else {
-    El::Copy(*m_activations_v, fp_output);
-  }
-}
-
-void Layer::get_bp_output(AbsDistMat& bp_output, const Layer* prev_layer) const {
-  if(m_error_signal_v->DistData() == bp_output.DistData()) {
-    El::LockedView(bp_output, *m_error_signal_v);
-  }
-  else {
-    El::Copy(*m_error_signal_v, bp_output);
-  }
-}
-
-#ifdef __LIB_CUDNN
-
-void Layer::get_gpu_fp_output(std::vector<DataType*>& output_dv,
-                              std::vector<DataType*>& output_d,
-                              const Layer* next_layer) const {
-  output_dv = m_activations_d;
-}
-
-void Layer::get_gpu_bp_output(std::vector<DataType*>& output_dv,
-                              std::vector<DataType*>& output_d,
-                              const Layer* prev_layer) const {
-  output_dv = m_error_signal_d;
-}
-
-#endif // __LIB_CUDNN
 
 std::string Layer::get_data_layout_string(data_layout d) const {
   switch(d) {
@@ -840,30 +945,34 @@ std::string Layer::get_data_layout_string(data_layout d) const {
   case data_layout::MODEL_PARALLEL:
     return "model_parallel";
   default:
-    throw lbann_exception(
-      std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
-      "Layer: invalid data layout");
+    LBANN_ERROR("invalid data layout");
   }
 }
 
-const std::vector<int> Layer::fp_output_dims(const Layer* next_layer) const {
-  return m_neuron_dims;
+std::string Layer::get_device_allocation_string(El::Device dev) const {
+  switch(dev) {
+  case El::Device::CPU:
+    return "cpu";
+#ifdef LBANN_HAS_GPU
+  case El::Device::GPU:
+    return "gpu";
+#endif // LBANN_HAS_GPU
+  default:
+    LBANN_ERROR("invalid device allocation");
+  }
 }
 
-std::vector<const Layer*>& Layer::get_parent_layers() {
-  return m_parent_layers;
-}
-
-const std::vector<const Layer*>& Layer::get_parent_layers() const {
-  return m_parent_layers;
-}
-
-std::vector<const Layer*>& Layer::get_child_layers() {
-  return m_child_layers;
-}
-
-const std::vector<const Layer*>& Layer::get_child_layers() const {
-  return m_child_layers;
+std::string Layer::get_device_allocation_string_short(El::Device dev) const {
+  switch(dev) {
+  case El::Device::CPU:
+    return "C";
+#ifdef LBANN_HAS_GPU
+  case El::Device::GPU:
+    return "G";
+#endif // LBANN_HAS_GPU
+  default:
+    LBANN_ERROR("invalid device allocation");
+  }
 }
 
 std::string Layer::get_layer_names(const std::vector<const Layer*>& list) {
@@ -897,14 +1006,6 @@ void Layer::add_child_layer(const Layer* child) {
   }
 }
 
-void Layer::clear_parent_layers() {
-  m_parent_layers.clear();
-}
-
-void Layer::clear_child_layers() {
-  m_child_layers.clear();
-}
-
 std::vector<Layer*> Layer::get_layer_pointers() {
   std::vector<Layer*> layers;
   for(const Layer* parent: m_parent_layers) {
@@ -918,9 +1019,7 @@ std::vector<Layer*> Layer::get_layer_pointers() {
 
 void Layer::set_layer_pointers(std::vector<Layer*> layers) {
   if(layers.size() != m_parent_layers.size() + m_child_layers.size()) {
-    throw lbann_exception(
-      std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
-      "Layer: attempted to set layer pointers with an invalid number of pointers");
+    LBANN_ERROR("attempted to set layer pointers with an invalid number of pointers");
   }
   size_t pos = 0;
   for(const Layer*& parent: m_parent_layers) {

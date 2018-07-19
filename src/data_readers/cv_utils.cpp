@@ -28,9 +28,11 @@
 
 #include "lbann/data_readers/cv_utils.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/timer.hpp"
+#include "lbann/utils/file_utils.hpp"
 //#include <iostream>
 
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
 namespace lbann {
 
 
@@ -89,6 +91,24 @@ std::ostream& operator<<(std::ostream& os, const cv_transform& tr) {
 }
 
 
-} // end of namespace lbann
+cv::Mat cv_utils::lbann_imread(const std::string& img_file_path, int flags) {
+  std::vector<unsigned char> buf;
+  // Load an image bytestream into memory
+  bool ok = lbann::load_file(img_file_path, buf);
+  if (!ok) {
+    throw lbann_exception("lbann_imread() : failed to load " + img_file_path);
+  }
 
-#endif // __LIB_OPENCV
+  // create a zero-copying view on a block of bytes
+  using InputBuf_T = lbann::cv_image_type<uint8_t>;
+  const cv::Mat inbuf(1, buf.size(), InputBuf_T::T(1), &(buf[0]));
+
+  // decode the image data in the memory buffer
+  cv::Mat image = cv::imdecode(inbuf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+
+  return image;
+}
+
+
+} // end of namespace lbann
+#endif // LBANN_HAS_OPENCV

@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/metrics/pearson_correlation.hpp"
-#include "lbann/layers/io/target/target_layer.hpp"
+#include "lbann/layers/io/target/generic_target_layer.hpp"
 #include "lbann/utils/statistics.hpp"
 
 namespace lbann {
@@ -103,20 +103,57 @@ pearson_correlation_metric::~pearson_correlation_metric() {
 void pearson_correlation_metric::setup(model& m) {
   metric::setup(m);
   const El::DistData dist_data(get_target_layer().get_prediction());
+  const El::Device dev = get_target_layer().get_prediction().GetLocalDevice();
   if (dist_data.colDist == El::MC
       && dist_data.rowDist == El::MR) {
-    m_prediction_means    = new StarMRMat(*dist_data.grid, dist_data.root);
-    m_prediction_stdevs   = new StarMRMat(*dist_data.grid, dist_data.root);
-    m_ground_truth_means  = new StarMRMat(*dist_data.grid, dist_data.root);
-    m_ground_truth_stdevs = new StarMRMat(*dist_data.grid, dist_data.root);
-    m_covariances         = new StarMRMat(*dist_data.grid, dist_data.root);
+    switch(dev) {
+    case El::Device::CPU:
+      m_prediction_means    = new StarMRMat<El::Device::CPU>(*dist_data.grid, dist_data.root);
+      m_prediction_stdevs   = new StarMRMat<El::Device::CPU>(*dist_data.grid, dist_data.root);
+      m_ground_truth_means  = new StarMRMat<El::Device::CPU>(*dist_data.grid, dist_data.root);
+      m_ground_truth_stdevs = new StarMRMat<El::Device::CPU>(*dist_data.grid, dist_data.root);
+      m_covariances         = new StarMRMat<El::Device::CPU>(*dist_data.grid, dist_data.root);
+      break;
+#ifdef LBANN_HAS_GPU
+    case El::Device::GPU:
+      m_prediction_means    = new StarMRMat<El::Device::GPU>(*dist_data.grid, dist_data.root);
+      m_prediction_stdevs   = new StarMRMat<El::Device::GPU>(*dist_data.grid, dist_data.root);
+      m_ground_truth_means  = new StarMRMat<El::Device::GPU>(*dist_data.grid, dist_data.root);
+      m_ground_truth_stdevs = new StarMRMat<El::Device::GPU>(*dist_data.grid, dist_data.root);
+      m_covariances         = new StarMRMat<El::Device::GPU>(*dist_data.grid, dist_data.root);
+      break;
+#endif // LBANN_HAS_GPU
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid matrix data allocation";
+      throw lbann_exception(err.str());
+    }
   } else if (dist_data.colDist == El::STAR
              && dist_data.rowDist == El::VC) {
-    m_prediction_means    = new StarVCMat(*dist_data.grid, dist_data.root);
-    m_prediction_stdevs   = new StarVCMat(*dist_data.grid, dist_data.root);
-    m_ground_truth_means  = new StarVCMat(*dist_data.grid, dist_data.root);
-    m_ground_truth_stdevs = new StarVCMat(*dist_data.grid, dist_data.root);
-    m_covariances         = new StarVCMat(*dist_data.grid, dist_data.root);
+    switch(dev) {
+    case El::Device::CPU:
+      m_prediction_means    = new StarVCMat<El::Device::CPU>(*dist_data.grid, dist_data.root);
+      m_prediction_stdevs   = new StarVCMat<El::Device::CPU>(*dist_data.grid, dist_data.root);
+      m_ground_truth_means  = new StarVCMat<El::Device::CPU>(*dist_data.grid, dist_data.root);
+      m_ground_truth_stdevs = new StarVCMat<El::Device::CPU>(*dist_data.grid, dist_data.root);
+      m_covariances         = new StarVCMat<El::Device::CPU>(*dist_data.grid, dist_data.root);
+      break;
+#ifdef LBANN_HAS_GPU
+    case El::Device::GPU:
+      m_prediction_means    = new StarVCMat<El::Device::GPU>(*dist_data.grid, dist_data.root);
+      m_prediction_stdevs   = new StarVCMat<El::Device::GPU>(*dist_data.grid, dist_data.root);
+      m_ground_truth_means  = new StarVCMat<El::Device::GPU>(*dist_data.grid, dist_data.root);
+      m_ground_truth_stdevs = new StarVCMat<El::Device::GPU>(*dist_data.grid, dist_data.root);
+      m_covariances         = new StarVCMat<El::Device::GPU>(*dist_data.grid, dist_data.root);
+      break;
+#endif // LBANN_HAS_GPU
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid matrix data allocation";
+      throw lbann_exception(err.str());
+    }
   } else {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
@@ -149,6 +186,13 @@ EvalType pearson_correlation_metric::evaluate_compute(const AbsDistMat& predicti
     const EvalType pred_stdev = m_prediction_stdevs->GetLocal(0, col);
     const EvalType true_stdev = m_ground_truth_stdevs->GetLocal(0, col);
     const EvalType cov        = m_covariances->GetLocal(0, col);
+    /// If there is no valid true value and it is the last column of
+    /// the matrix, the data may not exist due to a mini-batch size
+    /// imbalance with multiple models.  Just skip this element.
+    if(true_stdev == 0
+       && m_ground_truth_stdevs->GlobalCol(col) == (m_ground_truth_stdevs->Width()-1)) {
+      continue;
+    }
     local_sum += cov / (pred_stdev * true_stdev);
   }
   return get_comm().allreduce(local_sum, m_covariances->DistComm());

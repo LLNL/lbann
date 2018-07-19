@@ -6,8 +6,6 @@ model {
   num_epochs: 4
   num_parallel_readers: 1
   procs_per_model: 0
-  use_cudnn: true
-  num_gpus: -1
 
   ###################################################
   # Objective function
@@ -15,6 +13,9 @@ model {
 
   objective_function {
     mean_squared_error {}
+    mean_absolute_deviation {
+      scale_factor: 0.01
+    }
     l2_weight_regularization {
       scale_factor: 0.0005
     }
@@ -49,7 +50,8 @@ model {
   layer {
     name: "data"
     data_layout: "data_parallel"
-    input_partitioned_minibatch {
+    input {
+      io_buffer: "partitioned"
     }
   }
 

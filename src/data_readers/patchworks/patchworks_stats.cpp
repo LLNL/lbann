@@ -30,8 +30,8 @@
  * LBANN PATCHWORKS implementation for pixel statistics
  */
 
-#ifdef __LIB_OPENCV
 #include "lbann/data_readers/patchworks/patchworks_stats.hpp"
+#ifdef LBANN_HAS_OPENCV
 
 namespace lbann {
 namespace patchworks {
@@ -144,4 +144,4 @@ bool get_channel_stats(const cv::Mat& img, std::vector<image_stats>& stats) {
 
 } // end of namespace patchworks
 } // end of namespace lbann
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV

@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.0)
+
+project(CUB NONE)
+
+include(GNUInstallDirs)
+
+install(DIRECTORY cub DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  FILES_MATCHING PATTERN "*.cuh")

@@ -47,17 +47,8 @@ static void prof_region_end(const char *s) {
   return;
 }
 #elif defined(LBANN_NVPROF)
-static void synchronize_all_devices() {
-  int count;
-  cudaGetDeviceCount(&count);
-  for (int i = 0; i < count; ++i) {
-    cudaSetDevice(i);
-    cudaDeviceSynchronize();
-  }
-}
-
 static void prof_region_begin(const char *s, int c) {
-  synchronize_all_devices();
+  El::GPUManager::SynchronizeDevice();
   // Doesn't work with gcc 4.9
   // nvtxEventAttributes_t ev = {0};
   nvtxEventAttributes_t ev;  
@@ -71,7 +62,7 @@ static void prof_region_begin(const char *s, int c) {
   nvtxRangePushEx(&ev);
 }
 static void prof_region_end(const char *s) {
-  synchronize_all_devices();    
+  El::GPUManager::SynchronizeDevice();
   nvtxRangePop();
 }
 #else

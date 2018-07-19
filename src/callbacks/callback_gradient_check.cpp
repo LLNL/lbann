@@ -44,7 +44,10 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
   const std::vector<Layer*>& layers = m->get_layers();
 
   // Initialize network for testing
-  m->set_execution_mode(execution_mode::testing);
+  for (auto&& w : m->get_weights()) {
+    auto&& opt = w->get_optimizer();
+    if (opt != nullptr) { opt->clear_gradient(); }
+  }
   layers[0]->forward_prop();
 
   // Compute objective function
@@ -70,10 +73,8 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
   expected_error = std::pow(expected_error, 0.9);
 
   // Compute gradients
-  for (auto layer : layers) {
-    layer->clear_error_signal();
-  }
   m->get_objective_function()->differentiate();
+  m->get_objective_function()->compute_weight_regularization();
   for (int l = layers.size() - 1; l > 0; --l) {
     layers[l]->back_prop();
   }
@@ -117,15 +118,15 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
         // Compute objective function values
         // Note: matrix entry is reset after computing objective
         // function values
-        w->set_value(row, col, initial_weight + 2 * step_size);
+        w->set_value(initial_weight + 2 * step_size, row, col);
         const DataType f_2h = compute_objective_function(m);
-        w->set_value(row, col, initial_weight + step_size);
+        w->set_value(initial_weight + step_size, row, col);
         const DataType f_h = compute_objective_function(m);
-        w->set_value(row, col, initial_weight - step_size);
+        w->set_value(initial_weight - step_size, row, col);
         const DataType f_nh = compute_objective_function(m);
-        w->set_value(row, col, initial_weight - 2 * step_size);
+        w->set_value(initial_weight - 2 * step_size, row, col);
         const DataType f_n2h = compute_objective_function(m);
-        w->set_value(row, col, initial_weight);
+        w->set_value(initial_weight, row, col);
 
         // Compute relative error in gradient.
         // Note: only weight owner participates
@@ -181,7 +182,10 @@ DataType lbann_callback_gradient_check::compute_objective_function(model *m) {
   for (size_t l = 1; l < layers.size(); l++) {
     layers[l]->forward_prop();
   }
-  return obj_fn->evaluate(m->get_execution_mode());
+  obj_fn->start_evaluation(m->get_execution_mode(),
+                           m->get_current_mini_batch_size());
+  return obj_fn->finish_evaluation(m->get_execution_mode(),
+                                   m->get_current_mini_batch_size());
 }
 
 }  // namespace lbann

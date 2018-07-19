@@ -31,37 +31,25 @@
 
 namespace lbann {
 
-/**
- * Atan activation function.
- * See: http://mathworld.wolfram.com/InverseTangent.html 
- */
-template <data_layout T_layout>
+/** Arctangent activation function. */
+template <data_layout T_layout, El::Device Dev>
 class atan_layer : public entrywise_activation_layer {
  public:
-
-  atan_layer(lbann_comm *comm) :
-    entrywise_activation_layer(comm) { 
-    initialize_distributed_matrices(); 
-  }
-
+  atan_layer(lbann_comm *comm) : entrywise_activation_layer(comm) {}
   atan_layer* copy() const override { return new atan_layer(*this); }
-
   std::string get_type() const override { return "atan"; }
-
-  inline void initialize_distributed_matrices() override {
-    entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
-  }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
  protected:
-  DataType activation_function(DataType z) override {
-    return std::atan(z);
+  DataType activation(DataType x) const override {
+    return std::atan(x);
   }
-  DataType activation_function_gradient(DataType z) override {
-    return DataType(1)/(1 + z*z);
+  DataType activation_derivative(DataType x) const override {
+    return 1 / (DataType(1) + x * x);
   }
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // ATAN_HPP_INCLUDED
+#endif // ATAN_HPP_INCLUDED

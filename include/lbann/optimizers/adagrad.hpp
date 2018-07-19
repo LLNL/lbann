@@ -22,8 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// adagrad .hpp .cpp - SGD with AdaGrad optimizer
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_OPTIMIZER_ADAGRAD_HPP
@@ -52,7 +50,7 @@ class adagrad : public optimizer {
   adagrad* copy() const override { return new adagrad(*this); }
 
   /** Get the optimizer name. */
-  std::string get_type() const override { return "adagrad"; }
+  std::string get_type() const override { return "Adagrad"; }
   /** Get a human-readable description of the optimizer. */
   std::string get_description() const override;
 
@@ -62,6 +60,10 @@ class adagrad : public optimizer {
 
   /** Perform the computation in an optimization step. */
   void step_compute(AbsDistMat& values, const AbsDistMat& gradient) override;
+#ifdef LBANN_HAS_CUDNN
+  /** Perform the computation in an optimization step on GPU. */
+  void step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) override;
+#endif // LBANN_HAS_CUDNN
 
   /// Set parameters to optimize and initialize optimizer
   void setup(AbsDistMat *parameters) ;
@@ -73,6 +75,9 @@ class adagrad : public optimizer {
 
   bool save_to_checkpoint_shared(persist& p, std::string m_name) override;
   bool load_from_checkpoint_shared(persist& p, std::string m_name) override;
+
+  bool save_to_checkpoint_distributed(persist& p, std::string m_name) override;
+  bool load_from_checkpoint_distributed(persist& p, std::string m_name) override;
   
   /** Small factor to avoid division by zero. */
   DataType m_eps;

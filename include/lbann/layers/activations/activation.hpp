@@ -32,48 +32,35 @@
 
 namespace lbann {
 
+/** Abstract base class for activation layer.
+ *  Activation layers implement the nonlinear activation functions
+ *  common in neural networks.
+ */
 class activation_layer : public Layer {
-
  public:
-  activation_layer(lbann_comm *comm) :
-    Layer(comm) {
-  }
-  activation_layer(const activation_layer&) = default;
-  activation_layer& operator=(const activation_layer&) = default;
-
-  ~activation_layer() override {}
-
-  template<data_layout T_layout> inline void initialize_distributed_matrices() {
-    Layer::initialize_distributed_matrices<T_layout>();
-  }
-
-  virtual void initialize_distributed_matrices() = 0;
-
+  activation_layer(lbann_comm *comm) : Layer(comm) {}
 };
 
+/** Abstract base class for entry-wise activation layer.
+ *  A nonlinear activation function is applied independently to each
+ *  input entry.
+ */
 class entrywise_activation_layer : public activation_layer {
-
  public:
-  entrywise_activation_layer(lbann_comm *comm) :
-    activation_layer(comm) {
-  }
-  entrywise_activation_layer(const entrywise_activation_layer&) = default;
-  entrywise_activation_layer& operator=(
-    const entrywise_activation_layer&) = default;
-
-  ~entrywise_activation_layer() override {}
-
-  template<data_layout T_layout> inline void initialize_distributed_matrices() {
-    activation_layer::initialize_distributed_matrices<T_layout>();
-  }
+  entrywise_activation_layer(lbann_comm *comm) : activation_layer(comm) {}
 
  protected:
-  
-  virtual DataType activation_function(DataType x) = 0;
-  virtual DataType activation_function_gradient(DataType x) = 0;
+
+  /** Activation function.
+   *  This function is applied independently to each input entry.
+   */
+  virtual DataType activation(DataType x) const = 0;
+
+  /** Derivative of activation function. */
+  virtual DataType activation_derivative(DataType x) const = 0;
 
   void fp_compute() override {
-    if(this->m_using_gpus) {
+    if(this->using_gpus()) {
       fp_compute_gpu();
     } else {
       fp_compute_cpu();
@@ -81,7 +68,7 @@ class entrywise_activation_layer : public activation_layer {
   }
 
   void bp_compute() override {
-    if(this->m_using_gpus) {
+    if(this->using_gpus()) {
       bp_compute_gpu();
     } else {
       bp_compute_cpu();
@@ -89,48 +76,49 @@ class entrywise_activation_layer : public activation_layer {
   }
 
   virtual void fp_compute_gpu() {
-    throw lbann_exception("entrywise_activation_layer: no forward propagation GPU implementation");
+    std::stringstream err;
+    err << get_type() << " layer \"" << get_name() << "\" "
+        << "has no GPU implementation for forward propagation";
+    LBANN_ERROR(err.str());
   }
 
   virtual void bp_compute_gpu() {
-    throw lbann_exception("entrywise_activation_layer: no backward propagation GPU implementation");
+    std::stringstream err;
+    err << get_type() << " layer \"" << get_name() << "\" "
+        << "has no GPU implementation for backward propagation";
+    LBANN_ERROR(err.str());
   }
 
   virtual void fp_compute_cpu() {
-    
-    // Get local matrices
-    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
-    Mat& activations_local = this->m_activations_v->Matrix();
 
-    // Local matrix parameters
-    const int local_height = prev_activations_local.Height();
-    const int local_width = prev_activations_local.Width();
-    const int prev_activations_ldim = prev_activations_local.LDim();
-    const int activations_ldim = activations_local.LDim();
-    const DataType* __restrict__ prev_activations_buffer 
-      = prev_activations_local.LockedBuffer();
-    DataType* __restrict__ activations_buffer = activations_local.Buffer();
-    
-    // Apply activation function
-    if(prev_activations_ldim == local_height
-       && activations_ldim == local_height) {
+    // Input and output matrices
+    const auto& local_input = get_local_prev_activations();
+    auto& local_output = get_local_activations();
+
+    // Matrix parameters
+    const int local_height = local_input.Height();
+    const int local_width = local_input.Width();
+    const int input_ldim = local_input.LDim();
+    const int output_ldim = local_output.LDim();
+    const DataType* __restrict__ input_buffer = local_input.LockedBuffer();
+    DataType* __restrict__ output_buffer = local_output.Buffer();
+
+    // Apply activation function to each input entry
+    if (input_ldim == local_height && output_ldim == local_height) {
       // Contiguous data
+      const size_t buffer_size = local_height * local_width;
       #pragma omp parallel for
-      for(int i = 0; i < local_height * local_width; ++i) {
-        const DataType prev_activations_entry = prev_activations_buffer[i];
-        DataType& activations_entry = activations_buffer[i];
-        activations_entry = activation_function(prev_activations_entry);
+      for (size_t i = 0; i < buffer_size; ++i) {
+        output_buffer[i] = activation(input_buffer[i]);
       }
     } else {
       // Non-contiguous data
       #pragma omp parallel for collapse(2)
       for(int col = 0; col < local_width; ++col) {
         for(int row = 0; row < local_height; ++row) {
-          const DataType prev_activations_entry
-            = prev_activations_buffer[row + col * prev_activations_ldim];
-          DataType& activations_entry
-            = activations_buffer[row + col * activations_ldim];
-          activations_entry = activation_function(prev_activations_entry);
+          const auto& x = input_buffer[row + col * input_ldim];
+          auto& y = output_buffer[row + col * output_ldim];
+          y = activation(x);
         }
       }
     }
@@ -138,50 +126,48 @@ class entrywise_activation_layer : public activation_layer {
   }
 
   virtual void bp_compute_cpu() {
-    
-    // Get local matrices
-    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
-    const Mat& prev_error_signal_local = this->m_prev_error_signal_v->LockedMatrix();
-    Mat& error_signal_local = this->m_error_signal_v->Matrix();
 
-    // Local matrix parameters
-    const int local_height = prev_activations_local.Height();
-    const int local_width = prev_activations_local.Width();
-    const int prev_activations_ldim = prev_activations_local.LDim();
-    const int prev_error_signal_ldim = prev_error_signal_local.LDim();
-    const int error_signal_ldim = error_signal_local.LDim();
-    const DataType* __restrict__ prev_activations_buffer 
-      = prev_activations_local.LockedBuffer();
-    const DataType* __restrict__ prev_error_signal_buffer 
-      = prev_error_signal_local.LockedBuffer();
-    DataType* __restrict__ error_signal_buffer = error_signal_local.Buffer();
-    
-    // Apply activation function back propagation
-    if(prev_activations_ldim == local_height
-       && prev_error_signal_ldim == local_height
-       && error_signal_ldim == local_height) {
+    // Input and output matrices
+    const auto& local_input = get_local_prev_activations();
+    const auto& local_gradient_wrt_output = get_local_prev_error_signals();
+    auto& local_gradient_wrt_input = get_local_error_signals();
+
+    // Matrix parameters
+    const int local_height = local_input.Height();
+    const int local_width = local_input.Width();
+    const int input_ldim = local_input.LDim();
+    const int gradient_wrt_output_ldim = local_gradient_wrt_output.LDim();
+    const int gradient_wrt_input_ldim = local_gradient_wrt_input.LDim();
+    const DataType* __restrict__ input_buffer = local_input.LockedBuffer();
+    const DataType* __restrict__ gradient_wrt_output_buffer
+      = local_gradient_wrt_output.LockedBuffer();
+    DataType* __restrict__ gradient_wrt_input_buffer
+      = local_gradient_wrt_input.Buffer();
+
+    // Apply activation function to each input entry
+    if (input_ldim == local_height
+        && gradient_wrt_output_ldim == local_height
+        && gradient_wrt_input_ldim == local_height) {
       // Contiguous data
+      const size_t buffer_size = local_height * local_width;
       #pragma omp parallel for
-      for(int i = 0; i < local_height * local_width; ++i) {
-        const DataType prev_activations_entry = prev_activations_buffer[i];
-        const DataType prev_error_signal_entry = prev_error_signal_buffer[i];
-        DataType& error_signal_entry = error_signal_buffer[i];
-        error_signal_entry
-          = activation_function_gradient(prev_activations_entry) * prev_error_signal_entry;
+      for (size_t i = 0; i < buffer_size; ++i) {
+        const auto& x = input_buffer[i];
+        const auto& dy = gradient_wrt_output_buffer[i];
+        auto& dx = gradient_wrt_input_buffer[i];
+        dx = dy * activation_derivative(x);
       }
     } else {
       // Non-contiguous data
       #pragma omp parallel for collapse(2)
       for(int col = 0; col < local_width; ++col) {
         for(int row = 0; row < local_height; ++row) {
-          const DataType prev_activations_entry
-            = prev_activations_buffer[row + col * prev_activations_ldim];
-          const DataType prev_error_signal_entry
-            = prev_error_signal_buffer[row + col * prev_error_signal_ldim];
-          DataType& error_signal_entry
-            = error_signal_buffer[row + col * error_signal_ldim];
-          error_signal_entry
-            = activation_function_gradient(prev_activations_entry) * prev_error_signal_entry;
+          const auto& x = input_buffer[row + col * input_ldim];
+          const auto& dy
+            = gradient_wrt_output_buffer[row + col * gradient_wrt_output_ldim];
+          auto& dx
+            = gradient_wrt_input_buffer[row + col * gradient_wrt_input_ldim];
+          dx = dy * activation_derivative(x);
         }
       }
     }
@@ -190,6 +176,6 @@ class entrywise_activation_layer : public activation_layer {
 
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_LAYER_ACTIVATION_HPP_INCLUDED
+#endif // LBANN_LAYER_ACTIVATION_HPP_INCLUDED

@@ -36,6 +36,10 @@
 namespace lbann {
 class image_data_reader : public generic_data_reader {
  public:
+  using img_src_t = std::string;
+  using label_t = int;
+  using sample_t = std::pair<img_src_t, label_t>;
+
   image_data_reader(bool shuffle = true);
   image_data_reader(const image_data_reader&);
   image_data_reader& operator=(const image_data_reader&);
@@ -62,8 +66,9 @@ class image_data_reader : public generic_data_reader {
   virtual int get_image_num_channels() const {
     return m_image_num_channels;
   }
+  /// Get the total number of channel values in a sample of image(s).
   int get_linearized_data_size() const override {
-    return m_image_width * m_image_height * m_image_num_channels;
+    return m_image_linearized_size;
   }
   int get_linearized_label_size() const override {
     return m_num_labels;
@@ -77,17 +82,35 @@ class image_data_reader : public generic_data_reader {
                         m_image_num_channels, do_scale);
   }
 
+  /// Return the sample list of current minibatch
+  std::vector<sample_t> get_image_list_of_current_mb() const;
+
+  /// Allow read-only access to the entire sample list
+  const std::vector<sample_t>& get_image_list() const {
+    return m_image_list;
+  }
+
+  /**
+   * Returns idx-th sample in the initial loading order.
+   * The second argument is only to facilitate overloading, and not to be used by users.
+   */
+  sample_t get_sample(const size_t idx) const {
+    return m_image_list.at(idx);
+  }
+
  protected:
   /// Set the default values for the width, the height, the number of channels, and the number of labels of an image
   virtual void set_defaults();
   bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
+  void set_linearized_image_size();
 
  protected:
   std::string m_image_dir; ///< where images are stored
-  std::vector<std::pair<std::string, int> > m_image_list; ///< list of image files and labels
+  std::vector<sample_t> m_image_list; ///< list of image files and labels
   int m_image_width; ///< image width
   int m_image_height; ///< image height
   int m_image_num_channels; ///< number of image channels
+  int m_image_linearized_size; ///< linearized image size
   int m_num_labels; ///< number of labels
 };
 

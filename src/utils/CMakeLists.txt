@@ -1,20 +1,23 @@
-add_sources(
-  quantizer.cpp
-  summary.cpp
-  random.cpp
-  statistics.cpp
+# Add the source files for this directory
+set_full_path(THIS_DIR_SOURCES
+  cnpy_utils.cpp
+  cublas.cpp
+  cudnn.cpp
+  file_utils.cpp
   graph.cpp
   im2col.cpp
-  cudnn_wrapper.cpp
-  options.cpp
+  number_theory.cpp
   omp_diagnostics.cpp
+  options.cpp
   protobuf_utils.cpp
+  quantizer.cpp
+  random.cpp
+  stack_profiler.cpp
   stack_trace.cpp
-  file_utils.cpp
+  statistics.cpp
+  summary.cpp
 )
 
-if(LBANN_HAS_CUDA)
-  add_sources(
-    cudnn_wrapper.cu
-    )
-endif()
+# Propagate the files up the tree
+set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)
+set(CUDA_SOURCES "${CUDA_SOURCES}" "${THIS_DIR_CU_SOURCES}" PARENT_SCOPE)

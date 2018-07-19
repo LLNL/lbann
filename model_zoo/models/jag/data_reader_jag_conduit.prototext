@@ -1,0 +1,180 @@
+data_reader {
+  reader {
+    name: "jag_conduit"
+    role: "train"
+    shuffle: true
+    data_filedir: "/p/lscratchh/brainusr/datasets/jag/bundle_100_10/"
+    data_filename: "samples100-200.bundle"
+    validation_percent: 0.01
+    absolute_sample_count: 0
+    percent_of_data_to_use: 1.0
+
+    # 1: JAG_Image,  2: JAG_Scalar,  3: JAG_Input
+    independent: [1, 2]
+    dependent: [3]
+
+    # An empty list indicates to use all
+    # The commented out variables are not on the Jim's original list but used in the numpy-based format
+    jag_scalar_keys:
+      [ "BWx",
+        "BT",
+#        "tMAXt",
+        "BWn",
+        "MAXpressure",
+        "BAte",
+        "MAXtion",
+        "tMAXpressure",
+#        "BAt",
+        "Yn",
+        "Ye",
+        "Yx",
+#        "tMAXte",
+        "BAtion",
+        "MAXte",
+#        "tMAXtion",
+        "BTx",
+#        "MAXt",
+        "BTn",
+        "BApressure",
+        "tMINradius"
+#        "MINradius"
+      ]
+
+    # When using all the keys without explicit selection, key filters can be used
+    # to explicitly exclude the particular variables with keys that matches a filter.
+    # 'jag_scalar_filters' and 'jag_input_filters' rely on exact key string matching.
+    # 'jag_scalar_prefix_filters' and 'jag_input_prefix_filters' define a filter as
+    # the pair of a prefix substring and the minimum key length.
+    # For example, with the example below, any key that has a length no shorter
+    # than 27 and starts with the substring "image_[" is excluded.
+
+    jag_scalar_prefix_filters: [ { key_prefix: "image_[" min_len: 27} ]
+
+    # The parameter "shape_model_initial_velocities" is used in numpy-based format but empty in conduit-based format
+    jag_input_keys: ["stopping_mult",
+                     "radiation_mult",
+                     "ablation_cv",
+                     "Vi",
+                     "conduction_mult",
+                     "shape_model_initial_velocity_amplitude"
+                    ];
+
+    jag_input_filters: ["shape_model_initial_velocity"]
+
+    num_labels: 6
+
+    image_preprocessor {
+      # assume fixed size of input images if cropper is not used
+      raw_width: 64
+      raw_height: 64
+
+      normalizer {
+        disable: false
+        scale: false
+        subtract_mean: false
+        unit_variance: false
+        z_score: true
+      }
+
+      subtractor {
+        disable: true
+      }
+
+      cropper {
+        disable: true
+      }
+
+      colorizer {
+        disable: true
+      }
+
+      augmenter {
+        disable: true
+      }
+    }
+  }
+
+  reader {
+    name: "jag_conduit"
+    role: "test"
+    shuffle: true
+    data_filedir: "/p/lscratchh/brainusr/datasets/jag/bundle_100_10/"
+    data_filename: "samples200-300.bundle"
+    absolute_sample_count: 0
+    percent_of_data_to_use: 1.0
+
+    # 1: JAG_Image,  2: JAG_Scalar,  3: JAG_Input
+    independent: [1, 2]
+    dependent: [3]
+
+    # An empty list indicates to use all
+    jag_scalar_keys:
+      [ "BWx",
+        "BT",
+#        "tMAXt",
+        "BWn",
+        "MAXpressure",
+        "BAte",
+        "MAXtion",
+        "tMAXpressure",
+#        "BAt",
+        "Yn",
+        "Ye",
+        "Yx",
+#        "tMAXte",
+        "BAtion",
+        "MAXte",
+#        "tMAXtion",
+        "BTx",
+#        "MAXt",
+        "BTn",
+        "BApressure",
+        "tMINradius"
+#        "MINradius"
+      ]
+
+    jag_scalar_prefix_filters: [ { key_prefix: "image_[" min_len: 27} ]
+
+    jag_input_keys: ["stopping_mult",
+                     "radiation_mult",
+                     "ablation_cv",
+                     "Vi",
+                     "conduction_mult",
+                     "shape_model_initial_velocity_amplitude"
+                    ];
+
+    jag_input_filters: ["shape_model_initial_velocity"]
+
+    num_labels: 6
+
+    image_preprocessor {
+      # assume fixed size of input images if cropper is not used
+      raw_width: 64
+      raw_height: 64
+
+      normalizer {
+        disable: false
+        scale: false
+        subtract_mean: false
+        unit_variance: false
+        z_score: true
+      }
+
+      subtractor {
+        disable: true
+      }
+
+      cropper {
+        disable: true
+      }
+
+      colorizer {
+        disable: true
+      }
+
+      augmenter {
+        disable: true
+      }
+    }
+  }
+}

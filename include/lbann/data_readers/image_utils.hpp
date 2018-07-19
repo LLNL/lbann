@@ -33,7 +33,7 @@
 #include <type_traits>
 #include <typeinfo>   // operator typeid
 
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
 #include "lbann/data_readers/cv_utils.hpp"
 #include "lbann/data_readers/cv_process_patches.hpp"
 #endif
@@ -46,11 +46,28 @@ class image_utils {
   static bool loadIMG(const std::string& Imagefile, int& Width, int& Height, bool Flip, unsigned char *&Pixels);
   static bool saveIMG(const std::string& Imagefile, int Width, int Height, bool Flip, unsigned char *Pixels);
 
+#ifdef LBANN_HAS_OPENCV
+  // The other load/import methods rely on these core methods
+  /// process an image and put it into an LBANN Mat data block
+  static bool process_image(cv::Mat& image, int& Width, int& Height, int& Type, cv_process& pp, ::Mat& out);
+  /// process an image and put it into a serialized buffer
+  static bool process_image(cv::Mat& image, int& Width, int& Height, int& Type, cv_process& pp, std::vector<uint8_t>& out);
+  /// process an image and put it into an LBANN Mat data blocks
+  static bool process_image(cv::Mat& image, int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<::Mat>& out);
+#endif // LBANN_HAS_OPENCV
+
   // load/save an image into/from a temporary buffer
   /// Load an image from a file and put it into a serialized buffer
   static bool load_image(const std::string& filename, int& Width, int& Height, int& Type, cv_process& pp, std::vector<uint8_t>& buf);
   /// Save an image from a serialized buffer into a file
   static bool save_image(const std::string& filename, const int Width, const int Height, const int Type, cv_process& pp, const std::vector<uint8_t>& buf);
+
+  // new function, to support sharded data reader and data store functionality
+  static bool load_image(std::vector<unsigned char>& image_buf, int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data);
+  
+  // new function, to support sharded data reader and data store functionality
+  static bool load_image(std::vector<unsigned char>& image_buf,
+                         int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<::Mat>& data); 
 
   // load/save an image into/from an LBANN data block of El::Matrix<DataType> type
   /// Load an image from a file and put it into an LBANN Mat data block

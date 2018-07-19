@@ -35,33 +35,26 @@ namespace lbann {
  * Smooth Rectified linear unit activation function.
  * This is an approximation to the softplus.
  */
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class smooth_relu_layer : public entrywise_activation_layer {
  public:
-  smooth_relu_layer(lbann_comm *comm) :
-    entrywise_activation_layer(comm) { 
-    initialize_distributed_matrices(); 
-  }
-
+  smooth_relu_layer(lbann_comm *comm)
+    : entrywise_activation_layer(comm) {}
   smooth_relu_layer* copy() const override { return new smooth_relu_layer(*this); }
-
-  std::string get_type() const override { return "smooth relu"; }
-
-  inline void initialize_distributed_matrices() override {
-    entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
-  }
+  std::string get_type() const override { return "smooth ReLU"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
  protected:
-  DataType activation_function(DataType z) override {
-    return z / (DataType(1) + std::exp(-z));
+  DataType activation(DataType x) const override {
+    return x / (DataType(1) + std::exp(-x));
   }
-  DataType activation_function_gradient(DataType z) override {
-    const DataType sigz = DataType(1) / (DataType(1) + std::exp(-z));
-    return sigz + z*sigz - z*sigz*sigz;
+  DataType activation_derivative(DataType x) const override {
+    const DataType sigx = 1 / (DataType(1) + std::exp(-x));
+    return sigx + x * sigx - x * sigx * sigx;
   }
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // SMOOTH_RELU_ACTIVATIONS_HPP_INCLUDED
+#endif // SMOOTH_RELU_ACTIVATIONS_HPP_INCLUDED

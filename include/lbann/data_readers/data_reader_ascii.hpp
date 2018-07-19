@@ -41,6 +41,10 @@ class ascii_reader : public generic_data_reader {
   ~ascii_reader() override = default;
   ascii_reader* copy() const override { return new ascii_reader(*this); }
 
+  std::string get_type() const override {
+    return "ascii_reader";
+  }
+
   void load() override;
 
   int get_linearized_data_size() const override {
@@ -54,8 +58,8 @@ class ascii_reader : public generic_data_reader {
   }
 
  protected:
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
-  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) override;
 
   /** Length of text sequence. */
   int m_sequence_length;

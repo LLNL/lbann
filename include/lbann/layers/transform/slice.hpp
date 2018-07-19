@@ -22,22 +22,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// slice.hpp - Slice layer
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_LAYER_SLICE_HPP_INCLUDED
 #define LBANN_LAYER_SLICE_HPP_INCLUDED
 
-#include <utility>
-#include <vector>
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
-/// Slice layer
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
+/** Slice layer.
+ *  This layer slices an input tensor along a specified axis.
+ */
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class slice_layer : public transform_layer {
  private:
 
@@ -46,72 +44,70 @@ class slice_layer : public transform_layer {
   /** Slice points for each child layer. */
   std::vector<int> m_slice_points;
 
-  /** View of back prop output, as seen by child layers. */
-  AbsDistMat* m_fp_output;
-  /** View into an input tensor slice.
-   *  Used in forward and backward propagation.
-   */
-  AbsDistMat* m_input_slice_v;
-  /** View into an output tensor slice.
-   *  Used in forward and backward propagation.
-   */
-  AbsDistMat* m_output_slice_v;
-
+  /** View into region of input tensor. */
+  AbsDistMat *m_input_region_v;
+  /** View into region of output tensor. */
+  AbsDistMat *m_output_region_v;
 
  public:
-  /// Constructor
+
   slice_layer(lbann_comm *comm,
               int slice_axis,
-              std::vector<int> slice_points,
-              cudnn::cudnn_manager *cudnn = nullptr)
+              std::vector<int> slice_points)
     : transform_layer(comm),
       m_slice_axis(slice_axis),
-      m_slice_points(std::move(slice_points)) {
-
-    // Setup the data distribution
-    initialize_distributed_matrices();
+      m_slice_points(slice_points),
+      m_input_region_v(nullptr),
+      m_output_region_v(nullptr) {
 
     // Slice layer has no limit on children
-    m_max_num_child_layers = -1;
-
-  #ifdef __LIB_CUDNN
-    // Initialize GPU if available
-    if(cudnn) {
-      this->m_using_gpus = true;
-      this->m_cudnn = cudnn;
-    }
-  #endif // __LIB_CUDNN
+    m_expected_num_child_layers = -1;
 
   }
 
-  slice_layer(const slice_layer& other) :
-    transform_layer(other) {
-    m_fp_output = other.m_fp_output->Copy();
-    m_input_slice_v = other.m_input_slice_v->Copy();
-    m_output_slice_v = other.m_output_slice_v->Copy();
+  slice_layer(const slice_layer& other)
+    : transform_layer(other),
+      m_slice_axis(other.m_slice_axis),
+      m_slice_points(other.m_slice_points),
+      m_input_region_v(other.m_input_region_v),
+      m_output_region_v(other.m_output_region_v) {
+    // Deep copy matrices
+    if (m_input_region_v != nullptr) {
+      m_input_region_v = m_input_region_v->Copy();
+    }
+    if (m_output_region_v != nullptr) {
+      m_output_region_v = m_output_region_v->Copy();
+    }
   }
 
   slice_layer& operator=(const slice_layer& other) {
     transform_layer::operator=(other);
-    if(m_fp_output)      delete m_fp_output;
-    if(m_input_slice_v)  delete m_input_slice_v;
-    if(m_output_slice_v) delete m_output_slice_v;
-    m_fp_output = other.m_fp_output->Copy;
-    m_input_slice_v = other.m_input_slice_v->Copy();
-    m_output_slice_v = other.m_output_slice_v->Copy();
-  }
+    m_slice_axis = other.m_slice_axis;
+    m_slice_points = other.m_slice_points;
 
-  ~slice_layer() override {
-    delete m_fp_output;
-    delete m_input_slice_v;
-    delete m_output_slice_v;
-
-  #ifdef __LIB_CUDNN
-    // GPU memory for activations is a copy of previous layer's activations
-    this->m_activations_d.clear();
-  #endif // __LIB_CUDNN
+    // Deep copy matrices
+    if (m_input_region_v != nullptr)  { delete m_input_region_v; }
+    if (m_output_region_v != nullptr) { delete m_output_region_v; }
+    m_input_region_v = other.m_input_region_v;
+    m_output_region_v = other.m_output_region_v;
+    if (m_input_region_v != nullptr) {
+      m_input_region_v = m_input_region_v->Copy();
+    }
+    if (m_output_region_v != nullptr) {
+      m_output_region_v = m_output_region_v->Copy();
+    }
 
   }
+
+  virtual ~slice_layer() override {
+    if (m_input_region_v != nullptr)  { delete m_input_region_v; }
+    if (m_output_region_v != nullptr) { delete m_output_region_v; }
+  }
+
+  slice_layer* copy() const override { return new slice_layer(*this); }
+  std::string get_type() const override { return "slice"; }
+  data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   /** Returns description of ctor params */
   std::string get_description() const override {
@@ -126,405 +122,186 @@ class slice_layer : public transform_layer {
       s << this->m_slice_points[h] << " ";
     }
     s << " dataLayout: " << this->get_data_layout_string(get_data_layout());
+    s << " device alloc: " << this->get_device_allocation_string(get_device_allocation());
     return s.str();
   }
 
-  slice_layer* copy() const override { return new slice_layer(*this); }
+  void setup_pointers() override {
+    transform_layer::setup_pointers();
+    if (get_num_children() <= 0) {
+      LBANN_ERROR("slice layer has no children");
+    }
+  }
 
-  std::string get_type() const override { return "slice"; }
-
-  virtual inline void initialize_distributed_matrices();
-  data_layout get_data_layout() const override { return T_layout; }
+  void setup_matrices(const El::Grid& grid) override {
+    transform_layer::setup_matrices(grid);
+    if (m_input_region_v != nullptr)  { delete m_input_region_v; }
+    if (m_output_region_v != nullptr) { delete m_output_region_v; }
+    const auto& input = get_prev_activations();
+    m_input_region_v = input.Construct(input.Grid(), input.Root());
+    m_output_region_v = input.Construct(input.Grid(), input.Root());
+  }
 
   void setup_dims() override {
-    std::stringstream err;
-
-    // Initialize previous neuron tensor dimensions
     transform_layer::setup_dims();
-
-    // Set first and last slice points if needed
-    if(m_slice_points.size() == m_child_layers.size() - 1) {
-      m_slice_points.insert(m_slice_points.begin(), 0);
-      m_slice_points.push_back(this->m_neuron_dims[m_slice_axis]);
-    }
-
-    // Check that slice points are valid
-    if(m_slice_points.size() != m_child_layers.size() + 1
-       || !std::is_sorted(m_slice_points.begin(), m_slice_points.end())) {
-      err << __FILE__ << " " << __LINE__ << " :: slice_layer: ";
-      if (!std::is_sorted(m_slice_points.begin(), m_slice_points.end())) {
-        err << "slice points not sorted";
-      } else {
-        err << "number of slice points (" << m_slice_points.size()
-            << ") != number of children (" << m_child_layers.size() << ") + 1"
-            << " {" << get_layer_names(m_child_layers) << "}";
-      }
-      throw lbann_exception(err.str());
-    }
-
-  }
-
-  void setup_gpu() override {
-    transform_layer::setup_gpu();
-  #ifndef __LIB_CUDNN
     std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: slice_layer: cuDNN not detected";
-    throw lbann_exception(err.str());
-  #else
 
-    // Copy forward propagation output from GPUs if a child layer is
-    // not using GPU implementation
-    for(size_t i=1; i<this->m_child_layers.size(); ++i) {
-      if(!this->m_child_layers[i]->using_gpus()) {
-        m_copy_fp_output_from_gpus = true;
+    const auto& input_dims = get_input_dims();
+    const auto& num_outputs = get_num_children();
+
+    // Check that slice parameters are valid
+    if (m_slice_axis >= (int) input_dims.size()) {
+      err << get_type() << " layer \"" << get_name() << "\" "
+          << "cannot slice along axis " << m_slice_axis << " "
+          << "since it only has " << input_dims.size() << " dimensions";
+      LBANN_ERROR(err.str());
+    }
+    if ((int) m_slice_points.size() <= num_outputs) {
+      err << get_type() << " layer \"" << get_name() << "\" "
+          << "requires more slice points than output tensors "
+          << "(found " << m_slice_points.size() << " slice points "
+          << "and " << m_child_layers.size() << " output tensors)";
+      LBANN_ERROR(err.str());
+    }
+    if (!std::is_sorted(m_slice_points.begin(), m_slice_points.end())) {
+      err << get_type() << " layer \"" << get_name() << "\" "
+          << "has unsorted slice points";
+      LBANN_ERROR(err.str());
+    }
+    if (m_slice_points.front() < 0
+        || m_slice_points.back() > input_dims[m_slice_axis]) {
+      err << get_type() << " layer \"" << get_name() << "\" "
+          << "expects slice points in the range "
+          << "[0, " << input_dims[m_slice_axis] << "], "
+          << "but found an invalid slice point ";
+      if (m_slice_points.front() < 0) {
+        err << "(" << m_slice_points.front() << ")";
+      } else {
+        err << "(" << m_slice_points.back() << ")";
       }
+      LBANN_ERROR(err.str());
     }
 
-    // Allocate workspace if needed
-    if(m_copy_fp_output_from_gpus) {
-      int max_slice_dim = 0;
-      for(size_t child_index = 1;
-          child_index < this->m_child_layers.size();
-          ++child_index) {
-        if(!this->m_child_layers[child_index]->using_gpus()) {
-          max_slice_dim = std::max(max_slice_dim,
-                                   m_slice_points[child_index+1]
-                                   - m_slice_points[child_index]);
-        }
-      }
-      int max_slice_size = (this->m_num_prev_neurons
-                            / this->m_prev_neuron_dims[m_slice_axis]
-                            * max_slice_dim);
-      size_t required_work_space = (max_slice_size
-                                    * this->m_mini_batch_size_per_gpu
-                                    * sizeof(DataType));
-      for(int i=0; i<this->m_cudnn->get_num_gpus(); ++i) {
-        if(required_work_space > this->m_cudnn->get_work_space_size(i)) {
-          this->m_cudnn->set_work_space_size(i, required_work_space);
-        }
-      }
+    // Set output tensor dimensions
+    auto output_dims = input_dims;
+    for (int i = 0; i < num_outputs; ++i) {
+      output_dims[m_slice_axis] = m_slice_points[i+1] - m_slice_points[i];
+      set_output_dims(output_dims, i);
     }
 
-  #endif // #ifndef __LIB_CUDNN
   }
+
+  /** Get slice points. */
+  std::vector<int>& get_slice_points() { return m_slice_points; }
+  /** Get slice points (const). */
+  const std::vector<int>& get_slice_points() const { return m_slice_points; }
 
   protected:
 
   void fp_compute() override {
-    if(this->m_using_gpus) {
-  #ifndef __LIB_CUDNN
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: slice_layer: cuDNN not detected";
-    throw lbann_exception(err.str());
-  #else
-    this->m_cudnn->copy_on_gpus(this->m_activations_d,
-                                this->m_prev_activations_dv,
-                                this->m_num_prev_neurons,
-                                this->m_mini_batch_size_per_gpu);
-  #endif // __LIB_CUDNN
+
+    // Input tensor
+    const auto& input = get_prev_activations();
+    const int width = input.Width();
+
+    // Get number of contiguous regions in a tensor slice of width 1
+    const auto& input_dims = get_input_dims();
+    const int num_regions = std::accumulate(input_dims.begin(),
+                                            input_dims.begin() + m_slice_axis,
+                                            1,
+                                            std::multiplies<int>());
+    const int unit_region_size = std::accumulate(input_dims.begin() + m_slice_axis + 1,
+                                                 input_dims.end(),
+                                                 1,
+                                                 std::multiplies<int>());
+
+    // Get stride between contiguous regions in input tensor slices
+    const int input_slice_dim = input_dims[m_slice_axis];
+    const int input_region_stride = input_slice_dim * unit_region_size;
+
+    // Populate output tensors with slices of input tensor
+    for (int i = 0; i < get_num_children(); ++i) {
+      auto& output = get_activations(i);
+
+      // Get stride between contiguous regions in output tensor slices
+      const int output_slice_dim = m_slice_points[i+1] - m_slice_points[i];
+      const int output_region_stride = output_slice_dim * unit_region_size;
+
+      // Get position of first contiguous region in input tensor
+      const int input_region_start = m_slice_points[i] * unit_region_size;
+      const int input_region_end = m_slice_points[i+1] * unit_region_size;
+
+      // Populate current output tensor
+      output.Resize(num_regions * output_region_stride, width);
+      for (int region = 0; region < num_regions; ++region) {
+        El::LockedView(*m_input_region_v,
+                       input,
+                       El::IR(input_region_start + region * input_region_stride,
+                              input_region_end + region * input_region_stride),
+                       El::ALL);
+        El::View(*m_output_region_v,
+                 output,
+                 El::IR(region * output_region_stride,
+                        (region+1) * output_region_stride),
+                 El::ALL);
+        El::Copy(*m_input_region_v, *m_output_region_v);
+      }
     }
-    else {
-      El::LockedView(*this->m_activations_v, *this->m_prev_activations_v);
-    }
+
   }
 
   void bp_compute() override {
-    if(this->m_using_gpus) {
-      bp_compute_gpu();
-    } else {
-      bp_compute_cpu();
-    }
-  }
 
-  void bp_compute_gpu() {
-  #ifndef __LIB_CUDNN
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: slice_layer: cuDNN not detected";
-    throw lbann_exception(err.str());
-  #else
+    // Gradient w.r.t. input
+    auto& gradient_wrt_input = get_error_signals();
 
-    // Split the error signal tensor into slices of width 1 along the
-    // slice axis
-    const int num_slices
-      = std::accumulate(this->m_prev_neuron_dims.begin(),
-                        this->m_prev_neuron_dims.begin() + m_slice_axis,
-                        1,
-                        std::multiplies<int>());
-    const int slice_unit_size
-      = std::accumulate(this->m_prev_neuron_dims.begin() + m_slice_axis + 1,
-                        this->m_prev_neuron_dims.end(),
-                        1,
-                        std::multiplies<int>());
-    const int output_slice_dim = this->m_prev_neuron_dims[m_slice_axis];
-    const int output_slice_size = output_slice_dim * slice_unit_size;
+    // Get number of contiguous regions in a tensor slice of width 1
+    const auto& input_dims = get_input_dims();
+    const int num_regions = std::accumulate(input_dims.begin(),
+                                            input_dims.begin() + m_slice_axis,
+                                            1,
+                                            std::multiplies<int>());
+    const int unit_region_size = std::accumulate(input_dims.begin() + m_slice_axis + 1,
+                                                 input_dims.end(),
+                                                 1,
+                                                 std::multiplies<int>());
 
-    // Copy entries in each child to error signal tensor
-    const int num_gpus = this->m_cudnn->get_num_gpus();
-    for(size_t child_index = 0; child_index < this->m_child_layers.size(); ++child_index) {
-      const Layer* child = this->m_child_layers[child_index];
+    // Get stride between contiguous regions in input tensor slices
+    const int input_slice_dim = input_dims[m_slice_axis];
+    const int input_region_stride = input_slice_dim * unit_region_size;
 
-      // Get child error signal on GPUs
-      std::vector<DataType*> input;
-      if(child_index == 0) {
-        input = this->m_prev_error_signal_dv;
-      }
-      else {
-        std::vector<DataType*> work_spaces;
-        for(int i=0; i<num_gpus; ++i) {
-          work_spaces.push_back((DataType*)this->m_cudnn->get_work_space(i));
-        }
-        if(child->using_gpus()) {
-          child->get_gpu_bp_output(input, work_spaces, this);
-        }
-        else {
-          child->get_bp_output(*this->m_prev_error_signal_v, this);
-          this->m_cudnn->scatter_to_gpus(work_spaces,
-                                         this->m_prev_error_signal_v->LockedMatrix(),
-                                         this->m_mini_batch_size_per_gpu);
-          input = work_spaces;
-        }
-      }
+    // Populate gradient w.r.t. input with slices of gradient w.r.t. output
+    for (int i = 0; i < get_num_children(); ++i) {
+      const auto& gradient_wrt_output = get_prev_error_signals(i);
 
-      // Split previous error signal tensor into slices
-      const int input_slice_dim = m_slice_points[child_index+1] - m_slice_points[child_index];
-      const int input_slice_size = input_slice_dim * slice_unit_size;
-      const int input_size = num_slices * input_slice_size;
-      const int slice_offset = m_slice_points[child_index] * slice_unit_size;
+      // Get stride between contiguous regions in output tensor slices
+      const int output_slice_dim = m_slice_points[i+1] - m_slice_points[i];
+      const int output_region_stride = output_slice_dim * unit_region_size;
 
-      // Copy slices from previous error signal tensor into error signal tensor
-      for(int slice = 0; slice < num_slices; ++slice) {
-        std::vector<DataType*> input_slice(num_gpus), output_slice(num_gpus);
-        for(int i = 0; i < num_gpus; ++i) {
-          input_slice[i] = input[i] + slice * input_slice_size;
-          output_slice[i] = this->m_error_signal_d[i] + slice * output_slice_size + slice_offset;
-        }
-        this->m_cudnn->copy_on_gpus(output_slice,
-                                    input_slice,
-                                    input_slice_size,
-                                    this->m_mini_batch_size_per_gpu,
-                                    input_size,
-                                    this->m_num_prev_neurons);
-      }
+      // Get position of first contiguous region in input tensor
+      const int input_region_start = m_slice_points[i] * unit_region_size;
+      const int input_region_end = m_slice_points[i+1] * unit_region_size;
 
-    }
-    
-  #endif // #ifndef __LIB_CUDNN
-  }
-
-  void bp_compute_cpu() {
-    
-    // Clear error signal if needed
-    if(m_slice_points.front() != 0
-       || m_slice_points.back() != this->m_neuron_dims[m_slice_axis]) {
-      El::Zero(*this->m_error_signal_v);
-    }
-
-    // Split the error signal tensor into slices of width 1 along the
-    // slice axis
-    const int num_slices
-      = std::accumulate(this->m_prev_neuron_dims.begin(),
-                        this->m_prev_neuron_dims.begin() + m_slice_axis,
-                        1,
-                        std::multiplies<int>());
-    const int slice_unit_size
-      = std::accumulate(this->m_prev_neuron_dims.begin() + m_slice_axis + 1,
-                        this->m_prev_neuron_dims.end(),
-                        1,
-                        std::multiplies<int>());
-    const int output_slice_dim = this->m_prev_neuron_dims[m_slice_axis];
-    const int output_slice_size = output_slice_dim * slice_unit_size;
-
-    // Copy entries in each child to error signal tensor
-    for(size_t i = 0; i < this->m_child_layers.size(); ++i) {
-
-      // Split previous error signal tensor into slices
-      this->m_child_layers[i]->get_bp_output(*this->m_prev_error_signal_v, this);
-      const int input_slice_dim = m_slice_points[i+1] - m_slice_points[i];
-      const int input_slice_size = input_slice_dim * slice_unit_size;
-      const int slice_offset_start = m_slice_points[i] * slice_unit_size;
-      const int slice_offset_end = m_slice_points[i+1] * slice_unit_size;
-
-      // Copy slices from previous error signal tensor into error signal tensor
-      for(int slice = 0; slice < num_slices; ++slice) {
-        El::LockedView(*m_input_slice_v,
-                       *this->m_prev_error_signal_v,
-                       El::IR(slice * input_slice_size,
-                              (slice+1) * input_slice_size),
-                       El::ALL);
-        El::View(*m_output_slice_v,
-                 *this->m_error_signal_v,
-                 El::IR(slice * output_slice_size + slice_offset_start,
-                        slice * output_slice_size + slice_offset_end),
+      // Populate slice of gradient w.r.t. input
+      for (int region = 0; region < num_regions; ++region) {
+        El::View(*m_input_region_v,
+                 gradient_wrt_input,
+                 El::IR(input_region_start + region * input_region_stride,
+                        input_region_end + region * input_region_stride),
                  El::ALL);
-        El::Copy(*m_input_slice_v, *m_output_slice_v);
-      }
-
-    }
-
-  }
-
-  void get_fp_output(AbsDistMat& fp_output, const Layer* next_layer) const override {
-
-    // Check if input is in the list of child layers
-    const int child_index = (std::find(this->m_child_layers.begin(),
-                                       this->m_child_layers.end(),
-                                       next_layer)
-                             - this->m_child_layers.begin());
-    if(child_index >= (int) this->m_child_layers.size()) {
-      transform_layer::get_fp_output(fp_output, next_layer);
-    }
-
-    // Split the activations tensor into slices of width 1 along the
-    // slice axis
-    const int num_slices
-      = std::accumulate(this->m_prev_neuron_dims.begin(),
-                        this->m_prev_neuron_dims.begin() + m_slice_axis,
-                        1,
-                        std::multiplies<int>());
-    const int slice_unit_size
-      = std::accumulate(this->m_prev_neuron_dims.begin() + m_slice_axis + 1,
-                        this->m_prev_neuron_dims.end(),
-                        1,
-                        std::multiplies<int>());
-    const int input_slice_dim = this->m_prev_neuron_dims[m_slice_axis];
-    const int output_slice_dim = m_slice_points[child_index+1] - m_slice_points[child_index];
-    const int input_slice_size = input_slice_dim * slice_unit_size;
-    const int output_slice_size = output_slice_dim * slice_unit_size;
-    const int slice_offset_start = m_slice_points[child_index] * slice_unit_size;
-    const int slice_offset_end = m_slice_points[child_index+1] * slice_unit_size;
-    
-    if(num_slices == 1
-       && m_activations_v->DistData() == fp_output.DistData()) {
-      // Return view of activations tensor slice
-      El::LockedView(fp_output,
-                     *this->m_activations_v,
-                     El::IR(slice_offset_start, slice_offset_end),
-                     El::ALL);
-    }
-    else {
-      // Copy slices from activations tensor into output
-      fp_output.Empty(false);
-      fp_output.Resize(output_slice_size, m_activations_v->Width());
-      AbsDistMat* output_slice_v
-        = fp_output.Construct(fp_output.Grid(), fp_output.Root());
-      for(int slice = 0; slice < num_slices; ++slice) {
-        El::LockedView(*m_input_slice_v,
-                       *this->m_activations_v,
-                       El::IR(slice * input_slice_size + slice_offset_start,
-                              slice * input_slice_size + slice_offset_end),
+        El::LockedView(*m_output_region_v,
+                       gradient_wrt_output,
+                       El::IR(region * output_region_stride,
+                              (region+1) * output_region_stride),
                        El::ALL);
-        El::View(*output_slice_v,
-                 fp_output,
-                 El::IR(slice * output_slice_size,
-                        (slice+1) * output_slice_size),
-                 El::ALL);
-        El::Copy(*m_input_slice_v, *output_slice_v);
+        El::Copy(*m_output_region_v, *m_input_region_v);
       }
-      delete output_slice_v;
+
     }
-
-  }
-
-  #ifdef __LIB_CUDNN
-  void get_gpu_fp_output(std::vector<DataType*>& output_dv,
-                         std::vector<DataType*>& output_d,
-                         const Layer* next_layer) const override {
-
-    // Check if input is in the list of child layers
-    const int child_index = (std::find(this->m_child_layers.begin(),
-                                       this->m_child_layers.end(),
-                                       next_layer)
-                             - this->m_child_layers.begin());
-    if(child_index >= (int) this->m_child_layers.size()) {
-      transform_layer::get_gpu_fp_output(output_dv, output_d, next_layer);
-    }
-
-    // Split the activations tensor into slices of width 1 along the
-    // slice axis
-    const int num_slices
-      = std::accumulate(this->m_prev_neuron_dims.begin(),
-                        this->m_prev_neuron_dims.begin() + m_slice_axis,
-                        1,
-                        std::multiplies<int>());
-    const int slice_unit_size
-      = std::accumulate(this->m_prev_neuron_dims.begin() + m_slice_axis + 1,
-                        this->m_prev_neuron_dims.end(),
-                        1,
-                        std::multiplies<int>());
-    const int input_slice_dim = this->m_prev_neuron_dims[m_slice_axis];
-    const int output_slice_dim = m_slice_points[child_index+1] - m_slice_points[child_index];
-    const int input_slice_size = input_slice_dim * slice_unit_size;
-    const int output_slice_size = output_slice_dim * slice_unit_size;
-    const int output_size = num_slices * output_slice_size;
-    const int slice_offset = m_slice_points[child_index] * slice_unit_size;
-
-    // Allocate GPU memory if needed and set data view
-    if(output_d.empty()) {
-      m_cudnn->allocate_on_gpus(output_d,
-                                output_size,
-                                m_max_mini_batch_size_per_gpu);
-    }
-    output_dv = output_d;
-    
-    // Copy slices from previous activations tensor into output
-    const int num_gpus = this->m_cudnn->get_num_gpus();
-    for(int slice = 0; slice < num_slices; ++slice) {
-      std::vector<DataType*> input_slice(num_gpus), output_slice(num_gpus);
-      for(int i = 0; i < num_gpus; ++i) {
-        input_slice[i] = this->m_activations_d[i] + slice * input_slice_size + slice_offset;
-        output_slice[i] = output_d[i] + slice * output_slice_size;
-      }
-      this->m_cudnn->copy_on_gpus(output_slice,
-                                  input_slice,
-                                  output_slice_size,
-                                  this->m_mini_batch_size_per_gpu,
-                                  this->m_num_neurons,
-                                  output_size);
-    }
-
-  }
-  #endif // __LIB_CUDNN
-
-  const std::vector<int> fp_output_dims(const Layer* next_layer) const override {
-
-    // Return all neurons if input is null
-    if(next_layer == nullptr) {
-      return m_neuron_dims;
-    }
-
-    // Check if input is in the list of child layers
-    const int child_index = (std::find(this->m_child_layers.begin(),
-                                       this->m_child_layers.end(),
-                                       next_layer)
-                             - this->m_child_layers.begin());
-    if(child_index >= (int) this->m_child_layers.size()) {
-      return m_neuron_dims;
-    }
-
-    // Return slice dimensions
-    std::vector<int> neuron_dims = m_neuron_dims;
-    neuron_dims[m_slice_axis] = m_slice_points[child_index+1] - m_slice_points[child_index];
-    return neuron_dims;
 
   }
 
 };
-
-/// Matrices should be in MC,MR distributions
-template<> inline void slice_layer<data_layout::MODEL_PARALLEL>::initialize_distributed_matrices() {
-  transform_layer::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
-  m_fp_output = new DistMat(this->m_comm->get_model_grid());
-  m_input_slice_v = new DistMat(this->m_comm->get_model_grid());
-  m_output_slice_v = new DistMat(this->m_comm->get_model_grid());
-}
-
-/// Matrices should be in Star,VC distributions
-template<> inline void slice_layer<data_layout::DATA_PARALLEL>::initialize_distributed_matrices() {
-  transform_layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
-  m_fp_output = new StarVCMat(this->m_comm->get_model_grid());
-  m_input_slice_v = new StarVCMat(this->m_comm->get_model_grid());
-  m_output_slice_v = new StarVCMat(this->m_comm->get_model_grid());
-}
 
 } // namespace lbann
 

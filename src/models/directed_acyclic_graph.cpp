@@ -39,12 +39,12 @@ directed_acyclic_graph_model::directed_acyclic_graph_model(lbann_comm *comm,
   : model(comm, mini_batch_size, obj_fn, default_optimizer) {}
 
 void directed_acyclic_graph_model::setup_layer_execution_order() {
-  model::setup_layer_execution_order();
   std::set<int> nodes;
   std::map<int,std::set<int>> edges;
   construct_layer_graph(nodes, edges);
   const auto& sorted_order = graph::topological_sort(nodes, edges);
   permute_layers(sorted_order);
+  model::setup_layer_execution_order();
 }
 
 }  // namespace lbann

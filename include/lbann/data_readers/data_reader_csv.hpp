@@ -31,6 +31,7 @@
 
 #include "data_reader.hpp"
 #include "image_preprocessor.hpp"
+#include <unordered_map>
 
 namespace lbann {
 
@@ -52,6 +53,10 @@ class csv_reader : public generic_data_reader {
   ~csv_reader() override;
 
   csv_reader* copy() const override { return new csv_reader(*this); }
+
+  std::string get_type() const override {
+    return "csv_reader";
+  }
 
   /// Set the label column.
   void set_label_col(int col) { m_label_col = col; }
@@ -84,7 +89,7 @@ class csv_reader : public generic_data_reader {
   /**
    * Supply a custom transform to convert the label column to an integer.
    * Note that the label should be an integer starting from 0.
-   */ 
+   */
   void set_label_transform(std::function<int(const std::string&)> f) {
     m_label_transform = f;
   }
@@ -116,35 +121,43 @@ class csv_reader : public generic_data_reader {
     return {get_linearized_data_size()};
   }
 
+  /**
+   * Return the parsed CSV line and store the label and response in the m_labels
+   * and m_responses vectors, respectively. The label and response are not
+   * present in the vector.
+   * (Made public to support data store functionality)
+   */
+  std::vector<DataType> fetch_line_label_response(int data_id);
+
+  /// sets up a data_store.
+  void setup_data_store(model *m) override;
+
  protected:
   /**
    * Fetch the data associated with data_id.
    * Note this does *not* normalize the data.
    */
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
   /// Fetch the label associated with data_id.
-  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) override;
   /// Fetch the response associated with data_id.
-  bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) override;
 
-  /** Return a raw line from the CSV file. */
-  std::string fetch_raw_line(int data_id);
   /**
    * Return the parsed CSV line. This does not extract the label/response.
    */
   std::vector<DataType> fetch_line(int data_id);
-  /**
-   * Return the parsed CSV line and store the label and response in the m_labels
-   * and m_responses vectors, respectively. The label and response are not
-   * present in the vector.
-   */
-  std::vector<DataType> fetch_line_label_response(int data_id);
 
   /// Skip rows in an ifstream.
   void skip_rows(std::ifstream& s, int rows);
 
   /// Initialize the ifstreams vector.
   void setup_ifstreams();
+
+  /** Return a raw line from the CSV file. 
+   *  (Made public to support data store functionality)
+   */
+  std::string fetch_raw_line(int data_id);
 
   /// String value that separates data.
   char m_separator = ',';

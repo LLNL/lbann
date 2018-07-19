@@ -6,7 +6,6 @@ model {
   num_epochs: 3
   num_parallel_readers: 0
   procs_per_model: 0
-  use_cudnn: false
   num_gpus: -1
 
   ###################################################
@@ -54,7 +53,9 @@ model {
   layer {
     name: "data"
     data_layout: "data_parallel"
-    input_partitioned_minibatch {}
+    input {
+      io_buffer: "partitioned"
+    }
   }
 
   layer {
@@ -90,10 +91,10 @@ model {
   layer {
     name: "target"
     data_layout: "data_parallel"
-    target_partitioned_minibatch {
+    target {
+      io_buffer: "partitioned"
       shared_data_reader: true
     }
   }
 
 }
-

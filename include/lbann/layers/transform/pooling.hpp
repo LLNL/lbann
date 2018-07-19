@@ -22,8 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_layer_pooling .hpp .cpp - Pooling Layer (max, average)
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_LAYER_POOLING_HPP_INCLUDED
@@ -32,33 +30,33 @@
 #include <utility>
 #include <vector>
 #include "lbann/layers/transform/transform.hpp"
-#include "lbann/utils/cudnn_wrapper.hpp"
+#include "lbann/utils/cudnn.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/im2col.hpp"
 
 namespace lbann {
 
-// Forward declaration for unpooling layer
-template <data_layout T_layout>
+// Forward declaration
+template <data_layout T_layout, El::Device Dev>
 class unpooling_layer;
 
-/// Pooling layer
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
+/** Pooling layer. */
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class pooling_layer : public transform_layer {
  private:
 
-  /// Pooling mode
+  /** Pooling mode. */
   const pool_mode m_pool_mode;
 
-  /// Pooling window dimensions
+  /** Pooling window dimensions. */
   std::vector<int> m_pool_dims;
-  /// Pooling padding
-  std::vector<int> m_pool_pads;
-  /// Pooling strides
-  std::vector<int> m_pool_strides;
-  /// Size of pooling window
+  /** Size of pooling window. */
   int m_pool_size;
- 
+  /** Pooling padding. */
+  std::vector<int> m_pads;
+  /** Pooling strides. */
+  std::vector<int> m_strides;
+
   /** Input indices for max pooling.
    *  Each entry corresponds to a local entry in the activations
    *  matrix. The entry gives the index of the maximum entry within
@@ -66,48 +64,48 @@ class pooling_layer : public transform_layer {
    */
   std::vector<int> m_max_pool_indices;
 
-#ifdef __LIB_CUDNN
-  /// Pooling descriptor
+#ifdef LBANN_HAS_CUDNN
+  /** Pooling descriptor. */
   cudnnPoolingDescriptor_t m_pooling_cudnn_desc;
-#endif // __LIB_CUDNN
+  /** Tensor cuDNN descriptors. */
+  cudnn::data_parallel_layer_tensor_manager m_tensors_cudnn_desc;
+#endif // LBANN_HAS_CUDNN
 
-  friend class unpooling_layer<T_layout>;
+  friend class unpooling_layer<T_layout, Dev>;
 
- public:
+public:
 
   pooling_layer(lbann_comm *comm,
                 int num_data_dims,
                 int pool_dim,
-                int pool_pad,
-                int pool_stride,
-                pool_mode pool_mode,
-                cudnn::cudnn_manager *cudnn = nullptr)
+                int pad,
+                int stride,
+                pool_mode mode)
     : pooling_layer(comm,
                     num_data_dims,
                     std::vector<int>(num_data_dims, pool_dim),
-                    std::vector<int>(num_data_dims, pool_pad),
-                    std::vector<int>(num_data_dims, pool_stride),
-                    pool_mode,
-                    cudnn) {}
+                    std::vector<int>(num_data_dims, pad),
+                    std::vector<int>(num_data_dims, stride),
+                    mode) {}
 
-  /// Constructor
   pooling_layer(lbann_comm *comm,
                 int num_data_dims,
                 std::vector<int> pool_dims,
-                std::vector<int> pool_pads,
-                std::vector<int> pool_strides,
-                pool_mode pool_mode,
-                cudnn::cudnn_manager *cudnn = nullptr)
+                std::vector<int> pads,
+                std::vector<int> strides,
+                pool_mode mode)
     : transform_layer(comm),
-      m_pool_mode(pool_mode),
-      m_pool_dims(std::move(pool_dims)),
-      m_pool_pads(std::move(pool_pads)),
-      m_pool_strides(std::move(pool_strides))  {
+      m_pool_mode(mode),
+      m_pool_dims(pool_dims),
+      m_pads(pads),
+      m_strides(strides)
+#ifdef LBANN_HAS_CUDNN
+    , m_pooling_cudnn_desc(nullptr),
+      m_tensors_cudnn_desc(this)
+#endif // LBANN_HAS_CUDNN
+  {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "pooling only supports DATA_PARALLEL");
-
-    // Setup the data distribution
-    initialize_distributed_matrices();
 
     // Initialize input dimensions and pooling parameters
     m_pool_size = std::accumulate(m_pool_dims.begin(),
@@ -115,48 +113,48 @@ class pooling_layer : public transform_layer {
                                   1,
                                   std::multiplies<int>());
 
-  #ifdef __LIB_CUDNN
-
-    // Initialize cuDNN objects
-    m_pooling_cudnn_desc = nullptr;
-
-    // Initialize GPU memory if using GPU
-    if(cudnn) {
-      this->m_using_gpus = true;
-      this->m_cudnn = cudnn;
-    }
-  #endif // __LIB_CUDNN
-
   }
 
-  pooling_layer(const pooling_layer& other) :
-    transform_layer(other),
-    m_pool_mode(other.m_pool_mode),
-    m_pool_dims(other.m_pool_dims),
-    m_pool_pads(other.m_pool_pads),
-    m_pool_strides(other.m_pool_strides),
-    m_pool_size(other.m_pool_size),
-    m_max_pool_indices(other.m_max_pool_indices) {
-  #ifdef __LIB_CUDNN
-    m_pooling_cudnn_desc = nullptr;
-    cudnn::copy_pooling_cudnn_desc(other.m_pooling_cudnn_desc, m_pooling_cudnn_desc);
-  #endif // __LIB_CUDNN
+  pooling_layer(const pooling_layer& other)
+    : transform_layer(other),
+      m_pool_mode(other.m_pool_mode),
+      m_pool_dims(other.m_pool_dims),
+      m_pool_size(other.m_pool_size),
+      m_pads(other.m_pads),
+      m_strides(other.m_strides),
+      m_max_pool_indices(other.m_max_pool_indices)
+#ifdef LBANN_HAS_CUDNN
+    , m_pooling_cudnn_desc(nullptr),
+      m_tensors_cudnn_desc(other.m_tensors_cudnn_desc)
+#endif // LBANN_HAS_CUDNN
+  {
+#ifdef LBANN_HAS_CUDNN
+    copy_pooling_cudnn_desc(other.m_pooling_cudnn_desc, m_pooling_cudnn_desc);
+    m_tensors_cudnn_desc.set_layer(this);
+#endif // LBANN_HAS_CUDNN
   }
 
   pooling_layer& operator=(const pooling_layer& other){
     transform_layer::operator=(other);
     m_pool_mode = other.m_pool_mode;
     m_pool_dims = other.m_pool_dims;
-    m_pool_pads = other.m_pool_pads;
-    m_pool_strides = other.m_pool_strides;
     m_pool_size = other.m_pool_size;
+    m_pads = other.m_pads;
+    m_strides = other.m_strides;
     m_max_pool_indices = other.m_max_pool_indices;
-  #ifdef __LIB_CUDNN
-    cudnn::copy_pooling_cudnn_desc(other.m_pooling_cudnn_desc, m_pooling_cudnn_desc);
-  #endif // __LIB_CUDNN
+#ifdef LBANN_HAS_CUDNN
+    copy_pooling_cudnn_desc(other.m_pooling_cudnn_desc, m_pooling_cudnn_desc);
+    m_tensors_cudnn_desc = other.m_tensors_cudnn_desc;
+    m_tensors_cudnn_desc.set_layer(this);
+#endif // LBANN_HAS_CUDNN
     return *this;
   }
-    
+
+  pooling_layer* copy() const override { return new pooling_layer(*this); }
+  std::string get_type() const override { return "pooling"; }
+  data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
+
   /** Returns description of ctor params */
   std::string get_description() const override {
     std::stringstream s;
@@ -165,74 +163,66 @@ class pooling_layer : public transform_layer {
     for (size_t h=0; h<this->m_pool_dims.size(); h++) {
       s << this->m_pool_dims[h] << " ";
     }
-    s << " pool_pads: ";
-    for (size_t h=0; h<this->m_pool_pads.size(); h++) {
-      s << this->m_pool_pads[h] << " ";
+    s << " pads: ";
+    for (size_t h=0; h<this->m_pads.size(); h++) {
+      s << this->m_pads[h] << " ";
     }
-    s << " pool_strides: ";
-    for (size_t h=0; h<this->m_pool_strides.size(); h++) {
-      s << this->m_pool_strides[h] << " ";
+    s << " strides: ";
+    for (size_t h=0; h<this->m_strides.size(); h++) {
+      s << this->m_strides[h] << " ";
     }
     s << " pool_mode: " << get_pool_mode_name(this->m_pool_mode);
     s << " dataLayout: " << this->get_data_layout_string(get_data_layout());
+    s << " device alloc: " + this->get_device_allocation_string(get_device_allocation());
+
     return s.str();
   }
 
-  /// Destructor
-  ~pooling_layer() override {
-  #ifdef __LIB_CUDNN
-    // Destroy cuDNN objects
-    if(m_pooling_cudnn_desc) {
-      CHECK_CUDNN(cudnnDestroyPoolingDescriptor(m_pooling_cudnn_desc));
+  ~pooling_layer() {
+#ifdef LBANN_HAS_CUDNN
+    if (m_pooling_cudnn_desc != nullptr) {
+      cudnnDestroyPoolingDescriptor(m_pooling_cudnn_desc);
     }
-  #endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
   }
 
-  pooling_layer* copy() const override { return new pooling_layer(*this); }
-
-  std::string get_type() const override { return "pooling"; }
-  
-  virtual inline void initialize_distributed_matrices();
-
-  data_layout get_data_layout() const override { return T_layout; }
-
   void setup_dims() override {
-
-    // Initialize previous neuron tensor dimensions
     transform_layer::setup_dims();
-
-    // Initialize neuron tensor dimensions
-    for(int i=0; i<this->m_num_neuron_dims-1; ++i) {
-      const int effective_dim = (this->m_prev_neuron_dims[i+1]
-                                 + 2*m_pool_pads[i] - m_pool_dims[i] + 1);
-      this->m_neuron_dims[i+1] = ((effective_dim + m_pool_strides[i] - 1)
-                                  / m_pool_strides[i]);
+    const auto& input_dims = get_input_dims();
+    auto output_dims = input_dims;
+    for(size_t i = 0; i < output_dims.size() - 1; ++i) {
+      const int effective_dim = (input_dims[i+1] + 2 * m_pads[i]
+                                 - m_pool_dims[i] + 1);
+      output_dims[i+1] = (effective_dim + m_strides[i] - 1) / m_strides[i];
     }
-    this->m_num_neurons = std::accumulate(this->m_neuron_dims.begin(),
-                                          this->m_neuron_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
-
+    set_output_dims(output_dims);
   }
 
   /// Initialize GPU objects
   void setup_gpu() override {
     transform_layer::setup_gpu();
-  #ifndef __LIB_CUDNN
-    throw lbann_exception("lbann_layer_pooling: cuDNN not detected");
-  #else
+#ifndef LBANN_HAS_CUDNN
+    LBANN_ERROR("cuDNN not detected");
+#else
 
     // Set pooling descriptor
     cudnnPoolingMode_t cudnn_pool_mode;
     switch(m_pool_mode) {
     case pool_mode::max:
+    #ifndef LBANN_DETERMINISTIC    
       cudnn_pool_mode = CUDNN_POOLING_MAX; break;
+    #else
+      cudnn_pool_mode = CUDNN_POOLING_MAX_DETERMINISTIC; break;
+    #endif  
     case pool_mode::average:
       cudnn_pool_mode = CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING; break;
     case pool_mode::average_no_pad:
       cudnn_pool_mode = CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING; break;
     default:
-      throw lbann_exception("pooling_layer: no GPU implementation for pooling mode");
+      std::stringstream err;
+      err << "no GPU implementation for pooling mode " << static_cast<int>(m_pool_mode);
+      LBANN_ERROR(err.str());
+      cudnn_pool_mode = CUDNN_POOLING_MAX;
     }
     CHECK_CUDNN(cudnnCreatePoolingDescriptor(&m_pooling_cudnn_desc));
     CHECK_CUDNN(cudnnSetPoolingNdDescriptor(m_pooling_cudnn_desc,
@@ -240,16 +230,16 @@ class pooling_layer : public transform_layer {
                                             CUDNN_PROPAGATE_NAN,
                                             m_pool_dims.size(),
                                             m_pool_dims.data(),
-                                            m_pool_pads.data(),
-                                            m_pool_strides.data()));
+                                            m_pads.data(),
+                                            m_strides.data()));
 
-  #endif // #ifndef __LIB_CUDNN
+#endif // #ifndef LBANN_HAS_CUDNN
   }
 
   protected:
 
   void fp_compute() override {
-    if(this->m_using_gpus) {
+    if(this->using_gpus()) {
       fp_compute_cudnn();
     } else {
       fp_compute_im2col();
@@ -257,7 +247,7 @@ class pooling_layer : public transform_layer {
   }
 
   void bp_compute() override {
-    if(this->m_using_gpus) {
+    if(this->using_gpus()) {
       bp_compute_cudnn();
     } else {
       bp_compute_im2col();
@@ -268,121 +258,110 @@ class pooling_layer : public transform_layer {
 
   /// Pooling forward propagation with cuDNN
   void fp_compute_cudnn() {
-  #ifndef __LIB_CUDNN
-    throw lbann_exception("pooling_layer: cuDNN not detected");
-  #else
-
-    // Useful constants
-    const DataType one = 1;
-    const DataType zero = 0;
-
-    // Perform pooling with each GPU
-    const int num_gpus = this->m_cudnn->get_num_gpus();
-    for(int i=0; i<num_gpus; ++i) {
-      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-      CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
-                                 this->m_cudnn->get_stream(i)));
-      CHECK_CUDNN(cudnnPoolingForward(this->m_cudnn->get_handle(i),
+#ifndef LBANN_HAS_CUDNN
+    LBANN_ERROR("cuDNN not detected");
+#else
+    const auto& local_input = get_local_prev_activations();
+    auto& local_output = get_local_activations();
+    if (local_input.Height() > 0 && local_input.Width() > 0) {
+      const DataType zero = DataType(0);
+      const DataType one = DataType(1);
+      CHECK_CUDNN(cudnnPoolingForward(cudnn::get_handle(),
                                       m_pooling_cudnn_desc,
                                       &one,
-                                      this->m_prev_neurons_cudnn_desc,
-                                      this->m_prev_activations_dv[i],
+                                      m_tensors_cudnn_desc.get_prev_activations(),
+                                      local_input.LockedBuffer(),
                                       &zero,
-                                      this->m_neurons_cudnn_desc,
-                                      this->m_activations_d[i]));
+                                      m_tensors_cudnn_desc.get_activations(),
+                                      local_output.Buffer()));
     }
-
-  #endif // #ifndef __LIB_CUDNN
+#endif // #ifndef LBANN_HAS_CUDNN
   }
 
   /// Pooling backward propagation with cuDNN
-  void bp_compute_cudnn() {    
-  #ifndef __LIB_CUDNN
-    throw lbann_exception("pooling_layer: cuDNN not detected");
-  #else
+  void bp_compute_cudnn() {
+#ifndef LBANN_HAS_CUDNN
+    LBANN_ERROR("cuDNN not detected");
+#else
+    const auto& local_input = get_local_prev_activations();
+    const auto& local_output = get_local_activations();
+    const auto& local_gradient_wrt_output = get_local_prev_error_signals();
+    auto& local_gradient_wrt_input = get_local_error_signals();
+    if (local_input.Height() > 0 && local_input.Width() > 0) {
 
-    // Useful constants
-    const DataType one = DataType(1);
-    const DataType zero = DataType(0);
+      // Useful constants
+      const DataType one = DataType(1);
+      const DataType zero = DataType(0);
 
-    // Get number of GPUs
-    const int num_gpus = this->m_cudnn->get_num_gpus();
-
-    // Perform back propagation on each GPU
-    for(int i=0; i<num_gpus; ++i) {
-      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-      CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
-                                 this->m_cudnn->get_stream(i)));
-      CHECK_CUDNN(cudnnPoolingBackward(this->m_cudnn->get_handle(i),
+      // Perform backprop on GPU
+      CHECK_CUDNN(cudnnPoolingBackward(cudnn::get_handle(),
                                        m_pooling_cudnn_desc,
                                        &one,
-                                       this->m_neurons_cudnn_desc,
-                                       this->m_activations_d[i],
-                                       this->m_neurons_cudnn_desc,
-                                       this->m_prev_error_signal_dv[i],
-                                       this->m_prev_neurons_cudnn_desc,
-                                       this->m_prev_activations_dv[i],
+                                       m_tensors_cudnn_desc.get_activations(),
+                                       local_output.LockedBuffer(),
+                                       m_tensors_cudnn_desc.get_prev_error_signals(),
+                                       local_gradient_wrt_output.LockedBuffer(),
+                                       m_tensors_cudnn_desc.get_prev_activations(),
+                                       local_input.LockedBuffer(),
                                        &zero,
-                                       this->m_prev_neurons_cudnn_desc,
-                                       this->m_error_signal_d[i]));
-    }
+                                       m_tensors_cudnn_desc.get_error_signals(),
+                                       local_gradient_wrt_input.Buffer()));
 
-  #endif // #ifndef __LIB_CUDNN
+    }
+#endif // #ifndef LBANN_HAS_CUDNN
   }
 
   /// Pooling forward propagation with im2col
   void fp_compute_im2col() {
-
-    // Throw exception if pooling mode is not max or average pooling
-    if(m_pool_mode != pool_mode::max
-       && m_pool_mode != pool_mode::average) {
-      throw lbann_exception("pooling_layer: CPU pooling layer only implements max and average pooling");
+    if(m_pool_mode != pool_mode::max && m_pool_mode != pool_mode::average) {
+      LBANN_ERROR("CPU pooling layer only supports max and average pooling");
     }
 
-    // Get local matrices
-    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
-    Mat& activations_local = this->m_activations_v->Matrix();
+    // Local matrices
+    const auto& local_input = get_local_prev_activations();
+    auto& local_output = get_local_activations();
 
-    // Get parameters
-    const int local_width = prev_activations_local.Width();
-    const int num_channels = this->m_prev_neuron_dims[0];
-    const int num_per_output_channel = this->m_num_neurons / num_channels;
+    // Pool parameters
+    const int local_width = local_input.Width();
+    const auto& input_dims = get_input_dims();
+    const int num_channels = input_dims[0];
+    const int num_per_output_channel = get_output_size() / num_channels;
 
     // Initialize max pool indices if needed
     if(m_pool_mode == pool_mode::max) {
-      m_max_pool_indices.assign(this->m_num_neurons * local_width, 0);
+      m_max_pool_indices.assign(get_output_size() * local_width, 0);
     }
 
     // Initialize matrices
-    Mat im2col_mat(m_pool_size * num_channels, num_per_output_channel);
-    Mat input_mat;
+    DMat<Dev> im2col_mat(m_pool_size * num_channels, num_per_output_channel);
+    DMat<Dev> input_mat;
 
     // Iterate through data samples
     for(int sample = 0; sample < local_width; ++sample) {
 
       // Construct im2col matrix from input
-      El::LockedView(input_mat, prev_activations_local,
+      El::LockedView(input_mat, local_input,
                      El::ALL, El::IR(sample));
       im2col(input_mat,
              im2col_mat,
              num_channels,
-             this->m_num_prev_neuron_dims - 1,
-             &this->m_prev_neuron_dims[1],
-             m_pool_pads.data(),
+             input_dims.size() - 1,
+             &input_dims[1],
+             m_pads.data(),
              m_pool_dims.data(),
-             m_pool_strides.data());
+             m_strides.data());
 
       if(m_pool_mode == pool_mode::max) {
         // Apply max pooling
-        DataType *activations_buffer = activations_local.Buffer(0, sample);
-        int *indices_buffer = &m_max_pool_indices[sample * this->m_num_neurons];
+        DataType *output_buffer = local_output.Buffer(0, sample);
+        int *indices_buffer = &m_max_pool_indices[sample * get_output_size()];
         #pragma omp parallel for
         for(int channel = 0; channel < num_channels; ++channel) {
           for(int j = 0; j < num_per_output_channel; ++j) {
             DataType *im2col_buffer = im2col_mat.Buffer(channel*m_pool_size, j);
-            DataType max_entry = -INFINITY;
+            DataType max_entry = im2col_buffer[0];
             int max_index = 0;
-            for(int i = 0; i < m_pool_size; ++i) {
+            for(int i = 1; i < m_pool_size; ++i) {
               const DataType current_entry = im2col_buffer[i];
               if(current_entry > max_entry) {
                 max_entry = current_entry;
@@ -390,7 +369,7 @@ class pooling_layer : public transform_layer {
               }
             }
             const int output_index = j + channel * num_per_output_channel;
-            activations_buffer[output_index] = max_entry;
+            output_buffer[output_index] = max_entry;
             indices_buffer[output_index] = max_index;
           }
         }
@@ -398,7 +377,7 @@ class pooling_layer : public transform_layer {
 
       if(m_pool_mode == pool_mode::average) {
         // Apply average pooling
-        DataType *activations_buffer = activations_local.Buffer(0, sample);
+        DataType *output_buffer = local_output.Buffer(0, sample);
         #pragma omp parallel for
         for(int channel = 0; channel < num_channels; ++channel) {
           for(int j = 0; j < num_per_output_channel; ++j) {
@@ -410,7 +389,7 @@ class pooling_layer : public transform_layer {
             }
             output_entry /= m_pool_size;
             const int output_index = j + channel * num_per_output_channel;
-            activations_buffer[output_index] = output_entry;
+            output_buffer[output_index] = output_entry;
           }
         }
       }
@@ -421,25 +400,23 @@ class pooling_layer : public transform_layer {
 
   /// Pooling forward propagation with im2col
   void bp_compute_im2col() {
-
-    // Throw exception if pooling mode is not max or average pooling
-    if(m_pool_mode != pool_mode::max
-        && m_pool_mode != pool_mode::average) {
-      throw lbann_exception("pooling_layer: CPU pooling layer only implements max and average pooling");
+    if(m_pool_mode != pool_mode::max && m_pool_mode != pool_mode::average) {
+      LBANN_ERROR("CPU pooling layer only supports max and average pooling");
     }
 
-    // Get local matrices
-    const Mat& prev_error_signal_local = this->m_prev_error_signal_v->LockedMatrix();
-    Mat& error_signal_local = this->m_error_signal_v->Matrix();
+    // Local matrices
+    const auto& local_gradient_wrt_output = get_local_prev_error_signals();
+    auto& local_gradient_wrt_input = get_local_error_signals();
 
-    // Get parameters
-    const int local_width = prev_error_signal_local.Width();
-    const int num_channels = this->m_prev_neuron_dims[0];
-    const int num_per_input_channel = this->m_num_neurons / num_channels;
+    // Pool parameters
+    const int local_width = local_gradient_wrt_output.Width();
+    const auto& input_dims = get_input_dims();
+    const int num_channels = input_dims[0];
+    const int num_per_input_channel = get_output_size() / num_channels;
 
     // Initialize matrices
-    Mat im2col_mat(m_pool_size * num_channels, num_per_input_channel);
-    Mat output_mat;
+    CPUMat im2col_mat(m_pool_size * num_channels, num_per_input_channel);
+    CPUMat gradient_wrt_input_col;
 
     // Iterate through data samples
     for(int sample = 0; sample < local_width; ++sample) {
@@ -452,10 +429,10 @@ class pooling_layer : public transform_layer {
 
         // Copy previous error signal to im2col matrix entries
         // corresponding to max
-        const DataType *prev_error_signal_buffer
-          = prev_error_signal_local.LockedBuffer(0, sample);
+        const DataType *gradient_wrt_output_buffer
+          = local_gradient_wrt_output.LockedBuffer(0, sample);
         const int *indices_buffer
-          = &m_max_pool_indices[sample * this->m_num_neurons];
+          = &m_max_pool_indices[sample * get_output_size()];
         #pragma omp parallel for
         for(int channel = 0; channel < num_channels; ++channel) {
           for(int j = 0; j < num_per_input_channel; ++j) {
@@ -463,7 +440,7 @@ class pooling_layer : public transform_layer {
             const int max_index = indices_buffer[input_index];
             DataType *im2col_buffer = im2col_mat.Buffer(channel*m_pool_size, j);
             im2col_buffer[max_index]
-              = prev_error_signal_buffer[input_index];
+              = gradient_wrt_output_buffer[input_index];
           }
         }
 
@@ -471,15 +448,15 @@ class pooling_layer : public transform_layer {
 
       // Compute gradient w.r.t. im2col matrix for average pooling
       if(m_pool_mode == pool_mode::average) {
-        const DataType *prev_error_signal_buffer
-          = prev_error_signal_local.LockedBuffer(0, sample);
+        const DataType *gradient_wrt_output_buffer
+          = local_gradient_wrt_output.LockedBuffer(0, sample);
         #pragma omp parallel for
         for(int channel = 0; channel < num_channels; ++channel) {
           for(int j = 0; j < num_per_input_channel; ++j) {
             DataType *im2col_buffer = im2col_mat.Buffer(channel*m_pool_size, j);
             const int input_index = j + channel * num_per_input_channel;
             const DataType output_entry
-              = prev_error_signal_buffer[input_index] / m_pool_size;
+              = gradient_wrt_output_buffer[input_index] / m_pool_size;
             for(int i = 0; i < m_pool_size; ++i) {
               im2col_buffer[i] = output_entry;
             }
@@ -489,30 +466,71 @@ class pooling_layer : public transform_layer {
       }
 
       // Compute error signal (i.e. gradient w.r.t. input)
-      El::View(output_mat, error_signal_local, El::ALL, El::IR(sample));
+      El::View(gradient_wrt_input_col, local_gradient_wrt_input,
+               El::ALL, El::IR(sample));
       col2im(im2col_mat,
-             output_mat,
+             gradient_wrt_input_col,
              num_channels,
-             this->m_num_prev_neuron_dims - 1,
-             &this->m_prev_neuron_dims[1],
-             m_pool_pads.data(),
+             input_dims.size() - 1,
+             &input_dims[1],
+             m_pads.data(),
              m_pool_dims.data(),
-             m_pool_strides.data());
+             m_strides.data());
 
     }
 
   }
 
+#ifdef LBANN_HAS_CUDNN
+  /** Copy pooling cuDNN descriptor. */
+  static void copy_pooling_cudnn_desc(const cudnnPoolingDescriptor_t& src,
+                                      cudnnPoolingDescriptor_t& dst) {
+
+    // Create or destroy descriptor if needed
+    if(src != nullptr && dst == nullptr) {
+        CHECK_CUDNN(cudnnCreatePoolingDescriptor(&dst));
+    }
+    else if(src == nullptr && dst != nullptr) {
+        CHECK_CUDNN(cudnnDestroyPoolingDescriptor(dst));
+        dst = nullptr;
+    }
+
+    // Copy descriptor data if needed
+    if(src != nullptr) {
+        cudnnPoolingMode_t mode;
+        cudnnNanPropagation_t nan_propagation;
+        int num_dims;
+        CHECK_CUDNN(cudnnGetPoolingNdDescriptor(src,
+                                                0,
+                                                &mode,
+                                                &nan_propagation,
+                                                &num_dims,
+                                                nullptr,
+                                                nullptr,
+                                                nullptr));
+        std::vector<int> dims(num_dims), pads(num_dims), strides(num_dims);
+        CHECK_CUDNN(cudnnGetPoolingNdDescriptor(src,
+                                                0,
+                                                &mode,
+                                                &nan_propagation,
+                                                &num_dims,
+                                                dims.data(),
+                                                pads.data(),
+                                                strides.data()));
+        CHECK_CUDNN(cudnnSetPoolingNdDescriptor(dst,
+                                                mode,
+                                                nan_propagation,
+                                                num_dims,
+                                                dims.data(),
+                                                pads.data(),
+                                                strides.data()));
+    }
+
+  }
+#endif // LBANN_HAS_CUDNN
+
 };
 
-template<> inline void pooling_layer<data_layout::MODEL_PARALLEL>::initialize_distributed_matrices() {
-  transform_layer::initialize_distributed_matrices<data_layout::MODEL_PARALLEL>();
-}
+} // namespace lbann
 
-template<> inline void pooling_layer<data_layout::DATA_PARALLEL>::initialize_distributed_matrices() {
-  transform_layer::initialize_distributed_matrices<data_layout::DATA_PARALLEL>();
-}
-
-}  // namespace lbann
-
-#endif  // LBANN_LAYER_POOLING_HPP_INCLUDED
+#endif // LBANN_LAYER_POOLING_HPP_INCLUDED

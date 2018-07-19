@@ -22,8 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_callback_ltfb .hpp .cpp - Manage LTFB training for a model
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef __LBANN_CALLBACKS_CALLBACK_LTFB_HPP_INCLUDED
@@ -41,6 +39,9 @@ namespace lbann {
  * model. The pairs exchange their models and evaluate both their local and the
  * received model on their validation data. The model achieving the highest
  * accuracy is retained and training continues.
+ * Extension to GAN list of weights to send are specified
+ * For example, a trainer will evaluate on its generator and partner's generator
+ * using its holdout tournament data and local discriminator
  * Current limitations:
  * - Does not transfer optimizer state, so it's best to stick to SGD without
  * momentum.
@@ -49,51 +50,46 @@ namespace lbann {
  */
 class lbann_callback_ltfb : public lbann_callback {
  public:
-  /**
-   * Initialize LFTB.
-   * @param round_size The number of minibatches in each round.
-   * @param remote_model A duplicate of the model being trained (temp workaround).
+
+  /** Constructor.
+   *  @param round_size The number of minibatches in each round.
+   *  @param increasing_metric_mode  The expectation for a good tournament metric, 
+   *  default, increasing trend is good  
+   *  @todo pair metric_mode with eval_metric
+   *  @param eval_metric Tournament evaluation metrics
+   *  @param selected_weights set of weights to exchange
    */
-  lbann_callback_ltfb(uint round_size,
-                      lbann_summary *summarizer = nullptr);
+  lbann_callback_ltfb(int round_size, 
+                      std::unordered_set<std::string> eval_metrics,
+                      bool increasing_metric_mode = true,
+                      std::unordered_set<std::string> weights_tosend = std::unordered_set<std::string>(),
+                      lbann_summary* summarizer = nullptr);
   lbann_callback_ltfb(const lbann_callback_ltfb& other);
   lbann_callback_ltfb& operator=(const lbann_callback_ltfb& other);
   ~lbann_callback_ltfb() override;
   lbann_callback_ltfb* copy() const override { return new lbann_callback_ltfb(*this); }
+  std::string name() const override { return "ltfb"; }
+
   /** Set up LTFB. */
   void setup(model *m) override;
-  /**
-   * Potentially run an LTFB round.
-   */
+  /** Potentially run an LTFB round. */
   void on_batch_begin(model *m) override;
 
-  std::string name() const override { return "ltfb"; }
  private:
+
+  /** LBANN communicator. */
   lbann_comm *m_comm;
   /** Number of minibatches in a round. */
-  uint m_round_size;
-  /** Second model for doing the tournament. */
-  model *m_remote_model = nullptr;
+  int m_round_size;
+  /** Evaluation metrics. */
+  std::unordered_set<std::string> m_eval_metrics;
+  /** Flag to determine expectation for a good tournament metric: default is increasing */
+  bool m_increasing_metric_mode;
+  /** List of weights to send. */
+  std::unordered_set<std::string> m_weights_tosend;
+  /** Weights from local model. */
+  std::vector<weights*> m_local_weights;
 
-  /**
-   * Global operation that selects partners for the current tournament.
-   * This generates unique pairs (i.e. each model competes with only one other
-   * model). If there is an odd number of models, one of them sits out.
-   * @return The local rank's partner.
-   */
-  int select_partner();
-  /**
-   * Exchange local model data with partner's.
-   */
-  void exchange(model *m, int partner);
-  /**
-   * Evaluate a model on tournament data and return its accuracy.
-   */
-  EvalType evaluate(model *m);
-  /**
-   * Replace the local model m with the remote model data.
-   */
-  void replace_with_remote(model *m);
 };
 
 }  // namespace lbann

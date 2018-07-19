@@ -28,37 +28,19 @@
 #define LBANN_LAYERS_RECONSTRUCTION_HPP_INCLUDED
 
 #include "lbann/layers/layer.hpp"
-#include "lbann/layers/io/target/target_layer.hpp"
+#include "lbann/layers/io/target/generic_target_layer.hpp"
 #include "lbann/models/model.hpp"
 #include <string>
 #include "lbann/utils/random.hpp"
 
 namespace lbann {
-template <data_layout T_layout>
-class reconstruction_layer : public target_layer {
+template <data_layout T_layout, El::Device Dev>
+class reconstruction_layer : public generic_target_layer {
  private:
 
-  /** Original layer to reconstruct. */
-  Layer *m_original_layer;
-  /** View of original layer activation */
-  AbsDistMat *original_layer_act_v;
-
  public:
-  reconstruction_layer(lbann_comm *comm,
-                       Layer *original_layer)
-    :  target_layer(comm, dynamic_cast<input_layer*>(original_layer), {}, false),
-       m_original_layer(original_layer) {
-    // Setup the data distribution
-    initialize_distributed_matrices();
-  }
-
-  reconstruction_layer(const reconstruction_layer& other) :
-    target_layer(other),
-    m_original_layer(other.m_original_layer) {}
-
-  reconstruction_layer& operator=(const reconstruction_layer& other) {
-    target_layer::operator=(other);
-    m_original_layer = other.m_original_layer;
+  reconstruction_layer(lbann_comm *comm)
+    :  generic_target_layer(comm) {
   }
 
   reconstruction_layer* copy() const override {
@@ -70,85 +52,38 @@ class reconstruction_layer : public target_layer {
 
   std::string get_description() const override {
     return std::string{} + " reconstruction_layer " +
-                           " original: " + m_original_layer->get_name() +
                            " dataLayout: " + this->get_data_layout_string(get_data_layout());
   }
 
-  //virtual inline void initialize_distributed_matrices();
-  virtual inline void initialize_distributed_matrices() {
-    target_layer::initialize_distributed_matrices<T_layout>();
-  }
   data_layout get_data_layout() const override { return T_layout; }
 
-  /** Set original layer. */
-  void set_original_layer(Layer *original_layer) {
-    m_original_layer = original_layer;
-  }
-
-  void setup_dims() override {
-    target_layer::setup_dims();
-    this->m_neuron_dims = m_original_layer->get_neuron_dims();
-    this->m_num_neuron_dims = m_original_layer->get_num_neuron_dims();
-    this->m_num_neurons = m_original_layer->get_num_neurons();
-    if(this->m_num_neurons != this->m_num_prev_neurons) {
-      throw lbann_exception("reconstruction_layer: original layer ("
-                            + std::to_string(this->m_num_neurons)
-                            + ") and reconstruction layer ("
-                            + std::to_string(this->m_num_prev_neurons)
-                            +") do not have the same number of neurons");
-    }
-  }
+  El::Device get_device_allocation() const override { return Dev; }
 
  protected:
-  void fp_set_std_matrix_view() override {
-    int64_t cur_mini_batch_size = this->m_model->get_current_mini_batch_size();
-
-    target_layer::fp_set_std_matrix_view();
-
-    //view of original layer
-    AbsDistMat& orig_acts = m_original_layer->get_activations();
-    original_layer_act_v = orig_acts.Construct(orig_acts.Grid(),orig_acts.Root());
-    El::View(*original_layer_act_v, orig_acts, El::ALL, El::IR(0, cur_mini_batch_size));
-  }
 
   void fp_compute() override {
-
-    //Copy prev (decoder) activations for greedy layer wise training
-    El::Copy(*original_layer_act_v,*this->m_activations_v);
-
+    // Differentiating objective function loss functions requires that
+    // target layer error signal matrices are zero
+    for (int i = 0; i < get_num_parents(); ++i) {
+      const auto& input = get_prev_activations(i);
+      auto& gradient_wrt_input = get_error_signals(i);
+      El::Zeros(gradient_wrt_input, input.Height(), input.Width());
+    }
   }
 
   void bp_compute() override {}
 
- public:
-  bool update_compute() override {
-    if(this->m_model->get_execution_mode() == execution_mode::training) {
-      double start = get_time();
-      this->update_time += get_time() - start;
-    }
-    return true;
-  }
+  const AbsDistMat& get_ground_truth() const override { return get_prev_activations(1); }
+
+public:
 
   void summarize_stats(lbann_summary& summarizer, int step) override {
     std::string tag = this->m_name + "/ReconstructionCost";
     execution_mode mode = this->m_model->get_execution_mode();
     summarizer.reduce_scalar(tag, this->m_model->get_objective_function()->get_mean_value(mode), step);
     // Skip target layer (for now).
-    io_layer::summarize_stats(summarizer, step);
+    //    io_layer::summarize_stats(summarizer, step);
   }
-
-  std::vector<Layer*> get_layer_pointers() override {
-    std::vector<Layer*> layers = target_layer::get_layer_pointers();
-    layers.push_back(m_original_layer);
-    return layers;
-  }
-
-  void set_layer_pointers(std::vector<Layer*> layers) override {
-    m_original_layer = layers.back();
-    layers.pop_back();
-    target_layer::set_layer_pointers(layers);
-  }
-
 };
 
 }

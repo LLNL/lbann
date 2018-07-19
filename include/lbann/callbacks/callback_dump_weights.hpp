@@ -47,8 +47,8 @@ class lbann_callback_dump_weights : public lbann_callback {
   /**
    * @param basename The basename for writing files.
    */
-  lbann_callback_dump_weights(std::string basename, int batch_interval = 1) :
-    lbann_callback(batch_interval), m_basename(std::move(basename)) {}
+  lbann_callback_dump_weights(std::string basename) :
+    lbann_callback(), m_basename(std::move(basename)) {}
   lbann_callback_dump_weights(const lbann_callback_dump_weights&) = default;
   lbann_callback_dump_weights& operator=(
     const lbann_callback_dump_weights&) = default;
@@ -62,7 +62,7 @@ class lbann_callback_dump_weights : public lbann_callback {
   /** Basename for writing files. */
   std::string m_basename;
   /// Dump weights from learning layers.
-  void dump_weights(model *m);
+  void dump_weights(model *m, std::string s = "");
 };
 
 }  // namespace lbann

@@ -52,14 +52,20 @@ class l1_weight_regularization : public objective_function_term {
 
   /** Setup L2 regularization term. */
   void setup(model& m) override;
-  
+
+  void start_evaluation() override;
   /** Get the value of the L1 regularization term. */
-  EvalType evaluate() override;
+  EvalType finish_evaluation() override;
+
+  /** Weight regularization terms are not applied to the objective
+   *  functions w.r.t. the activations
+   */
+  void differentiate() override {};
 
   /** Compute the gradient of the L1 regularization term.
    *  The gradient is computed w.r.t. the weights.
    */
-  void differentiate() override;
+  void compute_weight_regularization() override;
 
 };
 

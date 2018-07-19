@@ -112,11 +112,14 @@ bool options::get_bool(std::string option)
 {
   int result;
   if (!m_test_int(option, result)) {
+    return false;
+    /*
     std::stringstream err;
     err << __FILE__ << " " << __LINE__
         << " ::options::get_int() - failed to find option: " << option
         << ", or to convert to int";
     throw std::runtime_error(err.str());
+    */
   }
   if (result == 0) return false;
   return true;

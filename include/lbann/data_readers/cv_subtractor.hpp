@@ -33,7 +33,7 @@
 #include "cv_transform.hpp"
 #include "lbann/base.hpp"
 
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
 namespace lbann {
 
 /**
@@ -56,17 +56,36 @@ class cv_subtractor : public cv_transform {
  protected:
   // --- configuration variables ---
   /**
-   * The image to subtract from an input image.
+   * The image to subtract from an input image in the pixel-wise fashion.
    * It has channel values of a floating point type, in the scale from 0 to 1.
-   * An input image will be mapped into the scale before subtraction.
+   * An input image will be mapped into the scale before subtraction by linearly
+   * mapping the smallest representative value to 0 and the largest representative
+   * value to 1.
    */
   cv::Mat m_img_to_sub;
 
+  /**
+   * The image to divide an input image in the pixel-wise fashion.
+   * It has channel values of a floating point type, in the scale from 0 to 1.
+   * An input image will be mapped into the scale before division.
+   */
+  cv::Mat m_img_to_div;
+
+  /** uniform mean per channel used for channel-wise mean-subtraction.
+   *  This is used to construct the m_img_to_sub when the size of the image is known.
+   */
+  std::vector<lbann::DataType> m_channel_mean;
+
+  /** uniform standard deviation per channel used for channel-wise z-score (division).
+   *  This is used to construct the m_img_to_div when the size of the image is known.
+   */
+  std::vector<lbann::DataType> m_channel_stddev;
+
   // --- state variables ---
-  bool m_subtracted; ///< has been subtracted
+  bool m_applied; ///< has been subtracted
 
  public:
-  cv_subtractor() : cv_transform(), m_subtracted(false) {}
+  cv_subtractor() : cv_transform(), m_applied(false) {}
   cv_subtractor(const cv_subtractor& rhs);
   cv_subtractor& operator=(const cv_subtractor& rhs);
   cv_subtractor *clone() const override;
@@ -75,19 +94,45 @@ class cv_subtractor : public cv_transform {
 
   static cv::Mat read_binary_image_file(const std::string filename);
 
+  /// Load and set the image to subtract from every input image.
+  void set_mean(const std::string name_of_img, const int depth_code = cv_image_type<lbann::DataType>::T());
+
   /**
-   * Set the image to subtract from every input image.
+   * Set the mean fixed per channel for mean-subtracting each input image.
+   * This supports an alternative method for mean subtraction given that the
+   * mean per channel is uniform.
+   */
+  void set_mean(const std::vector<lbann::DataType> channel_mean);
+
+  /**
+   * Set the dataset-wise mean image to subtract from each input image.
+   * The image represents the pre-computed pixel-wise mean of the dataset.
    * In case that this image is not in a floating point type, it is converted to
    * one with the depth specified by depth_code.
-   */ 
-  void set(const cv::Mat& img, const int depth_code = cv_image_type<::DataType>::T());
+   */
+  void set_mean(const cv::Mat& img, const int depth_code = cv_image_type<lbann::DataType>::T());
 
-  /// Load and set the image to subtract from every input image.
-  void set(const std::string name_of_img, const int depth_code = cv_image_type<::DataType>::T());
+  /// Load and set the image to normalize the pixels of every input image.
+  void set_stddev(const std::string name_of_img, const int depth_code = cv_image_type<lbann::DataType>::T());
+
+  /**
+   * Set the dataset-wise standard deviation fixed per channel for normalizing
+   * each input image.
+   * This supports an alternative method for normalizing with stddev given that
+   * it is uniform per channel.
+   */
+  void set_stddev(const std::vector<lbann::DataType> channel_stddev);
+
+  /**
+   * Set the dataset-wise standard deviation to normalize each input image.
+   * In case that this image is not in a floating point type, it is converted to
+   * one with the depth specified by depth_code.
+   */
+  void set_stddev(const cv::Mat& img, const int depth_code = cv_image_type<lbann::DataType>::T());
 
   void reset() override {
     m_enabled = false;
-    m_subtracted = false;
+    m_applied = false;
   }
 
   /**
@@ -106,12 +151,21 @@ class cv_subtractor : public cv_transform {
    */
   bool apply(cv::Mat& image) override;
 
+  /// true if both sub and div are channel-wise
+  bool check_if_channel_wise() const;
+
   std::string get_type() const override { return "subtractor"; }
   std::string get_description() const override;
   std::ostream& print(std::ostream& os) const override;
+
+ protected:
+  /// Construct an image of the unform channel values using the channel-wise mean.
+  bool create_img_to_sub(int width, int height, int n_channels);
+  /// Construct an image of the unform channel values using the channel-wise stddev.
+  bool create_img_to_div(int width, int height, int n_channels);
 };
 
 } // end of namespace lbann
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
 
 #endif // LBANN_CV_SUBTRACTOR_HPP

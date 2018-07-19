@@ -32,41 +32,23 @@
 namespace lbann {
 
 /** Layer with constant output. */
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class constant_layer : public transform_layer {
 
  public:
   /** Constructor. */
   constant_layer(lbann_comm *comm,
                  DataType value,
-                 const std::vector<int>& neuron_dims,
-                 cudnn::cudnn_manager *cudnn = nullptr)
+                 std::vector<int> dims)
     : transform_layer(comm), m_value(value) {
-
-    // Initialize matrices
-    initialize_distributed_matrices();
-
-    // Record neuron dimensions
-    this->m_neuron_dims = neuron_dims;
-    this->m_num_neuron_dims = neuron_dims.size();
-    this->m_num_neurons = std::accumulate(neuron_dims.begin(),
-                                          neuron_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
-
-    // Constant layer has no parents
-    m_max_num_parent_layers = 0;
-
+    set_output_dims(dims);
+    m_expected_num_parent_layers = 0;
   }
 
-  /** Copy constructor. */
-  constant_layer(const constant_layer& other) = default;
-  /** Copy assignment operator. */
-  constant_layer& operator=(const constant_layer& other) = default;
-  /** Destructor. */
-  ~constant_layer() override = default;
-  /** Copy function. */
   constant_layer* copy() const override { return new constant_layer(*this); }
+  std::string get_type() const override { return "constant"; }
+  data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   /** Returns description. */
   std::string get_description() const override {
@@ -76,36 +58,24 @@ class constant_layer : public transform_layer {
      return s.str();
   }
 
-  /** Get layer type. */
-  std::string get_type() const override { return "constant"; }
-
-  virtual inline void initialize_distributed_matrices() {
-    transform_layer::initialize_distributed_matrices<T_layout>();
-  }
-  data_layout get_data_layout() const override { return T_layout; }
-
  protected:
-
-  void setup_dims() override {
-    const auto neuron_dims = this->m_neuron_dims;
-    transform_layer::setup_dims();
-    this->m_neuron_dims = neuron_dims;
-    this->m_num_neuron_dims = neuron_dims.size();
-    this->m_num_neurons = std::accumulate(neuron_dims.begin(),
-                                          neuron_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
-  }
 
   void setup_data() override {
     transform_layer::setup_data();
     if (m_value != DataType(0)) {
-      El::Fill(*m_activations, m_value);
+      El::Fill(get_activations(), m_value);
     }
   }
 
-  void fp_compute() override {}
-  void bp_compute() override {}
+  void fp_compute() override {
+    auto& activations = get_activations();
+    if (m_value == EvalType(0)) {
+      El::Zero(activations);
+    } else {
+      El::Fill(activations, m_value);
+    }
+
+  }
 
  private:
 
@@ -114,6 +84,6 @@ class constant_layer : public transform_layer {
 
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_LAYER_CONSTANT_HPP_INCLUDED
+#endif // LBANN_LAYER_CONSTANT_HPP_INCLUDED

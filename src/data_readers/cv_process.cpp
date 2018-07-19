@@ -32,7 +32,7 @@
 #include "lbann/utils/exception.hpp"
 #include <algorithm> // std::min
 
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
 namespace lbann {
 
 /**
@@ -220,11 +220,10 @@ bool cv_process::preprocess(cv::Mat& image, unsigned int tr_start, unsigned int 
   // differently from other transforms. However, if a subtractor is used as a
   // normalizer, it is treated as an ordinary transform.
 
-  const bool lazy_normalization = to_fuse_normalizer_with_copy();
+  const unsigned int num_trs = static_cast<unsigned int>(m_transforms.size());
+  const bool lazy_normalization = (tr_end == num_trs) && to_fuse_normalizer_with_copy();
   const unsigned int n_immediate_transforms 
-      = std::min((lazy_normalization?
-                  m_normalizer_idx : static_cast<unsigned int>(m_transforms.size())),
-                 tr_end);
+      = std::min((lazy_normalization?  m_normalizer_idx : num_trs), tr_end);
 
   for (size_t i = tr_start; i < n_immediate_transforms; ++i) {
     if (m_transforms[i]->determine_transform(image)) {
@@ -310,4 +309,4 @@ std::string cv_process::get_description() const {
 }
 
 } // end of namespace lbann
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV

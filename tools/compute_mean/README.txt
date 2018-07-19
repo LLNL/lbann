@@ -36,6 +36,7 @@ Usage: > ./compute_mean path_file w h [ r rw rh ] bsz save
   path_file: contains the paths to the root data directory, the image list file
              and the output directory. The list file contains the path of each
              image relative to the root directory.
+             If this is the only argument, it will create the output directories and exit.
   The parameters w, h, c, rw and rh are for cropper.
     w: the final crop width of image
     h: the final crop height of image.

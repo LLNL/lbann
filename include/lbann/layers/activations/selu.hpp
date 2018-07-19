@@ -31,42 +31,43 @@
 
 namespace lbann {
 
-/**
- * SELU: scaled exponential linear unit.
- * See: Klambauer et al. "Self-Normalizing Neural Networks", 2017.
- * https://arxiv.org/abs/1706.02515
- * By default, this assumes the goal is to normalize to 0 mean/unit variance.
- * To accomplish this, you should also normalize input to 0 mean/unit variance
- * (z-score), initialize with 0 mean, 1/n variance (He), and use the SELU
- * dropout.
+/** SELU: scaled exponential linear unit.
+ *  See: Klambauer et al. "Self-Normalizing Neural Networks", 2017.
+ *  https://arxiv.org/abs/1706.02515
+ *  By default, this assumes the goal is to normalize to 0 mean/unit
+ *  variance. To accomplish this, you should also normalize input to 0
+ *  mean/unit variance (z-score), initialize with 0 mean, 1/n variance
+ *  (He), and use the SELU dropout.
  */
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class selu_layer : public entrywise_activation_layer {
  public:
   selu_layer(lbann_comm *comm,
              DataType alpha = DataType(1.6732632423543772848170429916717),
-             DataType scale = DataType(1.0507009873554804934193349852946)) :
-    entrywise_activation_layer(comm),
-    m_alpha(alpha), m_scale(scale)
-  {
-    initialize_distributed_matrices();
-  }
-
+             DataType scale = DataType(1.0507009873554804934193349852946))
+    : entrywise_activation_layer(comm), m_alpha(alpha), m_scale(scale) {}
   selu_layer* copy() const override { return new selu_layer(*this); }
-
   std::string get_type() const override { return "SELU"; }
-
-  inline void initialize_distributed_matrices() override {
-    entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
-  }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
+
+  std::string get_description() const override {
+    return std::string {}
+      + " selu" + " alpha: " + std::to_string(m_alpha) + " scale: "
+      + std::to_string(m_scale) + " dataLayout: "
+      + this->get_data_layout_string(get_data_layout());
+  }
 
  protected:
-  DataType activation_function(DataType z) override {
-    return (z >= DataType(0)) ? m_scale*z : m_scale*(m_alpha*std::expm1(z));
+  DataType activation(DataType x) const override {
+    return (x >= DataType(0) ?
+            m_scale * x :
+            m_scale * (m_alpha * std::expm1(x)));
   }
-  DataType activation_function_gradient(DataType z) override {
-    return (z >= DataType(0)) ? m_scale : m_scale*m_alpha*std::exp(z);
+  DataType activation_derivative(DataType x) const override {
+    return (x >= DataType(0) ?
+            m_scale :
+            m_scale * m_alpha * std::exp(x));
   }
  private:
   /** Alpha parameter for the ELU. */
@@ -75,6 +76,6 @@ class selu_layer : public entrywise_activation_layer {
   DataType m_scale;
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // SELU_HPP_INCLUDED
+#endif // SELU_HPP_INCLUDED

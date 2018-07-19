@@ -63,11 +63,14 @@ class mean_squared_error_loss : public loss_function {
    *  This function updates the objective function value with the mean
    *  value of the mean absolute deviation across the mini-batch.
    */
-  EvalType evaluate_compute(const AbsDistMat& prediction,
-                            const AbsDistMat& ground_truth) override;
+  void start_evaluate_compute(const AbsDistMat& prediction,
+                              const AbsDistMat& ground_truth) override;
+
+  EvalType finish_evaluate_compute(const AbsDistMat& prediction,
+                                   const AbsDistMat& ground_truth) override;
 
   /** Compute the gradient of the mean squared error objective function.
-   *  Given a prediction \f$y\f$ and ground truth \f$\hat{y}\f$, the
+   *  Given a prediction \f$\hat{y}\f$ and ground truth \f$y\f$, the
    *  gradient of the mean squared error is
    *    \f[
    *    \nabla_y MSE (y,\hat{y}) = \frac{2}{n} (y - \hat{y})
@@ -77,6 +80,11 @@ class mean_squared_error_loss : public loss_function {
                              const AbsDistMat& ground_truth,
                              AbsDistMat& gradient) override;
 
+ private:
+  /** Sum of the the squared errors. */
+  EvalType m_sum;
+  /** Non-blocking allreduce request. */
+  Al::request m_allreduce_req;
 };
 
 } // namespace lbann

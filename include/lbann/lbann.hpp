@@ -36,7 +36,6 @@
 /// Models
 #include "lbann/models/sequential.hpp"
 #include "lbann/models/directed_acyclic_graph.hpp"
-#include "lbann/models/recurrent.hpp"
 #include "lbann/models/greedy_layerwise_autoencoder.hpp"
 #include "lbann/models/siamese.hpp"
 
@@ -45,7 +44,7 @@
 #include "lbann/layers/activations/bent_identity.hpp"
 #include "lbann/layers/activations/elu.hpp"
 #include "lbann/layers/activations/exponential.hpp"
-#include "lbann/layers/activations/id.hpp"
+#include "lbann/layers/activations/identity.hpp"
 #include "lbann/layers/activations/leaky_relu.hpp"
 #include "lbann/layers/activations/relu.hpp"
 #include "lbann/layers/activations/selu.hpp"
@@ -55,11 +54,20 @@
 #include "lbann/layers/activations/softplus.hpp"
 #include "lbann/layers/activations/swish.hpp"
 #include "lbann/layers/activations/tanh.hpp"
+#include "lbann/layers/activations/power.hpp"
+#include "lbann/layers/activations/sigmoid_bce_with_logits.hpp"
+#include "lbann/layers/activations/abs.hpp"
+#include "lbann/layers/activations/l2_loss.hpp"
+#include "lbann/layers/activations/log.hpp"
 
 /// Learning Layers
 #include "lbann/layers/learning/fully_connected.hpp"
 #include "lbann/layers/learning/convolution.hpp"
 #include "lbann/layers/learning/deconvolution.hpp"
+
+/// Loss Layers
+#include "lbann/layers/loss/cross_entropy.hpp"
+#include "lbann/layers/loss/top_k_categorical_accuracy.hpp"
 
 /// Transform Layers
 #include "lbann/layers/transform/reshape.hpp"
@@ -67,11 +75,26 @@
 #include "lbann/layers/transform/unpooling.hpp"
 #include "lbann/layers/transform/split.hpp"
 #include "lbann/layers/transform/sum.hpp"
+#include "lbann/layers/transform/weighted_sum.hpp"
 #include "lbann/layers/transform/slice.hpp"
 #include "lbann/layers/transform/concatenation.hpp"
 #include "lbann/layers/transform/constant.hpp"
-#include "lbann/layers/transform/noise.hpp"
+#include "lbann/layers/transform/dummy.hpp"
 #include "lbann/layers/transform/safe_inv.hpp"
+#include "lbann/layers/transform/hadamard.hpp"
+#include "lbann/layers/transform/zero.hpp"
+#include "lbann/layers/transform/reduction.hpp"
+#include "lbann/layers/transform/evaluation.hpp"
+#include "lbann/layers/transform/gaussian.hpp"
+#include "lbann/layers/transform/bernoulli.hpp"
+#include "lbann/layers/transform/uniform.hpp"
+#include "lbann/layers/transform/crop.hpp"
+#include "lbann/layers/transform/categorical_random.hpp"
+#include "lbann/layers/transform/discrete_random.hpp"
+#include "lbann/layers/transform/stop_gradient.hpp"
+#include "lbann/layers/transform/max.hpp"
+#include "lbann/layers/transform/min.hpp"
+#include "lbann/layers/transform/in_top_k.hpp"
 
 /// Regularization layers.
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
@@ -80,22 +103,24 @@
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 
 /// I/O Layers
-#include "lbann/layers/io/input/input_layer_distributed_minibatch.hpp"
-#include "lbann/layers/io/target/target_layer_distributed_minibatch.hpp"
-#include "lbann/layers/io/input/input_layer_partitioned_minibatch.hpp"
-#include "lbann/layers/io/target/target_layer_partitioned_minibatch.hpp"
+#include "lbann/layers/io/input/input_layer.hpp"
+#include "lbann/layers/io/target/target_layer.hpp"
+#include "lbann/layers/io/input/repeated_input_layer.hpp"
 
 /// Reconstruction Layer
 #include "lbann/layers/io/target/reconstruction.hpp"
 
 /// Data Readers
-#include "lbann/data_readers/data_reader_imagenet_org.hpp"
 #include "lbann/data_readers/data_reader_imagenet.hpp"
-#include "lbann/data_readers/data_reader_imagenet_single.hpp"
 #include "lbann/data_readers/data_reader_imagenet_patches.hpp"
 #include "lbann/data_readers/data_reader_cifar10.hpp"
 #include "lbann/data_readers/data_reader_mnist.hpp"
+#include "lbann/data_readers/data_reader_multi_images.hpp"
+#include "lbann/data_readers/data_reader_mnist_siamese.hpp"
+#include "lbann/data_readers/data_reader_triplet.hpp"
 #include "lbann/data_readers/data_reader_synthetic.hpp"
+#include "lbann/data_readers/data_reader_jag.hpp"
+#include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/data_readers/data_reader_nci.hpp"
 #include "lbann/data_readers/data_reader_numpy.hpp"
 #include "lbann/data_readers/data_reader_csv.hpp"
@@ -103,6 +128,12 @@
 #include "lbann/data_readers/data_reader_merge_features.hpp"
 #include "lbann/data_readers/data_reader_ascii.hpp"
 #include "lbann/data_readers/data_reader_pilot2_molecular.hpp"
+#include "lbann/data_readers/data_reader_mesh.hpp"
+
+/// Data Store
+#include "lbann/data_store/generic_data_store.hpp"
+#include "lbann/data_store/data_store_imagenet.hpp"
+//#include "lbann/data_store/data_store_merge_samples.hpp"
 
 /// Callbacks
 #include "lbann/callbacks/callback_check_init.hpp"
@@ -110,9 +141,9 @@
 #include "lbann/callbacks/callback_checksmall.hpp"
 #include "lbann/callbacks/callback_check_dataset.hpp"
 #include "lbann/callbacks/callback_print.hpp"
+#include "lbann/callbacks/callback_timer.hpp"
 #include "lbann/callbacks/callback_io.hpp"
 #include "lbann/callbacks/callback_summary.hpp"
-#include "lbann/callbacks/callback_timer.hpp"
 #include "lbann/callbacks/callback_learning_rate.hpp"
 #include "lbann/callbacks/callback_debug.hpp"
 #include "lbann/callbacks/callback_debug_io.hpp"
@@ -131,6 +162,11 @@
 #include "lbann/callbacks/callback_gradient_check.hpp"
 #include "lbann/callbacks/callback_timeline.hpp"
 #include "lbann/callbacks/callback_checkpoint.hpp"
+#include "lbann/callbacks/callback_save_model.hpp"
+#include "lbann/callbacks/callback_replace_weights.hpp"
+#include "lbann/callbacks/callback_gpu_memory_usage.hpp"
+#include "lbann/callbacks/callback_sync_layers.hpp"
+#include "lbann/callbacks/callback_sync_selected.hpp"
 
 /// Weights and weight initializers
 #include "lbann/weights/weights.hpp"
@@ -152,18 +188,25 @@
 #include "lbann/objective_functions/loss_functions/cross_entropy_with_uncertainty.hpp"
 #include "lbann/objective_functions/loss_functions/geom_negloglike.hpp"
 #include "lbann/objective_functions/loss_functions/mean_absolute_deviation.hpp"
+#include "lbann/objective_functions/loss_functions/mean_absolute_error.hpp"
 #include "lbann/objective_functions/loss_functions/poisson_negloglike.hpp"
 #include "lbann/objective_functions/loss_functions/polya_negloglike.hpp"
 #include "lbann/objective_functions/weight_regularization/l1.hpp"
 #include "lbann/objective_functions/weight_regularization/l2.hpp"
 #include "lbann/objective_functions/weight_regularization/group_lasso.hpp"
+#include "lbann/objective_functions/layer_term.hpp"
 
 /// Metrics
+#include "lbann/metrics/layer_metric.hpp"
 #include "lbann/metrics/categorical_accuracy.hpp"
 #include "lbann/metrics/top_k_categorical_accuracy.hpp"
 #include "lbann/metrics/mean_squared_error.hpp"
 #include "lbann/metrics/mean_absolute_deviation.hpp"
 #include "lbann/metrics/pearson_correlation.hpp"
+#include "lbann/metrics/r2.hpp"
+#include "lbann/metrics/boolean_accuracy.hpp"
+#include "lbann/metrics/boolean_false_positives.hpp"
+#include "lbann/metrics/boolean_false_negatives.hpp"
 
 /// Utilities, exceptions, etc.
 #include "lbann/utils/exception.hpp"
@@ -175,5 +218,6 @@
 #include "lbann/io/persist.hpp"
 #include "lbann/utils/compiler_control.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
+#include "lbann/utils/peek_map.hpp"
 
 #endif // LBANN_HPP_INCLUDED

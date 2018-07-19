@@ -28,8 +28,48 @@
 
 namespace lbann {
 
-EvalType binary_cross_entropy::evaluate_compute(const AbsDistMat& predictions,
-                                                const AbsDistMat& ground_truth) {
+#ifdef LBANN_DEBUG
+namespace binary_cross_entropy_debug {
+  /** Check inputs for binary cross entropy.
+   *  Throws an exception if the inputs are invalid, e.g. if the
+   *  inputs are not in [0,1] or if the binary cross entropy is
+   *  singular.
+   */
+  void check_entry(int global_row, int global_col,
+                   DataType true_val, DataType pred_val) {
+    if (!(true_val >= DataType(0) && true_val <= DataType(1))) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "binary cross entropy requires ground truth in [0,1], but "
+          << "ground_truth(" << global_row << "," << global_col << ")"
+          << "=" << true_val;
+      throw lbann_exception(err.str());
+    }
+    if (!(pred_val >= DataType(0) && pred_val <= DataType(1))) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "binary cross entropy requires predictions in [0,1], but "
+          << "predictions(" << global_row << "," << global_col << ")"
+          << "=" << pred_val;
+      throw lbann_exception(err.str());
+    }
+    if ((pred_val == DataType(0) && true_val != DataType(0))
+        || (pred_val == DataType(1) && true_val != DataType(1))) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "binary cross entropy is singular since "
+          << "predictions(" << global_row << "," << global_col << ")"
+          << "=" << pred_val << " and "
+          << "ground_truth(" << global_row << "," << global_col << ")"
+          << "=" << true_val;
+      throw lbann_exception(err.str());
+    }
+  }
+} // namespace binary_cross_entropy_debug
+#endif // LBANN_DEBUG
+
+EvalType binary_cross_entropy::finish_evaluate_compute(
+  const AbsDistMat& predictions, const AbsDistMat& ground_truth) {
 
   // Local matrices
   const Mat& predictions_local = predictions.LockedMatrix();
@@ -45,17 +85,19 @@ EvalType binary_cross_entropy::evaluate_compute(const AbsDistMat& predictions,
   #pragma omp parallel for reduction(+:sum) collapse(2)
   for (int col = 0; col < local_width; ++col) {
     for (int row = 0; row < local_height; ++row) {
-      const EvalType true_val = ground_truth_local(row, col);
-      const EvalType pred_val = predictions_local(row, col);
-      if (true_val == EvalType(1)) {
-        sum += - std::log(pred_val);
-      } else if (true_val == EvalType(0)) {
-        sum += - std::log(EvalType(1) - pred_val);
-      } else {
-        std::stringstream err;
-        err << __FILE__ << " " << __LINE__ << " :: "
-            << "binary cross entropy loss function requires binary ground truth";
-        throw lbann_exception(err.str());
+      const DataType true_val = ground_truth_local(row, col);
+      const DataType pred_val = predictions_local(row, col);
+      #ifdef LBANN_DEBUG
+      binary_cross_entropy_debug::check_entry(ground_truth.GlobalRow(row),
+                                              ground_truth.GlobalCol(col),
+                                              true_val,
+                                              pred_val);
+      #endif // LBANN_DEBUG
+      if (true_val > DataType(0)) {
+        sum += - true_val * std::log(pred_val);
+      }
+      if (true_val < DataType(1)) {
+        sum += - (EvalType(1) - true_val) * std::log(EvalType(1) - pred_val);
       }
     }
   }
@@ -84,20 +126,23 @@ void binary_cross_entropy::differentiate_compute(const AbsDistMat& predictions,
     for (El::Int row = 0; row < local_height; ++row) {
       const DataType true_val = ground_truth_local(row, col);
       const DataType pred_val = predictions_local(row, col);
-      DataType& grad_val = gradient_local(row, col);
-      if (true_val == DataType(1)) {
-        grad_val = - DataType(1) / pred_val;
-      } else if (true_val == DataType(0)) {
-        grad_val = DataType(1) / (DataType(1) - pred_val);
-      } else {
-        std::stringstream err;
-        err << __FILE__ << " " << __LINE__ << " :: "
-            << "binary cross entropy loss function requires binary ground truth";
-        throw lbann_exception(err.str());
+      #ifdef LBANN_DEBUG
+      binary_cross_entropy_debug::check_entry(ground_truth.GlobalRow(row),
+                                              ground_truth.GlobalCol(col),
+                                              true_val,
+                                              pred_val);
+      #endif // LBANN_DEBUG
+      DataType grad_val = DataType(0);
+      if (true_val > DataType(0)) {
+        grad_val += - true_val / pred_val;
       }
+      if (true_val < DataType(1)) {
+        grad_val += (DataType(1) - true_val) / (DataType(1) - pred_val);
+      }
+      gradient_local(row, col) = grad_val;
     }
   }
 
 }
 
-}  // namespace lbann
+} // namespace lbann

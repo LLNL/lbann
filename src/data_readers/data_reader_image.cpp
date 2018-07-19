@@ -43,6 +43,7 @@ image_data_reader::image_data_reader(const image_data_reader& rhs)
     m_image_width(rhs.m_image_width),
     m_image_height(rhs.m_image_height),
     m_image_num_channels(rhs.m_image_num_channels),
+    m_image_linearized_size(rhs.m_image_linearized_size),
     m_num_labels(rhs.m_num_labels)
 {}
 
@@ -53,15 +54,21 @@ image_data_reader& image_data_reader::operator=(const image_data_reader& rhs) {
   m_image_width = rhs.m_image_width;
   m_image_height = rhs.m_image_height;
   m_image_num_channels = rhs.m_image_num_channels;
+  m_image_linearized_size = rhs.m_image_linearized_size;
   m_num_labels = rhs.m_num_labels;
 
   return (*this);
+}
+
+void image_data_reader::set_linearized_image_size() {
+  m_image_linearized_size = m_image_width * m_image_height * m_image_num_channels;
 }
 
 void image_data_reader::set_defaults() {
   m_image_width = 256;
   m_image_height = 256;
   m_image_num_channels = 3;
+  set_linearized_image_size();
   m_num_labels = 1000;
 }
 
@@ -81,6 +88,7 @@ void image_data_reader::set_input_params(const int width, const int height, cons
     err << __FILE__<<" "<<__LINE__<< " :: Imagenet data reader setup error: invalid number of channels of input images";
     throw lbann_exception(err.str());
   }
+  set_linearized_image_size();
   if (num_labels > 0) {
     m_num_labels = num_labels;
   } else if (num_labels < 0) {
@@ -90,8 +98,8 @@ void image_data_reader::set_input_params(const int width, const int height, cons
   }
 }
 
-bool image_data_reader::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
-  const int label = m_image_list[data_id].second;
+bool image_data_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) {
+  const label_t label = m_image_list[data_id].second;
   Y.Set(label, mb_idx, 1);
   return true;
 }
@@ -112,7 +120,7 @@ void image_data_reader::load() {
 
   while (!feof(fplist)) {
     char imagepath[512];
-    int imagelabel;
+    label_t imagelabel;
     if (fscanf(fplist, "%s%d", imagepath, &imagelabel) <= 1) {
       break;
     }
@@ -126,6 +134,17 @@ void image_data_reader::load() {
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
 
   select_subset_of_data();
+}
+
+std::vector<image_data_reader::sample_t> image_data_reader::get_image_list_of_current_mb() const {
+  std::vector<sample_t> ret;
+  ret.reserve(m_mini_batch_size);
+
+  for (El::Int i = 0; i < m_indices_fetched_per_mb.Height(); ++i) {
+    El::Int index = m_indices_fetched_per_mb.Get(i, 0);
+    ret.push_back(m_image_list[index]);
+  }
+  return ret;
 }
 
 }  // namespace lbann

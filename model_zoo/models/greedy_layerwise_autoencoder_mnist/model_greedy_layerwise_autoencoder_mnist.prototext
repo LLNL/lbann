@@ -6,8 +6,6 @@ model {
   num_epochs: 10
   num_parallel_readers: 0
   procs_per_model: 0
-  use_cudnn: true
-  num_gpus: -1
 
   ###################################################
   # Objective function
@@ -49,12 +47,17 @@ model {
   # data
   layer {
     name: "data"
+    children: "fc1 reconstruction"
     data_layout: "model_parallel"
-    input_distributed_minibatch {}
+    input {
+      io_buffer: "distributed"
+      target_mode: "reconstruction"
+    }
   }
 
   # encode1
   layer {
+    name: "fc1:
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 100
@@ -101,12 +104,15 @@ model {
     }
   }
   layer {
+    name: "sigmoid"
     data_layout: "model_parallel"
     sigmoid {}
   }
 
   # reconstruction
   layer {
+    name: "reconstruction"
+    parents: "sigmoid data"
     data_layout: "model_parallel"
     reconstruction {
       original_layer: "data"

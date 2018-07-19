@@ -31,7 +31,6 @@
 
 #include "lbann/models/model.hpp"
 #include "lbann/layers/layer.hpp"
-#include "lbann/layers/activations/activation.hpp"
 #include "lbann/data_readers/data_reader.hpp"
 #include "lbann/io/persist.hpp"
 #include <vector>
@@ -60,14 +59,8 @@ class sequential_model : public model {
   /** Get model name. */
   std::string name() const override { return "sequential_model"; }
 
-  bool save_to_checkpoint(int fd, const char *filename, size_t *bytes);
-  /// Load model from checkpoint
-  /** @todo This is old and likely broken */
-  bool load_from_checkpoint(int fd, const char *filename, size_t *bytes);
-
-  bool save_to_checkpoint_shared(persist& p) override;
-  bool load_from_checkpoint_shared(persist& p) override;
-
+  /** Write model to proto file */
+  void write_proto(lbann_data::Model* proto) override;
  protected:
 
   /** Set up topology of layer graph.

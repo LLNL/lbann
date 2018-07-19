@@ -31,37 +31,30 @@
 
 namespace lbann {
 
-/**
- * Bent Identity activation function.
- * See: https://en.wikipedia.org/wiki/Bent_Identity_function
+/** Bent identity activation function.
+ *  See https://en.wikipedia.org/wiki/Bent_Identity_function
  */
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class bent_identity_layer : public entrywise_activation_layer {
  public:
-
-  bent_identity_layer(lbann_comm *comm) :
-    entrywise_activation_layer(comm) { 
-    initialize_distributed_matrices(); 
-  }
-
+  bent_identity_layer(lbann_comm *comm)
+    : entrywise_activation_layer(comm) {}
   bent_identity_layer* copy() const override { return new bent_identity_layer(*this); }
-
   std::string get_type() const override { return "bent identity"; }
-
-  inline void initialize_distributed_matrices() override {
-    entrywise_activation_layer::initialize_distributed_matrices<T_layout>();
-  }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
  protected:
-  DataType activation_function(DataType z) override {
-    return (std::sqrt(z*z + DataType(1)) - DataType(1))/DataType(2) + z;
+  DataType activation(DataType x) const override {
+    const DataType one = DataType(1);
+    return (std::sqrt(x*x + one) - one) / 2 + x;
   }
-  DataType activation_function_gradient(DataType z) override {
-    return z/(DataType(2)*std::sqrt(z*z + DataType(1))) + DataType(1);
+  DataType activation_derivative(DataType x) const override {
+    const DataType one = DataType(1);
+    return x / (2 * std::sqrt(x*x + one)) + one;
   }
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // BENT_IDENTITY_HPP_INCLUDED
+#endif // BENT_IDENTITY_HPP_INCLUDED

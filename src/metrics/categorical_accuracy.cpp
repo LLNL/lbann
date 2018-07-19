@@ -25,11 +25,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/metrics/categorical_accuracy.hpp"
-#include "lbann/layers/io/target/target_layer.hpp"
+#include "lbann/layers/io/target/generic_target_layer.hpp"
 
 namespace lbann {
 
-categorical_accuracy_metric::categorical_accuracy_metric(lbann_comm *comm) 
+categorical_accuracy_metric::categorical_accuracy_metric(lbann_comm *comm)
   : metric(comm), m_prediction_values(nullptr) {}
 
 categorical_accuracy_metric::categorical_accuracy_metric(const categorical_accuracy_metric& other)
@@ -59,12 +59,35 @@ categorical_accuracy_metric::~categorical_accuracy_metric() {
 void categorical_accuracy_metric::setup(model& m) {
   metric::setup(m);
   const El::DistData dist_data(get_target_layer().get_prediction());
+  const El::Device dev = get_target_layer().get_prediction().GetLocalDevice();
   if (dist_data.colDist == El::MC
       && dist_data.rowDist == El::MR) {
-    m_prediction_values = new StarMRMat(*dist_data.grid, dist_data.root);
+    switch(dev) {
+    case El::Device::CPU:
+      m_prediction_values = new StarMRMat<El::Device::CPU>(*dist_data.grid, dist_data.root); break;
+#ifdef LBANN_HAS_GPU
+    case El::Device::GPU:
+#endif // LBANN_HAS_GPU
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid matrix data allocation";
+      throw lbann_exception(err.str());
+    }
   } else if (dist_data.colDist == El::STAR
              && dist_data.rowDist == El::VC) {
-    m_prediction_values = new StarVCMat(*dist_data.grid, dist_data.root);
+    switch(dev) {
+    case El::Device::CPU:
+      m_prediction_values = new StarVCMat<El::Device::CPU>(*dist_data.grid, dist_data.root); break;
+#ifdef LBANN_HAS_GPU
+    case El::Device::GPU:
+#endif // LBANN_HAS_GPU
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid matrix data allocation";
+      throw lbann_exception(err.str());
+    }
   } else {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
@@ -85,14 +108,14 @@ EvalType categorical_accuracy_metric::evaluate_compute(const AbsDistMat& predict
   const int width = prediction.Width();
   const int local_height = prediction.LocalHeight();
   const int local_width = prediction.LocalWidth();
-  
+
   // Get local matrices
   const Mat& prediction_local = prediction.LockedMatrix();
   const Mat& ground_truth_local = ground_truth.LockedMatrix();
 
   // Initialize workspace matrices
   m_prediction_values->Resize(1, width);
-  Mat& prediction_values_local = m_prediction_values->Matrix();
+  CPUMat& prediction_values_local = m_prediction_values->Matrix();
   m_prediction_indices.resize(local_width);
 
   // Find largest value in each column of prediction matrix
@@ -143,6 +166,14 @@ EvalType categorical_accuracy_metric::evaluate_compute(const AbsDistMat& predict
     const int global_row = m_prediction_indices[col];
     if (ground_truth.IsLocalRow(global_row)) {
       const int row = ground_truth.LocalRow(global_row);
+      if (row == ground_truth.Height()) {
+        std::stringstream err;
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << "ground_truth matrix has invalid index "
+            << "(row=" << row << " x "
+            << "col=" << col << ")";
+        throw lbann_exception(err.str());
+      }
       if (ground_truth_local(row, col) != DataType(0)) {
         ++correct_predictions;
       }

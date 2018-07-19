@@ -58,16 +58,30 @@ class objective_function {
 
   /** Setup objective function. */
   void setup(model& m);
-  
-  /** Evaluate the objective function.
+
+  /** Start evaluating the objective function.
+   *  This function takes the model's current mini-batch size. If
+   *  multiple models are being trained, the current mini-batch size
+   *  may be different from the effective mini-batch size.
+   *  The result is not guaranteed to be available until finish_evaluation is
+   *  called.
+   */
+  void start_evaluation(execution_mode mode, int mini_batch_size);
+
+  /** Complete evaluation of the objective function.
    *  The result is stored in history.
    */
-  EvalType evaluate(execution_mode mode);
-  
+  EvalType finish_evaluation(execution_mode mode, int mini_batch_size);
+
   /** Compute the objective function gradient.
    *  The gradient is with respect to the objective function inputs
    */
   void differentiate();
+
+  /** Compute the gradient of the weight regularization term.
+   *  The gradient is computed w.r.t. the weights.
+   */
+  void compute_weight_regularization();
 
   /** Clear all statistics. */
   void reset_statistics() { m_statistics.clear(); }
@@ -75,8 +89,8 @@ class objective_function {
   void reset_statistics(execution_mode mode) { m_statistics.erase(mode); }
 
   /** Get mean objective function value.
-   *  The mean is over the mini-batches, even if the mini-batch sizes
-   *  are not identical.
+   *  This is a weighted average such that each mini-batch sample makes
+   *  an equal contribution.
    */
   EvalType get_mean_value(execution_mode mode) const;
   /** Get number of samples for statistics. */
@@ -100,22 +114,6 @@ class objective_function {
     m_evaluation_time = 0.0;
     m_differentiation_time = 0.0;
   }
-
-  bool save_to_checkpoint_shared(lbann::persist& p); //{
-    //for (objective_function_term* term : m_terms) {
-    //  term->get_objective_function()->saveToCheckpointShared(p);
-    //}
-    //return true;
-
-  //}
-
-  bool load_from_checkpoint_shared(lbann::persist& p);// {
-    //for (objective_function_term* term : m_terms) {
-    //  term->get_objective_function()->loadFromCheckpointShared(p);
-    //}
-
-   //return true;
-   //}
 
  private:
 

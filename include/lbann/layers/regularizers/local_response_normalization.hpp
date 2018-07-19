@@ -22,8 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_layer_local_response_normalization .hpp .cpp - LRN layer
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_LAYER_LOCAL_RESPONSE_NORMALIZATION_HPP_INCLUDED
@@ -31,89 +29,104 @@
 
 #include <vector>
 #include "lbann/layers/regularizers/regularizer.hpp"
-#include "lbann/utils/cudnn_wrapper.hpp"
+#include "lbann/utils/cudnn.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
-/// Local Response Normalization layer
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
+/** Local response normalization layer. */
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class local_response_normalization_layer : public regularizer_layer {
  private:
 
-  /// Normalization window width
+  /** Normalization window width. */
   int m_window_width;
-  /// LRN alpha scaling parameter
-  DataType m_lrn_alpha;
-  /// LRN beta power parameter
-  DataType m_lrn_beta;
-  /// LRN k parameter
-  DataType m_lrn_k;
+  /** LRN alpha scaling parameter. */
+  DataType m_alpha;
+  /** LRN beta power parameter. */
+  DataType m_beta;
+  /** LRN k parameter. */
+  DataType m_k;
 
-#ifdef __LIB_CUDNN
-  /// Pooling descriptor
+#ifdef LBANN_HAS_CUDNN
+  /** LRN cuDNN descriptor. */
   cudnnLRNDescriptor_t m_lrn_cudnn_desc;
-#endif // __LIB_CUDNN
+  /** Tensor cuDNN descriptors. */
+  cudnn::data_parallel_layer_tensor_manager m_tensors_cudnn_desc;
+#endif // LBANN_HAS_CUDNN
 
  public:
-  local_response_normalization_layer
-  (lbann_comm *comm,
-   int window_width,
-   DataType lrn_alpha,
-   DataType lrn_beta,
-   DataType lrn_k,
-   cudnn::cudnn_manager *cudnn = nullptr)
+  local_response_normalization_layer(lbann_comm *comm,
+                                     int window_width,
+                                     DataType alpha,
+                                     DataType beta,
+                                     DataType k)
     : regularizer_layer(comm),
-      m_window_width(window_width), m_lrn_alpha(lrn_alpha), m_lrn_beta(lrn_beta),
-      m_lrn_k(lrn_k) {
+      m_window_width(window_width), m_alpha(alpha), m_beta(beta), m_k(k)
+#ifdef LBANN_HAS_CUDNN
+    , m_lrn_cudnn_desc(nullptr),
+      m_tensors_cudnn_desc(this)
+#endif // LBANN_HAS_CUDNN
+  {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "local_response_normalization only supports DATA_PARALLEL");
-    // Setup the data distribution
-    initialize_distributed_matrices();
-
-  #ifdef __LIB_CUDNN
-
-    // Initialize cuDNN objects
-    m_lrn_cudnn_desc = nullptr;
-
-    // Initialize GPU memory if using GPU
-    if(cudnn) {
-      this->m_using_gpus = true;
-      this->m_cudnn = cudnn;
-    }
-  #endif // __LIB_CUDNN
   }
 
-  local_response_normalization_layer(const local_response_normalization_layer& other) :
-    regularizer_layer(other),
-    m_window_width(other.m_window_width),
-    m_lrn_alpha(other.m_lrn_alpha),
-    m_lrn_beta(other.m_lrn_beta),
-    m_lrn_k(other.m_lrn_k) {
-  #ifdef __LIB_CUDNN
-    m_lrn_cudnn_desc = nullptr;
-    cudnn::copy_lrn_cudnn_desc(other.m_lrn_cudnn_desc, m_lrn_cudnn_desc);
-  #endif // __LIB_CUDNN
+  local_response_normalization_layer(const local_response_normalization_layer& other)
+    : regularizer_layer(other),
+      m_window_width(other.m_window_width),
+      m_alpha(other.m_alpha),
+      m_beta(other.m_beta),
+      m_k(other.m_k)
+#ifdef LBANN_HAS_CUDNN
+    , m_lrn_cudnn_desc(nullptr),
+      m_tensors_cudnn_desc(other.m_tensors_cudnn_desc)
+#endif // LBANN_HAS_CUDNN
+  {
+#ifdef LBANN_HAS_CUDNN
+    if (other.m_lrn_cudnn_desc != nullptr) {
+      unsigned n;
+      double alpha, beta, k;
+      CHECK_CUDNN(cudnnCreateLRNDescriptor(&m_lrn_cudnn_desc));
+      CHECK_CUDNN(cudnnGetLRNDescriptor(other.m_lrn_cudnn_desc, &n, &alpha, &beta, &k));
+      CHECK_CUDNN(cudnnSetLRNDescriptor(m_lrn_cudnn_desc, n, alpha, beta, k));
+    }
+    m_tensors_cudnn_desc.set_layer(this);
+#endif // LBANN_HAS_CUDNN
   }
 
   local_response_normalization_layer& operator=(const local_response_normalization_layer& other) {
     regularizer_layer::operator=(other);
     m_window_width = other.m_window_width;
-    m_lrn_alpha = other.m_lrn_alpha;
-    m_lrn_beta = other.m_lrn_beta;
-    m_lrn_k = other.m_lrn_k;
-  #ifdef __LIB_CUDNN
-    cudnn::copy_lrn_cudnn_desc(other.m_lrn_cudnn_desc, m_lrn_cudnn_desc);
-  #endif // __LIB_CUDNN
+    m_alpha = other.m_alpha;
+    m_beta = other.m_beta;
+    m_k = other.m_k;
+#ifdef LBANN_HAS_CUDNN
+    if (other.m_lrn_cudnn_desc != nullptr
+        && m_lrn_cudnn_desc == nullptr) {
+      CHECK_CUDNN(cudnnCreateLRNDescriptor(&m_lrn_cudnn_desc));
+    } else if (other.m_lrn_cudnn_desc == nullptr
+               && m_lrn_cudnn_desc != nullptr) {
+      CHECK_CUDNN(cudnnDestroyLRNDescriptor(m_lrn_cudnn_desc));
+      m_lrn_cudnn_desc = nullptr;
+    }
+    if (other.m_lrn_cudnn_desc != nullptr) {
+      unsigned n;
+      double alpha, beta, k;
+      CHECK_CUDNN(cudnnGetLRNDescriptor(other.m_lrn_cudnn_desc, &n, &alpha, &beta, &k));
+      CHECK_CUDNN(cudnnSetLRNDescriptor(m_lrn_cudnn_desc, n, alpha, beta, k));
+    }
+    m_tensors_cudnn_desc = other.m_tensors_cudnn_desc;
+    m_tensors_cudnn_desc.set_layer(this);
+#endif // LBANN_HAS_CUDNN
   }
 
   ~local_response_normalization_layer() override {
-  #ifdef __LIB_CUDNN
-    // Destroy cuDNN objects
-    if(m_lrn_cudnn_desc) {
-      CHECK_CUDNN(cudnnDestroyLRNDescriptor(m_lrn_cudnn_desc));
+#ifdef LBANN_HAS_CUDNN
+    if (m_lrn_cudnn_desc != nullptr) {
+      cudnnDestroyLRNDescriptor(m_lrn_cudnn_desc);
     }
-  #endif // __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
   }
 
   local_response_normalization_layer* copy() const override {
@@ -125,36 +138,31 @@ class local_response_normalization_layer : public regularizer_layer {
 
   std::string get_description() const override {
     return " LRN window width: " + std::to_string(m_window_width) + " alpha: " +
-      std::to_string(m_lrn_alpha) + " beta: " + std::to_string(m_lrn_beta)
-      + " k: " + std::to_string(m_lrn_k)
+      std::to_string(m_alpha) + " beta: " + std::to_string(m_beta)
+      + " k: " + std::to_string(m_k)
       + " dataLayout: " + get_data_layout_string(get_data_layout());
   }
 
-  virtual inline void initialize_distributed_matrices() {
-    regularizer_layer::initialize_distributed_matrices<T_layout>();
-  }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   /// Initialize GPU objects
   void setup_gpu() override {
     regularizer_layer::setup_gpu();
-  #ifndef __LIB_CUDNN
-    throw lbann_exception("lbann_layer_local_response_normalization: cuDNN not detected");
-  #else
-
-    // Initialize local response normalization descriptor
+#ifndef LBANN_HAS_CUDNN
+    LBANN_ERROR("cuDNN not detected");
+#else
     CHECK_CUDNN(cudnnCreateLRNDescriptor(&m_lrn_cudnn_desc));
     CHECK_CUDNN(cudnnSetLRNDescriptor(m_lrn_cudnn_desc,
                                       (unsigned int) m_window_width,
-                                      (double) m_lrn_alpha,
-                                      (double) m_lrn_beta,
-                                      (double) m_lrn_k));
-
-  #endif // #ifndef __LIB_CUDNN
+                                      (double) m_alpha,
+                                      (double) m_beta,
+                                      (double) m_k));
+#endif // #ifndef LBANN_HAS_CUDNN
   }
 
   void fp_compute() override {
-    if(this->m_using_gpus) {
+    if (this->using_gpus()) {
       fp_compute_cudnn();
     } else {
       fp_compute_cpu();
@@ -162,7 +170,7 @@ class local_response_normalization_layer : public regularizer_layer {
   }
 
   void bp_compute() override {
-    if(this->m_using_gpus) {
+    if (this->using_gpus()) {
       bp_compute_cudnn();
     } else {
       bp_compute_cpu();
@@ -172,90 +180,77 @@ class local_response_normalization_layer : public regularizer_layer {
  private:
   /// GPU implementation of forward propagation
   void fp_compute_cudnn() {
-  #ifndef __LIB_CUDNN
-    throw lbann_exception("lbann_layer_local_response_normalization: cuDNN not detected");
-  #else
-
-    // Useful constants
-    const DataType one = 1;
-    const DataType zero = 0;
-
-    // Perform local response normalization with each GPU
-    const int num_gpus = this->m_cudnn->get_num_gpus();
-    for(int i=0; i<num_gpus; ++i) {
-      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-      CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
-                                 this->m_cudnn->get_stream(i)));
-      CHECK_CUDNN(cudnnLRNCrossChannelForward(this->m_cudnn->get_handle(i),
+#ifndef LBANN_HAS_CUDNN
+    LBANN_ERROR("cuDNN not detected");
+#else
+    const auto& local_input = get_local_prev_activations();
+    auto& local_output = get_local_activations();
+    if (local_input.Height() > 0 && local_input.Width() > 0) {
+      const DataType zero = DataType(0);
+      const DataType one = DataType(1);
+      CHECK_CUDNN(cudnnLRNCrossChannelForward(cudnn::get_handle(),
                                               m_lrn_cudnn_desc,
                                               CUDNN_LRN_CROSS_CHANNEL_DIM1,
                                               &one,
-                                              this->m_prev_neurons_cudnn_desc,
-                                              this->m_prev_activations_dv[i],
+                                              m_tensors_cudnn_desc.get_prev_activations(),
+                                              local_input.LockedBuffer(),
                                               &zero,
-                                              this->m_neurons_cudnn_desc,
-                                              this->m_activations_d[i]));
+                                              m_tensors_cudnn_desc.get_activations(),
+                                              local_output.Buffer()));
     }
-
-  #endif // #ifndef __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
   }
 
   /// GPU implementation of backward propagation
   void bp_compute_cudnn() {
-  #ifndef __LIB_CUDNN
-    throw lbann_exception("lbann_layer_local_response_normalization: cuDNN not detected");
-  #else
-
-    // Useful constants
-    const DataType one = 1;
-    const DataType zero = 0;
-
-    // Get number of GPUs
-    const int num_gpus = this->m_cudnn->get_num_gpus();
-
-    // Perform back propagation on each GPU
-    for(int i=0; i<num_gpus; ++i) {
-      CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-      CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(i),
-                                 this->m_cudnn->get_stream(i)));
-      CHECK_CUDNN(cudnnLRNCrossChannelBackward(this->m_cudnn->get_handle(i),
+#ifndef LBANN_HAS_CUDNN
+    LBANN_ERROR("cuDNN not detected");
+#else
+    const auto& local_input = get_local_prev_activations();
+    const auto& local_output = get_local_activations();
+    const auto& local_gradient_wrt_output = get_local_prev_error_signals();
+    auto& local_gradient_wrt_input = get_local_error_signals();
+    if (local_input.Height() > 0 && local_input.Width() > 0) {
+      const DataType zero = DataType(0);
+      const DataType one = DataType(1);
+      CHECK_CUDNN(cudnnLRNCrossChannelBackward(cudnn::get_handle(),
                                                m_lrn_cudnn_desc,
                                                CUDNN_LRN_CROSS_CHANNEL_DIM1,
                                                &one,
-                                               this->m_neurons_cudnn_desc,
-                                               this->m_activations_d[i],
-                                               this->m_neurons_cudnn_desc,
-                                               this->m_prev_error_signal_dv[i],
-                                               this->m_prev_neurons_cudnn_desc,
-                                               this->m_prev_activations_dv[i],
+                                               m_tensors_cudnn_desc.get_prev_activations(),
+                                               local_input.LockedBuffer(),
+                                               m_tensors_cudnn_desc.get_prev_error_signals(),
+                                               local_gradient_wrt_output.LockedBuffer(),
+                                               m_tensors_cudnn_desc.get_activations(),
+                                               local_output.LockedBuffer(),
                                                &zero,
-                                               this->m_prev_neurons_cudnn_desc,
-                                               this->m_error_signal_d[i]));
+                                               m_tensors_cudnn_desc.get_error_signals(),
+                                               local_gradient_wrt_input.Buffer()));
     }
-
-  #endif // #ifndef __LIB_CUDNN
+#endif // LBANN_HAS_CUDNN
   }
 
   /// CPU implementation of forward propagation
   void fp_compute_cpu() {
 
-    // Get local matrices
-    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
-    Mat& activations_local = this->m_activations_v->Matrix();
+    // Local matrices
+    const auto& local_input = get_local_prev_activations();
+    auto& local_output = get_local_activations();
 
-    // Get matrix buffers
-    const int width_local = prev_activations_local.Width();
-    const DataType* prev_activations_buffer = prev_activations_local.LockedBuffer();
-    const int prev_activations_ldim = prev_activations_local.LDim();
-    DataType* activations_buffer = activations_local.Buffer();
-    const int activations_ldim = activations_local.LDim();
+    // Matrix parameters
+    const int local_width = local_input.Width();
+    const DataType* input_buffer = local_input.LockedBuffer();
+    const int input_ldim = local_input.LDim();
+    DataType* output_buffer = local_output.Buffer();
+    const int output_ldim = local_output.LDim();
 
     // Get LRN parameters
-    const int num_channels = this->m_neuron_dims[0];
-    const int num_per_channel = this->m_num_neurons / num_channels;
+    const auto& output_dims = get_output_dims();
+    const int num_channels = output_dims[0];
+    const int num_per_channel = get_output_size() / num_channels;
 
     // Check if LRN is using default beta parameter
-    const bool default_beta = (std::fabs((m_lrn_beta - 0.75) / 0.75)
+    const bool default_beta = (std::fabs((m_beta - 0.75) / 0.75)
                                < 2 * std::numeric_limits<DataType>::epsilon());
 
     ////////////////////////////////////////////////////////////////
@@ -268,8 +263,8 @@ class local_response_normalization_layer : public regularizer_layer {
     // Iterate through blocks in channels of each data sample
     const int max_block_size = 16;
     #pragma omp parallel for collapse(2)
-    for(int sample = 0; sample < width_local; ++sample) {
-      for(int block_start = 0;
+    for (int sample = 0; sample < local_width; ++sample) {
+      for (int block_start = 0;
           block_start < num_per_channel;
           block_start += max_block_size) {
         const int block_size = std::min(max_block_size,
@@ -277,40 +272,37 @@ class local_response_normalization_layer : public regularizer_layer {
         DataType workspace[max_block_size];
 
         // Iterate through channels
-        for(int channel = 0; channel < num_channels; ++channel) {
+        for (int channel = 0; channel < num_channels; ++channel) {
           const int window_start = std::max(channel - m_window_width / 2, 0);
           const int window_end = std::min(channel + m_window_width / 2, num_channels - 1);
 
           // Compute sum of squares in workspace
           std::fill(workspace, workspace + block_size, DataType(0));
-          for(int window_pos = window_start; window_pos <= window_end; ++window_pos) {
-            for(int block_pos = 0; block_pos < block_size; ++block_pos) {
+          for (int window_pos = window_start; window_pos <= window_end; ++window_pos) {
+            for (int block_pos = 0; block_pos < block_size; ++block_pos) {
               const int index = block_start + block_pos + window_pos * num_per_channel;
-              const DataType prev_activations_entry
-                = prev_activations_buffer[index + sample * prev_activations_ldim];
-              workspace[block_pos] += prev_activations_entry * prev_activations_entry;
+              const DataType input_entry = input_buffer[index + sample * input_ldim];
+              workspace[block_pos] += input_entry * input_entry;
             }
           }
 
           // Compute 1 / (k + alpha * sum(x^2) ) in workspace
-          for(int block_pos = 0; block_pos < block_size; ++block_pos) {
-            workspace[block_pos] = 1 / (m_lrn_k + m_lrn_alpha * workspace[block_pos]);
+          for (int block_pos = 0; block_pos < block_size; ++block_pos) {
+            workspace[block_pos] = 1 / (m_k + m_alpha * workspace[block_pos]);
           }
 
-          // Compute activations
-          for(int block_pos = 0; block_pos < block_size; ++block_pos) {
+          // Compute output
+          for (int block_pos = 0; block_pos < block_size; ++block_pos) {
             const int index = block_start + block_pos + channel * num_per_channel;
             const DataType scale_factor = workspace[block_pos];
-              const DataType prev_activations_entry
-                = prev_activations_buffer[index + sample * prev_activations_ldim];
-            if(default_beta) { // Special case when beta = 0.75
-              activations_buffer[index + sample * activations_ldim]
-                = (prev_activations_entry
-                   * std::sqrt(scale_factor * std::sqrt(scale_factor)));
+            const DataType input_entry = input_buffer[index + sample * input_ldim];
+            DataType& output_entry = output_buffer[index + sample * output_ldim];
+            if (default_beta) { // Special case when beta = 0.75
+              output_entry = (input_entry
+                              * std::sqrt(scale_factor * std::sqrt(scale_factor)));
             }
             else {
-              activations_buffer[index + sample * activations_ldim]
-                = prev_activations_entry * std::pow(scale_factor, m_lrn_beta);
+              output_entry = input_entry * std::pow(scale_factor, m_beta);
             }
           }
 
@@ -325,31 +317,29 @@ class local_response_normalization_layer : public regularizer_layer {
   void bp_compute_cpu() {
 
     // Get local matrices
-    const Mat& prev_activations_local = this->m_prev_activations_v->LockedMatrix();
-    const Mat& activations_local = this->m_activations_v->LockedMatrix();
-    const Mat& prev_error_signal_local = this->m_prev_error_signal_v->LockedMatrix();
-    Mat& error_signal_local = this->m_error_signal_v->Matrix();
+    const auto& local_input = get_local_prev_activations();
+    const auto& local_output = get_local_activations();
+    const auto& local_gradient_wrt_output = get_local_prev_error_signals();
+    auto& local_gradient_wrt_input = get_local_error_signals();
 
     // Get matrix buffers
-    const int width_local = prev_activations_local.Width();
-    const DataType* prev_activations_buffer = prev_activations_local.LockedBuffer();
-    const int prev_activations_ldim = prev_activations_local.LDim();
-    const DataType* activations_buffer = activations_local.LockedBuffer();
-    const int activations_ldim = activations_local.LDim();
-    const DataType* prev_error_signal_buffer = prev_error_signal_local.LockedBuffer();
-    const int prev_error_signal_ldim = prev_error_signal_local.LDim();
-    DataType* error_signal_buffer = error_signal_local.Buffer();
-    const int error_signal_ldim = error_signal_local.LDim();
-
-    // Initialize error signal to zero
-    El::Zero(error_signal_local);
+    const int local_width = local_input.Width();
+    const DataType* input_buffer = local_input.LockedBuffer();
+    const int input_ldim = local_input.LDim();
+    const DataType* output_buffer = local_output.LockedBuffer();
+    const int output_ldim = local_output.LDim();
+    const DataType* gradient_wrt_output_buffer = local_gradient_wrt_output.LockedBuffer();
+    const int gradient_wrt_output_ldim = local_gradient_wrt_output.LDim();
+    DataType* gradient_wrt_input_buffer = local_gradient_wrt_input.Buffer();
+    const int gradient_wrt_input_ldim = local_gradient_wrt_input.LDim();
 
     // Get LRN parameters
-    const int num_channels = this->m_neuron_dims[0];
-    const int num_per_channel = this->m_num_neurons / num_channels;
+    const auto& output_dims = get_output_dims();
+    const int num_channels = output_dims[0];
+    const int num_per_channel = get_output_size() / num_channels;
 
     // Check if LRN is using default beta parameter
-    const bool default_beta = (std::fabs((m_lrn_beta - 0.75) / 0.75)
+    const bool default_beta = (std::fabs((m_beta - 0.75) / 0.75)
                                < 2 * std::numeric_limits<DataType>::epsilon());
 
     ////////////////////////////////////////////////////////////////
@@ -366,8 +356,8 @@ class local_response_normalization_layer : public regularizer_layer {
     // Iterate through blocks in channels of each data sample
     const int max_block_size = 16;
     #pragma omp parallel for collapse(2)
-    for(int sample = 0; sample < width_local; ++sample) {
-      for(int block_start = 0;
+    for (int sample = 0; sample < local_width; ++sample) {
+      for (int block_start = 0;
           block_start < num_per_channel;
           block_start += max_block_size) {
         const int block_size = std::min(max_block_size,
@@ -375,61 +365,60 @@ class local_response_normalization_layer : public regularizer_layer {
         DataType workspace[max_block_size];
 
         // Iterate through channels
-        for(int channel = 0; channel < num_channels; ++channel) {
+        for (int channel = 0; channel < num_channels; ++channel) {
           const int window_start = std::max(channel - m_window_width / 2, 0);
           const int window_end = std::min(channel + m_window_width / 2, num_channels - 1);
 
           // Compute sum of squares in workspace
           std::fill(workspace, workspace + block_size, DataType(0));
-          for(int window_pos = window_start; window_pos <= window_end; ++window_pos) {
-            for(int block_pos = 0; block_pos < block_size; ++block_pos) {
+          for (int window_pos = window_start; window_pos <= window_end; ++window_pos) {
+            for (int block_pos = 0; block_pos < block_size; ++block_pos) {
               const int index = block_start + block_pos + window_pos * num_per_channel;
-              const DataType prev_activations_entry
-                = prev_activations_buffer[index + sample * prev_activations_ldim];
-              workspace[block_pos] += prev_activations_entry * prev_activations_entry;
+              const DataType input_entry = input_buffer[index + sample * input_ldim];
+              workspace[block_pos] += input_entry * input_entry;
             }
           }
 
           // Compute 1 / (k + alpha * sum(x^2) ) in workspace
-          for(int block_pos = 0; block_pos < block_size; ++block_pos) {
-            workspace[block_pos] = 1 / (m_lrn_k + m_lrn_alpha * workspace[block_pos]);
+          for (int block_pos = 0; block_pos < block_size; ++block_pos) {
+            workspace[block_pos] = 1 / (m_k + m_alpha * workspace[block_pos]);
           }
 
           // Compute error signal contribution for current entry
-          for(int block_pos = 0; block_pos < block_size; ++block_pos) {
+          for (int block_pos = 0; block_pos < block_size; ++block_pos) {
             const int index = block_start + block_pos + channel * num_per_channel;
             const DataType scale_factor = workspace[block_pos];
-            const DataType prev_error_signal_entry
-              = prev_error_signal_buffer[index + sample * prev_error_signal_ldim];
-            if(default_beta) { // Special case when beta = 0.75
-              error_signal_buffer[index + sample * error_signal_ldim]
-                += prev_error_signal_entry * std::sqrt(scale_factor * std::sqrt(scale_factor));
+            const DataType gradient_wrt_output_entry
+              = gradient_wrt_output_buffer[index + sample * gradient_wrt_output_ldim];
+            DataType& gradient_wrt_input_entry
+              = gradient_wrt_input_buffer[index + sample * gradient_wrt_input_ldim];
+            if (default_beta) { // Special case when beta = 0.75
+              gradient_wrt_input_entry
+                = gradient_wrt_output_entry * std::sqrt(scale_factor * std::sqrt(scale_factor));
             }
             else {
-              error_signal_buffer[index + sample * error_signal_ldim]
-                += prev_error_signal_entry * std::pow(scale_factor, m_lrn_beta);
+              gradient_wrt_input_entry
+                = gradient_wrt_output_entry * std::pow(scale_factor, m_beta);
             }
           }
 
           // Compute y * dy / (k + alpha * sum(x^2) ) in workspace
-          for(int block_pos = 0; block_pos < block_size; ++block_pos) {
+          for (int block_pos = 0; block_pos < block_size; ++block_pos) {
             const int index = block_start + block_pos + channel * num_per_channel;
-            const DataType activations_entry
-              = activations_buffer[index + sample * activations_ldim];
-            const DataType prev_error_signal_entry
-              = prev_error_signal_buffer[index + sample * prev_error_signal_ldim];
-            workspace[block_pos] = (-2 * m_lrn_alpha * m_lrn_beta * workspace[block_pos]
-                                    * activations_entry * prev_error_signal_entry);
+            const DataType output_entry = output_buffer[index + sample * output_ldim];
+            const DataType gradient_wrt_output_entry
+              = gradient_wrt_output_buffer[index + sample * gradient_wrt_output_ldim];
+            workspace[block_pos] = (-2 * m_alpha * m_beta * workspace[block_pos]
+                                    * output_entry * gradient_wrt_output_entry);
           }
 
           // Compute error signal contribution for entries in window
-          for(int window_pos = window_start; window_pos <= window_end; ++window_pos) {
-            for(int block_pos = 0; block_pos < block_size; ++block_pos) {
+          for (int window_pos = window_start; window_pos <= window_end; ++window_pos) {
+            for (int block_pos = 0; block_pos < block_size; ++block_pos) {
               const int index = block_start + block_pos + window_pos * num_per_channel;
-              const DataType prev_activations_entry
-                = prev_activations_buffer[index + sample * prev_activations_ldim];
-              error_signal_buffer[index + sample * error_signal_ldim]
-                += workspace[block_pos] * prev_activations_entry;
+              const DataType input_entry = input_buffer[index + sample * input_ldim];
+              gradient_wrt_input_buffer[index + sample * gradient_wrt_input_ldim]
+                += workspace[block_pos] * input_entry;
             }
           }
 
@@ -442,6 +431,6 @@ class local_response_normalization_layer : public regularizer_layer {
 
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_LAYER_LOCAL_RESPONSE_NORMALIZATION_HPP_INCLUDED
+#endif // LBANN_LAYER_LOCAL_RESPONSE_NORMALIZATION_HPP_INCLUDED

@@ -22,8 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// rmsprop .hpp .cpp - SGD with RMSprop
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_OPTIMIZER_RMSPROP_HPP
@@ -54,7 +52,7 @@ class rmsprop : public optimizer {
   rmsprop* copy() const override { return new rmsprop(*this); }
   
   /** Get the optimizer name. */
-  std::string get_type() const override { return "rmsprop"; }
+  std::string get_type() const override { return "RMSprop"; }
   /** Get a human-readable description of the optimizer. */
   std::string get_description() const override;
 
@@ -72,6 +70,39 @@ class rmsprop : public optimizer {
   DataType m_eps;
   /** RMSprop cache. */
   AbsDistMat *m_cache;
+
+
+//************************************************************************
+// Checkpointing
+//************************************************************************
+
+  struct packing_header {
+    DataType decay_rate;
+  };
+
+  bool pack_scalars(persist& p) {
+    p.write_datatype(persist_type::train, "decay_rate", m_decay_rate);
+    return true;
+  }
+
+  bool unpack_scalars(persist& p, struct packing_header *header){
+    p.read_datatype(persist_type::train, "momentum",  &m_decay_rate);
+    
+    if(header != nullptr){
+      header->decay_rate = m_decay_rate;
+    }
+   
+  return true;
+  }
+  
+  void unpack_header(struct packing_header& header){
+    m_decay_rate = header.decay_rate;
+  }
+  
+  bool save_to_checkpoint_shared(persist& p, std::string m_name) override;
+  bool load_from_checkpoint_shared(persist& p, std::string m_name) override;
+  bool save_to_checkpoint_distributed(persist& p, std::string m_name) override;
+  bool load_from_checkpoint_distributed(persist& p, std::string m_name) override;
 
 };
 

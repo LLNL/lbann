@@ -28,6 +28,8 @@
 
 #include <unordered_set>
 #include "lbann/data_readers/data_reader_csv.hpp"
+#include "lbann/data_store/data_store_csv.hpp"
+#include "lbann/utils/options.hpp"
 #include <omp.h>
 
 namespace lbann {
@@ -96,147 +98,200 @@ csv_reader::~csv_reader() {
 }
 
 void csv_reader::load() {
+  bool master = m_comm->am_world_master();
   setup_ifstreams();
   std::ifstream& ifs = *m_ifstreams[0];
-  // TODO: Only one (or a subset) of ranks should read this, then distribute
-  // the results to avoid every rank reading the same file.
-  std::string line;
+  const El::mpi::Comm world_comm = m_comm->get_world_comm();
   // Parse the header to determine how many columns there are.
   // Skip rows if needed.
-  skip_rows(ifs, m_skip_rows);
-  std::streampos header_start = ifs.tellg();
-  // TODO: Skip comment lines.
-  if (std::getline(ifs, line)) {
-    m_num_cols = std::count(line.begin(), line.end(), m_separator) + 1;
-    if (m_skip_cols >= m_num_cols) {
+  if (master) {
+    skip_rows(ifs, m_skip_rows);
+  }
+  m_comm->broadcast<int>(0, m_skip_rows, world_comm);
+
+  //This will be broadcast from root to other procs, and will
+  //then be converted to std::vector<int> m_labels; this is because
+  //El::mpi::Broadcast<std::streampos> doesn't work
+  std::vector<long long> index;
+
+  if (master) {
+    std::string line;
+    std::streampos header_start = ifs.tellg();
+    // TODO: Skip comment lines.
+    if (std::getline(ifs, line)) {
+      m_num_cols = std::count(line.begin(), line.end(), m_separator) + 1;
+      if (m_skip_cols >= m_num_cols) {
+        throw lbann_exception(
+          "csv_reader: asked to skip more columns than are present");
+      }
+
+      if (!m_disable_labels) {
+        if (m_label_col < 0) {
+          // Last column becomes the label column.
+          m_label_col = m_num_cols - 1;
+        }
+        if (m_label_col >= m_num_cols) {
+          throw lbann_exception(
+            "csv_reader: label column" + std::to_string(m_label_col) +
+            " is not present");
+        }
+      }
+
+      if (!m_disable_responses) {
+        if (m_response_col < 0) {
+          // Last column becomes the response column.
+          m_response_col = m_num_cols - 1;
+        }
+        if (m_response_col >= m_num_cols) {
+          throw lbann_exception(
+            "csv_reader: response column" + std::to_string(m_response_col) +
+            " is not present");
+        }
+      }
+
+    } else {
       throw lbann_exception(
-        "csv_reader: asked to skip more columns than are present");
+        "csv_reader: failed to read header in " + get_data_filename());
+    }
+    if (ifs.eof()) {
+      throw lbann_exception(
+        "csv_reader: reached EOF after reading header");
+    }
+    // If there was no header, skip back to the beginning.
+    if (!m_has_header) {
+      ifs.clear();
+      ifs.seekg(header_start, std::ios::beg);
+    }
+    // Construct an index mapping each line (sample) to its offset.
+    // TODO: Skip comment lines.
+    // Used to count the number of label classes.
+    std::unordered_set<int> label_classes;
+    index.push_back(ifs.tellg());
+
+    int num_samples_to_use = get_absolute_sample_count();
+    int line_num = 0;
+    if (num_samples_to_use == 0) {
+      num_samples_to_use = -1;
+    }
+    while (std::getline(ifs, line)) {
+      if (line_num == num_samples_to_use) {
+        break;
+      }
+      ++line_num;
+
+      // Verify the line has the right number of columns.
+      if (std::count(line.begin(), line.end(), m_separator) + 1 != m_num_cols) {
+        throw lbann_exception(
+          "csv_reader: line " + std::to_string(line_num) +
+          " does not have right number of entries");
+      }
+      index.push_back(ifs.tellg());
+      // Extract the label.
+      if (!m_disable_labels) {
+        size_t cur_pos = 0;
+        for (int col = 0; col < m_num_cols; ++col) {
+          size_t end_pos = line.find_first_of(m_separator, cur_pos);
+          if (col == m_label_col) {
+            int label = m_label_transform(line.substr(cur_pos, end_pos - cur_pos));
+            label_classes.insert(label);
+            m_labels.push_back(label);
+            break;
+          }
+          cur_pos = end_pos + 1;
+        }
+      }
+      // Possibly extract the response.
+      if (!m_disable_responses) {
+        size_t cur_pos = 0;
+        for (int col = 0; col < m_num_cols; ++col) {
+          size_t end_pos = line.find_first_of(m_separator, cur_pos);
+          if (col == m_response_col) {
+            DataType response = m_response_transform(
+              line.substr(cur_pos, end_pos - cur_pos));
+            m_responses.push_back(response);
+            break;
+          }
+          cur_pos = end_pos + 1;
+        }
+      }
+    }
+
+    if (!ifs.eof() && num_samples_to_use == 0) {
+       //If we didn't get to EOF, something went wrong.
+      throw lbann_exception(
+        "csv_reader: did not reach EOF");
     }
     if (!m_disable_labels) {
-      if (m_label_col < 0) {
-        // Last column becomes the label column.
-        m_label_col = m_num_cols - 1;
-      }
-      if (m_label_col >= m_num_cols) {
+      // Do some simple validation checks on the classes.
+      // Ensure the elements begin with 0, and there are no gaps.
+      auto minmax = std::minmax_element(label_classes.begin(), label_classes.end());
+      if (*minmax.first != 0) {
         throw lbann_exception(
-          "csv_reader: label column" + std::to_string(m_label_col) +
-          " is not present");
+          "csv_reader: classes are not indexed from 0");
       }
-    }
-    if (!m_disable_responses) {
-      if (m_response_col < 0) {
-        // Last column becomes the response column.
-        m_response_col = m_num_cols - 1;
-      }
-      if (m_response_col >= m_num_cols) {
+      if (*minmax.second != (int) label_classes.size() - 1) {
         throw lbann_exception(
-          "csv_reader: response column" + std::to_string(m_response_col) +
-          " is not present");
+          "csv_reader: label classes are not contiguous");
       }
+      m_num_labels = label_classes.size();
     }
-  } else {
-    throw lbann_exception(
-      "csv_reader: failed to read header in " + get_data_filename());
-  }
-  if (ifs.eof()) {
-    throw lbann_exception(
-      "csv_reader: reached EOF after reading header");
-  }
-  // If there was no header, skip back to the beginning.
-  if (!m_has_header) {
     ifs.clear();
-    ifs.seekg(header_start, std::ios::beg);
+  } // if (master)
+
+  m_comm->broadcast<int>(0, m_num_cols, world_comm);
+  m_label_col = m_num_cols - 1;
+
+  //bcast the index vector
+  m_comm->world_broadcast<long long>(0, index);
+  m_num_samples = index.size() - 1;
+  if (m_master) std::cerr << "num samples: " << m_num_samples << "\n";
+
+  m_index.reserve(index.size());
+  for (auto t : index) {
+    m_index.push_back(t);
   }
-  // Construct an index mapping each line (sample) to its offset.
-  // TODO: Skip comment lines.
-  // Used to count the number of label classes.
-  std::unordered_set<int> label_classes;
-  m_index.push_back(ifs.tellg());
-  int line_num = 0;
-  while (std::getline(ifs, line)) {
-    ++line_num;
-    // Verify the line has the right number of columns.
-    if (std::count(line.begin(), line.end(), m_separator) + 1 != m_num_cols) {
-      throw lbann_exception(
-        "csv_reader: line " + std::to_string(line_num) +
-        " does not have right number of entries");
-    }
-    m_index.push_back(ifs.tellg());
-    // Extract the label.
-    if (!m_disable_labels) {
-      size_t cur_pos = 0;
-      for (int col = 0; col < m_num_cols; ++col) {
-        size_t end_pos = line.find_first_of(m_separator, cur_pos);
-        if (col == m_label_col) {
-          int label = m_label_transform(line.substr(cur_pos, end_pos - cur_pos));
-          label_classes.insert(label);
-          m_labels.push_back(label);
-          break;
-        }
-        cur_pos = end_pos + 1;
-      }
-    }
-    // Possibly extract the response.
-    if (!m_disable_responses) {
-      size_t cur_pos = 0;
-      for (int col = 0; col < m_num_cols; ++col) {
-        size_t end_pos = line.find_first_of(m_separator, cur_pos);
-        if (col == m_response_col) {
-          DataType response = m_response_transform(
-            line.substr(cur_pos, end_pos - cur_pos));
-          m_responses.push_back(response);
-          break;
-        }
-        cur_pos = end_pos + 1;
-      }
-    }
+
+  //optionally bcast the response vector
+  if (!m_disable_responses) {
+    m_response_col = m_num_cols - 1;
+    m_comm->world_broadcast<DataType>(0, m_responses);
   }
-  if (!ifs.eof()) {
-    // If we didn't get to EOF, something went wrong.
-    throw lbann_exception(
-      "csv_reader: did not reach EOF");
-  }
+
+  //optionally bcast the label vector
   if (!m_disable_labels) {
-    // Do some simple validation checks on the classes.
-    // Ensure the elements begin with 0, and there are no gaps.
-    auto minmax = std::minmax_element(label_classes.begin(), label_classes.end());
-    if (*minmax.first != 0) {
-      throw lbann_exception(
-        "csv_reader: classes are not indexed from 0");
-    }
-    if (*minmax.second != (int) label_classes.size() - 1) {
-      throw lbann_exception(
-        "csv_reader: label classes are not contiguous");
-    }
-    m_num_labels = label_classes.size();
+    m_comm->world_broadcast<int>(0, m_labels);
+    m_num_labels = m_labels.size();
   }
-  m_num_samples = m_index.size() - 1;
-  // End of file offset.
-  m_index.push_back(ifs.tellg());
-  // Seek back to the beginning.
-  ifs.clear();
-  ifs.seekg(0, std::ios::beg);
+
   // Reset indices.
   m_shuffled_indices.resize(m_num_samples);
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
   select_subset_of_data();
 }
 
-bool csv_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
-  auto line = fetch_line_label_response(data_id);
-  // Todo: Avoid unneeded copies.
-  for (size_t i = 0; i < line.size(); ++i) {
-    X(i, mb_idx) = line[i];
+bool csv_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
+  if (m_data_store != nullptr) {
+    std::vector<DataType> *buf;
+    m_data_store->get_data_buf_DataType(data_id, buf);
+    for (size_t i = 0; i < buf->size(); ++i) {
+      X(i, mb_idx) = (*buf)[i];
+    }
+  } else {
+    auto line = fetch_line_label_response(data_id);
+    // TODO: Avoid unneeded copies.
+    for (size_t i = 0; i < line.size(); ++i) {
+      X(i, mb_idx) = line[i];
+    }
   }
   return true;
 }
 
-bool csv_reader::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
+bool csv_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) {
   Y(m_labels[data_id], mb_idx) = 1;
   return true;
 }
 
-bool csv_reader::fetch_response(Mat& Y, int data_id, int mb_idx, int tid) {
+bool csv_reader::fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) {
   Y(0, mb_idx) = m_responses[data_id];
   return true;
 }
@@ -254,7 +309,7 @@ std::vector<DataType> csv_reader::fetch_line(int data_id) {
       cur_pos = end_pos + 1;
       continue;
     }
-    // Note: This results in a copy, switch to string_view when we can.
+    // @TODO Note: This results in a copy, switch to string_view when we can.
     std::string str_val = line.substr(cur_pos, end_pos - cur_pos);
     cur_pos = end_pos + 1;
     DataType val;
@@ -306,6 +361,7 @@ std::vector<DataType> csv_reader::fetch_line_label_response(
 }
 
 std::string csv_reader::fetch_raw_line(int data_id) {
+static int n = 0;
   std::ifstream& ifs = *m_ifstreams[omp_get_thread_num()];
   // Seek to the start of this datum's line.
   ifs.seekg(m_index[data_id], std::ios::beg);
@@ -315,9 +371,16 @@ std::string csv_reader::fetch_raw_line(int data_id) {
   std::string line;
   line.resize(cnt);
   if (!ifs.read(&line[0], cnt)) {
-    throw lbann_exception(
-      "csv_reader: error on reading " + std::to_string(data_id));
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "csv_reader: error on reading data_id: " << data_id << "\n"
+        <<"index.size(): " << m_index.size() << "  m_index["<< data_id
+        << ")=" <<m_index[data_id] << "; index[" << data_id+1
+        << ")= " << m_index[data_id+1] << "\ncnt: " << cnt << " role: "
+        << get_role() << " gcount: " << ifs.gcount() << " n: " << n;
+    throw lbann_exception(err.str());
   }
+++n;
   return line;
 }
 
@@ -334,11 +397,21 @@ void csv_reader::setup_ifstreams() {
   m_ifstreams.resize(omp_get_max_threads());
   for (int i = 0; i < omp_get_max_threads(); ++i) {
     m_ifstreams[i] = new std::ifstream(
-      get_data_filename(), std::ios::in | std::ios::binary);
+      get_file_dir() + get_data_filename(), std::ios::in | std::ios::binary);
     if (m_ifstreams[i]->fail()) {
       throw lbann_exception(
-        "csv_reader: failed to open " + get_data_filename());
+        "csv_reader: failed to open " + get_file_dir() + get_data_filename());
     }
+  }
+}
+
+void csv_reader::setup_data_store(model *m) {
+  if (m_data_store != nullptr) {
+    delete m_data_store;
+  }
+  m_data_store = new data_store_csv(this, m);
+  if (m_data_store != nullptr) {
+    m_data_store->setup();
   }
 }
 

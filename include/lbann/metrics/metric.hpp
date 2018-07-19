@@ -37,7 +37,7 @@ namespace lbann {
 // Forward declarations
 class model;
 class Layer;
-class target_layer;
+class generic_target_layer;
 
 /** Metric statistics. */
 struct metric_statistics {
@@ -113,9 +113,15 @@ class metric {
 
   /** Setup metric. */
   virtual void setup(model& m);
-  
-  /** Evaluate the metric value. */
-  EvalType evaluate(execution_mode mode);
+
+  /** Evaluate the metric value.
+   *  This function takes the model's current mini-batch size. If
+   *  multiple models are being trained, the current mini-batch size
+   *  may be different from the effective mini-batch size. The result
+   *  is stored in history.
+   */
+  virtual EvalType evaluate(execution_mode mode,
+                            int mini_batch_size);
 
   /** Clear all statistics. */
   void reset_statistics() { m_statistics.clear(); }
@@ -131,19 +137,32 @@ class metric {
   int get_statistics_num_samples(execution_mode mode) const;
 
   /** Set pointer to target layer. */
-  void set_target_layer(const target_layer *target) { m_target_layer = target; }
+  void set_target_layer(const generic_target_layer *target) { m_target_layer = target; }
   /** Get target layer. */
-  const target_layer& get_target_layer() const;
+  const generic_target_layer& get_target_layer() const;
 
   /** Get list of pointers to layers. */
-  std::vector<Layer*> get_layer_pointers() const;
+  virtual std::vector<Layer*> get_layer_pointers() const;
   /** Set list of pointers to layers. */
-  void set_layer_pointers(std::vector<Layer*> layers);
+  virtual void set_layer_pointers(std::vector<Layer*> layers);
+
+  /** Get the time spent in evaluation for this metric (const). */
+  EvalType get_evaluate_time() const { return m_evaluate_time; }
+  /** Get the time spent in evaluation for this metric. */
+  EvalType& get_evaluate_time() { return m_evaluate_time; }
+
+  /** Reset timing counters. */
+  void reset_counters() {
+    m_evaluate_time = 0.0;
+  }
 
   /** Save metric state to checkpoint. */
   virtual bool save_to_checkpoint_shared(persist& p);
   /** Load metric state from checkpoint. */
   virtual bool load_from_checkpoint_shared(persist& p);
+
+  virtual bool save_to_checkpoint_distributed(persist& p);
+  virtual bool load_from_checkpoint_distributed(persist& p);
 
  protected:
 
@@ -157,16 +176,22 @@ class metric {
   /** Get LBANN communicator. */
   lbann_comm& get_comm() { return *m_comm; }
 
+  /** Get metric statistics. */
+  std::map<execution_mode,metric_statistics>& get_statistics() { return m_statistics; }
+
  private:
 
   /** LBANN communicator. */
   lbann_comm *m_comm;
 
   /** Pointer to target layer. */
-  const target_layer *m_target_layer;
+  const generic_target_layer *m_target_layer;
 
   /** Metric statistics. */
   std::map<execution_mode,metric_statistics> m_statistics;
+
+  /** Runtime for the metric evaluation. */
+  EvalType m_evaluate_time = 0.0;
 
 };
 

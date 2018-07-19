@@ -57,7 +57,7 @@ loss_function::~loss_function() {
   if (m_gradient != nullptr) { delete m_gradient; }
 }
 
-void loss_function::set_target_layer(target_layer *layer) {
+void loss_function::set_target_layer(generic_target_layer *layer) {
   if (m_layers.size() > 0) {
     m_layers[0] = layer;
   } else {
@@ -67,7 +67,7 @@ void loss_function::set_target_layer(target_layer *layer) {
 
 void loss_function::setup(model& m) {
   objective_function_term::setup(m);
-  
+
   // Check that loss function has one target layer and no weights
   // Note: if target layer is not specified, choose the latest target
   // layer in the model.
@@ -79,16 +79,16 @@ void loss_function::setup(model& m) {
     throw lbann_exception(err.str());
   }
   if (m_layers.empty()) {
-    std::vector<Layer*> layers = m.get_layers();
+    const std::vector<Layer*> layers = m.get_layers();
     for (int i = layers.size() - 1; i >= 0; --i) {
-      if (dynamic_cast<target_layer*>(layers[i]) != nullptr) {
+      if (dynamic_cast<generic_target_layer*>(layers[i]) != nullptr) {
         m_layers.push_back(layers[i]);
         break;
       }
     }
   }
   if (m_layers.size() != 1
-      || dynamic_cast<target_layer*>(m_layers[0]) == nullptr) {
+      || dynamic_cast<generic_target_layer*>(m_layers[0]) == nullptr) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "could not setup loss function with target layer";
@@ -103,46 +103,38 @@ void loss_function::setup(model& m) {
   }
 
   // Initialize gradient matrix
-  auto *target = (target_layer*) m_layers[0];
-  const AbsDistMat& ground_truth = target->get_activations();
+  auto *target = (generic_target_layer*) m_layers[0];
+  const AbsDistMat& ground_truth = target->get_ground_truth();
   m_gradient = ground_truth.Construct(ground_truth.Grid(),
                                       ground_truth.Root());
   El::Zeros(*m_gradient, ground_truth.Height(), ground_truth.Width());
 
 }
 
-EvalType loss_function::evaluate() {
-  if (m_scale_factor == EvalType(0)) { return EvalType(0); }
-  auto *target = (target_layer*) m_layers[0];
+void loss_function::start_evaluation() {
+  auto *target = (generic_target_layer*) m_layers[0];
   const AbsDistMat& prediction = target->get_prediction();
   const AbsDistMat& ground_truth = target->get_ground_truth();
-  return m_scale_factor * evaluate_compute(prediction, ground_truth);
+  start_evaluate_compute(prediction, ground_truth);
+}
+
+EvalType loss_function::finish_evaluation() {
+  if (m_scale_factor == EvalType(0)) { return EvalType(0); }
+  auto *target = (generic_target_layer*) m_layers[0];
+  const AbsDistMat& prediction = target->get_prediction();
+  const AbsDistMat& ground_truth = target->get_ground_truth();
+  return m_scale_factor * finish_evaluate_compute(prediction, ground_truth);
 }
 
 void loss_function::differentiate() {
   if (m_scale_factor == EvalType(0)) { return; }
-  auto *target = (target_layer*) m_layers[0];
+  auto *target = (generic_target_layer*) m_layers[0];
   const AbsDistMat& prediction = target->get_prediction();
   const AbsDistMat& ground_truth = target->get_ground_truth();
   El::Zeros(*m_gradient, prediction.Height(), prediction.Width());
   differentiate_compute(prediction, ground_truth, *m_gradient);
-  target->add_to_error_signal(*m_gradient, DataType(m_scale_factor));
+  El::Axpy(DataType(m_scale_factor), *m_gradient,
+           target->get_error_signals());
 }
-
-  bool loss_function::save_to_checkpoint_shared(persist& p)  {
-    char l_name[512];
-    sprintf(l_name, "objfunc_gradient");
-    p.write_distmat(persist_type::train, l_name, (DistMat *)m_gradient);
-    return true;
-  
-  }
-
-  bool loss_function::load_from_checkpoint_shared(persist& p) {
-    char l_name[512];
-    sprintf(l_name, "objfunc_gradient.bin");
-    p.read_distmat(persist_type::train, l_name, (DistMat *)m_gradient);
-    return true;
-   }
-
 
 }  // namespace lbann

@@ -58,10 +58,35 @@ void cross_entropy_with_uncertainty::setup(model& m) {
   loss_function::setup(m);
 
   const El::DistData dist(*m_gradient);
+  const El::Device dev = m_gradient->GetLocalDevice();
   if (dist.colDist == El::MC && dist.rowDist == El::MR) {
-    m_prediction_sums = new StarMRMat(*dist.grid);
+    switch(dev) {
+    case El::Device::CPU:
+      m_prediction_sums = new StarMRMat<El::Device::CPU>(*dist.grid); break;
+#ifdef LBANN_HAS_GPU
+    case El::Device::GPU:
+      m_prediction_sums = new StarMRMat<El::Device::GPU>(*dist.grid); break;
+#endif // LBANN_HAS_GPU
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid matrix data allocation";
+      throw lbann_exception(err.str());
+    }
   } else if (dist.colDist == El::STAR && dist.rowDist == El::VC) {
-    m_prediction_sums = new StarVCMat(*dist.grid);
+    switch(dev) {
+    case El::Device::CPU:
+      m_prediction_sums = new StarVCMat<El::Device::CPU>(*dist.grid); break;
+#ifdef LBANN_HAS_GPU
+    case El::Device::GPU:
+      m_prediction_sums = new StarVCMat<El::Device::GPU>(*dist.grid); break;
+#endif // LBANN_HAS_GPU
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid matrix data allocation";
+      throw lbann_exception(err.str());
+    }
   } else {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
@@ -71,8 +96,8 @@ void cross_entropy_with_uncertainty::setup(model& m) {
 
 }
 
-EvalType cross_entropy_with_uncertainty::evaluate_compute(const AbsDistMat& predictions,
-                                                          const AbsDistMat& ground_truth) {
+EvalType cross_entropy_with_uncertainty::finish_evaluate_compute(
+  const AbsDistMat& predictions, const AbsDistMat& ground_truth) {
 
   // Initialize workspace
   m_prediction_sums->Resize(1, predictions.Width());
@@ -81,7 +106,7 @@ EvalType cross_entropy_with_uncertainty::evaluate_compute(const AbsDistMat& pred
   // Local matrices
   const Mat& predictions_local = predictions.LockedMatrix();
   const Mat& ground_truth_local = ground_truth.LockedMatrix();
-  
+
   // Matrix parameters
   const int width = predictions.Width();
   const int local_height = predictions_local.Height();

@@ -10,6 +10,12 @@ ARCH=$(uname -m)
 ################################################################
 
 COMPILER=gnu
+if [ "${CLUSTER}" == "pascal" ]; then
+	# The latest GCC version on Pascal is 7, which is not supported by nvcc.
+	# Version 6.1.0 does not work with CUDA 9.1, either.
+	COMPILER=gnu
+	module load gcc/4.9.3
+fi
 if [ "${ARCH}" == "x86_64" ]; then
     MPI=mvapich2
 elif [ "${ARCH}" == "ppc64le" ]; then
@@ -17,34 +23,37 @@ elif [ "${ARCH}" == "ppc64le" ]; then
 fi
 BUILD_TYPE=Release
 Elemental_DIR=
-if [ "${TOSS}" == "3.10.0" ]; then
-    OpenCV_DIR=""
-    if [ "${ARCH}" == "x86_64" ]; then
-        VTUNE_DIR=/usr/tce/packages/vtune/default
-    elif [ "${ARCH}" == "ppc64le" ]; then
-        VTUNE_DIR=
-    fi
-else
-    OpenCV_DIR=/usr/gapps/brain/tools/OpenCV/2.4.13
-    VTUNE_DIR=/usr/local/tools/vtune
-fi
+case $TOSS in
+	3.10.0|4.11.0)
+		OpenCV_DIR=""
+		if [ "${ARCH}" == "x86_64" ]; then
+			export VTUNE_DIR=/usr/tce/packages/vtune/default
+		elif [ "${ARCH}" == "ppc64le" ]; then
+			export VTUNE_DIR=
+		fi
+		;;
+	*)
+      OpenCV_DIR=/usr/gapps/brain/tools/OpenCV/2.4.13
+      export VTUNE_DIR=/usr/local/tools/vtune
+	  ;;
+esac
 if [ "${ARCH}" == "x86_64" ]; then
-    cuDNN_DIR=/usr/gapps/brain/installs/cudnn/v5
     if [ "${CLUSTER}" == "quartz" ]; then
         IPPROOT=/p/lscratchh/brainusr/ippicv_lnx
     else
         IPPROOT=/p/lscratchf/brainusr/ippicv_lnx
     fi
-elif [ "${ARCH}" == "ppc64le" ]; then
-    cuDNN_DIR=/usr/gapps/brain/cuda/targets/ppc64le-linux
 fi
+
+#CONDUIT_DIR=/usr/workspace/wsb/icfsi/conduit/install-toss3
+
 ELEMENTAL_MATH_LIBS=
 PATCH_OPENBLAS=ON
 C_FLAGS=
 CXX_FLAGS=-DLBANN_SET_EL_RNG
 Fortran_FLAGS=
 CLEAN_BUILD=0
-DATATYPE=4
+DATATYPE=float
 VERBOSE=0
 CMAKE_INSTALL_MESSAGE=LAZY
 MAKE_NUM_PROCESSES=$(($(nproc) + 1))
@@ -53,11 +62,16 @@ INSTALL_LBANN=0
 BUILD_DIR=
 INSTALL_DIR=
 BUILD_SUFFIX=
-SEQ_INIT=OFF
+DETERMINISTIC=OFF
 WITH_CUDA=
 WITH_TOPO_AWARE=ON
 INSTRUMENT=
-
+WITH_ALUMINUM=OFF
+ALUMINUM_WITH_MPI_CUDA=OFF
+ALUMINUM_WITH_NCCL=OFF
+WITH_CONDUIT=OFF
+WITH_TBINF=OFF
+RECONFIGURE=0
 # In case that autoconf fails during on-demand buid on surface, try the newer
 # version of autoconf installed under '/p/lscratche/brainusr/autoconf/bin'
 # by putting it at the beginning of the PATH or use the preinstalled library
@@ -74,7 +88,7 @@ if [ "${CLUSTER}" == "surface" ]; then
     AUTOCONF_VER_CUSTOM=`${AUTOCONF_CUSTOM_DIR}/autoconf --version | awk '(FNR==1){print $NF}'`
 
     if version_gt ${AUTOCONF_VER_CUSTOM} ${AUTOCONF_VER_DEFAULT}; then
-        export PATH=${AUTOCONF_CUSTOM_DIR}:${PATH}
+        PATH=${AUTOCONF_CUSTOM_DIR}:${PATH}
     fi
 fi
 
@@ -100,6 +114,7 @@ Options:
   ${C}--tbinf${N}                 Build with Tensorboard interface.
   ${C}--vtune${N}                 Build with VTune profiling libraries.
   ${C}--nvprof${N}                Build with region annotations for NVPROF.
+  ${C}--reconfigure${N}           Reconfigure build. Used when build parameters are changed (e.g current build is release and --debug is desired). Clean build overrides
   ${C}--clean-build${N}           Clean build directory before building.
   ${C}--make-processes${N} <val>  Number of parallel processes for make.
   ${C}--doc${N}                   Generate documentation.
@@ -107,9 +122,11 @@ Options:
   ${C}--build${N}                 Specify alternative build directory; default is <lbann_home>/build.
   ${C}--suffix${N}                Specify suffix for build directory. If you are, e.g, building on surface, your build will be <someplace>/surface.llnl.gov, regardless of your choice of compiler or other flags. This option enables you to specify, e.g: --suffix gnu_debug, in which case your build will be in the directory <someplace>/surface.llnl.gov.gnu_debug
   ${C}--instrument${N}            Use -finstrument-functions flag, for profiling stack traces
-  ${C}--use-nccl${N}              Use NCCL library
   ${C}--disable-cuda${N}          Disable CUDA
   ${C}--disable-topo-aware${N}    Disable topological-aware configuration (no HWLOC)
+  ${C}--with-aluminum${N}              Use Aluminum allreduce library
+  ${C}--aluminum-with-mpi-cuda         Enable MPI-CUDA backend in Aluminum
+  ${C}--aluminum-with-nccl             Enable NCCL backend in Aluminum
 EOF
 }
 
@@ -132,7 +149,7 @@ while :; do
             else
                 echo "\"${1}\" option requires a non-empty option argument" >&2
                 exit 1
-            fi  
+            fi
             ;;
         --suffix)
             # Specify suffix for build directory
@@ -182,7 +199,7 @@ while :; do
         -d|--debug)
             # Debug mode
             BUILD_TYPE=Debug
-            SEQ_INIT=ON
+            DETERMINISTIC=ON
             ;;
         --tbinf)
             # Tensorboard interface
@@ -218,15 +235,28 @@ while :; do
         --disable-cuda)
             WITH_CUDA=OFF
             ;;
-        --use-nccl)
-            WITH_NCCL=ON
-            ;;
         --disable-topo-aware)
             WITH_TOPO_AWARE=OFF
             ;;
+        --with-aluminum)
+            WITH_ALUMINUM=ON
+            ;;
+        --aluminum-with-mpi-cuda)
+            WITH_ALUMINUM=ON
+            ALUMINUM_WITH_MPI_CUDA=ON
+            ;;
+        --aluminum-with-nccl)
+            WITH_ALUMINUM=ON
+            ALUMINUM_WITH_NCCL=ON
+            ;;
+        --with-conduit)
+            WITH_CONDUIT=ON
+            ;;
         --instrument)
             INSTRUMENT="-finstrument-functions -ldl"
-            #INSTRUMENT="-finstrument-functions -finstrument-functions-exclude-file-list=download,python,/lib64,/gcc -ldl"
+            ;;
+        --reconfigure)
+            RECONFIGURE=1
             ;;
         -?*)
             # Unknown option
@@ -246,15 +276,19 @@ done
 
 # Determine whether system uses modules
 USE_MODULES=0
-if [ "${TOSS}" == "3.10.0" ]; then
-    USE_MODULES=1
-elif [ "${TOSS}" == "2.6.32" ]; then
-    USE_MODULES=0
-else
-    # Initialize modules
-    . /usr/share/[mM]odules/init/bash
-    USE_MODULES=1
-fi
+case $TOSS in
+	3.10.0|4.11.0)
+		USE_MODULES=1
+		;;
+	2.6.32)
+		USE_MODULES=0
+		;;
+	*)
+		# Initialize modules
+		. /usr/share/[mM]odules/init/bash
+		USE_MODULES=1
+		;;
+esac
 
 # Initialize Dotkit if system doesn't use modules
 if [ ${USE_MODULES} -eq 0 ]; then
@@ -264,38 +298,22 @@ fi
 # Load packages
 if [ ${USE_MODULES} -ne 0 ]; then
     module load git
-    module load cmake
+    module load cmake/3.9.2
+    CMAKE_PATH=$(dirname $(which cmake))
 else
     if [ "${CLUSTER}" == "surface" ]; then
         use git-2.8.0
-        use cmake-3.4.1
+        CMAKE_PATH=/usr/workspace/wsb/brain/utils/toss2/cmake-3.9.6/bin
     else
         use git
-        use cmake
+        CMAKE_PATH=/usr/workspace/wsb/brain/utils/toss2/cmake-3.9.6/bin
     fi
 fi
 
-################################################################
-# Initialize directories
-################################################################
-
-# Get LBANN root directory
-ROOT_DIR=$(git rev-parse --show-toplevel)
-
-# Initialize build directory
-if [ -z "${BUILD_DIR}" ]; then
-    BUILD_DIR=${ROOT_DIR}/build/${CLUSTER}.llnl.gov
+if [ ${CLUSTER} == "ray" -o ${CLUSTER} == "sierra" ]; then
+    module load cmake
+    CMAKE_PATH=$(dirname $(which cmake))
 fi
-if [ -n "${BUILD_SUFFIX}" ]; then
-    BUILD_DIR=${BUILD_DIR}.${BUILD_SUFFIX}
-fi
-mkdir -p ${BUILD_DIR}
-
-# Initialize install directory
-if [ -z "${INSTALL_DIR}" ]; then
-    INSTALL_DIR=${BUILD_DIR}
-fi
-mkdir -p ${INSTALL_DIR}
 
 ################################################################
 # Initialize C/C++/Fortran compilers
@@ -332,7 +350,7 @@ else
     fi
     COMPILER_BASE="$(use -hv ${COMPILER_} | grep 'dk_alter PATH' | awk '{print $3}' | sed 's/\/bin//')"
 fi
-
+COMPILER_STRIP="$(echo ${COMPILER_} | sed "s/[^[a-z]//g")"
 # Get compiler paths
 if [ "${COMPILER}" == "gnu" ]; then
     # GNU compilers
@@ -352,7 +370,7 @@ elif [ "${COMPILER}" == "intel" ]; then
 elif [ "${COMPILER}" == "clang" ]; then
     # clang
     # clang depends on gnu fortran library. so, find the dependency
-    if [ "${CLUSTER}" == "ray" ]; then
+    if [ "${CLUSTER}" == "ray" -o "{CLUSTER}" == "sierra" ]; then
         #gccdep=`ldd ${COMPILER_BASE}/lib/*.so 2> /dev/null | grep gcc | awk '(NF>2){print $3}' | sort | uniq | head -n 1`
         #GCC_VERSION=`ls -l $gccdep | awk '{print $NF}' | cut -d '-' -f 2 | cut -d '/' -f 1`
         # Forcing to gcc 4.9.3 because of the current way of ray's gcc and various clang installation
@@ -370,14 +388,13 @@ elif [ "${COMPILER}" == "clang" ]; then
     Fortran_COMPILER=${GNU_DIR}/bin/gfortran
     FORTRAN_LIB=${GNU_DIR}/lib64/libgfortran.so
     COMPILER_VERSION=$(${C_COMPILER} --version | awk '(($1=="clang")&&($2=="version")){print $3}')
-    export MPICH_FC=${GNU_DIR}/bin/gfortran
+    MPICH_FC=${GNU_DIR}/bin/gfortran
     #MPI_Fortran_COMPILER="${MPI_DIR}/bin/mpifort -fc=${Fortran_COMPILER}" $ done by exporting MPICH_FC
 else
     # Unrecognized compiler
     echo "Unrecognized compiler (${COMPILER})"
     exit 1
 fi
-
 # Add compiler optimization flags
 if [ "${BUILD_TYPE}" == "Release" ]; then
     if [ "${COMPILER}" == "gnu" ]; then
@@ -388,7 +405,7 @@ if [ "${BUILD_TYPE}" == "Release" ]; then
             C_FLAGS="${C_FLAGS} -march=ivybridge -mtune=ivybridge"
             CXX_FLAGS="${CXX_FLAGS} -march=ivybridge -mtune=ivybridge"
             Fortran_FLAGS="${Fortran_FLAGS} -march=ivybridge -mtune=ivybridge"
-        elif [ "${CLUSTER}" == "quartz" ]; then
+        elif [ "${CLUSTER}" == "quartz" ] || [ "${CLUSTER}" == "pascal" ] ; then
             C_FLAGS="${C_FLAGS} -march=broadwell -mtune=broadwell"
             CXX_FLAGS="${CXX_FLAGS} -march=broadwell -mtune=broadwell"
             Fortran_FLAGS="${Fortran_FLAGS} -march=broadwell -mtune=broadwell"
@@ -400,9 +417,14 @@ if [ "${BUILD_TYPE}" == "Release" ]; then
             C_FLAGS="${C_FLAGS} -mcpu=power8 -mtune=power8"
             CXX_FLAGS="${CXX_FLAGS} -mcpu=power8 -mtune=power8"
             Fortran_FLAGS="${Fortran_FLAGS} -mcpu=power8 -mtune=power8"
+        elif [ "${CLUSTER}" == "sierra" ]; then
+			# no power9 option shown in the manual
+            C_FLAGS="${C_FLAGS} -mcpu=power8 -mtune=power8"
+            CXX_FLAGS="${CXX_FLAGS} -mcpu=power8 -mtune=power8"
+            Fortran_FLAGS="${Fortran_FLAGS} -mcpu=power8 -mtune=power8"
         fi
     fi
-else 
+else
     if [ "${COMPILER}" == "gnu" ]; then
         C_FLAGS="${C_FLAGS} -g ${INSTRUMENT}"
         CXX_FLAGS="${CXX_FLAGS} -g ${INSTRUMENT}"
@@ -410,11 +432,40 @@ else
     fi
 fi
 
+# Add flag for libldl: may be needed some compilers
+CXX_FLAGS="${CXX_FLAGS} -ldl"
+C_FLAGS="${CXX_FLAGS}"
 
 
 # Set environment variables
-export CC=${C_COMPILER}
-export CXX=${CXX_COMPILER}
+CC=${C_COMPILER}
+CXX=${CXX_COMPILER}
+
+
+################################################################
+# Initialize directories
+################################################################
+
+# Get LBANN root directory
+ROOT_DIR=$(git rev-parse --show-toplevel)
+
+# Initialize build directory
+if [ -z "${BUILD_DIR}" ]; then
+    BUILD_DIR=${ROOT_DIR}/build/${COMPILER}.${BUILD_TYPE}.${CLUSTER}.llnl.gov
+fi
+if [ -n "${BUILD_SUFFIX}" ]; then
+    BUILD_DIR=${BUILD_DIR}.${BUILD_SUFFIX}
+fi
+mkdir -p ${BUILD_DIR}
+
+# Initialize install directory
+if [ -z "${INSTALL_DIR}" ]; then
+    INSTALL_DIR=${BUILD_DIR}/install
+fi
+mkdir -p ${INSTALL_DIR}
+
+SUPERBUILD_DIR="${ROOT_DIR}/superbuild"
+
 
 ################################################################
 # Initialize MPI compilers
@@ -434,91 +485,166 @@ if [ "${MPI}" == "spectrum" ]; then
     MPI=spectrum-mpi
 fi
 
-if [ ${USE_MODULES} -ne 0 ]; then
-    if [ -z "$(module list 2>&1 | grep ${MPI})" ]; then
-        MPI=$(module --terse spider ${MPI} 2>&1 | sed '/^$/d' | tail -1)
-        module load ${MPI}
-    fi
-    if [ -z "$(module list 2>&1 | grep ${MPI})" ]; then
-        echo "Could not load module (${MPI})"
-        exit 1
-    fi
-    MPI_DIR=$(module show ${MPI} 2>&1 | grep '\"PATH\"' | cut -d ',' -f 2 | cut -d ')' -f 1 | sed 's/\/bin//' | sed 's/\"//g')
-else
-    # The idea here is to check if the module of the specified mpi type is loaded
-    MPI_DOTKIT=$(use | grep ${MPI} | sed 's/ //g')
-    if [ -z "${MPI_DOTKIT}" ]; then
-        if [ "${COMPILER}" == "gnu" ] || [ "${COMPILER}" == "intel" ] || [ "${COMPILER}" == "pgi" ] ; then
-            MPI_DOTKIT=${MPI}-${COMPILER}
-        elif [ "${COMPILER}" == "clang" ]; then
-            MPI_DOTKIT=${MPI}-gnu
-        fi
-        # The default MVAPICH version does not work on surface
-        if [ "${CLUSTER}" == "surface" -a "${MPI}" == "mvapich2" ]; then
-            MPI_DOTKIT+="-2.2"
-        fi  
-        use ${MPI_DOTKIT}
-        if [ -z "$(use | grep ${MPI_DOTKIT})" ]; then
-            echo "Could not load dotkit (${MPI_DOTKIT})"
-            exit 1
-        fi
-    fi
-    if [ "${BUILD_TYPE}" == "Debug" ] && [ -z "$(echo ${MPI_DOTKIT} | grep debug)" ]; then
-        unuse ${MPI_DOTKIT}
-        #MPI_DOTKIT=$(echo ${MPI_DOTKIT} | awk 'BEGIN{FS="-"}{printf("%s-%s-debug-%s\n",$1,$2,$3)}')
-        MPI_DOTKIT=$(echo ${MPI_DOTKIT} | awk 'BEGIN{FS="-"}{printf("%s-%s-debug\n",$1,$2)}')
-        use ${MPI_DOTKIT}
-        if [ -z "$(use | grep ${MPI_DOTKIT})" ]; then
-            echo "Could not load dotkit (${MPI_DOTKIT})"
-            exit 1
-        fi
-    fi
-    if [ "${COMPILER}" == "gnu" ] || [ "${COMPILER}" == "intel" ] || [ "${COMPILER}" == "pgi" ]; then
-        if [ "`echo ${MPI_DOTKIT} | grep ${COMPILER}`" == "" ] ; then
-            echo "switch to an MPI version that is consistent with (${COMPILER}) compilers"
-            exit 1
-        fi
-    fi
-    MPI_DIR=$(use -hv ${MPI_DOTKIT} | grep 'dk_alter PATH' | awk '{print $3}' | sed 's/\/bin//')
+# Use CUDA-aware MVAPICH2 on Surface and Pascal
+if [ "${CLUSTER}" == "pascal" -o "${CLUSTER}" == "surface" ]; then
+  MPI_HOME=/usr/global/tools/mpi/sideinstalls/${SYS_TYPE}/mvapich2-2.3/install-gcc-4.9.3-cuda-9.1
+  export MV2_USE_CUDA=1
+fi
+
+if [ -z "${MPI_HOME}" ]; then
+	if [ ${USE_MODULES} -ne 0 ]; then
+		if [ -z "$(module list 2>&1 | grep ${MPI})" ]; then
+			MPI=$(module --terse spider ${MPI} 2>&1 | sed '/^$/d' | tail -1)
+			module load ${MPI}
+		fi
+		if [ -z "$(module list 2>&1 | grep ${MPI})" ]; then
+			echo "Could not load module (${MPI})"
+			exit 1
+		fi
+		MPI_HOME=$(module show ${MPI} 2>&1 | grep '\"PATH\"' | cut -d ',' -f 2 | cut -d ')' -f 1 | sed 's/\/bin//' | sed 's/\"//g')
+	else
+		# The idea here is to check if the module of the specified mpi type is loaded
+		MPI_DOTKIT=$(use | grep ${MPI} | sed 's/ //g')
+		if [ -z "${MPI_DOTKIT}" ]; then
+			if [ "${COMPILER}" == "gnu" ] || [ "${COMPILER}" == "intel" ] || [ "${COMPILER}" == "pgi" ] ; then
+				MPI_COMPILER=-${COMPILER}
+			elif [ "${COMPILER}" == "clang" ]; then
+				MPI_COMPILER=-gnu
+			fi
+			# The default MVAPICH version does not work on surface
+			if [ "${CLUSTER}" == "surface" -a "${MPI}" == "mvapich2" ]; then
+				MPI_VERSION="-2.2"
+			else
+				MPI_VERSION=""
+			fi
+		else
+			MPI_COMPILER=-$(echo ${MPI_DOTKIT} | awk 'BEGIN{FS="-"}{print $2}')
+			MPI_VERSION=-$(echo ${MPI_DOTKIT} |  awk 'BEGIN{FS="-"}{print $NF}')
+		fi
+		if [ "${BUILD_TYPE}" == "Debug" ]; then
+			MPI_DEBUG="-debug"
+		else
+			MPI_DEBUG=""
+		fi
+		MPI_DOTKIT=${MPI}${MPI_COMPILER}${MPI_DEBUG}${MPI_VERSION}
+		echo "Using ${MPI_DOTKIT}"
+		use ${MPI_DOTKIT}
+		if [ -z "$(use | grep ${MPI_DOTKIT})" ]; then
+			echo "Could not load dotkit (${MPI_DOTKIT})"
+			exit 1
+		fi
+		if [ "${COMPILER}" == "gnu" ] || [ "${COMPILER}" == "intel" ] || [ "${COMPILER}" == "pgi" ]; then
+			if [ "`echo ${MPI_DOTKIT} | grep ${COMPILER}`" == "" ] ; then
+				echo "switch to an MPI version that is consistent with (${COMPILER}) compilers"
+				exit 1
+			fi
+		fi
+		MPI_HOME=$(use -hv ${MPI_DOTKIT} | grep 'dk_alter PATH' | awk '{print $3}' | sed 's/\/bin//')
+	fi
 fi
 
 # Get MPI compilers
-MPI_C_COMPILER=${MPI_DIR}/bin/mpicc
-MPI_CXX_COMPILER=${MPI_DIR}/bin/mpicxx
-MPI_Fortran_COMPILER=${MPI_DIR}/bin/mpifort
+export MPI_HOME
+export CMAKE_PREFIX_PATH=${MPI_HOME}:${CMAKE_PREFIX_PATH}
+export MPI_C_COMPILER=${MPI_HOME}/bin/mpicc
+export MPI_CXX_COMPILER=${MPI_HOME}/bin/mpicxx
+export MPI_Fortran_COMPILER=${MPI_HOME}/bin/mpifort
+if [ "${MPI}" == "spectrum-mpi" ]; then
+    WITH_SPECTRUM=ON
+fi
 
 ################################################################
 # Initialize GPU libraries
 ################################################################
 
-if [ "${CLUSTER}" == "surface" ] || [ "${CLUSTER}" == "ray" ]; then
+if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" -o \
+	 "${CLUSTER}" == "pascal" -o "${CLUSTER}" == "sierra" ]; then
     HAS_GPU=1
     WITH_CUDA=${WITH_CUDA:-ON}
     WITH_CUDNN=ON
+    WITH_CUB=ON
     ELEMENTAL_USE_CUBLAS=OFF
-    if [ "${CLUSTER}" == "ray" ]; then
-      NCCL_HOME_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.0.5-3+cuda8.0_ppc64el
-    else
-      NCCL_HOME_DIR=/usr/workspace/wsb/brain/nccl2/nccl-2.0.5+cuda8.0
-    fi
-    if [ "${ARCH}" == "ppc64le" ]; then
-        CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda
-        CUDATOOLKIT_VERSION=$(ls -l ${CUDA_TOOLKIT_ROOT_DIR} | awk '{print $NF}' | cut -d '-' -f 2)
-    elif [ -n "${CUDA_PATH}" ]; then
-        CUDATOOLKIT_VERSION=$(basename "$CUDA_PATH" | sed 's/cudatoolkit-//')
-        CUDA_TOOLKIT_ROOT_DIR=${CUDA_PATH}
-    else
-        CUDATOOLKIT_VERSION=8.0
-        if [ ${USE_MODULES} -ne 0 ]; then
-            module load cudatoolkit/${CUDATOOLKIT_VERSION}
-        fi
-        CUDA_TOOLKIT_ROOT_DIR=/opt/cudatoolkit-${CUDATOOLKIT_VERSION}
-    fi
+	case $CLUSTER in
+		ray)
+			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.2.12-1+cuda9.2_ppc64le
+			;;
+		sierra)
+			# NCCL not available
+			unset NCCL_DIR
+			;;
+		*)
+			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.2.12-1+cuda9.0_x86_64
+			;;
+	esac
+
+    # Hack for surface
+	case $CLUSTER in
+		surface)
+			. /usr/share/[mM]odules/init/bash
+			CUDA_TOOLKIT_MODULE=cudatoolkit/9.1
+			;;
+		ray)
+			module del cuda
+			CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/9.2.88}
+			;;
+		sierra)
+			module del cuda
+			# cuDNN is not yet available for CUDA 9.2
+			CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/9.2.88}
+			;;
+	esac
+fi
+
+if [ "${WITH_CUDA}" == "ON" ]; then
+	# Defines CUDA_TOOLKIT_ROOT_DIR
+	if [ -z "${CUDA_TOOLKIT_ROOT_DIR}" ]; then
+		if [ -n "${CUDA_PATH}" ]; then
+			CUDA_TOOLKIT_ROOT_DIR=${CUDA_PATH}
+		elif [ -n "${CUDA_HOME}" ]; then
+			CUDA_TOOLKIT_ROOT_DIR=${CUDA_HOME}
+		elif [ -n "${CUDA_TOOLKIT_MODULE}" -o ${USE_MODULES} -ne 0 ]; then
+			CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda}
+			module load ${CUDA_TOOLKIT_MODULE}
+			CUDA_TOOLKIT_ROOT_DIR=${CUDA_HOME:-${CUDA_PATH}}
+		fi
+	fi
+	if [ -n "${CUDA_TOOLKIT_ROOT_DIR}" -a -d "${CUDA_TOOLKIT_ROOT_DIR}" ]; then
+		export CUDA_TOOLKIT_ROOT_DIR
+	else
+		echo "Could not find CUDA"
+		exit 1
+	fi
+	# Defines CUDA_TOOLKIT_VERSION
+	#CUDA_TOOLKIT_VERSION=$(ls -l ${CUDA_TOOLKIT_ROOT_DIR} | awk '{print $NF}' | cut -d '-' -f 2)
+	CUDA_TOOLKIT_VERSION=$(${CUDA_TOOLKIT_ROOT_DIR}/bin/nvcc --version | grep -oE "V[0-9]+\.[0-9]+" | sed 's/V//')
+
+	# CUDNN
+	if [ -z "${CUDNN_DIR}" ]; then
+		if [ "${CUDA_TOOLKIT_VERSION}" == "9.2" ]; then
+			CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-7.1.4/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
+		elif [ "${CUDA_TOOLKIT_VERSION}" == "9.1" ]; then
+			CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-7.1.3/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
+		fi
+	fi
+	if [ ! -d "${CUDNN_DIR}" ]; then
+		echo "Could not find cuDNN at $CUDNN_DIR"
+		exit 1
+	fi
+	export CUDNN_DIR
 else
     HAS_GPU=0
     WITH_CUDA=${WITH_CUDA:-OFF}
     WITH_CUDNN=OFF
     ELEMENTAL_USE_CUBLAS=OFF
+fi
+
+################################################################
+# Library options
+################################################################
+if [ "${CLUSTER}" == "sierra" ]; then
+	OPENBLAS_ARCH="TARGET=POWER8"
+else
+	OPENBLAS_ARCH=
 fi
 
 ################################################################
@@ -574,7 +700,7 @@ if [ ${VERBOSE} -ne 0 ]; then
     print_variable ELEMENTAL_USE_CUBLAS
     print_variable ELEMENTAL_MATH_LIBS
     print_variable PATCH_OPENBLAS
-    print_variable SEQ_INIT
+    print_variable DETERMINISTIC
     print_variable CLEAN_BUILD
     print_variable VERBOSE
     print_variable MAKE_NUM_PROCESSES
@@ -599,54 +725,60 @@ if [ ${CLEAN_BUILD} -ne 0 ]; then
     eval ${CLEAN_COMMAND}
 fi
 
+if [ -f ${BUILD_DIR}/lbann/build/Makefile ] && [ ${RECONFIGURE} != 1 ]; then
+    echo "Building previously configured LBANN"
+    cd ${BUILD_DIR}/lbann/build/
+    make -j${MAKE_NUM_PROCESSES} all
+    make install -j${MAKE_NUM_PROCESSES} all
+    exit $?
+fi
+
+
+
 # ATM: goes after Elemental_DIR
 #-D OpenCV_DIR=${OpenCV_DIR} \
 
 # Configure build with CMake
 CONFIGURE_COMMAND=$(cat << EOF
-cmake \
+ ${CMAKE_PATH}/cmake \
 -D CMAKE_EXPORT_COMPILE_COMMANDS=ON \
 -D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
 -D CMAKE_INSTALL_MESSAGE=${CMAKE_INSTALL_MESSAGE} \
 -D CMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
+-D LBANN_SB_BUILD_CNPY=ON \
+-D LBANN_SB_BUILD_HYDROGEN=ON \
+-D LBANN_SB_FWD_HYDROGEN_Hydrogen_ENABLE_CUDA=${WITH_CUDA} \
+-D LBANN_SB_BUILD_OPENBLAS=ON \
+-D LBANN_SB_BUILD_OPENCV=ON \
+-D LBANN_SB_BUILD_JPEG_TURBO=ON \
+-D LBANN_SB_BUILD_PROTOBUF=ON \
+-D LBANN_SB_BUILD_CUB=${WITH_CUB} \
+-D LBANN_SB_BUILD_ALUMINUM=${WITH_ALUMINUM} \
+-D ALUMINUM_ENABLE_MPI_CUDA=${ALUMINUM_WITH_MPI_CUDA} \
+-D ALUMINUM_ENABLE_NCCL=${ALUMINUM_WITH_NCCL} \
+-D LBANN_SB_BUILD_LBANN=ON \
+-D CMAKE_CXX_FLAGS="${CXX_FLAGS}" \
+-D CMAKE_C_FLAGS="${C_FLAGS}" \
 -D CMAKE_C_COMPILER=${C_COMPILER} \
 -D CMAKE_CXX_COMPILER=${CXX_COMPILER} \
 -D CMAKE_Fortran_COMPILER=${Fortran_COMPILER} \
--D GFORTRAN_LIB=${FORTRAN_LIB} \
--D MPI_C_COMPILER=${MPI_C_COMPILER} \
--D MPI_CXX_COMPILER=${MPI_CXX_COMPILER} \
--D MPI_Fortran_COMPILER=${MPI_Fortran_COMPILER} \
--D CMAKE_CXX_FLAGS="${CXX_FLAGS}" \
--D CMAKE_C_FLAGS="${C_FLAGS}" \
--D CMAKE_Fortran_FLAGS="${Fortran_FLAGS}" \
--D WITH_CUDA=${WITH_CUDA} \
--D WITH_CUDNN=${WITH_CUDNN} \
--D WITH_TBINF=${WITH_TBINF} \
--D WITH_VTUNE=${WITH_VTUNE} \
--D WITH_NVPROF=${WITH_NVPROF} \
--D Elemental_DIR=${Elemental_DIR} \
--D CUDA_TOOLKIT_ROOT_DIR=${CUDA_TOOLKIT_ROOT_DIR} \
--D cuDNN_DIR=${cuDNN_DIR} \
--D VTUNE_DIR=${VTUNE_DIR} \
--D ELEMENTAL_MATH_LIBS=${ELEMENTAL_MATH_LIBS} \
--D DATATYPE=${DATATYPE} \
--D VERBOSE=${VERBOSE} \
--D MAKE_NUM_PROCESSES=${MAKE_NUM_PROCESSES} \
--D LBANN_HOME=${ROOT_DIR} \
--D SEQ_INIT=${SEQ_INIT} \
--D COMPILER_VERSION=${COMPILER_VERSION} \
--D COMPILER_BASE=${COMPILER_BASE} \
--D WITH_LIBJPEG_TURBO=${WITH_LIBJPEG_TURBO} \
--D LIBJPEG_TURBO_DIR=${LIBJPEG_TURBO_DIR} \
--D PATCH_OPENBLAS=${PATCH_OPENBLAS} \
--D ELEMENTAL_USE_CUBLAS=${ELEMENTAL_USE_CUBLAS} \
--D WITH_NCCL=${WITH_NCCL} \
--D NCCL_HOME_DIR=${NCCL_HOME_DIR} \
--D WITH_TOPO_AWARE=${WITH_TOPO_AWARE} \
--D IPPROOT=${IPPROOT} \
-${ROOT_DIR}
+-D LBANN_WITH_CUDA=${WITH_CUDA} \
+-D LBANN_WITH_NVPROF=${WITH_NVPROF} \
+-D LBANN_WITH_VTUNE=${WITH_VTUNE} \
+-D LBANN_WITH_TBINF=${WITH_TBINF} \
+-D LBANN_WITH_TOPO_AWARE=${WITH_TOPO_AWARE} \
+-D LBANN_DATATYPE=${DATATYPE} \
+-D LBANN_DETERMINISTIC=${DETERMINISTIC} \
+-D LBANN_WITH_ALUMINUM=${WITH_ALUMINUM} \
+-D LBANN_WITH_CONDUIT=${WITH_CONDUIT} \
+-D LBANN_CONDUIT_DIR=${CONDUIT_DIR} \
+-D LBANN_BUILT_WITH_SPECTRUM=${WITH_SPECTRUM} \
+-D OPENBLAS_ARCH_COMMAND=${OPENBLAS_ARCH} \
+${SUPERBUILD_DIR}
 EOF
 )
+
+
 if [ ${VERBOSE} -ne 0 ]; then
     echo "${CONFIGURE_COMMAND}"
 fi
@@ -660,7 +792,7 @@ fi
 
 # Build LBANN with make
 # Note: Ensure Elemental to be built before LBANN. Dependency violation appears to occur only when using cuda_add_library.
-BUILD_COMMAND="make -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE} project_Elemental all"
+BUILD_COMMAND="make -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"
 if [ ${VERBOSE} -ne 0 ]; then
     echo "${BUILD_COMMAND}"
 fi

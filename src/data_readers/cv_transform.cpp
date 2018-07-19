@@ -29,7 +29,7 @@
 
 #include "lbann/data_readers/cv_transform.hpp"
 
-#ifdef __LIB_OPENCV
+#ifdef LBANN_HAS_OPENCV
 namespace lbann {
 
 const constexpr char* const cv_transform::cv_flip_desc[];
@@ -51,4 +51,4 @@ double get_depth_denormalizing_factor(const int cv_depth) {
 
 } // end of namespace lbann
 
-#endif // __LIB_OPENCV
+#endif // LBANN_HAS_OPENCV
