@@ -430,9 +430,6 @@ void data_reader_jag_conduit::check_image_size() {
 
   m_image_linearized_size = static_cast<size_t>(emi.number_of_elements());
 
-#if 0
-//dah: the following block is throwing an error, since m_image_linearized_size = 64*64, which is != emi.number_of_elements(), which is 16384
-
   if (m_image_linearized_size != static_cast<size_t>(emi.number_of_elements())) {
     if ((m_image_width == 0) && (m_image_height == 0)) {
       m_image_height = 1;
@@ -447,7 +444,6 @@ void data_reader_jag_conduit::check_image_size() {
           << " m_image_linearized_size: " << m_image_linearized_size << std::endl;
     }
   }
-#endif
 }
 
 void data_reader_jag_conduit::check_scalar_keys() {
