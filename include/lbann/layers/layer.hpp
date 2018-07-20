@@ -160,7 +160,13 @@ class Layer {
   virtual void reset_counters();
 
   /** Whether the layer is using a GPU implementation. */
-  inline bool using_gpus() const { return get_device_allocation() == El::Device::GPU; }
+  inline bool using_gpus() const {
+#ifdef LBANN_HAS_GPU
+    return get_device_allocation() == El::Device::GPU;
+#else
+    return false;
+#endif // LBANN_HAS_GPU
+  }
 
   /** Get expected number of parent layers.
    *  A negative value indicates no limit.

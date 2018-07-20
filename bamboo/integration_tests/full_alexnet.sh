@@ -8,15 +8,15 @@ srun --wait=0 --clear-ssd hostname > /dev/null
 # Cache dataset
 echo "Caching dataset..."
 [ -e /l/ssd/lbannusr/datasets-resized/ILSVRC2012/train_resized.tar ] || \
-  srun --nodes=128 --ntasks-per-node=2 dbcast /p/lscratche/brainusr/datasets/ILSVRC2012/original/train_resized.tar /l/ssd/lbannusr/datasets-resized/ILSVRC2012/train_resized.tar > /dev/null
+  srun --nodes=128 --ntasks-per-node=2 dbcast /p/lscratchh/brainusr/datasets/ILSVRC2012/original/train_resized.tar /l/ssd/lbannusr/datasets-resized/ILSVRC2012/train_resized.tar > /dev/null
 [ -d /l/ssd/lbannusr/datasets-resized/ILSVRC2012/train ] || \
   srun --nodes=128 --ntasks-per-node=1 tar xf /l/ssd/lbannusr/datasets-resized/ILSVRC2012/train_resized.tar -C /l/ssd/lbannusr/datasets-resized/ILSVRC2012
 [ -e /l/ssd/lbannusr/datasets-resized/ILSVRC2012/val_resized.tar ] || \
-  srun --nodes=128 --ntasks-per-node=2 dbcast /p/lscratche/brainusr/datasets/ILSVRC2012/original/val_resized.tar /l/ssd/lbannusr/datasets-resized/ILSVRC2012/val_resized.tar > /dev/null
+  srun --nodes=128 --ntasks-per-node=2 dbcast /p/lscratchh/brainusr/datasets/ILSVRC2012/original/val_resized.tar /l/ssd/lbannusr/datasets-resized/ILSVRC2012/val_resized.tar > /dev/null
 [ -d /l/ssd/lbannusr/datasets-resized/ILSVRC2012/val ] || \
   srun --nodes=128 --ntasks-per-node=1 tar xf /l/ssd/lbannusr/datasets-resized/ILSVRC2012/val_resized.tar -C /l/ssd/lbannusr/datasets-resized/ILSVRC2012
 [ -e /l/ssd/lbannusr/datasets-resized/ILSVRC2012/labels.tar ] || \
-  srun --nodes=128 --ntasks-per-node=2 dbcast /p/lscratche/brainusr/datasets/ILSVRC2012/original/labels.tar /l/ssd/lbannusr/datasets-resized/ILSVRC2012/labels.tar > /dev/null
+  srun --nodes=128 --ntasks-per-node=2 dbcast /p/lscratchh/brainusr/datasets/ILSVRC2012/original/labels.tar /l/ssd/lbannusr/datasets-resized/ILSVRC2012/labels.tar > /dev/null
 [ -e /l/ssd/lbannusr/datasets-resized/ILSVRC2012/labels/train.txt ] || \
   srun --nodes=128 --ntasks-per-node=1 tar xf /l/ssd/lbannusr/datasets-resized/ILSVRC2012/labels.tar -C /l/ssd/lbannusr/datasets-resized/ILSVRC2012
 wait

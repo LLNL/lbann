@@ -3,8 +3,8 @@ data_reader {
     name: "multi_images"
     role: "train"
     shuffle: true
-    data_filedir: "/p/lscratche/brainusr/datasets/ILSVRC2012/patches_84h_110x110_13x13-blur-ab_compact/"
-    data_filename: "/p/lscratche/brainusr/datasets/ILSVRC2012/birds_and_cars/patches_84h_110x110_13x13-blur-ab_compact/train_list_8h_birds.txt"
+    data_filedir: "/p/lscratchh/brainusr/datasets/ILSVRC2012/patches_84h_110x110_13x13-blur-ab_compact/"
+    data_filename: "/p/lscratchh/brainusr/datasets/ILSVRC2012/birds_and_cars/patches_84h_110x110_13x13-blur-ab_compact/train_list_8h_birds.txt"
     label_filename: ""
     validation_percent: 0.1
     absolute_sample_count: 0
@@ -52,8 +52,8 @@ data_reader {
     name: "multi_images"
     role: "test"
     shuffle: true
-    data_filedir: "/p/lscratche/brainusr/datasets/ILSVRC2012/patches_84h_110x110_13x13-blur-ab_compact/"
-    data_filename: "/p/lscratche/brainusr/datasets/ILSVRC2012/birds_and_cars/patches_84h_110x110_13x13-blur-ab_compact/val_list_8h.txt"
+    data_filedir: "/p/lscratchh/brainusr/datasets/ILSVRC2012/patches_84h_110x110_13x13-blur-ab_compact/"
+    data_filename: "/p/lscratchh/brainusr/datasets/ILSVRC2012/birds_and_cars/patches_84h_110x110_13x13-blur-ab_compact/val_list_8h.txt"
     label_filename: ""
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
