@@ -658,7 +658,7 @@ void Layer::check_setup() {
     for (size_t i = 1; i < m_neuron_dims.size(); ++i) {
       err << "x" << m_neuron_dims[i];
     }
-    err << ")";
+    err << "); m_num_neurons: " << m_num_neurons;
     LBANN_ERROR(err.str());
   }
 
