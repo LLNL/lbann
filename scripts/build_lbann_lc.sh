@@ -326,7 +326,14 @@ if [ ${USE_MODULES} -ne 0 ]; then
         COMPILER_=gcc
     fi
     if [ -z "$(module list 2>&1 | grep ${COMPILER_})" ]; then
-        COMPILER_=$(module --terse spider ${COMPILER_} 2>&1 | sed '/^$/d' | tail -1)
+        if [ "${COMPILER_}" == "gcc" ]; then
+            # Special case to avoid GCC 8.1
+            # Note: This should be removed once the bug in GCC 8.1 is
+            # patched. See https://github.com/LLNL/lbann/issues/529.
+            COMPILER_=$(module --terse spider ${COMPILER_} 2>&1 | grep -v 8.1.0 | sed '/^$/d' | tail -1)
+        else
+            COMPILER_=$(module --terse spider ${COMPILER_} 2>&1 | sed '/^$/d' | tail -1)
+        fi
         module load ${COMPILER_}
     fi
     if [ -z "$(module list 2>&1 | grep ${COMPILER_})" ]; then
