@@ -172,8 +172,10 @@ std::string Layer::get_topo_description() const {
 void Layer::forward_prop() {
   const auto fp_start = get_time();
 
-  // Setup matrix data, e.g. input matrices
-  fp_setup_data(m_model->get_current_mini_batch_size());
+  // Setup tensors
+  const auto& mini_batch_size = m_model->get_current_mini_batch_size();
+  fp_setup_inputs(mini_batch_size);
+  fp_setup_outputs(mini_batch_size);
 
 #if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
@@ -202,8 +204,10 @@ void Layer::forward_prop() {
 void Layer::back_prop() {
   const auto bp_start = get_time();
 
-  // Setup matrix data, e.g. input matrices
-  bp_setup_data(m_model->get_current_mini_batch_size());
+  // Setup tensors
+  const auto& mini_batch_size = m_model->get_current_mini_batch_size();
+  bp_setup_gradient_wrt_outputs(mini_batch_size);
+  bp_setup_gradient_wrt_inputs(mini_batch_size);
 
 #if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
   // Synchronize GPUs and check for errors
@@ -607,10 +611,14 @@ void Layer::setup_dims() {
 }
   
 void Layer::setup_matrices(const El::Grid& grid) {
+
+  // Destroy previously setup matrices
   m_inputs.clear();
   m_outputs.clear();
   m_gradient_wrt_outputs.clear();
   m_gradient_wrt_inputs.clear();
+
+  // Construct matrices
   m_inputs.resize(get_num_parents());
   m_outputs.resize(get_num_children());
   m_gradient_wrt_outputs.resize(get_num_children());
@@ -629,6 +637,7 @@ void Layer::setup_matrices(const El::Grid& grid) {
     m_gradient_wrt_inputs[i]
       = construct_matrix(grid, "gradient_wrt_input", i);
   }
+
 }
 
 std::unique_ptr<AbsDistMat> Layer::construct_matrix(const El::Grid& grid,
@@ -667,41 +676,34 @@ std::unique_ptr<AbsDistMat> Layer::construct_matrix(const El::Grid& grid,
 }
 
 void Layer::setup_data() {
-  const int mini_batch_size = m_model->get_max_mini_batch_size();
 
-  // Determine distributed matrix alignment
-  El::DistData alignment_dist;
-  if (get_num_parents() > 0) {
-    alignment_dist = m_parent_layers[0]->get_activations(*this).DistData();
-  } else if (get_num_children() > 0) {
-    alignment_dist = get_activations().DistData();
-  }
+  // Get mini-batch size
+  const auto& mini_batch_size = m_model->get_max_mini_batch_size();
 
-  // Initialize input tensors
-  for (int i = 0; i < get_num_parents(); ++i) {
-    const auto& parent_output = m_parent_layers[i]->get_activations(*this);
-    auto& input = *m_inputs[i];
-    input.AlignWith(alignment_dist);
-    if (parent_output.DistData() == input.DistData()) {
-      El::LockedView(input, parent_output);
+  // Initialize input and output tensors
+  fp_setup_inputs(mini_batch_size);
+  fp_setup_outputs(mini_batch_size);
+
+  // Initialize gradient w.r.t. output tensors
+  // Note: We guess whether the tensor is a view or needs to allocate
+  // memory, but there are some edge cases that are not handled.
+  for (int i = 0; i < get_num_children(); ++i) {
+    const auto& child = *m_child_layers[i];
+    const auto& output = get_activations(i);
+    auto& gradient_wrt_output = *m_gradient_wrt_outputs[i];
+    gradient_wrt_output.Empty(false);
+    gradient_wrt_output.AlignWith(output);
+    if (child.get_data_layout() == get_data_layout()
+        && child.get_device_allocation() == get_device_allocation()
+        && gradient_wrt_output.DistData() == output.DistData()) {
+      El::LockedView(gradient_wrt_output, output);
     } else {
-      El::Copy(parent_output, input);
+      El::Copy(output, gradient_wrt_output);
     }
   }
 
-  // Initialize output tensors
-  for (int i = 0; i < get_num_children(); ++i) {
-    auto& output = get_activations(i);
-    output.AlignWith(alignment_dist);
-    output.Resize(get_output_size(i), mini_batch_size);
-  }
-
   // Initialize gradient w.r.t. input tensors
-  for (int i = 0; i < get_num_parents(); ++i) {
-    auto& gradient_wrt_input = get_error_signals(i);
-    gradient_wrt_input.AlignWith(alignment_dist);
-    gradient_wrt_input.Resize(get_input_size(i), mini_batch_size);
-  }
+  bp_setup_gradient_wrt_inputs(mini_batch_size);
 
 }
 
@@ -847,23 +849,21 @@ void Layer::write_proto(lbann_data::Layer* proto) const {
   }
 }
 
-void Layer::fp_setup_data(int mini_batch_size) {
+void Layer::fp_setup_inputs(El::Int mini_batch_size) {
+  if (get_num_parents() < 1) { return; }
 
   // Determine distributed matrix alignment
-  El::DistData alignment_dist;
-  if (get_num_parents() > 0) {
-    alignment_dist = m_parent_layers[0]->get_activations(*this).DistData();
-  } else if (get_num_children() > 0) {
-    alignment_dist = get_activations().DistData();
-  }
+  const auto& alignment_dist
+    = m_parent_layers.front()->get_activations(*this).DistData();
 
-  // Initialize input tensors
+  // Iterate through input tensors
   for (int i = 0; i < get_num_parents(); ++i) {
 
     // Initialize input tensor
     const auto& parent = *m_parent_layers[i];
     const auto& parent_output = parent.get_activations(*this);
     auto& input = *m_inputs[i];
+    input.Empty(false);
     input.AlignWith(alignment_dist);
     if (parent_output.DistData() == input.DistData()) {
       El::LockedView(input, parent_output);
@@ -885,30 +885,36 @@ void Layer::fp_setup_data(int mini_batch_size) {
     }
 
   }
+  
+}
+
+void Layer::fp_setup_outputs(El::Int mini_batch_size) {
+  if (get_num_children() < 1) { return; }
+
+  // Determine distributed matrix alignment
+  const bool align_outputs = get_num_parents() > 0;
+  const auto& alignment_dist = (align_outputs ?
+                                get_prev_activations().DistData() :
+                                El::DistData());
 
   // Initialize output tensors
   for (int i = 0; i < get_num_children(); ++i) {
     auto& output = get_activations(i);
-    const auto& height = get_output_size(i);
-    const auto& width = mini_batch_size;
-    output.AlignWith(alignment_dist);
-    if (output.Height() != height || output.Width() != width) {
-      output.Empty(false); // Reset matrix views without deallocating memory
-      output.Resize(height, width);
-    }
+    output.Empty(false);
+    if (align_outputs) { output.AlignWith(alignment_dist); }
+    output.Resize(get_output_size(i), mini_batch_size);
   }
 
 }
 
-void Layer::bp_setup_data(int mini_batch_size) {
-
-  // Initialize gradient w.r.t. output tensors
+void Layer::bp_setup_gradient_wrt_outputs(El::Int mini_batch_size) {
   for (int i = 0; i < get_num_children(); ++i) {
 
     // Initialize gradient w.r.t. output tensor
     const auto& child = *m_child_layers[i];
     const auto& child_gradient_wrt_input = child.get_error_signals(*this);
     auto& gradient_wrt_output = *m_gradient_wrt_outputs[i];
+    gradient_wrt_output.Empty(false);
     gradient_wrt_output.AlignWith(get_activations(i));
     if (child_gradient_wrt_input.DistData()
         == gradient_wrt_output.DistData()) {
@@ -933,20 +939,15 @@ void Layer::bp_setup_data(int mini_batch_size) {
     }
 
   }
+}
 
-  // Initialize gradient w.r.t. input tensors
+void Layer::bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) {
   for (int i = 0; i < get_num_parents(); ++i) {
     auto& gradient_wrt_input = get_error_signals(i);
-    const auto& height = get_input_size(i);
-    const auto& width = mini_batch_size;
+    gradient_wrt_input.Empty(false);
     gradient_wrt_input.AlignWith(get_prev_activations(i));
-    if (gradient_wrt_input.Height() != height
-        || gradient_wrt_input.Width() != width) {
-      gradient_wrt_input.Empty(false); // Reset matrix views without deallocating memory
-      gradient_wrt_input.Resize(height, width);
-    }
+    gradient_wrt_input.Resize(get_input_size(i), mini_batch_size);
   }
-
 }
 
 std::string Layer::get_data_layout_string(data_layout d) const {
