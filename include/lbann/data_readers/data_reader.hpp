@@ -114,12 +114,12 @@ class generic_data_reader : public lbann_image_preprocessor {
   // load, etc.
 
   /**
-   * Set base directory for your data. 
+   * Set base directory for your data.
    */
   void set_file_dir(std::string s);
 
   /**
-   * Set base directory for your locally cached (e.g, on ssd) data. 
+   * Set base directory for your locally cached (e.g, on ssd) data.
    */
   void set_local_file_dir(std::string s);
 
@@ -515,7 +515,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   void use_unused_index_set();
 
   /// partition the dataset amongst the models
-  void set_partitioned(bool is_partitioned=true, double overlap=0.0, int mode=0); 
+  void set_partitioned(bool is_partitioned=true, double overlap=0.0, int mode=0);
 
   /// returns true if the data set is partitioned
   bool is_partitioned() const { return m_is_partitioned; }
@@ -826,6 +826,8 @@ class generic_data_reader : public lbann_image_preprocessor {
    /// only relevant if m_is_partitioned = true.  Currently this is same as
    /// comm->get_procs_per_model)
    int m_procs_per_partition;
+
+  std::vector<std::vector<char>> m_thread_buffer;
 };
 
 template<typename T>

@@ -39,9 +39,9 @@
 
 namespace lbann {
 
-bool image_utils::loadIMG(const std::string& Imagefile, int& Width, int& Height, bool Flip, unsigned char *&Pixels) {
+bool image_utils::loadIMG(const std::string& Imagefile, int& Width, int& Height, bool Flip, unsigned char *&Pixels, std::vector<char>& buf) {
 #ifdef LBANN_HAS_OPENCV
-  cv::Mat image = cv_utils::lbann_imread(Imagefile, _LBANN_CV_COLOR_);
+    cv::Mat image = cv_utils::lbann_imread(Imagefile, _LBANN_CV_COLOR_, buf);
   if (image.empty()) {
     return false;
   }
@@ -189,7 +189,7 @@ bool image_utils::process_image(cv::Mat& image, int& Width, int& Height, int& Ty
 }
 #endif // LBANN_HAS_OPENCV
 
-
+#if 0
 bool image_utils::load_image(const std::string& filename,
                                     int& Width, int& Height, int& Type, cv_process& pp, std::vector<uint8_t>& buf) {
 #ifdef LBANN_HAS_OPENCV
@@ -217,6 +217,7 @@ bool image_utils::save_image(const std::string& filename,
   return false;
 #endif // LBANN_HAS_OPENCV
 }
+#endif
 
 /**
  *  @param filename The name of the image file to read in
@@ -225,11 +226,12 @@ bool image_utils::save_image(const std::string& filename,
  *  @param Type     The type of the image read (OpenCV code used for cv::Mat)
  *  @param pp       The pre-processing parameters
  *  @param data     The pre-processed image data to be stored in El::Matrix<DataType> format
+ *  @param buf      A thread safe buffer for local, temporary, image decoding
  */
 bool image_utils::load_image(const std::string& filename,
-                                    int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data) {
+                                    int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data, std::vector<char>& buf) {
 #ifdef LBANN_HAS_OPENCV
-  cv::Mat image = cv_utils::lbann_imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+  cv::Mat image = cv_utils::lbann_imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH, buf);
 
   return process_image(image, Width, Height, Type, pp, data);
 #else
@@ -245,11 +247,12 @@ bool image_utils::load_image(const std::string& filename,
  *  @param Type     The type of the image patches (OpenCV code used for cv::Mat)
  *  @param pp       The pre-processing parameters
  *  @param data     The pre-processed image data to be stored in El::Matrix<DataType> format
+ *  @param buf      A thread safe buffer for local, temporary, image decoding
  */
 bool image_utils::load_image(const std::string& filename,
-                                    int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<::Mat>& data) {
+                                    int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<::Mat>& data, std::vector<char>& buf) {
 #ifdef LBANN_HAS_OPENCV
-  cv::Mat image = cv_utils::lbann_imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
+  cv::Mat image = cv_utils::lbann_imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH, buf);
 
   return process_image(image, Width, Height, Type, pp, data);
 #else
@@ -269,7 +272,7 @@ bool image_utils::load_image(const std::string& filename,
  */
 bool image_utils::load_image(std::vector<unsigned char>& image_buf,
                                     int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<::Mat>& data) {
-/*
+
 #ifdef LBANN_HAS_OPENCV
   cv::Mat image = cv::imdecode(image_buf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
 
@@ -277,7 +280,6 @@ bool image_utils::load_image(std::vector<unsigned char>& image_buf,
 #else
   return false;
 #endif // LBANN_HAS_OPENCV
-*/
   return import_image(image_buf, Width, Height, Type, pp, data);
 }
 

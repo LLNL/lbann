@@ -65,7 +65,7 @@ bool create_dir(const std::string output_dir);
 
 
 /// Load a file into a buffer
-template <typename T = std::vector<unsigned char> >
+template <typename T = std::vector<char> >
 inline bool load_file(const std::string filename, T& buf) {
   std::ifstream file(filename, std::ios::binary);
   if (!file.good()) {
@@ -79,11 +79,9 @@ inline bool load_file(const std::string filename, T& buf) {
 
   file.seekg(0, std::ios::beg);
 
-  buf.reserve(file_size);
+  buf.resize(file_size);
 
-  buf.insert(buf.begin(),
-             std::istream_iterator<unsigned char>(file),
-             std::istream_iterator<unsigned char>());
+  file.read(buf.data(), file_size);
 
   return true;
 }

@@ -111,7 +111,7 @@ class cv_utils {
    *  return type. Avoiding the extra access to the underlying filesystem may
    *  result in a better performance.
    */
-  static cv::Mat lbann_imread(const std::string& img_file_path, int flags);
+  static cv::Mat lbann_imread(const std::string& img_file_path, int flags, std::vector<char>& buf);
 };
 
 
