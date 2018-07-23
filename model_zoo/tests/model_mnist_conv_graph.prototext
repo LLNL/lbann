@@ -11,7 +11,7 @@ model {
   # Objective function
   ###################################################
   objective_function {
-    layer_term { layer: "cross_entropy_eval" }
+    layer_term { layer: "cross_entropy" }
   }
 
   ###################################################
@@ -222,13 +222,7 @@ model {
     name: "cross_entropy"
     parents: "prob labels"
     data_layout: "model_parallel"
-    cross_entropy {}    
-  }
-  layer {
-    name: "cross_entropy_eval"
-    parents: "cross_entropy"
-    data_layout: "model_parallel"
-    evaluation {}    
+    cross_entropy {}
   }
 
 }

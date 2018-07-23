@@ -86,8 +86,8 @@ class split_layer : public transform_layer {
 
   void fp_compute() override {
     const auto& input = get_prev_activations();
-    for (auto& output : this->m_activations) {
-      El::LockedView(*output, input);
+    for (int i = 0; i < get_num_children(); ++i) {
+      El::LockedView(get_activations(i), input);
     }
   }
 

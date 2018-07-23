@@ -89,8 +89,8 @@ void greedy_layerwise_autoencoder::setup_layer_topology() {
 
     // Encoder input and decoder output should match
     std::vector<int> input_dims, output_dims;
-    input_dims = m_layers[encoder_start]->get_prev_neuron_dims();
-    output_dims = m_layers[decoder_end-1]->get_neuron_dims();
+    input_dims = m_layers[encoder_start]->get_input_dims();
+    output_dims = m_layers[decoder_end-1]->get_output_dims();
     if (input_dims != output_dims) {
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
@@ -110,8 +110,8 @@ void greedy_layerwise_autoencoder::setup_layer_topology() {
     }
 
     // Encoder output and decoder input should match
-    output_dims = m_layers[encoder_end-1]->get_neuron_dims();
-    input_dims = m_layers[decoder_start]->get_prev_neuron_dims();
+    output_dims = m_layers[encoder_end-1]->get_output_dims();
+    input_dims = m_layers[decoder_start]->get_input_dims();
     if (input_dims != output_dims) {
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "

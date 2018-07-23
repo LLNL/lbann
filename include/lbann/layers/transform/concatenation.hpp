@@ -143,56 +143,57 @@ class concatenation_layer : public transform_layer {
   }
 
   void setup_dims() override {
-    std::stringstream err;
-
-    // Initialize previous neuron tensor dimensions
     transform_layer::setup_dims();
 
-    if (m_concatenation_axis >= (int) m_prev_neuron_dims.size()) {
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "layer " << get_name() << " cannot concatenate along "
+    // Get concatenation points for first parent layer
+    auto output_dims = get_input_dims(0);
+    if (m_concatenation_axis >= (int) output_dims.size()) {
+      std::stringstream err;
+      err << get_type() << " layer \"" << get_name() << "\" "
+          << "cannot concatenate along "
           << "axis " << m_concatenation_axis << " since it only has "
-          << m_prev_neuron_dims.size() << " dimensions";
-      throw lbann_exception(err.str());
+          << output_dims.size() << " dimensions";
+      LBANN_ERROR(err.str());
     }
-
-    // Get concatenation axis indices corresponding to parent layers
-    m_concatenation_points.empty();
+    m_concatenation_points.clear();
     m_concatenation_points.push_back(0);
-    auto expected_dims = m_prev_neuron_dims;
-    for (const auto& parent : this->m_parent_layers) {
-      const auto& parent_dims = parent->fp_output_dims(this);
+    m_concatenation_points.push_back(output_dims[m_concatenation_axis]);
 
-      // Check that dimensions are valid
-      if ((int) parent_dims.size() > m_concatenation_axis) {
-        expected_dims[m_concatenation_axis] = parent_dims[m_concatenation_axis];
-      }
-      if (parent_dims != expected_dims) {
-        err << __FILE__ << " " << __LINE__ << " :: "
-            << "layer " << get_name() << " expects inputs with "
-            << "dimensions ";
-        for (size_t i = 0; i < expected_dims.size(); ++i) {
-          err << (i > 0 ? "x" : "") << expected_dims[i];
+    // Get concatenation points for remaining parent layers
+    for (int i = 1; i < get_num_parents(); ++i) {
+      const auto& input_dims = get_input_dims(i);
+      if (input_dims.size() != output_dims.size()
+          || !std::equal(input_dims.begin(),
+                         input_dims.begin() + m_concatenation_axis,
+                         output_dims.begin())
+          || !std::equal(input_dims.begin() + m_concatenation_axis + 1,
+                         input_dims.end(),
+                         output_dims.begin() + m_concatenation_axis + 1)) {
+        std::stringstream err;
+        err << get_type() << " layer \"" << get_name() << "\" "
+            << "expects input tensors with dimensions ";
+        for (size_t j = 0; j < output_dims.size(); ++j) {
+          err << (j > 0 ? " x " : "");
+          if ((int) j == m_concatenation_axis) {
+            err << "X";
+          } else {
+            err << output_dims[j];
+          }
         }
-        err << ", but layer " << parent->get_name() << " outputs with "
-            << "dimensions ";
-        for (size_t i = 0; i < parent_dims.size(); ++i) {
-          err << (i > 0 ? "x" : "") << parent_dims[i];
+        err << ", but parent layer "
+            << "\"" << m_parent_layers[i]->get_name() << "\" "
+            << "outputs with dimensions ";
+        for (size_t j = 0; j < input_dims.size(); ++j) {
+          err << (j > 0 ? " x " : "") << input_dims[j];
         }
+        LBANN_ERROR(err.str());
       }
-
-      // Get concatentation axis upper bound for parent layer
-      m_concatenation_points.push_back(m_concatenation_points.back()
-                                       + parent_dims[m_concatenation_axis]);
-
+      output_dims[m_concatenation_axis] += input_dims[m_concatenation_axis];
+      m_concatenation_points.push_back(output_dims[m_concatenation_axis]);
     }
 
-    // Update neuron dimensions
-    this->m_neuron_dims[m_concatenation_axis] = m_concatenation_points.back();
-    this->m_num_neurons = std::accumulate(m_neuron_dims.begin(),
-                                          m_neuron_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
+    // Update output dimensions
+    set_output_dims(output_dims);
 
   }
 
@@ -204,7 +205,7 @@ class concatenation_layer : public transform_layer {
     auto& output = get_activations();
 
     // Get number of contiguous regions in a tensor slice of width 1
-    const auto& output_dims = this->m_neuron_dims;
+    const auto& output_dims = get_output_dims();
     const int num_regions = std::accumulate(output_dims.begin(),
                                             output_dims.begin() + m_concatenation_axis,
                                             1,
@@ -255,7 +256,7 @@ class concatenation_layer : public transform_layer {
     const auto& gradient_wrt_output = get_prev_error_signals();
 
     // Get number of contiguous regions in a tensor slice of width 1
-    const auto& output_dims = this->m_neuron_dims;
+    const auto& output_dims = get_output_dims();
     const int num_regions = std::accumulate(output_dims.begin(),
                                             output_dims.begin() + m_concatenation_axis,
                                             1,
@@ -297,21 +298,6 @@ class concatenation_layer : public transform_layer {
       }
     }
 
-  }
-
-  std::vector<int> get_prev_neuron_dims(int parent_index = 0) const override {
-    std::vector<int> prev_neuron_dims = m_prev_neuron_dims;
-    prev_neuron_dims[m_concatenation_axis]
-      = (m_concatenation_points[parent_index+1] - m_concatenation_points[parent_index]);
-    return prev_neuron_dims;
-  }
-
-  int get_num_prev_neurons(int parent_index = 0) const override {
-    const auto& prev_neuron_dims = get_prev_neuron_dims(parent_index);
-    return std::accumulate(prev_neuron_dims.begin(),
-                           prev_neuron_dims.end(),
-                           1,
-                           std::multiplies<int>());
   }
 
 };

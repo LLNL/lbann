@@ -94,7 +94,7 @@ class deconvolution_layer : public base_convolution_layer<Dev> {
     for (size_t h=0; h<this->m_strides.size(); h++) {
       s << this->m_strides[h] << " ";
     }
-    s << " num_output_channels: " << this->m_neuron_dims[0]
+    s << " num_output_channels: " << this->get_output_dims()[0]
       << " has_bias: " << this->m_bias_scaling_factor
       << " dataLayout: " << this->get_data_layout_string(get_data_layout())
       << " device alloc: " + this->get_device_allocation_string(get_device_allocation());
@@ -110,41 +110,43 @@ class deconvolution_layer : public base_convolution_layer<Dev> {
   El::Device get_device_allocation() const override { return Dev; }
 
   void setup_dims() override {
-
-    // Initialize previous neuron tensor dimensions
     base_convolution_layer<Dev>::setup_dims();
 
+    // Get tensor dimensions
+    auto& kernel_dims = this->m_kernel_dims;
+    const auto& input_dims = this->get_input_dims();
+    auto output_dims = input_dims;
+
     // Initialize deconvolution kernel dimensions
-    // Note that unlike the convolutional kernel, the previous layer's
+    // Note: Unlike the convolutional kernel, the previous layer's
     // number of channels is now the leading position -- keep in mind
-    // that deconvolution is the transpose of a convolution
-    this->m_kernel_dims.insert(this->m_kernel_dims.begin(),
-                               this->m_prev_neuron_dims[0]);
-
-    // Check if previous neuron tensor dimensions are valid
-  #ifdef LBANN_DEBUG
-    if(this->m_num_neuron_dims != (int) this->m_kernel_dims.size() - 1) {
-      throw lbann_exception("deconvolution_layer: previous neuron tensor dimensions are unexpected");
-    }
-  #endif
-
-    // Initialize neuron tensor dimensions
-    this->m_neuron_dims[0] = this->m_kernel_dims[1];
-    for(int i=0; i<this->m_num_neuron_dims-1; ++i) {
-      this->m_neuron_dims[i+1]
-        = ((this->m_prev_neuron_dims[i+1]-1) * this->m_strides[i]
-           + this->m_kernel_dims[i+2] - 2*this->m_pads[i]);
-    }
-    this->m_num_neurons = std::accumulate(this->m_neuron_dims.begin(),
-                                          this->m_neuron_dims.end(),
+    // that deconvolution is the transpose of a convolution.
+    kernel_dims.insert(kernel_dims.begin(), input_dims[0]);
+    this->m_kernel_size = std::accumulate(kernel_dims.begin(),
+                                          kernel_dims.end(),
                                           1,
                                           std::multiplies<int>());
 
-    // Get size of convolutional kernel
-    this->m_kernel_size = std::accumulate(this->m_kernel_dims.begin(),
-                                          this->m_kernel_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
+    // Check if input tensor dimensions are valid
+    if (input_dims.size() != kernel_dims.size() - 1) {
+      std::stringstream err;
+      err << this->get_type() << " layer \"" << this->get_name() << "\" "
+          << "has an input tensor with "
+          << input_dims.size() << " dimensions "
+          << "and a convolution kernel with "
+          << kernel_dims.size() << " dimensions";
+      LBANN_ERROR(err.str());
+    }
+
+    // Initialize output tensor dimensions
+    output_dims[0] = kernel_dims[1];
+    for (size_t i = 0; i < output_dims.size() - 1; ++i) {
+      const auto& stride = this->m_strides[i];
+      const auto& pad = this->m_pads[i];
+      output_dims[i+1] = ((input_dims[i+1] - 1) * stride
+                          + kernel_dims[i+2] - 2 * pad);
+    }
+    this->set_output_dims(output_dims);
 
   }
 

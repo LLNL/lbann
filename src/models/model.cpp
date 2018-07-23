@@ -32,6 +32,9 @@
 #include "lbann/layers/io/input/generic_input_layer.hpp"
 #include "lbann/layers/transform/dummy.hpp"
 #include "lbann/layers/transform/split.hpp"
+#include "lbann/layers/transform/evaluation.hpp"
+#include "lbann/objective_functions/layer_term.hpp"
+#include "lbann/metrics/layer_metric.hpp"
 #include "lbann/utils/random.hpp"
 #include <string>
 #include <unistd.h>
@@ -312,13 +315,16 @@ void model::permute_layers(const std::vector<int>& permutation) {
 std::string model::print_layer_description(const Layer* layer) const {
   if (layer == nullptr) return std::string();
   std::stringstream os;
+  /// @todo Clean up
   //std::string description = layer->get_description();
   os << std::setw(12) << layer->get_name() << ":[" << std::setw(18)
      << layer->get_type()
      << "(" << layer->get_device_allocation_string_short(layer->get_device_allocation()) << ")"
      <<  "] Set up a layer with input " << std::setw(7)
-     << layer->get_num_prev_neurons() << " and " << std::setw(7)
-     << layer->get_num_neurons() << " neurons.";
+     << (layer->get_num_parents() > 0 ? layer->get_input_size() : 0)
+     << " and " << std::setw(7)
+     << (layer->get_num_children() > 0 ? layer->get_output_size() : 0)
+     << " neurons.";
   std::string s = layer->get_topo_description();
   if(s != "") {
     os << " (" << s << ")";
@@ -444,6 +450,7 @@ void model::setup_layer_topology() {
   }
 
   // Add utility layers if needed
+  add_evaluation_layers();
   add_dummy_layers();
   add_split_layers();
 
@@ -558,6 +565,66 @@ void model::add_connected_layers() {
 
 }
 
+void model::add_evaluation_layers() {
+
+  // Add evaluation layers corresponding to objective function layer terms
+  for (auto* t : m_objective_function->get_terms()) {
+    auto* term = dynamic_cast<layer_term*>(t);
+    if (term != nullptr) {
+      auto* l = &term->get_layer();
+      const size_t pos = (std::find(m_layers.begin(), m_layers.end(), l)
+                          - m_layers.begin());
+      if (pos >= m_layers.size()) {
+        std::stringstream err;
+        err << "an objective function layer term corresponds to "
+            << "layer \"" << l->get_name() << "\", "
+            << "which is not in current model";
+        LBANN_ERROR(err.str());
+      }
+      if (dynamic_cast<abstract_evaluation_layer*>(l) == nullptr) {
+        auto* eval = abstract_evaluation_layer::construct(
+                       l->get_comm(),
+                       l->get_data_layout(),
+                       l->get_device_allocation());
+        eval->set_name(l->get_name() + "_eval");
+        l->add_child_layer(eval);
+        eval->add_parent_layer(l);
+        term->set_layer(*eval);
+        m_layers.insert(m_layers.begin() + pos + 1, eval);
+      }
+    }
+  }
+
+  // Add evaluation layers corresponding to layer metrics
+  for (auto* m : m_metrics) {
+    auto* met = dynamic_cast<layer_metric*>(m);
+    if (met != nullptr) {
+      auto* l = &met->get_layer();
+      const size_t pos = (std::find(m_layers.begin(), m_layers.end(), l)
+                          - m_layers.begin());
+      if (pos >= m_layers.size()) {
+        std::stringstream err;
+        err << "layer metric \"" << met->name() << "\" "
+            << "corresponds to layer \"" << l->get_name() << "\", "
+            << "which is not in current model";
+        LBANN_ERROR(err.str());
+      }
+      if (dynamic_cast<abstract_evaluation_layer*>(l) == nullptr) {
+        auto* eval = abstract_evaluation_layer::construct(
+                       l->get_comm(),
+                       l->get_data_layout(),
+                       l->get_device_allocation());
+        eval->set_name(l->get_name() + "_eval");
+        l->add_child_layer(eval);
+        eval->add_parent_layer(l);
+        met->set_layer(*eval);
+        m_layers.insert(m_layers.begin() + pos + 1, eval);
+      }
+    }
+  }
+
+}
+  
 void model::add_dummy_layers() {
   for (size_t i = 0; i < m_layers.size(); ++i) {
     auto layer = m_layers[i];

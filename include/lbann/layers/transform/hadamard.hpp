@@ -66,6 +66,29 @@ class hadamard_layer : public transform_layer {
 
   protected:
 
+  void setup_dims() override {
+    transform_layer::setup_dims();
+    const auto& output_dims = get_output_dims();
+    for (int i = 0; i < get_num_parents(); ++i) {
+      const auto& input_dims = get_input_dims(i);
+      if (input_dims != output_dims) {
+        std::stringstream err;
+        err << get_type() << " layer \"" << get_name() << "\" "
+            << "expects input tensors with dimensions ";
+        for (size_t j = 0; j < output_dims.size(); ++j) {
+          err << (j > 0 ? " x " : "") << output_dims[j];
+        }
+        err << ", but parent layer "
+            << "\"" << m_parent_layers[i]->get_name() << "\" "
+            << "outputs with dimensions ";
+        for (size_t j = 0; j < input_dims.size(); ++j) {
+          err << (j > 0 ? " x " : "") << input_dims[j];
+        }
+        LBANN_ERROR(err.str());
+      }
+    }
+  }
+
   void fp_compute() override {
     auto& output = get_activations();
     switch (get_num_parents()) {

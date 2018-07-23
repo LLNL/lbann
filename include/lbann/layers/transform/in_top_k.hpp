@@ -24,66 +24,48 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYER_CONSTANT_HPP_INCLUDED
-#define LBANN_LAYER_CONSTANT_HPP_INCLUDED
+#ifndef LBANN_LAYER_IN_TOP_K_HPP_INCLUDED
+#define LBANN_LAYER_IN_TOP_K_HPP_INCLUDED
 
 #include "lbann/layers/transform/transform.hpp"
+#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
-/** Layer with constant output. */
+/** Indicate top-k entries in each mini-batch sample.
+ *  Output entries corresponding to the top-k input entries are set to
+ *  one and the rest are set to zero. Ties are broken in favor of
+ *  entries with smaller indices.
+ */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
-class constant_layer : public transform_layer {
-
+class in_top_k_layer : public transform_layer {
  public:
-  /** Constructor. */
-  constant_layer(lbann_comm *comm,
-                 DataType value,
-                 std::vector<int> dims)
-    : transform_layer(comm), m_value(value) {
-    set_output_dims(dims);
-    m_expected_num_parent_layers = 0;
+
+  in_top_k_layer(lbann_comm *comm, El::Int k)
+    : transform_layer(comm), m_k(k) {
+    if (m_k < 0) {
+      std::stringstream err;
+      err << "invalid parameter for top-k search (k=" << m_k << ")";
+      LBANN_ERROR(err.str());
+    }
   }
 
-  constant_layer* copy() const override { return new constant_layer(*this); }
-  std::string get_type() const override { return "constant"; }
+  in_top_k_layer* copy() const override { return new in_top_k_layer(*this); }
+  std::string get_type() const override { return "in_top_k"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  /** Returns description. */
-  std::string get_description() const override {
-    std::stringstream s;
-     s << "constant_layer  value: " << m_value
-       << " dataLayout: " << this->get_data_layout_string(get_data_layout());
-     return s.str();
-  }
-
  protected:
 
-  void setup_data() override {
-    transform_layer::setup_data();
-    if (m_value != DataType(0)) {
-      El::Fill(get_activations(), m_value);
-    }
-  }
-
-  void fp_compute() override {
-    auto& activations = get_activations();
-    if (m_value == EvalType(0)) {
-      El::Zero(activations);
-    } else {
-      El::Fill(activations, m_value);
-    }
-
-  }
+  void fp_compute() override;
 
  private:
 
-  /** Constant value. */
-  DataType m_value;
+  /** Parameter for top-k search. */
+  const El::Int m_k;
 
 };
 
 } // namespace lbann
 
-#endif // LBANN_LAYER_CONSTANT_HPP_INCLUDED
+#endif // LBANN_LAYER_IN_TOP_K_HPP_INCLUDED

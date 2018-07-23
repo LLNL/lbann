@@ -393,6 +393,14 @@ class model {
  private:
   /** Search layer graph and add all connected layers. */
   void add_connected_layers();
+  /** Insert evaluation layers where needed.
+   *  If an objective function layer term or a layer metric
+   *  corresponds to a layer that is not an evaluation layer, an
+   *  evaluation layer is added as a child of the original layer and
+   *  set as the corresponding layer to the layer term or layer
+   *  metric.
+   */
+  void add_evaluation_layers();
   /** Insert dummy layers after layers with too few children.
    *  If a layer expects more child layers than it has, add dummy
    *  layers until it has enough children.

@@ -182,7 +182,7 @@ Layer* construct_layer(lbann_comm* comm,
       }
       dims.push_back(dr->get_linearized_data_size());
     }
-    return new reshape_layer<layout, Dev>(comm, dims.size(), dims.data());
+    return new reshape_layer<layout, Dev>(comm, dims);
   }
   if (proto_layer.has_sum()) {
     return new sum_layer<layout, Dev>(comm);
@@ -285,7 +285,7 @@ Layer* construct_layer(lbann_comm* comm,
     }
   }
   if (proto_layer.has_evaluation()) {
-    return new evaluation_layer<layout>(comm);
+    return new evaluation_layer<layout, Dev>(comm);
   }
   if (proto_layer.has_crop()) {
     const auto& params = proto_layer.crop();
@@ -327,6 +327,11 @@ Layer* construct_layer(lbann_comm* comm,
       return new min_layer<layout, El::Device::CPU>(comm);
     }
   }
+  if (proto_layer.has_in_top_k()) {
+    const auto& params = proto_layer.in_top_k();
+    return new in_top_k_layer<layout, Dev>(comm, params.k());
+  }
+
   // Regularizer layers
   if (proto_layer.has_batch_normalization()) {
     const auto& params = proto_layer.batch_normalization();
@@ -438,6 +443,10 @@ Layer* construct_layer(lbann_comm* comm,
   // Loss layers
   if (proto_layer.has_cross_entropy()) {
     return new cross_entropy_layer<layout, Dev>(comm);
+  }
+  if (proto_layer.has_top_k_categorical_accuracy()) {
+    const auto& params = proto_layer.top_k_categorical_accuracy();
+    return new top_k_categorical_accuracy_layer<layout, Dev>(comm, params.k());
   }
 
   if (proto_layer.has_bce_with_logits()) {

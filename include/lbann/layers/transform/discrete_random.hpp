@@ -54,15 +54,7 @@ class discrete_random_layer : public transform_layer {
                   "discrete random layer currently only supports CPU");
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "discrete random layer currently only supports DATA_PARALLEL");
-    
-    // Record neuron dimensions
-    this->m_neuron_dims = dims;
-    this->m_num_neuron_dims = this->m_neuron_dims.size();
-    this->m_num_neurons = std::accumulate(this->m_neuron_dims.begin(),
-                                          this->m_neuron_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
-
+    set_output_dims(dims);
   }
   discrete_random_layer* copy() const override { return new discrete_random_layer(*this); }
   std::string get_type() const override { return "discrete random"; }
@@ -72,20 +64,11 @@ class discrete_random_layer : public transform_layer {
  protected:
 
   void setup_dims() override {
-    const auto neuron_dims = this->m_neuron_dims;
     transform_layer::setup_dims();
-    this->m_neuron_dims = neuron_dims;
-    this->m_num_neuron_dims = neuron_dims.size();
-    this->m_num_neurons = std::accumulate(neuron_dims.begin(),
-                                          neuron_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
-
-    // Check input dimensions
-    if (get_num_prev_neurons() != (int) m_values.size()) {
-      LBANN_ERROR("input dimensions don't match number of values in discrete distribution");
+    if (get_input_size() != (int) m_values.size()) {
+      LBANN_ERROR("input tensor dimensions don't match number of "
+                  "values in discrete distribution");
     }
-
   }
 
   void fp_compute() override {
