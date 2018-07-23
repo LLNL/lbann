@@ -289,9 +289,9 @@ void data_reader_jag_conduit::add_input_prefix_filter(const prefix_t& p) {
  * Then, it checks if the key contains any prefix string to filter
  * while sayisfying the mininum length requirement.
  */
-bool data_reader_jag_conduit::filter(const std::set<std::string>& filter,
+bool data_reader_jag_conduit::filter(const std::set<std::string>& key_filter,
   const std::vector<data_reader_jag_conduit::prefix_t>& prefix_filter, const std::string& key) const {
-  if (filter.find(key) != filter.end()) {
+  if (key_filter.find(key) != key_filter.end()) {
     return true;
   }
   for (const auto& pf: prefix_filter) {
@@ -439,8 +439,8 @@ void data_reader_jag_conduit::check_image_size() {
       //_THROW_LBANN_EXCEPTION_(_CN_, "check_image_size() : image size mismatch");
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
-          <<"check_image_size() : image size mismatch; m_image_width: " 
-          << m_image_width << " m_image_height: " << m_image_height 
+          <<"check_image_size() : image size mismatch; m_image_width: "
+          << m_image_width << " m_image_height: " << m_image_height
           << " m_image_linearized_size: " << m_image_linearized_size << std::endl;
     }
   }
@@ -567,7 +567,7 @@ void data_reader_jag_conduit::load() {
     if (n >= max_files_to_load) {
       break;
     }
-  }  
+  }
   if (is_master()) std::cerr << "time to load conduit files: " << get_time() - tm1
         << "  num samples: " << m_data.number_of_children() << "\n";
 
@@ -596,7 +596,7 @@ if (is_master()) std::cerr << "loading: " << conduit_file_path<< "\n";
     int success = n_ok.to_int64();
     if (success == 1) {
       m_success_map[idx] = t;
-    } 
+    }
   }
 
   set_num_img_srcs();
@@ -885,7 +885,7 @@ data_reader_jag_conduit::get_image_ptrs(const size_t sample_id) const {
     const size_t num_pixels = emi.number_of_elements();
     const ch_t* emi_data = n_image.value();
     image_ptrs.push_back(std::make_pair(num_pixels, emi_data));
-  }  
+  }
 
   return image_ptrs;
 }
