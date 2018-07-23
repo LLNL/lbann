@@ -575,7 +575,7 @@ El::AbstractDistMatrix<T>* construct_dist_matrix(El::Distribution col_dist,
                                                  El::DistWrap wrap,
                                                  El::Device device,
                                                  const El::Grid& grid) {
-  
+
 #define LBANN_CONSTRUCT_DIST_MATRIX(T_col_dist, T_row_dist,     \
                                     T_wrap, T_device)           \
   do {                                                          \
@@ -592,7 +592,7 @@ El::AbstractDistMatrix<T>* construct_dist_matrix(El::Distribution col_dist,
   LBANN_CONSTRUCT_DIST_MATRIX(El::STAR, El::VC, El::ELEMENT, El::Device::GPU);
 #endif // LBANN_HAS_GPU
 #undef LBANN_CONSTRUCT_DIST_MATRIX
-  
+
   // Failed to construct matrix
   std::stringstream err;
   err << "invalid matrix parameters "
@@ -602,11 +602,11 @@ El::AbstractDistMatrix<T>* construct_dist_matrix(El::Distribution col_dist,
       << "device=" << (int) device << ")";
   LBANN_ERROR(err.str());
   return nullptr;
-  
+
 }
-  
+
 } // namespace
-  
+
 void Layer::setup_matrices(const El::Grid& grid) {
 
   // Choose matrix distribution
@@ -624,7 +624,7 @@ void Layer::setup_matrices(const El::Grid& grid) {
     break;
   default: LBANN_ERROR("invalid data layout");
   }
-  
+
   // Delete any previously allocated matrices
   m_inputs.clear();
   m_outputs.clear();
@@ -791,17 +791,6 @@ void Layer::check_setup() {
           << "(index " << i << ")";
       LBANN_ERROR(err.str());
     }
-  }
-  
-  // Check that number of neurons is greater than zero
-  if (m_num_neurons <= 0) {
-    err << "layer " << m_name << " has invalid output dimensions "
-        << "(" << m_neuron_dims[0];
-    for (size_t i = 1; i < m_neuron_dims.size(); ++i) {
-      err << "x" << m_neuron_dims[i];
-    }
-    err << "); m_num_neurons: " << m_num_neurons;
-    LBANN_ERROR(err.str());
   }
 }
 
