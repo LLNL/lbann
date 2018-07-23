@@ -189,36 +189,6 @@ bool image_utils::process_image(cv::Mat& image, int& Width, int& Height, int& Ty
 }
 #endif // LBANN_HAS_OPENCV
 
-#if 0
-bool image_utils::load_image(const std::string& filename,
-                                    int& Width, int& Height, int& Type, cv_process& pp, std::vector<uint8_t>& buf) {
-#ifdef LBANN_HAS_OPENCV
-  cv::Mat image = cv_utils::lbann_imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
-
-  return process_image(image, Width, Height, Type, pp, buf);
-#else
-  _THROW_EXCEPTION_NO_OPENCV_();
-  return false;
-#endif // LBANN_HAS_OPENCV
-}
-
-bool image_utils::save_image(const std::string& filename,
-                                    const int Width, const int Height, const int Type, cv_process& pp, const std::vector<uint8_t>& buf) {
-#ifdef LBANN_HAS_OPENCV
-  pp.determine_inverse_lazy_normalization();
-  cv::Mat image = cv_utils::copy_buf_to_cvMat(buf, Width, Height, Type, pp);
-  bool ok = !image.empty() && pp.postprocess(image);
-
-  _LBANN_MILD_EXCEPTION(!ok, "Either the image is empty or postprocessing has failed.", false)
-
-  return (ok && cv::imwrite(filename, image));
-#else
-  _THROW_EXCEPTION_NO_OPENCV_();
-  return false;
-#endif // LBANN_HAS_OPENCV
-}
-#endif
-
 /**
  *  @param filename The name of the image file to read in
  *  @param Width    The width of the image read

@@ -56,12 +56,6 @@ class image_utils {
   static bool process_image(cv::Mat& image, int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<::Mat>& out);
 #endif // LBANN_HAS_OPENCV
 
-  // load/save an image into/from a temporary buffer
-  /// Load an image from a file and put it into a serialized buffer
-  //  static bool load_image(const std::string& filename, int& Width, int& Height, int& Type, cv_process& pp, std::vector<uint8_t>& buf);
-  /// Save an image from a serialized buffer into a file
-  //  static bool save_image(const std::string& filename, const int Width, const int Height, const int Type, cv_process& pp, const std::vector<uint8_t>& buf);
-
   // new function, to support sharded data reader and data store functionality
   static bool load_image(std::vector<unsigned char>& image_buf, int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data);
 
@@ -70,6 +64,7 @@ class image_utils {
                          int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<::Mat>& data);
 
   // load/save an image into/from an LBANN data block of El::Matrix<DataType> type
+  // Use a thread save temporary buffer for decoding the image
   /// Load an image from a file and put it into an LBANN Mat data block
   static bool load_image(const std::string& filename, int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data, std::vector<char>& buf);
   /// Load an image from a file, extract patches from it and put them into LBANN Mat data blocks
