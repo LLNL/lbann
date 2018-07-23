@@ -80,6 +80,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_global_last_mini_batch_size(0),
     m_world_master_mini_batch_adjustment(0),
     m_num_parallel_readers(0), m_rank_in_model(0),
+    m_max_files_to_load(0),
     m_file_dir(""), m_data_fn(""), m_label_fn(""),
     m_shuffle(shuffle), m_absolute_sample_count(0), m_validation_percent(0.0),
     m_use_percent(1.0),
@@ -122,6 +123,14 @@ class generic_data_reader : public lbann_image_preprocessor {
    * Set base directory for your locally cached (e.g, on ssd) data. 
    */
   void set_local_file_dir(std::string s);
+
+  /**
+   * for some data readers (jag_conduit) we load from multiple files;
+   * for testing we want to be able to restrict that number
+   */
+  void set_max_files_to_load(int n) {
+    m_max_files_to_load = n;
+  }
 
   /**
    * Returns the base directory for your data.
@@ -768,6 +777,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   int m_num_parallel_readers; /// How many parallel readers are being used
 
   int m_rank_in_model;  /// What is the rank of the data reader within a given model
+  int m_max_files_to_load;
   std::string m_file_dir;
   std::string m_local_file_dir;
   std::string m_data_fn;

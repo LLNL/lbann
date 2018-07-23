@@ -792,7 +792,17 @@ void Layer::check_setup() {
       LBANN_ERROR(err.str());
     }
   }
-
+  
+  // Check that number of neurons is greater than zero
+  if (m_num_neurons <= 0) {
+    err << "layer " << m_name << " has invalid output dimensions "
+        << "(" << m_neuron_dims[0];
+    for (size_t i = 1; i < m_neuron_dims.size(); ++i) {
+      err << "x" << m_neuron_dims[i];
+    }
+    err << "); m_num_neurons: " << m_num_neurons;
+    LBANN_ERROR(err.str());
+  }
 }
 
 void Layer::replace_weights(Layer* other_layer) {
