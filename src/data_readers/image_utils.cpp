@@ -243,13 +243,6 @@ bool image_utils::load_image(const std::string& filename,
 bool image_utils::load_image(std::vector<unsigned char>& image_buf,
                                     int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<::Mat>& data) {
 
-#ifdef LBANN_HAS_OPENCV
-  cv::Mat image = cv::imdecode(image_buf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
-
-  return process_image(image, Width, Height, Type, pp, data);
-#else
-  return false;
-#endif // LBANN_HAS_OPENCV
   return import_image(image_buf, Width, Height, Type, pp, data);
 }
 
