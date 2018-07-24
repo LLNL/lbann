@@ -40,30 +40,18 @@ namespace lbann {
  */
 template <data_layout T_layout, El::Device Dev>
 class stop_gradient_layer : public transform_layer {
- public:
+public:
   stop_gradient_layer(lbann_comm *comm) : transform_layer(comm) {}
   stop_gradient_layer* copy() const override { return new stop_gradient_layer(*this); }
   std::string get_type() const override { return "stop_gradient"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  void setup_gpu() override {
-    transform_layer::setup_gpu();
-#ifdef HYDROGEN_HAVE_CUB
-    // Set output matrix to use CUB GPU memory pool
-    // Note: During each forward prop, the output matrix is resized to
-    // the mini-batch size and cleared to obtain a matrix view. To
-    // avoid expensive GPU memory allocation and deallocation, we use
-    // CUB's GPU memory pool.
-    if (Dev == El::Device::GPU) {
-      get_local_activations().SetMemoryMode(1);
-    }
-#endif
-  }
-
-  void fp_compute() override {
+protected:
+  void fp_setup_outputs(El::Int mini_batch_size) override {
     El::LockedView(get_activations(), get_prev_activations());
   }
+  void fp_compute() override {}
 
 };
 

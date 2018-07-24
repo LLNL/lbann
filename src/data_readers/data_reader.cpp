@@ -58,6 +58,11 @@ void generic_data_reader::setup() {
   set_initial_position();
 
   shuffle_indices();
+
+  m_thread_buffer.resize(omp_get_max_threads(), std::vector<char>());
+  for(int tid = 0; tid < omp_get_max_threads(); ++tid) {
+    m_thread_buffer[tid].resize(get_linearized_data_size());
+  }
 }
 
 
@@ -339,7 +344,7 @@ void generic_data_reader::select_subset_of_data_partitioned() {
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
       " :: generic_data_reader - percent_of_data_to_use must be > 0 "
       + "and <= 1");
-  }    
+  }
   if (! (m_partition_mode == 1 || m_partition_mode == 2)) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
@@ -358,10 +363,10 @@ void generic_data_reader::select_subset_of_data_partitioned() {
   //case where there's an overlap set that is common to all models
   if (m_partition_overlap && m_partition_mode == 2) {
     // Let x be the percent of indices from shuffled_indices that will be
-    //   assigned to the common pool. 
-    // Let p be the number of models. 
+    //   assigned to the common pool.
+    // Let p be the number of models.
     // Let v be the requested percent overlap.
-    // Let n = m_shuffled_indices.size(). Then each  model will have 
+    // Let n = m_shuffled_indices.size(). Then each  model will have
     //  xn + n(1-x)/p indices, and we want:
     //   xn / ( xn + n(1-x)/p ) = v solving for x:
     //
@@ -381,15 +386,15 @@ void generic_data_reader::select_subset_of_data_partitioned() {
       m_shuffled_indices.end(),
       common_pool.begin());
     m_shuffled_indices.resize(x3);
-  } 
+  }
 
   // hack: possibly drop a few indices to avoid dealing with edge cases;
   // number dropped is less than the number of models
   size_t partition_size = m_shuffled_indices.size() / m_num_partitions;
   if (partition_size*m_num_partitions < m_shuffled_indices.size() && is_master()) {
-    std::cout 
-      << "select_subset_of_data_partitioned; data set is partitioned; dropping " 
-      << m_shuffled_indices.size() - (partition_size*m_num_partitions)   
+    std::cout
+      << "select_subset_of_data_partitioned; data set is partitioned; dropping "
+      << m_shuffled_indices.size() - (partition_size*m_num_partitions)
       << " to avoid dealing with edge cases (hack)\n";
   }
 
@@ -433,15 +438,15 @@ void generic_data_reader::select_subset_of_data_partitioned() {
       double x = m_partition_overlap / (1-m_partition_overlap);
       size_t overlap_count = x*use_me;
 
-      //ensure there's at least one overlap at each end of a proc's partition; 
-      //this is only needed to ensure that, when testing with smallish data sets, 
+      //ensure there's at least one overlap at each end of a proc's partition;
+      //this is only needed to ensure that, when testing with smallish data sets,
       //rounding error doesn't set overlap to 0.
       if (overlap_count < 2) {
         overlap_count = 2;
       }
       //we exchange 1/2 of the overlap with left & right nabore
-      overlap_count /= 2; 
-  
+      overlap_count /= 2;
+
       size_t start_of_prior_partition = (m_my_partition-1)*partition_size;
       if (m_my_partition == 0) {
         start_of_prior_partition = (m_num_partitions-1)*partition_size;
