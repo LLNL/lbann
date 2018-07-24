@@ -60,9 +60,7 @@ void generic_data_reader::setup() {
   shuffle_indices();
 
   m_thread_buffer.resize(omp_get_max_threads(), std::vector<char>());
-#pragma omp parallel
-  {
-    int tid = omp_get_thread_num();
+  for(int tid = 0; tid < omp_get_max_threads(); ++tid) {
     m_thread_buffer[tid].resize(get_linearized_data_size());
   }
 }
