@@ -118,7 +118,8 @@ int main(int argc, char *argv[]) {
     }
 
   } catch (lbann_exception& e) {
-    lbann_report_exception(e, comm);
+    e.print_report();
+    El::mpi::Abort(El::mpi::COMM_WORLD, 1);
   } catch (std::exception& e) {
     El::ReportException(e);  // Elemental exceptions
   }
@@ -320,7 +321,8 @@ model * build_model_from_prototext(int argc, char **argv,
 #endif
 
   } catch (lbann_exception& e) {
-    lbann_report_exception(e, comm);
+    e.print_report();
+    El::mpi::Abort(El::mpi::COMM_WORLD, 1);
   } catch (std::exception& e) {
     El::ReportException(e);  // Elemental exceptions
   }

@@ -22,17 +22,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_exception .hpp .cpp - LBANN exception class
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_EXCEPTION_HPP_INCLUDED
-#define LBANN_EXCEPTION_HPP_INCLUDED
+#ifndef LBANN_UTILS_EXCEPTION_HPP_INCLUDED
+#define LBANN_UTILS_EXCEPTION_HPP_INCLUDED
 
-#include "lbann/base.hpp"
 #include "lbann/comm.hpp"
-#include "lbann/utils/stack_trace.hpp"
 #include <iostream>
+#include <sstream>
 #include <exception>
 
 // Macro to throw an LBANN exception
@@ -40,17 +37,13 @@
   do {                                                          \
     std::stringstream ss_LBANN_ERROR;                           \
     ss_LBANN_ERROR << "LBANN error ";                           \
-    int initialized_LBANN_ERROR = 0, finalized_LBANN_ERROR = 1; \
-    MPI_Initialized(&initialized_LBANN_ERROR);                  \
-    MPI_Finalized(&finalized_LBANN_ERROR);                      \
-    if (initialized_LBANN_ERROR && !finalized_LBANN_ERROR) {    \
-      int rank_LBANN_ERROR = 0;                                 \
-      MPI_Comm_rank(MPI_COMM_WORLD, &rank_LBANN_ERROR);         \
+    const int rank_LBANN_ERROR = lbann::get_rank_in_world();    \
+    if (rank_LBANN_ERROR >= 0) {                                \
       ss_LBANN_ERROR << "on rank " << rank_LBANN_ERROR << " ";  \
     }                                                           \
     ss_LBANN_ERROR << "(" << __FILE__ << ":" << __LINE__ << ")" \
                      << ": " << (message);                      \
-    throw lbann::lbann_exception(ss_LBANN_ERROR.str());         \
+    throw lbann::exception(ss_LBANN_ERROR.str());               \
   } while (0)
 
 // Macro to print a warning to standard error stream.
@@ -58,12 +51,8 @@
   do {                                                                  \
     std::stringstream ss_LBANN_WARNING;                                 \
     ss_LBANN_WARNING << "LBANN warning ";                               \
-    int initialized_LBANN_WARNING = 0, finalized_LBANN_WARNING = 1;     \
-    MPI_Initialized(&initialized_LBANN_WARNING);                        \
-    MPI_Finalized(&finalized_LBANN_WARNING);                            \
-    if (initialized_LBANN_WARNING && !finalized_LBANN_WARNING) {        \
-      int rank_LBANN_WARNING = 0;                                       \
-      MPI_Comm_rank(MPI_COMM_WORLD, &rank_LBANN_WARNING);               \
+    const int rank_LBANN_WARNING = lbann::get_rank_in_world();          \
+    if (rank_LBANN_WARNING >= 0) {                                      \
       ss_LBANN_WARNING << "on rank " << rank_LBANN_WARNING << " ";      \
     }                                                                   \
     ss_LBANN_WARNING << "(" << __FILE__ << ":" << __LINE__ << ")"       \
@@ -73,33 +62,34 @@
 
 namespace lbann {
 
-class lbann_exception : public std::exception {
- public:
-  lbann_exception(const std::string m="my custom exception"):msg(m) { 
-    stack_trace::print_lbann_exception_stack_trace(msg);
-  }
+/** Exception.
+ *  A stack trace is recorded when the exception is constructed.
+ */
+class exception : public std::exception {
+public:
+  exception(std::string message="");
+  const char* what() const noexcept override;
 
-  ~lbann_exception() override {}
-  const char *what() const noexcept override {
-    return msg.c_str();
-  }
-
- private:
-  std::string msg;
+  /** Print human-readable report to stream.
+   *  Reports the exception message and the stack trace.
+   */
+  void print_report(std::ostream& os = std::cerr) const;
+  /** Write human-readable report to file.
+   *  The file name has the form "<base_name>_rank<MPI rank>.txt".
+   */
+  void write(std::string base_name = "stack_trace") const;
+  
+private:
+  /** Human-readable exception message. */
+  std::string m_message;
+  /** Human-readable stack trace.
+   *  The stack trace is recorded when the exception is constructed.
+   */
+  std::string m_stack_trace;
+  
 };
+using lbann_exception = exception;
+  
+} // namespace lbann
 
-inline void lbann_report_exception( lbann_exception& e, lbann_comm *comm=nullptr, std::ostream& os=std::cerr) {
-  if( std::string(e.what()) != "" ) {
-    if(comm != nullptr) {
-      os << "LBANN: rank " << comm->get_rank_in_model() << " of model " << comm->get_model_rank() <<" caught error message:";
-    } else {
-      os << "LBANN: caught error message:";
-    }
-    os << "\t" << e.what() << std::endl;
-  }
-  El::mpi::Abort( El::mpi::COMM_WORLD, 1 );
-}
-}
-
-
-#endif // LBANN_EXCEPTION_HPP_INCLUDED
+#endif // LBANN_UTILS_EXCEPTION_HPP_INCLUDED
