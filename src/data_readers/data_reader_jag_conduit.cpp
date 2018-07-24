@@ -590,13 +590,19 @@ if (is_master()) std::cerr << "loading: " << conduit_file_path<< "\n";
   // set up mapping: need to do this since some of the data may be bad
   const std::vector<std::string> &children_names = m_data.child_names();
   int idx = 0;
+  int bad = 0;
   for (auto t : children_names) {
     const std::string key = "/" + t + "/performance/success";
     const conduit::Node& n_ok = get_conduit_node(key);
     int success = n_ok.to_int64();
     if (success == 1) {
-      m_success_map[idx] = t;
+      m_success_map[idx++] = t;
+    } else {
+      ++bad;
     }
+  }
+  if (is_master()) {
+    std::cerr << "data_reader_jag_conduit::load_conduit: num good samples: " << m_success_map.size() << "  num bad: " << bad << "\n";
   }
 
   set_num_img_srcs();
