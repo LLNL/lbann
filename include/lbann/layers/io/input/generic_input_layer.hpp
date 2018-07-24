@@ -132,6 +132,13 @@ class generic_input_layer : public io_layer {
   void setup_data() override {
     io_layer::setup_data();
 
+    // Resize output to maximum mini-batch size
+    const auto& max_mb_size = this->m_model->get_max_mini_batch_size();
+    for (int i = 0; i < get_num_children(); ++i) {
+      auto& output = get_activations(i);
+      output.Resize(output.Height(), max_mb_size);
+    }
+
     /// BVE FIXME foreach data reader
     // in case that target_layer gets initialized beforehand
     if(m_data_readers[execution_mode::training] != nullptr) {
@@ -147,7 +154,6 @@ class generic_input_layer : public io_layer {
       m_data_readers[execution_mode::testing]->set_rank(Layer::m_comm->get_rank_in_model());
     }
 
-    int max_mb_size = this->m_model->get_max_mini_batch_size();
     if(io_layer::m_data_set_spans_models) {
       calculate_num_iterations_per_epoch_training_spans_models(max_mb_size);
     } else {
@@ -174,10 +180,10 @@ class generic_input_layer : public io_layer {
                           max_mb_size);
   }
 
-  /** Define the standard view of the matrix -- and set it for the model
-   * Setup the effective (global) mini-batch size so that gradients are properly
-   * averaged across models. */
-  void fp_setup_data(int mini_batch_size) override {
+  /** Setup output tensors.
+   *  Sets up the effective (global) mini-batch size.
+   */
+  void fp_setup_outputs(El::Int mini_batch_size) override {
 
     // Determine model mini-batch size and effective mini-batch size
     // Note: If inter-model communication is activated, the effective
@@ -197,7 +203,7 @@ class generic_input_layer : public io_layer {
     this->m_model->set_effective_mini_batch_size(effective_mini_batch_size);
 
     // Initialize matrices
-    io_layer::fp_setup_data(mini_batch_size);
+    io_layer::fp_setup_outputs(mini_batch_size);
 
     // Once the current mini-batch size is defined, set the standard view for activations only
     for (int i = 0; i < get_num_children(); ++i) {
@@ -256,8 +262,6 @@ class generic_input_layer : public io_layer {
       throw lbann_exception(err.str());
     }
   }
-
-  void bp_compute() override {}
 
   /**
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary

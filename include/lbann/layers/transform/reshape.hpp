@@ -34,7 +34,7 @@ namespace lbann {
 /** Reshape layer */
 template <data_layout T_layout, El::Device Dev>
 class reshape_layer : public transform_layer {
- public:
+public:
   reshape_layer(lbann_comm *comm,
                 std::vector<int> dims)
     : transform_layer(comm) {
@@ -44,6 +44,8 @@ class reshape_layer : public transform_layer {
   std::string get_type() const override { return "reshape"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+
+protected:
 
   void setup_dims() override {
     transform_layer::setup_dims();
@@ -85,28 +87,14 @@ class reshape_layer : public transform_layer {
 
   }
 
-  void setup_gpu() override {
-    transform_layer::setup_gpu();
-#ifdef HYDROGEN_HAVE_CUB
-    // Set matrices to use CUB GPU memory pool
-    // Note: During each iteration, matrices are resized to the
-    // mini-batch size and cleared to obtain a matrix view. To avoid
-    // expensive GPU memory allocations and deallocations, we use
-    // CUB's GPU memory pool.
-    if (Dev == El::Device::GPU) {
-      get_local_activations().SetMemoryMode(1);
-      get_local_error_signals().SetMemoryMode(1);
-    }
-#endif
-  }
-
-  void fp_compute() override {
+  void fp_setup_outputs(El::Int mini_batch_size) override {
     El::LockedView(get_activations(), get_prev_activations());
   }
-
-  void bp_compute() override {
+  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
     El::LockedView(get_error_signals(), get_prev_error_signals());
   }
+  void fp_compute() override {}
+  void bp_compute() override {}
 
 };
 
