@@ -162,4 +162,33 @@ void abstract_evaluation_layer::bp_compute() {
   El::Fill(get_error_signals(), DataType(m_scale));
 }
 
+abstract_evaluation_layer*
+abstract_evaluation_layer::construct(lbann_comm *comm,
+                                     data_layout layout,
+                                     El::Device device) {
+#define EVAL_LAYER_CONSTRUCT(T_layout, T_device)                \
+  do {                                                          \
+    if (layout == T_layout && device == T_device) {             \
+      return new evaluation_layer<T_layout, T_device>(comm);    \
+    }                                                           \
+  } while (false)
+  EVAL_LAYER_CONSTRUCT(data_layout::DATA_PARALLEL, El::Device::CPU);
+  EVAL_LAYER_CONSTRUCT(data_layout::MODEL_PARALLEL, El::Device::CPU);
+#ifdef LBANN_HAS_GPU
+  EVAL_LAYER_CONSTRUCT(data_layout::DATA_PARALLEL, El::Device::GPU);
+  EVAL_LAYER_CONSTRUCT(data_layout::MODEL_PARALLEL, El::Device::GPU);
+#endif // LBANN_HAS_GPU
+#undef EVAL_LAYER_CONSTRUCT
+
+  // Could not construct evaluation layer
+  std::stringstream err;
+  err << "attempted to construct evaluation layer "
+      << "with invalid parameters "
+      << "(data layout type " << static_cast<int>(layout) << ", "
+      << "device type " << static_cast<int>(device) << ")";
+  LBANN_ERROR(err.str());
+  return nullptr;
+
+}
+  
 } // namespace lbann

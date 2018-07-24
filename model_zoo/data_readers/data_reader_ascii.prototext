@@ -3,7 +3,7 @@ data_reader {
     name: "ascii"
     role: "train"
     shuffle: true
-    data_filedir: "/p/lscratche/brainusr/datasets/tinyshakespeare/"
+    data_filedir: "/p/lscratchh/brainusr/datasets/tinyshakespeare/"
     data_filename: "input.txt"
     validation_percent: 0.1
     percent_of_data_to_use: 1.0
@@ -12,7 +12,7 @@ data_reader {
     name: "ascii"
     role: "test"
     shuffle: false
-    data_filedir: "/p/lscratche/brainusr/datasets/tinyshakespeare/"
+    data_filedir: "/p/lscratchh/brainusr/datasets/tinyshakespeare/"
     data_filename: "input.txt"
     percent_of_data_to_use: 1.0
   }

@@ -137,7 +137,7 @@ bool imagenet_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
     m_data_store->get_data_buf(data_id, image_buf, 0);
     ret = lbann::image_utils::load_image(*image_buf, width, height, img_type, *(m_pps[tid]), X_v);
   } else {
-    ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v);
+    ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v, m_thread_buffer[tid]);
   }
 
   if(!ret) {

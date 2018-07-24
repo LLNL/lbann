@@ -133,7 +133,8 @@ void loss_function::differentiate() {
   const AbsDistMat& ground_truth = target->get_ground_truth();
   El::Zeros(*m_gradient, prediction.Height(), prediction.Width());
   differentiate_compute(prediction, ground_truth, *m_gradient);
-  target->add_to_error_signal(*m_gradient, DataType(m_scale_factor));
+  El::Axpy(DataType(m_scale_factor), *m_gradient,
+           target->get_error_signals());
 }
 
 }  // namespace lbann

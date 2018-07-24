@@ -35,7 +35,6 @@
 #ifdef LBANN_HAS_OPENCV
 namespace lbann {
 
-
 bool cv_utils::copy_cvMat_to_buf(const cv::Mat& image, std::vector<uint8_t>& buf, const cv_process& pp) {
   _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
 
@@ -91,8 +90,7 @@ std::ostream& operator<<(std::ostream& os, const cv_transform& tr) {
 }
 
 
-cv::Mat cv_utils::lbann_imread(const std::string& img_file_path, int flags) {
-  std::vector<unsigned char> buf;
+cv::Mat cv_utils::lbann_imread(const std::string& img_file_path, int flags, std::vector<char>& buf) {
   // Load an image bytestream into memory
   bool ok = lbann::load_file(img_file_path, buf);
   if (!ok) {
@@ -101,7 +99,7 @@ cv::Mat cv_utils::lbann_imread(const std::string& img_file_path, int flags) {
 
   // create a zero-copying view on a block of bytes
   using InputBuf_T = lbann::cv_image_type<uint8_t>;
-  const cv::Mat inbuf(1, buf.size(), InputBuf_T::T(1), &(buf[0]));
+  const cv::Mat inbuf(1, buf.size(), InputBuf_T::T(1), buf.data());
 
   // decode the image data in the memory buffer
   cv::Mat image = cv::imdecode(inbuf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
