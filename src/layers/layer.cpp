@@ -805,7 +805,6 @@ void Layer::check_setup() {
       LBANN_ERROR(err.str());
     }
   }
-
 }
 
 void Layer::replace_weights(Layer* other_layer) {
