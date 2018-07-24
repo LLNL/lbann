@@ -129,9 +129,6 @@ int main(int argc, char *argv[]) {
 
   } catch (lbann_exception& e) {
     e.print_report();
-    if (options::get()->has_bool("stack_trace_to_file")) {
-      e.write();
-    }
     El::mpi::Abort(El::mpi::COMM_WORLD, 1);
   } catch (std::exception& e) {
     El::ReportException(e);  // Elemental exceptions

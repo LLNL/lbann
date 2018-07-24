@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
     if (!opts->has_bool("disable_signal_handler")) {
       stack_trace::register_signal_handler(opts->has_bool("stack_trace_to_file"));
     }
-
+    
     //to activate, must specify --st_on on cmd line
     stack_profiler::get()->activate(comm->get_rank_in_world());
 
@@ -305,7 +305,12 @@ int main(int argc, char *argv[]) {
   } catch (lbann_exception& e) {
     e.print_report();
     if (options::get()->has_bool("stack_trace_to_file")) {
-      e.write();
+      std::stringstream ss("stack_trace");
+      const auto& rank = get_rank_in_world();
+      if (rank >= 0) { ss << "_rank" << rank; }
+      ss << ".txt";
+      std::ofstream fs(ss.str().c_str());
+      e.print_report(fs);
     }
     El::mpi::Abort(El::mpi::COMM_WORLD, 1);
   } catch (std::exception& e) {

@@ -47,11 +47,6 @@ namespace stack_trace {
 std::string get() {
   std::stringstream ss;
 
-  // Stack frames to ignore
-  const std::vector<std::string> ignored_frames
-    = {"lbann::stack_trace",
-       "lbann::lbann_exception"};
-  
   // Get stack frames
   std::vector<void*> frames(128, nullptr);
   const auto& frames_size = backtrace(frames.data(), frames.size());
@@ -68,11 +63,7 @@ std::string get() {
                                        nullptr, nullptr, nullptr);
       if (name == nullptr) {
         ss << info.dli_sname << " (demangling failed)";
-      } else if (std::all_of(ignored_frames.begin(),
-                             ignored_frames.end(),
-                             [name](const std::string& str) {
-                               return str.find(name) == std::string::npos;
-                             })) {
+      } else {
         ss << name;
       }
       std::free(name);
@@ -89,59 +80,85 @@ std::string get() {
   
 namespace {
 
-/** Get human-readable name for signal.
+/** Get human-readable description of signal.
  *  See /usr/include/bits/signum.h for signal explanations.
  */
-std::string signal_name(int signal) {
+std::string signal_description(int signal) {
+
+  // Get signal description
+  std::string desc;
   switch (signal) {
-  case 1:  return "SIGHUP";
-  case 2:  return "SIGINT";
-  case 3:  return "SIGQUIT";
-  case 4:  return "SIGILL";
-  case 5:  return "SIGTRAP";
-  case 6:  return "SIGABRT";
-  case 7:  return "SIGBUS";
-  case 8:  return "SIGFPE";
-  case 9:  return "SIGKILL";
-  case 10: return "SIGUSR1";
-  case 11: return "SIGSEGV";
-  case 12: return "SIGUSR2";
-  case 13: return "SIGPIPE";
-  case 14: return "SIGALRM";
-  case 15: return "SIGTERM";
-  case 16: return "SIGSTKFLT";
-  case 17: return "SIGCHLD";
-  case 18: return "SIGCONT";
-  case 19: return "SIGSTOP";
-  case 20: return "SIGTSTP";
-  case 21: return "SIGTTIN";
-  case 22: return "SIGTTOU";
-  case 23: return "SIGURG";
-  case 24: return "SIGXCPU";
-  case 25: return "SIGXFSZ";
-  case 26: return "SIGVTALRM";
-  case 27: return "SIGPROF";
-  case 28: return "SIGWINCH";
-  case 29: return "SIGPOLL";
-  case 30: return "SIGPWR";
-  case 31: return "SIGSYS";
-  default: return "signal " + std::to_string(signal);
+  case 1:  desc = "hangup";                     break;
+  case 2:  desc = "interrupt";                  break;
+  case 3:  desc = "quit";                       break;
+  case 4:  desc = "illegal instruction";        break;
+  case 5:  desc = "trace trap";                 break;
+  case 6:  desc = "abort";                      break;
+  case 7:  desc = "BUS error";                  break;
+  case 8:  desc = "floating-point exception";   break;
+  case 9:  desc = "kill, unblockable";          break;
+  case 10: desc = "user-defined signal 1";      break;
+  case 11: desc = "segmentation violation";     break;
+  case 12: desc = "user-defined signal 2";      break;
+  case 13: desc = "broken pipe";                break;
+  case 14: desc = "alarm clock";                break;
+  case 15: desc = "termination";                break;
+  case 16: desc = "stack fault";                break;
+  case 17: desc = "child status has changed";   break;
+  case 18: desc = "continue";                   break;
+  case 19: desc = "stop, unblockable";          break;
+  case 20: desc = "keyboard stop";              break;
+  case 21: desc = "background read from tty";   break;
+  case 22: desc = "background write to tty";    break;
+  case 23: desc = "urgent condition on socket"; break;
+  case 24: desc = "CPU limit exceeded";         break;
+  case 25: desc = "file size limit exceeded";   break;
+  case 26: desc = "virtual alarm clock";        break;
+  case 27: desc = "profiling alarm clock";      break;
+  case 28: desc = "window size change";         break;
+  case 29: desc = "pollable event occured";     break;
+  case 30: desc = "power failure restart";      break;
+  case 31: desc = "bad system call";            break;
   }
+
+  // Construct signal description
+  std::stringstream ss;
+  ss << "signal " << signal;
+  if (!desc.empty()) { ss << " (" << desc << ")"; }
+  return ss.str();
+  
 }
 
 /** Whether to write to file when a signal is detected. */
 bool write_to_file_on_signal = false;
-  
+
 /** Signal handler.
- *  Output signal name and stack trace to standard output and to a
- *  file (if desired).
+ *  Output signal name and stack trace to standard error and to a file
+ *  (if desired).
  */
 void handle_signal(int signal) {
+
+  // Print error message and stack trace to standard error
   std::stringstream ss;
-  ss << "Caught " << signal_name(signal);
+  ss << "Caught " << signal_description(signal);
   const auto& rank = get_rank_in_world();
   if (rank >= 0) { ss << " on rank " << rank; }
-  throw exception(ss.str());
+  const exception e(ss.str());
+  e.print_report();
+
+  // Print error message and stack trace to file
+  if (write_to_file_on_signal) {
+    ss.clear();
+    ss.str("stack_trace");
+    if (rank >= 0) { ss << "_rank" << rank; }
+    ss << ".txt";
+    std::ofstream fs(ss.str().c_str());
+    e.print_report(fs);
+  }
+
+  // Terminate program
+  El::mpi::Abort(El::mpi::COMM_WORLD, 1);
+  
 }
 
 } // namespace
@@ -152,8 +169,9 @@ void register_signal_handler(bool write_to_file) {
   sa.sa_handler = &handle_signal;
   sa.sa_flags = SA_RESTART;
   sigfillset(&sa.sa_mask);
-  for (int i=0; i<40; i++) {
-    sigaction(i, &sa, NULL);
+  const int num_signals = 40;
+  for (int i = 0; i < num_signals; i++) {
+    sigaction(i, &sa, nullptr);
   }
 }
 

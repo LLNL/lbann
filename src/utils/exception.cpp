@@ -63,21 +63,5 @@ void exception::print_report(std::ostream& os) const {
      << std::endl;
   os << ss.str();
 }
- 
-void exception::write(std::string base_name) const {
-
-  // Construct file name
-  std::stringstream ss(base_name);
-  const auto& rank = get_rank_in_world();
-  if (rank >= 0) { ss << "_rank" << rank; }
-  ss << ".txt";
-  const auto& file_name = ss.str();
-
-  // Write stack trace to file
-  std::ofstream fs;
-  fs.open(file_name.c_str());
-  print_report(fs);
-  
-}
 
 } // namespace lbann

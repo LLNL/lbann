@@ -74,10 +74,6 @@ public:
    *  Reports the exception message and the stack trace.
    */
   void print_report(std::ostream& os = std::cerr) const;
-  /** Write human-readable report to file.
-   *  The file name has the form "<base_name>_rank<MPI rank>.txt".
-   */
-  void write(std::string base_name = "stack_trace") const;
   
 private:
   /** Human-readable exception message. */
