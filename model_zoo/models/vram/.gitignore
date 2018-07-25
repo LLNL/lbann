@@ -1,0 +1,6 @@
+lbann_pb2.py
+lbann_pb2.pyc
+dram.prototext
+vram.prototext
+vram_template.prototext
+generate_vram.py
