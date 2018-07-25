@@ -170,12 +170,18 @@ void assign_weights_to_layers(std::vector<Layer*>& layer_list,
   for (int i=0; i<proto_model.layer_size(); ++i) {
     const auto& proto_layer = proto_model.layer(i);
     auto& layer_weights = layer_list[i]->get_weights();
+    const bool is_frozen = layer_list[i]->is_frozen();
     for (auto&& name : parse_list<std::string>(proto_layer.weights())) {
       auto&& w = names_to_weights[name];
       if (w == nullptr) {
         err << "could not find weights named \"" << name << "\", "
             << "which are expected by layer " << layer_list[i]->get_name();
         LBANN_ERROR(err.str());
+      }
+      if (is_frozen) {
+        w->freeze();
+      } else if (w->is_frozen()) {
+        w->unfreeze();
       }
       layer_weights.push_back(w);
     }
