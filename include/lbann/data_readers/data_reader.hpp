@@ -255,7 +255,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * If the base offset is not specified set it to 0
    * If the stride is not specified set it to batch size
    */
-  void setup();
+  virtual void setup();
 
   /** Return this data_reader's type */
   virtual std::string get_type() const = 0;

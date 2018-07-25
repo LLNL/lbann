@@ -54,6 +54,8 @@ class image_data_reader : public generic_data_reader {
   // dataset specific functions
   void load() override;
 
+  void setup() override;
+
   int get_num_labels() const override {
     return m_num_labels;
   }
@@ -112,6 +114,7 @@ class image_data_reader : public generic_data_reader {
   int m_image_num_channels; ///< number of image channels
   int m_image_linearized_size; ///< linearized image size
   int m_num_labels; ///< number of labels
+  std::vector<cv::Mat> m_thread_cv_buffer;
 };
 
 }  // namespace lbann

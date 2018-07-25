@@ -112,7 +112,7 @@ bool data_reader_multi_images::fetch_datum(CPUMat& X, int data_id, int mb_idx, i
       m_data_store->get_data_buf(data_id, image_buf, i);
       ret = lbann::image_utils::load_image(*image_buf, width, height, img_type, *(m_pps[tid]), X_v[i]);
     } else {
-      ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v[i], m_thread_buffer[tid]);
+      ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v[i], m_thread_buffer[tid], &m_thread_cv_buffer[tid]);
     }
 
     if(!ret) {
